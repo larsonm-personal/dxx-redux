@@ -65,12 +65,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "args.h"
 #ifdef __ANDROID__
-#include "android_rewind.h"
-#include "android_rewind_policy.h"
 #include "coop_save.h"
+#include "coop/coop_host_migration.h"
 #include "coop_warp.h"
 #include "coop_indicator_lines.h"
-#include "android_crash_handler.h"
 #include "android_log.h"
 #include "state_android_shared.h"
 #include <android/log.h>
@@ -2793,61 +2791,9 @@ void multi_disconnect_player(int pnum)
 	if (pnum == multi_who_is_master()) // Host has left
 	{
 #ifdef __ANDROID__
-		/* android port: host migration for coop games */
-		if (Game_mode & GM_MULTI_COOP) {
-			int new_master = -1;
-			for (i = 0; i < N_players; i++) {
-				if (i != pnum && Players[i].connected == CONNECT_PLAYING) {
-					new_master = i;
-					break;
-				}
-			}
-			if (new_master >= 0) {
-				Multi_master_playernum = new_master;
-				android_rewind_reset_level();
-				android_rewind_set_clients_can_request(0);
-				con_printf(CON_NORMAL, "host migration: player %d is now master\n", new_master);
-				if (new_master == Player_num) {
-					PHYSFS_file *mfp;
-					HUD_init_message_literal(HM_MULTI, "You are now the game host");
-					memset(object_owner, -1, sizeof(sbyte) * MAX_OBJECTS);
-					multi_powcap_count_powerups_in_mine();
-					/* Engine stays on loopback -- Kotlin host-mode proxy
-					 * will accept incoming connections on the network port
-					 * and forward to the engine via loopback */
-					/* Write migration info for Kotlin LAN broadcast */
-					mfp = PHYSFS_openWrite("host_migration.json");
-					if (mfp) {
-						char mbuf[512];
-						int mlen = snprintf(mbuf, sizeof(mbuf),
-							"{\n"
-							"  \"callsign\": \"%s\",\n"
-							"  \"game\": \"d1\",\n"
-							"  \"mission\": \"%s\",\n"
-							"  \"mode\": \"coop\",\n"
-							"  \"difficulty\": %d,\n"
-							"  \"level_num\": %d,\n"
-							"  \"max_players\": %d,\n"
-							"  \"coop_qol\": %s,\n"
-							"  \"full_death_spew\": %s,\n"
-							"  \"player_spew_no_expire\": %s\n"
-							"}\n",
-							Players[Player_num].callsign,
-							Netgame.mission_name,
-							Netgame.difficulty,
-							Current_level_num,
-							Netgame.max_numplayers,
-							(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false",
-							Netgame.FullDeathSpew ? "true" : "false",
-							Netgame.PlayerSpewNoExpire ? "true" : "false");
-						PHYSFS_write(mfp, mbuf, mlen, 1);
-						PHYSFS_close(mfp);
-					}
-					android_notify_host_migration();
-				}
-				goto after_host_check;
-			}
-		}
+		/* android port: migrate cooperative host loss in shared code */
+		if (coop_host_migration_handle_disconnect(pnum))
+			goto after_host_check;
 #endif
 		if (Network_status==NETSTAT_PLAYING)
 			multi_leave_game();

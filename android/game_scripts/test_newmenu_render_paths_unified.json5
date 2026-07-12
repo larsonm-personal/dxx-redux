@@ -1,0 +1,101 @@
+// TEST: Shared D1/D2 scaled newmenu and listbox render paths
+//
+// Covers the private-state callbacks retained by each game after the common
+// offscreen render transaction moved into android_menu_scale.
+[
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike", "GAME_NUM": "1"},
+            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2"}
+        },
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
+            {"file": "descent.hog", "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052"},
+            {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+    {"action": "write_config", "file": "descent.cfg",
+     "content": "AspectX=3\nAspectY=4\nResolutionX=1280\nResolutionY=960\n"},
+    {"action": "write_config", "file": "d2x-redux/descent.cfg",
+     "content": "AspectX=3\nAspectY=4\nResolutionX=1280\nResolutionY=960\n"},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+
+    // A clean install opens the pilot-name newmenu directly.  Save the default
+    // pilot, then relaunch so the listbox render path is genuinely exercised.
+    {"action": "enter_launcher"},
+    {"action": "wait_for", "field": "game_running", "value": "false", "timeout_ms": 10000},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "menu_type", "value": "listbox", "timeout_ms": 20000},
+    {"action": "assert", "expect": {
+        "menu.type": "listbox",
+        "menu_scale.active": "true",
+        "menu_scale.direct_render": "true",
+        "menu_scale.render_scale": {"gt": 1.05},
+        "menu_scale.dst.w": {"gt": 0},
+        "menu_scale.dst.h": {"gt": 0}
+    }},
+
+    {"action": "key", "key": "enter", "post_delay_ms": 150},
+    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.type": "newmenu",
+        "menu_scale.active": "true",
+        "menu_scale.direct_render": "true",
+        "menu_scale.render_scale": {"gt": 1.05}
+    }},
+    {"action": "select", "text": "Options", "post_delay_ms": 150, "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.type": "newmenu"
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 150},
+
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100},
+    {"action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100},
+
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
+    {"action": "assert", "expect": {
+        "game_window_is_front": "false",
+        "menu.type": "newmenu",
+        "menu_scale.active": "true",
+        "menu_scale.direct_render": "true",
+        "menu_scale.render_scale": {"gt": 1.05}
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "introspect"}
+]

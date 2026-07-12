@@ -422,18 +422,27 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
  */
 internal fun SetupActivity.patchPilotsFromConfig(): Int {
     val cfg = File(filesDir, "controller_config.json")
-    if (!cfg.exists()) return 0
+    var d1Patched = 0
+    var d2Patched = 0
+    if (!cfg.exists()) {
+        writeControllerOperationResult("controller_patch_result.json", d1Patched, d2Patched)
+        return 0
+    }
     try {
         val json = JSONObject(cfg.readText())
-        val kbArr = json.optJSONArray("key_settings_keyboard") ?: return 0
+        val kbArr =
+            json.optJSONArray("key_settings_keyboard")
+                ?: run {
+                    writeControllerOperationResult("controller_patch_result.json", d1Patched, d2Patched)
+                    return 0
+                }
         val kb = ByteArray(kbArr.length()) { (kbArr.getInt(it) and 0xFF).toByte() }
         val ct = json.optInt("control_type", 1)
-        var total = 0
         for (game in arrayOf("d2", "d1")) {
             val joyKey = "key_settings_joystick_$game"
             val jArr = json.optJSONArray(joyKey) ?: continue
             val joy = ByteArray(jArr.length()) { (jArr.getInt(it) and 0xFF).toByte() }
-            total +=
+            val patched =
                 NativePilotPatcher.nativePatchPilotFiles(
                     filesDir.absolutePath,
                     joy,
@@ -441,12 +450,36 @@ internal fun SetupActivity.patchPilotsFromConfig(): Int {
                     ct,
                     game,
                 )
+            if (game == "d1") d1Patched = patched else d2Patched = patched
         }
-        return total
+        writeControllerOperationResult("controller_patch_result.json", d1Patched, d2Patched)
+        return d1Patched + d2Patched
     } catch (e: Exception) {
         Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
+        writeControllerOperationResult("controller_patch_result.json", d1Patched, d2Patched)
         return 0
     }
+}
+
+internal fun SetupActivity.writeControllerOperationResult(
+    filename: String,
+    d1Count: Int,
+    d2Count: Int,
+) {
+    val result =
+        JSONObject()
+            .put("d1", d1Count)
+            .put("d2", d2Count)
+            .put("total", d1Count + d2Count)
+    File(filesDir, filename).writeText(result.toString(2))
+}
+
+/** Write a distinct controller layout used by the real-pilot JNI roundtrip test. */
+internal fun SetupActivity.writeControllerPatchFixture(game: String) {
+    val bindings = loadDefaultBindings(applicationContext).toMutableMap()
+    bindings["RS_X"] = "Slide L/R"
+    bindings["LS_X"] = "Turn L/R"
+    saveConfig(applicationContext, bindings, setOf("RS_X"), game)
 }
 
 private data class KcMeta(
@@ -618,6 +651,7 @@ internal fun SetupActivity.writeControllerIntrospectJson(game: String? = null) {
 
         val root = JSONObject()
         root.put("source", "launcher")
+        root.put("game", gameId)
         val jc = JSONObject()
         jc.put("control_type", ct)
         jc.put("bound_count", boundCount)
@@ -625,6 +659,7 @@ internal fun SetupActivity.writeControllerIntrospectJson(game: String? = null) {
         jc.put("total_count", n)
         jc.put("items", items)
         root.put("joystick_controls", jc)
+        root.put("keyboard_settings", json.optJSONArray("key_settings_keyboard") ?: JSONArray())
 
         if (json.has("bindings")) root.put("bindings", json.getJSONObject("bindings"))
         if (json.has("inverts")) root.put("inverts", json.getJSONArray("inverts"))

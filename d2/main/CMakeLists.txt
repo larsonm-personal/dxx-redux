@@ -91,6 +91,8 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/android_newmenu_text_wrap.c
     ../../android/app/src/main/cpp/shared/coop/coop_multi_status.c
     ../../android/app/src/main/cpp/shared/automap_metadata_overlay.c
+    ../../android/app/src/main/cpp/shared/classic_demo_json.c
+    ../../android/app/src/main/cpp/shared/classic_demo_json_d2_snapshot.c
     ../../android/app/src/main/cpp/shared/hud_counts_shared.c
     ../../android/app/src/main/cpp/shared/difficulty_runtime_shared.c
     ../../android/app/src/main/cpp/shared/effect_runtime_shared.c
@@ -109,6 +111,8 @@ target_include_directories(dxx-redux-d2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(ANDROID)
     target_sources(dxx-redux-d2 PRIVATE
+        ../../android/app/src/main/cpp/shared/coop/coop_host_migration.c
+        ../../android/app/src/main/cpp/shared/coop/coop_host_migration_policy.c
         ../../android/app/src/main/cpp/shared/kconfig_android_shared.c
         ../../android/app/src/main/cpp/shared/multi_save_transfer.c
         ../../android/app/src/main/cpp/shared/state_android_shared.c

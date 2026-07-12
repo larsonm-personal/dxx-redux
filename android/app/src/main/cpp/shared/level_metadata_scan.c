@@ -1214,12 +1214,12 @@ static int metadata_route_edge_passable(
 	     (metadata_wall_flags(view, wall_num) & view->wall_flag_door_locked) == 0))
 		return 1;
 	if (metadata_route_edge_trigger_blocker(view, route, seg, side, child, &trigger_block)) {
-		if (metadata_route_trigger_valid(trigger_block.trigger_num) &&
-		    route->avoided_triggers[trigger_block.trigger_num])
-			return 0;
-		if (block)
-			*block = trigger_block;
-		return optimistic;
+		if (!metadata_route_trigger_valid(trigger_block.trigger_num) ||
+		    !route->avoided_triggers[trigger_block.trigger_num]) {
+			if (block)
+				*block = trigger_block;
+			return optimistic;
+		}
 	}
 	if (wall_type == view->wall_type_door &&
 	    view->wall_flag_door_locked &&

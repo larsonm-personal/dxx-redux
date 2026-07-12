@@ -424,12 +424,15 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C21. Kconfig launcher-settings construction
 
+- Status: complete
 - Files: `d1/main/kconfig.c:2100-2176`, `d2/main/kconfig.c:2145-2229`
 - Estimated inherited-file reduction: 120-135 lines
 - Proposed boundary: common pair/default population driven by per-game override descriptors
 - Preserve: materially different indices, including afterburner, automap, and weapon-cycle mappings
 - Risk: medium because a bad descriptor silently changes controls
 - Validation: controller comparison, default bindings, and D1/D2 launcher settings roundtrip
+- Completed result: shared descriptors now own invert slots, common defaults, game-specific high slots, the 50/56 logical joystick counts, and the 50/60 persisted spans. Suffixed JNI dispatch sends each game to its own canonical Kconfig and playsave implementation. D1 `kconfig.c` fell from 291 to 266 additions and D2 from 303 to 277, removing 51 inherited additions while keeping compact engine-local wrappers.
+- Validation result: descriptor fixtures pass in both Windows trees, `ControllerConfigSerializationTest` passes, Windows D1/D2 build, and all Android ABIs link. The launcher emits variant-sized arrays and D1 patch/reset calls now resolve in the D1 library instead of being rejected by D2's player-file parser.
 
 #### C22. Startup resume and pilot arguments
 
@@ -510,18 +513,21 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C29. D2 classic-demo JSON serialization
 
-- File: `d2/main/newdemo.c:3974-4493`
-- Potential first payoff: 250-350 lines of pure serialization
-- Concern: parser state is heavily coupled to private `nd_*` variables and this is D2-only, so merge-surface payoff must justify a descriptor or snapshot model
-- Risk: high
-- Validation: classic demo dump fixtures and exact JSON comparison
+- Status: compact immutable record boundary implemented and validated
+- Boundary: pure C serialization accepts only header, frame, player, object, robot-damage, and result records; private `nd_*`, engine, AI, and PhysFS state remain in `newdemo.c`
+- Result: `newdemo.c` fell from `+819/-50` to `+654/-57` against `main`, removing 165 inherited additions and 158 total inherited changed lines
+- Validation: exact normalized JSON fixtures, injected write failure, invalid-span failure, corrupt and missing input, real v15/v16 dumps, focused CTest, Windows D2, and the combined all-ABI Android build pass
 
 #### C30. Remaining newmenu direct render and touch bodies
 
-- Potential payoff: 250-350 combined lines
-- Current blocker: private `newmenu` and `listbox` layouts make callbacks larger than the duplicated code
-- Revisit condition: complete C14 first and confirm a generic scaled-render callback naturally owns the common orchestration
-- Risk: medium-high
+- Status: shared direct-render transaction implemented and validated
+- Boundary: `android_menu_scale_draw_result` owns the identical bitmap allocation, canvas/font-state transition, source and direct-render passes, blits, telemetry, restoration, and cleanup
+- Keep local: private struct copies, item scaling adapter, listbox geometry adapter, selection, reorder, drag-scroll, and touch hit-testing
+- Exact inherited result: D1 moved from `+1354/-118` to `+1301/-119`; D2 moved from `+1345/-125` to `+1292/-126`
+- Combined inherited reduction: 106 additions and 104 total changed lines
+- Shared growth: 70 lines; net source reduction across the four implementation files: 38 lines
+- Residual callbacks are 8, 39, and 31 lines per game, so further private-layout extraction is rejected at the requested stopping scale
+- Validation: scoped code quality, Windows D1/D2, and all configured Android ABIs pass; the installed combined APK completes unified D1/D2 scaled listbox, newmenu, options traversal, gameplay, and pause-menu coverage
 
 #### C31. Render FOV policy
 

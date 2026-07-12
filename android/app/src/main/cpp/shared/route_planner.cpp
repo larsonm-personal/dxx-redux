@@ -1,6 +1,7 @@
 #include "route_planner.h"
 #include "route_planner_c.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -704,6 +705,8 @@ route_trigger_path_selection select_trigger_firing_path(
 			    source.source_position);
 			candidate.terminal_segment = source.source_segment;
 			candidate.terminal_position = source.source_position;
+			candidate.path.terminal_segment = source.source_segment;
+			candidate.path.terminal_position = source.source_position;
 			candidate.found = true;
 		} else {
 			for (const int segment : search.visit_order) {
@@ -718,6 +721,8 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.path.progress_weight = 0;
 				candidate.terminal_segment = segment;
 				candidate.terminal_position = terminal;
+				candidate.path.terminal_segment = segment;
+				candidate.path.terminal_position = terminal;
 				candidate.found = true;
 				break;
 			}
@@ -867,7 +872,121 @@ struct dependency_state {
 	double pending_distance = 0.0;
 	route_path_result pending_path;
 	std::vector<unsigned char> hidden_door_in_progress;
+	std::string note;
+	bool unresolved_obstruction_valid = false;
+	int unresolved_obstruction_segment = -1;
+	int unresolved_obstruction_side = -1;
+	route_edge_decision unresolved_obstruction;
 };
+
+struct unexplored_candidate {
+	int component = -1;
+	int component_size = 0;
+	int target_segment = -1;
+	double distance = std::numeric_limits<double>::infinity();
+	bool direct = false;
+};
+
+struct unexplored_inventory {
+	int component_count = 0;
+	std::vector<unexplored_candidate> candidates;
+};
+
+unexplored_inventory discover_unexplored_candidates(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress)
+{
+	unexplored_inventory result;
+	const int segment_count = static_cast<int>(snapshot.topology.segments.size());
+	std::vector<int> component_ids(segment_count, -1);
+	std::vector<int> queue;
+	queue.reserve(segment_count);
+	auto optimistic_progress = progress;
+	optimistic_progress.control_center_destroyed = true;
+	for (int segment = 0; segment < segment_count; ++segment) {
+		if (component_ids[segment] >= 0 ||
+		    snapshot.state.segments[segment].explored)
+			continue;
+		unexplored_candidate candidate;
+		candidate.component = result.component_count;
+		queue.clear();
+		queue.push_back(segment);
+		component_ids[segment] = result.component_count;
+		for (std::size_t head = 0; head < queue.size(); ++head) {
+			const int current = queue[head];
+			candidate.component_size++;
+			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+				const int child =
+				    snapshot.topology.segments[current].sides[side].child;
+				if (!valid_segment(snapshot, child) ||
+				    component_ids[child] >= 0 ||
+				    snapshot.state.segments[child].explored)
+					continue;
+				const auto edge = evaluate_route_edge(
+				    snapshot, query, optimistic_progress, current, side);
+				if (edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED)
+					continue;
+				component_ids[child] = result.component_count;
+				queue.push_back(child);
+			}
+		}
+		result.candidates.push_back(candidate);
+		result.component_count++;
+	}
+	if (result.component_count == 0)
+		return result;
+	const auto update_candidate = [&](int segment, double distance, bool direct) {
+		const int component = component_ids[segment];
+		if (component < 0)
+			return;
+		auto &candidate = result.candidates[component];
+		if (candidate.target_segment >= 0 &&
+		    (distance > candidate.distance ||
+		     (distance == candidate.distance &&
+		      segment >= candidate.target_segment)))
+			return;
+		candidate.target_segment = segment;
+		candidate.distance = distance;
+		candidate.direct = direct;
+	};
+	const auto direct = search_routes(snapshot, query, progress, false);
+	if (direct.problem.empty())
+		for (int segment = 0; segment < segment_count; ++segment)
+			if (direct.nodes[segment].reachable)
+				update_candidate(segment, direct.nodes[segment].distance, true);
+	const auto optimistic = search_routes(
+	    snapshot, query, optimistic_progress, true);
+	if (optimistic.problem.empty())
+		for (int segment = 0; segment < segment_count; ++segment) {
+			const int component = component_ids[segment];
+			if (component >= 0 &&
+			    result.candidates[component].target_segment < 0 &&
+			    optimistic.nodes[segment].reachable)
+				update_candidate(
+				    segment, optimistic.nodes[segment].distance, false);
+		}
+	result.candidates.erase(
+	    std::remove_if(
+	        result.candidates.begin(), result.candidates.end(),
+	        [](const unexplored_candidate &candidate) {
+		        return candidate.target_segment < 0;
+	        }),
+	    result.candidates.end());
+	std::sort(
+	    result.candidates.begin(), result.candidates.end(),
+	    [](const unexplored_candidate &left,
+	       const unexplored_candidate &right) {
+		    if (left.component_size != right.component_size)
+			    return left.component_size > right.component_size;
+		    if (left.direct != right.direct)
+			    return left.direct > right.direct;
+		    if (left.distance != right.distance)
+			    return left.distance < right.distance;
+		    return left.target_segment < right.target_segment;
+	    });
+	return result;
+}
 
 class dependency_planner
 {
@@ -904,11 +1023,150 @@ class dependency_planner
 		return result;
 	}
 
+	route_plan_result plan_end_level()
+	{
+		if (!initialize_route())
+			return finish_partial("route incomplete");
+		if (!targets_.reactor_found)
+			state_.note = targets_.exits.empty()
+			                  ? "missing reactor"
+			                  : "no reactor, exit exists";
+		if (targets_.exits.empty()) {
+			set_problem("missing exit");
+			return finish_partial("route incomplete");
+		}
+		bool progressed = false;
+		if (!progress_primary(progressed))
+			return finish_partial("route incomplete");
+		const auto selected = select_route_target(
+		    snapshot_, query_, state_.progress, targets_.exits);
+		if (!selected.found) {
+			set_problem("exit unreachable");
+			return finish_partial("route incomplete");
+		}
+		const auto &target = targets_.exits[selected.selected_index];
+		if (!move_to_target(target.segment, target.position, 0) ||
+		    !append_target_step(
+		        route_semantic_step_kind::exit, target, "Exit"))
+			return finish_partial("route incomplete");
+		return make_plan_result(route_plan_status::ok);
+	}
+
+	route_plan_result plan_segment(int segment)
+	{
+		if (!initialize_route())
+			return finish_partial("unexplored route incomplete");
+		if (!valid_segment(snapshot_, segment) ||
+		    !snapshot_.topology.segments[segment].center.valid) {
+			set_problem("unexplored target missing center");
+			return finish_partial("unexplored route incomplete");
+		}
+		route_target target;
+		target.segment = segment;
+		target.position = snapshot_.topology.segments[segment].center;
+		if (!move_to_endpoint(target) ||
+		    !append_target_step(
+		        route_semantic_step_kind::unexplored, target,
+		        "Unexplored"))
+			return finish_partial("unexplored route incomplete");
+		return make_plan_result(route_plan_status::ok);
+	}
+
+	route_plan_result plan_unexplored()
+	{
+		if (!initialize_route())
+			return finish_partial("unexplored route incomplete");
+		const auto prefix = state_;
+		const auto inventory = discover_unexplored_candidates(
+		    snapshot_, query_, state_.progress);
+		if (inventory.component_count <= 0) {
+			set_problem("no unexplored area");
+			return finish_partial("unexplored route incomplete");
+		}
+		for (const auto &candidate : inventory.candidates) {
+			state_ = prefix;
+			route_target target;
+			target.segment = candidate.target_segment;
+			target.position =
+			    snapshot_.topology.segments[target.segment].center;
+			if (!move_to_endpoint(target) ||
+			    !append_target_step(
+			        route_semantic_step_kind::unexplored, target,
+			        "Unexplored"))
+				continue;
+			auto result = make_plan_result(route_plan_status::ok);
+			result.unexplored_component_size = candidate.component_size;
+			result.unexplored_target_segment = target.segment;
+			result.unexplored_waypoint_segment =
+			    result.steps.size() > 1 ? result.steps[1].segment
+			                            : target.segment;
+			result.unexplored_direct_reachable = candidate.direct;
+			return result;
+		}
+		state_ = prefix;
+		set_problem("no reachable unexplored area");
+		return finish_partial("unexplored route incomplete");
+	}
+
   private:
 	void set_problem(const std::string &problem)
 	{
 		if (state_.problem.empty())
 			state_.problem = problem;
+	}
+
+	route_plan_result make_plan_result(route_plan_status status)
+	{
+		route_plan_result result;
+		result.status = status;
+		result.progress = state_.progress;
+		result.steps = std::move(state_.steps);
+		result.problem = std::move(state_.problem);
+		result.note = std::move(state_.note);
+		for (const auto &step : result.steps)
+			if (std::isfinite(step.distance_from_previous) &&
+			    step.distance_from_previous > 0.0)
+				result.travel_distance += step.distance_from_previous;
+		return result;
+	}
+
+	bool initialize_route()
+	{
+		if (!valid_segment(snapshot_, state_.progress.current_segment) ||
+		    !state_.progress.current_position.valid) {
+			set_problem("missing player start");
+			return false;
+		}
+		route_semantic_step step;
+		step.kind = route_semantic_step_kind::start;
+		step.segment = state_.progress.current_segment;
+		step.label = "Start";
+		return append_step(std::move(step));
+	}
+
+	void note_unresolved_obstruction(
+	    int segment,
+	    int side,
+	    const route_edge_decision &obstruction)
+	{
+		if (state_.unresolved_obstruction_valid ||
+		    (obstruction.blocker != route_edge_blocker::trigger &&
+		     obstruction.blocker != route_edge_blocker::hidden_door))
+			return;
+		state_.unresolved_obstruction_valid = true;
+		state_.unresolved_obstruction_segment = segment;
+		state_.unresolved_obstruction_side = side;
+		state_.unresolved_obstruction = obstruction;
+	}
+
+	route_plan_result finish_partial(const char *problem)
+	{
+		append_unresolved_obstruction();
+		if (state_.problem.empty())
+			set_problem(problem);
+		return make_plan_result(
+		    state_.steps.size() > 1 ? route_plan_status::partial
+		                            : route_plan_status::failed);
 	}
 
 	route_path_result path_to_position(
@@ -932,7 +1190,35 @@ class dependency_planner
 			return {};
 		path.distance += point_distance(
 		    snapshot_.topology.segments[segment].center, position);
+		path.terminal_segment = segment;
+		path.terminal_position = position;
 		return path;
+	}
+
+	route_path_result visible_path_to_target(const route_target &target)
+	{
+		const auto search = search_routes(
+		    snapshot_, query_, state_.progress, false);
+		if (!search.problem.empty())
+			return {};
+		route_trigger_source visibility_target;
+		visibility_target.source_segment = target.segment;
+		visibility_target.source_position = target.position;
+		for (const int segment : search.visit_order) {
+			double extra_distance = 0.0;
+			route_position terminal;
+			if (!visible_source_position(
+			        snapshot_, state_.progress, visibility_target,
+			        visibility_, segment, terminal, extra_distance))
+				continue;
+			auto path = build_route_path(search, segment);
+			path.distance += extra_distance;
+			path.progress_weight = 0;
+			path.terminal_segment = segment;
+			path.terminal_position = terminal;
+			return path;
+		}
+		return {};
 	}
 
 	void accumulate_path(const route_path_result &path)
@@ -941,6 +1227,10 @@ class dependency_planner
 		state_.pending_path.reached = true;
 		state_.pending_path.distance += path.distance;
 		state_.pending_path.progress_weight += path.progress_weight;
+		if (path.terminal_position.valid) {
+			state_.pending_path.terminal_segment = path.terminal_segment;
+			state_.pending_path.terminal_position = path.terminal_position;
+		}
 		if (state_.pending_path.segments.empty()) {
 			state_.pending_path.segments = path.segments;
 			state_.pending_path.sides = path.sides;
@@ -1026,6 +1316,86 @@ class dependency_planner
 			step.opened_links.push_back({ reverse_topology.segment, reverse_topology.side, reverse });
 		}
 		return append_step(std::move(step));
+	}
+
+	bool side_is_route_exit(int segment, int side) const
+	{
+		if (!valid_segment(snapshot_, segment) || side < 0 ||
+		    side >= LEVEL_METADATA_MAX_SIDES)
+			return false;
+		const auto &topology_side =
+		    snapshot_.topology.segments[segment].sides[side];
+		if (topology_side.child == -2)
+			return true;
+		if (!snapshot_.state.segments[segment].sides[side].exit_trigger)
+			return false;
+		const int wall = topology_side.wall;
+		if (!valid_wall(snapshot_, wall))
+			return true;
+		const int trigger = snapshot_.state.walls[wall].trigger;
+		return !valid_trigger(snapshot_, trigger) ||
+		       snapshot_.topology.triggers[trigger].kind !=
+		           route_trigger_kind::secret_exit;
+	}
+
+	bool append_target_step(
+	    route_semantic_step_kind kind,
+	    const route_target &target,
+	    const char *label)
+	{
+		route_semantic_step step;
+		step.kind = kind;
+		step.segment = target.segment;
+		step.label = label;
+		step.aim_position = target.position;
+		step.label_position = target.position;
+		if (kind == route_semantic_step_kind::reactor)
+			step.activation = route_activation_kind::destroy_reactor;
+		else if (kind == route_semantic_step_kind::boss)
+			step.activation = route_activation_kind::destroy_boss;
+		else if (kind == route_semantic_step_kind::exit) {
+			step.activation = route_activation_kind::enter_exit;
+			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+				if (!side_is_route_exit(target.segment, side))
+					continue;
+				step.side = side;
+				step.wall = snapshot_.topology.segments[target.segment]
+				                .sides[side]
+				                .wall;
+				break;
+			}
+			if (valid_wall(snapshot_, step.wall)) {
+				step.trigger = snapshot_.state.walls[step.wall].trigger;
+				if (valid_trigger(snapshot_, step.trigger)) {
+					const auto &trigger =
+					    snapshot_.topology.triggers[step.trigger];
+					step.trigger_raw_type = trigger.raw_type;
+					step.trigger_type_name =
+					    dependency_trigger_type_name(trigger.kind);
+				}
+			}
+		}
+		return append_step(std::move(step));
+	}
+
+	void append_unresolved_obstruction()
+	{
+		if (!state_.unresolved_obstruction_valid)
+			return;
+		if (state_.unresolved_obstruction.blocker ==
+		    route_edge_blocker::trigger) {
+			const auto sources = discover_trigger_sources_internal(
+			    snapshot_, state_.progress,
+			    state_.unresolved_obstruction_segment,
+			    state_.unresolved_obstruction_side, true);
+			if (!sources.empty())
+				append_trigger_step(sources.front());
+		} else if (state_.unresolved_obstruction.blocker ==
+		           route_edge_blocker::hidden_door)
+			append_hidden_door_step(
+			    state_.unresolved_obstruction_segment,
+			    state_.unresolved_obstruction_side,
+			    state_.unresolved_obstruction.wall);
 	}
 
 	bool open_hidden_door(int segment, int side, int wall, int depth)
@@ -1146,6 +1516,93 @@ class dependency_planner
 		}
 		if (!last_problem.empty())
 			state_.problem = last_problem;
+		return false;
+	}
+
+	bool move_to_target_or_visible(const route_target &target, int depth)
+	{
+		if (move_to_target(target.segment, target.position, depth))
+			return true;
+		const std::string saved_problem = state_.problem;
+		state_.problem.clear();
+		const auto visible = visible_path_to_target(target);
+		if (!visible.reached) {
+			set_problem(
+			    !saved_problem.empty() ? saved_problem : "route target unreachable");
+			return false;
+		}
+		accumulate_path(visible);
+		state_.progress.current_segment = visible.terminal_segment;
+		state_.progress.current_position = visible.terminal_position;
+		return true;
+	}
+
+	bool move_primary_with_key_recovery(const route_target &target)
+	{
+		const auto initial = state_;
+		std::string last_problem;
+		if (move_to_target_or_visible(target, 0))
+			return true;
+		if (!state_.problem.empty())
+			last_problem = state_.problem;
+		state_ = initial;
+		for (int attempt = 0; attempt < 3; ++attempt) {
+			state_.problem.clear();
+			if (!acquire_recovery_key(0))
+				break;
+			const auto key_state = state_;
+			state_.problem.clear();
+			if (move_to_target_or_visible(target, 0))
+				return true;
+			if (!state_.problem.empty())
+				last_problem = state_.problem;
+			state_ = key_state;
+		}
+		if (state_.problem.empty() && !last_problem.empty())
+			state_.problem = last_problem;
+		return false;
+	}
+
+	bool progress_primary(bool &progressed)
+	{
+		progressed = false;
+		if (targets_.boss_found) {
+			if (!move_primary_with_key_recovery(targets_.boss) ||
+			    !append_target_step(
+			        route_semantic_step_kind::boss, targets_.boss,
+			        "Boss robot"))
+				return false;
+			state_.progress.control_center_destroyed = true;
+			progressed = true;
+		} else if (targets_.reactor_found) {
+			if (!move_primary_with_key_recovery(targets_.reactor) ||
+			    !append_target_step(
+			        route_semantic_step_kind::reactor, targets_.reactor,
+			        "Reactor"))
+				return false;
+			state_.progress.control_center_destroyed = true;
+			progressed = true;
+		}
+		return true;
+	}
+
+	bool move_to_endpoint(const route_target &target)
+	{
+		const auto initial = state_;
+		if (move_to_target(target.segment, target.position, 0))
+			return true;
+		const std::string direct_problem = state_.problem;
+		state_ = initial;
+		state_.problem.clear();
+		bool progressed = false;
+		if (progress_primary(progressed) && progressed &&
+		    move_to_target(target.segment, target.position, 0))
+			return true;
+		if (!progressed) {
+			state_ = initial;
+			if (!direct_problem.empty())
+				state_.problem = direct_problem;
+		}
 		return false;
 	}
 
@@ -1344,6 +1801,9 @@ class dependency_planner
 							state_.progress.avoided_triggers[failed] = 1;
 						continue;
 					}
+					note_unresolved_obstruction(
+					    optimistic.first_obstruction_segment,
+					    optimistic.first_obstruction_side, block);
 					state_.progress.avoided_key_mask = saved_avoided_keys;
 					state_.progress.avoided_triggers = saved_avoided_triggers;
 					return false;
@@ -1355,6 +1815,9 @@ class dependency_planner
 				        optimistic.first_obstruction_segment,
 				        optimistic.first_obstruction_side, block.wall,
 				        depth + 1)) {
+					note_unresolved_obstruction(
+					    optimistic.first_obstruction_segment,
+					    optimistic.first_obstruction_side, block);
 					state_.progress.avoided_key_mask = saved_avoided_keys;
 					state_.progress.avoided_triggers = saved_avoided_triggers;
 					return false;
@@ -1394,6 +1857,21 @@ route_dependency_result resolve_trigger_dependency(
 {
 	dependency_planner planner(snapshot, query, progress, visibility);
 	return planner.resolve_trigger(segment, side);
+}
+
+route_plan_result plan_route(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_visibility_query &visibility)
+{
+	dependency_planner planner(
+	    snapshot, query, initial_route_progress_state(snapshot, query),
+	    visibility);
+	if (query.endpoint == route_endpoint_kind::end_of_level)
+		return planner.plan_end_level();
+	if (query.endpoint == route_endpoint_kind::unexplored)
+		return planner.plan_unexplored();
+	return planner.plan_segment(query.target_segment);
 }
 
 } // namespace dxx_route
@@ -1540,6 +2018,35 @@ bool dependency_result_matches(
 	return true;
 }
 
+bool complete_route_matches(
+    const level_metadata_state &legacy,
+    const dxx_route::route_plan_result &shared,
+    int &first_step)
+{
+	first_step = -1;
+	if (legacy.route_status != static_cast<int>(shared.status) ||
+	    std::strcmp(legacy.route_problem, shared.problem.c_str()) != 0 ||
+	    std::strcmp(legacy.route_note, shared.note.c_str()) != 0) {
+		first_step = -2;
+		return false;
+	}
+	const int shared_count = static_cast<int>(shared.steps.size());
+	const int common_count =
+	    legacy.route_step_count < shared_count ? legacy.route_step_count
+	                                           : shared_count;
+	for (int step = 0; step < common_count; ++step) {
+		if (dependency_step_matches(legacy.route_steps[step], shared.steps[step]))
+			continue;
+		first_step = step;
+		return false;
+	}
+	if (legacy.route_step_count != shared_count) {
+		first_step = common_count;
+		return false;
+	}
+	return true;
+}
+
 struct view_visibility_context {
 	const level_metadata_scan_view *view;
 };
@@ -1592,6 +2099,20 @@ extern "C" int route_planner_compare_view(
 		summary->first_trigger_dependency_segment = -1;
 		summary->first_trigger_dependency_side = -1;
 		summary->first_trigger_dependency_step = -1;
+		summary->first_complete_route_step = -1;
+		summary->first_legacy_complete_route_kind = -1;
+		summary->first_shared_complete_route_kind = -1;
+		summary->first_legacy_complete_route_segment = -1;
+		summary->first_shared_complete_route_segment = -1;
+		summary->first_legacy_complete_route_wall = -1;
+		summary->first_shared_complete_route_wall = -1;
+		summary->first_legacy_complete_route_trigger = -1;
+		summary->first_shared_complete_route_trigger = -1;
+		summary->first_legacy_unexplored_target_segment = -1;
+		summary->first_shared_unexplored_target_segment = -1;
+		summary->first_legacy_unexplored_waypoint_segment = -1;
+		summary->first_shared_unexplored_waypoint_segment = -1;
+		summary->first_unexplored_route_step = -1;
 	}
 	copy_problem(problem, problem_capacity, "");
 	if (!view || !summary) {
@@ -1679,9 +2200,131 @@ extern "C" int route_planner_compare_view(
 		                legacy_targets->boss_found, shared_boss);
 		compare_targets(5, legacy_targets->exits, legacy_targets->exit_count,
 		                shared_targets.exits);
+		auto legacy_complete = std::make_unique<level_metadata_state>();
+		level_metadata_state_clear(legacy_complete.get());
+		level_metadata_scan_end_route(view, legacy_complete.get());
+		const auto shared_complete = dxx_route::plan_route(
+		    snapshot, query, visibility);
+		summary->compared_complete_route_count++;
+		int first_complete_step = -1;
+		if (!complete_route_matches(
+		        *legacy_complete, shared_complete, first_complete_step)) {
+			summary->complete_route_mismatch_count++;
+			summary->first_legacy_complete_route_status =
+			    legacy_complete->route_status;
+			summary->first_shared_complete_route_status =
+			    static_cast<int>(shared_complete.status);
+			summary->first_legacy_complete_route_step_count =
+			    legacy_complete->route_step_count;
+			summary->first_shared_complete_route_step_count =
+			    static_cast<int>(shared_complete.steps.size());
+			summary->first_complete_route_step = first_complete_step;
+			if (first_complete_step >= 0 &&
+			    first_complete_step < legacy_complete->route_step_count) {
+				const auto &step =
+				    legacy_complete->route_steps[first_complete_step];
+				summary->first_legacy_complete_route_kind = step.kind;
+				summary->first_legacy_complete_route_segment = step.seg;
+				summary->first_legacy_complete_route_wall = step.wall_num;
+				summary->first_legacy_complete_route_trigger = step.trigger_num;
+			}
+			if (first_complete_step >= 0 &&
+			    first_complete_step <
+			        static_cast<int>(shared_complete.steps.size())) {
+				const auto &step = shared_complete.steps[first_complete_step];
+				summary->first_shared_complete_route_kind =
+				    static_cast<int>(step.kind);
+				summary->first_shared_complete_route_segment = step.segment;
+				summary->first_shared_complete_route_wall = step.wall;
+				summary->first_shared_complete_route_trigger = step.trigger;
+			}
+		}
+		auto legacy_unexplored = std::make_unique<level_metadata_state>();
+		level_metadata_unexplored_route legacy_unexplored_selection = {};
+		level_metadata_state_clear(legacy_unexplored.get());
+		level_metadata_scan_unexplored_route(
+		    view, legacy_unexplored.get(), &legacy_unexplored_selection);
+		auto unexplored_query = query;
+		unexplored_query.endpoint = dxx_route::route_endpoint_kind::unexplored;
+		const auto shared_unexplored = dxx_route::plan_route(
+		    snapshot, unexplored_query, visibility);
+		summary->compared_unexplored_route_count++;
+		int first_unexplored_step = -1;
+		const bool unexplored_mismatch =
+		    !complete_route_matches(
+		        *legacy_unexplored, shared_unexplored,
+		        first_unexplored_step) ||
+		    legacy_unexplored_selection.component_size !=
+		        shared_unexplored.unexplored_component_size ||
+		    legacy_unexplored_selection.target_seg !=
+		        shared_unexplored.unexplored_target_segment ||
+		    legacy_unexplored_selection.waypoint_seg !=
+		        shared_unexplored.unexplored_waypoint_segment ||
+		    legacy_unexplored_selection.direct_reachable !=
+		        static_cast<int>(
+		            shared_unexplored.unexplored_direct_reachable);
+		if (unexplored_mismatch) {
+			summary->unexplored_route_mismatch_count++;
+			summary->first_legacy_unexplored_status =
+			    legacy_unexplored->route_status;
+			summary->first_shared_unexplored_status =
+			    static_cast<int>(shared_unexplored.status);
+			summary->first_legacy_unexplored_component_size =
+			    legacy_unexplored_selection.component_size;
+			summary->first_shared_unexplored_component_size =
+			    shared_unexplored.unexplored_component_size;
+			summary->first_legacy_unexplored_target_segment =
+			    legacy_unexplored_selection.target_seg;
+			summary->first_shared_unexplored_target_segment =
+			    shared_unexplored.unexplored_target_segment;
+			summary->first_legacy_unexplored_waypoint_segment =
+			    legacy_unexplored_selection.waypoint_seg;
+			summary->first_shared_unexplored_waypoint_segment =
+			    shared_unexplored.unexplored_waypoint_segment;
+			summary->first_legacy_unexplored_direct_reachable =
+			    legacy_unexplored_selection.direct_reachable;
+			summary->first_shared_unexplored_direct_reachable =
+			    shared_unexplored.unexplored_direct_reachable;
+			summary->first_legacy_unexplored_step_count =
+			    legacy_unexplored->route_step_count;
+			summary->first_shared_unexplored_step_count =
+			    static_cast<int>(shared_unexplored.steps.size());
+			summary->first_unexplored_route_step =
+			    first_unexplored_step;
+		}
 		std::vector<dxx_route::route_progress_state> progress_states;
 		progress_states.push_back(
 		    dxx_route::initial_route_progress_state(snapshot, query));
+		auto checkpoint = progress_states.front();
+		for (int index = 1; index < legacy_complete->route_step_count; ++index) {
+			const auto &step = legacy_complete->route_steps[index];
+			if (step.activation_pos_valid &&
+			    step.seg >= 0 && step.seg < view->num_segments) {
+				checkpoint.current_segment = step.seg;
+				for (int coordinate = 0; coordinate < 3; ++coordinate)
+					checkpoint.current_position.value[coordinate] =
+					    step.activation_pos[coordinate];
+				checkpoint.current_position.valid = true;
+			}
+			if (step.key_index >= 0 && step.key_index < 3)
+				dxx_route::route_progress_acquire_key(
+				    checkpoint,
+				    static_cast<dxx_route::route_key_requirement>(step.key_index + 1));
+			if (step.trigger_num >= 0)
+				dxx_route::route_progress_fire_trigger(
+				    checkpoint, step.trigger_num);
+			if (step.kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR &&
+			    step.wall_num >= 0)
+				dxx_route::route_progress_open_hidden_wall(
+				    snapshot, checkpoint, step.wall_num);
+			if (step.kind == LEVEL_METADATA_ROUTE_REACTOR ||
+			    step.kind == LEVEL_METADATA_ROUTE_BOSS)
+				checkpoint.control_center_destroyed = true;
+			if (step.kind == LEVEL_METADATA_ROUTE_KEY ||
+			    step.kind == LEVEL_METADATA_ROUTE_TRIGGER ||
+			    step.kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR)
+				progress_states.push_back(checkpoint);
+		}
 		auto advanced = progress_states.front();
 		dxx_route::route_progress_acquire_key(
 		    advanced, dxx_route::route_key_requirement::blue);
@@ -1696,12 +2339,15 @@ extern "C" int route_planner_compare_view(
 		opened.opened_hidden_walls.assign(
 		    opened.opened_hidden_walls.size(), 1);
 		progress_states.push_back(opened);
-		auto avoided = progress_states.front();
-		avoided.avoided_key_mask = LEVEL_METADATA_KEY_MASK_BLUE |
-		                           LEVEL_METADATA_KEY_MASK_RED |
-		                           LEVEL_METADATA_KEY_MASK_GOLD;
-		avoided.avoided_triggers.assign(avoided.avoided_triggers.size(), 1);
-		progress_states.push_back(avoided);
+		auto avoided_keys = progress_states.front();
+		avoided_keys.avoided_key_mask = LEVEL_METADATA_KEY_MASK_BLUE |
+		                                LEVEL_METADATA_KEY_MASK_RED |
+		                                LEVEL_METADATA_KEY_MASK_GOLD;
+		progress_states.push_back(avoided_keys);
+		auto avoided_triggers = progress_states.front();
+		avoided_triggers.avoided_triggers.assign(
+		    avoided_triggers.avoided_triggers.size(), 1);
+		progress_states.push_back(avoided_triggers);
 		summary->compared_progress_state_count =
 		    static_cast<int>(progress_states.size());
 		for (int state_index = 0;

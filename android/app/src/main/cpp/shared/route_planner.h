@@ -39,6 +39,8 @@ struct route_path_result {
 	int progress_weight = 0;
 	std::vector<int> segments;
 	std::vector<int> sides;
+	int terminal_segment = -1;
+	route_position terminal_position;
 	bool has_obstruction = false;
 	int first_obstruction_segment = -1;
 	int first_obstruction_side = -1;
@@ -115,17 +117,26 @@ struct route_trigger_path_selection {
 };
 
 enum class route_semantic_step_kind {
+	start = LEVEL_METADATA_ROUTE_START,
 	key = LEVEL_METADATA_ROUTE_KEY,
 	trigger = LEVEL_METADATA_ROUTE_TRIGGER,
-	hidden_door = LEVEL_METADATA_ROUTE_HIDDEN_DOOR
+	reactor = LEVEL_METADATA_ROUTE_REACTOR,
+	boss = LEVEL_METADATA_ROUTE_BOSS,
+	exit = LEVEL_METADATA_ROUTE_EXIT,
+	hidden_door = LEVEL_METADATA_ROUTE_HIDDEN_DOOR,
+	unexplored = LEVEL_METADATA_ROUTE_UNEXPLORED
 };
 
 enum class route_activation_kind {
+	none = LEVEL_METADATA_ROUTE_ACTIVATION_NONE,
 	pickup_key = LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY,
 	shoot_switch = LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH,
 	fly_through_trigger = LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER,
 	pass_through_trigger = LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER,
-	open_hidden_door = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR
+	open_hidden_door = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR,
+	destroy_reactor = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR,
+	destroy_boss = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS,
+	enter_exit = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT
 };
 
 struct route_effect_link {
@@ -135,15 +146,14 @@ struct route_effect_link {
 };
 
 struct route_semantic_step {
-	route_semantic_step_kind kind = route_semantic_step_kind::trigger;
+	route_semantic_step_kind kind = route_semantic_step_kind::start;
 	int segment = -1;
 	int side = -1;
 	int wall = -1;
 	int trigger = -1;
 	int trigger_raw_type = -1;
 	route_key_requirement key = route_key_requirement::none;
-	route_activation_kind activation =
-	    route_activation_kind::pass_through_trigger;
+	route_activation_kind activation = route_activation_kind::none;
 	route_position activation_position;
 	route_position aim_position;
 	route_position label_position;
@@ -164,6 +174,25 @@ struct route_dependency_result {
 	int failed_key = -1;
 	double pending_distance = 0.0;
 	route_path_result pending_path;
+};
+
+enum class route_plan_status {
+	ok = 0,
+	partial = 1,
+	failed = 2
+};
+
+struct route_plan_result {
+	route_plan_status status = route_plan_status::failed;
+	route_progress_state progress;
+	std::vector<route_semantic_step> steps;
+	std::string problem;
+	std::string note;
+	double travel_distance = 0.0;
+	int unexplored_component_size = 0;
+	int unexplored_target_segment = -1;
+	int unexplored_waypoint_segment = -1;
+	bool unexplored_direct_reachable = false;
 };
 
 route_search_result search_routes(
@@ -221,6 +250,11 @@ route_dependency_result resolve_trigger_dependency(
     const route_progress_state &progress,
     int segment,
     int side,
+    const route_visibility_query &visibility = {});
+
+route_plan_result plan_route(
+    const route_snapshot &snapshot,
+    const route_query &query,
     const route_visibility_query &visibility = {});
 
 route_target_selection select_route_target(

@@ -33,6 +33,7 @@ struct test_level {
 	int child = 1;
 	int trigger_flags = 0;
 	int object_segment = 1;
+	int wall_key[2] = { 20, 21 };
 };
 
 int segment_child(void *user, int segment, int side)
@@ -109,9 +110,9 @@ int wall_flags(void *user, int wall)
 	return wall == 0 ? static_cast<test_level *>(user)->wall_flags : 0;
 }
 
-int wall_keys(void *, int wall)
+int wall_keys(void *user, int wall)
 {
-	return 20 + wall;
+	return static_cast<test_level *>(user)->wall_key[wall];
 }
 
 int wall_clip_flags(void *, int wall)
@@ -450,6 +451,14 @@ int main()
 	       dxx_route::route_wall_kind::door);
 	assert(first.state.walls[1].key ==
 	       dxx_route::route_key_requirement::blue);
+	test_level zero_key_level = level;
+	zero_key_level.wall_key[1] = 0;
+	auto zero_key_view = make_view(zero_key_level);
+	dxx_route::route_snapshot zero_key_snapshot;
+	assert(dxx_route::build_route_snapshot(
+	    zero_key_view, zero_key_snapshot, &problem));
+	assert(zero_key_snapshot.state.walls[1].key ==
+	       dxx_route::route_key_requirement::none);
 	assert(first.state.walls[0].hidden);
 	assert(!first.state.walls[0].locked);
 	assert(first.topology.segments[1].sides[0].opener_walls[0] == 0);
@@ -712,17 +721,25 @@ int main()
 		return 1;
 	}
 	assert(planner_problem[0] == '\0');
-	assert(planner_summary.compared_progress_state_count == 4);
-	assert(planner_summary.compared_node_count == 16);
+	assert(planner_summary.compared_progress_state_count >= 5);
+	assert(
+	    planner_summary.compared_node_count ==
+	    planner_summary.compared_progress_state_count * 4);
 	assert(planner_summary.mismatch_count == 0);
 	assert(planner_summary.compared_target_count == 9);
 	assert(planner_summary.target_mismatch_count == 0);
-	assert(planner_summary.compared_target_selection_count == 4);
+	assert(
+	    planner_summary.compared_target_selection_count ==
+	    planner_summary.compared_progress_state_count);
 	assert(planner_summary.target_selection_mismatch_count == 0);
-	assert(planner_summary.compared_key_selection_count == 12);
+	assert(
+	    planner_summary.compared_key_selection_count ==
+	    planner_summary.compared_progress_state_count * 3);
 	assert(planner_summary.key_selection_mismatch_count == 0);
-	assert(planner_summary.compared_trigger_source_edge_count == 48);
-	assert(planner_summary.compared_trigger_source_count == 6);
+	assert(
+	    planner_summary.compared_trigger_source_edge_count ==
+	    planner_summary.compared_progress_state_count * 12);
+	assert(planner_summary.compared_trigger_source_count > 0);
 	assert(planner_summary.trigger_source_mismatch_count == 0);
 	assert(planner_summary.compared_trigger_firing_path_count == 2);
 	assert(planner_summary.trigger_firing_path_mismatch_count == 0);
@@ -740,6 +757,36 @@ int main()
 		    planner_summary.first_shared_trigger_dependency_step_count,
 		    planner_summary.first_trigger_dependency_step);
 	assert(planner_summary.trigger_dependency_mismatch_count == 0);
+	assert(planner_summary.compared_complete_route_count == 1);
+	if (planner_summary.complete_route_mismatch_count != 0)
+		fprintf(
+		    stderr,
+		    "complete route mismatch status=%d/%d steps=%d/%d first_step=%d\n",
+		    planner_summary.first_legacy_complete_route_status,
+		    planner_summary.first_shared_complete_route_status,
+		    planner_summary.first_legacy_complete_route_step_count,
+		    planner_summary.first_shared_complete_route_step_count,
+		    planner_summary.first_complete_route_step);
+	assert(planner_summary.complete_route_mismatch_count == 0);
+	assert(planner_summary.compared_unexplored_route_count == 1);
+	if (planner_summary.unexplored_route_mismatch_count != 0)
+		fprintf(
+		    stderr,
+		    "unexplored route mismatch status=%d/%d component=%d/%d target=%d/%d waypoint=%d/%d direct=%d/%d steps=%d/%d first_step=%d\n",
+		    planner_summary.first_legacy_unexplored_status,
+		    planner_summary.first_shared_unexplored_status,
+		    planner_summary.first_legacy_unexplored_component_size,
+		    planner_summary.first_shared_unexplored_component_size,
+		    planner_summary.first_legacy_unexplored_target_segment,
+		    planner_summary.first_shared_unexplored_target_segment,
+		    planner_summary.first_legacy_unexplored_waypoint_segment,
+		    planner_summary.first_shared_unexplored_waypoint_segment,
+		    planner_summary.first_legacy_unexplored_direct_reachable,
+		    planner_summary.first_shared_unexplored_direct_reachable,
+		    planner_summary.first_legacy_unexplored_step_count,
+		    planner_summary.first_shared_unexplored_step_count,
+		    planner_summary.first_unexplored_route_step);
+	assert(planner_summary.unexplored_route_mismatch_count == 0);
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);

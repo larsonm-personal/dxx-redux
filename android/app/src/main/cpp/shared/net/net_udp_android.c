@@ -347,5 +347,5 @@ void android_net_udp_reset_proxy(int pnum,
 	if (log_connection_status)
 		log_connection_status(pnum, status->type);
 	status->type = CONNT_PROXY;
-	status->proxy_through = 0;
+	status->proxy_through = master_player_num;
 }

@@ -32,11 +32,7 @@ extern fix64 last_direct_attempt[MAX_PLAYERS][MAX_PLAYERS];
 
 static int net_udp_ping_host_player_index(void)
 {
-#ifdef DXX_BUILD_DESCENT_II
 	return multi_who_is_master();
-#else
-	return 0;
-#endif
 }
 
 static void net_udp_android_mpdiag(const char *fmt, ...)
@@ -93,6 +89,9 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 	direct_pong = data[len];
 	len++;
 
+	if (from_player >= MAX_PLAYERS || from_player == Player_num)
+		return;
+
 	Netgame.players[from_player].ping = f2i(fixmul(timer_query() - sent_time, i2f(1000)));
 
 	if (Netgame.players[from_player].ping < 0)
@@ -101,7 +100,7 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 	if (Netgame.players[from_player].ping > 9999)
 		Netgame.players[from_player].ping = 9999;
 
-	if (from_player < 1 || from_player > MAX_PLAYERS || from_player == Player_num)
+	if (from_player == multi_who_is_master())
 		return;
 
 	if (direct_pong) {
@@ -158,7 +157,7 @@ void net_udp_send_to_player(ubyte *data, int len, int to_player)
 		net_udp_send_to_player_proxy(data, len, to_player,
 		                             connection_statuses[to_player].proxy_through);
 	else
-		net_udp_send_to_player_proxy(data, len, to_player, 0);
+		net_udp_send_to_player_proxy(data, len, to_player, multi_who_is_master());
 }
 
 void net_udp_send_to_player_direct(ubyte *data, int len, int to_player)
@@ -249,8 +248,8 @@ void net_udp_p2p_ping_frame(fix64 time)
 		if (!Players[i].connected)
 			continue;
 
-		if (is_observer() && !multi_i_am_master() && i > 0)
-			return;
+		if (is_observer() && !multi_i_am_master() && i != multi_who_is_master())
+			continue;
 
 		if (connection_statuses[i].holepunch_attempts < MAX_HOLEPUNCH_ATTEMPTS) {
 			if (time > lastPing[i] + pingTimeSetup) {

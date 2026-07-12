@@ -33,8 +33,8 @@ int main(void)
 	};
 	const int indices[] = {0, 14, 63, -1};
 	const int values[] = {7, 1, 9, 4};
-	unsigned char output[56];
-	unsigned char defaults[56];
+	unsigned char output[60];
+	unsigned char defaults[60];
 	size_t i;
 
 	if (!check_game(KCONFIG_ANDROID_D1, 50, d1_expected,
@@ -42,13 +42,17 @@ int main(void)
 	    !check_game(KCONFIG_ANDROID_D2, 56, d2_expected,
 	                sizeof(d2_expected) / sizeof(d2_expected[0])))
 		return 1;
-	if (kconfig_android_get_layout(KCONFIG_ANDROID_D1)->settings_size != 50 ||
-	    kconfig_android_get_layout(KCONFIG_ANDROID_D2)->settings_size != 56)
+	if (kconfig_android_get_layout(KCONFIG_ANDROID_D1)->joystick_size != 50 ||
+	    kconfig_android_get_layout(KCONFIG_ANDROID_D1)->settings_size != 50 ||
+	    kconfig_android_get_layout(KCONFIG_ANDROID_D2)->joystick_size != 56 ||
+	    kconfig_android_get_layout(KCONFIG_ANDROID_D2)->settings_size != 60)
 		return 1;
 	kconfig_android_fill_joy_settings(
 		kconfig_android_get_layout(KCONFIG_ANDROID_D2), indices, values, 4,
-		output, sizeof(output));
-	for (i = 0; i < sizeof(output); i++) {
+		output, kconfig_android_get_layout(KCONFIG_ANDROID_D2)->joystick_size);
+	for (i = 0; i <
+	            kconfig_android_get_layout(KCONFIG_ANDROID_D2)->joystick_size;
+	     i++) {
 		unsigned char expected = 0xff;
 		if (i == 14 || i == 16 || i == 18 || i == 20 || i == 22 || i == 24)
 			expected = 0;
@@ -64,5 +68,8 @@ int main(void)
 	memset(defaults, 0x55, sizeof(defaults));
 	kconfig_android_fill_kb_settings(defaults, indices, values, 4, output,
 	                                sizeof(output));
-	return output[0] == 7 && output[14] == 1 && output[55] == 0x55 ? 0 : 1;
+	if (output[0] != 7 || output[14] != 1 || output[56] != 0x55 ||
+	    output[59] != 0x55)
+		return 1;
+	return 0;
 }

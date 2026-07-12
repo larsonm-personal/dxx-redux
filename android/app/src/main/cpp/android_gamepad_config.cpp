@@ -42,6 +42,16 @@ using json = nlohmann::json;
 #define LOG_TAG   "DXX-GamepadCfg"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
+#define PILOT_PASTE_(a, b, c) a##b##c
+#define PILOT_PASTE3(a, b, c) PILOT_PASTE_(a, b, c)
+#ifdef DXX_BUILD_DESCENT_II
+#define PILOT_GAME_TAG D2
+#else
+#define PILOT_GAME_TAG D1
+#endif
+#define PILOT_JNI_FUNC(method) \
+	PILOT_PASTE3(Java_com_dxxredux_app_NativePilotPatcher_, method, PILOT_GAME_TAG)
+
 /* Engine headers (C linkage) */
 extern "C" {
 #include "shared/android_graphics_options.h"
@@ -294,7 +304,7 @@ static int patch_all_plr_files(const char *files_dir,
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
+PILOT_JNI_FUNC(nativePatchPilotFiles)(
     JNIEnv *env, jclass clazz,
     jstring jfilesDir, jbyteArray jjoy, jbyteArray jkb, jint controlType,
     jstring jgame)
@@ -326,16 +336,24 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
 /* -- JNI: reset all pilot files to engine defaults ------------ */
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
+PILOT_JNI_FUNC(nativeResetToDefaults)(
     JNIEnv *env, jclass, jstring jfilesDir, jstring jgame)
 {
-	ubyte kb[MAX_CONTROLS], joy[MAX_CONTROLS], mouse[MAX_CONTROLS];
-	kconfig_get_default_settings(kb, joy, mouse);
-
+	ubyte kb[KCONFIG_ANDROID_MAX_SETTINGS];
+	ubyte joy[KCONFIG_ANDROID_MAX_SETTINGS];
+	ubyte mouse[KCONFIG_ANDROID_MAX_SETTINGS];
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	const char *game = env->GetStringUTFChars(jgame, NULL);
+	const kconfig_android_layout *layout = kconfig_android_get_layout(
+	    !strcmp(game, "d1") ? KCONFIG_ANDROID_D1 : KCONFIG_ANDROID_D2);
+	memset(kb, 0xff, sizeof(kb));
+	memset(joy, 0xff, sizeof(joy));
+	memset(mouse, 0xff, sizeof(mouse));
+	kconfig_get_default_settings(kb, joy, mouse);
 	int total = patch_all_plr_files(files_dir, game,
-	                                kb, MAX_CONTROLS, joy, MAX_CONTROLS, mouse, MAX_CONTROLS, 1);
+	                                kb, (int) layout->settings_size,
+	                                joy, (int) layout->settings_size,
+	                                mouse, (int) layout->settings_size, 1);
 	LOGI("nativeResetToDefaults[%s]: patched %d file(s) in %s", game, total, files_dir);
 	env->ReleaseStringUTFChars(jgame, game);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
@@ -353,7 +371,7 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
  * (BUTTON_KC_INDEX, AXIS_KC_INDEX) -- update both when the layout changes.
  */
 extern "C" JNIEXPORT jbyteArray JNICALL
-Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(
+PILOT_JNI_FUNC(nativeBuildJoySettings)(
     JNIEnv *env, jclass, jintArray jindices, jintArray jvalues, jstring jgame)
 {
 	jint index_count = env->GetArrayLength(jindices);
@@ -365,10 +383,40 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(
 	const kconfig_android_layout *layout = kconfig_android_get_layout(
 	    !strcmp(game, "d1") ? KCONFIG_ANDROID_D1 : KCONFIG_ANDROID_D2);
 
-	ubyte out[MAX_CONTROLS];
+	ubyte out[KCONFIG_ANDROID_MAX_SETTINGS];
 	kconfig_android_fill_joy_settings(layout, (const int *) indices,
 	                                  (const int *) values, (int) count, out,
-	                                  layout->settings_size);
+	                                  layout->joystick_size);
+
+	env->ReleaseStringUTFChars(jgame, game);
+	env->ReleaseIntArrayElements(jvalues, values, JNI_ABORT);
+	env->ReleaseIntArrayElements(jindices, indices, JNI_ABORT);
+
+	jbyteArray result = env->NewByteArray((jsize) layout->joystick_size);
+	env->SetByteArrayRegion(result, 0, (jsize) layout->joystick_size,
+	                        (const jbyte *) out);
+	return result;
+}
+
+/* -- JNI: build keyboard KeySettings from (index, value) pairs -- */
+
+extern "C" JNIEXPORT jbyteArray JNICALL
+PILOT_JNI_FUNC(nativeBuildKbSettings)(
+    JNIEnv *env, jclass, jintArray jindices, jintArray jvalues, jstring jgame)
+{
+	jint index_count = env->GetArrayLength(jindices);
+	jint value_count = env->GetArrayLength(jvalues);
+	jint count = index_count < value_count ? index_count : value_count;
+	jint *indices = env->GetIntArrayElements(jindices, NULL);
+	jint *values = env->GetIntArrayElements(jvalues, NULL);
+	const char *game = env->GetStringUTFChars(jgame, NULL);
+	const kconfig_android_layout *layout = kconfig_android_get_layout(
+	    !strcmp(game, "d1") ? KCONFIG_ANDROID_D1 : KCONFIG_ANDROID_D2);
+
+	ubyte out[KCONFIG_ANDROID_MAX_SETTINGS];
+	kconfig_android_fill_kb_settings(
+	    DefaultKeySettings[0], (const int *) indices,
+	    (const int *) values, (int) count, out, layout->settings_size);
 
 	env->ReleaseStringUTFChars(jgame, game);
 	env->ReleaseIntArrayElements(jvalues, values, JNI_ABORT);
@@ -377,27 +425,6 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(
 	jbyteArray result = env->NewByteArray((jsize) layout->settings_size);
 	env->SetByteArrayRegion(result, 0, (jsize) layout->settings_size,
 	                        (const jbyte *) out);
-	return result;
-}
-
-/* -- JNI: build keyboard KeySettings from (index, value) pairs -- */
-
-extern "C" JNIEXPORT jbyteArray JNICALL
-Java_com_dxxredux_app_NativePilotPatcher_nativeBuildKbSettings(
-    JNIEnv *env, jclass, jintArray jindices, jintArray jvalues)
-{
-	jint count = env->GetArrayLength(jindices);
-	jint *indices = env->GetIntArrayElements(jindices, NULL);
-	jint *values = env->GetIntArrayElements(jvalues, NULL);
-
-	ubyte out[MAX_CONTROLS];
-	kconfig_fill_kb_settings((const int *) indices, (const int *) values, (int) count, out);
-
-	env->ReleaseIntArrayElements(jvalues, values, JNI_ABORT);
-	env->ReleaseIntArrayElements(jindices, indices, JNI_ABORT);
-
-	jbyteArray result = env->NewByteArray(MAX_CONTROLS);
-	env->SetByteArrayRegion(result, 0, MAX_CONTROLS, (const jbyte *) out);
 	return result;
 }
 

@@ -5380,9 +5380,9 @@
         "mine_volume": 13335439.972754667,
         "mine_volume_normalized": 2.9161870506724674,
         "mine_volume_text": "2.9x",
-        "travel_distance": 7146.741794690664,
-        "travel_time_seconds": 143,
-        "travel_time_text": "2M:23S",
+        "travel_distance": 7240.88207756193,
+        "travel_time_seconds": 145,
+        "travel_time_text": "2M:25S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -5469,41 +5469,16 @@
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 5",
-            "seg": 149,
-            "side": 4,
-            "wall": 71,
-            "label_pos": {
-              "x": 57.869476318359375,
-              "y": -187.76226806640625,
-              "z": 1154.0063934326172
-            },
-            "distance": 861.7593269565141,
-            "trigger": 5,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 237,
-                "side": 5,
-                "wall": 70
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 149,
+            "seg": 363,
             "wall": 95,
             "label_pos": {
               "x": -302.0150451660156,
               "y": -205.86227416992188,
               "z": 1154.6054992675781
             },
-            "distance": 4.999253108679944,
+            "distance": 229.82915597717442,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -5516,7 +5491,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -5528,7 +5503,7 @@
               "y": -195.51116943359375,
               "z": 1154.2806396484375
             },
-            "distance": 538.6687125938865,
+            "distance": 1269.738419553172,
             "opens": [
               {
                 "seg": 12,
@@ -5543,7 +5518,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
@@ -5568,7 +5543,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -5581,7 +5556,7 @@
             "distance": 112.75564506073381
           },
           {
-            "index": 10,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

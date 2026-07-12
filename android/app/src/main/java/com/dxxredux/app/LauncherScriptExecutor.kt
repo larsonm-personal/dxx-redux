@@ -511,6 +511,8 @@ class LauncherScriptExecutor(
                 "descent.cfg",
                 "controller_config.json",
                 "controller_introspect.json",
+                "controller_patch_result.json",
+                "controller_reset_result.json",
             )
         for (pattern in patterns) {
             if (pattern.startsWith("*")) {
@@ -635,8 +637,8 @@ class LauncherScriptExecutor(
     /**
      * Compare joystick_controls between controller_introspect.json (launcher)
      * and introspect.json (game). Returns null on match, error message on mismatch.
-     * Only control_type must match exactly. Item arrays are compared up to the
-     * shorter length (D1 has fewer controls than D2).
+     * This also requires successful reset and patch operations for the selected
+     * game's real pilot file before comparing persisted joystick and keyboard data.
      */
     private fun compareControllerIntrospections(): String? {
         val launcherFile = File(context.filesDir, "controller_introspect.json")
@@ -646,6 +648,20 @@ class LauncherScriptExecutor(
 
         val launcherJson = JSONObject(launcherFile.readText())
         val gameJson = JSONObject(gameFile.readText())
+        val game = launcherJson.optString("game", "")
+        if (game !in arrayOf("d1", "d2")) return "launcher JSON has invalid game '$game'"
+        for (
+        (operation, filename) in
+        arrayOf(
+            "reset" to "controller_reset_result.json",
+            "patch" to "controller_patch_result.json",
+        )
+        ) {
+            val resultFile = File(context.filesDir, filename)
+            if (!resultFile.exists()) return "$operation result not found"
+            val count = JSONObject(resultFile.readText()).optInt(game, 0)
+            if (count < 1) return "$operation did not process a real $game pilot file"
+        }
         val ljc =
             launcherJson.optJSONObject("joystick_controls")
                 ?: return "launcher JSON missing joystick_controls"
@@ -658,19 +674,19 @@ class LauncherScriptExecutor(
         val gct = gjc.opt("control_type")?.toString() ?: ""
         if (lct != gct) return "control_type: launcher=$lct game=$gct"
 
-        // Log summary diffs as warnings (D1 has fewer bound controls than D2)
         for (field in arrayOf("bound_count", "bound_controls", "total_count")) {
             val lv = ljc.opt(field)?.toString() ?: ""
             val gv = gjc.opt(field)?.toString() ?: ""
-            if (lv != gv) Log.w(TAG, "controller_match: $field differs (launcher=$lv game=$gv)")
+            if (lv != gv) return "$field: launcher=$lv game=$gv"
         }
 
-        // Compare items up to the shorter array length
         val lItems = ljc.optJSONArray("items") ?: return "launcher missing items array"
         val gItems = gjc.optJSONArray("items") ?: return "game missing items array"
-        val count = minOf(lItems.length(), gItems.length())
-        if (count == 0) return "no items to compare"
-        for (i in 0 until count) {
+        if (lItems.length() == 0) return "no items to compare"
+        if (lItems.length() != gItems.length()) {
+            return "item count: launcher=${lItems.length()} game=${gItems.length()}"
+        }
+        for (i in 0 until lItems.length()) {
             val li = lItems.getJSONObject(i)
             val gi = gItems.getJSONObject(i)
             for (f in arrayOf("name", "type", "value")) {
@@ -680,8 +696,16 @@ class LauncherScriptExecutor(
                 if (!match) return "item[$i] ${gi.optString("name", "?")}.$f: launcher=$lv game=$gv"
             }
         }
-        if (lItems.length() != gItems.length()) {
-            Log.w(TAG, "controller_match: item count differs (launcher=${lItems.length()} game=${gItems.length()})")
+
+        val lKeyboard = launcherJson.optJSONArray("keyboard_settings") ?: return "launcher missing keyboard settings"
+        val gKeyboard = gameJson.optJSONArray("keyboard_settings") ?: return "game missing keyboard settings"
+        if (lKeyboard.length() != gKeyboard.length()) {
+            return "keyboard count: launcher=${lKeyboard.length()} game=${gKeyboard.length()}"
+        }
+        for (i in 0 until lKeyboard.length()) {
+            val lv = lKeyboard.getInt(i)
+            val gv = gKeyboard.getInt(i)
+            if (lv != gv) return "keyboard[$i]: launcher=$lv game=$gv"
         }
         return null
     }

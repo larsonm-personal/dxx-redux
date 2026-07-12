@@ -21,6 +21,7 @@
 #   .\test_lan.ps1 -GuidebotOwnership
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
+#   .\test_lan.ps1 -HostMigration
 #   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
 
@@ -31,6 +32,7 @@ param(
     [switch]$GuidebotOwnership,
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
+    [switch]$HostMigration,
     [int]$TimeoutSeconds = 120
 )
 
@@ -52,6 +54,7 @@ $EMU2 = "emulator-5556"  # Player 2 (joiner)
 $AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }
 $CALLSIGN1 = "LanHost"
 $CALLSIGN2 = "LanJoin"
+$MIGRATED_HOST_PORT = 42425
 
 # Mission filenames as used by the engine (not display names)
 $MISSION = if ($Game -eq "d1") { "" } else { "d2" }
@@ -124,6 +127,31 @@ function Get-IntroGuidebot {
         return $null
     }
     return $prop.Value
+}
+
+function Get-IntroPdataSequence {
+    param($Intro, [int]$PlayerSlot)
+
+    $mp = Get-IntroMultiplayer -Intro $Intro
+    if (-not $mp -or $PlayerSlot -lt 0) {
+        return $null
+    }
+    $prop = $mp.PSObject.Properties['last_pdata_received']
+    if ($null -eq $prop -or $PlayerSlot -ge @($prop.Value).Count) {
+        return $null
+    }
+    return [int]$prop.Value[$PlayerSlot]
+}
+
+function Get-DeviceWlanIp {
+    param([string]$Serial)
+
+    $ipRaw = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "ip", "addr", "show", "wlan0"
+    ) -Seconds 5
+    return ($ipRaw | Select-String -Pattern 'inet (\d+\.\d+\.\d+\.\d+)' | ForEach-Object {
+            $_.Matches[0].Groups[1].Value
+        } | Select-Object -First 1)
 }
 
 function Start-DeviceGameAutomation {
@@ -363,6 +391,296 @@ function Invoke-GuidebotHostObserverScenario {
     }
 
     Write-Status "Observer host excluded; playing joiner owns Guide-Bot at generation $($joinGuidebot.owner_generation)" "Green"
+    return $true
+}
+
+function Test-IntroHostRole {
+    param(
+        $Intro,
+        [int]$LocalSlot,
+        [int]$MasterSlot,
+        [int]$ConnectedPlayers,
+        [bool]$IsMaster
+    )
+
+    $mp = Get-IntroMultiplayer -Intro $Intro
+    return $Intro -and $mp -and
+    [bool]$Intro.in_game -and [bool]$Intro.is_network -and
+    [int]$mp.network_status -eq 1 -and
+    [int]$mp.my_player_num -eq $LocalSlot -and
+    [int]$mp.master_player_num -eq $MasterSlot -and
+    ([bool]$mp.i_am_master -eq $IsMaster) -and
+    [int]$mp.num_connected -eq $ConnectedPlayers
+}
+
+function Get-IntroObjectOwnerSignature {
+    param($Intro)
+
+    $mp = Get-IntroMultiplayer -Intro $Intro
+    if (-not $mp) {
+        return $null
+    }
+    $ownerCounts = @($mp.synchronized_object_owner_counts) -join ','
+    return "$($mp.synchronized_object_count)/$($mp.synchronized_unowned_object_count)/$ownerCounts"
+}
+
+function Wait-SoloMigratedHost {
+    param(
+        [string]$Serial,
+        [int]$HostSlot,
+        [int]$PreviousGuidebotGeneration,
+        [bool]$CheckGuidebot,
+        [string]$Description
+    )
+
+    $script:migrationSoloIntro = $null
+    return Wait-ForCondition -Description $Description -TimeoutSec 40 -PollMs 1000 -Condition {
+        $script:migrationSoloIntro = Get-GameIntrospection -Serial $Serial
+        $mp = Get-IntroMultiplayer -Intro $script:migrationSoloIntro
+        $guidebot = Get-IntroGuidebot -Intro $script:migrationSoloIntro
+        if (-not (Test-IntroHostRole -Intro $script:migrationSoloIntro `
+                    -LocalSlot $HostSlot -MasterSlot $HostSlot `
+                    -ConnectedPlayers 1 -IsMaster $true)) {
+            return $false
+        }
+        $ownedCount = 0
+        foreach ($count in @($mp.synchronized_object_owner_counts)) {
+            $ownedCount += [int]$count
+        }
+        $guidebotMatches = -not $CheckGuidebot
+        if ($CheckGuidebot) {
+            $guidebotMatches = $guidebot -and
+            [int]$guidebot.owner_player -eq $HostSlot -and
+            [int]$guidebot.owner_generation -gt $PreviousGuidebotGeneration -and
+            [bool]$guidebot.owner_is_local -and
+            [int]$guidebot.remote_owner -eq $HostSlot -and
+            [bool]$guidebot.local_control_slot_matches
+        }
+        return $guidebotMatches -and
+        [int]$mp.synchronized_object_count -gt 0 -and
+        $ownedCount -eq 0 -and
+        [int]$mp.synchronized_unowned_object_count -eq [int]$mp.synchronized_object_count
+    }
+}
+
+function Start-MigratedPeerRejoin {
+    param(
+        [string]$JoiningSerial,
+        [string]$HostSerial,
+        [string]$Callsign
+    )
+
+    if (-not (Start-SetupActivity -Serial $JoiningSerial)) {
+        Write-Status "FAIL: SetupActivity didn't restart on $JoiningSerial" "Red"
+        return $false
+    }
+    $hostIp = Get-DeviceWlanIp -Serial $HostSerial
+    if (-not $hostIp) {
+        Write-Status "FAIL: could not get migrated host wlan0 IP from $HostSerial" "Red"
+        return $false
+    }
+    Write-Status "Rejoining $JoiningSerial to migrated host ${hostIp}:$MIGRATED_HOST_PORT"
+    Send-MpCommand -Serial $JoiningSerial -Command "lan_launch" -Extras @(
+        "--es", "game", $Game,
+        "--es", "mp_mode", "join",
+        "--es", "mission", $MISSION,
+        "--es", "mode", $MODE,
+        "--ei", "max_players", "2",
+        "--ei", "level_num", "1",
+        "--ei", "difficulty", "1",
+        "--es", "callsign", $Callsign,
+        "--es", "host_addr", $hostIp,
+        "--ei", "host_port", $MIGRATED_HOST_PORT.ToString()
+    )
+    return $true
+}
+
+function Wait-MigratedPairSync {
+    param(
+        [string]$HostSerial,
+        [int]$HostSlot,
+        [string]$HostCallsign,
+        [string]$JoinSerial,
+        [int]$JoinSlot,
+        [string]$JoinCallsign,
+        [bool]$CheckGuidebot,
+        [string]$Description
+    )
+
+    $script:migratedHostIntro = $null
+    $script:migratedJoinIntro = $null
+    return Wait-ForCondition -Description $Description -TimeoutSec $TimeoutSeconds -PollMs 1500 -Condition {
+        $script:migratedHostIntro = Get-GameIntrospection -Serial $HostSerial
+        $script:migratedJoinIntro = Get-GameIntrospection -Serial $JoinSerial
+        if (-not (Test-IntroHostRole -Intro $script:migratedHostIntro `
+                    -LocalSlot $HostSlot -MasterSlot $HostSlot `
+                    -ConnectedPlayers 2 -IsMaster $true) -or
+            -not (Test-IntroHostRole -Intro $script:migratedJoinIntro `
+                    -LocalSlot $JoinSlot -MasterSlot $HostSlot `
+                    -ConnectedPlayers 2 -IsMaster $false)) {
+            return $false
+        }
+        $hostMp = Get-IntroMultiplayer -Intro $script:migratedHostIntro
+        $joinMp = Get-IntroMultiplayer -Intro $script:migratedJoinIntro
+        $hostGuidebot = Get-IntroGuidebot -Intro $script:migratedHostIntro
+        $joinGuidebot = Get-IntroGuidebot -Intro $script:migratedJoinIntro
+        $hostObjects = Get-IntroObjectOwnerSignature -Intro $script:migratedHostIntro
+        $joinObjects = Get-IntroObjectOwnerSignature -Intro $script:migratedJoinIntro
+        $guidebotMatches = -not $CheckGuidebot
+        if ($CheckGuidebot) {
+            $guidebotMatches = $hostGuidebot -and $joinGuidebot -and
+            [int]$hostGuidebot.owner_player -eq $HostSlot -and
+            [int]$joinGuidebot.owner_player -eq $HostSlot -and
+            [int]$hostGuidebot.owner_generation -eq [int]$joinGuidebot.owner_generation -and
+            [bool]$hostGuidebot.owner_is_local -and
+            -not [bool]$joinGuidebot.owner_is_local -and
+            [int]$hostGuidebot.remote_owner -eq $HostSlot -and
+            [int]$joinGuidebot.remote_owner -eq $HostSlot -and
+            [int]$hostGuidebot.segment -eq [int]$joinGuidebot.segment
+        }
+        return $guidebotMatches -and
+        [int]$hostMp.players[$HostSlot].slot -eq $HostSlot -and
+        $hostMp.players[$HostSlot].callsign -eq $HostCallsign -and
+        $hostMp.players[$JoinSlot].callsign -eq $JoinCallsign -and
+        [int]$joinMp.players[$HostSlot].slot -eq $HostSlot -and
+        $joinMp.players[$HostSlot].callsign -eq $HostCallsign -and
+        $joinMp.players[$JoinSlot].callsign -eq $JoinCallsign -and
+        [int]$hostMp.synchronized_object_count -gt 0 -and
+        $hostObjects -eq $joinObjects
+    }
+}
+
+function Wait-BidirectionalPdata {
+    param(
+        [string]$FirstSerial,
+        [int]$FirstRemoteSlot,
+        [string]$SecondSerial,
+        [int]$SecondRemoteSlot,
+        [string]$Description
+    )
+
+    $firstIntro = Get-GameIntrospection -Serial $FirstSerial
+    $secondIntro = Get-GameIntrospection -Serial $SecondSerial
+    $firstStart = Get-IntroPdataSequence -Intro $firstIntro -PlayerSlot $FirstRemoteSlot
+    $secondStart = Get-IntroPdataSequence -Intro $secondIntro -PlayerSlot $SecondRemoteSlot
+    if ($null -eq $firstStart -or $null -eq $secondStart) {
+        Write-Status "FAIL: PDATA sequence counters unavailable" "Red"
+        return $false
+    }
+    return Wait-ForCondition -Description $Description -TimeoutSec 15 -PollMs 1000 -Condition {
+        $firstNow = Get-GameIntrospection -Serial $FirstSerial
+        $secondNow = Get-GameIntrospection -Serial $SecondSerial
+        $firstMp = Get-IntroMultiplayer -Intro $firstNow
+        $secondMp = Get-IntroMultiplayer -Intro $secondNow
+        $firstSequence = Get-IntroPdataSequence -Intro $firstNow -PlayerSlot $FirstRemoteSlot
+        $secondSequence = Get-IntroPdataSequence -Intro $secondNow -PlayerSlot $SecondRemoteSlot
+        return $firstMp -and $secondMp -and
+        [int]$firstMp.num_connected -eq 2 -and [int]$secondMp.num_connected -eq 2 -and
+        $null -ne $firstSequence -and $null -ne $secondSequence -and
+        $firstSequence -ne $firstStart -and $secondSequence -ne $secondStart
+    }
+}
+
+function Invoke-HostMigrationScenario {
+    $checkGuidebot = $Game -eq "d2"
+    $initialGuidebotGeneration = -1
+
+    Write-Status ""
+    Write-Status "--- Host migration, rejoin, and second-swap scenario ---" "White"
+    if ($checkGuidebot) {
+        if (-not (Invoke-PairedGameAutomation `
+                    -PrimarySerial $EMU1 `
+                    -PrimaryScript "test_coop_host_migration_prepare_host.json5" `
+                    -SecondarySerial $EMU2 `
+                    -SecondaryScript "test_coop_host_migration_prepare_joiner.json5" `
+                    -Description "paired host-migration preparation" `
+                    -TimeoutSec $TimeoutSeconds)) {
+            return $false
+        }
+    }
+
+    $initialHost = Get-GameIntrospection -Serial $EMU1
+    $initialJoin = Get-GameIntrospection -Serial $EMU2
+    $initialGuidebot = Get-IntroGuidebot -Intro $initialHost
+    if (-not (Test-IntroHostRole -Intro $initialHost -LocalSlot 0 -MasterSlot 0 `
+                -ConnectedPlayers 2 -IsMaster $true) -or
+        -not (Test-IntroHostRole -Intro $initialJoin -LocalSlot 1 -MasterSlot 0 `
+                -ConnectedPlayers 2 -IsMaster $false) -or
+        ($checkGuidebot -and -not $initialGuidebot) -or
+        (Get-IntroObjectOwnerSignature -Intro $initialHost) -ne
+        (Get-IntroObjectOwnerSignature -Intro $initialJoin)) {
+        Write-Status "FAIL: initial peers do not agree on host/object state" "Red"
+        return $false
+    }
+    if ($checkGuidebot) {
+        $initialGuidebotGeneration = [int]$initialGuidebot.owner_generation
+    }
+    if (-not (Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 `
+                -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+                -Description "initial bidirectional PDATA")) {
+        return $false
+    }
+
+    Write-Status "Stopping original host $EMU1"
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @(
+        "shell", "am", "force-stop", $PACKAGE
+    ) -Seconds 10 | Out-Null
+    if (-not (Wait-SoloMigratedHost -Serial $EMU2 -HostSlot 1 `
+                -PreviousGuidebotGeneration $initialGuidebotGeneration `
+                -CheckGuidebot $checkGuidebot `
+                -Description "slot 1 becomes host and resets object ownership")) {
+        return $false
+    }
+    Write-Status "Slot 1 became host and reset object ownership$(if ($checkGuidebot) { ', with Guide-Bot authority' })" "Green"
+
+    if (-not (Start-MigratedPeerRejoin -JoiningSerial $EMU1 -HostSerial $EMU2 -Callsign $CALLSIGN1)) {
+        return $false
+    }
+    if (-not (Wait-MigratedPairSync -HostSerial $EMU2 -HostSlot 1 -HostCallsign $CALLSIGN2 `
+                -JoinSerial $EMU1 -JoinSlot 0 -JoinCallsign $CALLSIGN1 `
+                -CheckGuidebot $checkGuidebot `
+                -Description "former host rejoins slot-1 host with matching objects")) {
+        return $false
+    }
+    if (-not (Wait-BidirectionalPdata -FirstSerial $EMU2 -FirstRemoteSlot 0 `
+                -SecondSerial $EMU1 -SecondRemoteSlot 1 `
+                -Description "PDATA after first host migration")) {
+        return $false
+    }
+    Write-Status "Former host rejoined with object parity and sustained PDATA" "Green"
+
+    $firstMigrationGuidebotGeneration = if ($checkGuidebot) {
+        [int](Get-IntroGuidebot -Intro $script:migratedHostIntro).owner_generation
+    } else {
+        -1
+    }
+    Write-Status "Stopping migrated host $EMU2 for the second swap"
+    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
+        "shell", "am", "force-stop", $PACKAGE
+    ) -Seconds 10 | Out-Null
+    if (-not (Wait-SoloMigratedHost -Serial $EMU1 -HostSlot 0 `
+                -PreviousGuidebotGeneration $firstMigrationGuidebotGeneration `
+                -CheckGuidebot $checkGuidebot `
+                -Description "slot 0 regains host authority")) {
+        return $false
+    }
+    Write-Status "Slot 0 regained host authority$(if ($checkGuidebot) { ' and the Guide-Bot' })" "Green"
+
+    if (-not (Start-MigratedPeerRejoin -JoiningSerial $EMU2 -HostSerial $EMU1 -Callsign $CALLSIGN2)) {
+        return $false
+    }
+    if (-not (Wait-MigratedPairSync -HostSerial $EMU1 -HostSlot 0 -HostCallsign $CALLSIGN1 `
+                -JoinSerial $EMU2 -JoinSlot 1 -JoinCallsign $CALLSIGN2 `
+                -CheckGuidebot $checkGuidebot `
+                -Description "second host rejoins with matching objects")) {
+        return $false
+    }
+    if (-not (Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 `
+                -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+                -Description "PDATA after second host migration")) {
+        return $false
+    }
+    Write-Status "Second host swap, rejoin, object parity, and sustained PDATA passed" "Green"
     return $true
 }
 
@@ -627,6 +945,10 @@ try {
         Write-Status "FAIL: choose one Guide-Bot LAN scenario per run" "Red"
         exit 1
     }
+    if ($HostMigration -and ($GuidebotOwnership -or $GuidebotHostObserver -or $GuidebotSlotRemapRestore)) {
+        Write-Status "FAIL: run host migration separately from other Guide-Bot LAN scenarios" "Red"
+        exit 1
+    }
     if ($GuidebotSlotRemapRestore -and $UseRelay) {
         Write-Status "FAIL: slot-remapped restore coverage requires direct LAN" "Red"
         exit 1
@@ -742,6 +1064,11 @@ try {
     $logcatFile2 = Join-Path $REPO_ROOT "temp\lan_emu2_logcat.txt"
     & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
     & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
+    foreach ($serial in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
+        ) -Seconds 10 | Out-Null
+    }
     $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
     $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
     Start-Sleep -Seconds 1
@@ -751,22 +1078,28 @@ try {
     $hostExtras = @(
         "--es", "game", $Game,
         "--es", "mp_mode", "host",
-        "--es", "mission", $MISSION,
         "--es", "mode", $MODE,
         "--ei", "max_players", "2",
         "--ei", "level_num", "1",
         "--ei", "difficulty", "1",
         "--es", "callsign", $CALLSIGN1
     )
+    if ($MISSION) {
+        $hostExtras += @("--es", "mission", $MISSION)
+    }
     if ($GuidebotHostObserver) {
         $hostExtras += @("--ez", "host_observer", "true")
     }
     Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
 
     # Poll for host game process to appear (replaces fixed 5s sleep)
-    $null = Wait-ForCondition -Description "Host game process" -TimeoutSec 30 -PollMs 500 -Condition {
+    $hostProcessReady = Wait-ForCondition -Description "Host game process" -TimeoutSec 30 -PollMs 500 -Condition {
         $gPid = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
         return ($gPid -and $gPid -match '^\d+')
+    }
+    if (-not $hostProcessReady) {
+        Write-Status "FAIL: Host game process did not start" "Red"
+        exit 1
     }
 
     # Joiner (EMU2)
@@ -774,13 +1107,15 @@ try {
     $joinExtras = @(
         "--es", "game", $Game,
         "--es", "mp_mode", "join",
-        "--es", "mission", $MISSION,
         "--es", "mode", $MODE,
         "--ei", "max_players", "2",
         "--ei", "level_num", "1",
         "--ei", "difficulty", "1",
         "--es", "callsign", $CALLSIGN2
     )
+    if ($MISSION) {
+        $joinExtras += @("--es", "mission", $MISSION)
+    }
     if ($UseRelay) {
         # Relay mode: 10.0.2.2 = host loopback from emulator, port 42600 = relay
         $joinExtras += @("--es", "host_addr", "10.0.2.2", "--ei", "host_port", "42600")
@@ -919,7 +1254,7 @@ try {
     }
 
     # Check captured host diagnostics from logcat
-    $hostLines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG|auto_net|lan_launch|LocalhostProxy' }
+    $hostLines = @(Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG|auto_net|lan_launch|LocalhostProxy' })
     Write-Status "Host LAN log ($($hostLines.Count) lines):" "Gray"
     foreach ($line in $hostLines) {
         Write-Status "  $line" "Gray"
@@ -968,6 +1303,9 @@ try {
     }
     if ($testPassed -and $GuidebotSlotRemapRestore) {
         $testPassed = Invoke-GuidebotSlotRemapRestoreScenario
+    }
+    if ($testPassed -and $HostMigration) {
+        $testPassed = Invoke-HostMigrationScenario
     }
 
     # Stop logcat capture

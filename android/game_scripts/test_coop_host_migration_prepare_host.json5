@@ -1,0 +1,28 @@
+// TEST HELPER: Seed Guide-Bot ownership on the original host before migration.
+// Run with test_lan.ps1 -HostMigration alongside the joiner helper.
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+
+    {"action": "log", "message": "=== COOP HOST MIGRATION: prepare host ==="},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "multiplayer.my_player_num": "0",
+        "multiplayer.master_player_num": "0",
+        "multiplayer.i_am_master": "true",
+        "multiplayer.num_connected": "2"
+    }},
+
+    {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.owner_player": "0",
+        "guidebot.owner_is_local": "true",
+        "guidebot.owner_generation": {"gte": 1},
+        "guidebot.remote_owner": "0",
+        "guidebot.local_control_slot_matches": "true"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP HOST MIGRATION: prepare host PASS ==="}
+]

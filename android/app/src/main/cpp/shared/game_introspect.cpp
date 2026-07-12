@@ -65,6 +65,9 @@ extern "C" {
 #include "mission.h"
 #endif
 
+/* Android UDP diagnostics used by multiplayer integration tests. */
+extern ubyte last_pdata_received[MAX_PLAYERS];
+
 /* Android port: hires texture tracking counters from ogl.c */
 extern int r_hires_found;
 extern int r_hires_loaded;
@@ -723,6 +726,36 @@ static json serialize_level_metadata_route()
 			{ "first_legacy_trigger_dependency_step_count", planner_shadow.first_legacy_trigger_dependency_step_count },
 			{ "first_shared_trigger_dependency_step_count", planner_shadow.first_shared_trigger_dependency_step_count },
 			{ "first_trigger_dependency_step", planner_shadow.first_trigger_dependency_step },
+			{ "compared_complete_route_count", planner_shadow.compared_complete_route_count },
+			{ "complete_route_mismatch_count", planner_shadow.complete_route_mismatch_count },
+			{ "first_legacy_complete_route_status", planner_shadow.first_legacy_complete_route_status },
+			{ "first_shared_complete_route_status", planner_shadow.first_shared_complete_route_status },
+			{ "first_legacy_complete_route_step_count", planner_shadow.first_legacy_complete_route_step_count },
+			{ "first_shared_complete_route_step_count", planner_shadow.first_shared_complete_route_step_count },
+			{ "first_complete_route_step", planner_shadow.first_complete_route_step },
+			{ "first_legacy_complete_route_kind", planner_shadow.first_legacy_complete_route_kind },
+			{ "first_shared_complete_route_kind", planner_shadow.first_shared_complete_route_kind },
+			{ "first_legacy_complete_route_segment", planner_shadow.first_legacy_complete_route_segment },
+			{ "first_shared_complete_route_segment", planner_shadow.first_shared_complete_route_segment },
+			{ "first_legacy_complete_route_wall", planner_shadow.first_legacy_complete_route_wall },
+			{ "first_shared_complete_route_wall", planner_shadow.first_shared_complete_route_wall },
+			{ "first_legacy_complete_route_trigger", planner_shadow.first_legacy_complete_route_trigger },
+			{ "first_shared_complete_route_trigger", planner_shadow.first_shared_complete_route_trigger },
+			{ "compared_unexplored_route_count", planner_shadow.compared_unexplored_route_count },
+			{ "unexplored_route_mismatch_count", planner_shadow.unexplored_route_mismatch_count },
+			{ "first_legacy_unexplored_status", planner_shadow.first_legacy_unexplored_status },
+			{ "first_shared_unexplored_status", planner_shadow.first_shared_unexplored_status },
+			{ "first_legacy_unexplored_component_size", planner_shadow.first_legacy_unexplored_component_size },
+			{ "first_shared_unexplored_component_size", planner_shadow.first_shared_unexplored_component_size },
+			{ "first_legacy_unexplored_target_segment", planner_shadow.first_legacy_unexplored_target_segment },
+			{ "first_shared_unexplored_target_segment", planner_shadow.first_shared_unexplored_target_segment },
+			{ "first_legacy_unexplored_waypoint_segment", planner_shadow.first_legacy_unexplored_waypoint_segment },
+			{ "first_shared_unexplored_waypoint_segment", planner_shadow.first_shared_unexplored_waypoint_segment },
+			{ "first_legacy_unexplored_direct_reachable", planner_shadow.first_legacy_unexplored_direct_reachable },
+			{ "first_shared_unexplored_direct_reachable", planner_shadow.first_shared_unexplored_direct_reachable },
+			{ "first_legacy_unexplored_step_count", planner_shadow.first_legacy_unexplored_step_count },
+			{ "first_shared_unexplored_step_count", planner_shadow.first_shared_unexplored_step_count },
+			{ "first_unexplored_route_step", planner_shadow.first_unexplored_route_step },
 		};
 	}
 	count = metadata->route_step_count;
@@ -1182,7 +1215,57 @@ extern "C" char *game_introspect_get_state(void)
 			mp["game_status"] = (int) Netgame.game_status;
 			mp["network_status"] = Network_status;
 			mp["my_player_num"] = Player_num;
+			mp["master_player_num"] = multi_who_is_master();
+			mp["i_am_master"] = multi_i_am_master() != 0;
 			mp["host_is_observer"] = Netgame.host_is_obs != 0;
+
+			json pdata_arr = json::array();
+			json object_owner_arr = json::array();
+			json synchronized_object_owner_arr = json::array();
+			int active_object_count = 0;
+			int unowned_object_count = 0;
+			int synchronized_object_count = 0;
+			int synchronized_unowned_object_count = 0;
+			int object_owner_counts[MAX_PLAYERS] = {};
+			int synchronized_object_owner_counts[MAX_PLAYERS] = {};
+			for (int i = 0; i < MAX_PLAYERS; i++)
+				pdata_arr.push_back((int) last_pdata_received[i]);
+			for (int i = 0; i <= Highest_object_index; i++) {
+				bool synchronized_object;
+
+				if (Objects[i].type == OBJ_NONE)
+					continue;
+				active_object_count++;
+				if (object_owner[i] >= 0 && object_owner[i] < MAX_PLAYERS)
+					object_owner_counts[(int) object_owner[i]]++;
+				else
+					unowned_object_count++;
+				synchronized_object = Objects[i].type == OBJ_POWERUP || Objects[i].type == OBJ_PLAYER ||
+				                      Objects[i].type == OBJ_CNTRLCEN || Objects[i].type == OBJ_GHOST ||
+				                      Objects[i].type == OBJ_ROBOT || Objects[i].type == OBJ_HOSTAGE;
+#ifdef DXX_BUILD_DESCENT_II
+				synchronized_object = synchronized_object ||
+				                      (Objects[i].type == OBJ_WEAPON && Objects[i].id == PMINE_ID);
+#endif
+				if (synchronized_object) {
+					synchronized_object_count++;
+					if (object_owner[i] >= 0 && object_owner[i] < MAX_PLAYERS)
+						synchronized_object_owner_counts[(int) object_owner[i]]++;
+					else
+						synchronized_unowned_object_count++;
+				}
+			}
+			for (int i = 0; i < MAX_PLAYERS; i++) {
+				object_owner_arr.push_back(object_owner_counts[i]);
+				synchronized_object_owner_arr.push_back(synchronized_object_owner_counts[i]);
+			}
+			mp["last_pdata_received"] = std::move(pdata_arr);
+			mp["active_object_count"] = active_object_count;
+			mp["unowned_object_count"] = unowned_object_count;
+			mp["object_owner_counts"] = std::move(object_owner_arr);
+			mp["synchronized_object_count"] = synchronized_object_count;
+			mp["synchronized_unowned_object_count"] = synchronized_unowned_object_count;
+			mp["synchronized_object_owner_counts"] = std::move(synchronized_object_owner_arr);
 
 			json players_arr = json::array();
 			for (int i = 0; i < N_players && i < MAX_PLAYERS; i++) {
@@ -1308,6 +1391,12 @@ extern "C" char *game_introspect_get_state(void)
 			{ "total_count", n },
 			{ "items", std::move(items) }
 		};
+	}
+	{
+		json keyboard_settings = json::array();
+		for (int i = 0; i < MAX_CONTROLS; i++)
+			keyboard_settings.push_back((int) PlayerCfg.KeySettings[0][i]);
+		j["keyboard_settings"] = std::move(keyboard_settings);
 	}
 
 	/* -- Automap ------------------------------------------------ */

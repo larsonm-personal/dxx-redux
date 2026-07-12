@@ -17,10 +17,10 @@ static const struct kconfig_android_binding d2_defaults[] = {
 };
 
 static const struct kconfig_android_layout layouts[] = {
-	{ 50, invert_indices, sizeof(invert_indices), common_defaults,
+	{ 50, 50, invert_indices, sizeof(invert_indices), common_defaults,
 	  sizeof(common_defaults) / sizeof(common_defaults[0]), d1_defaults,
 	  sizeof(d1_defaults) / sizeof(d1_defaults[0]) },
-	{ 56, invert_indices, sizeof(invert_indices), common_defaults,
+	{ 56, 60, invert_indices, sizeof(invert_indices), common_defaults,
 	  sizeof(common_defaults) / sizeof(common_defaults[0]), d2_defaults,
 	  sizeof(d2_defaults) / sizeof(d2_defaults[0]) }
 };

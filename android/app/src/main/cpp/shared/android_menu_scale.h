@@ -38,6 +38,9 @@ typedef struct android_menu_scale_draw_state {
 
 typedef void (*android_menu_scale_canvas_draw_fn)(void *userdata,
                                                   grs_canvas *canvas);
+typedef int (*android_menu_scale_result_draw_fn)(
+    void *userdata, grs_canvas *canvas,
+    const android_menu_scale_result *result);
 
 float android_menu_scale_get_target_fill(void);
 int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
@@ -51,6 +54,11 @@ int android_menu_scale_draw_kconfig(int source_x, int source_y, int source_w,
                                     int *scroll_y, grs_canvas *window_canvas,
                                     android_menu_scale_canvas_draw_fn draw_contents,
                                     void *userdata);
+int android_menu_scale_draw_result(
+    android_menu_scale_result *result, int screen_w, int screen_h,
+    int source_masked, int render_masked,
+    android_menu_scale_canvas_draw_fn draw_source,
+    android_menu_scale_result_draw_fn draw_scaled, void *userdata);
 void android_menu_scale_scroll_by(int *scroll_y, int delta_y);
 void android_menu_scale_publish(const android_menu_scale_result *result);
 void android_menu_scale_clear(void);
@@ -63,10 +71,10 @@ void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
                                            const android_menu_scale_result *result,
                                            int source_y);
 void android_menu_scale_blit_source_region(grs_bitmap *bitmap,
-	const android_menu_scale_result *result, int masked);
+                                           const android_menu_scale_result *result, int masked);
 int android_menu_scale_round_coord(int value, float scale);
 void android_menu_scale_items(newmenu_item *dst, const newmenu_item *src,
-	int count, float scale);
+                              int count, float scale);
 
 #ifdef __cplusplus
 }

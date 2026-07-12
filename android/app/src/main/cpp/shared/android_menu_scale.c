@@ -284,6 +284,68 @@ int android_menu_scale_draw_kconfig(int source_x, int source_y, int source_w,
 	return 1;
 }
 
+int android_menu_scale_draw_result(
+    android_menu_scale_result *result, int screen_w, int screen_h,
+    int source_masked, int render_masked,
+    android_menu_scale_canvas_draw_fn draw_source,
+    android_menu_scale_result_draw_fn draw_scaled, void *userdata)
+{
+	grs_bitmap source_bitmap, render_bitmap;
+	grs_canvas source_canvas, render_canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+	android_menu_scale_draw_state draw_state;
+	int drew_scaled = 0;
+
+	if (!result || !result->active || result->dst.w <= 0 ||
+	    result->dst.h <= 0 || screen_w <= 0 || screen_h <= 0 ||
+	    !draw_scaled)
+		return 0;
+
+	if (draw_source) {
+		gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, screen_w,
+		                     screen_h, screen_w);
+		if (source_masked)
+			memset(source_bitmap.bm_data, TRANSPARENCY_COLOR,
+			       screen_w * screen_h);
+		gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR,
+		               screen_w, screen_h);
+		gr_set_current_canvas(&source_canvas);
+		draw_source(userdata, &source_canvas);
+		gr_set_current_canvas(save_canvas);
+		android_menu_scale_blit_source_region(&source_bitmap, result,
+		                                      source_masked);
+		gr_set_current_canvas(save_canvas);
+		gr_free_bitmap_data(&source_bitmap);
+	}
+
+	gr_init_bitmap_alloc(&render_bitmap, BM_LINEAR, 0, 0, result->dst.w,
+	                     result->dst.h, result->dst.w);
+	memset(render_bitmap.bm_data,
+	       render_masked ? TRANSPARENCY_COLOR : 0,
+	       result->dst.w * result->dst.h);
+	gr_init_canvas(&render_canvas, render_bitmap.bm_data, BM_LINEAR,
+	               result->dst.w, result->dst.h);
+
+	if (android_menu_scale_begin_scaled_draw(result->scale, &draw_state)) {
+		gr_set_current_canvas(&render_canvas);
+		drew_scaled = draw_scaled(userdata, &render_canvas, result);
+		android_menu_scale_end_scaled_draw(&draw_state);
+		if (drew_scaled) {
+			result->direct_render = 1;
+			result->render_w = result->dst.w;
+			result->render_h = result->dst.h;
+			result->render_scale = result->scale;
+		}
+	}
+
+	gr_set_current_canvas(save_canvas);
+	android_menu_scale_blit_bitmap(&render_bitmap, result, render_masked);
+	gr_set_current_canvas(save_canvas);
+	gr_free_bitmap_data(&render_bitmap);
+	android_menu_scale_publish(result);
+	return 1;
+}
+
 void android_menu_scale_publish(const android_menu_scale_result *result)
 {
 	if (!result || !result->active) {

@@ -105,6 +105,36 @@ typedef struct route_planner_shadow_summary {
 	int first_legacy_trigger_dependency_step_count;
 	int first_shared_trigger_dependency_step_count;
 	int first_trigger_dependency_step;
+	int compared_complete_route_count;
+	int complete_route_mismatch_count;
+	int first_legacy_complete_route_status;
+	int first_shared_complete_route_status;
+	int first_legacy_complete_route_step_count;
+	int first_shared_complete_route_step_count;
+	int first_complete_route_step;
+	int first_legacy_complete_route_kind;
+	int first_shared_complete_route_kind;
+	int first_legacy_complete_route_segment;
+	int first_shared_complete_route_segment;
+	int first_legacy_complete_route_wall;
+	int first_shared_complete_route_wall;
+	int first_legacy_complete_route_trigger;
+	int first_shared_complete_route_trigger;
+	int compared_unexplored_route_count;
+	int unexplored_route_mismatch_count;
+	int first_legacy_unexplored_status;
+	int first_shared_unexplored_status;
+	int first_legacy_unexplored_component_size;
+	int first_shared_unexplored_component_size;
+	int first_legacy_unexplored_target_segment;
+	int first_shared_unexplored_target_segment;
+	int first_legacy_unexplored_waypoint_segment;
+	int first_shared_unexplored_waypoint_segment;
+	int first_legacy_unexplored_direct_reachable;
+	int first_shared_unexplored_direct_reachable;
+	int first_legacy_unexplored_step_count;
+	int first_shared_unexplored_step_count;
+	int first_unexplored_route_step;
 } route_planner_shadow_summary;
 
 #ifdef _MSC_VER

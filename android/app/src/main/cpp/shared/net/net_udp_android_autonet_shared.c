@@ -32,11 +32,7 @@ extern void net_log_comment(char *comment);
 
 static int net_udp_android_restore_host_addr_player_index(void)
 {
-#ifdef DXX_BUILD_DESCENT_II
 	return multi_who_is_master();
-#else
-	return 0;
-#endif
 }
 
 static void net_udp_android_mpdiag(const char *fmt, ...)

@@ -358,6 +358,7 @@ internal fun saveConfig(
         NativePilotPatcher.nativeBuildKbSettings(
             kbIndices.toIntArray(),
             kbValues.toIntArray(),
+            gameVariant,
         )
     val controlType = 1 // CONTROL_USING_JOYSTICK
 

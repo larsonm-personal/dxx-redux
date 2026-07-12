@@ -124,7 +124,7 @@ route_wall_kind normalize_wall_kind(const level_metadata_scan_view &view,
 route_key_requirement normalize_wall_key(const level_metadata_scan_view &view,
                                          int raw_key)
 {
-	if (raw_key == view.wall_key_none)
+	if (raw_key == 0 || raw_key == view.wall_key_none)
 		return route_key_requirement::none;
 	if (raw_key == view.wall_key_blue)
 		return route_key_requirement::blue;

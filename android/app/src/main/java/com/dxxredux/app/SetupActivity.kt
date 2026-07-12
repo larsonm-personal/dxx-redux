@@ -481,13 +481,16 @@ class SetupActivity : ComponentActivity() {
 
                     "reset_controls" -> {
                         val game = intent.getStringExtra("game")
-                        var n = 0
+                        var d1Reset = 0
+                        var d2Reset = 0
                         if (game == null || game == "d2") {
-                            n += NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
+                            d2Reset = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
                         }
                         if (game == null || game == "d1") {
-                            n += NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d1")
+                            d1Reset = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d1")
                         }
+                        val n = d1Reset + d2Reset
+                        writeControllerOperationResult("controller_reset_result.json", d1Reset, d2Reset)
                         Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                     }
 
@@ -500,6 +503,12 @@ class SetupActivity : ComponentActivity() {
                     "write_default_config" -> {
                         File(filesDir, "controller_config.json").delete()
                         writeDefaultControllerConfig()
+                    }
+
+                    "write_controller_patch_fixture" -> {
+                        val game = intent.getStringExtra("game") ?: "d2"
+                        writeControllerPatchFixture(game)
+                        Log.i("DXX-Setup", "write_controller_patch_fixture: written (game=$game)")
                     }
 
                     "write_engine_prefs" -> {

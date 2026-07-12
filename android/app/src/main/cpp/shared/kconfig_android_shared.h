@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#define KCONFIG_ANDROID_MAX_SETTINGS 60
+
 enum kconfig_android_game {
 	KCONFIG_ANDROID_D1,
 	KCONFIG_ANDROID_D2
@@ -14,6 +16,7 @@ struct kconfig_android_binding {
 };
 
 struct kconfig_android_layout {
+	size_t joystick_size;
 	size_t settings_size;
 	const unsigned char *invert_indices;
 	size_t invert_count;

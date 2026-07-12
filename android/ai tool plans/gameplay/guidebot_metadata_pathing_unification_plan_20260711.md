@@ -58,7 +58,7 @@ Parity has two separate meanings and both must pass:
   - Added an opt-in strict headless shadow gate and a no-copy host corpus mode so archive regeneration executes old/new edge parity across every loaded level without rewriting reviewed JSON.
   - Confirmed zero edge-cost mismatches across all base Descent and Counterstrike levels plus 1,244 levels from 109 mission archives; the remaining archive contains no mission descriptor and was skipped by existing policy.
   - The C planner remains authoritative; porting semantic dependency planning is the next migration boundary.
-- [ ] Phase 3 in progress: port semantic dependency planning behind corpus shadow comparisons.
+- [x] Phase 3 complete: port semantic dependency planning behind corpus shadow comparisons.
   - Ported deterministic weighted segment search, parent-chain retention, progress weighting, and first-obstruction capture into the shared C++ planner.
   - Added exact pessimistic/optimistic per-segment shadow comparison for reachability, distance, progress weight, parent segment, and parent side, with strict headless and introspection diagnostics.
   - Confirmed zero search mismatches in D1/D2 unit fixtures, all base Descent and Counterstrike levels, and 1,244 levels from 109 mission archives.
@@ -84,8 +84,16 @@ Parity has two separate meanings and both must pass:
   - Completed recursive trigger dependency resolution in the shared planner. Trigger sources can now transactionally resolve prerequisite keys, hidden doors, and other triggers; failed branches restore semantic steps and progress state, dependency loops retain legacy diagnostics, and every emitted step preserves its activation pose, aim target, opened links, distance, and selected segment chain.
   - Added a legacy-C shadow entry point and exact result comparison for success, diagnostics, final progress, step order and fields, activation and aim poses, opened links, and distances. Direct, visible, nested-trigger, and loop fixtures pass in D1 and D2.
   - Strict base campaigns and all 109 processable mission archives pass with zero recursive-dependency mismatches; one descriptor-less archive remains an expected skip. The Counterstrike unexplored live fixture compared four dependencies with zero mismatches while preserving all 1,274 reviewed route fingerprints.
-  - Next slice: promote the dependency resolver into the complete shared endpoint planner, including top-level key recovery, boss/reactor and exit actions, unexplored endpoints, unresolved frontier production, and full semantic route-signature comparison.
-  - Live behavior remains on the C planner until complete endpoint semantic output is green across the same gates.
+  - Completed the generic end-of-level and specified-segment route driver in shared C++. It now owns top-level key recovery, boss/reactor and exit actions, partial status, unresolved trigger or hidden-door frontier steps, exact terminal positions, and complete route-signature comparison against the migration C planner.
+  - Expanded differential coverage from level-start synthetic states to every emitted key, trigger, and hidden-door checkpoint, plus independent all-keys-avoided and all-triggers-avoided states. The strict headless gate now includes recursive dependency and complete-route mismatches instead of silently omitting them.
+  - Fixed keyed doors that also have trigger openers: avoiding a failed trigger now falls through to the independent key requirement instead of blocking the edge. Counterstrike level 17 and its TRINITY level 44 copy remain `ok` while dropping the same unnecessary trigger 5 detour; these are the only reviewed route-signature changes across all 1,274 corpus records.
+  - Fixed D1 snapshot normalization for ordinary doors whose unset raw key field is zero even though `KEY_NONE` is nonzero. D1 and D2 unit tests and strict base campaigns pass with zero edge, search, dependency, or complete-route mismatches.
+  - Re-ran built-in Counterstrike and all 110 mission archives with the expanded strict gate: 109 archives passed, one descriptor-less archive was skipped by existing policy, and none failed. The reviewed 1,274-record corpus and base-campaign status tests pass.
+  - Ported unexplored-component discovery and ranking into shared C++. End-of-level, unexplored, and explicit-segment queries now use the same dependency solver; unexplored differs only by component connectivity and endpoint ranking.
+  - Added exact unexplored-route shadow comparison for component size, target segment, first semantic waypoint, direct reachability, status, diagnostics, and every semantic step. D1/D2 unit fixtures, both strict base campaigns, built-in Counterstrike, and all 109 processable mission archives pass with zero unexplored-route mismatches; one descriptor-less archive remains an expected skip.
+  - Updated the live Counterstrike unexplored-wheel fixture for data-dependent checkpoint counts. It selects `Guide` -> `Unexplored` by visible text, confirms Guide-Bot retains unexplored mode, and reports zero unexplored-route, complete-route, dependency, firing-path, source, target, search, and edge mismatches with the visibility cache active.
+  - Phase 4 is next: separate canonical and live shared plans, then make Guide-Bot consume the first pending shared waypoint without rebuilding route meaning in `escort.c`.
+  - Live behavior remains on the C planner until the Phase 4 consumer bridge is green across the same gates.
 
 ## Non-Goals
 

@@ -96,6 +96,8 @@ extern volatile int g_demo_record_per_frame_state;
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_rng_mode.h"
+#include "classic_demo_json.h"
+#include "classic_demo_json_d2_snapshot.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -230,7 +232,8 @@ static sbyte nd_playback_v_bad_read;
 static int nd_playback_v_framecount;
 static int nd_dump_v_frame_number = -1;
 static int nd_dump_v_active = 0;
-static FILE *nd_dump_v_fp = NULL;
+static classic_demo_json_writer nd_dump_v_writer;
+static classic_demo_json_object nd_dump_v_objects[MAX_OBJECTS];
 static nd_player_control_trace nd_dump_v_player_control_trace;
 static struct {
 	int valid;
@@ -1706,7 +1709,8 @@ enum purpose_type
 {
 	PURPOSE_CHOSE_PLAY = 0,
 	PURPOSE_RANDOM_PLAY,
-	PURPOSE_REWRITE
+	PURPOSE_REWRITE,
+	PURPOSE_DUMP
 };
 
 int newdemo_read_demo_start(enum purpose_type purpose)
@@ -1722,7 +1726,8 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_byte(c);
 	if ((c != ND_EVENT_START_DEMO) || nd_playback_v_bad_read) {
-		nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_CANT_PLAYBACK, TXT_DEMO_CORRUPT );
+		if (purpose != PURPOSE_DUMP)
+			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_CANT_PLAYBACK, TXT_DEMO_CORRUPT );
 		return 1;
 	}
 	nd_read_byte(&version);
@@ -1733,11 +1738,13 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 		nd_write_byte(game_type);
 	nd_playback_v_demo_version = version;
 	if (game_type < DEMO_GAME_TYPE) {
-		nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "    In Descent: First Strike" );
+		if (purpose != PURPOSE_DUMP)
+			nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "    In Descent: First Strike" );
 		return 1;
 	}
 	if (game_type != DEMO_GAME_TYPE) {
-		nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "   In Unknown Descent version" );
+		if (purpose != PURPOSE_DUMP)
+			nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "   In Unknown Descent version" );
 		return 1;
 	}
 	if (version < DEMO_OLDEST_SUPPORTED_VERSION) {
@@ -1758,7 +1765,8 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	Boss_cloak_start_time=Boss_cloak_end_time=GameTime64;
 #ifndef NETWORK
 	if (Newdemo_game_mode & GM_MULTI) {
-		nm_messagebox( NULL, 1, "Ok", "can't playback net game\nwith this version of code\n" );
+		if (purpose != PURPOSE_DUMP)
+			nm_messagebox( NULL, 1, "Ok", "can't playback net game\nwith this version of code\n" );
 		return 1;
 	}
 #endif
@@ -1852,7 +1860,7 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_string(current_mission);
 	if (!load_mission_by_name(current_mission)) {
-		if (purpose != PURPOSE_RANDOM_PLAY) {
+		if (purpose != PURPOSE_RANDOM_PLAY && purpose != PURPOSE_DUMP) {
 			nm_messagebox( NULL, 1, TXT_OK, TXT_NOMISSION4DEMO, current_mission );
 		}
 		return 1;
@@ -3023,9 +3031,7 @@ int newdemo_read_frame_information(int rewrite)
 				if (Newdemo_vcr_state == ND_STATE_PAUSED)
 					break;
 
-				if (nd_dump_v_active) { fprintf(stderr, "classic dump before stop_time\n"); fflush(stderr); }
 				stop_time();
-				if (nd_dump_v_active) { fprintf(stderr, "classic dump after stop_time\n"); fflush(stderr); }
 				if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
 					loaded_level = old_level;
 				else {
@@ -3036,22 +3042,19 @@ int newdemo_read_frame_information(int rewrite)
 					}
 				}
 				if ((loaded_level < Last_secret_level) || (loaded_level > Last_level)) {
-					nm_messagebox( NULL, 1, TXT_OK, "%s\n%s\n%s", TXT_CANT_PLAYBACK, TXT_LEVEL_CANT_LOAD, TXT_DEMO_OLD_CORRUPT );
+					if (!nd_dump_v_active)
+						nm_messagebox( NULL, 1, TXT_OK, "%s\n%s\n%s", TXT_CANT_PLAYBACK, TXT_LEVEL_CANT_LOAD, TXT_DEMO_OLD_CORRUPT );
 					free_mission();
 					return -1;
 				}
 
-				if (nd_dump_v_active) { fprintf(stderr, "classic dump before LoadLevel %d\n", (int)loaded_level); fflush(stderr); }
 				LoadLevel((int)loaded_level,1);
-				if (nd_dump_v_active) { fprintf(stderr, "classic dump after LoadLevel %d walls=%d\n", (int)loaded_level, Num_walls); fflush(stderr); }
 				nd_playback_v_cntrlcen_destroyed = 0;
 			}
 
 			if (nd_playback_v_juststarted)
 			{
-				if (nd_dump_v_active) { fprintf(stderr, "classic dump before wall restore\n"); fflush(stderr); }
 				nd_read_int (&Num_walls);
-				if (nd_dump_v_active) { fprintf(stderr, "classic dump wall count %d\n", Num_walls); fflush(stderr); }
 				if (rewrite)
 					nd_write_int (Num_walls);
 				for (i=0;i<Num_walls;i++)    // restore the walls
@@ -3151,7 +3154,8 @@ int newdemo_read_frame_information(int rewrite)
 	}
 
 	if (nd_playback_v_bad_read) {
-		nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_DEMO_ERR_READING, TXT_DEMO_OLD_CORRUPT );
+		if (!nd_dump_v_active)
+			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_DEMO_ERR_READING, TXT_DEMO_OLD_CORRUPT );
 		free_mission();
 	}
 
@@ -4029,298 +4033,105 @@ void newdemo_dump_note_player_wiggle(object *obj,
 	nd_dump_v_player_wiggle.uvec = obj->orient.uvec;
 }
 
-static void newdemo_dump_write_json_escaped(FILE *fp, const char *text)
+static classic_demo_json_vector newdemo_dump_snapshot_vector(const vms_vector *vector)
 {
-	const unsigned char *p = (const unsigned char *)(text ? text : "");
+	classic_demo_json_vector snapshot = {vector->x, vector->y, vector->z};
 
-	fputc('"', fp);
-	for (; *p; ++p) {
-		switch (*p) {
-		case '\\':
-			fputs("\\\\", fp);
-			break;
-		case '"':
-			fputs("\\\"", fp);
-			break;
-		case '\b':
-			fputs("\\b", fp);
-			break;
-		case '\f':
-			fputs("\\f", fp);
-			break;
-		case '\n':
-			fputs("\\n", fp);
-			break;
-		case '\r':
-			fputs("\\r", fp);
-			break;
-		case '\t':
-			fputs("\\t", fp);
-			break;
-		default:
-			if (*p < 0x20)
-				fprintf(fp, "\\u%04x", *p);
-			else
-				fputc(*p, fp);
-		}
-	}
-	fputc('"', fp);
+	return snapshot;
 }
 
-static void newdemo_dump_write_vector(FILE *fp, const vms_vector *vec)
+static void newdemo_dump_snapshot_control(classic_demo_json_control *snapshot)
 {
-	fprintf(fp, "[%d,%d,%d]", vec->x, vec->y, vec->z);
+	const nd_player_control_trace *trace = &nd_dump_v_player_control_trace;
+
+	memset(snapshot, 0, sizeof(*snapshot));
+	snapshot->valid = trace->valid;
+	if (!trace->valid)
+		return;
+	snapshot->segnum = trace->segnum;
+	snapshot->phys_flags = trace->phys_flags;
+	snapshot->player_flags = trace->player_flags;
+	snapshot->frame_time = trace->frame_time;
+	snapshot->resolved_forward_thrust_time = trace->resolved_forward_thrust_time;
+	snapshot->control_pitch = trace->control_pitch;
+	snapshot->control_heading = trace->control_heading;
+	snapshot->control_bank = trace->control_bank;
+	snapshot->control_forward = trace->control_forward;
+	snapshot->control_sideways = trace->control_sideways;
+	snapshot->control_vertical = trace->control_vertical;
+	snapshot->afterburner_state = trace->afterburner_state;
+	snapshot->afterburner_charge = trace->afterburner_charge;
+	snapshot->wiggle_applied = trace->wiggle_applied;
+	snapshot->raw_swiggle = trace->raw_swiggle;
+	snapshot->scaled_swiggle = trace->scaled_swiggle;
+	snapshot->wiggle_amount = trace->wiggle_amount;
+	snapshot->ship_wiggle = trace->ship_wiggle;
+	snapshot->pre_scale_thrust = newdemo_dump_snapshot_vector(&trace->pre_scale_thrust);
+	snapshot->thrust = newdemo_dump_snapshot_vector(&trace->thrust);
+	snapshot->pre_scale_rotthrust = newdemo_dump_snapshot_vector(&trace->pre_scale_rotthrust);
+	snapshot->rotthrust = newdemo_dump_snapshot_vector(&trace->rotthrust);
+	snapshot->velocity_before_wiggle = newdemo_dump_snapshot_vector(&trace->velocity_before_wiggle);
+	snapshot->wiggle_delta = newdemo_dump_snapshot_vector(&trace->wiggle_delta);
+	snapshot->velocity_after_wiggle = newdemo_dump_snapshot_vector(&trace->velocity_after_wiggle);
 }
 
-static void newdemo_dump_write_matrix(FILE *fp, const vms_matrix *mat)
+static void newdemo_dump_snapshot_wiggle(classic_demo_json_wiggle *snapshot)
 {
-	fputs("{\"f\":", fp);
-	newdemo_dump_write_vector(fp, &mat->fvec);
-	fputs(",\"r\":", fp);
-	newdemo_dump_write_vector(fp, &mat->rvec);
-	fputs(",\"u\":", fp);
-	newdemo_dump_write_vector(fp, &mat->uvec);
-	fputc('}', fp);
+	memset(snapshot, 0, sizeof(*snapshot));
+	snapshot->valid = nd_dump_v_player_wiggle.valid;
+	if (!snapshot->valid)
+		return;
+	snapshot->applied = nd_dump_v_player_wiggle.applied;
+	snapshot->segnum = nd_dump_v_player_wiggle.segnum;
+	snapshot->phys_flags = nd_dump_v_player_wiggle.phys_flags;
+	snapshot->frame_time = nd_dump_v_player_wiggle.frame_time;
+	snapshot->raw_swiggle = nd_dump_v_player_wiggle.raw_swiggle;
+	snapshot->scaled_swiggle = nd_dump_v_player_wiggle.scaled_swiggle;
+	snapshot->wiggle_amount = nd_dump_v_player_wiggle.wiggle_amount;
+	snapshot->velocity_before = newdemo_dump_snapshot_vector(&nd_dump_v_player_wiggle.velocity_before);
+	snapshot->wiggle_delta = newdemo_dump_snapshot_vector(&nd_dump_v_player_wiggle.wiggle_delta);
+	snapshot->velocity_after = newdemo_dump_snapshot_vector(&nd_dump_v_player_wiggle.velocity_after);
+	snapshot->uvec = newdemo_dump_snapshot_vector(&nd_dump_v_player_wiggle.uvec);
 }
 
 void newdemo_dump_note_robot_damage(object *robot, fix old_shields, fix damage)
 {
-	if (!nd_dump_v_active || !nd_dump_v_fp || !robot || robot->type != OBJ_ROBOT)
+	classic_demo_json_robot_damage snapshot;
+
+	if (!nd_dump_v_active || !robot || robot->type != OBJ_ROBOT)
 		return;
 
-	fprintf(nd_dump_v_fp,
-		"{\"type\":\"robot_damage\",\"f\":%d,\"gt\":%d,\"objnum\":%d,\"sig\":%d,\"id\":%d,\"size\":%d,\"damage\":%d,\"shields_before\":%d,\"shields_after\":%d,\"dead\":%s,\"pos\":",
-		nd_dump_v_frame_number,
-		nd_recorded_time,
-		(int)(robot - Objects),
-		robot->signature,
-		robot->id,
-		robot->size,
-		damage,
-		old_shields,
-		robot->shields,
-		(robot->shields < 0) ? "true" : "false");
-	newdemo_dump_write_vector(nd_dump_v_fp, &robot->pos);
-	if (robot->movement_type == MT_PHYSICS) {
-		fputs(",\"vel\":", nd_dump_v_fp);
-		newdemo_dump_write_vector(nd_dump_v_fp, &robot->mtype.phys_info.velocity);
-	}
-	fputs("}\n", nd_dump_v_fp);
+	classic_demo_json_d2_snapshot_robot_damage(&snapshot,
+		nd_dump_v_frame_number, nd_recorded_time, robot, old_shields, damage);
+	classic_demo_json_write_robot_damage(&nd_dump_v_writer, &snapshot);
 }
 
-static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
+static int newdemo_dump_write_header(void)
 {
-	ai_local *ailp = NULL;
-	ai_static *aip = NULL;
-	int player_seg = -1;
+	classic_demo_json_header snapshot;
 
-	if (obj->type == OBJ_ROBOT) {
-		aip = &obj->ctype.ai_info;
-		ailp = &Ai_local_info[objnum];
-		if (ConsoleObject)
-			player_seg = ConsoleObject->segnum;
-	}
-
-	fprintf(fp,
-		"{\"objnum\":%d,\"sig\":%d,\"obj_type\":%d,\"id\":%d,\"seg\":%d,\"flags\":%d,\"size\":%d,\"shields\":%d,\"lifeleft\":%d,\"control_type\":%d,\"movement_type\":%d,\"render_type\":%d,\"viewer\":%s,\"pos\":",
-		objnum,
-		obj->signature,
-		obj->type,
-		obj->id,
-		obj->segnum,
-		obj->flags,
-		obj->size,
-		obj->shields,
-		obj->lifeleft,
-		obj->control_type,
-		obj->movement_type,
-		obj->render_type,
-		(obj == Viewer) ? "true" : "false");
-	newdemo_dump_write_vector(fp, &obj->pos);
-	fputs(",\"last_pos\":", fp);
-	newdemo_dump_write_vector(fp, &obj->last_pos);
-	if (obj->movement_type == MT_PHYSICS) {
-		fprintf(fp, ",\"phys_flags\":%d,\"vel\":", obj->mtype.phys_info.flags);
-		newdemo_dump_write_vector(fp, &obj->mtype.phys_info.velocity);
-	}
-	if (obj->type == OBJ_ROBOT) {
-		fprintf(fp,
-			",\"robot_ai\":{\"companion\":%d,\"behavior\":%d,\"mode\":%d,\"cur_state\":%d,\"goal_state\":%d,\"gun\":%d,\"path_dir\":%d,\"goal_side\":%d,\"danger_obj\":%d,\"danger_sig\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"goal_seg\":%d,\"prev_vis\":%d,\"aware\":%d,\"aware_time\":%d,\"seen\":%lld,\"since\":%d,\"next_action\":%d,\"next_fire\":%d,\"next_fire2\":%d,\"path_index\":%d,\"path_length\":%d,\"hide\":%d,\"skip\":%d}",
-			Robot_info[obj->id].companion,
-			aip->behavior,
-			ailp->mode,
-			aip->CURRENT_STATE,
-			aip->GOAL_STATE,
-			aip->CURRENT_GUN,
-			aip->PATH_DIR,
-			aip->GOALSIDE,
-			aip->danger_laser_num,
-			aip->danger_laser_signature,
-			player_seg,
-			Believed_player_seg,
-			ailp->goal_segment,
-			ailp->previous_visibility,
-			ailp->player_awareness_type,
-			ailp->player_awareness_time,
-			(long long)ailp->time_player_seen,
-			ailp->time_since_processed,
-			ailp->next_action_time,
-			ailp->next_fire,
-			ailp->next_fire2,
-			aip->cur_path_index,
-			aip->path_length,
-			aip->hide_index,
-			aip->SKIP_AI_COUNT);
-	}
-	fputs(",\"orient\":", fp);
-	newdemo_dump_write_matrix(fp, &obj->orient);
-	fputc('}', fp);
+	classic_demo_json_d2_snapshot_header(&snapshot,
+		nd_playback_v_demo_version, DEMO_GAME_TYPE);
+	return classic_demo_json_write_header(&nd_dump_v_writer, &snapshot);
 }
 
-static void newdemo_dump_write_header(FILE *fp)
+static int newdemo_dump_write_frame(int *object_count)
 {
-	fprintf(fp,
-		"{\"type\":\"header\",\"format\":\"classic_dem_runtime_dump\",\"game\":\"d2\",\"version\":%d,\"game_type\":%d,\"mission\":",
-		nd_playback_v_demo_version,
-		DEMO_GAME_TYPE);
-	newdemo_dump_write_json_escaped(fp, Current_mission_filename);
-	fprintf(fp,
-		",\"score\":%d,\"primary_weapon\":%d,\"secondary_weapon\":%d,\"player_flags\":%d,\"energy\":%d,\"shields\":%d}\n",
-		Players[Player_num].score,
-		Players[Player_num].primary_weapon,
-		Players[Player_num].secondary_weapon,
-		Players[Player_num].flags,
-		f2ir(Players[Player_num].energy),
-		f2ir(Players[Player_num].shields));
-}
+	classic_demo_json_control control;
+	classic_demo_json_wiggle wiggle;
+	classic_demo_json_frame snapshot;
 
-static void newdemo_dump_write_frame(FILE *fp)
-{
-	int i;
-	int first = 1;
-	int object_count = 0;
-	int player_objnum = Players[Player_num].objnum;
-	object *player_obj = &Objects[Players[Player_num].objnum];
-
-	for (i = 0; i <= Highest_object_index; ++i)
-		if (Objects[i].type != OBJ_NONE && Objects[i].segnum != -1)
-			object_count++;
-
-	fprintf(fp,
-		"{\"type\":\"frame\",\"f\":%d,\"ft\":%d,\"gt\":%d,\"level\":%d,\"viewer_objnum\":%d,\"object_count\":%d,\"player\":{\"objnum\":%d,\"score\":%d,\"energy\":%d,\"shields\":%d,\"flags\":%d,\"seg\":%d,\"phys_flags\":%d,\"pos\":",
-		nd_dump_v_frame_number,
-		nd_recorded_time,
-		nd_recorded_total,
-		Current_level_num,
-		Viewer ? (int)(Viewer - Objects) : -1,
-		object_count,
-		player_objnum,
-		Players[Player_num].score,
-		f2ir(Players[Player_num].energy),
-		f2ir(Players[Player_num].shields),
-		Players[Player_num].flags,
-		player_obj->segnum,
-		player_obj->mtype.phys_info.flags);
-	newdemo_dump_write_vector(fp, &player_obj->pos);
-	fputs(",\"last_pos\":", fp);
-	newdemo_dump_write_vector(fp, &player_obj->last_pos);
-	fputs(",\"vel\":", fp);
-	newdemo_dump_write_vector(fp, &player_obj->mtype.phys_info.velocity);
-	fputs(",\"orient\":", fp);
-	newdemo_dump_write_matrix(fp, &player_obj->orient);
-	fputs(",\"control\":{\"valid\":", fp);
-	fputs(nd_dump_v_player_control_trace.valid ? "true" : "false", fp);
-	if (nd_dump_v_player_control_trace.valid) {
-		fprintf(fp,
-			",\"seg\":%d,\"phys_flags\":%d,\"player_flags\":%d,\"ft\":%d,\"resolved_forward\":%d,\"pitch\":%d,\"heading\":%d,\"bank\":%d,\"forward\":%d,\"sideways\":%d,\"vertical\":%d,\"afterburner_state\":%d,\"afterburner_charge\":%d,\"wiggle_applied\":%d,\"wiggle_raw\":%d,\"wiggle_scaled\":%d,\"wiggle_amount\":%d,\"ship_wiggle\":%d,\"pre_thrust\":",
-			nd_dump_v_player_control_trace.segnum,
-			nd_dump_v_player_control_trace.phys_flags,
-			nd_dump_v_player_control_trace.player_flags,
-			nd_dump_v_player_control_trace.frame_time,
-			nd_dump_v_player_control_trace.resolved_forward_thrust_time,
-			nd_dump_v_player_control_trace.control_pitch,
-			nd_dump_v_player_control_trace.control_heading,
-			nd_dump_v_player_control_trace.control_bank,
-			nd_dump_v_player_control_trace.control_forward,
-			nd_dump_v_player_control_trace.control_sideways,
-			nd_dump_v_player_control_trace.control_vertical,
-			nd_dump_v_player_control_trace.afterburner_state,
-			nd_dump_v_player_control_trace.afterburner_charge,
-			nd_dump_v_player_control_trace.wiggle_applied,
-			nd_dump_v_player_control_trace.raw_swiggle,
-			nd_dump_v_player_control_trace.scaled_swiggle,
-			nd_dump_v_player_control_trace.wiggle_amount,
-			nd_dump_v_player_control_trace.ship_wiggle);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.pre_scale_thrust);
-		fputs(",\"thrust\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.thrust);
-		fputs(",\"pre_rot\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.pre_scale_rotthrust);
-		fputs(",\"rot\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.rotthrust);
-		fputs(",\"vel_before_wiggle\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_before_wiggle);
-		fputs(",\"wiggle_delta\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.wiggle_delta);
-		fputs(",\"vel_after_wiggle\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_after_wiggle);
+	newdemo_dump_snapshot_control(&control);
+	newdemo_dump_snapshot_wiggle(&wiggle);
+	if (!classic_demo_json_d2_snapshot_frame(&snapshot,
+		nd_dump_v_objects, MAX_OBJECTS,
+		nd_dump_v_frame_number, nd_recorded_time, nd_recorded_total,
+		&control, &wiggle)) {
+		nd_dump_v_writer.failed = 1;
+		return 0;
 	}
-	fputs("}", fp);
-	fputs(",\"wiggle\":{\"valid\":", fp);
-	if (nd_dump_v_player_control_trace.valid || nd_dump_v_player_wiggle.valid)
-		fputs("true", fp);
-	else
-		fputs("false", fp);
-	if (nd_dump_v_player_control_trace.valid) {
-		fprintf(fp,
-			",\"applied\":%d,\"seg\":%d,\"phys_flags\":%d,\"ft\":%d,\"raw\":%d,\"scaled\":%d,\"amount\":%d,\"vel_before\":",
-			nd_dump_v_player_control_trace.wiggle_applied,
-			nd_dump_v_player_control_trace.segnum,
-			nd_dump_v_player_control_trace.phys_flags,
-			nd_dump_v_player_control_trace.frame_time,
-			nd_dump_v_player_control_trace.raw_swiggle,
-			nd_dump_v_player_control_trace.scaled_swiggle,
-			nd_dump_v_player_control_trace.wiggle_amount);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_before_wiggle);
-		fputs(",\"delta\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.wiggle_delta);
-		fputs(",\"vel_after\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_after_wiggle);
-		fputs(",\"uvec\":", fp);
-		newdemo_dump_write_vector(fp, &player_obj->orient.uvec);
-	}
-	else if (nd_dump_v_player_wiggle.valid) {
-		fprintf(fp,
-			",\"applied\":%d,\"seg\":%d,\"phys_flags\":%d,\"ft\":%d,\"raw\":%d,\"scaled\":%d,\"amount\":%d,\"vel_before\":",
-			nd_dump_v_player_wiggle.applied,
-			nd_dump_v_player_wiggle.segnum,
-			nd_dump_v_player_wiggle.phys_flags,
-			nd_dump_v_player_wiggle.frame_time,
-			nd_dump_v_player_wiggle.raw_swiggle,
-			nd_dump_v_player_wiggle.scaled_swiggle,
-			nd_dump_v_player_wiggle.wiggle_amount);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.velocity_before);
-		fputs(",\"delta\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.wiggle_delta);
-		fputs(",\"vel_after\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.velocity_after);
-		fputs(",\"uvec\":", fp);
-		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.uvec);
-	}
-	fputs("}},\"objects\":[", fp);
-
-	for (i = 0; i <= Highest_object_index; ++i) {
-		object *obj = &Objects[i];
-
-		if (obj->type == OBJ_NONE || obj->segnum == -1)
-			continue;
-		if (!first)
-			fputc(',', fp);
-		newdemo_dump_write_object(fp, i, obj);
-		first = 0;
-	}
-
-	fputs("]}\n", fp);
+	*object_count = (int)snapshot.object_count;
+	return classic_demo_json_write_frame(&nd_dump_v_writer, &snapshot);
 }
 
 static const char *newdemo_dump_find_last_sep(const char *path)
@@ -4382,6 +4193,14 @@ static int newdemo_dump_open_input(const char *demo_path,
 	return 1;
 }
 
+static int newdemo_dump_finish_write(FILE *fp, char *error, size_t error_size)
+{
+	if (!nd_dump_v_writer.failed && !fflush(fp))
+		return 1;
+	newdemo_dump_set_error(error, error_size, "classic demo json output write failed");
+	return 0;
+}
+
 int newdemo_dump_json(const char *demo_path, const char *output_path,
 	char *error, size_t error_size)
 {
@@ -4391,6 +4210,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	int mounted = 0;
 	int frame_count = 0;
 	int object_total = 0;
+	int decode_failed = 0;
 	int ok = 0;
 
 	newdemo_dump_set_error(error, error_size, "");
@@ -4403,6 +4223,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 		newdemo_dump_set_error(error, error_size, "could not open classic demo json output path");
 		return 0;
 	}
+	classic_demo_json_writer_init_file(&nd_dump_v_writer, fp);
 	if (!newdemo_dump_open_input(demo_path, mount_dir, sizeof(mount_dir), logical_path, sizeof(logical_path), &mounted, error, error_size))
 		goto cleanup;
 
@@ -4415,7 +4236,6 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	nd_playback_v_demo_version = DEMO_VERSION;
 	nd_dump_v_frame_number = -1;
 	nd_dump_v_active = 1;
-	nd_dump_v_fp = fp;
 	newdemo_dump_reset_player_control_trace();
 	newdemo_dump_reset_player_wiggle();
 	nd_recorded_total = 0;
@@ -4423,7 +4243,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	strncpy(nd_playback_v_save_callsign, Players[Player_num].callsign, CALLSIGN_LEN);
 	Players[Player_num].lives = 0;
 	Viewer = ConsoleObject = &Objects[0];
-	if (newdemo_read_demo_start(PURPOSE_RANDOM_PLAY)) {
+	if (newdemo_read_demo_start(PURPOSE_DUMP)) {
 		newdemo_dump_set_error(error, error_size, "classic demo header parse failed");
 		goto cleanup;
 	}
@@ -4436,16 +4256,22 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	init_seismic_disturbances();
 	nd_playback_v_dead = nd_playback_v_rear = nd_playback_v_guided = 0;
 
-	newdemo_dump_write_header(fp);
-	fflush(fp);
+	newdemo_dump_write_header();
+	if (!newdemo_dump_finish_write(fp, error, error_size))
+		goto cleanup;
 	while (!nd_playback_v_at_eof) {
-		int i;
 		int active_objects = 0;
 		int player_objnum;
 
 		if (newdemo_read_frame_information(0) == -1) {
-			if (!nd_playback_v_at_eof)
+			if (!nd_playback_v_at_eof) {
 				newdemo_dump_set_error(error, error_size, "classic demo frame decode failed");
+				decode_failed = 1;
+			}
+			break;
+		}
+		if (nd_dump_v_writer.failed) {
+			newdemo_dump_set_error(error, error_size, "classic demo json output write failed");
 			break;
 		}
 		player_objnum = Players[Player_num].objnum;
@@ -4455,28 +4281,30 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 			newdemo_dump_reset_player_wiggle();
 			continue;
 		}
-		for (i = 0; i <= Highest_object_index; ++i)
-			if (Objects[i].type != OBJ_NONE && Objects[i].segnum != -1)
-				active_objects++;
-		newdemo_dump_write_frame(fp);
+		newdemo_dump_write_frame(&active_objects);
 		newdemo_dump_reset_player_control_trace();
 		newdemo_dump_reset_player_wiggle();
-		fflush(fp);
+		if (!newdemo_dump_finish_write(fp, error, error_size))
+			break;
 		frame_count++;
 		object_total += active_objects;
 	}
-	if (error && error[0])
+	if (nd_dump_v_writer.failed && (!error || !error[0]))
+		newdemo_dump_set_error(error, error_size, "classic demo json output write failed");
+	if (decode_failed || nd_dump_v_writer.failed || (error && error[0]))
 		goto cleanup;
 
-	fprintf(fp,
-		"{\"type\":\"result\",\"frames_decoded\":%d,\"objects_emitted\":%d,\"truncated\":false}\n",
-		frame_count,
-		object_total);
+	{
+		classic_demo_json_result result = {frame_count, object_total, 0};
+
+		classic_demo_json_write_result(&nd_dump_v_writer, &result);
+	}
+	if (!newdemo_dump_finish_write(fp, error, error_size))
+		goto cleanup;
 	ok = 1;
 
 cleanup:
 	nd_dump_v_active = 0;
-	nd_dump_v_fp = NULL;
 	newdemo_dump_reset_player_control_trace();
 	newdemo_dump_reset_player_wiggle();
 	if (Newdemo_state == ND_STATE_PLAYBACK)
@@ -4487,8 +4315,11 @@ cleanup:
 	}
 	if (mounted)
 		PHYSFS_removeFromSearchPath(mount_dir);
-	if (fp)
-		fclose(fp);
+	if (fp && fclose(fp)) {
+		if (ok)
+			newdemo_dump_set_error(error, error_size, "classic demo json output write failed");
+		ok = 0;
+	}
 	return ok;
 }
 
