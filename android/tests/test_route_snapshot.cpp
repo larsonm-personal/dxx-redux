@@ -228,6 +228,17 @@ level_metadata_scan_view make_view(test_level &level)
 	view.num_triggers = 1;
 	view.start_segment = 0;
 	view.initial_key_mask = level.key_mask;
+	view.wall_type_blastable = 10;
+	view.wall_type_door = 11;
+	view.wall_type_illusion = 12;
+	view.wall_type_open = 13;
+	view.wall_flag_door_locked = 1;
+	view.wall_flag_door_opened = 4;
+	view.wall_clip_hidden = 2;
+	view.wall_key_none = 20;
+	view.wall_key_blue = 21;
+	view.wall_key_red = 22;
+	view.wall_key_gold = 23;
 	view.segment_child = segment_child;
 	view.segment_is_explored = segment_explored;
 	view.reverse_side = reverse_side;
@@ -298,6 +309,14 @@ int main()
 	assert(first.state.segments[1].sides[0].hard_blocked);
 	assert(first.state.segments[1].sides[0].exit_trigger);
 	assert(first.state.walls[1].trigger == 41);
+	assert(first.state.walls[0].kind ==
+	       dxx_route::route_wall_kind::blastable);
+	assert(first.state.walls[1].kind ==
+	       dxx_route::route_wall_kind::door);
+	assert(first.state.walls[1].key ==
+	       dxx_route::route_key_requirement::blue);
+	assert(first.state.walls[0].hidden);
+	assert(!first.state.walls[0].locked);
 	assert(first.topology.segments[1].sides[0].opener_walls[0] == 0);
 	assert(first.topology.triggers[0].kind ==
 	       dxx_route::route_trigger_kind::open_door);
@@ -335,6 +354,18 @@ int main()
 	assert(changed_state.topology.hash == first.topology.hash);
 	assert(changed_state.state.hash != first.state.hash);
 	assert(changed_state.state.triggers[0].disabled);
+	assert(changed_state.state.walls[0].locked);
+	assert(changed_state.state.walls[0].opened);
+
+	dxx_route::route_query query;
+	query.endpoint = dxx_route::route_endpoint_kind::unexplored;
+	query.start = changed_state.state.start_position;
+	query.progression.key_mask = changed_state.state.key_mask;
+	query.navigator.companion = true;
+	query.navigator.respects_buddy_proof_walls = true;
+	assert(query.endpoint == dxx_route::route_endpoint_kind::unexplored);
+	assert(query.progression.key_mask == LEVEL_METADATA_KEY_MASK_BLUE);
+	assert(query.navigator.companion);
 
 	level.child = -1;
 	view = make_view(level);

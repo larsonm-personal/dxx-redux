@@ -22,9 +22,58 @@ enum class route_trigger_kind {
 	illusory_wall
 };
 
+enum class route_wall_kind {
+	none,
+	blastable,
+	door,
+	illusion,
+	open,
+	other
+};
+
+enum class route_key_requirement {
+	none,
+	blue,
+	red,
+	gold,
+	unknown
+};
+
+enum class route_endpoint_kind {
+	end_of_level,
+	unexplored,
+	segment
+};
+
 struct route_position {
 	std::array<int, 3> value = {};
 	bool valid = false;
+};
+
+struct route_progression_profile {
+	int key_mask = 0;
+	bool can_open_ordinary_doors = true;
+	bool can_activate_triggers = true;
+	bool can_destroy_blastable_walls = true;
+	bool can_destroy_reactor = true;
+	bool can_destroy_boss = true;
+};
+
+struct route_navigator_profile {
+	int radius = 0;
+	bool companion = false;
+	bool respects_buddy_proof_walls = false;
+	bool can_fire_flare = false;
+	bool can_cross_triggers = true;
+};
+
+struct route_query {
+	route_endpoint_kind endpoint = route_endpoint_kind::end_of_level;
+	int target_segment = -1;
+	route_position start;
+	route_progression_profile progression;
+	route_navigator_profile navigator;
+	bool allow_partial = true;
 };
 
 struct route_topology_side {
@@ -77,10 +126,15 @@ struct route_state_segment {
 
 struct route_state_wall {
 	int type = -1;
+	route_wall_kind kind = route_wall_kind::none;
 	int flags = 0;
 	int keys = -1;
+	route_key_requirement key = route_key_requirement::none;
 	int clip_flags = 0;
 	int trigger = -1;
+	bool locked = false;
+	bool opened = false;
+	bool hidden = false;
 };
 
 struct route_state_trigger {

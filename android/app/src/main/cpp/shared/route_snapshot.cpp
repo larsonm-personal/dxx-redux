@@ -105,6 +105,36 @@ route_trigger_kind normalize_trigger_kind(
 	return route_trigger_kind::other;
 }
 
+route_wall_kind normalize_wall_kind(const level_metadata_scan_view &view,
+                                    int raw_type)
+{
+	if (raw_type < 0)
+		return route_wall_kind::none;
+	if (raw_type == view.wall_type_blastable)
+		return route_wall_kind::blastable;
+	if (raw_type == view.wall_type_door)
+		return route_wall_kind::door;
+	if (raw_type == view.wall_type_illusion)
+		return route_wall_kind::illusion;
+	if (raw_type == view.wall_type_open)
+		return route_wall_kind::open;
+	return route_wall_kind::other;
+}
+
+route_key_requirement normalize_wall_key(const level_metadata_scan_view &view,
+                                         int raw_key)
+{
+	if (raw_key == view.wall_key_none)
+		return route_key_requirement::none;
+	if (raw_key == view.wall_key_blue)
+		return route_key_requirement::blue;
+	if (raw_key == view.wall_key_red)
+		return route_key_requirement::red;
+	if (raw_key == view.wall_key_gold)
+		return route_key_requirement::gold;
+	return route_key_requirement::unknown;
+}
+
 std::uint64_t hash_topology(const route_topology &topology)
 {
 	stable_hasher hasher;
@@ -164,10 +194,15 @@ std::uint64_t hash_state(const route_state &state)
 	}
 	for (const auto &wall : state.walls) {
 		hasher.add_int(wall.type);
+		hasher.add_int(static_cast<int>(wall.kind));
 		hasher.add_int(wall.flags);
 		hasher.add_int(wall.keys);
+		hasher.add_int(static_cast<int>(wall.key));
 		hasher.add_int(wall.clip_flags);
 		hasher.add_int(wall.trigger);
+		hasher.add_bool(wall.locked);
+		hasher.add_bool(wall.opened);
+		hasher.add_bool(wall.hidden);
 	}
 	for (const auto &trigger : state.triggers) {
 		hasher.add_int(trigger.flags);
@@ -344,14 +379,22 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			topology_wall.side = view.wall_side(view.user, wall_index);
 		if (view.wall_type)
 			state_wall.type = view.wall_type(view.user, wall_index);
+		state_wall.kind = normalize_wall_kind(view, state_wall.type);
 		if (view.wall_flags)
 			state_wall.flags = view.wall_flags(view.user, wall_index);
 		if (view.wall_keys)
 			state_wall.keys = view.wall_keys(view.user, wall_index);
+		state_wall.key = normalize_wall_key(view, state_wall.keys);
 		if (view.wall_clip_flags)
 			state_wall.clip_flags = view.wall_clip_flags(view.user, wall_index);
 		if (view.wall_trigger)
 			state_wall.trigger = view.wall_trigger(view.user, wall_index);
+		state_wall.locked = view.wall_flag_door_locked != 0 &&
+		                    (state_wall.flags & view.wall_flag_door_locked) != 0;
+		state_wall.opened = view.wall_flag_door_opened != 0 &&
+		                    (state_wall.flags & view.wall_flag_door_opened) != 0;
+		state_wall.hidden = view.wall_clip_hidden != 0 &&
+		                    (state_wall.clip_flags & view.wall_clip_hidden) != 0;
 	}
 
 	next.topology.hash = hash_topology(next.topology);

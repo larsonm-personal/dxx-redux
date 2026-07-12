@@ -46,7 +46,8 @@ Parity has two separate meanings and both must pass:
   - Expanded the shadow snapshot with normalized D1/D2 trigger kinds, trigger effect links, per-side opener source walls, mutable trigger flags/disabled state, and live progression-object identity, containment, position, boss, and companion state.
   - Added a separate live Guide-Bot snapshot summary for route-only replans; canonical level-load diagnostics are no longer the only observable snapshot and are cleared independently on level changes.
   - Exposed the canonical snapshot summary through introspection without changing route selection or simulation RNG.
-  - Exact opener/action geometry, generation-based invalidation, and profiles/query types remain pending.
+  - Added normalized wall kinds, key requirements, lock/open/hidden state, endpoint kinds, progression and navigator profiles, and the explicit route-query domain type.
+  - Exact opener/action geometry and generation-based invalidation remain pending.
 - [ ] Phase 2 pending: centralize rich edge evaluation after snapshot parity is established.
 
 ## Non-Goals
