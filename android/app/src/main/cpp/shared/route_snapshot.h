@@ -102,6 +102,7 @@ struct route_topology_wall {
 	int segment = -1;
 	int side = -1;
 	route_position target;
+	bool shootable_trigger = false;
 };
 
 struct route_topology_trigger_link {

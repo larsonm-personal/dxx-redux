@@ -307,6 +307,62 @@ bool visible_source_position(
 	return false;
 }
 
+std::vector<route_trigger_source> discover_trigger_sources_internal(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int segment,
+    int side,
+    bool include_in_progress)
+{
+	std::vector<route_trigger_source> result;
+	if (!valid_segment(snapshot, segment) || side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return result;
+	const auto &requested_side = snapshot.topology.segments[segment].sides[side];
+	const int child = requested_side.child;
+	if (!valid_segment(snapshot, child))
+		return result;
+	int target_segment = segment;
+	int target_side = side;
+	if (!side_has_trigger_source(snapshot, progress, target_segment, target_side)) {
+		target_segment = child;
+		target_side = requested_side.reverse_side;
+		if (!side_has_trigger_source(
+		        snapshot, progress, target_segment, target_side))
+			return result;
+	}
+	const auto &target =
+	    snapshot.topology.segments[target_segment].sides[target_side];
+	for (const int source_wall : target.opener_walls) {
+		if (!trigger_source_wall_valid(snapshot, progress, source_wall))
+			continue;
+		const int trigger = snapshot.state.walls[source_wall].trigger;
+		if (!include_in_progress &&
+		    state_flag(progress.trigger_in_progress, trigger))
+			continue;
+		const auto &source_topology = snapshot.topology.walls[source_wall];
+		route_position source_position = source_topology.target;
+		if (!source_position.valid &&
+		    valid_segment(snapshot, source_topology.segment))
+			source_position =
+			    snapshot.topology.segments[source_topology.segment].center;
+		if (!source_position.valid)
+			continue;
+		route_trigger_source source;
+		source.target_segment = target_segment;
+		source.target_side = target_side;
+		source.target_wall = target.wall;
+		source.source_wall = source_wall;
+		source.source_segment = source_topology.segment;
+		source.source_side = source_topology.side;
+		source.trigger = trigger;
+		source.trigger_kind = snapshot.topology.triggers[trigger].kind;
+		source.source_position = source_position;
+		result.push_back(source);
+	}
+	return result;
+}
+
 int key_index(route_key_requirement key)
 {
 	switch (key) {
@@ -511,6 +567,8 @@ route_path_result build_route_path(
 		const auto &edge = search.nodes[result.segments[index]].incoming_edge;
 		if (edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS) {
 			result.has_obstruction = true;
+			result.first_obstruction_segment = result.segments[index - 1];
+			result.first_obstruction_side = result.sides[index - 1];
 			result.first_obstruction = edge;
 			break;
 		}
@@ -613,52 +671,8 @@ std::vector<route_trigger_source> discover_trigger_sources(
     int segment,
     int side)
 {
-	std::vector<route_trigger_source> result;
-	if (!valid_segment(snapshot, segment) || side < 0 ||
-	    side >= LEVEL_METADATA_MAX_SIDES)
-		return result;
-	const auto &requested_side = snapshot.topology.segments[segment].sides[side];
-	const int child = requested_side.child;
-	if (!valid_segment(snapshot, child))
-		return result;
-	int target_segment = segment;
-	int target_side = side;
-	if (!side_has_trigger_source(snapshot, progress, target_segment, target_side)) {
-		target_segment = child;
-		target_side = requested_side.reverse_side;
-		if (!side_has_trigger_source(
-		        snapshot, progress, target_segment, target_side))
-			return result;
-	}
-	const auto &target =
-	    snapshot.topology.segments[target_segment].sides[target_side];
-	for (const int source_wall : target.opener_walls) {
-		if (!trigger_source_wall_valid(snapshot, progress, source_wall))
-			continue;
-		const int trigger = snapshot.state.walls[source_wall].trigger;
-		if (state_flag(progress.trigger_in_progress, trigger))
-			continue;
-		const auto &source_topology = snapshot.topology.walls[source_wall];
-		route_position source_position = source_topology.target;
-		if (!source_position.valid &&
-		    valid_segment(snapshot, source_topology.segment))
-			source_position =
-			    snapshot.topology.segments[source_topology.segment].center;
-		if (!source_position.valid)
-			continue;
-		route_trigger_source source;
-		source.target_segment = target_segment;
-		source.target_side = target_side;
-		source.target_wall = target.wall;
-		source.source_wall = source_wall;
-		source.source_segment = source_topology.segment;
-		source.source_side = source_topology.side;
-		source.trigger = trigger;
-		source.trigger_kind = snapshot.topology.triggers[trigger].kind;
-		source.source_position = source_position;
-		result.push_back(source);
-	}
-	return result;
+	return discover_trigger_sources_internal(
+	    snapshot, progress, segment, side, false);
 }
 
 route_trigger_path_selection select_trigger_firing_path(

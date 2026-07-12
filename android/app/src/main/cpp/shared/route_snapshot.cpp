@@ -185,6 +185,7 @@ std::uint64_t hash_topology(const route_topology &topology)
 		hasher.add_int(wall.segment);
 		hasher.add_int(wall.side);
 		hash_position(hasher, wall.target);
+		hasher.add_bool(wall.shootable_trigger);
 	}
 	for (const auto &trigger : topology.triggers) {
 		hasher.add_int(trigger.raw_type);
@@ -510,6 +511,9 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			                           .segments[topology_wall.segment]
 			                           .sides[topology_wall.side]
 			                           .center;
+		topology_wall.shootable_trigger =
+		    view.wall_is_shootable_trigger &&
+		    view.wall_is_shootable_trigger(view.user, wall_index) != 0;
 		if (view.wall_type)
 			state_wall.type = view.wall_type(view.user, wall_index);
 		state_wall.kind = normalize_wall_kind(view, state_wall.type);

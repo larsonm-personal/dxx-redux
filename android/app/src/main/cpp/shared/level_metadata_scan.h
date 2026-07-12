@@ -241,6 +241,18 @@ typedef struct level_metadata_route_trigger_firing_path_shadow {
 	int terminal_pos_valid;
 } level_metadata_route_trigger_firing_path_shadow;
 
+typedef struct level_metadata_route_trigger_dependency_shadow {
+	int attempted;
+	int resolved;
+	int failed_trigger;
+	int failed_key;
+	double pending_distance;
+	char problem[128];
+	level_metadata_route_progress_shadow progress;
+	int route_step_count;
+	level_metadata_route_step route_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
+} level_metadata_route_trigger_dependency_shadow;
+
 typedef struct level_metadata_visibility_cache_summary {
 	unsigned long long world_hash;
 	unsigned long long hits;
@@ -328,6 +340,12 @@ int level_metadata_scan_route_trigger_firing_path_shadow(
     int seg,
     int side,
     level_metadata_route_trigger_firing_path_shadow *result);
+int level_metadata_scan_route_trigger_dependency_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int seg,
+    int side,
+    level_metadata_route_trigger_dependency_shadow *result);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

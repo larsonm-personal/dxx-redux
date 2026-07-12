@@ -40,6 +40,8 @@ struct route_path_result {
 	std::vector<int> segments;
 	std::vector<int> sides;
 	bool has_obstruction = false;
+	int first_obstruction_segment = -1;
+	int first_obstruction_side = -1;
 	route_edge_decision first_obstruction;
 };
 
@@ -112,6 +114,56 @@ struct route_trigger_path_selection {
 	route_position terminal_position;
 };
 
+enum class route_semantic_step_kind {
+	key = LEVEL_METADATA_ROUTE_KEY,
+	trigger = LEVEL_METADATA_ROUTE_TRIGGER,
+	hidden_door = LEVEL_METADATA_ROUTE_HIDDEN_DOOR
+};
+
+enum class route_activation_kind {
+	pickup_key = LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY,
+	shoot_switch = LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH,
+	fly_through_trigger = LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER,
+	pass_through_trigger = LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER,
+	open_hidden_door = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR
+};
+
+struct route_effect_link {
+	int segment = -1;
+	int side = -1;
+	int wall = -1;
+};
+
+struct route_semantic_step {
+	route_semantic_step_kind kind = route_semantic_step_kind::trigger;
+	int segment = -1;
+	int side = -1;
+	int wall = -1;
+	int trigger = -1;
+	int trigger_raw_type = -1;
+	route_key_requirement key = route_key_requirement::none;
+	route_activation_kind activation =
+	    route_activation_kind::pass_through_trigger;
+	route_position activation_position;
+	route_position aim_position;
+	route_position label_position;
+	double distance_from_previous = 0.0;
+	std::string label;
+	std::string trigger_type_name;
+	std::vector<route_effect_link> opened_links;
+	route_path_result path;
+};
+
+struct route_dependency_result {
+	bool attempted = false;
+	bool resolved = false;
+	route_progress_state progress;
+	std::vector<route_semantic_step> steps;
+	std::string problem;
+	int failed_trigger = -1;
+	int failed_key = -1;
+};
+
 route_search_result search_routes(
     const route_snapshot &snapshot,
     const route_query &query,
@@ -159,6 +211,14 @@ route_trigger_path_selection select_trigger_firing_path(
     const route_query &query,
     const route_progress_state &progress,
     const std::vector<route_trigger_source> &sources,
+    const route_visibility_query &visibility = {});
+
+route_dependency_result resolve_trigger_dependency(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    int segment,
+    int side,
     const route_visibility_query &visibility = {});
 
 route_target_selection select_route_target(

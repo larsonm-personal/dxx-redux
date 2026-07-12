@@ -1432,6 +1432,27 @@ static void metadata_route_context_from_progress_shadow(
 	       sizeof(progress->opened_hidden_walls));
 }
 
+static void metadata_route_context_to_progress_shadow(
+    const metadata_route_context *route,
+    level_metadata_route_progress_shadow *progress)
+{
+	memset(progress, 0, sizeof(*progress));
+	progress->current_seg = route->current_seg;
+	copy_pos(progress->current_pos, route->current_pos);
+	progress->key_mask = route->key_mask;
+	progress->key_in_progress = route->key_in_progress;
+	progress->avoided_key_mask = route->avoided_key_mask;
+	progress->control_center_destroyed = route->control_center_destroyed;
+	memcpy(progress->fired_triggers, route->fired_triggers,
+	       sizeof(progress->fired_triggers));
+	memcpy(progress->trigger_in_progress, route->trigger_in_progress,
+	       sizeof(progress->trigger_in_progress));
+	memcpy(progress->avoided_triggers, route->avoided_triggers,
+	       sizeof(progress->avoided_triggers));
+	memcpy(progress->opened_hidden_walls, route->opened_hidden_walls,
+	       sizeof(progress->opened_hidden_walls));
+}
+
 int level_metadata_scan_route_search_state_shadow(
     const level_metadata_scan_view *view,
     const level_metadata_route_progress_shadow *progress,
@@ -2302,6 +2323,52 @@ static int metadata_route_fire_trigger(
 		return 0;
 	}
 	route->trigger_in_progress[step_block.trigger_num] = 0;
+	return 1;
+}
+
+int level_metadata_scan_route_trigger_dependency_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int seg,
+    int side,
+    level_metadata_route_trigger_dependency_shadow *result)
+{
+	metadata_route_context route;
+	metadata_route_block block;
+	level_metadata_state state;
+	int child;
+
+	if (!view || !progress || !result)
+		return 0;
+	memset(result, 0, sizeof(*result));
+	result->failed_trigger = -1;
+	result->failed_key = -1;
+	metadata_route_context_from_progress_shadow(&route, progress);
+	metadata_route_context_to_progress_shadow(&route, &result->progress);
+	if (!view->segment_child || !valid_segment(view, seg) ||
+	    side < 0 || side >= LEVEL_METADATA_MAX_SIDES)
+		return 1;
+	child = view->segment_child(view->user, seg, side);
+	if (!valid_segment(view, child))
+		return 1;
+	collect_segment_centers(view);
+	collect_route_key_targets(view);
+	if (!metadata_route_edge_trigger_blocker(
+	        view, &route, seg, side, child, &block))
+		return 1;
+	result->attempted = 1;
+	level_metadata_state_clear(&state);
+	result->resolved = metadata_route_fire_trigger(
+	    view, &state, &route, &block, 0);
+	result->failed_trigger = route.failed_trigger;
+	result->failed_key = route.failed_key;
+	result->pending_distance = route.pending_distance;
+	snprintf(result->problem, sizeof(result->problem), "%s",
+	         state.route_problem);
+	metadata_route_context_to_progress_shadow(&route, &result->progress);
+	result->route_step_count = state.route_step_count;
+	memcpy(result->route_steps, state.route_steps,
+	       sizeof(result->route_steps));
 	return 1;
 }
 

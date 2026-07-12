@@ -81,8 +81,9 @@ Parity has two separate meanings and both must pass:
   - Existing unrelated strict diagnostics remain in K_SOS and Levigen edge/search parity, while KCXF2 level 4 still reports shadow data unavailable; none reports a firing-path mismatch.
   - Completed the exact FVI visibility cache shared by metadata recursion, C/C++ shadow comparison, and live Guide-Bot fallback. Wall and object-target rays are keyed by the exact source pose and target, so reachability-only recalculations reuse them while door doorway state, textures, or level geometry changes invalidate the cache through a direct world fingerprint.
   - Added live cache counters and assertions. Counterstrike level 1 reused 18,420 rays after 12,642 evaluations with zero bypasses and zero planner shadow mismatches; strict D2 base-campaign analysis dropped from 18.1 seconds to 3.2 seconds while all 1,274 reviewed route fingerprints and base campaign statuses remained unchanged.
-  - Next slice: port recursive trigger dependency resolution and semantic trigger-step production, including loop diagnostics, opened-link projection, and selected segment-chain retention.
-  - Semantic step production and live behavior remain on the C planner; recursive dependency planning is the next porting boundary.
+  - Next slice in progress: port recursive trigger dependency resolution into a shared semantic result model. Because a trigger source can itself be behind a key, hidden door, or another trigger, this includes transactional prerequisite rollback, loop diagnostics, opened-link projection, and selected segment-chain retention for all three dependency kinds.
+  - Add a legacy-C shadow entry point for one trigger-blocked edge, compare success, diagnostics, progress state, semantic steps, activation and aim poses, opened links, and distances, and exercise direct, visible, nested, and dependency-loop cases before widening corpus comparison.
+  - Semantic step production and live behavior remain on the C planner until this recursive shadow boundary is green across synthetic fixtures, base campaigns, and the reviewed mission corpus.
 
 ## Non-Goals
 

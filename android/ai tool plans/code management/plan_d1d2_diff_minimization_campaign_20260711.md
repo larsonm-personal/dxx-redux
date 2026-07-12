@@ -69,6 +69,9 @@
 - Completed kconfig scaled-render extraction: 148 inherited additions removed
 - Completed OGL viewport and keyboard-gap extraction: 136 inherited additions removed
 - Completed safe OGL MSAA frame-lifecycle slice: 66 inherited additions removed
-- Isolated reduction from these post-refresh tranches: 2,823 inherited additions
-- Live aggregate after concurrent feature work: 339 files, `+46506/-3891` against `upstream/main`
-- Current selected tranche: rerank the remaining low-risk feature seams against the 20-40-line endpoint
+- Completed startup pilot/resume extraction: 130 inherited additions removed
+- Completed restored Netgame count extraction: 30 inherited additions removed
+- Isolated reduction from these post-refresh tranches: 2,983 inherited additions
+- Live aggregate after concurrent feature work: 339 files, `+46346/-3891` against `upstream/main`
+- Endpoint reached for clean mechanical work: the best remaining low-risk slices are about 20-40 lines each
+- Deferred larger items require materially broader authority or stronger fixtures: playsave transaction repair, input-demo command policy, control-layout descriptors, host migration, and D2 classic-demo serialization

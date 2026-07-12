@@ -433,15 +433,19 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C22. Startup resume and pilot arguments
 
+- Status: implementation and dual-platform build validation complete
 - Files: D1 `inferno.c:211-275`; D2 common regions `229-252` and `280-318`
-- Estimated inherited-file reduction: 95-105 lines
+- Exact inherited-file reduction: 130 additions after CMake wiring
 - Proposed boundary: an unconditional startup-resume helper
 - Keep local: D2 classic-demo dump parsing
 - Risk: low-medium
 - Validation: missing-pilot resume in both games plus invalid and missing save paths
+- Completed result: both `inferno.c` files shed 66 additions; command lookup, Android pilot selection, and restore orchestration now have one unconditional shared owner
+- Runtime validation is deferred due to unrelated active guidebot automation on the sole emulator
 
 #### C23. State restore-tail helpers
 
+- Status: reranked and final mechanical count slice complete
 - Files and independent slices:
   - player-count normalization: D1 `2460-2483`, D2 `3246-3272`
   - player flight reset: D1 `2499-2516`, D2 `3290-3307`
@@ -452,6 +456,9 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Keep local: D2 guidebot ownership and route handling
 - Risk: medium
 - Validation: disk save, rewind checkpoint, coop restore, and collision-delay fixtures
+- Live finding: player flight reset was already shared, trailer processing is materially game-specific, and collision-delay selection is a 20-line-per-game follow-up
+- Completed count result: 15 additions removed from each `state.c`, 30 total, by moving live Netgame count normalization into the existing coop restore layer
+- Endpoint: remaining clean C23 slices are now individually in the requested 20-40-line range
 
 #### C24. Shader information-log helpers
 
