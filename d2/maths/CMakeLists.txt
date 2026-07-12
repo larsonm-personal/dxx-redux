@@ -61,6 +61,15 @@ if(NOT ANDROID)
     add_executable(test_playsave_layout
         ../../android/tests/test_playsave_layout.c
         ../../android/app/src/main/cpp/shared/playsave_layout.c)
+
+    add_executable(test_playsave_text
+        ../../android/tests/test_playsave_text.c
+        ../../android/app/src/main/cpp/shared/playsave_text.c
+        ../../android/app/src/main/cpp/shared/playsave_transaction.c)
+
+    add_executable(test_kconfig_android_shared
+        ../../android/tests/test_kconfig_android_shared.c
+        ../../android/app/src/main/cpp/shared/kconfig_android_shared.c)
     target_include_directories(test_playsave_transaction PRIVATE ../../android/app/src/main/cpp/shared)
 
     add_executable(test_android_rewind_policy
@@ -174,6 +183,8 @@ if(NOT ANDROID)
             test_android_save_set
             test_playsave_transaction
             test_playsave_layout
+            test_playsave_text
+            test_kconfig_android_shared
             test_android_rewind_policy
             test_input_demo_rng_mode
             test_android_axis_mailbox

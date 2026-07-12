@@ -51,6 +51,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "auto_net.h"
 #include "coop_save.h"
 #include "playsave_layout.h"
+#include "playsave_text.h"
 #include "songs.h"
 #include "songs_android_shared.h"
 #endif
@@ -1960,77 +1961,12 @@ int plx_read_cockpit_mode(const char *path, int *cockpit_mode)
  */
 int plx_write_cockpit_mode(const char *path, int cockpit_mode)
 {
-	FILE *f = fopen(path, "r");
-	char buf[4096];
-	int buf_len = 0;
-	int in_cockpit = 0;
-	int found_cockpit = 0;
-	int wrote_mode = 0;
-	char tmp[64];
+	char line[32];
+	struct playsave_text_entry entry = {"mode=", line};
 
-#define PLX_BUF_APPEND(s) do { \
-		int _slen = (int)strlen(s); \
-		if (buf_len + _slen < (int)sizeof(buf)) { \
-			memcpy(buf + buf_len, s, _slen); \
-			buf_len += _slen; \
-		} \
-	} while (0)
-
-#define PLX_APPEND_MODE() do { \
-		snprintf(tmp, sizeof(tmp), "mode=%i\n", cockpit_mode); \
-		PLX_BUF_APPEND(tmp); \
-		wrote_mode = 1; \
-	} while (0)
-
-	if (f) {
-		char line[256];
-		while (fgets(line, sizeof(line), f)) {
-			if (!in_cockpit && !d_strnicmp(line, "[cockpit]", 9)) {
-				found_cockpit = 1;
-				in_cockpit = 1;
-				PLX_BUF_APPEND(line);
-				continue;
-			}
-			if (in_cockpit && !d_strnicmp(line, "[end]", 5)) {
-				if (!wrote_mode)
-					PLX_APPEND_MODE();
-				PLX_BUF_APPEND(line);
-				in_cockpit = 0;
-				continue;
-			}
-			if (in_cockpit && !d_strnicmp(line, "mode=", 5)) {
-				PLX_APPEND_MODE();
-				continue;
-			}
-			PLX_BUF_APPEND(line);
-		}
-		fclose(f);
-	}
-
-	if (in_cockpit) {
-		if (!wrote_mode)
-			PLX_APPEND_MODE();
-		PLX_BUF_APPEND("[end]\n");
-	}
-
-	if (!found_cockpit) {
-		if (buf_len == 0)
-			PLX_BUF_APPEND("[D1X Options]\n");
-		PLX_BUF_APPEND("[cockpit]\n");
-		PLX_APPEND_MODE();
-		PLX_BUF_APPEND("[end]\n");
-	}
-
-#undef PLX_BUF_APPEND
-#undef PLX_APPEND_MODE
-
-	f = fopen(path, "w");
-	if (!f) return 0;
-	fwrite(buf, 1, buf_len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-	return 1;
+	snprintf(line, sizeof(line), "mode=%i\n", cockpit_mode);
+	return playsave_text_update_section(path, "[D1X Options]\n", "[cockpit]",
+	                                    &entry, 1);
 }
 /*
  * Read weapon ordering from a D1 .plx text file.
@@ -2101,72 +2037,25 @@ int plx_write_weapon_order(const char *path,
                            const ubyte *primary, int prim_len,
                            const ubyte *secondary, int sec_len)
 {
-	FILE *f = fopen(path, "r");
+	char primary_line[128];
+	char secondary_line[128];
+	struct playsave_text_entry entries[2];
 
-	char buf[4096];
-	int buf_len = 0;
-	int in_reorder = 0;
-	int wrote_reorder = 0;
-
-#define PLX_BUF_APPEND(s) do { \
-		int _slen = (int)strlen(s); \
-		if (buf_len + _slen < (int)sizeof(buf)) { \
-			memcpy(buf + buf_len, s, _slen); \
-			buf_len += _slen; \
-		} \
-	} while (0)
-
-	char tmp[256];
-	/* Write the reorder section into the buffer */
-#define PLX_WRITE_REORDER() do { \
-		PLX_BUF_APPEND("[weapon reorder]\n"); \
-		snprintf(tmp, sizeof(tmp), \
-		         "primary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n", \
-		         primary[0], primary[1], primary[2], primary[3], \
-		         primary[4], primary[5], prim_len > 6 ? primary[6] : 0); \
-		PLX_BUF_APPEND(tmp); \
-		snprintf(tmp, sizeof(tmp), \
-		         "secondary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n", \
-		         secondary[0], secondary[1], secondary[2], \
-		         secondary[3], secondary[4], sec_len > 5 ? secondary[5] : 0); \
-		PLX_BUF_APPEND(tmp); \
-		PLX_BUF_APPEND("[end]\n"); \
-		wrote_reorder = 1; \
-	} while (0)
-
-	if (f) {
-		char line[256];
-		while (fgets(line, sizeof(line), f)) {
-			if (strstr(line, "[weapon reorder]") || strstr(line, "[WEAPON REORDER]")) {
-				in_reorder = 1;
-				PLX_WRITE_REORDER();
-				continue;
-			}
-			if (in_reorder) {
-				if (strstr(line, "[end]") || strstr(line, "[END]"))
-					in_reorder = 0;
-				continue;
-			}
-			PLX_BUF_APPEND(line);
-		}
-		fclose(f);
-	}
-
-	if (!wrote_reorder) {
-		if (buf_len == 0)
-			PLX_BUF_APPEND("[D1X Options]\n");
-		PLX_WRITE_REORDER();
-	}
-
-#undef PLX_BUF_APPEND
-#undef PLX_WRITE_REORDER
-
-	f = fopen(path, "w");
-	if (!f) return 0;
-	fwrite(buf, 1, buf_len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-	return 1;
+	if (!primary || !secondary || prim_len < 6 || sec_len < 5)
+		return 0;
+	snprintf(primary_line, sizeof(primary_line),
+	         "primary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",
+	         primary[0], primary[1], primary[2], primary[3], primary[4],
+	         primary[5], prim_len > 6 ? primary[6] : 0);
+	snprintf(secondary_line, sizeof(secondary_line),
+	         "secondary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",
+	         secondary[0], secondary[1], secondary[2], secondary[3],
+	         secondary[4], sec_len > 5 ? secondary[5] : 0);
+	entries[0].key = "primary=";
+	entries[0].line = primary_line;
+	entries[1].key = "secondary=";
+	entries[1].line = secondary_line;
+	return playsave_text_update_section(path, "[D1X Options]\n",
+	                                    "[weapon reorder]", entries, 2);
 }
 #endif /* ANDROID */

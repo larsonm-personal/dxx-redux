@@ -11,6 +11,7 @@
 #include "playsave.h"
 #include "strutil.h"
 #include "playsave_android_shared.h"
+#include "playsave_text.h"
 #include "playsave_transaction.h"
 
 static const char *playsave_android_options_header(void)
@@ -143,77 +144,31 @@ int plx_read_music_prefs(const char *path, int *source, int *prefer_mission, int
 
 int plx_write_music_prefs(const char *path, int source, int prefer_mission, int play_order, int volume)
 {
-	FILE *f = fopen(path, "r");
-	char buf[32768];
-	int buf_len = 0;
-	int in_music = 0;
-	int found_music = 0;
-	int wrote_music = 0;
-	char tmp[128];
+	char source_line[64];
+	char prefer_line[32];
+	char order_line[32];
+	char volume_line[32];
+	struct playsave_text_entry entries[4];
 
 	source = playsave_android_clamp_int(source, 0, 3);
 	play_order = playsave_android_clamp_int(play_order, 0, 2);
 	volume = playsave_android_clamp_int(volume, 0, 8);
-
-#define PLAYSAVE_BUF_APPEND(s)                             \
-	do {                                                   \
-		int playsave_slen = (int) strlen(s);               \
-		if (buf_len + playsave_slen < (int) sizeof(buf)) { \
-			memcpy(buf + buf_len, s, playsave_slen);       \
-			buf_len += playsave_slen;                      \
-		}                                                  \
-	} while (0)
-
-#define PLAYSAVE_APPEND_MUSIC()                                                                     \
-	do {                                                                                            \
-		PLAYSAVE_BUF_APPEND("[music]\n");                                                           \
-		snprintf(tmp, sizeof(tmp), "source=%s\n", playsave_android_music_source_to_string(source)); \
-		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
-		snprintf(tmp, sizeof(tmp), "prefermission=%i\n", prefer_mission ? 1 : 0);                   \
-		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
-		snprintf(tmp, sizeof(tmp), "playorder=%i\n", play_order);                                   \
-		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
-		snprintf(tmp, sizeof(tmp), "volume=%i\n", volume);                                          \
-		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
-		PLAYSAVE_BUF_APPEND("[end]\n");                                                             \
-		wrote_music = 1;                                                                            \
-	} while (0)
-
-	if (f) {
-		char line[256];
-		while (fgets(line, sizeof(line), f)) {
-			if (!in_music && !d_strnicmp(line, "[music]", 7)) {
-				found_music = 1;
-				in_music = 1;
-				PLAYSAVE_APPEND_MUSIC();
-				continue;
-			}
-			if (in_music) {
-				if (!d_strnicmp(line, "[end]", 5))
-					in_music = 0;
-				continue;
-			}
-			PLAYSAVE_BUF_APPEND(line);
-		}
-		fclose(f);
-	}
-
-	if (!found_music) {
-		if (buf_len == 0)
-			PLAYSAVE_BUF_APPEND(playsave_android_options_header());
-		PLAYSAVE_APPEND_MUSIC();
-	}
-
-#undef PLAYSAVE_BUF_APPEND
-#undef PLAYSAVE_APPEND_MUSIC
-
-	f = fopen(path, "w");
-	if (!f) return 0;
-	fwrite(buf, 1, buf_len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-	return wrote_music;
+	snprintf(source_line, sizeof(source_line), "source=%s\n",
+	         playsave_android_music_source_to_string(source));
+	snprintf(prefer_line, sizeof(prefer_line), "prefermission=%i\n",
+	         prefer_mission ? 1 : 0);
+	snprintf(order_line, sizeof(order_line), "playorder=%i\n", play_order);
+	snprintf(volume_line, sizeof(volume_line), "volume=%i\n", volume);
+	entries[0].key = "source=";
+	entries[0].line = source_line;
+	entries[1].key = "prefermission=";
+	entries[1].line = prefer_line;
+	entries[2].key = "playorder=";
+	entries[2].line = order_line;
+	entries[3].key = "volume=";
+	entries[3].line = volume_line;
+	return playsave_text_update_section(path, playsave_android_options_header(),
+	                                    "[music]", entries, 4);
 }
 
 int plx_read_robot_hostage_counts(const char *path, int *show_counts)
@@ -246,79 +201,13 @@ int plx_read_robot_hostage_counts(const char *path, int *show_counts)
 
 int plx_write_robot_hostage_counts(const char *path, int show_counts)
 {
-	FILE *f = fopen(path, "r");
-	char buf[32768];
-	int buf_len = 0;
-	int in_cockpit = 0;
-	int found_cockpit = 0;
-	int wrote_counts = 0;
-	char tmp[64];
+	char line[64];
+	struct playsave_text_entry entry = { "robothostagecounts=", line };
 
-#define PLAYSAVE_BUF_APPEND(s)                             \
-	do {                                                   \
-		int playsave_slen = (int) strlen(s);               \
-		if (buf_len + playsave_slen < (int) sizeof(buf)) { \
-			memcpy(buf + buf_len, s, playsave_slen);       \
-			buf_len += playsave_slen;                      \
-		}                                                  \
-	} while (0)
-
-#define PLAYSAVE_APPEND_COUNTS()                                                    \
-	do {                                                                            \
-		snprintf(tmp, sizeof(tmp), "robothostagecounts=%i\n", show_counts ? 1 : 0); \
-		PLAYSAVE_BUF_APPEND(tmp);                                                   \
-		wrote_counts = 1;                                                           \
-	} while (0)
-
-	if (f) {
-		char line[256];
-		while (fgets(line, sizeof(line), f)) {
-			if (!in_cockpit && !d_strnicmp(line, "[cockpit]", 9)) {
-				found_cockpit = 1;
-				in_cockpit = 1;
-				PLAYSAVE_BUF_APPEND(line);
-				continue;
-			}
-			if (in_cockpit && !d_strnicmp(line, "[end]", 5)) {
-				if (!wrote_counts)
-					PLAYSAVE_APPEND_COUNTS();
-				PLAYSAVE_BUF_APPEND(line);
-				in_cockpit = 0;
-				continue;
-			}
-			if (in_cockpit && !d_strnicmp(line, "robothostagecounts=", 19)) {
-				PLAYSAVE_APPEND_COUNTS();
-				continue;
-			}
-			PLAYSAVE_BUF_APPEND(line);
-		}
-		fclose(f);
-	}
-
-	if (in_cockpit) {
-		if (!wrote_counts)
-			PLAYSAVE_APPEND_COUNTS();
-		PLAYSAVE_BUF_APPEND("[end]\n");
-	}
-
-	if (!found_cockpit) {
-		if (buf_len == 0)
-			PLAYSAVE_BUF_APPEND(playsave_android_options_header());
-		PLAYSAVE_BUF_APPEND("[cockpit]\n");
-		PLAYSAVE_APPEND_COUNTS();
-		PLAYSAVE_BUF_APPEND("[end]\n");
-	}
-
-#undef PLAYSAVE_BUF_APPEND
-#undef PLAYSAVE_APPEND_COUNTS
-
-	f = fopen(path, "w");
-	if (!f) return 0;
-	fwrite(buf, 1, buf_len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-	return 1;
+	snprintf(line, sizeof(line), "robothostagecounts=%i\n",
+	         show_counts ? 1 : 0);
+	return playsave_text_update_section(path, playsave_android_options_header(),
+	                                    "[cockpit]", &entry, 1);
 }
 
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color)
@@ -357,97 +246,20 @@ int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_co
 
 int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color)
 {
-	FILE *f = fopen(path, "r");
-	char buf[32768];
-	int buf_len = 0;
-	int in_graphics = 0;
-	int found_graphics = 0;
-	int wrote_alpha = 0;
-	int wrote_dynlight = 0;
-	char tmp[64];
+	char alpha_line[32];
+	char dynlight_line[32];
+	struct playsave_text_entry entries[2];
 
-#define PLAYSAVE_BUF_APPEND(s)                             \
-	do {                                                   \
-		int playsave_slen = (int) strlen(s);               \
-		if (buf_len + playsave_slen < (int) sizeof(buf)) { \
-			memcpy(buf + buf_len, s, playsave_slen);       \
-			buf_len += playsave_slen;                      \
-		}                                                  \
-	} while (0)
-
-#define PLAYSAVE_APPEND_ALPHA()                                                 \
-	do {                                                                        \
-		snprintf(tmp, sizeof(tmp), "alphaeffects=%i\n", alpha_effects ? 1 : 0); \
-		PLAYSAVE_BUF_APPEND(tmp);                                               \
-		wrote_alpha = 1;                                                        \
-	} while (0)
-
-#define PLAYSAVE_APPEND_DYNLIGHT()                                                \
-	do {                                                                          \
-		snprintf(tmp, sizeof(tmp), "dynlightcolor=%i\n", dynlight_color ? 1 : 0); \
-		PLAYSAVE_BUF_APPEND(tmp);                                                 \
-		wrote_dynlight = 1;                                                       \
-	} while (0)
-
-	if (f) {
-		char line[256];
-		while (fgets(line, sizeof(line), f)) {
-			if (!in_graphics && !d_strnicmp(line, "[graphics]", 10)) {
-				found_graphics = 1;
-				in_graphics = 1;
-				PLAYSAVE_BUF_APPEND(line);
-				continue;
-			}
-			if (in_graphics && !d_strnicmp(line, "[end]", 5)) {
-				if (!wrote_alpha)
-					PLAYSAVE_APPEND_ALPHA();
-				if (!wrote_dynlight)
-					PLAYSAVE_APPEND_DYNLIGHT();
-				PLAYSAVE_BUF_APPEND(line);
-				in_graphics = 0;
-				continue;
-			}
-			if (in_graphics && !d_strnicmp(line, "alphaeffects=", 13)) {
-				PLAYSAVE_APPEND_ALPHA();
-				continue;
-			}
-			if (in_graphics && !d_strnicmp(line, "dynlightcolor=", 14)) {
-				PLAYSAVE_APPEND_DYNLIGHT();
-				continue;
-			}
-			PLAYSAVE_BUF_APPEND(line);
-		}
-		fclose(f);
-	}
-
-	if (in_graphics) {
-		if (!wrote_alpha)
-			PLAYSAVE_APPEND_ALPHA();
-		if (!wrote_dynlight)
-			PLAYSAVE_APPEND_DYNLIGHT();
-		PLAYSAVE_BUF_APPEND("[end]\n");
-	}
-
-	if (!found_graphics) {
-		if (buf_len == 0)
-			PLAYSAVE_BUF_APPEND(playsave_android_options_header());
-		PLAYSAVE_BUF_APPEND("[graphics]\n");
-		PLAYSAVE_APPEND_ALPHA();
-		PLAYSAVE_APPEND_DYNLIGHT();
-		PLAYSAVE_BUF_APPEND("[end]\n");
-	}
-
-#undef PLAYSAVE_BUF_APPEND
-#undef PLAYSAVE_APPEND_ALPHA
-#undef PLAYSAVE_APPEND_DYNLIGHT
-
-	f = fopen(path, "w");
-	if (!f) return 0;
-	fwrite(buf, 1, buf_len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-	return 1;
+	snprintf(alpha_line, sizeof(alpha_line), "alphaeffects=%i\n",
+	         alpha_effects ? 1 : 0);
+	snprintf(dynlight_line, sizeof(dynlight_line), "dynlightcolor=%i\n",
+	         dynlight_color ? 1 : 0);
+	entries[0].key = "alphaeffects=";
+	entries[0].line = alpha_line;
+	entries[1].key = "dynlightcolor=";
+	entries[1].line = dynlight_line;
+	return playsave_text_update_section(path, playsave_android_options_header(),
+	                                    "[graphics]", entries, 2);
 }
 
 int playsave_android_read_u16le(FILE *f, int *value)

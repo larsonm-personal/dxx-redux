@@ -27,7 +27,7 @@ object NativePilotPatcher {
     ): Int
 
     /**
-     * Build a 60-byte joystick KeySettings array from (kc_index, value) pairs.
+     * Build the selected game's joystick KeySettings array from (kc_index, value) pairs.
      * The C side initializes invert slots to 0, others to 0xFF, then fills
      * the specified indices.  Indices are kc_joystick[] positions shared with
      * BUTTON_KC_INDEX / AXIS_KC_INDEX in ControllerConfigPage.kt.
@@ -36,6 +36,7 @@ object NativePilotPatcher {
     external fun nativeBuildJoySettings(
         indices: IntArray,
         values: IntArray,
+        game: String,
     ): ByteArray
 
     /**

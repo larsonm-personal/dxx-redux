@@ -54,6 +54,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 
 #ifdef ANDROID
+#include "kconfig_android_shared.h"
 #include "android_log.h"
 #include "android_menu_scale.h"
 #ifdef INTROSPECT_ON
@@ -2044,17 +2045,9 @@ void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value
  */
 void kconfig_fill_joy_settings(const int *indices, const int *values, int count, ubyte *out)
 {
-	int i;
-	for (i = 0; i < MAX_CONTROLS; i++) {
-		if (i < NUM_JOYSTICK_CONTROLS && kc_joystick[i].type == BT_INVERT)
-			out[i] = 0;
-		else
-			out[i] = 0xFF;
-	}
-	for (i = 0; i < count; i++) {
-		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
-			out[indices[i]] = (ubyte)(values[i] & 0xFF);
-	}
+	kconfig_android_fill_joy_settings(
+		kconfig_android_get_layout(KCONFIG_ANDROID_D1), indices, values,
+		count, out, MAX_CONTROLS);
 }
 
 /*
@@ -2063,12 +2056,8 @@ void kconfig_fill_joy_settings(const int *indices, const int *values, int count,
  */
 void kconfig_fill_kb_settings(const int *indices, const int *values, int count, ubyte *out)
 {
-	int i;
-	memcpy(out, DefaultKeySettings[0], MAX_CONTROLS);
-	for (i = 0; i < count; i++) {
-		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
-			out[indices[i]] = (ubyte)(values[i] & 0xFF);
-	}
+	kconfig_android_fill_kb_settings(DefaultKeySettings[0], indices, values,
+		count, out, MAX_CONTROLS);
 }
 
 /*
@@ -2081,23 +2070,7 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	memcpy(joy_out, DefaultKeySettings[1], MAX_CONTROLS);
 	memcpy(mouse_out, DefaultKeySettings[2], MAX_CONTROLS);
 
-	/* Override DOS 2-axis joystick defaults with Android 4-axis gamepad layout.
-	 * Must match android_apply_gamepad_defaults() in android_gamepad_config.cpp. */
-	joy_out[2]  = 21;  /* Accelerate = +RT axis button */
-	joy_out[3]  = 19;  /* Reverse    = +LT axis button */
-	joy_out[13] = 3;   /* Pitch U/D  = axis 3 (RY) */
-	joy_out[15] = 2;   /* Turn L/R   = axis 2 (RX) */
-	joy_out[17] = 0;   /* Slide L/R  = axis 0 (LX) */
-	joy_out[23] = 1;   /* Throttle   = axis 1 (LY) */
-	joy_out[6]  = 24;  /* Slide Left = DLeft virtual button */
-	joy_out[7]  = 25;  /* Slide Right= DRight virtual button */
-	joy_out[8]  = 22;  /* Slide Up   = DUp virtual button */
-	joy_out[9]  = 23;  /* Slide Down = DDown virtual button */
-	joy_out[19] = 7;   /* Slide U/D  = axis 7 (SU, virtual) */
-	joy_out[21] = 6;   /* Bank L/R   = axis 6 (BK, virtual) */
-	joy_out[4]  = 2;   /* Fire Flare    = X button */
-	joy_out[27] = 6;   /* Automap       = Select button */
-	joy_out[44] = 4;   /* Cycle Primary = L1 button */
-	joy_out[45] = 5;   /* Cycle Second. = R1 button */
+	kconfig_android_apply_default_overrides(
+		kconfig_android_get_layout(KCONFIG_ANDROID_D1), joy_out, MAX_CONTROLS);
 }
 #endif /* ANDROID */

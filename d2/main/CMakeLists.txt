@@ -109,10 +109,12 @@ target_include_directories(dxx-redux-d2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(ANDROID)
     target_sources(dxx-redux-d2 PRIVATE
+        ../../android/app/src/main/cpp/shared/kconfig_android_shared.c
         ../../android/app/src/main/cpp/shared/multi_save_transfer.c
         ../../android/app/src/main/cpp/shared/state_android_shared.c
         ../../android/app/src/main/cpp/shared/playsave_android_shared.c
         ../../android/app/src/main/cpp/shared/playsave_layout.c
+        ../../android/app/src/main/cpp/shared/playsave_text.c
         ../../android/app/src/main/cpp/shared/playsave_transaction.c)
 endif()
 

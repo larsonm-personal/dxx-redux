@@ -46,6 +46,7 @@ using json = nlohmann::json;
 extern "C" {
 #include "shared/android_graphics_options.h"
 #include "shared/android_axis_mailbox.h"
+#include "shared/kconfig_android_shared.h"
 #include "playsave.h"
 #include "kconfig.h"
 #include "joy.h"
@@ -353,20 +354,29 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
  */
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(
-    JNIEnv *env, jclass, jintArray jindices, jintArray jvalues)
+    JNIEnv *env, jclass, jintArray jindices, jintArray jvalues, jstring jgame)
 {
-	jint count = env->GetArrayLength(jindices);
+	jint index_count = env->GetArrayLength(jindices);
+	jint value_count = env->GetArrayLength(jvalues);
+	jint count = index_count < value_count ? index_count : value_count;
 	jint *indices = env->GetIntArrayElements(jindices, NULL);
 	jint *values = env->GetIntArrayElements(jvalues, NULL);
+	const char *game = env->GetStringUTFChars(jgame, NULL);
+	const kconfig_android_layout *layout = kconfig_android_get_layout(
+	    !strcmp(game, "d1") ? KCONFIG_ANDROID_D1 : KCONFIG_ANDROID_D2);
 
 	ubyte out[MAX_CONTROLS];
-	kconfig_fill_joy_settings((const int *) indices, (const int *) values, (int) count, out);
+	kconfig_android_fill_joy_settings(layout, (const int *) indices,
+	                                  (const int *) values, (int) count, out,
+	                                  layout->settings_size);
 
+	env->ReleaseStringUTFChars(jgame, game);
 	env->ReleaseIntArrayElements(jvalues, values, JNI_ABORT);
 	env->ReleaseIntArrayElements(jindices, indices, JNI_ABORT);
 
-	jbyteArray result = env->NewByteArray(MAX_CONTROLS);
-	env->SetByteArrayRegion(result, 0, MAX_CONTROLS, (const jbyte *) out);
+	jbyteArray result = env->NewByteArray((jsize) layout->settings_size);
+	env->SetByteArrayRegion(result, 0, (jsize) layout->settings_size,
+	                        (const jbyte *) out);
 	return result;
 }
 

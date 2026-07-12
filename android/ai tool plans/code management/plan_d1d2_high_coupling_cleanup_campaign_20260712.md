@@ -15,13 +15,22 @@ Process the remaining high-value D1/D2 diff-minimization candidates with the fix
 
 ### H01. Playsave transactional repair and format fixtures
 
-- [ ] Refresh the live D1/D2 launcher-bridge layout audit against current code
-- [ ] Add byte-accurate D1/D2 PLR and PLX fixtures covering supported versions and layout variants
-- [ ] Add short-file, malformed-section, oversized-PLX, and injected-write-failure coverage
-- [ ] Introduce atomic shared I/O and bounded PLX rewrite primitives
-- [ ] Correct layout/version handling through compact per-game descriptors kept next to canonical engine format knowledge
-- [ ] Extract common launcher bridge mechanisms and minimize inherited `playsave.c`/header churn
-- [ ] Build and run host, Android, and launcher integration coverage
+- [x] Refresh the live D1/D2 launcher-bridge layout audit against current code
+- [x] Add byte-accurate D1/D2 PLR and PLX fixtures covering supported versions and layout variants
+- [x] Add short-file, malformed-section, oversized-PLX, and injected-write-failure coverage
+- [x] Introduce atomic shared I/O and bounded PLX rewrite primitives
+- [x] Correct layout/version handling through compact per-game descriptors kept next to canonical engine format knowledge
+- [x] Extract common launcher bridge mechanisms and minimize inherited `playsave.c`/header churn
+- [x] Build and run host and all-ABI Android coverage; JNI callers compile against the repaired bridge
+
+H01 evidence:
+
+- D1 fixtures cover versions 4-8, shareware and registered v7/v8 layouts, and both 8-byte D1X variants
+- D2 fixtures cover versions 17-24 structural boundaries and byte-swapped v24 headers
+- Atomic failure fixtures cover write, sync, and replace failures without original-file mutation
+- PLX fixtures preserve a 65,537-byte payload, unknown keys, outer `[end]` placement, and unterminated target-section repair
+- Windows D1/D2 builds and all six focused executables pass
+- Android native builds pass for arm64-v8a, armeabi-v7a, and x86_64
 
 ### H02. Kconfig launcher control-layout descriptors
 
@@ -72,4 +81,5 @@ Process the remaining high-value D1/D2 diff-minimization candidates with the fix
 ## Current status
 
 - [x] Campaign order established with demo-breaking work last
-- [ ] H01 playsave audit and fixture design in progress
+- [x] H01 playsave transactional repair and format fixtures complete
+- [ ] H02 Kconfig descriptor audit in progress

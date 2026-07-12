@@ -338,8 +338,8 @@ internal fun saveConfig(
 ) {
     val d1Result = buildJoyPairs(bindings, inverts, "d1")
     val d2Result = buildJoyPairs(bindings, inverts, "d2")
-    val d1JoySettings = buildJoySettingsArray(d1Result, "d1")
-    val d2JoySettings = buildJoySettingsArray(d2Result, "d2")
+    val d1JoySettings = NativePilotPatcher.nativeBuildJoySettings(d1Result.indices, d1Result.values, "d1")
+    val d2JoySettings = NativePilotPatcher.nativeBuildJoySettings(d2Result.indices, d2Result.values, "d2")
     val joySettings = if (gameVariant == "d1") d1JoySettings else d2JoySettings
 
     val activeSettings = joySettings
