@@ -54,7 +54,7 @@ H02 evidence:
 - [x] Reconcile existing host-migration plans and current implementation
 - [x] Add deterministic host-loss/disconnect coverage before extraction
 - [x] Separate common election/reset/ownership mechanics from D2-only ownership transfer
-- [ ] Validate two-emulator host loss, reconnect, object ownership, and guidebot authority
+- [x] Validate two-emulator host loss, reconnect, object ownership, and guidebot authority
 
 H03 implementation evidence:
 
@@ -62,7 +62,10 @@ H03 implementation evidence:
 - Shared runtime code now owns election, rewind reset, object ownership reset, powerup recount, migration metadata output, and Kotlin notification
 - D2 retains its Guide-Bot ownership handoff after the common transition; the focused D2 escort-owner policy fixture passes
 - D1 and D2 `multi.c` shed 54 and 56 inherited additions respectively, reducing combined inherited additions by 110
-- Windows D1/D2 builds, both host-migration policy executables, and the combined all-ABI Android build pass; two-emulator acceptance remains pending
+- Windows D1/D2 builds, both host-migration policy executables, and the combined all-ABI Android build pass
+- D2 two-emulator acceptance passes initial PDATA, both host elections, both port-42425 rejoins, synchronized-object parity, Guide-Bot generation/ownership parity, and post-rejoin PDATA
+- D1 two-emulator acceptance passes the corresponding two elections and rejoins with fresh process/introspection gates, synchronized-object parity, owner reset, and sustained PDATA
+- Migrated-master transport paths now address the elected slot rather than slot 0; D1's Android full-game-info packet carries the elected master slot like D2
 
 ### H04. Private newmenu rendering state
 
@@ -119,8 +122,8 @@ H05 implementation evidence:
 - [x] H01 playsave transactional repair and format fixtures complete
 - [x] H02 Kconfig launcher control-layout descriptors complete
 - [x] H03 host-migration implementation and host fixtures complete
-- [ ] H03 two-emulator acceptance pending
+- [x] H03 D1/D2 two-emulator acceptance complete
 - [x] H04-H05 implementation, combined Android build, and focused fixture validation complete
 - [x] H04 D1/D2 emulator acceptance complete
 - [x] H02 D1/D2 real-pilot launcher JNI roundtrip complete
-- [ ] H03 two-emulator acceptance pending
+- [x] H03 two-emulator acceptance complete

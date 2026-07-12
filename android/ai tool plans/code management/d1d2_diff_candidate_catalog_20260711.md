@@ -496,11 +496,12 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C27. Host migration core
 
-- Files: `d1/main/multi.c:2795-2851`, `d2/main/multi.c:2915-2973`
-- Estimated inherited-file reduction: 105-110 lines
-- Common behavior: election, reset, object ownership, powerup caps, JSON output, and notification
-- Keep local: D2 later ownership transfer
-- Risk: high; defer until automated host-disconnect coverage is reliable
+- Status: shared policy/runtime boundary implemented and validated
+- Boundary: shared code owns deterministic election, rewind reset, complete object-owner reset, powerup recount, migration metadata output, and Kotlin notification
+- Keep local: D1/D2 disconnect side effects and D2 Guide-Bot ownership transfer
+- Exact inherited result: D1 `multi.c` shed 54 additions and D2 shed 56 additions, removing 110 inherited additions combined
+- Transport follow-through: reliable MDATA/ACK, PDATA, queue, ping, endlevel, proxy, observer, sync-abort, and leave paths address the elected master/lower-numbered peers; D1 Android game-info/sync carries the elected master slot
+- Validation: focused D1/D2 host-migration policy fixtures, D2 escort-owner policy, Windows D1/D2, all configured Android ABIs, and full D1/D2 two-emulator two-swap host-loss/rejoin cycles pass. D2 also verifies Guide-Bot generation/authority parity.
 
 #### C28. Android virtual-gamepad registration
 

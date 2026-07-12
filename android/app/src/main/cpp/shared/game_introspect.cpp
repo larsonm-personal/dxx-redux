@@ -788,7 +788,7 @@ static json serialize_level_metadata_route()
 
 static json serialize_guidebot_route_analysis()
 {
-	const level_metadata_state *metadata = level_metadata_get_state();
+	const level_metadata_state *metadata = level_metadata_get_live_route_state();
 	json result;
 	json steps = json::array();
 	int count = 0;
@@ -880,7 +880,10 @@ static json serialize_guidebot()
 	result["secret_goal_seg"] = escort_get_secret_goal_seg();
 	result["secret_goal_side"] = escort_get_secret_goal_side();
 #ifdef __ANDROID__
-	const level_metadata_state *route_metadata = level_metadata_get_state();
+	const level_metadata_state *route_metadata = level_metadata_get_live_route_state();
+	route_planner_plan_summary live_plan = {};
+	const bool live_plan_available =
+	    level_metadata_get_live_route_plan_summary(&live_plan) != 0;
 
 	result["route_goal_active"] = (bool) escort_get_route_goal_active();
 	result["route_goal_label"] = escort_get_route_goal_label();
@@ -907,6 +910,17 @@ static json serialize_guidebot()
 	result["route_last_replan_reason"] = escort_get_route_last_replan_reason();
 	result["route_metadata_rescan_count"] = escort_get_route_metadata_rescan_count();
 	result["route_guidance_full_search_count"] = escort_get_route_guidance_full_search_count();
+	result["route_planner_source"] = live_plan_available ? "shared_cpp" : "unavailable";
+	result["route_first_pending_step"] =
+	    live_plan_available ? live_plan.first_pending_step : -1;
+	result["route_first_pending_path_segment_count"] =
+	    live_plan_available ? live_plan.first_pending_path_segment_count : 0;
+	result["route_first_pending_path_terminal_seg"] =
+	    live_plan_available ? live_plan.first_pending_path_terminal_segment : -1;
+	result["route_selector_compare_count"] = escort_get_route_selector_compare_count();
+	result["route_selector_mismatch_count"] = escort_get_route_selector_mismatch_count();
+	result["route_selector_shared_index"] = escort_get_route_selector_shared_index();
+	result["route_selector_legacy_index"] = escort_get_route_selector_legacy_index();
 	result["unexplored_component_size"] = escort_get_unexplored_component_size();
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
 	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();

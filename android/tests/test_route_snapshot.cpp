@@ -6,6 +6,7 @@
 #include "route_planner_c.h"
 
 #include <cassert>
+#include <cstring>
 #include <cstdlib>
 #include <cstdio>
 #include <string>
@@ -410,6 +411,47 @@ level_metadata_scan_view make_view(test_level &level)
 	return view;
 }
 
+void assert_route_projection_matches(
+    const level_metadata_state &legacy,
+    const level_metadata_state &shared)
+{
+	assert(legacy.route_status == shared.route_status);
+	assert(std::strcmp(legacy.route_problem, shared.route_problem) == 0);
+	assert(std::strcmp(legacy.route_note, shared.route_note) == 0);
+	assert(legacy.route_step_count == shared.route_step_count);
+	assert(legacy.travel_distance == shared.travel_distance);
+	assert(legacy.travel_time_seconds == shared.travel_time_seconds);
+	for (int index = 0; index < legacy.route_step_count; ++index) {
+		const auto &left = legacy.route_steps[index];
+		const auto &right = shared.route_steps[index];
+		assert(left.kind == right.kind);
+		assert(left.seg == right.seg);
+		assert(left.side == right.side);
+		assert(left.wall_num == right.wall_num);
+		assert(left.trigger_num == right.trigger_num);
+		assert(left.trigger_type == right.trigger_type);
+		assert(left.key_index == right.key_index);
+		assert(left.activation_kind == right.activation_kind);
+		assert(left.activation_pos_valid == right.activation_pos_valid);
+		assert(left.aim_pos_valid == right.aim_pos_valid);
+		assert(left.label_pos_valid == right.label_pos_valid);
+		assert(left.distance_from_previous == right.distance_from_previous);
+		assert(std::strcmp(left.label, right.label) == 0);
+		assert(std::strcmp(left.trigger_type_name, right.trigger_type_name) == 0);
+		assert(left.opened_link_count == right.opened_link_count);
+		for (int coordinate = 0; coordinate < 3; ++coordinate) {
+			assert(left.activation_pos[coordinate] == right.activation_pos[coordinate]);
+			assert(left.aim_pos[coordinate] == right.aim_pos[coordinate]);
+			assert(left.label_pos[coordinate] == right.label_pos[coordinate]);
+		}
+		for (int link = 0; link < left.opened_link_count; ++link) {
+			assert(left.opened_link_seg[link] == right.opened_link_seg[link]);
+			assert(left.opened_link_side[link] == right.opened_link_side[link]);
+			assert(left.opened_link_wall[link] == right.opened_link_wall[link]);
+		}
+	}
+}
+
 } // namespace
 
 int main()
@@ -787,6 +829,43 @@ int main()
 		    planner_summary.first_shared_unexplored_step_count,
 		    planner_summary.first_unexplored_route_step);
 	assert(planner_summary.unexplored_route_mismatch_count == 0);
+	level_metadata_state legacy_plan = {};
+	level_metadata_state shared_plan = {};
+	level_metadata_unexplored_route legacy_unexplored = {};
+	level_metadata_unexplored_route shared_unexplored = {};
+	route_planner_plan_summary plan_summary = {};
+	char plan_problem[96] = {};
+	level_metadata_state_clear(&legacy_plan);
+	assert(level_metadata_scan_end_route(&view, &legacy_plan));
+	assert(route_planner_plan_view(
+	    &view, ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL, -1, &shared_plan,
+	    nullptr, &plan_summary, plan_problem, sizeof(plan_problem)));
+	assert(plan_problem[0] == '\0');
+	assert_route_projection_matches(legacy_plan, shared_plan);
+	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL);
+	assert(plan_summary.route_step_count == shared_plan.route_step_count);
+	assert(plan_summary.first_pending_step == 1);
+	assert(plan_summary.first_pending_path_segment_count > 0);
+	assert(plan_summary.first_pending_path_terminal_segment >= 0);
+	level_metadata_state_clear(&legacy_plan);
+	assert(level_metadata_scan_unexplored_route(
+	    &view, &legacy_plan, &legacy_unexplored));
+	assert(route_planner_plan_view(
+	    &view, ROUTE_PLANNER_ENDPOINT_UNEXPLORED, -1, &shared_plan,
+	    &shared_unexplored, &plan_summary, plan_problem,
+	    sizeof(plan_problem)));
+	assert_route_projection_matches(legacy_plan, shared_plan);
+	assert(legacy_unexplored.component_size == shared_unexplored.component_size);
+	assert(legacy_unexplored.target_seg == shared_unexplored.target_seg);
+	assert(legacy_unexplored.waypoint_seg == shared_unexplored.waypoint_seg);
+	assert(
+	    legacy_unexplored.direct_reachable ==
+	    shared_unexplored.direct_reachable);
+	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_UNEXPLORED);
+	assert(!route_planner_plan_view(
+	    &view, -1, -1, &shared_plan, nullptr, &plan_summary, plan_problem,
+	    sizeof(plan_problem)));
+	assert(std::string(plan_problem) == "invalid shared route endpoint kind");
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);

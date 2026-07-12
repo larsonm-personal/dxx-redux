@@ -6,12 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-enum level_metadata_route_status {
-	LEVEL_METADATA_ROUTE_OK = 0,
-	LEVEL_METADATA_ROUTE_PARTIAL = 1,
-	LEVEL_METADATA_ROUTE_FAILED = 2
-};
-
 enum metadata_route_block_kind {
 	METADATA_ROUTE_BLOCK_NONE = 0,
 	METADATA_ROUTE_BLOCK_KEY = 1,

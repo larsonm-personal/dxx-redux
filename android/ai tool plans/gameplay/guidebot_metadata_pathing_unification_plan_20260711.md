@@ -94,6 +94,12 @@ Parity has two separate meanings and both must pass:
   - Updated the live Counterstrike unexplored-wheel fixture for data-dependent checkpoint counts. It selects `Guide` -> `Unexplored` by visible text, confirms Guide-Bot retains unexplored mode, and reports zero unexplored-route, complete-route, dependency, firing-path, source, target, search, and edge mismatches with the visibility cache active.
   - Phase 4 is next: separate canonical and live shared plans, then make Guide-Bot consume the first pending shared waypoint without rebuilding route meaning in `escort.c`.
   - Live behavior remains on the C planner until the Phase 4 consumer bridge is green across the same gates.
+- [ ] Phase 4 in progress: separate canonical and live plans and bridge Guide-Bot to shared C++ output.
+  - [ ] Add a C ABI projection for end-of-level, unexplored, and explicit-segment shared plans, including the first pending waypoint summary.
+  - [ ] Store canonical metadata and live Guide-Bot route state independently; canonical serializers and overlays must never observe a live replan.
+  - [ ] Make the shared first pending waypoint authoritative for Guide-Bot goal selection, with the legacy all-step selector retained only for temporary shadow diagnostics and stale-plan invalidation.
+  - [ ] Prevent nonowner co-op peers from running live route replans and expose planner provenance plus selector parity through introspection.
+  - [ ] Verify D1/D2 host tests, strict metadata gates, Android builds, and the live unexplored goal fixture before marking the tranche complete.
 
 ## Non-Goals
 

@@ -479,11 +479,13 @@ function Start-MigratedPeerRejoin {
         Write-Status "FAIL: could not get migrated host wlan0 IP from $HostSerial" "Red"
         return $false
     }
+    Adb-Dev-Timeout -Serial $JoiningSerial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
+    ) -Seconds 10 | Out-Null
     Write-Status "Rejoining $JoiningSerial to migrated host ${hostIp}:$MIGRATED_HOST_PORT"
-    Send-MpCommand -Serial $JoiningSerial -Command "lan_launch" -Extras @(
+    $rejoinExtras = @(
         "--es", "game", $Game,
         "--es", "mp_mode", "join",
-        "--es", "mission", $MISSION,
         "--es", "mode", $MODE,
         "--ei", "max_players", "2",
         "--ei", "level_num", "1",
@@ -492,6 +494,20 @@ function Start-MigratedPeerRejoin {
         "--es", "host_addr", $hostIp,
         "--ei", "host_port", $MIGRATED_HOST_PORT.ToString()
     )
+    if ($MISSION) {
+        $rejoinExtras += @("--es", "mission", $MISSION)
+    }
+    Send-MpCommand -Serial $JoiningSerial -Command "lan_launch" -Extras $rejoinExtras
+    if (-not (Wait-ForCondition -Description "Rejoining game process on $JoiningSerial" `
+                -TimeoutSec 30 -PollMs 500 -Condition {
+                $gPid = Adb-Dev-Timeout -Serial $JoiningSerial -AdbArgs @(
+                    "shell", "pidof", "${PACKAGE}:game"
+                ) -Seconds 5
+                return ($gPid -and $gPid -match '^\d+')
+            })) {
+        Write-Status "FAIL: Rejoining game process did not start on $JoiningSerial" "Red"
+        return $false
+    }
     return $true
 }
 

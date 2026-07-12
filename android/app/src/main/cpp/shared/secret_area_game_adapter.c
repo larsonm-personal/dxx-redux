@@ -33,8 +33,11 @@
 #endif
 
 static secret_area_state Secret_area_state;
-static level_metadata_state Level_metadata_state;
 static level_metadata_state Level_metadata_canonical_state;
+static level_metadata_state Level_metadata_live_route_state;
+static int Level_metadata_live_route_state_valid;
+static route_planner_plan_summary Level_metadata_live_plan_summary;
+static int Level_metadata_live_plan_summary_valid;
 static route_snapshot_summary Level_metadata_canonical_snapshot;
 static int Level_metadata_canonical_snapshot_valid;
 static route_snapshot_summary Level_metadata_live_snapshot;
@@ -1180,25 +1183,6 @@ static int secret_area_trigger_link_side(void *user, int trigger_num, int link_i
 	return Triggers[trigger_num].side[link_index];
 }
 
-static void level_metadata_copy_route(const level_metadata_state *route_state)
-{
-	if (!route_state)
-		return;
-	Level_metadata_state.route_status = route_state->route_status;
-	snprintf(Level_metadata_state.route_problem,
-	         sizeof(Level_metadata_state.route_problem),
-	         "%s",
-	         route_state->route_problem);
-	snprintf(Level_metadata_state.route_note,
-	         sizeof(Level_metadata_state.route_note),
-	         "%s",
-	         route_state->route_note);
-	Level_metadata_state.route_step_count = route_state->route_step_count;
-	memcpy(Level_metadata_state.route_steps,
-	       route_state->route_steps,
-	       sizeof(Level_metadata_state.route_steps));
-}
-
 static void level_metadata_initialize_scan_view(void)
 {
 	level_metadata_scan_view *view = &Level_metadata_scan_view;
@@ -1317,11 +1301,12 @@ static void level_metadata_rescan_current_level_internal(
     level_metadata_unexplored_route *unexplored_result)
 {
 	level_metadata_scan_view *view = level_metadata_refresh_scan_view(start_objnum);
-	level_metadata_state route_state;
 
 	Level_metadata_route_start_objnum = start_objnum;
 	Level_metadata_route_start_seg = view->start_segment;
 	if (!route_only) {
+		Level_metadata_live_route_state_valid = 0;
+		Level_metadata_live_plan_summary_valid = 0;
 		Level_metadata_live_snapshot_valid = 0;
 		Level_metadata_canonical_snapshot_valid = route_snapshot_build_summary(
 		    view,
@@ -1361,19 +1346,38 @@ static void level_metadata_rescan_current_level_internal(
 		}
 	}
 	if (!route_only) {
-		level_metadata_scan_level(view, &Level_metadata_state);
-		Level_metadata_canonical_state = Level_metadata_state;
+		level_metadata_scan_level(view, &Level_metadata_canonical_state);
 	}
 	if (route_only) {
-		if (unexplored_result)
-			level_metadata_scan_unexplored_route(view, &route_state, unexplored_result);
-		else if (route_target_seg >= 0)
-			level_metadata_scan_route_to_segment(view, route_target_seg, &route_state);
-		else {
-			level_metadata_state_clear(&route_state);
-			level_metadata_scan_end_route(view, &route_state);
+		char problem[128];
+		int endpoint_kind = unexplored_result ?
+		                    ROUTE_PLANNER_ENDPOINT_UNEXPLORED :
+		                    route_target_seg >= 0 ?
+		                    ROUTE_PLANNER_ENDPOINT_SEGMENT :
+		                    ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL;
+
+		level_metadata_state_clear(&Level_metadata_live_route_state);
+		memset(&Level_metadata_live_plan_summary, 0,
+		       sizeof(Level_metadata_live_plan_summary));
+		Level_metadata_live_plan_summary.first_pending_step = -1;
+		Level_metadata_live_plan_summary.first_pending_path_terminal_segment = -1;
+		Level_metadata_live_plan_summary_valid = route_planner_plan_view(
+		    view,
+		    endpoint_kind,
+		    route_target_seg,
+		    &Level_metadata_live_route_state,
+		    unexplored_result,
+		    &Level_metadata_live_plan_summary,
+		    problem,
+		    sizeof(problem));
+		if (!Level_metadata_live_plan_summary_valid) {
+			Level_metadata_live_route_state.route_status = LEVEL_METADATA_ROUTE_FAILED;
+			snprintf(Level_metadata_live_route_state.route_problem,
+			         sizeof(Level_metadata_live_route_state.route_problem),
+			         "shared route planner: %s",
+			         problem[0] ? problem : "unknown failure");
 		}
-		level_metadata_copy_route(&route_state);
+		Level_metadata_live_route_state_valid = 1;
 	}
 }
 
@@ -1510,12 +1514,27 @@ const secret_area_state *secret_area_get_state(void)
 
 const level_metadata_state *level_metadata_get_state(void)
 {
-	return &Level_metadata_state;
+	return &Level_metadata_canonical_state;
 }
 
 const level_metadata_state *level_metadata_get_canonical_state(void)
 {
 	return &Level_metadata_canonical_state;
+}
+
+const level_metadata_state *level_metadata_get_live_route_state(void)
+{
+	return Level_metadata_live_route_state_valid ?
+	           &Level_metadata_live_route_state : NULL;
+}
+
+int level_metadata_get_live_route_plan_summary(
+    route_planner_plan_summary *summary)
+{
+	if (!summary || !Level_metadata_live_plan_summary_valid)
+		return 0;
+	*summary = Level_metadata_live_plan_summary;
+	return 1;
 }
 
 int level_metadata_get_canonical_route_snapshot(

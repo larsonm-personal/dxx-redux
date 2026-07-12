@@ -11,6 +11,20 @@ extern "C" {
 #pragma pack(push, 8)
 #endif
 
+enum route_planner_endpoint_kind {
+	ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL = 0,
+	ROUTE_PLANNER_ENDPOINT_UNEXPLORED = 1,
+	ROUTE_PLANNER_ENDPOINT_SEGMENT = 2
+};
+
+typedef struct route_planner_plan_summary {
+	int endpoint_kind;
+	int route_step_count;
+	int first_pending_step;
+	int first_pending_path_segment_count;
+	int first_pending_path_terminal_segment;
+} route_planner_plan_summary;
+
 typedef struct route_planner_shadow_summary {
 	int compared_progress_state_count;
 	int compared_node_count;
@@ -144,6 +158,16 @@ typedef struct route_planner_shadow_summary {
 int route_planner_compare_view(
     const level_metadata_scan_view *view,
     route_planner_shadow_summary *summary,
+    char *problem,
+    int problem_capacity);
+
+int route_planner_plan_view(
+    const level_metadata_scan_view *view,
+    int endpoint_kind,
+    int target_segment,
+    level_metadata_state *state,
+    level_metadata_unexplored_route *unexplored,
+    route_planner_plan_summary *summary,
     char *problem,
     int problem_capacity);
 

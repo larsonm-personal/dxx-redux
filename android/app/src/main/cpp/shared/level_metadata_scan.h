@@ -22,6 +22,12 @@ extern "C" {
 #define LEVEL_METADATA_FIX_SCALE                            65536.0
 #define LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND          50.0
 
+enum level_metadata_route_status {
+	LEVEL_METADATA_ROUTE_OK = 0,
+	LEVEL_METADATA_ROUTE_PARTIAL = 1,
+	LEVEL_METADATA_ROUTE_FAILED = 2
+};
+
 /*
  * Baseline for normalized volume. This must be generated from Descent 1 level 1
  * with level_metadata_scan.c's segment-volume algorithm. It is intentionally

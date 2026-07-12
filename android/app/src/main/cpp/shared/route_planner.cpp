@@ -2075,7 +2075,186 @@ bool view_wall_visible(
 	           context->view->user, segment, from.value.data(), wall) != 0;
 }
 
+void project_position(
+    const dxx_route::route_position &source,
+    int &valid,
+    int destination[3])
+{
+	valid = source.valid ? 1 : 0;
+	for (int coordinate = 0; coordinate < 3; ++coordinate)
+		destination[coordinate] = source.valid ? source.value[coordinate] : 0;
+}
+
+bool project_step(
+    const dxx_route::route_semantic_step &source,
+    level_metadata_route_step &destination)
+{
+	if (source.opened_links.size() > LEVEL_METADATA_MAX_ROUTE_LINKS)
+		return false;
+	std::memset(&destination, 0, sizeof(destination));
+	destination.kind = static_cast<int>(source.kind);
+	destination.seg = source.segment;
+	destination.side = source.side;
+	destination.wall_num = source.wall;
+	destination.trigger_num = source.trigger;
+	destination.trigger_type = source.trigger_raw_type;
+	destination.key_index = semantic_key_index(source.key);
+	destination.activation_kind = static_cast<int>(source.activation);
+	project_position(
+	    source.activation_position, destination.activation_pos_valid,
+	    destination.activation_pos);
+	project_position(
+	    source.aim_position, destination.aim_pos_valid, destination.aim_pos);
+	project_position(
+	    source.label_position, destination.label_pos_valid,
+	    destination.label_pos);
+	destination.distance_from_previous = source.distance_from_previous;
+	std::snprintf(
+	    destination.label, sizeof(destination.label), "%s",
+	    source.label.c_str());
+	std::snprintf(
+	    destination.trigger_type_name,
+	    sizeof(destination.trigger_type_name), "%s",
+	    source.trigger_type_name.c_str());
+	destination.opened_link_count =
+	    static_cast<int>(source.opened_links.size());
+	for (int link = 0; link < destination.opened_link_count; ++link) {
+		destination.opened_link_seg[link] = source.opened_links[link].segment;
+		destination.opened_link_side[link] = source.opened_links[link].side;
+		destination.opened_link_wall[link] = source.opened_links[link].wall;
+	}
+	return true;
+}
+
+bool project_plan(
+    const dxx_route::route_plan_result &source,
+    int endpoint_kind,
+    level_metadata_state &destination,
+    level_metadata_unexplored_route *unexplored,
+    route_planner_plan_summary &summary,
+    std::string &problem)
+{
+	if (source.steps.size() > LEVEL_METADATA_MAX_ROUTE_STEPS) {
+		problem = "shared route exceeds route step capacity";
+		return false;
+	}
+	level_metadata_state_clear(&destination);
+	destination.route_status = static_cast<int>(source.status);
+	std::snprintf(
+	    destination.route_problem, sizeof(destination.route_problem), "%s",
+	    source.problem.c_str());
+	std::snprintf(
+	    destination.route_note, sizeof(destination.route_note), "%s",
+	    source.note.c_str());
+	destination.route_step_count = static_cast<int>(source.steps.size());
+	destination.travel_distance = source.travel_distance;
+	destination.travel_time_seconds = static_cast<int>(std::floor(
+	    source.travel_distance / LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND +
+	    0.5));
+	for (int step = 0; step < destination.route_step_count; ++step) {
+		if (project_step(source.steps[step], destination.route_steps[step]))
+			continue;
+		problem = "shared route step exceeds opened-link capacity";
+		return false;
+	}
+
+	std::memset(&summary, 0, sizeof(summary));
+	summary.endpoint_kind = endpoint_kind;
+	summary.route_step_count = destination.route_step_count;
+	summary.first_pending_step = -1;
+	summary.first_pending_path_terminal_segment = -1;
+	for (int step = 0; step < destination.route_step_count; ++step) {
+		if (source.steps[step].kind ==
+		    dxx_route::route_semantic_step_kind::start)
+			continue;
+		summary.first_pending_step = step;
+		summary.first_pending_path_segment_count =
+		    static_cast<int>(source.steps[step].path.segments.size());
+		summary.first_pending_path_terminal_segment =
+		    source.steps[step].path.terminal_segment;
+		break;
+	}
+	if (unexplored) {
+		unexplored->component_size = source.unexplored_component_size;
+		unexplored->target_seg = source.unexplored_target_segment;
+		unexplored->waypoint_seg = source.unexplored_waypoint_segment;
+		unexplored->direct_reachable =
+		    source.unexplored_direct_reachable ? 1 : 0;
+	}
+	return true;
+}
+
 } // namespace
+
+extern "C" int route_planner_plan_view(
+    const level_metadata_scan_view *view,
+    int endpoint_kind,
+    int target_segment,
+    level_metadata_state *state,
+    level_metadata_unexplored_route *unexplored,
+    route_planner_plan_summary *summary,
+    char *problem,
+    int problem_capacity)
+{
+	copy_problem(problem, problem_capacity, "");
+	if (!view || !state || !summary) {
+		copy_problem(
+		    problem, problem_capacity,
+		    "shared route planning requires input and output");
+		return 0;
+	}
+	try {
+		dxx_route::route_snapshot snapshot;
+		std::string detail;
+		if (!dxx_route::build_route_snapshot(*view, snapshot, &detail)) {
+			copy_problem(problem, problem_capacity, detail.c_str());
+			return 0;
+		}
+		dxx_route::route_query query;
+		query.start = snapshot.state.start_position;
+		query.progression.key_mask = snapshot.state.key_mask;
+		switch (endpoint_kind) {
+			case ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL:
+				query.endpoint =
+				    dxx_route::route_endpoint_kind::end_of_level;
+				break;
+			case ROUTE_PLANNER_ENDPOINT_UNEXPLORED:
+				query.endpoint = dxx_route::route_endpoint_kind::unexplored;
+				break;
+			case ROUTE_PLANNER_ENDPOINT_SEGMENT:
+				query.endpoint = dxx_route::route_endpoint_kind::segment;
+				query.target_segment = target_segment;
+				break;
+			default:
+				copy_problem(
+				    problem, problem_capacity,
+				    "invalid shared route endpoint kind");
+				return 0;
+		}
+		view_visibility_context visibility_context = { view };
+		dxx_route::route_visibility_query visibility;
+		visibility.user = &visibility_context;
+		if (view->target_visible_from_segment)
+			visibility.target_visible = view_target_visible;
+		if (view->wall_visible_from_segment)
+			visibility.wall_visible = view_wall_visible;
+		const auto result = dxx_route::plan_route(
+		    snapshot, query, visibility);
+		if (!project_plan(
+		        result, endpoint_kind, *state, unexplored, *summary,
+		        detail)) {
+			copy_problem(problem, problem_capacity, detail.c_str());
+			return 0;
+		}
+		return 1;
+	} catch (const std::exception &error) {
+		copy_problem(problem, problem_capacity, error.what());
+	} catch (...) {
+		copy_problem(
+		    problem, problem_capacity, "shared route planning failed");
+	}
+	return 0;
+}
 
 extern "C" int route_planner_compare_view(
     const level_metadata_scan_view *view,
