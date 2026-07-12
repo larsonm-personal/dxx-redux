@@ -38,7 +38,9 @@ Parity has two separate meanings and both must pass:
 - [ ] Phase 0 in progress: freeze corpus comparisons and characterize current live behavior.
   - Added a checked-in fingerprint baseline for 1,274 route-bearing mission levels and a comparison script that detects added, removed, or changed route records.
   - Confirmed the existing unexplored-goal emulator fixture is stale at command selection: its hardcoded wheel action IDs select `end_of_level`, so it does not currently exercise unexplored routing.
-  - Autonomous action/execution fixtures and repaired wheel selection remain pending.
+  - Added semantic radial-menu automation backed by the Kotlin overlay's visible wheel labels and migrated the unexplored fixture away from its numeric goal action ID.
+  - The repaired emulator fixture verifies that `Guide` -> `Unexplored` is visible, dispatches through the production radial binding path, selects unexplored route mode, and retains that mode after the former refresh interval.
+  - Autonomous action/execution fixtures remain pending.
 - [ ] Phase 1 in progress: add the engine-neutral topology/state snapshot in shadow-only form.
   - Added deterministic C++ topology and mutable-state snapshots, hashes, validation, C ABI summary, unit tests, and canonical level-load capture for D1 and D2.
   - Exposed the canonical snapshot summary through introspection without changing route selection or simulation RNG.

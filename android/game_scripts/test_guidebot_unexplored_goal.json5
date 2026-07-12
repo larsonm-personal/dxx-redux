@@ -39,9 +39,8 @@
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
-    {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
-    {"action": "meta_action", "id": 1043, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.released": "true",
         "guidebot.buddy_objnum": {"gte": 0},
@@ -49,24 +48,16 @@
         "guidebot.route_status": "ok",
         "guidebot.route_start_matches_buddy": "true",
         "guidebot.route_goal_active": "true",
-        "guidebot.route_analysis.selected_index": "1",
-        "guidebot.route_analysis.steps[1].kind": "reactor",
-        "guidebot.route_analysis.steps[1].selected_next": "true",
-        "guidebot.route_analysis.steps[2].kind": "unexplored",
-        "guidebot.route_goal_label": "Reactor",
-        "guidebot.route_goal_objective_kind": "3",
-        "guidebot.route_goal_activation_kind": "6",
         "guidebot.unexplored_component_size": {"gt": 0},
         "guidebot.unexplored_target_seg": {"gte": 0},
         "guidebot.unexplored_waypoint_seg": {"gte": 0},
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
-        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: destroy the reactor"}
+        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
     }},
 
     {"action": "wait_ms", "ms": 6000},
     {"action": "assert", "expect": {
         "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_last_replan_reason": "periodic_refresh"
+        "guidebot.route_last_replan_reason": "unexplored_command"
     }},
 
     {"action": "introspect"},

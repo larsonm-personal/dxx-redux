@@ -3362,6 +3362,13 @@ class TouchOverlayView
                         -1
                     }
                 }
+            dispatchRadialBinding(seg, binding)
+        }
+
+        private fun dispatchRadialBinding(
+            seg: RadialSegment?,
+            binding: Int,
+        ) {
             val isAction = seg?.bindingType == "action"
             if (binding >= 0) {
                 if (TouchBindings.isMetaAction(binding)) {
@@ -3376,6 +3383,17 @@ class TouchOverlayView
                     keyCallback?.invoke(1, binding, 0)
                 }
             }
+        }
+
+        internal fun automateRadialSelection(
+            menuId: String,
+            text: String,
+        ): Boolean {
+            val rm = radialStates.firstOrNull { it.control.id.equals(menuId, ignoreCase = true) } ?: return false
+            val seg =
+                visibleRadialSegments(rm).firstOrNull { it.label.contains(text, ignoreCase = true) } ?: return false
+            dispatchRadialBinding(seg, seg.binding)
+            return true
         }
 
         private fun releaseRadialMenu(

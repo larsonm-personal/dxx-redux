@@ -30,6 +30,7 @@ extern "C" {
 
 #ifdef ANDROID
 #include <android/log.h>
+#include <jni.h>
 #define LOG_TAG   "DXX-Automate"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -78,6 +79,39 @@ extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
 extern "C" android_axis_generation android_joystick_axis_publish(
     int axis, int raw_value, int touch_source);
+extern "C" JavaVM *g_jvm;
+extern "C" jobject g_activity;
+
+static bool automation_select_radial(const char *menu_id, const char *text)
+{
+	JNIEnv *env;
+	int attached = 0;
+
+	if (!g_jvm || !g_activity || !menu_id || !text)
+		return false;
+	if (g_jvm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+		if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK)
+			return false;
+		attached = 1;
+	}
+	jclass cls = env->GetObjectClass(g_activity);
+	jmethodID method = cls ? env->GetMethodID(
+	                             cls, "automateRadialSelection",
+	                             "(Ljava/lang/String;Ljava/lang/String;)Z")
+	                       : NULL;
+	jstring jmenu = method ? env->NewStringUTF(menu_id) : NULL;
+	jstring jtext = method ? env->NewStringUTF(text) : NULL;
+	bool selected = jmenu && jtext && env->CallBooleanMethod(g_activity, method, jmenu, jtext);
+	if (env->ExceptionCheck()) {
+		env->ExceptionClear();
+		selected = false;
+	}
+	if (jtext) env->DeleteLocalRef(jtext);
+	if (jmenu) env->DeleteLocalRef(jmenu);
+	if (cls) env->DeleteLocalRef(cls);
+	if (attached) g_jvm->DetachCurrentThread();
+	return selected;
+}
 
 static void automation_enter_launcher(void)
 {
@@ -284,6 +318,7 @@ enum step_type {
 	STEP_SEND_TOUCH_DOWN,            /* inject a touch down through android_input.c */
 	STEP_SEND_TOUCH_UP,              /* inject a touch up through android_input.c */
 	STEP_META_ACTION,                /* dispatch a native Android meta action */
+	STEP_SELECT_RADIAL,              /* select a Kotlin radial-menu slice by text */
 	STEP_SKIP_INTRO,                 /* repeatedly dismiss launch intro with touch or button */
 	STEP_SKIP_BRIEFING,              /* escape only if a non-game window covers Game_wind */
 	STEP_ASSERT_OVERLAY,             /* check overlay ring buffer for matching entry */
@@ -341,6 +376,7 @@ struct auto_step {
 	std::string label;                  /* STEP_PROBE_CROSSHAIR: log label */
 	std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
 	std::string select_text;            /* STEP_SELECT: partial text to match */
+	std::string radial_menu;            /* STEP_SELECT_RADIAL: radial-menu ID */
 	bool select_non_base_mission = false;
 	bool select_mission = false;
 	bool optional = false;                 /* STEP_SELECT: skip instead of fail on timeout */
@@ -480,6 +516,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SEND_TOUCH_DOWN: return "send_touch_down";
 		case STEP_SEND_TOUCH_UP: return "send_touch_up";
 		case STEP_META_ACTION: return "meta_action";
+		case STEP_SELECT_RADIAL: return "select_radial";
 		case STEP_SKIP_INTRO: return "skip_intro";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
@@ -1801,6 +1838,7 @@ static int parse_script(const char *json_text)
 			else if (action == "send_touch_down") s.type = STEP_SEND_TOUCH_DOWN;
 			else if (action == "send_touch_up") s.type = STEP_SEND_TOUCH_UP;
 			else if (action == "meta_action") s.type = STEP_META_ACTION;
+			else if (action == "select_radial") s.type = STEP_SELECT_RADIAL;
 			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
@@ -1841,6 +1879,7 @@ static int parse_script(const char *json_text)
 			s.message = step_json.value("message", "");
 			s.label = step_json.value("label", "");
 			s.select_text = step_json.value("text", "");
+			s.radial_menu = step_json.value("menu", "");
 			s.optional = step_json.value("optional", false);
 			s.axis_id = step_json.value("axis", -1);
 			s.axis_value = step_json.value("axis_value", 0.0f);
@@ -2695,6 +2734,26 @@ extern "C" void game_automate_tick(void)
 					advance_step();
 				}
 			}
+			break;
+
+		case STEP_SELECT_RADIAL:
+#ifdef ANDROID
+			if (s.radial_menu.empty() || s.select_text.empty()) {
+				stop_script_fail("select_radial: menu and text are required");
+			} else if (!automation_select_radial(s.radial_menu.c_str(), s.select_text.c_str())) {
+				char reason[256];
+				snprintf(reason, sizeof(reason),
+				         "select_radial: no visible item matching menu=\"%s\" text=\"%s\"",
+				         s.radial_menu.c_str(), s.select_text.c_str());
+				stop_script_fail(reason);
+			} else {
+				LOGI("SELECT_RADIAL: selected menu=\"%s\" text=\"%s\"",
+				     s.radial_menu.c_str(), s.select_text.c_str());
+				advance_step();
+			}
+#else
+			stop_script_fail("select_radial: Android-only action");
+#endif
 			break;
 
 		case STEP_SKIP_INTRO:

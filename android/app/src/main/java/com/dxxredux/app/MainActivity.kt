@@ -45,6 +45,8 @@ import com.dxxredux.app.multiplayer.MatchmakingService
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
 internal const val EXTRA_TRANSIENT_LAUNCH_TOKEN = "transient_launch_token"
@@ -240,6 +242,22 @@ class MainActivity :
     )
 
     external fun nativeSetAutomationPath(path: String)
+
+    fun automateRadialSelection(
+        menuId: String,
+        text: String,
+    ): Boolean {
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            return touchOverlay.automateRadialSelection(menuId, text)
+        }
+        val done = CountDownLatch(1)
+        var selected = false
+        runOnUiThread {
+            selected = touchOverlay.automateRadialSelection(menuId, text)
+            done.countDown()
+        }
+        return done.await(2, TimeUnit.SECONDS) && selected
+    }
 
     external fun nativeSetMusicGain(gainDb: Float)
 
