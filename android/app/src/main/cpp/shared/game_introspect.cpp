@@ -542,17 +542,37 @@ static const char *introspect_route_key_name(int key_index)
 	}
 }
 
+static std::string serialize_route_hash(unsigned long long hash)
+{
+	char text[17];
+	std::snprintf(text, sizeof(text), "%016llx", hash);
+	return text;
+}
+
 static json serialize_route_snapshot(const route_snapshot_summary &snapshot)
 {
-	char topology_hash[17];
-	char state_hash[17];
-	std::snprintf(topology_hash, sizeof(topology_hash), "%016llx",
-	              snapshot.topology_hash);
-	std::snprintf(state_hash, sizeof(state_hash), "%016llx",
-	              snapshot.state_hash);
 	return {
-		{ "topology_hash", topology_hash },
-		{ "state_hash", state_hash },
+		{ "topology_hash", serialize_route_hash(snapshot.topology_hash) },
+		{ "state_hash", serialize_route_hash(snapshot.state_hash) },
+		{ "fingerprints",
+		  {
+		      { "start", serialize_route_hash(snapshot.start_hash) },
+		      { "progression", serialize_route_hash(snapshot.progression_hash) },
+		      { "navigation", serialize_route_hash(snapshot.navigation_hash) },
+		      { "triggers", serialize_route_hash(snapshot.trigger_hash) },
+		      { "objects", serialize_route_hash(snapshot.object_hash) },
+		      { "automap", serialize_route_hash(snapshot.automap_hash) },
+		  } },
+		{ "generations",
+		  {
+		      { "topology", snapshot.topology_generation },
+		      { "start", snapshot.start_generation },
+		      { "progression", snapshot.progression_generation },
+		      { "navigation", snapshot.navigation_generation },
+		      { "triggers", snapshot.trigger_generation },
+		      { "objects", snapshot.object_generation },
+		      { "automap", snapshot.automap_generation },
+		  } },
 		{ "segment_count", snapshot.segment_count },
 		{ "wall_count", snapshot.wall_count },
 		{ "trigger_count", snapshot.trigger_count },

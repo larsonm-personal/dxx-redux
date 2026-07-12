@@ -136,6 +136,7 @@ typedef struct level_metadata_scan_view {
 	int (*wall_trigger)(void *user, int wall_num);
 	int (*segment_special)(void *user, int seg);
 	int (*segment_center)(void *user, int seg, int xyz[3]);
+	int (*side_center)(void *user, int seg, int side, int xyz[3]);
 	int (*segment_vertex)(void *user, int seg, int index, int xyz[3]);
 	int (*start_position)(void *user, int xyz[3]);
 	int (*object_count)(void *user);

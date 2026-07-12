@@ -410,7 +410,11 @@ static int side_center(const level_metadata_scan_view *view, int seg, int side, 
 	int corners[4][3];
 	int i;
 
-	if (!view->segment_vertex || side < 0 || side >= LEVEL_METADATA_MAX_SIDES || !xyz)
+	if (side < 0 || side >= LEVEL_METADATA_MAX_SIDES || !xyz)
+		return 0;
+	if (view->side_center && view->side_center(view->user, seg, side, xyz))
+		return 1;
+	if (!view->segment_vertex)
 		return 0;
 	for (i = 0; i < 4; ++i)
 		if (!view->segment_vertex(view->user, seg, side_to_verts[side][i], corners[i]))

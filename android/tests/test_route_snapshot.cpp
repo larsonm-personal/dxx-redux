@@ -211,6 +211,14 @@ int segment_vertex(void *, int segment, int vertex, int xyz[3])
 	return 1;
 }
 
+int side_center(void *, int segment, int side, int xyz[3])
+{
+	xyz[0] = segment * 200 + side * 10;
+	xyz[1] = xyz[0] + 1;
+	xyz[2] = xyz[0] + 2;
+	return 1;
+}
+
 int start_position(void *, int xyz[3])
 {
 	xyz[0] = 7;
@@ -275,6 +283,7 @@ level_metadata_scan_view make_view(test_level &level)
 	view.object_is_boss = object_is_boss;
 	view.object_is_companion = object_is_companion;
 	view.segment_center = segment_center;
+	view.side_center = side_center;
 	view.segment_vertex = segment_vertex;
 	view.start_position = start_position;
 	return view;
@@ -302,6 +311,8 @@ int main()
 	assert(first.topology.segments[0].sides[0].child == 1);
 	assert(first.topology.segments[0].sides[0].reverse_side == 0);
 	assert(first.topology.segments[0].sides[0].wall == 0);
+	assert(first.topology.segments[1].sides[0].center.value[2] == 202);
+	assert(first.topology.walls[1].target.value[2] == 202);
 	assert(first.topology.segments[1].center.value[0] == 100);
 	assert(first.topology.segments[1].vertices[7].value[2] == 1072);
 	assert(first.state.start_position.value[2] == 9);
@@ -332,6 +343,12 @@ int main()
 	assert(summary_problem[0] == '\0');
 	assert(summary.topology_hash == first.topology.hash);
 	assert(summary.state_hash == first.state.hash);
+	assert(summary.start_hash == first.state.fingerprints.start);
+	assert(summary.progression_hash == first.state.fingerprints.progression);
+	assert(summary.navigation_hash == first.state.fingerprints.navigation);
+	assert(summary.trigger_hash == first.state.fingerprints.triggers);
+	assert(summary.object_hash == first.state.fingerprints.objects);
+	assert(summary.automap_hash == first.state.fingerprints.automap);
 	assert(summary.segment_count == 2);
 	assert(summary.wall_count == 2);
 	assert(summary.trigger_count == 1);
@@ -341,8 +358,25 @@ int main()
 	assert(dxx_route::build_route_snapshot(view, repeated, nullptr));
 	assert(repeated.topology.hash == first.topology.hash);
 	assert(repeated.state.hash == first.state.hash);
+	assert(repeated.state.fingerprints.automap ==
+	       first.state.fingerprints.automap);
 
 	level.explored[1] = 1;
+	view = make_view(level);
+	dxx_route::route_snapshot automap_changed;
+	assert(dxx_route::build_route_snapshot(view, automap_changed, nullptr));
+	assert(automap_changed.state.fingerprints.automap !=
+	       first.state.fingerprints.automap);
+	assert(automap_changed.state.fingerprints.navigation ==
+	       first.state.fingerprints.navigation);
+	assert(automap_changed.state.fingerprints.progression ==
+	       first.state.fingerprints.progression);
+	assert(automap_changed.state.fingerprints.triggers ==
+	       first.state.fingerprints.triggers);
+	assert(automap_changed.state.fingerprints.objects ==
+	       first.state.fingerprints.objects);
+	assert(automap_changed.state.fingerprints.start ==
+	       first.state.fingerprints.start);
 	level.flyable = 1;
 	level.wall_flags = 5;
 	level.trigger_flags = 4;

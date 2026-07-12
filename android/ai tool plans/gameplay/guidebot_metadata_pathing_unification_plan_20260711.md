@@ -47,7 +47,9 @@ Parity has two separate meanings and both must pass:
   - Added a separate live Guide-Bot snapshot summary for route-only replans; canonical level-load diagnostics are no longer the only observable snapshot and are cleared independently on level changes.
   - Exposed the canonical snapshot summary through introspection without changing route selection or simulation RNG.
   - Added normalized wall kinds, key requirements, lock/open/hidden state, endpoint kinds, progression and navigator profiles, and the explicit route-query domain type.
-  - Exact opener/action geometry and generation-based invalidation remain pending.
+  - Added engine-derived side centers and stable wall target points to shared topology; the C analyzer now consumes the same side-center callback with its vertex average retained as a headless fallback.
+  - Added independent mutable-state fingerprints and live generations for start, progression, navigation, trigger, object, and automap domains, exposed for canonical/live introspection and future cache keys.
+  - Exact occupiable activation poses, aim validation, and event-driven generation hooks remain pending.
 - [ ] Phase 2 pending: centralize rich edge evaluation after snapshot parity is established.
 
 ## Non-Goals

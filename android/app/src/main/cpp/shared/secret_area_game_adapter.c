@@ -49,6 +49,51 @@ static level_metadata_game_context Level_metadata_game_context;
 static level_metadata_scan_view Level_metadata_scan_view;
 static int Level_metadata_scan_view_initialized;
 
+static unsigned int level_metadata_next_generation(unsigned int current)
+{
+	current++;
+	return current ? current : 1;
+}
+
+static void level_metadata_seed_snapshot_generations(
+    route_snapshot_summary *snapshot)
+{
+	snapshot->topology_generation = 1;
+	snapshot->start_generation = 1;
+	snapshot->progression_generation = 1;
+	snapshot->navigation_generation = 1;
+	snapshot->trigger_generation = 1;
+	snapshot->object_generation = 1;
+	snapshot->automap_generation = 1;
+}
+
+static void level_metadata_advance_snapshot_generations(
+    route_snapshot_summary *snapshot,
+    const route_snapshot_summary *previous)
+{
+	snapshot->topology_generation = previous->topology_generation;
+	snapshot->start_generation = previous->start_generation;
+	snapshot->progression_generation = previous->progression_generation;
+	snapshot->navigation_generation = previous->navigation_generation;
+	snapshot->trigger_generation = previous->trigger_generation;
+	snapshot->object_generation = previous->object_generation;
+	snapshot->automap_generation = previous->automap_generation;
+	if (snapshot->topology_hash != previous->topology_hash)
+		snapshot->topology_generation = level_metadata_next_generation(snapshot->topology_generation);
+	if (snapshot->start_hash != previous->start_hash)
+		snapshot->start_generation = level_metadata_next_generation(snapshot->start_generation);
+	if (snapshot->progression_hash != previous->progression_hash)
+		snapshot->progression_generation = level_metadata_next_generation(snapshot->progression_generation);
+	if (snapshot->navigation_hash != previous->navigation_hash)
+		snapshot->navigation_generation = level_metadata_next_generation(snapshot->navigation_generation);
+	if (snapshot->trigger_hash != previous->trigger_hash)
+		snapshot->trigger_generation = level_metadata_next_generation(snapshot->trigger_generation);
+	if (snapshot->object_hash != previous->object_hash)
+		snapshot->object_generation = level_metadata_next_generation(snapshot->object_generation);
+	if (snapshot->automap_hash != previous->automap_hash)
+		snapshot->automap_generation = level_metadata_next_generation(snapshot->automap_generation);
+}
+
 typedef struct level_metadata_opener_entry {
 	short source_wall;
 	short next;
@@ -296,6 +341,21 @@ static int secret_area_segment_vertex(void *user, int seg, int index, int xyz[3]
 	xyz[0] = Vertices[vertex].x;
 	xyz[1] = Vertices[vertex].y;
 	xyz[2] = Vertices[vertex].z;
+	return 1;
+}
+
+static int secret_area_side_center(void *user, int seg, int side, int xyz[3])
+{
+	vms_vector center;
+
+	(void) user;
+	if (seg < 0 || seg >= Num_segments ||
+	    side < 0 || side >= MAX_SIDES_PER_SEGMENT || !xyz)
+		return 0;
+	compute_center_point_on_side(&center, &Segments[seg], side);
+	xyz[0] = center.x;
+	xyz[1] = center.y;
+	xyz[2] = center.z;
 	return 1;
 }
 
@@ -924,6 +984,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_trigger = secret_area_wall_trigger;
 	view->segment_special = secret_area_segment_special;
 	view->segment_center = secret_area_segment_center;
+	view->side_center = secret_area_side_center;
 	view->segment_vertex = secret_area_segment_vertex;
 	view->start_position = secret_area_start_position;
 	view->object_count = secret_area_object_count;
@@ -989,12 +1050,32 @@ static void level_metadata_rescan_current_level_internal(
 		    &Level_metadata_canonical_snapshot,
 		    NULL,
 		    0);
-	} else
+		if (Level_metadata_canonical_snapshot_valid)
+			level_metadata_seed_snapshot_generations(
+			    &Level_metadata_canonical_snapshot);
+	} else {
+		route_snapshot_summary previous_snapshot;
+		int previous_valid = Level_metadata_live_snapshot_valid ||
+		                     Level_metadata_canonical_snapshot_valid;
+		if (Level_metadata_live_snapshot_valid)
+			previous_snapshot = Level_metadata_live_snapshot;
+		else if (Level_metadata_canonical_snapshot_valid)
+			previous_snapshot = Level_metadata_canonical_snapshot;
 		Level_metadata_live_snapshot_valid = route_snapshot_build_summary(
 		    view,
 		    &Level_metadata_live_snapshot,
 		    NULL,
 		    0);
+		if (Level_metadata_live_snapshot_valid) {
+			if (previous_valid)
+				level_metadata_advance_snapshot_generations(
+				    &Level_metadata_live_snapshot,
+				    &previous_snapshot);
+			else
+				level_metadata_seed_snapshot_generations(
+				    &Level_metadata_live_snapshot);
+		}
+	}
 	if (!route_only)
 		level_metadata_scan_level(view, &Level_metadata_state);
 	if (route_only) {

@@ -80,6 +80,7 @@ struct route_topology_side {
 	int child = -1;
 	int reverse_side = -1;
 	int wall = -1;
+	route_position center;
 	std::vector<int> opener_walls;
 };
 
@@ -92,6 +93,7 @@ struct route_topology_segment {
 struct route_topology_wall {
 	int segment = -1;
 	int side = -1;
+	route_position target;
 };
 
 struct route_topology_trigger_link {
@@ -155,6 +157,15 @@ struct route_state_object {
 	bool companion = false;
 };
 
+struct route_state_fingerprints {
+	std::uint64_t start = 0;
+	std::uint64_t progression = 0;
+	std::uint64_t navigation = 0;
+	std::uint64_t triggers = 0;
+	std::uint64_t objects = 0;
+	std::uint64_t automap = 0;
+};
+
 struct route_state {
 	int start_segment = -1;
 	route_position start_position;
@@ -164,6 +175,7 @@ struct route_state {
 	std::vector<route_state_wall> walls;
 	std::vector<route_state_trigger> triggers;
 	std::vector<route_state_object> objects;
+	route_state_fingerprints fingerprints;
 	std::uint64_t hash = 0;
 };
 

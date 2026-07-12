@@ -150,6 +150,7 @@ std::uint64_t hash_topology(const route_topology &topology)
 			hasher.add_int(side.child);
 			hasher.add_int(side.reverse_side);
 			hasher.add_int(side.wall);
+			hash_position(hasher, side.center);
 			hasher.add_int(static_cast<int>(side.opener_walls.size()));
 			for (const int opener_wall : side.opener_walls)
 				hasher.add_int(opener_wall);
@@ -158,6 +159,7 @@ std::uint64_t hash_topology(const route_topology &topology)
 	for (const auto &wall : topology.walls) {
 		hasher.add_int(wall.segment);
 		hasher.add_int(wall.side);
+		hash_position(hasher, wall.target);
 	}
 	for (const auto &trigger : topology.triggers) {
 		hasher.add_int(trigger.raw_type);
@@ -169,6 +171,76 @@ std::uint64_t hash_topology(const route_topology &topology)
 		}
 	}
 	return hasher.value();
+}
+
+route_state_fingerprints fingerprint_state(const route_state &state)
+{
+	route_state_fingerprints result;
+	stable_hasher start;
+	start.add_int(state.start_segment);
+	hash_position(start, state.start_position);
+	result.start = start.value();
+
+	stable_hasher progression;
+	progression.add_int(state.key_mask);
+	progression.add_bool(state.control_center_destroyed);
+	result.progression = progression.value();
+
+	stable_hasher navigation;
+	navigation.add_int(static_cast<int>(state.segments.size()));
+	navigation.add_int(static_cast<int>(state.walls.size()));
+	for (const auto &segment : state.segments) {
+		for (const auto &side : segment.sides) {
+			navigation.add_bool(side.flyable);
+			navigation.add_bool(side.hard_blocked);
+			navigation.add_bool(side.control_center_link);
+			navigation.add_bool(side.exit_trigger);
+		}
+	}
+	for (const auto &wall : state.walls) {
+		navigation.add_int(wall.type);
+		navigation.add_int(static_cast<int>(wall.kind));
+		navigation.add_int(wall.flags);
+		navigation.add_int(wall.keys);
+		navigation.add_int(static_cast<int>(wall.key));
+		navigation.add_int(wall.clip_flags);
+		navigation.add_int(wall.trigger);
+		navigation.add_bool(wall.locked);
+		navigation.add_bool(wall.opened);
+		navigation.add_bool(wall.hidden);
+	}
+	result.navigation = navigation.value();
+
+	stable_hasher triggers;
+	triggers.add_int(static_cast<int>(state.triggers.size()));
+	for (const auto &trigger : state.triggers) {
+		triggers.add_int(trigger.flags);
+		triggers.add_bool(trigger.disabled);
+	}
+	result.triggers = triggers.value();
+
+	stable_hasher objects;
+	objects.add_int(static_cast<int>(state.objects.size()));
+	for (const auto &object : state.objects) {
+		objects.add_int(object.segment);
+		objects.add_int(object.type);
+		objects.add_int(object.id);
+		objects.add_int(object.flags);
+		objects.add_int(object.contains_type);
+		objects.add_int(object.contains_id);
+		objects.add_int(object.contains_count);
+		hash_position(objects, object.position);
+		objects.add_bool(object.boss);
+		objects.add_bool(object.companion);
+	}
+	result.objects = objects.value();
+
+	stable_hasher automap;
+	automap.add_int(static_cast<int>(state.segments.size()));
+	for (const auto &segment : state.segments)
+		automap.add_bool(segment.explored);
+	result.automap = automap.value();
+	return result;
 }
 
 std::uint64_t hash_state(const route_state &state)
@@ -291,6 +363,15 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			if (view.wall_num)
 				topology_side.wall = view.wall_num(
 				    view.user, segment_index, side_index);
+			if (view.side_center) {
+				int center[3] = {};
+				if (view.side_center(view.user, segment_index, side_index, center)) {
+					topology_side.center.valid = true;
+					topology_side.center.value = {
+						{ center[0], center[1], center[2] }
+					};
+				}
+			}
 			if (view.triggered_side_opener_count &&
 			    view.triggered_side_opener_wall_num) {
 				const int opener_count = view.triggered_side_opener_count(
@@ -377,6 +458,14 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			topology_wall.segment = view.wall_segment(view.user, wall_index);
 		if (view.wall_side)
 			topology_wall.side = view.wall_side(view.user, wall_index);
+		if (topology_wall.segment >= 0 &&
+		    topology_wall.segment < view.num_segments &&
+		    topology_wall.side >= 0 &&
+		    topology_wall.side < LEVEL_METADATA_MAX_SIDES)
+			topology_wall.target = next.topology
+			                           .segments[topology_wall.segment]
+			                           .sides[topology_wall.side]
+			                           .center;
 		if (view.wall_type)
 			state_wall.type = view.wall_type(view.user, wall_index);
 		state_wall.kind = normalize_wall_kind(view, state_wall.type);
@@ -398,6 +487,7 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 	}
 
 	next.topology.hash = hash_topology(next.topology);
+	next.state.fingerprints = fingerprint_state(next.state);
 	next.state.hash = hash_state(next.state);
 	snapshot = std::move(next);
 	return true;
@@ -441,6 +531,12 @@ extern "C" int route_snapshot_build_summary(
 		}
 		summary->topology_hash = snapshot.topology.hash;
 		summary->state_hash = snapshot.state.hash;
+		summary->start_hash = snapshot.state.fingerprints.start;
+		summary->progression_hash = snapshot.state.fingerprints.progression;
+		summary->navigation_hash = snapshot.state.fingerprints.navigation;
+		summary->trigger_hash = snapshot.state.fingerprints.triggers;
+		summary->object_hash = snapshot.state.fingerprints.objects;
+		summary->automap_hash = snapshot.state.fingerprints.automap;
 		summary->segment_count =
 		    static_cast<int>(snapshot.topology.segments.size());
 		summary->wall_count =
