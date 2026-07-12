@@ -599,79 +599,11 @@ static void kconfig_draw_contents(kc_menu *menu, grs_canvas *canvas)
 }
 
 #ifdef ANDROID
-static int android_kconfig_scale_coord(int value, float scale)
+static void android_kconfig_draw_contents(void *userdata, grs_canvas *canvas)
 {
-	return (int) (value * scale + 0.5f);
+	kconfig_draw_contents((kc_menu *)userdata, canvas);
 }
 
-static int android_kconfig_scroll_bitmap_y(const android_menu_scale_result *result)
-{
-	int scroll_y;
-	int max_y;
-
-	scroll_y = android_kconfig_scale_coord(result->src.y - result->box.y,
-	                                      result->scale);
-	max_y = result->render_h - result->dst.h;
-	if (scroll_y < 0)
-		scroll_y = 0;
-	if (scroll_y > max_y)
-		scroll_y = max_y;
-	return scroll_y;
-}
-
-static void android_kconfig_scroll_by(kc_menu *menu, int delta_y)
-{
-	menu->android_scroll_y += delta_y;
-	if (menu->android_scroll_y < 0)
-		menu->android_scroll_y = 0;
-}
-
-static void android_kconfig_draw_scaled(kc_menu *menu,
-                                        android_menu_scale_result *result)
-{
-	grs_bitmap render_bitmap;
-	grs_canvas scaled_canvas, menu_canvas;
-	grs_canvas *window_canvas = window_get_canvas(menu->wind);
-	grs_canvas *save_canvas = grd_curcanv;
-	android_menu_scale_draw_state draw_state;
-	float scale;
-	int bitmap_y;
-
-	if (!result || !result->active || result->render_w <= 0 || result->render_h <= 0)
-		return;
-
-	scale = result->scale;
-	gr_init_bitmap_alloc(&render_bitmap, BM_LINEAR, 0, 0, result->render_w,
-	                     result->render_h, result->render_w);
-	memset(render_bitmap.bm_data, 0, result->render_w * result->render_h);
-	gr_init_canvas(&scaled_canvas, render_bitmap.bm_data, BM_LINEAR,
-	               result->render_w, result->render_h);
-
-	if (android_menu_scale_begin_scaled_draw(scale, &draw_state)) {
-		gr_set_current_canvas(&scaled_canvas);
-		nm_draw_background(0, 0, result->render_w, result->render_h);
-		if (window_canvas) {
-			int menu_x = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_x - result->box.x, scale);
-			int menu_y = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_y - result->box.y, scale);
-			int menu_w = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_w, scale);
-			int menu_h = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_h, scale);
-
-			gr_init_sub_canvas(&menu_canvas, &scaled_canvas,
-			                   menu_x, menu_y, menu_w, menu_h);
-			kconfig_draw_contents(menu, &menu_canvas);
-		}
-		android_menu_scale_end_scaled_draw(&draw_state);
-
-		result->direct_render = 1;
-		result->render_scale = scale;
-	}
-
-	gr_set_current_canvas(save_canvas);
-	bitmap_y = android_kconfig_scroll_bitmap_y(result);
-	android_menu_scale_blit_bitmap_region(&render_bitmap, result, bitmap_y);
-	gr_set_current_canvas(save_canvas);
-	gr_free_bitmap_data(&render_bitmap);
-}
 #endif
 
 void kconfig_draw(kc_menu *menu)
@@ -680,22 +612,16 @@ void kconfig_draw(kc_menu *menu)
 
 #ifdef ANDROID
 	{
-		android_menu_scale_result menu_scale;
 		int source_x = ((SWIDTH - w) / 2) - BORDERX;
 		int source_y = ((SHEIGHT - h) / 2) - BORDERY;
 		int source_w = w + 2 * BORDERX;
 		int source_h = h + 2 * BORDERY;
 
-		if (android_menu_scale_compute_kconfig(source_x, source_y, source_w,
-		                                      source_h, SWIDTH, SHEIGHT,
-		                                      &menu->android_scroll_y,
-		                                      &menu_scale)) {
-			android_kconfig_draw_scaled(menu, &menu_scale);
-			android_menu_scale_publish(&menu_scale);
+		if (android_menu_scale_draw_kconfig(
+		        source_x, source_y, source_w, source_h, SWIDTH, SHEIGHT,
+		        &menu->android_scroll_y, window_get_canvas(menu->wind),
+		        android_kconfig_draw_contents, menu))
 			return;
-		} else {
-			android_menu_scale_clear();
-		}
 	}
 #endif
 
@@ -826,10 +752,10 @@ int kconfig_key_command(window *wind, d_event *event, kc_menu *menu)
 			return 1;
 #ifdef ANDROID
 		case KEY_PAGEUP:
-			android_kconfig_scroll_by(menu, -FSPACY(80));
+			android_menu_scale_scroll_by(&menu->android_scroll_y, -FSPACY(80));
 			return 1;
 		case KEY_PAGEDOWN:
-			android_kconfig_scroll_by(menu, FSPACY(80));
+			android_menu_scale_scroll_by(&menu->android_scroll_y, FSPACY(80));
 			return 1;
 #endif
 		case KEY_LEFT:
@@ -995,11 +921,11 @@ int kconfig_handler(window *wind, d_event *event, kc_menu *menu)
 			}
 #ifdef ANDROID
 			else if (event_mouse_get_button(event) == MBTN_Z_UP) {
-				android_kconfig_scroll_by(menu, -FSPACY(16));
+				android_menu_scale_scroll_by(&menu->android_scroll_y, -FSPACY(16));
 				return 1;
 			}
 			else if (event_mouse_get_button(event) == MBTN_Z_DOWN) {
-				android_kconfig_scroll_by(menu, FSPACY(16));
+				android_menu_scale_scroll_by(&menu->android_scroll_y, FSPACY(16));
 				return 1;
 			}
 #endif
@@ -1020,7 +946,7 @@ int kconfig_handler(window *wind, d_event *event, kc_menu *menu)
 				if (menu->android_drag_total_y >= FSPACY(8))
 					menu->android_drag_scrolling = 1;
 				if (menu->android_drag_scrolling && dy) {
-					android_kconfig_scroll_by(menu, -dy);
+					android_menu_scale_scroll_by(&menu->android_scroll_y, -dy);
 					return 1;
 				}
 			}

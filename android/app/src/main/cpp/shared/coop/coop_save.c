@@ -43,9 +43,9 @@ extern fix ThisLevelTime;
 
 #ifdef ANDROID
 int coop_remap_restored_players(rewind_file *file,
-	const player restore_players[MAX_PLAYERS],
-	const object restore_objects[MAX_PLAYERS],
-	int coop_player_got[MAX_PLAYERS])
+                                const player restore_players[MAX_PLAYERS],
+                                const object restore_objects[MAX_PLAYERS],
+                                int coop_player_got[MAX_PLAYERS])
 {
 	coop_save_metadata meta_early;
 	int have_meta = state_android_read_coop_metadata_trailer(file, &meta_early);
@@ -58,22 +58,22 @@ int coop_remap_restored_players(rewind_file *file,
 		int saved_objnum;
 
 		if (!(Players[i].connected == CONNECT_PLAYING ||
-			Players[i].connected == CONNECT_WAITING))
+		      Players[i].connected == CONNECT_WAITING))
 			continue;
 
 		if (have_meta) {
 			int meta_idx = coop_find_player_in_metadata(Players[i].callsign,
-				Netgame.players[i].client_id, &meta_early);
+			                                            Netgame.players[i].client_id, &meta_early);
 			if (meta_idx >= 0 && meta_idx < meta_early.num_active_players)
 				saved_slot = meta_early.active_players[meta_idx].original_slot;
 		}
 
 		if (saved_slot < 0 || saved_slot >= MAX_PLAYERS ||
-			restore_players[saved_slot].connected != CONNECT_PLAYING) {
+		    restore_players[saved_slot].connected != CONNECT_PLAYING) {
 			COOPLOG("P%d '%s' not found in save -- spawning fresh", i,
-				Players[i].callsign);
+			        Players[i].callsign);
 			HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
-				Players[i].callsign);
+			                 Players[i].callsign);
 			continue;
 		}
 
@@ -83,7 +83,7 @@ int coop_remap_restored_players(rewind_file *file,
 		coop_player_got[i] = 1;
 		got_players++;
 		COOPLOG("mapped P%d '%s' -> save slot %d, objnum=%d", i,
-			Players[i].callsign, saved_slot, saved_objnum);
+		        Players[i].callsign, saved_slot, saved_objnum);
 
 		obj = &Objects[Players[i].objnum];
 		obj->id = i;
@@ -102,10 +102,30 @@ int coop_remap_restored_players(rewind_file *file,
 		multi_reset_player_object(obj);
 		update_object_seg(obj);
 		COOPLOG("P%d post-reset: ct=%d mt=%d phys_flags=0x%x", i,
-			obj->control_type, obj->movement_type, obj->mtype.phys_info.flags);
+		        obj->control_type, obj->movement_type, obj->mtype.phys_info.flags);
 	}
 
 	return got_players;
+}
+
+void coop_normalize_restored_netgame_players(const char *game_name)
+{
+	int live_count = 0;
+	int i;
+
+	for (i = 0; i < MAX_PLAYERS; i++)
+		if (Players[i].connected == CONNECT_PLAYING ||
+		    Players[i].connected == CONNECT_WAITING)
+			live_count++;
+	if (live_count > Netgame.numplayers)
+		Netgame.numplayers = live_count;
+	if (live_count > Netgame.max_numplayers)
+		Netgame.max_numplayers = live_count;
+	Netgame.numconnected = live_count;
+	if (Game_mode & GM_MULTI_COOP)
+		COOPLOG("restore netgame live count: game=%s live=%d net_num=%d max=%d connected=%d",
+		        game_name, live_count, Netgame.numplayers,
+		        Netgame.max_numplayers, Netgame.numconnected);
 }
 #endif
 

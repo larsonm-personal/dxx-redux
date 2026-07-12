@@ -86,6 +86,7 @@ set(D1X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/difficulty_runtime_shared.c
     ../../android/app/src/main/cpp/shared/effect_runtime_shared.c
     ../../android/app/src/main/cpp/shared/coop_start_positions.c
+    ../../android/app/src/main/cpp/shared/startup_resume_shared.c
     )
 
 if(ANDROID)

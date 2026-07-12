@@ -557,6 +557,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_viewport_android.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_debug.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
@@ -694,6 +695,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_viewport_android.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_debug.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c

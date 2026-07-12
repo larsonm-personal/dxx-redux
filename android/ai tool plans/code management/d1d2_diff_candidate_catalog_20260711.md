@@ -268,6 +268,7 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C09. OGL MSAA and framebuffer lifecycle
 
+- Status: safe shared lifecycle slice complete
 - Files: both `arch/ogl/ogl.c`
 - Regions: begin/bind in `ogl_start_frame`, frame-depth end handling, readback resolve, window backing clear, overlay preparation, and existing create/destroy wrappers
 - Estimated inherited-file reduction: 200-250 lines
@@ -277,6 +278,9 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Risk: medium
 - Validation: MSAA smoke, keyboard and pause viewport tests, merged-wall snapshot, graphics preferences
 - Overlap note: do not double-count tiny framebuffer helpers later if absorbed here
+- Completed result: after C15, each OGL file shed another 33 additions, 66 total; shared code now owns begin/end nesting, create-or-reuse binding, resolve timing/error handling, and backing/overlay target binding
+- Intentional residual: clear-mask policy, viewport, orthographic shader state, blend/alpha/cull state, and render context remain local; moving those would exceed the natural MSAA boundary
+- Validation: all Android ABIs and Windows D1/D2 passed; focused emulator tests are deferred due to unrelated active automation
 
 #### C10. SDL mixer Android diagnostics
 
@@ -332,24 +336,30 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C14. Kconfig offscreen scaled-render kernel
 
+- Status: implementation and dual-platform build validation complete
 - Files: both `main/kconfig.c:601-700`
-- Estimated inherited-file reduction: 170-190 lines
+- Exact inherited-file reduction: 148 additions
 - Proposed boundary: extend `android_menu_scale` with one offscreen-draw callback
 - Shared ownership: allocation, canvas setup, scaling, crop/blit, cleanup, and restoration
 - Keep local: `kconfig_draw_contents` and private item state
 - Strategic value: creates the natural callback boundary needed before revisiting remaining newmenu direct-render bodies
 - Risk: medium
 - Validation: keyboard-stage, controls-readability, menu-scale, and pause-menu viewport scripts
+- Completed result: D1 moved from 365 to 291 additions and D2 from 377 to 303; shared code now owns compute, allocation, scaled state, background, subcanvas, crop/blit, telemetry, cleanup, and scroll clamping
+- Build validation: all Android ABIs and Windows D1/D2 passed; focused emulator coverage is deferred while an unrelated guidebot test owns the sole emulator
 
 #### C15. OGL viewport and keyboard gap
 
+- Status: implementation and dual-platform build validation complete
 - Files: D1 `arch/ogl/ogl.c:199-282`, D2 `202-285`
-- Estimated inherited-file reduction: 155-180 lines
+- Exact inherited-file reduction: 136 additions
 - Shared behavior: axis scaling, drawable-size policy, cached viewport, and keyboard-gap clear
 - Proposed boundary: `ogl_viewport_android.{c,h}` with cached logical/physical coordinates and keyboard offset
 - Preserve: application from `gr_flip`, since menus render outside normal frame begin/end
 - Risk: low-medium
 - Validation: keyboard viewport, D2 pause viewport, menu scale, and both-game autoselect
+- Completed result: D1 moved from 1,895 to 1,827 additions and D2 from 1,988 to 1,920; one pointer-backed shared state owns scaling and cache mechanics while the existing local wrapper supplies screen and keyboard policy
+- Validation note: all Android ABIs and Windows D1/D2 passed; focused emulator tests are deferred due to unrelated active automation
 
 #### C16. Coop restore client-ID remapping
 
@@ -362,12 +372,15 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C17. Texmerge owner and diagnostic state
 
+- Status: complete
 - Files: both `main/texmerge.c:60-159` plus small call sites
-- Estimated inherited-file reduction: 160-180 lines
+- Exact inherited-file reduction: 190 additions
 - Proposed boundary: extend `merged_wall_debug` with a compact owner-state structure and set/reset/log operations
 - Adapter: one state field in the private texture cache, not exposure of the whole cache
 - Risk: low-medium; diagnostic-only but render ordering matters
 - Validation: merged-wall snapshot, door45 regression, and D1/D2 render smoke
+- Completed result: each `texmerge.c` moved from 133 to 38 additions; the shared record owns first/last face and frame state, and the shared logger preserves event filtering, severity, names, and field order
+- Build validation: all Android ABIs and Windows D1/D2 compiled and linked; the existing per-event call sites and D1/D2-specific flush tags remain local
 
 #### C18. Missing coop-start fanout
 

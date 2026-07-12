@@ -209,6 +209,81 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
 	return compute_destination(result, screen_w, screen_h, scale);
 }
 
+void android_menu_scale_scroll_by(int *scroll_y, int delta_y)
+{
+	if (!scroll_y)
+		return;
+	*scroll_y += delta_y;
+	if (*scroll_y < 0)
+		*scroll_y = 0;
+}
+
+int android_menu_scale_draw_kconfig(int source_x, int source_y, int source_w,
+                                    int source_h, int screen_w, int screen_h,
+                                    int *scroll_y, grs_canvas *window_canvas,
+                                    android_menu_scale_canvas_draw_fn draw_contents,
+                                    void *userdata)
+{
+	android_menu_scale_result result;
+	android_menu_scale_draw_state draw_state;
+	grs_bitmap render_bitmap;
+	grs_canvas scaled_canvas, menu_canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+	float scale;
+	int bitmap_y;
+	int max_y;
+
+	if (!android_menu_scale_compute_kconfig(source_x, source_y, source_w,
+	                                        source_h, screen_w, screen_h,
+	                                        scroll_y, &result)) {
+		android_menu_scale_clear();
+		return 0;
+	}
+
+	scale = result.scale;
+	gr_init_bitmap_alloc(&render_bitmap, BM_LINEAR, 0, 0, result.render_w,
+	                     result.render_h, result.render_w);
+	memset(render_bitmap.bm_data, 0, result.render_w * result.render_h);
+	gr_init_canvas(&scaled_canvas, render_bitmap.bm_data, BM_LINEAR,
+	               result.render_w, result.render_h);
+
+	if (android_menu_scale_begin_scaled_draw(scale, &draw_state)) {
+		gr_set_current_canvas(&scaled_canvas);
+		nm_draw_background(0, 0, result.render_w, result.render_h);
+		if (window_canvas && draw_contents) {
+			const int menu_x = android_menu_scale_round_coord(
+			    window_canvas->cv_bitmap.bm_x - result.box.x, scale);
+			const int menu_y = android_menu_scale_round_coord(
+			    window_canvas->cv_bitmap.bm_y - result.box.y, scale);
+			const int menu_w = android_menu_scale_round_coord(
+			    window_canvas->cv_bitmap.bm_w, scale);
+			const int menu_h = android_menu_scale_round_coord(
+			    window_canvas->cv_bitmap.bm_h, scale);
+
+			gr_init_sub_canvas(&menu_canvas, &scaled_canvas,
+			                   menu_x, menu_y, menu_w, menu_h);
+			draw_contents(userdata, &menu_canvas);
+		}
+		android_menu_scale_end_scaled_draw(&draw_state);
+		result.direct_render = 1;
+		result.render_scale = scale;
+	}
+
+	gr_set_current_canvas(save_canvas);
+	bitmap_y = android_menu_scale_round_coord(result.src.y - result.box.y,
+	                                          result.scale);
+	max_y = result.render_h - result.dst.h;
+	if (bitmap_y < 0)
+		bitmap_y = 0;
+	if (bitmap_y > max_y)
+		bitmap_y = max_y;
+	android_menu_scale_blit_bitmap_region(&render_bitmap, &result, bitmap_y);
+	gr_set_current_canvas(save_canvas);
+	gr_free_bitmap_data(&render_bitmap);
+	android_menu_scale_publish(&result);
+	return 1;
+}
+
 void android_menu_scale_publish(const android_menu_scale_result *result)
 {
 	if (!result || !result->active) {
@@ -296,7 +371,7 @@ static void scale_line_masked(unsigned char *in, unsigned char *out, int ilen, i
 			goto inside_m;
 		}
 		while (--i >= 0) {
-inside_m:
+		inside_m:
 			if (*in != 255)
 				*out = *in;
 			out++;
@@ -321,7 +396,7 @@ static void bitmap_scale_to_masked(grs_bitmap *src, grs_bitmap *dst)
 			goto inside2;
 		}
 		while (--i >= 0) {
-inside2:
+		inside2:
 			scale_line_masked(s, d, src->bm_w, dst->bm_w);
 			d += dst->bm_rowsize;
 		}

@@ -56,6 +56,224 @@ static level_metadata_game_context Level_metadata_game_context;
 static level_metadata_scan_view Level_metadata_scan_view;
 static int Level_metadata_scan_view_initialized;
 
+#define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
+
+enum level_metadata_visibility_target_kind {
+	LEVEL_METADATA_VISIBILITY_TARGET_WALL = 1,
+	LEVEL_METADATA_VISIBILITY_TARGET_POSITION = 2
+};
+
+typedef struct level_metadata_visibility_key {
+	int kind;
+	int from_seg;
+	int from_pos[3];
+	int target_id;
+	int target_pos[3];
+} level_metadata_visibility_key;
+
+typedef struct level_metadata_visibility_entry {
+	unsigned long long hash;
+	level_metadata_visibility_key key;
+	unsigned char used;
+	unsigned char result;
+} level_metadata_visibility_entry;
+
+static level_metadata_visibility_entry *Level_metadata_visibility_entries;
+static int Level_metadata_visibility_count;
+static level_metadata_visibility_cache_summary Level_metadata_visibility_summary;
+
+static unsigned long long level_metadata_visibility_hash_int(
+    unsigned long long hash,
+    int value)
+{
+	hash ^= (unsigned int) value;
+	return hash * 1099511628211ULL;
+}
+
+static unsigned long long level_metadata_visibility_hash_key(
+    const level_metadata_visibility_key *key)
+{
+	unsigned long long hash = 1469598103934665603ULL;
+	int coordinate;
+
+	hash = level_metadata_visibility_hash_int(hash, key->kind);
+	hash = level_metadata_visibility_hash_int(hash, key->from_seg);
+	for (coordinate = 0; coordinate < 3; ++coordinate)
+		hash = level_metadata_visibility_hash_int(hash, key->from_pos[coordinate]);
+	hash = level_metadata_visibility_hash_int(hash, key->target_id);
+	for (coordinate = 0; coordinate < 3; ++coordinate)
+		hash = level_metadata_visibility_hash_int(hash, key->target_pos[coordinate]);
+	return hash ? hash : 1;
+}
+
+static int level_metadata_visibility_key_equal(
+    const level_metadata_visibility_key *left,
+    const level_metadata_visibility_key *right)
+{
+	return memcmp(left, right, sizeof(*left)) == 0;
+}
+
+static int level_metadata_visibility_cache_resize(int capacity)
+{
+	level_metadata_visibility_entry *previous = Level_metadata_visibility_entries;
+	int previous_capacity = Level_metadata_visibility_summary.capacity;
+	level_metadata_visibility_entry *entries;
+	int index;
+
+	entries = (level_metadata_visibility_entry *) calloc(
+	    (size_t) capacity, sizeof(*entries));
+	if (!entries)
+		return 0;
+	Level_metadata_visibility_entries = entries;
+	Level_metadata_visibility_summary.capacity = capacity;
+	Level_metadata_visibility_count = 0;
+	for (index = 0; index < previous_capacity; ++index) {
+		int slot;
+		if (!previous[index].used)
+			continue;
+		slot = (int) (previous[index].hash & (unsigned long long) (capacity - 1));
+		while (entries[slot].used)
+			slot = (slot + 1) & (capacity - 1);
+		entries[slot] = previous[index];
+		Level_metadata_visibility_count++;
+	}
+	free(previous);
+	Level_metadata_visibility_summary.entries =
+	    Level_metadata_visibility_count;
+	return 1;
+}
+
+static int level_metadata_visibility_cache_lookup(
+    const level_metadata_visibility_key *key,
+    int *result)
+{
+	unsigned long long hash;
+	int capacity = Level_metadata_visibility_summary.capacity;
+	int slot;
+	int probe;
+
+	if (!Level_metadata_visibility_entries || capacity <= 0)
+		return 0;
+	hash = level_metadata_visibility_hash_key(key);
+	slot = (int) (hash & (unsigned long long) (capacity - 1));
+	for (probe = 0; probe < capacity; ++probe) {
+		const level_metadata_visibility_entry *entry =
+		    &Level_metadata_visibility_entries[slot];
+		if (!entry->used)
+			return 0;
+		if (entry->hash == hash &&
+		    level_metadata_visibility_key_equal(&entry->key, key)) {
+			*result = entry->result != 0;
+			Level_metadata_visibility_summary.hits++;
+			return 1;
+		}
+		slot = (slot + 1) & (capacity - 1);
+	}
+	return 0;
+}
+
+static void level_metadata_visibility_cache_store(
+    const level_metadata_visibility_key *key,
+    int result)
+{
+	unsigned long long hash;
+	int capacity = Level_metadata_visibility_summary.capacity;
+	int slot;
+	int probe;
+
+	if (capacity <= 0) {
+		if (!level_metadata_visibility_cache_resize(
+		        LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY)) {
+			Level_metadata_visibility_summary.bypasses++;
+			return;
+		}
+		capacity = Level_metadata_visibility_summary.capacity;
+	} else if ((Level_metadata_visibility_count + 1) * 10 > capacity * 7) {
+		if (level_metadata_visibility_cache_resize(capacity * 2))
+			capacity = Level_metadata_visibility_summary.capacity;
+	}
+	hash = level_metadata_visibility_hash_key(key);
+	slot = (int) (hash & (unsigned long long) (capacity - 1));
+	for (probe = 0; probe < capacity; ++probe) {
+		level_metadata_visibility_entry *entry =
+		    &Level_metadata_visibility_entries[slot];
+		if (!entry->used) {
+			entry->used = 1;
+			entry->hash = hash;
+			entry->key = *key;
+			entry->result = result != 0;
+			Level_metadata_visibility_count++;
+			Level_metadata_visibility_summary.entries =
+			    Level_metadata_visibility_count;
+			return;
+		}
+		if (entry->hash == hash &&
+		    level_metadata_visibility_key_equal(&entry->key, key)) {
+			entry->result = result != 0;
+			return;
+		}
+		slot = (slot + 1) & (capacity - 1);
+	}
+	Level_metadata_visibility_summary.bypasses++;
+}
+
+static unsigned long long level_metadata_visibility_world_hash(void)
+{
+	unsigned long long hash = 1469598103934665603ULL;
+	int segment;
+	int side;
+	int vertex;
+
+	hash = level_metadata_visibility_hash_int(hash, Current_level_num);
+	hash = level_metadata_visibility_hash_int(hash, Num_segments);
+	hash = level_metadata_visibility_hash_int(hash, Num_vertices);
+	hash = level_metadata_visibility_hash_int(hash, Num_walls);
+	for (vertex = 0; vertex < Num_vertices; ++vertex) {
+		hash = level_metadata_visibility_hash_int(hash, Vertices[vertex].x);
+		hash = level_metadata_visibility_hash_int(hash, Vertices[vertex].y);
+		hash = level_metadata_visibility_hash_int(hash, Vertices[vertex].z);
+	}
+	for (segment = 0; segment < Num_segments; ++segment) {
+		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+			hash = level_metadata_visibility_hash_int(
+			    hash, Segments[segment].children[side]);
+			hash = level_metadata_visibility_hash_int(
+			    hash, Segments[segment].sides[side].wall_num);
+			hash = level_metadata_visibility_hash_int(
+			    hash, Segments[segment].sides[side].tmap_num);
+			hash = level_metadata_visibility_hash_int(
+			    hash, Segments[segment].sides[side].tmap_num2);
+			hash = level_metadata_visibility_hash_int(
+			    hash, WALL_IS_DOORWAY(&Segments[segment], side));
+		}
+	}
+	return hash ? hash : 1;
+}
+
+static void level_metadata_visibility_cache_sync(void)
+{
+	unsigned long long world_hash =
+	    level_metadata_visibility_world_hash();
+	int capacity = Level_metadata_visibility_summary.capacity;
+	int resets = Level_metadata_visibility_summary.resets;
+
+	if (Level_metadata_visibility_summary.world_hash == world_hash &&
+	    Level_metadata_visibility_summary.resets != 0)
+		return;
+	if (Level_metadata_visibility_entries)
+		memset(
+		    Level_metadata_visibility_entries, 0,
+		    (size_t) Level_metadata_visibility_summary.capacity *
+		        sizeof(*Level_metadata_visibility_entries));
+	memset(
+	    &Level_metadata_visibility_summary, 0,
+	    sizeof(Level_metadata_visibility_summary));
+	Level_metadata_visibility_summary.world_hash = world_hash;
+	Level_metadata_visibility_summary.capacity = capacity;
+	Level_metadata_visibility_summary.resets = resets + 1;
+	Level_metadata_visibility_count = 0;
+}
+
 static unsigned int level_metadata_next_generation(unsigned int current)
 {
 	current++;
@@ -579,15 +797,19 @@ static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 #endif
 }
 
-static int secret_area_target_visible_from_segment(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3])
+static int secret_area_target_visible_from_position_uncached(
+    int seg,
+    const int from_pos[3],
+    int target_seg,
+    const int target_pos[3])
 {
 	fvi_info hit_data;
 	fvi_query query;
 	vms_vector from;
 	vms_vector target;
 
-	(void) user;
-	if (seg < 0 || seg >= Num_segments || target_seg < 0 || target_seg >= Num_segments || !from_pos || !target_pos)
+	if (seg < 0 || seg >= Num_segments || target_seg < -1 ||
+	    target_seg >= Num_segments || !from_pos || !target_pos)
 		return 0;
 	from.x = from_pos[0];
 	from.y = from_pos[1];
@@ -606,8 +828,47 @@ static int secret_area_target_visible_from_segment(void *user, int seg, const in
 	return find_vector_intersection(&query, &hit_data) == HIT_NONE;
 }
 
+int level_metadata_target_visible_from_position(
+    int seg,
+    const int from_pos[3],
+    int target_seg,
+    const int target_pos[3])
+{
+	level_metadata_visibility_key key;
+	int result;
+
+	if (seg < 0 || seg >= Num_segments || target_seg < -1 ||
+	    target_seg >= Num_segments || !from_pos || !target_pos)
+		return 0;
+	memset(&key, 0, sizeof(key));
+	key.kind = LEVEL_METADATA_VISIBILITY_TARGET_POSITION;
+	key.from_seg = seg;
+	memcpy(key.from_pos, from_pos, sizeof(key.from_pos));
+	memcpy(key.target_pos, target_pos, sizeof(key.target_pos));
+	if (level_metadata_visibility_cache_lookup(&key, &result))
+		return result;
+	Level_metadata_visibility_summary.misses++;
+	result = secret_area_target_visible_from_position_uncached(
+	    seg, from_pos, target_seg, target_pos);
+	level_metadata_visibility_cache_store(&key, result);
+	return result;
+}
+
+static int secret_area_target_visible_from_segment(
+    void *user,
+    int seg,
+    const int from_pos[3],
+    int target_seg,
+    const int target_pos[3])
+{
+	(void) user;
+	return level_metadata_target_visible_from_position(
+	    seg, from_pos, target_seg, target_pos);
+}
+
 int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], int wall_num)
 {
+	level_metadata_visibility_key key;
 	fvi_info hit_data;
 	fvi_query query;
 	vms_vector from;
@@ -624,6 +885,13 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 		return 0;
 	if (wall_seg == seg)
 		return 1;
+	memset(&key, 0, sizeof(key));
+	key.kind = LEVEL_METADATA_VISIBILITY_TARGET_WALL;
+	key.from_seg = seg;
+	memcpy(key.from_pos, from_pos, sizeof(key.from_pos));
+	key.target_id = wall_num;
+	if (level_metadata_visibility_cache_lookup(&key, &fate))
+		return fate;
 	from.x = from_pos[0];
 	from.y = from_pos[1];
 	from.z = from_pos[2];
@@ -636,12 +904,15 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	query.rad = 0;
 	query.thisobjnum = -1;
 	query.flags = FQ_TRANSWALL;
+	Level_metadata_visibility_summary.misses++;
 	fate = find_vector_intersection(&query, &hit_data);
-	return fate == HIT_NONE ||
+	fate = fate == HIT_NONE ||
 	       (fate == HIT_WALL &&
 	        hit_data.hit_type == HIT_WALL &&
 	        hit_data.hit_side_seg == wall_seg &&
 	        hit_data.hit_side == wall_side);
+	level_metadata_visibility_cache_store(&key, fate);
+	return fate;
 }
 
 static int secret_area_wall_visible_from_segment(void *user, int seg, const int from_pos[3], int wall_num)
@@ -1057,6 +1328,7 @@ static void level_metadata_rescan_current_level_internal(
 		    &Level_metadata_canonical_snapshot,
 		    NULL,
 		    0);
+		level_metadata_visibility_cache_sync();
 		if (Level_metadata_canonical_snapshot_valid)
 			level_metadata_seed_snapshot_generations(
 			    &Level_metadata_canonical_snapshot);
@@ -1077,6 +1349,7 @@ static void level_metadata_rescan_current_level_internal(
 		    &Level_metadata_live_snapshot,
 		    NULL,
 		    0);
+		level_metadata_visibility_cache_sync();
 		if (Level_metadata_live_snapshot_valid) {
 			if (previous_valid)
 				level_metadata_advance_snapshot_generations(
@@ -1154,6 +1427,15 @@ int level_metadata_get_route_start_objnum(void)
 int level_metadata_get_route_start_seg(void)
 {
 	return Level_metadata_route_start_seg;
+}
+
+int level_metadata_get_visibility_cache_summary(
+    level_metadata_visibility_cache_summary *summary)
+{
+	if (!summary)
+		return 0;
+	*summary = Level_metadata_visibility_summary;
+	return 1;
 }
 
 void secret_area_rescan_current_level(void)

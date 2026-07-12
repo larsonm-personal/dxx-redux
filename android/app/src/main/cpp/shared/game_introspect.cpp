@@ -592,6 +592,7 @@ static json serialize_level_metadata_route()
 	route_snapshot_summary snapshot = {};
 	route_edge_shadow_summary edge_shadow = {};
 	route_planner_shadow_summary planner_shadow = {};
+	level_metadata_visibility_cache_summary visibility_cache = {};
 	int count = 0;
 
 	if (!metadata) {
@@ -602,6 +603,17 @@ static json serialize_level_metadata_route()
 	}
 	result["status"] = level_metadata_route_status_name(metadata->route_status);
 	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
+	if (level_metadata_get_visibility_cache_summary(&visibility_cache)) {
+		result["visibility_cache"] = {
+			{ "world_hash", visibility_cache.world_hash },
+			{ "hits", visibility_cache.hits },
+			{ "misses", visibility_cache.misses },
+			{ "entries", visibility_cache.entries },
+			{ "capacity", visibility_cache.capacity },
+			{ "resets", visibility_cache.resets },
+			{ "bypasses", visibility_cache.bypasses },
+		};
+	}
 	if (level_metadata_get_canonical_route_snapshot(&snapshot))
 		result["canonical_snapshot"] = serialize_route_snapshot(snapshot);
 	if (level_metadata_get_live_route_snapshot(&snapshot))

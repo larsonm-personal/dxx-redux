@@ -69,8 +69,8 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "gameseq.h"
 #include "playsave.h"
 #include "state.h"
+#include "startup_resume_shared.h"
 #ifdef __ANDROID__
-#include "android_resume_pilot.h"
 #include "android_log.h"
 #endif
 #include "collide.h"
@@ -206,72 +206,6 @@ void print_commandline_help()
 	printf( "\n Help:\n\n");
 	printf( "  -help, -h, -?, ?             View this help screen\n");
 	printf( "\n\n");
-}
-
-static int find_cmd_arg(const char *name)
-{
-	int i;
-
-	for (i = 1; i < Num_args; ++i)
-		if (!d_stricmp(Args[i], name))
-			return i;
-
-	return 0;
-}
-
-#ifdef __ANDROID__
-static void android_apply_startup_pilot_arg(void)
-{
-	const int arg_index = find_cmd_arg("-pilot");
-
-	if (GameArg.SysPilot || !arg_index)
-		return;
-	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] ||
-	    !Args[arg_index + 1][0] || Args[arg_index + 1][0] == '-')
-		return;
-	GameArg.SysPilot = Args[arg_index + 1];
-}
-#endif
-
-static int maybe_resume_save_from_cmdline(void)
-{
-	const int arg_index = find_cmd_arg("-resume-save");
-	int restored;
-
-	if (!arg_index)
-		return 0;
-	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || !Args[arg_index + 1][0]) {
-		con_printf(CON_URGENT, "startup resume: missing save path\n");
-		return 0;
-	}
-
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "startup resume check: game=d1 Num_args=%d arg_index=%d current_callsign='%s'",
-		Num_args, arg_index, Players[Player_num].callsign);
-	if (!android_load_pilot_from_resume_save(Args[arg_index + 1], "d1"))
-	{
-		con_printf(CON_URGENT, "startup resume: could not prepare pilot for '%s'\n", Args[arg_index + 1]);
-		debug_log(DLOG_GAME, "startup resume aborted: could not prepare pilot for '%s'", Args[arg_index + 1]);
-		return 0;
-	}
-#endif
-	con_printf(CON_NORMAL, "startup resume: restoring '%s'\n", Args[arg_index + 1]);
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "startup resume restore begin: game=d1 path='%s' callsign='%s'",
-		Args[arg_index + 1], Players[Player_num].callsign);
-#endif
-	restored = state_restore_all_path(0, Args[arg_index + 1]);
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "startup resume restore result: game=d1 path='%s' restored=%d callsign='%s'",
-		Args[arg_index + 1], restored, Players[Player_num].callsign);
-#endif
-	if (!restored)
-		con_printf(CON_URGENT, "startup resume: restore failed for '%s'\n", Args[arg_index + 1]);
-#ifdef __ANDROID__
-	if (restored)
-		game_flush_inputs();
-#endif
-	return restored;
 }
 
 int Quitting = 0;
@@ -428,7 +362,7 @@ int main(int argc, char *argv[])
 		for (i = 0; i < Num_args; i++)
 			debug_log(DLOG_GAME, "startup parsed Args[%d]=%s", i, Args[i] ? Args[i] : "<null>");
 	}
-	android_apply_startup_pilot_arg();
+	startup_apply_pilot_arg();
 #endif
 
 	setbuf(stdout, NULL); // unbuffered output via printf
@@ -532,7 +466,7 @@ int main(int argc, char *argv[])
 
 	set_default_handler(standard_handler);
 
-	if (!find_cmd_arg("-resume-save"))
+	if (!startup_find_cmd_arg("-resume-save"))
 		show_titles();
 
 	set_screen_mode(SCREEN_MENU);
@@ -592,7 +526,7 @@ int main(int argc, char *argv[])
 			if (replay_result > 0)
 				return replay_result;
 			if (replay_result < 0) {
-				if (!maybe_resume_save_from_cmdline()) {
+				if (!startup_resume_save_from_cmdline("d1")) {
 					Game_mode = GM_GAME_OVER;
 					DoMenu();
 				}

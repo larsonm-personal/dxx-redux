@@ -53,6 +53,7 @@ static void android_clear_texture_replacement_path_cache(void);
 #include "android_profile.h"
 #include "gles3_shim.h"
 #include "ogl_msaa_android.h"
+#include "ogl_viewport_android.h"
 #endif
 
 #include "3d.h"
@@ -114,6 +115,10 @@ unsigned char *ogl_pal=gr_palette;
 int last_width=-1,last_height=-1;
 #ifdef ANDROID
 int last_kb_off=0;
+static struct android_ogl_viewport_state ogl_android_viewport_state = {
+	&last_width, &last_height, &last_kb_off,
+	-1, -1, -1, -1, -1, -1
+};
 #endif
 int GL_TEXTURE_2D_enabled=-1;
 int GL_texclamp_enabled=-1;
@@ -195,87 +200,14 @@ static void android_cache_profile_count(int *counter)
 		(*counter)++;
 }
 
-static int android_ogl_scale_axis(int value, int logical_extent, int physical_extent)
-{
-	long long scaled;
-
-	if (logical_extent <= 0 || physical_extent <= 0)
-		return value;
-	scaled = (long long)value * physical_extent;
-	if (scaled >= 0)
-		scaled += logical_extent / 2;
-	else
-		scaled -= logical_extent / 2;
-	return (int)(scaled / logical_extent);
-}
-
-static void android_ogl_get_drawable_size(int logical_w, int logical_h, int *drawable_w, int *drawable_h)
-{
-	/* Android setBuffersGeometry keeps the EGL drawable at game resolution.
-	 * The Java SurfaceView can be larger, but using that for GL viewport
-	 * pushes centered menus off the actual drawable on some devices. */
-	if (drawable_w)
-		*drawable_w = logical_w;
-	if (drawable_h)
-		*drawable_h = logical_h;
-}
-
 void ogl_android_viewport(int x, int y, int w, int h)
 {
-	static int last_x = -1, last_y = -1;
-	static int last_physical_x = -1, last_physical_y = -1;
-	static int last_physical_w = -1, last_physical_h = -1;
 	int logical_screen_w = grd_curscreen ? grd_curscreen->sc_w : w;
 	int logical_screen_h = grd_curscreen ? grd_curscreen->sc_h : h;
 	int canvas_h = grd_curscreen ? grd_curscreen->sc_canvas.cv_bitmap.bm_h : logical_screen_h;
-	int drawable_screen_w, drawable_screen_h;
 	int koff = android_get_keyboard_y_offset(canvas_h);
-	int viewport_y = canvas_h - y - h + koff;
-	int drawable_x, drawable_y, drawable_w, drawable_h;
-
-	android_ogl_get_drawable_size(logical_screen_w, logical_screen_h,
-	                              &drawable_screen_w, &drawable_screen_h);
-	drawable_x = android_ogl_scale_axis(x, logical_screen_w, drawable_screen_w);
-	drawable_y = android_ogl_scale_axis(viewport_y, logical_screen_h, drawable_screen_h);
-	drawable_w = android_ogl_scale_axis(w, logical_screen_w, drawable_screen_w);
-	drawable_h = android_ogl_scale_axis(h, logical_screen_h, drawable_screen_h);
-	if (drawable_w <= 0 && w > 0)
-		drawable_w = 1;
-	if (drawable_h <= 0 && h > 0)
-		drawable_h = 1;
-
-	if (x != last_x || y != last_y || w != last_width || h != last_height ||
-	    koff != last_kb_off || drawable_x != last_physical_x ||
-	    drawable_y != last_physical_y || drawable_w != last_physical_w ||
-	    drawable_h != last_physical_h) {
-		glViewport(drawable_x, drawable_y, drawable_w, drawable_h);
-		last_x = x;
-		last_y = y;
-		last_width = w;
-		last_height = h;
-		last_kb_off = koff;
-		last_physical_x = drawable_x;
-		last_physical_y = drawable_y;
-		last_physical_w = drawable_w;
-		last_physical_h = drawable_h;
-	}
-}
-
-static void android_fill_keyboard_gap(int screen_w, int screen_h, int gap_h)
-{
-	int drawable_w, drawable_h, drawable_gap_h;
-
-	if (gap_h <= 0)
-		return;
-	if (gap_h > screen_h)
-		gap_h = screen_h;
-	android_ogl_get_drawable_size(screen_w, screen_h, &drawable_w, &drawable_h);
-	drawable_gap_h = android_ogl_scale_axis(gap_h, screen_h, drawable_h);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(0, 0, drawable_w, drawable_gap_h);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glDisable(GL_SCISSOR_TEST);
+	android_ogl_viewport_apply(&ogl_android_viewport_state, x, y, w, h,
+		logical_screen_w, logical_screen_h, canvas_h, koff);
 }
 #endif
 
@@ -682,15 +614,6 @@ static void ogl_msaa_destroy_fbo(void)
 	android_ogl_msaa_destroy_fbo(&ogl_msaa_state, &g_msaa_fbo_bound);
 }
 
-static int ogl_msaa_create_fbo(int samples, int w, int h)
-{
-	debug_log(DLOG_GRAPHICS,
-		"MSAA FBO create request: samples=%d max=%d size=%dx%d",
-		samples, ogl_msaa_max_samples, w, h);
-	return android_ogl_msaa_create_fbo(&ogl_msaa_state, &g_msaa_fbo_bound,
-		ogl_msaa_max_samples, samples, w, h,
-		ogl_msaa_log_message, NULL);
-}
 #endif
 
 //gltexture MUST be bound first
@@ -2207,19 +2130,15 @@ void ogl_start_frame(void){
 	 * Only the outermost active 3D pass binds here. ogl_end_frame balances
 	 * the depth counter, so later cockpit subviews in the same game frame can
 	 * rebind safely before the final resolve in gr_flip. */
-	if (ogl_msaa_samples > 0 && g_msaa_frame_depth == 0) {
+	{
 		int w, h;
-		android_ogl_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
-		                              &w, &h);
-		if (!ogl_msaa_fbo || ogl_msaa_w != w || ogl_msaa_h != h)
-			ogl_msaa_create_fbo(ogl_msaa_samples, w, h);
-		if (ogl_msaa_fbo) {
-			msaa_color_clear = !g_msaa_fbo_bound;
-			glBindFramebuffer(GL_FRAMEBUFFER, ogl_msaa_fbo);
-			g_msaa_fbo_bound = 1;
-		}
+		android_ogl_viewport_get_drawable_size(grd_curscreen->sc_w,
+			grd_curscreen->sc_h, &w, &h);
+		msaa_color_clear = android_ogl_msaa_begin_frame(
+			&ogl_msaa_state, &g_msaa_fbo_bound, &g_msaa_frame_depth,
+			ogl_msaa_max_samples, ogl_msaa_samples, w, h,
+			ogl_msaa_log_message, NULL);
 	}
-	g_msaa_frame_depth++;
 	/* GPU timer: read oldest completed query, begin new query */
 	if (ogl_gpu_timer_available) {
 		struct android_ogl_gpu_timer_state gpu_timer_state = {
@@ -2311,8 +2230,7 @@ void ogl_start_frame(void){
 void ogl_end_frame(void){
 	OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
 #ifdef ANDROID
-	if (g_msaa_frame_depth > 0)
-		g_msaa_frame_depth--;
+	android_ogl_msaa_end_frame(&g_msaa_frame_depth);
 	{
 		extern volatile int g_blit_y_offset;
 		g_blit_y_offset = last_kb_off;
@@ -2348,30 +2266,13 @@ void ogl_end_frame(void){
 void ogl_prepare_framebuffer_readback(void)
 {
 #ifdef ANDROID
-	g_msaa_resolve_time_us = 0;
-	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
-		struct timespec resolve_start, resolve_end;
+	{
 		int w, h;
-		android_ogl_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
-		                              &w, &h);
-		android_perf_clock_now(&resolve_start);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
-		    GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		{
-			GLenum err = glGetError();
-			if (err != GL_NO_ERROR)
-				__android_log_print(ANDROID_LOG_ERROR, "DXX",
-				    "MSAA resolve error: 0x%x", err);
-		}
-		g_msaa_fbo_bound = 0;
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		android_perf_clock_now(&resolve_end);
-		g_msaa_resolve_time_us = android_perf_elapsed_us(&resolve_start, &resolve_end);
-		return;
+		android_ogl_viewport_get_drawable_size(grd_curscreen->sc_w,
+			grd_curscreen->sc_h, &w, &h);
+		g_msaa_resolve_time_us = android_ogl_msaa_resolve(
+			&ogl_msaa_state, &g_msaa_fbo_bound, g_msaa_frame_depth, w, h);
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 }
 
@@ -2383,8 +2284,8 @@ void ogl_android_clear_window_backing(void)
 
 	if (w <= 0 || h <= 0)
 		return;
-	glBindFramebuffer(GL_FRAMEBUFFER,
-	                  g_msaa_fbo_bound && ogl_msaa_fbo ? ogl_msaa_fbo : 0);
+	android_ogl_msaa_bind_window_backing(&ogl_msaa_state,
+		g_msaa_fbo_bound);
 	ogl_android_viewport(0, 0, w, h);
 	glDisable(GL_SCISSOR_TEST);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -2401,10 +2302,8 @@ void ogl_android_prepare_overlay_blit(void)
 
 	if (before_bound && before_depth == 0)
 		ogl_prepare_framebuffer_readback();
-	else if (before_bound && ogl_msaa_fbo)
-		glBindFramebuffer(GL_FRAMEBUFFER, ogl_msaa_fbo);
 	else
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		android_ogl_msaa_bind_overlay_target(&ogl_msaa_state, before_bound);
 
 	if (w > 0 && h > 0) {
 		extern volatile int g_blit_y_offset;
@@ -2490,7 +2389,7 @@ void gr_flip(void)
 			if (trace_flip)
 				crash_breadcrumb("gr_flip: fb_sample");
 			int w, h;
-			android_ogl_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
+			android_ogl_viewport_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
 			                              &w, &h);
 			android_merged_wall_sample_snapshot_framebuffer(
 				w, h,
@@ -2511,7 +2410,7 @@ void gr_flip(void)
 		int w = grd_curscreen->sc_w;
 		ogl_android_viewport(0, 0, w, h);
 		g_blit_y_offset = last_kb_off;
-		android_fill_keyboard_gap(w, h, last_kb_off);
+		android_ogl_viewport_fill_keyboard_gap(w, h, last_kb_off);
 	}
 
 	if (trace_flip)

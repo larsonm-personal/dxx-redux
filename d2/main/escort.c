@@ -1078,20 +1078,19 @@ static int escort_route_can_see_wall_from_pos(int from_seg, const vms_vector *fr
 
 static int escort_route_can_see_pos_from_pos(int from_seg, const vms_vector *from_pos, const vms_vector *target)
 {
-	fvi_info hit_data;
-	fvi_query query;
+	int from[3];
+	int to[3];
 
 	if (!escort_valid_segment(from_seg) || !from_pos || !target)
 		return 0;
-	memset(&query, 0, sizeof(query));
-	memset(&hit_data, 0, sizeof(hit_data));
-	query.p0 = (vms_vector *) from_pos;
-	query.p1 = (vms_vector *) target;
-	query.startseg = from_seg;
-	query.rad = 0;
-	query.thisobjnum = -1;
-	query.flags = FQ_TRANSWALL;
-	return find_vector_intersection(&query, &hit_data) == HIT_NONE;
+	from[0] = from_pos->x;
+	from[1] = from_pos->y;
+	from[2] = from_pos->z;
+	to[0] = target->x;
+	to[1] = target->y;
+	to[2] = target->z;
+	return level_metadata_target_visible_from_position(
+	    from_seg, from, -1, to);
 }
 
 static int escort_route_segment_can_see_wall(int segnum, int wall_num)

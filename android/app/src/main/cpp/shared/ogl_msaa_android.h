@@ -22,6 +22,18 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
                                 int h,
                                 android_ogl_msaa_log_message_fn log_message,
                                 void *log_user_data);
+int android_ogl_msaa_begin_frame(struct android_ogl_msaa_state *state,
+                                 int *bound, int *frame_depth,
+                                 int max_samples, int samples, int w, int h,
+                                 android_ogl_msaa_log_message_fn log_message,
+                                 void *log_user_data);
+void android_ogl_msaa_end_frame(int *frame_depth);
+int android_ogl_msaa_resolve(struct android_ogl_msaa_state *state,
+                             int *bound, int frame_depth, int w, int h);
+void android_ogl_msaa_bind_window_backing(
+    const struct android_ogl_msaa_state *state, int bound);
+void android_ogl_msaa_bind_overlay_target(
+    const struct android_ogl_msaa_state *state, int bound);
 
 #endif
 

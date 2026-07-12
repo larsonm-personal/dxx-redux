@@ -55,4 +55,20 @@
 - Completed automap metadata overlay: 313 inherited additions removed; objective and secret labels passed focused dual-game coverage
 - Completed Android scaled linear font renderer: 252 inherited additions removed; readability and scale regressions passed
 - Stable aggregate before the active input-demo-probe tranche: 339 files, `+48217/-3887`, a reduction of 1,741 additions from the refreshed `+49958/-3886` inventory
-- Current selected tranche: staged input-demo diagnostic centralization, beginning with stateless collision and AI probes
+- Completed input-demo diagnostic centralization: 1,053 inherited additions removed across collision, AI, FVI, controls, physics, and render probes
+- Completed HUD-count extraction: 203 inherited additions removed
+- Completed SDL-mixer diagnostics extraction: 174 inherited additions removed
+- Completed live-difficulty extraction: 214 inherited additions removed
+- Completed effect-runtime extraction: 168 inherited additions removed
+- Completed coop-start fanout extraction: 126 inherited additions removed
+- Completed coop restore remapping extraction: 130 inherited additions removed
+- Completed shader-runtime extraction: 96 inherited additions removed
+- Completed jukebox-name extraction: 62 inherited additions removed
+- Completed Android fatal-error bridge: 57 inherited additions removed
+- Completed texmerge-owner diagnostics extraction: 190 inherited additions removed
+- Completed kconfig scaled-render extraction: 148 inherited additions removed
+- Completed OGL viewport and keyboard-gap extraction: 136 inherited additions removed
+- Completed safe OGL MSAA frame-lifecycle slice: 66 inherited additions removed
+- Isolated reduction from these post-refresh tranches: 2,823 inherited additions
+- Live aggregate after concurrent feature work: 339 files, `+46506/-3891` against `upstream/main`
+- Current selected tranche: rerank the remaining low-risk feature seams against the 20-40-line endpoint

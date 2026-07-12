@@ -36,6 +36,9 @@ typedef struct android_menu_scale_draw_state {
 	float fnt_scale_y;
 } android_menu_scale_draw_state;
 
+typedef void (*android_menu_scale_canvas_draw_fn)(void *userdata,
+                                                  grs_canvas *canvas);
+
 float android_menu_scale_get_target_fill(void);
 int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
                                        int source_h, int screen_w, int screen_h, int border_x, int border_y,
@@ -43,6 +46,12 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
 int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
                                        int source_h, int screen_w, int screen_h, int *scroll_y,
                                        android_menu_scale_result *result);
+int android_menu_scale_draw_kconfig(int source_x, int source_y, int source_w,
+                                    int source_h, int screen_w, int screen_h,
+                                    int *scroll_y, grs_canvas *window_canvas,
+                                    android_menu_scale_canvas_draw_fn draw_contents,
+                                    void *userdata);
+void android_menu_scale_scroll_by(int *scroll_y, int delta_y);
 void android_menu_scale_publish(const android_menu_scale_result *result);
 void android_menu_scale_clear(void);
 int android_menu_scale_get_state(android_menu_scale_result *result);

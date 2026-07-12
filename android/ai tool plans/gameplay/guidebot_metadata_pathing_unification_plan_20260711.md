@@ -75,8 +75,14 @@ Parity has two separate meanings and both must pass:
   - Fixed MSVC packing for all new snapshot, edge, and planner C ABI summaries after expanded diagnostics exposed engine-header packing leakage.
   - Ported ordered trigger-source discovery with direct-side-before-reverse-side precedence, stable source-wall ordering, source activation positions, and fired, disabled, non-progress, and in-progress trigger filtering.
   - Added per-side trigger-source shadow comparison in all four progression states, strict headless diagnostics, unit coverage, and live introspection; confirmed zero mismatches in D1/D2 fixtures, all base campaigns, 1,244 levels from 109 mission archives, and the Counterstrike unexplored-goal emulator fixture.
-  - Next slice in progress: port trigger firing-path selection through an engine-neutral visibility callback, including candidate ranking, exact visible or directly reachable activation pose, terminal segment, distance, and dependency-loop behavior.
-  - Semantic step production and live behavior remain on the C planner; firing-position selection is the next porting boundary.
+  - Ported trigger firing-path selection through an engine-neutral visibility callback, retaining deterministic search visit order and the exact preferred, center, side, vertex, and edge sample sequence used by metadata.
+  - Reused one pessimistic search tree across candidate trigger sources, preserving direct-path and visibility-fallback ranking while avoiding the C planner's repeated full-mine search per source.
+  - Added direct and visibility-fallback unit fixtures plus bounded direct/visible shadow comparisons for distinct progression states; base campaigns, 106 fully strict archive scans, the remaining available archive comparisons, and the Counterstrike unexplored-goal emulator fixture report zero firing-path mismatches.
+  - Existing unrelated strict diagnostics remain in K_SOS and Levigen edge/search parity, while KCXF2 level 4 still reports shadow data unavailable; none reports a firing-path mismatch.
+  - Completed the exact FVI visibility cache shared by metadata recursion, C/C++ shadow comparison, and live Guide-Bot fallback. Wall and object-target rays are keyed by the exact source pose and target, so reachability-only recalculations reuse them while door doorway state, textures, or level geometry changes invalidate the cache through a direct world fingerprint.
+  - Added live cache counters and assertions. Counterstrike level 1 reused 18,420 rays after 12,642 evaluations with zero bypasses and zero planner shadow mismatches; strict D2 base-campaign analysis dropped from 18.1 seconds to 3.2 seconds while all 1,274 reviewed route fingerprints and base campaign statuses remained unchanged.
+  - Next slice: port recursive trigger dependency resolution and semantic trigger-step production, including loop diagnostics, opened-link projection, and selected segment-chain retention.
+  - Semantic step production and live behavior remain on the C planner; recursive dependency planning is the next porting boundary.
 
 ## Non-Goals
 

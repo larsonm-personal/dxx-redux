@@ -276,6 +276,77 @@ static const char *merged_wall_request_mode_name_local(int mode)
 	}
 }
 
+void android_merged_wall_texmerge_owner_reset(struct merged_wall_texmerge_owner *owner)
+{
+	owner->first_seg = -1;
+	owner->first_side = -1;
+	owner->first_face = -1;
+	owner->last_seg = -1;
+	owner->last_side = -1;
+	owner->last_face = -1;
+	owner->creation_frame = -1;
+	owner->last_use_frame = -1;
+}
+
+void android_merged_wall_texmerge_owner_note(struct merged_wall_texmerge_owner *owner)
+{
+	const int seg = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1;
+	const int side = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1;
+	const int face = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1;
+
+	if (owner->creation_frame < 0) {
+		owner->first_seg = seg;
+		owner->first_side = side;
+		owner->first_face = face;
+		owner->creation_frame = g_merged_wall_frame_id;
+	}
+	owner->last_seg = seg;
+	owner->last_side = side;
+	owner->last_face = face;
+	owner->last_use_frame = g_merged_wall_frame_id;
+}
+
+void android_merged_wall_log_texmerge_owner(
+    const char *event, int slot, int tmap_bottom, int tmap_top,
+    grs_bitmap *bottom_bmp, grs_bitmap *top_bmp, int orient,
+    const struct merged_wall_texmerge_owner *owner)
+{
+	const char *bottom_name;
+	const char *top_name;
+	int force_log;
+
+	if (!android_merged_wall_is_logging_target_bitmap(top_bmp))
+		return;
+	bottom_name = piggy_game_bitmap_name(bottom_bmp);
+	top_name = piggy_game_bitmap_name(top_bmp);
+	force_log = event && strcmp(event, "reuse");
+	(force_log ? debug_log_force : debug_log)(DLOG_TEXTURE,
+	                                          "[mwall_texmerge] event=%s frame=%d pass=%d seq=%d slot=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s first_owner=%d/%d/%d create_frame=%d last_owner=%d/%d/%d last_use_frame=%d",
+	                                          event,
+	                                          g_merged_wall_frame_id,
+	                                          g_merged_wall_render_pass,
+	                                          g_merged_wall_draw_seq,
+	                                          slot,
+	                                          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                                          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                                          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                                          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+	                                          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+	                                          tmap_bottom,
+	                                          tmap_top,
+	                                          orient,
+	                                          bottom_name ? bottom_name : "<none>",
+	                                          top_name ? top_name : "<none>",
+	                                          owner->first_seg,
+	                                          owner->first_side,
+	                                          owner->first_face,
+	                                          owner->creation_frame,
+	                                          owner->last_seg,
+	                                          owner->last_side,
+	                                          owner->last_face,
+	                                          owner->last_use_frame);
+}
+
 void android_merged_wall_log_cached_texmerge(const char *event,
                                              grs_bitmap *bottom_bmp,
                                              grs_bitmap *overlay_bmp,

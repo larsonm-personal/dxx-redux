@@ -12,6 +12,17 @@ struct segment;
 struct g3s_point;
 struct _ogl_texture;
 
+struct merged_wall_texmerge_owner {
+	int first_seg;
+	int first_side;
+	int first_face;
+	int last_seg;
+	int last_side;
+	int last_face;
+	int creation_frame;
+	int last_use_frame;
+};
+
 struct merged_wall_cached_texmerge_entry {
 	grs_bitmap bitmap;
 	struct _ogl_texture *texture;
@@ -37,6 +48,14 @@ struct merged_wall_tmap2_submit_context {
 
 extern volatile int g_merged_wall_force_two_pass;
 
+void android_merged_wall_texmerge_owner_reset(
+    struct merged_wall_texmerge_owner *owner);
+void android_merged_wall_texmerge_owner_note(
+    struct merged_wall_texmerge_owner *owner);
+void android_merged_wall_log_texmerge_owner(
+    const char *event, int slot, int tmap_bottom, int tmap_top,
+    grs_bitmap *bottom_bmp, grs_bitmap *top_bmp, int orient,
+    const struct merged_wall_texmerge_owner *owner);
 void android_merged_wall_log_cached_texmerge(
     const char *event,
     grs_bitmap *bottom_bmp,

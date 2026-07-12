@@ -241,6 +241,16 @@ typedef struct level_metadata_route_trigger_firing_path_shadow {
 	int terminal_pos_valid;
 } level_metadata_route_trigger_firing_path_shadow;
 
+typedef struct level_metadata_visibility_cache_summary {
+	unsigned long long world_hash;
+	unsigned long long hits;
+	unsigned long long misses;
+	int entries;
+	int capacity;
+	int resets;
+	int bypasses;
+} level_metadata_visibility_cache_summary;
+
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
 	int energy_center_raw_count;

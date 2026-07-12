@@ -3188,22 +3188,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		/* Player count may differ from saved state (new joiners or
 		 * disconnected players). Re-derive from live session so the
 		 * networking layer stays consistent. */
-		{
-			int live_n = 0;
-			for (i = 0; i < MAX_PLAYERS; i++)
-				if (Players[i].connected == CONNECT_PLAYING ||
-				    Players[i].connected == CONNECT_WAITING)
-					live_n++;
-			if (live_n > Netgame.numplayers)
-				Netgame.numplayers = live_n;
-			if (live_n > Netgame.max_numplayers)
-				Netgame.max_numplayers = live_n;
-			Netgame.numconnected = live_n;
-			if (Game_mode & GM_MULTI_COOP)
-				COOPLOG("restore netgame live count: game=d2 live=%d net_num=%d max=%d connected=%d",
-				        live_n, Netgame.numplayers,
-				        Netgame.max_numplayers, Netgame.numconnected);
-		}
+		coop_normalize_restored_netgame_players("d2");
 #endif
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{

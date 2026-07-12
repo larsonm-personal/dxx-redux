@@ -63,7 +63,11 @@
         "level_metadata_route.planner_shadow.compared_trigger_source_edge_count": {"gt": 0},
         "level_metadata_route.planner_shadow.trigger_source_mismatch_count": "0",
         "level_metadata_route.planner_shadow.compared_trigger_firing_path_count": {"gt": 0},
-        "level_metadata_route.planner_shadow.trigger_firing_path_mismatch_count": "0"
+        "level_metadata_route.planner_shadow.trigger_firing_path_mismatch_count": "0",
+        "level_metadata_route.visibility_cache.hits": {"gt": 0},
+        "level_metadata_route.visibility_cache.misses": {"gt": 0},
+        "level_metadata_route.visibility_cache.entries": {"gt": 0},
+        "level_metadata_route.visibility_cache.bypasses": "0"
     }},
 
     {"action": "wait_ms", "ms": 6000},
