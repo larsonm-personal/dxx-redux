@@ -917,6 +917,8 @@ static json serialize_guidebot()
 	    live_plan_available ? live_plan.first_pending_path_segment_count : 0;
 	result["route_first_pending_path_terminal_seg"] =
 	    live_plan_available ? live_plan.first_pending_path_terminal_segment : -1;
+	result["route_partial_frontier_seg"] =
+	    live_plan_available ? live_plan.partial_frontier_segment : -1;
 	result["route_selector_compare_count"] = escort_get_route_selector_compare_count();
 	result["route_selector_mismatch_count"] = escort_get_route_selector_mismatch_count();
 	result["route_selector_shared_index"] = escort_get_route_selector_shared_index();

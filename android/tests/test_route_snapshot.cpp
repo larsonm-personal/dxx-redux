@@ -714,6 +714,14 @@ int main()
 	assert(loop_dependency.problem.rfind(
 	           "trigger route dependency loop", 0) == 0);
 	assert(loop_dependency.steps.empty());
+	auto frontier_query = nested_query;
+	frontier_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	frontier_query.target_segment = 3;
+	const auto frontier_plan = dxx_route::plan_route(
+	    loop_snapshot, frontier_query);
+	assert(frontier_plan.status != dxx_route::route_plan_status::ok);
+	assert(frontier_plan.partial_frontier_segment >= 0);
+	assert(frontier_plan.partial_frontier_segment != frontier_query.target_segment);
 	auto visible_snapshot = triggered_snapshot;
 	visible_snapshot.state.segments[0].sides[0].hard_blocked = true;
 	visible_snapshot.topology.walls[0].segment = 1;

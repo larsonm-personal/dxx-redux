@@ -189,6 +189,7 @@ struct route_plan_result {
 	std::string problem;
 	std::string note;
 	double travel_distance = 0.0;
+	int partial_frontier_segment = -1;
 	int unexplored_component_size = 0;
 	int unexplored_target_segment = -1;
 	int unexplored_waypoint_segment = -1;

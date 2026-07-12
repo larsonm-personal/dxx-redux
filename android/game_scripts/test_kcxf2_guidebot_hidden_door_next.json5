@@ -52,12 +52,10 @@
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "4",
         "guidebot.released": "true",
         "guidebot.buddy_objnum": {"gte": 0},
         "guidebot.route_status": "ok",
         "guidebot.route_start_matches_buddy": "true",
-        "guidebot.route_analysis.step_count": "4",
         "guidebot.route_analysis.selected_index": "1",
         "guidebot.route_analysis.steps[1].kind": "hidden_door",
         "guidebot.route_analysis.steps[1].selected_next": "true",

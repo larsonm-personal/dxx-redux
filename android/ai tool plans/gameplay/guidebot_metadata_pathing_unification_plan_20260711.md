@@ -101,7 +101,16 @@ Parity has two separate meanings and both must pass:
   - Fixed the first live selector mismatch exposed by the new gate: key steps were omitted from the common targetability helper because the legacy selector handled them in a separate branch.
   - Nonowner co-op peers return before live route planning. Introspection reports shared planner provenance, first-waypoint path data, current selector parity, and the exact pair from any mismatch.
   - D1/D2 projection tests cover all three endpoint policies. Windows D1/D2 builds, both strict base-campaign scans, corpus status/fingerprint tests, all Android ABIs, and the live Counterstrike unexplored-wheel fixture pass with zero selector or planner-shadow mismatches.
-  - Phase 5 is next: restore and enforce the classic movement boundary while retaining the shared planner only for semantic objective and goal-segment selection.
+  - Phase 5 is in progress: restore and enforce the classic movement boundary while retaining the shared planner only for semantic objective and goal-segment selection.
+  - [x] Restored the original `aipath.c` doorway/openable-door predicate and removed the metadata-aware Guide-Bot path wrapper.
+  - [x] The shared planner's first pending path terminal is now the high-level Guide-Bot goal; the duplicate live firing-position and reachability searches were deleted.
+  - [x] Restored classic command scheduling and return-to-player timing by removing command-time path creation, duplicate polishing, and pending-route suppression.
+  - [x] Partial-route closest-frontier selection now belongs to the shared planner, and shared route goals issue one ordinary classic path request.
+  - [ ] Add path, scheduling, and RNG parity coverage before closing Phase 5.
+  - D1 and D2 Windows builds and native suites pass (19 and 22 tests), including a new partial-frontier planner test. Android debug builds pass for all three ABIs.
+  - Full host metadata regeneration completed 109 mission archives with one skip and zero failures; all 1,274 reviewed route fingerprints and base-campaign status gates remain unchanged.
+  - The KCXF2 hidden-door fixture and the unexplored wheel fixture pass. The KCXF2 fixture now follows semantic objective identity instead of assuming the total live route-step count remains fixed while Guide-Bot moves.
+  - Remaining Phase 5 gate: add a dedicated trace comparator that starts ordinary and shared-route goals from identical object, segment, timer, and RNG state and compares the resulting classic path and RNG delta.
 
 ## Non-Goals
 

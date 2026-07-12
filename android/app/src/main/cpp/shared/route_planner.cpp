@@ -871,6 +871,7 @@ struct dependency_state {
 	int failed_key = -1;
 	double pending_distance = 0.0;
 	route_path_result pending_path;
+	int partial_frontier_segment = -1;
 	std::vector<unsigned char> hidden_door_in_progress;
 	std::string note;
 	bool unresolved_obstruction_valid = false;
@@ -1123,6 +1124,7 @@ class dependency_planner
 		result.steps = std::move(state_.steps);
 		result.problem = std::move(state_.problem);
 		result.note = std::move(state_.note);
+		result.partial_frontier_segment = state_.partial_frontier_segment;
 		for (const auto &step : result.steps)
 			if (std::isfinite(step.distance_from_previous) &&
 			    step.distance_from_previous > 0.0)
@@ -1592,6 +1594,7 @@ class dependency_planner
 		if (move_to_target(target.segment, target.position, 0))
 			return true;
 		const std::string direct_problem = state_.problem;
+		const int direct_frontier = state_.partial_frontier_segment;
 		state_ = initial;
 		state_.problem.clear();
 		bool progressed = false;
@@ -1600,6 +1603,7 @@ class dependency_planner
 			return true;
 		if (!progressed) {
 			state_ = initial;
+			state_.partial_frontier_segment = direct_frontier;
 			if (!direct_problem.empty())
 				state_.problem = direct_problem;
 		}
@@ -1759,6 +1763,9 @@ class dependency_planner
 				return false;
 			}
 			const auto &block = optimistic.first_obstruction;
+			if (valid_segment(snapshot_, optimistic.first_obstruction_segment))
+				state_.partial_frontier_segment =
+				    optimistic.first_obstruction_segment;
 			if (block.blocker == route_edge_blocker::missing_key) {
 				const auto saved = state_;
 				state_.failed_key = -1;
@@ -2163,6 +2170,7 @@ bool project_plan(
 	summary.route_step_count = destination.route_step_count;
 	summary.first_pending_step = -1;
 	summary.first_pending_path_terminal_segment = -1;
+	summary.partial_frontier_segment = source.partial_frontier_segment;
 	for (int step = 0; step < destination.route_step_count; ++step) {
 		if (source.steps[step].kind ==
 		    dxx_route::route_semantic_step_kind::start)

@@ -23,6 +23,7 @@ typedef struct route_planner_plan_summary {
 	int first_pending_step;
 	int first_pending_path_segment_count;
 	int first_pending_path_terminal_segment;
+	int partial_frontier_segment;
 } route_planner_plan_summary;
 
 typedef struct route_planner_shadow_summary {

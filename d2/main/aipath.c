@@ -42,28 +42,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "deterministic_math.h"
 #include "d1_in_d2.h"
 #include "input_demo_hooks.h"
-#ifdef __ANDROID__
-#include "secretarea.h"
-#endif
-
-#ifdef __ANDROID__
-static int Metadata_route_path_depth;
-#endif
-
-static int ai_path_edge_is_passable(object *objp, segment *segp, int sidenum)
-{
-	if (!IS_CHILD(segp->children[sidenum]))
-		return 0;
-#ifdef __ANDROID__
-	if (Metadata_route_path_depth > 0 &&
-	    objp && objp->type == OBJ_ROBOT && Robot_info[objp->id].companion)
-		return level_metadata_route_edge_cost_from_object(
-		           objp - Objects, segp - Segments, sidenum) ==
-		       LEVEL_METADATA_ROUTE_EDGE_PASSABLE;
-#endif
-	return (WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG) ||
-	       ai_door_is_openable(objp, segp, sidenum);
-}
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
 
@@ -392,7 +370,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 			if (random_flag)
 				snum = random_xlate[sidenum];
 
-			if (ai_path_edge_is_passable(objp, segp, snum)) {
+			if (IS_CHILD(segp->children[snum]) && ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
 				int			this_seg = segp->children[snum];
 				Assert(this_seg != -1);
 				if (((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
@@ -824,15 +802,6 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 		input_demo_log_path_request(end_seg == -1 ? "create_path_to_segment skipped" : "create_path_to_segment done", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
 }
-
-#ifdef __ANDROID__
-void create_path_to_segment_metadata_route(object *objp, int goalseg, int max_length, int safety_flag)
-{
-	Metadata_route_path_depth++;
-	create_path_to_segment(objp, goalseg, max_length, safety_flag);
-	Metadata_route_path_depth--;
-}
-#endif
 
 //	-------------------------------------------------------------------------------------------------------
 //	Creates a path from the objects current segment (objp->segnum) to the specified segment for the object to

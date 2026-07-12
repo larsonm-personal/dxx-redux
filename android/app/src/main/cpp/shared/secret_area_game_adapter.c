@@ -1362,6 +1362,7 @@ static void level_metadata_rescan_current_level_internal(
 		       sizeof(Level_metadata_live_plan_summary));
 		Level_metadata_live_plan_summary.first_pending_step = -1;
 		Level_metadata_live_plan_summary.first_pending_path_terminal_segment = -1;
+		Level_metadata_live_plan_summary.partial_frontier_segment = -1;
 		Level_metadata_live_plan_summary_valid = route_planner_plan_view(
 		    view,
 		    endpoint_kind,
