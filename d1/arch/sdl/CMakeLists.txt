@@ -19,6 +19,10 @@ if(SDLMIXER)
         digi_mixer_music.c
         jukebox.c
         )
+    if(ANDROID)
+        target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE
+            ../../../android/app/src/main/cpp/shared/android_audio_diagnostics.c)
+    endif()
     target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PUBLIC ${SDL_MIXER_INCLUDE_DIRS})
     target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl ${SDL_MIXER_LIBRARY})
 endif()

@@ -50,6 +50,738 @@ static int input_demo_recording_terminal_exit = INPUT_DEMO_RESULT_TERMINAL_EXIT_
 static int input_demo_player_shield_probe_valid = 0;
 static fix input_demo_player_shield_probe_value = 0;
 
+static int input_demo_trace_player_control_active(void)
+{
+	return input_demo_debug_activity_probe_active();
+}
+
+static unsigned int input_demo_trace_player_control_frame_index(void)
+{
+	return input_demo_debug_frame_index();
+}
+
+static const char *input_demo_trace_player_control_mode_name(void)
+{
+	return input_demo_debug_activity_mode_name();
+}
+
+static int input_demo_player_weapon_threat_now(object *obj)
+{
+	int i;
+
+	if (!input_demo_trace_player_control_active() ||
+		!ConsoleObject ||
+		obj != ConsoleObject ||
+		obj->type != OBJ_PLAYER ||
+		obj->id != Player_num)
+		return 0;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *weapon = &Objects[i];
+
+		if (weapon->type != OBJ_WEAPON)
+			continue;
+		if (weapon->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS))
+			continue;
+		if (weapon->ctype.laser_info.parent_type != OBJ_ROBOT)
+			continue;
+		if (weapon->segnum != obj->segnum)
+			continue;
+		return 1;
+	}
+
+	return 0;
+}
+
+static int input_demo_player_control_probe_active(object *obj)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static int frames_remaining = 0;
+	const unsigned int frame = input_demo_trace_player_control_frame_index();
+	const int threat_now = input_demo_player_weapon_threat_now(obj);
+
+	if (frame != last_frame) {
+		if (frames_remaining > 0)
+			frames_remaining--;
+		last_frame = frame;
+	}
+	if (threat_now)
+		frames_remaining = 2;
+
+	return threat_now || frames_remaining > 0;
+}
+
+static unsigned int input_demo_player_control_state_key(object *obj, fix resolved_forward_thrust_time)
+{
+	unsigned int key = (unsigned int)(obj->segnum & 0xffff);
+
+	key = key * 131u + (unsigned int)resolved_forward_thrust_time;
+	key = key * 131u + (unsigned int)Controls.pitch_time;
+	key = key * 131u + (unsigned int)Controls.heading_time;
+	key = key * 131u + (unsigned int)Controls.bank_time;
+	key = key * 131u + (unsigned int)Controls.forward_thrust_time;
+	key = key * 131u + (unsigned int)Controls.sideways_thrust_time;
+	key = key * 131u + (unsigned int)Controls.vertical_thrust_time;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.x;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.y;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.z;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.rotthrust.x;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.rotthrust.y;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.rotthrust.z;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.flags;
+	key = key * 131u + (unsigned int)Players[Player_num].flags;
+	key = key * 131u + (unsigned int)Controls.afterburner_state;
+	key = key * 131u + (unsigned int)Players[Player_num].afterburner_charge;
+
+	return key;
+}
+
+static int input_demo_player_control_probe_should_log(unsigned int state_key)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static unsigned int last_state_key = 0;
+	const unsigned int frame = input_demo_trace_player_control_frame_index();
+
+	if (last_frame != (unsigned int)-1 && frame == last_frame + 1 && last_state_key == state_key)
+		return 0;
+
+	last_frame = frame;
+	last_state_key = state_key;
+	return 1;
+}
+
+void input_demo_log_player_control_probe(object *obj,
+	const vms_vector *pre_scale_thrust,
+	const vms_vector *pre_scale_rotthrust,
+	fix resolved_forward_thrust_time)
+{
+	const unsigned int state_key = input_demo_player_control_state_key(obj, resolved_forward_thrust_time);
+
+	if (!input_demo_player_control_probe_active(obj))
+		return;
+	if (!input_demo_player_control_probe_should_log(state_key))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo player control probe: mode=%s frame=%u gt=%lld step=read_flying_controls seg=%d resolved_forward=%d controls=(%d,%d,%d,%d,%d,%d) pre_thrust=(%d,%d,%d) thrust=(%d,%d,%d) pre_rot=(%d,%d,%d) rot=(%d,%d,%d) vel=(%d,%d,%d) orient_f=(%d,%d,%d) orient_r=(%d,%d,%d) orient_u=(%d,%d,%d) phys_flags=0x%x player_flags=0x%x ab=(%d,%d)\n",
+		input_demo_trace_player_control_mode_name(),
+		input_demo_trace_player_control_frame_index(),
+		(long long)GameTime64,
+		obj->segnum,
+		resolved_forward_thrust_time,
+		Controls.pitch_time,
+		Controls.heading_time,
+		Controls.bank_time,
+		Controls.forward_thrust_time,
+		Controls.sideways_thrust_time,
+		Controls.vertical_thrust_time,
+		pre_scale_thrust ? pre_scale_thrust->x : 0,
+		pre_scale_thrust ? pre_scale_thrust->y : 0,
+		pre_scale_thrust ? pre_scale_thrust->z : 0,
+		obj->mtype.phys_info.thrust.x,
+		obj->mtype.phys_info.thrust.y,
+		obj->mtype.phys_info.thrust.z,
+		pre_scale_rotthrust ? pre_scale_rotthrust->x : 0,
+		pre_scale_rotthrust ? pre_scale_rotthrust->y : 0,
+		pre_scale_rotthrust ? pre_scale_rotthrust->z : 0,
+		obj->mtype.phys_info.rotthrust.x,
+		obj->mtype.phys_info.rotthrust.y,
+		obj->mtype.phys_info.rotthrust.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->orient.fvec.x,
+		obj->orient.fvec.y,
+		obj->orient.fvec.z,
+		obj->orient.rvec.x,
+		obj->orient.rvec.y,
+		obj->orient.rvec.z,
+		obj->orient.uvec.x,
+		obj->orient.uvec.y,
+		obj->orient.uvec.z,
+		obj->mtype.phys_info.flags,
+		Players[Player_num].flags,
+		Controls.afterburner_state,
+		Players[Player_num].afterburner_charge);
+}
+
+void input_demo_log_player_wiggle_probe(object *obj,
+	const vms_vector *velocity_before_wiggle,
+	const vms_vector *wiggle_delta,
+	fix raw_swiggle,
+	fix scaled_swiggle,
+	fix wiggle_amount,
+	int wiggle_applied)
+{
+	if (!input_demo_player_control_probe_active(obj))
+		return;
+	if (!wiggle_applied &&
+		(!wiggle_delta ||
+		(wiggle_delta->x == 0 && wiggle_delta->y == 0 && wiggle_delta->z == 0)))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo player wiggle probe: mode=%s frame=%u gt=%lld seg=%d applied=%d raw=%d scaled=%d amount=%d ship_wiggle=%d vel_before=(%d,%d,%d) wiggle_delta=(%d,%d,%d) vel_after=(%d,%d,%d) uvec=(%d,%d,%d) phys_flags=0x%x ft=%d\n",
+		input_demo_trace_player_control_mode_name(),
+		input_demo_trace_player_control_frame_index(),
+		(long long)GameTime64,
+		obj->segnum,
+		wiggle_applied,
+		raw_swiggle,
+		scaled_swiggle,
+		wiggle_amount,
+		Player_ship ? Player_ship->wiggle : 0,
+		velocity_before_wiggle ? velocity_before_wiggle->x : 0,
+		velocity_before_wiggle ? velocity_before_wiggle->y : 0,
+		velocity_before_wiggle ? velocity_before_wiggle->z : 0,
+		wiggle_delta ? wiggle_delta->x : 0,
+		wiggle_delta ? wiggle_delta->y : 0,
+		wiggle_delta ? wiggle_delta->z : 0,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->orient.uvec.x,
+		obj->orient.uvec.y,
+		obj->orient.uvec.z,
+		obj->mtype.phys_info.flags,
+		FrameTime);
+}
+
+static unsigned int input_demo_render_probe_drawn_frame[MAX_OBJECTS];
+static unsigned int input_demo_render_probe_skip_state[MAX_OBJECTS];
+static ubyte input_demo_render_probe_skip_logged[MAX_OBJECTS];
+
+static int input_demo_render_probe_active(void)
+{
+	return input_demo_debug_replay_probe_active();
+}
+
+void input_demo_render_probe_note_drawn_robot(int objnum)
+{
+	if (!input_demo_render_probe_active() || objnum < 0 || objnum >= MAX_OBJECTS)
+		return;
+	input_demo_render_probe_drawn_frame[objnum] = input_demo_debug_frame_index();
+}
+
+static int input_demo_render_probe_list_has_object(
+	const input_demo_render_probe_lists *lists, int listnum, int objnum);
+
+int input_demo_render_probe_should_log_boundary(void)
+{
+	return input_demo_render_probe_active();
+}
+
+int input_demo_render_probe_first_robot_in_seg(int segnum, int *objnum_out, int *objid_out)
+{
+	int objnum;
+
+	if ((segnum < 0) || (segnum > Highest_segment_index))
+		return 0;
+
+	for (objnum = Segments[segnum].objects; objnum != -1; objnum = Objects[objnum].next) {
+		object *obj = &Objects[objnum];
+
+		if (obj->type != OBJ_ROBOT)
+			continue;
+
+		if (objnum_out)
+			*objnum_out = objnum;
+		if (objid_out)
+			*objid_out = obj->id;
+		return 1;
+	}
+
+	return 0;
+}
+
+static int input_demo_render_probe_list_has_object(
+	const input_demo_render_probe_lists *lists, int listnum, int objnum)
+{
+	int objnp = 0;
+	int safety = 0;
+
+	while (listnum >= 0 && listnum < lists->object_list_count &&
+		safety < lists->object_list_count) {
+		int entry = lists->object_lists[listnum * lists->object_list_stride + objnp++];
+
+		if (entry == -1)
+			break;
+
+		if (entry < 0) {
+			listnum = -entry;
+			objnp = 0;
+			safety++;
+			continue;
+		}
+
+		if (entry == objnum)
+			return 1;
+	}
+
+	return 0;
+}
+
+static unsigned int input_demo_render_probe_skip_state_key(object *obj, int depth, int in_obj_list)
+{
+	unsigned int key = (unsigned int)obj->signature;
+
+	key = key * 131u + (unsigned int)(obj->segnum & 0xffff);
+	key = key * 131u + (unsigned int)depth;
+	key = key * 131u + (unsigned int)in_obj_list;
+	key = key * 131u + (unsigned int)obj->flags;
+	key = key * 131u + (unsigned int)obj->control_type;
+	key = key * 131u + (unsigned int)obj->movement_type;
+
+	return key;
+}
+
+void input_demo_render_probe_log_skipped_robots(
+	const input_demo_render_probe_lists *lists)
+{
+	int nn;
+	unsigned int frame;
+
+	if (!input_demo_render_probe_active())
+		return;
+
+	frame = input_demo_debug_frame_index();
+
+	for (nn=0; nn<lists->render_segment_count; nn++) {
+		int segnum = lists->render_list[nn];
+		int objnum;
+		object *obj;
+
+		if (segnum < 0)
+			continue;
+
+		for (objnum=Segments[segnum].objects; objnum!=-1; objnum=obj->next) {
+			int in_obj_list;
+			unsigned int skip_state;
+
+			obj = &Objects[objnum];
+
+			if (obj->type != OBJ_ROBOT || obj->render_type != RT_POLYOBJ)
+				continue;
+
+			if (obj->flags & OF_ATTACHED)
+				continue;
+
+			if (input_demo_render_probe_drawn_frame[objnum] == frame) {
+				input_demo_render_probe_skip_logged[objnum] = 0;
+				continue;
+			}
+
+			in_obj_list = input_demo_render_probe_list_has_object(lists, nn, objnum);
+			skip_state = input_demo_render_probe_skip_state_key(obj, nn, in_obj_list);
+			if (input_demo_render_probe_skip_logged[objnum] &&
+				input_demo_render_probe_skip_state[objnum] == skip_state)
+				continue;
+
+			input_demo_render_probe_skip_logged[objnum] = 1;
+			input_demo_render_probe_skip_state[objnum] = skip_state;
+			con_printf(CON_NORMAL,
+				"Input demo render robot skip: frame=%u obj=%d sig=%d id=%d seg=%d depth=%d in_obj_list=%d render_type=%d flags=0x%x control=%d movement=%d life=%d\n",
+				frame,
+				objnum,
+				obj->signature,
+				obj->id,
+				obj->segnum,
+				nn,
+				in_obj_list,
+				obj->render_type,
+				obj->flags,
+				obj->control_type,
+				obj->movement_type,
+				(int)obj->lifeleft);
+		}
+	}
+}
+int input_demo_trace_motion_probe_active(void)
+{
+	return input_demo_debug_activity_probe_active();
+}
+
+unsigned int input_demo_trace_motion_frame_index(void)
+{
+	return input_demo_debug_frame_index();
+}
+
+static const char *input_demo_trace_motion_mode_name(void)
+{
+	return input_demo_debug_activity_mode_name();
+}
+
+static int input_demo_motion_player_weapon_threat_now(object *obj)
+{
+	int i;
+
+	if (!input_demo_trace_motion_probe_active() ||
+		!ConsoleObject ||
+		obj != ConsoleObject ||
+		obj->type != OBJ_PLAYER ||
+		obj->id != Player_num)
+		return 0;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *weapon = &Objects[i];
+
+		if (weapon->type != OBJ_WEAPON)
+			continue;
+		if (weapon->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS))
+			continue;
+		if (weapon->ctype.laser_info.parent_type != OBJ_ROBOT)
+			continue;
+		if (weapon->segnum != obj->segnum)
+			continue;
+		return 1;
+	}
+
+	return 0;
+}
+
+static int input_demo_player_hit_trace_window_active(object *obj)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static int frames_remaining = 0;
+	const unsigned int frame = input_demo_trace_motion_frame_index();
+	const int threat_now = input_demo_motion_player_weapon_threat_now(obj);
+
+	if (frame != last_frame) {
+		if (frames_remaining > 0)
+			frames_remaining--;
+		last_frame = frame;
+	}
+	if (threat_now)
+		frames_remaining = 2;
+
+	return threat_now || frames_remaining > 0;
+}
+
+static int input_demo_player_motion_detail_probe_active(object *obj)
+{
+	return input_demo_player_hit_trace_window_active(obj);
+}
+
+static int input_demo_player_drag_probe_active(object *obj)
+{
+	return input_demo_player_motion_detail_probe_active(obj);
+}
+
+static unsigned int input_demo_trace_motion_hash_step(const char *step)
+{
+	unsigned int key = 0;
+
+	if (!step)
+		return 0;
+
+	while (*step) {
+		key = key * 131u + (unsigned int)(unsigned char)(*step);
+		step++;
+	}
+
+	return key;
+}
+
+static unsigned int input_demo_player_drag_probe_state_key(object *obj,
+	const char *step,
+	const vms_vector *velocity,
+	const vms_vector *accel,
+	fix drag,
+	int count,
+	fix remainder,
+	fix ratio)
+{
+	unsigned int key = input_demo_trace_motion_hash_step(step);
+
+	key = key * 131u + (unsigned int)(obj->segnum & 0xffff);
+	key = key * 131u + (unsigned int)(velocity ? velocity->x : 0);
+	key = key * 131u + (unsigned int)(velocity ? velocity->y : 0);
+	key = key * 131u + (unsigned int)(velocity ? velocity->z : 0);
+	key = key * 131u + (unsigned int)(accel ? accel->x : 0);
+	key = key * 131u + (unsigned int)(accel ? accel->y : 0);
+	key = key * 131u + (unsigned int)(accel ? accel->z : 0);
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.x;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.y;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.z;
+	key = key * 131u + (unsigned int)drag;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.mass;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.flags;
+	key = key * 131u + (unsigned int)count;
+	key = key * 131u + (unsigned int)remainder;
+	key = key * 131u + (unsigned int)ratio;
+
+	return key;
+}
+
+static int input_demo_player_drag_probe_should_log(unsigned int state_key)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static unsigned int last_state_key = 0;
+	const unsigned int frame = input_demo_trace_motion_frame_index();
+
+	if (last_frame != (unsigned int)-1 && frame == last_frame + 1 && last_state_key == state_key)
+		return 0;
+
+	last_frame = frame;
+	last_state_key = state_key;
+	return 1;
+}
+
+void input_demo_log_player_drag_probe(object *obj,
+	const char *step,
+	const vms_vector *velocity,
+	const vms_vector *accel,
+	fix drag,
+	int count,
+	fix remainder,
+	fix ratio)
+{
+	const unsigned int state_key = input_demo_player_drag_probe_state_key(obj, step, velocity, accel, drag, count, remainder, ratio);
+
+	if (!input_demo_player_drag_probe_active(obj))
+		return;
+	if (!input_demo_player_drag_probe_should_log(state_key))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo player drag probe: mode=%s frame=%u gt=%lld step=%s seg=%d vel=(%d,%d,%d) thrust=(%d,%d,%d) accel=(%d,%d,%d) drag=%d mass=%d flags=0x%x count=%d rem=%d ratio=%d ft=%d\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		step,
+		obj->segnum,
+		velocity ? velocity->x : 0,
+		velocity ? velocity->y : 0,
+		velocity ? velocity->z : 0,
+		obj->mtype.phys_info.thrust.x,
+		obj->mtype.phys_info.thrust.y,
+		obj->mtype.phys_info.thrust.z,
+		accel ? accel->x : 0,
+		accel ? accel->y : 0,
+		accel ? accel->z : 0,
+		drag,
+		obj->mtype.phys_info.mass,
+		obj->mtype.phys_info.flags,
+		count,
+		remainder,
+		ratio,
+		FrameTime);
+}
+
+void input_demo_log_player_motion_detail_probe(object *obj,
+	const char *step,
+	const vms_vector *frame_vec,
+	const vms_vector *new_pos,
+	fix sim_time)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static unsigned int last_state_key = 0;
+	unsigned int state_key = input_demo_trace_motion_hash_step(step);
+	const unsigned int frame = input_demo_trace_motion_frame_index();
+
+	state_key = state_key * 131u + (unsigned int)(obj->segnum & 0xffff);
+	state_key = state_key * 131u + (unsigned int)obj->pos.x;
+	state_key = state_key * 131u + (unsigned int)obj->pos.y;
+	state_key = state_key * 131u + (unsigned int)obj->pos.z;
+	state_key = state_key * 131u + (unsigned int)obj->last_pos.x;
+	state_key = state_key * 131u + (unsigned int)obj->last_pos.y;
+	state_key = state_key * 131u + (unsigned int)obj->last_pos.z;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.velocity.x;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.velocity.y;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.velocity.z;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.thrust.x;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.thrust.y;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.thrust.z;
+	state_key = state_key * 131u + (unsigned int)(frame_vec ? frame_vec->x : 0);
+	state_key = state_key * 131u + (unsigned int)(frame_vec ? frame_vec->y : 0);
+	state_key = state_key * 131u + (unsigned int)(frame_vec ? frame_vec->z : 0);
+	state_key = state_key * 131u + (unsigned int)(new_pos ? new_pos->x : 0);
+	state_key = state_key * 131u + (unsigned int)(new_pos ? new_pos->y : 0);
+	state_key = state_key * 131u + (unsigned int)(new_pos ? new_pos->z : 0);
+	state_key = state_key * 131u + (unsigned int)sim_time;
+	state_key = state_key * 131u + (unsigned int)FrameTime;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.flags;
+
+	if (!input_demo_player_motion_detail_probe_active(obj))
+		return;
+	if (last_frame != (unsigned int)-1 && frame == last_frame + 1 && last_state_key == state_key)
+		return;
+
+	last_frame = frame;
+	last_state_key = state_key;
+
+	con_printf(CON_NORMAL,
+		"Input demo player motion detail: mode=%s frame=%u gt=%lld step=%s seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) thrust=(%d,%d,%d) frame_vec=(%d,%d,%d) target=(%d,%d,%d) sim_time=%d ft=%d flags=0x%x\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		step,
+		obj->segnum,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->last_pos.x,
+		obj->last_pos.y,
+		obj->last_pos.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->mtype.phys_info.thrust.x,
+		obj->mtype.phys_info.thrust.y,
+		obj->mtype.phys_info.thrust.z,
+		frame_vec ? frame_vec->x : 0,
+		frame_vec ? frame_vec->y : 0,
+		frame_vec ? frame_vec->z : 0,
+		new_pos ? new_pos->x : 0,
+		new_pos ? new_pos->y : 0,
+		new_pos ? new_pos->z : 0,
+		sim_time,
+		FrameTime,
+		obj->mtype.phys_info.flags);
+}
+
+static const char *input_demo_physics_fate_name(int fate)
+{
+	switch (fate) {
+		case HIT_NONE:
+			return "none";
+		case HIT_WALL:
+			return "wall";
+		case HIT_OBJECT:
+			return "object";
+		case HIT_BAD_P0:
+			return "bad_p0";
+		default:
+			return "unknown";
+	}
+}
+
+void input_demo_log_physics_fate(
+	object *obj,
+	int fate,
+	int count,
+	fix attempted_dist,
+	fix actual_dist,
+	fix moved_time,
+	fix sim_time,
+	const vms_vector *start_pos,
+	const vms_vector *new_pos,
+	int hit_seg,
+	int hit_side,
+	int hit_object,
+	const vms_vector *wall_norm)
+{
+	int wall_num = -1;
+	int wall_type = -1;
+	int wall_state = -1;
+	int wall_flags = 0;
+	int doorway_flags = 0;
+	int child_seg = -3;
+	int hit_object_type = -1;
+	int hit_object_id = -1;
+	int hit_object_size = 0;
+	vms_vector hit_object_pos = ZERO_VECTOR;
+
+	if (!input_demo_trace_motion_probe_active() ||
+		obj != ConsoleObject ||
+		!input_demo_player_hit_trace_window_active(obj))
+		return;
+
+	if (fate == HIT_OBJECT && hit_object >= 0 && hit_object <= Highest_object_index) {
+		hit_object_type = Objects[hit_object].type;
+		hit_object_id = Objects[hit_object].id;
+		hit_object_size = Objects[hit_object].size;
+		hit_object_pos = Objects[hit_object].pos;
+	}
+
+	if (fate == HIT_WALL && hit_seg >= 0 && hit_seg <= Highest_segment_index && hit_side >= 0 && hit_side < 6) {
+		child_seg = Segments[hit_seg].children[hit_side];
+		wall_num = Segments[hit_seg].sides[hit_side].wall_num;
+		if (wall_num >= 0 && wall_num < Num_walls) {
+			wall_type = Walls[wall_num].type;
+			wall_state = Walls[wall_num].state;
+			wall_flags = Walls[wall_num].flags;
+			doorway_flags = wall_is_doorway(&Segments[hit_seg], hit_side);
+		}
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo physics probe: mode=%s frame=%u gt=%lld iter=%d obj=%d type=%d id=%d size=%d fate=%s seg=%d hit=(seg=%d side=%d child=%d obj=%d type=%d id=%d size=%d pos=(%d,%d,%d)) wall=(num=%d type=%d state=%d flags=0x%x doorway=0x%x) norm=(%d,%d,%d) dist=(%d,%d) sim=(%d,%d) start=(%d,%d,%d) target=(%d,%d,%d) pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		count,
+		obj - Objects,
+		obj->type,
+		obj->id,
+		obj->size,
+		input_demo_physics_fate_name(fate),
+		obj->segnum,
+		hit_seg,
+		hit_side,
+		child_seg,
+		hit_object,
+		hit_object_type,
+		hit_object_id,
+		hit_object_size,
+		hit_object_pos.x,
+		hit_object_pos.y,
+		hit_object_pos.z,
+		wall_num,
+		wall_type,
+		wall_state,
+		wall_flags,
+		doorway_flags,
+		wall_norm ? wall_norm->x : 0,
+		wall_norm ? wall_norm->y : 0,
+		wall_norm ? wall_norm->z : 0,
+		attempted_dist,
+		actual_dist,
+		moved_time,
+		sim_time,
+		start_pos ? start_pos->x : 0,
+		start_pos ? start_pos->y : 0,
+		start_pos ? start_pos->z : 0,
+		new_pos ? new_pos->x : 0,
+		new_pos ? new_pos->y : 0,
+		new_pos ? new_pos->z : 0,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z);
+}
+
+void input_demo_log_fvi_weapon_robot_check(
+	const vms_vector *p0, const vms_vector *p1,
+	int weapon_objnum, int robot_objnum, fix fudged_rad, fix d)
+{
+	object *weapon;
+	object *robot;
+	fix center_dist;
+	fix combined_rad;
+	fix miss_delta;
+
+	if (!input_demo_replay_is_loaded() && !input_demo_recorder_is_active())
+		return;
+	if (weapon_objnum < 0 || robot_objnum < 0)
+		return;
+	weapon = &Objects[weapon_objnum];
+	robot = &Objects[robot_objnum];
+	if (weapon->type != OBJ_WEAPON || weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
+		return;
+	if (robot->type != OBJ_ROBOT)
+		return;
+	center_dist = vm_vec_dist(p0, &robot->pos);
+	combined_rad = robot->size + fudged_rad;
+	miss_delta = center_dist - combined_rad;
+	if (!input_demo_homing_desync_probe_active() && !d && miss_delta > (8 * f1_0))
+		return;
+	input_demo_log_weapon_robot_fvi_check(weapon, robot, p0, p1,
+		fudged_rad, combined_rad, center_dist, miss_delta, d);
+}
+
 static int input_demo_replay_fire_probe_active(void);
 static void input_demo_note_player_shield_probe_value(fix shields);
 static void input_demo_reset_powerup_live_probe_state(void);

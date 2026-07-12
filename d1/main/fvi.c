@@ -32,9 +32,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "player.h"
 #include "fix.h"
-#include "game.h"
-#include "input_demo_replay.h"
-#include "input_demo_recorder.h"
+#include "input_demo_hooks.h"
 
 #define face_type_num(nfaces,face_num,tri_edge) ((nfaces==1)?0:(tri_edge*2 + face_num))
 
@@ -592,68 +590,6 @@ static int check_vector_to_sphere_1(vms_vector *intp,const vms_vector *p0,const 
 //$$	else
 //$$		return 0;       //no intersection
 //$$}
-
-// android port: FVI sphere-check probe for weapon vs robot hits and misses
-static unsigned int fvi_input_demo_frame_index(void)
-{
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t n = input_demo_recorder_frame_count();
-		return n ? (unsigned int)(n - 1) : 0;
-	}
-	return 0;
-}
-
-static const char *fvi_input_demo_mode_name(void)
-{
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
-}
-
-static void input_demo_log_fvi_weapon_robot_check(
-	const vms_vector *p0, const vms_vector *p1,
-	int weapon_objnum, int robot_objnum, fix fudged_rad, fix d)
-{
-	object *weapon;
-	object *robot;
-	fix center_dist;
-	fix combined_rad;
-	fix miss_delta;
-	unsigned int frame;
-
-	if (!input_demo_replay_is_loaded() && !input_demo_recorder_is_active())
-		return;
-	if (weapon_objnum < 0 || robot_objnum < 0)
-		return;
-	weapon = &Objects[weapon_objnum];
-	robot = &Objects[robot_objnum];
-	if (weapon->type != OBJ_WEAPON || weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
-		return;
-	if (robot->type != OBJ_ROBOT)
-		return;
-	frame = fvi_input_demo_frame_index();
-	center_dist = vm_vec_dist(p0, &robot->pos);
-	combined_rad = robot->size + fudged_rad;
-	miss_delta = center_dist - combined_rad;
-	if (!d && miss_delta > (8 * f1_0))
-		return;
-	con_printf(CON_NORMAL,
-		"Input demo fvi weapon robot check: mode=%s frame=%u gt=%lld "
-		"weapon_obj=%d weapon_sig=%d p0=(%d,%d,%d) p1=(%d,%d,%d) "
-		"robot_obj=%d robot_sig=%d robot_id=%d robot_pos=(%d,%d,%d) "
-		"robot_size=%d fudged_rad=%d combined_rad=%d center_dist=%d miss_delta=%d d=%d hit=%d\n",
-		fvi_input_demo_mode_name(), frame, (long long)GameTime64,
-		weapon_objnum, weapon->signature,
-		p0->x, p0->y, p0->z,
-		p1->x, p1->y, p1->z,
-		robot_objnum, robot->signature, robot->id,
-		robot->pos.x, robot->pos.y, robot->pos.z,
-		robot->size, fudged_rad, combined_rad, center_dist, miss_delta, d, d > 0);
-}
 
 //determine if a vector intersects with an object
 //if no intersects, returns 0, else fills in intp and returns dist

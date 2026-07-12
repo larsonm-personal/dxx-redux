@@ -25,6 +25,9 @@ const char *input_demo_trace_collision_mode_name(void);
 void input_demo_log_player_robot_contact_probe(const char *step, struct object *player, struct object *robot,
 	const struct vms_vector *collision_point, int32_t damage);
 void input_demo_log_weapon_robot_accept_seq(struct object *weapon, struct object *robot);
+void input_demo_log_fvi_weapon_robot_check(const struct vms_vector *p0,
+	const struct vms_vector *p1, int weapon_objnum, int robot_objnum,
+	int32_t fudged_rad, int32_t d);
 void input_demo_log_weapon_lifetime(const char *step, struct object *obj);
 void input_demo_record_homing_state(const char *step, struct object *obj,
 	int straight_time_active, int do_homer_frame, int track_goal_before,

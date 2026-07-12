@@ -485,6 +485,39 @@ int main()
 	assert(dxx_route::evaluate_route_edge(
 	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
 	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED);
+	auto source_progress = dxx_route::initial_route_progress_state(
+	    triggered_snapshot, planner_query);
+	const auto trigger_sources = dxx_route::discover_trigger_sources(
+	    triggered_snapshot, source_progress, 1, 0);
+	assert(trigger_sources.size() == 1);
+	assert(trigger_sources[0].target_segment == 1);
+	assert(trigger_sources[0].target_side == 0);
+	assert(trigger_sources[0].target_wall == 1);
+	assert(trigger_sources[0].source_wall == 0);
+	assert(trigger_sources[0].source_segment == 0);
+	assert(trigger_sources[0].source_side == 0);
+	assert(trigger_sources[0].trigger == 0);
+	assert(trigger_sources[0].trigger_kind ==
+	       dxx_route::route_trigger_kind::open_door);
+	assert(trigger_sources[0].source_position.valid);
+	assert(trigger_sources[0].source_position.value[0] == 0);
+	assert(trigger_sources[0].source_position.value[1] == 1);
+	assert(trigger_sources[0].source_position.value[2] == 2);
+	source_progress.fired_triggers[0] = 1;
+	assert(dxx_route::discover_trigger_sources(
+	           triggered_snapshot, source_progress, 1, 0)
+	           .empty());
+	source_progress.fired_triggers[0] = 0;
+	source_progress.trigger_in_progress[0] = 1;
+	assert(dxx_route::discover_trigger_sources(
+	           triggered_snapshot, source_progress, 1, 0)
+	           .empty());
+	auto disabled_trigger_snapshot = triggered_snapshot;
+	disabled_trigger_snapshot.state.triggers[0].disabled = true;
+	source_progress.trigger_in_progress[0] = 0;
+	assert(dxx_route::discover_trigger_sources(
+	           disabled_trigger_snapshot, source_progress, 1, 0)
+	           .empty());
 	route_planner_shadow_summary planner_summary = {};
 	char planner_problem[96] = {};
 	if (!route_planner_compare_view(
@@ -502,6 +535,9 @@ int main()
 	assert(planner_summary.target_selection_mismatch_count == 0);
 	assert(planner_summary.compared_key_selection_count == 12);
 	assert(planner_summary.key_selection_mismatch_count == 0);
+	assert(planner_summary.compared_trigger_source_edge_count == 48);
+	assert(planner_summary.compared_trigger_source_count == 6);
+	assert(planner_summary.trigger_source_mismatch_count == 0);
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);

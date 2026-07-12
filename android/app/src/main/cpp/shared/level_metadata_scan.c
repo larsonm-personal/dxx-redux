@@ -1424,6 +1424,8 @@ static void metadata_route_context_from_progress_shadow(
 	route->control_center_destroyed = progress->control_center_destroyed != 0;
 	memcpy(route->fired_triggers, progress->fired_triggers,
 	       sizeof(progress->fired_triggers));
+	memcpy(route->trigger_in_progress, progress->trigger_in_progress,
+	       sizeof(progress->trigger_in_progress));
 	memcpy(route->avoided_triggers, progress->avoided_triggers,
 	       sizeof(progress->avoided_triggers));
 	memcpy(route->opened_hidden_walls, progress->opened_hidden_walls,
@@ -1555,6 +1557,66 @@ static int metadata_route_trigger_source_pos(
 		return 1;
 	}
 	return 0;
+}
+
+int level_metadata_scan_route_trigger_sources_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int seg,
+    int side,
+    level_metadata_route_trigger_source_shadow *sources,
+    int capacity,
+    int *count)
+{
+	metadata_route_context route;
+	metadata_route_block first;
+	int child;
+	int opener_count;
+	int index;
+
+	if (!view || !progress || !count || capacity < 0 ||
+	    (capacity > 0 && !sources))
+		return 0;
+	*count = 0;
+	if (!view->segment_child || !valid_segment(view, seg) ||
+	    side < 0 || side >= LEVEL_METADATA_MAX_SIDES)
+		return 1;
+	child = view->segment_child(view->user, seg, side);
+	if (!valid_segment(view, child))
+		return 1;
+	collect_segment_centers(view);
+	metadata_route_context_from_progress_shadow(&route, progress);
+	if (!metadata_route_edge_trigger_blocker(
+	        view, &route, seg, side, child, &first))
+		return 1;
+	opener_count = view->triggered_side_opener_count(
+	    view->user, first.seg, first.side);
+	for (index = 0; index < opener_count; ++index) {
+		metadata_route_block candidate;
+		level_metadata_route_trigger_source_shadow *source;
+		int source_wall = view->triggered_side_opener_wall_num(
+		    view->user, first.seg, first.side, index);
+		int pos[3];
+		if (!metadata_route_source_wall_block(
+		        view, &route, first.seg, first.side, 0, source_wall,
+		        &candidate) ||
+		    route.trigger_in_progress[candidate.trigger_num] ||
+		    !metadata_route_trigger_source_pos(view, &candidate, pos))
+			continue;
+		if (*count >= capacity)
+			return 0;
+		source = &sources[(*count)++];
+		source->target_seg = candidate.seg;
+		source->target_side = candidate.side;
+		source->target_wall = candidate.wall_num;
+		source->source_wall = candidate.source_wall;
+		source->source_seg = candidate.source_seg;
+		source->source_side = candidate.source_side;
+		source->trigger_num = candidate.trigger_num;
+		source->trigger_type = candidate.trigger_type;
+		copy_pos(source->source_pos, pos);
+	}
+	return 1;
 }
 
 static int metadata_route_try_trigger_firing_path(

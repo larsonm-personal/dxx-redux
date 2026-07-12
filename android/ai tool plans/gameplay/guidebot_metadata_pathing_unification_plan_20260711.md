@@ -73,7 +73,10 @@ Parity has two separate meanings and both must pass:
   - Added explicit distance-first and forbidden-missing-key search policy, then ported direct or contained key-recovery target choice with selected path retention.
   - Confirmed zero key-selection mismatches for blue, red, and gold across all four progression states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
   - Fixed MSVC packing for all new snapshot, edge, and planner C ABI summaries after expanded diagnostics exposed engine-header packing leakage.
-  - Semantic step production and live behavior remain on the C planner; trigger-source discovery and firing-position selection are the next porting boundary.
+  - Ported ordered trigger-source discovery with direct-side-before-reverse-side precedence, stable source-wall ordering, source activation positions, and fired, disabled, non-progress, and in-progress trigger filtering.
+  - Added per-side trigger-source shadow comparison in all four progression states, strict headless diagnostics, unit coverage, and live introspection; confirmed zero mismatches in D1/D2 fixtures, all base campaigns, 1,244 levels from 109 mission archives, and the Counterstrike unexplored-goal emulator fixture.
+  - Next slice: port trigger firing-path selection, including candidate ranking, exact visible or directly reachable activation pose, terminal segment, distance, and dependency-loop behavior.
+  - Semantic step production and live behavior remain on the C planner; firing-position selection is the next porting boundary.
 
 ## Non-Goals
 

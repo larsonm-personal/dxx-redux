@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "effects.h"
 #include "playsave.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
 #ifdef OGL
@@ -200,12 +201,6 @@ void android_render_frame_main_view(fix eye_offset, int window_num)
 #ifndef NDEBUG
 ubyte object_rendered[MAX_OBJECTS];
 #endif
-
-static unsigned int input_demo_render_probe_drawn_frame[MAX_OBJECTS];
-static unsigned int input_demo_render_probe_skip_state[MAX_OBJECTS];
-static ubyte input_demo_render_probe_skip_logged[MAX_OBJECTS];
-static int input_demo_render_probe_active(void);
-static void input_demo_render_probe_log_skipped_robots(void);
 
 #ifdef EDITOR
 int	Render_only_bottom=0;
@@ -897,12 +892,12 @@ void do_render_object(int objnum, int window_num)
 		Window_rendered_data[window_num].rendered_objects[Window_rendered_data[window_num].num_objects++] = objnum;
 	}
 
-	if (input_demo_render_probe_active()
+	if (
 #if defined(ANDROID) || defined(__ANDROID__)
-		&& !Android_visual_only_render_pass
+		!Android_visual_only_render_pass &&
 #endif
-		&& obj->type == OBJ_ROBOT)
-		input_demo_render_probe_drawn_frame[objnum] = input_demo_debug_frame_index();
+		obj->type == OBJ_ROBOT)
+		input_demo_render_probe_note_drawn_robot(objnum);
 
 	if ((count++ > MAX_OBJECTS) || (obj->next == objnum)) {
 		Int3();					// infinite loop detected
@@ -1222,140 +1217,6 @@ rect render_windows[MAX_RENDER_SEGS];
 
 short render_obj_list[MAX_RENDER_SEGS+N_EXTRA_OBJ_LISTS][OBJS_PER_SEG];
 
-static int input_demo_render_probe_active(void)
-{
-	return input_demo_debug_replay_probe_active();
-}
-
-static int input_demo_render_probe_list_has_object(int listnum, int objnum);
-
-static int input_demo_render_probe_should_log_boundary(void)
-{
-	return input_demo_render_probe_active();
-}
-
-static int input_demo_render_probe_first_robot_in_seg(int segnum, int *objnum_out, int *objid_out)
-{
-	int objnum;
-
-	if ((segnum < 0) || (segnum > Highest_segment_index))
-		return 0;
-
-	for (objnum = Segments[segnum].objects; objnum != -1; objnum = Objects[objnum].next) {
-		object *obj = &Objects[objnum];
-
-		if (obj->type != OBJ_ROBOT)
-			continue;
-
-		if (objnum_out)
-			*objnum_out = objnum;
-		if (objid_out)
-			*objid_out = obj->id;
-		return 1;
-	}
-
-	return 0;
-}
-
-static int input_demo_render_probe_list_has_object(int listnum, int objnum)
-{
-	int objnp = 0;
-	int safety = 0;
-
-	while (listnum >= 0 && safety < (MAX_RENDER_SEGS + N_EXTRA_OBJ_LISTS)) {
-		int entry = render_obj_list[listnum][objnp++];
-
-		if (entry == -1)
-			break;
-
-		if (entry < 0) {
-			listnum = -entry;
-			objnp = 0;
-			safety++;
-			continue;
-		}
-
-		if (entry == objnum)
-			return 1;
-	}
-
-	return 0;
-}
-
-static unsigned int input_demo_render_probe_skip_state_key(object *obj, int depth, int in_obj_list)
-{
-	unsigned int key = (unsigned int)obj->signature;
-
-	key = key * 131u + (unsigned int)(obj->segnum & 0xffff);
-	key = key * 131u + (unsigned int)depth;
-	key = key * 131u + (unsigned int)in_obj_list;
-	key = key * 131u + (unsigned int)obj->flags;
-	key = key * 131u + (unsigned int)obj->control_type;
-	key = key * 131u + (unsigned int)obj->movement_type;
-
-	return key;
-}
-
-static void input_demo_render_probe_log_skipped_robots(void)
-{
-	int nn;
-	unsigned int frame;
-
-	if (!input_demo_render_probe_active())
-		return;
-
-	frame = input_demo_debug_frame_index();
-
-	for (nn=0; nn<N_render_segs; nn++) {
-		int segnum = Render_list[nn];
-		int objnum;
-		object *obj;
-
-		if (segnum < 0)
-			continue;
-
-		for (objnum=Segments[segnum].objects; objnum!=-1; objnum=obj->next) {
-			int in_obj_list;
-			unsigned int skip_state;
-
-			obj = &Objects[objnum];
-
-			if (obj->type != OBJ_ROBOT || obj->render_type != RT_POLYOBJ)
-				continue;
-
-			if (obj->flags & OF_ATTACHED)
-				continue;
-
-			if (input_demo_render_probe_drawn_frame[objnum] == frame) {
-				input_demo_render_probe_skip_logged[objnum] = 0;
-				continue;
-			}
-
-			in_obj_list = input_demo_render_probe_list_has_object(nn, objnum);
-			skip_state = input_demo_render_probe_skip_state_key(obj, nn, in_obj_list);
-			if (input_demo_render_probe_skip_logged[objnum] &&
-				input_demo_render_probe_skip_state[objnum] == skip_state)
-				continue;
-
-			input_demo_render_probe_skip_logged[objnum] = 1;
-			input_demo_render_probe_skip_state[objnum] = skip_state;
-			con_printf(CON_NORMAL,
-				"Input demo render robot skip: frame=%u obj=%d sig=%d id=%d seg=%d depth=%d in_obj_list=%d render_type=%d flags=0x%x control=%d movement=%d life=%d\n",
-				frame,
-				objnum,
-				obj->signature,
-				obj->id,
-				obj->segnum,
-				nn,
-				in_obj_list,
-				obj->render_type,
-				obj->flags,
-				obj->control_type,
-				obj->movement_type,
-				(int)obj->lifeleft);
-		}
-	}
-}
 
 //for objects
 
@@ -2703,7 +2564,17 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 #endif
 
 	// -- commented out by mk on 09/14/94...did i do a good thing??  object_render_targets();
-	input_demo_render_probe_log_skipped_robots();
+	{
+		const input_demo_render_probe_lists probe_lists = {
+			Render_list,
+			N_render_segs,
+			&render_obj_list[0][0],
+			OBJS_PER_SEG,
+			MAX_RENDER_SEGS + N_EXTRA_OBJ_LISTS
+		};
+
+		input_demo_render_probe_log_skipped_robots(&probe_lists);
+	}
 
 #ifdef EDITOR
 	#ifndef NDEBUG

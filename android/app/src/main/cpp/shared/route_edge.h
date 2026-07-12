@@ -44,9 +44,12 @@ struct route_progress_state {
 	int avoided_key_mask = 0;
 	bool control_center_destroyed = false;
 	std::vector<unsigned char> fired_triggers;
+	std::vector<unsigned char> trigger_in_progress;
 	std::vector<unsigned char> avoided_triggers;
 	std::vector<unsigned char> opened_hidden_walls;
 };
+
+bool route_trigger_opens_path(route_trigger_kind kind);
 
 route_edge_decision evaluate_route_edge(
     const route_snapshot &snapshot,

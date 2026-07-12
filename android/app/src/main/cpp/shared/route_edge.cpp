@@ -29,15 +29,6 @@ bool valid_trigger(const route_snapshot &snapshot, int trigger)
 	       trigger < static_cast<int>(snapshot.state.triggers.size());
 }
 
-bool trigger_makes_progress(route_trigger_kind kind)
-{
-	return kind == route_trigger_kind::open_door ||
-	       kind == route_trigger_kind::open_wall ||
-	       kind == route_trigger_kind::illusory_wall ||
-	       kind == route_trigger_kind::illusion_off ||
-	       kind == route_trigger_kind::unlock_door;
-}
-
 bool state_flag(const std::vector<unsigned char> &values, int index)
 {
 	return index >= 0 && index < static_cast<int>(values.size()) &&
@@ -60,7 +51,7 @@ int side_progress_trigger(
 		const int trigger = snapshot.state.walls[source_wall].trigger;
 		if (!valid_trigger(snapshot, trigger) ||
 		    snapshot.state.triggers[trigger].disabled ||
-		    !trigger_makes_progress(snapshot.topology.triggers[trigger].kind) ||
+		    !route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) ||
 		    state_flag(progress.fired_triggers, trigger))
 			continue;
 		return trigger;
@@ -95,7 +86,7 @@ bool side_has_fired_trigger(
 		const int trigger = snapshot.state.walls[source_wall].trigger;
 		if (valid_trigger(snapshot, trigger) &&
 		    !snapshot.state.triggers[trigger].disabled &&
-		    trigger_makes_progress(snapshot.topology.triggers[trigger].kind) &&
+		    route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) &&
 		    state_flag(progress.fired_triggers, trigger))
 			return true;
 	}
@@ -177,6 +168,15 @@ route_edge_decision blocked(route_edge_blocker blocker, int wall = -1)
 
 } // namespace
 
+bool route_trigger_opens_path(route_trigger_kind kind)
+{
+	return kind == route_trigger_kind::open_door ||
+	       kind == route_trigger_kind::open_wall ||
+	       kind == route_trigger_kind::illusory_wall ||
+	       kind == route_trigger_kind::illusion_off ||
+	       kind == route_trigger_kind::unlock_door;
+}
+
 route_edge_decision evaluate_route_edge(
     const route_snapshot &snapshot,
     const route_query &query,
@@ -189,6 +189,7 @@ route_edge_decision evaluate_route_edge(
 	progress.key_mask = query.progression.key_mask;
 	progress.control_center_destroyed = snapshot.state.control_center_destroyed;
 	progress.fired_triggers.resize(snapshot.state.triggers.size());
+	progress.trigger_in_progress.resize(snapshot.state.triggers.size());
 	progress.avoided_triggers.resize(snapshot.state.triggers.size());
 	progress.opened_hidden_walls.resize(snapshot.state.walls.size());
 	return evaluate_route_edge(snapshot, query, progress, segment, side);

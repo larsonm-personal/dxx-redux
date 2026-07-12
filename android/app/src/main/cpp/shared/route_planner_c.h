@@ -57,6 +57,25 @@ typedef struct route_planner_shadow_summary {
 	int first_shared_key_selection_progress_weight;
 	double first_legacy_key_selection_distance;
 	double first_shared_key_selection_distance;
+	int compared_trigger_source_edge_count;
+	int compared_trigger_source_count;
+	int trigger_source_mismatch_count;
+	int first_trigger_source_progress_state;
+	int first_trigger_source_segment;
+	int first_trigger_source_side;
+	int first_trigger_source_index;
+	int first_legacy_trigger_source_count;
+	int first_shared_trigger_source_count;
+	int first_legacy_trigger_source_wall;
+	int first_shared_trigger_source_wall;
+	int first_legacy_trigger_source_trigger;
+	int first_shared_trigger_source_trigger;
+	int first_legacy_trigger_source_segment;
+	int first_shared_trigger_source_segment;
+	int first_legacy_trigger_source_side;
+	int first_shared_trigger_source_side;
+	int first_legacy_trigger_source_pos[3];
+	int first_shared_trigger_source_pos[3];
 } route_planner_shadow_summary;
 
 #ifdef _MSC_VER

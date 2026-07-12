@@ -76,6 +76,18 @@ struct route_target_selection {
 	route_path_result path;
 };
 
+struct route_trigger_source {
+	int target_segment = -1;
+	int target_side = -1;
+	int target_wall = -1;
+	int source_wall = -1;
+	int source_segment = -1;
+	int source_side = -1;
+	int trigger = -1;
+	route_trigger_kind trigger_kind = route_trigger_kind::other;
+	route_position source_position;
+};
+
 route_search_result search_routes(
     const route_snapshot &snapshot,
     const route_query &query,
@@ -111,6 +123,12 @@ route_path_result build_route_path(
     int target_segment);
 
 route_target_inventory discover_route_targets(const route_snapshot &snapshot);
+
+std::vector<route_trigger_source> discover_trigger_sources(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int segment,
+    int side);
 
 route_target_selection select_route_target(
     const route_snapshot &snapshot,

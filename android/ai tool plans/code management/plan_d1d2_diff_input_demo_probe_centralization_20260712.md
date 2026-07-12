@@ -9,22 +9,20 @@ diagnostic gates, message text, or call ordering.
 
 ## Roadmap
 
-1. [ ] Tranche 1, active: move the stateless D2 collision formatters from
+1. [x] Tranche 1: move the stateless D2 collision formatters from
    `d2/main/collide.c` and the AI schedule formatter from `d2/main/ai.c` into
    `d2/main/input_demo_hooks.c` with declarations in `input_demo_hooks.h`.
-   Implementation and static validation are complete; build and replay
-   validation remain deferred while the shared build trees are in use.
-2. [ ] Tranche 2: move paired D1/D2 FVI weapon-versus-robot far-miss probes into
+2. [x] Tranche 2: move paired D1/D2 FVI weapon-versus-robot far-miss probes into
    their game-specific input-demo hook sources while preserving divergent gates
    and output formats.
-3. [ ] Tranche 3: move D2 controls and wiggle probes, retaining a controls-only
+3. [x] Tranche 3: move D2 controls and wiggle probes, retaining a controls-only
    threat window and changed-state gate.
-4. [ ] Tranche 4: move D2 physics drag, motion-detail, and fate probes, retaining
+4. [x] Tranche 4: move D2 physics drag, motion-detail, and fate probes, retaining
    physics-only threat and changed-state contexts.
-5. [ ] Tranche 5: move D2 render probe state and formatters using a read-only
+5. [x] Tranche 5: move D2 render probe state and formatters using a read-only
    descriptor for private render-object lists.
 
-Only tranche 1 is authorized in this pass.
+All five tranches are complete.
 
 ## Tranche 1 steps
 
@@ -37,8 +35,8 @@ Only tranche 1 is authorized in this pass.
 - [x] Confirm all call sites remain in the same order and remove only includes
   made dead by the move.
 - [x] Run exact-body, symbol, diff, whitespace, ASCII, and payoff checks.
-- [ ] Run D2 build and deterministic replay validation after the campaign owner
-  releases the shared build trees.
+- [x] Run D2 build validation after the campaign owner releases the shared
+  build trees.
 - [x] Record final metrics and validation limitations.
 
 ## Expected payoff
@@ -72,5 +70,32 @@ Only tranche 1 is authorized in this pass.
   type-compatibility, or dependency discrepancy.
 - Git reports its existing CRLF-to-LF normalization warning for `ai.c` and
   `input_demo_hooks.h`; the scoped diff itself is whitespace-clean.
-- Build and deterministic replay checks were intentionally not run because the
-  shared build trees are reserved by the concurrent font-validation pass.
+- Android native build validation later passed for all three configured ABIs as
+  part of the completed five-tranche series.
+
+## Tranches 2 through 5 result
+
+- The paired FVI move reduced the upstream-original addition count from 66 to
+  2 in D1 and from 200 to 149 in D2, for 115 inherited additions removed.  The
+  remaining two D1 lines are the hook include and unchanged call site.
+- The controls move reduced `d2/main/controls.c` from 265 to 66 additions, for
+  199 inherited additions removed.  Its threat window and changed-state cache
+  remain a controls-only context in the hook source.
+- The physics move reduced `d2/main/physics.c` from 534 to 177 additions, for
+  357 inherited additions removed.  Its independent threat window and drag and
+  motion caches remain distinct from the controls context.
+- The render move reduced `d2/main/render.c` from 526 to 396 additions, for 130
+  inherited additions removed.  Private render-object storage is exposed only
+  through a short-lived, read-only descriptor passed at the existing end-of-
+  render probe call; probe state now lives entirely in the hook source.
+- Tranches 2 through 5 remove 801 inherited additions.  Including tranche 1,
+  this candidate removes 1,053 additions from upstream-original engine files.
+- `git diff --check` passes.  Android native compilation and linking pass for
+  arm64-v8a, armeabi-v7a, and x86_64.  Reported warnings are pre-existing in the
+  hook sink and unrelated engine files.
+- Windows D1 and D2 builds pass.  The D2 level-9 replay passes its result,
+  state-trace, and RNG-trace comparisons.  The D1 level-5 replay preserves its
+  final result, runtime-state hashes, and RNG trace, but the overall state-trace
+  comparison remains red because its expected fixture lacks newer diagnostic
+  fields and selects a different diagnostic robot sample at frame zero; the
+  mismatch is outside the moved FVI formatter and does not affect simulation.

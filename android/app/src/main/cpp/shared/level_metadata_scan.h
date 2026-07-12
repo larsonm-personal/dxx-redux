@@ -192,6 +192,7 @@ typedef struct level_metadata_route_progress_shadow {
 	int avoided_key_mask;
 	int control_center_destroyed;
 	unsigned char fired_triggers[LEVEL_METADATA_MAX_TRIGGERS];
+	unsigned char trigger_in_progress[LEVEL_METADATA_MAX_TRIGGERS];
 	unsigned char avoided_triggers[LEVEL_METADATA_MAX_TRIGGERS];
 	unsigned char opened_hidden_walls[LEVEL_METADATA_MAX_WALLS];
 } level_metadata_route_progress_shadow;
@@ -217,6 +218,18 @@ typedef struct level_metadata_route_target_selection_shadow {
 	double distance;
 	int progress_weight;
 } level_metadata_route_target_selection_shadow;
+
+typedef struct level_metadata_route_trigger_source_shadow {
+	int target_seg;
+	int target_side;
+	int target_wall;
+	int source_wall;
+	int source_seg;
+	int source_side;
+	int trigger_num;
+	int trigger_type;
+	int source_pos[3];
+} level_metadata_route_trigger_source_shadow;
 
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
@@ -281,6 +294,14 @@ int level_metadata_scan_route_select_key_shadow(
     const level_metadata_route_progress_shadow *progress,
     int key_index,
     level_metadata_route_target_selection_shadow *selection);
+int level_metadata_scan_route_trigger_sources_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int seg,
+    int side,
+    level_metadata_route_trigger_source_shadow *sources,
+    int capacity,
+    int *count);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

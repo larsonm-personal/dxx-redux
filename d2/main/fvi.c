@@ -43,7 +43,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
-#include "input_demo_recorder.h"
 
 #define face_type_num(nfaces,face_num,tri_edge) ((nfaces==1)?0:(tri_edge*2 + face_num))
 
@@ -598,56 +597,6 @@ int check_vector_to_sphere_1(vms_vector *intp,vms_vector *p0,vms_vector *p1,vms_
 //$$		return 0;       //no intersection
 //$$}
 */
-
-// android port: FVI sphere-check probe for weapon vs robot hits and misses
-static unsigned int fvi_input_demo_frame_index(void)
-{
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t n = input_demo_recorder_frame_count();
-		return n ? (unsigned int)(n - 1) : 0;
-	}
-	return 0;
-}
-
-static const char *fvi_input_demo_mode_name(void)
-{
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
-}
-
-static void input_demo_log_fvi_weapon_robot_check(
-	const vms_vector *p0, const vms_vector *p1,
-	int weapon_objnum, int robot_objnum, fix fudged_rad, fix d)
-{
-	object *weapon;
-	object *robot;
-	fix center_dist;
-	fix combined_rad;
-	fix miss_delta;
-
-	if (!input_demo_replay_is_loaded() && !input_demo_recorder_is_active())
-		return;
-	if (weapon_objnum < 0 || robot_objnum < 0)
-		return;
-	weapon = &Objects[weapon_objnum];
-	robot = &Objects[robot_objnum];
-	if (weapon->type != OBJ_WEAPON || weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
-		return;
-	if (robot->type != OBJ_ROBOT)
-		return;
-	center_dist = vm_vec_dist(p0, &robot->pos);
-	combined_rad = robot->size + fudged_rad;
-	miss_delta = center_dist - combined_rad;
-	if (!input_demo_homing_desync_probe_active() && !d && miss_delta > (8 * f1_0))
-		return;
-	input_demo_log_weapon_robot_fvi_check(weapon, robot, p0, p1,
-		fudged_rad, combined_rad, center_dist, miss_delta, d);
-}
 
 //determine if a vector intersects with an object
 //if no intersects, returns 0, else fills in intp and returns dist

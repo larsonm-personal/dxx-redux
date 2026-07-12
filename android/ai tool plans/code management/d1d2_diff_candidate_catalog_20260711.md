@@ -252,6 +252,7 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C08. HUD robot, hostage, secret, and coop counts
 
+- Status: implementation and dual-platform build validation complete
 - Files: `d1/main/gauges.c:782-904`, `d2/main/gauges.c:792-919`
 - Estimated inherited-file reduction: 230-245 lines
 - Proposed boundary: `hud_counts_shared.c` for count computation and common rendering
@@ -259,6 +260,11 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Preserve: D2 secret/negative-level behavior that displays only secret count
 - Risk: low-medium
 - Validation: exposed count computation plus both-game assertions for robots, hostages, secrets, and aggregate coop kills
+- Completed result: D1 `gauges.c` moved from 226 to 126 additions and D2
+  from 282 to 177.  After one CMake line per game, the inherited-file reduction
+  is 203 additions.  Private score animation and inset policy remain in compact
+  local wrappers; D2 alone passes its negative-level `secret_only` flag.
+- Build result: Windows D1/D2 and all three Android ABI links pass.
 
 #### C09. OGL MSAA and framebuffer lifecycle
 

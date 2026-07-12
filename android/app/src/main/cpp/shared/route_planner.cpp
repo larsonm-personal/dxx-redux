@@ -131,6 +131,54 @@ bool valid_segment(const route_snapshot &snapshot, int segment)
 	       segment < static_cast<int>(snapshot.topology.segments.size());
 }
 
+bool valid_wall(const route_snapshot &snapshot, int wall)
+{
+	return wall >= 0 && wall < static_cast<int>(snapshot.state.walls.size()) &&
+	       wall < static_cast<int>(snapshot.topology.walls.size());
+}
+
+bool valid_trigger(const route_snapshot &snapshot, int trigger)
+{
+	return trigger >= 0 &&
+	       trigger < static_cast<int>(snapshot.topology.triggers.size()) &&
+	       trigger < static_cast<int>(snapshot.state.triggers.size());
+}
+
+bool state_flag(const std::vector<unsigned char> &values, int index)
+{
+	return index >= 0 && index < static_cast<int>(values.size()) &&
+	       values[index] != 0;
+}
+
+bool trigger_source_wall_valid(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int wall)
+{
+	if (!valid_wall(snapshot, wall))
+		return false;
+	const int trigger = snapshot.state.walls[wall].trigger;
+	return valid_trigger(snapshot, trigger) &&
+	       !snapshot.state.triggers[trigger].disabled &&
+	       route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) &&
+	       !state_flag(progress.fired_triggers, trigger);
+}
+
+bool side_has_trigger_source(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int segment,
+    int side)
+{
+	if (!valid_segment(snapshot, segment) || side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return false;
+	for (const int wall : snapshot.topology.segments[segment].sides[side].opener_walls)
+		if (trigger_source_wall_valid(snapshot, progress, wall))
+			return true;
+	return false;
+}
+
 int key_index(route_key_requirement key)
 {
 	switch (key) {
@@ -155,6 +203,7 @@ route_progress_state initial_route_progress_state(
 	result.key_mask = query.progression.key_mask;
 	result.control_center_destroyed = snapshot.state.control_center_destroyed;
 	result.fired_triggers.resize(snapshot.state.triggers.size());
+	result.trigger_in_progress.resize(snapshot.state.triggers.size());
 	result.avoided_triggers.resize(snapshot.state.triggers.size());
 	result.opened_hidden_walls.resize(snapshot.state.walls.size());
 	return result;
@@ -429,6 +478,60 @@ route_target_selection select_key_target(
 	return result;
 }
 
+std::vector<route_trigger_source> discover_trigger_sources(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int segment,
+    int side)
+{
+	std::vector<route_trigger_source> result;
+	if (!valid_segment(snapshot, segment) || side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return result;
+	const auto &requested_side = snapshot.topology.segments[segment].sides[side];
+	const int child = requested_side.child;
+	if (!valid_segment(snapshot, child))
+		return result;
+	int target_segment = segment;
+	int target_side = side;
+	if (!side_has_trigger_source(snapshot, progress, target_segment, target_side)) {
+		target_segment = child;
+		target_side = requested_side.reverse_side;
+		if (!side_has_trigger_source(
+		        snapshot, progress, target_segment, target_side))
+			return result;
+	}
+	const auto &target =
+	    snapshot.topology.segments[target_segment].sides[target_side];
+	for (const int source_wall : target.opener_walls) {
+		if (!trigger_source_wall_valid(snapshot, progress, source_wall))
+			continue;
+		const int trigger = snapshot.state.walls[source_wall].trigger;
+		if (state_flag(progress.trigger_in_progress, trigger))
+			continue;
+		const auto &source_topology = snapshot.topology.walls[source_wall];
+		route_position source_position = source_topology.target;
+		if (!source_position.valid &&
+		    valid_segment(snapshot, source_topology.segment))
+			source_position =
+			    snapshot.topology.segments[source_topology.segment].center;
+		if (!source_position.valid)
+			continue;
+		route_trigger_source source;
+		source.target_segment = target_segment;
+		source.target_side = target_side;
+		source.target_wall = target.wall;
+		source.source_wall = source_wall;
+		source.source_segment = source_topology.segment;
+		source.source_side = source_topology.side;
+		source.trigger = trigger;
+		source.trigger_kind = snapshot.topology.triggers[trigger].kind;
+		source.source_position = source_position;
+		result.push_back(source);
+	}
+	return result;
+}
+
 route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 {
 	route_target_inventory result;
@@ -565,6 +668,10 @@ extern "C" int route_planner_compare_view(
 		summary->first_mismatch_segment = -1;
 		summary->first_target_category = -1;
 		summary->first_target_index = -1;
+		summary->first_trigger_source_progress_state = -1;
+		summary->first_trigger_source_segment = -1;
+		summary->first_trigger_source_side = -1;
+		summary->first_trigger_source_index = -1;
 	}
 	copy_problem(problem, problem_capacity, "");
 	if (!view || !summary) {
@@ -687,6 +794,8 @@ extern "C" int route_planner_compare_view(
 			     trigger < static_cast<int>(progress.fired_triggers.size()); ++trigger) {
 				legacy_progress.fired_triggers[trigger] =
 				    progress.fired_triggers[trigger];
+				legacy_progress.trigger_in_progress[trigger] =
+				    progress.trigger_in_progress[trigger];
 				legacy_progress.avoided_triggers[trigger] =
 				    progress.avoided_triggers[trigger];
 			}
@@ -694,6 +803,96 @@ extern "C" int route_planner_compare_view(
 			     wall < static_cast<int>(progress.opened_hidden_walls.size()); ++wall)
 				legacy_progress.opened_hidden_walls[wall] =
 				    progress.opened_hidden_walls[wall];
+			for (int segment = 0; segment < view->num_segments; ++segment) {
+				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+					std::array<level_metadata_route_trigger_source_shadow,
+					           LEVEL_METADATA_MAX_WALLS>
+					    legacy_sources = {};
+					int legacy_count = 0;
+					if (!level_metadata_scan_route_trigger_sources_shadow(
+					        view, &legacy_progress, segment, side,
+					        legacy_sources.data(),
+					        static_cast<int>(legacy_sources.size()),
+					        &legacy_count)) {
+						copy_problem(
+						    problem, problem_capacity,
+						    "legacy trigger source comparison failed");
+						return 0;
+					}
+					const auto shared_sources =
+					    dxx_route::discover_trigger_sources(
+					        snapshot, progress, segment, side);
+					const int shared_count =
+					    static_cast<int>(shared_sources.size());
+					summary->compared_trigger_source_edge_count++;
+					auto record_source_mismatch = [&](int index) {
+						if (summary->trigger_source_mismatch_count++ != 0)
+							return;
+						summary->first_trigger_source_progress_state =
+						    state_index;
+						summary->first_trigger_source_segment = segment;
+						summary->first_trigger_source_side = side;
+						summary->first_trigger_source_index = index;
+						summary->first_legacy_trigger_source_count =
+						    legacy_count;
+						summary->first_shared_trigger_source_count =
+						    shared_count;
+						if (index < 0 || index >= legacy_count ||
+						    index >= shared_count)
+							return;
+						const auto &old_source = legacy_sources[index];
+						const auto &new_source = shared_sources[index];
+						summary->first_legacy_trigger_source_wall =
+						    old_source.source_wall;
+						summary->first_shared_trigger_source_wall =
+						    new_source.source_wall;
+						summary->first_legacy_trigger_source_trigger =
+						    old_source.trigger_num;
+						summary->first_shared_trigger_source_trigger =
+						    new_source.trigger;
+						summary->first_legacy_trigger_source_segment =
+						    old_source.source_seg;
+						summary->first_shared_trigger_source_segment =
+						    new_source.source_segment;
+						summary->first_legacy_trigger_source_side =
+						    old_source.source_side;
+						summary->first_shared_trigger_source_side =
+						    new_source.source_side;
+						for (int coordinate = 0; coordinate < 3; ++coordinate) {
+							summary->first_legacy_trigger_source_pos[coordinate] =
+							    old_source.source_pos[coordinate];
+							summary->first_shared_trigger_source_pos[coordinate] =
+							    new_source.source_position.value[coordinate];
+						}
+					};
+					if (legacy_count != shared_count)
+						record_source_mismatch(-1);
+					const int source_count =
+					    legacy_count < shared_count ? legacy_count : shared_count;
+					for (int index = 0; index < source_count; ++index) {
+						const auto &old_source = legacy_sources[index];
+						const auto &new_source = shared_sources[index];
+						summary->compared_trigger_source_count++;
+						const bool mismatch =
+						    old_source.target_seg != new_source.target_segment ||
+						    old_source.target_side != new_source.target_side ||
+						    old_source.target_wall != new_source.target_wall ||
+						    old_source.source_wall != new_source.source_wall ||
+						    old_source.source_seg != new_source.source_segment ||
+						    old_source.source_side != new_source.source_side ||
+						    old_source.trigger_num != new_source.trigger ||
+						    !new_source.source_position.valid ||
+						    old_source.source_pos[0] !=
+						        new_source.source_position.value[0] ||
+						    old_source.source_pos[1] !=
+						        new_source.source_position.value[1] ||
+						    old_source.source_pos[2] !=
+						        new_source.source_position.value[2];
+						if (mismatch)
+							record_source_mismatch(index);
+					}
+				}
+			}
 			level_metadata_route_target_selection_shadow legacy_selection = {};
 			if (!level_metadata_scan_route_select_targets_shadow(
 			        view, &legacy_progress, legacy_targets->exits,

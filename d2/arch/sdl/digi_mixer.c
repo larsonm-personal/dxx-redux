@@ -18,22 +18,8 @@
 
 #ifdef ANDROID
 #include <android/log.h>
-#include "android_log.h"
+#include "android_audio_diagnostics.h"
 #define MIXLOG(...) __android_log_print(ANDROID_LOG_DEBUG, "digi_mixer", __VA_ARGS__)
-extern void androidaud_note_sfx_start(int soundnum, int channel);
-extern int androidaud_get_audio_buf_frames(void);
-extern int androidaud_get_callback_max_us(void);
-extern int androidaud_get_callback_overrun_count(void);
-extern int androidaud_get_native_buffer_frames(void);
-extern int androidaud_get_perf_mode_result(void);
-extern int androidaud_get_sfx_last_delay_ms(void);
-extern int androidaud_get_sfx_last_soundnum(void);
-extern int androidaud_get_sfx_last_channel(void);
-extern int androidaud_get_sfx_last_cb_delta(void);
-extern int androidaud_get_sfx_last_queue_delay_ms(void);
-extern int androidaud_get_sfx_last_estimated_output_ms(void);
-extern int androidaud_get_sfx_probe_count(void);
-extern int androidaud_get_initial_queued_buffers(void);
 #else
 #define MIXLOG(...) do {} while(0)
 #endif
@@ -60,7 +46,6 @@ extern int androidaud_get_initial_queued_buffers(void);
 #define MAX_SOUND_SLOTS 64
 #ifdef ANDROID
 #define SOUND_BUFFER_SIZE 256
-extern int g_android_native_sample_rate;
 #define DIGI_MIXER_OUTPUT_RATE (g_android_native_sample_rate > 0 ? g_android_native_sample_rate : SAMPLE_RATE_48K)
 #else
 #define SOUND_BUFFER_SIZE 512
@@ -74,55 +59,6 @@ static inline int fix2byte(fix f) { return f < 0 ? 0 : f >= 65536 ? 255 : f / 25
 Mix_Chunk SoundChunks[MAX_SOUNDS];
 ubyte channels[MAX_SOUND_SLOTS];
 
-#ifdef ANDROID
-static int android_sfx_chunk_ms(const Mix_Chunk *chunk, int *lead_ms)
-{
-	int actual_freq = 0;
-	Uint16 actual_fmt = 0;
-	int actual_ch = 0;
-	int bytes_per_sample;
-	int bytes_per_frame;
-	int frames;
-	int lead_frames = 0;
-	const Sint16 *samples;
-	int frame;
-
-	if (lead_ms)
-		*lead_ms = -1;
-	if (!chunk || !chunk->abuf || chunk->alen == 0)
-		return -1;
-	if (!Mix_QuerySpec(&actual_freq, &actual_fmt, &actual_ch) || actual_freq <= 0 || actual_ch <= 0)
-		return -1;
-	bytes_per_sample = (actual_fmt & 0xff) / 8;
-	if (bytes_per_sample != 2)
-		return -1;
-	bytes_per_frame = bytes_per_sample * actual_ch;
-	frames = chunk->alen / bytes_per_frame;
-	samples = (const Sint16 *)chunk->abuf;
-	for (frame = 0; frame < frames; frame++)
-	{
-		int ch;
-		int audible = 0;
-		for (ch = 0; ch < actual_ch; ch++)
-		{
-			int sample = samples[(frame * actual_ch) + ch];
-			if (sample < 0)
-				sample = -sample;
-			if (sample > 64)
-			{
-				audible = 1;
-				break;
-			}
-		}
-		if (audible)
-			break;
-		lead_frames++;
-	}
-	if (lead_ms)
-		*lead_ms = (lead_frames * 1000) / actual_freq;
-	return (frames * 1000) / actual_freq;
-}
-#endif
 
 #ifdef __linux__
 static int digi_mixer_check_soundfont(const char *path, void *data)
@@ -182,12 +118,8 @@ int digi_mixer_init()
 	}
 
 #ifdef ANDROID
-	debug_log(DLOG_GAME,
-	          "[audio] init: mixer_rate=%d actual_rate=%d fmt=0x%04X ch=%d buf_frames=%d native_buf_frames=%d initial_queue_buffers=%d perf_mode_result=%d native_rate=%d cb_overruns=%d",
-	          DIGI_MIXER_OUTPUT_RATE, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE,
-	          androidaud_get_native_buffer_frames(), androidaud_get_initial_queued_buffers(),
-	          androidaud_get_perf_mode_result(), g_android_native_sample_rate,
-	          androidaud_get_callback_overrun_count());
+	androidaud_log_mixer_init(DIGI_MIXER_OUTPUT_RATE, actual_freq, actual_fmt,
+		actual_ch, SOUND_BUFFER_SIZE);
 #endif
 
 	digi_max_channels = Mix_AllocateChannels(digi_max_channels);
@@ -288,26 +220,13 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 #ifdef ANDROID
 	static int last_logged_probe_count = 0;
 	static int start_log_count = 0;
-	int probe_count;
 #endif
 
 	if (!digi_initialised) return -1;
 	Assert(GameSounds[soundnum].data != (void *)-1);
 
 #ifdef ANDROID
-	probe_count = androidaud_get_sfx_probe_count();
-	if (probe_count != last_logged_probe_count) {
-		last_logged_probe_count = probe_count;
-		debug_log(DLOG_GAME,
-		          "[audio] sfx latency: probe=%d sound=%d channel=%d delay_ms=%d queue_ms=%d est_app_ms=%d callbacks=%d mixer_buf_frames=%d native_buf_frames=%d cb_max_us=%d cb_overruns=%d",
-		          probe_count, androidaud_get_sfx_last_soundnum(),
-		          androidaud_get_sfx_last_channel(), androidaud_get_sfx_last_delay_ms(),
-		          androidaud_get_sfx_last_queue_delay_ms(),
-		          androidaud_get_sfx_last_estimated_output_ms(),
-		          androidaud_get_sfx_last_cb_delta(), androidaud_get_audio_buf_frames(),
-		          androidaud_get_native_buffer_frames(), androidaud_get_callback_max_us(),
-		          androidaud_get_callback_overrun_count());
-	}
+	androidaud_log_sfx_latency_probe(&last_logged_probe_count);
 #endif
 
 	mixdigi_convert_sound(soundnum);
@@ -327,18 +246,8 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 	else
 		Mix_SetDistance(channel, 255-mix_vol);
 #ifdef ANDROID
-	androidaud_note_sfx_start(soundnum, channel);
-	{
-		int lead_ms = -1;
-		int chunk_ms = android_sfx_chunk_ms(&SoundChunks[soundnum], &lead_ms);
-		start_log_count++;
-		if (start_log_count <= 128 || (start_log_count % 32) == 0)
-			debug_log(DLOG_GAME,
-			          "[audio] sfx start: seq=%d sound=%d channel=%d lead_ms=%d chunk_ms=%d mixer_buf_frames=%d native_buf_frames=%d",
-			          start_log_count, soundnum, channel, lead_ms, chunk_ms,
-			          androidaud_get_audio_buf_frames(),
-			          androidaud_get_native_buffer_frames());
-	}
+	androidaud_log_mixer_sfx_start(soundnum, channel, SoundChunks[soundnum].abuf,
+		SoundChunks[soundnum].alen, &start_log_count);
 #endif
 	channels[channel] = 1;
 	Mix_ChannelFinished(digi_mixer_free_channel);

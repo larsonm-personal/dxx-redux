@@ -12,6 +12,14 @@ typedef struct fvi_info fvi_info;
 typedef struct input_demo_result input_demo_result;
 typedef struct input_demo_state_trace_diag input_demo_state_trace_diag;
 
+typedef struct input_demo_render_probe_lists {
+	const short *render_list;
+	int render_segment_count;
+	const short *object_lists;
+	int object_list_stride;
+	int object_list_count;
+} input_demo_render_probe_lists;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,6 +42,36 @@ void input_demo_log_weapon_robot_fvi_check(struct object *weapon, struct object 
 	const struct vms_vector *p0, const struct vms_vector *p1,
 	int32_t fudged_rad, int32_t combined_rad, int32_t center_dist,
 	int32_t miss_delta, int32_t d);
+void input_demo_log_fvi_weapon_robot_check(const struct vms_vector *p0,
+	const struct vms_vector *p1, int weapon_objnum, int robot_objnum,
+	int32_t fudged_rad, int32_t d);
+void input_demo_log_player_control_probe(struct object *obj,
+	const struct vms_vector *pre_scale_thrust,
+	const struct vms_vector *pre_scale_rotthrust,
+	int32_t resolved_forward_thrust_time);
+void input_demo_log_player_wiggle_probe(struct object *obj,
+	const struct vms_vector *velocity_before_wiggle,
+	const struct vms_vector *wiggle_delta, int32_t raw_swiggle,
+	int32_t scaled_swiggle, int32_t wiggle_amount, int wiggle_applied);
+int input_demo_trace_motion_probe_active(void);
+unsigned int input_demo_trace_motion_frame_index(void);
+void input_demo_log_player_drag_probe(struct object *obj, const char *step,
+	const struct vms_vector *velocity, const struct vms_vector *accel,
+	int32_t drag, int count, int32_t remainder, int32_t ratio);
+void input_demo_log_player_motion_detail_probe(struct object *obj,
+	const char *step, const struct vms_vector *frame_vec,
+	const struct vms_vector *new_pos, int32_t sim_time);
+void input_demo_log_physics_fate(struct object *obj, int fate, int count,
+	int32_t attempted_dist, int32_t actual_dist, int32_t moved_time,
+	int32_t sim_time, const struct vms_vector *start_pos,
+	const struct vms_vector *new_pos, int hit_seg, int hit_side,
+	int hit_object, const struct vms_vector *wall_norm);
+void input_demo_render_probe_note_drawn_robot(int objnum);
+int input_demo_render_probe_should_log_boundary(void);
+int input_demo_render_probe_first_robot_in_seg(int segnum, int *objnum_out,
+	int *objid_out);
+void input_demo_render_probe_log_skipped_robots(
+	const input_demo_render_probe_lists *lists);
 int input_demo_replay_powerup_probe_active(void);
 void input_demo_log_reactor_hit(struct object *controlcen, int32_t damage, int32_t old_shields);
 void input_demo_log_reactor_destroyed(struct object *controlcen);
