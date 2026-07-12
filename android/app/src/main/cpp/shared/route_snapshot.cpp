@@ -135,6 +135,30 @@ route_key_requirement normalize_wall_key(const level_metadata_scan_view &view,
 	return route_key_requirement::unknown;
 }
 
+route_object_kind normalize_object_kind(const level_metadata_scan_view &view,
+                                        int raw_type)
+{
+	if (raw_type == view.obj_type_robot)
+		return route_object_kind::robot;
+	if (raw_type == view.obj_type_powerup)
+		return route_object_kind::powerup;
+	if (raw_type == view.obj_type_control_center)
+		return route_object_kind::control_center;
+	return route_object_kind::other;
+}
+
+route_key_requirement normalize_powerup_key(const level_metadata_scan_view &view,
+                                            int raw_id)
+{
+	if (raw_id == view.powerup_key_blue)
+		return route_key_requirement::blue;
+	if (raw_id == view.powerup_key_red)
+		return route_key_requirement::red;
+	if (raw_id == view.powerup_key_gold)
+		return route_key_requirement::gold;
+	return route_key_requirement::none;
+}
+
 std::uint64_t hash_topology(const route_topology &topology)
 {
 	stable_hasher hasher;
@@ -144,6 +168,7 @@ std::uint64_t hash_topology(const route_topology &topology)
 	hasher.add_int(static_cast<int>(topology.triggers.size()));
 	for (const auto &segment : topology.segments) {
 		hash_position(hasher, segment.center);
+		hasher.add_bool(segment.control_center);
 		for (const auto &vertex : segment.vertices)
 			hash_position(hasher, vertex);
 		for (const auto &side : segment.sides) {
@@ -229,7 +254,11 @@ route_state_fingerprints fingerprint_state(const route_state &state)
 		objects.add_int(object.contains_type);
 		objects.add_int(object.contains_id);
 		objects.add_int(object.contains_count);
+		objects.add_int(static_cast<int>(object.kind));
+		objects.add_int(static_cast<int>(object.key));
+		objects.add_int(static_cast<int>(object.contains_key));
 		hash_position(objects, object.position);
+		objects.add_bool(object.should_be_dead);
 		objects.add_bool(object.boss);
 		objects.add_bool(object.companion);
 	}
@@ -288,7 +317,11 @@ std::uint64_t hash_state(const route_state &state)
 		hasher.add_int(object.contains_type);
 		hasher.add_int(object.contains_id);
 		hasher.add_int(object.contains_count);
+		hasher.add_int(static_cast<int>(object.kind));
+		hasher.add_int(static_cast<int>(object.key));
+		hasher.add_int(static_cast<int>(object.contains_key));
 		hash_position(hasher, object.position);
+		hasher.add_bool(object.should_be_dead);
 		hasher.add_bool(object.boss);
 		hasher.add_bool(object.companion);
 	}
@@ -344,6 +377,10 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		auto &state_segment = next.state.segments[segment_index];
 		topology_segment.center =
 		    read_position(view.segment_center, view.user, segment_index);
+		topology_segment.control_center =
+		    view.segment_special &&
+		    view.segment_special(view.user, segment_index) ==
+		        view.segment_special_control_center;
 		for (int vertex = 0; vertex < 8; ++vertex)
 			topology_segment.vertices[vertex] =
 			    read_segment_vertex(view, segment_index, vertex);
@@ -444,7 +481,14 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			object.contains_id = view.object_contains_id(view.user, object_index);
 		if (view.object_contains_count)
 			object.contains_count = view.object_contains_count(view.user, object_index);
+		object.kind = normalize_object_kind(view, object.type);
+		if (object.kind == route_object_kind::powerup)
+			object.key = normalize_powerup_key(view, object.id);
+		if (object.contains_type == view.obj_type_powerup)
+			object.contains_key = normalize_powerup_key(view, object.contains_id);
 		object.position = read_position(view.object_position, view.user, object_index);
+		object.should_be_dead = view.obj_flag_should_be_dead != 0 &&
+		                        (object.flags & view.obj_flag_should_be_dead) != 0;
 		object.boss = view.object_is_boss &&
 		              view.object_is_boss(view.user, object_index) != 0;
 		object.companion = view.object_is_companion &&

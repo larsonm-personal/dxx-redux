@@ -45,6 +45,13 @@ enum class route_endpoint_kind {
 	segment
 };
 
+enum class route_object_kind {
+	other,
+	robot,
+	powerup,
+	control_center
+};
+
 struct route_position {
 	std::array<int, 3> value = {};
 	bool valid = false;
@@ -86,6 +93,7 @@ struct route_topology_side {
 
 struct route_topology_segment {
 	route_position center;
+	bool control_center = false;
 	std::array<route_position, 8> vertices;
 	std::array<route_topology_side, LEVEL_METADATA_MAX_SIDES> sides;
 };
@@ -152,7 +160,11 @@ struct route_state_object {
 	int contains_type = -1;
 	int contains_id = -1;
 	int contains_count = 0;
+	route_object_kind kind = route_object_kind::other;
+	route_key_requirement key = route_key_requirement::none;
+	route_key_requirement contains_key = route_key_requirement::none;
 	route_position position;
+	bool should_be_dead = false;
 	bool boss = false;
 	bool companion = false;
 };

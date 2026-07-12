@@ -52,6 +52,11 @@ int segment_explored(void *user, int segment)
 	return static_cast<test_level *>(user)->explored[segment];
 }
 
+int segment_special(void *, int segment)
+{
+	return segment == 0 ? 7 : 0;
+}
+
 int reverse_side(void *, int, int)
 {
 	return 0;
@@ -265,8 +270,17 @@ level_metadata_scan_view make_view(test_level &level)
 	view.wall_key_blue = 21;
 	view.wall_key_red = 22;
 	view.wall_key_gold = 23;
+	view.segment_special_control_center = 7;
+	view.obj_type_robot = 80;
+	view.obj_type_powerup = 90;
+	view.obj_type_control_center = 91;
+	view.obj_flag_should_be_dead = 1;
+	view.powerup_key_blue = 100;
+	view.powerup_key_red = 101;
+	view.powerup_key_gold = 102;
 	view.segment_child = segment_child;
 	view.segment_is_explored = segment_explored;
+	view.segment_special = segment_special;
 	view.reverse_side = reverse_side;
 	view.side_is_flyable = side_flyable;
 	view.side_is_hard_blocked = side_hard_blocked;
@@ -335,6 +349,7 @@ int main()
 	assert(first.topology.segments[1].sides[0].center.value[2] == 202);
 	assert(first.topology.walls[1].target.value[2] == 202);
 	assert(first.topology.segments[1].center.value[0] == 100);
+	assert(first.topology.segments[0].control_center);
 	assert(first.topology.segments[1].vertices[7].value[2] == 1072);
 	assert(first.state.start_position.value[2] == 9);
 	assert(first.state.segments[0].sides[0].control_center_link);
@@ -354,6 +369,8 @@ int main()
 	       dxx_route::route_trigger_kind::open_door);
 	assert(first.topology.triggers[0].links[0].segment == 1);
 	assert(first.state.objects[0].position.value[2] == 87);
+	assert(first.state.objects[0].kind == dxx_route::route_object_kind::robot);
+	assert(!first.state.objects[0].should_be_dead);
 	assert(first.state.objects[0].boss);
 	dxx_route::route_query edge_query;
 	edge_query.progression.key_mask = first.state.key_mask;
@@ -455,6 +472,27 @@ int main()
 	assert(planner_problem[0] == '\0');
 	assert(planner_summary.compared_node_count == 4);
 	assert(planner_summary.mismatch_count == 0);
+	assert(planner_summary.compared_target_count == 9);
+	assert(planner_summary.target_mismatch_count == 0);
+	const auto targets = dxx_route::discover_route_targets(first);
+	assert(targets.reactor_found);
+	assert(targets.reactor.segment == 0);
+	assert(targets.boss_found);
+	assert(targets.boss.segment == 1);
+	assert(targets.exits.size() == 1);
+	assert(targets.exits[0].segment == 1);
+	assert(targets.exits[0].side == 0);
+	auto key_snapshot = first;
+	key_snapshot.state.objects[0].kind = dxx_route::route_object_kind::powerup;
+	key_snapshot.state.objects[0].key = dxx_route::route_key_requirement::blue;
+	key_snapshot.state.objects[0].boss = false;
+	key_snapshot.state.objects[0].contains_count = 1;
+	key_snapshot.state.objects[0].contains_key = dxx_route::route_key_requirement::gold;
+	const auto key_targets = dxx_route::discover_route_targets(key_snapshot);
+	assert(key_targets.keys[0].size() == 1);
+	assert(!key_targets.keys[0][0].contained);
+	assert(key_targets.keys[2].size() == 1);
+	assert(key_targets.keys[2][0].contained);
 	assert(first.topology.hash != 0);
 	assert(first.state.hash != 0);
 	route_snapshot_summary summary = {};

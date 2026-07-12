@@ -22,6 +22,16 @@ typedef struct route_planner_shadow_summary {
 	int first_shared_parent_side;
 	double first_legacy_distance;
 	double first_shared_distance;
+	int compared_target_count;
+	int target_mismatch_count;
+	int first_target_category;
+	int first_target_index;
+	int first_legacy_target_count;
+	int first_shared_target_count;
+	int first_legacy_target_segment;
+	int first_shared_target_segment;
+	int first_legacy_target_pos[3];
+	int first_shared_target_pos[3];
 } route_planner_shadow_summary;
 
 int route_planner_compare_view(

@@ -2384,6 +2384,47 @@ static int metadata_route_find_boss_target(const level_metadata_scan_view *view,
 	return 0;
 }
 
+static void metadata_route_copy_target_shadow(
+    level_metadata_route_target_shadow *out,
+    const metadata_target *target)
+{
+	out->seg = target->seg;
+	copy_pos(out->pos, target->pos);
+}
+
+int level_metadata_scan_route_targets_shadow(
+    const level_metadata_scan_view *view,
+    level_metadata_route_target_inventory_shadow *inventory)
+{
+	metadata_target reactor;
+	metadata_target boss;
+	int key;
+	int index;
+
+	if (!view || !inventory)
+		return 0;
+	memset(inventory, 0, sizeof(*inventory));
+	collect_segment_centers(view);
+	collect_route_key_targets(view);
+	inventory->reactor_found = collect_route_targets(
+	    view, &reactor, exit_targets, &inventory->exit_count);
+	inventory->boss_found = metadata_route_find_boss_target(view, &boss);
+	for (key = 0; key < 3; ++key) {
+		inventory->key_count[key] = key_target_count[key];
+		for (index = 0; index < key_target_count[key]; ++index)
+			metadata_route_copy_target_shadow(
+			    &inventory->keys[key][index], &key_targets[key][index]);
+	}
+	if (inventory->reactor_found)
+		metadata_route_copy_target_shadow(&inventory->reactor, &reactor);
+	if (inventory->boss_found)
+		metadata_route_copy_target_shadow(&inventory->boss, &boss);
+	for (index = 0; index < inventory->exit_count; ++index)
+		metadata_route_copy_target_shadow(
+		    &inventory->exits[index], &exit_targets[index]);
+	return 1;
+}
+
 static void collect_guidebot_info(const level_metadata_scan_view *view, level_metadata_state *state)
 {
 	metadata_route_context route;

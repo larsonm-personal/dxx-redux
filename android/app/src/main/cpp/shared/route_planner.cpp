@@ -6,6 +6,7 @@
 #include <cstring>
 #include <exception>
 #include <limits>
+#include <memory>
 
 namespace dxx_route
 {
@@ -130,6 +131,16 @@ bool valid_segment(const route_snapshot &snapshot, int segment)
 	       segment < static_cast<int>(snapshot.topology.segments.size());
 }
 
+int key_index(route_key_requirement key)
+{
+	switch (key) {
+		case route_key_requirement::blue: return 0;
+		case route_key_requirement::red: return 1;
+		case route_key_requirement::gold: return 2;
+		default: return -1;
+	}
+}
+
 } // namespace
 
 route_search_result search_routes(
@@ -240,6 +251,110 @@ route_path_result build_route_path(
 	return result;
 }
 
+route_target_inventory discover_route_targets(const route_snapshot &snapshot)
+{
+	route_target_inventory result;
+	for (std::size_t object_index = 0;
+	     object_index < snapshot.state.objects.size(); ++object_index) {
+		const auto &object = snapshot.state.objects[object_index];
+		if (object.should_be_dead || !object.position.valid ||
+		    !valid_segment(snapshot, object.segment))
+			continue;
+		if (object.kind == route_object_kind::powerup &&
+		    object.key != route_key_requirement::none) {
+			const int key = key_index(object.key);
+			if (key >= 0 && key < 3 &&
+			    result.keys[key].size() < LEVEL_METADATA_MAX_TARGETS) {
+				route_target target;
+				target.kind = route_target_kind::key;
+				target.key = object.key;
+				target.segment = object.segment;
+				target.object = static_cast<int>(object_index);
+				target.position = object.position;
+				result.keys[key].push_back(target);
+			}
+		}
+		if (object.contains_count > 0 &&
+		    object.contains_key != route_key_requirement::none) {
+			const int key = key_index(object.contains_key);
+			if (key >= 0 && key < 3 &&
+			    result.keys[key].size() < LEVEL_METADATA_MAX_TARGETS) {
+				route_target target;
+				target.kind = route_target_kind::key;
+				target.key = object.contains_key;
+				target.segment = object.segment;
+				target.object = static_cast<int>(object_index);
+				target.contained = true;
+				target.position = object.position;
+				result.keys[key].push_back(target);
+			}
+		}
+		if (!result.reactor_found &&
+		    object.kind == route_object_kind::control_center) {
+			result.reactor_found = true;
+			result.reactor.kind = route_target_kind::reactor;
+			result.reactor.segment = object.segment;
+			result.reactor.object = static_cast<int>(object_index);
+			result.reactor.position = object.position;
+		}
+		if (!result.boss_found && object.kind == route_object_kind::robot &&
+		    object.boss) {
+			result.boss_found = true;
+			result.boss.kind = route_target_kind::boss;
+			result.boss.segment = object.segment;
+			result.boss.object = static_cast<int>(object_index);
+			result.boss.position = object.position;
+		}
+	}
+	if (!result.reactor_found) {
+		for (int segment = 0;
+		     segment < static_cast<int>(snapshot.topology.segments.size());
+		     ++segment) {
+			const auto &candidate = snapshot.topology.segments[segment];
+			if (!candidate.control_center || !candidate.center.valid)
+				continue;
+			result.reactor_found = true;
+			result.reactor.kind = route_target_kind::reactor;
+			result.reactor.segment = segment;
+			result.reactor.position = candidate.center;
+			break;
+		}
+	}
+	for (int segment = 0;
+	     segment < static_cast<int>(snapshot.topology.segments.size());
+	     ++segment) {
+		const auto &topology_segment = snapshot.topology.segments[segment];
+		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			const auto &topology_side = topology_segment.sides[side];
+			const auto &state_side = snapshot.state.segments[segment].sides[side];
+			bool route_exit = topology_side.child == -2;
+			if (!route_exit && state_side.exit_trigger) {
+				route_exit = true;
+				const int wall = topology_side.wall;
+				if (wall >= 0 && wall < static_cast<int>(snapshot.state.walls.size())) {
+					const int trigger = snapshot.state.walls[wall].trigger;
+					if (trigger >= 0 &&
+					    trigger < static_cast<int>(snapshot.topology.triggers.size()) &&
+					    snapshot.topology.triggers[trigger].kind ==
+					        route_trigger_kind::secret_exit)
+						route_exit = false;
+				}
+			}
+			if (!route_exit || result.exits.size() >= LEVEL_METADATA_MAX_TARGETS)
+				continue;
+			route_target target;
+			target.kind = route_target_kind::exit;
+			target.segment = segment;
+			target.side = side;
+			target.position = topology_side.center.valid
+			                      ? topology_side.center
+			                      : topology_segment.center;
+			result.exits.push_back(target);
+		}
+	}
+	return result;
+}
+
 } // namespace dxx_route
 
 namespace
@@ -270,6 +385,8 @@ extern "C" int route_planner_compare_view(
 	if (summary) {
 		std::memset(summary, 0, sizeof(*summary));
 		summary->first_mismatch_segment = -1;
+		summary->first_target_category = -1;
+		summary->first_target_index = -1;
 	}
 	copy_problem(problem, problem_capacity, "");
 	if (!view || !summary) {
@@ -287,6 +404,69 @@ extern "C" int route_planner_compare_view(
 		dxx_route::route_query query;
 		query.start = snapshot.state.start_position;
 		query.progression.key_mask = snapshot.state.key_mask;
+		auto legacy_targets = std::unique_ptr<level_metadata_route_target_inventory_shadow>(
+		    new level_metadata_route_target_inventory_shadow{});
+		if (!level_metadata_scan_route_targets_shadow(view, legacy_targets.get())) {
+			copy_problem(problem, problem_capacity,
+			             "legacy route target comparison failed");
+			return 0;
+		}
+		const auto shared_targets = dxx_route::discover_route_targets(snapshot);
+		auto record_target_mismatch =
+		    [&](int category, int index, int old_count, int new_count,
+		        const level_metadata_route_target_shadow *old_target,
+		        const dxx_route::route_target *new_target) {
+			    summary->target_mismatch_count++;
+			    if (summary->target_mismatch_count != 1)
+				    return;
+			    summary->first_target_category = category;
+			    summary->first_target_index = index;
+			    summary->first_legacy_target_count = old_count;
+			    summary->first_shared_target_count = new_count;
+			    summary->first_legacy_target_segment = old_target ? old_target->seg : -1;
+			    summary->first_shared_target_segment = new_target ? new_target->segment : -1;
+			    for (int coordinate = 0; coordinate < 3; ++coordinate) {
+				    summary->first_legacy_target_pos[coordinate] = old_target ? old_target->pos[coordinate] : 0;
+				    summary->first_shared_target_pos[coordinate] = new_target ? new_target->position.value[coordinate] : 0;
+			    }
+		    };
+		auto compare_targets =
+		    [&](int category, const level_metadata_route_target_shadow *old_targets,
+		        int old_count, const std::vector<dxx_route::route_target> &new_targets) {
+			    const int new_count = static_cast<int>(new_targets.size());
+			    summary->compared_target_count++;
+			    if (old_count != new_count)
+				    record_target_mismatch(category, -1, old_count, new_count, nullptr, nullptr);
+			    const int count = old_count < new_count ? old_count : new_count;
+			    for (int index = 0; index < count; ++index) {
+				    const auto &old_target = old_targets[index];
+				    const auto &new_target = new_targets[index];
+				    summary->compared_target_count++;
+				    const bool mismatch = old_target.seg != new_target.segment ||
+				                          !new_target.position.valid ||
+				                          old_target.pos[0] != new_target.position.value[0] ||
+				                          old_target.pos[1] != new_target.position.value[1] ||
+				                          old_target.pos[2] != new_target.position.value[2];
+				    if (mismatch)
+					    record_target_mismatch(category, index, old_count, new_count,
+					                           &old_target, &new_target);
+			    }
+		    };
+		for (int key = 0; key < 3; ++key)
+			compare_targets(key, legacy_targets->keys[key],
+			                legacy_targets->key_count[key], shared_targets.keys[key]);
+		std::vector<dxx_route::route_target> shared_reactor;
+		if (shared_targets.reactor_found)
+			shared_reactor.push_back(shared_targets.reactor);
+		compare_targets(3, &legacy_targets->reactor,
+		                legacy_targets->reactor_found, shared_reactor);
+		std::vector<dxx_route::route_target> shared_boss;
+		if (shared_targets.boss_found)
+			shared_boss.push_back(shared_targets.boss);
+		compare_targets(4, &legacy_targets->boss,
+		                legacy_targets->boss_found, shared_boss);
+		compare_targets(5, legacy_targets->exits, legacy_targets->exit_count,
+		                shared_targets.exits);
 		for (int optimistic = 0; optimistic <= 1; ++optimistic) {
 			std::vector<level_metadata_route_search_node> legacy(view->num_segments);
 			if (level_metadata_scan_route_search_shadow(

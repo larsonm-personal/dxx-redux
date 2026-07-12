@@ -943,9 +943,9 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 			fprintf(stderr, "SECRET-AREA-DUMP FAIL route planner shadow unavailable level=%d file=%s\n",
 			        level_num, level_file ? level_file : "");
 			secret_area_dump_failed = 1;
-		} else if (planner_shadow.mismatch_count) {
+		} else if (planner_shadow.mismatch_count || planner_shadow.target_mismatch_count) {
 			fprintf(stderr,
-			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s compared=%d mismatches=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g\n",
+			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s compared=%d mismatches=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g compared_targets=%d target_mismatches=%d first_target=%d:%d legacy_target_count=%d shared_target_count=%d legacy_target_seg=%d shared_target_seg=%d\n",
 			        level_num, level_file ? level_file : "", planner_shadow.compared_node_count,
 			        planner_shadow.mismatch_count,
 			        planner_shadow.first_mismatch_optimistic ? "optimistic" : "pessimistic",
@@ -954,7 +954,11 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 			        planner_shadow.first_legacy_progress_weight, planner_shadow.first_shared_progress_weight,
 			        planner_shadow.first_legacy_parent_segment, planner_shadow.first_legacy_parent_side,
 			        planner_shadow.first_shared_parent_segment, planner_shadow.first_shared_parent_side,
-			        planner_shadow.first_legacy_distance, planner_shadow.first_shared_distance);
+			        planner_shadow.first_legacy_distance, planner_shadow.first_shared_distance,
+			        planner_shadow.compared_target_count, planner_shadow.target_mismatch_count,
+			        planner_shadow.first_target_category, planner_shadow.first_target_index,
+			        planner_shadow.first_legacy_target_count, planner_shadow.first_shared_target_count,
+			        planner_shadow.first_legacy_target_segment, planner_shadow.first_shared_target_segment);
 			secret_area_dump_failed = 1;
 		}
 	}

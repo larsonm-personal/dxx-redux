@@ -62,7 +62,10 @@ Parity has two separate meanings and both must pass:
   - Ported deterministic weighted segment search, parent-chain retention, progress weighting, and first-obstruction capture into the shared C++ planner.
   - Added exact pessimistic/optimistic per-segment shadow comparison for reachability, distance, progress weight, parent segment, and parent side, with strict headless and introspection diagnostics.
   - Confirmed zero search mismatches in D1/D2 unit fixtures, all base Descent and Counterstrike levels, and 1,244 levels from 109 mission archives.
-  - Semantic step production and live behavior remain on the C planner; target discovery and dependency-state transitions are the next porting boundary.
+  - Normalized object roles, direct and contained keys, dead-object state, and control-center segments without exposing D1/D2 constants to the planner.
+  - Ported ordered key, boss, reactor, control-center fallback, and normal-exit target discovery, including secret-exit filtering and stable activation positions.
+  - Confirmed zero target inventory mismatches in D1/D2 unit fixtures, all base Descent and Counterstrike levels, and 1,244 levels from 109 mission archives.
+  - Semantic step production and live behavior remain on the C planner; dependency-state transitions and target selection are the next porting boundary.
 
 ## Non-Goals
 

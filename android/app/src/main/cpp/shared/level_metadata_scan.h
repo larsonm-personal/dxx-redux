@@ -182,6 +182,22 @@ typedef struct level_metadata_route_search_node {
 	int parent_side;
 } level_metadata_route_search_node;
 
+typedef struct level_metadata_route_target_shadow {
+	int seg;
+	int pos[3];
+} level_metadata_route_target_shadow;
+
+typedef struct level_metadata_route_target_inventory_shadow {
+	int key_count[3];
+	level_metadata_route_target_shadow keys[3][LEVEL_METADATA_MAX_TARGETS];
+	int reactor_found;
+	level_metadata_route_target_shadow reactor;
+	int boss_found;
+	level_metadata_route_target_shadow boss;
+	int exit_count;
+	level_metadata_route_target_shadow exits[LEVEL_METADATA_MAX_TARGETS];
+} level_metadata_route_target_inventory_shadow;
+
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
 	int energy_center_raw_count;
@@ -225,6 +241,9 @@ int level_metadata_scan_route_search_shadow(
     int optimistic,
     level_metadata_route_search_node *nodes,
     int capacity);
+int level_metadata_scan_route_targets_shadow(
+    const level_metadata_scan_view *view,
+    level_metadata_route_target_inventory_shadow *inventory);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

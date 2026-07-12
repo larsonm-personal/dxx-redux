@@ -3,6 +3,7 @@
 
 #include "route_edge.h"
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,32 @@ struct route_path_result {
 	route_edge_decision first_obstruction;
 };
 
+enum class route_target_kind {
+	key,
+	reactor,
+	boss,
+	exit
+};
+
+struct route_target {
+	route_target_kind kind = route_target_kind::key;
+	route_key_requirement key = route_key_requirement::none;
+	int segment = -1;
+	int side = -1;
+	int object = -1;
+	bool contained = false;
+	route_position position;
+};
+
+struct route_target_inventory {
+	std::array<std::vector<route_target>, 3> keys;
+	bool reactor_found = false;
+	route_target reactor;
+	bool boss_found = false;
+	route_target boss;
+	std::vector<route_target> exits;
+};
+
 route_search_result search_routes(
     const route_snapshot &snapshot,
     const route_query &query,
@@ -42,6 +69,8 @@ route_search_result search_routes(
 route_path_result build_route_path(
     const route_search_result &search,
     int target_segment);
+
+route_target_inventory discover_route_targets(const route_snapshot &snapshot);
 
 } // namespace dxx_route
 
