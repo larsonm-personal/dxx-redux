@@ -15,8 +15,15 @@ int plx_read_music_prefs(const char *path, int *source, int *prefer_mission, int
 int plx_write_music_prefs(const char *path, int source, int prefer_mission, int play_order, int volume);
 int playsave_android_read_u16le(FILE *f, int *value);
 int playsave_android_read_u32le(FILE *f, unsigned int *value);
-int playsave_android_patch_keysettings_common(FILE *f, long ks_base,
+int playsave_android_patch_keysettings_common(const char *path, long ks_base,
                                               long control_type_offset, const ubyte *kb, int kb_len, const ubyte *joy,
                                               int joy_len, const ubyte *mouse, int mouse_len, int control_type);
+int playsave_android_patch_u32le(const char *path, long offset,
+                                 unsigned int value);
+int playsave_android_patch_u8_values(const char *path, const long *offsets,
+                                     const unsigned char *values, int count);
+int playsave_android_patch_weapon_order(const char *path, long offset,
+                                        const ubyte *primary, int primary_len, const ubyte *secondary,
+                                        int secondary_len);
 
 #endif /* PLAYSAVE_ANDROID_SHARED_H */

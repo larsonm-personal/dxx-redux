@@ -64,6 +64,8 @@
         "level_metadata_route.planner_shadow.trigger_source_mismatch_count": "0",
         "level_metadata_route.planner_shadow.compared_trigger_firing_path_count": {"gt": 0},
         "level_metadata_route.planner_shadow.trigger_firing_path_mismatch_count": "0",
+		"level_metadata_route.planner_shadow.compared_trigger_dependency_count": {"gt": 0},
+		"level_metadata_route.planner_shadow.trigger_dependency_mismatch_count": "0",
         "level_metadata_route.visibility_cache.hits": {"gt": 0},
         "level_metadata_route.visibility_cache.misses": {"gt": 0},
         "level_metadata_route.visibility_cache.entries": {"gt": 0},

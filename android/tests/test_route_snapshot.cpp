@@ -267,6 +267,77 @@ bool wall_visible(
 	       position.value == visible.position.value;
 }
 
+dxx_route::route_snapshot make_nested_trigger_snapshot()
+{
+	dxx_route::route_snapshot snapshot;
+	snapshot.topology.segments.resize(4);
+	snapshot.state.segments.resize(4);
+	for (int segment = 0; segment < 4; ++segment) {
+		auto &center = snapshot.topology.segments[segment].center;
+		center.valid = true;
+		center.value = { segment * 10 * 65536, 0, 0 };
+	}
+	auto connect = [&](int from, int side, int to, int reverse) {
+		snapshot.topology.segments[from].sides[side].child = to;
+		snapshot.topology.segments[from].sides[side].reverse_side = reverse;
+		snapshot.topology.segments[from].sides[side].center =
+		    snapshot.topology.segments[from].center;
+	};
+	connect(0, 0, 1, 0);
+	connect(1, 0, 0, 0);
+	connect(1, 1, 2, 0);
+	connect(2, 0, 1, 1);
+	connect(2, 1, 3, 0);
+	connect(3, 0, 2, 1);
+	snapshot.state.segments[0].sides[0].flyable = true;
+	snapshot.state.segments[1].sides[0].flyable = true;
+	snapshot.state.segments[1].sides[1].hard_blocked = true;
+	snapshot.state.segments[2].sides[0].hard_blocked = true;
+	snapshot.state.segments[2].sides[1].hard_blocked = true;
+	snapshot.state.segments[3].sides[0].hard_blocked = true;
+
+	snapshot.topology.walls.resize(4);
+	snapshot.state.walls.resize(4);
+	auto source_wall = [&](int wall, int segment, int side, int trigger) {
+		auto &topology = snapshot.topology.walls[wall];
+		topology.segment = segment;
+		topology.side = side;
+		topology.target = snapshot.topology.segments[segment].center;
+		topology.shootable_trigger = true;
+		snapshot.topology.segments[segment].sides[side].wall = wall;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::open;
+		snapshot.state.walls[wall].trigger = trigger;
+	};
+	auto target_wall = [&](int wall, int segment, int side, int source) {
+		auto &topology = snapshot.topology.walls[wall];
+		topology.segment = segment;
+		topology.side = side;
+		topology.target = snapshot.topology.segments[segment].center;
+		snapshot.topology.segments[segment].sides[side].wall = wall;
+		snapshot.topology.segments[segment].sides[side].opener_walls = {
+			source,
+		};
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::door;
+	};
+	source_wall(0, 0, 2, 1);
+	target_wall(1, 1, 1, 0);
+	source_wall(2, 2, 2, 0);
+	target_wall(3, 2, 1, 2);
+
+	snapshot.topology.triggers.resize(2);
+	snapshot.state.triggers.resize(2);
+	for (int trigger = 0; trigger < 2; ++trigger) {
+		snapshot.topology.triggers[trigger].raw_type = 70;
+		snapshot.topology.triggers[trigger].kind =
+		    dxx_route::route_trigger_kind::open_door;
+	}
+	snapshot.topology.triggers[0].links.push_back({ 2, 1 });
+	snapshot.topology.triggers[1].links.push_back({ 1, 1 });
+	snapshot.state.start_segment = 0;
+	snapshot.state.start_position = snapshot.topology.segments[0].center;
+	return snapshot;
+}
+
 level_metadata_scan_view make_view(test_level &level)
 {
 	level_metadata_scan_view view = {};
@@ -530,6 +601,70 @@ int main()
 	       trigger_sources[0].source_position.value);
 	assert(direct_firing.path.reached);
 	assert(direct_firing.path.segments.size() == 1);
+	const auto direct_dependency = dxx_route::resolve_trigger_dependency(
+	    triggered_snapshot, planner_query, source_progress, 1, 0);
+	assert(direct_dependency.attempted);
+	assert(direct_dependency.resolved);
+	assert(direct_dependency.problem.empty());
+	assert(direct_dependency.steps.size() == 1);
+	assert(direct_dependency.progress.fired_triggers[0]);
+	const auto &direct_trigger_step = direct_dependency.steps[0];
+	assert(direct_trigger_step.kind ==
+	       dxx_route::route_semantic_step_kind::trigger);
+	assert(direct_trigger_step.trigger == 0);
+	assert(direct_trigger_step.wall == 0);
+	assert(direct_trigger_step.segment == 0);
+	assert(direct_trigger_step.side == 0);
+	assert(direct_trigger_step.activation ==
+	       dxx_route::route_activation_kind::pass_through_trigger);
+	assert(direct_trigger_step.activation_position.value ==
+	       trigger_sources[0].source_position.value);
+	assert(direct_trigger_step.aim_position.value ==
+	       triggered_snapshot.topology.walls[0].target.value);
+	assert(direct_trigger_step.opened_links.size() == 1);
+	assert(direct_trigger_step.opened_links[0].segment == 1);
+	assert(direct_trigger_step.opened_links[0].side == 0);
+	assert(direct_trigger_step.opened_links[0].wall == 1);
+	assert(direct_trigger_step.path.reached);
+	assert(direct_trigger_step.path.segments.size() == 1);
+	assert(direct_trigger_step.path.segments[0] == 0);
+	const auto nested_snapshot = make_nested_trigger_snapshot();
+	dxx_route::route_query nested_query;
+	nested_query.start = nested_snapshot.state.start_position;
+	const auto nested_progress = dxx_route::initial_route_progress_state(
+	    nested_snapshot, nested_query);
+	const auto nested_dependency = dxx_route::resolve_trigger_dependency(
+	    nested_snapshot, nested_query, nested_progress, 2, 1);
+	assert(nested_dependency.attempted);
+	assert(nested_dependency.resolved);
+	assert(nested_dependency.problem.empty());
+	assert(nested_dependency.steps.size() == 2);
+	assert(nested_dependency.steps[0].trigger == 1);
+	assert(nested_dependency.steps[1].trigger == 0);
+	assert(nested_dependency.progress.fired_triggers[0]);
+	assert(nested_dependency.progress.fired_triggers[1]);
+	assert(nested_dependency.steps[0].path.segments.size() == 1);
+	assert(nested_dependency.steps[0].path.segments[0] == 0);
+	assert(nested_dependency.steps[1].path.segments.size() == 3);
+	assert(nested_dependency.steps[1].path.segments[0] == 0);
+	assert(nested_dependency.steps[1].path.segments[1] == 1);
+	assert(nested_dependency.steps[1].path.segments[2] == 2);
+	auto loop_snapshot = nested_snapshot;
+	loop_snapshot.topology.walls[0].segment = 2;
+	loop_snapshot.topology.walls[0].side = 3;
+	loop_snapshot.topology.walls[0].target =
+	    loop_snapshot.topology.segments[2].center;
+	loop_snapshot.topology.segments[0].sides[2].wall = -1;
+	loop_snapshot.topology.segments[2].sides[3].wall = 0;
+	const auto loop_progress = dxx_route::initial_route_progress_state(
+	    loop_snapshot, nested_query);
+	const auto loop_dependency = dxx_route::resolve_trigger_dependency(
+	    loop_snapshot, nested_query, loop_progress, 2, 1);
+	assert(loop_dependency.attempted);
+	assert(!loop_dependency.resolved);
+	assert(loop_dependency.problem.rfind(
+	           "trigger route dependency loop", 0) == 0);
+	assert(loop_dependency.steps.empty());
 	auto visible_snapshot = triggered_snapshot;
 	visible_snapshot.state.segments[0].sides[0].hard_blocked = true;
 	visible_snapshot.topology.walls[0].segment = 1;
@@ -591,6 +726,20 @@ int main()
 	assert(planner_summary.trigger_source_mismatch_count == 0);
 	assert(planner_summary.compared_trigger_firing_path_count == 2);
 	assert(planner_summary.trigger_firing_path_mismatch_count == 0);
+	assert(planner_summary.compared_trigger_dependency_count == 2);
+	if (planner_summary.trigger_dependency_mismatch_count != 0)
+		fprintf(
+		    stderr,
+		    "trigger dependency mismatch state=%d edge=%d:%d resolved=%d/%d steps=%d/%d first_step=%d\n",
+		    planner_summary.first_trigger_dependency_progress_state,
+		    planner_summary.first_trigger_dependency_segment,
+		    planner_summary.first_trigger_dependency_side,
+		    planner_summary.first_legacy_trigger_dependency_resolved,
+		    planner_summary.first_shared_trigger_dependency_resolved,
+		    planner_summary.first_legacy_trigger_dependency_step_count,
+		    planner_summary.first_shared_trigger_dependency_step_count,
+		    planner_summary.first_trigger_dependency_step);
+	assert(planner_summary.trigger_dependency_mismatch_count == 0);
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);

@@ -834,6 +834,568 @@ route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 	return result;
 }
 
+namespace
+{
+
+const char *dependency_key_name(int index)
+{
+	return index == 0 ? "blue" : index == 1 ? "red"
+	                         : index == 2   ? "gold"
+	                                        : "unknown";
+}
+
+const char *dependency_trigger_type_name(route_trigger_kind kind)
+{
+	switch (kind) {
+		case route_trigger_kind::open_door: return "open_door";
+		case route_trigger_kind::exit: return "exit";
+		case route_trigger_kind::secret_exit: return "secret_exit";
+		case route_trigger_kind::illusion_off: return "illusion_off";
+		case route_trigger_kind::unlock_door: return "unlock_door";
+		case route_trigger_kind::open_wall: return "open_wall";
+		case route_trigger_kind::illusory_wall: return "illusory_wall";
+		default: return "unknown";
+	}
+}
+
+struct dependency_state {
+	route_progress_state progress;
+	std::vector<route_semantic_step> steps;
+	std::string problem;
+	int failed_trigger = -1;
+	int failed_key = -1;
+	double pending_distance = 0.0;
+	route_path_result pending_path;
+	std::vector<unsigned char> hidden_door_in_progress;
+};
+
+class dependency_planner
+{
+  public:
+	dependency_planner(
+	    const route_snapshot &snapshot,
+	    const route_query &query,
+	    const route_progress_state &progress,
+	    const route_visibility_query &visibility)
+	    : snapshot_(snapshot), query_(query), visibility_(visibility),
+	      targets_(discover_route_targets(snapshot))
+	{
+		state_.progress = progress;
+		state_.hidden_door_in_progress.resize(snapshot.state.walls.size());
+	}
+
+	route_dependency_result resolve_trigger(int segment, int side)
+	{
+		route_dependency_result result;
+		result.progress = state_.progress;
+		const auto sources = discover_trigger_sources_internal(
+		    snapshot_, state_.progress, segment, side, true);
+		if (sources.empty())
+			return result;
+		result.attempted = true;
+		result.resolved = fire_trigger(segment, side, 0);
+		result.progress = state_.progress;
+		result.steps = std::move(state_.steps);
+		result.problem = std::move(state_.problem);
+		result.failed_trigger = state_.failed_trigger;
+		result.failed_key = state_.failed_key;
+		result.pending_distance = state_.pending_distance;
+		result.pending_path = std::move(state_.pending_path);
+		return result;
+	}
+
+  private:
+	void set_problem(const std::string &problem)
+	{
+		if (state_.problem.empty())
+			state_.problem = problem;
+	}
+
+	route_path_result path_to_position(
+	    int segment,
+	    const route_position &position,
+	    bool optimistic,
+	    route_key_requirement forbidden_key = route_key_requirement::none)
+	{
+		route_search_options options;
+		options.optimistic = optimistic;
+		options.prioritize_progress =
+		    forbidden_key == route_key_requirement::none;
+		options.forbidden_missing_key = forbidden_key;
+		const auto search = search_routes(
+		    snapshot_, query_, state_.progress, options);
+		if (!search.problem.empty())
+			return {};
+		auto path = build_route_path(search, segment);
+		if (!path.reached || !position.valid || !valid_segment(snapshot_, segment) ||
+		    !snapshot_.topology.segments[segment].center.valid)
+			return {};
+		path.distance += point_distance(
+		    snapshot_.topology.segments[segment].center, position);
+		return path;
+	}
+
+	void accumulate_path(const route_path_result &path)
+	{
+		state_.pending_distance += path.distance;
+		state_.pending_path.reached = true;
+		state_.pending_path.distance += path.distance;
+		state_.pending_path.progress_weight += path.progress_weight;
+		if (state_.pending_path.segments.empty()) {
+			state_.pending_path.segments = path.segments;
+			state_.pending_path.sides = path.sides;
+			return;
+		}
+		std::size_t segment_start = 0;
+		if (!path.segments.empty() &&
+		    state_.pending_path.segments.back() == path.segments.front())
+			segment_start = 1;
+		state_.pending_path.segments.insert(
+		    state_.pending_path.segments.end(),
+		    path.segments.begin() + static_cast<std::ptrdiff_t>(segment_start),
+		    path.segments.end());
+		state_.pending_path.sides.insert(
+		    state_.pending_path.sides.end(), path.sides.begin(), path.sides.end());
+	}
+
+	void finish_step(route_semantic_step &step)
+	{
+		step.activation_position = state_.progress.current_position;
+		step.distance_from_previous = state_.pending_distance;
+		step.path = std::move(state_.pending_path);
+		state_.pending_distance = 0.0;
+		state_.pending_path = {};
+	}
+
+	bool append_step(route_semantic_step step)
+	{
+		if (state_.steps.size() >= LEVEL_METADATA_MAX_ROUTE_STEPS) {
+			set_problem("route step limit");
+			return false;
+		}
+		finish_step(step);
+		state_.steps.push_back(std::move(step));
+		return true;
+	}
+
+	int reverse_wall(int wall) const
+	{
+		if (!valid_wall(snapshot_, wall))
+			return -1;
+		const auto &source = snapshot_.topology.walls[wall];
+		if (!valid_segment(snapshot_, source.segment) || source.side < 0 ||
+		    source.side >= LEVEL_METADATA_MAX_SIDES)
+			return -1;
+		const auto &side =
+		    snapshot_.topology.segments[source.segment].sides[source.side];
+		if (!valid_segment(snapshot_, side.child) || side.reverse_side < 0 ||
+		    side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
+			return -1;
+		return snapshot_.topology.segments[side.child]
+		    .sides[side.reverse_side]
+		    .wall;
+	}
+
+	void set_wall_pair(std::vector<unsigned char> &values, int wall, bool value)
+	{
+		if (wall >= 0 && wall < static_cast<int>(values.size()))
+			values[wall] = value;
+		const int reverse = reverse_wall(wall);
+		if (reverse >= 0 && reverse < static_cast<int>(values.size()))
+			values[reverse] = value;
+	}
+
+	bool append_hidden_door_step(int segment, int side, int wall)
+	{
+		route_semantic_step step;
+		step.kind = route_semantic_step_kind::hidden_door;
+		step.segment = segment;
+		step.side = side;
+		step.wall = wall;
+		step.activation = route_activation_kind::open_hidden_door;
+		step.label = "Open hidden door";
+		if (valid_wall(snapshot_, wall)) {
+			step.aim_position = snapshot_.topology.walls[wall].target;
+			step.label_position = step.aim_position;
+		}
+		step.opened_links.push_back({ segment, side, wall });
+		const int reverse = reverse_wall(wall);
+		if (valid_wall(snapshot_, reverse) &&
+		    step.opened_links.size() < LEVEL_METADATA_MAX_ROUTE_LINKS) {
+			const auto &reverse_topology = snapshot_.topology.walls[reverse];
+			step.opened_links.push_back({ reverse_topology.segment, reverse_topology.side, reverse });
+		}
+		return append_step(std::move(step));
+	}
+
+	bool open_hidden_door(int segment, int side, int wall, int depth)
+	{
+		if (!valid_wall(snapshot_, wall)) {
+			set_problem("unknown hidden door route dependency");
+			return false;
+		}
+		if (state_flag(state_.progress.opened_hidden_walls, wall))
+			return true;
+		if (state_flag(state_.hidden_door_in_progress, wall) ||
+		    state_flag(state_.hidden_door_in_progress, reverse_wall(wall))) {
+			set_problem("hidden door route dependency loop");
+			return false;
+		}
+		route_position position;
+		if (valid_segment(snapshot_, segment) && side >= 0 &&
+		    side < LEVEL_METADATA_MAX_SIDES)
+			position = snapshot_.topology.segments[segment].sides[side].center;
+		if (!position.valid && valid_segment(snapshot_, segment))
+			position = snapshot_.topology.segments[segment].center;
+		if (!position.valid) {
+			set_problem("hidden door source missing");
+			return false;
+		}
+		set_wall_pair(state_.hidden_door_in_progress, wall, true);
+		if (!move_to_target(segment, position, depth + 1)) {
+			set_wall_pair(state_.hidden_door_in_progress, wall, false);
+			return false;
+		}
+		state_.progress.current_segment = segment;
+		state_.progress.current_position = position;
+		if (!append_hidden_door_step(segment, side, wall)) {
+			set_wall_pair(state_.hidden_door_in_progress, wall, false);
+			return false;
+		}
+		route_progress_open_hidden_wall(snapshot_, state_.progress, wall);
+		set_wall_pair(state_.hidden_door_in_progress, wall, false);
+		return true;
+	}
+
+	bool append_key_step(const route_target &target, int key)
+	{
+		route_semantic_step step;
+		step.kind = route_semantic_step_kind::key;
+		step.segment = target.segment;
+		step.key = target.key;
+		step.activation = route_activation_kind::pickup_key;
+		step.label = std::string(dependency_key_name(key)) + " key";
+		step.aim_position = target.position;
+		step.label_position = target.position;
+		return append_step(std::move(step));
+	}
+
+	bool acquire_key(int key, int depth)
+	{
+		if (key < 0 || key >= 3) {
+			set_problem("unknown key route dependency");
+			return false;
+		}
+		const int bit = 1 << key;
+		if ((state_.progress.key_mask & bit) != 0)
+			return true;
+		if ((state_.progress.key_in_progress & bit) != 0) {
+			set_problem(
+			    std::string(dependency_key_name(key)) +
+			    " key route dependency loop");
+			state_.failed_key = key;
+			return false;
+		}
+		if (targets_.keys[key].empty()) {
+			set_problem(std::string(dependency_key_name(key)) + " key missing");
+			return false;
+		}
+		const route_key_requirement keys[3] = {
+			route_key_requirement::blue,
+			route_key_requirement::red,
+			route_key_requirement::gold,
+		};
+		const auto selected = select_key_target(
+		    snapshot_, query_, state_.progress, keys[key], targets_.keys[key]);
+		if (!selected.found) {
+			set_problem(
+			    std::string(dependency_key_name(key)) + " key unreachable");
+			state_.failed_key = key;
+			return false;
+		}
+		state_.progress.key_in_progress |= bit;
+		const auto &target = targets_.keys[key][selected.selected_index];
+		if (!move_to_target(target.segment, target.position, depth + 1)) {
+			state_.progress.key_in_progress &= ~bit;
+			return false;
+		}
+		append_key_step(target, key);
+		state_.progress.key_mask |= bit;
+		state_.progress.key_in_progress &= ~bit;
+		return true;
+	}
+
+	bool acquire_recovery_key(int depth)
+	{
+		static constexpr int recovery_order[] = { 0, 2, 1 };
+		std::string last_problem;
+		for (const int key : recovery_order) {
+			const int bit = 1 << key;
+			if (((state_.progress.key_mask | state_.progress.key_in_progress |
+			      state_.progress.avoided_key_mask) &
+			     bit) != 0 ||
+			    targets_.keys[key].empty())
+				continue;
+			const auto saved = state_;
+			state_.problem.clear();
+			if (acquire_key(key, depth + 1))
+				return true;
+			if (last_problem.empty() && !state_.problem.empty())
+				last_problem = state_.problem;
+			state_ = saved;
+		}
+		if (!last_problem.empty())
+			state_.problem = last_problem;
+		return false;
+	}
+
+	bool append_trigger_step(route_trigger_source source)
+	{
+		if (!valid_trigger(snapshot_, source.trigger))
+			return false;
+		route_semantic_step step;
+		step.kind = route_semantic_step_kind::trigger;
+		step.segment = source.source_segment;
+		step.side = source.source_side;
+		step.wall = source.source_wall;
+		step.trigger = source.trigger;
+		const auto &trigger = snapshot_.topology.triggers[source.trigger];
+		step.trigger_raw_type = trigger.raw_type;
+		step.trigger_type_name = dependency_trigger_type_name(trigger.kind);
+		if (valid_wall(snapshot_, source.source_wall) &&
+		    snapshot_.topology.walls[source.source_wall].shootable_trigger)
+			step.activation = route_activation_kind::shoot_switch;
+		else if (valid_wall(snapshot_, source.source_wall) &&
+		         snapshot_.state.walls[source.source_wall].kind ==
+		             route_wall_kind::open)
+			step.activation = route_activation_kind::fly_through_trigger;
+		else
+			step.activation = route_activation_kind::pass_through_trigger;
+		const char *action =
+		    step.activation == route_activation_kind::shoot_switch
+		        ? "Shoot switch"
+		    : step.activation == route_activation_kind::fly_through_trigger
+		        ? "Fly-through"
+		        : "Pass through";
+		step.label = std::string(action) + " trigger " +
+		             std::to_string(source.trigger);
+		if (valid_wall(snapshot_, source.source_wall)) {
+			step.aim_position =
+			    snapshot_.topology.walls[source.source_wall].target;
+			step.label_position = step.aim_position;
+		}
+		for (const auto &link : trigger.links) {
+			if (step.opened_links.size() >= LEVEL_METADATA_MAX_ROUTE_LINKS)
+				break;
+			int wall = -1;
+			if (valid_segment(snapshot_, link.segment) && link.side >= 0 &&
+			    link.side < LEVEL_METADATA_MAX_SIDES)
+				wall = snapshot_.topology.segments[link.segment].sides[link.side].wall;
+			step.opened_links.push_back({ link.segment, link.side, wall });
+		}
+		return append_step(std::move(step));
+	}
+
+	bool fire_trigger(int segment, int side, int depth)
+	{
+		const auto raw_sources = discover_trigger_sources_internal(
+		    snapshot_, state_.progress, segment, side, true);
+		if (raw_sources.empty()) {
+			set_problem("unknown trigger route dependency");
+			return false;
+		}
+		auto source = raw_sources.front();
+		const auto firing_sources = discover_trigger_sources_internal(
+		    snapshot_, state_.progress, segment, side, false);
+		const auto firing = select_trigger_firing_path(
+		    snapshot_, query_, state_.progress, firing_sources, visibility_);
+		if (firing.found)
+			source = firing.source;
+		if (state_flag(state_.progress.fired_triggers, source.trigger))
+			return true;
+		if (state_flag(state_.progress.trigger_in_progress, source.trigger)) {
+			set_problem(
+			    "trigger route dependency loop: trigger " +
+			    std::to_string(source.trigger) + " source " +
+			    std::to_string(source.source_segment) + ":" +
+			    std::to_string(source.source_side) + " wall " +
+			    std::to_string(source.source_wall) + " target " +
+			    std::to_string(source.target_segment) + ":" +
+			    std::to_string(source.target_side));
+			state_.failed_trigger = source.trigger;
+			return false;
+		}
+		if (!source.source_position.valid ||
+		    !valid_segment(snapshot_, source.source_segment)) {
+			set_problem("trigger source missing");
+			state_.failed_trigger = source.trigger;
+			return false;
+		}
+		state_.progress.trigger_in_progress[source.trigger] = 1;
+		const int selected_source_segment = source.source_segment;
+		if (firing.found) {
+			accumulate_path(firing.path);
+			state_.progress.current_segment = firing.terminal_segment;
+			state_.progress.current_position = firing.terminal_position;
+			source.source_segment = firing.terminal_segment;
+			if (source.source_segment != selected_source_segment)
+				source.source_side = -1;
+		} else if (!move_to_target(
+		               source.source_segment, source.source_position, depth + 1)) {
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			return false;
+		} else {
+			state_.progress.current_segment = source.source_segment;
+			state_.progress.current_position = source.source_position;
+		}
+		if (!append_trigger_step(source)) {
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			return false;
+		}
+		state_.progress.fired_triggers[source.trigger] = 1;
+		state_.progress.trigger_in_progress[source.trigger] = 0;
+		return true;
+	}
+
+	bool move_to_target(
+	    int goal_segment,
+	    const route_position &goal_position,
+	    int depth)
+	{
+		if (depth > LEVEL_METADATA_MAX_ROUTE_STEPS) {
+			set_problem("route dependency depth limit");
+			return false;
+		}
+		const int saved_avoided_keys = state_.progress.avoided_key_mask;
+		const auto saved_avoided_triggers = state_.progress.avoided_triggers;
+		std::string last_dependency_problem;
+		for (int guard = 0; guard < LEVEL_METADATA_MAX_ROUTE_STEPS; ++guard) {
+			const auto direct = path_to_position(
+			    goal_segment, goal_position, false);
+			if (direct.reached) {
+				accumulate_path(direct);
+				state_.progress.current_segment = goal_segment;
+				state_.progress.current_position = goal_position;
+				state_.progress.avoided_key_mask = saved_avoided_keys;
+				state_.progress.avoided_triggers = saved_avoided_triggers;
+				state_.failed_key = -1;
+				state_.failed_trigger = -1;
+				return true;
+			}
+			const auto optimistic = path_to_position(
+			    goal_segment, goal_position, true);
+			if (!optimistic.reached || !optimistic.has_obstruction) {
+				state_.problem.clear();
+				if (acquire_recovery_key(depth + 1)) {
+					state_.progress.avoided_key_mask = saved_avoided_keys;
+					state_.progress.avoided_triggers = saved_avoided_triggers;
+					state_.failed_key = -1;
+					state_.failed_trigger = -1;
+					continue;
+				}
+				set_problem(
+				    !last_dependency_problem.empty()
+				        ? last_dependency_problem
+				        : "route target unreachable");
+				state_.progress.avoided_key_mask = saved_avoided_keys;
+				state_.progress.avoided_triggers = saved_avoided_triggers;
+				return false;
+			}
+			const auto &block = optimistic.first_obstruction;
+			if (block.blocker == route_edge_blocker::missing_key) {
+				const auto saved = state_;
+				state_.failed_key = -1;
+				const int key = key_index(block.key);
+				if (!acquire_key(key, depth + 1)) {
+					const std::string key_problem = state_.problem;
+					const int failed = state_.failed_key >= 0
+					                       ? state_.failed_key
+					                       : key;
+					state_ = saved;
+					state_.failed_key = failed;
+					last_dependency_problem = key_problem;
+					state_.problem.clear();
+					if (failed >= 0 && failed < 3)
+						state_.progress.avoided_key_mask |= 1 << failed;
+				}
+				continue;
+			}
+			if (block.blocker == route_edge_blocker::trigger) {
+				const auto saved = state_;
+				state_.failed_trigger = -1;
+				if (!fire_trigger(
+				        optimistic.first_obstruction_segment,
+				        optimistic.first_obstruction_side, depth + 1)) {
+					const bool avoidable =
+					    state_.problem == "trigger source missing" ||
+					    state_.problem.rfind(
+					        "trigger route dependency loop", 0) == 0;
+					if (avoidable && valid_trigger(snapshot_, block.trigger)) {
+						const std::string trigger_problem = state_.problem;
+						const int failed = state_.failed_trigger >= 0
+						                       ? state_.failed_trigger
+						                       : block.trigger;
+						state_ = saved;
+						state_.failed_trigger = failed;
+						last_dependency_problem = trigger_problem;
+						if (failed >= 0 &&
+						    failed < static_cast<int>(
+						                 state_.progress.avoided_triggers.size()))
+							state_.progress.avoided_triggers[failed] = 1;
+						continue;
+					}
+					state_.progress.avoided_key_mask = saved_avoided_keys;
+					state_.progress.avoided_triggers = saved_avoided_triggers;
+					return false;
+				}
+				continue;
+			}
+			if (block.blocker == route_edge_blocker::hidden_door) {
+				if (!open_hidden_door(
+				        optimistic.first_obstruction_segment,
+				        optimistic.first_obstruction_side, block.wall,
+				        depth + 1)) {
+					state_.progress.avoided_key_mask = saved_avoided_keys;
+					state_.progress.avoided_triggers = saved_avoided_triggers;
+					return false;
+				}
+				continue;
+			}
+			set_problem("unsupported route dependency");
+			state_.progress.avoided_key_mask = saved_avoided_keys;
+			state_.progress.avoided_triggers = saved_avoided_triggers;
+			return false;
+		}
+		set_problem(
+		    !last_dependency_problem.empty()
+		        ? last_dependency_problem
+		        : "route dependency iteration limit");
+		state_.progress.avoided_key_mask = saved_avoided_keys;
+		state_.progress.avoided_triggers = saved_avoided_triggers;
+		return false;
+	}
+
+	const route_snapshot &snapshot_;
+	const route_query &query_;
+	const route_visibility_query &visibility_;
+	route_target_inventory targets_;
+	dependency_state state_;
+};
+
+} // namespace
+
+route_dependency_result resolve_trigger_dependency(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    int segment,
+    int side,
+    const route_visibility_query &visibility)
+{
+	dependency_planner planner(snapshot, query, progress, visibility);
+	return planner.resolve_trigger(segment, side);
+}
+
 } // namespace dxx_route
 
 namespace
@@ -851,6 +1413,131 @@ bool distances_match(double left, double right)
 	if (!std::isfinite(left) || !std::isfinite(right))
 		return !std::isfinite(left) && !std::isfinite(right);
 	return std::fabs(left - right) <= 1e-9;
+}
+
+int semantic_key_index(dxx_route::route_key_requirement key)
+{
+	switch (key) {
+		case dxx_route::route_key_requirement::blue: return 0;
+		case dxx_route::route_key_requirement::red: return 1;
+		case dxx_route::route_key_requirement::gold: return 2;
+		default: return -1;
+	}
+}
+
+bool dependency_progress_matches(
+    const level_metadata_route_progress_shadow &legacy,
+    const dxx_route::route_progress_state &shared)
+{
+	if (legacy.current_seg != shared.current_segment ||
+	    legacy.key_mask != shared.key_mask ||
+	    legacy.key_in_progress != shared.key_in_progress ||
+	    legacy.avoided_key_mask != shared.avoided_key_mask ||
+	    legacy.control_center_destroyed !=
+	        static_cast<int>(shared.control_center_destroyed) ||
+	    !shared.current_position.valid)
+		return false;
+	for (int coordinate = 0; coordinate < 3; ++coordinate)
+		if (legacy.current_pos[coordinate] !=
+		    shared.current_position.value[coordinate])
+			return false;
+	if (shared.fired_triggers.size() > LEVEL_METADATA_MAX_TRIGGERS ||
+	    shared.trigger_in_progress.size() > LEVEL_METADATA_MAX_TRIGGERS ||
+	    shared.avoided_triggers.size() > LEVEL_METADATA_MAX_TRIGGERS ||
+	    shared.opened_hidden_walls.size() > LEVEL_METADATA_MAX_WALLS)
+		return false;
+	for (int trigger = 0;
+	     trigger < static_cast<int>(shared.fired_triggers.size()); ++trigger)
+		if (legacy.fired_triggers[trigger] != shared.fired_triggers[trigger] ||
+		    legacy.trigger_in_progress[trigger] !=
+		        shared.trigger_in_progress[trigger] ||
+		    legacy.avoided_triggers[trigger] != shared.avoided_triggers[trigger])
+			return false;
+	for (int wall = 0;
+	     wall < static_cast<int>(shared.opened_hidden_walls.size()); ++wall)
+		if (legacy.opened_hidden_walls[wall] !=
+		    shared.opened_hidden_walls[wall])
+			return false;
+	return true;
+}
+
+bool dependency_position_matches(
+    int legacy_valid,
+    const int legacy[3],
+    const dxx_route::route_position &shared)
+{
+	if (legacy_valid != static_cast<int>(shared.valid))
+		return false;
+	if (!legacy_valid)
+		return true;
+	for (int coordinate = 0; coordinate < 3; ++coordinate)
+		if (legacy[coordinate] != shared.value[coordinate])
+			return false;
+	return true;
+}
+
+bool dependency_step_matches(
+    const level_metadata_route_step &legacy,
+    const dxx_route::route_semantic_step &shared)
+{
+	if (legacy.kind != static_cast<int>(shared.kind) ||
+	    legacy.seg != shared.segment || legacy.side != shared.side ||
+	    legacy.wall_num != shared.wall || legacy.trigger_num != shared.trigger ||
+	    legacy.trigger_type != shared.trigger_raw_type ||
+	    legacy.key_index != semantic_key_index(shared.key) ||
+	    legacy.activation_kind != static_cast<int>(shared.activation) ||
+	    !distances_match(
+	        legacy.distance_from_previous, shared.distance_from_previous) ||
+	    std::strcmp(legacy.label, shared.label.c_str()) != 0 ||
+	    std::strcmp(
+	        legacy.trigger_type_name, shared.trigger_type_name.c_str()) != 0 ||
+	    legacy.opened_link_count !=
+	        static_cast<int>(shared.opened_links.size()) ||
+	    !dependency_position_matches(
+	        legacy.activation_pos_valid, legacy.activation_pos,
+	        shared.activation_position) ||
+	    !dependency_position_matches(
+	        legacy.aim_pos_valid, legacy.aim_pos, shared.aim_position) ||
+	    !dependency_position_matches(
+	        legacy.label_pos_valid, legacy.label_pos, shared.label_position))
+		return false;
+	for (int link = 0; link < legacy.opened_link_count; ++link) {
+		const auto &shared_link = shared.opened_links[link];
+		if (legacy.opened_link_seg[link] != shared_link.segment ||
+		    legacy.opened_link_side[link] != shared_link.side ||
+		    legacy.opened_link_wall[link] != shared_link.wall)
+			return false;
+	}
+	return true;
+}
+
+bool dependency_result_matches(
+    const level_metadata_route_trigger_dependency_shadow &legacy,
+    const dxx_route::route_dependency_result &shared,
+    int &first_step)
+{
+	first_step = -1;
+	if (legacy.attempted != static_cast<int>(shared.attempted) ||
+	    legacy.resolved != static_cast<int>(shared.resolved) ||
+	    legacy.failed_trigger != shared.failed_trigger ||
+	    legacy.failed_key != shared.failed_key ||
+	    !distances_match(legacy.pending_distance, shared.pending_distance) ||
+	    std::strcmp(legacy.problem, shared.problem.c_str()) != 0 ||
+	    legacy.route_step_count != static_cast<int>(shared.steps.size())) {
+		first_step = -2;
+		return false;
+	}
+	if (!dependency_progress_matches(legacy.progress, shared.progress)) {
+		first_step = -3;
+		return false;
+	}
+	for (int step = 0; step < legacy.route_step_count; ++step) {
+		if (dependency_step_matches(legacy.route_steps[step], shared.steps[step]))
+			continue;
+		first_step = step;
+		return false;
+	}
+	return true;
 }
 
 struct view_visibility_context {
@@ -901,6 +1588,10 @@ extern "C" int route_planner_compare_view(
 		summary->first_trigger_firing_path_progress_state = -1;
 		summary->first_trigger_firing_path_segment = -1;
 		summary->first_trigger_firing_path_side = -1;
+		summary->first_trigger_dependency_progress_state = -1;
+		summary->first_trigger_dependency_segment = -1;
+		summary->first_trigger_dependency_side = -1;
+		summary->first_trigger_dependency_step = -1;
 	}
 	copy_problem(problem, problem_capacity, "");
 	if (!view || !summary) {
@@ -1231,6 +1922,41 @@ extern "C" int route_planner_compare_view(
 						    legacy_firing.distance;
 						summary->first_shared_trigger_firing_path_distance =
 						    shared_firing.path.distance;
+					}
+					const auto legacy_dependency = std::make_unique<
+					    level_metadata_route_trigger_dependency_shadow>();
+					if (!level_metadata_scan_route_trigger_dependency_shadow(
+					        view, &legacy_progress, segment, side,
+					        legacy_dependency.get())) {
+						copy_problem(
+						    problem, problem_capacity,
+						    "legacy trigger dependency comparison failed");
+						return 0;
+					}
+					const auto shared_dependency =
+					    dxx_route::resolve_trigger_dependency(
+					        snapshot, query, progress, segment, side,
+					        visibility);
+					summary->compared_trigger_dependency_count++;
+					int first_dependency_step = -1;
+					if (!dependency_result_matches(
+					        *legacy_dependency, shared_dependency,
+					        first_dependency_step) &&
+					    summary->trigger_dependency_mismatch_count++ == 0) {
+						summary->first_trigger_dependency_progress_state =
+						    state_index;
+						summary->first_trigger_dependency_segment = segment;
+						summary->first_trigger_dependency_side = side;
+						summary->first_legacy_trigger_dependency_resolved =
+						    legacy_dependency->resolved;
+						summary->first_shared_trigger_dependency_resolved =
+						    shared_dependency.resolved;
+						summary->first_legacy_trigger_dependency_step_count =
+						    legacy_dependency->route_step_count;
+						summary->first_shared_trigger_dependency_step_count =
+						    static_cast<int>(shared_dependency.steps.size());
+						summary->first_trigger_dependency_step =
+						    first_dependency_step;
 					}
 				}
 			}

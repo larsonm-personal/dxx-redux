@@ -713,6 +713,16 @@ static json serialize_level_metadata_route()
 			{ "first_shared_trigger_firing_path_terminal_pos", json::array({ planner_shadow.first_shared_trigger_firing_path_terminal_pos[0], planner_shadow.first_shared_trigger_firing_path_terminal_pos[1], planner_shadow.first_shared_trigger_firing_path_terminal_pos[2] }) },
 			{ "first_legacy_trigger_firing_path_distance", planner_shadow.first_legacy_trigger_firing_path_distance },
 			{ "first_shared_trigger_firing_path_distance", planner_shadow.first_shared_trigger_firing_path_distance },
+			{ "compared_trigger_dependency_count", planner_shadow.compared_trigger_dependency_count },
+			{ "trigger_dependency_mismatch_count", planner_shadow.trigger_dependency_mismatch_count },
+			{ "first_trigger_dependency_progress_state", planner_shadow.first_trigger_dependency_progress_state },
+			{ "first_trigger_dependency_segment", planner_shadow.first_trigger_dependency_segment },
+			{ "first_trigger_dependency_side", planner_shadow.first_trigger_dependency_side },
+			{ "first_legacy_trigger_dependency_resolved", planner_shadow.first_legacy_trigger_dependency_resolved },
+			{ "first_shared_trigger_dependency_resolved", planner_shadow.first_shared_trigger_dependency_resolved },
+			{ "first_legacy_trigger_dependency_step_count", planner_shadow.first_legacy_trigger_dependency_step_count },
+			{ "first_shared_trigger_dependency_step_count", planner_shadow.first_shared_trigger_dependency_step_count },
+			{ "first_trigger_dependency_step", planner_shadow.first_trigger_dependency_step },
 		};
 	}
 	count = metadata->route_step_count;

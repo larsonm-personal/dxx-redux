@@ -11,6 +11,7 @@
 #include "playsave.h"
 #include "strutil.h"
 #include "playsave_android_shared.h"
+#include "playsave_transaction.h"
 
 static const char *playsave_android_options_header(void)
 {
@@ -470,7 +471,7 @@ int playsave_android_read_u32le(FILE *f, unsigned int *value)
 	return 1;
 }
 
-int playsave_android_patch_keysettings_common(FILE *f,
+int playsave_android_patch_keysettings_common(const char *path,
                                               long ks_base,
                                               long control_type_offset,
                                               const ubyte *kb,
@@ -481,31 +482,82 @@ int playsave_android_patch_keysettings_common(FILE *f,
                                               int mouse_len,
                                               int control_type)
 {
-	if (fseek(f, 0, SEEK_END) != 0 || ftell(f) < control_type_offset + 1)
+	struct playsave_file_patch patches[4];
+	unsigned char control = (unsigned char) control_type;
+	size_t count = 0;
+
+	if (!path || ks_base < 0 || control_type_offset < 0 || kb_len < 0 ||
+	    joy_len < 0 || mouse_len < 0 || (!kb && kb_len) ||
+	    (!joy && joy_len))
 		return 0;
 
-	if (fseek(f, ks_base, SEEK_SET) != 0)
-		return 0;
-	fwrite(kb, 1, kb_len < MAX_CONTROLS ? kb_len : MAX_CONTROLS, f);
-
-	if (fseek(f, ks_base + MAX_CONTROLS, SEEK_SET) != 0)
-		return 0;
-	fwrite(joy, 1, joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS, f);
-
+	patches[count].offset = (size_t) ks_base;
+	patches[count].data = kb;
+	patches[count++].size = kb_len < MAX_CONTROLS ? kb_len : MAX_CONTROLS;
+	patches[count].offset = (size_t) (ks_base + MAX_CONTROLS);
+	patches[count].data = joy;
+	patches[count++].size = joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS;
 	if (mouse != NULL && mouse_len > 0) {
-		if (fseek(f, ks_base + 5 * MAX_CONTROLS, SEEK_SET) != 0)
-			return 0;
-		fwrite(mouse, 1, mouse_len < MAX_CONTROLS ? mouse_len : MAX_CONTROLS, f);
+		patches[count].offset = (size_t) (ks_base + 5 * MAX_CONTROLS);
+		patches[count].data = mouse;
+		patches[count++].size = mouse_len < MAX_CONTROLS ? mouse_len : MAX_CONTROLS;
 	}
+	patches[count].offset = (size_t) control_type_offset;
+	patches[count].data = &control;
+	patches[count++].size = 1;
+	return playsave_atomic_patch_file(path, patches, count);
+}
 
-	if (fseek(f, control_type_offset, SEEK_SET) != 0)
+int playsave_android_patch_u32le(const char *path, long offset,
+                                 unsigned int value)
+{
+	unsigned char data[4] = {
+		(unsigned char) (value & 0xff),
+		(unsigned char) ((value >> 8) & 0xff),
+		(unsigned char) ((value >> 16) & 0xff),
+		(unsigned char) ((value >> 24) & 0xff)
+	};
+	struct playsave_file_patch patch = { (size_t) offset, data, sizeof(data) };
+
+	return offset >= 0 && playsave_atomic_patch_file(path, &patch, 1);
+}
+
+int playsave_android_patch_u8_values(const char *path, const long *offsets,
+                                     const unsigned char *values, int count)
+{
+	struct playsave_file_patch patches[8];
+	int i;
+
+	if (!offsets || !values || count < 0 || count > 8)
 		return 0;
-	{
-		unsigned char ct = (unsigned char) control_type;
-		fwrite(&ct, 1, 1, f);
+	for (i = 0; i < count; i++) {
+		if (offsets[i] < 0)
+			return 0;
+		patches[i].offset = (size_t) offsets[i];
+		patches[i].data = &values[i];
+		patches[i].size = 1;
 	}
+	return playsave_atomic_patch_file(path, patches, (size_t) count);
+}
 
-	fflush(f);
-	fsync(fileno(f));
-	return 1;
+int playsave_android_patch_weapon_order(const char *path, long offset,
+                                        const ubyte *primary, int primary_len, const ubyte *secondary,
+                                        int secondary_len)
+{
+	unsigned char data[2 * MAX_CONTROLS];
+	struct playsave_file_patch patch;
+	int count = primary_len > secondary_len ? primary_len : secondary_len;
+	int i;
+
+	if (offset < 0 || !primary || !secondary || primary_len < 0 ||
+	    secondary_len < 0 || count > MAX_CONTROLS)
+		return 0;
+	for (i = 0; i < count; i++) {
+		data[2 * i] = i < primary_len ? primary[i] : 0;
+		data[2 * i + 1] = i < secondary_len ? secondary[i] : 0;
+	}
+	patch.offset = (size_t) offset;
+	patch.data = data;
+	patch.size = (size_t) (2 * count);
+	return playsave_atomic_patch_file(path, &patch, 1);
 }

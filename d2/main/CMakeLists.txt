@@ -111,7 +111,9 @@ if(ANDROID)
     target_sources(dxx-redux-d2 PRIVATE
         ../../android/app/src/main/cpp/shared/multi_save_transfer.c
         ../../android/app/src/main/cpp/shared/state_android_shared.c
-        ../../android/app/src/main/cpp/shared/playsave_android_shared.c)
+        ../../android/app/src/main/cpp/shared/playsave_android_shared.c
+        ../../android/app/src/main/cpp/shared/playsave_layout.c
+        ../../android/app/src/main/cpp/shared/playsave_transaction.c)
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-codec-deps.cmake)

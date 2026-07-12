@@ -2344,6 +2344,8 @@ int level_metadata_scan_route_trigger_dependency_shadow(
 	result->failed_trigger = -1;
 	result->failed_key = -1;
 	metadata_route_context_from_progress_shadow(&route, progress);
+	route.failed_trigger = -1;
+	route.failed_key = -1;
 	metadata_route_context_to_progress_shadow(&route, &result->progress);
 	if (!view->segment_child || !valid_segment(view, seg) ||
 	    side < 0 || side >= LEVEL_METADATA_MAX_SIDES)

@@ -162,6 +162,8 @@ struct route_dependency_result {
 	std::string problem;
 	int failed_trigger = -1;
 	int failed_key = -1;
+	double pending_distance = 0.0;
+	route_path_result pending_path;
 };
 
 route_search_result search_routes(

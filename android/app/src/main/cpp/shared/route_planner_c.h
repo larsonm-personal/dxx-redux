@@ -95,6 +95,16 @@ typedef struct route_planner_shadow_summary {
 	int first_shared_trigger_firing_path_terminal_pos[3];
 	double first_legacy_trigger_firing_path_distance;
 	double first_shared_trigger_firing_path_distance;
+	int compared_trigger_dependency_count;
+	int trigger_dependency_mismatch_count;
+	int first_trigger_dependency_progress_state;
+	int first_trigger_dependency_segment;
+	int first_trigger_dependency_side;
+	int first_legacy_trigger_dependency_resolved;
+	int first_shared_trigger_dependency_resolved;
+	int first_legacy_trigger_dependency_step_count;
+	int first_shared_trigger_dependency_step_count;
+	int first_trigger_dependency_step;
 } route_planner_shadow_summary;
 
 #ifdef _MSC_VER

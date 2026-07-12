@@ -53,6 +53,16 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/android_save_set.c)
     target_include_directories(test_android_save_set PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_playsave_transaction
+        ../../android/tests/test_playsave_transaction.c
+        ../../android/app/src/main/cpp/shared/playsave_transaction.c)
+    target_compile_definitions(test_playsave_transaction PRIVATE PLAYSAVE_TRANSACTION_TESTING=1)
+
+    add_executable(test_playsave_layout
+        ../../android/tests/test_playsave_layout.c
+        ../../android/app/src/main/cpp/shared/playsave_layout.c)
+    target_include_directories(test_playsave_transaction PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_android_rewind_policy
         ../../android/tests/test_android_rewind_policy.c
         ../../android/app/src/main/cpp/shared/android_rewind_policy.c)
@@ -162,6 +172,8 @@ if(NOT ANDROID)
             test_coop_indicator_lines_math
             test_android_save_meta
             test_android_save_set
+            test_playsave_transaction
+            test_playsave_layout
             test_android_rewind_policy
             test_input_demo_rng_mode
             test_android_axis_mailbox

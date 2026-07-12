@@ -50,6 +50,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "auto_net.h"
 #include "coop_save.h"
+#include "playsave_layout.h"
 #include "songs.h"
 #include "songs_android_shared.h"
 #endif
@@ -1817,29 +1818,12 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
  *
  * Returns 1 on success, 0 on failure.
  */
-static int playsave_android_get_keysettings_layout(FILE *f,
-	long *ks_base,
-	long *control_type_offset)
+static int playsave_android_get_layout(FILE *f,
+	struct playsave_binary_layout *layout)
 {
-	unsigned int id;
-	unsigned int n_highest;
-	int ver;
-
-	if (!playsave_android_read_u32le(f, &id) || id != (unsigned)SAVE_FILE_ID)
-		return 0;
-	if (!playsave_android_read_u16le(f, &ver) || ver != SAVED_GAME_VERSION)
-		return 0;
-
-	if (fseek(f, 8, SEEK_SET) != 0 ||
-	    !playsave_android_read_u32le(f, &n_highest))
-		return 0;
-
-	*ks_base = 20
-		+ (long)n_highest * sizeof(hli)
-		+ sizeof(saved_games)
-		+ 4 * MAX_MESSAGE_LEN;
-	*control_type_offset = *ks_base + 7 * MAX_CONTROLS;
-	return 1;
+	return playsave_d1_get_layout(f, (unsigned)SAVE_FILE_ID,
+		COMPATIBLE_SAVED_GAME_VERSION, COMPATIBLE_PLAYER_STRUCT_VERSION,
+		MAX_MISSIONS, sizeof(hli), sizeof(saved_games), MAX_CONTROLS, layout);
 }
 
 int plr_patch_keysettings(const char *path,
@@ -1848,21 +1832,20 @@ int plr_patch_keysettings(const char *path,
 			 const ubyte *mouse, int mouse_len,
 			 int control_type)
 {
-	long ks_base;
-	long control_type_offset;
+	struct playsave_binary_layout layout;
 	FILE *f;
 	int result;
 
-	f = fopen(path, "r+b");
+	f = fopen(path, "rb");
 	if (!f)
 		return 0;
 
-	result = playsave_android_get_keysettings_layout(f, &ks_base,
-		&control_type_offset) &&
-		playsave_android_patch_keysettings_common(f, ks_base,
-			control_type_offset, kb, kb_len, joy, joy_len,
-			mouse, mouse_len, control_type);
+	result = playsave_android_get_layout(f, &layout);
 	fclose(f);
+	if (result)
+		result = playsave_android_patch_keysettings_common(path,
+			layout.keysettings, layout.control_dos, kb, kb_len, joy, joy_len,
+			mouse, mouse_len, control_type);
 	return result;
 }
 
@@ -1917,7 +1900,7 @@ int plr_patch_autoleveling(const char *path, int auto_leveling)
 	int saved_game_version, player_struct_version;
 	FILE *f;
 
-	f = fopen(path, "r+b");
+	f = fopen(path, "rb");
 	if (!f) return 0;
 
 	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
@@ -1935,17 +1918,8 @@ int plr_patch_autoleveling(const char *path, int auto_leveling)
 		return 0;
 	}
 
-	if (fseek(f, 16, SEEK_SET) != 0) { fclose(f); return 0; }
-	buf[0] = (unsigned char)(auto_leveling & 0xFF);
-	buf[1] = (unsigned char)((auto_leveling >> 8) & 0xFF);
-	buf[2] = (unsigned char)((auto_leveling >> 16) & 0xFF);
-	buf[3] = (unsigned char)((auto_leveling >> 24) & 0xFF);
-	if (fwrite(buf, 1, 4, f) != 4) { fclose(f); return 0; }
-
-	fflush(f);
-	fsync(fileno(f));
 	fclose(f);
-	return 1;
+	return playsave_android_patch_u32le(path, 16, (unsigned)auto_leveling);
 }
 
 /*

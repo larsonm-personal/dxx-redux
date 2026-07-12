@@ -54,6 +54,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "auto_net.h"
 #include "coop_save.h"
+#include "playsave_layout.h"
 #include "songs.h"
 #include "songs_android_shared.h"
 #endif
@@ -1423,33 +1424,12 @@ int write_player_file()
  *
  * Returns 1 on success, 0 on failure.
  */
-static int playsave_android_get_keysettings_layout(FILE *f,
-	long *ks_base,
-	long *control_type_offset)
+static int playsave_android_get_layout(FILE *f,
+	struct playsave_binary_layout *layout)
 {
-	unsigned int id;
-	int ver;
-	int n_highest;
-	int fixed_header = 18;
-
-	if (!playsave_android_read_u32le(f, &id) || id != (unsigned)SAVE_FILE_ID)
-		return 0;
-	if (!playsave_android_read_u16le(f, &ver) ||
-	    ver < COMPATIBLE_PLAYER_FILE_VERSION)
-		return 0;
-
-	if (ver >= 19)
-		fixed_header = 19;
-
-	if (fseek(f, fixed_header, SEEK_SET) != 0 ||
-	    !playsave_android_read_u16le(f, &n_highest))
-		return 0;
-
-	*ks_base = fixed_header + 2
-		+ (long)n_highest * sizeof(hli)
-		+ 4 * MAX_MESSAGE_LEN;
-	*control_type_offset = *ks_base + 8 * MAX_CONTROLS;
-	return 1;
+	return playsave_d2_get_layout(f, (unsigned)SAVE_FILE_ID,
+		COMPATIBLE_PLAYER_FILE_VERSION, MAX_MISSIONS, sizeof(hli),
+		MAX_CONTROLS, MAX_MESSAGE_LEN, layout);
 }
 
 int plr_patch_keysettings(const char *path,
@@ -1458,21 +1438,20 @@ int plr_patch_keysettings(const char *path,
 			 const ubyte *mouse, int mouse_len,
 			 int control_type)
 {
-	long ks_base;
-	long control_type_offset;
+	struct playsave_binary_layout layout;
 	FILE *f;
 	int result;
 
-	f = fopen(path, "r+b");
+	f = fopen(path, "rb");
 	if (!f)
 		return 0;
 
-	result = playsave_android_get_keysettings_layout(f, &ks_base,
-		&control_type_offset) &&
-		playsave_android_patch_keysettings_common(f, ks_base,
-			control_type_offset, kb, kb_len, joy, joy_len,
-			mouse, mouse_len, control_type);
+	result = playsave_android_get_layout(f, &layout);
 	fclose(f);
+	if (result)
+		result = playsave_android_patch_keysettings_common(path,
+			layout.keysettings, layout.control_dos, kb, kb_len, joy, joy_len,
+			mouse, mouse_len, control_type);
 	return result;
 }
 
@@ -1528,11 +1507,13 @@ int plr_patch_cockpit_autolevel(const char *path,
 				    int headlight_active_default)
 {
 	unsigned char buf[4];
+	const long offsets[] = {11, 13, 16};
+	unsigned char values[3];
 	unsigned int id;
 	int ver;
 	FILE *f;
 
-	f = fopen(path, "r+b");
+	f = fopen(path, "rb");
 	if (!f) return 0;
 
 	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
@@ -1544,28 +1525,11 @@ int plr_patch_cockpit_autolevel(const char *path,
 	ver = buf[0] | (buf[1] << 8);
 	if (ver < COMPATIBLE_PLAYER_FILE_VERSION) { fclose(f); return 0; }
 
-	if (fseek(f, 11, SEEK_SET) != 0 ||
-	    fputc(auto_leveling ? 1 : 0, f) == EOF) {
-		fclose(f);
-		return 0;
-	}
-
-	if (fseek(f, 13, SEEK_SET) != 0 ||
-	    fputc(cockpit_mode, f) == EOF) {
-		fclose(f);
-		return 0;
-	}
-
-	if (fseek(f, 16, SEEK_SET) != 0 ||
-	    fputc(headlight_active_default ? 1 : 0, f) == EOF) {
-		fclose(f);
-		return 0;
-	}
-
-	fflush(f);
-	fsync(fileno(f));
 	fclose(f);
-	return 1;
+	values[0] = auto_leveling ? 1 : 0;
+	values[1] = (unsigned char)cockpit_mode;
+	values[2] = headlight_active_default ? 1 : 0;
+	return playsave_android_patch_u8_values(path, offsets, values, 3);
 }
 /*
  * Compute the file offset past key settings to where weapon ordering starts.
@@ -1573,39 +1537,9 @@ int plr_patch_cockpit_autolevel(const char *path,
  */
 static long plr_weapon_order_offset(FILE *f)
 {
-	unsigned char buf[4];
-	unsigned int id;
-	int ver, n_highest, fixed_header;
-	long ks_base;
+	struct playsave_binary_layout layout;
 
-	if (fread(buf, 1, 4, f) != 4) return -1;
-	id = (unsigned)buf[0] | ((unsigned)buf[1]<<8) |
-	     ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24);
-	if (id != (unsigned)SAVE_FILE_ID) return -1;
-
-	if (fread(buf, 1, 2, f) != 2) return -1;
-	ver = buf[0] | (buf[1] << 8);
-	if (ver < COMPATIBLE_PLAYER_FILE_VERSION) return -1;
-
-	fixed_header = (ver >= 19) ? 19 : 18;
-
-	fseek(f, fixed_header, SEEK_SET);
-	if (fread(buf, 1, 2, f) != 2) return -1;
-	n_highest = buf[0] | (buf[1] << 8);
-
-	ks_base = fixed_header + 2
-	        + (long)n_highest * sizeof(hli)
-	        + 4 * MAX_MESSAGE_LEN;
-
-	/* Weapon order: ks_base + 8*MAX_CONTROLS + 3
-	 * (past key settings, control types, sensitivity) */
-	long offset = ks_base + 8 * MAX_CONTROLS + 3;
-
-	/* Verify file can hold 22 interleaved weapon bytes */
-	fseek(f, 0, SEEK_END);
-	if (ftell(f) < offset + 22) return -1;
-
-	return offset;
+	return playsave_android_get_layout(f, &layout) ? layout.weapon_order : -1;
 }
 
 /*
@@ -1646,23 +1580,15 @@ int plr_patch_weapon_order(const char *path,
                            const ubyte *primary, int prim_len,
                            const ubyte *secondary, int sec_len)
 {
-	FILE *f = fopen(path, "r+b");
+	FILE *f = fopen(path, "rb");
 	if (!f) return 0;
 
 	long offset = plr_weapon_order_offset(f);
 	if (offset < 0) { fclose(f); return 0; }
 
-	fseek(f, offset, SEEK_SET);
-	int n = prim_len > sec_len ? prim_len : sec_len;
-	for (int i = 0; i < n; i++) {
-		fputc(i < prim_len ? primary[i] : 0, f);
-		fputc(i < sec_len ? secondary[i] : 0, f);
-	}
-
-	fflush(f);
-	fsync(fileno(f));
 	fclose(f);
-	return 1;
+	return playsave_android_patch_weapon_order(path, offset, primary,
+		prim_len, secondary, sec_len);
 }
 #endif /* ANDROID */
 
