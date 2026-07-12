@@ -150,10 +150,11 @@
         { "label": "Exit", "binding": "Meta: GB: Find Exit", "iconRes": "" },
         { "label": "Secret", "binding": "Meta: GB: Find Secret", "iconRes": "" },
         { "label": "Warp Me", "binding": "Meta: GB: Warp to Me", "iconRes": "" },
+        { "label": "Unexplored", "binding": "Meta: GB: Unexplored", "iconRes": "" },
         { "label": "Next", "binding": "Meta: GB: Next Goal", "iconRes": "" }
       ],
-      "centerLabel": "Unexplored",
-      "centerBinding": "Meta: GB: Unexplored"
+      "centerLabel": "",
+      "centerBinding": -1
     },
     {
       "type": "radial_menu",

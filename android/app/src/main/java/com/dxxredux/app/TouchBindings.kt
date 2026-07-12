@@ -242,15 +242,13 @@ object TouchBindings {
                     RadialSegment("Exit", META_GUIDE_FIND_EXIT),
                     RadialSegment("Secret", META_GUIDE_FIND_SECRET),
                     RadialSegment("Warp Me", META_GUIDE_WARP_TO_ME),
+                    RadialSegment("Unexplored", META_GUIDE_FIND_UNEXPLORED),
                     RadialSegment("Next", META_GUIDE_NEXT_GOAL),
                 ),
         )
 
     /** Center binding for preset radial menus (-1 = none). */
-    val RADIAL_PRESET_CENTER: Map<String, Pair<String, Int>> =
-        mapOf(
-            "Guide" to ("Unexplored" to META_GUIDE_FIND_UNEXPLORED),
-        )
+    val RADIAL_PRESET_CENTER: Map<String, Pair<String, Int>> = emptyMap()
 
     /** Human-readable labels for preset IDs, for the editor UI. */
     val RADIAL_PRESET_LABELS: Map<String, String> =

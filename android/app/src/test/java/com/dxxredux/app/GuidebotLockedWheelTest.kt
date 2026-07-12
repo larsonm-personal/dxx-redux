@@ -24,16 +24,15 @@ class GuidebotLockedWheelTest {
     }
 
     @Test
-    fun guidePresetUsesNextSliceAndUnexploredCenterWithoutRelease() {
+    fun guidePresetUsesNextAndUnexploredSlicesWithoutReleaseOrCenter() {
         val guideSegments = TouchBindings.RADIAL_PRESET_SEGMENTS.getValue("Guide")
         val bindings = guideSegments.map { it.binding }
-        val center = TouchBindings.RADIAL_PRESET_CENTER.getValue("Guide")
 
         assertTrue(TouchBindings.META_GUIDE_NEXT_GOAL in bindings)
         assertTrue(TouchBindings.META_GUIDE_WARP_TO_ME in bindings)
+        assertTrue(TouchBindings.META_GUIDE_FIND_UNEXPLORED in bindings)
         assertFalse(TouchBindings.META_GUIDE_RELEASE_CONTROL in bindings)
-        assertEquals("Unexplored", center.first)
-        assertEquals(TouchBindings.META_GUIDE_FIND_UNEXPLORED, center.second)
+        assertFalse(TouchBindings.RADIAL_PRESET_CENTER.containsKey("Guide"))
     }
 
     @Test
@@ -99,11 +98,12 @@ class GuidebotLockedWheelTest {
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout).radialMenus.single()
         val bindings = migrated.segments.map { it.binding }
 
-        assertEquals(TouchBindings.META_GUIDE_FIND_UNEXPLORED, migrated.centerBinding)
-        assertEquals("Unexplored", migrated.centerLabel)
+        assertEquals(-1, migrated.centerBinding)
+        assertEquals("", migrated.centerLabel)
         assertEquals(TouchBindings.META_GUIDE_NEXT_GOAL, migrated.segments.last().binding)
         assertTrue(TouchBindings.META_GUIDE_FIND_ENERGY in bindings)
         assertTrue(TouchBindings.META_GUIDE_WARP_TO_ME in bindings)
+        assertTrue(TouchBindings.META_GUIDE_FIND_UNEXPLORED in bindings)
         assertFalse(TouchBindings.META_GUIDE_RELEASE_CONTROL in bindings)
     }
 
@@ -159,8 +159,9 @@ class GuidebotLockedWheelTest {
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout)
         val guide = migrated.radialMenus.single()
 
-        assertEquals(9, migrated.version)
-        assertEquals("Unexplored", guide.centerLabel)
-        assertEquals(TouchBindings.META_GUIDE_FIND_UNEXPLORED, guide.centerBinding)
+        assertEquals(10, migrated.version)
+        assertEquals("", guide.centerLabel)
+        assertEquals(-1, guide.centerBinding)
+        assertTrue(guide.segments.any { it.binding == TouchBindings.META_GUIDE_FIND_UNEXPLORED })
     }
 }

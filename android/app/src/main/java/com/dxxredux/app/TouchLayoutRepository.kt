@@ -27,7 +27,7 @@ internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 9
+    private const val CURRENT_VERSION = 10
     private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
@@ -114,6 +114,13 @@ object TouchLayoutRepository {
                 migrated.copy(
                     version = 9,
                     radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredAction(it) },
+                )
+        }
+        if (migrated.version < 10) {
+            migrated =
+                migrated.copy(
+                    version = 10,
+                    radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredSlice(it) },
                 )
         }
         if (migrated.version >= CURRENT_VERSION) return migrated
@@ -216,6 +223,24 @@ object TouchLayoutRepository {
             RadialSegment("Unexplored", TouchBindings.META_GUIDE_FIND_UNEXPLORED),
         )
         return radial.copy(segments = segments)
+    }
+
+    private fun migrateGuideWheelUnexploredSlice(radial: RadialMenuControl): RadialMenuControl {
+        if (radial.id != "Guide") return radial
+        val centerIsUnexplored = radial.centerBinding == TouchBindings.META_GUIDE_FIND_UNEXPLORED
+        val segments = radial.segments.toMutableList()
+        if (segments.none { it.binding == TouchBindings.META_GUIDE_FIND_UNEXPLORED }) {
+            val nextIndex = segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }
+            segments.add(
+                if (nextIndex >= 0) nextIndex else segments.size,
+                RadialSegment("Unexplored", TouchBindings.META_GUIDE_FIND_UNEXPLORED),
+            )
+        }
+        return radial.copy(
+            segments = segments,
+            centerLabel = if (centerIsUnexplored) "" else radial.centerLabel,
+            centerBinding = if (centerIsUnexplored) -1 else radial.centerBinding,
+        )
     }
 
     fun save(
