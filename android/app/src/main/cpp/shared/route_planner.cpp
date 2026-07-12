@@ -323,6 +323,47 @@ route_path_result build_route_path(
 	return result;
 }
 
+route_target_selection select_route_target(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const std::vector<route_target> &targets)
+{
+	route_target_selection result;
+	const auto search = search_routes(snapshot, query, progress, true);
+	if (!search.problem.empty())
+		return result;
+	double best_distance = std::numeric_limits<double>::infinity();
+	int best_progress = std::numeric_limits<int>::max();
+	for (int index = 0; index < static_cast<int>(targets.size()); ++index) {
+		const auto &target = targets[index];
+		if (!valid_segment(snapshot, target.segment) || !target.position.valid ||
+		    !search.nodes[target.segment].reachable)
+			continue;
+		const auto &center = snapshot.topology.segments[target.segment].center;
+		if (!center.valid)
+			continue;
+		const auto &node = search.nodes[target.segment];
+		const double distance = node.distance +
+		                        point_distance(center, target.position);
+		if (node.progress_weight > best_progress ||
+		    (node.progress_weight == best_progress && distance >= best_distance))
+			continue;
+		best_progress = node.progress_weight;
+		best_distance = distance;
+		result.selected_index = index;
+	}
+	if (result.selected_index < 0)
+		return result;
+	result.found = true;
+	result.distance = best_distance;
+	result.progress_weight = best_progress;
+	result.path = build_route_path(
+	    search, targets[result.selected_index].segment);
+	result.path.distance = best_distance;
+	return result;
+}
+
 route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 {
 	route_target_inventory result;
@@ -588,6 +629,34 @@ extern "C" int route_planner_compare_view(
 			     wall < static_cast<int>(progress.opened_hidden_walls.size()); ++wall)
 				legacy_progress.opened_hidden_walls[wall] =
 				    progress.opened_hidden_walls[wall];
+			level_metadata_route_target_selection_shadow legacy_selection = {};
+			if (!level_metadata_scan_route_select_targets_shadow(
+			        view, &legacy_progress, legacy_targets->exits,
+			        legacy_targets->exit_count, &legacy_selection)) {
+				copy_problem(problem, problem_capacity,
+				             "legacy route target selection comparison failed");
+				return 0;
+			}
+			const auto shared_selection = dxx_route::select_route_target(
+			    snapshot, query, progress, shared_targets.exits);
+			summary->compared_target_selection_count++;
+			const bool selection_mismatch =
+			    legacy_selection.selected_index != shared_selection.selected_index ||
+			    (legacy_selection.selected_index >= 0 &&
+			     (legacy_selection.progress_weight != shared_selection.progress_weight ||
+			      !distances_match(legacy_selection.distance, shared_selection.distance)));
+			if (selection_mismatch &&
+			    summary->target_selection_mismatch_count++ == 0) {
+				summary->first_selection_progress_state = state_index;
+				summary->first_legacy_selection_index = legacy_selection.selected_index;
+				summary->first_shared_selection_index = shared_selection.selected_index;
+				summary->first_legacy_selection_progress_weight =
+				    legacy_selection.progress_weight;
+				summary->first_shared_selection_progress_weight =
+				    shared_selection.progress_weight;
+				summary->first_legacy_selection_distance = legacy_selection.distance;
+				summary->first_shared_selection_distance = shared_selection.distance;
+			}
 			for (int optimistic = 0; optimistic <= 1; ++optimistic) {
 				std::vector<level_metadata_route_search_node> legacy(view->num_segments);
 				if (level_metadata_scan_route_search_state_shadow(

@@ -498,6 +498,8 @@ int main()
 	assert(planner_summary.mismatch_count == 0);
 	assert(planner_summary.compared_target_count == 9);
 	assert(planner_summary.target_mismatch_count == 0);
+	assert(planner_summary.compared_target_selection_count == 4);
+	assert(planner_summary.target_selection_mismatch_count == 0);
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);
@@ -506,6 +508,24 @@ int main()
 	assert(targets.exits.size() == 1);
 	assert(targets.exits[0].segment == 1);
 	assert(targets.exits[0].side == 0);
+	auto selection_targets = targets.exits;
+	auto nearer_exit = targets.exits[0];
+	nearer_exit.position = first.topology.segments[1].center;
+	selection_targets.push_back(nearer_exit);
+	const auto selected_exit = dxx_route::select_route_target(
+	    first, planner_query,
+	    dxx_route::initial_route_progress_state(first, planner_query),
+	    selection_targets);
+	assert(selected_exit.found);
+	assert(selected_exit.selected_index == 1);
+	assert(selected_exit.path.reached);
+	assert(selected_exit.path.segments.size() == 2);
+	selection_targets[0] = nearer_exit;
+	assert(dxx_route::select_route_target(
+	           first, planner_query,
+	           dxx_route::initial_route_progress_state(first, planner_query),
+	           selection_targets)
+	           .selected_index == 0);
 	auto key_snapshot = first;
 	key_snapshot.state.objects[0].kind = dxx_route::route_object_kind::powerup;
 	key_snapshot.state.objects[0].key = dxx_route::route_key_requirement::blue;

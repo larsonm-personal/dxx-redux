@@ -61,6 +61,14 @@ struct route_target_inventory {
 	std::vector<route_target> exits;
 };
 
+struct route_target_selection {
+	bool found = false;
+	int selected_index = -1;
+	double distance = 0.0;
+	int progress_weight = 0;
+	route_path_result path;
+};
+
 route_search_result search_routes(
     const route_snapshot &snapshot,
     const route_query &query,
@@ -90,6 +98,12 @@ route_path_result build_route_path(
     int target_segment);
 
 route_target_inventory discover_route_targets(const route_snapshot &snapshot);
+
+route_target_selection select_route_target(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const std::vector<route_target> &targets);
 
 } // namespace dxx_route
 

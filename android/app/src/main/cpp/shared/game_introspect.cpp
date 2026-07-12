@@ -644,6 +644,15 @@ static json serialize_level_metadata_route()
 			{ "first_shared_target_segment", planner_shadow.first_shared_target_segment },
 			{ "first_legacy_target_pos", json::array({ planner_shadow.first_legacy_target_pos[0], planner_shadow.first_legacy_target_pos[1], planner_shadow.first_legacy_target_pos[2] }) },
 			{ "first_shared_target_pos", json::array({ planner_shadow.first_shared_target_pos[0], planner_shadow.first_shared_target_pos[1], planner_shadow.first_shared_target_pos[2] }) },
+			{ "compared_target_selection_count", planner_shadow.compared_target_selection_count },
+			{ "target_selection_mismatch_count", planner_shadow.target_selection_mismatch_count },
+			{ "first_selection_progress_state", planner_shadow.first_selection_progress_state },
+			{ "first_legacy_selection_index", planner_shadow.first_legacy_selection_index },
+			{ "first_shared_selection_index", planner_shadow.first_shared_selection_index },
+			{ "first_legacy_selection_progress_weight", planner_shadow.first_legacy_selection_progress_weight },
+			{ "first_shared_selection_progress_weight", planner_shadow.first_shared_selection_progress_weight },
+			{ "first_legacy_selection_distance", planner_shadow.first_legacy_selection_distance },
+			{ "first_shared_selection_distance", planner_shadow.first_shared_selection_distance },
 		};
 	}
 	count = metadata->route_step_count;

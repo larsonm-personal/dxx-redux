@@ -68,7 +68,9 @@ Parity has two separate meanings and both must pass:
   - Added explicit simulated progression state for acquired or avoided keys, fired or avoided triggers, opened hidden walls, current pose, and reactor/boss completion.
   - Added shared state transitions for key acquisition, trigger activation, and paired hidden-wall opening; searches now accept an immutable progression state instead of assuming level-start state.
   - Confirmed zero search mismatches across initial, post-key/reactor, fully opened, and dependency-avoidance states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
-  - Semantic step production and live behavior remain on the C planner; deterministic target selection is the next porting boundary.
+  - Ported deterministic exit target selection using progression weight, endpoint-adjusted geometric distance, stable source-order ties, and the preserved selected segment chain.
+  - Confirmed zero target-selection mismatches across all four progression states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
+  - Semantic step production and live behavior remain on the C planner; dependency target choice for key recovery and trigger sources is the next porting boundary.
 
 ## Non-Goals
 

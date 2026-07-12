@@ -55,7 +55,9 @@
         "level_metadata_route.edge_shadow.mismatch_count": "0",
         "level_metadata_route.planner_shadow.compared_progress_state_count": "4",
         "level_metadata_route.planner_shadow.mismatch_count": "0",
-        "level_metadata_route.planner_shadow.target_mismatch_count": "0"
+        "level_metadata_route.planner_shadow.target_mismatch_count": "0",
+        "level_metadata_route.planner_shadow.compared_target_selection_count": "4",
+        "level_metadata_route.planner_shadow.target_selection_mismatch_count": "0"
     }},
 
     {"action": "wait_ms", "ms": 6000},

@@ -77,6 +77,7 @@ extern "C" {
 extern "C" void android_test_inject_touch_tap(void);
 extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
+extern "C" int do_game_pause(void);
 extern "C" android_axis_generation android_joystick_axis_publish(
     int axis, int raw_value, int touch_source);
 extern "C" JavaVM *g_jvm;
@@ -3231,6 +3232,8 @@ extern "C" void game_automate_tick(void)
 					g_android_open_load_menu = 1;
 				} else if (s.value == "game_menu") {
 					g_android_open_game_menu = 1;
+				} else if (s.value == "pause") {
+					do_game_pause();
 				} else if (s.value == "auto_minimize") {
 					g_android_autosave_request_kind = ANDROID_SAVE_META_KIND_AUTO_MINIMIZE;
 				} else if (s.value.rfind("difficulty:", 0) == 0) {

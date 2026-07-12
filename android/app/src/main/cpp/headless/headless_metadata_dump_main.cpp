@@ -954,9 +954,10 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 			fprintf(stderr, "SECRET-AREA-DUMP FAIL route planner shadow unavailable level=%d file=%s\n",
 			        level_num, level_file ? level_file : "");
 			secret_area_dump_failed = 1;
-		} else if (planner_shadow.mismatch_count || planner_shadow.target_mismatch_count) {
+		} else if (planner_shadow.mismatch_count || planner_shadow.target_mismatch_count ||
+		           planner_shadow.target_selection_mismatch_count) {
 			fprintf(stderr,
-			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s states=%d compared=%d mismatches=%d first_state=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g compared_targets=%d target_mismatches=%d first_target=%d:%d legacy_target_count=%d shared_target_count=%d legacy_target_seg=%d shared_target_seg=%d\n",
+			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s states=%d compared=%d mismatches=%d first_state=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g compared_targets=%d target_mismatches=%d first_target=%d:%d legacy_target_count=%d shared_target_count=%d legacy_target_seg=%d shared_target_seg=%d compared_selections=%d selection_mismatches=%d first_selection_state=%d legacy_selection=%d shared_selection=%d legacy_selection_progress=%d shared_selection_progress=%d legacy_selection_distance=%.17g shared_selection_distance=%.17g\n",
 			        level_num, level_file ? level_file : "", planner_shadow.compared_progress_state_count,
 			        planner_shadow.compared_node_count,
 			        planner_shadow.mismatch_count, planner_shadow.first_mismatch_progress_state,
@@ -970,7 +971,16 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 			        planner_shadow.compared_target_count, planner_shadow.target_mismatch_count,
 			        planner_shadow.first_target_category, planner_shadow.first_target_index,
 			        planner_shadow.first_legacy_target_count, planner_shadow.first_shared_target_count,
-			        planner_shadow.first_legacy_target_segment, planner_shadow.first_shared_target_segment);
+			        planner_shadow.first_legacy_target_segment, planner_shadow.first_shared_target_segment,
+			        planner_shadow.compared_target_selection_count,
+			        planner_shadow.target_selection_mismatch_count,
+			        planner_shadow.first_selection_progress_state,
+			        planner_shadow.first_legacy_selection_index,
+			        planner_shadow.first_shared_selection_index,
+			        planner_shadow.first_legacy_selection_progress_weight,
+			        planner_shadow.first_shared_selection_progress_weight,
+			        planner_shadow.first_legacy_selection_distance,
+			        planner_shadow.first_shared_selection_distance);
 			secret_area_dump_failed = 1;
 		}
 	}

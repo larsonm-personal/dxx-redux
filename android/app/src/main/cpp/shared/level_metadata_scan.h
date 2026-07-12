@@ -212,6 +212,12 @@ typedef struct level_metadata_route_target_inventory_shadow {
 	level_metadata_route_target_shadow exits[LEVEL_METADATA_MAX_TARGETS];
 } level_metadata_route_target_inventory_shadow;
 
+typedef struct level_metadata_route_target_selection_shadow {
+	int selected_index;
+	double distance;
+	int progress_weight;
+} level_metadata_route_target_selection_shadow;
+
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
 	int energy_center_raw_count;
@@ -264,6 +270,12 @@ int level_metadata_scan_route_search_state_shadow(
 int level_metadata_scan_route_targets_shadow(
     const level_metadata_scan_view *view,
     level_metadata_route_target_inventory_shadow *inventory);
+int level_metadata_scan_route_select_targets_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    const level_metadata_route_target_shadow *targets,
+    int count,
+    level_metadata_route_target_selection_shadow *selection);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);
