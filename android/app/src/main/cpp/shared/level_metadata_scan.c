@@ -813,6 +813,41 @@ static int append_target(const level_metadata_scan_view *view, metadata_target *
 	return 1;
 }
 
+static void collect_route_key_targets(const level_metadata_scan_view *view)
+{
+	int obj_count;
+	int objnum;
+
+	memset(key_target_count, 0, sizeof(key_target_count));
+	if (!view->object_count || !view->object_segment || !view->object_type || !view->object_position)
+		return;
+	obj_count = view->object_count(view->user);
+	for (objnum = 0; objnum < obj_count; ++objnum) {
+		int type;
+		int pos[3];
+		int obj_seg;
+		if (view->object_flags &&
+		    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
+			continue;
+		obj_seg = view->object_segment(view->user, objnum);
+		if (!valid_segment(view, obj_seg) || !view->object_position(view->user, objnum, pos))
+			continue;
+		type = view->object_type(view->user, objnum);
+		if (type == view->obj_type_powerup && view->object_id) {
+			int key_index = powerup_key_index(view, view->object_id(view->user, objnum));
+			if (key_index >= 0)
+				append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
+		}
+		if (view->object_contains_type && view->object_contains_id && view->object_contains_count &&
+		    view->object_contains_count(view->user, objnum) > 0 &&
+		    view->object_contains_type(view->user, objnum) == view->obj_type_powerup) {
+			int key_index = powerup_key_index(view, view->object_contains_id(view->user, objnum));
+			if (key_index >= 0)
+				append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
+		}
+	}
+}
+
 static int collect_route_targets(
     const level_metadata_scan_view *view,
     metadata_target *reactor,
@@ -826,13 +861,11 @@ static int collect_route_targets(
 	int found_reactor = 0;
 
 	*exit_count = 0;
-	memset(key_target_count, 0, sizeof(key_target_count));
 	if (reactor)
 		memset(reactor, 0, sizeof(*reactor));
 	if (view->object_count && view->object_segment && view->object_type && view->object_position) {
 		obj_count = view->object_count(view->user);
 		for (objnum = 0; objnum < obj_count; ++objnum) {
-			int type;
 			int pos[3];
 			int obj_seg;
 			if (view->object_flags &&
@@ -841,22 +874,10 @@ static int collect_route_targets(
 			obj_seg = view->object_segment(view->user, objnum);
 			if (!valid_segment(view, obj_seg) || !view->object_position(view->user, objnum, pos))
 				continue;
-			type = view->object_type(view->user, objnum);
-			if (type == view->obj_type_control_center && reactor && !found_reactor) {
+			if (view->object_type(view->user, objnum) == view->obj_type_control_center && reactor && !found_reactor) {
 				reactor->seg = obj_seg;
 				copy_pos(reactor->pos, pos);
 				found_reactor = 1;
-			} else if (type == view->obj_type_powerup && view->object_id) {
-				int key_index = powerup_key_index(view, view->object_id(view->user, objnum));
-				if (key_index >= 0)
-					append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
-			}
-			if (view->object_contains_type && view->object_contains_id && view->object_contains_count &&
-			    view->object_contains_count(view->user, objnum) > 0 &&
-			    view->object_contains_type(view->user, objnum) == view->obj_type_powerup) {
-				int key_index = powerup_key_index(view, view->object_contains_id(view->user, objnum));
-				if (key_index >= 0)
-					append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
 			}
 		}
 	}
@@ -2103,8 +2124,7 @@ static int metadata_route_move_to_target(
 			route->failed_key = -1;
 			if (!metadata_route_acquire_key(view, state, route, path.first_block.key_index, depth + 1)) {
 				snprintf(key_problem, sizeof(key_problem), "%s", state->route_problem);
-				failed_key = route->failed_key >= 0 && route->failed_key < 3 ?
-					route->failed_key : path.first_block.key_index;
+				failed_key = route->failed_key >= 0 && route->failed_key < 3 ? route->failed_key : path.first_block.key_index;
 				metadata_route_restore_progress(state, route, &snapshot);
 				route->failed_key = failed_key;
 				snprintf(last_dependency_problem, sizeof(last_dependency_problem), "%s", key_problem);
@@ -2122,8 +2142,7 @@ static int metadata_route_move_to_target(
 				if (metadata_route_trigger_valid(path.first_block.trigger_num) &&
 				    metadata_route_problem_is_avoidable_trigger_dependency(state->route_problem)) {
 					snprintf(last_dependency_problem, sizeof(last_dependency_problem), "%s", state->route_problem);
-					failed_trigger = metadata_route_trigger_valid(route->failed_trigger) ?
-						route->failed_trigger : path.first_block.trigger_num;
+					failed_trigger = metadata_route_trigger_valid(route->failed_trigger) ? route->failed_trigger : path.first_block.trigger_num;
 					metadata_route_restore_progress(state, route, &snapshot);
 					route->failed_trigger = failed_trigger;
 					route->avoided_triggers[failed_trigger] = 1;
@@ -2381,25 +2400,15 @@ static int metadata_route_append_target_step(
 	return 1;
 }
 
-static int metadata_route_begin_progression(
+static int metadata_route_initialize(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
-    metadata_route_context *route,
-    int require_exit,
-    int *exit_count_out)
+    metadata_route_context *route)
 {
-	metadata_target reactor;
-	metadata_target boss;
-	int exit_count = 0;
-	int found_reactor;
-	int found_boss;
-
 	state->route_status = LEVEL_METADATA_ROUTE_FAILED;
 	memset(route, 0, sizeof(*route));
 	route->failed_trigger = -1;
 	route->failed_key = -1;
-	if (exit_count_out)
-		*exit_count_out = 0;
 	if (!valid_segment(view, view->start_segment) || !view->start_position) {
 		metadata_route_set_problem(state, "missing player start");
 		return 0;
@@ -2414,33 +2423,98 @@ static int metadata_route_begin_progression(
 		metadata_route_set_problem(state, "missing player start");
 		return 0;
 	}
-	found_reactor = collect_route_targets(view, &reactor, exit_targets, &exit_count);
-	found_boss = metadata_route_find_boss_target(view, &boss);
-	if (!found_reactor)
-		snprintf(state->route_note, sizeof(state->route_note), "%s",
-		         exit_count > 0 ? "no reactor, exit exists" : "missing reactor");
-	if (exit_count_out)
-		*exit_count_out = exit_count;
-	if (!metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_START, "Start", route->current_seg, -1))
-		return 0;
-	if (require_exit && exit_count <= 0) {
-		metadata_route_set_problem(state, "missing exit");
-		return 0;
-	}
+	collect_route_key_targets(view);
+	return metadata_route_append_step(
+	           view, state, route, LEVEL_METADATA_ROUTE_START, "Start", route->current_seg, -1) != NULL;
+}
+
+static int metadata_route_progress_primary(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int *progressed)
+{
+	metadata_target reactor;
+	metadata_target boss;
+	int exit_count = 0;
+	int found_reactor = collect_route_targets(view, &reactor, exit_targets, &exit_count);
+	int found_boss = metadata_route_find_boss_target(view, &boss);
+
+	if (progressed)
+		*progressed = 0;
 	if (found_boss) {
 		if (!metadata_route_move_primary_with_key_recovery(view, state, route, &boss))
 			return 0;
 		if (!metadata_route_append_target_step(view, state, route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
 			return 0;
 		route->control_center_destroyed = 1;
+		if (progressed)
+			*progressed = 1;
 	} else if (found_reactor) {
 		if (!metadata_route_move_primary_with_key_recovery(view, state, route, &reactor))
 			return 0;
 		if (!metadata_route_append_target_step(view, state, route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
 			return 0;
 		route->control_center_destroyed = 1;
+		if (progressed)
+			*progressed = 1;
 	}
 	return 1;
+}
+
+static int metadata_route_begin_progression(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int require_exit,
+    int *exit_count_out)
+{
+	metadata_target reactor;
+	int exit_count = 0;
+	int found_reactor;
+
+	if (exit_count_out)
+		*exit_count_out = 0;
+	if (!metadata_route_initialize(view, state, route))
+		return 0;
+	found_reactor = collect_route_targets(view, &reactor, exit_targets, &exit_count);
+	if (!found_reactor)
+		snprintf(state->route_note, sizeof(state->route_note), "%s",
+		         exit_count > 0 ? "no reactor, exit exists" : "missing reactor");
+	if (exit_count_out)
+		*exit_count_out = exit_count;
+	if (require_exit && exit_count <= 0) {
+		metadata_route_set_problem(state, "missing exit");
+		return 0;
+	}
+	return metadata_route_progress_primary(view, state, route, NULL);
+}
+
+static int metadata_route_move_to_endpoint(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_target *target)
+{
+	metadata_route_progress_snapshot initial;
+	char direct_problem[sizeof(state->route_problem)];
+	int progressed = 0;
+
+	metadata_route_save_progress(state, route, &initial);
+	if (metadata_route_move_to_target(view, state, route, target->seg, target->pos, 0))
+		return 1;
+	snprintf(direct_problem, sizeof(direct_problem), "%s", state->route_problem);
+	metadata_route_restore_progress(state, route, &initial);
+	state->route_problem[0] = '\0';
+	if (metadata_route_progress_primary(view, state, route, &progressed) && progressed &&
+	    metadata_route_move_to_target(view, state, route, target->seg, target->pos, 0))
+		return 1;
+	if (!progressed) {
+		metadata_route_restore_progress(state, route, &initial);
+		if (direct_problem[0])
+			snprintf(state->route_problem, sizeof(state->route_problem), "%s", direct_problem);
+	}
+	return 0;
 }
 
 static void metadata_route_finish_partial(
@@ -2527,7 +2601,7 @@ int level_metadata_scan_route_to_segment(
 	if (!state || !view_is_valid(view) || !valid_segment(view, target_seg))
 		return 0;
 	collect_segment_centers(view);
-	if (!metadata_route_begin_progression(view, state, &route, 0, NULL))
+	if (!metadata_route_initialize(view, state, &route))
 		goto route_partial;
 	if (!segment_center_valid[target_seg]) {
 		metadata_route_set_problem(state, "unexplored target missing center");
@@ -2536,7 +2610,7 @@ int level_metadata_scan_route_to_segment(
 	target.seg = target_seg;
 	copy_pos(target.pos, segment_centers[target_seg]);
 	target.visited = 0;
-	if (!metadata_route_move_to_target(view, state, &route, target.seg, target.pos, 0))
+	if (!metadata_route_move_to_endpoint(view, state, &route, &target))
 		goto route_partial;
 	if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_UNEXPLORED, &target, "Unexplored"))
 		goto route_partial;
@@ -2561,9 +2635,11 @@ static int metadata_route_collect_unexplored_components(
     const level_metadata_scan_view *view,
     const metadata_route_context *route)
 {
+	metadata_route_context optimistic_route = *route;
 	int component_count = 0;
 	int seg;
 
+	optimistic_route.control_center_destroyed = 1;
 	for (seg = 0; seg < view->num_segments; ++seg)
 		component_id[seg] = -1;
 	for (seg = 0; seg < view->num_segments; ++seg) {
@@ -2588,7 +2664,7 @@ static int metadata_route_collect_unexplored_components(
 				if (!valid_segment(view, child) ||
 				    component_id[child] >= 0 ||
 				    view->segment_is_explored(view->user, child) ||
-				    !metadata_route_edge_passable(view, route, current, side, 1, -1, NULL))
+				    !metadata_route_edge_passable(view, &optimistic_route, current, side, 1, -1, NULL))
 					continue;
 				component_id[child] = component_count;
 				queue[qtail++] = child;
@@ -2617,6 +2693,7 @@ static void metadata_route_find_unexplored_candidates(
     const metadata_route_context *route,
     int component_count)
 {
+	metadata_route_context optimistic_route = *route;
 	int component;
 	int seg;
 
@@ -2632,7 +2709,8 @@ static void metadata_route_find_unexplored_candidates(
 		if (component >= 0 && route_distance[seg] != DBL_MAX)
 			metadata_route_update_unexplored_candidate(component, seg, route_distance[seg], 1);
 	}
-	metadata_route_compute_paths(view, route, -1, 1, -1);
+	optimistic_route.control_center_destroyed = 1;
+	metadata_route_compute_paths(view, &optimistic_route, -1, 1, -1);
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		component = component_id[seg];
 		if (component >= 0 &&
@@ -2688,7 +2766,7 @@ int level_metadata_scan_unexplored_route(
 		return 0;
 	}
 	collect_segment_centers(view);
-	if (!metadata_route_begin_progression(view, state, &route, 0, NULL))
+	if (!metadata_route_initialize(view, state, &route))
 		goto route_partial;
 	component_count = metadata_route_collect_unexplored_components(view, &route);
 	if (component_count <= 0) {
@@ -2708,7 +2786,7 @@ int level_metadata_scan_unexplored_route(
 		target.seg = unexplored_component_target[component];
 		copy_pos(target.pos, segment_centers[target.seg]);
 		target.visited = 0;
-		if (!metadata_route_move_to_target(view, state, &route, target.seg, target.pos, 0))
+		if (!metadata_route_move_to_endpoint(view, state, &route, &target))
 			continue;
 		if (!metadata_route_append_target_step(
 		        view, state, &route, LEVEL_METADATA_ROUTE_UNEXPLORED, &target, "Unexplored"))

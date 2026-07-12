@@ -1223,6 +1223,30 @@ static int test_unexplored_route_clears_target_when_fully_explored(void)
 	return failures;
 }
 
+static int test_unexplored_route_omits_irrelevant_reactor(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	level_metadata_unexplored_route result;
+	int failures = 0;
+
+	test_reset();
+	test_children[0][2] = 3;
+	test_children[3][1] = 0;
+	test_segment_explored[0] = 1;
+	test_segment_explored[1] = 1;
+	test_segment_explored[2] = 1;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[0] = 2;
+	level_metadata_scan_unexplored_route(&view, &state, &result);
+	failures += expect_string("direct unexplored status", "ok", level_metadata_route_status_name(state.route_status));
+	failures += expect_int("direct unexplored target", 3, result.target_seg);
+	failures += expect_int("direct unexplored steps", 2, state.route_step_count);
+	failures += expect_string("direct unexplored terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	return failures;
+}
+
 static int test_route_opens_control_center_links_after_reactor(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1513,6 +1537,7 @@ int main(void)
 	failures += test_unexplored_route_acquires_key_for_largest_component();
 	failures += test_unexplored_route_keeps_hidden_wall_dependency();
 	failures += test_unexplored_route_clears_target_when_fully_explored();
+	failures += test_unexplored_route_omits_irrelevant_reactor();
 	failures += test_route_opens_control_center_links_after_reactor();
 	failures += test_route_accepts_any_fired_opener_for_side();
 	failures += test_route_hidden_door_step();

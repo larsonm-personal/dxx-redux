@@ -94,6 +94,8 @@ extern int escort_get_route_goal_path_pending(void);
 extern int escort_get_route_target_mode(void);
 extern const char *escort_get_route_target_mode_name(void);
 extern const char *escort_get_route_last_replan_reason(void);
+extern unsigned int escort_get_route_metadata_rescan_count(void);
+extern unsigned int escort_get_route_guidance_full_search_count(void);
 extern void escort_restore_route_target_mode(int target_mode);
 extern int escort_get_unexplored_component_size(void);
 extern int escort_get_unexplored_target_seg(void);

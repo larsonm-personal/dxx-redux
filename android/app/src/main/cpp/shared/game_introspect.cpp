@@ -699,6 +699,8 @@ static json serialize_guidebot()
 	result["route_target_mode"] = escort_get_route_target_mode();
 	result["route_target_mode_name"] = escort_get_route_target_mode_name();
 	result["route_last_replan_reason"] = escort_get_route_last_replan_reason();
+	result["route_metadata_rescan_count"] = escort_get_route_metadata_rescan_count();
+	result["route_guidance_full_search_count"] = escort_get_route_guidance_full_search_count();
 	result["unexplored_component_size"] = escort_get_unexplored_component_size();
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
 	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();
