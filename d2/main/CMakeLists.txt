@@ -78,6 +78,7 @@ set(D2X_MAIN_SOURCES
     weapon.c
     ../../android/app/src/main/cpp/shared/level_metadata_scan.c
     ../../android/app/src/main/cpp/shared/route_snapshot.cpp
+    ../../android/app/src/main/cpp/shared/route_edge.cpp
     ../../android/app/src/main/cpp/shared/secret_area_game_adapter.c
     ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c

@@ -73,6 +73,10 @@ typedef struct level_metadata_route_step {
 	int trigger_type;
 	int key_index;
 	int activation_kind;
+	int activation_pos_valid;
+	int activation_pos[3];
+	int aim_pos_valid;
+	int aim_pos[3];
 	double distance_from_previous;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 	char trigger_type_name[LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN];

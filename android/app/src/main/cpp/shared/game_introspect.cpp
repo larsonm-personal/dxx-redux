@@ -590,6 +590,7 @@ static json serialize_level_metadata_route()
 	json result;
 	json steps = json::array();
 	route_snapshot_summary snapshot = {};
+	route_edge_shadow_summary edge_shadow = {};
 	int count = 0;
 
 	if (!metadata) {
@@ -604,6 +605,16 @@ static json serialize_level_metadata_route()
 		result["canonical_snapshot"] = serialize_route_snapshot(snapshot);
 	if (level_metadata_get_live_route_snapshot(&snapshot))
 		result["live_snapshot"] = serialize_route_snapshot(snapshot);
+	if (level_metadata_get_route_edge_shadow(&edge_shadow)) {
+		result["edge_shadow"] = {
+			{ "compared_edge_count", edge_shadow.compared_edge_count },
+			{ "mismatch_count", edge_shadow.mismatch_count },
+			{ "first_mismatch_segment", edge_shadow.first_mismatch_segment },
+			{ "first_mismatch_side", edge_shadow.first_mismatch_side },
+			{ "first_legacy_cost", edge_shadow.first_legacy_cost },
+			{ "first_shared_cost", edge_shadow.first_shared_cost },
+		};
+	}
 	count = metadata->route_step_count;
 	if (count < 0)
 		count = 0;
@@ -622,6 +633,8 @@ static json serialize_level_metadata_route()
 		item["wall"] = step->wall_num;
 		item["trigger"] = step->trigger_num;
 		item["key"] = introspect_route_key_name(step->key_index);
+		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
+		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
 		item["opened_link_count"] = step->opened_link_count;
 		steps.push_back(std::move(item));
 	}
@@ -661,6 +674,8 @@ static json serialize_guidebot_route_analysis()
 		item["kind"] = level_metadata_route_step_kind_name(analysis.kind);
 		item["activation_kind"] = level_metadata_route_activation_kind_name(analysis.activation_kind);
 		item["label"] = metadata->route_steps[index].label;
+		item["activation_pos"] = metadata->route_steps[index].activation_pos_valid ? json::array({ metadata->route_steps[index].activation_pos[0], metadata->route_steps[index].activation_pos[1], metadata->route_steps[index].activation_pos[2] }) : json(nullptr);
+		item["aim_pos"] = metadata->route_steps[index].aim_pos_valid ? json::array({ metadata->route_steps[index].aim_pos[0], metadata->route_steps[index].aim_pos[1], metadata->route_steps[index].aim_pos[2] }) : json(nullptr);
 		item["satisfied"] = analysis.satisfied != 0;
 		item["satisfied_reason"] = escort_route_step_satisfied_reason_name(analysis.satisfied_reason);
 		item["selected_next"] = analysis.selected_next != 0;

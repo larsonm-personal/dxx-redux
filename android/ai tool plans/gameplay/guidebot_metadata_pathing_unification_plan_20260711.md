@@ -49,8 +49,14 @@ Parity has two separate meanings and both must pass:
   - Added normalized wall kinds, key requirements, lock/open/hidden state, endpoint kinds, progression and navigator profiles, and the explicit route-query domain type.
   - Added engine-derived side centers and stable wall target points to shared topology; the C analyzer now consumes the same side-center callback with its vertex average retained as a headless fallback.
   - Added independent mutable-state fingerprints and live generations for start, progression, navigation, trigger, object, and automap domains, exposed for canonical/live introspection and future cache keys.
-  - Exact occupiable activation poses, aim validation, and event-driven generation hooks remain pending.
-- [ ] Phase 2 pending: centralize rich edge evaluation after snapshot parity is established.
+  - Preserved each semantic step's exact analyzer-selected activation position and distinct wall/object aim point through the shared route-step ABI and live introspection; off-center visible firing positions are no longer discarded.
+  - Navigator-radius occupancy validation, action-specific hit validation, and event-driven generation hooks remain pending.
+- [ ] Phase 2 in progress: centralize rich edge evaluation after snapshot parity is established.
+  - Added a shared C++ edge evaluator with rich blocker/action results and a legacy three-state projection.
+  - Added canonical per-side shadow comparison against the active C evaluator, mismatch introspection, and progression/navigator capability unit coverage.
+  - Confirmed zero edge-cost mismatches in synthetic D1/D2 fixtures and the Counterstrike level 1 emulator route scan while preserving all 1,274 reviewed corpus route projections.
+  - Add an opt-in strict headless shadow gate and a no-copy host corpus mode so archive regeneration can execute old/new edge parity across every loaded level without rewriting reviewed JSON.
+  - The C planner remains authoritative; corpus-wide strict shadow execution and any discovered semantic gaps remain under review.
 
 ## Non-Goals
 

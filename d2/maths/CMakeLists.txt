@@ -79,8 +79,11 @@ if(NOT ANDROID)
 
     add_executable(test_route_snapshot
         ../../android/tests/test_route_snapshot.cpp
-        ../../android/app/src/main/cpp/shared/route_snapshot.cpp)
+        ../../android/app/src/main/cpp/shared/route_snapshot.cpp
+        ../../android/app/src/main/cpp/shared/route_edge.cpp
+        ../../android/app/src/main/cpp/shared/level_metadata_scan.c)
     target_compile_features(test_route_snapshot PRIVATE cxx_std_11)
+    target_link_libraries(test_route_snapshot PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_route_snapshot PRIVATE ../../android/app/src/main/cpp/shared)
 
     add_executable(test_escort_owner_policy

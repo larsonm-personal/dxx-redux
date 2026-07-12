@@ -1,9 +1,24 @@
 #include "route_snapshot.h"
 #include "route_snapshot_c.h"
+#include "route_edge.h"
+#include "route_edge_c.h"
 
 #include <cassert>
+#include <cstdlib>
 #include <cstdio>
 #include <string>
+
+#ifdef NDEBUG
+#undef assert
+#define assert(condition)                                                        \
+	do {                                                                         \
+		if (!(condition)) {                                                       \
+			fprintf(stderr, "assertion failed: %s (%s:%d)\n", #condition,       \
+			        __FILE__, __LINE__);                                           \
+			abort();                                                               \
+		}                                                                        \
+	} while (0)
+#endif
 
 namespace
 {
@@ -99,7 +114,8 @@ int wall_clip_flags(void *, int wall)
 
 int wall_trigger(void *, int wall)
 {
-	return 40 + wall;
+	(void) wall;
+	return 0;
 }
 
 int opener_count(void *, int segment, int side)
@@ -299,7 +315,10 @@ int main()
 	dxx_route::route_snapshot repeated;
 	std::string problem;
 
-	assert(dxx_route::build_route_snapshot(view, first, &problem));
+	if (!dxx_route::build_route_snapshot(view, first, &problem)) {
+		fprintf(stderr, "initial route snapshot failed: %s\n", problem.c_str());
+		return 1;
+	}
 	assert(problem.empty());
 	assert(first.topology.segments.size() == 2);
 	assert(first.topology.walls.size() == 2);
@@ -319,7 +338,7 @@ int main()
 	assert(first.state.segments[0].sides[0].control_center_link);
 	assert(first.state.segments[1].sides[0].hard_blocked);
 	assert(first.state.segments[1].sides[0].exit_trigger);
-	assert(first.state.walls[1].trigger == 41);
+	assert(first.state.walls[1].trigger == 0);
 	assert(first.state.walls[0].kind ==
 	       dxx_route::route_wall_kind::blastable);
 	assert(first.state.walls[1].kind ==
@@ -334,6 +353,67 @@ int main()
 	assert(first.topology.triggers[0].links[0].segment == 1);
 	assert(first.state.objects[0].position.value[2] == 87);
 	assert(first.state.objects[0].boss);
+	dxx_route::route_query edge_query;
+	edge_query.progression.key_mask = first.state.key_mask;
+	auto blastable_edge = dxx_route::evaluate_route_edge(
+	    first, edge_query, 0, 0);
+	assert(blastable_edge.legacy_cost ==
+	       LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	assert(blastable_edge.action ==
+	       dxx_route::route_required_action::destroy_blastable_wall);
+	edge_query.navigator.companion = true;
+	auto triggered_snapshot = first;
+	triggered_snapshot.state.segments[1].sides[0].exit_trigger = false;
+	auto triggered_edge = dxx_route::evaluate_route_edge(
+	    triggered_snapshot, edge_query, 1, 0);
+	assert(triggered_edge.legacy_cost ==
+	       LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
+	assert(triggered_edge.blocker ==
+	       dxx_route::route_edge_blocker::trigger);
+	assert(triggered_edge.action ==
+	       dxx_route::route_required_action::activate_trigger);
+	auto edge_cases = first;
+	edge_cases.state.segments[1].sides[0].exit_trigger = false;
+	edge_cases.state.triggers[0].disabled = true;
+	edge_cases.state.walls[1].hidden = true;
+	edge_cases.state.walls[1].key = dxx_route::route_key_requirement::none;
+	auto hidden_edge = dxx_route::evaluate_route_edge(
+	    edge_cases, edge_query, 1, 0);
+	assert(hidden_edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
+	assert(hidden_edge.action ==
+	       dxx_route::route_required_action::open_hidden_door);
+	edge_cases.state.walls[1].hidden = false;
+	edge_cases.state.segments[1].sides[0].hard_blocked = false;
+	edge_cases.state.walls[1].key = dxx_route::route_key_requirement::blue;
+	auto key_edge = dxx_route::evaluate_route_edge(
+	    edge_cases, edge_query, 1, 0);
+	assert(key_edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
+	assert(key_edge.blocker == dxx_route::route_edge_blocker::missing_key);
+	assert(key_edge.action == dxx_route::route_required_action::acquire_key);
+	edge_query.progression.key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
+	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	edge_cases.state.walls[1].locked = true;
+	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
+	           .blocker == dxx_route::route_edge_blocker::locked_door);
+	edge_cases.state.walls[1].locked = false;
+	edge_cases.state.segments[1].sides[0].hard_blocked = true;
+	auto buddy_edge = dxx_route::evaluate_route_edge(
+	    edge_cases, edge_query, 1, 0);
+	assert(buddy_edge.blocker == dxx_route::route_edge_blocker::hard_blocked);
+	assert(buddy_edge.action ==
+	       dxx_route::route_required_action::wait_for_player);
+	route_edge_shadow_summary edge_summary = {};
+	char edge_problem[96] = {};
+	if (!route_edge_compare_view(
+	        &view, &edge_summary, edge_problem, sizeof(edge_problem))) {
+		fprintf(stderr, "route edge comparison failed: %s\n", edge_problem);
+		return 1;
+	}
+	assert(edge_problem[0] == '\0');
+	assert(edge_summary.compared_edge_count ==
+	       2 * LEVEL_METADATA_MAX_SIDES);
+	assert(edge_summary.mismatch_count == 0);
 	assert(first.topology.hash != 0);
 	assert(first.state.hash != 0);
 	route_snapshot_summary summary = {};

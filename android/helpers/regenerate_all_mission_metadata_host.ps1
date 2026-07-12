@@ -1,5 +1,10 @@
 #!/usr/bin/env pwsh
 
+param(
+    [switch]$NoRegressionCopy,
+    [switch]$StrictRouteEdgeShadow
+)
+
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $PSCommandPath
@@ -535,7 +540,8 @@ function Invoke-HeadlessScan {
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
     $exe = $Executables[$game]
     $dataDir = $DataDirs[$game]
-    & $exe -hogdir $dataDir -extra-dir $StageDir -mission $mission -secretarea-json-out $RawOutputPath > $LogPath 2>&1
+    $shadowArgs = if ($StrictRouteEdgeShadow) { @("-route-edge-shadow-strict") } else { @() }
+    & $exe @shadowArgs -hogdir $dataDir -extra-dir $StageDir -mission $mission -secretarea-json-out $RawOutputPath > $LogPath 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $mission -LogPath $LogPath)
     }
@@ -551,7 +557,8 @@ function Invoke-BuiltinHeadlessScan {
         [Parameter(Mandatory = $true)][string]$LogPath
     )
 
-    & $Executables[$Game] -hogdir $DataDirs[$Game] -secretarea-json-out $RawOutputPath > $LogPath 2>&1
+    $shadowArgs = if ($StrictRouteEdgeShadow) { @("-route-edge-shadow-strict") } else { @() }
+    & $Executables[$Game] @shadowArgs -hogdir $DataDirs[$Game] -secretarea-json-out $RawOutputPath > $LogPath 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $Game -LogPath $LogPath)
     }
@@ -587,7 +594,9 @@ Write-Status "Host metadata: built-in Counterstrike"
 $counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
 $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
 Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike
-Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
+if (-not $NoRegressionCopy) {
+    Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
+}
 Write-Status "PASSED: built-in Counterstrike" "Green"
 
 $archives = @(
@@ -655,7 +664,9 @@ foreach ($archive in $archives) {
             $targetIndex++
         }
         Write-JsonValue -Path $metadataPath -Value ([object[]]$missions)
-        Copy-Item -LiteralPath $metadataPath -Destination $regressionPath -Force
+        if (-not $NoRegressionCopy) {
+            Copy-Item -LiteralPath $metadataPath -Destination $regressionPath -Force
+        }
         $record["status"] = "passed"
         $record["mission_count"] = $missions.Count
         $record["level_count"] = @($missions | ForEach-Object { $_.level_count } | Measure-Object -Sum).Sum

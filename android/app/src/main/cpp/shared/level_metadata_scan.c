@@ -1600,6 +1600,10 @@ static level_metadata_route_step *metadata_route_append_step(
 	step->trigger_type = -1;
 	step->key_index = -1;
 	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
+	if (route && valid_segment(view, route->current_seg)) {
+		step->activation_pos_valid = 1;
+		copy_pos(step->activation_pos, route->current_pos);
+	}
 	step->distance_from_previous = route ? route->pending_distance : 0.0;
 	snprintf(step->label, sizeof(step->label), "%s", label ? label : "");
 	for (i = 0; i < LEVEL_METADATA_MAX_ROUTE_LINKS; ++i) {
@@ -1612,6 +1616,42 @@ static level_metadata_route_step *metadata_route_append_step(
 	if (route)
 		route->pending_distance = 0.0;
 	return step;
+}
+
+static void metadata_route_step_set_aim(
+    level_metadata_route_step *step, const int pos[3])
+{
+	if (!step || !pos)
+		return;
+	step->aim_pos_valid = 1;
+	copy_pos(step->aim_pos, pos);
+}
+
+static int metadata_route_wall_target_pos(
+    const level_metadata_scan_view *view,
+    int wall_num,
+    int fallback_seg,
+    int fallback_side,
+    int pos[3])
+{
+	int seg = fallback_seg;
+	int side = fallback_side;
+
+	if (!valid_wall(view, wall_num))
+		return 0;
+	if (view->wall_segment && view->wall_side) {
+		seg = view->wall_segment(view->user, wall_num);
+		side = view->wall_side(view->user, wall_num);
+	}
+	if (!valid_segment(view, seg))
+		return 0;
+	if (side_center(view, seg, side, pos))
+		return 1;
+	if (segment_center_valid[seg]) {
+		copy_pos(pos, segment_centers[seg]);
+		return 1;
+	}
+	return 0;
 }
 
 static int metadata_route_trigger_activation_kind(
@@ -1674,6 +1714,13 @@ static int metadata_route_step_for_trigger(
 	step->trigger_num = block->trigger_num;
 	step->trigger_type = block->trigger_type;
 	step->activation_kind = activation_kind;
+	{
+		int aim_pos[3];
+		if (metadata_route_wall_target_pos(
+		        view, block->source_wall, block->source_seg,
+		        block->source_side, aim_pos))
+			metadata_route_step_set_aim(step, aim_pos);
+	}
 	snprintf(step->trigger_type_name, sizeof(step->trigger_type_name), "%s", type_name);
 	if (view->trigger_link_count && view->trigger_link_segment && view->trigger_link_side) {
 		link_count = view->trigger_link_count(view->user, block->trigger_num);
@@ -1782,6 +1829,12 @@ static int metadata_route_append_hidden_door_step(
 		return 0;
 	step->wall_num = block->wall_num;
 	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
+	{
+		int aim_pos[3];
+		if (metadata_route_wall_target_pos(
+		        view, block->wall_num, block->seg, block->side, aim_pos))
+			metadata_route_step_set_aim(step, aim_pos);
+	}
 	metadata_route_add_hidden_door_link(step, block->seg, block->side, block->wall_num);
 	child = view->segment_child ? view->segment_child(view->user, block->seg, block->side) : -1;
 	reverse_side = valid_segment(view, child) && view->reverse_side ? view->reverse_side(view->user, block->seg, child) : -1;
@@ -1897,6 +1950,8 @@ static int metadata_route_acquire_key(
 		if (step) {
 			step->key_index = key_index;
 			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+			metadata_route_step_set_aim(
+			    step, key_targets[key_index][best].pos);
 		}
 	}
 	key_targets[key_index][best].visited = 1;
@@ -2382,6 +2437,7 @@ static int metadata_route_append_target_step(
 	if (!step)
 		return 0;
 	step->wall_num = wall_num;
+	metadata_route_step_set_aim(step, target->pos);
 	switch (kind) {
 		case LEVEL_METADATA_ROUTE_REACTOR:
 			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR;

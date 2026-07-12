@@ -906,6 +906,10 @@ static int test_route_shootable_trigger_step(void)
 	failures += expect_int("shootable trigger route segment", 0, state.route_steps[1].seg);
 	failures += expect_int("shootable trigger route wall", 2, state.route_steps[1].wall_num);
 	failures += expect_int("shootable trigger route trigger", 0, state.route_steps[1].trigger_num);
+	failures += expect_int("shootable trigger activation pose", 1, state.route_steps[1].activation_pos_valid);
+	failures += expect_int("shootable trigger aim point", 1, state.route_steps[1].aim_pos_valid);
+	failures += expect_int("shootable trigger activation x", 0, state.route_steps[1].activation_pos[0]);
+	failures += expect_int("shootable trigger aim x", 100 * TEST_FIX, state.route_steps[1].aim_pos[0]);
 	failures += expect_string("shootable trigger route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }
@@ -1360,6 +1364,8 @@ static int test_route_hidden_door_step(void)
 	failures += expect_int("hidden door route side", 0, state.route_steps[1].side);
 	failures += expect_int("hidden door route wall", 0, state.route_steps[1].wall_num);
 	failures += expect_string("hidden door route activation", "open_hidden_door", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_int("hidden door activation pose", 1, state.route_steps[1].activation_pos_valid);
+	failures += expect_int("hidden door aim point", 1, state.route_steps[1].aim_pos_valid);
 	failures += expect_int("hidden door route link count", 2, state.route_steps[1].opened_link_count);
 	failures += expect_string("hidden door route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;

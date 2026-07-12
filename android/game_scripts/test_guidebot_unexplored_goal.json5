@@ -51,7 +51,8 @@
         "guidebot.unexplored_component_size": {"gt": 0},
         "guidebot.unexplored_target_seg": {"gte": 0},
         "guidebot.unexplored_waypoint_seg": {"gte": 0},
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
+        "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
+        "level_metadata_route.edge_shadow.mismatch_count": "0"
     }},
 
     {"action": "wait_ms", "ms": 6000},

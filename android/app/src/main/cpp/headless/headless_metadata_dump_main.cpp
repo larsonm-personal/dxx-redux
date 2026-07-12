@@ -52,6 +52,7 @@ extern "C" void gameseq_init_network_players(void);
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
 static int secret_area_missing_secret_levels = 0;
+static int route_edge_shadow_strict = 0;
 
 static std::string dump_metadata_json(const nlohmann::ordered_json &value)
 {
@@ -72,6 +73,14 @@ static const char *find_arg_value(int argc, char *argv[], const char *name)
 		if (!strcmp(argv[index], name))
 			return argv[index + 1];
 	return NULL;
+}
+
+static int has_arg(int argc, char *argv[], const char *name)
+{
+	for (int index = 1; index < argc; ++index)
+		if (!strcmp(argv[index], name))
+			return 1;
+	return 0;
 }
 
 static int init_headless_audio(void)
@@ -395,8 +404,7 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 				continue;
 			source_seg = Walls[source_wall].segnum;
 			source_side = Walls[source_wall].sidenum;
-			source_child = source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ?
-				Segments[source_seg].children[source_side] : -1;
+			source_child = source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ? Segments[source_seg].children[source_side] : -1;
 			if (source_child >= 0 && source_child < Num_segments) {
 				reverse_side = find_connect_side(&Segments[source_seg], &Segments[source_child]);
 				if (reverse_side >= 0)
@@ -414,8 +422,7 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 			        source_child,
 			        reverse_side,
 			        reverse_wall,
-			        source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ?
-			            Segments[source_seg].sides[source_side].tmap_num2 : 0);
+			        source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ? Segments[source_seg].sides[source_side].tmap_num2 : 0);
 			type = Walls[source_wall].type;
 			if (type < 0 || type >= (int) (sizeof(opener_source_type_counts) / sizeof(opener_source_type_counts[0])))
 				type = 0;
@@ -450,8 +457,7 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 	for (trigger_num = 0; trigger_num < ControlCenterTriggers.num_links; ++trigger_num) {
 		int seg = ControlCenterTriggers.seg[trigger_num];
 		int side = ControlCenterTriggers.side[trigger_num];
-		int wall = seg >= 0 && seg < Num_segments && side >= 0 && side < MAX_SIDES_PER_SEGMENT ?
-			Segments[seg].sides[side].wall_num : -1;
+		int wall = seg >= 0 && seg < Num_segments && side >= 0 && side < MAX_SIDES_PER_SEGMENT ? Segments[seg].sides[side].wall_num : -1;
 		fprintf(stderr, "SECRET-AREA-DUMP CONTROL-CENTER-LINK level=%d link=%d seg=%d side=%d wall=%d\n",
 		        level_num, trigger_num, seg, side, wall);
 	}
@@ -918,6 +924,21 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
 	secret_area_rescan_current_level();
+	if (route_edge_shadow_strict) {
+		route_edge_shadow_summary shadow = {};
+		if (!level_metadata_get_route_edge_shadow(&shadow)) {
+			fprintf(stderr, "SECRET-AREA-DUMP FAIL route edge shadow unavailable level=%d file=%s\n",
+			        level_num, level_file ? level_file : "");
+			secret_area_dump_failed = 1;
+		} else if (shadow.mismatch_count) {
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP FAIL route edge shadow mismatch level=%d file=%s compared=%d mismatches=%d first=%d:%d legacy=%d shared=%d\n",
+			        level_num, level_file ? level_file : "", shadow.compared_edge_count,
+			        shadow.mismatch_count, shadow.first_mismatch_segment, shadow.first_mismatch_side,
+			        shadow.first_legacy_cost, shadow.first_shared_cost);
+			secret_area_dump_failed = 1;
+		}
+	}
 	state = secret_area_get_state();
 	total = secret_area_total(state);
 	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
@@ -978,6 +999,7 @@ int main(int argc, char *argv[])
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	int total_secrets = 0;
+	route_edge_shadow_strict = has_arg(argc, argv, "-route-edge-shadow-strict");
 
 	if (!json_out && !coop_starts_json_out) {
 		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
