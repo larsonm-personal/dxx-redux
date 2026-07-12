@@ -38,8 +38,15 @@ bool trigger_makes_progress(route_trigger_kind kind)
 	       kind == route_trigger_kind::unlock_door;
 }
 
+bool state_flag(const std::vector<unsigned char> &values, int index)
+{
+	return index >= 0 && index < static_cast<int>(values.size()) &&
+	       values[index] != 0;
+}
+
 int side_progress_trigger(
     const route_snapshot &snapshot,
+    const route_progress_state &progress,
     int segment,
     int side)
 {
@@ -53,7 +60,8 @@ int side_progress_trigger(
 		const int trigger = snapshot.state.walls[source_wall].trigger;
 		if (!valid_trigger(snapshot, trigger) ||
 		    snapshot.state.triggers[trigger].disabled ||
-		    !trigger_makes_progress(snapshot.topology.triggers[trigger].kind))
+		    !trigger_makes_progress(snapshot.topology.triggers[trigger].kind) ||
+		    state_flag(progress.fired_triggers, trigger))
 			continue;
 		return trigger;
 	}
@@ -62,13 +70,48 @@ int side_progress_trigger(
 
 int edge_progress_trigger(
     const route_snapshot &snapshot,
+    const route_progress_state &progress,
     int segment,
     int side,
     int child,
     int reverse_side)
 {
-	const int direct = side_progress_trigger(snapshot, segment, side);
-	return direct >= 0 ? direct : side_progress_trigger(snapshot, child, reverse_side);
+	const int direct = side_progress_trigger(snapshot, progress, segment, side);
+	return direct >= 0 ? direct : side_progress_trigger(snapshot, progress, child, reverse_side);
+}
+
+bool side_has_fired_trigger(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int segment,
+    int side)
+{
+	if (!valid_segment(snapshot, segment) || side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return false;
+	for (const int source_wall : snapshot.topology.segments[segment].sides[side].opener_walls) {
+		if (!valid_wall(snapshot, source_wall))
+			continue;
+		const int trigger = snapshot.state.walls[source_wall].trigger;
+		if (valid_trigger(snapshot, trigger) &&
+		    !snapshot.state.triggers[trigger].disabled &&
+		    trigger_makes_progress(snapshot.topology.triggers[trigger].kind) &&
+		    state_flag(progress.fired_triggers, trigger))
+			return true;
+	}
+	return false;
+}
+
+bool edge_has_fired_trigger(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int segment,
+    int side,
+    int child,
+    int reverse_side)
+{
+	return side_has_fired_trigger(snapshot, progress, segment, side) ||
+	       side_has_fired_trigger(snapshot, progress, child, reverse_side);
 }
 
 bool key_allowed(route_key_requirement key, int key_mask)
@@ -82,6 +125,16 @@ bool key_allowed(route_key_requirement key, int key_mask)
 		case route_key_requirement::gold:
 			return (key_mask & LEVEL_METADATA_KEY_MASK_GOLD) != 0;
 		default: return false;
+	}
+}
+
+int key_bit(route_key_requirement key)
+{
+	switch (key) {
+		case route_key_requirement::blue: return LEVEL_METADATA_KEY_MASK_BLUE;
+		case route_key_requirement::red: return LEVEL_METADATA_KEY_MASK_RED;
+		case route_key_requirement::gold: return LEVEL_METADATA_KEY_MASK_GOLD;
+		default: return 0;
 	}
 }
 
@@ -130,6 +183,24 @@ route_edge_decision evaluate_route_edge(
     int segment,
     int side)
 {
+	route_progress_state progress;
+	progress.current_segment = snapshot.state.start_segment;
+	progress.current_position = query.start.valid ? query.start : snapshot.state.start_position;
+	progress.key_mask = query.progression.key_mask;
+	progress.control_center_destroyed = snapshot.state.control_center_destroyed;
+	progress.fired_triggers.resize(snapshot.state.triggers.size());
+	progress.avoided_triggers.resize(snapshot.state.triggers.size());
+	progress.opened_hidden_walls.resize(snapshot.state.walls.size());
+	return evaluate_route_edge(snapshot, query, progress, segment, side);
+}
+
+route_edge_decision evaluate_route_edge(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &state,
+    int segment,
+    int side)
+{
 	if (!valid_segment(snapshot, segment) || side < 0 ||
 	    side >= LEVEL_METADATA_MAX_SIDES)
 		return blocked(route_edge_blocker::invalid_topology);
@@ -147,9 +218,12 @@ route_edge_decision evaluate_route_edge(
 		return passable(topology_side.wall);
 	const auto &reverse_state_side =
 	    snapshot.state.segments[child].sides[reverse_side];
-	if (snapshot.state.control_center_destroyed &&
+	if (state.control_center_destroyed &&
 	    (state_side.control_center_link ||
 	     reverse_state_side.control_center_link))
+		return passable(topology_side.wall);
+	if (edge_has_fired_trigger(
+	        snapshot, state, segment, side, child, reverse_side))
 		return passable(topology_side.wall);
 	const int wall = topology_side.wall;
 	if (!valid_wall(snapshot, wall))
@@ -160,13 +234,15 @@ route_edge_decision evaluate_route_edge(
 	const bool hidden_door = wall_state.kind == route_wall_kind::door &&
 	                         wall_state.hidden && !wall_state.locked &&
 	                         wall_state.key == route_key_requirement::none;
+	if (hidden_door && state_flag(state.opened_hidden_walls, wall))
+		return passable(wall);
 	if (hidden_door)
 		return progress(route_edge_blocker::hidden_door,
 		                route_required_action::open_hidden_door, wall);
 	const int trigger = edge_progress_trigger(
-	    snapshot, segment, side, child, reverse_side);
+	    snapshot, state, segment, side, child, reverse_side);
 	if (state_side.hard_blocked) {
-		if (trigger >= 0)
+		if (trigger >= 0 && !state_flag(state.avoided_triggers, trigger))
 			return progress(route_edge_blocker::trigger,
 			                route_required_action::activate_trigger,
 			                wall, trigger);
@@ -180,11 +256,11 @@ route_edge_decision evaluate_route_edge(
 		return passable(wall);
 	if (wall_state.kind == route_wall_kind::blastable)
 		return passable(wall, route_required_action::destroy_blastable_wall);
-	const int key_mask = query.progression.key_mask;
+	const int key_mask = state.key_mask;
 	if (wall_state.kind == route_wall_kind::door &&
 	    key_allowed(wall_state.key, key_mask) && !wall_state.locked)
 		return passable(wall);
-	if (trigger >= 0)
+	if (trigger >= 0 && !state_flag(state.avoided_triggers, trigger))
 		return progress(route_edge_blocker::trigger,
 		                route_required_action::activate_trigger,
 		                wall, trigger);
@@ -195,7 +271,9 @@ route_edge_decision evaluate_route_edge(
 		return passable(wall);
 	if (wall_state.kind == route_wall_kind::door &&
 	    wall_state.key != route_key_requirement::none &&
-	    wall_state.key != route_key_requirement::unknown)
+	    wall_state.key != route_key_requirement::unknown &&
+	    ((state.avoided_key_mask | state.key_in_progress) &
+	     key_bit(wall_state.key)) == 0)
 		return progress(route_edge_blocker::missing_key,
 		                route_required_action::acquire_key,
 		                wall, -1, wall_state.key);

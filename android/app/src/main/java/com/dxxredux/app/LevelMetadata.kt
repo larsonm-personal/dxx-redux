@@ -52,6 +52,12 @@ internal data class LevelMetadataRouteOpenLink(
     val wall: Int = -1,
 )
 
+internal data class LevelMetadataPosition(
+    val x: Double,
+    val y: Double,
+    val z: Double,
+)
+
 internal data class LevelMetadataRouteStep(
     val index: Int,
     val kind: String,
@@ -60,6 +66,7 @@ internal data class LevelMetadataRouteStep(
     val seg: Int = -1,
     val side: Int = -1,
     val wall: Int = -1,
+    val labelPosition: LevelMetadataPosition? = null,
     val distance: Double = 0.0,
     val key: String = "",
     val trigger: Int = -1,
@@ -1219,6 +1226,7 @@ private fun JSONObject.optRouteSteps(name: String): List<LevelMetadataRouteStep>
         for (index in 0 until array.length()) {
             val step = array.optJSONObject(index) ?: continue
             val opens = step.optJSONArray("opens") ?: JSONArray()
+            val labelPosition = step.optJSONObject("label_pos")
             add(
                 LevelMetadataRouteStep(
                     index = step.optInt("index", index),
@@ -1228,6 +1236,14 @@ private fun JSONObject.optRouteSteps(name: String): List<LevelMetadataRouteStep>
                     seg = step.optInt("seg", -1),
                     side = step.optInt("side", -1),
                     wall = step.optInt("wall", -1),
+                    labelPosition =
+                        labelPosition?.let {
+                            LevelMetadataPosition(
+                                x = it.optDouble("x"),
+                                y = it.optDouble("y"),
+                                z = it.optDouble("z"),
+                            )
+                        },
                     distance = step.optDouble("distance", 0.0),
                     key = step.optString("key"),
                     trigger = step.optInt("trigger", -1),

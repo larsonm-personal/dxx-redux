@@ -34,6 +34,7 @@
 
 static secret_area_state Secret_area_state;
 static level_metadata_state Level_metadata_state;
+static level_metadata_state Level_metadata_canonical_state;
 static route_snapshot_summary Level_metadata_canonical_snapshot;
 static int Level_metadata_canonical_snapshot_valid;
 static route_snapshot_summary Level_metadata_live_snapshot;
@@ -45,6 +46,7 @@ static int Level_metadata_planner_shadow_valid;
 static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
+static int Level_metadata_show_objectives;
 
 typedef struct level_metadata_game_context {
 	int start_objnum;
@@ -1085,8 +1087,10 @@ static void level_metadata_rescan_current_level_internal(
 				    &Level_metadata_live_snapshot);
 		}
 	}
-	if (!route_only)
+	if (!route_only) {
 		level_metadata_scan_level(view, &Level_metadata_state);
+		Level_metadata_canonical_state = Level_metadata_state;
+	}
 	if (route_only) {
 		if (unexplored_result)
 			level_metadata_scan_unexplored_route(view, &route_state, unexplored_result);
@@ -1159,6 +1163,7 @@ void secret_area_rescan_current_level(void)
 
 	secret_area_trace("start");
 	Secret_area_reveal_unfound = 0;
+	Level_metadata_show_objectives = 0;
 	Level_metadata_topology_valid = 0;
 	secret_area_ensure_level_topology();
 	memset(&view, 0, sizeof(view));
@@ -1226,6 +1231,11 @@ const level_metadata_state *level_metadata_get_state(void)
 	return &Level_metadata_state;
 }
 
+const level_metadata_state *level_metadata_get_canonical_state(void)
+{
+	return &Level_metadata_canonical_state;
+}
+
 int level_metadata_get_canonical_route_snapshot(
     route_snapshot_summary *summary)
 {
@@ -1290,4 +1300,14 @@ int secret_area_get_reveal_unfound(void)
 void secret_area_set_reveal_unfound(int reveal)
 {
 	Secret_area_reveal_unfound = reveal ? 1 : 0;
+}
+
+int level_metadata_get_show_objectives(void)
+{
+	return Level_metadata_show_objectives;
+}
+
+void level_metadata_set_show_objectives(int show)
+{
+	Level_metadata_show_objectives = show ? 1 : 0;
 }

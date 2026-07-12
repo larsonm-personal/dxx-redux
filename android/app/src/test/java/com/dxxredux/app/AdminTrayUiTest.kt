@@ -115,6 +115,7 @@ class AdminTrayUiTest {
         assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
     }
 
     @Test
@@ -199,11 +200,13 @@ class AdminTrayUiTest {
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_STATS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_EVENTS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_VIDEO_INFO))
 
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_STATS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_EVENTS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_VIDEO_INFO))
     }
 

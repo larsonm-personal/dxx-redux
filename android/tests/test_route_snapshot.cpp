@@ -462,6 +462,29 @@ int main()
 	assert(obstructed_path.has_obstruction);
 	assert(obstructed_path.first_obstruction.action ==
 	       dxx_route::route_required_action::open_hidden_door);
+	auto progress = dxx_route::initial_route_progress_state(
+	    obstructed_snapshot, planner_query);
+	assert(dxx_route::route_progress_open_hidden_wall(
+	    obstructed_snapshot, progress, 0));
+	assert(progress.opened_hidden_walls[0]);
+	assert(progress.opened_hidden_walls[1]);
+	const auto opened_search = dxx_route::search_routes(
+	    obstructed_snapshot, planner_query, progress, false);
+	assert(opened_search.nodes[1].reachable);
+	assert(dxx_route::route_progress_acquire_key(
+	    progress, dxx_route::route_key_requirement::blue));
+	assert((progress.key_mask & LEVEL_METADATA_KEY_MASK_BLUE) != 0);
+	auto trigger_progress = dxx_route::initial_route_progress_state(
+	    triggered_snapshot, planner_query);
+	assert(dxx_route::route_progress_fire_trigger(trigger_progress, 0));
+	assert(dxx_route::evaluate_route_edge(
+	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
+	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	trigger_progress.fired_triggers[0] = 0;
+	trigger_progress.avoided_triggers[0] = 1;
+	assert(dxx_route::evaluate_route_edge(
+	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
+	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED);
 	route_planner_shadow_summary planner_summary = {};
 	char planner_problem[96] = {};
 	if (!route_planner_compare_view(
@@ -470,7 +493,8 @@ int main()
 		return 1;
 	}
 	assert(planner_problem[0] == '\0');
-	assert(planner_summary.compared_node_count == 4);
+	assert(planner_summary.compared_progress_state_count == 4);
+	assert(planner_summary.compared_node_count == 16);
 	assert(planner_summary.mismatch_count == 0);
 	assert(planner_summary.compared_target_count == 9);
 	assert(planner_summary.target_mismatch_count == 0);

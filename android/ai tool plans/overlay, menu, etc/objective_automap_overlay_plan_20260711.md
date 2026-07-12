@@ -11,9 +11,11 @@ Add an Android automap cheat toggle that draws the level's calculated objectives
 - [x] Trace route objective generation and mission metadata serialization
 - [x] Define objective numbering, label-anchor, state lifetime, and JSON contracts
 - [x] Identify focused and corpus-level verification
-- [ ] Implement the metadata fields and canonical objective snapshot
+- [ ] Implement the metadata fields and canonical objective snapshot (in progress)
 - [ ] Implement the Android toggle and D1/D2 automap rendering
 - [ ] Add tests, regenerate metadata, build, and run emulator verification
+
+Implementation began on 2026-07-11. Objective labels use one shared high-contrast color except key objectives, which use blue, gold, or red to match the existing automap key palette.
 
 ## Current architecture findings
 

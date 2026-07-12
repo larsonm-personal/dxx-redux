@@ -143,13 +143,84 @@ int key_index(route_key_requirement key)
 
 } // namespace
 
+route_progress_state initial_route_progress_state(
+    const route_snapshot &snapshot,
+    const route_query &query)
+{
+	route_progress_state result;
+	result.current_segment = snapshot.state.start_segment;
+	result.current_position = query.start.valid
+	                              ? query.start
+	                              : snapshot.state.start_position;
+	result.key_mask = query.progression.key_mask;
+	result.control_center_destroyed = snapshot.state.control_center_destroyed;
+	result.fired_triggers.resize(snapshot.state.triggers.size());
+	result.avoided_triggers.resize(snapshot.state.triggers.size());
+	result.opened_hidden_walls.resize(snapshot.state.walls.size());
+	return result;
+}
+
+bool route_progress_acquire_key(
+    route_progress_state &progress,
+    route_key_requirement key)
+{
+	const int index = key_index(key);
+	if (index < 0)
+		return false;
+	progress.key_mask |= 1 << index;
+	return true;
+}
+
+bool route_progress_fire_trigger(route_progress_state &progress, int trigger)
+{
+	if (trigger < 0 || trigger >= static_cast<int>(progress.fired_triggers.size()))
+		return false;
+	progress.fired_triggers[trigger] = 1;
+	return true;
+}
+
+bool route_progress_open_hidden_wall(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    int wall)
+{
+	if (wall < 0 || wall >= static_cast<int>(snapshot.topology.walls.size()) ||
+	    wall >= static_cast<int>(progress.opened_hidden_walls.size()))
+		return false;
+	progress.opened_hidden_walls[wall] = 1;
+	const auto &source = snapshot.topology.walls[wall];
+	if (!valid_segment(snapshot, source.segment) || source.side < 0 ||
+	    source.side >= LEVEL_METADATA_MAX_SIDES)
+		return true;
+	const auto &side = snapshot.topology.segments[source.segment].sides[source.side];
+	if (!valid_segment(snapshot, side.child) || side.reverse_side < 0 ||
+	    side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
+		return true;
+	const int reverse_wall =
+	    snapshot.topology.segments[side.child].sides[side.reverse_side].wall;
+	if (reverse_wall >= 0 &&
+	    reverse_wall < static_cast<int>(progress.opened_hidden_walls.size()))
+		progress.opened_hidden_walls[reverse_wall] = 1;
+	return true;
+}
+
 route_search_result search_routes(
     const route_snapshot &snapshot,
     const route_query &query,
     bool optimistic)
 {
+	return search_routes(
+	    snapshot, query, initial_route_progress_state(snapshot, query), optimistic);
+}
+
+route_search_result search_routes(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    bool optimistic)
+{
 	route_search_result result;
-	result.start_segment = snapshot.state.start_segment;
+	result.start_segment = progress.current_segment;
 	const int count = static_cast<int>(snapshot.topology.segments.size());
 	result.nodes.resize(count);
 	if (!valid_segment(snapshot, result.start_segment)) {
@@ -157,7 +228,7 @@ route_search_result search_routes(
 		return result;
 	}
 	const auto &start_center = snapshot.topology.segments[result.start_segment].center;
-	const route_position &start = query.start.valid ? query.start : snapshot.state.start_position;
+	const route_position &start = progress.current_position;
 	if (!start.valid || !start_center.valid) {
 		result.problem = "route start position is invalid";
 		return result;
@@ -182,7 +253,8 @@ route_search_result search_routes(
 			const int child = snapshot.topology.segments[current].sides[side].child;
 			if (!valid_segment(snapshot, child) || closed[child])
 				continue;
-			const auto edge = evaluate_route_edge(snapshot, query, current, side);
+			const auto edge = evaluate_route_edge(
+			    snapshot, query, progress, current, side);
 			if (edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED ||
 			    (!optimistic && edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS))
 				continue;
@@ -467,45 +539,98 @@ extern "C" int route_planner_compare_view(
 		                legacy_targets->boss_found, shared_boss);
 		compare_targets(5, legacy_targets->exits, legacy_targets->exit_count,
 		                shared_targets.exits);
-		for (int optimistic = 0; optimistic <= 1; ++optimistic) {
-			std::vector<level_metadata_route_search_node> legacy(view->num_segments);
-			if (level_metadata_scan_route_search_shadow(
-			        view, optimistic, legacy.data(), static_cast<int>(legacy.size())) != view->num_segments) {
-				copy_problem(problem, problem_capacity,
-				             "legacy route search comparison failed");
-				return 0;
+		std::vector<dxx_route::route_progress_state> progress_states;
+		progress_states.push_back(
+		    dxx_route::initial_route_progress_state(snapshot, query));
+		auto advanced = progress_states.front();
+		dxx_route::route_progress_acquire_key(
+		    advanced, dxx_route::route_key_requirement::blue);
+		dxx_route::route_progress_acquire_key(
+		    advanced, dxx_route::route_key_requirement::red);
+		dxx_route::route_progress_acquire_key(
+		    advanced, dxx_route::route_key_requirement::gold);
+		advanced.control_center_destroyed = true;
+		progress_states.push_back(advanced);
+		auto opened = advanced;
+		opened.fired_triggers.assign(opened.fired_triggers.size(), 1);
+		opened.opened_hidden_walls.assign(
+		    opened.opened_hidden_walls.size(), 1);
+		progress_states.push_back(opened);
+		auto avoided = progress_states.front();
+		avoided.avoided_key_mask = LEVEL_METADATA_KEY_MASK_BLUE |
+		                           LEVEL_METADATA_KEY_MASK_RED |
+		                           LEVEL_METADATA_KEY_MASK_GOLD;
+		avoided.avoided_triggers.assign(avoided.avoided_triggers.size(), 1);
+		progress_states.push_back(avoided);
+		summary->compared_progress_state_count =
+		    static_cast<int>(progress_states.size());
+		for (int state_index = 0;
+		     state_index < static_cast<int>(progress_states.size()); ++state_index) {
+			const auto &progress = progress_states[state_index];
+			level_metadata_route_progress_shadow legacy_progress = {};
+			legacy_progress.current_seg = progress.current_segment;
+			for (int coordinate = 0; coordinate < 3; ++coordinate)
+				legacy_progress.current_pos[coordinate] =
+				    progress.current_position.value[coordinate];
+			legacy_progress.key_mask = progress.key_mask;
+			legacy_progress.key_in_progress = progress.key_in_progress;
+			legacy_progress.avoided_key_mask = progress.avoided_key_mask;
+			legacy_progress.control_center_destroyed =
+			    progress.control_center_destroyed;
+			for (int trigger = 0;
+			     trigger < static_cast<int>(progress.fired_triggers.size()); ++trigger) {
+				legacy_progress.fired_triggers[trigger] =
+				    progress.fired_triggers[trigger];
+				legacy_progress.avoided_triggers[trigger] =
+				    progress.avoided_triggers[trigger];
 			}
-			const auto shared = dxx_route::search_routes(snapshot, query, optimistic != 0);
-			if (!shared.problem.empty()) {
-				copy_problem(problem, problem_capacity, shared.problem.c_str());
-				return 0;
-			}
-			for (int segment = 0; segment < view->num_segments; ++segment) {
-				const auto &old_node = legacy[segment];
-				const auto &new_node = shared.nodes[segment];
-				const bool mismatch =
-				    (old_node.reachable != static_cast<int>(new_node.reachable)) ||
-				    (old_node.reachable &&
-				     (old_node.progress_weight != new_node.progress_weight ||
-				      old_node.parent_seg != new_node.parent_segment ||
-				      old_node.parent_side != new_node.parent_side ||
-				      !distances_match(old_node.distance, new_node.distance)));
-				summary->compared_node_count++;
-				if (!mismatch)
-					continue;
-				if (summary->mismatch_count++ == 0) {
-					summary->first_mismatch_optimistic = optimistic;
-					summary->first_mismatch_segment = segment;
-					summary->first_legacy_reachable = old_node.reachable;
-					summary->first_shared_reachable = new_node.reachable;
-					summary->first_legacy_progress_weight = old_node.progress_weight;
-					summary->first_shared_progress_weight = new_node.progress_weight;
-					summary->first_legacy_parent_segment = old_node.parent_seg;
-					summary->first_shared_parent_segment = new_node.parent_segment;
-					summary->first_legacy_parent_side = old_node.parent_side;
-					summary->first_shared_parent_side = new_node.parent_side;
-					summary->first_legacy_distance = old_node.distance;
-					summary->first_shared_distance = new_node.distance;
+			for (int wall = 0;
+			     wall < static_cast<int>(progress.opened_hidden_walls.size()); ++wall)
+				legacy_progress.opened_hidden_walls[wall] =
+				    progress.opened_hidden_walls[wall];
+			for (int optimistic = 0; optimistic <= 1; ++optimistic) {
+				std::vector<level_metadata_route_search_node> legacy(view->num_segments);
+				if (level_metadata_scan_route_search_state_shadow(
+				        view, &legacy_progress, optimistic, legacy.data(),
+				        static_cast<int>(legacy.size())) != view->num_segments) {
+					copy_problem(problem, problem_capacity,
+					             "legacy route search comparison failed");
+					return 0;
+				}
+				const auto shared = dxx_route::search_routes(
+				    snapshot, query, progress, optimistic != 0);
+				if (!shared.problem.empty()) {
+					copy_problem(problem, problem_capacity, shared.problem.c_str());
+					return 0;
+				}
+				for (int segment = 0; segment < view->num_segments; ++segment) {
+					const auto &old_node = legacy[segment];
+					const auto &new_node = shared.nodes[segment];
+					const bool mismatch =
+					    (old_node.reachable != static_cast<int>(new_node.reachable)) ||
+					    (old_node.reachable &&
+					     (old_node.progress_weight != new_node.progress_weight ||
+					      old_node.parent_seg != new_node.parent_segment ||
+					      old_node.parent_side != new_node.parent_side ||
+					      !distances_match(old_node.distance, new_node.distance)));
+					summary->compared_node_count++;
+					if (!mismatch)
+						continue;
+					if (summary->mismatch_count++ == 0) {
+						summary->first_mismatch_progress_state = state_index;
+						summary->first_mismatch_optimistic = optimistic;
+						summary->first_mismatch_segment = segment;
+						summary->first_legacy_reachable = old_node.reachable;
+						summary->first_shared_reachable = new_node.reachable;
+						summary->first_legacy_progress_weight = old_node.progress_weight;
+						summary->first_shared_progress_weight = new_node.progress_weight;
+						summary->first_legacy_parent_segment = old_node.parent_seg;
+						summary->first_shared_parent_segment = new_node.parent_segment;
+						summary->first_legacy_parent_side = old_node.parent_side;
+						summary->first_shared_parent_side = new_node.parent_side;
+						summary->first_legacy_distance = old_node.distance;
+						summary->first_shared_distance = new_node.distance;
+					}
 				}
 			}
 		}

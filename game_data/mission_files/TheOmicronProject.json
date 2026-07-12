@@ -42,6 +42,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 115,
+            "label_pos": {
+              "x": 4.57763671875e-05,
+              "y": 137.5,
+              "z": -0.625
+            },
             "distance": 332.9940370466922,
             "key": "blue"
           },
@@ -51,6 +56,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 102,
+            "label_pos": {
+              "x": 100.0,
+              "y": -166.0,
+              "z": 0.0
+            },
             "distance": 469.515898567633,
             "key": "gold"
           },
@@ -60,6 +70,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 75,
+            "label_pos": {
+              "x": 7.5,
+              "y": -140.0,
+              "z": -187.5
+            },
             "distance": 317.34513443279627,
             "key": "red"
           },
@@ -69,6 +84,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 313,
+            "label_pos": {
+              "x": 30.0,
+              "y": -120.0,
+              "z": 174.0
+            },
             "distance": 584.0912216829605
           },
           {
@@ -79,6 +99,11 @@
             "seg": 194,
             "side": 0,
             "wall": 27,
+            "label_pos": {
+              "x": 0.0,
+              "y": 30.0,
+              "z": 0.0
+            },
             "distance": 595.2081997625177,
             "trigger": 1,
             "trigger_type_id": 3,
@@ -124,6 +149,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 381,
+            "label_pos": {
+              "x": -69.99050903320312,
+              "y": -201.52874755859375,
+              "z": 331.5292663574219
+            },
             "distance": 1019.2256738846457,
             "key": "blue"
           },
@@ -133,6 +163,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 192,
+            "label_pos": {
+              "x": 0.00360107421875,
+              "y": 60.0009765625,
+              "z": -620.0000610351562
+            },
             "distance": 2741.1523126114835,
             "key": "gold"
           },
@@ -144,6 +179,11 @@
             "seg": 573,
             "side": 5,
             "wall": 117,
+            "label_pos": {
+              "x": -69.99996948242188,
+              "y": -14.99835205078125,
+              "z": 622.6934509277344
+            },
             "distance": 3241.968709441863,
             "trigger": 19,
             "trigger_type_id": 9,
@@ -162,6 +202,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 582,
+            "label_pos": {
+              "x": -109.99952697753906,
+              "y": -14.998672485351562,
+              "z": 492.69378662109375
+            },
             "distance": 189.99919128660696,
             "key": "red"
           },
@@ -171,6 +216,11 @@
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 132,
+            "label_pos": {
+              "x": -195.29025268554688,
+              "y": -319.5296630859375,
+              "z": 126.24028015136719
+            },
             "distance": 2012.1639970437734
           },
           {
@@ -180,6 +230,11 @@
             "label": "Shoot switch trigger 28",
             "seg": 111,
             "wall": 179,
+            "label_pos": {
+              "x": -147.40069580078125,
+              "y": -321.5285949707031,
+              "z": 328.94305419921875
+            },
             "distance": 321.06465152076,
             "trigger": 28,
             "trigger_type_id": 9,
@@ -210,6 +265,11 @@
             "seg": 682,
             "side": 5,
             "wall": 193,
+            "label_pos": {
+              "x": -110.0,
+              "y": 0.0,
+              "z": -147.0
+            },
             "distance": 836.225754234441,
             "trigger": 33,
             "trigger_type_id": 3,
@@ -255,6 +315,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 391,
+            "label_pos": {
+              "x": -177.8562774658203,
+              "y": -60.002716064453125,
+              "z": 389.3972473144531
+            },
             "distance": 1025.7376840179113,
             "key": "blue"
           },
@@ -264,6 +329,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 98,
+            "label_pos": {
+              "x": 170.207763671875,
+              "y": -0.0001220703125,
+              "z": -370.917236328125
+            },
             "distance": 1153.8519822643343,
             "key": "gold"
           },
@@ -273,6 +343,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 318,
+            "label_pos": {
+              "x": 370.919677734375,
+              "y": -60.002410888671875,
+              "z": 170.20303344726562
+            },
             "distance": 1136.7939117554365,
             "key": "red"
           },
@@ -282,6 +357,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 393,
+            "label_pos": {
+              "x": -0.001556396484375,
+              "y": -273.4864501953125,
+              "z": 0.000946044921875
+            },
             "distance": 795.0906890201164
           },
           {
@@ -292,6 +372,11 @@
             "seg": 97,
             "side": 5,
             "wall": 144,
+            "label_pos": {
+              "x": 0.000335693359375,
+              "y": 263.44677734375,
+              "z": -0.000457763671875
+            },
             "distance": 1052.1344707782498,
             "trigger": 18,
             "trigger_type_id": 3,
@@ -337,6 +422,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 92,
+            "label_pos": {
+              "x": 139.11419677734375,
+              "y": -29.64947509765625,
+              "z": -132.81614685058594
+            },
             "distance": 947.7719718634992,
             "key": "blue"
           },
@@ -348,6 +438,11 @@
             "seg": 190,
             "side": 0,
             "wall": 164,
+            "label_pos": {
+              "x": 46.79862976074219,
+              "y": -27.247940063476562,
+              "z": -304.5108642578125
+            },
             "distance": 314.12432503346224,
             "trigger": 0,
             "trigger_type_id": 9,
@@ -366,6 +461,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 267,
+            "label_pos": {
+              "x": 223.14039611816406,
+              "y": -31.885818481445312,
+              "z": -405.62408447265625
+            },
             "distance": 485.643584983917,
             "key": "gold"
           },
@@ -377,6 +477,11 @@
             "seg": 268,
             "side": 2,
             "wall": 212,
+            "label_pos": {
+              "x": 232.09884643554688,
+              "y": -32.223602294921875,
+              "z": -385.1392822265625
+            },
             "distance": 29.999927168686746,
             "trigger": 29,
             "trigger_type_id": 0,
@@ -395,6 +500,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 329,
+            "label_pos": {
+              "x": 139.63941955566406,
+              "y": -92.09931945800781,
+              "z": -183.62413024902344
+            },
             "distance": 669.7674008213472,
             "key": "red"
           },
@@ -406,6 +516,11 @@
             "seg": 322,
             "side": 5,
             "wall": 169,
+            "label_pos": {
+              "x": 76.62431335449219,
+              "y": -147.01922607421875,
+              "z": -446.1546173095703
+            },
             "distance": 379.7707428952414,
             "trigger": 10,
             "trigger_type_id": 9,
@@ -435,6 +550,11 @@
             "label": "Shoot switch trigger 13",
             "seg": 325,
             "wall": 184,
+            "label_pos": {
+              "x": 231.21058654785156,
+              "y": -131.94488525390625,
+              "z": -538.4313659667969
+            },
             "distance": 250.94871986020695,
             "trigger": 13,
             "trigger_type_id": 9,
@@ -460,6 +580,11 @@
             "seg": 272,
             "side": 0,
             "wall": 243,
+            "label_pos": {
+              "x": 105.43022155761719,
+              "y": -29.051376342773438,
+              "z": -373.63731384277344
+            },
             "distance": 487.7727995874597,
             "trigger": 38,
             "trigger_type_id": 9,
@@ -478,6 +603,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 622,
+            "label_pos": {
+              "x": 157.38914489746094,
+              "y": -149.0749053955078,
+              "z": -572.2463073730469
+            },
             "distance": 705.4504917673949
           },
           {
@@ -488,6 +618,11 @@
             "seg": 594,
             "side": 5,
             "wall": 245,
+            "label_pos": {
+              "x": 176.5910186767578,
+              "y": 122.46366882324219,
+              "z": -773.6261749267578
+            },
             "distance": 1316.4500506522868,
             "trigger": 44,
             "trigger_type_id": 3,
@@ -534,6 +669,11 @@
             "label": "Pass through trigger 26",
             "seg": 600,
             "wall": 184,
+            "label_pos": {
+              "x": 0.0,
+              "y": -16.241348266601562,
+              "z": 660.0049896240234
+            },
             "distance": 620.9752979564714,
             "trigger": 26,
             "trigger_type_id": 9,
@@ -559,6 +699,11 @@
             "seg": 18,
             "side": 5,
             "wall": 7,
+            "label_pos": {
+              "x": -1.0011444091796875,
+              "y": -20.486526489257812,
+              "z": 1247.0016632080078
+            },
             "distance": 1252.3370095362222,
             "trigger": 0,
             "trigger_type_id": 9,
@@ -577,6 +722,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 637,
+            "label_pos": {
+              "x": -0.9588165283203125,
+              "y": -270.50120544433594,
+              "z": 717.0626831054688
+            },
             "distance": 1289.078686937392,
             "key": "blue"
           },
@@ -588,6 +738,11 @@
             "seg": 123,
             "side": 2,
             "wall": 55,
+            "label_pos": {
+              "x": -516.6866607666016,
+              "y": 7.0618133544921875,
+              "z": 1171.823745727539
+            },
             "distance": 1571.2685617596408,
             "trigger": 1,
             "trigger_type_id": 9,
@@ -613,6 +768,11 @@
             "seg": 227,
             "side": 2,
             "wall": 57,
+            "label_pos": {
+              "x": -520.2090454101562,
+              "y": 6.75775146484375,
+              "z": 913.7320556640625
+            },
             "distance": 447.7309040172371,
             "trigger": 3,
             "trigger_type_id": 9,
@@ -638,6 +798,11 @@
             "seg": 235,
             "side": 5,
             "wall": 84,
+            "label_pos": {
+              "x": -488.50608825683594,
+              "y": 9.4703369140625,
+              "z": 733.4201965332031
+            },
             "distance": 1087.7285024090509,
             "trigger": 5,
             "trigger_type_id": 9,
@@ -671,6 +836,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 235,
+            "label_pos": {
+              "x": -509.6417999267578,
+              "y": 7.6608123779296875,
+              "z": 754.6332702636719
+            },
             "distance": 29.999786398160268,
             "key": "gold"
           },
@@ -682,6 +852,11 @@
             "seg": 136,
             "side": 2,
             "wall": 92,
+            "label_pos": {
+              "x": 514.6878662109375,
+              "y": 7.0473175048828125,
+              "z": 1171.8224792480469
+            },
             "distance": 2738.822554873107,
             "trigger": 11,
             "trigger_type_id": 9,
@@ -707,6 +882,11 @@
             "seg": 252,
             "side": 2,
             "wall": 88,
+            "label_pos": {
+              "x": 518.21533203125,
+              "y": 6.7453765869140625,
+              "z": 913.7244415283203
+            },
             "distance": 447.7407341935598,
             "trigger": 9,
             "trigger_type_id": 9,
@@ -732,6 +912,11 @@
             "seg": 245,
             "side": 0,
             "wall": 86,
+            "label_pos": {
+              "x": 528.7863464355469,
+              "y": 5.839630126953125,
+              "z": 733.4094390869141
+            },
             "distance": 1087.744742417748,
             "trigger": 7,
             "trigger_type_id": 9,
@@ -765,6 +950,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 245,
+            "label_pos": {
+              "x": 507.6497039794922,
+              "y": 7.650604248046875,
+              "z": 754.6234588623047
+            },
             "distance": 30.00119858627367,
             "key": "red"
           },
@@ -774,6 +964,11 @@
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 333,
+            "label_pos": {
+              "x": 285.3597869873047,
+              "y": -440.48919677734375,
+              "z": 1299.9530181884766
+            },
             "distance": 1614.8305015321807
           },
           {
@@ -784,6 +979,11 @@
             "seg": 504,
             "side": 1,
             "wall": 155,
+            "label_pos": {
+              "x": 127.8133544921875,
+              "y": 321.8374786376953,
+              "z": -34.466888427734375
+            },
             "distance": 2862.1619331655957,
             "trigger": 15,
             "trigger_type_id": 3,
@@ -831,6 +1031,11 @@
             "seg": 27,
             "side": 1,
             "wall": 117,
+            "label_pos": {
+              "x": -70.0,
+              "y": 210.0,
+              "z": 160.0
+            },
             "distance": 722.4313606283807,
             "opens": [
               {
@@ -851,6 +1056,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 152,
+            "label_pos": {
+              "x": 20.0,
+              "y": -318.5,
+              "z": 370.0
+            },
             "distance": 2610.819551415159,
             "key": "blue"
           },
@@ -860,6 +1070,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 127,
+            "label_pos": {
+              "x": 636.027099609375,
+              "y": -369.95672607421875,
+              "z": 215.37588500976562
+            },
             "distance": 3821.0362416687653,
             "key": "gold"
           },
@@ -869,6 +1084,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 221,
+            "label_pos": {
+              "x": -400.0,
+              "y": 100.0,
+              "z": 305.0
+            },
             "distance": 1892.5664799325177,
             "key": "red"
           },
@@ -878,6 +1098,11 @@
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 343,
+            "label_pos": {
+              "x": 1326.1769714355469,
+              "y": 79.96875,
+              "z": 193.68618774414062
+            },
             "distance": 2583.5972244574787
           },
           {
@@ -888,6 +1113,11 @@
             "seg": 372,
             "side": 3,
             "wall": 28,
+            "label_pos": {
+              "x": 977.739990234375,
+              "y": 90.00004577636719,
+              "z": 291.42884826660156
+            },
             "distance": 522.2102056773623,
             "trigger": 0,
             "trigger_type_id": 3,
@@ -935,6 +1165,11 @@
             "seg": 112,
             "side": 1,
             "wall": 7,
+            "label_pos": {
+              "x": 60.5,
+              "y": 46.0,
+              "z": -385.0
+            },
             "distance": 38.006171705814495,
             "trigger": 0,
             "trigger_type_id": 7,
@@ -960,6 +1195,11 @@
             "seg": 135,
             "side": 4,
             "wall": 82,
+            "label_pos": {
+              "x": 60.0,
+              "y": 21.0,
+              "z": -281.0
+            },
             "distance": 148.00901364189798,
             "trigger": 10,
             "trigger_type_id": 9,
@@ -1009,6 +1249,11 @@
             "label": "Shoot switch trigger 22",
             "seg": 109,
             "wall": 172,
+            "label_pos": {
+              "x": 58.0,
+              "y": 114.0,
+              "z": -126.0
+            },
             "distance": 161.82793321429725,
             "trigger": 22,
             "trigger_type_id": 9,
@@ -1067,6 +1312,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 15,
+            "label_pos": {
+              "x": 58.0,
+              "y": 142.0,
+              "z": -126.0
+            },
             "distance": 243.64449685538705
           }
         ],

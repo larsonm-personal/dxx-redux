@@ -702,6 +702,7 @@ static int test_route_key_step(void)
 	failures += expect_string("key route step", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("key route key index", 0, state.route_steps[1].key_index);
 	failures += expect_string("key route activation", "pickup_key", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_int("key route label position", 1, state.route_steps[1].label_pos_valid);
 	failures += expect_string("key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }
@@ -910,6 +911,8 @@ static int test_route_shootable_trigger_step(void)
 	failures += expect_int("shootable trigger aim point", 1, state.route_steps[1].aim_pos_valid);
 	failures += expect_int("shootable trigger activation x", 0, state.route_steps[1].activation_pos[0]);
 	failures += expect_int("shootable trigger aim x", 100 * TEST_FIX, state.route_steps[1].aim_pos[0]);
+	failures += expect_int("shootable trigger label position", 1, state.route_steps[1].label_pos_valid);
+	failures += expect_int("shootable trigger label x", 100 * TEST_FIX, state.route_steps[1].label_pos[0]);
 	failures += expect_string("shootable trigger route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }
@@ -1366,6 +1369,7 @@ static int test_route_hidden_door_step(void)
 	failures += expect_string("hidden door route activation", "open_hidden_door", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
 	failures += expect_int("hidden door activation pose", 1, state.route_steps[1].activation_pos_valid);
 	failures += expect_int("hidden door aim point", 1, state.route_steps[1].aim_pos_valid);
+	failures += expect_int("hidden door label position", 1, state.route_steps[1].label_pos_valid);
 	failures += expect_int("hidden door route link count", 2, state.route_steps[1].opened_link_count);
 	failures += expect_string("hidden door route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
@@ -1396,6 +1400,7 @@ static int test_route_visible_reactor_step(void)
 	failures += expect_int("visible reactor route steps", 3, state.route_step_count);
 	failures += expect_string("visible reactor route step", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("visible reactor route activation", "destroy_reactor", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_int("visible reactor label position", 1, state.route_steps[1].label_pos_valid);
 	failures += expect_string("visible reactor route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }
@@ -1418,6 +1423,7 @@ static int test_route_prefers_boss_over_control_center_segment(void)
 	failures += expect_string("boss route step", "boss", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("boss route label", "Boss robot", state.route_steps[1].label);
 	failures += expect_string("boss route activation", "destroy_boss", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_int("boss label position", 1, state.route_steps[1].label_pos_valid);
 	failures += expect_string("boss route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }

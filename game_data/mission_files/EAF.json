@@ -44,6 +44,11 @@
             "seg": 413,
             "side": 4,
             "wall": 32,
+            "label_pos": {
+              "x": -3.0517578125e-05,
+              "y": -3.0517578125e-05,
+              "z": 490.0
+            },
             "distance": 470.0000000000435,
             "trigger": 0,
             "trigger_type_id": 9,
@@ -78,6 +83,11 @@
             "label": "Shoot switch trigger 3",
             "seg": 147,
             "wall": 45,
+            "label_pos": {
+              "x": 0.122283935546875,
+              "y": -283.62701416015625,
+              "z": 399.2538146972656
+            },
             "distance": 1213.5001819821418,
             "trigger": 3,
             "trigger_type_id": 9,
@@ -103,6 +113,11 @@
             "seg": 234,
             "side": 1,
             "wall": 50,
+            "label_pos": {
+              "x": 0.19244384765625,
+              "y": 257.3260040283203,
+              "z": 641.05810546875
+            },
             "distance": 1498.4765529685033,
             "trigger": 4,
             "trigger_type_id": 9,
@@ -126,6 +141,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 450,
+            "label_pos": {
+              "x": 2.1012420654296875,
+              "y": 79.76068115234375,
+              "z": 379.60899353027344
+            },
             "distance": 1000.8850944258666
           },
           {
@@ -136,6 +156,11 @@
             "seg": 0,
             "side": 5,
             "wall": 51,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -10.0
+            },
             "distance": 2257.5561986128696,
             "trigger": 7,
             "trigger_type_id": 3,
@@ -217,6 +242,11 @@
             "label": "Shoot switch trigger 2",
             "seg": 39,
             "wall": 98,
+            "label_pos": {
+              "x": -79.99957275390625,
+              "y": -140.000244140625,
+              "z": 74.999755859375
+            },
             "distance": 363.58184221240055,
             "trigger": 2,
             "trigger_type_id": 9,
@@ -251,6 +281,11 @@
             "label": "Shoot switch trigger 3",
             "seg": 47,
             "wall": 99,
+            "label_pos": {
+              "x": 79.99951171875,
+              "y": -140.000244140625,
+              "z": 74.99978637695312
+            },
             "distance": 65.9808590204978,
             "trigger": 3,
             "trigger_type_id": 9,
@@ -269,6 +304,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 603,
+            "label_pos": {
+              "x": 29.398483276367188,
+              "y": -250.00218200683594,
+              "z": 413.81591796875
+            },
             "distance": 676.3793105408454
           },
           {
@@ -279,6 +319,11 @@
             "seg": 701,
             "side": 3,
             "wall": 120,
+            "label_pos": {
+              "x": 0.190521240234375,
+              "y": 310.0001525878906,
+              "z": 355.09620666503906
+            },
             "distance": 1768.662662632639,
             "trigger": 13,
             "trigger_type_id": 3,
@@ -324,6 +369,11 @@
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 307,
+            "label_pos": {
+              "x": 0.5,
+              "y": 82.5,
+              "z": 60.0
+            },
             "distance": 969.2086159900405
           },
           {
@@ -334,6 +384,11 @@
             "seg": 504,
             "side": 4,
             "wall": 24,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 130.0
+            },
             "distance": 978.4656007195574,
             "trigger": 6,
             "trigger_type_id": 3,

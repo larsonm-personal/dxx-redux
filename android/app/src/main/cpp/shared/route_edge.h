@@ -36,9 +36,28 @@ struct route_edge_decision {
 	route_key_requirement key = route_key_requirement::none;
 };
 
+struct route_progress_state {
+	int current_segment = -1;
+	route_position current_position;
+	int key_mask = 0;
+	int key_in_progress = 0;
+	int avoided_key_mask = 0;
+	bool control_center_destroyed = false;
+	std::vector<unsigned char> fired_triggers;
+	std::vector<unsigned char> avoided_triggers;
+	std::vector<unsigned char> opened_hidden_walls;
+};
+
 route_edge_decision evaluate_route_edge(
     const route_snapshot &snapshot,
     const route_query &query,
+    int segment,
+    int side);
+
+route_edge_decision evaluate_route_edge(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
     int segment,
     int side);
 

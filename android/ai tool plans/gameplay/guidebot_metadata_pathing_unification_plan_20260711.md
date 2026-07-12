@@ -65,7 +65,10 @@ Parity has two separate meanings and both must pass:
   - Normalized object roles, direct and contained keys, dead-object state, and control-center segments without exposing D1/D2 constants to the planner.
   - Ported ordered key, boss, reactor, control-center fallback, and normal-exit target discovery, including secret-exit filtering and stable activation positions.
   - Confirmed zero target inventory mismatches in D1/D2 unit fixtures, all base Descent and Counterstrike levels, and 1,244 levels from 109 mission archives.
-  - Semantic step production and live behavior remain on the C planner; dependency-state transitions and target selection are the next porting boundary.
+  - Added explicit simulated progression state for acquired or avoided keys, fired or avoided triggers, opened hidden walls, current pose, and reactor/boss completion.
+  - Added shared state transitions for key acquisition, trigger activation, and paired hidden-wall opening; searches now accept an immutable progression state instead of assuming level-start state.
+  - Confirmed zero search mismatches across initial, post-key/reactor, fully opened, and dependency-avoidance states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
+  - Semantic step production and live behavior remain on the C planner; deterministic target selection is the next porting boundary.
 
 ## Non-Goals
 

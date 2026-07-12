@@ -42,6 +42,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 311,
+            "label_pos": {
+              "x": 190.0,
+              "y": 130.0,
+              "z": -100.0
+            },
             "distance": 1036.253986271747,
             "key": "blue"
           },
@@ -51,6 +56,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 41,
+            "label_pos": {
+              "x": 435.0,
+              "y": -48.75,
+              "z": -82.5
+            },
             "distance": 1717.500764178906,
             "key": "gold"
           },
@@ -60,6 +70,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 281,
+            "label_pos": {
+              "x": -212.5,
+              "y": -81.25,
+              "z": 886.25
+            },
             "distance": 2010.00664612911,
             "key": "red"
           },
@@ -69,6 +84,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 82,
+            "label_pos": {
+              "x": -20.0,
+              "y": 85.0,
+              "z": 371.25
+            },
             "distance": 1938.1892221719522
           },
           {
@@ -79,6 +99,11 @@
             "seg": 315,
             "side": 0,
             "wall": 32,
+            "label_pos": {
+              "x": 135.0,
+              "y": 60.0,
+              "z": 265.0
+            },
             "distance": 483.1169858586576,
             "trigger": 0,
             "trigger_type_id": 3,
@@ -125,6 +150,11 @@
             "label": "Shoot switch trigger 6",
             "seg": 39,
             "wall": 17,
+            "label_pos": {
+              "x": 190.0,
+              "y": -119.00982666015625,
+              "z": 590.0
+            },
             "distance": 809.1906005517128,
             "trigger": 6,
             "trigger_type_id": 9,
@@ -158,6 +188,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 208,
+            "label_pos": {
+              "x": -32.562347412109375,
+              "y": -121.50982666015625,
+              "z": 520.0
+            },
             "distance": 584.3049615316825,
             "key": "blue"
           },
@@ -168,6 +203,11 @@
             "label": "Shoot switch trigger 2",
             "seg": 246,
             "wall": 53,
+            "label_pos": {
+              "x": -190.0,
+              "y": -214.00982666015625,
+              "z": 522.5
+            },
             "distance": 612.8111359756263,
             "trigger": 2,
             "trigger_type_id": 7,
@@ -186,6 +226,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 403,
+            "label_pos": {
+              "x": -490.0,
+              "y": -210.0,
+              "z": 1030.0
+            },
             "distance": 1026.371433963093,
             "key": "gold"
           },
@@ -197,6 +242,11 @@
             "seg": 499,
             "side": 3,
             "wall": 82,
+            "label_pos": {
+              "x": -5.0,
+              "y": -10.0,
+              "z": -300.0
+            },
             "distance": 3184.6033875116827,
             "trigger": 13,
             "trigger_type_id": 9,
@@ -230,6 +280,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 315,
+            "label_pos": {
+              "x": -0.0001678466796875,
+              "y": -10.000030517578125,
+              "z": -185.0
+            },
             "distance": 397.8941651804426,
             "key": "red"
           },
@@ -239,6 +294,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 473,
+            "label_pos": {
+              "x": -95.0,
+              "y": -525.0,
+              "z": 170.0
+            },
             "distance": 1059.1768603497308
           },
           {
@@ -249,6 +309,11 @@
             "seg": 476,
             "side": 0,
             "wall": 78,
+            "label_pos": {
+              "x": -3.0517578125e-05,
+              "y": 83.67672729492188,
+              "z": 253.0172882080078
+            },
             "distance": 974.3086510373258,
             "trigger": 15,
             "trigger_type_id": 3,
@@ -296,6 +361,11 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 218,
+            "label_pos": {
+              "x": 514.0106201171875,
+              "y": -74.55833435058594,
+              "z": 211.07460021972656
+            },
             "distance": 1326.1070203775137,
             "key": "blue"
           },
@@ -305,6 +375,11 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 226,
+            "label_pos": {
+              "x": 520.960693359375,
+              "y": -65.0,
+              "z": 350.24566650390625
+            },
             "distance": 2001.9456497134938,
             "key": "gold"
           },
@@ -315,6 +390,11 @@
             "label": "Pass through trigger 8",
             "seg": 320,
             "wall": 62,
+            "label_pos": {
+              "x": -275.0,
+              "y": 0.0,
+              "z": 377.5
+            },
             "distance": 2042.2314820234358,
             "trigger": 8,
             "trigger_type_id": 9,
@@ -339,6 +419,11 @@
             "label": "Shoot switch trigger 2",
             "seg": 320,
             "wall": 61,
+            "label_pos": {
+              "x": -275.0,
+              "y": 0.0,
+              "z": 417.5
+            },
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -361,6 +446,11 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 363,
+            "label_pos": {
+              "x": -227.5,
+              "y": -65.0,
+              "z": -70.0
+            },
             "distance": 785.6592134836815,
             "key": "red"
           },
@@ -370,6 +460,11 @@
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 7,
+            "label_pos": {
+              "x": -605.000244140625,
+              "y": -64.37498474121094,
+              "z": 627.5
+            },
             "distance": 1297.8819173628501
           },
           {
@@ -380,6 +475,11 @@
             "seg": 31,
             "side": 2,
             "wall": 2,
+            "label_pos": {
+              "x": -340.000244140625,
+              "y": 60.0,
+              "z": 460.0
+            },
             "distance": 589.2206128756449,
             "trigger": 0,
             "trigger_type_id": 3,

@@ -717,6 +717,15 @@ static const char *headless_metadata_key_name(int key_index)
 	}
 }
 
+static nlohmann::ordered_json serialize_route_position(const int pos[3])
+{
+	return {
+		{ "x", pos[0] / LEVEL_METADATA_FIX_SCALE },
+		{ "y", pos[1] / LEVEL_METADATA_FIX_SCALE },
+		{ "z", pos[2] / LEVEL_METADATA_FIX_SCALE }
+	};
+}
+
 static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *metadata)
 {
 	nlohmann::ordered_json steps = nlohmann::ordered_json::array();
@@ -743,6 +752,8 @@ static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *
 			item["side"] = step.side;
 		if (step.wall_num >= 0)
 			item["wall"] = step.wall_num;
+		if (step.label_pos_valid)
+			item["label_pos"] = serialize_route_position(step.label_pos);
 		if (step.distance_from_previous > 0.0)
 			item["distance"] = step.distance_from_previous;
 		if (step.kind == LEVEL_METADATA_ROUTE_KEY && step.key_index >= 0)
@@ -805,7 +816,7 @@ static void count_level_objects(int *robots, int *hostages)
 
 static nlohmann::ordered_json serialize_current_level(int level_num, const char *level_file)
 {
-	const level_metadata_state *metadata = level_metadata_get_state();
+	const level_metadata_state *metadata = level_metadata_get_canonical_state();
 	const secret_area_state *state = secret_area_get_state();
 	int total = secret_area_total(state);
 	int robots = 0;
@@ -945,9 +956,10 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 			secret_area_dump_failed = 1;
 		} else if (planner_shadow.mismatch_count || planner_shadow.target_mismatch_count) {
 			fprintf(stderr,
-			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s compared=%d mismatches=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g compared_targets=%d target_mismatches=%d first_target=%d:%d legacy_target_count=%d shared_target_count=%d legacy_target_seg=%d shared_target_seg=%d\n",
-			        level_num, level_file ? level_file : "", planner_shadow.compared_node_count,
-			        planner_shadow.mismatch_count,
+			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s states=%d compared=%d mismatches=%d first_state=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g compared_targets=%d target_mismatches=%d first_target=%d:%d legacy_target_count=%d shared_target_count=%d legacy_target_seg=%d shared_target_seg=%d\n",
+			        level_num, level_file ? level_file : "", planner_shadow.compared_progress_state_count,
+			        planner_shadow.compared_node_count,
+			        planner_shadow.mismatch_count, planner_shadow.first_mismatch_progress_state,
 			        planner_shadow.first_mismatch_optimistic ? "optimistic" : "pessimistic",
 			        planner_shadow.first_mismatch_segment,
 			        planner_shadow.first_legacy_reachable, planner_shadow.first_shared_reachable,

@@ -1619,6 +1619,18 @@ Java_com_dxxredux_app_MainActivity_nativeToggleSecretAreaReveal(JNIEnv *env, job
 	secret_area_set_reveal_unfound(!secret_area_get_reveal_unfound());
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeObjectiveOverlayActive(JNIEnv *env, jobject thiz)
+{
+	return level_metadata_get_show_objectives() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeToggleObjectiveOverlay(JNIEnv *env, jobject thiz)
+{
+	level_metadata_set_show_objectives(!level_metadata_get_show_objectives());
+}
+
 /* ── C→Java keyboard callbacks ──────────────────────────────
  *
  * The engine calls these from the game thread when a menu with a text

@@ -1392,22 +1392,53 @@ int level_metadata_scan_route_search_shadow(
     level_metadata_route_search_node *nodes,
     int capacity)
 {
-	metadata_route_context route;
-	int seg;
+	level_metadata_route_progress_shadow progress;
 
 	if (!view || !nodes || capacity < view->num_segments ||
 	    !valid_segment(view, view->start_segment) || !view->start_position)
 		return 0;
+	memset(&progress, 0, sizeof(progress));
+	progress.current_seg = view->start_segment;
+	progress.key_mask = view->initial_key_mask &
+	                    (LEVEL_METADATA_KEY_MASK_BLUE |
+	                     LEVEL_METADATA_KEY_MASK_RED |
+	                     LEVEL_METADATA_KEY_MASK_GOLD);
+	progress.control_center_destroyed =
+	    view->initial_control_center_destroyed != 0;
+	if (!view->start_position(view->user, progress.current_pos))
+		return 0;
+	return level_metadata_scan_route_search_state_shadow(
+	    view, &progress, optimistic, nodes, capacity);
+}
+
+int level_metadata_scan_route_search_state_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int optimistic,
+    level_metadata_route_search_node *nodes,
+    int capacity)
+{
+	metadata_route_context route;
+	int seg;
+
+	if (!view || !progress || !nodes || capacity < view->num_segments ||
+	    !valid_segment(view, progress->current_seg))
+		return 0;
 	collect_segment_centers(view);
 	memset(&route, 0, sizeof(route));
-	route.current_seg = view->start_segment;
-	route.key_mask = view->initial_key_mask &
-	                 (LEVEL_METADATA_KEY_MASK_BLUE |
-	                  LEVEL_METADATA_KEY_MASK_RED |
-	                  LEVEL_METADATA_KEY_MASK_GOLD);
-	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
-	if (!view->start_position(view->user, route.current_pos) ||
-	    !metadata_route_compute_paths(view, &route, -1, optimistic != 0, -1))
+	route.current_seg = progress->current_seg;
+	copy_pos(route.current_pos, progress->current_pos);
+	route.key_mask = progress->key_mask;
+	route.key_in_progress = progress->key_in_progress;
+	route.avoided_key_mask = progress->avoided_key_mask;
+	route.control_center_destroyed = progress->control_center_destroyed != 0;
+	memcpy(route.fired_triggers, progress->fired_triggers,
+	       sizeof(progress->fired_triggers));
+	memcpy(route.avoided_triggers, progress->avoided_triggers,
+	       sizeof(progress->avoided_triggers));
+	memcpy(route.opened_hidden_walls, progress->opened_hidden_walls,
+	       sizeof(progress->opened_hidden_walls));
+	if (!metadata_route_compute_paths(view, &route, -1, optimistic != 0, -1))
 		return 0;
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		nodes[seg].reachable = route_distance[seg] != DBL_MAX;
@@ -1646,6 +1677,14 @@ static level_metadata_route_step *metadata_route_append_step(
 	}
 	if (view && view->wall_num && valid_segment(view, seg) && side >= 0 && side < LEVEL_METADATA_MAX_SIDES)
 		step->wall_num = view->wall_num(view->user, seg, side);
+	if (kind != LEVEL_METADATA_ROUTE_START && valid_segment(view, seg)) {
+		if (side_center(view, seg, side, step->label_pos))
+			step->label_pos_valid = 1;
+		else if (segment_center_valid[seg]) {
+			copy_pos(step->label_pos, segment_centers[seg]);
+			step->label_pos_valid = 1;
+		}
+	}
 	if (route)
 		route->pending_distance = 0.0;
 	return step;
@@ -1658,6 +1697,8 @@ static void metadata_route_step_set_aim(
 		return;
 	step->aim_pos_valid = 1;
 	copy_pos(step->aim_pos, pos);
+	step->label_pos_valid = 1;
+	copy_pos(step->label_pos, pos);
 }
 
 static int metadata_route_wall_target_pos(

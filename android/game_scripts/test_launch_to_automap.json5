@@ -74,8 +74,32 @@
     // Open automap (TAB key)
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
-    {"action": "assert", "expect": {"automap_active": "true"}},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "automap_active": "true",
+        "automap.objective_overlay_enabled": "false",
+        "automap.objective_label_candidate_count": "0"
+    }},
     {"action": "log", "message": "=== Automap opened successfully ==="},
+
+    // Enable the numbered objective overlay and verify native rendering state.
+    {"action": "set_objective_overlay", "enabled": true, "post_delay_ms": 100},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "automap.objective_overlay_enabled": "true",
+        "automap.objective_label_candidate_count": {"gt": 0},
+        "automap.objective_label_projected_count": {"gt": 0}
+    }},
+
+    {"action": "set_objective_overlay", "enabled": false, "post_delay_ms": 100},
+    {"action": "wait_ms", "ms": 100},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "automap.objective_overlay_enabled": "false",
+        "automap.objective_label_candidate_count": "0",
+        "automap.objective_label_projected_count": "0"
+    }},
 
     // Close automap (ESC)
     {"action": "key", "key": "escape", "post_delay_ms": 100},

@@ -569,6 +569,15 @@ static const char *levelmeta_key_name(int key_index)
 	}
 }
 
+static json serialize_route_position(const int pos[3])
+{
+	return {
+		{ "x", pos[0] / LEVEL_METADATA_FIX_SCALE },
+		{ "y", pos[1] / LEVEL_METADATA_FIX_SCALE },
+		{ "z", pos[2] / LEVEL_METADATA_FIX_SCALE }
+	};
+}
+
 static json serialize_route_steps(const level_metadata_state *metadata)
 {
 	json steps = json::array();
@@ -595,6 +604,8 @@ static json serialize_route_steps(const level_metadata_state *metadata)
 			item["side"] = step.side;
 		if (step.wall_num >= 0)
 			item["wall"] = step.wall_num;
+		if (step.label_pos_valid)
+			item["label_pos"] = serialize_route_position(step.label_pos);
 		if (step.distance_from_previous > 0.0)
 			item["distance"] = step.distance_from_previous;
 		if (step.kind == LEVEL_METADATA_ROUTE_KEY && step.key_index >= 0)
@@ -643,7 +654,7 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 static json serialize_current_level_row(int level_num, const char *level_file)
 {
 	const secret_area_state *secret_state = secret_area_get_state();
-	const level_metadata_state *metadata = level_metadata_get_state();
+	const level_metadata_state *metadata = level_metadata_get_canonical_state();
 	const std::string display_level_name = read_level_display_name(level_file);
 	int robots = 0;
 	int hostages = 0;

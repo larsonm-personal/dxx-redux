@@ -259,6 +259,11 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 12,
+            "label_pos": {
+              "x": 100.0,
+              "y": 0.0,
+              "z": 1660.0
+            },
             "distance": 315.1554445662277
           },
           {
@@ -269,6 +274,11 @@
             "seg": 101,
             "side": 4,
             "wall": 11,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 10.0
+            },
             "distance": 325.1554445662277,
             "trigger": 1,
             "trigger_type_id": 1,
@@ -289,6 +299,11 @@
             "seg": 79,
             "side": 4,
             "wall": 8,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 510.0
+            },
             "distance": 520.0,
             "trigger": 2,
             "trigger_type_id": 1,
@@ -309,6 +324,11 @@
             "seg": 44,
             "side": 4,
             "wall": 6,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 1010.0
+            },
             "distance": 520.0,
             "trigger": 3,
             "trigger_type_id": 1,
@@ -329,6 +349,11 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
+            "label_pos": {
+              "x": -10.0,
+              "y": 0.0,
+              "z": 1620.0
+            },
             "distance": 640.0,
             "trigger": 0,
             "trigger_type_id": 8,

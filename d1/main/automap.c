@@ -107,6 +107,8 @@ typedef struct automap
 	int			secret_edges_culled_far_dist_last_frame;
 	int			secret_label_candidate_count;
 	int			secret_label_projected_count;
+	int			objective_label_candidate_count;
+	int			objective_label_projected_count;
 	
 	// Edge list variables
 	int			num_edges;
@@ -155,6 +157,10 @@ typedef struct automap
 #define K_SECRET_REVEAL_FOUND_COLOR   BM_XRGB(31, 29, 24)
 #define K_SECRET_LABEL_UNFOUND_COLOR  BM_XRGB(31, 0, 0)
 #define K_SECRET_LABEL_FOUND_COLOR    BM_XRGB(0, 31, 0)
+#define K_OBJECTIVE_LABEL_COLOR       BM_XRGB(10, 63, 63)
+#define K_OBJECTIVE_LABEL_BLUE        BM_XRGB(5, 5, 63)
+#define K_OBJECTIVE_LABEL_GOLD        BM_XRGB(63, 63, 10)
+#define K_OBJECTIVE_LABEL_RED         BM_XRGB(63, 5, 5)
 #define K_HOSTAGE_COLOR         BM_XRGB(0, 31, 0 )
 #define K_FONT_COLOR_20         BM_XRGB(20, 20, 20 )
 #define K_GREEN_31              BM_XRGB(0, 31, 0)
@@ -195,6 +201,9 @@ int automap_get_view_info(automap_view_info *out) {
 	out->secret_edges_culled_far_dist_last_frame = am->secret_edges_culled_far_dist_last_frame;
 	out->secret_label_candidate_count = am->secret_label_candidate_count;
 	out->secret_label_projected_count = am->secret_label_projected_count;
+	out->objective_overlay_enabled = level_metadata_get_show_objectives();
+	out->objective_label_candidate_count = am->objective_label_candidate_count;
+	out->objective_label_projected_count = am->objective_label_projected_count;
 	for (i = 0; i <= am->highest_edge_index; i++) {
 		Edge_info *e = &am->edges[i];
 
@@ -248,6 +257,7 @@ ubyte Automap_visited[MAX_SEGMENTS];
 void adjust_segment_limit(automap *am, int SegmentLimit);
 void draw_all_edges(automap *am);
 void draw_secret_area_labels(void);
+void draw_objective_labels(void);
 int secret_area_should_draw_segment_edges(int segnum);
 int automap_segment_is_within_limit(int segnum, int SegmentLimit);
 void automap_build_edge_list(automap *am);
@@ -534,6 +544,7 @@ void draw_automap(automap *am)
 	g3_end_frame();
 
 	draw_secret_area_labels();
+	draw_objective_labels();
 
 	name_frame(am);
 
@@ -1292,6 +1303,57 @@ void draw_secret_area_labels(void)
 		if (draw_secret_area_label(label, found ? K_SECRET_LABEL_FOUND_COLOR : K_SECRET_LABEL_UNFOUND_COLOR, &point) &&
 		    g_active_automap)
 			g_active_automap->secret_label_projected_count++;
+	}
+}
+
+static int objective_label_color(const level_metadata_route_step *step)
+{
+	if (!step || step->kind != LEVEL_METADATA_ROUTE_KEY)
+		return K_OBJECTIVE_LABEL_COLOR;
+	switch (step->key_index) {
+		case 0:
+			return K_OBJECTIVE_LABEL_BLUE;
+		case 1:
+			return K_OBJECTIVE_LABEL_RED;
+		case 2:
+			return K_OBJECTIVE_LABEL_GOLD;
+		default:
+			return K_OBJECTIVE_LABEL_COLOR;
+	}
+}
+
+void draw_objective_labels(void)
+{
+	const level_metadata_state *metadata = level_metadata_get_canonical_state();
+	int objective_number = 0;
+	int i;
+
+	if (g_active_automap) {
+		g_active_automap->objective_label_candidate_count = 0;
+		g_active_automap->objective_label_projected_count = 0;
+	}
+	if (!level_metadata_get_show_objectives() || !metadata)
+		return;
+	for (i = 0; i < metadata->route_step_count; ++i) {
+		const level_metadata_route_step *step = &metadata->route_steps[i];
+		char label[12];
+		vms_vector pos;
+		g3s_point point;
+
+		if (step->kind == LEVEL_METADATA_ROUTE_START)
+			continue;
+		objective_number++;
+		if (!step->label_pos_valid)
+			continue;
+		snprintf(label, sizeof(label), "%d", objective_number);
+		pos.x = step->label_pos[0];
+		pos.y = step->label_pos[1];
+		pos.z = step->label_pos[2];
+		g3_rotate_point(&point, &pos);
+		if (g_active_automap)
+			g_active_automap->objective_label_candidate_count++;
+		if (draw_secret_area_label(label, objective_label_color(step), &point) && g_active_automap)
+			g_active_automap->objective_label_projected_count++;
 	}
 }
 

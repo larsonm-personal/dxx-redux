@@ -8,8 +8,10 @@ extern "C" {
 #endif
 
 typedef struct route_planner_shadow_summary {
+	int compared_progress_state_count;
 	int compared_node_count;
 	int mismatch_count;
+	int first_mismatch_progress_state;
 	int first_mismatch_optimistic;
 	int first_mismatch_segment;
 	int first_legacy_reachable;

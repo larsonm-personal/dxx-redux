@@ -863,6 +863,15 @@ class LauncherScriptExecutor(
             if (step.seg >= 0) item.put("seg", step.seg)
             if (step.side >= 0) item.put("side", step.side)
             if (step.wall >= 0) item.put("wall", step.wall)
+            step.labelPosition?.let { pos ->
+                item.put(
+                    "label_pos",
+                    JSONObject()
+                        .put("x", pos.x)
+                        .put("y", pos.y)
+                        .put("z", pos.z),
+                )
+            }
             if (step.distance > 0.0) item.put("distance", step.distance)
             if (step.key.isNotBlank()) item.put("key", step.key)
             if (step.trigger >= 0) item.put("trigger", step.trigger)

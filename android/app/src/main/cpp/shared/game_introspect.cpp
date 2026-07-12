@@ -618,8 +618,10 @@ static json serialize_level_metadata_route()
 	}
 	if (level_metadata_get_route_planner_shadow(&planner_shadow)) {
 		result["planner_shadow"] = {
+			{ "compared_progress_state_count", planner_shadow.compared_progress_state_count },
 			{ "compared_node_count", planner_shadow.compared_node_count },
 			{ "mismatch_count", planner_shadow.mismatch_count },
+			{ "first_mismatch_progress_state", planner_shadow.first_mismatch_progress_state },
 			{ "first_mismatch_optimistic", planner_shadow.first_mismatch_optimistic },
 			{ "first_mismatch_segment", planner_shadow.first_mismatch_segment },
 			{ "first_legacy_reachable", planner_shadow.first_legacy_reachable },
@@ -664,6 +666,7 @@ static json serialize_level_metadata_route()
 		item["key"] = introspect_route_key_name(step->key_index);
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
+		item["label_pos"] = step->label_pos_valid ? json::array({ step->label_pos[0], step->label_pos[1], step->label_pos[2] }) : json(nullptr);
 		item["opened_link_count"] = step->opened_link_count;
 		steps.push_back(std::move(item));
 	}
@@ -1253,7 +1256,10 @@ extern "C" char *game_introspect_get_state(void)
 				{ "secret_edges_drawn_last_frame", avi.secret_edges_drawn_last_frame },
 				{ "secret_edges_culled_far_dist_last_frame", avi.secret_edges_culled_far_dist_last_frame },
 				{ "secret_label_candidate_count", avi.secret_label_candidate_count },
-				{ "secret_label_projected_count", avi.secret_label_projected_count }
+				{ "secret_label_projected_count", avi.secret_label_projected_count },
+				{ "objective_overlay_enabled", (bool) avi.objective_overlay_enabled },
+				{ "objective_label_candidate_count", avi.objective_label_candidate_count },
+				{ "objective_label_projected_count", avi.objective_label_projected_count }
 			};
 		} else {
 			j["automap"] = nullptr;

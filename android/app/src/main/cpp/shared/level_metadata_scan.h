@@ -77,6 +77,8 @@ typedef struct level_metadata_route_step {
 	int activation_pos[3];
 	int aim_pos_valid;
 	int aim_pos[3];
+	int label_pos_valid;
+	int label_pos[3];
 	double distance_from_previous;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 	char trigger_type_name[LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN];
@@ -182,6 +184,18 @@ typedef struct level_metadata_route_search_node {
 	int parent_side;
 } level_metadata_route_search_node;
 
+typedef struct level_metadata_route_progress_shadow {
+	int current_seg;
+	int current_pos[3];
+	int key_mask;
+	int key_in_progress;
+	int avoided_key_mask;
+	int control_center_destroyed;
+	unsigned char fired_triggers[LEVEL_METADATA_MAX_TRIGGERS];
+	unsigned char avoided_triggers[LEVEL_METADATA_MAX_TRIGGERS];
+	unsigned char opened_hidden_walls[LEVEL_METADATA_MAX_WALLS];
+} level_metadata_route_progress_shadow;
+
 typedef struct level_metadata_route_target_shadow {
 	int seg;
 	int pos[3];
@@ -238,6 +252,12 @@ int level_metadata_scan_unexplored_route(
 int level_metadata_scan_route_edge_cost(const level_metadata_scan_view *view, int seg, int side);
 int level_metadata_scan_route_search_shadow(
     const level_metadata_scan_view *view,
+    int optimistic,
+    level_metadata_route_search_node *nodes,
+    int capacity);
+int level_metadata_scan_route_search_state_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
     int optimistic,
     level_metadata_route_search_node *nodes,
     int capacity);

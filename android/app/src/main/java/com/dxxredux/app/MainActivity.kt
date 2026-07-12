@@ -363,6 +363,10 @@ class MainActivity :
 
     external fun nativeToggleSecretAreaReveal()
 
+    external fun nativeObjectiveOverlayActive(): Boolean
+
+    external fun nativeToggleObjectiveOverlay()
+
     external fun nativeGetAutomapMarkerState(): IntArray
 
     external fun nativeGetGameWidth(): Int
@@ -995,6 +999,14 @@ class MainActivity :
                     }
                 }
 
+                TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES -> {
+                    try {
+                        nativeObjectiveOverlayActive()
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
                     videoInfoOverlay?.visibility == View.VISIBLE
                 }
@@ -1151,6 +1163,13 @@ class MainActivity :
                 TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL -> {
                     try {
                         nativeToggleSecretAreaReveal()
+                    } catch (_: Exception) {
+                    }
+                }
+
+                TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES -> {
+                    try {
+                        nativeToggleObjectiveOverlay()
                     } catch (_: Exception) {
                     }
                 }

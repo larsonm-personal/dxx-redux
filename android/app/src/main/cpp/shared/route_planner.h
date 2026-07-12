@@ -66,6 +66,25 @@ route_search_result search_routes(
     const route_query &query,
     bool optimistic);
 
+route_search_result search_routes(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    bool optimistic);
+
+route_progress_state initial_route_progress_state(
+    const route_snapshot &snapshot,
+    const route_query &query);
+
+bool route_progress_acquire_key(
+    route_progress_state &progress,
+    route_key_requirement key);
+bool route_progress_fire_trigger(route_progress_state &progress, int trigger);
+bool route_progress_open_hidden_wall(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    int wall);
+
 route_path_result build_route_path(
     const route_search_result &search,
     int target_segment);

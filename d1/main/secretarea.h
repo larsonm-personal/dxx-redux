@@ -19,6 +19,7 @@ int level_metadata_get_route_start_objnum(void);
 int level_metadata_get_route_start_seg(void);
 const secret_area_state *secret_area_get_state(void);
 const level_metadata_state *level_metadata_get_state(void);
+const level_metadata_state *level_metadata_get_canonical_state(void);
 int level_metadata_get_canonical_route_snapshot(route_snapshot_summary *summary);
 int level_metadata_get_live_route_snapshot(route_snapshot_summary *summary);
 int level_metadata_get_route_edge_shadow(route_edge_shadow_summary *summary);
@@ -28,5 +29,7 @@ void secret_area_restore_saved_found(int saved_total, const unsigned char *found
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);
 int secret_area_get_reveal_unfound(void);
 void secret_area_set_reveal_unfound(int reveal);
+int level_metadata_get_show_objectives(void);
+void level_metadata_set_show_objectives(int show);
 
 #endif

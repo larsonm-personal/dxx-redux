@@ -643,6 +643,7 @@ class TouchOverlayView
             const val ADMIN_CHEATS = 24
             const val ADMIN_CYCLE_LEFT_VIEW = 25
             const val ADMIN_CYCLE_RIGHT_VIEW = 26
+            const val ADMIN_AUTOMAP_OBJECTIVES = 27
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -3915,6 +3916,14 @@ class TouchOverlayView
 
                 ADMIN_AUTOMAP_SECRET_REVEAL -> {
                     if (secretAreaRevealProvider?.invoke() == true) "Hide Secrets" else "Reveal Secrets"
+                }
+
+                ADMIN_AUTOMAP_OBJECTIVES -> {
+                    if (adminTrayToggleStateProvider?.invoke(ADMIN_AUTOMAP_OBJECTIVES) == true) {
+                        "Hide Objectives"
+                    } else {
+                        "Show Objectives"
+                    }
                 }
 
                 ADMIN_HEADLIGHT -> {

@@ -343,9 +343,10 @@ enum step_type {
 	STEP_ASSERT_BUTTON,              /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_CONTROLLER_MATCH,    /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_MISSION_LIST_HAS_NON_BASE,
-	STEP_SELECT_MISSION,   /* select mission if mission picker is present */
-	STEP_SET_DEBUG,        /* set a debug flag (e.g. tex_overlay) */
-	STEP_SET_SECRET_REVEAL /* automation-only: set automap secret reveal */
+	STEP_SELECT_MISSION,       /* select mission if mission picker is present */
+	STEP_SET_DEBUG,            /* set a debug flag (e.g. tex_overlay) */
+	STEP_SET_SECRET_REVEAL,    /* automation-only: set automap secret reveal */
+	STEP_SET_OBJECTIVE_OVERLAY /* automation-only: set objective labels */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -544,6 +545,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SELECT_MISSION: return "select_mission";
 		case STEP_SET_DEBUG: return "set_debug";
 		case STEP_SET_SECRET_REVEAL: return "set_secret_reveal";
+		case STEP_SET_OBJECTIVE_OVERLAY: return "set_objective_overlay";
 		default: return "unknown";
 	}
 }
@@ -1865,6 +1867,7 @@ static int parse_script(const char *json_text)
 			else if (action == "assert_mission_list_has_non_base") s.type = STEP_ASSERT_MISSION_LIST_HAS_NON_BASE;
 			else if (action == "set_debug") s.type = STEP_SET_DEBUG;
 			else if (action == "set_secret_reveal") s.type = STEP_SET_SECRET_REVEAL;
+			else if (action == "set_objective_overlay") s.type = STEP_SET_OBJECTIVE_OVERLAY;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
 				continue;
@@ -3265,6 +3268,12 @@ extern "C" void game_automate_tick(void)
 		case STEP_SET_SECRET_REVEAL:
 			secret_area_set_reveal_unfound(s.enabled ? 1 : 0);
 			LOGI("set_secret_reveal: enabled=%s", s.enabled ? "true" : "false");
+			advance_step();
+			break;
+
+		case STEP_SET_OBJECTIVE_OVERLAY:
+			level_metadata_set_show_objectives(s.enabled ? 1 : 0);
+			LOGI("set_objective_overlay: enabled=%s", s.enabled ? "true" : "false");
 			advance_step();
 			break;
 	}
