@@ -191,11 +191,18 @@ static int input_demo_change_difficulty_direct_command(void *context,
 	int difficulty, int validate_only, char *error, size_t error_size)
 {
 	(void)context;
-	(void)error;
-	(void)error_size;
+	if (difficulty < 0 || difficulty > 4) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "difficulty is out of range");
+		return 0;
+	}
 	if (validate_only)
 		return 1;
-	return difficulty_change_to(difficulty, DIFFICULTY_CHANGE_FROM_REPLAY);
+	if (difficulty_change_to(difficulty, DIFFICULTY_CHANGE_FROM_REPLAY))
+		return 1;
+	if (error && error_size)
+		snprintf(error, error_size, "%s", "change difficulty replay event failed");
+	return 0;
 }
 
 static int input_demo_apply_d2_direct_command(void *context,
@@ -2620,11 +2627,6 @@ int input_demo_replay_spreadfire_probe_active(void)
 		Players[Player_num].primary_weapon == SPREADFIRE_INDEX;
 }
 
-static int input_demo_replay_weapon_lifetime_probe_active(void)
-{
-	return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
-}
-
 int input_demo_replay_weapon_focus_active(void)
 {
 	return input_demo_debug_replay_probe_active();
@@ -2656,12 +2658,6 @@ static const char *input_demo_weapon_trace_mode_name(void)
 	if (input_demo_recorder_is_active())
 		return "record";
 	return "none";
-}
-
-static int input_demo_replay_weapon_creation_probe_active(void)
-{
-	return input_demo_replay_spreadfire_probe_active() ||
-		input_demo_replay_weapon_lifetime_probe_active();
 }
 
 int input_demo_replay_is_player_owned_weapon(object *obj)
@@ -5810,7 +5806,7 @@ void input_demo_log_ai_visibility_fvi_probe(object *objp,
 	input_demo_hit_object_details(hit_object, &hit_obj_type, &hit_obj_id,
 		&hit_obj_sig, &hit_obj_seg);
 	snprintf(probe, sizeof(probe),
-		"step=%s result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)",
+		"step=%s result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)",
 		step_label ? step_label : "unset",
 		visibility_result,
 		hit_type,
@@ -5841,7 +5837,7 @@ void input_demo_log_ai_visibility_fvi_probe(object *objp,
 		return;
 
 	con_printf(CON_NORMAL,
-		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
+		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
 		input_demo_debug_activity_mode_name(),
 		input_demo_trace_frame_index(),
 		(long long)GameTime64,

@@ -539,6 +539,7 @@ int HandleEndlevelKey(int key)
 }
 
 int is_key_rotate_event(d_event *event); 
+extern void DropFlag(void);
 int HandleDeathInput(d_event *event)
 {
 	int was_aborted = Death_sequence_aborted;
@@ -2011,14 +2012,12 @@ int ReadControlsReplayFrame(void)
 {
 	Player_fired_laser_this_frame = -1;
 	if (Player_is_dead) {
-		if (!input_demo_apply_replay_direct_commands(
-		        INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
+		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
 			return 0;
 	}
 
 	if (!Endlevel_sequence && !Player_is_dead) {
-		if (!input_demo_apply_replay_direct_commands(
-		        INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
+		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
 			return 0;
 		check_rear_view();
 

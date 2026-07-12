@@ -9,7 +9,7 @@ Move toward one engine-neutral C++ route planner, but do it as a staged replacem
 
 The core invariant will be:
 
-> Given the same topology snapshot, dynamic state, endpoint policy, and actor profile, every consumer receives the same semantic steps, segment chain, activation pose, required action, completion predicate, and partial-route frontier.
+> Given the same topology snapshot, dynamic state, endpoint policy, and actor profile, every consumer receives the same semantic steps, activation pose, player action, completion predicate, and partial-route frontier. The segment chain remains planner evidence and diagnostics; live Guide-Bot movement consumes only the selected goal segment through the unmodified classic pathfinder.
 
 The Kotlin layer is not currently a second pathfinder. It deserializes and displays native metadata results. The routing split is inside native code: the metadata analyzer plans in `level_metadata_scan.c`, `escort.c` reinterprets those steps, and `aipath.c` independently constructs the physical path.
 
@@ -20,7 +20,7 @@ Bring live Guide-Bot navigation and metadata route analysis to behavioral parity
 Parity has two separate meanings and both must pass:
 
 1. **Planner parity:** the same state produces the same progression, dependencies, target, and fallback.
-2. **Executor parity:** Guide-Bot can physically reach the selected pose, perform or wait for the required action, detect completion, and continue.
+2. **Guidance parity:** Guide-Bot can identify and classically navigate toward the selected goal segment, tell the player where and what to do, detect the resulting world-state completion, and continue without changing classic movement or flare behavior.
 
 ## Planning Checklist
 
@@ -40,7 +40,7 @@ Parity has two separate meanings and both must pass:
   - Confirmed the existing unexplored-goal emulator fixture is stale at command selection: its hardcoded wheel action IDs select `end_of_level`, so it does not currently exercise unexplored routing.
   - Added semantic radial-menu automation backed by the Kotlin overlay's visible wheel labels and migrated the unexplored fixture away from its numeric goal action ID.
   - The repaired emulator fixture verifies that `Guide` -> `Unexplored` is visible, dispatches through the production radial binding path, selects unexplored route mode, and retains that mode after the former refresh interval.
-  - Autonomous action/execution fixtures remain pending.
+  - Player-assisted guidance and completion fixtures remain pending.
 - [ ] Phase 1 in progress: add the engine-neutral topology/state snapshot in shadow-only form.
   - Added deterministic C++ topology and mutable-state snapshots, hashes, validation, C ABI summary, unit tests, and canonical level-load capture for D1 and D2.
   - Expanded the shadow snapshot with normalized D1/D2 trigger kinds, trigger effect links, per-side opener source walls, mutable trigger flags/disabled state, and live progression-object identity, containment, position, boss, and companion state.
@@ -50,7 +50,7 @@ Parity has two separate meanings and both must pass:
   - Added engine-derived side centers and stable wall target points to shared topology; the C analyzer now consumes the same side-center callback with its vertex average retained as a headless fallback.
   - Added independent mutable-state fingerprints and live generations for start, progression, navigation, trigger, object, and automap domains, exposed for canonical/live introspection and future cache keys.
   - Preserved each semantic step's exact analyzer-selected activation position and distinct wall/object aim point through the shared route-step ABI and live introspection; off-center visible firing positions are no longer discarded.
-  - Navigator-radius occupancy validation, action-specific hit validation, and event-driven generation hooks remain pending.
+  - Player-radius occupancy validation for guidance poses, action-specific player hit validation, and event-driven generation hooks remain pending.
 - [x] Phase 2 complete: centralize rich edge evaluation after snapshot parity is established.
   - Added a shared C++ edge evaluator with rich blocker/action results and a legacy three-state projection.
   - Added canonical per-side shadow comparison against the active C evaluator, mismatch introspection, and progression/navigator capability unit coverage.
@@ -95,33 +95,35 @@ Parity has two separate meanings and both must pass:
   - Phase 4 is next: separate canonical and live shared plans, then make Guide-Bot consume the first pending shared waypoint without rebuilding route meaning in `escort.c`.
   - Live behavior remains on the C planner until the Phase 4 consumer bridge is green across the same gates.
 - [x] Phase 4 complete: separate canonical and live plans and bridge Guide-Bot to shared C++ output.
-  - Added a C ABI projection for end-of-level, unexplored, and explicit-segment shared plans, including the first pending waypoint and its preserved path summary.
+  - Added a C ABI projection for end-of-level, unexplored, and explicit-segment shared plans, including the first pending waypoint and its preserved diagnostic-only path summary.
   - Canonical metadata and live Guide-Bot route state now have independent storage and getters. Canonical serializers and overlays no longer observe route-only Guide-Bot replans.
   - Route-only live scans now use the shared C++ planner. Guide-Bot selects its first pending shared waypoint directly; the legacy all-step selector remains only as a temporary parity diagnostic and stale-plan detector.
   - Fixed the first live selector mismatch exposed by the new gate: key steps were omitted from the common targetability helper because the legacy selector handled them in a separate branch.
   - Nonowner co-op peers return before live route planning. Introspection reports shared planner provenance, first-waypoint path data, current selector parity, and the exact pair from any mismatch.
   - D1/D2 projection tests cover all three endpoint policies. Windows D1/D2 builds, both strict base-campaign scans, corpus status/fingerprint tests, all Android ABIs, and the live Counterstrike unexplored-wheel fixture pass with zero selector or planner-shadow mismatches.
-  - Phase 5 is next: consume the shared segment chain and exact terminal pose instead of rerunning the legacy randomized physical path search.
+  - Phase 5 is next: restore and enforce the classic movement boundary while retaining the shared planner only for semantic objective and goal-segment selection.
 
 ## Non-Goals
 
 - No route behavior changes during this planning pass.
 - No mission-specific exceptions.
 - No immediate conversion of upstream D1 or D2 AI source files to C++.
-- No replacement of every classic Guide-Bot goal. Initial unification covers end-of-level and unexplored route goals.
-- No deletion of legacy path behavior for classic Guide-Bot and robot goals until their callers are intentionally migrated.
+- No replacement of classic Guide-Bot path construction, path polishing, path refresh timing, steering, collision behavior, AI modes, or flare behavior for any goal.
+- No route-specific Guide-Bot aiming, firing, directed trigger crossing, exact-pose movement, or world-state action execution.
 - No synchronization of full route plans over multiplayer. Route intent remains synchronized and the active owner computes the transient plan.
 
 ## Constraints
 
 - Metadata generation must remain headless and independent of a rendered game loop.
-- Live execution must respond to doors, triggers, keys, destroyed objects, automap exploration, save restore, and cooperative ownership changes.
+- Live guidance and passive completion must respond to doors, triggers, keys, destroyed objects, automap exploration, save restore, and cooperative ownership changes.
 - The route planner must not read D1 or D2 globals directly.
 - D1 and D2 must use the same planner through a C ABI and game-specific adapters.
 - Input-demo recording and replay must remain deterministic after route behavior changes and new fixtures are recorded.
 - The checked-in mission JSON corpus is an acceptance oracle, not proof of live executability.
 - Planner ranking must not depend on platform floating-point tie behavior, unordered iteration, or simulation RNG.
 - Guide-Bot and player capabilities are not identical. Legitimate differences must be explicit actor-profile data, not separate algorithms.
+- Shared planning must consume no simulation RNG. Given the same Guide-Bot state, goal segment, and RNG state, live path points, RNG calls, and subsequent movement must match the classic implementation.
+- Exact activation and aim positions are player-guidance data for messages, introspection, and automap markers. They must never be fed into Guide-Bot movement, orientation, or firing.
 
 ## Current Pipeline Map
 
@@ -152,6 +154,8 @@ Parity has two separate meanings and both must pass:
 4. Generic companion behavior fires a flare straight ahead when an ordinary unlocked, non-hidden door is nearby.
 5. No route-specific action executor consumes `objective_wall`, an aim point, a fly-through side, or a completion predicate.
 
+Items 1 and 3 cross the newly fixed architecture boundary and must be rolled back in Phase 5. Item 2 is intentional classic behavior and must remain. Item 4 is the only normal Guide-Bot world-state action and must remain unmodified. Item 5 is now a requirement rather than a missing feature: exact positions and actions guide the player, while completion predicates observe what the player changes.
+
 ## Parity Matrix
 
 | Decision | Metadata today | Guide-Bot today | Unified target |
@@ -162,34 +166,36 @@ Parity has two separate meanings and both must pass:
 | Actor restrictions | Usually player-like | Companion buddy-proof restriction | Explicit progression and navigator profiles |
 | Edge semantics | Rich internal blocker, coarse public cost | Coarse public cost only | Shared rich `EdgeDecision` |
 | Path ranking | Weighted Dijkstra | BFS by segment count | Shared deterministic ranking |
-| Segment chain | Computed then discarded | Recomputed randomly | Preserved in plan and consumed live |
-| Firing position | Exact sampled position computed then discarded | Visible segment recomputed; position discarded | Exact occupiable pose and aim target |
-| Trigger traversal | Source side known internally | Routes to source segment only | Required directed crossing in action spec |
-| Hidden door | Semantic step emitted | Routes near wall; generic flare may miss it | Explicit aim, fire, verify state |
+| Segment chain | Computed then discarded | Recomputed by classic randomized pathfinder | Preserved only as planner evidence and diagnostics; never consumed by movement |
+| Firing position | Exact sampled position computed then discarded | Visible segment recomputed; position discarded | Exact player pose and aim target exposed as guidance; Guide-Bot receives only the goal segment |
+| Trigger traversal | Source side known internally | Routes to source segment only | Tell the player which side to cross; observe completion without directing Guide-Bot traversal |
+| Hidden door | Semantic step emitted | Routes near wall; generic classic flare behavior remains incidental | Tell the player where to stand and what to open; never aim or fire Guide-Bot |
 | Blastable wall | Treated immediately passable | Treated passable although buddy flare cannot damage it | Explicit player-required obstruction action |
 | Step completion | Analyzer simulation | Reimplemented from live globals | Shared completion evaluator |
 | Nearest fallback | Partial semantic result | Separate optimistic BFS heuristic | Frontier from the same failed plan proof |
 | State invalidation | Fresh headless scan | Mostly keys, commands, restore, handoff, target visited | Generation-keyed snapshots and coalesced invalidation |
 | Multiplayer | Not applicable | Owner-local plan, mode synchronized | Preserve owner-local planning |
-| Determinism | No RNG, but double ties | Physical BFS consumes simulation RNG | Integer ranking and RNG-free route execution |
+| Determinism | No RNG, but double ties | Classic physical BFS consumes simulation RNG | RNG-free shared planning plus byte-for-byte classic movement RNG behavior for the same goal segment |
 
 ## Audit Findings
 
-### P0: Semantic Steps Are Not Executable Contracts
+### P0: Semantic Steps Need Complete Player-Guidance Contracts
 
-`level_metadata_route_step` stores a segment, side, wall, trigger, and label, but not the path, exact terminal pose, aim point, directed transition, action owner, or completion predicate. The analyzer can prove that a switch is visible from a sampled point and then discard that point. Guide-Bot later navigates to the segment center and may have no line of fire.
+`level_metadata_route_step` stores a segment, side, wall, trigger, and label, but historically omitted the exact player activation pose, aim point, directed transition, action owner, and completion predicate. The analyzer can prove that a switch is visible from a sampled point and then discard that point. Guide-Bot may still navigate toward the segment through classic movement, while the exact pose and target must be retained so the player can be told where and what to do.
 
 This is the clearest explanation for a route that is correct in metadata but stalls in-game.
 
-### P0: Physical Path Selection Still Diverges
+### P0: Physical Path Selection Must Remain Intentionally Independent
 
 Metadata uses weighted Dijkstra over segment-center distances and progress cost. `aipath.c` uses randomized BFS, a maximum depth, legacy safety polishing, and partial-path fallback. Sharing edge classification does not make these searches equivalent. The physical endpoint can differ from the planner's endpoint even when both use the same passable-edge rule.
 
-### P0: Route Actions Are Mostly Unimplemented
+This divergence is not something to eliminate. Metadata chooses the semantic objective and a goal segment for the player-guidance task. The classic Guide-Bot pathfinder independently decides how the companion moves toward that segment. The metadata edge override, route-specific path wrapper, exact-pose materialization, and shared-chain consumption are therefore architecture violations.
 
-The companion's generic flare code does not target the selected route wall. `openable_doors_in_segment()` explicitly excludes hidden doors and recognizes only ordinary unlocked doors. Shoot-switch and hidden-door objectives therefore depend on incidental orientation.
+### P0: Route Actions Belong to the Player
 
-Fly-through and pass-through trigger steps have a second gap: the source side is known, but Guide-Bot is sent only to the source segment. Standing in that segment does not guarantee crossing the required side and firing the trigger.
+The companion's generic flare code does not target the selected route wall. `openable_doors_in_segment()` explicitly excludes hidden doors and recognizes only ordinary unlocked doors. This is correct classic behavior and must not be expanded for route goals.
+
+Shoot-switch, hidden-door, fly-through, and pass-through steps must identify a player action. Guide-Bot may travel toward the selected source or firing segment using classic movement, then tell the player the exact activation position, aim point, or side. It must not orient, fire, cross a directed side, or otherwise execute the action on the player's behalf.
 
 ### P0: Blastable Walls Are Misclassified for Live Navigation
 
@@ -213,7 +219,7 @@ The planner must emit the exact required effects for a step, and the shared eval
 
 Metadata and `escort.c` both sample the center, face-biased points, vertex-biased points, and edge-biased points. The live version can cast up to 115 rays per segment during a full search. The copies can drift and both currently use zero-radius visibility even though the companion has physical size.
 
-The shared planner should return an occupiable pose validated for the navigator radius and an action-specific line trace that confirms the intended wall or object can be hit.
+The shared planner should return a player-occupiable pose and an action-specific line trace that confirms the intended wall or object can be hit. This validation must not be reused as Guide-Bot movement or aiming input.
 
 ### P1: Nearest-Progress Fallback Is a Different Planner
 
@@ -233,18 +239,18 @@ A live route-only rescan copies its route fields into global `Level_metadata_sta
 
 ### P1: Player Progression and Guide-Bot Movement Need Separate Profiles
 
-Metadata describes how the player can complete a level. Live routing asks where the Guide-Bot can move while escorting that progression. Buddy-proof walls and navigator radius are real differences, while keys belong to the owning player and some actions can be performed by either the owner or companion.
+Metadata describes how the player can complete a level. Live routing asks which goal segment can usefully guide that progression while classic code independently moves the Guide-Bot. Buddy-proof walls and navigator radius can inform high-level endpoint suitability, while every route progression action belongs to the owning player. Classic incidental Guide-Bot door and flare interactions are not route capabilities.
 
 A single "actor" flag is insufficient. A query needs both:
 
 - A **progression profile** for owner keys and actions that make the level advance.
-- A **navigator profile** for Guide-Bot traversal, physical radius, and actions it can perform itself.
+- A **navigator profile** used only to judge whether a high-level Guide-Bot goal segment is sensible under classic traversal constraints. It must not replace the classic pathfinder or grant route actions.
 
-Semantic steps should remain the same. The live plan adds executable Guide-Bot waypoints or a well-defined near-side frontier when the companion cannot occupy the player's destination.
+Semantic steps should remain the same. The live plan selects a goal segment or a well-defined near-side frontier, then classic movement independently attempts that segment. All progression actions remain assigned to the player.
 
 ### P1: Existing Live Tests Stop Before Execution
 
-Current KCXF2 and Obsidian scripts validate step selection and then directly grant keys or fire triggers through debug controls. The hidden-door script checks that a path remains pending, not that Guide-Bot opens the door. These are useful planner tests but not executor tests.
+Current KCXF2 and Obsidian scripts validate step selection and then directly grant keys or fire triggers through debug controls. The hidden-door script checks that a path remains pending. These are useful planner tests but need player-assisted guidance and passive-completion assertions.
 
 ### P2: Planner State Is Global and Non-Reentrant
 
@@ -360,7 +366,7 @@ struct RoutePlan {
 };
 ```
 
-The current JSON schema remains stable initially by projecting `RoutePlan` into `level_metadata_route_step`. New executable fields stay internal until their format is mature. Debug introspection may expose them immediately.
+The current JSON schema remains stable initially by projecting `RoutePlan` into `level_metadata_route_step`. New player-guidance and completion fields stay internal until their format is mature. Debug introspection may expose them immediately.
 
 ### 6. Shared Step Evaluation
 
@@ -373,52 +379,48 @@ The planner library exposes `evaluate_waypoint(waypoint, state)`. It returns:
 
 `escort.c` should not inspect trigger links, key objects, boss lists, or wall state to reinterpret planner intent after this migration.
 
-### 7. Thin Live Executor
+### 7. Thin Live Guidance Bridge
 
-`escort.c` remains responsible for command selection, messages, ownership, save intent, and the Guide-Bot state machine. A new route executor is responsible for:
+`escort.c` remains responsible for command selection, messages, ownership, save intent, and the classic Guide-Bot state machine. The route bridge is responsible only for:
 
-1. Follow the shared segment chain in bounded chunks.
-2. Reach the exact validated terminal pose.
-3. Orient toward the exact aim point or crossing side.
-4. Perform a Guide-Bot-capable action once, or wait for the owning player.
-5. Verify the shared completion predicate.
-6. Replan on timeout, invalidation, displacement, or path-materialization failure.
+1. Select the first pending semantic waypoint.
+2. Hand its goal segment to the ordinary classic `create_path_to_segment()` lifecycle.
+3. Expose the exact activation position, aim target, crossing side, and required player action through messages, introspection, and automap guidance.
+4. Observe the shared completion predicate after the player changes world state.
+5. Replan on completion, invalidation, owner change, or relevant world-state change without creating a physical path itself.
 
-The action policy should initially be:
+The action policy is:
 
 | Action | Responsibility |
 | --- | --- |
 | Pick up key | Owning player |
-| Open keyed/ordinary door | Either, using owner keys |
-| Shoot switch | Guide-Bot may fire an aimed flare |
-| Open hidden door | Guide-Bot may fire an aimed flare |
-| Cross companion-compatible trigger | Guide-Bot may cross the directed side |
+| Open keyed/ordinary door | Owning player; Guide-Bot's unchanged generic forward flare may incidentally open an ordinary door |
+| Shoot switch | Owning player |
+| Open hidden door | Owning player |
+| Cross trigger | Owning player |
 | Destroy blastable wall | Owning player |
 | Destroy reactor or boss | Owning player |
 | Enter exit | Owning player |
 
-This preserves gameplay capabilities instead of making the planner's assumptions alter game rules.
+Guide-Bot never performs a route action, aims at a route target, or fires a route-specific flare. Its existing generic forward-flare behavior remains byte-for-byte classic and may incidentally affect the world exactly as before.
 
-### 8. Physical Path Materializer
+### 8. Classic Movement Boundary
 
-Add a Guide-Bot route-path entry point that accepts the planner's segment chain and final pose. It writes compatible `Point_segs` and applies existing safety geometry checks without rerunning a graph search.
+Do not add a route-path materializer. The shared segment chain and exact pose remain diagnostic and player-guidance data. Live movement receives only a goal segment and uses the classic pathfinder.
 
-The materializer must:
+The boundary requires:
 
-- Validate each directed segment transition for the companion profile.
-- Respect global path storage and emit bounded path chunks.
-- Use the planner's exact terminal pose for the final point.
-- Return a structured failure containing the first invalid transition.
-- Never silently substitute an unrelated partial path.
-- Avoid simulation RNG for route goals.
-
-Classic Guide-Bot goals may continue to use legacy randomized path creation during the initial migration.
+- Restore the original `aipath.c` doorway predicate and remove `Metadata_route_path_depth` plus `create_path_to_segment_metadata_route()`.
+- Route goals call ordinary `create_path_to_segment()` exactly once at the same classic scheduling point as any other Guide-Bot goal.
+- Preserve classic random side ordering, simulation RNG consumption, path polishing, five-second refresh, return-to-player interruptions, AI modes, steering, and forward-flare behavior.
+- Remove route-specific exact-pose injection, path chunking, path lifecycle suppression, immediate command-time path creation, and duplicate path polishing.
+- Given identical Guide-Bot state, goal segment, and RNG state, route and non-route callers produce identical `Point_segs`, RNG deltas, and subsequent movement.
 
 ### 9. Partial Route and "Closest Possible"
 
 Every search retains the best reachable frontier on the selected dependency proof. The frontier includes the reachable segment, pose, unresolved side, required action, and reason progress cannot continue.
 
-When a complete physical path cannot be materialized, Guide-Bot follows this frontier and reports the next obstruction. This replaces the independent nearest-point BFS and gives end-of-level and unexplored goals identical fallback behavior.
+The planner selects a reachable frontier as a high-level fallback before requesting movement. Guide-Bot then makes one ordinary classic path request to that frontier segment and reports the next obstruction. The route bridge must not run a second fallback path search or use metadata edge semantics inside `aipath.c`.
 
 ### 10. State Generations and Cache Policy
 
@@ -430,22 +432,22 @@ Build cache keys from the topology hash, relevant dynamic generations, endpoint,
 - Object destruction or relocation invalidates only affected objective data.
 - Automap changes are coalesced and invalidate unexplored endpoint selection.
 - Owner handoff invalidates the navigator start, key owner, and owner-local automap state.
-- Ordinary movement advances through the existing segment chain and does not force full replanning.
+- Ordinary movement advances through classic `Point_segs` and does not force full semantic replanning.
 
 ### 11. Multiplayer Policy
 
-Only the peer that locally owns Guide-Bot plans and executes its route. Other peers render synchronized robot state and retain route intent for UI/ownership transfer.
+Only the peer that locally owns Guide-Bot plans its guidance and runs the classic Guide-Bot simulation. Other peers render synchronized robot state and retain route intent for UI/ownership transfer.
 
 - Keep synchronizing target mode and owner generation.
 - Do not put segment chains or firing poses in ownership packets initially.
-- On adoption, abdication, disconnect transfer, or restore remap, clear transient execution and recompute from synchronized world state plus the new owner's local automap.
+- On adoption, abdication, disconnect transfer, or restore remap, clear transient guidance state and recompute from synchronized world state plus the new owner's local automap.
 - Ensure an aimed trigger action is emitted once by the owner and propagated through existing trigger/door network messages.
 - Expose plan hash and state generations in introspection so two-peer tests can distinguish intentional owner-local differences from stale ownership.
 
 ### 12. Determinism Policy
 
 - Planner searches use integer/fixed ranking and stable ID tie-breaks.
-- Route execution consumes no simulation RNG.
+- Shared planning, shadow comparison, guidance presentation, and completion observation consume no simulation RNG. Classic Guide-Bot movement continues consuming simulation RNG exactly as the original pathfinder does.
 - Shadow planning must have no gameplay side effects and no RNG calls.
 - Treat existing input demos as regression evidence, not compatibility artifacts that constrain a corrected engine.
 - After intentional route behavior changes, record new fixtures and require the shared deterministic route chain to match on record and replay.
@@ -453,7 +455,7 @@ Only the peer that locally owns Guide-Bot plans and executes its route. Other pe
 
 ## Migration Phases
 
-Each phase must be independently buildable, testable, and reversible. Until Phase 8, retain the old path behind a debug or compatibility switch. Shadow mode logs differences but does not alter gameplay.
+Each phase must be independently buildable, testable, and reversible. The classic physical path remains authoritative throughout every phase. Planner shadow mode logs differences but does not alter gameplay.
 
 ### Phase 0: Freeze Baselines and Characterize Gaps
 
@@ -462,8 +464,8 @@ Work:
 - Capture a normalized full-corpus baseline keyed by mission identity, archive hash, level number, route status, problem category, semantic step signature, endpoint, and travel distance.
 - Record the current corpus snapshot: 1,281 level records, 1,180 `ok`, 47 `partial`, and 47 `failed` as audited on 2026-07-11.
 - Keep Descent and Counterstrike strict through `test_base_mission_route_status.ps1`.
-- Add characterization fixtures for hidden-door aiming, shoot-switch aiming, directed trigger crossing, blastable walls, buddy-proof walls, disabled triggers, relevant-link completion, and partial frontier selection.
-- Split live tests into planner-selection tests and autonomous-execution tests.
+- Add characterization fixtures for hidden-door player guidance, shoot-switch player guidance, directed player trigger crossing, blastable walls, buddy-proof walls, disabled triggers, relevant-link completion, and partial frontier selection.
+- Split live tests into planner-selection, classic-movement-parity, and player-assisted-completion tests.
 - Resolve the stale `periodic_refresh` expectation before using that script as a gate.
 - Add plan/state hashes and exact path/action diagnostics to introspection.
 
@@ -527,34 +529,38 @@ Exit gate: planner-selection scripts pass without debug-only semantic difference
 
 Rollback: restore the old step scanner while retaining separate result storage.
 
-### Phase 5: Consume the Shared Segment Chain
+### Phase 5: Restore and Enforce the Classic Movement Boundary
 
 Work:
 
-- Add the segment-chain path materializer and exact final pose support.
-- Use it only for Android end-of-level and unexplored route goals.
-- Keep legacy path creation for classic goals that have not been migrated.
-- Replace silent partial path output with structured failure and the shared frontier.
-- Track path chunk, chain index, materialization failure, and frontier in introspection.
+- Remove `Metadata_route_path_depth`, `create_path_to_segment_metadata_route()`, and the metadata edge override from `aipath.c`; restore the original inline doorway/openable-door predicate.
+- Make every route goal call ordinary `create_path_to_segment()` through the same classic scheduling and polishing lifecycle as other Guide-Bot goals.
+- Remove `escort_route_goal_has_pending_path_for()` and restore the classic return-to-player interruption behavior.
+- Remove `escort_start_default_goal_now()` path creation. Commands set route intent and let the normal Guide-Bot frame create the path; eliminate the current duplicate polish.
+- Remove live visibility/reachability guidance searches that replace the shared waypoint segment. Use the shared first waypoint's segment directly and retain its exact activation and aim positions only as player-guidance data.
+- Move "closest possible" entirely into high-level waypoint selection. Select a frontier before path creation, then issue one classic path request instead of performing a failed request followed by a route-specific fallback request.
+- Keep the shared segment chain available only in planner tests and introspection diagnostics; never write it into `Point_segs`.
+- Add path/RNG parity instrumentation and fixtures comparing an ordinary goal with a route goal given identical object state, goal segment, and RNG state.
 
-Exit gate: physical endpoints and chain transitions match the planner in automated levels; route goals consume no simulation RNG; newly recorded input-demo determinism tests pass.
+Exit gate: for identical Guide-Bot state, goal segment, and RNG state, route and ordinary goal paths have identical `Point_segs`, path indices, AI modes, RNG call deltas, and return-to-player timing. End-of-level, unexplored, and closest-frontier guidance still select the intended high-level waypoint.
 
-Rollback: switch route goals back to `create_path_to_segment_metadata_route()`.
+Rollback: disable shared high-level route selection while retaining the restored classic movement code. Do not restore the metadata path override.
 
-### Phase 6: Add Explicit Action Execution
+### Phase 6: Add Passive Player Guidance and Completion
 
 Work:
 
-- Add navigate, orient, act/wait, verify, timeout, and replan states.
-- Aim flares at exact shoot-switch and hidden-door targets.
-- Materialize directed crossing for fly-through/pass-through triggers.
-- Stop on the near side of player-only blastable, key, boss/reactor, and exit actions.
-- Verify only the effects required by the selected route.
-- Add autonomous live tests that do not call `fire_trigger` to advance.
+- Define every semantic progression step as a player action plus a passive completion predicate. Guide-Bot has no route-action state machine.
+- Present the exact activation position, aim point, target wall/object, crossing side, and concise player instruction through messages, introspection, and automap markers.
+- Navigate only toward the waypoint segment through classic movement. Do not move Guide-Bot to an exact XYZ point, alter its orientation, aim it, fire a route-specific flare, or force it across a trigger side.
+- Preserve the existing generic forward-flare behavior without route-specific conditions or target selection.
+- Observe only the effects required by the selected route, then invalidate/replan after the owning player picks up the key, shoots or opens the wall, crosses the trigger, destroys the boss/reactor, or enters the exit.
+- Add player-assisted live tests: automation moves or acts as the player, verifies the guidance data first, performs the action, and confirms the route advances.
+- Add a negative fixture proving Guide-Bot does not orient toward, fire at, cross, or autonomously complete a pending route action while the player waits.
 
-Exit gate: KCXF2 hidden-door and switch scenarios autonomously reach and activate their target, then advance to the next semantic step.
+Exit gate: KCXF2 hidden-door and switch scenarios identify the correct player pose and target, remain pending without Guide-Bot action, and advance only after the player performs the required action. Classic flare and movement traces remain unchanged for the same state and goal segment.
 
-Rollback: disable route action execution while retaining shared planning and path chains.
+Rollback: disable enhanced guidance presentation while retaining semantic planning and classic movement. There is no route action executor to fall back from.
 
 ### Phase 7: Complete Invalidation, Caching, and Multiplayer
 
@@ -564,26 +570,25 @@ Work:
 - Coalesce automap invalidations so unexplored routing remains responsive without scanning each frame.
 - Replan moving boss waypoints without rebuilding static topology.
 - Run two-peer owner, observer-host, disconnect adoption, voluntary abdication, save restore, and slot-remap scenarios.
-- Verify exactly-once route actions and owner-local unexplored selection.
+- Verify owner-local guidance, passive completion transitions, unchanged classic flare behavior, and owner-local unexplored selection.
 
 Exit gate: no stale-plan failures in dynamic tests, no nonowner planner execution, and multiplayer ownership tests pass repeatedly.
 
-Rollback: retain explicit event invalidation but route live execution through the prior plan cache.
+Rollback: retain explicit event invalidation but route live selection through the prior plan cache.
 
 ### Phase 8: Remove Superseded Code
 
 Delete only after all prior gates have been green for at least one full regression cycle:
 
-- Duplicate visibility sampling and reachable-segment BFS in `escort.c`.
+- Duplicate live visibility sampling and reachable-segment BFS in `escort.c`; the shared planner's exact player-guidance pose is authoritative.
 - `escort_find_nearest_reachable_goal_segment()` and related optimistic fallback logic.
 - Live route-step satisfaction reconstruction.
-- `Metadata_route_path_depth` and `create_path_to_segment_metadata_route()`.
 - Old C semantic planner and global planner scratch arrays.
 - Duplicate keyed/non-keyed opener policies that are replaced by normalized actions.
 - Dead route kinds or legacy mappings that no longer have a producer.
 - Stale tests and debug fields superseded by plan/action diagnostics.
 
-Keep the legacy generic AI pathfinder for classic robot and classic Guide-Bot behavior unless a later project deliberately replaces it.
+`Metadata_route_path_depth` and `create_path_to_segment_metadata_route()` are removed in Phase 5 rather than deferred cleanup. Keep the classic generic AI pathfinder, its doorway predicate, path scheduling, RNG consumption, path polishing, return-to-player behavior, steering, collision handling, and generic flare behavior unchanged.
 
 ## Verification Matrix
 
@@ -597,24 +602,25 @@ Keep the legacy generic AI pathfinder for classic robot and classic Guide-Bot be
 | Corpus | All 1,281 checked-in records plus archive regeneration where available | No unreviewed status or step regression |
 | Base campaigns | Descent and Counterstrike | Existing strict policy remains green |
 | Live planner scripts | KCXF2, Obsidian, unexplored | Correct first pending shared waypoint |
-| Live executor scripts | Switch, hidden door, trigger crossing, blastable wait, fallback | Autonomous progress or explicit player wait |
-| Save/restore | Mid-path and mid-action for both endpoint modes | Intent preserved, transient plan rebuilt |
-| Multiplayer | Owner, observer host, handoff, abdication, disconnect, slot remap | One owner executes; intent persists |
+| Live guidance scripts | Switch, hidden door, trigger crossing, blastable wait, fallback | Correct player instruction and marker; progress only after player action |
+| Classic movement parity | Same state, goal segment, and RNG state through ordinary and route-goal bridges | Exact `Point_segs`, AI mode, path timing, and RNG delta match |
+| Save/restore | Mid-path and while awaiting a player action for both endpoint modes | Intent preserved, transient plan rebuilt, classic movement resumed |
+| Multiplayer | Owner, observer host, handoff, abdication, disconnect, slot remap | One owner plans guidance and simulates classic movement; intent persists |
 | Determinism | Input-demo state/RNG matrices with newly recorded route fixtures | Stable record and replay with no route-specific replay patch |
-| Performance | Planner count, snapshot build, rays, path materialization, frame time | No periodic spikes; no per-frame full search |
+| Performance | Planner count, snapshot build, rays, classic path request count, frame time | No periodic spikes, no per-frame full search, and no extra physical path request |
 
 ## Required New Regression Scenarios
 
-1. A switch is visible only from an off-center valid pose. Guide-Bot must reach that exact pose and hit the intended wall.
-2. A hidden door is in the current segment but outside Guide-Bot's initial forward vector. It must orient, fire, observe the door opening, and continue.
-3. A pass-through trigger requires crossing a specific side. Reaching the source segment without crossing must not count as complete.
-4. A blastable wall lies on the only route. Guide-Bot must stop near it, identify the player action, and continue after the player destroys it.
+1. A switch is visible only from an off-center valid pose. Guidance must expose that exact player pose and aim target; Guide-Bot must not aim or fire, and the route advances after the player hits the wall.
+2. A hidden door is in the current segment but outside Guide-Bot's initial forward vector. Guidance must identify it without changing Guide-Bot orientation or flare behavior; the player opens it and the route continues.
+3. A pass-through trigger requires crossing a specific side. Guidance identifies the side, Guide-Bot does not deliberately cross it, and only the player's crossing completes the step.
+4. A blastable wall lies on the only route. Guide-Bot identifies the player action and continues after the player destroys it without attempting to damage the wall.
 5. A trigger has several effects but only one is required for the selected route. Completion follows the required effect set.
 6. A one-shot trigger is disabled while its required wall remains blocked. The plan becomes impossible or chooses another route; it is not skipped.
 7. A target object disappears or a boss relocates after planning. The waypoint invalidates and replans without a full topology rebuild.
-8. A physical chain transition fails companion-radius validation. The planner tries an alternate route or exposes the matching partial frontier.
+8. A shared planner chain differs from the classic Guide-Bot path. The chain remains diagnostic only; movement follows the classic path to the same high-level goal segment.
 9. The largest unexplored component changes while the current target remains unvisited. Coalesced automap invalidation selects the new endpoint without a frame spike.
-10. Ownership changes during navigation and during an aimed action. The old owner stops immediately and the new owner replans from local automap and synchronized world state.
+10. Ownership changes during navigation and while awaiting a player action. The old owner stops planning immediately and the new owner replans from local automap and synchronized world state without altering classic movement behavior.
 
 ## Corpus Policy
 
@@ -629,7 +635,7 @@ Keep the legacy generic AI pathfinder for classic robot and classic Guide-Bot be
 
 ## Performance Plan
 
-- Establish baseline counters before behavior changes: planner calls, topology builds, state snapshots, expanded nodes, edge decisions, visibility rays, path materializations, and replans by reason.
+- Establish baseline counters before behavior changes: planner calls, topology builds, state snapshots, expanded nodes, edge decisions, visibility rays, classic path requests, RNG deltas, and replans by reason.
 - Build trigger-to-effect and side-to-opener indices once per topology.
 - Reuse planner workspaces to avoid repeated large allocations.
 - Cache visibility by topology generation, target identity/position generation, navigator profile, and candidate pose.
@@ -644,13 +650,13 @@ Keep the legacy generic AI pathfinder for classic robot and classic Guide-Bot be
 | --- | --- |
 | Large rewrite obscures regressions | Small phases, shadow mode, old implementation retained |
 | Canonical metadata changes unintentionally | Frozen plan signatures and strict base campaigns |
-| Guide-Bot path changes demo RNG timing | RNG-free route path, then record new deterministic fixtures |
+| High-level goal changes perturb classic path RNG | Shared planning consumes no RNG; preserve classic path call timing and RNG behavior exactly for the same goal segment, and treat only a changed goal segment as intentional divergence |
 | C++ cannot be called cleanly from C engine files | Stable `extern "C"` facade and C-compatible result projection |
 | Player and companion rules are conflated | Separate progression and navigator profiles |
 | Dynamic state causes replan storms | Generation keys, relevance filtering, and coalescing |
 | Multiplayer peers choose different unexplored targets | Only active owner plans; mode, not plan, is synchronized |
-| Exact pose is visible but physically invalid | Navigator-radius occupancy and transition validation |
-| Corpus green but Guide-Bot still stalls | Autonomous action/executor tests and timeout diagnostics |
+| Exact player-guidance pose is invalid | Validate player occupancy and visibility in the planner; do not move Guide-Bot to the exact pose |
+| Corpus green but Guide-Bot still stalls | Player-assisted guidance tests plus classic movement parity and path-request diagnostics |
 | Internal dynamic results exceed legacy ABI | Explicit projection overflow, no silent truncation |
 
 ## Proposed File Boundaries
@@ -662,8 +668,8 @@ Names are provisional, but responsibilities should remain separated:
 - `shared/route_snapshot.h/.cpp`: immutable topology/state builders independent of D1/D2 globals.
 - `shared/secret_area_game_adapter.c`: D1/D2 global-state adapter only.
 - `shared/level_metadata_scan.c`: metadata aggregation wrapper during migration, deleted or reduced after cutover.
-- `d2/main/escort.c`: command, ownership, messaging, and thin route executor bridge.
-- `d2/main/aipath.c`: generic AI paths plus segment-chain materializer entry point.
+- `d2/main/escort.c`: command, ownership, messaging, passive completion observation, and a thin goal-segment bridge into classic movement.
+- `d2/main/aipath.c`: unmodified classic generic AI paths; no metadata or route-planner dependency.
 - `android/tests/test_route_planner.cpp`: engine-neutral planner unit tests.
 - `android/tests/test_route_planner_parity.cpp`: old/new differential and projection tests during migration.
 
@@ -671,13 +677,14 @@ Names are provisional, but responsibilities should remain separated:
 
 - End-of-level and unexplored use the same planner and differ only by endpoint policy.
 - Metadata and Guide-Bot consume the same semantic `RoutePlan`; live code does not reconstruct route meaning.
-- Guide-Bot follows the planner's segment chain and exact terminal pose without a second graph search.
-- Switches, hidden doors, and crossing triggers have explicit executable actions and shared completion predicates.
-- Blastable and buddy-proof obstructions are modeled according to actual companion capability.
+- Guide-Bot receives only the selected goal segment and reaches toward it through the unmodified classic path lifecycle; shared chains and exact poses never control movement.
+- Switches, hidden doors, crossing triggers, keys, blastable walls, bosses, reactors, and exits have explicit player actions and shared passive completion predicates.
+- Exact activation and aim positions are exposed as player guidance without changing Guide-Bot orientation, firing, collision, steering, or path points.
+- For identical Guide-Bot state, goal segment, and RNG state, route and ordinary goal movement produce identical paths, RNG deltas, AI modes, and interruption timing.
 - "Closest possible" comes from the same route proof and names the next obstruction.
 - Canonical metadata and live plans are stored separately.
 - Dynamic state and owner changes invalidate only relevant cached work.
-- The full corpus, base campaigns, autonomous live tests, multiplayer tests, performance checks, and determinism matrix pass.
+- The full corpus, base campaigns, player-assisted guidance tests, classic movement parity tests, multiplayer tests, performance checks, and determinism matrix pass.
 - Duplicate route BFS, visibility, satisfaction, fallback, and metadata path-depth shims are removed.
 
 ## Recommended First Implementation Slice
@@ -688,6 +695,6 @@ Start with Phase 0 and Phase 1 only. The first behavior-changing slice should no
 2. Produce a rich edge decision and exact route plan in shadow mode.
 3. Compare it with current metadata across synthetic fixtures and the corpus.
 4. Expose the shared segment chain and exact activation pose in introspection.
-5. Use one focused hidden-door or shoot-switch fixture to prove that the plan contains enough information for a future executor.
+5. Use one focused hidden-door or shoot-switch fixture to prove that the plan contains enough information to guide the player and passively detect completion without controlling Guide-Bot movement or actions.
 
 That sequence uses the regression corpus immediately, preserves easy rollback, and attacks the information loss that currently sits between a correct metadata route and a stuck Guide-Bot.

@@ -315,13 +315,14 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C12. Input-demo direct-command dispatcher
 
-- Files: D1 `gamecntl.c:1500-1608`; D2 command work near `1222-1413` and replay integration near `2300-2357`
-- Estimated inherited-file reduction: 180-220 lines
-- Proposed boundary: common command iteration, event validation, error handling, death abort, and difficulty commands
-- Adapter: a compact operations table for D2 guidebot, marker, weapon-drop, and flag commands
-- Preserve: D2 unloads failed replay while D1 currently logs and returns failure
-- Risk: medium-high due deterministic replay semantics
-- Validation: direct-command recording/replay suites for both games and exact final-state comparisons
+- Status: complete
+- Files: D1 and D2 `main/gamecntl.c`, `main/input_demo_hooks.c`, and the compiled shared `input_demo_direct_command_policy.{c,h}`
+- Boundary: shared code materializes and parses the complete current-frame direct-command batch, preflights every command before mutation, then applies commands in exact direct-command order. It ignores interleaved non-command events and owns dead/gameplay phase filtering, diagnostics, and failure dispatch.
+- Engine policy: common death-abort and difficulty effects remain in compact engine-local callbacks. A typed 48-line D2 adapter owns the ten D2-only Guide-Bot, marker, weapon-drop, and flag effects; D1 has no game-specific adapter and rejects those commands.
+- Preserved difference: D1 logs and returns failure without unloading the replay, while D2 unloads the failed replay.
+- Exact inherited result: D1 `gamecntl.c` moved from `+185/-10` to `+122/-10`; D2 moved from `+458/-14` to `+265/-17`. The extraction removed 256 inherited additions and 253 total inherited changed lines. Each inherited replay dispatcher now retains only the dead and gameplay phase calls, while live recording stays at canonical engine action sites.
+- Compatibility result: the direct-command JSON wire shape and schema version 4 remain unchanged, and no shim was added. The ignored local 15-triple corpus contains only two direct-command recordings, both `death_abort`; both pass, so no re-recording or state/RNG trace regeneration was required.
+- Validation: all four focused D1/D2 recorder/replay executables, Windows D1/D2, and Android arm64-v8a, armeabi-v7a, and x86_64 pass without compiler warnings. Both command-bearing demos pass exact final-state and RNG comparison. The primary matrix passes 4 D1, 11 D2, and 4 D1-in-D2 cases; the filtered suite passes 10 of 10 tests, 22 corpus replays, three render variants, runtime smoke, and result/state/RNG comparers. Scoped code quality and `git diff --check` pass.
 
 #### C13. Deterministic effect timeline
 

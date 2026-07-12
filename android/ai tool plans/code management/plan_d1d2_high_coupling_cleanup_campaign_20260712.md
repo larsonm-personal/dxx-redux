@@ -98,14 +98,25 @@ H05 implementation evidence:
 - Missing and corrupt demo failures return cleanly without invoking headless menu rendering
 - Windows D2, the focused CTest, and the combined all-ABI Android build pass
 
-### H06. Input-demo direct-command policy and demo refresh
+### H06. Input-demo direct-command policy and demo compatibility audit
 
-- [ ] Begin only after H01-H05 are complete and fully validated
-- [ ] Define shared command iteration and explicit D1/D2 policy adapters
-- [ ] Accept input-demo format/behavior compatibility breaks where they simplify the correct engine boundary
-- [ ] Run deterministic record/replay and final-state coverage
-- [ ] Re-record affected regression demos once from the final clean implementation
-- [ ] Regenerate and verify associated state and RNG traces
+- [x] Begin only after H01-H05 are complete and fully validated
+- [x] Define shared command iteration and explicit D1/D2 policy adapters
+- [x] Review compatibility and accept a break only where it simplifies the correct engine boundary
+- [x] Run deterministic record/replay and final-state coverage
+- [x] Audit the regression corpus and refresh only fixtures invalidated by the final clean implementation
+- [x] Verify associated state and RNG traces after the final implementation
+
+H06 implementation evidence:
+
+- One compiled shared policy owns direct-command materialization, complete-batch validation before mutation, ordered dispatch, phase filtering, diagnostics, and failure handling. Common effects remain engine-owned, and a typed 48-line D2 adapter owns the ten D2-only Guide-Bot, marker, weapon-drop, and flag effects.
+- D1 preserves log-and-return failure without replay unload; D2 preserves unload-on-failure. D1 rejects D2-only commands, dead frames apply only `death_abort`, gameplay frames ignore `death_abort`, and interleaved non-command events do not disturb direct-command order.
+- Against `upstream/main`, D1 `gamecntl.c` moved from `+185/-10` to `+122/-10` and D2 moved from `+458/-14` to `+265/-17`, removing 256 inherited additions and 253 total inherited changed lines.
+- Synthetic fixtures cover all 12 commands, exact order and payloads, dead/gameplay filtering, malformed and unknown late events without partial mutation, adapter rejection, D1/D2 failure policy, and recorder truncation. The four focused D1/D2 recorder/replay executables and Windows D1/D2 pass in `temp/h06_windows_both_final.out.txt`; the final D2 adapter audit, rebuild, focused rerun, and D1/D2 runtime smoke pass in `temp/h06_windows_d2_post_audit_final.out.txt` and `temp/h06_input_demo_runtime_smoke_post_audit.out.txt`.
+- Android arm64-v8a, armeabi-v7a, and x86_64 build without compiler warnings in `android/temp/h06_android_assemble_debug_final.out.txt`. Scoped code quality and `git diff --check` pass.
+- The real D1 and D2 command-bearing recordings pass exact final-state and RNG comparison in `temp/h06_d1_death_abort_replay.out.txt` and `temp/h06_d2_death_abort_replay_post_audit.out.txt`.
+- The primary matrix at `temp/h06_input_demo_matrix_20260712_150718` passes 4 D1, 11 D2, and 4 D1-in-D2 cases. The exact-final-tree filtered report at `temp/h06_input_demo_run_all_final_20260712_153835/report_20260712_153836.md` passes 10 of 10 tests, 22 corpus replays, three render variants, runtime smoke, and result/state/RNG comparers.
+- Compatibility breakage was authorized but unnecessary. The direct-command JSON wire shape and schema version 4 remain unchanged, with no shim. The ignored local 15-triple corpus contains only two command-bearing recordings, both `death_abort`; both pass, so no re-recording or state/RNG regeneration is required.
 
 ## Validation gates for every tranche
 
@@ -127,3 +138,5 @@ H05 implementation evidence:
 - [x] H04 D1/D2 emulator acceptance complete
 - [x] H02 D1/D2 real-pilot launcher JNI roundtrip complete
 - [x] H03 two-emulator acceptance complete
+- [x] H06 input-demo direct-command policy, corpus audit, and complete regression validation complete
+- [x] H01-H06 high-coupling cleanup campaign complete

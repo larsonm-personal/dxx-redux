@@ -15,12 +15,12 @@ typedef enum input_demo_direct_command_phase {
 } input_demo_direct_command_phase;
 
 typedef int (*input_demo_direct_command_death_callback)(void *context,
-	int validate_only, char *error, size_t error_size);
+                                                        int validate_only, char *error, size_t error_size);
 typedef int (*input_demo_direct_command_difficulty_callback)(void *context,
-	int difficulty, int validate_only, char *error, size_t error_size);
+                                                             int difficulty, int validate_only, char *error, size_t error_size);
 typedef int (*input_demo_direct_command_game_callback)(void *context,
-	const input_demo_replay_direct_command_event *event,
-	int validate_only, char *error, size_t error_size);
+                                                       const input_demo_replay_direct_command_event *event,
+                                                       int validate_only, char *error, size_t error_size);
 
 typedef struct input_demo_direct_command_policy {
 	void *context;
@@ -31,9 +31,9 @@ typedef struct input_demo_direct_command_policy {
 } input_demo_direct_command_policy;
 
 int input_demo_direct_command_apply_current_frame(
-	const input_demo_direct_command_policy *policy,
-	input_demo_direct_command_phase phase,
-	char *error, size_t error_size);
+    const input_demo_direct_command_policy *policy,
+    input_demo_direct_command_phase phase,
+    char *error, size_t error_size);
 
 #ifdef __cplusplus
 }
