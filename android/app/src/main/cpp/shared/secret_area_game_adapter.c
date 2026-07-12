@@ -1350,11 +1350,12 @@ static void level_metadata_rescan_current_level_internal(
 	}
 	if (route_only) {
 		char problem[128];
-		int endpoint_kind = unexplored_result ?
-		                    ROUTE_PLANNER_ENDPOINT_UNEXPLORED :
-		                    route_target_seg >= 0 ?
-		                    ROUTE_PLANNER_ENDPOINT_SEGMENT :
-		                    ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL;
+		int endpoint_kind = ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL;
+
+		if (unexplored_result)
+			endpoint_kind = ROUTE_PLANNER_ENDPOINT_UNEXPLORED;
+		else if (route_target_seg >= 0)
+			endpoint_kind = ROUTE_PLANNER_ENDPOINT_SEGMENT;
 
 		level_metadata_state_clear(&Level_metadata_live_route_state);
 		memset(&Level_metadata_live_plan_summary, 0,
@@ -1524,8 +1525,7 @@ const level_metadata_state *level_metadata_get_canonical_state(void)
 
 const level_metadata_state *level_metadata_get_live_route_state(void)
 {
-	return Level_metadata_live_route_state_valid ?
-	           &Level_metadata_live_route_state : NULL;
+	return Level_metadata_live_route_state_valid ? &Level_metadata_live_route_state : NULL;
 }
 
 int level_metadata_get_live_route_plan_summary(

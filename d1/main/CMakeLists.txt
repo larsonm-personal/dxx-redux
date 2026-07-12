@@ -162,7 +162,8 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_state_trace.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
-        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
+        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_direct_command_policy.c)
     target_include_directories(dxx-redux-d1 PRIVATE ../../android/app/src/main/cpp/shared)
     target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
     target_link_libraries(dxx-redux-d1 PRIVATE ZLIB::ZLIB)
@@ -282,7 +283,8 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_state_trace.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
-        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
+        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_direct_command_policy.c)
 
     target_compile_features(dxx-redux-d1-headless-metadata PRIVATE cxx_std_11)
     target_compile_definitions(dxx-redux-d1-headless-metadata PRIVATE

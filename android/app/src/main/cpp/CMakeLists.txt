@@ -549,6 +549,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
@@ -687,6 +688,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp

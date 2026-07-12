@@ -205,6 +205,35 @@ Semantics:
 - `state` remains the frame-start snapshot source of truth; `events` adds
   mid-frame evidence and does not change replay timing
 
+Direct gameplay commands use this event shape:
+
+```json
+{"kind":"direct_command","command":"change_difficulty","difficulty":3}
+```
+
+Commands are staged after the live action and attached to the next captured
+frame. Replay validates the complete current-frame command batch before applying
+the first command, preserves command order relative to other direct commands,
+and ignores non-command durable events while iterating the batch.
+
+Common D1/D2 commands:
+
+- `death_abort`: no payload; applied only while the replayed player is dead
+- `change_difficulty`: integer `difficulty` in `0..4`; applied before live frame
+  simulation without re-recording the event or rewriting the user's default
+
+D2-only commands:
+
+- `guidebot_goal`: integer `special_key` and optional boolean `from_menu`
+- `drop_marker`: integer `player_marker_num` and string `message`
+- `drop_current_weapon`, `drop_secondary_weapon`, and `drop_flag`: no payload
+- `escort_release_control`, `guidebot_spawn`, `guidebot_find_secret`,
+  `guidebot_find_unexplored`, and `guidebot_warp_to_me`: no payload
+
+D1 rejects D2-only commands. A dead-frame pass ignores valid non-death commands;
+a live gameplay pass ignores `death_abort`. Unknown command names and malformed
+payloads fail validation before any command in that frame is applied.
+
 Validation:
 
 - `events` must be an array when present

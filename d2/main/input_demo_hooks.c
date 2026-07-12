@@ -18,6 +18,7 @@
 #include "escort.h"
 #include "input_demo_control_info.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_direct_command_policy.h"
 #include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
@@ -49,6 +50,222 @@ static int input_demo_result_kills_baseline_valid = 0;
 static int input_demo_recording_terminal_exit = INPUT_DEMO_RESULT_TERMINAL_EXIT_NONE;
 static int input_demo_player_shield_probe_valid = 0;
 static fix input_demo_player_shield_probe_value = 0;
+
+extern void DropCurrentWeapon(void);
+extern void DropFlag(void);
+extern void DropSecondaryWeapon(void);
+extern void input_demo_apply_recorded_marker_drop(int player_marker_num,
+	const char *message);
+
+static void input_demo_log_direct_command_record_error(const char *context,
+	const char *error)
+{
+	if (error && error[0])
+		con_printf(CON_NORMAL, "Input demo recorder %s event failed: %s\n",
+			context, error);
+}
+
+void input_demo_record_direct_command_guidebot_goal(int special_key,
+	int from_menu)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_goal(
+	        special_key, from_menu, error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot goal", error);
+}
+
+void input_demo_record_direct_command_drop_current_weapon(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_drop_current_weapon(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("drop current weapon", error);
+}
+
+void input_demo_record_direct_command_drop_secondary_weapon(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_drop_secondary_weapon(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("drop secondary weapon", error);
+}
+
+void input_demo_record_direct_command_drop_flag(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_drop_flag(error,
+	                                                        sizeof(error)))
+		input_demo_log_direct_command_record_error("drop flag", error);
+}
+
+void input_demo_record_direct_command_escort_release_control(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_escort_release_control(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("escort release", error);
+}
+
+void input_demo_record_direct_command_guidebot_spawn(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_spawn(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot spawn", error);
+}
+
+void input_demo_record_direct_command_guidebot_find_secret(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_find_secret(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot find secret", error);
+}
+
+void input_demo_record_direct_command_guidebot_find_unexplored(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_find_unexplored(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot find unexplored", error);
+}
+
+void input_demo_record_direct_command_guidebot_warp_to_me(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_warp_to_me(
+	        error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot warp to me", error);
+}
+
+void input_demo_record_direct_command_death_abort(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_death_abort(error,
+	                                                          sizeof(error)))
+		input_demo_log_direct_command_record_error("death abort", error);
+}
+
+static int input_demo_apply_death_abort_direct_command(void *context,
+	int validate_only, char *error, size_t error_size)
+{
+	(void)context;
+	(void)error;
+	(void)error_size;
+	if (!validate_only)
+		Death_sequence_aborted = 1;
+	return 1;
+}
+
+static int input_demo_change_difficulty_direct_command(void *context,
+	int difficulty, int validate_only, char *error, size_t error_size)
+{
+	(void)context;
+	(void)error;
+	(void)error_size;
+	if (validate_only)
+		return 1;
+	return difficulty_change_to(difficulty, DIFFICULTY_CHANGE_FROM_REPLAY);
+}
+
+static int input_demo_apply_d2_direct_command(void *context,
+	const input_demo_replay_direct_command_event *event,
+	int validate_only, char *error, size_t error_size)
+{
+	(void)context;
+	if (validate_only)
+		return 1;
+
+	switch (event->kind) {
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
+			input_demo_apply_recorded_guidebot_goal(event->value0,
+				event->value1);
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
+			input_demo_apply_recorded_marker_drop(event->value0,
+				event->text);
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON:
+			DropCurrentWeapon();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON:
+			DropSecondaryWeapon();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG:
+			DropFlag();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL:
+			escort_release_control();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN:
+			escort_spawn_at_player();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET:
+			input_demo_apply_recorded_guidebot_find_secret();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED:
+			input_demo_apply_recorded_guidebot_find_unexplored();
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME:
+			escort_warp_to_player();
+			return 1;
+		default:
+			if (error && error_size)
+				snprintf(error, error_size,
+					"unsupported D2 direct command kind %d", event->kind);
+			return 0;
+	}
+}
+
+int input_demo_apply_replay_direct_commands(
+	input_demo_direct_command_phase phase)
+{
+	static const input_demo_direct_command_policy policy = {
+		NULL,
+		1,
+		input_demo_apply_death_abort_direct_command,
+		input_demo_change_difficulty_direct_command,
+		input_demo_apply_d2_direct_command
+	};
+	char error[512] = "";
+
+	if (input_demo_direct_command_apply_current_frame(
+	        &policy, phase, error, sizeof(error)))
+		return 1;
+	con_printf(CON_NORMAL, "Input demo replay stopped: %s\n",
+		error[0] ? error : "direct command replay failed");
+	return 0;
+}
 
 static int input_demo_trace_player_control_active(void)
 {

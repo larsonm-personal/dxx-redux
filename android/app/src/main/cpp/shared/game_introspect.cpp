@@ -921,6 +921,10 @@ static json serialize_guidebot()
 	result["route_selector_mismatch_count"] = escort_get_route_selector_mismatch_count();
 	result["route_selector_shared_index"] = escort_get_route_selector_shared_index();
 	result["route_selector_legacy_index"] = escort_get_route_selector_legacy_index();
+	result["route_selector_mismatch_shared_index"] = escort_get_route_selector_mismatch_shared_index();
+	result["route_selector_mismatch_legacy_index"] = escort_get_route_selector_mismatch_legacy_index();
+	result["route_selector_mismatch_shared_goal"] = escort_get_route_selector_mismatch_shared_goal();
+	result["route_selector_mismatch_legacy_goal"] = escort_get_route_selector_mismatch_legacy_goal();
 	result["unexplored_component_size"] = escort_get_unexplored_component_size();
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
 	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();

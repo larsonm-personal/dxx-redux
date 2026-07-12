@@ -539,8 +539,6 @@ int HandleEndlevelKey(int key)
 }
 
 int is_key_rotate_event(d_event *event); 
-static void input_demo_record_direct_command_death_abort(void);
-
 int HandleDeathInput(d_event *event)
 {
 	int was_aborted = Death_sequence_aborted;
@@ -1105,201 +1103,6 @@ int HandleSystemKey(int key)
 			break;
 	}
 
-	return 1;
-}
-
-extern void DropFlag();
-
-static void input_demo_log_direct_command_record_error(const char *context, const char *error)
-{
-	if (error && error[0])
-		con_printf(CON_NORMAL, "Input demo recorder %s event failed: %s\n", context, error);
-}
-
-static void input_demo_record_direct_command_guidebot_goal(int special_key, int from_menu)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_guidebot_goal(special_key, from_menu, error, sizeof(error)))
-		input_demo_log_direct_command_record_error("guidebot goal", error);
-}
-
-static void input_demo_record_direct_command_drop_current_weapon(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_drop_current_weapon(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("drop current weapon", error);
-}
-
-static void input_demo_record_direct_command_drop_secondary_weapon(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_drop_secondary_weapon(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("drop secondary weapon", error);
-}
-
-static void input_demo_record_direct_command_drop_flag(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_drop_flag(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("drop flag", error);
-}
-
-static void input_demo_record_direct_command_escort_release_control(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_escort_release_control(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("escort release", error);
-}
-
-static void input_demo_record_direct_command_guidebot_spawn(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_guidebot_spawn(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("guidebot spawn", error);
-}
-
-static void input_demo_record_direct_command_guidebot_find_secret(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_guidebot_find_secret(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("guidebot find secret", error);
-}
-
-static void input_demo_record_direct_command_guidebot_find_unexplored(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_guidebot_find_unexplored(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("guidebot find unexplored", error);
-}
-
-static void input_demo_record_direct_command_guidebot_warp_to_me(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_guidebot_warp_to_me(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("guidebot warp to me", error);
-}
-
-static void input_demo_record_direct_command_death_abort(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("death abort", error);
-}
-
-static int input_demo_abort_replay_direct_commands(const char *error)
-{
-	con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error ? error : "direct command replay failed");
-	input_demo_replay_unload();
-	return 0;
-}
-
-static int input_demo_replay_apply_direct_commands(void)
-{
-	uint32_t direct_command_count = 0;
-	uint32_t direct_command_index;
-	input_demo_replay_direct_command_event event;
-	char error[256] = "";
-
-	if (!input_demo_replay_is_loaded())
-		return 1;
-	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
-		return input_demo_abort_replay_direct_commands(error);
-	for (direct_command_index = 0; direct_command_index != direct_command_count; ++direct_command_index) {
-		input_demo_replay_direct_command_event_clear(&event);
-		if (!input_demo_replay_get_current_frame_direct_command_event(direct_command_index, &event, error, sizeof(error)))
-			return input_demo_abort_replay_direct_commands(error);
-		switch (event.kind) {
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
-				input_demo_apply_recorded_guidebot_goal(event.value0, event.value1);
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
-				input_demo_apply_recorded_marker_drop(event.value0, event.text);
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON:
-				DropCurrentWeapon();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON:
-				DropSecondaryWeapon();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG:
-				DropFlag();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL:
-				escort_release_control();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN:
-				escort_spawn_at_player();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET:
-				input_demo_apply_recorded_guidebot_find_secret();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED:
-				input_demo_apply_recorded_guidebot_find_unexplored();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME:
-				escort_warp_to_player();
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT:
-				break;
-			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY:
-				if (!difficulty_change_to(event.value0, DIFFICULTY_CHANGE_FROM_REPLAY))
-					return input_demo_abort_replay_direct_commands("change difficulty replay event failed");
-				break;
-			default:
-				return input_demo_abort_replay_direct_commands("unknown direct command replay event");
-		}
-	}
-	return 1;
-}
-
-static int input_demo_replay_apply_death_abort_direct_commands(void)
-{
-	uint32_t direct_command_count = 0;
-	uint32_t direct_command_index;
-	input_demo_replay_direct_command_event event;
-	char error[256] = "";
-
-	if (!input_demo_replay_is_loaded())
-		return 1;
-	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
-		return input_demo_abort_replay_direct_commands(error);
-	for (direct_command_index = 0; direct_command_index != direct_command_count; ++direct_command_index) {
-		input_demo_replay_direct_command_event_clear(&event);
-		if (!input_demo_replay_get_current_frame_direct_command_event(direct_command_index, &event, error, sizeof(error)))
-			return input_demo_abort_replay_direct_commands(error);
-		if (event.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT)
-			Death_sequence_aborted = 1;
-	}
 	return 1;
 }
 
@@ -2208,12 +2011,14 @@ int ReadControlsReplayFrame(void)
 {
 	Player_fired_laser_this_frame = -1;
 	if (Player_is_dead) {
-		if (!input_demo_replay_apply_death_abort_direct_commands())
+		if (!input_demo_apply_replay_direct_commands(
+		        INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
 			return 0;
 	}
 
 	if (!Endlevel_sequence && !Player_is_dead) {
-		if (!input_demo_replay_apply_direct_commands())
+		if (!input_demo_apply_replay_direct_commands(
+		        INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
 			return 0;
 		check_rear_view();
 

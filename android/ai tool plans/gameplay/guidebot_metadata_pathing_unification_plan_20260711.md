@@ -94,12 +94,14 @@ Parity has two separate meanings and both must pass:
   - Updated the live Counterstrike unexplored-wheel fixture for data-dependent checkpoint counts. It selects `Guide` -> `Unexplored` by visible text, confirms Guide-Bot retains unexplored mode, and reports zero unexplored-route, complete-route, dependency, firing-path, source, target, search, and edge mismatches with the visibility cache active.
   - Phase 4 is next: separate canonical and live shared plans, then make Guide-Bot consume the first pending shared waypoint without rebuilding route meaning in `escort.c`.
   - Live behavior remains on the C planner until the Phase 4 consumer bridge is green across the same gates.
-- [ ] Phase 4 in progress: separate canonical and live plans and bridge Guide-Bot to shared C++ output.
-  - [ ] Add a C ABI projection for end-of-level, unexplored, and explicit-segment shared plans, including the first pending waypoint summary.
-  - [ ] Store canonical metadata and live Guide-Bot route state independently; canonical serializers and overlays must never observe a live replan.
-  - [ ] Make the shared first pending waypoint authoritative for Guide-Bot goal selection, with the legacy all-step selector retained only for temporary shadow diagnostics and stale-plan invalidation.
-  - [ ] Prevent nonowner co-op peers from running live route replans and expose planner provenance plus selector parity through introspection.
-  - [ ] Verify D1/D2 host tests, strict metadata gates, Android builds, and the live unexplored goal fixture before marking the tranche complete.
+- [x] Phase 4 complete: separate canonical and live plans and bridge Guide-Bot to shared C++ output.
+  - Added a C ABI projection for end-of-level, unexplored, and explicit-segment shared plans, including the first pending waypoint and its preserved path summary.
+  - Canonical metadata and live Guide-Bot route state now have independent storage and getters. Canonical serializers and overlays no longer observe route-only Guide-Bot replans.
+  - Route-only live scans now use the shared C++ planner. Guide-Bot selects its first pending shared waypoint directly; the legacy all-step selector remains only as a temporary parity diagnostic and stale-plan detector.
+  - Fixed the first live selector mismatch exposed by the new gate: key steps were omitted from the common targetability helper because the legacy selector handled them in a separate branch.
+  - Nonowner co-op peers return before live route planning. Introspection reports shared planner provenance, first-waypoint path data, current selector parity, and the exact pair from any mismatch.
+  - D1/D2 projection tests cover all three endpoint policies. Windows D1/D2 builds, both strict base-campaign scans, corpus status/fingerprint tests, all Android ABIs, and the live Counterstrike unexplored-wheel fixture pass with zero selector or planner-shadow mismatches.
+  - Phase 5 is next: consume the shared segment chain and exact terminal pose instead of rerunning the legacy randomized physical path search.
 
 ## Non-Goals
 

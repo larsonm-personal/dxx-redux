@@ -235,6 +235,10 @@ static unsigned int Escort_route_selector_compare_count;
 static unsigned int Escort_route_selector_mismatch_count;
 static int Escort_route_selector_shared_index = -1;
 static int Escort_route_selector_legacy_index = -1;
+static int Escort_route_selector_mismatch_shared_index = -1;
+static int Escort_route_selector_mismatch_legacy_index = -1;
+static int Escort_route_selector_mismatch_shared_goal = ESCORT_GOAL_UNSPECIFIED;
+static int Escort_route_selector_mismatch_legacy_goal = ESCORT_GOAL_UNSPECIFIED;
 static const char *Escort_route_last_replan_reason = "level_start";
 
 static void escort_unexplored_route_target_clear(escort_unexplored_route_target *target)
@@ -441,6 +445,26 @@ int escort_get_route_selector_shared_index(void)
 int escort_get_route_selector_legacy_index(void)
 {
 	return Escort_route_selector_legacy_index;
+}
+
+int escort_get_route_selector_mismatch_shared_index(void)
+{
+	return Escort_route_selector_mismatch_shared_index;
+}
+
+int escort_get_route_selector_mismatch_legacy_index(void)
+{
+	return Escort_route_selector_mismatch_legacy_index;
+}
+
+int escort_get_route_selector_mismatch_shared_goal(void)
+{
+	return Escort_route_selector_mismatch_shared_goal;
+}
+
+int escort_get_route_selector_mismatch_legacy_goal(void)
+{
+	return Escort_route_selector_mismatch_legacy_goal;
 }
 
 void escort_restore_route_target_mode(int target_mode)
@@ -763,6 +787,7 @@ static int escort_route_step_is_targetable(const level_metadata_route_step *step
 	if (!step)
 		return 0;
 	switch (step->kind) {
+		case LEVEL_METADATA_ROUTE_KEY:
 		case LEVEL_METADATA_ROUTE_TRIGGER:
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
 		case LEVEL_METADATA_ROUTE_REACTOR:
@@ -1057,6 +1082,10 @@ static int escort_route_next_goal(int key_flags)
 	Escort_route_selector_legacy_index = legacy_index;
 	if (shared_index != legacy_index || shared_goal != legacy_goal) {
 		Escort_route_selector_mismatch_count++;
+		Escort_route_selector_mismatch_shared_index = shared_index;
+		Escort_route_selector_mismatch_legacy_index = legacy_index;
+		Escort_route_selector_mismatch_shared_goal = shared_goal;
+		Escort_route_selector_mismatch_legacy_goal = legacy_goal;
 		ESCORT_DIAG(
 		    "route selector mismatch shared=%d/%d legacy=%d/%d",
 		    shared_index, shared_goal, legacy_index, legacy_goal);
@@ -1849,6 +1878,10 @@ void init_buddy_for_level(void)
 	Escort_route_selector_mismatch_count = 0;
 	Escort_route_selector_shared_index = -1;
 	Escort_route_selector_legacy_index = -1;
+	Escort_route_selector_mismatch_shared_index = -1;
+	Escort_route_selector_mismatch_legacy_index = -1;
+	Escort_route_selector_mismatch_shared_goal = ESCORT_GOAL_UNSPECIFIED;
+	Escort_route_selector_mismatch_legacy_goal = ESCORT_GOAL_UNSPECIFIED;
 	escort_route_note_replan("level_start");
 	Escort_route_target_mode_restore_pending = 0;
 #endif

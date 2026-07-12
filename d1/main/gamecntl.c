@@ -72,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #include "kconfig.h"
 #include "input_demo_control_info.h"
+#include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "mouse.h"
@@ -361,22 +362,6 @@ int HandleEndlevelKey(int key)
 
 int is_key_rotate_event(d_event *event); 
 
-static void input_demo_log_direct_command_record_error(const char *context, const char *error)
-{
-	if (error && error[0])
-		con_printf(CON_NORMAL, "Input demo recorder %s event failed: %s\n", context, error);
-}
-
-static void input_demo_record_direct_command_death_abort(void)
-{
-	char error[256] = "";
-
-	if (!input_demo_recorder_is_active())
-		return;
-	if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)))
-		input_demo_log_direct_command_record_error("death abort", error);
-}
-
 int HandleDeathInput(d_event *event)
 {
 	int was_aborted = Death_sequence_aborted;
@@ -406,7 +391,7 @@ int HandleDeathInput(d_event *event)
 	if (Death_sequence_aborted)
 	{
 		if (!was_aborted)
-			input_demo_record_direct_command_death_abort();
+			input_demo_record_death_abort_direct_command();
 		// Causes problems with joystick throttle -- joy_axis data is cleared, and will only
 		// be updated when joystick moves (could be long enough for player to notice)
 		//game_flush_inputs();
@@ -1388,56 +1373,6 @@ void play_test_sound()
 
 #endif  //ifndef NDEBUG
 
-static int input_demo_abort_replay_direct_commands(const char *reason)
-{
-	if (reason && reason[0])
-		con_printf(CON_NORMAL, "Input demo replay direct command failed: %s\n", reason);
-	return 0;
-}
-
-static int input_demo_replay_apply_death_abort_direct_commands(void)
-{
-	uint32_t direct_command_count = 0;
-	uint32_t direct_command_index;
-	input_demo_replay_direct_command_event event;
-	char error[256] = "";
-
-	if (!input_demo_replay_is_loaded())
-		return 1;
-	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
-		return input_demo_abort_replay_direct_commands(error);
-	for (direct_command_index = 0; direct_command_index != direct_command_count; ++direct_command_index) {
-		input_demo_replay_direct_command_event_clear(&event);
-		if (!input_demo_replay_get_current_frame_direct_command_event(direct_command_index, &event, error, sizeof(error)))
-			return input_demo_abort_replay_direct_commands(error);
-		if (event.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT)
-			Death_sequence_aborted = 1;
-	}
-	return 1;
-}
-
-static int input_demo_replay_apply_direct_commands(void)
-{
-	uint32_t direct_command_count = 0;
-	uint32_t direct_command_index;
-	input_demo_replay_direct_command_event event;
-	char error[256] = "";
-
-	if (!input_demo_replay_is_loaded())
-		return 1;
-	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
-		return input_demo_abort_replay_direct_commands(error);
-	for (direct_command_index = 0; direct_command_index != direct_command_count; ++direct_command_index) {
-		input_demo_replay_direct_command_event_clear(&event);
-		if (!input_demo_replay_get_current_frame_direct_command_event(direct_command_index, &event, error, sizeof(error)))
-			return input_demo_abort_replay_direct_commands(error);
-		if (event.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY &&
-		    !difficulty_change_to(event.value0, DIFFICULTY_CHANGE_FROM_REPLAY))
-			return input_demo_abort_replay_direct_commands("change difficulty replay event failed");
-	}
-	return 1;
-}
-
 static void input_demo_replay_clear_secondary_release_marker(void)
 {
 	input_demo_replay_frame frame, next_frame;
@@ -1458,12 +1393,14 @@ int ReadControlsReplayFrame(void)
 {
 	Player_fired_laser_this_frame=-1;
 	if (Player_is_dead) {
-		if (!input_demo_replay_apply_death_abort_direct_commands())
+		if (!input_demo_apply_replay_direct_commands(
+			INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
 			return 0;
 	}
 
 	if (!Endlevel_sequence && !Player_is_dead) {
-		if (!input_demo_replay_apply_direct_commands())
+		if (!input_demo_apply_replay_direct_commands(
+			INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
 			return 0;
 
 		check_rear_view();

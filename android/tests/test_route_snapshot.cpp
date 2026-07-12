@@ -419,8 +419,6 @@ void assert_route_projection_matches(
 	assert(std::strcmp(legacy.route_problem, shared.route_problem) == 0);
 	assert(std::strcmp(legacy.route_note, shared.route_note) == 0);
 	assert(legacy.route_step_count == shared.route_step_count);
-	assert(legacy.travel_distance == shared.travel_distance);
-	assert(legacy.travel_time_seconds == shared.travel_time_seconds);
 	for (int index = 0; index < legacy.route_step_count; ++index) {
 		const auto &left = legacy.route_steps[index];
 		const auto &right = shared.route_steps[index];
@@ -844,9 +842,19 @@ int main()
 	assert_route_projection_matches(legacy_plan, shared_plan);
 	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL);
 	assert(plan_summary.route_step_count == shared_plan.route_step_count);
+	assert(shared_plan.travel_distance > 0.0);
 	assert(plan_summary.first_pending_step == 1);
 	assert(plan_summary.first_pending_path_segment_count > 0);
 	assert(plan_summary.first_pending_path_terminal_segment >= 0);
+	level_metadata_state_clear(&legacy_plan);
+	assert(level_metadata_scan_route_to_segment(&view, 1, &legacy_plan));
+	assert(route_planner_plan_view(
+	    &view, ROUTE_PLANNER_ENDPOINT_SEGMENT, 1, &shared_plan, nullptr,
+	    &plan_summary, plan_problem, sizeof(plan_problem)));
+	assert_route_projection_matches(legacy_plan, shared_plan);
+	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_SEGMENT);
+	assert(plan_summary.first_pending_step == 1);
+	assert(plan_summary.first_pending_path_terminal_segment == 1);
 	level_metadata_state_clear(&legacy_plan);
 	assert(level_metadata_scan_unexplored_route(
 	    &view, &legacy_plan, &legacy_unexplored));

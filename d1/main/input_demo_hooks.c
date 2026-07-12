@@ -12,6 +12,7 @@
 #include "gameseq.h"
 #include "input_demo_control_info.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_direct_command_policy.h"
 #include "input_demo_fp_env.h"
 #include "input_demo_result.h"
 #include "input_demo_state_trace.h"
@@ -34,6 +35,67 @@ extern int Num_awareness_events;
 #include "input_demo_hooks_shared.h"
 
 static int input_demo_record_event_append_logged_error = 0;
+
+void input_demo_record_death_abort_direct_command(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)) &&
+		error[0])
+		con_printf(CON_NORMAL,
+			"Input demo recorder death abort event failed: %s\n", error);
+}
+
+static int input_demo_apply_death_abort_d1(void *context, int validate_only,
+	char *error, size_t error_size)
+{
+	(void)context;
+	(void)error;
+	(void)error_size;
+	if (!validate_only)
+		Death_sequence_aborted = 1;
+	return 1;
+}
+
+static int input_demo_change_difficulty_d1(void *context, int difficulty,
+	int validate_only, char *error, size_t error_size)
+{
+	(void)context;
+	if (difficulty < 0 || difficulty > 4) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "difficulty is out of range");
+		return 0;
+	}
+	if (validate_only)
+		return 1;
+	if (difficulty_change_to(difficulty, DIFFICULTY_CHANGE_FROM_REPLAY))
+		return 1;
+	if (error && error_size)
+		snprintf(error, error_size, "%s", "change difficulty replay event failed");
+	return 0;
+}
+
+int input_demo_apply_replay_direct_commands(input_demo_direct_command_phase phase)
+{
+	static const input_demo_direct_command_policy policy = {
+		NULL,
+		0,
+		input_demo_apply_death_abort_d1,
+		input_demo_change_difficulty_d1,
+		NULL
+	};
+	char error[512] = "";
+
+	if (input_demo_direct_command_apply_current_frame(
+		&policy, phase, error, sizeof(error)))
+		return 1;
+	if (error[0])
+		con_printf(CON_NORMAL,
+			"Input demo replay direct command failed: %s\n", error);
+	return 0;
+}
 
 static unsigned int fvi_input_demo_frame_index(void)
 {

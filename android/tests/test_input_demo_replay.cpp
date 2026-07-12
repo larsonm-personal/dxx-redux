@@ -11,7 +11,9 @@
 #endif
 
 #include <string>
+#include <vector>
 
+#include "input_demo_direct_command_policy.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -594,11 +596,397 @@ static int expect_checkpoint_replay_loader(void)
 	return 0;
 }
 
+enum direct_command_policy_fixture_kind {
+	DIRECT_COMMAND_POLICY_FIXTURE_ZERO,
+	DIRECT_COMMAND_POLICY_FIXTURE_ONE,
+	DIRECT_COMMAND_POLICY_FIXTURE_MULTIPLE,
+	DIRECT_COMMAND_POLICY_FIXTURE_UNKNOWN_LATE,
+	DIRECT_COMMAND_POLICY_FIXTURE_MALFORMED_LATE,
+	DIRECT_COMMAND_POLICY_FIXTURE_UNSUPPORTED
+};
+
+typedef struct direct_command_policy_test_context {
+	std::vector<std::string> calls;
+	int mutation_count;
+	int reject_game_kind;
+} direct_command_policy_test_context;
+
+static int direct_command_policy_fixture_error(const char *operation, const char *error)
+{
+	input_demo_recorder_cancel();
+	return report_failure_string(std::string(operation) + ": " + (error ? error : ""));
+}
+
+static int write_direct_command_policy_fixture(const char *path,
+	direct_command_policy_fixture_kind fixture_kind)
+{
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	char error[256] = "";
+
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
+		return direct_command_policy_fixture_error("direct command policy recorder start failed", error);
+
+	if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_ZERO) {
+		if (!input_demo_recorder_stage_frame_event_json(
+			"{\"kind\":\"score\",\"delta\":1}", error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage zero-command durable event failed", error);
+	} else if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_ONE) {
+		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage one difficulty command failed", error);
+	} else if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_MULTIPLE) {
+		if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage death abort command failed", error);
+		if (!input_demo_recorder_stage_frame_event_json(
+			"{\"kind\":\"score\",\"delta\":2}", error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage interleaved durable event failed", error);
+		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage multiple difficulty command failed", error);
+		if (!input_demo_recorder_stage_direct_command_guidebot_goal(17, 1, error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage guidebot goal command failed", error);
+		if (!input_demo_recorder_stage_direct_command_drop_marker(1, "marker text", error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage marker command failed", error);
+		if (!input_demo_recorder_stage_direct_command_drop_current_weapon(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage current weapon command failed", error);
+		if (!input_demo_recorder_stage_direct_command_drop_secondary_weapon(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage secondary weapon command failed", error);
+		if (!input_demo_recorder_stage_direct_command_drop_flag(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage flag command failed", error);
+		if (!input_demo_recorder_stage_direct_command_escort_release_control(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage escort release command failed", error);
+		if (!input_demo_recorder_stage_direct_command_guidebot_spawn(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage guidebot spawn command failed", error);
+		if (!input_demo_recorder_stage_direct_command_guidebot_find_secret(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage find secret command failed", error);
+		if (!input_demo_recorder_stage_direct_command_guidebot_find_unexplored(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage find unexplored command failed", error);
+		if (!input_demo_recorder_stage_direct_command_guidebot_warp_to_me(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage guidebot warp command failed", error);
+	} else if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_UNKNOWN_LATE) {
+		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage command before unknown failed", error);
+		if (!input_demo_recorder_stage_frame_event_json(
+			"{\"kind\":\"direct_command\",\"command\":\"future_command\"}",
+			error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage unknown command failed", error);
+	} else if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_MALFORMED_LATE) {
+		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage command before malformed failed", error);
+		if (!input_demo_recorder_stage_frame_event_json(
+			"{\"kind\":\"direct_command\",\"command\":\"change_difficulty\"}",
+			error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage malformed command failed", error);
+	} else {
+		if (!input_demo_recorder_stage_direct_command_guidebot_spawn(error, sizeof(error)))
+			return direct_command_policy_fixture_error("stage unsupported command failed", error);
+	}
+
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0,
+		NULL, NULL, error, sizeof(error)))
+		return direct_command_policy_fixture_error("direct command policy capture failed", error);
+	if (!input_demo_recorder_flush(path, error, sizeof(error)))
+		return direct_command_policy_fixture_error("direct command policy flush failed", error);
+	return 0;
+}
+
+static std::string direct_command_policy_game_call(
+	const input_demo_replay_direct_command_event *event, int validate_only)
+{
+	char call[160];
+
+	snprintf(call, sizeof(call), "%s game kind=%d value0=%d value1=%d text=%s",
+		validate_only ? "validate" : "apply", event->kind,
+		event->value0, event->value1, event->text);
+	return call;
+}
+
+static int direct_command_policy_death_callback(void *context, int validate_only,
+	char *error, size_t error_size)
+{
+	direct_command_policy_test_context *test_context =
+		static_cast<direct_command_policy_test_context *>(context);
+
+	(void) error;
+	(void) error_size;
+	test_context->calls.push_back(validate_only ? "validate death" : "apply death");
+	if (!validate_only)
+		test_context->mutation_count++;
+	return 1;
+}
+
+static int direct_command_policy_difficulty_callback(void *context, int difficulty,
+	int validate_only, char *error, size_t error_size)
+{
+	direct_command_policy_test_context *test_context =
+		static_cast<direct_command_policy_test_context *>(context);
+	char call[80];
+
+	(void) error;
+	(void) error_size;
+	snprintf(call, sizeof(call), "%s difficulty=%d",
+		validate_only ? "validate" : "apply", difficulty);
+	test_context->calls.push_back(call);
+	if (!validate_only)
+		test_context->mutation_count++;
+	return 1;
+}
+
+static int direct_command_policy_game_callback(void *context,
+	const input_demo_replay_direct_command_event *event,
+	int validate_only, char *error, size_t error_size)
+{
+	direct_command_policy_test_context *test_context =
+		static_cast<direct_command_policy_test_context *>(context);
+
+	test_context->calls.push_back(direct_command_policy_game_call(event, validate_only));
+	if (validate_only && event->kind == test_context->reject_game_kind) {
+		if (error && error_size)
+			snprintf(error, error_size, "test adapter rejected kind %d", event->kind);
+		return 0;
+	}
+	if (!validate_only)
+		test_context->mutation_count++;
+	return 1;
+}
+
+static void direct_command_policy_init(input_demo_direct_command_policy *policy,
+	direct_command_policy_test_context *context)
+{
+	memset(policy, 0, sizeof(*policy));
+	policy->context = context;
+	policy->apply_death_abort = direct_command_policy_death_callback;
+	policy->change_difficulty = direct_command_policy_difficulty_callback;
+	policy->apply_game_specific = direct_command_policy_game_callback;
+}
+
+static void direct_command_policy_context_clear(direct_command_policy_test_context *context)
+{
+	context->calls.clear();
+	context->mutation_count = 0;
+	context->reject_game_kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_NONE;
+}
+
+static int expect_direct_command_policy_calls(
+	const direct_command_policy_test_context *context,
+	const std::vector<std::string> &expected, const char *label)
+{
+	size_t i;
+
+	if (context->calls.size() != expected.size())
+		return report_failure_string(std::string(label) + " callback count mismatch: expected " +
+			std::to_string(expected.size()) + ", got " + std::to_string(context->calls.size()));
+	for (i = 0; i != expected.size(); ++i)
+		if (context->calls[i] != expected[i])
+			return report_failure_string(std::string(label) + " callback mismatch at " +
+				std::to_string(i) + ": expected '" + expected[i] + "', got '" +
+				context->calls[i] + "'");
+	return 0;
+}
+
+static void append_direct_command_policy_game_calls(std::vector<std::string> *calls,
+	int validate_only)
+{
+	input_demo_replay_direct_command_event event;
+	static const int no_payload_kinds[] = {
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED,
+		INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME
+	};
+	size_t i;
+
+	input_demo_replay_direct_command_event_clear(&event);
+	event.kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL;
+	event.value0 = 17;
+	event.value1 = 1;
+	calls->push_back(direct_command_policy_game_call(&event, validate_only));
+	input_demo_replay_direct_command_event_clear(&event);
+	event.kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER;
+	event.value0 = 1;
+	snprintf(event.text, sizeof(event.text), "%s", "marker text");
+	calls->push_back(direct_command_policy_game_call(&event, validate_only));
+	for (i = 0; i != sizeof(no_payload_kinds) / sizeof(no_payload_kinds[0]); ++i) {
+		input_demo_replay_direct_command_event_clear(&event);
+		event.kind = no_payload_kinds[i];
+		calls->push_back(direct_command_policy_game_call(&event, validate_only));
+	}
+}
+
+static int expect_direct_command_policy(void)
+{
+	const char *dir = "test_input_demo_direct_command_policy_fixture";
+	const std::string zero_path = std::string(dir) + "/zero.dximdemo";
+	const std::string one_path = std::string(dir) + "/one.dximdemo";
+	const std::string multiple_path = std::string(dir) + "/multiple.dximdemo";
+	const std::string unknown_path = std::string(dir) + "/unknown.dximdemo";
+	const std::string malformed_path = std::string(dir) + "/malformed.dximdemo";
+	const std::string unsupported_path = std::string(dir) + "/unsupported.dximdemo";
+	const std::string paths[] = {
+		zero_path, one_path, multiple_path, unknown_path, malformed_path, unsupported_path
+	};
+	direct_command_policy_test_context context;
+	input_demo_direct_command_policy policy;
+	std::vector<std::string> expected;
+	char error[256] = "";
+	size_t i;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create direct command policy test directory");
+	if (write_direct_command_policy_fixture(zero_path.c_str(), DIRECT_COMMAND_POLICY_FIXTURE_ZERO) ||
+	    write_direct_command_policy_fixture(one_path.c_str(), DIRECT_COMMAND_POLICY_FIXTURE_ONE) ||
+	    write_direct_command_policy_fixture(multiple_path.c_str(), DIRECT_COMMAND_POLICY_FIXTURE_MULTIPLE) ||
+	    write_direct_command_policy_fixture(unknown_path.c_str(), DIRECT_COMMAND_POLICY_FIXTURE_UNKNOWN_LATE) ||
+	    write_direct_command_policy_fixture(malformed_path.c_str(), DIRECT_COMMAND_POLICY_FIXTURE_MALFORMED_LATE) ||
+	    write_direct_command_policy_fixture(unsupported_path.c_str(), DIRECT_COMMAND_POLICY_FIXTURE_UNSUPPORTED))
+		return 1;
+	direct_command_policy_context_clear(&context);
+	direct_command_policy_init(&policy, &context);
+
+	if (!input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure_string(std::string("absent replay policy failed: ") + error);
+	if (!input_demo_replay_load(zero_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("zero-command replay load failed: ") + error);
+	if (!input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure_string(std::string("zero-command policy failed: ") + error);
+	if (!context.calls.empty() || context.mutation_count)
+		return report_failure("zero-command policy invoked a callback");
+	input_demo_replay_unload();
+
+	direct_command_policy_context_clear(&context);
+	if (!input_demo_replay_load(one_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("one-command replay load failed: ") + error);
+	if (!input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure_string(std::string("one-command policy failed: ") + error);
+	expected.clear();
+	expected.push_back("validate difficulty=3");
+	expected.push_back("apply difficulty=3");
+	if (expect_direct_command_policy_calls(&context, expected, "one-command") ||
+	    context.mutation_count != 1)
+		return report_failure("one-command policy mutation mismatch");
+	input_demo_replay_unload();
+
+	direct_command_policy_context_clear(&context);
+	if (!input_demo_replay_load(multiple_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("dead-phase replay load failed: ") + error);
+	if (!input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD, error, sizeof(error)))
+		return report_failure_string(std::string("dead-phase policy failed: ") + error);
+	expected.clear();
+	expected.push_back("validate death");
+	expected.push_back("apply death");
+	if (expect_direct_command_policy_calls(&context, expected, "dead-phase") ||
+	    context.mutation_count != 1)
+		return report_failure("dead-phase policy mutation mismatch");
+	input_demo_replay_unload();
+
+	direct_command_policy_context_clear(&context);
+	if (!input_demo_replay_load(multiple_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("gameplay-phase replay load failed: ") + error);
+	if (!input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure_string(std::string("gameplay-phase policy failed: ") + error);
+	expected.clear();
+	expected.push_back("validate difficulty=3");
+	append_direct_command_policy_game_calls(&expected, 1);
+	expected.push_back("apply difficulty=3");
+	append_direct_command_policy_game_calls(&expected, 0);
+	if (expect_direct_command_policy_calls(&context, expected, "gameplay-phase") ||
+	    context.mutation_count != 11)
+		return report_failure("gameplay-phase policy mutation mismatch");
+	input_demo_replay_unload();
+
+	direct_command_policy_context_clear(&context);
+	context.reject_game_kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME;
+	if (!input_demo_replay_load(multiple_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("adapter rejection replay load failed: ") + error);
+	if (input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure("adapter rejection unexpectedly succeeded");
+	if (context.mutation_count != 0)
+		return report_failure("adapter validation failure partially applied commands");
+	for (i = 0; i != context.calls.size(); ++i)
+		if (context.calls[i].find("apply ") == 0)
+			return report_failure("adapter validation failure reached application pass");
+	input_demo_replay_unload();
+
+	direct_command_policy_context_clear(&context);
+	if (!input_demo_replay_load(malformed_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("malformed replay load failed: ") + error);
+	if (input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure("malformed late command unexpectedly succeeded");
+	if (!context.calls.empty() || context.mutation_count)
+		return report_failure("malformed late command partially dispatched commands");
+	if (!input_demo_replay_is_loaded())
+		return report_failure("non-unloading malformed policy unloaded replay");
+	input_demo_replay_unload();
+
+	direct_command_policy_context_clear(&context);
+	if (!input_demo_replay_load(unknown_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("unknown replay load failed: ") + error);
+	if (input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure("unknown late command unexpectedly succeeded");
+	if (!context.calls.empty() || context.mutation_count)
+		return report_failure("unknown late command partially dispatched commands");
+	if (!input_demo_replay_is_loaded())
+		return report_failure("D1-style failure policy unloaded replay");
+	input_demo_replay_unload();
+	policy.unload_replay_on_failure = 1;
+	if (!input_demo_replay_load(unknown_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("unloading replay load failed: ") + error);
+	if (input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure("unloading unknown command unexpectedly succeeded");
+	if (input_demo_replay_is_loaded())
+		return report_failure("D2-style failure policy did not unload replay");
+	policy.unload_replay_on_failure = 0;
+
+	direct_command_policy_context_clear(&context);
+	policy.apply_game_specific = NULL;
+	if (!input_demo_replay_load(unsupported_path.c_str(), error, sizeof(error)))
+		return report_failure_string(std::string("unsupported replay load failed: ") + error);
+	if (input_demo_direct_command_apply_current_frame(&policy,
+		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+		return report_failure("unsupported D1 command unexpectedly succeeded");
+	if (!context.calls.empty() || context.mutation_count)
+		return report_failure("unsupported D1 command invoked a callback");
+	if (std::string(error).find("unsupported") == std::string::npos)
+		return report_failure_string(std::string("unsupported D1 command error mismatch: ") + error);
+	input_demo_replay_unload();
+
+	for (i = 0; i != sizeof(paths) / sizeof(paths[0]); ++i) {
+		remove(paths[i].c_str());
+		remove((paths[i] + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+		remove((paths[i] + ".actual.json").c_str());
+	}
+	remove_test_dir(dir);
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_replay_loader())
 		return 1;
 	if (expect_checkpoint_replay_loader())
+		return 1;
+	if (expect_direct_command_policy())
 		return 1;
 	puts("PASS");
 	return 0;
