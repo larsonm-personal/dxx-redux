@@ -14,6 +14,9 @@ namespace dxx_route
 namespace
 {
 
+bool valid_segment(const route_snapshot &snapshot, int segment);
+bool valid_wall(const route_snapshot &snapshot, int wall);
+
 double point_distance(const route_position &left, const route_position &right)
 {
 	const double dx = (static_cast<double>(left.value[0]) - right.value[0]) /
@@ -23,6 +26,77 @@ double point_distance(const route_position &left, const route_position &right)
 	const double dz = (static_cast<double>(left.value[2]) - right.value[2]) /
 	                  LEVEL_METADATA_FIX_SCALE;
 	return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+bool positions_differ(
+    const route_position &left,
+    const route_position &right)
+{
+	return left.valid && right.valid && left.value != right.value;
+}
+
+route_position crossing_aim_position(
+    const route_snapshot &snapshot,
+    const route_trigger_source &source)
+{
+	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
+		{ 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 }
+	};
+	route_position result;
+	if (!source.source_position.valid ||
+	    !valid_segment(snapshot, source.source_segment) ||
+	    source.source_side < 0 ||
+	    source.source_side >= LEVEL_METADATA_MAX_SIDES)
+		return result;
+	const auto &segment = snapshot.topology.segments[source.source_segment];
+	const auto &side = segment.sides[source.source_side];
+	if (valid_segment(snapshot, side.child)) {
+		result = snapshot.topology.segments[side.child].center;
+		if (positions_differ(result, source.source_position))
+			return result;
+	}
+	if (valid_wall(snapshot, source.source_wall)) {
+		result = snapshot.topology.walls[source.source_wall].target;
+		if (positions_differ(result, source.source_position))
+			return result;
+	}
+	const auto &first = segment.vertices[side_vertices[source.source_side][0]];
+	const auto &second = segment.vertices[side_vertices[source.source_side][1]];
+	const auto &third = segment.vertices[side_vertices[source.source_side][2]];
+	if (!first.valid || !second.valid || !third.valid)
+		return {};
+	const std::int64_t a[3] = {
+		static_cast<std::int64_t>(second.value[0]) - first.value[0],
+		static_cast<std::int64_t>(second.value[1]) - first.value[1],
+		static_cast<std::int64_t>(second.value[2]) - first.value[2]
+	};
+	const std::int64_t b[3] = {
+		static_cast<std::int64_t>(third.value[0]) - first.value[0],
+		static_cast<std::int64_t>(third.value[1]) - first.value[1],
+		static_cast<std::int64_t>(third.value[2]) - first.value[2]
+	};
+	std::int64_t normal[3] = {
+		a[1] * b[2] - a[2] * b[1],
+		a[2] * b[0] - a[0] * b[2],
+		a[0] * b[1] - a[1] * b[0]
+	};
+	std::int64_t maximum = 0;
+	for (const auto coordinate : normal)
+		maximum = std::max(maximum, coordinate < 0 ? -coordinate : coordinate);
+	if (maximum == 0)
+		return {};
+	const std::int64_t divisor =
+	    std::max<std::int64_t>(1, maximum / (LEVEL_METADATA_FIX_SCALE * 10));
+	result = source.source_position;
+	for (int axis = 0; axis < 3; ++axis) {
+		const std::int64_t coordinate =
+		    static_cast<std::int64_t>(result.value[axis]) +
+		    normal[axis] / divisor;
+		result.value[axis] = static_cast<int>(std::max<std::int64_t>(
+		    std::numeric_limits<int>::min(),
+		    std::min<std::int64_t>(coordinate, std::numeric_limits<int>::max())));
+	}
+	return result;
 }
 
 class route_heap
@@ -342,7 +416,13 @@ std::vector<route_trigger_source> discover_trigger_sources_internal(
 		    state_flag(progress.trigger_in_progress, trigger))
 			continue;
 		const auto &source_topology = snapshot.topology.walls[source_wall];
-		route_position source_position = source_topology.target;
+		route_position source_position;
+		if (snapshot.state.walls[source_wall].kind == route_wall_kind::open &&
+		    valid_segment(snapshot, source_topology.segment))
+			source_position =
+			    snapshot.topology.segments[source_topology.segment].center;
+		if (!source_position.valid)
+			source_position = source_topology.target;
 		if (!source_position.valid &&
 		    valid_segment(snapshot, source_topology.segment))
 			source_position =
@@ -1640,9 +1720,13 @@ class dependency_planner
 		        : "Pass through";
 		step.label = std::string(action) + " trigger " +
 		             std::to_string(source.trigger);
+		if (step.activation == route_activation_kind::fly_through_trigger &&
+		    valid_segment(snapshot_, source.source_segment))
+			step.aim_position = crossing_aim_position(snapshot_, source);
 		if (valid_wall(snapshot_, source.source_wall)) {
-			step.aim_position =
-			    snapshot_.topology.walls[source.source_wall].target;
+			if (!step.aim_position.valid)
+				step.aim_position =
+				    snapshot_.topology.walls[source.source_wall].target;
 			step.label_position = step.aim_position;
 		}
 		for (const auto &link : trigger.links) {
@@ -1666,10 +1750,14 @@ class dependency_planner
 			return false;
 		}
 		auto source = raw_sources.front();
-		const auto firing_sources = discover_trigger_sources_internal(
-		    snapshot_, state_.progress, segment, side, false);
-		const auto firing = select_trigger_firing_path(
-		    snapshot_, query_, state_.progress, firing_sources, visibility_);
+		route_trigger_path_selection firing;
+		if (valid_wall(snapshot_, source.source_wall) &&
+		    snapshot_.topology.walls[source.source_wall].shootable_trigger) {
+			const auto firing_sources = discover_trigger_sources_internal(
+			    snapshot_, state_.progress, segment, side, false);
+			firing = select_trigger_firing_path(
+			    snapshot_, query_, state_.progress, firing_sources, visibility_);
+		}
 		if (firing.found)
 			source = firing.source;
 		if (state_flag(state_.progress.fired_triggers, source.trigger))

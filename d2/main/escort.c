@@ -310,9 +310,9 @@ const char *escort_get_route_goal_instruction(void)
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
 			return "follow me, then shoot the marked switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
-			return "fly through this trigger";
+			return "follow me, then fly through the marked opening";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
-			return "pass through this trigger";
+			return "follow me, then pass through the marked trigger";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
 			return "follow me, then open the marked hidden door";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:

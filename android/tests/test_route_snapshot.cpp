@@ -696,6 +696,34 @@ int main()
 	assert(direct_trigger_step.path.reached);
 	assert(direct_trigger_step.path.segments.size() == 1);
 	assert(direct_trigger_step.path.segments[0] == 0);
+	auto fly_through_snapshot = triggered_snapshot;
+	fly_through_snapshot.state.walls[0].kind =
+	    dxx_route::route_wall_kind::open;
+	fly_through_snapshot.topology.segments[1].center =
+	    fly_through_snapshot.topology.segments[0].center;
+	fly_through_snapshot.topology.walls[0].target =
+	    fly_through_snapshot.topology.segments[0].center;
+	fly_through_snapshot.topology.segments[0].vertices[7].value = { 0, 0, 0 };
+	fly_through_snapshot.topology.segments[0].vertices[6].value = { 0, 100, 0 };
+	fly_through_snapshot.topology.segments[0].vertices[2].value = { 0, 100, 100 };
+	const auto fly_through_sources = dxx_route::discover_trigger_sources(
+	    fly_through_snapshot, source_progress, 1, 0);
+	assert(fly_through_sources.size() == 1);
+	assert(fly_through_sources[0].source_position.value ==
+	       fly_through_snapshot.topology.segments[0].center.value);
+	const auto fly_through_dependency = dxx_route::resolve_trigger_dependency(
+	    fly_through_snapshot, planner_query, source_progress, 1, 0);
+	assert(fly_through_dependency.resolved);
+	assert(fly_through_dependency.steps.size() == 1);
+	const auto &fly_through_step = fly_through_dependency.steps[0];
+	assert(fly_through_step.activation ==
+	       dxx_route::route_activation_kind::fly_through_trigger);
+	assert(fly_through_step.activation_position.value ==
+	       fly_through_snapshot.topology.segments[0].center.value);
+	assert(fly_through_step.activation_position.value !=
+	       fly_through_step.aim_position.value);
+	assert(fly_through_step.aim_position.value[0] >
+	       fly_through_step.activation_position.value[0]);
 	const auto nested_snapshot = make_nested_trigger_snapshot();
 	dxx_route::route_query nested_query;
 	nested_query.start = nested_snapshot.state.start_position;
