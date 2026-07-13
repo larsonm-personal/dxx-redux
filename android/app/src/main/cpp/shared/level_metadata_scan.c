@@ -3255,7 +3255,7 @@ route_partial:
 	return 0;
 }
 
-int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state)
+int level_metadata_scan_level_summary(const level_metadata_scan_view *view, level_metadata_state *state)
 {
 	level_metadata_state_clear(state);
 	if (!state || !view_is_valid(view))
@@ -3266,7 +3266,16 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	state->matcen_raw_count = count_connected_special_components(view, view->segment_special_robotmaker, &state->matcen_segment_count);
 	state->matcen_count = state->matcen_segment_count;
 	collect_guidebot_info(view, state);
+	return state->energy_center_count;
+}
+
+int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state)
+{
+	int energy_center_count = level_metadata_scan_level_summary(view, state);
+
+	if (!state || !view_is_valid(view))
+		return 0;
 	collect_route_chain(view, state);
 	collect_route_travel_metrics(state);
-	return state->energy_center_count;
+	return energy_center_count;
 }

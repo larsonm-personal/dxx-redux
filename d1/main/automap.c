@@ -110,6 +110,8 @@ typedef struct automap
 	int			secret_label_projected_count;
 	int			objective_label_candidate_count;
 	int			objective_label_projected_count;
+	int			objective_connector_candidate_count;
+	int			objective_connector_drawn_count;
 	
 	// Edge list variables
 	int			num_edges;
@@ -197,6 +199,8 @@ int automap_get_view_info(automap_view_info *out) {
 	out->objective_overlay_enabled = level_metadata_get_show_objectives();
 	out->objective_label_candidate_count = am->objective_label_candidate_count;
 	out->objective_label_projected_count = am->objective_label_projected_count;
+	out->objective_connector_candidate_count = am->objective_connector_candidate_count;
+	out->objective_connector_drawn_count = am->objective_connector_drawn_count;
 	for (i = 0; i <= am->highest_edge_index; i++) {
 		Edge_info *e = &am->edges[i];
 
@@ -529,6 +533,10 @@ void draw_automap(automap *am)
 			break;
 		}
 	}
+
+	automap_metadata_draw_connectors(
+		&am->objective_connector_candidate_count,
+		&am->objective_connector_drawn_count);
 
 	g3_end_frame();
 

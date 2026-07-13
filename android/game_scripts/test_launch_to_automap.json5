@@ -6,8 +6,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"MISSION": "First Strike", "GAME_NUM": "1", "GAME_DIR": "d1x-redux"},
-            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2", "GAME_DIR": "d2x-redux"}
+            "d1": {"MISSION": "First Strike", "GAME_NUM": "1", "GAME_DIR": "d1x-redux", "LEVEL": "1"},
+            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2", "GAME_DIR": "d2x-redux", "LEVEL": "2"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -51,7 +51,10 @@
 
     // Mission select
     {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
-    // accept default level 1
+    // D2 uses level 2 because its route has paired shoot-switch guidance.
+    {"action": "wait_ms", "ms": 300, "when": "d2"},
+    {"action": "key", "key": "backspace", "when": "d2", "post_delay_ms": 100},
+    {"action": "key", "key": "${LEVEL}", "when": "d2", "post_delay_ms": 100},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     // difficulty (wait for menu transition from level dialog)
@@ -63,7 +66,7 @@
 
     // Wait for game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
-    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "${LEVEL}"}},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"physfs.write_dir": {"contains": "${GAME_DIR}"}}},
     {"action": "assert", "expect": {"physfs.search_path": {"contains": "${GAME_DIR}"}}},
@@ -91,6 +94,10 @@
         "automap.objective_label_candidate_count": {"gt": 0},
         "automap.objective_label_projected_count": {"gt": 0}
     }},
+    {"action": "assert", "when": "d2", "expect": {
+        "automap.objective_connector_candidate_count": {"gt": 0},
+        "automap.objective_connector_drawn_count": {"gt": 0}
+    }},
 
     {"action": "set_objective_overlay", "enabled": false, "post_delay_ms": 100},
     {"action": "wait_ms", "ms": 100},
@@ -98,7 +105,9 @@
     {"action": "assert", "expect": {
         "automap.objective_overlay_enabled": "false",
         "automap.objective_label_candidate_count": "0",
-        "automap.objective_label_projected_count": "0"
+        "automap.objective_label_projected_count": "0",
+        "automap.objective_connector_candidate_count": "0",
+        "automap.objective_connector_drawn_count": "0"
     }},
 
     // Close automap (ESC)

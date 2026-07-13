@@ -75,6 +75,26 @@ typedef struct escort_route_link_analysis {
 	int wall;
 } escort_route_link_analysis;
 
+#ifdef INTROSPECT_ON
+typedef struct escort_path_parity_result {
+	int valid;
+	int match;
+	int start_seg;
+	int goal_seg;
+	int ordinary_result;
+	int route_result;
+	int ordinary_length;
+	int route_length;
+	int first_mismatch;
+	int ai_state_match;
+	int restored_state_match;
+	unsigned int ordinary_rng_state;
+	unsigned int route_rng_state;
+	unsigned int ordinary_rng_calls;
+	unsigned int route_rng_calls;
+} escort_path_parity_result;
+#endif
+
 extern int escort_get_route_goal_active(void);
 extern int escort_get_route_goal_seg(void);
 extern int escort_get_route_goal_side(void);
@@ -91,6 +111,7 @@ extern int escort_get_route_goal_guidance_seg(void);
 extern int escort_get_route_goal_guidance_side(void);
 extern int escort_get_route_goal_path_endpoint_seg(void);
 extern int escort_get_route_goal_path_pending(void);
+extern const char *escort_get_route_goal_instruction(void);
 extern int escort_get_route_target_mode(void);
 extern const char *escort_get_route_target_mode_name(void);
 extern const char *escort_get_route_last_replan_reason(void);
@@ -116,6 +137,10 @@ extern void escort_route_link_analysis_clear(escort_route_link_analysis *analysi
 extern int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis);
 extern int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis);
 extern const char *escort_route_step_satisfied_reason_name(int reason);
+#ifdef INTROSPECT_ON
+extern int escort_debug_compare_route_path(void);
+extern void escort_get_path_parity_result(escort_path_parity_result *result);
+#endif
 #endif
 extern void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu);
 extern void input_demo_apply_recorded_guidebot_find_secret(void);

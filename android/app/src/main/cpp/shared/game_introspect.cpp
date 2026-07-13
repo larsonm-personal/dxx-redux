@@ -595,6 +595,7 @@ static json serialize_level_metadata_route()
 	route_snapshot_summary snapshot = {};
 	route_edge_shadow_summary edge_shadow = {};
 	route_planner_shadow_summary planner_shadow = {};
+	route_planner_plan_summary canonical_plan = {};
 	level_metadata_visibility_cache_summary visibility_cache = {};
 	int count = 0;
 
@@ -606,6 +607,8 @@ static json serialize_level_metadata_route()
 	}
 	result["status"] = level_metadata_route_status_name(metadata->route_status);
 	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
+	result["planner_source"] =
+	    level_metadata_get_canonical_route_plan_summary(&canonical_plan) ? "shared_cpp" : "unavailable";
 	if (level_metadata_get_visibility_cache_summary(&visibility_cache)) {
 		result["visibility_cache"] = {
 			{ "world_hash", visibility_cache.world_hash },
@@ -905,6 +908,7 @@ static json serialize_guidebot()
 	result["route_goal_guidance_side"] = escort_get_route_goal_guidance_side();
 	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
 	result["route_goal_path_pending"] = (bool) escort_get_route_goal_path_pending();
+	result["route_goal_instruction"] = escort_get_route_goal_instruction();
 	result["route_target_mode"] = escort_get_route_target_mode();
 	result["route_target_mode_name"] = escort_get_route_target_mode_name();
 	result["route_last_replan_reason"] = escort_get_route_last_replan_reason();
@@ -919,6 +923,62 @@ static json serialize_guidebot()
 	    live_plan_available ? live_plan.first_pending_path_terminal_segment : -1;
 	result["route_partial_frontier_seg"] =
 	    live_plan_available ? live_plan.partial_frontier_segment : -1;
+	const level_metadata_route_step *active_step =
+	    live_plan_available && route_metadata && live_plan.first_pending_step >= 0 &&
+	            live_plan.first_pending_step < route_metadata->route_step_count
+	        ? &route_metadata->route_steps[live_plan.first_pending_step]
+	        : nullptr;
+	escort_route_step_analysis active_analysis;
+	escort_route_step_analysis_clear(&active_analysis);
+	const bool active_analysis_available =
+	    active_step && escort_route_analyze_step(
+	                       live_plan.first_pending_step, &active_analysis) != 0;
+	result["route_goal_activation_pos"] =
+	    active_step && active_step->activation_pos_valid
+	        ? json::array({ f2fl(active_step->activation_pos[0]),
+	                        f2fl(active_step->activation_pos[1]),
+	                        f2fl(active_step->activation_pos[2]) })
+	        : json(nullptr);
+	result["route_goal_aim_pos"] =
+	    active_step && active_step->aim_pos_valid
+	        ? json::array({ f2fl(active_step->aim_pos[0]),
+	                        f2fl(active_step->aim_pos[1]),
+	                        f2fl(active_step->aim_pos[2]) })
+	        : json(nullptr);
+	result["route_goal_satisfied"] =
+	    active_analysis_available ? json(active_analysis.satisfied != 0) : json(nullptr);
+	result["route_goal_satisfied_reason"] =
+	    active_analysis_available
+	        ? json(escort_route_step_satisfied_reason_name(active_analysis.satisfied_reason))
+	        : json(nullptr);
+	result["route_goal_linked_walls_passable"] =
+	    active_analysis_available && active_analysis.linked_wall_count > 0
+	        ? json(active_analysis.linked_walls_passable != 0)
+	        : json(nullptr);
+	result["route_goal_first_blocking_wall"] =
+	    active_analysis_available ? active_analysis.first_blocking_wall : -1;
+	escort_path_parity_result path_parity = {};
+	escort_get_path_parity_result(&path_parity);
+	result["path_parity"] = {
+		{ "valid", path_parity.valid != 0 },
+		{ "match", path_parity.match != 0 },
+		{ "start_seg", path_parity.start_seg },
+		{ "goal_seg", path_parity.goal_seg },
+		{ "ordinary_result", path_parity.ordinary_result },
+		{ "route_result", path_parity.route_result },
+		{ "ordinary_length", path_parity.ordinary_length },
+		{ "route_length", path_parity.route_length },
+		{ "length_match", path_parity.ordinary_length == path_parity.route_length },
+		{ "first_mismatch", path_parity.first_mismatch },
+		{ "ai_state_match", path_parity.ai_state_match != 0 },
+		{ "restored_state_match", path_parity.restored_state_match != 0 },
+		{ "ordinary_rng_state", path_parity.ordinary_rng_state },
+		{ "route_rng_state", path_parity.route_rng_state },
+		{ "rng_state_match", path_parity.ordinary_rng_state == path_parity.route_rng_state },
+		{ "ordinary_rng_calls", path_parity.ordinary_rng_calls },
+		{ "route_rng_calls", path_parity.route_rng_calls },
+		{ "rng_calls_match", path_parity.ordinary_rng_calls == path_parity.route_rng_calls },
+	};
 	result["route_selector_compare_count"] = escort_get_route_selector_compare_count();
 	result["route_selector_mismatch_count"] = escort_get_route_selector_mismatch_count();
 	result["route_selector_shared_index"] = escort_get_route_selector_shared_index();
@@ -1447,7 +1507,9 @@ extern "C" char *game_introspect_get_state(void)
 				{ "secret_label_projected_count", avi.secret_label_projected_count },
 				{ "objective_overlay_enabled", (bool) avi.objective_overlay_enabled },
 				{ "objective_label_candidate_count", avi.objective_label_candidate_count },
-				{ "objective_label_projected_count", avi.objective_label_projected_count }
+				{ "objective_label_projected_count", avi.objective_label_projected_count },
+				{ "objective_connector_candidate_count", avi.objective_connector_candidate_count },
+				{ "objective_connector_drawn_count", avi.objective_connector_drawn_count }
 			};
 		} else {
 			j["automap"] = nullptr;

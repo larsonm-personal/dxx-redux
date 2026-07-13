@@ -40,24 +40,25 @@ Parity has two separate meanings and both must pass:
   - Confirmed the existing unexplored-goal emulator fixture is stale at command selection: its hardcoded wheel action IDs select `end_of_level`, so it does not currently exercise unexplored routing.
   - Added semantic radial-menu automation backed by the Kotlin overlay's visible wheel labels and migrated the unexplored fixture away from its numeric goal action ID.
   - The repaired emulator fixture verifies that `Guide` -> `Unexplored` is visible, dispatches through the production radial binding path, selects unexplored route mode, and retains that mode after the former refresh interval.
-  - Player-assisted guidance and completion fixtures remain pending.
+  - Phase 6 now has a player-assisted switch fixture; additional hidden-door,
+    directed-crossing, blastable-wall, boss, reactor, and exit fixtures remain.
 - [ ] Phase 1 in progress: add the engine-neutral topology/state snapshot in shadow-only form.
   - Added deterministic C++ topology and mutable-state snapshots, hashes, validation, C ABI summary, unit tests, and canonical level-load capture for D1 and D2.
   - Expanded the shadow snapshot with normalized D1/D2 trigger kinds, trigger effect links, per-side opener source walls, mutable trigger flags/disabled state, and live progression-object identity, containment, position, boss, and companion state.
   - Added a separate live Guide-Bot snapshot summary for route-only replans; canonical level-load diagnostics are no longer the only observable snapshot and are cleared independently on level changes.
   - Exposed the canonical snapshot summary through introspection without changing route selection or simulation RNG.
   - Added normalized wall kinds, key requirements, lock/open/hidden state, endpoint kinds, progression and navigator profiles, and the explicit route-query domain type.
-  - Added engine-derived side centers and stable wall target points to shared topology; the C analyzer now consumes the same side-center callback with its vertex average retained as a headless fallback.
+  - Added engine-derived side centers and stable wall target points to shared topology; the legacy metadata analyzer now consumes the same side-center callback with its vertex average retained as a headless fallback.
   - Added independent mutable-state fingerprints and live generations for start, progression, navigation, trigger, object, and automap domains, exposed for canonical/live introspection and future cache keys.
   - Preserved each semantic step's exact analyzer-selected activation position and distinct wall/object aim point through the shared route-step ABI and live introspection; off-center visible firing positions are no longer discarded.
   - Player-radius occupancy validation for guidance poses, action-specific player hit validation, and event-driven generation hooks remain pending.
 - [x] Phase 2 complete: centralize rich edge evaluation after snapshot parity is established.
   - Added a shared C++ edge evaluator with rich blocker/action results and a legacy three-state projection.
-  - Added canonical per-side shadow comparison against the active C evaluator, mismatch introspection, and progression/navigator capability unit coverage.
+  - Added canonical per-side shadow comparison against the active legacy evaluator, mismatch introspection, and progression/navigator capability unit coverage.
   - Confirmed zero edge-cost mismatches in synthetic D1/D2 fixtures and the Counterstrike level 1 emulator route scan while preserving all 1,274 reviewed corpus route projections.
   - Added an opt-in strict headless shadow gate and a no-copy host corpus mode so archive regeneration executes old/new edge parity across every loaded level without rewriting reviewed JSON.
   - Confirmed zero edge-cost mismatches across all base Descent and Counterstrike levels plus 1,244 levels from 109 mission archives; the remaining archive contains no mission descriptor and was skipped by existing policy.
-  - The C planner remains authoritative; porting semantic dependency planning is the next migration boundary.
+  - The legacy native planner remains authoritative; porting semantic dependency planning is the next migration boundary.
 - [x] Phase 3 complete: port semantic dependency planning behind corpus shadow comparisons.
   - Ported deterministic weighted segment search, parent-chain retention, progress weighting, and first-obstruction capture into the shared C++ planner.
   - Added exact pessimistic/optimistic per-segment shadow comparison for reachability, distance, progress weight, parent segment, and parent side, with strict headless and introspection diagnostics.
@@ -76,7 +77,7 @@ Parity has two separate meanings and both must pass:
   - Ported ordered trigger-source discovery with direct-side-before-reverse-side precedence, stable source-wall ordering, source activation positions, and fired, disabled, non-progress, and in-progress trigger filtering.
   - Added per-side trigger-source shadow comparison in all four progression states, strict headless diagnostics, unit coverage, and live introspection; confirmed zero mismatches in D1/D2 fixtures, all base campaigns, 1,244 levels from 109 mission archives, and the Counterstrike unexplored-goal emulator fixture.
   - Ported trigger firing-path selection through an engine-neutral visibility callback, retaining deterministic search visit order and the exact preferred, center, side, vertex, and edge sample sequence used by metadata.
-  - Reused one pessimistic search tree across candidate trigger sources, preserving direct-path and visibility-fallback ranking while avoiding the C planner's repeated full-mine search per source.
+  - Reused one pessimistic search tree across candidate trigger sources, preserving direct-path and visibility-fallback ranking while avoiding the legacy planner's repeated full-mine search per source.
   - Added direct and visibility-fallback unit fixtures plus bounded direct/visible shadow comparisons for distinct progression states; base campaigns, 106 fully strict archive scans, the remaining available archive comparisons, and the Counterstrike unexplored-goal emulator fixture report zero firing-path mismatches.
   - Existing unrelated strict diagnostics remain in K_SOS and Levigen edge/search parity, while KCXF2 level 4 still reports shadow data unavailable; none reports a firing-path mismatch.
   - Completed the exact FVI visibility cache shared by metadata recursion, C/C++ shadow comparison, and live Guide-Bot fallback. Wall and object-target rays are keyed by the exact source pose and target, so reachability-only recalculations reuse them while door doorway state, textures, or level geometry changes invalidate the cache through a direct world fingerprint.
@@ -84,7 +85,7 @@ Parity has two separate meanings and both must pass:
   - Completed recursive trigger dependency resolution in the shared planner. Trigger sources can now transactionally resolve prerequisite keys, hidden doors, and other triggers; failed branches restore semantic steps and progress state, dependency loops retain legacy diagnostics, and every emitted step preserves its activation pose, aim target, opened links, distance, and selected segment chain.
   - Added a legacy-C shadow entry point and exact result comparison for success, diagnostics, final progress, step order and fields, activation and aim poses, opened links, and distances. Direct, visible, nested-trigger, and loop fixtures pass in D1 and D2.
   - Strict base campaigns and all 109 processable mission archives pass with zero recursive-dependency mismatches; one descriptor-less archive remains an expected skip. The Counterstrike unexplored live fixture compared four dependencies with zero mismatches while preserving all 1,274 reviewed route fingerprints.
-  - Completed the generic end-of-level and specified-segment route driver in shared C++. It now owns top-level key recovery, boss/reactor and exit actions, partial status, unresolved trigger or hidden-door frontier steps, exact terminal positions, and complete route-signature comparison against the migration C planner.
+  - Completed the generic end-of-level and specified-segment route driver in shared C++. It now owns top-level key recovery, boss/reactor and exit actions, partial status, unresolved trigger or hidden-door frontier steps, exact terminal positions, and complete route-signature comparison against the legacy planner retained during migration.
   - Expanded differential coverage from level-start synthetic states to every emitted key, trigger, and hidden-door checkpoint, plus independent all-keys-avoided and all-triggers-avoided states. The strict headless gate now includes recursive dependency and complete-route mismatches instead of silently omitting them.
   - Fixed keyed doors that also have trigger openers: avoiding a failed trigger now falls through to the independent key requirement instead of blocking the edge. Counterstrike level 17 and its TRINITY level 44 copy remain `ok` while dropping the same unnecessary trigger 5 detour; these are the only reviewed route-signature changes across all 1,274 corpus records.
   - Fixed D1 snapshot normalization for ordinary doors whose unset raw key field is zero even though `KEY_NONE` is nonzero. D1 and D2 unit tests and strict base campaigns pass with zero edge, search, dependency, or complete-route mismatches.
@@ -93,7 +94,7 @@ Parity has two separate meanings and both must pass:
   - Added exact unexplored-route shadow comparison for component size, target segment, first semantic waypoint, direct reachability, status, diagnostics, and every semantic step. D1/D2 unit fixtures, both strict base campaigns, built-in Counterstrike, and all 109 processable mission archives pass with zero unexplored-route mismatches; one descriptor-less archive remains an expected skip.
   - Updated the live Counterstrike unexplored-wheel fixture for data-dependent checkpoint counts. It selects `Guide` -> `Unexplored` by visible text, confirms Guide-Bot retains unexplored mode, and reports zero unexplored-route, complete-route, dependency, firing-path, source, target, search, and edge mismatches with the visibility cache active.
   - Phase 4 is next: separate canonical and live shared plans, then make Guide-Bot consume the first pending shared waypoint without rebuilding route meaning in `escort.c`.
-  - Live behavior remains on the C planner until the Phase 4 consumer bridge is green across the same gates.
+  - Live behavior remains on the legacy planner until the Phase 4 consumer bridge is green across the same gates.
 - [x] Phase 4 complete: separate canonical and live plans and bridge Guide-Bot to shared C++ output.
   - Added a C ABI projection for end-of-level, unexplored, and explicit-segment shared plans, including the first pending waypoint and its preserved diagnostic-only path summary.
   - Canonical metadata and live Guide-Bot route state now have independent storage and getters. Canonical serializers and overlays no longer observe route-only Guide-Bot replans.
@@ -101,16 +102,35 @@ Parity has two separate meanings and both must pass:
   - Fixed the first live selector mismatch exposed by the new gate: key steps were omitted from the common targetability helper because the legacy selector handled them in a separate branch.
   - Nonowner co-op peers return before live route planning. Introspection reports shared planner provenance, first-waypoint path data, current selector parity, and the exact pair from any mismatch.
   - D1/D2 projection tests cover all three endpoint policies. Windows D1/D2 builds, both strict base-campaign scans, corpus status/fingerprint tests, all Android ABIs, and the live Counterstrike unexplored-wheel fixture pass with zero selector or planner-shadow mismatches.
-  - Phase 5 is in progress: restore and enforce the classic movement boundary while retaining the shared planner only for semantic objective and goal-segment selection.
+  - [x] Phase 5 complete: restored and enforced the classic movement boundary while retaining the shared planner only for semantic objective and goal-segment selection.
   - [x] Restored the original `aipath.c` doorway/openable-door predicate and removed the metadata-aware Guide-Bot path wrapper.
   - [x] The shared planner's first pending path terminal is now the high-level Guide-Bot goal; the duplicate live firing-position and reachability searches were deleted.
   - [x] Restored classic command scheduling and return-to-player timing by removing command-time path creation, duplicate polishing, and pending-route suppression.
   - [x] Partial-route closest-frontier selection now belongs to the shared planner, and shared route goals issue one ordinary classic path request.
-  - [ ] Add path, scheduling, and RNG parity coverage before closing Phase 5.
-  - D1 and D2 Windows builds and native suites pass (19 and 22 tests), including a new partial-frontier planner test. Android debug builds pass for all three ABIs.
+  - [x] Added path, scheduling, and RNG parity coverage before closing Phase 5.
+  - D1 and D2 Windows builds and native suites pass (20 and 23 tests), including the partial-frontier planner test. Android debug builds pass for all three ABIs.
   - Full host metadata regeneration completed 109 mission archives with one skip and zero failures; all 1,274 reviewed route fingerprints and base-campaign status gates remain unchanged.
   - The KCXF2 hidden-door fixture and the unexplored wheel fixture pass. The KCXF2 fixture now follows semantic objective identity instead of assuming the total live route-step count remains fixed while Guide-Bot moves.
-  - Remaining Phase 5 gate: add a dedicated trace comparator that starts ordinary and shared-route goals from identical object, segment, timer, and RNG state and compares the resulting classic path and RNG delta.
+  - Added a debug-only ordinary-versus-route path comparator. It snapshots Guide-Bot AI, all robot path lengths, route intent, and simulation RNG; runs classic path construction twice from the same object, segment, target, and RNG state; compares every point, AI bookkeeping, return value, RNG calls, and ending RNG state; then proves the original state was restored.
+  - [x] Phase 6 initial slice complete: added passive player guidance and switch completion coverage without adding a Guide-Bot action executor.
+  - [x] Route instructions now tell the player to follow Guide-Bot and perform the marked switch or hidden-door action. Introspection exposes the active instruction, activation/aim positions, completion reason, linked-wall passability, and first blocking wall.
+  - [x] The Android automap marks the active activation position and aim point. These positions are presentation data only and are never passed to Guide-Bot movement, orientation, or firing.
+  - [x] Numbered automap cheat objectives now render distinct shoot-switch activation and aim positions as a same-number pair with an inset, same-color 3D connector. Connector candidate/drawn counts are introspectable; D2 Counterstrike level 2 and the D1 no-pair case pass the shared automap fixture.
+  - [x] Added a test-only player pose action and extended the KCXF2 level 5 live fixture. It proves trigger 6 remains blocked while Guide-Bot waits, then advances from the blue-key stage to the red key only after ordinary player fire from the reported guidance pose.
+  - [x] Rejected an experimental 200-unit firing-ray limit after the corpus exposed 55 route-status regressions. Also rejected stricter finite `FQ_TRANSPOINT` sampling for semantic dependency discovery after six valid routes regressed. Route discovery retains its established transparent-wall existence approximation; exact player execution is tested live.
+  - Windows D1/D2 builds and route snapshot tests pass. The full host corpus remains 109 passed, one descriptor-less skip, zero failed, with no route-status regressions. The KCXF2 player-assisted switch fixture passes all 45 steps.
+  - The live KCXF2 level 4 fixture compared two identical 30-point paths toward hidden-door segment 221. Both consumed 458 simulation RNG calls and ended at RNG state 2654953511, with no point or AI mismatch and exact post-probe restoration.
+  - Route commands once again use only the original Guide-Bot frame scheduling, return-to-player interruption, `create_path_to_segment()`, and polish lifecycle. The fixture uses the existing warp command only to establish a deterministic nearby starting state before NEXT, then confirms the route remains active at wall 61 after classic scheduling continues.
+  - The comparator intentionally exercises core classic path construction without invoking `polish_path()` twice in one tick. The original companion polish guard makes a same-tick second call differ by design; source structure and the live fixture instead verify that ordinary and route goals share the one classic polish lifecycle.
+- [x] Canonical metadata route cut over to the shared C++ planner.
+  - Keep non-route metadata aggregation in `level_metadata_scan_level_summary()` while producing route and travel fields with the same shared `route_planner_plan_view()` result consumed by live Guide-Bot routing.
+  - Retain the legacy native planner only behind strict differential comparison until the full mission corpus proves the authoritative cutover is behaviorally stable.
+  - Expose canonical planner provenance through introspection so integration tests can distinguish shared authority from shadow availability.
+  - Split summary-only metadata aggregation from legacy route construction, so normal canonical generation no longer computes and discards a legacy route before calling the shared planner.
+  - Bounded malformed trigger-link counts to the engine array and normalized a 255-wall third-party level to the 254-wall engine limit without out-of-bounds metadata reads. Orion, KCXF2, and Plutonia retained their prior valid routes.
+  - Regenerated built-in Counterstrike and all 110 mission archives: 109 passed, one descriptor-less archive was skipped, and none failed.
+  - Reviewed the only three checked route changes across the corpus. `eq-set` now exposes hidden doors crossed by two routes, `vignett2` uses a verified nearby switch firing position, and `af_d1_beta` preserves its semantic steps while avoiding a shorter traversal that treated a hidden wall as freely passable.
+  - Windows D1/D2 builds, all 20 D1 and 23 D2 native tests, all Android ABIs, and the 37-step live KCXF2 fixture pass. Live introspection reports `shared_cpp` for both canonical metadata and Guide-Bot routing.
 
 ## Non-Goals
 
@@ -517,12 +537,12 @@ Work:
 - Port deterministic path ranking, target selection, keys, triggers, hidden doors, boss/reactor, exits, unexplored components, and partial-route production.
 - Preserve exact segment chains and terminal poses that are currently discarded.
 - Keep metadata JSON projection byte-stable where ordering and numeric formatting are intentionally unchanged.
-- Run the old C planner and new C++ planner in corpus shadow mode.
+- Run the legacy planner and shared C++ planner in corpus shadow mode.
 - Categorize every difference as bug fix, deterministic tie resolution, or regression before accepting it.
 
 Exit gate: base campaigns remain strict; full-corpus status does not regress; all changed semantic signatures are reviewed; synthetic parity tests pass in D1 and D2.
 
-Rollback: retain the C planner as the active implementation.
+Rollback: retain the legacy planner as the active implementation.
 
 ### Phase 4: Separate Canonical and Live Plans
 
@@ -607,7 +627,7 @@ Delete only after all prior gates have been green for at least one full regressi
 | Edge unit tests | Every wall, key, trigger, control-center, hidden, buddy-proof, and blastable state | Exact rich decision and C projection |
 | Planner unit tests | Keys, trigger chains, loops, multiple openers, hidden doors, boss/reactor, exits, unexplored | Exact deterministic plan signature |
 | Completion tests | Required link subset, disabled trigger, missing target, reclosed door | Correct four-state evaluation |
-| Differential tests | Old C planner versus C++ shadow planner | No unexplained difference |
+| Differential tests | Legacy planner versus shared C++ planner | No unexplained difference |
 | Corpus | All 1,281 checked-in records plus archive regeneration where available | No unreviewed status or step regression |
 | Base campaigns | Descent and Counterstrike | Existing strict policy remains green |
 | Live planner scripts | KCXF2, Obsidian, unexplored | Correct first pending shared waypoint |
@@ -660,7 +680,7 @@ Delete only after all prior gates have been green for at least one full regressi
 | Large rewrite obscures regressions | Small phases, shadow mode, old implementation retained |
 | Canonical metadata changes unintentionally | Frozen plan signatures and strict base campaigns |
 | High-level goal changes perturb classic path RNG | Shared planning consumes no RNG; preserve classic path call timing and RNG behavior exactly for the same goal segment, and treat only a changed goal segment as intentional divergence |
-| C++ cannot be called cleanly from C engine files | Stable `extern "C"` facade and C-compatible result projection |
+| Shared C++ cannot be called cleanly from C-in-C++ engine files | Stable C-linkage facade and C-compatible result projection |
 | Player and companion rules are conflated | Separate progression and navigator profiles |
 | Dynamic state causes replan storms | Generation keys, relevance filtering, and coalescing |
 | Multiplayer peers choose different unexplored targets | Only active owner plans; mode, not plan, is synchronized |

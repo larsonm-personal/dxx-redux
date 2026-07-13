@@ -642,6 +642,21 @@ static int test_reactorless_reachable_exit(void)
 	return failures;
 }
 
+static int test_level_summary_omits_route_work(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	level_metadata_scan_level_summary(&view, &state);
+	failures += expect_double("summary travel distance", 0.0, state.travel_distance);
+	failures += expect_int("summary travel time", 0, state.travel_time_seconds);
+	failures += expect_int("summary route steps", 0, state.route_step_count);
+	failures += expect_string("summary route problem", "", state.route_problem);
+	return failures;
+}
+
 static int test_reactorless_missing_exit(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1532,6 +1547,7 @@ int main(void)
 	int failures = 0;
 
 	failures += test_shared_route_edge_cost();
+	failures += test_level_summary_omits_route_work();
 	failures += test_reactorless_reachable_exit();
 	failures += test_reactorless_missing_exit();
 	failures += test_end_route_refresh_preserves_static_metadata();

@@ -240,6 +240,12 @@ static int Escort_route_selector_mismatch_legacy_index = -1;
 static int Escort_route_selector_mismatch_shared_goal = ESCORT_GOAL_UNSPECIFIED;
 static int Escort_route_selector_mismatch_legacy_goal = ESCORT_GOAL_UNSPECIFIED;
 static const char *Escort_route_last_replan_reason = "level_start";
+#ifdef INTROSPECT_ON
+static escort_path_parity_result Escort_path_parity_result;
+static point_seg Escort_path_parity_ordinary[MAX_SEGMENTS * 2];
+static point_seg Escort_path_parity_route[MAX_SEGMENTS * 2];
+static int Escort_path_parity_saved_path_lengths[MAX_OBJECTS];
+#endif
 
 static void escort_unexplored_route_target_clear(escort_unexplored_route_target *target)
 {
@@ -295,19 +301,19 @@ static const char *escort_route_goal_label(void)
 	return Escort_route_goal.label[0] ? Escort_route_goal.label : "route objective";
 }
 
-static const char *escort_route_goal_instruction(void)
+const char *escort_get_route_goal_instruction(void)
 {
 	if (Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED)
 		return "unexplored";
 	switch (Escort_route_goal.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
-			return "go here and shoot this switch";
+			return "follow me, then shoot the marked switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 			return "fly through this trigger";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
 			return "pass through this trigger";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
-			return "open this hidden door";
+			return "follow me, then open the marked hidden door";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:
 			return "destroy the reactor";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS:
@@ -324,6 +330,7 @@ static int escort_route_shared_next_goal(int set_goal, int *selected_index);
 static void escort_route_refresh_metadata(void);
 static int escort_route_step_reachable(int step_index);
 static object *escort_route_reference_object(void);
+static int escort_valid_segment(int segnum);
 static int escort_key_owner_player(void);
 static int escort_owned_key_flags(void);
 static int escort_key_exists(int powerup_id);
@@ -403,6 +410,174 @@ int escort_get_route_goal_path_endpoint_seg(void)
 {
 	return Escort_route_goal.active ? Escort_route_goal.path_endpoint_seg : -1;
 }
+
+#ifdef INTROSPECT_ON
+static int escort_path_points_match(const point_seg *ordinary, int ordinary_length,
+	const point_seg *route, int route_length, int *first_mismatch)
+{
+	int i;
+
+	*first_mismatch = -1;
+	if (ordinary_length != route_length) {
+		*first_mismatch = ordinary_length < route_length ? ordinary_length : route_length;
+		return 0;
+	}
+	for (i = 0; i < ordinary_length; ++i) {
+		if (ordinary[i].segnum == route[i].segnum &&
+		    ordinary[i].point.x == route[i].point.x &&
+		    ordinary[i].point.y == route[i].point.y &&
+		    ordinary[i].point.z == route[i].point.z)
+			continue;
+		*first_mismatch = i;
+		return 0;
+	}
+	return 1;
+}
+
+static void escort_path_parity_capture_robot_paths(void)
+{
+	int i;
+
+	for (i = 0; i <= Highest_object_index; ++i)
+		Escort_path_parity_saved_path_lengths[i] =
+		    Objects[i].type == OBJ_ROBOT && Objects[i].control_type == CT_AI ?
+		        Objects[i].ctype.ai_info.path_length : -1;
+}
+
+static void escort_path_parity_restore_robot_paths(void)
+{
+	int i;
+
+	for (i = 0; i <= Highest_object_index; ++i)
+		if (Escort_path_parity_saved_path_lengths[i] >= 0 &&
+		    Objects[i].type == OBJ_ROBOT && Objects[i].control_type == CT_AI)
+			Objects[i].ctype.ai_info.path_length =
+			    Escort_path_parity_saved_path_lengths[i];
+}
+
+int escort_debug_compare_route_path(void)
+{
+	object *objp;
+	ai_static *aip;
+	ai_local *ailp;
+	ai_static saved_aip;
+	ai_local saved_ailp;
+	escort_route_goal saved_route_goal;
+	unsigned int rng_before, rng_calls_before;
+	unsigned int rng_restored;
+	unsigned int ordinary_rng_calls_after, route_rng_calls_after;
+	short ordinary_length = 0, route_length = 0;
+	int ordinary_mode_after, ordinary_cur_path_after, ordinary_path_length_after;
+	int ordinary_hide_index_after, ordinary_path_dir_after, ordinary_goal_segment_after;
+	int route_mode_after, route_cur_path_after, route_path_length_after;
+	int route_hide_index_after, route_path_dir_after, route_goal_segment_after;
+	int points_match;
+
+	memset(&Escort_path_parity_result, 0, sizeof(Escort_path_parity_result));
+	Escort_path_parity_result.first_mismatch = -1;
+	if (!Escort_route_goal.active || !escort_is_companion_object(Buddy_objnum) ||
+	    !escort_valid_segment(Escort_route_goal.target_seg) ||
+	    !d_rand_get_state(&rng_before))
+		return 0;
+
+	objp = &Objects[Buddy_objnum];
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[Buddy_objnum];
+	saved_aip = *aip;
+	saved_ailp = *ailp;
+	saved_route_goal = Escort_route_goal;
+	escort_path_parity_capture_robot_paths();
+	rng_calls_before = d_rand_get_call_count();
+	ailp->goal_segment = saved_route_goal.target_seg;
+
+	escort_route_clear_goal();
+	Escort_path_parity_result.ordinary_result = create_path_points(
+	    objp, objp->segnum, saved_route_goal.target_seg,
+	    Escort_path_parity_ordinary, &ordinary_length,
+	    Max_escort_length, 1, 1, -1);
+	d_rand_get_state(&Escort_path_parity_result.ordinary_rng_state);
+	ordinary_rng_calls_after = d_rand_get_call_count();
+	ordinary_mode_after = ailp->mode;
+	ordinary_cur_path_after = aip->cur_path_index;
+	ordinary_path_length_after = aip->path_length;
+	ordinary_hide_index_after = aip->hide_index;
+	ordinary_path_dir_after = aip->PATH_DIR;
+	ordinary_goal_segment_after = ailp->goal_segment;
+
+	d_rand_set_state(rng_before);
+	d_rand_set_call_count(rng_calls_before);
+	escort_path_parity_restore_robot_paths();
+	*aip = saved_aip;
+	*ailp = saved_ailp;
+	ailp->goal_segment = saved_route_goal.target_seg;
+	Escort_route_goal = saved_route_goal;
+	Escort_path_parity_result.route_result = create_path_points(
+	    objp, objp->segnum, saved_route_goal.target_seg,
+	    Escort_path_parity_route, &route_length,
+	    Max_escort_length, 1, 1, -1);
+	d_rand_get_state(&Escort_path_parity_result.route_rng_state);
+	route_rng_calls_after = d_rand_get_call_count();
+	route_mode_after = ailp->mode;
+	route_cur_path_after = aip->cur_path_index;
+	route_path_length_after = aip->path_length;
+	route_hide_index_after = aip->hide_index;
+	route_path_dir_after = aip->PATH_DIR;
+	route_goal_segment_after = ailp->goal_segment;
+
+	d_rand_set_state(rng_before);
+	d_rand_set_call_count(rng_calls_before);
+	escort_path_parity_restore_robot_paths();
+	*aip = saved_aip;
+	*ailp = saved_ailp;
+	Escort_route_goal = saved_route_goal;
+
+	Escort_path_parity_result.valid = 1;
+	Escort_path_parity_result.start_seg = objp->segnum;
+	Escort_path_parity_result.goal_seg = saved_route_goal.target_seg;
+	Escort_path_parity_result.ordinary_length = ordinary_length;
+	Escort_path_parity_result.route_length = route_length;
+	Escort_path_parity_result.ordinary_rng_calls = ordinary_rng_calls_after - rng_calls_before;
+	Escort_path_parity_result.route_rng_calls = route_rng_calls_after - rng_calls_before;
+	Escort_path_parity_result.ai_state_match =
+	    ordinary_mode_after == route_mode_after &&
+	    ordinary_cur_path_after == route_cur_path_after &&
+	    ordinary_path_length_after == route_path_length_after &&
+	    ordinary_hide_index_after == route_hide_index_after &&
+	    ordinary_path_dir_after == route_path_dir_after &&
+	    ordinary_goal_segment_after == route_goal_segment_after;
+	d_rand_get_state(&rng_restored);
+	Escort_path_parity_result.restored_state_match =
+	    aip->cur_path_index == saved_aip.cur_path_index &&
+	    aip->path_length == saved_aip.path_length &&
+	    aip->hide_index == saved_aip.hide_index &&
+	    aip->PATH_DIR == saved_aip.PATH_DIR &&
+	    ailp->mode == saved_ailp.mode &&
+	    ailp->goal_segment == saved_ailp.goal_segment &&
+	    Escort_route_goal.active == saved_route_goal.active &&
+	    Escort_route_goal.target_seg == saved_route_goal.target_seg &&
+	    Escort_route_goal.objective_kind == saved_route_goal.objective_kind &&
+	    Escort_route_goal.objective_wall == saved_route_goal.objective_wall &&
+	    rng_restored == rng_before &&
+	    d_rand_get_call_count() == rng_calls_before;
+	points_match = escort_path_points_match(
+	    Escort_path_parity_ordinary, ordinary_length,
+	    Escort_path_parity_route, route_length,
+	    &Escort_path_parity_result.first_mismatch);
+	Escort_path_parity_result.match =
+	    points_match && Escort_path_parity_result.ai_state_match &&
+	    Escort_path_parity_result.restored_state_match &&
+	    Escort_path_parity_result.ordinary_result == Escort_path_parity_result.route_result &&
+	    Escort_path_parity_result.ordinary_rng_state == Escort_path_parity_result.route_rng_state &&
+	    Escort_path_parity_result.ordinary_rng_calls == Escort_path_parity_result.route_rng_calls;
+	return Escort_path_parity_result.match;
+}
+
+void escort_get_path_parity_result(escort_path_parity_result *result)
+{
+	if (result)
+		*result = Escort_path_parity_result;
+}
+#endif
 
 int escort_get_route_target_mode(void)
 {
@@ -2861,7 +3036,7 @@ escort_goal_path_ready:
 		if (!used_nearest_point) {
 #ifdef __ANDROID__
 			if (using_route_goal)
-				buddy_message("Finding NEXT: %s", escort_route_goal_instruction());
+				buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
 			else
 #endif
 			say_escort_goal(Escort_goal_object);

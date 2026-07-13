@@ -44,6 +44,8 @@ typedef struct automap_view_info {
 	int         objective_overlay_enabled;
 	int         objective_label_candidate_count;
 	int         objective_label_projected_count;
+	int         objective_connector_candidate_count;
+	int         objective_connector_drawn_count;
 } automap_view_info;
 int automap_get_view_info(automap_view_info *out);
 #endif

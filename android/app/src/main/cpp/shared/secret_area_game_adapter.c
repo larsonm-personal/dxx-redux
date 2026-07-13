@@ -34,6 +34,8 @@
 
 static secret_area_state Secret_area_state;
 static level_metadata_state Level_metadata_canonical_state;
+static route_planner_plan_summary Level_metadata_canonical_plan_summary;
+static int Level_metadata_canonical_plan_summary_valid;
 static level_metadata_state Level_metadata_live_route_state;
 static int Level_metadata_live_route_state_valid;
 static route_planner_plan_summary Level_metadata_live_plan_summary;
@@ -50,6 +52,21 @@ static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
 static int Level_metadata_show_objectives;
+
+static void level_metadata_apply_planned_route(
+    level_metadata_state *destination,
+    const level_metadata_state *route)
+{
+	destination->travel_distance = route->travel_distance;
+	destination->travel_time_seconds = route->travel_time_seconds;
+	destination->route_status = route->route_status;
+	snprintf(destination->route_problem, sizeof(destination->route_problem), "%s", route->route_problem);
+	snprintf(destination->route_note, sizeof(destination->route_note), "%s", route->route_note);
+	destination->route_step_count = route->route_step_count;
+	memset(destination->route_steps, 0, sizeof(destination->route_steps));
+	memcpy(destination->route_steps, route->route_steps,
+	       sizeof(destination->route_steps[0]) * route->route_step_count);
+}
 
 typedef struct level_metadata_game_context {
 	int start_objnum;
@@ -373,11 +390,38 @@ static int secret_area_reverse_side(void *user, int seg, int child)
 	return find_connect_side(&Segments[seg], &Segments[child]);
 }
 
+static int secret_area_safe_wall_count(void)
+{
+	return Num_walls < MAX_WALLS ? Num_walls : MAX_WALLS;
+}
+
+static int secret_area_wall_index_valid(int wall_num)
+{
+	return wall_num >= 0 && wall_num < secret_area_safe_wall_count();
+}
+
+static int secret_area_bounded_trigger_link_count(int trigger_num)
+{
+	int count;
+
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 0;
+	count = Triggers[trigger_num].num_links;
+	if (count < 0)
+		return 0;
+	return count < MAX_WALLS_PER_LINK ? count : MAX_WALLS_PER_LINK;
+}
+
 static int secret_area_side_is_flyable(void *user, int seg, int side)
 {
+	int wall_num;
+
 	(void) user;
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return 0;
+	wall_num = Segments[seg].sides[side].wall_num;
+	if (wall_num >= 0 && !secret_area_wall_index_valid(wall_num))
+		return Segments[seg].children[side] >= 0;
 	return (WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG) != 0;
 }
 
@@ -400,7 +444,7 @@ static int secret_area_side_is_hard_blocked(void *user, int seg, int side)
 	if (objp->type != OBJ_ROBOT || !Robot_info[objp->id].companion)
 		return 0;
 	wall_num = Segments[seg].sides[side].wall_num;
-	if (wall_num < 0 || wall_num >= Num_walls ||
+	if (!secret_area_wall_index_valid(wall_num) ||
 	    !(Walls[wall_num].flags & WALL_BUDDY_PROOF))
 		return 0;
 	return !((WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG) ||
@@ -429,13 +473,13 @@ static int secret_area_wall_num(void *user, int seg, int side)
 	(void) user;
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return -1;
-	return Segments[seg].sides[side].wall_num;
+	return secret_area_wall_index_valid(Segments[seg].sides[side].wall_num) ? Segments[seg].sides[side].wall_num : -1;
 }
 
 static int secret_area_wall_segment(void *user, int wall_num)
 {
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return -1;
 	return Walls[wall_num].segnum;
 }
@@ -443,7 +487,7 @@ static int secret_area_wall_segment(void *user, int wall_num)
 static int secret_area_wall_side(void *user, int wall_num)
 {
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return -1;
 	return Walls[wall_num].sidenum;
 }
@@ -451,7 +495,7 @@ static int secret_area_wall_side(void *user, int wall_num)
 static int secret_area_wall_type(void *user, int wall_num)
 {
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return WALL_NORMAL;
 	return Walls[wall_num].type;
 }
@@ -459,7 +503,7 @@ static int secret_area_wall_type(void *user, int wall_num)
 static int secret_area_wall_flags(void *user, int wall_num)
 {
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return 0;
 	return Walls[wall_num].flags;
 }
@@ -467,7 +511,7 @@ static int secret_area_wall_flags(void *user, int wall_num)
 static int secret_area_wall_keys(void *user, int wall_num)
 {
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return KEY_NONE;
 	return Walls[wall_num].keys;
 }
@@ -475,7 +519,7 @@ static int secret_area_wall_keys(void *user, int wall_num)
 static int secret_area_wall_trigger(void *user, int wall_num)
 {
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return -1;
 	return Walls[wall_num].trigger;
 }
@@ -485,7 +529,7 @@ static int secret_area_wall_clip_flags(void *user, int wall_num)
 	int clip_num;
 
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return 0;
 	clip_num = Walls[wall_num].clip_num;
 	if (clip_num < 0 || clip_num >= Num_wall_anims)
@@ -501,7 +545,7 @@ static int secret_area_wall_is_shootable_trigger(void *user, int wall_num)
 	int ec;
 
 	(void) user;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return 0;
 	seg = Walls[wall_num].segnum;
 	side = Walls[wall_num].sidenum;
@@ -788,7 +832,7 @@ static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 
 	(void) user;
 	wall_num = secret_area_wall_num(NULL, seg, side);
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return 0;
 	trigger_num = Walls[wall_num].trigger;
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
@@ -880,7 +924,8 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	int wall_side;
 	int fate;
 
-	if (seg < 0 || seg >= Num_segments || !from_pos || wall_num < 0 || wall_num >= Num_walls)
+	if (seg < 0 || seg >= Num_segments || !from_pos ||
+	    !secret_area_wall_index_valid(wall_num))
 		return 0;
 	wall_seg = Walls[wall_num].segnum;
 	wall_side = Walls[wall_num].sidenum;
@@ -946,7 +991,7 @@ static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 
 	if (!secret_area_trigger_opens_links(trigger_num))
 		return 0;
-	for (i = 0; i < Triggers[trigger_num].num_links; ++i)
+	for (i = 0; i < secret_area_bounded_trigger_link_count(trigger_num); ++i)
 		if (Triggers[trigger_num].seg[i] == seg && Triggers[trigger_num].side[i] == side)
 			return 1;
 	return 0;
@@ -971,7 +1016,7 @@ static void secret_area_rebuild_level_topology(void)
 
 		if (!secret_area_trigger_opens_links(trigger_num))
 			continue;
-		for (link = 0; link < Triggers[trigger_num].num_links; ++link) {
+		for (link = 0; link < secret_area_bounded_trigger_link_count(trigger_num); ++link) {
 			int prior_link;
 			int source_wall;
 
@@ -986,7 +1031,7 @@ static void secret_area_rebuild_level_topology(void)
 					break;
 			if (prior_link < link)
 				continue;
-			for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+			for (source_wall = 0; source_wall < secret_area_safe_wall_count(); ++source_wall) {
 				int entry;
 
 				if (Walls[source_wall].trigger != trigger_num)
@@ -1032,7 +1077,7 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return -1;
 	wall_num = Segments[seg].sides[side].wall_num;
-	if (wall_num < 0 || wall_num >= Num_walls)
+	if (!secret_area_wall_index_valid(wall_num))
 		return -1;
 	if (!allow_keyed_target && Walls[wall_num].keys != KEY_NONE)
 		return -1;
@@ -1054,7 +1099,7 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 
 		if (!secret_area_trigger_opens_side(trigger_num, seg, side))
 			continue;
-		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+		for (source_wall = 0; source_wall < secret_area_safe_wall_count(); ++source_wall) {
 			if (Walls[source_wall].trigger != trigger_num)
 				continue;
 			if (found == wanted_index)
@@ -1069,7 +1114,7 @@ static int secret_area_side_opener_segment_at(int seg, int side, int wanted_inde
 {
 	int source_wall = secret_area_side_opener_source_wall_at(seg, side, wanted_index, 0);
 
-	if (source_wall < 0 || source_wall >= Num_walls)
+	if (!secret_area_wall_index_valid(source_wall))
 		return -1;
 	return Walls[source_wall].segnum;
 }
@@ -1107,7 +1152,7 @@ static int secret_area_triggered_side_opener_side(void *user, int seg, int side,
 
 	(void) user;
 	source_wall = secret_area_side_opener_source_wall_at(seg, side, index, 0);
-	if (source_wall < 0 || source_wall >= Num_walls)
+	if (!secret_area_wall_index_valid(source_wall))
 		return -1;
 	return Walls[source_wall].sidenum;
 }
@@ -1160,16 +1205,15 @@ static int secret_area_trigger_flags(void *user, int trigger_num)
 static int secret_area_trigger_link_count(void *user, int trigger_num)
 {
 	(void) user;
-	if (trigger_num < 0 || trigger_num >= Num_triggers)
-		return 0;
-	return Triggers[trigger_num].num_links;
+	return secret_area_bounded_trigger_link_count(trigger_num);
 }
 
 static int secret_area_trigger_link_segment(void *user, int trigger_num, int link_index)
 {
 	(void) user;
 	if (trigger_num < 0 || trigger_num >= Num_triggers ||
-	    link_index < 0 || link_index >= Triggers[trigger_num].num_links)
+	    link_index < 0 ||
+	    link_index >= secret_area_bounded_trigger_link_count(trigger_num))
 		return -1;
 	return Triggers[trigger_num].seg[link_index];
 }
@@ -1178,7 +1222,8 @@ static int secret_area_trigger_link_side(void *user, int trigger_num, int link_i
 {
 	(void) user;
 	if (trigger_num < 0 || trigger_num >= Num_triggers ||
-	    link_index < 0 || link_index >= Triggers[trigger_num].num_links)
+	    link_index < 0 ||
+	    link_index >= secret_area_bounded_trigger_link_count(trigger_num))
 		return -1;
 	return Triggers[trigger_num].side[link_index];
 }
@@ -1285,7 +1330,7 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	secret_area_ensure_level_topology();
 	Level_metadata_game_context.start_objnum = start_objnum;
 	view->num_segments = Num_segments;
-	view->num_walls = Num_walls;
+	view->num_walls = secret_area_safe_wall_count();
 	view->num_triggers = Num_triggers;
 	view->start_segment = secret_area_metadata_start(&Level_metadata_game_context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
 	view->initial_key_mask = secret_area_current_key_mask();
@@ -1346,7 +1391,41 @@ static void level_metadata_rescan_current_level_internal(
 		}
 	}
 	if (!route_only) {
-		level_metadata_scan_level(view, &Level_metadata_canonical_state);
+		level_metadata_state shared_route;
+		char problem[128];
+
+		level_metadata_scan_level_summary(view, &Level_metadata_canonical_state);
+		level_metadata_state_clear(&shared_route);
+		memset(&Level_metadata_canonical_plan_summary, 0,
+		       sizeof(Level_metadata_canonical_plan_summary));
+		Level_metadata_canonical_plan_summary.first_pending_step = -1;
+		Level_metadata_canonical_plan_summary.first_pending_path_terminal_segment = -1;
+		Level_metadata_canonical_plan_summary.partial_frontier_segment = -1;
+		Level_metadata_canonical_plan_summary_valid = route_planner_plan_view(
+		    view,
+		    ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL,
+		    -1,
+		    &shared_route,
+		    NULL,
+		    &Level_metadata_canonical_plan_summary,
+		    problem,
+		    sizeof(problem));
+		if (Level_metadata_canonical_plan_summary_valid) {
+			level_metadata_apply_planned_route(
+			    &Level_metadata_canonical_state, &shared_route);
+		} else {
+			Level_metadata_canonical_state.travel_distance = 0.0;
+			Level_metadata_canonical_state.travel_time_seconds = 0;
+			Level_metadata_canonical_state.route_status = LEVEL_METADATA_ROUTE_FAILED;
+			Level_metadata_canonical_state.route_step_count = 0;
+			memset(Level_metadata_canonical_state.route_steps, 0,
+			       sizeof(Level_metadata_canonical_state.route_steps));
+			snprintf(Level_metadata_canonical_state.route_problem,
+			         sizeof(Level_metadata_canonical_state.route_problem),
+			         "shared route planner: %s",
+			         problem[0] ? problem : "unknown failure");
+			Level_metadata_canonical_state.route_note[0] = '\0';
+		}
 	}
 	if (route_only) {
 		char problem[128];
@@ -1522,6 +1601,15 @@ const level_metadata_state *level_metadata_get_state(void)
 const level_metadata_state *level_metadata_get_canonical_state(void)
 {
 	return &Level_metadata_canonical_state;
+}
+
+int level_metadata_get_canonical_route_plan_summary(
+    route_planner_plan_summary *summary)
+{
+	if (!summary || !Level_metadata_canonical_plan_summary_valid)
+		return 0;
+	*summary = Level_metadata_canonical_plan_summary;
+	return 1;
 }
 
 const level_metadata_state *level_metadata_get_live_route_state(void)

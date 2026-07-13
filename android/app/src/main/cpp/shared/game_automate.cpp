@@ -327,6 +327,7 @@ enum step_type {
 	STEP_FACE_VIEW,                  /* move player inside a segment and face a wall */
 	STEP_FACE_FIRST_MERGED,          /* move player to the first merged face on the level */
 	STEP_POSE_VIEW,                  /* move player to an exact position and orientation */
+	STEP_POSE_ROUTE_GUIDANCE,        /* move player to the active route pose and aim point */
 	STEP_PROBE_CROSSHAIR,            /* request merged-wall crosshair probe and wait */
 	STEP_ASSERT_PROBE_MATCH,         /* compare two stored probe results */
 	STEP_ENTER_LAUNCHER,             /* yield back to launcher, write LAUNCHER_CONTINUE */
@@ -526,6 +527,7 @@ static const char *step_type_name(step_type t)
 		case STEP_FACE_VIEW: return "face_view";
 		case STEP_FACE_FIRST_MERGED: return "face_first_merged";
 		case STEP_POSE_VIEW: return "pose_view";
+		case STEP_POSE_ROUTE_GUIDANCE: return "pose_route_guidance";
 		case STEP_PROBE_CROSSHAIR: return "probe_crosshair";
 		case STEP_ASSERT_PROBE_MATCH: return "assert_probe_match";
 		case STEP_ENTER_LAUNCHER: return "enter_launcher";
@@ -1658,6 +1660,68 @@ static int move_player_to_pose(const auto_step &s, char *reason, size_t reason_s
 	return 1;
 }
 
+static int move_player_to_route_guidance(char *reason, size_t reason_size)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	const level_metadata_state *metadata = level_metadata_get_live_route_state();
+	route_planner_plan_summary plan;
+	const level_metadata_route_step *step;
+	vms_vector activation;
+	vms_vector direction;
+	int new_seg;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "pose_route_guidance: game window is not active");
+		return 0;
+	}
+	if (!metadata || !level_metadata_get_live_route_plan_summary(&plan) ||
+	    plan.first_pending_step < 0 ||
+	    plan.first_pending_step >= metadata->route_step_count) {
+		snprintf(reason, reason_size, "pose_route_guidance: no pending route step");
+		return 0;
+	}
+	step = &metadata->route_steps[plan.first_pending_step];
+	if (!step->activation_pos_valid || !step->aim_pos_valid) {
+		snprintf(reason, reason_size,
+		         "pose_route_guidance: pending step has no firing pose");
+		return 0;
+	}
+	activation.x = step->activation_pos[0];
+	activation.y = step->activation_pos[1];
+	activation.z = step->activation_pos[2];
+	new_seg = find_point_seg(&activation, step->seg);
+	if (new_seg < 0) {
+		snprintf(reason, reason_size,
+		         "pose_route_guidance: activation point is outside the mine");
+		return 0;
+	}
+	ConsoleObject->pos = activation;
+	ConsoleObject->last_pos = ConsoleObject->pos;
+	if (ConsoleObject->segnum != new_seg)
+		obj_relink(ConsoleObject - Objects, new_seg);
+	direction.x = step->aim_pos[0] - step->activation_pos[0];
+	direction.y = step->aim_pos[1] - step->activation_pos[1];
+	direction.z = step->aim_pos[2] - step->activation_pos[2];
+	if (vm_vec_normalize(&direction) == 0) {
+		snprintf(reason, reason_size,
+		         "pose_route_guidance: firing pose has no aim direction");
+		return 0;
+	}
+	vm_vector_2_matrix(&ConsoleObject->orient, &direction, NULL, NULL);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotthrust);
+	LOGI("pose_route_guidance: step=%d seg=%d target=(%d,%d,%d)",
+	     plan.first_pending_step, new_seg,
+	     step->aim_pos[0], step->aim_pos[1], step->aim_pos[2]);
+	return 1;
+#else
+	snprintf(reason, reason_size, "pose_route_guidance: requires Descent 2");
+	return 0;
+#endif
+}
+
 static int clear_level_robots(char *reason, size_t reason_size)
 {
 	int removed = 0;
@@ -1849,6 +1913,7 @@ static int parse_script(const char *json_text)
 			else if (action == "face_view") s.type = STEP_FACE_VIEW;
 			else if (action == "face_first_merged") s.type = STEP_FACE_FIRST_MERGED;
 			else if (action == "pose_view") s.type = STEP_POSE_VIEW;
+			else if (action == "pose_route_guidance") s.type = STEP_POSE_ROUTE_GUIDANCE;
 			else if (action == "probe_crosshair") s.type = STEP_PROBE_CROSSHAIR;
 			else if (action == "assert_probe_match") s.type = STEP_ASSERT_PROBE_MATCH;
 			else if (action == "enter_launcher") s.type = STEP_ENTER_LAUNCHER;
@@ -2942,6 +3007,23 @@ extern "C" void game_automate_tick(void)
 			}
 			break;
 
+		case STEP_POSE_ROUTE_GUIDANCE:
+			if (g_key_phase == 0) {
+				char reason[256];
+
+				if (!move_player_to_route_guidance(reason, sizeof(reason))) {
+					log_append("pose_route_guidance", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+				log_append("pose_route_guidance", "done", "");
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (elapsed >= (Uint32) s.post_delay_ms) {
+				advance_step();
+			}
+			break;
+
 		case STEP_PROBE_CROSSHAIR: {
 			const Uint32 timeout = (Uint32) (s.timeout_ms > 0 ? s.timeout_ms : 2000);
 
@@ -3195,8 +3277,7 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("graphics_option: unknown option");
 					break;
 				}
-			}
-			else if (s.field == "clear_robots") {
+			} else if (s.field == "clear_robots") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
 					char reason[128];
 					if (!clear_level_robots(reason, sizeof(reason))) {
@@ -3220,6 +3301,17 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "guidebot_path_parity") {
+#ifdef DXX_BUILD_DESCENT_II
+				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
+				    !escort_debug_compare_route_path()) {
+					stop_script_fail("guidebot_path_parity: comparison failed");
+					break;
+				}
+#else
+				stop_script_fail("guidebot_path_parity: D2-only action");
+				break;
+#endif
 			} else if (s.field == "automap_visit_all") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0)
 					for (int segnum = 0; segnum <= Highest_segment_index; segnum++)

@@ -299,6 +299,7 @@ typedef struct level_metadata_state {
 #endif
 
 void level_metadata_state_clear(level_metadata_state *state);
+int level_metadata_scan_level_summary(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_end_route(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_route_to_segment(const level_metadata_scan_view *view, int target_seg, level_metadata_state *state);

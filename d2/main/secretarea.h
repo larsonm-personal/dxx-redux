@@ -22,6 +22,7 @@ int level_metadata_get_route_start_seg(void);
 const secret_area_state *secret_area_get_state(void);
 const level_metadata_state *level_metadata_get_state(void);
 const level_metadata_state *level_metadata_get_canonical_state(void);
+int level_metadata_get_canonical_route_plan_summary(route_planner_plan_summary *summary);
 const level_metadata_state *level_metadata_get_live_route_state(void);
 int level_metadata_get_live_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_canonical_route_snapshot(route_snapshot_summary *summary);

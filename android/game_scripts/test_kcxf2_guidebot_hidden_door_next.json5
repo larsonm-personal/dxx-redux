@@ -49,9 +49,11 @@
 
     {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "level_metadata_route.status": "ok",
+        "level_metadata_route.planner_source": "shared_cpp",
         "guidebot.released": "true",
         "guidebot.buddy_objnum": {"gte": 0},
         "guidebot.route_status": "ok",
@@ -75,10 +77,25 @@
         "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: open this hidden door"}
     }},
 
+    {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
+    {"action": "assert", "expect": {
+        "guidebot.path_parity.valid": "true",
+        "guidebot.path_parity.match": "true",
+        "guidebot.path_parity.ai_state_match": "true",
+        "guidebot.path_parity.restored_state_match": "true",
+        "guidebot.path_parity.first_mismatch": "-1",
+        "guidebot.path_parity.ordinary_length": {"gte": 1},
+        "guidebot.path_parity.length_match": "true",
+        "guidebot.path_parity.rng_state_match": "true",
+        "guidebot.path_parity.rng_calls_match": "true"
+    }},
+
     {"action": "wait_ms", "ms": 7000},
     {"action": "assert", "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_seg": "221",
         "guidebot.route_goal_objective_wall": "61",
-        "guidebot.route_goal_path_pending": "true"
+        "guidebot.route_goal_path_endpoint_seg": "221"
     }},
 
     {"action": "introspect"},
