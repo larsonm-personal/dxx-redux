@@ -1111,9 +1111,9 @@
         "mine_volume": 331541982.39003986,
         "mine_volume_normalized": 72.50142760759593,
         "mine_volume_text": "73x",
-        "travel_distance": 5944.103607476856,
-        "travel_time_seconds": 119,
-        "travel_time_text": "1M:59S",
+        "travel_distance": 5901.134765924001,
+        "travel_time_seconds": 118,
+        "travel_time_text": "1M:58S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1139,7 +1139,7 @@
               "y": 56.4844970703125,
               "z": 83.91035461425781
             },
-            "distance": 760.114310602852,
+            "distance": 755.1142800852273,
             "opens": [
               {
                 "seg": 151,
@@ -1164,7 +1164,7 @@
               "y": 2.4999847412109375,
               "z": 205.5651092529297
             },
-            "distance": 352.4378874062325,
+            "distance": 347.4378568886079,
             "key": "blue"
           },
           {
@@ -1180,7 +1180,7 @@
               "y": -118.984375,
               "z": 27.848297119140625
             },
-            "distance": 642.6725382672023,
+            "distance": 626.1881480083991,
             "opens": [
               {
                 "seg": 142,
@@ -1205,7 +1205,7 @@
               "y": -408.3658447265625,
               "z": -147.3991241455078
             },
-            "distance": 1699.6953899497446,
+            "distance": 1683.2109996909414,
             "key": "gold"
           },
           {
@@ -2108,7 +2108,7 @@
         "mine_volume": 7290154.857612872,
         "mine_volume_normalized": 1.5942072579984126,
         "mine_volume_text": "1.6x",
-        "travel_distance": 5956.113029771428,
+        "travel_distance": 5936.113029771428,
         "travel_time_seconds": 119,
         "travel_time_text": "1M:59S",
         "guidebot_count": 0,
@@ -2136,7 +2136,7 @@
               "y": 0.0,
               "z": 70.0
             },
-            "distance": 70.0,
+            "distance": 60.0,
             "opens": [
               {
                 "seg": 62,
@@ -2161,7 +2161,7 @@
               "y": -440.0,
               "z": 120.0
             },
-            "distance": 952.9961375929623,
+            "distance": 942.9961375929623,
             "key": "blue"
           },
           {
@@ -2330,7 +2330,7 @@
         "mine_volume": 15669265.90191482,
         "mine_volume_normalized": 3.4265468863468365,
         "mine_volume_text": "3.4x",
-        "travel_distance": 9708.152405569863,
+        "travel_distance": 9693.767468094165,
         "travel_time_seconds": 194,
         "travel_time_text": "3M:14S",
         "guidebot_count": 0,
@@ -2402,7 +2402,7 @@
               "y": -120.69692993164062,
               "z": 561.9313354492188
             },
-            "distance": 1081.1699349839091,
+            "distance": 1073.9774662460607,
             "opens": [
               {
                 "seg": 505,
@@ -2429,7 +2429,7 @@
               "y": -121.82623291015625,
               "z": 561.5324096679688
             },
-            "distance": 19.753595664959086,
+            "distance": 12.561126927110672,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3763,9 +3763,9 @@
         "mine_volume": 22628870.754675616,
         "mine_volume_normalized": 4.948469641867733,
         "mine_volume_text": "4.9x",
-        "travel_distance": 2177.132316184157,
-        "travel_time_seconds": 44,
-        "travel_time_text": "0M:44S",
+        "travel_distance": 2157.132316184157,
+        "travel_time_seconds": 43,
+        "travel_time_text": "0M:43S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3830,7 +3830,7 @@
               "y": 40.0,
               "z": 0.0
             },
-            "distance": 162.8739305987288,
+            "distance": 152.8739305987288,
             "opens": [
               {
                 "seg": 433,
@@ -3855,7 +3855,7 @@
               "y": 57.91041564941406,
               "z": -1.464508056640625
             },
-            "distance": 68.31042523909827
+            "distance": 58.31042523909826
           },
           {
             "index": 4,

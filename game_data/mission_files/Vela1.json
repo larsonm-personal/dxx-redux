@@ -21,9 +21,9 @@
         "mine_volume": 7598830.647305993,
         "mine_volume_normalized": 1.6617083185257193,
         "mine_volume_text": "1.7x",
-        "travel_distance": 10114.097625601476,
-        "travel_time_seconds": 202,
-        "travel_time_text": "3M:22S",
+        "travel_distance": 9954.097595083897,
+        "travel_time_seconds": 199,
+        "travel_time_text": "3M:19S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -49,7 +49,7 @@
               "y": 0.0,
               "z": 58.0
             },
-            "distance": 58.0,
+            "distance": 47.99998474121094,
             "opens": [
               {
                 "seg": 4,
@@ -76,7 +76,7 @@
               "y": 0.0,
               "z": 78.0
             },
-            "distance": 40.000030517578125,
+            "distance": 20.000015258789062,
             "opens": [
               {
                 "seg": 12,
@@ -101,7 +101,7 @@
               "y": -77.10826110839844,
               "z": -199.40699768066406
             },
-            "distance": 1152.8496824474614,
+            "distance": 1142.849682447461,
             "key": "blue"
           },
           {
@@ -435,7 +435,7 @@
               "y": 0.0,
               "z": 98.0
             },
-            "distance": 1266.273506999174,
+            "distance": 1256.273506999174,
             "opens": [
               {
                 "seg": 14,
@@ -462,7 +462,7 @@
               "y": 0.0,
               "z": 128.0
             },
-            "distance": 60.0,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 16,
@@ -489,7 +489,7 @@
               "y": 0.0,
               "z": 118.0
             },
-            "distance": 60.0,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 18,
@@ -516,7 +516,7 @@
               "y": -10.0,
               "z": 108.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 19,
@@ -543,7 +543,7 @@
               "y": -40.0,
               "z": 118.0
             },
-            "distance": 60.0,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 21,
@@ -570,7 +570,7 @@
               "y": -40.0,
               "z": 138.0
             },
-            "distance": 60.0,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 23,
@@ -595,7 +595,7 @@
               "y": -50.0,
               "z": 327.61566162109375
             },
-            "distance": 424.2337238673448
+            "distance": 414.2337238673448
           },
           {
             "index": 22,

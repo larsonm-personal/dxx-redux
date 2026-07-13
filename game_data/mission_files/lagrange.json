@@ -21,9 +21,9 @@
         "mine_volume": 9068239.305758307,
         "mine_volume_normalized": 1.9830378367627906,
         "mine_volume_text": "2.0x",
-        "travel_distance": 4025.1436058035815,
-        "travel_time_seconds": 81,
-        "travel_time_text": "1M:21S",
+        "travel_distance": 3997.7412340105193,
+        "travel_time_seconds": 80,
+        "travel_time_text": "1M:20S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -49,7 +49,7 @@
               "y": 223.6366424560547,
               "z": 187.2398223876953
             },
-            "distance": 335.8341052881699,
+            "distance": 326.3340949845985,
             "opens": [
               {
                 "seg": 301,
@@ -76,7 +76,7 @@
               "y": 379.3951721191406,
               "z": -17.88055419921875
             },
-            "distance": 301.47372319329395,
+            "distance": 287.77253729676323,
             "opens": [
               {
                 "seg": 375,
@@ -101,7 +101,7 @@
               "y": 200.5065460205078,
               "z": -189.8653564453125
             },
-            "distance": 1938.0642976621027,
+            "distance": 1933.8631220691432,
             "key": "gold"
           },
           {

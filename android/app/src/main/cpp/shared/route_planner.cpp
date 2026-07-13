@@ -1414,11 +1414,11 @@ class dependency_planner
 			return false;
 		}
 		route_position position;
-		if (valid_segment(snapshot_, segment) && side >= 0 &&
+		if (valid_segment(snapshot_, segment))
+			position = snapshot_.topology.segments[segment].center;
+		if (!position.valid && valid_segment(snapshot_, segment) && side >= 0 &&
 		    side < LEVEL_METADATA_MAX_SIDES)
 			position = snapshot_.topology.segments[segment].sides[side].center;
-		if (!position.valid && valid_segment(snapshot_, segment))
-			position = snapshot_.topology.segments[segment].center;
 		if (!position.valid) {
 			set_problem("hidden door source missing");
 			return false;

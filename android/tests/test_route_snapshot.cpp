@@ -590,6 +590,9 @@ int main()
 	obstructed_snapshot.state.walls[0].kind = dxx_route::route_wall_kind::door;
 	obstructed_snapshot.state.walls[0].hidden = true;
 	obstructed_snapshot.state.walls[0].key = dxx_route::route_key_requirement::none;
+	obstructed_snapshot.topology.segments[0].sides[0].center.value[0] = 50;
+	obstructed_snapshot.topology.walls[0].target =
+	    obstructed_snapshot.topology.segments[0].sides[0].center;
 	const auto optimistic_search = dxx_route::search_routes(
 	    obstructed_snapshot, planner_query, true);
 	const auto obstructed_path = dxx_route::build_route_path(
@@ -599,6 +602,22 @@ int main()
 	assert(obstructed_path.has_obstruction);
 	assert(obstructed_path.first_obstruction.action ==
 	       dxx_route::route_required_action::open_hidden_door);
+	auto hidden_query = planner_query;
+	hidden_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	hidden_query.target_segment = 1;
+	const auto hidden_plan = dxx_route::plan_route(
+	    obstructed_snapshot, hidden_query);
+	assert(hidden_plan.status == dxx_route::route_plan_status::ok);
+	assert(hidden_plan.steps.size() >= 2);
+	const auto &hidden_step = hidden_plan.steps[1];
+	assert(hidden_step.kind ==
+	       dxx_route::route_semantic_step_kind::hidden_door);
+	assert(hidden_step.activation_position.value ==
+	       obstructed_snapshot.topology.segments[0].center.value);
+	assert(hidden_step.aim_position.value ==
+	       obstructed_snapshot.topology.walls[0].target.value);
+	assert(hidden_step.activation_position.value !=
+	       hidden_step.aim_position.value);
 	auto progress = dxx_route::initial_route_progress_state(
 	    obstructed_snapshot, planner_query);
 	assert(dxx_route::route_progress_open_hidden_wall(

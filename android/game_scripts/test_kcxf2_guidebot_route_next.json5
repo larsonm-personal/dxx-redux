@@ -103,10 +103,8 @@
     {"action": "send_button", "button": 100, "held": 1},
     {"action": "wait_ms", "ms": 3000},
     {"action": "send_button", "button": 100, "pressed": 0},
-    {"action": "wait_ms", "ms": 10000},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_last_replan_reason": "player_completed_waypoint",
         "guidebot.route_status": "ok",
         "guidebot.route_start_matches_buddy": "true",
         "guidebot.route_goal_active": "true",

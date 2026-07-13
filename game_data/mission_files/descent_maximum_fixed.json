@@ -1859,9 +1859,9 @@
         "mine_volume": 3800024.863252667,
         "mine_volume_normalized": 0.8309874530642687,
         "mine_volume_text": "0.83x",
-        "travel_distance": 2830.0535490318525,
-        "travel_time_seconds": 57,
-        "travel_time_text": "0M:57S",
+        "travel_distance": 2820.0535490318525,
+        "travel_time_seconds": 56,
+        "travel_time_text": "0M:56S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1940,7 +1940,7 @@
               "y": 39.42301940917969,
               "z": 101.0
             },
-            "distance": 664.6846834848131,
+            "distance": 659.6846834848131,
             "opens": [
               {
                 "seg": 135,
@@ -1967,7 +1967,7 @@
               "y": 39.42301940917969,
               "z": 91.0
             },
-            "distance": 20.0,
+            "distance": 15.0,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4287,9 +4287,9 @@
         "mine_volume": 5957294.88511655,
         "mine_volume_normalized": 1.302738135112733,
         "mine_volume_text": "1.3x",
-        "travel_distance": 2266.0234940037335,
-        "travel_time_seconds": 45,
-        "travel_time_text": "0M:45S",
+        "travel_distance": 2224.7924377475565,
+        "travel_time_seconds": 44,
+        "travel_time_text": "0M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4339,7 +4339,7 @@
               "y": 12.838165283203125,
               "z": -32.47161865234375
             },
-            "distance": 294.09688065701107,
+            "distance": 273.48135252892274,
             "opens": [
               {
                 "seg": 45,
@@ -4366,7 +4366,7 @@
               "y": 12.838165283203125,
               "z": -32.47161865234375
             },
-            "distance": 51.110625696052224,
+            "distance": 30.495097567963924,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",

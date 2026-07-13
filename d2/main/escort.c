@@ -231,6 +231,7 @@ static int Escort_route_target_mode_restore_pending;
 static int Escort_route_metadata_dirty = 1;
 static unsigned int Escort_route_metadata_rescan_count;
 static unsigned int Escort_route_guidance_full_search_count;
+static fix64 Escort_route_completion_check_time;
 static unsigned int Escort_route_selector_compare_count;
 static unsigned int Escort_route_selector_mismatch_count;
 static int Escort_route_selector_shared_index = -1;
@@ -328,6 +329,7 @@ const char *escort_get_route_goal_instruction(void)
 static int escort_route_legacy_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index);
 static int escort_route_shared_next_goal(int set_goal, int *selected_index);
 static void escort_route_refresh_metadata(void);
+static void escort_route_monitor_completion(void);
 static int escort_route_step_reachable(int step_index);
 static object *escort_route_reference_object(void);
 static int escort_valid_segment(int segnum);
@@ -1341,6 +1343,41 @@ int escort_route_analyze_step(int step_index, escort_route_step_analysis *analys
 	return 1;
 }
 
+static void escort_route_monitor_completion(void)
+{
+	const level_metadata_state *metadata;
+	route_planner_plan_summary summary;
+	escort_route_step_analysis analysis;
+	int step_index;
+
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
+		return;
+#endif
+	if (!Escort_route_goal.active ||
+	    Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED ||
+	    Escort_route_goal.objective_kind < 0)
+		return;
+	if (GameTime64 >= Escort_route_completion_check_time &&
+	    GameTime64 - Escort_route_completion_check_time < F1_0 / 4)
+		return;
+	Escort_route_completion_check_time = GameTime64;
+	metadata = level_metadata_get_live_route_state();
+	if (!metadata || !level_metadata_get_live_route_plan_summary(&summary))
+		return;
+	step_index = summary.first_pending_step;
+	if (step_index < 0 || step_index >= metadata->route_step_count)
+		return;
+	escort_route_analyze_step_for_key_flags(
+	    &metadata->route_steps[step_index], step_index,
+	    escort_owned_key_flags(), 0, &analysis);
+	if (!analysis.satisfied)
+		return;
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	escort_route_clear_goal();
+	escort_route_note_replan("player_completed_waypoint");
+}
+
 int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis)
 {
 	const level_metadata_state *metadata = level_metadata_get_live_route_state();
@@ -1659,6 +1696,7 @@ void init_buddy_for_level(void)
 	Escort_route_selector_mismatch_legacy_index = -1;
 	Escort_route_selector_mismatch_shared_goal = ESCORT_GOAL_UNSPECIFIED;
 	Escort_route_selector_mismatch_legacy_goal = ESCORT_GOAL_UNSPECIFIED;
+	Escort_route_completion_check_time = 0;
 	escort_route_note_replan("level_start");
 	Escort_route_target_mode_restore_pending = 0;
 #endif
@@ -3469,6 +3507,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		replay_rng_call_count = d_rand_get_call_count();
 
 	Buddy_objnum = objp-Objects;
+
+#ifdef __ANDROID__
+	escort_route_monitor_completion();
+#endif
 
 	if (player_visibility) {
 		Buddy_last_seen_player = GameTime64;
