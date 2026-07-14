@@ -74,6 +74,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include <android/log.h>
 #include "android_menu_scale.h"
+#include "endlevel.h"
 extern volatile int g_guidebot_navigate_nearest_point;
 #define ESCORT_DIAG(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "DXX-ESCORT", fmt, ##__VA_ARGS__)
 #define ANDROID_JOY_BUTTON_A 0
@@ -321,6 +322,8 @@ const char *escort_get_route_goal_instruction(void)
 			return "destroy the boss";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT:
 			return "enter the exit";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL:
+			return "shoot the blastable wall";
 		default:
 			return escort_route_goal_label();
 	}
@@ -329,7 +332,7 @@ const char *escort_get_route_goal_instruction(void)
 static int escort_route_legacy_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index);
 static int escort_route_shared_next_goal(int set_goal, int *selected_index);
 static void escort_route_refresh_metadata(void);
-static void escort_route_monitor_completion(void);
+void escort_route_monitor_completion(void);
 static int escort_route_step_reachable(int step_index);
 static object *escort_route_reference_object(void);
 static int escort_valid_segment(int segnum);
@@ -759,8 +762,14 @@ const char *escort_route_step_satisfied_reason_name(int reason)
 			return "boss_destroyed";
 		case ESCORT_ROUTE_STEP_REASON_BOSS_ALIVE:
 			return "boss_alive";
+		case ESCORT_ROUTE_STEP_REASON_EXIT_ENTERED:
+			return "exit_entered";
 		case ESCORT_ROUTE_STEP_REASON_EXIT_PENDING:
 			return "exit_pending";
+		case ESCORT_ROUTE_STEP_REASON_WALL_DESTROYED:
+			return "wall_destroyed";
+		case ESCORT_ROUTE_STEP_REASON_WALL_INTACT:
+			return "wall_intact";
 		case ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE:
 			return "not_applicable";
 		case ESCORT_ROUTE_STEP_REASON_INVALID:
@@ -881,6 +890,8 @@ static int escort_route_step_guidance_mode(const level_metadata_route_step *step
 			}
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
 			return ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR;
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
+			return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
 		case LEVEL_METADATA_ROUTE_KEY:
 		case LEVEL_METADATA_ROUTE_REACTOR:
 		case LEVEL_METADATA_ROUTE_BOSS:
@@ -971,6 +982,7 @@ static int escort_route_step_is_targetable(const level_metadata_route_step *step
 		case LEVEL_METADATA_ROUTE_KEY:
 		case LEVEL_METADATA_ROUTE_TRIGGER:
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
 		case LEVEL_METADATA_ROUTE_REACTOR:
 		case LEVEL_METADATA_ROUTE_BOSS:
 		case LEVEL_METADATA_ROUTE_EXIT:
@@ -1046,6 +1058,15 @@ static void escort_route_analyze_step_for_key_flags(
 			                              ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE :
 			                              ESCORT_ROUTE_STEP_REASON_LINKS_BLOCKED;
 			break;
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
+			analysis->satisfied =
+			    !escort_valid_wall(step->wall_num) ||
+			    Walls[step->wall_num].type != WALL_BLASTABLE ||
+			    (Walls[step->wall_num].flags & WALL_BLASTED) != 0;
+			analysis->satisfied_reason = analysis->satisfied ?
+			                              ESCORT_ROUTE_STEP_REASON_WALL_DESTROYED :
+			                              ESCORT_ROUTE_STEP_REASON_WALL_INTACT;
+			break;
 		case LEVEL_METADATA_ROUTE_REACTOR:
 			analysis->satisfied = Control_center_destroyed != 0 || !escort_reactor_exists();
 			analysis->satisfied_reason = analysis->satisfied ?
@@ -1059,8 +1080,10 @@ static void escort_route_analyze_step_for_key_flags(
 			                              ESCORT_ROUTE_STEP_REASON_BOSS_ALIVE;
 			break;
 		case LEVEL_METADATA_ROUTE_EXIT:
-			analysis->satisfied = 0;
-			analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_EXIT_PENDING;
+			analysis->satisfied = Endlevel_sequence != 0;
+			analysis->satisfied_reason = analysis->satisfied ?
+			                              ESCORT_ROUTE_STEP_REASON_EXIT_ENTERED :
+			                              ESCORT_ROUTE_STEP_REASON_EXIT_PENDING;
 			break;
 		case LEVEL_METADATA_ROUTE_UNEXPLORED:
 			analysis->satisfied = escort_valid_segment(step->seg) && Automap_visited[step->seg] != 0;
@@ -1343,7 +1366,7 @@ int escort_route_analyze_step(int step_index, escort_route_step_analysis *analys
 	return 1;
 }
 
-static void escort_route_monitor_completion(void)
+void escort_route_monitor_completion(void)
 {
 	const level_metadata_state *metadata;
 	route_planner_plan_summary summary;
@@ -1373,9 +1396,20 @@ static void escort_route_monitor_completion(void)
 	    escort_owned_key_flags(), 0, &analysis);
 	if (!analysis.satisfied)
 		return;
+	ESCORT_DIAG("route completion step=%d kind=%d reason=%s control_center_destroyed=%d",
+	            step_index, analysis.kind,
+	            escort_route_step_satisfied_reason_name(analysis.satisfied_reason),
+	            Control_center_destroyed);
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 	escort_route_clear_goal();
 	escort_route_note_replan("player_completed_waypoint");
+	if (analysis.kind == LEVEL_METADATA_ROUTE_EXIT)
+		return;
+	escort_route_refresh_metadata();
+	escort_route_next_goal(escort_owned_key_flags());
+	ESCORT_DIAG("route completion next active=%d activation=%d seg=%d",
+	            Escort_route_goal.active, Escort_route_goal.activation_kind,
+	            Escort_route_goal.target_seg);
 }
 
 int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis)
@@ -3507,10 +3541,6 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		replay_rng_call_count = d_rand_get_call_count();
 
 	Buddy_objnum = objp-Objects;
-
-#ifdef __ANDROID__
-	escort_route_monitor_completion();
-#endif
 
 	if (player_visibility) {
 		Buddy_last_seen_player = GameTime64;

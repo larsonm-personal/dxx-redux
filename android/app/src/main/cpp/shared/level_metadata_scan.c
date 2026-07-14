@@ -15,6 +15,7 @@ enum metadata_route_block_kind {
 
 typedef struct metadata_target {
 	int seg;
+	int side;
 	int pos[3];
 	int visited;
 } metadata_target;
@@ -57,6 +58,7 @@ typedef struct metadata_route_context {
 	unsigned char trigger_in_progress[256];
 	unsigned char avoided_triggers[256];
 	unsigned char opened_hidden_walls[LEVEL_METADATA_MAX_WALLS];
+	unsigned char destroyed_blastable_walls[LEVEL_METADATA_MAX_WALLS];
 	unsigned char hidden_door_in_progress[LEVEL_METADATA_MAX_WALLS];
 } metadata_route_context;
 
@@ -142,6 +144,8 @@ const char *level_metadata_route_step_kind_name(int kind)
 			return "hostage";
 		case LEVEL_METADATA_ROUTE_UNEXPLORED:
 			return "unexplored";
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
+			return "blastable_wall";
 		default:
 			return "unknown";
 	}
@@ -168,6 +172,8 @@ const char *level_metadata_route_activation_kind_name(int kind)
 			return "destroy_boss";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT:
 			return "enter_exit";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL:
+			return "destroy_blastable_wall";
 		default:
 			return "unknown";
 	}
@@ -276,6 +282,71 @@ static void copy_pos(int dest[3], const int src[3])
 	dest[0] = src[0];
 	dest[1] = src[1];
 	dest[2] = src[2];
+}
+
+static void exit_activation_pos(
+    const level_metadata_scan_view *view,
+    const metadata_target *target,
+    int result[3])
+{
+	int vertices[4][3];
+	long long normal[3];
+	long double inward_dot = 0.0;
+	long double length_squared = 0.0;
+	long double length;
+	const int *face = target->pos;
+	const int *center = segment_centers[target->seg];
+	int axis;
+
+	if (!view->segment_vertex || target->side < 0 ||
+	    target->side >= LEVEL_METADATA_MAX_SIDES ||
+	    !view->segment_vertex(view->user, target->seg, side_to_verts[target->side][0], vertices[0]) ||
+	    !view->segment_vertex(view->user, target->seg, side_to_verts[target->side][1], vertices[1]) ||
+	    !view->segment_vertex(view->user, target->seg, side_to_verts[target->side][2], vertices[2]) ||
+	    !view->segment_vertex(view->user, target->seg, side_to_verts[target->side][3], vertices[3])) {
+		copy_pos(result, center);
+		return;
+	}
+	for (axis = 0; axis < 3; ++axis) {
+		int next = (axis + 1) % 3;
+		int last = (axis + 2) % 3;
+		normal[axis] =
+		    ((long long) vertices[1][next] - vertices[0][next]) *
+		        (vertices[2][last] - vertices[0][last]) -
+		    ((long long) vertices[1][last] - vertices[0][last]) *
+		        (vertices[2][next] - vertices[0][next]);
+	}
+	if (normal[0] == 0 && normal[1] == 0 && normal[2] == 0)
+		for (axis = 0; axis < 3; ++axis) {
+			int next = (axis + 1) % 3;
+			int last = (axis + 2) % 3;
+			normal[axis] =
+			    ((long long) vertices[2][next] - vertices[0][next]) *
+			        (vertices[3][last] - vertices[0][last]) -
+			    ((long long) vertices[2][last] - vertices[0][last]) *
+			        (vertices[3][next] - vertices[0][next]);
+		}
+	for (axis = 0; axis < 3; ++axis) {
+		inward_dot +=
+		    (long double) normal[axis] * (center[axis] - face[axis]);
+		length_squared += (long double) normal[axis] * normal[axis];
+	}
+	if (inward_dot < 0.0)
+		for (axis = 0; axis < 3; ++axis)
+			normal[axis] = -normal[axis];
+	length = sqrtl(length_squared);
+	if (length <= 0.0) {
+		copy_pos(result, center);
+		return;
+	}
+	for (axis = 0; axis < 3; ++axis) {
+		long long coordinate = llroundl(
+		    face[axis] + (long double) normal[axis] *
+		                     (4 * LEVEL_METADATA_FIX_SCALE) / length);
+		result[axis] = coordinate < INT_MIN   ? INT_MIN
+		               : coordinate > INT_MAX ? INT_MAX
+		                                      : (int) coordinate;
+	}
 }
 
 static void weighted_point(int dest[3], const int a[3], int a_weight, const int b[3], int b_weight)
@@ -805,6 +876,7 @@ static int append_target(const level_metadata_scan_view *view, metadata_target *
 	if (!targets || !count || *count >= max_count || !pos || !valid_segment(view, seg))
 		return 0;
 	targets[*count].seg = seg;
+	targets[*count].side = -1;
 	copy_pos(targets[*count].pos, pos);
 	targets[*count].visited = 0;
 	++*count;
@@ -897,7 +969,8 @@ static int collect_route_targets(
 				continue;
 			if (!side_center(view, seg, side, pos) && segment_center_valid[seg])
 				copy_pos(pos, segment_centers[seg]);
-			append_target(view, exits, exit_count, LEVEL_METADATA_MAX_TARGETS, seg, pos);
+			if (append_target(view, exits, exit_count, LEVEL_METADATA_MAX_TARGETS, seg, pos))
+				exits[*exit_count - 1].side = side;
 		}
 	}
 	return found_reactor;
@@ -1174,6 +1247,9 @@ static int metadata_route_edge_passable(
 	wall_keys = view->wall_keys(view->user, wall_num);
 	if (metadata_wall_is_opened_door(view, wall_num))
 		return 1;
+	if (wall_type == view->wall_type_blastable &&
+	    route->destroyed_blastable_walls[wall_num])
+		return 1;
 	if (metadata_wall_is_hidden_door(view, wall_num)) {
 		if (route->opened_hidden_walls[wall_num])
 			return 1;
@@ -1424,6 +1500,9 @@ static void metadata_route_context_from_progress_shadow(
 	       sizeof(progress->avoided_triggers));
 	memcpy(route->opened_hidden_walls, progress->opened_hidden_walls,
 	       sizeof(progress->opened_hidden_walls));
+	memcpy(route->destroyed_blastable_walls,
+	       progress->destroyed_blastable_walls,
+	       sizeof(progress->destroyed_blastable_walls));
 }
 
 static void metadata_route_context_to_progress_shadow(
@@ -1445,6 +1524,9 @@ static void metadata_route_context_to_progress_shadow(
 	       sizeof(progress->avoided_triggers));
 	memcpy(progress->opened_hidden_walls, route->opened_hidden_walls,
 	       sizeof(progress->opened_hidden_walls));
+	memcpy(progress->destroyed_blastable_walls,
+	       route->destroyed_blastable_walls,
+	       sizeof(progress->destroyed_blastable_walls));
 }
 
 int level_metadata_scan_route_search_state_shadow(
@@ -2062,6 +2144,86 @@ static int metadata_route_append_hidden_door_step(
 	return 1;
 }
 
+static int metadata_route_append_blastable_wall_step(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_route_block *block)
+{
+	level_metadata_route_step *step;
+	int child;
+	int reverse_side;
+	int reverse_wall;
+	int aim_pos[3];
+
+	if (!block || !valid_wall(view, block->wall_num))
+		return 0;
+	step = metadata_route_append_step(
+	    view, state, route, LEVEL_METADATA_ROUTE_BLASTABLE_WALL,
+	    "Destroy blastable wall", block->seg, block->side);
+	if (!step)
+		return 0;
+	step->wall_num = block->wall_num;
+	step->activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL;
+	if (metadata_route_wall_target_pos(
+	        view, block->wall_num, block->seg, block->side, aim_pos))
+		metadata_route_step_set_aim(step, aim_pos);
+	metadata_route_add_hidden_door_link(
+	    step, block->seg, block->side, block->wall_num);
+	child = view->segment_child
+	            ? view->segment_child(view->user, block->seg, block->side)
+	            : -1;
+	reverse_side = valid_segment(view, child) && view->reverse_side
+	                   ? view->reverse_side(view->user, block->seg, child)
+	                   : -1;
+	reverse_wall = metadata_route_reverse_wall_num(
+	    view, block->seg, block->side);
+	if (valid_wall(view, reverse_wall))
+		metadata_route_add_hidden_door_link(
+		    step, child, reverse_side, reverse_wall);
+	return 1;
+}
+
+static int metadata_route_first_blastable_wall(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int goal_seg,
+    metadata_route_block *block)
+{
+	int current = goal_seg;
+	int found = 0;
+
+	metadata_route_clear_block(block);
+	while (current != route->current_seg) {
+		int parent;
+		int side;
+		int wall_num;
+		if (!valid_segment(view, current))
+			return 0;
+		parent = route_parent_seg[current];
+		side = route_parent_side[current];
+		if (!valid_segment(view, parent) || side < 0 ||
+		    side >= LEVEL_METADATA_MAX_SIDES)
+			return 0;
+		wall_num = view->wall_num
+		               ? view->wall_num(view->user, parent, side)
+		               : -1;
+		if (valid_wall(view, wall_num) && view->wall_type &&
+		    view->wall_type(view->user, wall_num) ==
+		        view->wall_type_blastable &&
+		    !metadata_route_side_is_flyable(view, parent, side) &&
+		    !route->destroyed_blastable_walls[wall_num]) {
+			block->seg = parent;
+			block->side = side;
+			block->wall_num = wall_num;
+			found = 1;
+		}
+		current = parent;
+	}
+	return found;
+}
+
 static int metadata_route_open_hidden_door(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -2416,6 +2578,19 @@ static int metadata_route_move_to_target(
 	for (guard = 0; guard < LEVEL_METADATA_MAX_ROUTE_STEPS; ++guard) {
 		metadata_route_path path;
 		if (metadata_route_find_path(view, route, goal_seg, goal_pos, 0, &path)) {
+			metadata_route_block blastable;
+			if (metadata_route_first_blastable_wall(
+			        view, route, goal_seg, &blastable)) {
+				if (!metadata_route_move_to_target(
+				        view, state, route, blastable.seg,
+				        segment_centers[blastable.seg], depth + 1) ||
+				    !metadata_route_append_blastable_wall_step(
+				        view, state, route, &blastable))
+					return 0;
+				metadata_route_set_hidden_door_state(
+				    view, &blastable, route->destroyed_blastable_walls, 1);
+				continue;
+			}
 			route->pending_distance += path.distance;
 			route->current_seg = goal_seg;
 			copy_pos(route->current_pos, goal_pos);
@@ -2812,13 +2987,17 @@ static int metadata_route_append_target_step(
 
 	if (kind == LEVEL_METADATA_ROUTE_EXIT && view->side_has_exit_trigger) {
 		int s;
-		for (s = 0; s < LEVEL_METADATA_MAX_SIDES; ++s) {
+		if (target->side >= 0 && target->side < LEVEL_METADATA_MAX_SIDES &&
+		    side_has_route_exit(view, target->seg, target->side))
+			side = target->side;
+		for (s = 0; side < 0 && s < LEVEL_METADATA_MAX_SIDES; ++s) {
 			if (!side_has_route_exit(view, target->seg, s))
 				continue;
 			side = s;
-			wall_num = view->wall_num ? view->wall_num(view->user, target->seg, s) : -1;
-			break;
 		}
+		wall_num = side >= 0 && view->wall_num
+		               ? view->wall_num(view->user, target->seg, side)
+		               : -1;
 	}
 	step = metadata_route_append_step(view, state, route, kind, label, target->seg, side);
 	if (!step)
@@ -2979,6 +3158,7 @@ static void metadata_route_finish_partial(
 static void collect_route_chain(const level_metadata_scan_view *view, level_metadata_state *state)
 {
 	metadata_route_context route;
+	int exit_activation[3];
 	int exit_count = 0;
 	int exit_index;
 
@@ -2989,7 +3169,14 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 		metadata_route_set_problem(state, "exit unreachable");
 		goto route_partial;
 	}
-	if (!metadata_route_move_to_target(view, state, &route, exit_targets[exit_index].seg, exit_targets[exit_index].pos, 0))
+	if (segment_center_valid[exit_targets[exit_index].seg])
+		exit_activation_pos(
+		    view, &exit_targets[exit_index], exit_activation);
+	else
+		copy_pos(exit_activation, exit_targets[exit_index].pos);
+	if (!metadata_route_move_to_target(
+	        view, state, &route, exit_targets[exit_index].seg,
+	        exit_activation, 0))
 		goto route_partial;
 	if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_EXIT, &exit_targets[exit_index], "Exit"))
 		goto route_partial;

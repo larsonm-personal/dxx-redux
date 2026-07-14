@@ -37,7 +37,10 @@ enum escort_route_step_satisfied_reason {
 	ESCORT_ROUTE_STEP_REASON_REACTOR_ALIVE,
 	ESCORT_ROUTE_STEP_REASON_BOSS_DESTROYED,
 	ESCORT_ROUTE_STEP_REASON_BOSS_ALIVE,
+	ESCORT_ROUTE_STEP_REASON_EXIT_ENTERED,
 	ESCORT_ROUTE_STEP_REASON_EXIT_PENDING,
+	ESCORT_ROUTE_STEP_REASON_WALL_DESTROYED,
+	ESCORT_ROUTE_STEP_REASON_WALL_INTACT,
 	ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE,
 	ESCORT_ROUTE_STEP_REASON_INVALID
 };
@@ -137,6 +140,7 @@ extern void escort_route_link_analysis_clear(escort_route_link_analysis *analysi
 extern int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis);
 extern int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis);
 extern const char *escort_route_step_satisfied_reason_name(int reason);
+extern void escort_route_monitor_completion(void);
 #ifdef INTROSPECT_ON
 extern int escort_debug_compare_route_path(void);
 extern void escort_get_path_parity_result(escort_path_parity_result *result);

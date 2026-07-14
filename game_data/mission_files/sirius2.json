@@ -21,7 +21,7 @@
         "mine_volume": 8052328.547130503,
         "mine_volume_normalized": 1.760879002483454,
         "mine_volume_text": "1.8x",
-        "travel_distance": 4714.944552813729,
+        "travel_distance": 4710.944552813729,
         "travel_time_seconds": 94,
         "travel_time_text": "1M:34S",
         "guidebot_count": 1,
@@ -69,15 +69,15 @@
             "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 4,
-            "side": 0,
-            "wall": 0,
+            "side": 1,
+            "wall": 1,
             "label_pos": {
               "x": -287.5,
               "y": 15.0,
               "z": 80.0
             },
-            "distance": 1811.993314377585,
-            "trigger": 0,
+            "distance": 1807.993314377585,
+            "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
@@ -100,7 +100,7 @@
         "mine_volume": 29984642.563672878,
         "mine_volume_normalized": 6.557025980535603,
         "mine_volume_text": "6.6x",
-        "travel_distance": 7693.492511175751,
+        "travel_distance": 7689.492511175751,
         "travel_time_seconds": 154,
         "travel_time_text": "2M:34S",
         "guidebot_count": 1,
@@ -176,15 +176,15 @@
             "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 4,
-            "side": 0,
-            "wall": 0,
+            "side": 1,
+            "wall": 1,
             "label_pos": {
               "x": 302.5,
               "y": 60.0,
               "z": 85.0
             },
-            "distance": 991.7572213207623,
-            "trigger": 0,
+            "distance": 987.7572213207623,
+            "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
@@ -207,9 +207,9 @@
         "mine_volume": 24407729.977951046,
         "mine_volume_normalized": 5.337469648053021,
         "mine_volume_text": "5.3x",
-        "travel_distance": 8726.602189253555,
-        "travel_time_seconds": 175,
-        "travel_time_text": "2M:55S",
+        "travel_distance": 8722.602189253555,
+        "travel_time_seconds": 174,
+        "travel_time_text": "2M:54S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -283,15 +283,15 @@
             "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 4,
-            "side": 0,
-            "wall": 0,
+            "side": 1,
+            "wall": 1,
             "label_pos": {
               "x": 17.5,
               "y": 220.0,
               "z": 150.0
             },
-            "distance": 974.0050399361146,
-            "trigger": 0,
+            "distance": 970.0050399361146,
+            "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }

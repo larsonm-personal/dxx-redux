@@ -21,7 +21,7 @@
         "mine_volume": 11906309.989161136,
         "mine_volume_normalized": 2.603665652023607,
         "mine_volume_text": "2.6x",
-        "travel_distance": 5454.377741247245,
+        "travel_distance": 5450.378358470229,
         "travel_time_seconds": 109,
         "travel_time_text": "1M:49S",
         "guidebot_count": 0,
@@ -90,7 +90,7 @@
               "y": -123.85745239257812,
               "z": 46.67726135253906
             },
-            "distance": 2627.59464932333,
+            "distance": 2623.595266546315,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -110,7 +110,7 @@
         "mine_volume": 14274796.754420394,
         "mine_volume_normalized": 3.1216051012393513,
         "mine_volume_text": "3.1x",
-        "travel_distance": 7240.285120026195,
+        "travel_distance": 7236.36348626218,
         "travel_time_seconds": 145,
         "travel_time_text": "2M:25S",
         "guidebot_count": 0,
@@ -218,7 +218,7 @@
               "y": 39.32441711425781,
               "z": 358.2162780761719
             },
-            "distance": 722.1890554638893,
+            "distance": 718.2674216998745,
             "trigger": 27,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -269,7 +269,7 @@
         "mine_volume": 20488283.871239457,
         "mine_volume_normalized": 4.480367219820207,
         "mine_volume_text": "4.5x",
-        "travel_distance": 10629.606484771806,
+        "travel_distance": 10627.626862533512,
         "travel_time_seconds": 213,
         "travel_time_text": "3M:33S",
         "guidebot_count": 0,
@@ -406,7 +406,7 @@
               "y": 0.0,
               "z": 60.5
             },
-            "distance": 919.8305896316474,
+            "distance": 917.8509673933538,
             "trigger": 1,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -484,7 +484,7 @@
         "mine_volume": 11318424.223090393,
         "mine_volume_normalized": 2.4751070996404247,
         "mine_volume_text": "2.5x",
-        "travel_distance": 6635.694793262197,
+        "travel_distance": 6631.7379535633545,
         "travel_time_seconds": 133,
         "travel_time_text": "2M:13S",
         "guidebot_count": 0,
@@ -648,7 +648,7 @@
               "y": -86.0,
               "z": 667.5
             },
-            "distance": 802.7158057020827,
+            "distance": 798.7589660032397,
             "trigger": 9,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -790,6 +790,33 @@
           },
           {
             "index": 5,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 370,
+            "side": 2,
+            "wall": 79,
+            "label_pos": {
+              "x": -45.0,
+              "y": -110.0,
+              "z": 60.0
+            },
+            "distance": 10.0,
+            "opens": [
+              {
+                "seg": 370,
+                "side": 2,
+                "wall": 79
+              },
+              {
+                "seg": 99,
+                "side": 0,
+                "wall": 80
+              }
+            ]
+          },
+          {
+            "index": 6,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -801,7 +828,7 @@
               "y": -130.00001525878906,
               "z": 0.0
             },
-            "distance": 300.51315688243534,
+            "distance": 290.51315688243534,
             "opens": [
               {
                 "seg": 375,
@@ -816,7 +843,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -830,7 +857,7 @@
             "key": "blue"
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -857,7 +884,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -884,7 +911,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 10,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -911,7 +938,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 11,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -940,7 +967,7 @@
         "mine_volume": 17621152.48116567,
         "mine_volume_normalized": 3.8533844243974773,
         "mine_volume_text": "3.9x",
-        "travel_distance": 6645.862767973211,
+        "travel_distance": 6641.862775653614,
         "travel_time_seconds": 133,
         "travel_time_text": "2M:13S",
         "guidebot_count": 0,
@@ -1034,7 +1061,7 @@
               "y": 381.09336853027344,
               "z": -11.555374145507812
             },
-            "distance": 567.1418108311814,
+            "distance": 563.1418185115845,
             "trigger": 2,
             "trigger_type_id": 8,
             "trigger_type": "exit"

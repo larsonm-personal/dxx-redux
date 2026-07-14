@@ -112,12 +112,30 @@
     {"action": "wait_ms", "ms": 5000},
     {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 0},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_last_replan_reason": "player_completed_waypoint",
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_label": {"contains": "Boss"},
         "guidebot.route_goal_objective_kind": "4",
         "guidebot.route_goal_activation_kind_name": "destroy_boss",
         "guidebot.route_goal_objective_wall": {"ne": 61}
+    }},
+
+    // Continue from the boss guidance point, as the player would in normal
+    // progression, so the earlier auto-closing hidden door is behind both.
+    {"action": "pose_route_guidance", "post_delay_ms": 250},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_activation_kind_name": "destroy_boss",
+        "guidebot.route_goal_satisfied": "false",
+        "guidebot.route_goal_satisfied_reason": "boss_alive"
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 60000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_activation_kind_name": "enter_exit",
+        "guidebot.route_goal_satisfied": "false",
+        "guidebot.route_goal_satisfied_reason": "exit_pending"
     }},
 
     {"action": "introspect"},

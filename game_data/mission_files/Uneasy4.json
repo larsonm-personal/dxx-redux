@@ -21,7 +21,7 @@
         "mine_volume": 245931968.31899187,
         "mine_volume_normalized": 53.7802744284026,
         "mine_volume_text": "54x",
-        "travel_distance": 14155.699480822654,
+        "travel_distance": 14154.699480822654,
         "travel_time_seconds": 283,
         "travel_time_text": "4M:43S",
         "guidebot_count": 1,
@@ -199,7 +199,7 @@
               "y": 140.0,
               "z": -104.375
             },
-            "distance": 266.41331803598564,
+            "distance": 265.41331803598564,
             "trigger": 13,
             "trigger_type_id": 3,
             "trigger_type": "exit"

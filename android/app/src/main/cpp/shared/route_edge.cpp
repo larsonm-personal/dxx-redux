@@ -192,6 +192,7 @@ route_edge_decision evaluate_route_edge(
 	progress.trigger_in_progress.resize(snapshot.state.triggers.size());
 	progress.avoided_triggers.resize(snapshot.state.triggers.size());
 	progress.opened_hidden_walls.resize(snapshot.state.walls.size());
+	progress.destroyed_blastable_walls.resize(snapshot.state.walls.size());
 	return evaluate_route_edge(snapshot, query, progress, segment, side);
 }
 
@@ -266,6 +267,9 @@ route_edge_decision evaluate_route_edge(
 	}
 	if (wall_state.kind == route_wall_kind::open ||
 	    wall_state.kind == route_wall_kind::illusion)
+		return passable(wall);
+	if (wall_state.kind == route_wall_kind::blastable &&
+	    state_flag(state.destroyed_blastable_walls, wall))
 		return passable(wall);
 	if (wall_state.kind == route_wall_kind::blastable)
 		return passable(wall, route_required_action::destroy_blastable_wall);

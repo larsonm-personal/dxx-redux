@@ -21,7 +21,7 @@
         "mine_volume": 3715917.8318125354,
         "mine_volume_normalized": 0.8125949713420816,
         "mine_volume_text": "0.81x",
-        "travel_distance": 3930.387347500858,
+        "travel_distance": 3926.387347500866,
         "travel_time_seconds": 79,
         "travel_time_text": "1M:19S",
         "guidebot_count": 0,
@@ -104,7 +104,7 @@
               "y": 67.0,
               "z": 360.8229522705078
             },
-            "distance": 452.15147157823407,
+            "distance": 448.1514715782418,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -124,7 +124,7 @@
         "mine_volume": 4589835.689277863,
         "mine_volume_normalized": 1.003702872131153,
         "mine_volume_text": "1.0x",
-        "travel_distance": 3180.9805233134157,
+        "travel_distance": 3176.9805233134157,
         "travel_time_seconds": 64,
         "travel_time_text": "1M:04S",
         "guidebot_count": 0,
@@ -207,7 +207,7 @@
               "y": -80.0,
               "z": 382.0
             },
-            "distance": 144.75,
+            "distance": 140.75,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -227,7 +227,7 @@
         "mine_volume": 4759283.317695472,
         "mine_volume_normalized": 1.040757591043177,
         "mine_volume_text": "1.0x",
-        "travel_distance": 5824.06884597764,
+        "travel_distance": 5821.0689070129965,
         "travel_time_seconds": 116,
         "travel_time_text": "1M:56S",
         "guidebot_count": 0,
@@ -360,7 +360,7 @@
               "y": -16.99993896484375,
               "z": 239.99998474121094
             },
-            "distance": 1379.1275196268318,
+            "distance": 1376.1275806621877,
             "trigger": 7,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -380,7 +380,7 @@
         "mine_volume": 14486224.016926816,
         "mine_volume_normalized": 3.1678399046159207,
         "mine_volume_text": "3.2x",
-        "travel_distance": 7090.658780206832,
+        "travel_distance": 7086.658780206832,
         "travel_time_seconds": 142,
         "travel_time_text": "2M:22S",
         "guidebot_count": 0,
@@ -463,7 +463,7 @@
               "y": -130.0,
               "z": 60.0
             },
-            "distance": 130.0,
+            "distance": 126.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

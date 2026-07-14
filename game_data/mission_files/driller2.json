@@ -21,7 +21,7 @@
         "mine_volume": 5147067.331613689,
         "mine_volume_normalized": 1.125557996740815,
         "mine_volume_text": "1.1x",
-        "travel_distance": 2953.0859846701096,
+        "travel_distance": 2949.0945970181556,
         "travel_time_seconds": 59,
         "travel_time_text": "0M:59S",
         "guidebot_count": 1,
@@ -38,6 +38,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 96,
+            "side": 5,
+            "wall": 13,
+            "label_pos": {
+              "x": 140.0,
+              "y": -160.0,
+              "z": -170.0
+            },
+            "distance": 480.29911918692386,
+            "opens": [
+              {
+                "seg": 96,
+                "side": 5,
+                "wall": 13
+              },
+              {
+                "seg": 102,
+                "side": 4,
+                "wall": 12
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -47,11 +74,11 @@
               "y": -160.0,
               "z": -200.0
             },
-            "distance": 540.2991191869239,
+            "distance": 60.0,
             "key": "blue"
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -65,7 +92,7 @@
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -79,7 +106,7 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -92,7 +119,7 @@
             "distance": 538.4324451741998
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -104,7 +131,7 @@
               "y": 60.61668395996094,
               "z": 149.51663208007812
             },
-            "distance": 405.8121914369647,
+            "distance": 401.8208037850107,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -128,7 +155,7 @@
         "mine_volume": 3448287.2890602434,
         "mine_volume_normalized": 0.7540696639856524,
         "mine_volume_text": "0.75x",
-        "travel_distance": 2034.2192702406855,
+        "travel_distance": 2030.2192702406855,
         "travel_time_seconds": 41,
         "travel_time_text": "0M:41S",
         "guidebot_count": 1,
@@ -211,7 +238,7 @@
               "y": 170.0,
               "z": 842.1552124023438
             },
-            "distance": 155.90993890402814,
+            "distance": 151.90993890402814,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -235,7 +262,7 @@
         "mine_volume": 4976878.166128612,
         "mine_volume_normalized": 1.0883411188900414,
         "mine_volume_text": "1.1x",
-        "travel_distance": 2248.862270536847,
+        "travel_distance": 2245.145324620885,
         "travel_time_seconds": 45,
         "travel_time_text": "0M:45S",
         "guidebot_count": 1,
@@ -342,7 +369,7 @@
               "y": 121.4715576171875,
               "z": 86.06867980957031
             },
-            "distance": 50.060642091054085,
+            "distance": 46.343696175091736,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -366,9 +393,9 @@
         "mine_volume": 6762005.553904716,
         "mine_volume_normalized": 1.4787118440156632,
         "mine_volume_text": "1.5x",
-        "travel_distance": 4775.705521138016,
-        "travel_time_seconds": 96,
-        "travel_time_text": "1M:36S",
+        "travel_distance": 4771.705521138016,
+        "travel_time_seconds": 95,
+        "travel_time_text": "1M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -499,7 +526,7 @@
               "y": 30.0,
               "z": -140.0
             },
-            "distance": 657.7123190972875,
+            "distance": 653.7123190972875,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -523,9 +550,9 @@
         "mine_volume": 6289285.759196628,
         "mine_volume_normalized": 1.3753377261207353,
         "mine_volume_text": "1.4x",
-        "travel_distance": 5728.435091600977,
-        "travel_time_seconds": 115,
-        "travel_time_text": "1M:55S",
+        "travel_distance": 5724.435091600977,
+        "travel_time_seconds": 114,
+        "travel_time_text": "1M:54S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -630,7 +657,7 @@
               "y": -70.0,
               "z": 260.0
             },
-            "distance": 561.6652749392414,
+            "distance": 557.6652749392414,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -654,9 +681,9 @@
         "mine_volume": 3741447.666910843,
         "mine_volume_normalized": 0.8181778223519917,
         "mine_volume_text": "0.82x",
-        "travel_distance": 3428.8250340131517,
-        "travel_time_seconds": 69,
-        "travel_time_text": "1M:09S",
+        "travel_distance": 3424.8250340131517,
+        "travel_time_seconds": 68,
+        "travel_time_text": "1M:08S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -737,7 +764,7 @@
               "y": 0.0,
               "z": -70.0
             },
-            "distance": 1038.477117899117,
+            "distance": 1034.477117899117,
             "trigger": 11,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -761,9 +788,9 @@
         "mine_volume": 2483274.727456596,
         "mine_volume_normalized": 0.5430412208570895,
         "mine_volume_text": "0.54x",
-        "travel_distance": 2825.433846861992,
-        "travel_time_seconds": 57,
-        "travel_time_text": "0M:57S",
+        "travel_distance": 2821.4338468619926,
+        "travel_time_seconds": 56,
+        "travel_time_text": "0M:56S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -792,6 +819,33 @@
           },
           {
             "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 123,
+            "side": 4,
+            "wall": 40,
+            "label_pos": {
+              "x": 0.0,
+              "y": -155.56494140625,
+              "z": 225.49685668945312
+            },
+            "distance": 532.4026614873706,
+            "opens": [
+              {
+                "seg": 123,
+                "side": 4,
+                "wall": 40
+              },
+              {
+                "seg": 163,
+                "side": 5,
+                "wall": 41
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -801,11 +855,11 @@
               "y": -299.1244354248047,
               "z": 268.9775390625
             },
-            "distance": 783.5230152356742,
+            "distance": 251.12035374830384,
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -834,7 +888,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -848,7 +902,7 @@
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -861,7 +915,7 @@
             "distance": 385.4872717497512
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -873,7 +927,7 @@
               "y": 180.0,
               "z": 170.0
             },
-            "distance": 385.1554445662277,
+            "distance": 381.1554445662277,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -897,7 +951,7 @@
         "mine_volume": 6168662.498700147,
         "mine_volume_normalized": 1.3489598944940022,
         "mine_volume_text": "1.3x",
-        "travel_distance": 2035.2331107387645,
+        "travel_distance": 2031.2331107387645,
         "travel_time_seconds": 41,
         "travel_time_text": "0M:41S",
         "guidebot_count": 0,
@@ -980,7 +1034,7 @@
               "y": 40.0,
               "z": 140.0
             },
-            "distance": 702.6165553693824,
+            "distance": 698.6165553693824,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1004,7 +1058,7 @@
         "mine_volume": 7756744.824420056,
         "mine_volume_normalized": 1.6962409083284167,
         "mine_volume_text": "1.7x",
-        "travel_distance": 2879.6848644531674,
+        "travel_distance": 2875.6848644531674,
         "travel_time_seconds": 58,
         "travel_time_text": "0M:58S",
         "guidebot_count": 1,
@@ -1074,7 +1128,7 @@
               "y": 266.0,
               "z": 154.0
             },
-            "distance": 1014.0175039438325,
+            "distance": 1010.0175039438325,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1100,7 +1154,7 @@
         "mine_volume": 3604530.7786172666,
         "mine_volume_normalized": 0.7882369087056593,
         "mine_volume_text": "0.79x",
-        "travel_distance": 804.2314261450872,
+        "travel_distance": 800.2314261450872,
         "travel_time_seconds": 16,
         "travel_time_text": "0M:16S",
         "guidebot_count": 0,
@@ -1141,7 +1195,7 @@
               "y": 0.0,
               "z": -10.0
             },
-            "distance": 406.1157130725436,
+            "distance": 402.1157130725436,
             "trigger": 3,
             "trigger_type_id": 3,
             "trigger_type": "exit"

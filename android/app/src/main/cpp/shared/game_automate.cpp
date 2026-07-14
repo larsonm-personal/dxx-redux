@@ -69,8 +69,11 @@ extern "C" {
 #include "coop/coop_save.h"
 #include "secretarea.h"
 #include "switch.h"
+#include "wall.h"
 #ifdef DXX_BUILD_DESCENT_II
+#include "cntrlcen.h"
 #include "escort.h"
+#include "robot.h"
 #endif
 }
 
@@ -1708,6 +1711,8 @@ static int move_player_to_route_guidance(char *reason, size_t reason_size)
 		         "pose_route_guidance: activation point is outside the mine");
 		return 0;
 	}
+	if (step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT)
+		new_seg = step->seg;
 	ConsoleObject->pos = activation;
 	ConsoleObject->last_pos = ConsoleObject->pos;
 	if (ConsoleObject->segnum != new_seg)
@@ -1715,18 +1720,15 @@ static int move_player_to_route_guidance(char *reason, size_t reason_size)
 	direction.x = step->aim_pos[0] - step->activation_pos[0];
 	direction.y = step->aim_pos[1] - step->activation_pos[1];
 	direction.z = step->aim_pos[2] - step->activation_pos[2];
-	if (vm_vec_normalize(&direction) == 0) {
-		snprintf(reason, reason_size,
-		         "pose_route_guidance: firing pose has no aim direction");
-		return 0;
-	}
-	vm_vector_2_matrix(&ConsoleObject->orient, &direction, NULL, NULL);
+	if (vm_vec_normalize(&direction) != 0)
+		vm_vector_2_matrix(&ConsoleObject->orient, &direction, NULL, NULL);
 	vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
 	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
 	vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
 	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotthrust);
-	LOGI("pose_route_guidance: step=%d seg=%d target=(%d,%d,%d)",
+	LOGI("pose_route_guidance: step=%d seg=%d activation=(%d,%d,%d) aim=(%d,%d,%d)",
 	     plan.first_pending_step, new_seg,
+	     step->activation_pos[0], step->activation_pos[1], step->activation_pos[2],
 	     step->aim_pos[0], step->aim_pos[1], step->aim_pos[2]);
 	return 1;
 #else
@@ -1747,6 +1749,10 @@ static int clear_level_robots(char *reason, size_t reason_size)
 	for (int objnum = Highest_object_index; objnum >= 0; --objnum) {
 		if (Objects[objnum].type != OBJ_ROBOT)
 			continue;
+#ifdef DXX_BUILD_DESCENT_II
+		if (Robot_info[Objects[objnum].id].companion)
+			continue;
+#endif
 		obj_delete(objnum);
 		removed++;
 	}
@@ -1818,6 +1824,97 @@ static int fire_level_trigger(const std::string &value, char *reason, size_t rea
 	check_trigger_sub((int) trigger_num, Player_num, 1);
 	LOGI("fire_trigger: trigger=%ld", trigger_num);
 	return 1;
+}
+
+static int complete_route_objective(char *reason, size_t reason_size)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	const int activation = escort_get_route_goal_activation_kind();
+	const int target_seg = escort_get_route_goal_objective_seg();
+	const int target_side = escort_get_route_goal_objective_side();
+	const int target_wall = escort_get_route_goal_objective_wall();
+	int fallback = -1;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL ||
+	    !escort_get_route_goal_active()) {
+		snprintf(reason, reason_size,
+		         "complete_route_objective: no active route objective");
+		return 0;
+	}
+	if (activation ==
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL) {
+		object impact = {};
+
+		if (target_seg < 0 || target_seg > Highest_segment_index ||
+		    target_side < 0 || target_side >= MAX_SIDES_PER_SEGMENT ||
+		    target_wall < 0 || target_wall >= Num_walls ||
+		    Segments[target_seg].sides[target_side].wall_num != target_wall ||
+		    Walls[target_wall].type != WALL_BLASTABLE) {
+			snprintf(reason, reason_size,
+			         "complete_route_objective: invalid blastable wall");
+			return 0;
+		}
+		impact.type = OBJ_WEAPON;
+		impact.ctype.laser_info.parent_type = OBJ_PLAYER;
+		impact.ctype.laser_info.parent_num = ConsoleObject - Objects;
+		wall_hit_process(
+		    &Segments[target_seg], target_side,
+		    Walls[target_wall].hps + F1_0, Player_num, &impact);
+		LOGI("complete_route_objective: blastable wall=%d seg=%d side=%d flags=%d",
+		     target_wall, target_seg, target_side, Walls[target_wall].flags);
+		return 1;
+	}
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		object *objp = &Objects[objnum];
+		int matches = 0;
+		if (activation == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR)
+			matches = objp->type == OBJ_CNTRLCEN;
+		else if (activation == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS)
+			matches = objp->type == OBJ_ROBOT &&
+			          Robot_info[objp->id].boss_flag;
+		if (!matches || (objp->flags & OF_SHOULD_BE_DEAD))
+			continue;
+		if (fallback < 0)
+			fallback = objnum;
+		if (objp->segnum == target_seg) {
+			fallback = objnum;
+			break;
+		}
+	}
+	if (fallback < 0) {
+		snprintf(reason, reason_size,
+		         "complete_route_objective: target object not found");
+		return 0;
+	}
+	if (activation == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR) {
+		LOGI("complete_route_objective: reactor before shields=%d flags=%d destroyed=%d player_obj=%d type=%d id=%d",
+		     Objects[fallback].shields, Objects[fallback].flags,
+		     Control_center_destroyed, (int) (ConsoleObject - Objects),
+		     ConsoleObject->type, ConsoleObject->id);
+		apply_damage_to_controlcen(
+		    &Objects[fallback], Objects[fallback].shields + F1_0,
+		    (short) (ConsoleObject - Objects));
+		LOGI("complete_route_objective: reactor after shields=%d flags=%d destroyed=%d",
+		     Objects[fallback].shields, Objects[fallback].flags,
+		     Control_center_destroyed);
+	} else if (activation == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS)
+		apply_damage_to_robot(
+		    &Objects[fallback], Objects[fallback].shields + F1_0,
+		    ConsoleObject - Objects);
+	else {
+		snprintf(reason, reason_size,
+		         "complete_route_objective: unsupported activation %d",
+		         activation);
+		return 0;
+	}
+	LOGI("complete_route_objective: activation=%d object=%d target_seg=%d",
+	     activation, fallback, target_seg);
+	return 1;
+#else
+	snprintf(reason, reason_size,
+	         "complete_route_objective: requires Descent 2");
+	return 0;
+#endif
 }
 
 /* -- Condition checking ----------------------------------------------- */
@@ -3371,6 +3468,13 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "fire_trigger") {
 				char reason[128];
 				if (!fire_level_trigger(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+			} else if (s.field == "complete_route_objective") {
+				char reason[128];
+				if (!complete_route_objective(reason, sizeof(reason))) {
 					log_append("set_debug", "fail", reason);
 					stop_script_fail(reason);
 					break;

@@ -52,7 +52,8 @@ enum level_metadata_route_step_kind {
 	LEVEL_METADATA_ROUTE_EXIT = 5,
 	LEVEL_METADATA_ROUTE_HIDDEN_DOOR = 6,
 	LEVEL_METADATA_ROUTE_HOSTAGE = 7,
-	LEVEL_METADATA_ROUTE_UNEXPLORED = 8
+	LEVEL_METADATA_ROUTE_UNEXPLORED = 8,
+	LEVEL_METADATA_ROUTE_BLASTABLE_WALL = 9
 };
 
 enum level_metadata_route_activation_kind {
@@ -64,7 +65,8 @@ enum level_metadata_route_activation_kind {
 	LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR = 5,
 	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR = 6,
 	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS = 7,
-	LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT = 8
+	LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT = 8,
+	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL = 9
 };
 
 enum level_metadata_route_edge_cost {
@@ -212,6 +214,7 @@ typedef struct level_metadata_route_progress_shadow {
 	unsigned char trigger_in_progress[LEVEL_METADATA_MAX_TRIGGERS];
 	unsigned char avoided_triggers[LEVEL_METADATA_MAX_TRIGGERS];
 	unsigned char opened_hidden_walls[LEVEL_METADATA_MAX_WALLS];
+	unsigned char destroyed_blastable_walls[LEVEL_METADATA_MAX_WALLS];
 } level_metadata_route_progress_shadow;
 
 typedef struct level_metadata_route_target_shadow {

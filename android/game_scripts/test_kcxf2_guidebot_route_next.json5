@@ -195,6 +195,12 @@
         "guidebot.route_goal_objective_trigger": {"ne": 22}
     }},
 
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_satisfied": "false",
+        "guidebot.route_goal_satisfied_reason": "exit_pending"
+    }},
     {"action": "introspect"},
     {"action": "log", "message": "=== TEST: KCXF2 guidebot route next -- PASS ==="}
 ]

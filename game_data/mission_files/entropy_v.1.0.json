@@ -21,7 +21,7 @@
         "mine_volume": 10396346.946802046,
         "mine_volume_normalized": 2.2734677222876605,
         "mine_volume_text": "2.3x",
-        "travel_distance": 5267.49653693231,
+        "travel_distance": 5263.49653693231,
         "travel_time_seconds": 105,
         "travel_time_text": "1M:45S",
         "guidebot_count": 0,
@@ -215,7 +215,7 @@
               "y": 68.65083312988281,
               "z": -293.4897155761719
             },
-            "distance": 549.8955487151997,
+            "distance": 545.8955487151997,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -239,7 +239,7 @@
         "mine_volume": 56775304.233793326,
         "mine_volume_normalized": 12.415593886879234,
         "mine_volume_text": "12x",
-        "travel_distance": 15059.310546467672,
+        "travel_distance": 15055.310546467672,
         "travel_time_seconds": 301,
         "travel_time_text": "5M:01S",
         "guidebot_count": 0,
@@ -567,7 +567,7 @@
               "y": -116.10279846191406,
               "z": -86.09590148925781
             },
-            "distance": 2241.7291534859637,
+            "distance": 2237.7291534859637,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -591,7 +591,7 @@
         "mine_volume": 85470875.11993732,
         "mine_volume_normalized": 18.69072634601032,
         "mine_volume_text": "19x",
-        "travel_distance": 10553.1905044708,
+        "travel_distance": 10549.190504470815,
         "travel_time_seconds": 211,
         "travel_time_text": "3M:31S",
         "guidebot_count": 0,
@@ -671,6 +671,60 @@
           },
           {
             "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 409,
+            "side": 2,
+            "wall": 31,
+            "label_pos": {
+              "x": 807.0158996582031,
+              "y": 54.79341125488281,
+              "z": 197.34800720214844
+            },
+            "distance": 696.9438461304062,
+            "opens": [
+              {
+                "seg": 409,
+                "side": 2,
+                "wall": 31
+              },
+              {
+                "seg": 412,
+                "side": 0,
+                "wall": 32
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 434,
+            "side": 5,
+            "wall": 34,
+            "label_pos": {
+              "x": 794.8319091796875,
+              "y": -2.954376220703125,
+              "z": 163.1151885986328
+            },
+            "distance": 100.08903555542207,
+            "opens": [
+              {
+                "seg": 434,
+                "side": 5,
+                "wall": 34
+              },
+              {
+                "seg": 435,
+                "side": 4,
+                "wall": 33
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -680,11 +734,11 @@
               "y": -62.41082763671875,
               "z": -483.71514892578125
             },
-            "distance": 1946.9989788411754,
+            "distance": 1149.9660971553471,
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
@@ -743,7 +797,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 21",
@@ -813,7 +867,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 22",
@@ -858,7 +912,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 9,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -871,7 +925,7 @@
             "distance": 167.747501738401
           },
           {
-            "index": 8,
+            "index": 10,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -883,7 +937,7 @@
               "y": -49.21484375,
               "z": 52.7518310546875
             },
-            "distance": 1345.082978474967,
+            "distance": 1341.0829784749826,
             "trigger": 7,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -907,7 +961,7 @@
         "mine_volume": 39866954.233272,
         "mine_volume_normalized": 8.7180847367876,
         "mine_volume_text": "8.7x",
-        "travel_distance": 9763.79776224406,
+        "travel_distance": 9759.816602195264,
         "travel_time_seconds": 195,
         "travel_time_text": "3M:15S",
         "guidebot_count": 0,
@@ -1026,7 +1080,7 @@
               "y": -313.6155700683594,
               "z": -88.59446716308594
             },
-            "distance": 688.7790765744343,
+            "distance": 684.797916525638,
             "trigger": 11,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1050,7 +1104,7 @@
         "mine_volume": 6182064.443275595,
         "mine_volume_normalized": 1.351890624736469,
         "mine_volume_text": "1.4x",
-        "travel_distance": 3371.287870078342,
+        "travel_distance": 3367.309539328745,
         "travel_time_seconds": 67,
         "travel_time_text": "1M:07S",
         "guidebot_count": 0,
@@ -1105,7 +1159,7 @@
               "y": 84.82736206054688,
               "z": -182.98297119140625
             },
-            "distance": 1074.2747392751019,
+            "distance": 1070.2964085255044,
             "trigger": 7,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1129,7 +1183,7 @@
         "mine_volume": 435602187.38507724,
         "mine_volume_normalized": 95.25725890501398,
         "mine_volume_text": "95x",
-        "travel_distance": 10037.574462760565,
+        "travel_distance": 10033.574472736618,
         "travel_time_seconds": 201,
         "travel_time_text": "3M:21S",
         "guidebot_count": 0,
@@ -1252,7 +1306,7 @@
               "y": 416.26853942871094,
               "z": 55.04701232910156
             },
-            "distance": 329.1683710358538,
+            "distance": 325.16838101190666,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1278,7 +1332,7 @@
         "mine_volume": 25462593.28113282,
         "mine_volume_normalized": 5.5681466044378976,
         "mine_volume_text": "5.6x",
-        "travel_distance": 9902.32697403835,
+        "travel_distance": 9899.454042170091,
         "travel_time_seconds": 198,
         "travel_time_text": "3M:18S",
         "guidebot_count": 0,
@@ -1441,7 +1495,7 @@
               "y": 16.161026000976562,
               "z": -10.16180419921875
             },
-            "distance": 789.2958431367491,
+            "distance": 786.4229112684925,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1465,7 +1519,7 @@
         "mine_volume": 29311375.89866376,
         "mine_volume_normalized": 6.409796377750817,
         "mine_volume_text": "6.4x",
-        "travel_distance": 9199.022277004111,
+        "travel_distance": 9195.0222708703,
         "travel_time_seconds": 184,
         "travel_time_text": "3M:04S",
         "guidebot_count": 0,
@@ -1671,6 +1725,60 @@
           },
           {
             "index": 8,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 371,
+            "side": 1,
+            "wall": 25,
+            "label_pos": {
+              "x": 305.5508270263672,
+              "y": -328.5526123046875,
+              "z": 148.2930145263672
+            },
+            "distance": 1030.034116782592,
+            "opens": [
+              {
+                "seg": 371,
+                "side": 1,
+                "wall": 25
+              },
+              {
+                "seg": 303,
+                "side": 3,
+                "wall": 24
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 278,
+            "side": 2,
+            "wall": 34,
+            "label_pos": {
+              "x": 454.4949035644531,
+              "y": -338.5526123046875,
+              "z": 331.467529296875
+            },
+            "distance": 324.10189278898133,
+            "opens": [
+              {
+                "seg": 278,
+                "side": 2,
+                "wall": 34
+              },
+              {
+                "seg": 280,
+                "side": 1,
+                "wall": 32
+              }
+            ]
+          },
+          {
+            "index": 10,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -1680,11 +1788,11 @@
               "y": -373.0526123046875,
               "z": 438.53797912597656
             },
-            "distance": 1535.9159521129259,
+            "distance": 181.77994254135226,
             "key": "gold"
           },
           {
-            "index": 9,
+            "index": 11,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
@@ -1709,7 +1817,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 12,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
@@ -1734,7 +1842,34 @@
             ]
           },
           {
-            "index": 11,
+            "index": 13,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 336,
+            "side": 2,
+            "wall": 101,
+            "label_pos": {
+              "x": -84.99259948730469,
+              "y": -408.5500030517578,
+              "z": 197.9244842529297
+            },
+            "distance": 13.749310561341419,
+            "opens": [
+              {
+                "seg": 336,
+                "side": 2,
+                "wall": 101
+              },
+              {
+                "seg": 289,
+                "side": 0,
+                "wall": 102
+              }
+            ]
+          },
+          {
+            "index": 14,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1744,11 +1879,11 @@
               "y": -267.0246276855469,
               "z": 292.97743225097656
             },
-            "distance": 1077.6270709625833,
+            "distance": 1063.8777604012419,
             "key": "red"
           },
           {
-            "index": 12,
+            "index": 15,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1761,7 +1896,7 @@
             "distance": 1605.314811640928
           },
           {
-            "index": 13,
+            "index": 16,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1773,7 +1908,7 @@
               "y": -681.4871673583984,
               "z": 124.93975830078125
             },
-            "distance": 203.97705655598136,
+            "distance": 199.97705042216978,
             "trigger": 15,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1797,7 +1932,7 @@
         "mine_volume": 10456667.307386888,
         "mine_volume_normalized": 2.2866585472464767,
         "mine_volume_text": "2.3x",
-        "travel_distance": 6923.192762322959,
+        "travel_distance": 6919.192758894694,
         "travel_time_seconds": 138,
         "travel_time_text": "2M:18S",
         "guidebot_count": 0,
@@ -2053,7 +2188,7 @@
               "y": -771.9727020263672,
               "z": 69.84185791015625
             },
-            "distance": 85.08656855824398,
+            "distance": 81.08656512997781,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2077,7 +2212,7 @@
         "mine_volume": 19025194.862935252,
         "mine_volume_normalized": 4.16041967937797,
         "mine_volume_text": "4.2x",
-        "travel_distance": 4957.406349686892,
+        "travel_distance": 4953.4063454105535,
         "travel_time_seconds": 99,
         "travel_time_text": "1M:39S",
         "guidebot_count": 0,
@@ -2162,6 +2297,33 @@
           },
           {
             "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 30,
+            "side": 2,
+            "wall": 44,
+            "label_pos": {
+              "x": 139.3377685546875,
+              "y": -144.0497589111328,
+              "z": -61.25080871582031
+            },
+            "distance": 832.8988313052034,
+            "opens": [
+              {
+                "seg": 30,
+                "side": 2,
+                "wall": 44
+              },
+              {
+                "seg": 768,
+                "side": 0,
+                "wall": 45
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -2171,11 +2333,11 @@
               "y": -149.7423858642578,
               "z": -242.02615356445312
             },
-            "distance": 1224.8101523537632,
+            "distance": 391.9113210485598,
             "key": "gold"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -2189,7 +2351,7 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2201,7 +2363,7 @@
               "y": -25.458511352539062,
               "z": -313.5064697265625
             },
-            "distance": 876.0594308197233,
+            "distance": 872.0594265433853,
             "trigger": 21,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2227,9 +2389,9 @@
         "mine_volume": 58619321.97396384,
         "mine_volume_normalized": 12.81884272351921,
         "mine_volume_text": "13x",
-        "travel_distance": 7328.0336982600165,
-        "travel_time_seconds": 147,
-        "travel_time_text": "2M:27S",
+        "travel_distance": 7324.035370863161,
+        "travel_time_seconds": 146,
+        "travel_time_text": "2M:26S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2339,6 +2501,60 @@
           },
           {
             "index": 5,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 461,
+            "side": 4,
+            "wall": 152,
+            "label_pos": {
+              "x": -138.8103485107422,
+              "y": -98.24977111816406,
+              "z": 165.47947692871094
+            },
+            "distance": 1947.9124894363767,
+            "opens": [
+              {
+                "seg": 461,
+                "side": 4,
+                "wall": 152
+              },
+              {
+                "seg": 463,
+                "side": 5,
+                "wall": 151
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 625,
+            "side": 4,
+            "wall": 135,
+            "label_pos": {
+              "x": -135.47134399414062,
+              "y": 179.49630737304688,
+              "z": 566.6982879638672
+            },
+            "distance": 547.6863377457156,
+            "opens": [
+              {
+                "seg": 625,
+                "side": 4,
+                "wall": 135
+              },
+              {
+                "seg": 626,
+                "side": 5,
+                "wall": 136
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -2348,10 +2564,10 @@
               "y": 295.75999450683594,
               "z": 737.0399932861328
             },
-            "distance": 2786.8865269385683
+            "distance": 291.287699756476
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2363,7 +2579,7 @@
               "y": -55.01654052734375,
               "z": -659.1586456298828
             },
-            "distance": 2174.8255766458637,
+            "distance": 2170.8272492490087,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2389,7 +2605,7 @@
         "mine_volume": 73084575.21000727,
         "mine_volume_normalized": 15.982096748720611,
         "mine_volume_text": "16x",
-        "travel_distance": 13238.61803714865,
+        "travel_distance": 13234.618041335823,
         "travel_time_seconds": 265,
         "travel_time_text": "4M:25S",
         "guidebot_count": 0,
@@ -2434,6 +2650,33 @@
           },
           {
             "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 869,
+            "side": 2,
+            "wall": 83,
+            "label_pos": {
+              "x": 761.2776031494141,
+              "y": 235.8821563720703,
+              "z": -17.175979614257812
+            },
+            "distance": 2916.0275052275183,
+            "opens": [
+              {
+                "seg": 869,
+                "side": 2,
+                "wall": 83
+              },
+              {
+                "seg": 870,
+                "side": 0,
+                "wall": 84
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -2443,11 +2686,11 @@
               "y": 172.32696533203125,
               "z": -9.602859497070312
             },
-            "distance": 3267.676595379855,
+            "distance": 351.64909015233656,
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -2460,7 +2703,7 @@
             "distance": 3902.261368283354
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2472,7 +2715,7 @@
               "y": 160.98760986328125,
               "z": 90.50390625
             },
-            "distance": 2479.997451286005,
+            "distance": 2475.997455473177,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"

@@ -35,14 +35,90 @@ bool positions_differ(
 	return left.valid && right.valid && left.value != right.value;
 }
 
+bool side_normal(
+    const route_snapshot &snapshot,
+    int segment_number,
+    int side_number,
+    std::int64_t normal[3])
+{
+	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
+		{ 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 }
+	};
+	if (!valid_segment(snapshot, segment_number) || side_number < 0 ||
+	    side_number >= LEVEL_METADATA_MAX_SIDES)
+		return false;
+	const auto &segment = snapshot.topology.segments[segment_number];
+	const auto &first = segment.vertices[side_vertices[side_number][0]];
+	const auto &second = segment.vertices[side_vertices[side_number][1]];
+	const auto &third = segment.vertices[side_vertices[side_number][2]];
+	const auto &fourth = segment.vertices[side_vertices[side_number][3]];
+	if (!first.valid || !second.valid || !third.valid || !fourth.valid)
+		return false;
+	const auto calculate = [normal](
+	                           const route_position &origin,
+	                           const route_position &left,
+	                           const route_position &right) {
+		const std::int64_t a[3] = {
+			static_cast<std::int64_t>(left.value[0]) - origin.value[0],
+			static_cast<std::int64_t>(left.value[1]) - origin.value[1],
+			static_cast<std::int64_t>(left.value[2]) - origin.value[2]
+		};
+		const std::int64_t b[3] = {
+			static_cast<std::int64_t>(right.value[0]) - origin.value[0],
+			static_cast<std::int64_t>(right.value[1]) - origin.value[1],
+			static_cast<std::int64_t>(right.value[2]) - origin.value[2]
+		};
+		normal[0] = a[1] * b[2] - a[2] * b[1];
+		normal[1] = a[2] * b[0] - a[0] * b[2];
+		normal[2] = a[0] * b[1] - a[1] * b[0];
+		return normal[0] != 0 || normal[1] != 0 || normal[2] != 0;
+	};
+	return calculate(first, second, third) ||
+	       calculate(first, third, fourth);
+}
+
+route_position exit_activation_position(
+    const route_snapshot &snapshot,
+    const route_target &target)
+{
+	const auto &face = target.position;
+	const auto &segment_center = snapshot.topology.segments[target.segment].center;
+	if (!face.valid || !segment_center.valid)
+		return segment_center.valid ? segment_center : face;
+	std::int64_t normal[3] = {};
+	if (!side_normal(snapshot, target.segment, target.side, normal))
+		return segment_center;
+	long double inward_dot = 0.0;
+	long double length_squared = 0.0;
+	for (int axis = 0; axis < 3; ++axis) {
+		inward_dot += static_cast<long double>(normal[axis]) *
+		              (segment_center.value[axis] - face.value[axis]);
+		length_squared +=
+		    static_cast<long double>(normal[axis]) * normal[axis];
+	}
+	if (inward_dot < 0.0)
+		for (auto &coordinate : normal)
+			coordinate = -coordinate;
+	const long double length = std::sqrt(length_squared);
+	if (length <= 0.0)
+		return segment_center;
+	route_position result = face;
+	for (int axis = 0; axis < 3; ++axis) {
+		const auto coordinate = static_cast<std::int64_t>(std::llround(
+		    face.value[axis] + static_cast<long double>(normal[axis]) *
+		                           (4 * LEVEL_METADATA_FIX_SCALE) / length));
+		result.value[axis] = static_cast<int>(std::max<std::int64_t>(
+		    std::numeric_limits<int>::min(),
+		    std::min<std::int64_t>(coordinate, std::numeric_limits<int>::max())));
+	}
+	return result;
+}
+
 route_position crossing_aim_position(
     const route_snapshot &snapshot,
     const route_trigger_source &source,
     const route_position &activation_position)
 {
-	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
-		{ 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 }
-	};
 	route_position result;
 	if (!activation_position.valid ||
 	    !valid_segment(snapshot, source.source_segment) ||
@@ -61,34 +137,9 @@ route_position crossing_aim_position(
 		if (positions_differ(result, activation_position))
 			return result;
 	}
-	const auto &first = segment.vertices[side_vertices[source.source_side][0]];
-	const auto &second = segment.vertices[side_vertices[source.source_side][1]];
-	const auto &third = segment.vertices[side_vertices[source.source_side][2]];
-	const auto &fourth = segment.vertices[side_vertices[source.source_side][3]];
-	if (!first.valid || !second.valid || !third.valid || !fourth.valid)
-		return {};
 	std::int64_t normal[3] = {};
-	const auto calculate_normal = [&normal](
-	                                  const route_position &origin,
-	                                  const route_position &left,
-	                                  const route_position &right) {
-		const std::int64_t a[3] = {
-			static_cast<std::int64_t>(left.value[0]) - origin.value[0],
-			static_cast<std::int64_t>(left.value[1]) - origin.value[1],
-			static_cast<std::int64_t>(left.value[2]) - origin.value[2]
-		};
-		const std::int64_t b[3] = {
-			static_cast<std::int64_t>(right.value[0]) - origin.value[0],
-			static_cast<std::int64_t>(right.value[1]) - origin.value[1],
-			static_cast<std::int64_t>(right.value[2]) - origin.value[2]
-		};
-		normal[0] = a[1] * b[2] - a[2] * b[1];
-		normal[1] = a[2] * b[0] - a[0] * b[2];
-		normal[2] = a[0] * b[1] - a[1] * b[0];
-		return normal[0] != 0 || normal[1] != 0 || normal[2] != 0;
-	};
-	if (!calculate_normal(first, second, third) &&
-	    !calculate_normal(first, third, fourth))
+	if (!side_normal(
+	        snapshot, source.source_segment, source.source_side, normal))
 		return {};
 	std::int64_t maximum = 0;
 	for (const auto coordinate : normal)
@@ -473,6 +524,7 @@ route_progress_state initial_route_progress_state(
 	result.trigger_in_progress.resize(snapshot.state.triggers.size());
 	result.avoided_triggers.resize(snapshot.state.triggers.size());
 	result.opened_hidden_walls.resize(snapshot.state.walls.size());
+	result.destroyed_blastable_walls.resize(snapshot.state.walls.size());
 	return result;
 }
 
@@ -517,6 +569,31 @@ bool route_progress_open_hidden_wall(
 	if (reverse_wall >= 0 &&
 	    reverse_wall < static_cast<int>(progress.opened_hidden_walls.size()))
 		progress.opened_hidden_walls[reverse_wall] = 1;
+	return true;
+}
+
+bool route_progress_destroy_blastable_wall(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    int wall)
+{
+	if (!valid_wall(snapshot, wall) ||
+	    wall >= static_cast<int>(progress.destroyed_blastable_walls.size()))
+		return false;
+	progress.destroyed_blastable_walls[wall] = 1;
+	const auto &source = snapshot.topology.walls[wall];
+	if (!valid_segment(snapshot, source.segment) || source.side < 0 ||
+	    source.side >= LEVEL_METADATA_MAX_SIDES)
+		return true;
+	const auto &side = snapshot.topology.segments[source.segment].sides[source.side];
+	if (!valid_segment(snapshot, side.child) || side.reverse_side < 0 ||
+	    side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
+		return true;
+	const int reverse_wall =
+	    snapshot.topology.segments[side.child].sides[side.reverse_side].wall;
+	if (reverse_wall >= 0 &&
+	    reverse_wall < static_cast<int>(progress.destroyed_blastable_walls.size()))
+		progress.destroyed_blastable_walls[reverse_wall] = 1;
 	return true;
 }
 
@@ -1133,7 +1210,8 @@ class dependency_planner
 			return finish_partial("route incomplete");
 		}
 		const auto &target = targets_.exits[selected.selected_index];
-		if (!move_to_target(target.segment, target.position, 0) ||
+		const auto activation = exit_activation_position(snapshot_, target);
+		if (!move_to_target(target.segment, activation, 0) ||
 		    !append_target_step(
 		        route_semantic_step_kind::exit, target, "Exit"))
 			return finish_partial("route incomplete");
@@ -1407,6 +1485,51 @@ class dependency_planner
 		return append_step(std::move(step));
 	}
 
+	bool append_blastable_wall_step(int segment, int side, int wall)
+	{
+		route_semantic_step step;
+		step.kind = route_semantic_step_kind::blastable_wall;
+		step.segment = segment;
+		step.side = side;
+		step.wall = wall;
+		step.activation = route_activation_kind::destroy_blastable_wall;
+		step.label = "Destroy blastable wall";
+		if (valid_wall(snapshot_, wall)) {
+			step.aim_position = snapshot_.topology.walls[wall].target;
+			step.label_position = step.aim_position;
+		}
+		step.opened_links.push_back({ segment, side, wall });
+		const int reverse = reverse_wall(wall);
+		if (valid_wall(snapshot_, reverse) &&
+		    step.opened_links.size() < LEVEL_METADATA_MAX_ROUTE_LINKS) {
+			const auto &reverse_topology = snapshot_.topology.walls[reverse];
+			step.opened_links.push_back(
+			    { reverse_topology.segment, reverse_topology.side, reverse });
+		}
+		return append_step(std::move(step));
+	}
+
+	bool first_blastable_wall(
+	    const route_path_result &path,
+	    int &segment,
+	    int &side,
+	    int &wall) const
+	{
+		for (std::size_t index = 0;
+		     index < path.sides.size() && index < path.segments.size(); ++index) {
+			const auto edge = evaluate_route_edge(
+			    snapshot_, query_, state_.progress, path.segments[index],
+			    path.sides[index]);
+			if (edge.action != route_required_action::destroy_blastable_wall)
+				continue;
+			segment = path.segments[index];
+			side = path.sides[index];
+			wall = edge.wall;
+			return true;
+		}
+		return false;
+	}
+
 	bool side_is_route_exit(int segment, int side) const
 	{
 		if (!valid_segment(snapshot_, segment) || side < 0 ||
@@ -1444,15 +1567,18 @@ class dependency_planner
 			step.activation = route_activation_kind::destroy_boss;
 		else if (kind == route_semantic_step_kind::exit) {
 			step.activation = route_activation_kind::enter_exit;
-			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-				if (!side_is_route_exit(target.segment, side))
-					continue;
-				step.side = side;
+			step.side = side_is_route_exit(target.segment, target.side)
+			                ? target.side
+			                : -1;
+			for (int side = 0;
+			     step.side < 0 && side < LEVEL_METADATA_MAX_SIDES;
+			     ++side)
+				if (side_is_route_exit(target.segment, side))
+					step.side = side;
+			if (step.side >= 0)
 				step.wall = snapshot_.topology.segments[target.segment]
-				                .sides[side]
+				                .sides[step.side]
 				                .wall;
-				break;
-			}
 			if (valid_wall(snapshot_, step.wall)) {
 				step.trigger = snapshot_.state.walls[step.wall].trigger;
 				if (valid_trigger(snapshot_, step.trigger)) {
@@ -1655,6 +1781,8 @@ class dependency_planner
 	bool progress_primary(bool &progressed)
 	{
 		progressed = false;
+		if (state_.progress.control_center_destroyed)
+			return true;
 		if (targets_.boss_found) {
 			if (!move_primary_with_key_recovery(targets_.boss) ||
 			    !append_target_step(
@@ -1845,6 +1973,22 @@ class dependency_planner
 			const auto direct = path_to_position(
 			    goal_segment, goal_position, false);
 			if (direct.reached) {
+				int blast_segment = -1;
+				int blast_side = -1;
+				int blast_wall = -1;
+				if (first_blastable_wall(
+				        direct, blast_segment, blast_side, blast_wall)) {
+					if (!move_to_target(
+					        blast_segment,
+					        snapshot_.topology.segments[blast_segment].center,
+					        depth + 1) ||
+					    !append_blastable_wall_step(
+					        blast_segment, blast_side, blast_wall) ||
+					    !route_progress_destroy_blastable_wall(
+					        snapshot_, state_.progress, blast_wall))
+						return false;
+					continue;
+				}
 				accumulate_path(direct);
 				state_.progress.current_segment = goal_segment;
 				state_.progress.current_position = goal_position;
@@ -2048,7 +2192,8 @@ bool dependency_progress_matches(
 	if (shared.fired_triggers.size() > LEVEL_METADATA_MAX_TRIGGERS ||
 	    shared.trigger_in_progress.size() > LEVEL_METADATA_MAX_TRIGGERS ||
 	    shared.avoided_triggers.size() > LEVEL_METADATA_MAX_TRIGGERS ||
-	    shared.opened_hidden_walls.size() > LEVEL_METADATA_MAX_WALLS)
+	    shared.opened_hidden_walls.size() > LEVEL_METADATA_MAX_WALLS ||
+	    shared.destroyed_blastable_walls.size() > LEVEL_METADATA_MAX_WALLS)
 		return false;
 	for (int trigger = 0;
 	     trigger < static_cast<int>(shared.fired_triggers.size()); ++trigger)
@@ -2061,6 +2206,11 @@ bool dependency_progress_matches(
 	     wall < static_cast<int>(shared.opened_hidden_walls.size()); ++wall)
 		if (legacy.opened_hidden_walls[wall] !=
 		    shared.opened_hidden_walls[wall])
+			return false;
+	for (int wall = 0;
+	     wall < static_cast<int>(shared.destroyed_blastable_walls.size()); ++wall)
+		if (legacy.destroyed_blastable_walls[wall] !=
+		    shared.destroyed_blastable_walls[wall])
 			return false;
 	return true;
 }
@@ -2624,12 +2774,17 @@ extern "C" int route_planner_compare_view(
 			    step.wall_num >= 0)
 				dxx_route::route_progress_open_hidden_wall(
 				    snapshot, checkpoint, step.wall_num);
+			if (step.kind == LEVEL_METADATA_ROUTE_BLASTABLE_WALL &&
+			    step.wall_num >= 0)
+				dxx_route::route_progress_destroy_blastable_wall(
+				    snapshot, checkpoint, step.wall_num);
 			if (step.kind == LEVEL_METADATA_ROUTE_REACTOR ||
 			    step.kind == LEVEL_METADATA_ROUTE_BOSS)
 				checkpoint.control_center_destroyed = true;
 			if (step.kind == LEVEL_METADATA_ROUTE_KEY ||
 			    step.kind == LEVEL_METADATA_ROUTE_TRIGGER ||
-			    step.kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR)
+			    step.kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR ||
+			    step.kind == LEVEL_METADATA_ROUTE_BLASTABLE_WALL)
 				progress_states.push_back(checkpoint);
 		}
 		auto advanced = progress_states.front();
@@ -2645,6 +2800,8 @@ extern "C" int route_planner_compare_view(
 		opened.fired_triggers.assign(opened.fired_triggers.size(), 1);
 		opened.opened_hidden_walls.assign(
 		    opened.opened_hidden_walls.size(), 1);
+		opened.destroyed_blastable_walls.assign(
+		    opened.destroyed_blastable_walls.size(), 1);
 		progress_states.push_back(opened);
 		auto avoided_keys = progress_states.front();
 		avoided_keys.avoided_key_mask = LEVEL_METADATA_KEY_MASK_BLUE |
@@ -2683,6 +2840,10 @@ extern "C" int route_planner_compare_view(
 			     wall < static_cast<int>(progress.opened_hidden_walls.size()); ++wall)
 				legacy_progress.opened_hidden_walls[wall] =
 				    progress.opened_hidden_walls[wall];
+			for (int wall = 0;
+			     wall < static_cast<int>(progress.destroyed_blastable_walls.size()); ++wall)
+				legacy_progress.destroyed_blastable_walls[wall] =
+				    progress.destroyed_blastable_walls[wall];
 			const auto firing_search = dxx_route::search_routes(
 			    snapshot, query, progress, false);
 			if (!firing_search.problem.empty()) {

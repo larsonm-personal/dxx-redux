@@ -47,6 +47,7 @@ struct route_progress_state {
 	std::vector<unsigned char> trigger_in_progress;
 	std::vector<unsigned char> avoided_triggers;
 	std::vector<unsigned char> opened_hidden_walls;
+	std::vector<unsigned char> destroyed_blastable_walls;
 };
 
 bool route_trigger_opens_path(route_trigger_kind kind);

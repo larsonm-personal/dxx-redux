@@ -124,7 +124,8 @@ enum class route_semantic_step_kind {
 	boss = LEVEL_METADATA_ROUTE_BOSS,
 	exit = LEVEL_METADATA_ROUTE_EXIT,
 	hidden_door = LEVEL_METADATA_ROUTE_HIDDEN_DOOR,
-	unexplored = LEVEL_METADATA_ROUTE_UNEXPLORED
+	unexplored = LEVEL_METADATA_ROUTE_UNEXPLORED,
+	blastable_wall = LEVEL_METADATA_ROUTE_BLASTABLE_WALL
 };
 
 enum class route_activation_kind {
@@ -136,7 +137,9 @@ enum class route_activation_kind {
 	open_hidden_door = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR,
 	destroy_reactor = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR,
 	destroy_boss = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS,
-	enter_exit = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT
+	enter_exit = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT,
+	destroy_blastable_wall =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL
 };
 
 struct route_effect_link {
@@ -222,6 +225,11 @@ bool route_progress_acquire_key(
     route_key_requirement key);
 bool route_progress_fire_trigger(route_progress_state &progress, int trigger);
 bool route_progress_open_hidden_wall(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    int wall);
+
+bool route_progress_destroy_blastable_wall(
     const route_snapshot &snapshot,
     route_progress_state &progress,
     int wall);

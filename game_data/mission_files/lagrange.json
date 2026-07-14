@@ -21,7 +21,7 @@
         "mine_volume": 9068239.305758307,
         "mine_volume_normalized": 1.9830378367627906,
         "mine_volume_text": "2.0x",
-        "travel_distance": 3997.7412340105193,
+        "travel_distance": 3996.74123401052,
         "travel_time_seconds": 80,
         "travel_time_text": "1M:20S",
         "guidebot_count": 0,
@@ -92,6 +92,33 @@
           },
           {
             "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 317,
+            "side": 1,
+            "wall": 92,
+            "label_pos": {
+              "x": 0.0,
+              "y": 195.0159149169922,
+              "z": -179.9310302734375
+            },
+            "distance": 339.34577027578325,
+            "opens": [
+              {
+                "seg": 317,
+                "side": 1,
+                "wall": 92
+              },
+              {
+                "seg": 315,
+                "side": 3,
+                "wall": 93
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -101,11 +128,11 @@
               "y": 200.5065460205078,
               "z": -189.8653564453125
             },
-            "distance": 1933.8631220691432,
+            "distance": 1594.5173517933601,
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
@@ -134,7 +161,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -147,7 +174,7 @@
             "distance": 371.74215611656587
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
@@ -172,7 +199,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -184,7 +211,7 @@
               "y": 190.0,
               "z": 0.0
             },
-            "distance": 142.5,
+            "distance": 141.5,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -208,7 +235,7 @@
         "mine_volume": 2947295.796684501,
         "mine_volume_normalized": 0.6445131060057044,
         "mine_volume_text": "0.64x",
-        "travel_distance": 1583.6794618152512,
+        "travel_distance": 1579.6794618152512,
         "travel_time_seconds": 32,
         "travel_time_text": "0M:32S",
         "guidebot_count": 0,
@@ -249,7 +276,7 @@
               "y": -12.0318603515625,
               "z": 669.2095947265625
             },
-            "distance": 554.3448044275266,
+            "distance": 550.3448044275266,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

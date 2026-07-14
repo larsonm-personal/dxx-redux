@@ -598,6 +598,50 @@ int main()
 	dxx_route::route_query planner_query;
 	planner_query.start = first.state.start_position;
 	planner_query.progression.key_mask = first.state.key_mask;
+	auto destroyed_snapshot = first;
+	destroyed_snapshot.state.control_center_destroyed = true;
+	auto destroyed_query = planner_query;
+	destroyed_query.endpoint = dxx_route::route_endpoint_kind::end_of_level;
+	const auto destroyed_plan = dxx_route::plan_route(
+	    destroyed_snapshot, destroyed_query);
+	assert(destroyed_plan.status == dxx_route::route_plan_status::ok);
+	assert(destroyed_plan.steps.size() == 2);
+	assert(destroyed_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::exit);
+	assert(destroyed_plan.steps[1].side == 0);
+	assert(destroyed_plan.steps[1].activation_position.valid);
+	assert(destroyed_plan.steps[1].aim_position.value ==
+	       destroyed_snapshot.topology.segments[1].sides[0].center.value);
+	assert(destroyed_plan.steps[1].activation_position.value !=
+	       destroyed_plan.steps[1].aim_position.value);
+	auto blast_query = planner_query;
+	blast_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	blast_query.target_segment = 1;
+	const auto blast_plan = dxx_route::plan_route(first, blast_query);
+	assert(blast_plan.status == dxx_route::route_plan_status::ok);
+	assert(blast_plan.steps.size() == 3);
+	assert(blast_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::blastable_wall);
+	assert(blast_plan.steps[1].activation ==
+	       dxx_route::route_activation_kind::destroy_blastable_wall);
+	assert(blast_plan.steps[1].segment == 0);
+	assert(blast_plan.steps[1].side == 0);
+	assert(blast_plan.steps[1].wall == 0);
+	assert(blast_plan.steps[1].activation_position.value ==
+	       first.topology.segments[0].center.value);
+	assert(blast_plan.steps[1].aim_position.value ==
+	       first.topology.walls[0].target.value);
+	assert(blast_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::unexplored);
+	auto blasted_progress = dxx_route::initial_route_progress_state(
+	    first, blast_query);
+	assert(dxx_route::route_progress_destroy_blastable_wall(
+	    first, blasted_progress, 0));
+	assert(blasted_progress.destroyed_blastable_walls[0]);
+	assert(blasted_progress.destroyed_blastable_walls[1]);
+	assert(dxx_route::evaluate_route_edge(
+	           first, blast_query, blasted_progress, 0, 0)
+	           .action == dxx_route::route_required_action::none);
 	const auto pessimistic_search = dxx_route::search_routes(
 	    first, planner_query, false);
 	assert(pessimistic_search.problem.empty());
@@ -621,7 +665,9 @@ int main()
 	const auto clearance_fallback = dxx_route::plan_route(
 	    first, clearance_query);
 	assert(clearance_fallback.status == dxx_route::route_plan_status::ok);
-	assert(clearance_fallback.steps.size() == 2);
+	assert(clearance_fallback.steps.size() == 3);
+	assert(clearance_fallback.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::blastable_wall);
 	auto obstructed_snapshot = first;
 	obstructed_snapshot.state.walls[0].kind = dxx_route::route_wall_kind::door;
 	obstructed_snapshot.state.walls[0].hidden = true;
@@ -946,7 +992,9 @@ int main()
 	assert_route_projection_matches(legacy_plan, shared_plan);
 	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_SEGMENT);
 	assert(plan_summary.first_pending_step == 1);
-	assert(plan_summary.first_pending_path_terminal_segment == 1);
+	assert(shared_plan.route_steps[1].kind ==
+	       LEVEL_METADATA_ROUTE_BLASTABLE_WALL);
+	assert(plan_summary.first_pending_path_terminal_segment == 0);
 	level_metadata_state_clear(&legacy_plan);
 	assert(level_metadata_scan_unexplored_route(
 	    &view, &legacy_plan, &legacy_unexplored));

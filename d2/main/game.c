@@ -92,6 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
+#include "escort.h"
 #ifdef OGL
 extern int g_swap_time_us;
 extern int g_msaa_resolve_time_us;
@@ -1588,6 +1589,10 @@ void GameProcessFrame(void)
 	dead_player_frame();
 	if (Newdemo_state != ND_STATE_PLAYBACK)
 		do_controlcen_dead_frame();
+#ifdef __ANDROID__
+	if (Newdemo_state != ND_STATE_PLAYBACK)
+		escort_route_monitor_completion();
+#endif
 
 	input_demo_update_result_kills_baseline();
 
