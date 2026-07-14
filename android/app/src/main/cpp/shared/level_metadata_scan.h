@@ -28,6 +28,14 @@ enum level_metadata_route_status {
 	LEVEL_METADATA_ROUTE_FAILED = 2
 };
 
+enum level_metadata_objective_mode {
+	LEVEL_METADATA_OBJECTIVES_OFF = 0,
+	LEVEL_METADATA_OBJECTIVES_ALL = 1,
+	LEVEL_METADATA_OBJECTIVES_REMAINING = 2,
+	LEVEL_METADATA_OBJECTIVES_NEXT = 3,
+	LEVEL_METADATA_OBJECTIVES_MODE_COUNT = 4
+};
+
 /*
  * Baseline for normalized volume. This must be generated from Descent 1 level 1
  * with level_metadata_scan.c's segment-volume algorithm. It is intentionally

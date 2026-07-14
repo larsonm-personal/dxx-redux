@@ -21,7 +21,7 @@
         "mine_volume": 5405522.396735425,
         "mine_volume_normalized": 1.1820768154396049,
         "mine_volume_text": "1.2x",
-        "travel_distance": 2982.523727592046,
+        "travel_distance": 3001.1469901169303,
         "travel_time_seconds": 60,
         "travel_time_text": "1M:00S",
         "guidebot_count": 0,
@@ -76,7 +76,7 @@
               "y": -46.25,
               "z": 311.1697998046875
             },
-            "distance": 969.7397534998713,
+            "distance": 988.3630160247558,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -747,7 +747,7 @@
         "mine_volume": 16056266.42490482,
         "mine_volume_normalized": 3.5111759586573603,
         "mine_volume_text": "3.5x",
-        "travel_distance": 3938.5491913587452,
+        "travel_distance": 3943.0541367410187,
         "travel_time_seconds": 79,
         "travel_time_text": "1M:19S",
         "guidebot_count": 0,
@@ -787,7 +787,7 @@
               "y": -69.39653015136719,
               "z": -272.2413330078125
             },
-            "distance": 1502.5904404592636
+            "distance": 1504.8429131504001
           },
           {
             "index": 3,
@@ -802,7 +802,7 @@
               "y": -69.60417175292969,
               "z": 151.57029724121094
             },
-            "distance": 947.5711617074799,
+            "distance": 949.8236343986166,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

@@ -51,7 +51,7 @@ static int Level_metadata_planner_shadow_valid;
 static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
-static int Level_metadata_show_objectives;
+static int Level_metadata_objective_mode;
 
 static void level_metadata_apply_planned_route(
     level_metadata_state *destination,
@@ -1651,7 +1651,7 @@ void secret_area_rescan_current_level(void)
 
 	secret_area_trace("start");
 	Secret_area_reveal_unfound = 0;
-	Level_metadata_show_objectives = 0;
+	Level_metadata_objective_mode = LEVEL_METADATA_OBJECTIVES_OFF;
 	Level_metadata_topology_valid = 0;
 	secret_area_ensure_level_topology();
 	memset(&view, 0, sizeof(view));
@@ -1813,12 +1813,32 @@ void secret_area_set_reveal_unfound(int reveal)
 	Secret_area_reveal_unfound = reveal ? 1 : 0;
 }
 
-int level_metadata_get_show_objectives(void)
+int level_metadata_get_objective_mode(void)
 {
-	return Level_metadata_show_objectives;
+	return Level_metadata_objective_mode;
 }
 
-void level_metadata_set_show_objectives(int show)
+const char *level_metadata_objective_mode_name(int mode)
 {
-	Level_metadata_show_objectives = show ? 1 : 0;
+	switch (mode) {
+		case LEVEL_METADATA_OBJECTIVES_ALL: return "all";
+		case LEVEL_METADATA_OBJECTIVES_REMAINING: return "remaining";
+		case LEVEL_METADATA_OBJECTIVES_NEXT: return "next";
+		default: return "off";
+	}
+}
+
+void level_metadata_set_objective_mode(int mode)
+{
+	if (mode < LEVEL_METADATA_OBJECTIVES_OFF ||
+	    mode >= LEVEL_METADATA_OBJECTIVES_MODE_COUNT)
+		mode = LEVEL_METADATA_OBJECTIVES_OFF;
+	Level_metadata_objective_mode = mode;
+}
+
+void level_metadata_cycle_objective_mode(void)
+{
+	level_metadata_set_objective_mode(
+	    (Level_metadata_objective_mode + 1) %
+	    LEVEL_METADATA_OBJECTIVES_MODE_COUNT);
 }

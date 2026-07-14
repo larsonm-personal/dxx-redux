@@ -34,7 +34,9 @@ void secret_area_restore_saved_found(int saved_total, const unsigned char *found
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);
 int secret_area_get_reveal_unfound(void);
 void secret_area_set_reveal_unfound(int reveal);
-int level_metadata_get_show_objectives(void);
-void level_metadata_set_show_objectives(int show);
+int level_metadata_get_objective_mode(void);
+const char *level_metadata_objective_mode_name(int mode);
+void level_metadata_set_objective_mode(int mode);
+void level_metadata_cycle_objective_mode(void);
 
 #endif

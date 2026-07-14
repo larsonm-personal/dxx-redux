@@ -443,9 +443,9 @@
         "mine_volume": 11069264.601182712,
         "mine_volume_normalized": 2.4206210036104387,
         "mine_volume_text": "2.4x",
-        "travel_distance": 3146.5459813332773,
-        "travel_time_seconds": 63,
-        "travel_time_text": "1M:03S",
+        "travel_distance": 3331.103839817966,
+        "travel_time_seconds": 67,
+        "travel_time_text": "1M:07S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -487,16 +487,16 @@
             "index": 2,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 8",
-            "seg": 21,
-            "wall": 139,
+            "label": "Pass through trigger 10",
+            "seg": 225,
+            "wall": 145,
             "label_pos": {
-              "x": 314.81182861328125,
-              "y": -120.00863647460938,
-              "z": 424.7059326171875
+              "x": 93.10064697265625,
+              "y": -120.0025634765625,
+              "z": 349.5794677734375
             },
-            "distance": 105.2204446912715,
-            "trigger": 8,
+            "distance": 306.4993665635736,
+            "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -523,7 +523,7 @@
               "y": -140.01947021484375,
               "z": 566.2149353027344
             },
-            "distance": 1899.4928329591903
+            "distance": 1882.7714104494542
           },
           {
             "index": 4,
@@ -538,7 +538,7 @@
               "y": -10.000457763671875,
               "z": 139.99960327148438
             },
-            "distance": 1050.2310322591404,
+            "distance": 1050.2313913812634,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"

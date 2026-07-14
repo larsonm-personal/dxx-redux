@@ -21,7 +21,7 @@
         "mine_volume": 13919359.808122696,
         "mine_volume_normalized": 3.0438783354002337,
         "mine_volume_text": "3.0x",
-        "travel_distance": 4659.856793479606,
+        "travel_distance": 4659.856847730457,
         "travel_time_seconds": 93,
         "travel_time_text": "1M:33S",
         "guidebot_count": 0,
@@ -40,24 +40,24 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 16",
-            "seg": 347,
-            "side": 2,
-            "wall": 93,
+            "label": "Fly-through trigger 15",
+            "seg": 348,
+            "side": 0,
+            "wall": 95,
             "label_pos": {
-              "x": -30.999969482421875,
-              "y": 49.999969482421875,
-              "z": 78.99996948242188
+              "x": 51.0,
+              "y": 50.0,
+              "z": 79.0
             },
-            "distance": 531.1267614533315,
-            "trigger": 16,
+            "distance": 531.1267939735451,
+            "trigger": 15,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
             "opens": [
               {
-                "seg": 337,
-                "side": 0,
-                "wall": 67
+                "seg": 339,
+                "side": 2,
+                "wall": 68
               }
             ]
           },
@@ -74,7 +74,7 @@
               "y": -151.0,
               "z": -733.0
             },
-            "distance": 1449.964993413616,
+            "distance": 1449.9650151442543,
             "trigger": 12,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",

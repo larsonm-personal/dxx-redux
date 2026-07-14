@@ -625,9 +625,9 @@
         "mine_volume": 23068825.0482912,
         "mine_volume_normalized": 5.044678617090955,
         "mine_volume_text": "5.0x",
-        "travel_distance": 7726.77738281665,
-        "travel_time_seconds": 155,
-        "travel_time_text": "2M:35S",
+        "travel_distance": 7890.3372121434695,
+        "travel_time_seconds": 158,
+        "travel_time_text": "2M:38S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -686,7 +686,7 @@
               "y": -55.10438537597656,
               "z": -236.3684844970703
             },
-            "distance": 1317.08320385434,
+            "distance": 1398.8631185177494,
             "key": "blue"
           },
           {
@@ -700,7 +700,7 @@
               "y": 94.89553833007812,
               "z": 207.1487579345703
             },
-            "distance": 1286.5060291141583,
+            "distance": 1368.2859437775685,
             "key": "gold"
           },
           {
@@ -1218,7 +1218,7 @@
         "mine_volume": 7339905.346500611,
         "mine_volume_normalized": 1.6050866689331447,
         "mine_volume_text": "1.6x",
-        "travel_distance": 2238.960974579421,
+        "travel_distance": 2250.208533265064,
         "travel_time_seconds": 45,
         "travel_time_text": "0M:45S",
         "guidebot_count": 0,
@@ -1237,17 +1237,16 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 1",
-            "seg": 117,
-            "side": 1,
-            "wall": 27,
+            "label": "Fly-through trigger 12",
+            "seg": 67,
+            "wall": 93,
             "label_pos": {
               "x": 37.499969482421875,
-              "y": 200.0,
+              "y": 155.0,
               "z": -60.0
             },
-            "distance": 646.9951524258086,
-            "trigger": 1,
+            "distance": 415.45401703726503,
+            "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -1296,7 +1295,7 @@
               "y": 200.0,
               "z": 50.0
             },
-            "distance": 172.5,
+            "distance": 403.72595608240795,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1334,7 +1333,7 @@
               "y": 257.5,
               "z": -170.0
             },
-            "distance": 837.2329110768062,
+            "distance": 848.795649068585,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

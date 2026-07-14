@@ -140,13 +140,65 @@ static int draw_objective_label_at(
 	return draw_text_label(label, color, &point);
 }
 
-static void draw_objective_labels(int *candidate_count, int *projected_count)
+static const level_metadata_state *current_objective_route(
+    route_planner_plan_summary *plan)
 {
-	const level_metadata_state *metadata = level_metadata_get_canonical_state();
+	const level_metadata_state *metadata = level_metadata_get_live_route_state();
+
+	if (metadata && level_metadata_get_live_route_plan_summary(plan))
+		return metadata;
+	metadata = level_metadata_get_canonical_state();
+	if (metadata && level_metadata_get_canonical_route_plan_summary(plan))
+		return metadata;
+	return NULL;
+}
+
+static const level_metadata_state *objective_label_route(
+    int *first_step,
+    int *end_step)
+{
+	route_planner_plan_summary plan;
+	const level_metadata_state *metadata;
+	int mode = level_metadata_get_objective_mode();
+
+	if (mode == LEVEL_METADATA_OBJECTIVES_OFF)
+		return NULL;
+	if (mode == LEVEL_METADATA_OBJECTIVES_ALL) {
+		metadata = level_metadata_get_canonical_state();
+		if (!metadata)
+			return NULL;
+		*first_step = 0;
+		*end_step = metadata->route_step_count;
+		return metadata;
+	}
+	memset(&plan, 0, sizeof(plan));
+	metadata = current_objective_route(&plan);
+	if (!metadata || plan.first_pending_step < 0 ||
+	    plan.first_pending_step >= metadata->route_step_count)
+		return NULL;
+	*first_step = plan.first_pending_step;
+	while (*first_step < metadata->route_step_count &&
+	       metadata->route_steps[*first_step].kind == LEVEL_METADATA_ROUTE_START)
+		(*first_step)++;
+	*end_step = mode == LEVEL_METADATA_OBJECTIVES_NEXT
+	                ? *first_step + 1
+	                : metadata->route_step_count;
+	return metadata;
+}
+
+static void draw_objective_labels(
+    int *visible_step_count,
+    int *candidate_count,
+    int *projected_count)
+{
+	int first_step = 0;
+	int end_step = 0;
+	const level_metadata_state *metadata =
+	    objective_label_route(&first_step, &end_step);
 	int objective_number = 0;
 	int i;
 
-	if (!level_metadata_get_show_objectives() || !metadata)
+	if (!metadata)
 		return;
 	for (i = 0; i < metadata->route_step_count; ++i) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
@@ -156,6 +208,9 @@ static void draw_objective_labels(int *candidate_count, int *projected_count)
 		if (step->kind == LEVEL_METADATA_ROUTE_START)
 			continue;
 		objective_number++;
+		if (i < first_step || i >= end_step)
+			continue;
+		(*visible_step_count)++;
 		snprintf(label, sizeof(label), "%d", objective_number);
 		color = objective_label_color(step);
 		if (objective_has_distinct_guidance_positions(step)) {
@@ -228,13 +283,16 @@ void automap_metadata_draw_connectors(
     int *objective_candidate_count,
     int *objective_drawn_count)
 {
-	const level_metadata_state *metadata = level_metadata_get_canonical_state();
+	int first_step = 0;
+	int end_step = 0;
+	const level_metadata_state *metadata =
+	    objective_label_route(&first_step, &end_step);
 	int objective_number = 0;
 	int i;
 
 	*objective_candidate_count = 0;
 	*objective_drawn_count = 0;
-	if (!level_metadata_get_show_objectives() || !metadata)
+	if (!metadata)
 		return;
 	for (i = 0; i < metadata->route_step_count; ++i) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
@@ -243,6 +301,8 @@ void automap_metadata_draw_connectors(
 		if (step->kind == LEVEL_METADATA_ROUTE_START)
 			continue;
 		objective_number++;
+		if (i < first_step || i >= end_step)
+			continue;
 		if (!objective_has_distinct_guidance_positions(step))
 			continue;
 		snprintf(label, sizeof(label), "%d", objective_number);
@@ -263,7 +323,8 @@ static void draw_guidebot_guidance_labels(int *candidate_count, int *projected_c
 	vms_vector pos;
 	g3s_point point;
 
-	if (!level_metadata_get_show_objectives() || !escort_get_route_goal_active() ||
+	if (level_metadata_get_objective_mode() == LEVEL_METADATA_OBJECTIVES_OFF ||
+	    !escort_get_route_goal_active() ||
 	    !metadata || !level_metadata_get_live_route_plan_summary(&plan) ||
 	    plan.first_pending_step < 0 ||
 	    plan.first_pending_step >= metadata->route_step_count)
@@ -293,6 +354,7 @@ static void draw_guidebot_guidance_labels(int *candidate_count, int *projected_c
 void automap_metadata_draw_labels(
     int *secret_candidate_count,
     int *secret_projected_count,
+    int *objective_visible_step_count,
     int *objective_candidate_count,
     int *objective_projected_count)
 {
@@ -300,25 +362,15 @@ void automap_metadata_draw_labels(
 	*secret_projected_count = 0;
 	draw_secret_labels(secret_candidate_count, secret_projected_count);
 
+	*objective_visible_step_count = 0;
 	*objective_candidate_count = 0;
 	*objective_projected_count = 0;
-	draw_objective_labels(objective_candidate_count, objective_projected_count);
+	draw_objective_labels(
+	    objective_visible_step_count, objective_candidate_count,
+	    objective_projected_count);
 #if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
 	draw_guidebot_guidance_labels(objective_candidate_count, objective_projected_count);
 #endif
-}
-
-static const level_metadata_state *next_objective_route(
-    route_planner_plan_summary *plan)
-{
-	const level_metadata_state *metadata = level_metadata_get_live_route_state();
-
-	if (metadata && level_metadata_get_live_route_plan_summary(plan))
-		return metadata;
-	metadata = level_metadata_get_canonical_state();
-	if (metadata && level_metadata_get_canonical_route_plan_summary(plan))
-		return metadata;
-	return NULL;
 }
 
 static void fit_objective_text(char *text, int max_width)
@@ -347,23 +399,26 @@ void automap_metadata_draw_next_objectives(int *objective_count)
 	route_planner_plan_summary plan;
 	const level_metadata_state *metadata;
 	int first;
+	int max_count;
+	int mode = level_metadata_get_objective_mode();
 	int drawn = 0;
 	int i;
 
 	*objective_count = 0;
-	if (!level_metadata_get_show_objectives())
+	if (mode == LEVEL_METADATA_OBJECTIVES_OFF)
 		return;
 	memset(&plan, 0, sizeof(plan));
-	metadata = next_objective_route(&plan);
+	metadata = current_objective_route(&plan);
 	if (!metadata)
 		return;
 	first = plan.first_pending_step;
 	if (first < 0 || first >= metadata->route_step_count)
 		return;
+	max_count = mode == LEVEL_METADATA_OBJECTIVES_NEXT ? 1 : K_NEXT_OBJECTIVE_COUNT;
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(K_NEXT_OBJECTIVE_COLOR, -1);
 	for (i = first;
-	     i < metadata->route_step_count && drawn < K_NEXT_OBJECTIVE_COUNT;
+	     i < metadata->route_step_count && drawn < max_count;
 	     ++i) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
 		char text[LEVEL_METADATA_ROUTE_LABEL_LEN];

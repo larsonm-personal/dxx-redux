@@ -304,6 +304,19 @@ static int lookup_key_command(const char *name)
 	return -1;
 }
 
+static int objective_mode_from_name(const char *name)
+{
+	if (strcasecmp(name, "off") == 0)
+		return LEVEL_METADATA_OBJECTIVES_OFF;
+	if (strcasecmp(name, "all") == 0)
+		return LEVEL_METADATA_OBJECTIVES_ALL;
+	if (strcasecmp(name, "remaining") == 0)
+		return LEVEL_METADATA_OBJECTIVES_REMAINING;
+	if (strcasecmp(name, "next") == 0)
+		return LEVEL_METADATA_OBJECTIVES_NEXT;
+	return -1;
+}
+
 /* -- Step types ------------------------------------------------------- */
 
 enum step_type {
@@ -349,7 +362,7 @@ enum step_type {
 	STEP_SELECT_MISSION,       /* select mission if mission picker is present */
 	STEP_SET_DEBUG,            /* set a debug flag (e.g. tex_overlay) */
 	STEP_SET_SECRET_REVEAL,    /* automation-only: set automap secret reveal */
-	STEP_SET_OBJECTIVE_OVERLAY /* automation-only: set objective labels */
+	STEP_SET_OBJECTIVE_OVERLAY /* automation-only: set objective display mode */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -1974,6 +1987,8 @@ static int parse_script(const char *json_text)
 			s.bank = step_json.value("bank", 0);
 			s.heading = step_json.value("heading", 0);
 			s.enabled = step_json.value("enabled", false);
+			if (s.type == STEP_SET_OBJECTIVE_OVERLAY)
+				s.value = step_json.value("mode", "off");
 			s.hot_xy_tolerance = step_json.value("hot_xy_tolerance", 0.02f);
 			s.require_hash_match = step_json.value("require_hash_match", 0);
 			s.max_mean_luma_diff = step_json.value("max_mean_luma_diff", 0.0f);
@@ -3381,11 +3396,25 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			break;
 
-		case STEP_SET_OBJECTIVE_OVERLAY:
-			level_metadata_set_show_objectives(s.enabled ? 1 : 0);
-			LOGI("set_objective_overlay: enabled=%s", s.enabled ? "true" : "false");
+		case STEP_SET_OBJECTIVE_OVERLAY: {
+			int mode;
+			if (strcasecmp(s.value.c_str(), "cycle") == 0) {
+				level_metadata_cycle_objective_mode();
+				mode = level_metadata_get_objective_mode();
+			} else {
+				mode = objective_mode_from_name(s.value.c_str());
+			}
+			if (mode < LEVEL_METADATA_OBJECTIVES_OFF) {
+				stop_script_fail("set_objective_overlay: invalid mode");
+				break;
+			}
+			if (strcasecmp(s.value.c_str(), "cycle") != 0)
+				level_metadata_set_objective_mode(mode);
+			LOGI("set_objective_overlay: mode=%s",
+			     level_metadata_objective_mode_name(mode));
 			advance_step();
 			break;
+		}
 	}
 }
 

@@ -1050,7 +1050,7 @@
         "mine_volume": 6182064.443275595,
         "mine_volume_normalized": 1.351890624736469,
         "mine_volume_text": "1.4x",
-        "travel_distance": 3358.25276264115,
+        "travel_distance": 3371.287870078342,
         "travel_time_seconds": 67,
         "travel_time_text": "1M:07S",
         "guidebot_count": 0,
@@ -1076,7 +1076,7 @@
               "y": 21.815231323242188,
               "z": 205.1983184814453
             },
-            "distance": 987.7231358408333,
+            "distance": 994.2406895594294,
             "key": "red"
           },
           {
@@ -1090,7 +1090,7 @@
               "y": 24.436553955078125,
               "z": 9.134994506835938
             },
-            "distance": 1296.2548875252153
+            "distance": 1302.7724412438113
           },
           {
             "index": 3,

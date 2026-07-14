@@ -363,9 +363,9 @@ class MainActivity :
 
     external fun nativeToggleSecretAreaReveal()
 
-    external fun nativeObjectiveOverlayActive(): Boolean
+    external fun nativeObjectiveOverlayMode(): Int
 
-    external fun nativeToggleObjectiveOverlay()
+    external fun nativeCycleObjectiveOverlay()
 
     external fun nativeGetAutomapMarkerState(): IntArray
 
@@ -999,14 +999,6 @@ class MainActivity :
                     }
                 }
 
-                TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES -> {
-                    try {
-                        nativeObjectiveOverlayActive()
-                    } catch (_: Exception) {
-                        false
-                    }
-                }
-
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
                     videoInfoOverlay?.visibility == View.VISIBLE
                 }
@@ -1014,6 +1006,13 @@ class MainActivity :
                 else -> {
                     false
                 }
+            }
+        }
+        touchOverlay.adminTrayObjectiveModeProvider = {
+            try {
+                nativeObjectiveOverlayMode()
+            } catch (_: Exception) {
+                OBJECTIVE_MODE_OFF
             }
         }
         touchOverlay.adminTrayEnabledStateProvider = { action ->
@@ -1169,7 +1168,7 @@ class MainActivity :
 
                 TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES -> {
                     try {
-                        nativeToggleObjectiveOverlay()
+                        nativeCycleObjectiveOverlay()
                     } catch (_: Exception) {
                     }
                 }

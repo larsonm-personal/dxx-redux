@@ -42,7 +42,8 @@ typedef struct automap_view_info {
 	int         secret_edges_culled_far_dist_last_frame;
 	int         secret_label_candidate_count;
 	int         secret_label_projected_count;
-	int         objective_overlay_enabled;
+	int         objective_overlay_mode;
+	int         objective_visible_step_count;
 	int         objective_label_candidate_count;
 	int         objective_label_projected_count;
 	int         objective_connector_candidate_count;

@@ -8,12 +8,13 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
         TouchOverlayView.ADMIN_NET_EVENTS,
         TouchOverlayView.ADMIN_NET_STATS,
         TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL,
-        TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES,
         TouchOverlayView.ADMIN_VIDEO_INFO,
         -> true
 
         else -> false
     }
+
+internal fun adminTrayCyclesState(actionIndex: Int): Boolean = actionIndex == TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES
 
 internal fun adminTrayUsesSlider(actionIndex: Int): Boolean =
     when (actionIndex) {
@@ -25,7 +26,7 @@ internal fun adminTrayUsesSlider(actionIndex: Int): Boolean =
     }
 
 internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
-    if (adminTrayUsesSlider(actionIndex)) {
+    if (adminTrayUsesSlider(actionIndex) || adminTrayCyclesState(actionIndex)) {
         false
     } else {
         when (actionIndex) {
@@ -41,6 +42,21 @@ internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
             else -> !adminTrayUsesCheckbox(actionIndex)
         }
     }
+
+// These values mirror level_metadata_objective_mode in level_metadata_scan.h.
+internal const val OBJECTIVE_MODE_OFF = 0
+internal const val OBJECTIVE_MODE_ALL = 1
+internal const val OBJECTIVE_MODE_REMAINING = 2
+internal const val OBJECTIVE_MODE_NEXT = 3
+
+internal fun objectiveOverlayLabel(mode: Int): String =
+    "Objectives: " +
+        when (mode) {
+            OBJECTIVE_MODE_ALL -> "All"
+            OBJECTIVE_MODE_REMAINING -> "Remaining"
+            OBJECTIVE_MODE_NEXT -> "Next"
+            else -> "Off"
+        }
 
 internal fun clampAdminTrayBrightness(value: Int): Int = value.coerceIn(0, 16)
 

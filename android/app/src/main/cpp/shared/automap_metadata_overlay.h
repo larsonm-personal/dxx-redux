@@ -4,6 +4,7 @@
 void automap_metadata_draw_labels(
     int *secret_candidate_count,
     int *secret_projected_count,
+    int *objective_visible_step_count,
     int *objective_candidate_count,
     int *objective_projected_count);
 void automap_metadata_draw_connectors(

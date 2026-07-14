@@ -45,12 +45,38 @@
     }},
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
-    {"action": "set_objective_overlay", "enabled": true, "post_delay_ms": 300},
+    {"action": "assert", "expect": {
+        "automap.objective_overlay_mode_name": "off",
+        "automap.objective_visible_step_count": "0"
+    }},
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
-        "automap.objective_overlay_enabled": "true",
+        "automap.objective_overlay_mode_name": "all",
+        "automap.objective_visible_step_count": "6",
         "automap.objective_label_candidate_count": {"gte": 6},
         "automap.objective_label_projected_count": {"gt": 0},
         "automap.next_objective_count": "3"
+    }},
+
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "remaining",
+        "automap.objective_visible_step_count": "6",
+        "automap.next_objective_count": "3"
+    }},
+
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "next",
+        "automap.objective_visible_step_count": "1",
+        "automap.next_objective_count": "1"
+    }},
+
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "off",
+        "automap.objective_visible_step_count": "0",
+        "automap.next_objective_count": "0"
     }},
     {"action": "introspect"}
 ]

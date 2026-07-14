@@ -196,18 +196,28 @@ class AdminTrayUiTest {
     }
 
     @Test
-    fun overlayTogglesUseCheckboxesAndStayOpen() {
+    fun overlayTogglesAndObjectiveCycleStayOpen() {
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_STATS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_EVENTS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
-        assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_VIDEO_INFO))
+        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
+        assertTrue(adminTrayCyclesState(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
 
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_STATS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_EVENTS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_VIDEO_INFO))
+    }
+
+    @Test
+    fun objectiveModeLabelsDescribeEveryCycleState() {
+        assertEquals("Objectives: Off", objectiveOverlayLabel(OBJECTIVE_MODE_OFF))
+        assertEquals("Objectives: All", objectiveOverlayLabel(OBJECTIVE_MODE_ALL))
+        assertEquals("Objectives: Remaining", objectiveOverlayLabel(OBJECTIVE_MODE_REMAINING))
+        assertEquals("Objectives: Next", objectiveOverlayLabel(OBJECTIVE_MODE_NEXT))
+        assertEquals("Objectives: Off", objectiveOverlayLabel(Int.MAX_VALUE))
     }
 
     @Test

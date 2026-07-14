@@ -108,6 +108,7 @@ typedef struct automap
 	int			secret_edges_culled_far_dist_last_frame;
 	int			secret_label_candidate_count;
 	int			secret_label_projected_count;
+	int			objective_visible_step_count;
 	int			objective_label_candidate_count;
 	int			objective_label_projected_count;
 	int			objective_connector_candidate_count;
@@ -197,7 +198,8 @@ int automap_get_view_info(automap_view_info *out) {
 	out->secret_edges_culled_far_dist_last_frame = am->secret_edges_culled_far_dist_last_frame;
 	out->secret_label_candidate_count = am->secret_label_candidate_count;
 	out->secret_label_projected_count = am->secret_label_projected_count;
-	out->objective_overlay_enabled = level_metadata_get_show_objectives();
+	out->objective_overlay_mode = level_metadata_get_objective_mode();
+	out->objective_visible_step_count = am->objective_visible_step_count;
 	out->objective_label_candidate_count = am->objective_label_candidate_count;
 	out->objective_label_projected_count = am->objective_label_projected_count;
 	out->objective_connector_candidate_count = am->objective_connector_candidate_count;
@@ -544,6 +546,7 @@ void draw_automap(automap *am)
 
 	automap_metadata_draw_labels(
 		&am->secret_label_candidate_count, &am->secret_label_projected_count,
+		&am->objective_visible_step_count,
 		&am->objective_label_candidate_count, &am->objective_label_projected_count);
 	automap_metadata_draw_next_objectives(&am->next_objective_count);
 

@@ -363,7 +363,7 @@
         "mine_volume": 4137332.3174022594,
         "mine_volume_normalized": 0.9047496710260319,
         "mine_volume_text": "0.90x",
-        "travel_distance": 3478.8786915501323,
+        "travel_distance": 3487.6349394931444,
         "travel_time_seconds": 70,
         "travel_time_text": "1M:10S",
         "guidebot_count": 0,
@@ -403,7 +403,7 @@
               "y": -20.0,
               "z": 169.99996948242188
             },
-            "distance": 1084.5886975927367,
+            "distance": 1088.9668215642428,
             "key": "gold"
           },
           {
@@ -417,7 +417,7 @@
               "y": 0.0,
               "z": 276.3484344482422
             },
-            "distance": 1009.556304430232,
+            "distance": 1013.934428401738,
             "key": "red"
           },
           {
@@ -466,9 +466,9 @@
         "mine_volume": 4509214.762898062,
         "mine_volume_normalized": 0.986072730043428,
         "mine_volume_text": "0.99x",
-        "travel_distance": 1483.8904687792033,
-        "travel_time_seconds": 30,
-        "travel_time_text": "0M:30S",
+        "travel_distance": 1575.583635258633,
+        "travel_time_seconds": 32,
+        "travel_time_text": "0M:32S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -506,7 +506,7 @@
               "y": -82.49555969238281,
               "z": 347.16346740722656
             },
-            "distance": 438.4108319729359
+            "distance": 468.9699590764605
           },
           {
             "index": 3,
@@ -521,7 +521,7 @@
               "y": -105.2786865234375,
               "z": 259.652099609375
             },
-            "distance": 146.34849113189796,
+            "distance": 176.65124535992888,
             "trigger": 1,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -546,7 +546,7 @@
               "y": -109.04615783691406,
               "z": 329.3574981689453
             },
-            "distance": 118.60300064269731,
+            "distance": 149.43428579057138,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1069,7 +1069,7 @@
         "mine_volume": 46175868.07359513,
         "mine_volume_normalized": 10.097714721441058,
         "mine_volume_text": "10x",
-        "travel_distance": 3202.027927837599,
+        "travel_distance": 3204.71383079531,
         "travel_time_seconds": 64,
         "travel_time_text": "1M:04S",
         "guidebot_count": 0,
@@ -1138,7 +1138,7 @@
               "y": -21.291519165039062,
               "z": 569.3065338134766
             },
-            "distance": 652.1368942060841,
+            "distance": 654.8227971637954,
             "trigger": 1,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1340,9 +1340,9 @@
         "mine_volume": 33954234.49534467,
         "mine_volume_normalized": 7.425094271589066,
         "mine_volume_text": "7.4x",
-        "travel_distance": 5753.309496970449,
-        "travel_time_seconds": 115,
-        "travel_time_text": "1M:55S",
+        "travel_distance": 5812.524969946086,
+        "travel_time_seconds": 116,
+        "travel_time_text": "1M:56S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1391,7 +1391,7 @@
               "y": 40.0,
               "z": 140.0
             },
-            "distance": 767.904920093891,
+            "distance": 793.531130372195,
             "key": "blue"
           },
           {
@@ -1405,7 +1405,7 @@
               "y": 480.0,
               "z": 366.0
             },
-            "distance": 1225.1239781651416,
+            "distance": 1250.7501884434457,
             "key": "gold"
           },
           {
@@ -1419,7 +1419,7 @@
               "y": 40.0,
               "z": 140.0
             },
-            "distance": 1835.2403138475433,
+            "distance": 1839.2218400570578,
             "key": "red"
           },
           {
@@ -1433,7 +1433,7 @@
               "y": 863.0,
               "z": 140.0
             },
-            "distance": 1582.0402848638723
+            "distance": 1586.0218110733872
           },
           {
             "index": 6,
@@ -1914,9 +1914,9 @@
         "mine_volume": 4461579.915021084,
         "mine_volume_normalized": 0.9756559663803314,
         "mine_volume_text": "0.98x",
-        "travel_distance": 1936.649462329255,
-        "travel_time_seconds": 39,
-        "travel_time_text": "0M:39S",
+        "travel_distance": 2228.2820427468,
+        "travel_time_seconds": 45,
+        "travel_time_text": "0M:45S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1940,7 +1940,7 @@
               "y": -28.923248291015625,
               "z": 250.00018310546875
             },
-            "distance": 718.3169434615052,
+            "distance": 864.1332336702777,
             "key": "red"
           },
           {
@@ -1954,7 +1954,7 @@
               "y": -53.923828125,
               "z": 250.000244140625
             },
-            "distance": 1061.2920554108093
+            "distance": 1207.1083456195818
           },
           {
             "index": 3,
@@ -1989,7 +1989,7 @@
         "mine_volume": 10701224.252611224,
         "mine_volume_normalized": 2.3401381323424535,
         "mine_volume_text": "2.3x",
-        "travel_distance": 2337.2207289437015,
+        "travel_distance": 2347.9290378291616,
         "travel_time_seconds": 47,
         "travel_time_text": "0M:47S",
         "guidebot_count": 0,
@@ -2015,7 +2015,7 @@
               "y": -54.99992370605469,
               "z": 354.9991912841797
             },
-            "distance": 420.78347745514844,
+            "distance": 424.2795390660427,
             "key": "blue"
           },
           {
@@ -2029,7 +2029,7 @@
               "y": 91.53762817382812,
               "z": 264.99951171875
             },
-            "distance": 449.4149958948253,
+            "distance": 456.6272431693909,
             "key": "gold"
           },
           {

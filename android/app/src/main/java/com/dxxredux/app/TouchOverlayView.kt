@@ -814,6 +814,7 @@ class TouchOverlayView
         var adminTrayDifficultySetter: ((Int) -> Boolean)? = null
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
         var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
+        var adminTrayObjectiveModeProvider: (() -> Int)? = null
         var secretAreaRevealProvider: (() -> Boolean)? = null
 
         // Gamepad-only mode: no touchscreen, admin tray gets extra items + D-pad nav
@@ -3919,11 +3920,7 @@ class TouchOverlayView
                 }
 
                 ADMIN_AUTOMAP_OBJECTIVES -> {
-                    if (adminTrayToggleStateProvider?.invoke(ADMIN_AUTOMAP_OBJECTIVES) == true) {
-                        "Hide Objectives"
-                    } else {
-                        "Show Objectives"
-                    }
+                    objectiveOverlayLabel(adminTrayObjectiveModeProvider?.invoke() ?: OBJECTIVE_MODE_OFF)
                 }
 
                 ADMIN_HEADLIGHT -> {
