@@ -36,11 +36,13 @@
         "guidebot.owner_generation": {"gte": 3},
         "guidebot.route_target_mode_name": "unexplored",
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_label": {"contains": "red key"},
-        "guidebot.route_goal_objective_kind": "1",
+        "guidebot.route_goal_label": "Unexplored",
+        "guidebot.route_goal_objective_kind": "1000",
+        "guidebot.route_goal_path_endpoint_seg": "56",
         "guidebot.route_goal_path_pending": "true",
         "guidebot.unexplored_component_size": "1",
-        "guidebot.unexplored_target_seg": "56"
+        "guidebot.unexplored_target_seg": "56",
+        "guidebot.unexplored_direct_reachable": "true"
     }},
 
     {"action": "set_debug", "field": "damage_player", "value": "250", "post_delay_ms": 100},

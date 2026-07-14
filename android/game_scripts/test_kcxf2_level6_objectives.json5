@@ -41,7 +41,11 @@
     {"action": "assert", "expect": {
         "current_level_num": "6",
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "7"
+        "level_metadata_route.step_count": "7",
+        "level_metadata_route.steps[4].kind": "key",
+        "level_metadata_route.steps[4].activation_kind": "destroy_key_carrier",
+        "level_metadata_route.steps[4].label": "Destroy robot carrying blue key",
+        "level_metadata_route.steps[4].key_carrier_objnum": {"gte": 0}
     }},
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
@@ -55,6 +59,10 @@
         "automap.objective_visible_step_count": "6",
         "automap.objective_label_candidate_count": {"gte": 6},
         "automap.objective_label_projected_count": {"gt": 0},
+        "automap.key_carrier_marker_count": "1",
+        "automap.key_carrier_marker_objnum": {"gte": 0},
+        "automap.key_carrier_marker_key_index": "0",
+        "automap.key_carrier_marker_position[0]": {"range": [-10000, 10000]},
         "automap.next_objective_count": "3"
     }},
 
@@ -77,6 +85,21 @@
         "automap.objective_overlay_mode_name": "off",
         "automap.objective_visible_step_count": "0",
         "automap.next_objective_count": "0"
+    }},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 200},
+    {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 200},
+    {"action": "set_debug", "field": "fire_trigger", "value": "19", "post_delay_ms": 200},
+    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_label": "Destroy robot carrying blue key",
+        "guidebot.route_goal_activation_kind_name": "destroy_key_carrier",
+        "guidebot.route_goal_instruction": "Destroy robot carrying blue key",
+        "guidebot.route_analysis.steps[1].key_carrier_objnum": {"gte": 0},
+        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: Destroy robot carrying blue key"}
     }},
     {"action": "introspect"}
 ]

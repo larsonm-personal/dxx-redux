@@ -187,8 +187,8 @@
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 59,
             "label_pos": {
               "x": 0.0,
@@ -196,7 +196,8 @@
               "z": 630.0
             },
             "distance": 1373.4124412762226,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 47
           },
           {
             "index": 3,

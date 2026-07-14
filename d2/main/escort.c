@@ -232,6 +232,8 @@ static int Escort_route_target_mode_restore_pending;
 static int Escort_route_metadata_dirty = 1;
 static unsigned int Escort_route_metadata_rescan_count;
 static unsigned int Escort_route_guidance_full_search_count;
+static unsigned int Escort_route_ignored_nonowner_key_change_count;
+static unsigned int Escort_route_boss_move_invalidation_count;
 static fix64 Escort_route_completion_check_time;
 static unsigned int Escort_route_selector_compare_count;
 static unsigned int Escort_route_selector_mismatch_count;
@@ -602,6 +604,16 @@ unsigned int escort_get_route_metadata_rescan_count(void)
 unsigned int escort_get_route_guidance_full_search_count(void)
 {
 	return Escort_route_guidance_full_search_count;
+}
+
+unsigned int escort_get_route_ignored_nonowner_key_change_count(void)
+{
+	return Escort_route_ignored_nonowner_key_change_count;
+}
+
+unsigned int escort_get_route_boss_move_invalidation_count(void)
+{
+	return Escort_route_boss_move_invalidation_count;
 }
 
 unsigned int escort_get_route_selector_compare_count(void)
@@ -1722,6 +1734,8 @@ void init_buddy_for_level(void)
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	Escort_route_metadata_rescan_count = 0;
 	Escort_route_guidance_full_search_count = 0;
+	Escort_route_ignored_nonowner_key_change_count = 0;
+	Escort_route_boss_move_invalidation_count = 0;
 	Escort_route_selector_compare_count = 0;
 	Escort_route_selector_mismatch_count = 0;
 	Escort_route_selector_shared_index = -1;
@@ -3698,12 +3712,50 @@ void invalidate_escort_goal(void)
 
 void escort_note_player_key_flags(int old_flags, int new_flags)
 {
+	escort_note_player_key_flags_for_player(Player_num, old_flags, new_flags);
+}
+
+void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_flags)
+{
 	if ((old_flags ^ new_flags) & ESCORT_KEY_FLAGS) {
+#ifdef NETWORK
+		if ((Game_mode & GM_MULTI_COOP) &&
+		    !escort_owner_key_change_relevant(pnum, escort_key_owner_player())) {
+#ifdef __ANDROID__
+			Escort_route_ignored_nonowner_key_change_count++;
+#endif
+			return;
+		}
+#else
+		(void) pnum;
+#endif
 		invalidate_escort_goal();
 #ifdef __ANDROID__
 		escort_route_note_replan("key_change");
 #endif
 	}
+}
+
+void escort_note_boss_teleported(int objnum)
+{
+#ifdef __ANDROID__
+	if (objnum < 0 || objnum > Highest_object_index ||
+	    Objects[objnum].type != OBJ_ROBOT ||
+	    !Robot_info[Objects[objnum].id].boss_flag ||
+	    !Escort_route_goal.active ||
+	    Escort_route_goal.objective_kind != LEVEL_METADATA_ROUTE_BOSS)
+		return;
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
+		return;
+#endif
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	escort_route_clear_goal();
+	escort_route_note_replan("boss_teleported");
+	Escort_route_boss_move_invalidation_count++;
+#else
+	(void) objnum;
+#endif
 }
 
 //	-------------------------------------------------------------------------------------------------
@@ -4930,7 +4982,7 @@ void multi_do_escort_owner(const ubyte *buf, int authenticated_sender)
 	}
 	if (packet_kind != ESCORT_OWNER_PACKET_STATE || sender != multi_who_is_master())
 		return;
-	if (generation <= Escort_owner_generation)
+	if (!escort_owner_generation_is_newer(generation, Escort_owner_generation))
 		return;
 	Escort_owner_generation = generation;
 	escort_apply_multiplayer_owner(new_owner, target_mode);

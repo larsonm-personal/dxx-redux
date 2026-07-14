@@ -5,6 +5,7 @@
 #include "route_planner.h"
 #include "route_planner_c.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <cstdlib>
@@ -445,6 +446,7 @@ void assert_route_projection_matches(
 		assert(left.trigger_num == right.trigger_num);
 		assert(left.trigger_type == right.trigger_type);
 		assert(left.key_index == right.key_index);
+		assert(left.key_carrier_objnum == right.key_carrier_objnum);
 		assert(left.activation_kind == right.activation_kind);
 		assert(left.activation_pos_valid == right.activation_pos_valid);
 		assert(left.aim_pos_valid == right.aim_pos_valid);
@@ -1051,6 +1053,45 @@ int main()
 	assert(!key_targets.keys[0][0].contained);
 	assert(key_targets.keys[2].size() == 1);
 	assert(key_targets.keys[2][0].contained);
+	auto carrier_snapshot = first;
+	carrier_snapshot.state.objects[0].boss = false;
+	carrier_snapshot.state.objects[0].kind =
+	    dxx_route::route_object_kind::robot;
+	carrier_snapshot.state.objects[0].key =
+	    dxx_route::route_key_requirement::none;
+	carrier_snapshot.state.objects[0].contains_count = 1;
+	carrier_snapshot.state.objects[0].contains_key =
+	    dxx_route::route_key_requirement::blue;
+	carrier_snapshot.state.objects[0].segment = 0;
+	carrier_snapshot.state.objects[0].position =
+	    carrier_snapshot.topology.segments[0].center;
+	carrier_snapshot.state.control_center_destroyed = true;
+	carrier_snapshot.state.segments[0].sides[0].flyable = false;
+	carrier_snapshot.state.segments[0].sides[0].control_center_link = false;
+	carrier_snapshot.state.walls[0].kind =
+	    dxx_route::route_wall_kind::door;
+	carrier_snapshot.state.walls[0].hidden = false;
+	carrier_snapshot.state.walls[0].key =
+	    dxx_route::route_key_requirement::blue;
+	carrier_snapshot.state.walls[0].trigger = -1;
+	carrier_snapshot.topology.segments[0].sides[0].opener_walls.clear();
+	carrier_snapshot.topology.walls[0].shootable_trigger = false;
+	auto carrier_query = planner_query;
+	carrier_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	carrier_query.target_segment = 1;
+	const auto carrier_plan = dxx_route::plan_route(
+	    carrier_snapshot, carrier_query);
+	assert(carrier_plan.status == dxx_route::route_plan_status::ok);
+	const auto carrier_step = std::find_if(
+	    carrier_plan.steps.begin(), carrier_plan.steps.end(),
+	    [](const dxx_route::route_semantic_step &step) {
+		    return step.kind == dxx_route::route_semantic_step_kind::key;
+	    });
+	assert(carrier_step != carrier_plan.steps.end());
+	assert(carrier_step->activation ==
+	       dxx_route::route_activation_kind::destroy_key_carrier);
+	assert(carrier_step->key_carrier_object == 0);
+	assert(carrier_step->label == "Destroy robot carrying blue key");
 	const auto selected_key = dxx_route::select_key_target(
 	    key_snapshot, planner_query,
 	    dxx_route::initial_route_progress_state(key_snapshot, planner_query),

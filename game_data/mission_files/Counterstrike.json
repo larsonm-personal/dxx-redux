@@ -1203,8 +1203,8 @@
         {
           "index": 1,
           "kind": "key",
-          "activation_kind": "pickup_key",
-          "label": "blue key",
+          "activation_kind": "destroy_key_carrier",
+          "label": "Destroy robot carrying blue key",
           "seg": 410,
           "label_pos": {
             "x": -81.3619384765625,
@@ -1212,7 +1212,8 @@
             "z": -287.0442810058594
           },
           "distance": 1439.692573168826,
-          "key": "blue"
+          "key": "blue",
+          "key_carrier_objnum": 3
         }
       ],
       "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
@@ -2434,8 +2435,8 @@
         {
           "index": 2,
           "kind": "key",
-          "activation_kind": "pickup_key",
-          "label": "blue key",
+          "activation_kind": "destroy_key_carrier",
+          "label": "Destroy robot carrying blue key",
           "seg": 113,
           "label_pos": {
             "x": 246.19712829589844,
@@ -2443,7 +2444,8 @@
             "z": 766.8402557373047
           },
           "distance": 548.0891294425144,
-          "key": "blue"
+          "key": "blue",
+          "key_carrier_objnum": 143
         },
         {
           "index": 3,
@@ -3110,8 +3112,8 @@
         {
           "index": 3,
           "kind": "key",
-          "activation_kind": "pickup_key",
-          "label": "red key",
+          "activation_kind": "destroy_key_carrier",
+          "label": "Destroy robot carrying red key",
           "seg": 243,
           "label_pos": {
             "x": 392.0906677246094,
@@ -3119,7 +3121,8 @@
             "z": 53.942413330078125
           },
           "distance": 1285.6762910115574,
-          "key": "red"
+          "key": "red",
+          "key_carrier_objnum": 2
         },
         {
           "index": 4,

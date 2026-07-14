@@ -40,6 +40,7 @@ extern "C" {
 #include "laser.h"
 #include "cntrlcen.h"
 #include "automap.h"
+#include "automap_metadata_overlay.h"
 #include "segment.h"
 #include "playsave.h"
 #include "kconfig.h"
@@ -779,6 +780,7 @@ static json serialize_level_metadata_route()
 		item["wall"] = step->wall_num;
 		item["trigger"] = step->trigger_num;
 		item["key"] = introspect_route_key_name(step->key_index);
+		item["key_carrier_objnum"] = step->key_carrier_objnum;
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
 		item["label_pos"] = step->label_pos_valid ? json::array({ step->label_pos[0], step->label_pos[1], step->label_pos[2] }) : json(nullptr);
@@ -829,6 +831,7 @@ static json serialize_guidebot_route_analysis()
 		item["reachable"] = analysis.reachable;
 		item["guidance_mode"] = analysis.guidance_mode;
 		item["key_index"] = analysis.key_index;
+		item["key_carrier_objnum"] = metadata->route_steps[index].key_carrier_objnum;
 		item["key_owned"] = analysis.key_owned;
 		item["key_exists"] = analysis.key_exists;
 		item["trigger"] = analysis.trigger_num;
@@ -914,6 +917,10 @@ static json serialize_guidebot()
 	result["route_last_replan_reason"] = escort_get_route_last_replan_reason();
 	result["route_metadata_rescan_count"] = escort_get_route_metadata_rescan_count();
 	result["route_guidance_full_search_count"] = escort_get_route_guidance_full_search_count();
+	result["route_ignored_nonowner_key_change_count"] =
+	    escort_get_route_ignored_nonowner_key_change_count();
+	result["route_boss_move_invalidation_count"] =
+	    escort_get_route_boss_move_invalidation_count();
 	result["route_planner_source"] = live_plan_available ? "shared_cpp" : "unavailable";
 	result["route_first_pending_step"] =
 	    live_plan_available ? live_plan.first_pending_step : -1;
@@ -1484,7 +1491,10 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		automap_view_info avi;
 		if (automap_get_view_info(&avi)) {
-			j["automap"] = {
+			int carrier_objnum = -1;
+			int carrier_key_index = -1;
+			int carrier_position[3] = {};
+			json automap = {
 				{ "freeflight", (bool) avi.freeflight },
 				{ "view_x", f2fl(avi.view_pos.x) },
 				{ "view_y", f2fl(avi.view_pos.y) },
@@ -1512,8 +1522,20 @@ extern "C" char *game_introspect_get_state(void)
 				{ "objective_label_projected_count", avi.objective_label_projected_count },
 				{ "objective_connector_candidate_count", avi.objective_connector_candidate_count },
 				{ "objective_connector_drawn_count", avi.objective_connector_drawn_count },
-				{ "next_objective_count", avi.next_objective_count }
+				{ "next_objective_count", avi.next_objective_count },
+				{ "key_carrier_marker_count", automap_metadata_get_key_carrier_marker_count() }
 			};
+			if (automap_metadata_get_key_carrier_marker(
+			        &carrier_objnum, &carrier_key_index, carrier_position)) {
+				automap["key_carrier_marker_objnum"] = carrier_objnum;
+				automap["key_carrier_marker_key_index"] = carrier_key_index;
+				automap["key_carrier_marker_position"] = {
+					f2fl(carrier_position[0]),
+					f2fl(carrier_position[1]),
+					f2fl(carrier_position[2])
+				};
+			}
+			j["automap"] = std::move(automap);
 		} else {
 			j["automap"] = nullptr;
 		}

@@ -40,6 +40,7 @@ function ConvertTo-RouteStepProjection {
         wall = $Step.wall
         distance = ConvertTo-RoundedRouteDistance -Value $Step.distance
         key = $Step.key
+        key_carrier_objnum = $Step.key_carrier_objnum
         trigger = $Step.trigger
         trigger_type_id = $Step.trigger_type_id
         trigger_type = $Step.trigger_type

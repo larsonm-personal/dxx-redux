@@ -139,7 +139,9 @@ enum class route_activation_kind {
 	destroy_boss = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS,
 	enter_exit = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT,
 	destroy_blastable_wall =
-	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL,
+	destroy_key_carrier =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER
 };
 
 struct route_effect_link {
@@ -156,6 +158,7 @@ struct route_semantic_step {
 	int trigger = -1;
 	int trigger_raw_type = -1;
 	route_key_requirement key = route_key_requirement::none;
+	int key_carrier_object = -1;
 	route_activation_kind activation = route_activation_kind::none;
 	route_position activation_position;
 	route_position aim_position;

@@ -142,8 +142,8 @@
           {
             "index": 1,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 433,
             "label_pos": {
               "x": 47.5,
@@ -151,13 +151,14 @@
               "z": 70.0
             },
             "distance": 474.1989178096148,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 35
           },
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying gold key",
             "seg": 105,
             "label_pos": {
               "x": 95.0,
@@ -165,13 +166,14 @@
               "z": -190.0
             },
             "distance": 454.10553539418333,
-            "key": "gold"
+            "key": "gold",
+            "key_carrier_objnum": 26
           },
           {
             "index": 3,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
             "seg": 12,
             "label_pos": {
               "x": -5.0,
@@ -179,7 +181,8 @@
               "z": 377.5
             },
             "distance": 1523.092583320162,
-            "key": "red"
+            "key": "red",
+            "key_carrier_objnum": 98
           },
           {
             "index": 4,
@@ -245,8 +248,8 @@
           {
             "index": 1,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 23,
             "label_pos": {
               "x": -176.25,
@@ -254,7 +257,8 @@
               "z": 362.5
             },
             "distance": 365.9848951773967,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 73
           },
           {
             "index": 2,
@@ -514,8 +518,8 @@
           {
             "index": 3,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 97,
             "label_pos": {
               "x": 80.0,
@@ -523,7 +527,8 @@
               "z": 140.0
             },
             "distance": 277.8304684688622,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 116
           },
           {
             "index": 4,
@@ -762,8 +767,8 @@
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying gold key",
             "seg": 706,
             "label_pos": {
               "x": 582.0581665039062,
@@ -771,7 +776,8 @@
               "z": 612.464111328125
             },
             "distance": 1281.714901130321,
-            "key": "gold"
+            "key": "gold",
+            "key_carrier_objnum": 10
           },
           {
             "index": 3,
@@ -972,8 +978,8 @@
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 779,
             "label_pos": {
               "x": -162.87045288085938,
@@ -981,7 +987,8 @@
               "z": 42.06245422363281
             },
             "distance": 158.60577657930205,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 21
           },
           {
             "index": 3,

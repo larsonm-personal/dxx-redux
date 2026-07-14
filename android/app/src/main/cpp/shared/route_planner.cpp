@@ -1655,11 +1655,23 @@ class dependency_planner
 	bool append_key_step(const route_target &target, int key)
 	{
 		route_semantic_step step;
+		const bool robot_carrier =
+		    target.contained && target.object >= 0 &&
+		    static_cast<std::size_t>(target.object) < snapshot_.state.objects.size() &&
+		    snapshot_.state.objects[target.object].kind == route_object_kind::robot;
 		step.kind = route_semantic_step_kind::key;
 		step.segment = target.segment;
 		step.key = target.key;
-		step.activation = route_activation_kind::pickup_key;
-		step.label = std::string(dependency_key_name(key)) + " key";
+		if (robot_carrier) {
+			step.key_carrier_object = target.object;
+			step.activation = route_activation_kind::destroy_key_carrier;
+			step.label =
+			    std::string("Destroy robot carrying ") +
+			    dependency_key_name(key) + " key";
+		} else {
+			step.activation = route_activation_kind::pickup_key;
+			step.label = std::string(dependency_key_name(key)) + " key";
+		}
 		step.aim_position = target.position;
 		step.label_position = target.position;
 		return append_step(std::move(step));
@@ -2239,6 +2251,7 @@ bool dependency_step_matches(
 	    legacy.wall_num != shared.wall || legacy.trigger_num != shared.trigger ||
 	    legacy.trigger_type != shared.trigger_raw_type ||
 	    legacy.key_index != semantic_key_index(shared.key) ||
+	    legacy.key_carrier_objnum != shared.key_carrier_object ||
 	    legacy.activation_kind != static_cast<int>(shared.activation) ||
 	    !distances_match(
 	        legacy.distance_from_previous, shared.distance_from_previous) ||
@@ -2375,6 +2388,7 @@ bool project_step(
 	destination.trigger_num = source.trigger;
 	destination.trigger_type = source.trigger_raw_type;
 	destination.key_index = semantic_key_index(source.key);
+	destination.key_carrier_objnum = source.key_carrier_object;
 	destination.activation_kind = static_cast<int>(source.activation);
 	project_position(
 	    source.activation_position, destination.activation_pos_valid,

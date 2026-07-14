@@ -722,8 +722,8 @@
           {
             "index": 3,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 84,
             "label_pos": {
               "x": 0.0,
@@ -731,7 +731,8 @@
               "z": 80.0
             },
             "distance": 280.07641651291385,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 11
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",

@@ -475,8 +475,8 @@
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying gold key",
             "seg": 336,
             "label_pos": {
               "x": 0.0,
@@ -484,7 +484,8 @@
               "z": -480.0
             },
             "distance": 933.2695393870863,
-            "key": "gold"
+            "key": "gold",
+            "key_carrier_objnum": 112
           },
           {
             "index": 3,

@@ -72,6 +72,28 @@ static int test_ineligible_players_and_stale_requests_are_rejected(void)
 	return 1;
 }
 
+static int test_owner_generation_comparison_handles_wrap(void)
+{
+	CHECK(escort_owner_generation_is_newer(1, 0));
+	CHECK(escort_owner_generation_is_newer(2, 1));
+	CHECK(!escort_owner_generation_is_newer(0, 0));
+	CHECK(!escort_owner_generation_is_newer(0, 0xffffffffu));
+	CHECK(!escort_owner_generation_is_newer(4, 4));
+	CHECK(!escort_owner_generation_is_newer(3, 4));
+	CHECK(escort_owner_generation_is_newer(1, 0xffffffffu));
+	CHECK(!escort_owner_generation_is_newer(0xffffffffu, 1));
+	return 1;
+}
+
+static int test_only_effective_owner_key_changes_are_relevant(void)
+{
+	CHECK(escort_owner_key_change_relevant(2, 2));
+	CHECK(!escort_owner_key_change_relevant(1, 2));
+	CHECK(!escort_owner_key_change_relevant(-1, 2));
+	CHECK(!escort_owner_key_change_relevant(1, -1));
+	return 1;
+}
+
 int main(void)
 {
 	if (!test_packet_sender_must_match_authenticated_transport_player() ||
@@ -79,7 +101,9 @@ int main(void)
 	    !test_saved_owner_follows_identity_to_a_new_slot() ||
 	    !test_unowned_bot_can_only_be_claimed_by_requester() ||
 	    !test_only_current_owner_can_transfer_or_abdicate() ||
-	    !test_ineligible_players_and_stale_requests_are_rejected())
+	    !test_ineligible_players_and_stale_requests_are_rejected() ||
+	    !test_owner_generation_comparison_handles_wrap() ||
+	    !test_only_effective_owner_key_changes_are_relevant())
 		return 1;
 	puts("escort owner policy tests passed");
 	return 0;

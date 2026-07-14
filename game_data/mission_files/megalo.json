@@ -241,8 +241,8 @@
           {
             "index": 1,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 149,
             "label_pos": {
               "x": -25.560958862304688,
@@ -250,13 +250,14 @@
               "z": -125.86131286621094
             },
             "distance": 950.5004856191281,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 71
           },
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying gold key",
             "seg": 423,
             "label_pos": {
               "x": -733.3561248779297,
@@ -264,13 +265,14 @@
               "z": 1240.4147186279297
             },
             "distance": 2383.700242273908,
-            "key": "gold"
+            "key": "gold",
+            "key_carrier_objnum": 61
           },
           {
             "index": 3,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
             "seg": 721,
             "label_pos": {
               "x": 891.6278686523438,
@@ -278,7 +280,8 @@
               "z": 1322.0904083251953
             },
             "distance": 2699.264324227546,
-            "key": "red"
+            "key": "red",
+            "key_carrier_objnum": 62
           },
           {
             "index": 4,

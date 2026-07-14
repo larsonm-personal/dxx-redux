@@ -66,7 +66,8 @@ enum level_metadata_route_activation_kind {
 	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR = 6,
 	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS = 7,
 	LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT = 8,
-	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL = 9
+	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL = 9,
+	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER = 10
 };
 
 enum level_metadata_route_edge_cost {
@@ -88,6 +89,7 @@ typedef struct level_metadata_route_step {
 	int trigger_num;
 	int trigger_type;
 	int key_index;
+	int key_carrier_objnum;
 	int activation_kind;
 	int activation_pos_valid;
 	int activation_pos[3];

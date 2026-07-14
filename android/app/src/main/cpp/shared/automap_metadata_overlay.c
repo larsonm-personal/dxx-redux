@@ -9,6 +9,7 @@
 #include "gamefont.h"
 #include "gameseg.h"
 #include "gr.h"
+#include "powerup.h"
 #include "secretarea.h"
 #if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
 #include "escort.h"
@@ -24,6 +25,111 @@
 #define K_GUIDANCE_TARGET_COLOR      BM_XRGB(63, 25, 5)
 #define K_NEXT_OBJECTIVE_COLOR       BM_XRGB(63, 5, 5)
 #define K_NEXT_OBJECTIVE_COUNT       3
+
+static int key_carrier_marker_count;
+static int key_carrier_marker_objnum = -1;
+static int key_carrier_marker_key_index = -1;
+static int key_carrier_marker_position[3];
+
+static int objective_key_powerup_id(int key_index)
+{
+	switch (key_index) {
+		case 0:
+			return POW_KEY_BLUE;
+		case 1:
+			return POW_KEY_RED;
+		case 2:
+			return POW_KEY_GOLD;
+		default:
+			return -1;
+	}
+}
+
+static int objective_key_object_position(
+    const level_metadata_route_step *step,
+    int position[3],
+    int *resolved_objnum,
+    int *is_carrier)
+{
+	int objnum;
+	int powerup_id;
+	int best_objnum = -1;
+	fix best_distance = 0;
+	vms_vector static_pos;
+
+	if (resolved_objnum)
+		*resolved_objnum = -1;
+	if (is_carrier)
+		*is_carrier = 0;
+	if (!step || step->kind != LEVEL_METADATA_ROUTE_KEY ||
+	    step->key_carrier_objnum < 0 || !position)
+		return 0;
+	powerup_id = objective_key_powerup_id(step->key_index);
+	if (powerup_id < 0)
+		return 0;
+	objnum = step->key_carrier_objnum;
+	if (objnum <= Highest_object_index &&
+	    Objects[objnum].type == OBJ_ROBOT &&
+	    !(Objects[objnum].flags & OF_SHOULD_BE_DEAD) &&
+	    Objects[objnum].contains_count > 0 &&
+	    Objects[objnum].contains_type == OBJ_POWERUP &&
+	    Objects[objnum].contains_id == powerup_id) {
+		position[0] = Objects[objnum].pos.x;
+		position[1] = Objects[objnum].pos.y;
+		position[2] = Objects[objnum].pos.z;
+		if (resolved_objnum)
+			*resolved_objnum = objnum;
+		if (is_carrier)
+			*is_carrier = 1;
+		return 1;
+	}
+
+	static_pos.x = step->label_pos[0];
+	static_pos.y = step->label_pos[1];
+	static_pos.z = step->label_pos[2];
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		fix distance;
+		if (Objects[objnum].type != OBJ_POWERUP ||
+		    Objects[objnum].id != powerup_id ||
+		    (Objects[objnum].flags & OF_SHOULD_BE_DEAD))
+			continue;
+		distance = vm_vec_dist_quick(&static_pos, &Objects[objnum].pos);
+		if (best_objnum >= 0 && distance >= best_distance)
+			continue;
+		best_objnum = objnum;
+		best_distance = distance;
+	}
+	if (best_objnum < 0)
+		return 0;
+	position[0] = Objects[best_objnum].pos.x;
+	position[1] = Objects[best_objnum].pos.y;
+	position[2] = Objects[best_objnum].pos.z;
+	if (resolved_objnum)
+		*resolved_objnum = best_objnum;
+	return 1;
+}
+
+int automap_metadata_get_key_carrier_marker(
+    int *objnum, int *key_index, int position[3])
+{
+	if (key_carrier_marker_count <= 0)
+		return 0;
+	if (objnum)
+		*objnum = key_carrier_marker_objnum;
+	if (key_index)
+		*key_index = key_carrier_marker_key_index;
+	if (position) {
+		position[0] = key_carrier_marker_position[0];
+		position[1] = key_carrier_marker_position[1];
+		position[2] = key_carrier_marker_position[2];
+	}
+	return 1;
+}
+
+int automap_metadata_get_key_carrier_marker_count(void)
+{
+	return key_carrier_marker_count;
+}
 
 static int draw_text_label(const char *label, int color, const g3s_point *point)
 {
@@ -204,6 +310,9 @@ static void draw_objective_labels(
 		const level_metadata_route_step *step = &metadata->route_steps[i];
 		char label[12];
 		int color;
+		int dynamic_position[3];
+		int dynamic_objnum;
+		int dynamic_is_carrier;
 
 		if (step->kind == LEVEL_METADATA_ROUTE_START)
 			continue;
@@ -219,6 +328,22 @@ static void draw_objective_labels(
 			        label, color, step->activation_pos))
 				(*projected_count)++;
 			if (draw_objective_label_at(label, color, step->aim_pos))
+				(*projected_count)++;
+		} else if (objective_key_object_position(
+		               step, dynamic_position, &dynamic_objnum,
+		               &dynamic_is_carrier)) {
+			if (dynamic_is_carrier) {
+				key_carrier_marker_count++;
+				if (key_carrier_marker_objnum < 0) {
+					key_carrier_marker_objnum = dynamic_objnum;
+					key_carrier_marker_key_index = step->key_index;
+					memcpy(
+					    key_carrier_marker_position, dynamic_position,
+					    sizeof(key_carrier_marker_position));
+				}
+			}
+			(*candidate_count)++;
+			if (draw_objective_label_at(label, color, dynamic_position))
 				(*projected_count)++;
 		} else if (step->label_pos_valid) {
 			(*candidate_count)++;
@@ -340,9 +465,14 @@ static void draw_guidebot_guidance_labels(int *candidate_count, int *projected_c
 			(*projected_count)++;
 	}
 	if (step->aim_pos_valid) {
-		pos.x = step->aim_pos[0];
-		pos.y = step->aim_pos[1];
-		pos.z = step->aim_pos[2];
+		int dynamic_position[3];
+		const int *aim_position = step->aim_pos;
+		if (objective_key_object_position(
+		        step, dynamic_position, NULL, NULL))
+			aim_position = dynamic_position;
+		pos.x = aim_position[0];
+		pos.y = aim_position[1];
+		pos.z = aim_position[2];
 		g3_rotate_point(&point, &pos);
 		(*candidate_count)++;
 		if (draw_text_label("X", K_GUIDANCE_TARGET_COLOR, &point))
@@ -365,6 +495,10 @@ void automap_metadata_draw_labels(
 	*objective_visible_step_count = 0;
 	*objective_candidate_count = 0;
 	*objective_projected_count = 0;
+	key_carrier_marker_count = 0;
+	key_carrier_marker_objnum = -1;
+	key_carrier_marker_key_index = -1;
+	memset(key_carrier_marker_position, 0, sizeof(key_carrier_marker_position));
 	draw_objective_labels(
 	    objective_visible_step_count, objective_candidate_count,
 	    objective_projected_count);

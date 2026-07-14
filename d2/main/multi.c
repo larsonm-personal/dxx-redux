@@ -5571,7 +5571,8 @@ void multi_do_flags (const ubyte *buf)
 	if (pnum!=Player_num) {
 		int old_flags = Players[(int)pnum].flags;
 		Players[(int)pnum].flags=flags;
-		escort_note_player_key_flags(old_flags, Players[(int)pnum].flags);
+		escort_note_player_key_flags_for_player(
+		    (int)pnum, old_flags, Players[(int)pnum].flags);
 	}
 }
 
@@ -6612,7 +6613,8 @@ void multi_do_ship_status( const ubyte *buf )
 		int i;
 		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
 			Players[pnum].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
-		escort_note_player_key_flags(old_flags, Players[pnum].flags);
+		escort_note_player_key_flags_for_player(
+		    pnum, old_flags, Players[pnum].flags);
 	}
 #endif
 }

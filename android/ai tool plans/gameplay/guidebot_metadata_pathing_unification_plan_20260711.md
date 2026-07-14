@@ -130,6 +130,13 @@ Parity has two separate meanings and both must pass:
   - The live KCXF2 level 4 fixture compared two identical 30-point paths toward hidden-door segment 221. Both consumed 458 simulation RNG calls and ended at RNG state 2654953511, with no point or AI mismatch and exact post-probe restoration.
   - Route commands once again use only the original Guide-Bot frame scheduling, return-to-player interruption, `create_path_to_segment()`, and polish lifecycle. The fixture uses the existing warp command only to establish a deterministic nearby starting state before NEXT, then confirms the route remains active at wall 61 after classic scheduling continues.
   - The comparator intentionally exercises core classic path construction without invoking `polish_path()` twice in one tick. The original companion polish guard makes a same-tick second call differ by design; source structure and the live fixture instead verify that ordinary and route goals share the one classic polish lifecycle.
+- [ ] Phase 7 in progress: complete invalidation, caching, and multiplayer authority.
+  - [x] Owner-aware key invalidation now follows the effective Guide-Bot owner across local pickup and multiplayer status updates. Nonowner key changes are ignored before route invalidation and counted through introspection.
+  - [x] Active boss semantic waypoints now invalidate after local or replicated boss teleport, only on the authoritative Guide-Bot owner. The event hook clears high-level intent without searching, moving Guide-Bot, changing AI timing, firing, or consuming RNG.
+  - [x] Owner-state generations now use wrap-safe serial comparison with zero reserved; native policy tests cover duplicate, stale, wrap, and reverse-wrap input.
+  - [x] The focused two-peer fixture passes transfer, owner-local direct Unexplored routing, ignored nonowner key changes, disconnect adoption, intent preservation, and recomputation from the adopter's automap. Stable shared-plan endpoint assertions replaced stale legacy intermediate-step assumptions.
+  - [x] First-tranche gates pass: supported Windows D1/D2 builds, 19 D1 and 22 D2 host tests, Android JVM/all-ABI builds, the 1,274-route corpus, base mission statuses, automation catalog, and two-emulator ownership/handoff.
+  - [ ] Next: route-state generation keys for wall, trigger, object, and reactor events; coalesced automap invalidation; then observer-host, abdication, save/restore, slot-remap, and host-migration coverage with planner-count assertions.
 - [x] Canonical metadata route cut over to the shared C++ planner.
   - Keep non-route metadata aggregation in `level_metadata_scan_level_summary()` while producing route and travel fields with the same shared `route_planner_plan_view()` result consumed by live Guide-Bot routing.
   - Retain the legacy native planner only behind strict differential comparison until the full mission corpus proves the authoritative cutover is behaviorally stable.
@@ -266,9 +273,9 @@ The route search should retain its best reachable frontier and the next unresolv
 
 ### P1: Dynamic Invalidation Is Incomplete
 
-Full metadata rescans are now dirty-driven, which avoids earlier CPU spikes, but the invalidation model is implicit. Keys, commands, save restore, owner handoff, and an explored target cause replanning. Arbitrary wall/trigger changes, control-center links, object removal, boss movement, and changes elsewhere in an unexplored component do not have a unified generation signal.
+Full metadata rescans are dirty-driven, and owner-aware key changes, save restore, owner handoff, explored-target completion, and boss teleport now have explicit high-level invalidation paths. Remaining work is to connect wall, trigger, control-center, reactor, and progression-object generations to a unified live route-state cache key, and to coalesce automap changes that alter the largest unexplored component before its current endpoint is visited.
 
-The five-second Guide-Bot refresh currently resets the legacy goal and physical path, but does not mark metadata dirty. The automation script `test_guidebot_unexplored_goal.json5` still expects a `periodic_refresh` replan reason that no longer exists in the code. That stale expectation must be resolved before the script can be treated as a migration gate.
+The old five-second legacy goal refresh and its stale `periodic_refresh` test expectation have been removed. Dynamic invalidation must continue to clear only semantic route meaning; ordinary Guide-Bot frame scheduling remains responsible for rebuilding any classic physical path.
 
 ### P1: Canonical and Live Route State Are Conflated
 
@@ -608,6 +615,14 @@ Work:
 - Replan moving boss waypoints without rebuilding static topology.
 - Run two-peer owner, observer-host, disconnect adoption, voluntary abdication, save restore, and slot-remap scenarios.
 - Verify owner-local guidance, passive completion transitions, unchanged classic flare behavior, and owner-local unexplored selection.
+
+Progress (2026-07-13):
+
+- Owner-aware key invalidation and owner-only boss-teleport invalidation are complete. Both are passive high-level hooks.
+- Owner packet generations are wrap-safe and reserve zero; focused unit coverage is in place.
+- Introspection counts ignored nonowner key changes and boss-move invalidations.
+- The two-peer owner/disconnect-adoption scenario passes with Unexplored intent preserved and recomputed from the new owner's automap. Remaining multiplayer scenarios are observer host, abdication, save restore, slot remap, and host migration.
+- Remaining generation/cache work covers walls, triggers, objects, reactor/control-center state, and coalesced automap component changes.
 
 Exit gate: no stale-plan failures in dynamic tests, no nonowner planner execution, and multiplayer ownership tests pass repeatedly.
 

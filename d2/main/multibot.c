@@ -1327,6 +1327,7 @@ multi_do_boss_actions(const ubyte *buf)
 				}
 				compute_segment_center(&boss_obj->pos, &Segments[teleport_segnum]);
 				obj_relink(boss_obj-Objects, teleport_segnum);
+				escort_note_boss_teleported(boss_objnum);
 				Last_teleport_time = GameTime64;
 		
 				vm_vec_sub(&boss_dir, &Objects[Players[pnum].objnum].pos, &boss_obj->pos);

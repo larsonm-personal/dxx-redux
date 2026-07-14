@@ -2980,7 +2980,8 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 			default:
 				break;
 		}
-		escort_note_player_key_flags(old_flags, Players[playerobj->id].flags);
+		escort_note_player_key_flags_for_player(
+		    playerobj->id, old_flags, Players[playerobj->id].flags);
 	}
 #endif
 	return;

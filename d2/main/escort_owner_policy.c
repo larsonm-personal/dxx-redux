@@ -1,5 +1,7 @@
 #include "escort_owner_policy.h"
 
+#include <stdint.h>
+
 int escort_owner_packet_sender_valid(int claimed_sender, int authenticated_sender)
 {
 	return authenticated_sender >= 0 && claimed_sender == authenticated_sender;
@@ -63,4 +65,15 @@ int escort_owner_request_allowed(int current_owner,
 	if (current_owner == -1)
 		return requested_owner == sender;
 	return sender == current_owner;
+}
+
+int escort_owner_generation_is_newer(unsigned int candidate, unsigned int current)
+{
+	return candidate != 0 && candidate != current &&
+	       (int32_t)(candidate - current) > 0;
+}
+
+int escort_owner_key_change_relevant(int changed_player, int effective_owner)
+{
+	return changed_player >= 0 && changed_player == effective_owner;
 }

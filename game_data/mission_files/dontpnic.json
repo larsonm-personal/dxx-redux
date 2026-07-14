@@ -967,8 +967,8 @@
           {
             "index": 1,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 35,
             "label_pos": {
               "x": -40.70307922363281,
@@ -976,7 +976,8 @@
               "z": 103.58287048339844
             },
             "distance": 301.4761697903862,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 7
           },
           {
             "index": 2,
@@ -2594,8 +2595,8 @@
           {
             "index": 1,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
             "seg": 18,
             "label_pos": {
               "x": 0.0,
@@ -2603,13 +2604,14 @@
               "z": -33.3970947265625
             },
             "distance": 27.324928521095213,
-            "key": "blue"
+            "key": "blue",
+            "key_carrier_objnum": 14
           },
           {
             "index": 2,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying gold key",
             "seg": 30,
             "label_pos": {
               "x": -55.0,
@@ -2617,13 +2619,14 @@
               "z": 66.5068359375
             },
             "distance": 173.958102835489,
-            "key": "gold"
+            "key": "gold",
+            "key_carrier_objnum": 2
           },
           {
             "index": 3,
             "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
             "seg": 31,
             "label_pos": {
               "x": 55.0,
@@ -2631,7 +2634,8 @@
               "z": 66.5068359375
             },
             "distance": 115.61770922802461,
-            "key": "red"
+            "key": "red",
+            "key_carrier_objnum": 8
           },
           {
             "index": 4,

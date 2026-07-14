@@ -18,6 +18,7 @@ typedef struct metadata_target {
 	int side;
 	int pos[3];
 	int visited;
+	int key_carrier_objnum;
 } metadata_target;
 
 typedef struct metadata_route_block {
@@ -174,6 +175,8 @@ const char *level_metadata_route_activation_kind_name(int kind)
 			return "enter_exit";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL:
 			return "destroy_blastable_wall";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER:
+			return "destroy_key_carrier";
 		default:
 			return "unknown";
 	}
@@ -871,7 +874,7 @@ static int segment_target_visible(
 	return 0;
 }
 
-static int append_target(const level_metadata_scan_view *view, metadata_target *targets, int *count, int max_count, int seg, const int pos[3])
+static int append_target(const level_metadata_scan_view *view, metadata_target *targets, int *count, int max_count, int seg, const int pos[3], int key_carrier_objnum)
 {
 	if (!targets || !count || *count >= max_count || !pos || !valid_segment(view, seg))
 		return 0;
@@ -879,6 +882,7 @@ static int append_target(const level_metadata_scan_view *view, metadata_target *
 	targets[*count].side = -1;
 	copy_pos(targets[*count].pos, pos);
 	targets[*count].visited = 0;
+	targets[*count].key_carrier_objnum = key_carrier_objnum;
 	++*count;
 	return 1;
 }
@@ -906,14 +910,15 @@ static void collect_route_key_targets(const level_metadata_scan_view *view)
 		if (type == view->obj_type_powerup && view->object_id) {
 			int key_index = powerup_key_index(view, view->object_id(view->user, objnum));
 			if (key_index >= 0)
-				append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
+				append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos, -1);
 		}
 		if (view->object_contains_type && view->object_contains_id && view->object_contains_count &&
 		    view->object_contains_count(view->user, objnum) > 0 &&
 		    view->object_contains_type(view->user, objnum) == view->obj_type_powerup) {
 			int key_index = powerup_key_index(view, view->object_contains_id(view->user, objnum));
 			if (key_index >= 0)
-				append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
+				append_target(view, key_targets[key_index], &key_target_count[key_index], LEVEL_METADATA_MAX_TARGETS, obj_seg, pos,
+				              type == view->obj_type_robot ? objnum : -1);
 		}
 	}
 }
@@ -969,7 +974,7 @@ static int collect_route_targets(
 				continue;
 			if (!side_center(view, seg, side, pos) && segment_center_valid[seg])
 				copy_pos(pos, segment_centers[seg]);
-			if (append_target(view, exits, exit_count, LEVEL_METADATA_MAX_TARGETS, seg, pos))
+			if (append_target(view, exits, exit_count, LEVEL_METADATA_MAX_TARGETS, seg, pos, -1))
 				exits[*exit_count - 1].side = side;
 		}
 	}
@@ -1889,6 +1894,7 @@ static level_metadata_route_step *metadata_route_append_step(
 	step->trigger_num = -1;
 	step->trigger_type = -1;
 	step->key_index = -1;
+	step->key_carrier_objnum = -1;
 	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
 	if (route && valid_segment(view, route->current_seg)) {
 		step->activation_pos_valid = 1;
@@ -2325,11 +2331,15 @@ static int metadata_route_acquire_key(
 	{
 		char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 		level_metadata_route_step *step;
-		snprintf(label, sizeof(label), "%s key", key_name(key_index));
+		if (key_targets[key_index][best].key_carrier_objnum >= 0)
+			snprintf(label, sizeof(label), "Destroy robot carrying %s key", key_name(key_index));
+		else
+			snprintf(label, sizeof(label), "%s key", key_name(key_index));
 		step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_KEY, label, key_targets[key_index][best].seg, -1);
 		if (step) {
 			step->key_index = key_index;
-			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+			step->key_carrier_objnum = key_targets[key_index][best].key_carrier_objnum;
+			step->activation_kind = step->key_carrier_objnum >= 0 ? LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER : LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
 			metadata_route_step_set_aim(
 			    step, key_targets[key_index][best].pos);
 		}

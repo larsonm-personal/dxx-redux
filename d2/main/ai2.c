@@ -2077,6 +2077,7 @@ void teleport_boss(object *objp)
 
 	compute_segment_center(&objp->pos, &Segments[rand_segnum]);
 	obj_relink(objp-Objects, rand_segnum);
+	escort_note_boss_teleported(objp - Objects);
 
 	Last_teleport_time = GameTime64;
 

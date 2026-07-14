@@ -319,10 +319,12 @@ function Invoke-GuidebotOwnershipScenario {
         $guidebot.route_target_mode_name -eq "unexplored" -and
         [int]$guidebot.unexplored_component_size -gt 1 -and
         [int]$guidebot.unexplored_target_seg -ge 0 -and
+        [bool]$guidebot.unexplored_direct_reachable -and
         [bool]$guidebot.route_goal_active -and
-        [bool]$guidebot.route_goal_path_pending -and
-        $guidebot.route_goal_label -eq "Reactor" -and
-        [int]$guidebot.route_goal_objective_kind -eq 3
+        $guidebot.route_goal_label -eq "Unexplored" -and
+        [int]$guidebot.route_goal_objective_kind -eq 1000 -and
+        $guidebot.route_last_replan_reason -eq "owner_handoff" -and
+        [int]$guidebot.route_ignored_nonowner_key_change_count -ge 1
     }
     if (-not $replanned) {
         Write-Status "FAIL: adopted Guide-Bot did not recompute Unexplored from the host automap" "Red"

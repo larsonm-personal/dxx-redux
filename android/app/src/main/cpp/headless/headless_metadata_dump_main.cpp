@@ -758,6 +758,8 @@ static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *
 			item["distance"] = step.distance_from_previous;
 		if (step.kind == LEVEL_METADATA_ROUTE_KEY && step.key_index >= 0)
 			item["key"] = headless_metadata_key_name(step.key_index);
+		if (step.key_carrier_objnum >= 0)
+			item["key_carrier_objnum"] = step.key_carrier_objnum;
 		if (step.trigger_num >= 0)
 			item["trigger"] = step.trigger_num;
 		if (step.trigger_type >= 0)

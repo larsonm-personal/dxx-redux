@@ -31,6 +31,10 @@
         "guidebot.remote_owner": "1",
         "guidebot.local_control_slot_matches": "false"
     }},
+    {"action": "set_debug", "field": "player_keys", "value": "none", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_ignored_nonowner_key_change_count": {"gte": 1}
+    }},
 
     {"action": "wait_for", "timeout_ms": 15000, "expect": {
         "guidebot.owner_player": "1",

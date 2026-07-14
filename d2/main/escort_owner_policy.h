@@ -16,5 +16,7 @@ int escort_owner_request_allowed(int current_owner,
                                  int requested_owner_eligible,
                                  unsigned int current_generation,
                                  unsigned int request_generation);
+int escort_owner_generation_is_newer(unsigned int candidate, unsigned int current);
+int escort_owner_key_change_relevant(int changed_player, int effective_owner);
 
 #endif

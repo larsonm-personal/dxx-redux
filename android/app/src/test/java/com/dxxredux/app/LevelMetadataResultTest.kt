@@ -43,6 +43,7 @@ class LevelMetadataResultTest {
                       "index": 1,
                       "kind": "key",
                       "label": "blue key",
+                      "key_carrier_objnum": 42,
                       "label_pos": {"x": 12.5, "y": -4.0, "z": 88.25}
                     }]
                   }],
@@ -52,5 +53,6 @@ class LevelMetadataResultTest {
             )
 
         assertEquals(LevelMetadataPosition(12.5, -4.0, 88.25), result.levels.single().routeSteps.single().labelPosition)
+        assertEquals(42, result.levels.single().routeSteps.single().keyCarrierObjnum)
     }
 }
