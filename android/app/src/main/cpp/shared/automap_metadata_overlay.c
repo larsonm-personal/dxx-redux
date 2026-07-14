@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "3d.h"
 #include "segment.h"
@@ -21,6 +22,8 @@
 #define K_OBJECTIVE_LABEL_RED        BM_XRGB(63, 5, 5)
 #define K_GUIDANCE_POSITION_COLOR    BM_XRGB(5, 63, 20)
 #define K_GUIDANCE_TARGET_COLOR      BM_XRGB(63, 25, 5)
+#define K_NEXT_OBJECTIVE_COLOR       BM_XRGB(63, 5, 5)
+#define K_NEXT_OBJECTIVE_COUNT       3
 
 static int draw_text_label(const char *label, int color, const g3s_point *point)
 {
@@ -303,6 +306,78 @@ void automap_metadata_draw_labels(
 #if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
 	draw_guidebot_guidance_labels(objective_candidate_count, objective_projected_count);
 #endif
+}
+
+static const level_metadata_state *next_objective_route(
+    route_planner_plan_summary *plan)
+{
+	const level_metadata_state *metadata = level_metadata_get_live_route_state();
+
+	if (metadata && level_metadata_get_live_route_plan_summary(plan))
+		return metadata;
+	metadata = level_metadata_get_canonical_state();
+	if (metadata && level_metadata_get_canonical_route_plan_summary(plan))
+		return metadata;
+	return NULL;
+}
+
+static void fit_objective_text(char *text, int max_width)
+{
+	int width;
+	int height;
+	int average_width;
+	int length = (int) strlen(text);
+	int truncated = 0;
+
+	gr_get_string_size(text, &width, &height, &average_width);
+	while (length > 3 && width > max_width) {
+		text[--length] = '\0';
+		truncated = 1;
+		gr_get_string_size(text, &width, &height, &average_width);
+	}
+	if (truncated && length >= 3) {
+		text[length - 3] = '.';
+		text[length - 2] = '.';
+		text[length - 1] = '.';
+	}
+}
+
+void automap_metadata_draw_next_objectives(int *objective_count)
+{
+	route_planner_plan_summary plan;
+	const level_metadata_state *metadata;
+	int first;
+	int drawn = 0;
+	int i;
+
+	*objective_count = 0;
+	if (!level_metadata_get_show_objectives())
+		return;
+	memset(&plan, 0, sizeof(plan));
+	metadata = next_objective_route(&plan);
+	if (!metadata)
+		return;
+	first = plan.first_pending_step;
+	if (first < 0 || first >= metadata->route_step_count)
+		return;
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(K_NEXT_OBJECTIVE_COLOR, -1);
+	for (i = first;
+	     i < metadata->route_step_count && drawn < K_NEXT_OBJECTIVE_COUNT;
+	     ++i) {
+		const level_metadata_route_step *step = &metadata->route_steps[i];
+		char text[LEVEL_METADATA_ROUTE_LABEL_LEN];
+
+		if (step->kind == LEVEL_METADATA_ROUTE_START || !step->label[0])
+			continue;
+		snprintf(text, sizeof(text), "%s", step->label);
+		fit_objective_text(
+		    text, grd_curcanv->cv_bitmap.bm_w - FSPACX(4));
+		gr_printf(FSPACX(2), FSPACY(2) + drawn * LINE_SPACING,
+		          "%s", text);
+		drawn++;
+	}
+	*objective_count = drawn;
 }
 
 int secret_area_should_draw_segment_edges(int segnum)

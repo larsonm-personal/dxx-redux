@@ -87,6 +87,7 @@ struct route_topology_side {
 	int child = -1;
 	int reverse_side = -1;
 	int wall = -1;
+	int clearance_radius = 0;
 	route_position center;
 	std::vector<int> opener_walls;
 };

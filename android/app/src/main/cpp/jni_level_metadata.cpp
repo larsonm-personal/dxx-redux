@@ -124,7 +124,9 @@ static void breadcrumb_metadata_level(const json &request, int level_num, const 
 	crash_breadcrumb_v("levelmeta level n=%d file=%s source=%s", level_num, level.c_str(), source.c_str());
 }
 
-static void write_checkpoint(const json &request, const char *stage, const char *detail)
+static void write_checkpoint_progress(const json &request, const char *stage,
+                                      const char *detail, int completed,
+                                      int total)
 {
 	const std::string path = request.value("checkpoint_path", "");
 	if (path.empty())
@@ -136,9 +138,19 @@ static void write_checkpoint(const json &request, const char *stage, const char 
 	out["detail"] = detail ? detail : "";
 	out["source"] = request.value("source_name", "");
 	out["game"] = request.value("game", "");
+	if (total > 0) {
+		out["completed"] = completed;
+		out["total"] = total;
+	}
 	std::ofstream stream(path, std::ios::trunc);
 	if (stream)
 		stream << out.dump(2) << "\n";
+}
+
+static void write_checkpoint(const json &request, const char *stage,
+                             const char *detail)
+{
+	write_checkpoint_progress(request, stage, detail, -1, -1);
 }
 
 static int init_levelmeta_audio(void)
@@ -790,9 +802,13 @@ static json failed_level_row(int level_num, const char *level_file, const char *
 	return row;
 }
 
-static LevelScanStatus scan_level(const json &request, json &levels, int level_num, const char *level_file, int *coop_starts)
+static LevelScanStatus scan_level(const json &request, json &levels,
+                                  int level_num, const char *level_file,
+                                  int completed, int total,
+                                  int *coop_starts)
 {
-	write_checkpoint(request, "level", level_file ? level_file : "");
+	write_checkpoint_progress(request, "level", level_file ? level_file : "",
+	                          completed, total);
 	breadcrumb_metadata_level(request, level_num, level_file);
 	if (coop_starts)
 		*coop_starts = 0;
@@ -809,6 +825,9 @@ static LevelScanStatus scan_level(const json &request, json &levels, int level_n
 		*coop_starts = count_current_level_coop_starts();
 	secret_area_rescan_current_level();
 	levels.push_back(serialize_current_level_row(level_num, level_file));
+	write_checkpoint_progress(request, "level_done",
+	                          level_file ? level_file : "",
+	                          completed + 1, total);
 	return LEVEL_SCAN_OK;
 }
 
@@ -822,25 +841,33 @@ static json analyze_hog_entries(const json &request)
 	int failed = 0;
 	int missing_secret = 0;
 	int level_num = 1;
+	int completed = 0;
+	const int total =
+	    static_cast<int>(normal_levels.size() + secret_levels.size());
 	CoopStartRange coop_start_range;
 
 	if (normal_levels.empty() && secret_levels.empty())
 		return failed_result(request, "HOG contains no level entries");
 	for (const std::string &level_file : normal_levels) {
 		int coop_starts = 0;
-		const LevelScanStatus status = scan_level(request, levels, level_num, level_file.c_str(), &coop_starts);
+		const LevelScanStatus status = scan_level(
+		    request, levels, level_num, level_file.c_str(), completed,
+		    total, &coop_starts);
 		if (status == LEVEL_SCAN_OK) {
 			++successful;
 			coop_start_range.add(coop_starts);
 		} else {
 			++failed;
 		}
+		++completed;
 		++level_num;
 	}
 	level_num = -1;
 	for (const std::string &level_file : secret_levels) {
 		int coop_starts = 0;
-		const LevelScanStatus status = scan_level(request, levels, level_num, level_file.c_str(), &coop_starts);
+		const LevelScanStatus status = scan_level(
+		    request, levels, level_num, level_file.c_str(), completed,
+		    total, &coop_starts);
 		if (status == LEVEL_SCAN_OK) {
 			++successful;
 			coop_start_range.add(coop_starts);
@@ -849,6 +876,7 @@ static json analyze_hog_entries(const json &request)
 		} else {
 			++failed;
 		}
+		++completed;
 		--level_num;
 	}
 
@@ -875,16 +903,23 @@ static json analyze_loaded_mission(const json &request)
 	json levels = json::array();
 	json root;
 	CoopStartRange coop_start_range;
+	int completed = 0;
+	const int total = Last_level - Last_secret_level;
 
 	for (int level = 1; level <= Last_level; ++level) {
 		int coop_starts = 0;
-		if (scan_level(request, levels, level, Level_names[level - 1], &coop_starts))
+		if (scan_level(request, levels, level, Level_names[level - 1],
+		               completed, total, &coop_starts))
 			coop_start_range.add(coop_starts);
+		++completed;
 	}
 	for (int level = -1; level >= Last_secret_level; --level) {
 		int coop_starts = 0;
-		if (scan_level(request, levels, level, Secret_level_names[-level - 1], &coop_starts))
+		if (scan_level(request, levels, level,
+		               Secret_level_names[-level - 1], completed, total,
+		               &coop_starts))
 			coop_start_range.add(coop_starts);
+		++completed;
 	}
 
 	root["schema"] = "dxx-level-metadata-v1";
@@ -960,7 +995,8 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 			return failed_result(request, "missing level file");
 		{
 			int coop_starts = 0;
-			if (scan_level(request, levels, level_num, level_file.c_str(), &coop_starts))
+			if (scan_level(request, levels, level_num, level_file.c_str(),
+			               0, 1, &coop_starts))
 				coop_start_range.add(coop_starts);
 		}
 		root["schema"] = "dxx-level-metadata-v1";

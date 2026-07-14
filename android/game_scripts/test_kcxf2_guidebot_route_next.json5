@@ -22,7 +22,7 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "kcxf2rmv11.7z", "label": "kcxf2_guidebot", "display_name": "KCXF2RMv11.7z"},
-    {"action": "analyze_level_metadata_all", "label": "kcxf2_guidebot", "mod_file": "KCXF2RMv11.7z", "game": "d2", "status": "ok", "min_total_levels": 6},
+    {"action": "analyze_level_metadata_all", "label": "kcxf2_guidebot", "mod_file": "KCXF2RMv11.7z", "game": "d2", "status": "ok", "min_total_levels": 8},
     {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
@@ -130,13 +130,14 @@
     }},
     {"action": "wait_for", "timeout_ms": 90000, "expect": {
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_label": {"contains": "trigger 22"},
+        "guidebot.route_goal_label": {"contains": "trigger 11"},
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
-        "guidebot.route_goal_objective_trigger": "22",
-        "guidebot.route_goal_objective_wall": "250",
+        "guidebot.route_goal_objective_trigger": "11",
+        "guidebot.route_goal_objective_wall": "240",
         "guidebot.route_goal_instruction": {"contains": "fly through the marked opening"},
         "guidebot.route_goal_guidance_mode_name": "reach_objective",
+        "guidebot.route_goal_path_endpoint_seg": "838",
         "guidebot.route_goal_satisfied": "false",
         "guidebot.route_goal_linked_walls_passable": "false"
     }},
@@ -144,9 +145,33 @@
     // Guide-Bot must not cross the trigger for the player.
     {"action": "wait_ms", "ms": 3000},
     {"action": "assert", "expect": {
-        "guidebot.route_goal_objective_trigger": "22",
+        "guidebot.route_goal_objective_trigger": "11",
         "guidebot.route_goal_satisfied": "false",
         "guidebot.route_goal_linked_walls_passable": "false"
+    }},
+
+    // Advance the three intermediate fly-through triggers through the harness.
+    // Each handoff must remain in the shared route order before trigger 22.
+    {"action": "set_debug", "field": "fire_trigger", "value": "11", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_status": "ok",
+        "guidebot.route_goal_label": {"contains": "trigger 15"},
+        "guidebot.route_goal_objective_trigger": "15",
+        "guidebot.route_goal_objective_wall": "244"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_status": "ok",
+        "guidebot.route_goal_label": {"contains": "trigger 19"},
+        "guidebot.route_goal_objective_trigger": "19",
+        "guidebot.route_goal_objective_wall": "248"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "19", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_status": "ok",
+        "guidebot.route_goal_label": {"contains": "trigger 22"},
+        "guidebot.route_goal_objective_trigger": "22",
+        "guidebot.route_goal_objective_wall": "250"
     }},
 
     // Follow the shared crossing direction using ordinary player thrust.

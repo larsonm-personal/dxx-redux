@@ -581,6 +581,11 @@ route_search_result search_routes(
 			const int child = snapshot.topology.segments[current].sides[side].child;
 			if (!valid_segment(snapshot, child) || closed[child])
 				continue;
+			const int clearance =
+			    snapshot.topology.segments[current].sides[side].clearance_radius;
+			if (query.navigator.radius > 0 && clearance > 0 &&
+			    clearance < query.navigator.radius)
+				continue;
 			const auto edge = evaluate_route_edge(
 			    snapshot, query, progress, options.forbidden_missing_key,
 			    current, side);
@@ -1977,14 +1982,22 @@ route_plan_result plan_route(
     const route_query &query,
     const route_visibility_query &visibility)
 {
-	dependency_planner planner(
-	    snapshot, query, initial_route_progress_state(snapshot, query),
-	    visibility);
-	if (query.endpoint == route_endpoint_kind::end_of_level)
-		return planner.plan_end_level();
-	if (query.endpoint == route_endpoint_kind::unexplored)
-		return planner.plan_unexplored();
-	return planner.plan_segment(query.target_segment);
+	auto plan_once = [&](const route_query &attempt) {
+		dependency_planner planner(
+		    snapshot, attempt,
+		    initial_route_progress_state(snapshot, attempt), visibility);
+		if (attempt.endpoint == route_endpoint_kind::end_of_level)
+			return planner.plan_end_level();
+		if (attempt.endpoint == route_endpoint_kind::unexplored)
+			return planner.plan_unexplored();
+		return planner.plan_segment(attempt.target_segment);
+	};
+	auto result = plan_once(query);
+	if (result.status == route_plan_status::ok || query.navigator.radius <= 0)
+		return result;
+	route_query relaxed = query;
+	relaxed.navigator.radius = 0;
+	return plan_once(relaxed);
 }
 
 } // namespace dxx_route
@@ -2327,6 +2340,7 @@ extern "C" int route_planner_plan_view(
 		dxx_route::route_query query;
 		query.start = snapshot.state.start_position;
 		query.progression.key_mask = snapshot.state.key_mask;
+		query.navigator.radius = view->navigator_radius;
 		switch (endpoint_kind) {
 			case ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL:
 				query.endpoint =

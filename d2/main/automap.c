@@ -123,6 +123,7 @@ typedef struct automap
 	int			objective_label_projected_count;
 	int			objective_connector_candidate_count;
 	int			objective_connector_drawn_count;
+	int			next_objective_count;
 	
 	// Edge list variables
 	int			num_edges;
@@ -213,6 +214,7 @@ int automap_get_view_info(automap_view_info *out) {
 	out->objective_label_projected_count = am->objective_label_projected_count;
 	out->objective_connector_candidate_count = am->objective_connector_candidate_count;
 	out->objective_connector_drawn_count = am->objective_connector_drawn_count;
+	out->next_objective_count = am->next_objective_count;
 	for (i = 0; i <= am->highest_edge_index; i++) {
 		Edge_info *e = &am->edges[i];
 
@@ -826,6 +828,7 @@ void draw_automap(automap *am)
 	automap_metadata_draw_labels(
 		&am->secret_label_candidate_count, &am->secret_label_projected_count,
 		&am->objective_label_candidate_count, &am->objective_label_projected_count);
+	automap_metadata_draw_next_objectives(&am->next_objective_count);
 
 	name_frame(am);
 

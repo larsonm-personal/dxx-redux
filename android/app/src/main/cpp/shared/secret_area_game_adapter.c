@@ -344,9 +344,11 @@ typedef struct level_metadata_opener_entry {
 	short next;
 } level_metadata_opener_entry;
 
-#define LEVEL_METADATA_MAX_OPENER_ENTRIES (MAX_WALLS * MAX_WALLS_PER_LINK)
+#define LEVEL_METADATA_MAX_OPENER_ENTRIES            (MAX_WALLS * MAX_WALLS_PER_LINK)
+#define LEVEL_METADATA_MIN_NARROW_COMPONENT_SEGMENTS 3
 
 static vms_vector Level_metadata_segment_centers[LEVEL_METADATA_MAX_SEGMENTS];
+static int Level_metadata_side_clearance[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static short Level_metadata_opener_first[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static level_metadata_opener_entry Level_metadata_opener_entries[LEVEL_METADATA_MAX_OPENER_ENTRIES];
 static int Level_metadata_opener_entry_count;
@@ -423,6 +425,49 @@ static int secret_area_side_is_flyable(void *user, int seg, int side)
 	if (wall_num >= 0 && !secret_area_wall_index_valid(wall_num))
 		return Segments[seg].children[side] >= 0;
 	return (WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG) != 0;
+}
+
+static int secret_area_player_radius(void);
+
+static int secret_area_compute_segment_clearance_radius(int seg, int radius)
+{
+	object probe;
+
+	if (seg < 0 || seg >= Num_segments || radius <= 0)
+		return 0;
+	memset(&probe, 0, sizeof(probe));
+	probe.pos = Level_metadata_segment_centers[seg];
+	probe.segnum = seg;
+	probe.size = radius;
+	return object_intersects_wall(&probe) ? 1 : radius;
+}
+
+static int secret_area_side_clearance_radius(void *user, int seg, int side)
+{
+	(void) user;
+	if (seg < 0 || seg >= Num_segments ||
+	    seg >= LEVEL_METADATA_MAX_SEGMENTS || side < 0 ||
+	    side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	return Level_metadata_side_clearance[seg][side];
+}
+
+static int secret_area_player_radius(void)
+{
+	int objnum;
+	int local_objnum = Players[Player_num].objnum;
+
+	if (local_objnum >= 0 && local_objnum < num_objects &&
+	    (Objects[local_objnum].type == OBJ_PLAYER ||
+	     Objects[local_objnum].type == OBJ_GHOST) &&
+	    Objects[local_objnum].size > 0)
+		return Objects[local_objnum].size;
+	for (objnum = 0; objnum < num_objects; ++objnum)
+		if ((Objects[objnum].type == OBJ_PLAYER ||
+		     Objects[objnum].type == OBJ_GHOST) &&
+		    Objects[objnum].size > 0)
+			return Objects[objnum].size;
+	return 0;
 }
 
 static int secret_area_side_is_hard_blocked(void *user, int seg, int side)
@@ -506,6 +551,19 @@ static int secret_area_wall_flags(void *user, int wall_num)
 	if (!secret_area_wall_index_valid(wall_num))
 		return 0;
 	return Walls[wall_num].flags;
+}
+
+static int secret_area_wall_is_opening(void *user, int wall_num)
+{
+	(void) user;
+	if (!secret_area_wall_index_valid(wall_num))
+		return 0;
+#ifdef DXX_BUILD_DESCENT_II
+	return Walls[wall_num].state == WALL_DOOR_OPENING ||
+	       Walls[wall_num].state == WALL_DOOR_CLOAKING;
+#else
+	return Walls[wall_num].state == WALL_DOOR_OPENING;
+#endif
 }
 
 static int secret_area_wall_keys(void *user, int wall_num)
@@ -999,7 +1057,11 @@ static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 
 static void secret_area_rebuild_level_topology(void)
 {
+	unsigned char clearance_seen[LEVEL_METADATA_MAX_SEGMENTS];
+	int clearance_queue[LEVEL_METADATA_MAX_SEGMENTS];
+	int segment_clearance[LEVEL_METADATA_MAX_SEGMENTS];
 	short opener_last[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+	int player_radius = secret_area_player_radius();
 	int seg;
 	int side;
 	int trigger_num;
@@ -1009,8 +1071,48 @@ static void secret_area_rebuild_level_topology(void)
 	Level_metadata_opener_entry_count = 0;
 	memset(Level_metadata_opener_first, 0xff, sizeof(Level_metadata_opener_first));
 	memset(opener_last, 0xff, sizeof(opener_last));
+	memset(Level_metadata_side_clearance, 0,
+	       sizeof(Level_metadata_side_clearance));
+	memset(segment_clearance, 0, sizeof(segment_clearance));
+	memset(clearance_seen, 0, sizeof(clearance_seen));
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg)
 		compute_segment_center(&Level_metadata_segment_centers[seg], &Segments[seg]);
+	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg)
+		segment_clearance[seg] =
+		    secret_area_compute_segment_clearance_radius(seg, player_radius);
+	/* Isolated bad centers occur in otherwise navigable skewed geometry. */
+	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
+		int head = 0;
+		int tail = 0;
+		if (clearance_seen[seg] || segment_clearance[seg] <= 0 ||
+		    segment_clearance[seg] >= player_radius)
+			continue;
+		clearance_seen[seg] = 1;
+		clearance_queue[tail++] = seg;
+		while (head < tail) {
+			int component_seg = clearance_queue[head++];
+			for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+				int child = Segments[component_seg].children[side];
+				if (child < 0 || child >= Num_segments ||
+				    child >= LEVEL_METADATA_MAX_SEGMENTS || clearance_seen[child] ||
+				    segment_clearance[child] <= 0 ||
+				    segment_clearance[child] >= player_radius)
+					continue;
+				clearance_seen[child] = 1;
+				clearance_queue[tail++] = child;
+			}
+		}
+		if (tail < LEVEL_METADATA_MIN_NARROW_COMPONENT_SEGMENTS)
+			for (head = 0; head < tail; ++head)
+				segment_clearance[clearance_queue[head]] = player_radius;
+	}
+	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
+		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
+			if (Segments[seg].children[side] >= 0 &&
+			    Segments[seg].children[side] < LEVEL_METADATA_MAX_SEGMENTS)
+				Level_metadata_side_clearance[seg][side] =
+				    segment_clearance[Segments[seg].children[side]];
+	}
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int link;
 
@@ -1279,6 +1381,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->segment_is_explored = secret_area_segment_is_explored;
 	view->reverse_side = secret_area_reverse_side;
 	view->side_is_flyable = secret_area_side_is_flyable;
+	view->side_clearance_radius = secret_area_side_clearance_radius;
 	view->side_is_hard_blocked = secret_area_side_is_hard_blocked;
 	view->side_is_control_center_link = secret_area_side_is_control_center_link;
 	view->wall_num = secret_area_wall_num;
@@ -1286,6 +1389,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_side = secret_area_wall_side;
 	view->wall_type = secret_area_wall_type;
 	view->wall_flags = secret_area_wall_flags;
+	view->wall_is_opening = secret_area_wall_is_opening;
 	view->wall_keys = secret_area_wall_keys;
 	view->wall_clip_flags = secret_area_wall_clip_flags;
 	view->wall_trigger = secret_area_wall_trigger;
@@ -1335,6 +1439,23 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	view->start_segment = secret_area_metadata_start(&Level_metadata_game_context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
 	view->initial_key_mask = secret_area_current_key_mask();
 	view->initial_control_center_destroyed = Control_center_destroyed != 0;
+	view->navigator_radius = secret_area_player_radius();
+	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
+		int narrow_side_count = 0;
+		int seg;
+		int side;
+
+		for (seg = 0; seg < Num_segments; ++seg)
+			for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
+				if (Segments[seg].children[side] >= 0 &&
+				    Level_metadata_side_clearance[seg][side] > 0 &&
+				    Level_metadata_side_clearance[seg][side] <
+				        view->navigator_radius)
+					++narrow_side_count;
+		fprintf(stderr,
+		        "SECRET-AREA-DUMP TRACE navigator_radius=%d narrow_sides=%d\n",
+		        view->navigator_radius, narrow_side_count);
+	}
 	view->energy_center_group_distance = secret_area_energy_center_group_distance();
 	return view;
 }

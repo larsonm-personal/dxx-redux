@@ -22,7 +22,7 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "kcxf2rmv11.7z", "label": "kcxf2_level5_guidebot", "display_name": "KCXF2RMv11.7z"},
-    {"action": "analyze_level_metadata_all", "label": "kcxf2_level5_guidebot", "mod_file": "KCXF2RMv11.7z", "game": "d2", "status": "ok", "min_total_levels": 6},
+    {"action": "analyze_level_metadata_all", "label": "kcxf2_level5_guidebot", "mod_file": "KCXF2RMv11.7z", "game": "d2", "status": "ok", "min_total_levels": 8},
     {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
@@ -47,7 +47,7 @@
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "6",
+        "level_metadata_route.step_count": "9",
         "guidebot.route_status": "ok",
         "guidebot.route_goal_label": {"contains": "blue key"},
         "guidebot.route_goal_activation_kind_name": "pickup_key",
@@ -73,6 +73,19 @@
         "guidebot.route_goal_label": {"contains": "red key"},
         "guidebot.route_goal_activation_kind_name": "pickup_key",
         "guidebot.route_goal_objective_seg": "776"
+    }},
+
+    // Trigger 22 is geometrically nearby but requires a tunnel narrower than
+    // the player's ship. The shared high-level route must use trigger 11 first.
+    {"action": "set_debug", "field": "player_keys", "value": "blue red", "post_delay_ms": 100},
+    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_status": "ok",
+        "guidebot.route_goal_label": {"contains": "trigger 11"},
+        "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
+        "guidebot.route_goal_objective_trigger": "11",
+        "guidebot.route_goal_objective_wall": "240",
+        "guidebot.route_goal_path_endpoint_seg": "838"
     }},
 
     {"action": "introspect"},

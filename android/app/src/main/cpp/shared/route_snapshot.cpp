@@ -175,6 +175,7 @@ std::uint64_t hash_topology(const route_topology &topology)
 			hasher.add_int(side.child);
 			hasher.add_int(side.reverse_side);
 			hasher.add_int(side.wall);
+			hasher.add_int(side.clearance_radius);
 			hash_position(hasher, side.center);
 			hasher.add_int(static_cast<int>(side.opener_walls.size()));
 			for (const int opener_wall : side.opener_walls)
@@ -401,6 +402,10 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			if (view.wall_num)
 				topology_side.wall = view.wall_num(
 				    view.user, segment_index, side_index);
+			if (view.side_clearance_radius)
+				topology_side.clearance_radius =
+				    view.side_clearance_radius(
+				        view.user, segment_index, side_index);
 			if (view.side_center) {
 				int center[3] = {};
 				if (view.side_center(view.user, segment_index, side_index, center)) {
@@ -528,8 +533,11 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			state_wall.trigger = view.wall_trigger(view.user, wall_index);
 		state_wall.locked = view.wall_flag_door_locked != 0 &&
 		                    (state_wall.flags & view.wall_flag_door_locked) != 0;
-		state_wall.opened = view.wall_flag_door_opened != 0 &&
-		                    (state_wall.flags & view.wall_flag_door_opened) != 0;
+		state_wall.opened =
+		    (view.wall_flag_door_opened != 0 &&
+		     (state_wall.flags & view.wall_flag_door_opened) != 0) ||
+		    (view.wall_is_opening &&
+		     view.wall_is_opening(view.user, wall_index));
 		state_wall.hidden = view.wall_clip_hidden != 0 &&
 		                    (state_wall.clip_flags & view.wall_clip_hidden) != 0;
 	}

@@ -1509,7 +1509,8 @@ extern "C" char *game_introspect_get_state(void)
 				{ "objective_label_candidate_count", avi.objective_label_candidate_count },
 				{ "objective_label_projected_count", avi.objective_label_projected_count },
 				{ "objective_connector_candidate_count", avi.objective_connector_candidate_count },
-				{ "objective_connector_drawn_count", avi.objective_connector_drawn_count }
+				{ "objective_connector_drawn_count", avi.objective_connector_drawn_count },
+				{ "next_objective_count", avi.next_objective_count }
 			};
 		} else {
 			j["automap"] = nullptr;

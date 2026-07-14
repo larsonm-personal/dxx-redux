@@ -101,6 +101,7 @@ typedef struct level_metadata_scan_view {
 	int start_segment;
 	int initial_key_mask;
 	int initial_control_center_destroyed;
+	int navigator_radius;
 	int segment_special_fuelcen;
 	int segment_special_robotmaker;
 	int segment_special_control_center;
@@ -136,6 +137,7 @@ typedef struct level_metadata_scan_view {
 	int (*segment_is_explored)(void *user, int seg);
 	int (*reverse_side)(void *user, int seg, int child);
 	int (*side_is_flyable)(void *user, int seg, int side);
+	int (*side_clearance_radius)(void *user, int seg, int side);
 	int (*side_is_hard_blocked)(void *user, int seg, int side);
 	int (*side_is_control_center_link)(void *user, int seg, int side);
 	int (*wall_num)(void *user, int seg, int side);
@@ -143,6 +145,7 @@ typedef struct level_metadata_scan_view {
 	int (*wall_side)(void *user, int wall_num);
 	int (*wall_type)(void *user, int wall_num);
 	int (*wall_flags)(void *user, int wall_num);
+	int (*wall_is_opening)(void *user, int wall_num);
 	int (*wall_keys)(void *user, int wall_num);
 	int (*wall_clip_flags)(void *user, int wall_num);
 	int (*wall_trigger)(void *user, int wall_num);

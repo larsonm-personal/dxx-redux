@@ -768,17 +768,34 @@ internal object LevelMetadataAnalyzer {
                     .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
             progress("Starting analysis worker", 2)
             appContext.startService(intent)
-            progress("Scanning levels", 3)
+            val workerStartedAt = System.currentTimeMillis()
+            val expectedLevelCount =
+                (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
+            if (expectedLevelCount > 0) {
+                onProgress(MetadataLoadProgress("Scanning levels", 0, expectedLevelCount))
+            } else {
+                progress("Scanning levels", 3)
+            }
+            var lastCheckpoint = ""
 
-            while (System.currentTimeMillis() - startedAt < LEVEL_METADATA_TIMEOUT_MS) {
+            while (System.currentTimeMillis() - workerStartedAt < LEVEL_METADATA_TIMEOUT_MS) {
                 if (resultFile.isFile) {
                     progress("Reading analysis result", 4)
                     val parsed = parseResultFile(target, resultFile)
                     progress("Analysis complete", 5)
                     return@withContext parsed
                 }
+                if (checkpointFile.isFile) {
+                    runCatching { checkpointFile.readText(Charsets.UTF_8) }
+                        .getOrNull()
+                        ?.takeIf { it != lastCheckpoint }
+                        ?.let { checkpoint ->
+                            lastCheckpoint = checkpoint
+                            parseLevelMetadataCheckpointProgress(checkpoint)?.let { onProgress(it) }
+                        }
+                }
                 if (!isWorkerProcessRunning(appContext, target.game) &&
-                    System.currentTimeMillis() - startedAt > 1_000L
+                    System.currentTimeMillis() - workerStartedAt > 1_000L
                 ) {
                     break
                 }
@@ -797,6 +814,22 @@ internal object LevelMetadataAnalyzer {
                 status,
             )
         }
+
+    internal fun parseLevelMetadataCheckpointProgress(text: String): MetadataLoadProgress? =
+        runCatching {
+            val checkpoint = JSONObject(text)
+            val stage = checkpoint.optString("stage")
+            if (stage != "level" && stage != "level_done") return@runCatching null
+            val total = checkpoint.optInt("total", 0)
+            if (total <= 0) return@runCatching null
+            val completed = checkpoint.optInt("completed", 0).coerceIn(0, total)
+            val detail = checkpoint.optString("detail").substringAfterLast('/').substringAfterLast('\\')
+            MetadataLoadProgress(
+                if (stage == "level" && detail.isNotBlank()) "Scanning $detail" else "Scanning levels",
+                completed,
+                total,
+            )
+        }.getOrNull()
 
     private fun serviceClassForGame(game: String): Class<out LevelMetadataAnalysisService> =
         if (game == GameFileFormats.GAME_D1) {

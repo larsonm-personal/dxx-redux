@@ -30,11 +30,13 @@ struct test_level {
 	int explored[2] = {};
 	int flyable = 0;
 	int wall_flags = 0;
+	int wall_opening = 0;
 	int key_mask = 0;
 	int child = 1;
 	int trigger_flags = 0;
 	int object_segment = 1;
 	int wall_key[2] = { 20, 21 };
+	int side_clearance = 8 * 65536;
 };
 
 int segment_child(void *user, int segment, int side)
@@ -68,6 +70,13 @@ int side_flyable(void *user, int segment, int side)
 {
 	return segment == 0 && side == 0
 	           ? static_cast<test_level *>(user)->flyable
+	           : 0;
+}
+
+int side_clearance(void *user, int segment, int side)
+{
+	return side == 0 && (segment == 0 || segment == 1)
+	           ? static_cast<test_level *>(user)->side_clearance
 	           : 0;
 }
 
@@ -109,6 +118,11 @@ int wall_type(void *, int wall)
 int wall_flags(void *user, int wall)
 {
 	return wall == 0 ? static_cast<test_level *>(user)->wall_flags : 0;
+}
+
+int wall_is_opening(void *user, int wall)
+{
+	return wall == 0 ? static_cast<test_level *>(user)->wall_opening : 0;
 }
 
 int wall_keys(void *user, int wall)
@@ -373,6 +387,7 @@ level_metadata_scan_view make_view(test_level &level)
 	view.segment_special = segment_special;
 	view.reverse_side = reverse_side;
 	view.side_is_flyable = side_flyable;
+	view.side_clearance_radius = side_clearance;
 	view.side_is_hard_blocked = side_hard_blocked;
 	view.side_is_control_center_link = side_control_center_link;
 	view.side_has_exit_trigger = side_exit;
@@ -381,6 +396,7 @@ level_metadata_scan_view make_view(test_level &level)
 	view.wall_side = wall_side;
 	view.wall_type = wall_type;
 	view.wall_flags = wall_flags;
+	view.wall_is_opening = wall_is_opening;
 	view.wall_keys = wall_keys;
 	view.wall_clip_flags = wall_clip_flags;
 	view.wall_trigger = wall_trigger;
@@ -475,6 +491,8 @@ int main()
 	assert(first.topology.segments[0].sides[0].child == 1);
 	assert(first.topology.segments[0].sides[0].reverse_side == 0);
 	assert(first.topology.segments[0].sides[0].wall == 0);
+	assert(first.topology.segments[0].sides[0].clearance_radius ==
+	       level.side_clearance);
 	assert(first.topology.segments[1].sides[0].center.value[2] == 202);
 	assert(first.topology.walls[1].target.value[2] == 202);
 	assert(first.topology.segments[1].center.value[0] == 100);
@@ -517,6 +535,13 @@ int main()
 	       LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	assert(blastable_edge.action ==
 	       dxx_route::route_required_action::destroy_blastable_wall);
+	edge_query.navigator.radius = level.side_clearance + 1;
+	auto narrow_edge = dxx_route::evaluate_route_edge(
+	    first, edge_query, 0, 0);
+	assert(narrow_edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	edge_query.navigator.radius = level.side_clearance;
+	assert(dxx_route::evaluate_route_edge(first, edge_query, 0, 0)
+	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	edge_query.navigator.companion = true;
 	auto triggered_snapshot = first;
 	triggered_snapshot.state.segments[1].sides[0].exit_trigger = false;
@@ -586,6 +611,17 @@ int main()
 	assert(direct_path.sides.size() == 1);
 	assert(direct_path.sides[0] == 0);
 	assert(!direct_path.has_obstruction);
+	auto clearance_query = planner_query;
+	clearance_query.navigator.radius = level.side_clearance + 1;
+	const auto clearance_search = dxx_route::search_routes(
+	    first, clearance_query, false);
+	assert(!clearance_search.nodes[1].reachable);
+	clearance_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	clearance_query.target_segment = 1;
+	const auto clearance_fallback = dxx_route::plan_route(
+	    first, clearance_query);
+	assert(clearance_fallback.status == dxx_route::route_plan_status::ok);
+	assert(clearance_fallback.steps.size() == 2);
 	auto obstructed_snapshot = first;
 	obstructed_snapshot.state.walls[0].kind = dxx_route::route_wall_kind::door;
 	obstructed_snapshot.state.walls[0].hidden = true;
@@ -1013,6 +1049,14 @@ int main()
 	assert(repeated.state.hash == first.state.hash);
 	assert(repeated.state.fingerprints.automap ==
 	       first.state.fingerprints.automap);
+	level.wall_opening = 1;
+	view = make_view(level);
+	dxx_route::route_snapshot opening_state;
+	assert(dxx_route::build_route_snapshot(view, opening_state, nullptr));
+	assert(opening_state.state.walls[0].opened);
+	assert(opening_state.state.fingerprints.navigation !=
+	       first.state.fingerprints.navigation);
+	level.wall_opening = 0;
 
 	level.explored[1] = 1;
 	view = make_view(level);
