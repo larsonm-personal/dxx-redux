@@ -37,13 +37,14 @@ bool positions_differ(
 
 route_position crossing_aim_position(
     const route_snapshot &snapshot,
-    const route_trigger_source &source)
+    const route_trigger_source &source,
+    const route_position &activation_position)
 {
 	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
 		{ 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 }
 	};
 	route_position result;
-	if (!source.source_position.valid ||
+	if (!activation_position.valid ||
 	    !valid_segment(snapshot, source.source_segment) ||
 	    source.source_side < 0 ||
 	    source.source_side >= LEVEL_METADATA_MAX_SIDES)
@@ -52,42 +53,49 @@ route_position crossing_aim_position(
 	const auto &side = segment.sides[source.source_side];
 	if (valid_segment(snapshot, side.child)) {
 		result = snapshot.topology.segments[side.child].center;
-		if (positions_differ(result, source.source_position))
+		if (positions_differ(result, activation_position))
 			return result;
 	}
 	if (valid_wall(snapshot, source.source_wall)) {
 		result = snapshot.topology.walls[source.source_wall].target;
-		if (positions_differ(result, source.source_position))
+		if (positions_differ(result, activation_position))
 			return result;
 	}
 	const auto &first = segment.vertices[side_vertices[source.source_side][0]];
 	const auto &second = segment.vertices[side_vertices[source.source_side][1]];
 	const auto &third = segment.vertices[side_vertices[source.source_side][2]];
-	if (!first.valid || !second.valid || !third.valid)
+	const auto &fourth = segment.vertices[side_vertices[source.source_side][3]];
+	if (!first.valid || !second.valid || !third.valid || !fourth.valid)
 		return {};
-	const std::int64_t a[3] = {
-		static_cast<std::int64_t>(second.value[0]) - first.value[0],
-		static_cast<std::int64_t>(second.value[1]) - first.value[1],
-		static_cast<std::int64_t>(second.value[2]) - first.value[2]
+	std::int64_t normal[3] = {};
+	const auto calculate_normal = [&normal](
+	                                  const route_position &origin,
+	                                  const route_position &left,
+	                                  const route_position &right) {
+		const std::int64_t a[3] = {
+			static_cast<std::int64_t>(left.value[0]) - origin.value[0],
+			static_cast<std::int64_t>(left.value[1]) - origin.value[1],
+			static_cast<std::int64_t>(left.value[2]) - origin.value[2]
+		};
+		const std::int64_t b[3] = {
+			static_cast<std::int64_t>(right.value[0]) - origin.value[0],
+			static_cast<std::int64_t>(right.value[1]) - origin.value[1],
+			static_cast<std::int64_t>(right.value[2]) - origin.value[2]
+		};
+		normal[0] = a[1] * b[2] - a[2] * b[1];
+		normal[1] = a[2] * b[0] - a[0] * b[2];
+		normal[2] = a[0] * b[1] - a[1] * b[0];
+		return normal[0] != 0 || normal[1] != 0 || normal[2] != 0;
 	};
-	const std::int64_t b[3] = {
-		static_cast<std::int64_t>(third.value[0]) - first.value[0],
-		static_cast<std::int64_t>(third.value[1]) - first.value[1],
-		static_cast<std::int64_t>(third.value[2]) - first.value[2]
-	};
-	std::int64_t normal[3] = {
-		a[1] * b[2] - a[2] * b[1],
-		a[2] * b[0] - a[0] * b[2],
-		a[0] * b[1] - a[1] * b[0]
-	};
+	if (!calculate_normal(first, second, third) &&
+	    !calculate_normal(first, third, fourth))
+		return {};
 	std::int64_t maximum = 0;
 	for (const auto coordinate : normal)
 		maximum = std::max(maximum, coordinate < 0 ? -coordinate : coordinate);
-	if (maximum == 0)
-		return {};
 	const std::int64_t divisor =
 	    std::max<std::int64_t>(1, maximum / (LEVEL_METADATA_FIX_SCALE * 10));
-	result = source.source_position;
+	result = activation_position;
 	for (int axis = 0; axis < 3; ++axis) {
 		const std::int64_t coordinate =
 		    static_cast<std::int64_t>(result.value[axis]) +
@@ -416,13 +424,7 @@ std::vector<route_trigger_source> discover_trigger_sources_internal(
 		    state_flag(progress.trigger_in_progress, trigger))
 			continue;
 		const auto &source_topology = snapshot.topology.walls[source_wall];
-		route_position source_position;
-		if (snapshot.state.walls[source_wall].kind == route_wall_kind::open &&
-		    valid_segment(snapshot, source_topology.segment))
-			source_position =
-			    snapshot.topology.segments[source_topology.segment].center;
-		if (!source_position.valid)
-			source_position = source_topology.target;
+		route_position source_position = source_topology.target;
 		if (!source_position.valid &&
 		    valid_segment(snapshot, source_topology.segment))
 			source_position =
@@ -1690,14 +1692,21 @@ class dependency_planner
 		return false;
 	}
 
-	bool append_trigger_step(route_trigger_source source)
+	bool append_trigger_step(
+	    route_trigger_source source,
+	    bool use_current_endpoint = false)
 	{
 		if (!valid_trigger(snapshot_, source.trigger))
 			return false;
 		route_semantic_step step;
 		step.kind = route_semantic_step_kind::trigger;
-		step.segment = source.source_segment;
-		step.side = source.source_side;
+		step.segment = use_current_endpoint
+		                   ? state_.progress.current_segment
+		                   : source.source_segment;
+		step.side = use_current_endpoint &&
+		                    step.segment != source.source_segment
+		                ? -1
+		                : source.source_side;
 		step.wall = source.source_wall;
 		step.trigger = source.trigger;
 		const auto &trigger = snapshot_.topology.triggers[source.trigger];
@@ -1722,7 +1731,8 @@ class dependency_planner
 		             std::to_string(source.trigger);
 		if (step.activation == route_activation_kind::fly_through_trigger &&
 		    valid_segment(snapshot_, source.source_segment))
-			step.aim_position = crossing_aim_position(snapshot_, source);
+			step.aim_position = crossing_aim_position(
+			    snapshot_, source, state_.progress.current_position);
 		if (valid_wall(snapshot_, source.source_wall)) {
 			if (!step.aim_position.valid)
 				step.aim_position =
@@ -1750,16 +1760,15 @@ class dependency_planner
 			return false;
 		}
 		auto source = raw_sources.front();
-		route_trigger_path_selection firing;
-		if (valid_wall(snapshot_, source.source_wall) &&
-		    snapshot_.topology.walls[source.source_wall].shootable_trigger) {
-			const auto firing_sources = discover_trigger_sources_internal(
-			    snapshot_, state_.progress, segment, side, false);
-			firing = select_trigger_firing_path(
-			    snapshot_, query_, state_.progress, firing_sources, visibility_);
-		}
+		const auto firing_sources = discover_trigger_sources_internal(
+		    snapshot_, state_.progress, segment, side, false);
+		const auto firing = select_trigger_firing_path(
+		    snapshot_, query_, state_.progress, firing_sources, visibility_);
 		if (firing.found)
 			source = firing.source;
+		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
+		                       snapshot_.topology.walls[source.source_wall]
+		                           .shootable_trigger;
 		if (state_flag(state_.progress.fired_triggers, source.trigger))
 			return true;
 		if (state_flag(state_.progress.trigger_in_progress, source.trigger)) {
@@ -1786,9 +1795,18 @@ class dependency_planner
 			accumulate_path(firing.path);
 			state_.progress.current_segment = firing.terminal_segment;
 			state_.progress.current_position = firing.terminal_position;
-			source.source_segment = firing.terminal_segment;
-			if (source.source_segment != selected_source_segment)
-				source.source_side = -1;
+			if (shootable) {
+				source.source_segment = firing.terminal_segment;
+				if (source.source_segment != selected_source_segment)
+					source.source_side = -1;
+			} else if (
+			    firing.terminal_segment == source.source_segment &&
+			    valid_wall(snapshot_, source.source_wall) &&
+			    snapshot_.state.walls[source.source_wall].kind ==
+			        route_wall_kind::open &&
+			    snapshot_.topology.segments[source.source_segment].center.valid)
+				state_.progress.current_position =
+				    snapshot_.topology.segments[source.source_segment].center;
 		} else if (!move_to_target(
 		               source.source_segment, source.source_position, depth + 1)) {
 			state_.progress.trigger_in_progress[source.trigger] = 0;
@@ -1797,7 +1815,7 @@ class dependency_planner
 			state_.progress.current_segment = source.source_segment;
 			state_.progress.current_position = source.source_position;
 		}
-		if (!append_trigger_step(source)) {
+		if (!append_trigger_step(source, firing.found && !shootable)) {
 			state_.progress.trigger_in_progress[source.trigger] = 0;
 			return false;
 		}

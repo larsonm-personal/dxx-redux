@@ -21,9 +21,9 @@
         "mine_volume": 12026312.362918923,
         "mine_volume_normalized": 2.6299077084624938,
         "mine_volume_text": "2.6x",
-        "travel_distance": 7389.0308552774095,
-        "travel_time_seconds": 148,
-        "travel_time_text": "2M:28S",
+        "travel_distance": 7365.986216513911,
+        "travel_time_seconds": 147,
+        "travel_time_text": "2M:27S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -94,9 +94,9 @@
             "side": 4,
             "wall": 83,
             "label_pos": {
-              "x": 347.7257385253906,
-              "y": -183.5001220703125,
-              "z": 134.97024536132812
+              "x": 347.7259521484375,
+              "y": -183.49996948242188,
+              "z": 150.514892578125
             },
             "distance": 244.5106610404091,
             "trigger": 3,
@@ -157,7 +157,7 @@
               "y": -154.9990692138672,
               "z": 408.2467956542969
             },
-            "distance": 306.8693428929119,
+            "distance": 283.8247041294128,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -978,9 +978,9 @@
         "mine_volume": 3655133.6404034034,
         "mine_volume_normalized": 0.7993027161007803,
         "mine_volume_text": "0.80x",
-        "travel_distance": 1181.9347900465116,
-        "travel_time_seconds": 24,
-        "travel_time_text": "0M:24S",
+        "travel_distance": 1149.4347900318896,
+        "travel_time_seconds": 23,
+        "travel_time_text": "0M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1002,9 +1002,9 @@
             "side": 5,
             "wall": 169,
             "label_pos": {
-              "x": -0.0001678466796875,
+              "x": -0.00018310546875,
               "y": -0.5,
-              "z": -60.0
+              "z": -60.5
             },
             "distance": 67.50087760205975,
             "trigger": 12,
@@ -1040,7 +1040,7 @@
               "y": -0.0008697509765625,
               "z": 252.2842254638672
             },
-            "distance": 133.26010819872,
+            "distance": 100.76010818409824,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",

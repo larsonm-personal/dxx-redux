@@ -705,7 +705,8 @@ int main()
 	    fly_through_snapshot.topology.segments[0].center;
 	fly_through_snapshot.topology.segments[0].vertices[7].value = { 0, 0, 0 };
 	fly_through_snapshot.topology.segments[0].vertices[6].value = { 0, 100, 0 };
-	fly_through_snapshot.topology.segments[0].vertices[2].value = { 0, 100, 100 };
+	fly_through_snapshot.topology.segments[0].vertices[2].value = { 0, 200, 0 };
+	fly_through_snapshot.topology.segments[0].vertices[3].value = { 0, 0, 100 };
 	const auto fly_through_sources = dxx_route::discover_trigger_sources(
 	    fly_through_snapshot, source_progress, 1, 0);
 	assert(fly_through_sources.size() == 1);

@@ -232,7 +232,7 @@
         "mine_volume": 19045267.455851506,
         "mine_volume_normalized": 4.16480914351679,
         "mine_volume_text": "4.2x",
-        "travel_distance": 7647.455906142433,
+        "travel_distance": 7637.455906142433,
         "travel_time_seconds": 153,
         "travel_time_text": "2M:33S",
         "guidebot_count": 1,
@@ -270,7 +270,7 @@
             "side": 0,
             "wall": 114,
             "label_pos": {
-              "x": 531.0,
+              "x": 521.0,
               "y": -20.0,
               "z": 420.02490234375
             },
@@ -297,7 +297,7 @@
               "y": -20.0,
               "z": 420.02490234375
             },
-            "distance": 415.6438622920315,
+            "distance": 405.6438622920315,
             "key": "gold"
           },
           {

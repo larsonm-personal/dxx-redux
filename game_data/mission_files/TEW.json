@@ -1946,7 +1946,7 @@
         "mine_volume": 8851757.933772698,
         "mine_volume_normalized": 1.9356978033641148,
         "mine_volume_text": "1.9x",
-        "travel_distance": 4312.342354169006,
+        "travel_distance": 4308.342354169006,
         "travel_time_seconds": 86,
         "travel_time_text": "1M:26S",
         "guidebot_count": 0,
@@ -2037,8 +2037,8 @@
             "side": 4,
             "wall": 232,
             "label_pos": {
-              "x": -50.0,
-              "y": 160.00001525878906,
+              "x": -60.0,
+              "y": 160.0,
               "z": 0.0
             },
             "distance": 1107.3095900593505,
@@ -2069,7 +2069,7 @@
               "y": 50.00001525878906,
               "z": 0.0
             },
-            "distance": 370.1255441873236
+            "distance": 366.1255441873236
           },
           {
             "index": 7,
@@ -3047,7 +3047,7 @@
         "mine_volume": 17604873.61600402,
         "mine_volume_normalized": 3.8498245706632894,
         "mine_volume_text": "3.8x",
-        "travel_distance": 6650.925042383323,
+        "travel_distance": 6640.925042383323,
         "travel_time_seconds": 133,
         "travel_time_text": "2M:13S",
         "guidebot_count": 0,
@@ -3073,7 +3073,7 @@
             "label_pos": {
               "x": 212.0,
               "y": -120.0,
-              "z": 130.0
+              "z": 140.0
             },
             "distance": 1211.6528033247566,
             "trigger": 0,
@@ -3098,7 +3098,7 @@
               "y": -80.0,
               "z": 220.0
             },
-            "distance": 150.0,
+            "distance": 140.0,
             "key": "blue"
           },
           {
@@ -3334,9 +3334,9 @@
         "mine_volume": 84381950.88732143,
         "mine_volume_normalized": 18.45260096336035,
         "mine_volume_text": "18x",
-        "travel_distance": 3375.5437112665954,
-        "travel_time_seconds": 68,
-        "travel_time_text": "1M:08S",
+        "travel_distance": 3325.5437112665954,
+        "travel_time_seconds": 67,
+        "travel_time_text": "1M:07S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3436,7 +3436,7 @@
             "wall": 118,
             "label_pos": {
               "x": 0.0,
-              "y": 770.0,
+              "y": 780.0,
               "z": 285.0
             },
             "distance": 933.6922789745241,
@@ -3467,7 +3467,7 @@
               "y": 1129.999984741211,
               "z": 282.99037170410156
             },
-            "distance": 704.8660930212042
+            "distance": 654.8660930212042
           },
           {
             "index": 6,

@@ -597,9 +597,9 @@
         "mine_volume": 17814134.193591673,
         "mine_volume_normalized": 3.8955855645130706,
         "mine_volume_text": "3.9x",
-        "travel_distance": 9425.567039035237,
-        "travel_time_seconds": 189,
-        "travel_time_text": "3M:09S",
+        "travel_distance": 9405.567039035237,
+        "travel_time_seconds": 188,
+        "travel_time_text": "3M:08S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -653,7 +653,7 @@
               "y": 0.0,
               "z": 270.0
             },
-            "distance": 1915.9196543514292,
+            "distance": 1905.9196543514292,
             "opens": [
               {
                 "seg": 54,
@@ -678,7 +678,7 @@
               "y": 240.0,
               "z": -140.0
             },
-            "distance": 1410.810460803083,
+            "distance": 1400.810460803083,
             "key": "red"
           },
           {
@@ -1860,7 +1860,7 @@
         "mine_volume": 15954863.481546171,
         "mine_volume_normalized": 3.4890012159472046,
         "mine_volume_text": "3.5x",
-        "travel_distance": 6263.809524777149,
+        "travel_distance": 6251.809524200002,
         "travel_time_seconds": 125,
         "travel_time_text": "2M:05S",
         "guidebot_count": 0,
@@ -1926,9 +1926,9 @@
             "side": 2,
             "wall": 106,
             "label_pos": {
-              "x": -1359.8676300048828,
+              "x": -1358.5623779296875,
               "y": 30.0,
-              "z": 806.6709136962891
+              "z": 816.5853576660156
             },
             "distance": 1649.4326969294284,
             "trigger": 1,
@@ -1968,7 +1968,7 @@
               "y": -10.0,
               "z": 613.6154174804688
             },
-            "distance": 298.4039317999833
+            "distance": 286.403931222835
           },
           {
             "index": 6,
@@ -2209,9 +2209,9 @@
         "mine_volume": 39228902.50696801,
         "mine_volume_normalized": 8.578555918412771,
         "mine_volume_text": "8.6x",
-        "travel_distance": 11905.030562021404,
-        "travel_time_seconds": 238,
-        "travel_time_text": "3M:58S",
+        "travel_distance": 11855.030562021404,
+        "travel_time_seconds": 237,
+        "travel_time_text": "3M:57S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2292,7 +2292,7 @@
               "y": -480.0,
               "z": 725.0
             },
-            "distance": 160.0,
+            "distance": 150.0,
             "opens": [
               {
                 "seg": 653,
@@ -2319,7 +2319,7 @@
               "y": -460.0,
               "z": 895.0
             },
-            "distance": 210.0,
+            "distance": 185.0,
             "opens": [
               {
                 "seg": 588,
@@ -2346,7 +2346,7 @@
               "y": 80.0,
               "z": 905.0
             },
-            "distance": 580.0,
+            "distance": 565.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -2572,9 +2572,9 @@
         "mine_volume": 39149857.88666482,
         "mine_volume_normalized": 8.561270482114876,
         "mine_volume_text": "8.6x",
-        "travel_distance": 10739.755975816737,
-        "travel_time_seconds": 215,
-        "travel_time_text": "3M:35S",
+        "travel_distance": 10569.755975816737,
+        "travel_time_seconds": 211,
+        "travel_time_text": "3M:31S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2597,7 +2597,7 @@
             "wall": 40,
             "label_pos": {
               "x": -306.9375,
-              "y": 38.0758056640625,
+              "y": 43.0758056640625,
               "z": -225.0
             },
             "distance": 561.2340040193333,
@@ -2640,7 +2640,7 @@
               "y": -31.9241943359375,
               "z": 45.0
             },
-            "distance": 472.697567453082,
+            "distance": 432.697567453082,
             "opens": [
               {
                 "seg": 9,
@@ -2667,7 +2667,7 @@
               "y": -31.9241943359375,
               "z": -65.0
             },
-            "distance": 220.0,
+            "distance": 200.0,
             "opens": [
               {
                 "seg": 12,
@@ -2692,7 +2692,7 @@
               "y": -31.9241943359375,
               "z": -370.0
             },
-            "distance": 561.4911064067351,
+            "distance": 551.4911064067351,
             "key": "blue"
           },
           {
@@ -2706,7 +2706,7 @@
             "label_pos": {
               "x": -146.9375,
               "y": -31.9241943359375,
-              "z": 137.25
+              "z": 142.25
             },
             "distance": 853.7411064067352,
             "trigger": 1,
@@ -2738,7 +2738,7 @@
               "y": -111.9241943359375,
               "z": 45.0
             },
-            "distance": 472.25,
+            "distance": 462.25,
             "opens": [
               {
                 "seg": 49,
@@ -2765,7 +2765,7 @@
               "y": -111.9241943359375,
               "z": 155.0
             },
-            "distance": 220.0,
+            "distance": 200.0,
             "opens": [
               {
                 "seg": 47,
@@ -2790,7 +2790,7 @@
               "y": -181.9241943359375,
               "z": 45.0
             },
-            "distance": 757.6318445917816,
+            "distance": 747.6318445917816,
             "key": "gold"
           },
           {
@@ -2802,9 +2802,9 @@
             "side": 4,
             "wall": 170,
             "label_pos": {
-              "x": -260.6605224609375,
+              "x": -246.5183868408203,
               "y": -111.9241943359375,
-              "z": -122.15447998046875
+              "z": -108.01234436035156
             },
             "distance": 1270.2218951385025,
             "trigger": 11,
@@ -2851,7 +2851,7 @@
               "y": -111.9241943359375,
               "z": 265.0
             },
-            "distance": 752.5900505467212,
+            "distance": 742.5900505467212,
             "opens": [
               {
                 "seg": 64,
@@ -2878,7 +2878,7 @@
               "y": -111.9241943359375,
               "z": -175.0
             },
-            "distance": 660.0,
+            "distance": 640.0,
             "opens": [
               {
                 "seg": 78,
@@ -2903,7 +2903,7 @@
               "y": -210.5491943359375,
               "z": -205.0
             },
-            "distance": 341.89617249883463,
+            "distance": 331.89617249883463,
             "key": "red"
           },
           {
@@ -2915,7 +2915,7 @@
             "side": 0,
             "wall": 169,
             "label_pos": {
-              "x": -26.9375,
+              "x": -21.9375,
               "y": -91.9241943359375,
               "z": 417.25
             },
@@ -2954,7 +2954,7 @@
               "y": -111.9241943359375,
               "z": 155.0
             },
-            "distance": 717.8655281280883,
+            "distance": 707.8655281280883,
             "opens": [
               {
                 "seg": 97,
@@ -2979,7 +2979,7 @@
               "y": -131.9241943359375,
               "z": 155.0
             },
-            "distance": 130.0
+            "distance": 120.0
           },
           {
             "index": 16,
@@ -3602,9 +3602,9 @@
         "mine_volume": 17814134.193591673,
         "mine_volume_normalized": 3.8955855645130706,
         "mine_volume_text": "3.9x",
-        "travel_distance": 9425.567039035237,
-        "travel_time_seconds": 189,
-        "travel_time_text": "3M:09S",
+        "travel_distance": 9405.567039035237,
+        "travel_time_seconds": 188,
+        "travel_time_text": "3M:08S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3658,7 +3658,7 @@
               "y": 0.0,
               "z": 270.0
             },
-            "distance": 1915.9196543514292,
+            "distance": 1905.9196543514292,
             "opens": [
               {
                 "seg": 54,
@@ -3683,7 +3683,7 @@
               "y": 240.0,
               "z": -140.0
             },
-            "distance": 1410.810460803083,
+            "distance": 1400.810460803083,
             "key": "red"
           },
           {
@@ -4865,7 +4865,7 @@
         "mine_volume": 15954863.481546171,
         "mine_volume_normalized": 3.4890012159472046,
         "mine_volume_text": "3.5x",
-        "travel_distance": 6263.809524777149,
+        "travel_distance": 6251.809524200002,
         "travel_time_seconds": 125,
         "travel_time_text": "2M:05S",
         "guidebot_count": 0,
@@ -4931,9 +4931,9 @@
             "side": 2,
             "wall": 106,
             "label_pos": {
-              "x": -1359.8676300048828,
+              "x": -1358.5623779296875,
               "y": 30.0,
-              "z": 806.6709136962891
+              "z": 816.5853576660156
             },
             "distance": 1649.4326969294284,
             "trigger": 1,
@@ -4973,7 +4973,7 @@
               "y": -10.0,
               "z": 613.6154174804688
             },
-            "distance": 298.4039317999833
+            "distance": 286.403931222835
           },
           {
             "index": 6,
@@ -5214,9 +5214,9 @@
         "mine_volume": 39228902.50867355,
         "mine_volume_normalized": 8.578555918785739,
         "mine_volume_text": "8.6x",
-        "travel_distance": 11905.030562021404,
-        "travel_time_seconds": 238,
-        "travel_time_text": "3M:58S",
+        "travel_distance": 11855.030562021404,
+        "travel_time_seconds": 237,
+        "travel_time_text": "3M:57S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5297,7 +5297,7 @@
               "y": -480.0,
               "z": 725.0
             },
-            "distance": 160.0,
+            "distance": 150.0,
             "opens": [
               {
                 "seg": 653,
@@ -5324,7 +5324,7 @@
               "y": -460.0,
               "z": 895.0
             },
-            "distance": 210.0,
+            "distance": 185.0,
             "opens": [
               {
                 "seg": 398,
@@ -5351,7 +5351,7 @@
               "y": 80.0,
               "z": 905.0
             },
-            "distance": 580.0,
+            "distance": 565.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -5577,9 +5577,9 @@
         "mine_volume": 39149857.88666482,
         "mine_volume_normalized": 8.561270482114876,
         "mine_volume_text": "8.6x",
-        "travel_distance": 10739.755975816737,
-        "travel_time_seconds": 215,
-        "travel_time_text": "3M:35S",
+        "travel_distance": 10569.755975816737,
+        "travel_time_seconds": 211,
+        "travel_time_text": "3M:31S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5602,7 +5602,7 @@
             "wall": 40,
             "label_pos": {
               "x": -306.9375,
-              "y": 38.0758056640625,
+              "y": 43.0758056640625,
               "z": -225.0
             },
             "distance": 561.2340040193333,
@@ -5645,7 +5645,7 @@
               "y": -31.9241943359375,
               "z": 45.0
             },
-            "distance": 472.697567453082,
+            "distance": 432.697567453082,
             "opens": [
               {
                 "seg": 9,
@@ -5672,7 +5672,7 @@
               "y": -31.9241943359375,
               "z": -65.0
             },
-            "distance": 220.0,
+            "distance": 200.0,
             "opens": [
               {
                 "seg": 12,
@@ -5697,7 +5697,7 @@
               "y": -31.9241943359375,
               "z": -370.0
             },
-            "distance": 561.4911064067351,
+            "distance": 551.4911064067351,
             "key": "blue"
           },
           {
@@ -5711,7 +5711,7 @@
             "label_pos": {
               "x": -146.9375,
               "y": -31.9241943359375,
-              "z": 137.25
+              "z": 142.25
             },
             "distance": 853.7411064067352,
             "trigger": 1,
@@ -5743,7 +5743,7 @@
               "y": -111.9241943359375,
               "z": 45.0
             },
-            "distance": 472.25,
+            "distance": 462.25,
             "opens": [
               {
                 "seg": 49,
@@ -5770,7 +5770,7 @@
               "y": -111.9241943359375,
               "z": 155.0
             },
-            "distance": 220.0,
+            "distance": 200.0,
             "opens": [
               {
                 "seg": 47,
@@ -5795,7 +5795,7 @@
               "y": -181.9241943359375,
               "z": 45.0
             },
-            "distance": 757.6318445917816,
+            "distance": 747.6318445917816,
             "key": "gold"
           },
           {
@@ -5807,9 +5807,9 @@
             "side": 4,
             "wall": 170,
             "label_pos": {
-              "x": -260.6605224609375,
+              "x": -246.5183868408203,
               "y": -111.9241943359375,
-              "z": -122.15447998046875
+              "z": -108.01234436035156
             },
             "distance": 1270.2218951385025,
             "trigger": 11,
@@ -5856,7 +5856,7 @@
               "y": -111.9241943359375,
               "z": 265.0
             },
-            "distance": 752.5900505467212,
+            "distance": 742.5900505467212,
             "opens": [
               {
                 "seg": 64,
@@ -5883,7 +5883,7 @@
               "y": -111.9241943359375,
               "z": -175.0
             },
-            "distance": 660.0,
+            "distance": 640.0,
             "opens": [
               {
                 "seg": 78,
@@ -5908,7 +5908,7 @@
               "y": -210.5491943359375,
               "z": -205.0
             },
-            "distance": 341.89617249883463,
+            "distance": 331.89617249883463,
             "key": "red"
           },
           {
@@ -5920,7 +5920,7 @@
             "side": 0,
             "wall": 169,
             "label_pos": {
-              "x": -26.9375,
+              "x": -21.9375,
               "y": -91.9241943359375,
               "z": 417.25
             },
@@ -5959,7 +5959,7 @@
               "y": -111.9241943359375,
               "z": 155.0
             },
-            "distance": 717.8655281280883,
+            "distance": 707.8655281280883,
             "opens": [
               {
                 "seg": 97,
@@ -5984,7 +5984,7 @@
               "y": -131.9241943359375,
               "z": 155.0
             },
-            "distance": 130.0
+            "distance": 120.0
           },
           {
             "index": 16,

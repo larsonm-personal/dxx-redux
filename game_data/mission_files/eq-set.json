@@ -111,9 +111,9 @@
         "mine_volume": 6099707.412631661,
         "mine_volume_normalized": 1.3338808322747011,
         "mine_volume_text": "1.3x",
-        "travel_distance": 5042.82330324109,
-        "travel_time_seconds": 101,
-        "travel_time_text": "1M:41S",
+        "travel_distance": 5022.79766288526,
+        "travel_time_seconds": 100,
+        "travel_time_text": "1M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -218,9 +218,9 @@
             "seg": 19,
             "wall": 15,
             "label_pos": {
-              "x": -246.5848846435547,
-              "y": 56.05024719238281,
-              "z": -245.18411254882812
+              "x": -246.58413696289062,
+              "y": 66.31056213378906,
+              "z": -247.1282958984375
             },
             "distance": 248.02277779946925,
             "trigger": 0,
@@ -248,7 +248,7 @@
             "side": 0,
             "wall": 168,
             "label_pos": {
-              "x": -254.25125122070312,
+              "x": -264.2512512207031,
               "y": 209.0754852294922,
               "z": 60.92750549316406
             },
@@ -282,7 +282,7 @@
               "y": 209.0754852294922,
               "z": 180.92750549316406
             },
-            "distance": 180.0,
+            "distance": 170.0,
             "trigger": 28,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -322,9 +322,9 @@
             "side": 2,
             "wall": 32,
             "label_pos": {
-              "x": 25.748748779296875,
-              "y": 69.07548522949219,
-              "z": -14.072494506835938
+              "x": 117.08619689941406,
+              "y": 69.07359313964844,
+              "z": -14.06982421875
             },
             "distance": 673.241237724663,
             "trigger": 6,
@@ -356,7 +356,7 @@
               "y": 127.36747741699219,
               "z": 46.735321044921875
             },
-            "distance": 265.0795123173623,
+            "distance": 255.05387196153293,
             "opens": [
               {
                 "seg": 76,
@@ -1763,9 +1763,9 @@
         "mine_volume": 59361884.23646615,
         "mine_volume_normalized": 12.981225851383869,
         "mine_volume_text": "13x",
-        "travel_distance": 27692.346194372512,
-        "travel_time_seconds": 554,
-        "travel_time_text": "9M:14S",
+        "travel_distance": 27618.606564298407,
+        "travel_time_seconds": 552,
+        "travel_time_text": "9M:12S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2084,9 +2084,9 @@
             "side": 0,
             "wall": 68,
             "label_pos": {
-              "x": 441.7996826171875,
-              "y": 98.75076293945312,
-              "z": 574.0368499755859
+              "x": 366.21600341796875,
+              "y": 98.9912109375,
+              "z": 575.8567962646484
             },
             "distance": 1258.487562018195,
             "trigger": 12,
@@ -2118,7 +2118,7 @@
               "y": 202.77821350097656,
               "z": 101.67279052734375
             },
-            "distance": 1765.3440223045202,
+            "distance": 1749.9139054658558,
             "trigger": 28,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2228,9 +2228,9 @@
             "side": 1,
             "wall": 34,
             "label_pos": {
-              "x": -74.98138427734375,
-              "y": 97.33583068847656,
-              "z": -564.7934265136719
+              "x": -74.94319152832031,
+              "y": 107.32852172851562,
+              "z": -565.1738891601562
             },
             "distance": 994.139020005199,
             "trigger": 14,
@@ -2262,7 +2262,7 @@
               "y": 162.80746459960938,
               "z": 103.19465637207031
             },
-            "distance": 887.9415026363938,
+            "distance": 829.6319894009519,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

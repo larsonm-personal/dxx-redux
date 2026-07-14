@@ -44,7 +44,7 @@
             "seg": 379,
             "wall": 61,
             "label_pos": {
-              "x": -210.0,
+              "x": -200.0,
               "y": -230.0,
               "z": 0.0
             },
@@ -242,9 +242,9 @@
         "mine_volume": 553924639.1697598,
         "mine_volume_normalized": 121.1319508839268,
         "mine_volume_text": "120x",
-        "travel_distance": 17022.05999573729,
-        "travel_time_seconds": 340,
-        "travel_time_text": "5M:40S",
+        "travel_distance": 16964.05999573729,
+        "travel_time_seconds": 339,
+        "travel_time_text": "5M:39S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -265,7 +265,7 @@
             "seg": 564,
             "wall": 127,
             "label_pos": {
-              "x": 429.0,
+              "x": 439.0,
               "y": 0.0,
               "z": -20.0
             },
@@ -290,7 +290,7 @@
             "side": 2,
             "wall": 147,
             "label_pos": {
-              "x": 279.0,
+              "x": 329.0,
               "y": 210.0,
               "z": 100.0
             },
@@ -319,7 +319,7 @@
               "y": 0.0,
               "z": 0.0
             },
-            "distance": 800.7177488329485,
+            "distance": 765.7177488329485,
             "opens": [
               {
                 "seg": 670,
@@ -344,7 +344,7 @@
               "y": -0.0001220703125,
               "z": 0.0
             },
-            "distance": 50.00000000074506,
+            "distance": 40.00000000074506,
             "key": "blue"
           },
           {
@@ -370,7 +370,7 @@
             "side": 0,
             "wall": 7,
             "label_pos": {
-              "x": -204.0,
+              "x": -214.0,
               "y": 0.0,
               "z": 0.0
             },
@@ -412,9 +412,9 @@
             "label_pos": {
               "x": -254.0,
               "y": 0.0,
-              "z": -76.0
+              "z": -63.0
             },
-            "distance": 160.2842712474619,
+            "distance": 147.2842712474619,
             "trigger": 23,
             "trigger_type_id": 1,
             "trigger_type": "open_door",

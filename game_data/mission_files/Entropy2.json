@@ -21,9 +21,9 @@
         "mine_volume": 13919359.808122696,
         "mine_volume_normalized": 3.0438783354002337,
         "mine_volume_text": "3.0x",
-        "travel_distance": 4698.627445657409,
-        "travel_time_seconds": 94,
-        "travel_time_text": "1M:34S",
+        "travel_distance": 4659.856793479606,
+        "travel_time_seconds": 93,
+        "travel_time_text": "1M:33S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -45,9 +45,9 @@
             "side": 2,
             "wall": 93,
             "label_pos": {
-              "x": -37.999969482421875,
+              "x": -30.999969482421875,
               "y": 49.999969482421875,
-              "z": 71.99996948242188
+              "z": 78.99996948242188
             },
             "distance": 531.1267614533315,
             "trigger": 16,
@@ -72,9 +72,9 @@
             "label_pos": {
               "x": 10.0,
               "y": -151.0,
-              "z": -783.0
+              "z": -733.0
             },
-            "distance": 1459.8644775606522,
+            "distance": 1449.964993413616,
             "trigger": 12,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -95,11 +95,11 @@
             "side": 5,
             "wall": 91,
             "label_pos": {
-              "x": 134.0,
+              "x": 129.5,
               "y": 70.0,
-              "z": -178.5
+              "z": -187.25
             },
-            "distance": 1810.1701128445877,
+            "distance": 1799.6701128445877,
             "trigger": 13,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -124,7 +124,7 @@
               "y": 70.0,
               "z": -196.0
             },
-            "distance": 232.1644367863343,
+            "distance": 222.97204863090917,
             "trigger": 6,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -145,9 +145,9 @@
             "side": 5,
             "wall": 89,
             "label_pos": {
-              "x": -114.0,
+              "x": -109.5,
               "y": 70.0,
-              "z": -178.5
+              "z": -187.25
             },
             "distance": 232.1508285062521,
             "trigger": 14,
@@ -174,7 +174,7 @@
               "y": 70.0,
               "z": 5.0
             },
-            "distance": 433.1508285062521,
+            "distance": 423.97204863090917,
             "trigger": 5,
             "trigger_type_id": 3,
             "trigger_type": "exit"

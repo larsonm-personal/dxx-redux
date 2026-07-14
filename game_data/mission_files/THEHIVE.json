@@ -300,9 +300,9 @@
         "mine_volume": 4712858.091763462,
         "mine_volume_normalized": 1.03060534687545,
         "mine_volume_text": "1.0x",
-        "travel_distance": 6513.388619799631,
-        "travel_time_seconds": 130,
-        "travel_time_text": "2M:10S",
+        "travel_distance": 6253.388619799631,
+        "travel_time_seconds": 125,
+        "travel_time_text": "2M:05S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -370,7 +370,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 418.30951894845305,
+            "distance": 408.30951894845305,
             "opens": [
               {
                 "seg": 112,
@@ -397,7 +397,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 266,
@@ -424,7 +424,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 267,
@@ -451,7 +451,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 268,
@@ -478,7 +478,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 269,
@@ -505,7 +505,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 270,
@@ -532,7 +532,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 271,
@@ -559,7 +559,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 272,
@@ -586,7 +586,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 273,
@@ -613,7 +613,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 274,
@@ -640,7 +640,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 275,
@@ -667,7 +667,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 276,
@@ -694,7 +694,7 @@
               "y": 180.0,
               "z": 10.0
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 277,
@@ -719,7 +719,7 @@
               "y": 180.0,
               "z": 90.0
             },
-            "distance": 110.0
+            "distance": 100.0
           },
           {
             "index": 18,

@@ -96,7 +96,7 @@
         "mine_volume": 5194831.20584594,
         "mine_volume_normalized": 1.1360029758199166,
         "mine_volume_text": "1.1x",
-        "travel_distance": 2849.4543316584004,
+        "travel_distance": 2829.4543316584004,
         "travel_time_seconds": 57,
         "travel_time_text": "0M:57S",
         "guidebot_count": 0,
@@ -124,7 +124,7 @@
               "y": -4.999847412109375,
               "z": -512.9142608642578
             },
-            "distance": 70.0,
+            "distance": 60.0,
             "opens": [
               {
                 "seg": 17,
@@ -149,7 +149,7 @@
               "y": 162.5701446533203,
               "z": -365.46697998046875
             },
-            "distance": 275.34443712497404,
+            "distance": 265.34443712497404,
             "key": "blue"
           },
           {
@@ -301,9 +301,9 @@
         "mine_volume": 23575411.379053928,
         "mine_volume_normalized": 5.155458651408247,
         "mine_volume_text": "5.2x",
-        "travel_distance": 4368.708361824884,
-        "travel_time_seconds": 87,
-        "travel_time_text": "1M:27S",
+        "travel_distance": 4300.708361824884,
+        "travel_time_seconds": 86,
+        "travel_time_text": "1M:26S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -329,7 +329,7 @@
               "y": -88.72688293457031,
               "z": -110.57734680175781
             },
-            "distance": 33.648773193359375,
+            "distance": 23.648773193359375,
             "opens": [
               {
                 "seg": 2,
@@ -356,7 +356,7 @@
               "y": -128.7268829345703,
               "z": -0.5773468017578125
             },
-            "distance": 210.0,
+            "distance": 190.0,
             "opens": [
               {
                 "seg": 61,
@@ -383,7 +383,7 @@
               "y": -108.72688293457031,
               "z": -0.5773468017578125
             },
-            "distance": 40.0,
+            "distance": 20.0,
             "opens": [
               {
                 "seg": 67,
@@ -406,11 +406,11 @@
             "side": 5,
             "wall": 105,
             "label_pos": {
-              "x": -578.5473785400391,
-              "y": -118.72688293457031,
-              "z": 139.41867065429688
+              "x": -578.5467224121094,
+              "y": -98.72688293457031,
+              "z": 109.420654296875
             },
-            "distance": 506.805124516428,
+            "distance": 496.805124516428,
             "trigger": 1,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -433,7 +433,7 @@
               "y": -0.7268829345703125,
               "z": 149.4199981689453
             },
-            "distance": 539.8179373972024,
+            "distance": 531.8179373972024,
             "key": "gold"
           },
           {
@@ -496,9 +496,9 @@
         "mine_volume": 36463720.35191247,
         "mine_volume_normalized": 7.973867328475095,
         "mine_volume_text": "8.0x",
-        "travel_distance": 6853.561523412324,
-        "travel_time_seconds": 137,
-        "travel_time_text": "2M:17S",
+        "travel_distance": 6731.089758079653,
+        "travel_time_seconds": 135,
+        "travel_time_text": "2M:15S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -524,7 +524,7 @@
               "y": -17.103302001953125,
               "z": 68.96881103515625
             },
-            "distance": 1000.0615108218597,
+            "distance": 969.2394408070148,
             "opens": [
               {
                 "seg": 139,
@@ -551,7 +551,7 @@
               "y": -17.103302001953125,
               "z": 78.96881103515625
             },
-            "distance": 211.3195642648561,
+            "distance": 150.08368159852012,
             "opens": [
               {
                 "seg": 103,
@@ -576,7 +576,7 @@
               "y": 3.41595458984375,
               "z": 68.98905944824219
             },
-            "distance": 826.9034713995466,
+            "distance": 796.4896587480555,
             "key": "blue"
           },
           {

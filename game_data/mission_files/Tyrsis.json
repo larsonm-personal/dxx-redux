@@ -21,9 +21,9 @@
         "mine_volume": 17140772.101250738,
         "mine_volume_normalized": 3.7483350937291866,
         "mine_volume_text": "3.7x",
-        "travel_distance": 7980.458527565613,
-        "travel_time_seconds": 160,
-        "travel_time_text": "2M:40S",
+        "travel_distance": 7970.458863258972,
+        "travel_time_seconds": 159,
+        "travel_time_text": "2M:39S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -138,7 +138,7 @@
             "wall": 125,
             "label_pos": {
               "x": 128.67771911621094,
-              "y": -38.09906005859375,
+              "y": -35.599395751953125,
               "z": -110.36471557617188
             },
             "distance": 985.7107098648548,
@@ -164,7 +164,7 @@
               "y": -3.1000823974609375,
               "z": -56.040008544921875
             },
-            "distance": 115.14028212897568
+            "distance": 105.14061782233506
           },
           {
             "index": 8,
