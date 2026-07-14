@@ -71,6 +71,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "args.h"
 #include "input_demo_recorder.h"
+#ifdef __ANDROID__
+#include "escort.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -486,8 +489,16 @@ void ClearMarkers()
 
 void automap_clear_visited()	
 {
+	int changed = 0;
 	for (unsigned i=0; i< sizeof(Automap_visited) / sizeof(Automap_visited[0]); i++ )
+	{
+		changed |= Automap_visited[i] != 0;
 		Automap_visited[i] = 0;
+	}
+#ifdef __ANDROID__
+	if (changed)
+		escort_route_notify_automap_changed(-1);
+#endif
 		ClearMarkers();
 }
 
@@ -917,9 +928,16 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 #ifndef NDEBUG
 		case KEY_DEBUGGED+KEY_F: 	{
 				int i;
+				int changed = 0;
 				
-				for (i=0; i<=Highest_segment_index; i++ )
+				for (i=0; i<=Highest_segment_index; i++ ) {
+					changed |= Automap_visited[i] == 0;
 					Automap_visited[i] = 1;
+				}
+#ifdef __ANDROID__
+				if (changed)
+					escort_route_notify_automap_changed(-1);
+#endif
 				automap_build_edge_list(am);
 				am->max_segments_away = set_segment_depths(Objects[Players[Player_num].objnum].segnum, Automap_visited);
 				am->segment_limit = am->max_segments_away;

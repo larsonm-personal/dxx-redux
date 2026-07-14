@@ -3425,16 +3425,57 @@ extern "C" void game_automate_tick(void)
 				break;
 #endif
 			} else if (s.field == "automap_visit_all") {
-				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0)
-					for (int segnum = 0; segnum <= Highest_segment_index; segnum++)
+				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
+					bool changed = false;
+					for (int segnum = 0; segnum <= Highest_segment_index; segnum++) {
+						changed = changed || Automap_visited[segnum] == 0;
 						Automap_visited[segnum] = 1;
+					}
+#ifdef DXX_BUILD_DESCENT_II
+					if (changed)
+						escort_route_notify_automap_changed(-1);
+#endif
+				}
+			} else if (s.field == "automap_visit_segment") {
+				const int segnum = (int) strtol(s.value.c_str(), NULL, 10);
+				if (segnum < 0 || segnum > Highest_segment_index) {
+					stop_script_fail("automap_visit_segment: invalid segment");
+					break;
+				}
+				if (!Automap_visited[segnum]) {
+					Automap_visited[segnum] = 1;
+#ifdef DXX_BUILD_DESCENT_II
+					escort_route_notify_automap_changed(segnum);
+#endif
+				}
 			} else if (s.field == "automap_unvisit_segment") {
 				const int segnum = (int) strtol(s.value.c_str(), NULL, 10);
 				if (segnum < 0 || segnum > Highest_segment_index) {
 					stop_script_fail("automap_unvisit_segment: invalid segment");
 					break;
 				}
-				Automap_visited[segnum] = 0;
+				if (Automap_visited[segnum]) {
+					Automap_visited[segnum] = 0;
+#ifdef DXX_BUILD_DESCENT_II
+					escort_route_notify_automap_changed(segnum);
+#endif
+				}
+			} else if (s.field == "automap_revisit_segment") {
+				const int segnum = (int) strtol(s.value.c_str(), NULL, 10);
+				if (segnum < 0 || segnum > Highest_segment_index) {
+					stop_script_fail("automap_revisit_segment: invalid segment");
+					break;
+				}
+				if (Automap_visited[segnum]) {
+					Automap_visited[segnum] = 0;
+#ifdef DXX_BUILD_DESCENT_II
+					escort_route_notify_automap_changed(segnum);
+#endif
+					Automap_visited[segnum] = 1;
+#ifdef DXX_BUILD_DESCENT_II
+					escort_route_notify_automap_changed(segnum);
+#endif
+				}
 			} else if (s.field == "coop_autosave") {
 				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
 				    !coop_autosave()) {

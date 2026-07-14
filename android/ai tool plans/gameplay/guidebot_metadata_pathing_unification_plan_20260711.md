@@ -126,6 +126,7 @@ Parity has two separate meanings and both must pass:
   - [x] KCXF2 custom exits without a rendered end-level sequence immediately replace the level, so they do not expose an active `Endlevel_sequence` to automation. Live KCXF2 coverage therefore ends at `exit_pending`; native tests verify the selected side and inward activation pose, and ordinary engine level replacement remains the terminal completion behavior.
   - [x] Rejected an experimental 200-unit firing-ray limit after the corpus exposed 55 route-status regressions. Also rejected stricter finite `FQ_TRANSPOINT` sampling for semantic dependency discovery after six valid routes regressed. Route discovery retains its established transparent-wall existence approximation; exact player execution is tested live.
   - [x] Final Phase 6 corpus regeneration passed built-in Counterstrike and 109 mission archives with one expected descriptor-less skip and zero failures. All 1,274 reviewed levels retain their route status and problem text; 74 explicit blastable-wall steps were added and the reviewed fingerprint baseline was updated.
+  - [x] Contained-key robot objectives now preserve carrier identity in the shared route step, tell the player to destroy the carrier, and draw the numbered automap objective at the robot's live position before following the dropped key. The 145 objectives across 99 levels use the same metadata and Guide-Bot semantics without changing classic movement, firing, or RNG behavior; the focused KCXF2 level 6 fixture and full corpus/build gates pass.
   - Final directed-crossing validation passes: full Windows D1/D2 builds, both route snapshot suites, Android JVM tests and all three ABIs, the 1,274-level checked corpus, strict base-campaign status checks, and the 50-step live KCXF2 route fixture. Full regeneration processed 1,244 levels across 109 archives with one descriptor-less skip and zero failures; route status, problem text, and semantic step identity remain unchanged while crossing guidance positions and derived travel fields were regenerated.
   - The live KCXF2 level 4 fixture compared two identical 30-point paths toward hidden-door segment 221. Both consumed 458 simulation RNG calls and ended at RNG state 2654953511, with no point or AI mismatch and exact post-probe restoration.
   - Route commands once again use only the original Guide-Bot frame scheduling, return-to-player interruption, `create_path_to_segment()`, and polish lifecycle. The fixture uses the existing warp command only to establish a deterministic nearby starting state before NEXT, then confirms the route remains active at wall 61 after classic scheduling continues.
@@ -136,7 +137,10 @@ Parity has two separate meanings and both must pass:
   - [x] Owner-state generations now use wrap-safe serial comparison with zero reserved; native policy tests cover duplicate, stale, wrap, and reverse-wrap input.
   - [x] The focused two-peer fixture passes transfer, owner-local direct Unexplored routing, ignored nonowner key changes, disconnect adoption, intent preservation, and recomputation from the adopter's automap. Stable shared-plan endpoint assertions replaced stale legacy intermediate-step assumptions.
   - [x] First-tranche gates pass: supported Windows D1/D2 builds, 19 D1 and 22 D2 host tests, Android JVM/all-ABI builds, the 1,274-route corpus, base mission statuses, automation catalog, and two-emulator ownership/handoff.
-  - [ ] Next: route-state generation keys for wall, trigger, object, and reactor events; coalesced automap invalidation; then observer-host, abdication, save/restore, slot-remap, and host-migration coverage with planner-count assertions.
+  - [x] Wall, trigger, object, reactor, and automap events now advance wrap-safe diagnostic generations and schedule only owner-authoritative high-level semantic replans. Active-object filtering avoids ordinary object churn, and the quarter-second monitor coalesces pending work.
+  - [x] Unexplored now re-evaluates on newly visited automap segments even while its previous endpoint remains unvisited and after classic AI transiently clears the physical goal at the waypoint. A focused fixture proves two same-frame events produce one rescan and idle time produces none.
+  - [x] Shared/legacy selector parity now includes blastable-wall steps. Counterstrike level 1 reports zero mismatches before and after switching from the end-level endpoint to Unexplored.
+  - [ ] Next: observer-host, voluntary abdication, multiplayer save/restore, slot remap, and host-migration coverage with planner-count and owner-local automap assertions.
 - [x] Canonical metadata route cut over to the shared C++ planner.
   - Keep non-route metadata aggregation in `level_metadata_scan_level_summary()` while producing route and travel fields with the same shared `route_planner_plan_view()` result consumed by live Guide-Bot routing.
   - Retain the legacy native planner only behind strict differential comparison until the full mission corpus proves the authoritative cutover is behaviorally stable.
@@ -616,13 +620,16 @@ Work:
 - Run two-peer owner, observer-host, disconnect adoption, voluntary abdication, save restore, and slot-remap scenarios.
 - Verify owner-local guidance, passive completion transitions, unchanged classic flare behavior, and owner-local unexplored selection.
 
-Progress (2026-07-13):
+Progress (2026-07-14):
 
 - Owner-aware key invalidation and owner-only boss-teleport invalidation are complete. Both are passive high-level hooks.
 - Owner packet generations are wrap-safe and reserve zero; focused unit coverage is in place.
 - Introspection counts ignored nonowner key changes and boss-move invalidations.
 - The two-peer owner/disconnect-adoption scenario passes with Unexplored intent preserved and recomputed from the new owner's automap. Remaining multiplayer scenarios are observer host, abdication, save restore, slot remap, and host migration.
-- Remaining generation/cache work covers walls, triggers, objects, reactor/control-center state, and coalesced automap component changes.
+- Wall, trigger, relevant-object, reactor/control-center, and automap generation hooks are complete. They only dirty owner-local semantic intent; the existing monitor performs at most one replan per interval.
+- Same-frame automap events are coalesced, Unexplored remains armed while its semantic target is active, and a six-second idle assertion confirms there is no polling rescan.
+- Supported Windows D1/D2 builds, all 19 D1 and 22 D2 native tests, Android all-ABI assembly, the 1,274-level corpus, base campaign statuses, and focused live coverage pass.
+- Remaining Phase 7 work is multiplayer lifecycle coverage for observer host, voluntary abdication, save/restore, slot remap, and host migration. Phase 8 deletion remains gated on that regression cycle.
 
 Exit gate: no stale-plan failures in dynamic tests, no nonowner planner execution, and multiplayer ownership tests pass repeatedly.
 

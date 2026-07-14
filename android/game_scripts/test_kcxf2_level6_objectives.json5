@@ -86,7 +86,7 @@
         "automap.objective_visible_step_count": "0",
         "automap.next_objective_count": "0"
     }},
-    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 200},

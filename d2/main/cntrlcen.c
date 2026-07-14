@@ -46,6 +46,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
+#ifdef __ANDROID__
+#include "escort.h"
+#endif
 
 //@@vms_vector controlcen_gun_points[MAX_CONTROLCEN_GUNS];
 //@@vms_vector controlcen_gun_dirs[MAX_CONTROLCEN_GUNS];
@@ -255,6 +258,9 @@ void do_controlcen_destroyed_stuff(object *objp)
 
 	// And start the countdown stuff.
 	Control_center_destroyed = 1;
+#ifdef __ANDROID__
+	escort_route_notify_reactor_changed();
+#endif
 
 	// If a secret level, delete secret.sgc to indicate that we can't return to our secret level.
 	if (Current_level_num < 0)

@@ -921,6 +921,20 @@ static json serialize_guidebot()
 	    escort_get_route_ignored_nonowner_key_change_count();
 	result["route_boss_move_invalidation_count"] =
 	    escort_get_route_boss_move_invalidation_count();
+	result["route_event_generations"] = {
+		{ "wall", escort_get_route_wall_generation() },
+		{ "trigger", escort_get_route_trigger_generation() },
+		{ "object", escort_get_route_object_generation() },
+		{ "reactor", escort_get_route_reactor_generation() },
+		{ "automap", escort_get_route_automap_generation() }
+	};
+	result["route_pending_event_mask"] = escort_get_route_pending_event_mask();
+	result["route_event_notification_count"] =
+	    escort_get_route_event_notification_count();
+	result["route_event_coalesced_rescan_count"] =
+	    escort_get_route_event_coalesced_rescan_count();
+	result["route_ignored_nonowner_event_count"] =
+	    escort_get_route_ignored_nonowner_event_count();
 	result["route_planner_source"] = live_plan_available ? "shared_cpp" : "unavailable";
 	result["route_first_pending_step"] =
 	    live_plan_available ? live_plan.first_pending_step : -1;
@@ -998,6 +1012,7 @@ static json serialize_guidebot()
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
 	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();
 	result["unexplored_direct_reachable"] = (bool) escort_get_unexplored_direct_reachable();
+	result["unexplored_target_visited"] = (bool) escort_get_unexplored_target_visited();
 	result["route_status"] = route_metadata ? level_metadata_route_status_name(route_metadata->route_status) : "unavailable";
 	result["route_problem"] = route_metadata && route_metadata->route_problem[0] ? route_metadata->route_problem : "";
 	result["route_start_seg"] = route_metadata && route_metadata->route_step_count > 0 ? route_metadata->route_steps[0].seg : -1;

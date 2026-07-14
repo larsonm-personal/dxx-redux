@@ -37,7 +37,12 @@
 
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
-    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1",
+        "guidebot.route_selector_mismatch_count": "0"
+    }},
 
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 500},
@@ -54,10 +59,12 @@
         "guidebot.route_selector_shared_index": "1",
         "guidebot.route_selector_legacy_index": "1",
         "guidebot.route_start_matches_buddy": "true",
-        "guidebot.route_goal_active": "true",
         "guidebot.unexplored_component_size": {"gt": 0},
         "guidebot.unexplored_target_seg": {"gte": 0},
         "guidebot.unexplored_waypoint_seg": {"gte": 0},
+        "guidebot.unexplored_target_visited": "false",
+        "guidebot.route_pending_event_mask": "0",
+        "guidebot.route_event_coalesced_rescan_count": "0",
         "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
         "level_metadata_route.edge_shadow.mismatch_count": "0",
 		"level_metadata_route.planner_shadow.compared_progress_state_count": {"gt": 4},
@@ -83,10 +90,26 @@
         "level_metadata_route.visibility_cache.bypasses": "0"
     }},
 
+    // Two same-frame automap transitions must collapse into one high-level
+    // semantic route rescan while leaving the player's map unchanged.
+    {"action": "set_debug", "field": "automap_revisit_segment", "value": "0", "post_delay_ms": 1000},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_target_mode_name": "unexplored",
+        "guidebot.unexplored_target_visited": "false",
+        "guidebot.route_event_generations.automap": {"gt": 19},
+        "guidebot.route_pending_event_mask": "0",
+        "guidebot.route_event_coalesced_rescan_count": "1",
+        "guidebot.route_metadata_rescan_count": {"gte": 3},
+        "guidebot.route_selector_mismatch_count": "0",
+        "guidebot.route_last_replan_reason": "automap_exploration"
+    }},
+
     {"action": "wait_ms", "ms": 6000},
     {"action": "assert", "expect": {
         "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_last_replan_reason": "unexplored_command"
+        "guidebot.route_event_coalesced_rescan_count": "1",
+        "guidebot.route_metadata_rescan_count": {"gte": 3},
+        "guidebot.route_last_replan_reason": "automap_exploration"
     }},
 
     {"action": "introspect"},

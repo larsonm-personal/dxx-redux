@@ -94,6 +94,23 @@ static int test_only_effective_owner_key_changes_are_relevant(void)
 	return 1;
 }
 
+static int test_route_events_dirty_only_authoritative_relevant_work(void)
+{
+	CHECK(escort_route_event_should_dirty(
+	    1, 1, 0, ESCORT_ROUTE_EVENT_WALL, 1));
+	CHECK(!escort_route_event_should_dirty(
+	    0, 1, 0, ESCORT_ROUTE_EVENT_WALL, 1));
+	CHECK(!escort_route_event_should_dirty(
+	    1, 0, 0, ESCORT_ROUTE_EVENT_WALL, 1));
+	CHECK(!escort_route_event_should_dirty(
+	    1, 1, 0, ESCORT_ROUTE_EVENT_OBJECT, 0));
+	CHECK(escort_route_event_should_dirty(
+	    1, 1, 1, ESCORT_ROUTE_EVENT_AUTOMAP, 0));
+	CHECK(!escort_route_event_should_dirty(
+	    1, 1, 0, ESCORT_ROUTE_EVENT_AUTOMAP, 1));
+	return 1;
+}
+
 int main(void)
 {
 	if (!test_packet_sender_must_match_authenticated_transport_player() ||
@@ -103,7 +120,8 @@ int main(void)
 	    !test_only_current_owner_can_transfer_or_abdicate() ||
 	    !test_ineligible_players_and_stale_requests_are_rejected() ||
 	    !test_owner_generation_comparison_handles_wrap() ||
-	    !test_only_effective_owner_key_changes_are_relevant())
+	    !test_only_effective_owner_key_changes_are_relevant() ||
+	    !test_route_events_dirty_only_authoritative_relevant_work())
 		return 1;
 	puts("escort owner policy tests passed");
 	return 0;

@@ -218,6 +218,8 @@ typedef struct escort_route_goal {
 	int objective_side;
 	int objective_wall;
 	int objective_trigger;
+	int objective_object;
+	int objective_key_index;
 	int guidance_mode;
 	int guidance_seg;
 	int guidance_side;
@@ -234,6 +236,15 @@ static unsigned int Escort_route_metadata_rescan_count;
 static unsigned int Escort_route_guidance_full_search_count;
 static unsigned int Escort_route_ignored_nonowner_key_change_count;
 static unsigned int Escort_route_boss_move_invalidation_count;
+static unsigned int Escort_route_wall_generation;
+static unsigned int Escort_route_trigger_generation;
+static unsigned int Escort_route_object_generation;
+static unsigned int Escort_route_reactor_generation;
+static unsigned int Escort_route_automap_generation;
+static unsigned int Escort_route_pending_event_mask;
+static unsigned int Escort_route_event_notification_count;
+static unsigned int Escort_route_event_coalesced_rescan_count;
+static unsigned int Escort_route_ignored_nonowner_event_count;
 static fix64 Escort_route_completion_check_time;
 static unsigned int Escort_route_selector_compare_count;
 static unsigned int Escort_route_selector_mismatch_count;
@@ -273,6 +284,47 @@ static void escort_route_note_replan(const char *reason)
 	Escort_route_last_replan_reason = reason && reason[0] ? reason : "unknown";
 }
 
+static unsigned int escort_route_next_event_generation(unsigned int generation)
+{
+	generation++;
+	return generation ? generation : 1;
+}
+
+static int escort_route_has_local_authority(void)
+{
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
+		return 0;
+#endif
+	return 1;
+}
+
+static void escort_route_record_event(
+    unsigned int event_mask,
+    unsigned int *generation,
+    int matches_objective)
+{
+	int local_authority;
+
+	if (generation)
+		*generation = escort_route_next_event_generation(*generation);
+	Escort_route_event_notification_count++;
+	local_authority = escort_route_has_local_authority();
+	if (!local_authority)
+		Escort_route_ignored_nonowner_event_count++;
+	if (!escort_route_event_should_dirty(
+	        local_authority,
+	        Escort_route_goal.active ||
+	            (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
+	             Escort_unexplored_route_target.active),
+	        Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED,
+	        event_mask,
+	        matches_objective))
+		return;
+	Escort_route_pending_event_mask |= event_mask;
+	Escort_route_metadata_dirty = 1;
+}
+
 static void escort_route_sync_target_mode(void)
 {
 #ifdef NETWORK
@@ -294,6 +346,8 @@ static void escort_route_clear_goal(void)
 	Escort_route_goal.objective_side = -1;
 	Escort_route_goal.objective_wall = -1;
 	Escort_route_goal.objective_trigger = -1;
+	Escort_route_goal.objective_object = -1;
+	Escort_route_goal.objective_key_index = -1;
 	Escort_route_goal.guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
 	Escort_route_goal.guidance_seg = -1;
 	Escort_route_goal.guidance_side = -1;
@@ -616,6 +670,51 @@ unsigned int escort_get_route_boss_move_invalidation_count(void)
 	return Escort_route_boss_move_invalidation_count;
 }
 
+unsigned int escort_get_route_wall_generation(void)
+{
+	return Escort_route_wall_generation;
+}
+
+unsigned int escort_get_route_trigger_generation(void)
+{
+	return Escort_route_trigger_generation;
+}
+
+unsigned int escort_get_route_object_generation(void)
+{
+	return Escort_route_object_generation;
+}
+
+unsigned int escort_get_route_reactor_generation(void)
+{
+	return Escort_route_reactor_generation;
+}
+
+unsigned int escort_get_route_automap_generation(void)
+{
+	return Escort_route_automap_generation;
+}
+
+unsigned int escort_get_route_pending_event_mask(void)
+{
+	return Escort_route_pending_event_mask;
+}
+
+unsigned int escort_get_route_event_notification_count(void)
+{
+	return Escort_route_event_notification_count;
+}
+
+unsigned int escort_get_route_event_coalesced_rescan_count(void)
+{
+	return Escort_route_event_coalesced_rescan_count;
+}
+
+unsigned int escort_get_route_ignored_nonowner_event_count(void)
+{
+	return Escort_route_ignored_nonowner_event_count;
+}
+
 unsigned int escort_get_route_selector_compare_count(void)
 {
 	return Escort_route_selector_compare_count;
@@ -688,6 +787,13 @@ int escort_get_unexplored_waypoint_seg(void)
 int escort_get_unexplored_direct_reachable(void)
 {
 	return Escort_unexplored_route_target.active ? Escort_unexplored_route_target.direct_reachable : 0;
+}
+
+int escort_get_unexplored_target_visited(void)
+{
+	return Escort_unexplored_route_target.active &&
+	       escort_valid_segment(Escort_unexplored_route_target.target_seg) &&
+	       Automap_visited[Escort_unexplored_route_target.target_seg];
 }
 
 const char *escort_get_route_goal_label(void)
@@ -854,6 +960,78 @@ static int escort_route_key_powerup_id(int key_index)
 		default:
 			return -1;
 	}
+}
+
+void escort_route_notify_wall_changed(int wall_num)
+{
+	int matches_objective = Escort_route_goal.active && wall_num >= 0 &&
+	                        (wall_num == Escort_route_goal.objective_wall ||
+	                         wall_num == Escort_route_goal.target_wall);
+	escort_route_record_event(
+	    ESCORT_ROUTE_EVENT_WALL,
+	    &Escort_route_wall_generation,
+	    matches_objective);
+}
+
+void escort_route_notify_trigger_changed(int trigger_num)
+{
+	int matches_objective = Escort_route_goal.active && trigger_num >= 0 &&
+	                        (trigger_num == Escort_route_goal.objective_trigger ||
+	                         trigger_num == Escort_route_goal.trigger_num);
+	escort_route_record_event(
+	    ESCORT_ROUTE_EVENT_TRIGGER,
+	    &Escort_route_trigger_generation,
+	    matches_objective);
+}
+
+void escort_route_notify_object_changed(int objnum)
+{
+	int matches_objective = 0;
+
+	if (Escort_route_goal.active && objnum >= 0 && objnum <= Highest_object_index) {
+		object *objp = &Objects[objnum];
+		if (objnum == Escort_route_goal.objective_object)
+			matches_objective = 1;
+		else if (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_KEY) {
+			int powerup_id = escort_route_key_powerup_id(
+			    Escort_route_goal.objective_key_index);
+			matches_objective = powerup_id >= 0 &&
+			                    ((objp->type == OBJ_POWERUP && objp->id == powerup_id) ||
+			                     (objp->type == OBJ_ROBOT &&
+			                      objp->contains_type == OBJ_POWERUP &&
+			                      objp->contains_id == powerup_id &&
+			                      objp->contains_count > 0));
+		} else if (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_BOSS)
+			matches_objective = objp->type == OBJ_ROBOT &&
+			                    Robot_info[objp->id].boss_flag;
+		else if (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR)
+			matches_objective = objp->type == OBJ_CNTRLCEN;
+	}
+	escort_route_record_event(
+	    ESCORT_ROUTE_EVENT_OBJECT,
+	    &Escort_route_object_generation,
+	    matches_objective);
+}
+
+void escort_route_notify_reactor_changed(void)
+{
+	int matches_objective = Escort_route_goal.active &&
+	                        (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR ||
+	                         Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_BOSS ||
+	                         Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT);
+	escort_route_record_event(
+	    ESCORT_ROUTE_EVENT_REACTOR,
+	    &Escort_route_reactor_generation,
+	    matches_objective);
+}
+
+void escort_route_notify_automap_changed(int segnum)
+{
+	(void) segnum;
+	escort_route_record_event(
+	    ESCORT_ROUTE_EVENT_AUTOMAP,
+	    &Escort_route_automap_generation,
+	    0);
 }
 
 static int escort_route_key_goal(int key_index)
@@ -1127,6 +1305,8 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 	Escort_route_goal.objective_side = step->side;
 	Escort_route_goal.objective_wall = step->wall_num;
 	Escort_route_goal.objective_trigger = step->trigger_num;
+	Escort_route_goal.objective_object = step->key_carrier_objnum;
+	Escort_route_goal.objective_key_index = step->key_index;
 	Escort_route_goal.guidance_mode = guidance_mode;
 	Escort_route_goal.guidance_seg = target_seg;
 	Escort_route_goal.guidance_side = target_side;
@@ -1201,6 +1381,7 @@ static int escort_route_legacy_next_goal_for_key_flags(int key_flags, int set_go
 				}
 				break;
 			case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
 			case LEVEL_METADATA_ROUTE_REACTOR:
 			case LEVEL_METADATA_ROUTE_BOSS:
 			case LEVEL_METADATA_ROUTE_EXIT:
@@ -1237,6 +1418,12 @@ static int escort_route_shared_next_goal(int set_goal, int *selected_index)
 
 	if (selected_index)
 		*selected_index = -1;
+	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
+	    !Escort_unexplored_route_target.active) {
+		if (set_goal)
+			escort_route_clear_goal();
+		return ESCORT_GOAL_UNSPECIFIED;
+	}
 	if (!metadata || !level_metadata_get_live_route_plan_summary(&summary)) {
 		if (set_goal)
 			escort_route_clear_goal();
@@ -1326,6 +1513,7 @@ static void escort_route_refresh_metadata(void)
 	if (!Escort_route_metadata_dirty)
 		return;
 	Escort_route_metadata_dirty = 0;
+	Escort_route_pending_event_mask = 0;
 	Escort_route_metadata_rescan_count++;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    escort_is_companion_object(Buddy_objnum)) {
@@ -1389,14 +1577,29 @@ void escort_route_monitor_completion(void)
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
 		return;
 #endif
-	if (!Escort_route_goal.active ||
-	    Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED ||
-	    Escort_route_goal.objective_kind < 0)
+	if (!Escort_route_goal.active || Escort_route_goal.objective_kind < 0)
+		return;
+	if (!escort_route_has_local_authority())
 		return;
 	if (GameTime64 >= Escort_route_completion_check_time &&
 	    GameTime64 - Escort_route_completion_check_time < F1_0 / 4)
 		return;
 	Escort_route_completion_check_time = GameTime64;
+	if (Escort_route_pending_event_mask) {
+		unsigned int pending_events = Escort_route_pending_event_mask;
+		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+		escort_route_clear_goal();
+		escort_route_note_replan(
+		    pending_events == ESCORT_ROUTE_EVENT_AUTOMAP ?
+		        "automap_exploration" :
+		        "world_state_event");
+		escort_route_refresh_metadata();
+		Escort_route_event_coalesced_rescan_count++;
+		escort_route_next_goal(escort_owned_key_flags());
+		return;
+	}
+	if (Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED)
+		return;
 	metadata = level_metadata_get_live_route_state();
 	if (!metadata || !level_metadata_get_live_route_plan_summary(&summary))
 		return;
@@ -1736,6 +1939,15 @@ void init_buddy_for_level(void)
 	Escort_route_guidance_full_search_count = 0;
 	Escort_route_ignored_nonowner_key_change_count = 0;
 	Escort_route_boss_move_invalidation_count = 0;
+	Escort_route_wall_generation = 0;
+	Escort_route_trigger_generation = 0;
+	Escort_route_object_generation = 0;
+	Escort_route_reactor_generation = 0;
+	Escort_route_automap_generation = 0;
+	Escort_route_pending_event_mask = 0;
+	Escort_route_event_notification_count = 0;
+	Escort_route_event_coalesced_rescan_count = 0;
+	Escort_route_ignored_nonowner_event_count = 0;
 	Escort_route_selector_compare_count = 0;
 	Escort_route_selector_mismatch_count = 0;
 	Escort_route_selector_shared_index = -1;

@@ -77,3 +77,17 @@ int escort_owner_key_change_relevant(int changed_player, int effective_owner)
 {
 	return changed_player >= 0 && changed_player == effective_owner;
 }
+
+int escort_route_event_should_dirty(
+    int local_authority,
+    int route_active,
+    int unexplored_mode,
+    unsigned int event_mask,
+    int matches_objective)
+{
+	if (!local_authority || !route_active)
+		return 0;
+	if (event_mask == ESCORT_ROUTE_EVENT_AUTOMAP)
+		return unexplored_mode;
+	return matches_objective;
+}

@@ -75,6 +75,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_debug_logging.h"
 #include "input_demo_rng_trace.h"
 #include "interp.h"
+#ifdef __ANDROID__
+#include "escort.h"
+#endif
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -1626,6 +1629,9 @@ void obj_delete(int objnum)
 	Assert(obj != ConsoleObject);
 
 	input_demo_log_robot_lifecycle_delete(objnum, obj);
+#ifdef __ANDROID__
+	escort_route_notify_object_changed(objnum);
+#endif
 
 	if (obj->type==OBJ_WEAPON && obj->id==GUIDEDMISS_ID && obj->ctype.laser_info.parent_type==OBJ_PLAYER)
 	{

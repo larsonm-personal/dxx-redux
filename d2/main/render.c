@@ -66,6 +66,7 @@ int g_replay_robot_labels_enabled = 0;
 
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
+#include "escort.h"
 #include "merged_wall_debug.h"
 #endif
 #include "args.h"
@@ -1042,12 +1043,19 @@ void render_segment(int segnum, int window_num)
 
 	if (! cc.uand) {		//all off screen?
 
-      if (Viewer->type!=OBJ_ROBOT
+		if (Viewer->type!=OBJ_ROBOT
 #if defined(ANDROID) || defined(__ANDROID__)
-		  && !Android_visual_only_render_pass
+		    && !Android_visual_only_render_pass
 #endif
-		  )
-  	   	Automap_visited[segnum]=1;
+		    )
+		{
+			if (!Automap_visited[segnum]) {
+#ifdef ANDROID
+				escort_route_notify_automap_changed(segnum);
+#endif
+			}
+			Automap_visited[segnum]=1;
+		}
 
 		for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)
 			render_side(seg, sn);
@@ -2434,7 +2442,14 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 					  && !Android_visual_only_render_pass
 #endif
 					  )
-					Automap_visited[segnum]=1;
+					{
+						if (!Automap_visited[segnum]) {
+#ifdef ANDROID
+							escort_route_notify_automap_changed(segnum);
+#endif
+						}
+						Automap_visited[segnum]=1;
+					}
 
 					for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)
 						if (WALL_IS_DOORWAY(seg,sn) == WID_TRANSPARENT_WALL || WALL_IS_DOORWAY(seg,sn) == WID_TRANSILLUSORY_WALL ||
@@ -2549,7 +2564,14 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 					  && !Android_visual_only_render_pass
 #endif
 					  )
-					Automap_visited[segnum]=1;
+					{
+						if (!Automap_visited[segnum]) {
+#ifdef ANDROID
+							escort_route_notify_automap_changed(segnum);
+#endif
+						}
+						Automap_visited[segnum]=1;
+					}
 
 					for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)
 						if (WALL_IS_DOORWAY(seg,sn) == WID_TRANSPARENT_WALL || WALL_IS_DOORWAY(seg,sn) == WID_TRANSILLUSORY_WALL ||

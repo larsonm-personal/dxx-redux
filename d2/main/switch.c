@@ -46,6 +46,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
+#ifdef __ANDROID__
+#include "escort.h"
+#endif
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -609,6 +612,10 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 			Int3();
 			break;
 	}
+
+#ifdef __ANDROID__
+	escort_route_notify_trigger_changed(trigger_num);
+#endif
 
 	return 0;
 }

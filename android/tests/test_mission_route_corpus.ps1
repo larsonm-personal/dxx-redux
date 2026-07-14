@@ -30,7 +30,7 @@ function ConvertTo-RouteStepProjection {
             }
         }
     )
-    return [ordered]@{
+    $projection = [ordered]@{
         index = $Step.index
         kind = $Step.kind
         activation_kind = $Step.activation_kind
@@ -40,12 +40,15 @@ function ConvertTo-RouteStepProjection {
         wall = $Step.wall
         distance = ConvertTo-RoundedRouteDistance -Value $Step.distance
         key = $Step.key
-        key_carrier_objnum = $Step.key_carrier_objnum
         trigger = $Step.trigger
         trigger_type_id = $Step.trigger_type_id
         trigger_type = $Step.trigger_type
         opens = $opens
     }
+    if ($null -ne $Step.key_carrier_objnum) {
+        $projection.key_carrier_objnum = $Step.key_carrier_objnum
+    }
+    return $projection
 }
 
 function Get-Sha256Text {
