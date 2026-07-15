@@ -113,6 +113,7 @@ static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
 	player_cfg->cycle_autoselect_only = 1;
 	player_cfg->select_after_fire = 0;
 	player_cfg->classic_autoselect_weapon = 1;
+	player_cfg->original_homing = 1;
 	player_cfg->primary_order_count = (uint8_t) (sizeof(primary_order) / sizeof(primary_order[0]));
 	player_cfg->secondary_order_count = (uint8_t) (sizeof(secondary_order) / sizeof(secondary_order[0]));
 	for (i = 0; i != sizeof(primary_order) / sizeof(primary_order[0]); ++i)
@@ -179,7 +180,8 @@ static int expect_test_player_cfg(const input_demo_player_cfg *player_cfg)
 		return report_failure("replay player_cfg output missing");
 	if (player_cfg->auto_leveling != 1 || player_cfg->persistent_debris != 1 ||
 	    player_cfg->no_fire_autoselect != 1 || player_cfg->cycle_autoselect_only != 1 ||
-	    player_cfg->select_after_fire != 0 || player_cfg->classic_autoselect_weapon != 1)
+	    player_cfg->select_after_fire != 0 || player_cfg->classic_autoselect_weapon != 1 ||
+	    player_cfg->original_homing != 1)
 		return report_failure("replay player_cfg scalar mismatch");
 #if defined(INPUT_DEMO_TEST_D2)
 	if (!player_cfg->has_headlight_active_default || player_cfg->headlight_active_default != 0 ||

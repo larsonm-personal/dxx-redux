@@ -325,6 +325,7 @@ static void input_demo_fill_recorder_player_cfg(input_demo_recorder_settings *se
 	settings->player_cfg.cycle_autoselect_only = PlayerCfg.CycleAutoselectOnly;
 	settings->player_cfg.select_after_fire = PlayerCfg.SelectAfterFire;
 	settings->player_cfg.classic_autoselect_weapon = PlayerCfg.ClassicAutoselectWeapon;
+	settings->player_cfg.original_homing = PlayerCfg.OriginalHoming;
 	settings->player_cfg.primary_order_count =
 	    input_demo_primary_order_count();
 	settings->player_cfg.secondary_order_count = MAX_SECONDARY_WEAPONS + 1;

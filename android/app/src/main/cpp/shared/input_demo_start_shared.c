@@ -152,10 +152,16 @@ static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *play
 	PlayerCfg.CycleAutoselectOnly = player_cfg->cycle_autoselect_only;
 	PlayerCfg.SelectAfterFire = player_cfg->select_after_fire;
 	PlayerCfg.ClassicAutoselectWeapon = player_cfg->classic_autoselect_weapon;
+	PlayerCfg.OriginalHoming = player_cfg->original_homing;
 	memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order,
 	       input_demo_primary_order_copy_count());
 	memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order,
 	       MAX_SECONDARY_WEAPONS + 1);
+}
+
+static void input_demo_apply_legacy_replay_homing_default(void)
+{
+	PlayerCfg.OriginalHoming = 0;
 }
 
 void input_demo_set_skip_level_intro(int skip)
@@ -474,6 +480,8 @@ static int input_demo_start_replay_new_level(
 	Difficulty_level = input_demo_replay_difficulty();
 	if (have_replay_player_cfg)
 		input_demo_apply_replay_player_cfg(replay_player_cfg);
+	else
+		input_demo_apply_legacy_replay_homing_default();
 	printf("Input demo replay starting: %s level %d, %u frames\n",
 	       replay_context->mission_name, input_demo_replay_level(),
 	       input_demo_replay_frame_count());
@@ -553,6 +561,8 @@ int input_demo_start_loaded_replay_common(void)
 		                           d1_checkpoint.difficulty_max);
 		if (have_replay_player_cfg)
 			input_demo_apply_replay_player_cfg(replay_player_cfg);
+		else
+			input_demo_apply_legacy_replay_homing_default();
 		printf("Input demo replay starting: %s level %d, %u frames\n",
 		       d1_mission_name, d1_checkpoint.current_level,
 		       input_demo_replay_frame_count());
@@ -575,6 +585,7 @@ int input_demo_start_loaded_replay_common(void)
 		return 0;
 	}
 #endif
+	PlayerCfg.OriginalHoming = have_replay_player_cfg ? replay_player_cfg->original_homing : 0;
 	if (!input_demo_restore_replay_checkpoint_data(checkpoint_name,
 	                                               checkpoint_data, checkpoint_size))
 		return 1;
@@ -628,8 +639,11 @@ static void input_demo_capture_restored_player_diag(
 	}
 	if (have_replay_player_cfg)
 		input_demo_apply_replay_player_cfg(replay_player_cfg);
-	else if (diag->replay_auto_level >= 0)
-		PlayerCfg.AutoLeveling = diag->replay_auto_level;
+	else {
+		if (diag->replay_auto_level >= 0)
+			PlayerCfg.AutoLeveling = diag->replay_auto_level;
+		input_demo_apply_legacy_replay_homing_default();
+	}
 	diag->primary_order_hash = input_demo_replay_hash_u8_sequence(
 	    PlayerCfg.PrimaryOrder, input_demo_primary_order_copy_count());
 	diag->secondary_order_hash = input_demo_replay_hash_u8_sequence(

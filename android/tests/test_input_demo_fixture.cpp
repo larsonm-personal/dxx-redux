@@ -308,6 +308,25 @@ static int expect_demo_file_output(void)
 	return 0;
 }
 
+static int expect_legacy_player_cfg_defaults_to_redux_homing(void)
+{
+	input_demo_metadata metadata;
+	std::string error;
+	std::string header =
+		std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
+		"\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1,\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,";
+#if defined(INPUT_DEMO_TEST_D2)
+	header += "\"primary_order\":[9,8,7,6,5,4,3,2,1,0,255],\"secondary_order\":[9,8,4,3,1,5,0,255,7,6,2]}}";
+#else
+	header += "\"primary_order\":[4,3,2,1,0,255,16],\"secondary_order\":[4,3,1,0,255,2]}}";
+#endif
+	if (!input_demo_metadata_parse_header_line(header, &metadata, &error))
+		return report_failure_string(std::string("legacy player_cfg parse failed: ") + error);
+	if (!metadata.has_player_cfg || metadata.player_cfg.original_homing != 0)
+		return report_failure("legacy player_cfg did not default to Redux homing");
+	return 0;
+}
+
 static int expect_checkpoint_demo_file_output(void)
 {
 	const char *path = "test_input_demo_checkpoint_fixture.dximdemo";
@@ -445,6 +464,8 @@ int main(void)
 	if (expect_rng_file_round_trip())
 		return 1;
 	if (expect_demo_file_output())
+		return 1;
+	if (expect_legacy_player_cfg_defaults_to_redux_homing())
 		return 1;
 	if (expect_checkpoint_demo_file_output())
 		return 1;

@@ -130,6 +130,7 @@ static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
 	player_cfg->cycle_autoselect_only = 1;
 	player_cfg->select_after_fire = 0;
 	player_cfg->classic_autoselect_weapon = 1;
+	player_cfg->original_homing = 1;
 	player_cfg->primary_order_count = (uint8_t) (sizeof(primary_order) / sizeof(primary_order[0]));
 	player_cfg->secondary_order_count = (uint8_t) (sizeof(secondary_order) / sizeof(secondary_order[0]));
 	for (i = 0; i != sizeof(primary_order) / sizeof(primary_order[0]); ++i)
@@ -141,9 +142,9 @@ static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
 static std::string input_demo_test_player_cfg_header_json(void)
 {
 #if defined(INPUT_DEMO_TEST_D2)
-	return ",\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"headlight_active_default\":0,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"primary_order\":[9,8,7,6,5,4,3,2,1,0,255],\"secondary_order\":[9,8,4,3,1,5,0,255,7,6,2]}";
+	return ",\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"headlight_active_default\":0,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"original_homing\":1,\"primary_order\":[9,8,7,6,5,4,3,2,1,0,255],\"secondary_order\":[9,8,4,3,1,5,0,255,7,6,2]}";
 #else
-	return ",\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"primary_order\":[4,3,2,1,0,255,16],\"secondary_order\":[4,3,1,0,255,2]}";
+	return ",\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"original_homing\":1,\"primary_order\":[4,3,2,1,0,255,16],\"secondary_order\":[4,3,1,0,255,2]}";
 #endif
 }
 
