@@ -1,15 +1,16 @@
 # Original Homing Behavior Research and Restoration Plan
 
 Date: 2026-07-14
-Status: Complete
+Status: Follow-up required
 
 ## DescentBB Evidence Follow-up
 
-- [ ] Read the linked DescentBB thread and enumerate its concrete homing-missile claims
-- [ ] Follow cited posts, patches, commits, source releases, and named contributors where available
-- [ ] Compare the claims with retail D1/D2 source and Redux git history
-- [ ] Correct or extend the findings, implementation, and BLUF if the evidence changes them
-- [ ] Record sources, unresolved claims, and verification results in this plan
+- [x] Read the linked DescentBB thread and enumerate its concrete homing-missile claims
+- [x] Follow cited posts, patches, commits, source releases, and named contributors where available
+- [x] Compare the claims with retail D1/D2 source and Redux git history
+- [x] Correct or extend the findings and BLUF interpretation where the evidence changes them
+- [x] Record sources and unresolved claims in this plan
+- [ ] Restore retail smart-child target repetition in Original mode without changing the Redux RNG path
 
 ## Objective
 
@@ -95,7 +96,47 @@ The current D2 code applies the D1 frame-scaling formula to D2's `7/8` base. At 
 
 The earlier 16.262 and 11.480 degree figures incorrectly evaluated the middle branch of the D1 piecewise formula. A 25 Hz frame time is below the `1/16` cutoff, so the first branch applies. The focused test contained the same incorrect expected values and used standard C `assert`, which was disabled by the RelWithDebInfo test build.
 
-Git history provides no evidence that these changes were intentional PvP balance nerfs. Commit `a9ee22e7` replaced D2's retention calculation with the D1 formula under the code comment `Something's busted with the D2 code. Here's D1`, and changed D2's forced valid-target rescan to D1-style keep-current-target behavior while calling it a reversion to original release code. This suggests a mistaken compatibility or bug-fix rationale rather than deliberate weakening. Commit `f8ac5033` later moved scan phasing from object index to time since missile creation explicitly to make tracking more consistent between players. No commit message justifies leaving orientation scaled by render `FrameTime` after guidance became separately scheduled, so that appears to be an implementation omission. Likewise, the later D1-in-D2 work added D1 orientation and lifetime rules but left D2's compile-time cone constants in place, with no stated balance rationale. The quick-normalization transition documented by `592388ab` and `b6120b02` is not a retail nerf because the retail code also used quick normalization.
+History distinguishes older intentional Rebirth balance changes from the present 14.4-degree Redux retention cone. Commit `a9ee22e7` replaced D2 retention with the D1 formula and the D1 `3/4` base under the code comment `Something's busted with the D2 code. Here's D1`. That produced a 20.4-degree cone at 25 Hz, not the current 14.4-degree cone. Commit `5fee7673` later parameterized the update rate and silently fed D2's `7/8` base into that D1 formula, which produced today's 14.4-degree result. Its message only describes adding the D2 Homing Update Rate option, so the final narrowing appears to be a 2023 parameterization regression rather than an intentional PvP change. Commit `a9ee22e7` also changed D2's forced valid-target rescan to D1-style keep-current-target behavior while calling it a reversion to original release code. Commit `f8ac5033` later moved scan phasing from object index to time since missile creation explicitly to make tracking more consistent between players. No commit message justifies leaving orientation scaled by render `FrameTime` after guidance became separately scheduled, so that appears to be an implementation omission. Likewise, the later D1-in-D2 work added D1 orientation and lifetime rules but left D2's compile-time cone constants in place, with no stated balance rationale. The quick-normalization transition documented by `592388ab` and `b6120b02` is not a retail nerf because the retail code also used quick normalization.
+
+### DescentBB thread follow-up
+
+The 2016 thread reports that D2 homers did not turn sharply, rarely reacquired, and appeared unable to acquire targets much beyond 45 degrees. It links those observations to Drakona's work on frame-dependent retail trajectories and raises the possibility that the behavior was deliberate. Retail source resolves the angle claim: initial acquisition is limited to 41.4 degrees in D1 and 29.0 degrees in D2, so initial lock beyond 45 degrees was not retail behavior. Around-corner D1 shots can still work when the target begins within the wider D1 cone or when later geometry permits reacquisition.
+
+The thread nevertheless points to real historical changes:
+
+| Date | Change | Interpretation |
+| --- | --- | --- |
+| 2008 | Rebirth reduced homer turn rate after player feedback | Explicit balance change intended to make homers easier to dodge |
+| 2011 | Rebirth reduced aggressiveness on Hotshot and above | Explicit survival and dodgeability tuning |
+| 2012 | Rebirth prevented consecutive smart children from selecting the same target | Explicitly spread smart children and made homing projectiles easier to dodge |
+| 2013 | Rebirth mixed D1 tracking rules into D2, then widened acquisition after tester feedback and partly to counter the afterburner | The afterburner rationale supported stronger homing, not a nerf |
+| May to October 2016 | Rebirth restored D2's acquisition constant, D1/D2-specific tracking, forced D2 rescans, lifetime rules, and frame scaling | Independent confirmation that the earlier mixed implementation was historically inaccurate |
+| 2014 | Retro adopted fixed D1/D2 homing ticks and used D1 retention rules in D2 | Removed retail D2 retention and rescan semantics; D2 retention was about 20.4 degrees at 25 Hz |
+| 2023 | Redux passed D2's `7/8` base through the retained D1 formula while adding the update-rate option | Narrowed retention from about 20.4 to 14.4 degrees without a stated balance rationale |
+
+The thread's afterburner speculation is therefore only partly right. Rebirth history explicitly mentions the D2 afterburner when justifying a temporary wider acquisition cone in 2013. It does not explain the weaker current cone. Some older Rebirth steering and smart-child changes were deliberate balance nerfs, but the strongest current D2 cone nerf came from the later formula and parameter mismatch.
+
+The DXX-Retro issue cited by this research also explains the delayed or inconsistent reacquisition observation. Retail distributes broad scans across missiles with `(object_index ^ FrameCount) % 4`, so a missile can wait up to 160 ms in D1 or 133 ms in D2 before its next scan. Drakona characterized that per-missile delay as intentional retail tactical behavior; the networking problem was that object identities and clocks could disagree between clients. Redux commit `f8ac5033` changed the phase to time since missile creation for cross-client consistency. Original mode correctly restores the retail phase while Redux keeps the network-consistent phase.
+
+One related retail difference remains outside the current Original mode. Retail independently chooses a target for every smart child and permits consecutive children to select the same object. Rebirth commit `1475ecc` added a reroll to avoid consecutive repeats, explicitly to distribute targets and make the projectiles easier to dodge, and current D1/D2 Redux still contains that reroll. Restoring the retail distribution should be a small Original-mode gate around the reroll, but it affects RNG consumption and therefore needs matching D1/D2 deterministic tests. Legacy demos should continue to default to Redux, while newly recorded Original-mode demos already preserve the setting.
+
+Sources:
+
+- [DescentBB discussion](https://www.descentbb.net/viewtopic.php?t=22701)
+- [DXX-Retro issue 80](https://github.com/CDarrow/DXX-Retro/issues/80)
+- [Retro 1.2.6 fixed-tick and D1-in-D2 tracking change](https://github.com/dxx-redux/dxx-redux/commit/a9ee22e77e10ad7d271ea3a6e9f5a39cee59e799)
+- [D2 Homing Update Rate parameterization](https://github.com/dxx-redux/dxx-redux/commit/5fee7673f89a3a1189c4ce5813b70f9beba6b53d)
+- [Network-consistent scan phasing](https://github.com/dxx-redux/dxx-redux/commit/f8ac5033e9bc959ffa47c747fe5fbee425feb3b6)
+- [2008 Rebirth turn-rate balance change](https://github.com/dxx-rebirth/dxx-rebirth/commit/96f1a961f616428a5db39c7a2a9ba806362b9a06)
+- [2011 Rebirth difficulty balance change](https://github.com/dxx-rebirth/dxx-rebirth/commit/ea16967383e8c2eeb0221878e24042a055b6c16d)
+- [2012 Rebirth smart-child distribution change](https://github.com/dxx-rebirth/dxx-rebirth/commit/1475eccac4ae9f735b60b62ed471305a1f95a6e1)
+- [2013 Rebirth D1 tracking merge into D2](https://github.com/dxx-rebirth/dxx-rebirth/commit/2b632008b2ecc242ef8380e99a757c61bb1ffb19)
+- [2013 Rebirth D2 acquisition widening](https://github.com/dxx-rebirth/dxx-rebirth/commit/27a4a62b19fe29e7819fc4c4e11548b4ce26d89f)
+- [2013 tester-requested shared acquisition constant](https://github.com/dxx-rebirth/dxx-rebirth/commit/f2cdd906a66efd7c1795493938f953038aa0e27d)
+- [2016 Rebirth D2 acquisition restoration](https://github.com/dxx-rebirth/dxx-rebirth/commit/64400ff284bd4bece33ee2c78b9ff2a22ccdec20)
+- [2016 Rebirth D1/D2 tracking restoration](https://github.com/dxx-rebirth/dxx-rebirth/commit/dad3e953e9731a8d87f128f651751e996dddb45a)
+- [2016 Rebirth D2 rescan restoration](https://github.com/dxx-rebirth/dxx-rebirth/commit/89a2df0e1884d48293dc288360800a7f61520d08)
+- [2016 Rebirth D1/D2 retention scaling restoration](https://github.com/dxx-rebirth/dxx-rebirth/commit/407805be429fe7d3caeee4ba9b3246cfee951304)
 
 Retail D2's piecewise formula is:
 
@@ -169,3 +210,5 @@ The default is off. The gameplay checkbox is `Original homing (Single/Coop)`, an
 ## Remaining Limitation
 
 There is no isolated automated flight-trajectory harness in the engine, so verification covers the formulas, policy gating, all native suites, and all production build targets rather than pixel-for-pixel missile paths. A manual gameplay comparison against DOS at a controlled 25 FPS would still be useful for subjective confirmation, especially for smart children and tight-corner reacquisition.
+
+Original mode also does not yet restore retail smart-child target repetition. Current Redux deliberately prevents consecutive smart children from selecting the same target. Any restoration must preserve Redux's existing RNG path and cover both D1 and D2 with deterministic target-selection tests.
