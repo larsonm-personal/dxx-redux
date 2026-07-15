@@ -48,9 +48,9 @@ struct android_ogl_texture_filter_state {
 };
 
 typedef int (*android_ogl_loadtexture_fn)(unsigned char *data, int dxo, int dyo,
-                                         ogl_texture *tex, int bm_flags,
-                                         int data_format, int texfilt,
-                                         const char *bitmapname);
+                                          ogl_texture *tex, int bm_flags,
+                                          int data_format, int texfilt,
+                                          const char *bitmapname);
 
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle);

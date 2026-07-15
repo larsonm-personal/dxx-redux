@@ -12,7 +12,7 @@ typedef struct coop_player_kill_stats {
 } coop_player_kill_stats;
 
 extern coop_player_kill_stats Coop_kill_stats[MAX_PLAYERS];
-extern int Coop_total_robot_score;  // sum of score_value for all robots at level start
+extern int Coop_total_robot_score; // sum of score_value for all robots at level start
 
 // Call when a robot is killed: pnum = player who got the kill
 void coop_record_robot_kill(int pnum, int score_value);

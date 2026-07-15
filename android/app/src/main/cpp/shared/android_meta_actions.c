@@ -44,12 +44,12 @@ volatile int android_rewind_pending = 0;
 extern int HandleSystemKey(int key);
 
 #ifdef DXX_BUILD_DESCENT_II
-#define ANDROID_GAME_LABEL          "D2"
-#define ANDROID_STATE_SAVE_MENU()   state_save_all(0, NULL, 0)
+#define ANDROID_GAME_LABEL           "D2"
+#define ANDROID_STATE_SAVE_MENU()    state_save_all(0, NULL, 0)
 #define ANDROID_STATE_RESTORE_MENU() state_restore_all(1, 0, NULL)
 #else
-#define ANDROID_GAME_LABEL          "D1"
-#define ANDROID_STATE_SAVE_MENU()   state_save_all(0)
+#define ANDROID_GAME_LABEL           "D1"
+#define ANDROID_STATE_SAVE_MENU()    state_save_all(0)
 #define ANDROID_STATE_RESTORE_MENU() state_restore_all(1)
 #endif
 
@@ -217,8 +217,7 @@ int android_handle_ingame_saveload_request(void)
 {
 	if (g_android_autosave_request_kind) {
 		int request_kind = g_android_autosave_request_kind;
-		int slotnum = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ?
-			ANDROID_SAVE_META_SLOT_AUTO_EXIT : ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE;
+		int slotnum = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? ANDROID_SAVE_META_SLOT_AUTO_EXIT : ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE;
 		const char *desc = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? "AUTO EXIT" : "AUTO SAVE";
 		int saved = 0;
 

@@ -3,10 +3,10 @@
 #include "gamefont.h"
 #include "gr.h"
 
-#define FONTSCALE_X(x) ((float)(x) * FNTScaleX)
-#define FONTSCALE_Y(x) ((float)(x) * FNTScaleY)
+#define FONTSCALE_X(x)   ((float) (x) * FNTScaleX)
+#define FONTSCALE_Y(x)   ((float) (x) * FNTScaleY)
 #define BITS_TO_BYTES(x) (((x) + 7) >> 3)
-#define INFONT(c) ((c) >= 0 && (c) <= grd_curcanv->cv_font->ft_maxchar - grd_curcanv->cv_font->ft_minchar)
+#define INFONT(c)        ((c) >= 0 && (c) <= grd_curcanv->cv_font->ft_maxchar - grd_curcanv->cv_font->ft_minchar)
 
 void get_char_width(ubyte c, ubyte c2, int *width, int *spacing);
 int get_centered_x(const char *s);
@@ -18,13 +18,12 @@ int android_font_scale_active(void)
 }
 
 static void android_render_scaled_font_char(int x, int y, unsigned char *fp,
-	int raw_width, int draw_width, int draw_height, int underline, int masked)
+                                            int raw_width, int draw_width, int draw_height, int underline, int masked)
 {
 	grs_bitmap raw_bm, scaled_bm, *draw_bm;
 	int r, i, bits_per_row;
 	unsigned char fg = (unsigned char) grd_curcanv->cv_font_fg_color;
-	unsigned char bg = masked ? TRANSPARENCY_COLOR :
-	                   (unsigned char) grd_curcanv->cv_font_bg_color;
+	unsigned char bg = masked ? TRANSPARENCY_COLOR : (unsigned char) grd_curcanv->cv_font_bg_color;
 
 	if (raw_width < 1 || grd_curcanv->cv_font->ft_h < 1 ||
 	    draw_width < 1 || draw_height < 1)
@@ -35,13 +34,13 @@ static void android_render_scaled_font_char(int x, int y, unsigned char *fp,
 	                     grd_curcanv->cv_font->ft_h, raw_width);
 	for (r = 0; r < grd_curcanv->cv_font->ft_h; r++) {
 		int underline_row = underline &&
-			(r == grd_curcanv->cv_font->ft_baseline + 2 ||
-			 r == grd_curcanv->cv_font->ft_baseline + 3);
+		                    (r == grd_curcanv->cv_font->ft_baseline + 2 ||
+		                     r == grd_curcanv->cv_font->ft_baseline + 3);
 		for (i = 0; i < raw_width; i++) {
 			int bit = fp[r * bits_per_row + (i >> 3)] &
 			          (0x80 >> (i & 7));
 			raw_bm.bm_data[r * raw_width + i] =
-				(bit || underline_row) ? fg : bg;
+			    (bit || underline_row) ? fg : bg;
 		}
 	}
 
@@ -120,11 +119,8 @@ int android_internal_string_scaled_linear(int x, int y, const char *s, int maske
 				continue;
 			}
 
-			raw_width = (grd_curcanv->cv_font->ft_flags & FT_PROPORTIONAL) ?
-				grd_curcanv->cv_font->ft_widths[letter] :
-				grd_curcanv->cv_font->ft_w;
-			draw_width = (grd_curcanv->cv_font->ft_flags & FT_PROPORTIONAL) ?
-				scaled_width : FONTSCALE_X(raw_width);
+			raw_width = (grd_curcanv->cv_font->ft_flags & FT_PROPORTIONAL) ? grd_curcanv->cv_font->ft_widths[letter] : grd_curcanv->cv_font->ft_w;
+			draw_width = (grd_curcanv->cv_font->ft_flags & FT_PROPORTIONAL) ? scaled_width : FONTSCALE_X(raw_width);
 			draw_height = FONTSCALE_Y(grd_curcanv->cv_font->ft_h);
 			if (draw_width < 1)
 				draw_width = 1;
@@ -137,8 +133,8 @@ int android_internal_string_scaled_linear(int x, int y, const char *s, int maske
 				fp = grd_curcanv->cv_font->ft_chars[letter];
 			else
 				fp = grd_curcanv->cv_font->ft_data +
-					letter * BITS_TO_BYTES(raw_width) *
-					grd_curcanv->cv_font->ft_h;
+				     letter * BITS_TO_BYTES(raw_width) *
+				         grd_curcanv->cv_font->ft_h;
 
 			android_render_scaled_font_char(xx, yy, fp, raw_width, draw_width,
 			                                draw_height, underline, masked);

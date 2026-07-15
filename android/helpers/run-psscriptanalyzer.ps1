@@ -68,7 +68,7 @@ function Get-ScopedFiles {
     return @($results | Where-Object {
             $_.FullName.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase) -and
             ($ValidExtensions -contains $_.Extension.ToLowerInvariant()) -and
-            $_.FullName -notmatch '[\\/](build|\.cxx)[\\/]'
+            $_.FullName -notmatch '[\\/](build|\.cxx|temp)[\\/]'
         } | Sort-Object FullName -Unique)
 }
 

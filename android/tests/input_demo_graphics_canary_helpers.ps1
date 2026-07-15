@@ -43,7 +43,7 @@ function Get-InputDemoGraphicsCanaryIssue {
         return "demo root not found: $DemoRoot"
     }
     $matches = @(Get-ChildItem -LiteralPath $DemoRoot -Recurse -File -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -ceq $Entry.FileName })
+            Where-Object { $_.Name -ceq $Entry.FileName })
     if ($matches.Count -ne 1) {
         return "expected exactly one $($Entry.FileName), found $($matches.Count)"
     }
@@ -63,5 +63,5 @@ function Resolve-InputDemoGraphicsCanaryPath {
     $issue = Get-InputDemoGraphicsCanaryIssue -DemoRoot $DemoRoot -Entry $Entry
     if ($issue) { throw "Input-demo graphics canary unavailable: $issue" }
     return @(Get-ChildItem -LiteralPath $DemoRoot -Recurse -File |
-        Where-Object { $_.Name -ceq $Entry.FileName })[0].FullName
+            Where-Object { $_.Name -ceq $Entry.FileName })[0].FullName
 }

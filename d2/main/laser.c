@@ -2674,6 +2674,13 @@ void release_guided_missile(int player_num)
 
 int Proximity_dropped=0,Smartmines_dropped=0;
 
+static unsigned int get_sim_rng_state_for_probe(void)
+{
+	unsigned int state = 0;
+	d_rand_get_state(&state);
+	return state;
+}
+
 //	-------------------------------------------------------------------------------------------
 //changed on 31/3/10 by kreatordxx to distinguish between drop bomb and secondary fire
 void do_missile_firing(int drop_bomb)
@@ -2705,7 +2712,7 @@ void do_missile_firing(int drop_bomb)
 			weapon,
 			drop_bomb,
 			d_rand_get_call_count(),
-			d_rand_get_state(D_RNG_SIM));
+			get_sim_rng_state_for_probe());
 	}
 
 	if (!Player_is_dead && (Players[Player_num].secondary_ammo[weapon] > 0))	{
@@ -2735,7 +2742,7 @@ void do_missile_firing(int drop_bomb)
 				weapon_index,
 				weapon_gun,
 				d_rand_get_call_count(),
-				d_rand_get_state(D_RNG_SIM));
+				get_sim_rng_state_for_probe());
 		}
 
 		Laser_player_fire( ConsoleObject, weapon_index, weapon_gun, 1, 0, orient);
@@ -2747,7 +2754,7 @@ void do_missile_firing(int drop_bomb)
 				weapon_index,
 				weapon_gun,
 				d_rand_get_call_count(),
-				d_rand_get_state(D_RNG_SIM));
+				get_sim_rng_state_for_probe());
 		}
 
 		if (weapon == PROXIMITY_INDEX) {
@@ -2784,7 +2791,7 @@ void do_missile_firing(int drop_bomb)
 					(long long)GameTime64,
 					weapon,
 					d_rand_get_call_count(),
-					d_rand_get_state(D_RNG_SIM));
+					get_sim_rng_state_for_probe());
 			}
 
 			force_vec.x = -(ConsoleObject->orient.fvec.x << 7);
@@ -2803,7 +2810,7 @@ void do_missile_firing(int drop_bomb)
 					(long long)GameTime64,
 					weapon,
 					d_rand_get_call_count(),
-					d_rand_get_state(D_RNG_SIM));
+					get_sim_rng_state_for_probe());
 			}
 		}
 

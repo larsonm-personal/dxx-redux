@@ -11,7 +11,7 @@ typedef struct coop_start_offset {
 } coop_start_offset;
 
 static int coop_start_too_close(vms_vector *pos, int assigned_count,
-	fix min_dist)
+                                fix min_dist)
 {
 	int i;
 
@@ -23,7 +23,7 @@ static int coop_start_too_close(vms_vector *pos, int assigned_count,
 }
 
 int coop_find_fanout_start(int source, int assigned_count, vms_vector *pos,
-	short *segnum)
+                           short *segnum)
 {
 	static const coop_start_offset offsets[] = {
 		{ 1, 0, 0 },
@@ -45,21 +45,21 @@ int coop_find_fanout_start(int source, int assigned_count, vms_vector *pos,
 		const fix scale = ship_radius * (scale_index ? 2 : 3);
 
 		for (offset_index = 0;
-			offset_index < (int)(sizeof(offsets) / sizeof(offsets[0]));
-			offset_index++) {
+		     offset_index < (int) (sizeof(offsets) / sizeof(offsets[0]));
+		     offset_index++) {
 			const coop_start_offset *offset = &offsets[offset_index];
 			vms_vector candidate = Player_init[source].pos;
 			int candidate_seg;
 
 			if (offset->r)
 				vm_vec_scale_add2(&candidate, &Player_init[source].orient.rvec,
-					scale * offset->r);
+				                  scale * offset->r);
 			if (offset->u)
 				vm_vec_scale_add2(&candidate, &Player_init[source].orient.uvec,
-					scale * offset->u);
+				                  scale * offset->u);
 			if (offset->f)
 				vm_vec_scale_add2(&candidate, &Player_init[source].orient.fvec,
-					scale * offset->f);
+				                  scale * offset->f);
 
 			candidate_seg = find_point_seg(&candidate, Player_init[source].segnum);
 			if (candidate_seg < 0)
@@ -68,7 +68,7 @@ int coop_find_fanout_start(int source, int assigned_count, vms_vector *pos,
 				continue;
 
 			*pos = candidate;
-			*segnum = (short)candidate_seg;
+			*segnum = (short) candidate_seg;
 			return 1;
 		}
 	}

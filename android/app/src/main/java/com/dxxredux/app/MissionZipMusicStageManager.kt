@@ -210,14 +210,17 @@ class MissionZipMusicStageManager(
         output: File,
     ): Boolean =
         when {
-            track.hogEntryName != null && track.nestedEntryPath != null ->
+            track.hogEntryName != null && track.nestedEntryPath != null -> {
                 file.inputStream().use { extractFromDxaHog(it, track.nestedEntryPath, track.hogEntryName, output) }
+            }
 
-            track.hogEntryName != null ->
+            track.hogEntryName != null -> {
                 file.inputStream().use { extractFromHog(it, track.hogEntryName, output) }
+            }
 
-            track.nestedEntryPath != null ->
+            track.nestedEntryPath != null -> {
                 file.inputStream().use { extractFromDxa(it, track.nestedEntryPath, output) }
+            }
 
             else -> {
                 file.inputStream().use { input ->
@@ -232,16 +235,21 @@ class MissionZipMusicStageManager(
         track: MissionZipMusicTrack,
     ): ByteArray? =
         when {
-            track.hogEntryName != null && track.nestedEntryPath != null ->
+            track.hogEntryName != null && track.nestedEntryPath != null -> {
                 file.inputStream().use { readFromDxaHog(it, track.nestedEntryPath, track.hogEntryName) }
+            }
 
-            track.hogEntryName != null ->
+            track.hogEntryName != null -> {
                 file.inputStream().use { readFromHog(it, track.hogEntryName) }
+            }
 
-            track.nestedEntryPath != null ->
+            track.nestedEntryPath != null -> {
                 file.inputStream().use { readFromDxa(it, track.nestedEntryPath) }
+            }
 
-            else -> file.readBytes()
+            else -> {
+                file.readBytes()
+            }
         }
 
     private fun extractFromDxa(

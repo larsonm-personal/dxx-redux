@@ -48,7 +48,7 @@ void jukebox_names_load_for_playlist(const char *playlist_path);
  * Returns NULL if no name is known. */
 const char *jukebox_names_lookup(const char *filepath);
 const char *jukebox_track_display_name(char *const *songs, int song_count,
-	int index);
+                                       int index);
 
 /* Load and look up mission zip built-in/addon music names from PhysFS. */
 void mission_music_names_load(void);

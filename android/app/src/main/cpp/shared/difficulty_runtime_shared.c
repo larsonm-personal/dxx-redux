@@ -91,7 +91,7 @@ int difficulty_change_to(int difficulty, int flags)
 
 	Difficulty_level = difficulty;
 	if (Game_mode & GM_MULTI)
-		Netgame.difficulty = (ubyte)difficulty;
+		Netgame.difficulty = (ubyte) difficulty;
 	if (!(flags & DIFFICULTY_CHANGE_FROM_REPLAY)) {
 		PlayerCfg.DefaultDifficulty = difficulty;
 		write_player_file();

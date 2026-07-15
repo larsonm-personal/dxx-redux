@@ -15,7 +15,7 @@ static int effect_clamp_frame_count(const eclip *ec, int frame_count)
 }
 
 void effect_get_loop_state(const eclip *ec, fix64 elapsed_time,
-	int *frame_count, fix *time_left)
+                           int *frame_count, fix *time_left)
 {
 	fix frame_time;
 	fix64 advances, remainder;
@@ -38,8 +38,8 @@ void effect_get_loop_state(const eclip *ec, fix64 elapsed_time,
 
 	advances = (elapsed_time - 1) / frame_time;
 	remainder = elapsed_time % frame_time;
-	*frame_count = (int)(advances % num_frames);
-	*time_left = remainder ? (fix)(frame_time - remainder) : 0;
+	*frame_count = (int) (advances % num_frames);
+	*time_left = remainder ? (fix) (frame_time - remainder) : 0;
 }
 
 void effect_apply_bitmap_state(int effect_num)
@@ -49,7 +49,7 @@ void effect_apply_bitmap_state(int effect_num)
 
 	ec = &Effects[effect_num];
 	if ((ec->changing_wall_texture == -1) &&
-		(ec->changing_object_texture == -1))
+	    (ec->changing_object_texture == -1))
 		return;
 
 	if (ec->flags & EF_CRITICAL)

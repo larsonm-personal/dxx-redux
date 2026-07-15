@@ -119,22 +119,14 @@ internal class ControllerLongPressDetector(
         val activeButton = heldButtons.singleOrNull()
         if (activeButton != null && !axisBusy && !dpadBusy) {
             val startMs = buttonStartMs[activeButton] ?: STATE_INACTIVE
-            when {
-                startMs == STATE_TRIGGERED -> {
-                    Unit
-                }
-
-                startMs == STATE_INACTIVE -> {
-                    buttonStartMs[activeButton] = nowMs
-                }
-
-                nowMs - startMs >= longPressMs -> {
-                    clearButtons()
-                    buttonStartMs[activeButton] = STATE_TRIGGERED
-                    clearAxes()
-                    clearDpadAxes()
-                    return Trigger.Button(activeButton)
-                }
+            if (startMs == STATE_INACTIVE) {
+                buttonStartMs[activeButton] = nowMs
+            } else if (startMs != STATE_TRIGGERED && nowMs - startMs >= longPressMs) {
+                clearButtons()
+                buttonStartMs[activeButton] = STATE_TRIGGERED
+                clearAxes()
+                clearDpadAxes()
+                return Trigger.Button(activeButton)
             }
         }
 

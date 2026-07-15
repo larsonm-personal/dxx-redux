@@ -94,7 +94,7 @@ object AcoustIdClient {
                         .post(body)
                         .build()
                 val response = httpClient.newCall(request).execute()
-                val responseBody = response.body?.string() ?: return null
+                val responseBody = response.body.string()
 
                 if (response.code == 429 || response.code >= 500) {
                     Log.w(TAG, "HTTP ${response.code}, backing off ${backoffMs}ms")

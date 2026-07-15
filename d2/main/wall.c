@@ -945,7 +945,7 @@ void do_door_close(int door_num)
 	w = &Walls[d->front_wallnum[0]];
 
 	//check for objects in doorway before closing
-	if (w->flags & WALL_DOOR_AUTO)
+	if (w->flags & WALL_DOOR_AUTO) {
 		if (d1_in_d2_use_d1_gameplay()) {
 			for (p=0;p<d->n_parts;p++) {
 				int Connectside, side;
@@ -973,6 +973,7 @@ void do_door_close(int door_num)
 			wall_open_door(&Segments[w->segnum],w->sidenum);		//re-open door
 			return;
 		}
+	}
 
 	for (p=0;p<d->n_parts;p++) {
 		wall *w;

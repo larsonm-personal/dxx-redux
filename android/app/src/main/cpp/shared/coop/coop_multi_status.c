@@ -121,7 +121,7 @@ void coop_send_restore_inventory(int pnum)
 	                                         &source_level);
 	if (!rec) {
 		con_printf(CON_NORMAL, "coop_restore: no cached inventory for '%s'\n",
-			Players[pnum].callsign);
+		           Players[pnum].callsign);
 		return;
 	}
 
@@ -129,11 +129,11 @@ void coop_send_restore_inventory(int pnum)
 	removed = same_level ? coop_remove_rejoin_spew(pnum) : 0;
 
 	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (src_level=%d cur_level=%d spew=%d shields=%d energy=%d laser=%d)\n",
-		pnum, rec->callsign, source_level, Current_level_num, removed,
-		f2i(rec->shields), f2i(rec->energy), rec->laser_level);
+	           pnum, rec->callsign, source_level, Current_level_num, removed,
+	           f2i(rec->shields), f2i(rec->energy), rec->laser_level);
 
 	multibuf[0] = MULTI_COOP_RESTORE_INV;
-	multibuf[1] = (ubyte)pnum;
+	multibuf[1] = (ubyte) pnum;
 	PUT_INTEL_INT(multibuf + 2, rec->energy);
 	PUT_INTEL_INT(multibuf + 6, rec->shields);
 	PUT_INTEL_INT(multibuf + 10, rec->score);
@@ -150,7 +150,7 @@ void coop_send_restore_inventory(int pnum)
 	PUT_INTEL_SHORT(multibuf + 67, rec->num_kills_total);
 	PUT_INTEL_SHORT(multibuf + 69, rec->hostages_rescued_total);
 	PUT_INTEL_INT(multibuf + 71, rec->time_total);
-	multibuf[75] = (ubyte)rec->hours_total;
+	multibuf[75] = (ubyte) rec->hours_total;
 	PUT_INTEL_SHORT(multibuf + 76, source_level);
 
 	multi_send_data_direct(multibuf, 78, pnum, 2);

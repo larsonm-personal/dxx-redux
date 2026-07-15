@@ -190,7 +190,7 @@ void jukebox_names_load_for_playlist(const char *playlist_path)
 	else
 		names_path[0] = '\0';
 	strncat(names_path, "custom_music_names.json",
-		PATH_MAX - 1 - strlen(names_path));
+	        PATH_MAX - 1 - strlen(names_path));
 	jukebox_names_load(names_path);
 }
 
@@ -233,7 +233,7 @@ static const char *base_name(const char *path)
 }
 
 const char *jukebox_track_display_name(char *const *songs, int song_count,
-	int index)
+                                       int index)
 {
 	static char namebuf[64];
 	const char *decoded;

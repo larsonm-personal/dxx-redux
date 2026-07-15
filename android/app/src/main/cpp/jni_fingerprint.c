@@ -200,20 +200,19 @@ Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
 	if (!b64) return NULL;
 
 	/* Decode the base64 fingerprint to raw */
-	void *raw_fp_void = NULL;
+	uint32_t *raw_fp = NULL;
 	int raw_len = 0;
 	int algorithm = 0;
 	int ok = chromaprint_decode_fingerprint(b64, (int) strlen(b64),
-	                                        &raw_fp_void, &raw_len,
+	                                        &raw_fp, &raw_len,
 	                                        &algorithm, 1);
 	(*env)->ReleaseStringUTFChars(env, encodedFp, b64);
 
-	uint32_t *raw_fp = (uint32_t *) raw_fp_void;
 	if (!ok || !raw_fp) return NULL;
 
 	chromaprint_db_match_t match = { 0 };
 	int found = chromaprint_db_match(raw_fp, raw_len, durationMs, &match);
-	chromaprint_dealloc(raw_fp_void);
+	chromaprint_dealloc(raw_fp);
 
 	if (!found) return NULL;
 

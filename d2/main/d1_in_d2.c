@@ -1580,7 +1580,8 @@ static int read_d1_wall_anims(void)
 		return 0;
 	}
 	memset(D1_wall_anims, 0, sizeof(D1_wall_anims));
-	wclip_read_n_d1(D1_wall_anims, D1_MAX_WALL_ANIMS, fp);
+	REWIND_PHYSFS_FILE(rewind_fp, fp);
+	wclip_read_n_d1(D1_wall_anims, D1_MAX_WALL_ANIMS, rewind_fp);
 	PHYSFS_close(fp);
 	D1_num_wall_anims = num_wall_anims;
 	D1_wall_anims_loaded = 1;

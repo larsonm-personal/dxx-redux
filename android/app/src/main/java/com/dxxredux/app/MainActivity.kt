@@ -3480,7 +3480,7 @@ class MainActivity :
             keyboardInputView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.restartInput(keyboardInputView)
-            imm.showSoftInput(keyboardInputView, InputMethodManager.SHOW_IMPLICIT)
+            imm.showSoftInput(keyboardInputView, 0)
             // Use WindowInsetsController API (works with setDecorFitsSystemWindows(false))
             WindowInsetsControllerCompat(window, keyboardInputView)
                 .show(WindowInsetsCompat.Type.ime())

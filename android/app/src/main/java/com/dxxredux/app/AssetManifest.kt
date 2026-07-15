@@ -44,7 +44,8 @@ class AssetManifest(
         filesDir.listFiles()?.firstOrNull { it.name.equals(filename, ignoreCase = true) }
 
     private fun findCanonicalDiskFile(filename: String): File? =
-        filesDir.listFiles()
+        filesDir
+            .listFiles()
             ?.filter { it.name.equals(filename, ignoreCase = true) }
             ?.takeIf { it.isNotEmpty() }
             ?.let { canonicalDiskFile(it) }
@@ -102,14 +103,13 @@ class AssetManifest(
     /**
      * Load the manifest from disk. Returns empty list if file doesn't exist or is corrupt.
      */
-    fun load(): List<AssetEntry> {
-        return try {
+    fun load(): List<AssetEntry> =
+        try {
             canonicalize(readEntriesFromDisk())
         } catch (e: Exception) {
             Log.e("AssetManifest", "Failed to parse assets.json", e)
             emptyList()
         }
-    }
 
     /**
      * Save the manifest to disk.

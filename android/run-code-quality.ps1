@@ -481,6 +481,10 @@ try {
         }
         $exitCode = 1
     }
+} catch {
+    Write-Error $_
+    $failed += "runner"
+    $exitCode = 1
 } finally {
     $postDirtyPaths = Get-GitDirtyPaths $resolvedPaths
     $cleanTransitions = @($preDirtyPaths | Where-Object { $postDirtyPaths -notcontains $_ })

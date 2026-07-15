@@ -4203,7 +4203,6 @@ multi_prep_level(void)
 
 	for (i = 0; i < NumNetPlayerPositions; i++)
 	{
-		int objnum = Players[i].objnum;
 		if (i != Player_num)
 			Objects[Players[i].objnum].control_type = CT_REMOTE;
 		Objects[Players[i].objnum].movement_type = MT_PHYSICS;

@@ -15,9 +15,9 @@ rewind_file *state_android_open_read_buffered(const char *filename);
 rewind_file *state_android_open_write_buffered(const char *filename);
 int state_android_close_file(rewind_file *file);
 int state_android_read_android_metadata_trailer(rewind_file *file,
-	android_save_meta_disk *meta);
+                                                android_save_meta_disk *meta);
 int state_android_read_coop_metadata_trailer(rewind_file *file,
-	coop_save_metadata *meta);
+                                             coop_save_metadata *meta);
 int state_android_build_save_filename(char *filename, size_t filename_size,
                                       int slotnum, int coop, int for_save);
 int state_android_build_coop_autosave_filename(char *filename,

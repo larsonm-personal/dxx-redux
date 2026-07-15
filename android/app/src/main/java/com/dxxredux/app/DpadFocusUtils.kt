@@ -46,6 +46,7 @@ private fun androidStaticRepeatTiming(methodName: String): Long? =
         when (val value = android.view.ViewConfiguration::class.java.getMethod(methodName).invoke(null)) {
             is Int -> value.toLong()
             is Number -> value.toLong()
+            null -> null
             else -> null
         }
     }.getOrNull()
