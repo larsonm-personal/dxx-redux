@@ -162,6 +162,12 @@ multi_check_robot_timeout(void)
 		lastcheck = GameTime64;
 		for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++) 
 		{
+			const int objnum = robot_controlled[i];
+			if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num &&
+			    objnum >= 0 && objnum <= Highest_object_index &&
+			    Objects[objnum].type == OBJ_ROBOT &&
+			    Robot_info[Objects[objnum].id].companion)
+				continue;
 			if ((robot_controlled[i] != -1) && (robot_last_send_time[i] + ROBOT_TIMEOUT < GameTime64)) 
 			{
 				if (Objects[robot_controlled[i]].ctype.ai_info.REMOTE_OWNER != Player_num)
@@ -337,12 +343,18 @@ multi_add_controlled_robot(int objnum, int agitation)
 
 	for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++)
 	{
+		const int controlled_objnum = robot_controlled[i];
+		const int owned_companion =
+		    (Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num &&
+		    controlled_objnum >= 0 && controlled_objnum <= Highest_object_index &&
+		    Objects[controlled_objnum].type == OBJ_ROBOT &&
+		    Robot_info[Objects[controlled_objnum].id].companion;
 		if ((robot_controlled[i] == -1) || (Objects[robot_controlled[i]].type != OBJ_ROBOT)) {
 			first_free_robot = i;
 			break;
 		}
 
-		if (robot_last_message_time[i] + ROBOT_TIMEOUT < GameTime64) {
+		if (!owned_companion && robot_last_message_time[i] + ROBOT_TIMEOUT < GameTime64) {
 			if (robot_send_pending[i])
 				multi_send_robot_position(robot_controlled[i], 1);
 			multi_send_release_robot(robot_controlled[i]);
@@ -350,7 +362,7 @@ multi_add_controlled_robot(int objnum, int agitation)
 			break;
 		}
 
-		if ((robot_controlled[i] != -1) && (robot_agitation[i] < lowest_agitation) && (robot_controlled_time[i] + MIN_CONTROL_TIME < GameTime64))
+		if (!owned_companion && (robot_controlled[i] != -1) && (robot_agitation[i] < lowest_agitation) && (robot_controlled_time[i] + MIN_CONTROL_TIME < GameTime64))
 		{
 			lowest_agitation = robot_agitation[i];
 			lowest_agitated_bot = i;

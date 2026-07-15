@@ -92,7 +92,7 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 200},
     {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 200},
     {"action": "set_debug", "field": "fire_trigger", "value": "19", "post_delay_ms": 200},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_label": "Destroy robot carrying blue key",

@@ -28,7 +28,7 @@ enum class route_required_action {
 };
 
 struct route_edge_decision {
-	int legacy_cost = LEVEL_METADATA_ROUTE_EDGE_BLOCKED;
+	int progress_cost = LEVEL_METADATA_ROUTE_EDGE_BLOCKED;
 	route_edge_blocker blocker = route_edge_blocker::invalid_topology;
 	route_required_action action = route_required_action::none;
 	int wall = -1;

@@ -42,6 +42,9 @@ if(NOT ANDROID)
     target_link_libraries(test_coop_indicator_lines_math PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_coop_indicator_lines_math PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_hud_layout ../../android/tests/test_hud_layout.c)
+    target_include_directories(test_hud_layout PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_android_save_meta
         ../../android/tests/test_android_save_meta.c
         ../../android/app/src/main/cpp/shared/android_save_meta.c)
@@ -102,7 +105,11 @@ if(NOT ANDROID)
 
     add_executable(test_level_metadata_scan
         ../../android/tests/test_level_metadata_scan.c
-        ../../android/app/src/main/cpp/shared/level_metadata_scan.c)
+		../../android/app/src/main/cpp/shared/level_metadata_scan.c
+		../../android/app/src/main/cpp/shared/route_snapshot.cpp
+		../../android/app/src/main/cpp/shared/route_edge.cpp
+		../../android/app/src/main/cpp/shared/route_planner.cpp)
+	target_compile_features(test_level_metadata_scan PRIVATE cxx_std_11)
     target_link_libraries(test_level_metadata_scan PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_level_metadata_scan PRIVATE ../../android/app/src/main/cpp/shared)
 
@@ -191,6 +198,7 @@ if(NOT ANDROID)
             test_rng_seed_resume
             test_deterministic_math
             test_coop_indicator_lines_math
+            test_hud_layout
             test_android_save_meta
             test_android_save_set
             test_playsave_transaction

@@ -48,7 +48,8 @@
         "guidebot.owner_generation": "3",
         "guidebot.remote_owner": "1",
         "guidebot.local_control_slot_matches": "false",
-        "guidebot.route_target_mode_name": "unexplored"
+        "guidebot.route_target_mode_name": "unexplored",
+        "guidebot.route_metadata_rescan_count": "1"
     }},
     {"action": "introspect"},
     {"action": "log", "message": "=== COOP GUIDEBOT OWNER: host PASS ==="}

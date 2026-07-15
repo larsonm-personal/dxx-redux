@@ -52,7 +52,6 @@ extern "C" void gameseq_init_network_players(void);
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
 static int secret_area_missing_secret_levels = 0;
-static int route_shadow_strict = 0;
 
 static std::string dump_metadata_json(const nlohmann::ordered_json &value)
 {
@@ -73,14 +72,6 @@ static const char *find_arg_value(int argc, char *argv[], const char *name)
 		if (!strcmp(argv[index], name))
 			return argv[index + 1];
 	return NULL;
-}
-
-static int has_arg(int argc, char *argv[], const char *name)
-{
-	for (int index = 1; index < argc; ++index)
-		if (!strcmp(argv[index], name))
-			return 1;
-	return 0;
 }
 
 static int init_headless_audio(void)
@@ -937,163 +928,6 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
 	secret_area_rescan_current_level();
-	if (route_shadow_strict) {
-		route_edge_shadow_summary shadow = {};
-		route_planner_shadow_summary planner_shadow = {};
-		if (!level_metadata_get_route_edge_shadow(&shadow)) {
-			fprintf(stderr, "SECRET-AREA-DUMP FAIL route edge shadow unavailable level=%d file=%s\n",
-			        level_num, level_file ? level_file : "");
-			secret_area_dump_failed = 1;
-		} else if (shadow.mismatch_count) {
-			fprintf(stderr,
-			        "SECRET-AREA-DUMP FAIL route edge shadow mismatch level=%d file=%s compared=%d mismatches=%d first=%d:%d legacy=%d shared=%d\n",
-			        level_num, level_file ? level_file : "", shadow.compared_edge_count,
-			        shadow.mismatch_count, shadow.first_mismatch_segment, shadow.first_mismatch_side,
-			        shadow.first_legacy_cost, shadow.first_shared_cost);
-			secret_area_dump_failed = 1;
-		}
-		if (!level_metadata_get_route_planner_shadow(&planner_shadow)) {
-			fprintf(stderr, "SECRET-AREA-DUMP FAIL route planner shadow unavailable level=%d file=%s\n",
-			        level_num, level_file ? level_file : "");
-			secret_area_dump_failed = 1;
-		} else if (planner_shadow.mismatch_count || planner_shadow.target_mismatch_count ||
-		           planner_shadow.target_selection_mismatch_count ||
-		           planner_shadow.key_selection_mismatch_count ||
-		           planner_shadow.trigger_source_mismatch_count ||
-		           planner_shadow.trigger_firing_path_mismatch_count ||
-		           planner_shadow.trigger_dependency_mismatch_count ||
-		           planner_shadow.complete_route_mismatch_count ||
-		           planner_shadow.unexplored_route_mismatch_count) {
-			fprintf(stderr,
-			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s states=%d compared=%d mismatches=%d first_state=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g compared_targets=%d target_mismatches=%d first_target=%d:%d legacy_target_count=%d shared_target_count=%d legacy_target_seg=%d shared_target_seg=%d compared_selections=%d selection_mismatches=%d first_selection_state=%d legacy_selection=%d shared_selection=%d legacy_selection_progress=%d shared_selection_progress=%d legacy_selection_distance=%.17g shared_selection_distance=%.17g\n",
-			        level_num, level_file ? level_file : "", planner_shadow.compared_progress_state_count,
-			        planner_shadow.compared_node_count,
-			        planner_shadow.mismatch_count, planner_shadow.first_mismatch_progress_state,
-			        planner_shadow.first_mismatch_optimistic ? "optimistic" : "pessimistic",
-			        planner_shadow.first_mismatch_segment,
-			        planner_shadow.first_legacy_reachable, planner_shadow.first_shared_reachable,
-			        planner_shadow.first_legacy_progress_weight, planner_shadow.first_shared_progress_weight,
-			        planner_shadow.first_legacy_parent_segment, planner_shadow.first_legacy_parent_side,
-			        planner_shadow.first_shared_parent_segment, planner_shadow.first_shared_parent_side,
-			        planner_shadow.first_legacy_distance, planner_shadow.first_shared_distance,
-			        planner_shadow.compared_target_count, planner_shadow.target_mismatch_count,
-			        planner_shadow.first_target_category, planner_shadow.first_target_index,
-			        planner_shadow.first_legacy_target_count, planner_shadow.first_shared_target_count,
-			        planner_shadow.first_legacy_target_segment, planner_shadow.first_shared_target_segment,
-			        planner_shadow.compared_target_selection_count,
-			        planner_shadow.target_selection_mismatch_count,
-			        planner_shadow.first_selection_progress_state,
-			        planner_shadow.first_legacy_selection_index,
-			        planner_shadow.first_shared_selection_index,
-			        planner_shadow.first_legacy_selection_progress_weight,
-			        planner_shadow.first_shared_selection_progress_weight,
-			        planner_shadow.first_legacy_selection_distance,
-			        planner_shadow.first_shared_selection_distance);
-			if (planner_shadow.key_selection_mismatch_count)
-				fprintf(stderr,
-				        "SECRET-AREA-DUMP FAIL route key selection mismatch compared=%d mismatches=%d first_state=%d key=%d legacy_selection=%d shared_selection=%d legacy_progress=%d shared_progress=%d legacy_distance=%.17g shared_distance=%.17g\n",
-				        planner_shadow.compared_key_selection_count,
-				        planner_shadow.key_selection_mismatch_count,
-				        planner_shadow.first_key_selection_progress_state,
-				        planner_shadow.first_key_selection_key,
-				        planner_shadow.first_legacy_key_selection_index,
-				        planner_shadow.first_shared_key_selection_index,
-				        planner_shadow.first_legacy_key_selection_progress_weight,
-				        planner_shadow.first_shared_key_selection_progress_weight,
-				        planner_shadow.first_legacy_key_selection_distance,
-				        planner_shadow.first_shared_key_selection_distance);
-			if (planner_shadow.trigger_source_mismatch_count)
-				fprintf(stderr,
-				        "SECRET-AREA-DUMP FAIL route trigger source mismatch compared_edges=%d compared_sources=%d mismatches=%d first_state=%d edge=%d:%d index=%d legacy_count=%d shared_count=%d legacy_source=%d:%d wall=%d trigger=%d shared_source=%d:%d wall=%d trigger=%d\n",
-				        planner_shadow.compared_trigger_source_edge_count,
-				        planner_shadow.compared_trigger_source_count,
-				        planner_shadow.trigger_source_mismatch_count,
-				        planner_shadow.first_trigger_source_progress_state,
-				        planner_shadow.first_trigger_source_segment,
-				        planner_shadow.first_trigger_source_side,
-				        planner_shadow.first_trigger_source_index,
-				        planner_shadow.first_legacy_trigger_source_count,
-				        planner_shadow.first_shared_trigger_source_count,
-				        planner_shadow.first_legacy_trigger_source_segment,
-				        planner_shadow.first_legacy_trigger_source_side,
-				        planner_shadow.first_legacy_trigger_source_wall,
-				        planner_shadow.first_legacy_trigger_source_trigger,
-				        planner_shadow.first_shared_trigger_source_segment,
-				        planner_shadow.first_shared_trigger_source_side,
-				        planner_shadow.first_shared_trigger_source_wall,
-				        planner_shadow.first_shared_trigger_source_trigger);
-			if (planner_shadow.trigger_firing_path_mismatch_count)
-				fprintf(stderr,
-				        "SECRET-AREA-DUMP FAIL route trigger firing path mismatch compared=%d mismatches=%d first_state=%d edge=%d:%d legacy_found=%d shared_found=%d legacy_source=%d/%d shared_source=%d/%d legacy_terminal=%d shared_terminal=%d legacy_progress=%d shared_progress=%d legacy_distance=%.17g shared_distance=%.17g\n",
-				        planner_shadow.compared_trigger_firing_path_count,
-				        planner_shadow.trigger_firing_path_mismatch_count,
-				        planner_shadow.first_trigger_firing_path_progress_state,
-				        planner_shadow.first_trigger_firing_path_segment,
-				        planner_shadow.first_trigger_firing_path_side,
-				        planner_shadow.first_legacy_trigger_firing_path_found,
-				        planner_shadow.first_shared_trigger_firing_path_found,
-				        planner_shadow.first_legacy_trigger_firing_path_wall,
-				        planner_shadow.first_legacy_trigger_firing_path_trigger,
-				        planner_shadow.first_shared_trigger_firing_path_wall,
-				        planner_shadow.first_shared_trigger_firing_path_trigger,
-				        planner_shadow.first_legacy_trigger_firing_path_terminal_segment,
-				        planner_shadow.first_shared_trigger_firing_path_terminal_segment,
-				        planner_shadow.first_legacy_trigger_firing_path_progress_weight,
-				        planner_shadow.first_shared_trigger_firing_path_progress_weight,
-				        planner_shadow.first_legacy_trigger_firing_path_distance,
-				        planner_shadow.first_shared_trigger_firing_path_distance);
-			if (planner_shadow.trigger_dependency_mismatch_count)
-				fprintf(stderr,
-				        "SECRET-AREA-DUMP FAIL route trigger dependency mismatch compared=%d mismatches=%d first_state=%d edge=%d:%d legacy_resolved=%d shared_resolved=%d legacy_steps=%d shared_steps=%d first_step=%d\n",
-				        planner_shadow.compared_trigger_dependency_count,
-				        planner_shadow.trigger_dependency_mismatch_count,
-				        planner_shadow.first_trigger_dependency_progress_state,
-				        planner_shadow.first_trigger_dependency_segment,
-				        planner_shadow.first_trigger_dependency_side,
-				        planner_shadow.first_legacy_trigger_dependency_resolved,
-				        planner_shadow.first_shared_trigger_dependency_resolved,
-				        planner_shadow.first_legacy_trigger_dependency_step_count,
-				        planner_shadow.first_shared_trigger_dependency_step_count,
-				        planner_shadow.first_trigger_dependency_step);
-			if (planner_shadow.complete_route_mismatch_count)
-				fprintf(stderr,
-				        "SECRET-AREA-DUMP FAIL complete route mismatch compared=%d mismatches=%d legacy_status=%d shared_status=%d legacy_steps=%d shared_steps=%d first_step=%d legacy=%d@%d wall=%d trigger=%d shared=%d@%d wall=%d trigger=%d\n",
-				        planner_shadow.compared_complete_route_count,
-				        planner_shadow.complete_route_mismatch_count,
-				        planner_shadow.first_legacy_complete_route_status,
-				        planner_shadow.first_shared_complete_route_status,
-				        planner_shadow.first_legacy_complete_route_step_count,
-				        planner_shadow.first_shared_complete_route_step_count,
-				        planner_shadow.first_complete_route_step,
-				        planner_shadow.first_legacy_complete_route_kind,
-				        planner_shadow.first_legacy_complete_route_segment,
-				        planner_shadow.first_legacy_complete_route_wall,
-				        planner_shadow.first_legacy_complete_route_trigger,
-				        planner_shadow.first_shared_complete_route_kind,
-				        planner_shadow.first_shared_complete_route_segment,
-				        planner_shadow.first_shared_complete_route_wall,
-				        planner_shadow.first_shared_complete_route_trigger);
-			if (planner_shadow.unexplored_route_mismatch_count)
-				fprintf(stderr,
-				        "SECRET-AREA-DUMP FAIL unexplored route mismatch compared=%d mismatches=%d status=%d/%d component=%d/%d target=%d/%d waypoint=%d/%d direct=%d/%d steps=%d/%d first_step=%d\n",
-				        planner_shadow.compared_unexplored_route_count,
-				        planner_shadow.unexplored_route_mismatch_count,
-				        planner_shadow.first_legacy_unexplored_status,
-				        planner_shadow.first_shared_unexplored_status,
-				        planner_shadow.first_legacy_unexplored_component_size,
-				        planner_shadow.first_shared_unexplored_component_size,
-				        planner_shadow.first_legacy_unexplored_target_segment,
-				        planner_shadow.first_shared_unexplored_target_segment,
-				        planner_shadow.first_legacy_unexplored_waypoint_segment,
-				        planner_shadow.first_shared_unexplored_waypoint_segment,
-				        planner_shadow.first_legacy_unexplored_direct_reachable,
-				        planner_shadow.first_shared_unexplored_direct_reachable,
-				        planner_shadow.first_legacy_unexplored_step_count,
-				        planner_shadow.first_shared_unexplored_step_count,
-				        planner_shadow.first_unexplored_route_step);
-			secret_area_dump_failed = 1;
-		}
-	}
 	state = secret_area_get_state();
 	total = secret_area_total(state);
 	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
@@ -1154,10 +988,8 @@ int main(int argc, char *argv[])
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	int total_secrets = 0;
-	route_shadow_strict = has_arg(argc, argv, "-route-shadow-strict");
-
 	if (!json_out && !coop_starts_json_out) {
-		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>] [-route-shadow-strict]\n",
+		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-headless-metadata");
 		return 1;
 	}

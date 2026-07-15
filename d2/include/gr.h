@@ -314,6 +314,7 @@ int gr_ustring(int x, int y, const char *s );
 int gr_printf( int x, int y, const char * format, ... );
 int gr_uprintf( int x, int y, const char * format, ... );
 void gr_get_string_size(const char *s, int *string_width, int *string_height, int *average_width );
+void gr_get_string_drawn_size(const char *s, int *string_width, int *string_height);
 
 
 // From scale.c

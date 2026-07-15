@@ -18,7 +18,6 @@
 #include "powerup.h"
 #include "robot.h"
 #include "route_snapshot_c.h"
-#include "route_edge_c.h"
 #include "secret_area_item_names.h"
 #include "segment.h"
 #include "automap.h"
@@ -44,10 +43,6 @@ static route_snapshot_summary Level_metadata_canonical_snapshot;
 static int Level_metadata_canonical_snapshot_valid;
 static route_snapshot_summary Level_metadata_live_snapshot;
 static int Level_metadata_live_snapshot_valid;
-static route_edge_shadow_summary Level_metadata_edge_shadow;
-static int Level_metadata_edge_shadow_valid;
-static route_planner_shadow_summary Level_metadata_planner_shadow;
-static int Level_metadata_planner_shadow_valid;
 static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
@@ -1483,10 +1478,6 @@ static void level_metadata_rescan_current_level_internal(
 		if (Level_metadata_canonical_snapshot_valid)
 			level_metadata_seed_snapshot_generations(
 			    &Level_metadata_canonical_snapshot);
-		Level_metadata_edge_shadow_valid = route_edge_compare_view(
-		    view, &Level_metadata_edge_shadow, NULL, 0);
-		Level_metadata_planner_shadow_valid = route_planner_compare_view(
-		    view, &Level_metadata_planner_shadow, NULL, 0);
 	} else {
 		route_snapshot_summary previous_snapshot;
 		int previous_valid = Level_metadata_live_snapshot_valid ||
@@ -1609,20 +1600,6 @@ int level_metadata_rescan_unexplored_route_from_object(
 {
 	level_metadata_rescan_current_level_internal(objnum, -1, 1, result);
 	return result && result->target_seg >= 0;
-}
-
-int level_metadata_route_edge_cost_from_object(int objnum, int seg, int side)
-{
-	level_metadata_scan_view *view = &Level_metadata_scan_view;
-
-	level_metadata_initialize_scan_view();
-	secret_area_ensure_level_topology();
-	Level_metadata_game_context.start_objnum = objnum;
-	view->num_segments = Num_segments;
-	view->num_walls = Num_walls;
-	view->initial_key_mask = secret_area_current_key_mask();
-	view->initial_control_center_destroyed = Control_center_destroyed != 0;
-	return level_metadata_scan_route_edge_cost(view, seg, side);
 }
 
 int level_metadata_get_route_start_objnum(void)
@@ -1761,24 +1738,6 @@ int level_metadata_get_live_route_snapshot(route_snapshot_summary *summary)
 	if (!summary || !Level_metadata_live_snapshot_valid)
 		return 0;
 	*summary = Level_metadata_live_snapshot;
-	return 1;
-}
-
-int level_metadata_get_route_edge_shadow(
-    route_edge_shadow_summary *summary)
-{
-	if (!summary || !Level_metadata_edge_shadow_valid)
-		return 0;
-	*summary = Level_metadata_edge_shadow;
-	return 1;
-}
-
-int level_metadata_get_route_planner_shadow(
-    route_planner_shadow_summary *summary)
-{
-	if (!summary || !Level_metadata_planner_shadow_valid)
-		return 0;
-	*summary = Level_metadata_planner_shadow;
 	return 1;
 }
 

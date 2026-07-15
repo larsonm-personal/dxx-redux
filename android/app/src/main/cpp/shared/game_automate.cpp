@@ -3389,6 +3389,12 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("graphics_option: unknown option");
 					break;
 				}
+			} else if (s.field == "show_robot_hostage_counts") {
+				PlayerCfg.ShowRobotHostageCounts =
+				    (strcasecmp(s.value.c_str(), "true") == 0 ||
+				     strtol(s.value.c_str(), NULL, 10) != 0)
+				        ? 1
+				        : 0;
 			} else if (s.field == "clear_robots") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
 					char reason[128];

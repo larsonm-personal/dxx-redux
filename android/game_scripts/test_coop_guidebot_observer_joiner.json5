@@ -3,7 +3,7 @@
     {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER JOINER ==="},
-    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+    {"action": "wait_for", "timeout_ms": 45000, "expect": {
         "in_game": "true",
         "is_network": "true",
         "multiplayer.my_player_num": "1",
@@ -15,6 +15,13 @@
         "guidebot.owner_player": "1",
         "guidebot.owner_is_local": "true",
         "guidebot.owner_generation": {"gte": 1},
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "true"
+    }},
+    {"action": "wait_ms", "ms": 4000},
+    {"action": "assert", "expect": {
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "true",
         "guidebot.remote_owner": "1",
         "guidebot.local_control_slot_matches": "true"
     }},

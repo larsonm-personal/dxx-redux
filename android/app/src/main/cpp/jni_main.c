@@ -44,7 +44,6 @@ AAssetManager *g_asset_manager = NULL;
  * in the launcher, which starts a second MainActivity+thread in the same
  * process.  The static flag survives across Activity instances. */
 static volatile int g_game_running = 0;
-volatile int g_guidebot_navigate_nearest_point = 0;
 
 static char *android_consume_activity_string(JNIEnv *env, jobject activity, const char *method_name)
 {
@@ -703,17 +702,6 @@ Java_com_dxxredux_app_MainActivity_nativeSetCoopIndicatorOptions(JNIEnv *env,
 	     showGuidebotLine ? 1 : 0);
 	coop_indicator_lines_set_options(showNearestPlayerLine ? 1 : 0,
 	                                 showGuidebotLine ? 1 : 0);
-}
-
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeSetGuidebotNavigateNearestPoint(JNIEnv *env,
-                                                                         jobject thiz,
-                                                                         jboolean enabled)
-{
-	(void) env;
-	(void) thiz;
-	LOGI("guidebot navigate nearest point: %d", enabled ? 1 : 0);
-	g_guidebot_navigate_nearest_point = enabled ? 1 : 0;
 }
 
 /* ── Debug logging: per-category enable/disable from Kotlin ────── */

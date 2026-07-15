@@ -1,7 +1,6 @@
 #include "route_snapshot.h"
 #include "route_snapshot_c.h"
 #include "route_edge.h"
-#include "route_edge_c.h"
 #include "route_planner.h"
 #include "route_planner_c.h"
 
@@ -428,46 +427,6 @@ level_metadata_scan_view make_view(test_level &level)
 	return view;
 }
 
-void assert_route_projection_matches(
-    const level_metadata_state &legacy,
-    const level_metadata_state &shared)
-{
-	assert(legacy.route_status == shared.route_status);
-	assert(std::strcmp(legacy.route_problem, shared.route_problem) == 0);
-	assert(std::strcmp(legacy.route_note, shared.route_note) == 0);
-	assert(legacy.route_step_count == shared.route_step_count);
-	for (int index = 0; index < legacy.route_step_count; ++index) {
-		const auto &left = legacy.route_steps[index];
-		const auto &right = shared.route_steps[index];
-		assert(left.kind == right.kind);
-		assert(left.seg == right.seg);
-		assert(left.side == right.side);
-		assert(left.wall_num == right.wall_num);
-		assert(left.trigger_num == right.trigger_num);
-		assert(left.trigger_type == right.trigger_type);
-		assert(left.key_index == right.key_index);
-		assert(left.key_carrier_objnum == right.key_carrier_objnum);
-		assert(left.activation_kind == right.activation_kind);
-		assert(left.activation_pos_valid == right.activation_pos_valid);
-		assert(left.aim_pos_valid == right.aim_pos_valid);
-		assert(left.label_pos_valid == right.label_pos_valid);
-		assert(left.distance_from_previous == right.distance_from_previous);
-		assert(std::strcmp(left.label, right.label) == 0);
-		assert(std::strcmp(left.trigger_type_name, right.trigger_type_name) == 0);
-		assert(left.opened_link_count == right.opened_link_count);
-		for (int coordinate = 0; coordinate < 3; ++coordinate) {
-			assert(left.activation_pos[coordinate] == right.activation_pos[coordinate]);
-			assert(left.aim_pos[coordinate] == right.aim_pos[coordinate]);
-			assert(left.label_pos[coordinate] == right.label_pos[coordinate]);
-		}
-		for (int link = 0; link < left.opened_link_count; ++link) {
-			assert(left.opened_link_seg[link] == right.opened_link_seg[link]);
-			assert(left.opened_link_side[link] == right.opened_link_side[link]);
-			assert(left.opened_link_wall[link] == right.opened_link_wall[link]);
-		}
-	}
-}
-
 } // namespace
 
 int main()
@@ -533,23 +492,23 @@ int main()
 	edge_query.progression.key_mask = first.state.key_mask;
 	auto blastable_edge = dxx_route::evaluate_route_edge(
 	    first, edge_query, 0, 0);
-	assert(blastable_edge.legacy_cost ==
+	assert(blastable_edge.progress_cost ==
 	       LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	assert(blastable_edge.action ==
 	       dxx_route::route_required_action::destroy_blastable_wall);
 	edge_query.navigator.radius = level.side_clearance + 1;
 	auto narrow_edge = dxx_route::evaluate_route_edge(
 	    first, edge_query, 0, 0);
-	assert(narrow_edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	assert(narrow_edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	edge_query.navigator.radius = level.side_clearance;
 	assert(dxx_route::evaluate_route_edge(first, edge_query, 0, 0)
-	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	edge_query.navigator.companion = true;
 	auto triggered_snapshot = first;
 	triggered_snapshot.state.segments[1].sides[0].exit_trigger = false;
 	auto triggered_edge = dxx_route::evaluate_route_edge(
 	    triggered_snapshot, edge_query, 1, 0);
-	assert(triggered_edge.legacy_cost ==
+	assert(triggered_edge.progress_cost ==
 	       LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
 	assert(triggered_edge.blocker ==
 	       dxx_route::route_edge_blocker::trigger);
@@ -562,7 +521,7 @@ int main()
 	edge_cases.state.walls[1].key = dxx_route::route_key_requirement::none;
 	auto hidden_edge = dxx_route::evaluate_route_edge(
 	    edge_cases, edge_query, 1, 0);
-	assert(hidden_edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
+	assert(hidden_edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
 	assert(hidden_edge.action ==
 	       dxx_route::route_required_action::open_hidden_door);
 	edge_cases.state.walls[1].hidden = false;
@@ -570,12 +529,12 @@ int main()
 	edge_cases.state.walls[1].key = dxx_route::route_key_requirement::blue;
 	auto key_edge = dxx_route::evaluate_route_edge(
 	    edge_cases, edge_query, 1, 0);
-	assert(key_edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
+	assert(key_edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
 	assert(key_edge.blocker == dxx_route::route_edge_blocker::missing_key);
 	assert(key_edge.action == dxx_route::route_required_action::acquire_key);
 	edge_query.progression.key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
 	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
-	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	edge_cases.state.walls[1].locked = true;
 	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
 	           .blocker == dxx_route::route_edge_blocker::locked_door);
@@ -586,17 +545,6 @@ int main()
 	assert(buddy_edge.blocker == dxx_route::route_edge_blocker::hard_blocked);
 	assert(buddy_edge.action ==
 	       dxx_route::route_required_action::wait_for_player);
-	route_edge_shadow_summary edge_summary = {};
-	char edge_problem[96] = {};
-	if (!route_edge_compare_view(
-	        &view, &edge_summary, edge_problem, sizeof(edge_problem))) {
-		fprintf(stderr, "route edge comparison failed: %s\n", edge_problem);
-		return 1;
-	}
-	assert(edge_problem[0] == '\0');
-	assert(edge_summary.compared_edge_count ==
-	       2 * LEVEL_METADATA_MAX_SIDES);
-	assert(edge_summary.mismatch_count == 0);
 	dxx_route::route_query planner_query;
 	planner_query.start = first.state.start_position;
 	planner_query.progression.key_mask = first.state.key_mask;
@@ -719,12 +667,12 @@ int main()
 	assert(dxx_route::route_progress_fire_trigger(trigger_progress, 0));
 	assert(dxx_route::evaluate_route_edge(
 	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
-	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	trigger_progress.fired_triggers[0] = 0;
 	trigger_progress.avoided_triggers[0] = 1;
 	assert(dxx_route::evaluate_route_edge(
 	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
-	           .legacy_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED);
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED);
 	auto source_progress = dxx_route::initial_route_progress_state(
 	    triggered_snapshot, planner_query);
 	const auto trigger_sources = dxx_route::discover_trigger_sources(
@@ -893,124 +841,35 @@ int main()
 	assert(dxx_route::discover_trigger_sources(
 	           disabled_trigger_snapshot, source_progress, 1, 0)
 	           .empty());
-	route_planner_shadow_summary planner_summary = {};
-	char planner_problem[96] = {};
-	if (!route_planner_compare_view(
-	        &view, &planner_summary, planner_problem, sizeof(planner_problem))) {
-		fprintf(stderr, "route planner comparison failed: %s\n", planner_problem);
-		return 1;
-	}
-	assert(planner_problem[0] == '\0');
-	assert(planner_summary.compared_progress_state_count >= 5);
-	assert(
-	    planner_summary.compared_node_count ==
-	    planner_summary.compared_progress_state_count * 4);
-	assert(planner_summary.mismatch_count == 0);
-	assert(planner_summary.compared_target_count == 9);
-	assert(planner_summary.target_mismatch_count == 0);
-	assert(
-	    planner_summary.compared_target_selection_count ==
-	    planner_summary.compared_progress_state_count);
-	assert(planner_summary.target_selection_mismatch_count == 0);
-	assert(
-	    planner_summary.compared_key_selection_count ==
-	    planner_summary.compared_progress_state_count * 3);
-	assert(planner_summary.key_selection_mismatch_count == 0);
-	assert(
-	    planner_summary.compared_trigger_source_edge_count ==
-	    planner_summary.compared_progress_state_count * 12);
-	assert(planner_summary.compared_trigger_source_count > 0);
-	assert(planner_summary.trigger_source_mismatch_count == 0);
-	assert(planner_summary.compared_trigger_firing_path_count == 2);
-	assert(planner_summary.trigger_firing_path_mismatch_count == 0);
-	assert(planner_summary.compared_trigger_dependency_count == 2);
-	if (planner_summary.trigger_dependency_mismatch_count != 0)
-		fprintf(
-		    stderr,
-		    "trigger dependency mismatch state=%d edge=%d:%d resolved=%d/%d steps=%d/%d first_step=%d\n",
-		    planner_summary.first_trigger_dependency_progress_state,
-		    planner_summary.first_trigger_dependency_segment,
-		    planner_summary.first_trigger_dependency_side,
-		    planner_summary.first_legacy_trigger_dependency_resolved,
-		    planner_summary.first_shared_trigger_dependency_resolved,
-		    planner_summary.first_legacy_trigger_dependency_step_count,
-		    planner_summary.first_shared_trigger_dependency_step_count,
-		    planner_summary.first_trigger_dependency_step);
-	assert(planner_summary.trigger_dependency_mismatch_count == 0);
-	assert(planner_summary.compared_complete_route_count == 1);
-	if (planner_summary.complete_route_mismatch_count != 0)
-		fprintf(
-		    stderr,
-		    "complete route mismatch status=%d/%d steps=%d/%d first_step=%d\n",
-		    planner_summary.first_legacy_complete_route_status,
-		    planner_summary.first_shared_complete_route_status,
-		    planner_summary.first_legacy_complete_route_step_count,
-		    planner_summary.first_shared_complete_route_step_count,
-		    planner_summary.first_complete_route_step);
-	assert(planner_summary.complete_route_mismatch_count == 0);
-	assert(planner_summary.compared_unexplored_route_count == 1);
-	if (planner_summary.unexplored_route_mismatch_count != 0)
-		fprintf(
-		    stderr,
-		    "unexplored route mismatch status=%d/%d component=%d/%d target=%d/%d waypoint=%d/%d direct=%d/%d steps=%d/%d first_step=%d\n",
-		    planner_summary.first_legacy_unexplored_status,
-		    planner_summary.first_shared_unexplored_status,
-		    planner_summary.first_legacy_unexplored_component_size,
-		    planner_summary.first_shared_unexplored_component_size,
-		    planner_summary.first_legacy_unexplored_target_segment,
-		    planner_summary.first_shared_unexplored_target_segment,
-		    planner_summary.first_legacy_unexplored_waypoint_segment,
-		    planner_summary.first_shared_unexplored_waypoint_segment,
-		    planner_summary.first_legacy_unexplored_direct_reachable,
-		    planner_summary.first_shared_unexplored_direct_reachable,
-		    planner_summary.first_legacy_unexplored_step_count,
-		    planner_summary.first_shared_unexplored_step_count,
-		    planner_summary.first_unexplored_route_step);
-	assert(planner_summary.unexplored_route_mismatch_count == 0);
-	level_metadata_state legacy_plan = {};
 	level_metadata_state shared_plan = {};
-	level_metadata_unexplored_route legacy_unexplored = {};
 	level_metadata_unexplored_route shared_unexplored = {};
 	route_planner_plan_summary plan_summary = {};
 	char plan_problem[96] = {};
-	level_metadata_state_clear(&legacy_plan);
-	assert(level_metadata_scan_end_route(&view, &legacy_plan));
 	assert(route_planner_plan_view(
 	    &view, ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL, -1, &shared_plan,
 	    nullptr, &plan_summary, plan_problem, sizeof(plan_problem)));
 	assert(plan_problem[0] == '\0');
-	assert_route_projection_matches(legacy_plan, shared_plan);
 	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL);
 	assert(plan_summary.route_step_count == shared_plan.route_step_count);
 	assert(shared_plan.travel_distance > 0.0);
 	assert(plan_summary.first_pending_step == 1);
 	assert(plan_summary.first_pending_path_segment_count > 0);
 	assert(plan_summary.first_pending_path_terminal_segment >= 0);
-	level_metadata_state_clear(&legacy_plan);
-	assert(level_metadata_scan_route_to_segment(&view, 1, &legacy_plan));
 	assert(route_planner_plan_view(
 	    &view, ROUTE_PLANNER_ENDPOINT_SEGMENT, 1, &shared_plan, nullptr,
 	    &plan_summary, plan_problem, sizeof(plan_problem)));
-	assert_route_projection_matches(legacy_plan, shared_plan);
 	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_SEGMENT);
 	assert(plan_summary.first_pending_step == 1);
 	assert(shared_plan.route_steps[1].kind ==
 	       LEVEL_METADATA_ROUTE_BLASTABLE_WALL);
 	assert(plan_summary.first_pending_path_terminal_segment == 0);
-	level_metadata_state_clear(&legacy_plan);
-	assert(level_metadata_scan_unexplored_route(
-	    &view, &legacy_plan, &legacy_unexplored));
 	assert(route_planner_plan_view(
 	    &view, ROUTE_PLANNER_ENDPOINT_UNEXPLORED, -1, &shared_plan,
 	    &shared_unexplored, &plan_summary, plan_problem,
 	    sizeof(plan_problem)));
-	assert_route_projection_matches(legacy_plan, shared_plan);
-	assert(legacy_unexplored.component_size == shared_unexplored.component_size);
-	assert(legacy_unexplored.target_seg == shared_unexplored.target_seg);
-	assert(legacy_unexplored.waypoint_seg == shared_unexplored.waypoint_seg);
-	assert(
-	    legacy_unexplored.direct_reachable ==
-	    shared_unexplored.direct_reachable);
+	assert(shared_unexplored.component_size > 0);
+	assert(shared_unexplored.target_seg >= 0);
+	assert(shared_unexplored.waypoint_seg >= 0);
 	assert(plan_summary.endpoint_kind == ROUTE_PLANNER_ENDPOINT_UNEXPLORED);
 	assert(!route_planner_plan_view(
 	    &view, -1, -1, &shared_plan, nullptr, &plan_summary, plan_problem,

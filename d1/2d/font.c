@@ -37,6 +37,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #include "inferno.h"
 #include "android_font_scale.h"
+#include "font_control_shared.h"
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -156,22 +157,34 @@ void get_char_width_f(ubyte c,ubyte c2,float *width,float *spacing)
 	}
 }
 
+static int get_drawn_line_width(const char *s, const char **next_line)
+{
+	float width, spacing;
+	int line_width = 0;
+	if (next_line)
+		*next_line = NULL;
+
+	while (s && *s && *s != '\n') {
+		const int control_length = font_draw_control_sequence_length(s);
+
+		if (control_length) {
+			s += control_length;
+			continue;
+		}
+
+		get_char_width_f((ubyte)s[0], (ubyte)s[1], &width, &spacing);
+		line_width += (int)spacing;
+		s++;
+	}
+	if (next_line && s && *s == '\n')
+		*next_line = s + 1;
+
+	return line_width;
+}
+
 int get_centered_x(const char *s)
 {
-	float w,w2,s2;
-
-	for (w=0;*s!=0 && *s!='\n';s++) {
-		if (*s<=0x06) {
-			if (*s<=0x03)
-				s++;
-			continue;//skip color codes.
-		}
-		get_char_width_f(s[0],s[1],&w2,&s2);
-		s2 = (int)s2;
-		w += s2;
-	}
-
-	return ((grd_curcanv->cv_bitmap.bm_w - w) / 2);
+	return (grd_curcanv->cv_bitmap.bm_w - get_drawn_line_width(s, NULL)) / 2;
 }
 
 //hack to allow color codes to be embedded in strings -MPM
@@ -978,6 +991,26 @@ void gr_get_string_size(const char *s, int *string_width, int *string_height, in
 	string_width_f = longest_width;
 	*string_width = string_width_f;
 	*string_height = string_height_f;
+}
+
+void gr_get_string_drawn_size(const char *s, int *string_width, int *string_height)
+{
+	int longest_width = 0;
+	int height = FONTSCALE_Y(grd_curcanv->cv_font->ft_h);
+	const char *line = s;
+
+	while (line) {
+		const char *next_line;
+		const int line_width = get_drawn_line_width(line, &next_line);
+		if (line_width > longest_width)
+			longest_width = line_width;
+		if (next_line)
+			height += FONTSCALE_Y(grd_curcanv->cv_font->ft_h) + FSPACY(1);
+		line = next_line;
+	}
+
+	*string_width = longest_width;
+	*string_height = height;
 }
 
 

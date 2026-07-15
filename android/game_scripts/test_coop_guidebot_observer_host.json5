@@ -17,7 +17,15 @@
         "guidebot.owner_is_local": "false",
         "guidebot.owner_generation": {"gte": 1},
         "guidebot.remote_owner": "1",
-        "guidebot.local_control_slot_matches": "false"
+        "guidebot.local_control_slot_matches": "false",
+        "guidebot.route_metadata_rescan_count": "0"
+    }},
+    {"action": "wait_ms", "ms": 4000},
+    {"action": "assert", "expect": {
+        "guidebot.owner_player": "1",
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "false",
+        "guidebot.route_metadata_rescan_count": "0"
     }},
     {"action": "introspect"},
     {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER HOST PASS ==="}

@@ -51,7 +51,6 @@ enum level_metadata_route_step_kind {
 	LEVEL_METADATA_ROUTE_BOSS = 4,
 	LEVEL_METADATA_ROUTE_EXIT = 5,
 	LEVEL_METADATA_ROUTE_HIDDEN_DOOR = 6,
-	LEVEL_METADATA_ROUTE_HOSTAGE = 7,
 	LEVEL_METADATA_ROUTE_UNEXPLORED = 8,
 	LEVEL_METADATA_ROUTE_BLASTABLE_WALL = 9
 };
@@ -197,84 +196,6 @@ typedef struct level_metadata_unexplored_route {
 	int direct_reachable;
 } level_metadata_unexplored_route;
 
-typedef struct level_metadata_route_search_node {
-	int reachable;
-	double distance;
-	int progress_weight;
-	int parent_seg;
-	int parent_side;
-} level_metadata_route_search_node;
-
-typedef struct level_metadata_route_progress_shadow {
-	int current_seg;
-	int current_pos[3];
-	int key_mask;
-	int key_in_progress;
-	int avoided_key_mask;
-	int control_center_destroyed;
-	unsigned char fired_triggers[LEVEL_METADATA_MAX_TRIGGERS];
-	unsigned char trigger_in_progress[LEVEL_METADATA_MAX_TRIGGERS];
-	unsigned char avoided_triggers[LEVEL_METADATA_MAX_TRIGGERS];
-	unsigned char opened_hidden_walls[LEVEL_METADATA_MAX_WALLS];
-	unsigned char destroyed_blastable_walls[LEVEL_METADATA_MAX_WALLS];
-} level_metadata_route_progress_shadow;
-
-typedef struct level_metadata_route_target_shadow {
-	int seg;
-	int pos[3];
-} level_metadata_route_target_shadow;
-
-typedef struct level_metadata_route_target_inventory_shadow {
-	int key_count[3];
-	level_metadata_route_target_shadow keys[3][LEVEL_METADATA_MAX_TARGETS];
-	int reactor_found;
-	level_metadata_route_target_shadow reactor;
-	int boss_found;
-	level_metadata_route_target_shadow boss;
-	int exit_count;
-	level_metadata_route_target_shadow exits[LEVEL_METADATA_MAX_TARGETS];
-} level_metadata_route_target_inventory_shadow;
-
-typedef struct level_metadata_route_target_selection_shadow {
-	int selected_index;
-	double distance;
-	int progress_weight;
-} level_metadata_route_target_selection_shadow;
-
-typedef struct level_metadata_route_trigger_source_shadow {
-	int target_seg;
-	int target_side;
-	int target_wall;
-	int source_wall;
-	int source_seg;
-	int source_side;
-	int trigger_num;
-	int trigger_type;
-	int source_pos[3];
-} level_metadata_route_trigger_source_shadow;
-
-typedef struct level_metadata_route_trigger_firing_path_shadow {
-	int found;
-	level_metadata_route_trigger_source_shadow source;
-	double distance;
-	int progress_weight;
-	int terminal_seg;
-	int terminal_pos[3];
-	int terminal_pos_valid;
-} level_metadata_route_trigger_firing_path_shadow;
-
-typedef struct level_metadata_route_trigger_dependency_shadow {
-	int attempted;
-	int resolved;
-	int failed_trigger;
-	int failed_key;
-	double pending_distance;
-	char problem[128];
-	level_metadata_route_progress_shadow progress;
-	int route_step_count;
-	level_metadata_route_step route_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
-} level_metadata_route_trigger_dependency_shadow;
-
 typedef struct level_metadata_visibility_cache_summary {
 	unsigned long long world_hash;
 	unsigned long long hits;
@@ -317,58 +238,6 @@ typedef struct level_metadata_state {
 void level_metadata_state_clear(level_metadata_state *state);
 int level_metadata_scan_level_summary(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state);
-int level_metadata_scan_end_route(const level_metadata_scan_view *view, level_metadata_state *state);
-int level_metadata_scan_route_to_segment(const level_metadata_scan_view *view, int target_seg, level_metadata_state *state);
-int level_metadata_scan_unexplored_route(
-    const level_metadata_scan_view *view,
-    level_metadata_state *state,
-    level_metadata_unexplored_route *result);
-int level_metadata_scan_route_edge_cost(const level_metadata_scan_view *view, int seg, int side);
-int level_metadata_scan_route_search_shadow(
-    const level_metadata_scan_view *view,
-    int optimistic,
-    level_metadata_route_search_node *nodes,
-    int capacity);
-int level_metadata_scan_route_search_state_shadow(
-    const level_metadata_scan_view *view,
-    const level_metadata_route_progress_shadow *progress,
-    int optimistic,
-    level_metadata_route_search_node *nodes,
-    int capacity);
-int level_metadata_scan_route_targets_shadow(
-    const level_metadata_scan_view *view,
-    level_metadata_route_target_inventory_shadow *inventory);
-int level_metadata_scan_route_select_targets_shadow(
-    const level_metadata_scan_view *view,
-    const level_metadata_route_progress_shadow *progress,
-    const level_metadata_route_target_shadow *targets,
-    int count,
-    level_metadata_route_target_selection_shadow *selection);
-int level_metadata_scan_route_select_key_shadow(
-    const level_metadata_scan_view *view,
-    const level_metadata_route_progress_shadow *progress,
-    int key_index,
-    level_metadata_route_target_selection_shadow *selection);
-int level_metadata_scan_route_trigger_sources_shadow(
-    const level_metadata_scan_view *view,
-    const level_metadata_route_progress_shadow *progress,
-    int seg,
-    int side,
-    level_metadata_route_trigger_source_shadow *sources,
-    int capacity,
-    int *count);
-int level_metadata_scan_route_trigger_firing_path_shadow(
-    const level_metadata_scan_view *view,
-    const level_metadata_route_progress_shadow *progress,
-    int seg,
-    int side,
-    level_metadata_route_trigger_firing_path_shadow *result);
-int level_metadata_scan_route_trigger_dependency_shadow(
-    const level_metadata_scan_view *view,
-    const level_metadata_route_progress_shadow *progress,
-    int seg,
-    int side,
-    level_metadata_route_trigger_dependency_shadow *result);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

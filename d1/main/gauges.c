@@ -23,6 +23,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdarg.h>
 #include <stdbool.h>
 
+#include "hudmsg.h"
 #include "inferno.h"
 #include "game.h"
 #include "screens.h"
@@ -754,12 +755,10 @@ static int hud_corner_text_right_inset(int y, int h)
 void hud_show_score()
 {
 	char	score_str[20];
-	int	w, h, aw;
+	int	w, h;
+	int x, y;
 
 	int pnum = get_pnum_for_hud();
-
-	if (HUD_toolong)
-		return;
 
 	gr_set_curfont( GAME_FONT );
 
@@ -769,13 +768,17 @@ void hud_show_score()
 		sprintf(score_str, "%s: %5d", TXT_SCORE, Players[pnum].score);
 	}
 
-	gr_get_string_size(score_str, &w, &h, &aw );
+	gr_get_string_drawn_size(score_str, &w, &h);
+	y = FSPACY(1);
+	x = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(y, h) - w - FSPACX(1);
+	if (HUD_message_area_intersects(x, y, w, h))
+		return;
 
 	if (Color_0_31_0 == -1)
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 
-	gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(FSPACY(1), h)-w-FSPACX(1), FSPACY(1), score_str);
+	gr_string(x, y, score_str);
 }
 
 static int hud_score_added_active(void)
@@ -790,7 +793,7 @@ void hud_show_robot_hostage_counts()
 	int pnum = get_pnum_for_hud();
 	int timer_active = 0;
 
-	if (HUD_toolong || !PlayerCfg.ShowRobotHostageCounts)
+	if (!PlayerCfg.ShowRobotHostageCounts)
 		return;
 	if ((Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)))
 		return;
@@ -807,12 +810,10 @@ void hud_show_timer_count()
 {
 #ifdef NETWORK
 	char	score_str[20];
-	int	w, h, aw,i;
+	int	w, h, i;
+	int x, y;
 	fix timevar=0;
 #endif
-
-	if (HUD_toolong)
-		return;
 
 #ifdef NETWORK
 	if ((Game_mode & GM_NETWORK) && Netgame.PlayTimeAllowed)
@@ -822,15 +823,18 @@ void hud_show_timer_count()
 		i++;
 
 		sprintf(score_str, "T - %5d", i);
-		gr_get_string_size(score_str, &w, &h, &aw );
+		gr_get_string_drawn_size(score_str, &w, &h);
+		y = LINE_SPACING + FSPACY(1);
+		x = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(y, h) - w - FSPACX(12);
 
 		if (Color_0_31_0 == -1)
 			Color_0_31_0 = BM_XRGB(0,31,0);
 
 		gr_set_fontcolor(Color_0_31_0, -1);
 
-		if (i>-1 && !Control_center_destroyed)
-			gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(LINE_SPACING+FSPACY(1), h)-w-FSPACX(12), LINE_SPACING+FSPACY(1), score_str);
+		if (i > -1 && !Control_center_destroyed &&
+			!HUD_message_area_intersects(x, y, w, h))
+			gr_string(x, y, score_str);
 	}
 #endif
 }
@@ -838,7 +842,8 @@ void hud_show_timer_count()
 void hud_show_score_added()
 {
 	int	color;
-	int	w, h, aw;
+	int	w, h;
+	int x, y;
 	char	score_str[20];
 
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
@@ -865,9 +870,12 @@ void hud_show_score_added()
 		else
 			sprintf(score_str, "%5d", score_display);
 
-		gr_get_string_size(score_str, &w, &h, &aw );
+		gr_get_string_drawn_size(score_str, &w, &h);
+		y = LINE_SPACING + FSPACY(1);
+		x = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(y, h) - w - FSPACX(1);
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(LINE_SPACING+FSPACY(1), h)-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
+		if (!HUD_message_area_intersects(x, y, w, h))
+			gr_string(x, y, score_str);
 	} else {
 		score_time = 0;
 		score_display = 0;
@@ -1342,32 +1350,45 @@ void hud_show_shield(void)
 //draw the icons for number of lives
 void hud_show_lives()
 {
+	char lives_str[32];
 	int x;
+	int text_w, text_h;
+	const int y = FSPACY(1);
 
 	int pnum = get_pnum_for_hud();
-
-	if (HUD_toolong)
-		return;
 
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
 		x = HUD_SCALE_X(7);
 	else
 		x = FSPACX(2);
-	x += hud_corner_text_left_inset(FSPACY(1), LINE_SPACING);
+	x += hud_corner_text_left_inset(y, LINE_SPACING);
+	gr_set_curfont(GAME_FONT);
 
 	if (Game_mode & GM_MULTI) {
-		gr_set_curfont( GAME_FONT );
+		snprintf(lives_str, sizeof(lives_str), "%s: %d", TXT_DEATHS,
+			Players[pnum].net_killed_total);
+		gr_get_string_drawn_size(lives_str, &text_w, &text_h);
+		if (HUD_message_area_intersects(x, y, text_w, text_h))
+			return;
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
-		gr_printf(x, FSPACY(1), "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+		gr_string(x, y, lives_str);
 	}
 	else if (Players[pnum].lives > 1)  {
 		grs_bitmap *bm;
+		int bitmap_w, bitmap_h;
+		int total_h;
 		PIGGY_PAGE_IN(Gauges[GAUGE_LIVES]);
 		bm=&GameBitmaps[Gauges[GAUGE_LIVES].index];
-		gr_set_curfont( GAME_FONT );
+		bitmap_w = HUD_SCALE_X_AR(bm->bm_w);
+		bitmap_h = HUD_SCALE_Y_AR(bm->bm_h);
+		snprintf(lives_str, sizeof(lives_str), " x %d", Players[pnum].lives - 1);
+		gr_get_string_drawn_size(lives_str, &text_w, &text_h);
+		total_h = bitmap_h > text_h ? bitmap_h : text_h;
+		if (HUD_message_area_intersects(x, y, bitmap_w + text_w, total_h))
+			return;
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
-		hud_bitblt_free(x,FSPACY(1),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
+		hud_bitblt_free(x, y, bitmap_w, bitmap_h, bm);
+		gr_string(bitmap_w + x, y, lives_str);
 	}
 }
 
@@ -4245,6 +4266,7 @@ void observer_show_bomb_highlights()
 void draw_hud()
 {
 	int pnum = get_pnum_for_hud();
+	hud_counts_debug_reset();
 	if (Newdemo_state == ND_STATE_RECORDING)
 		if (Players[pnum].homing_object_dist >= 0)
 			newdemo_record_homing_distance(Players[pnum].homing_object_dist);
@@ -4252,6 +4274,8 @@ void draw_hud()
 	n_players = multi_get_kill_list(player_list);
 
 	if (is_observer()) {
+		HUD_prepare_message_frame();
+
 		// Show HUD names
 		show_HUD_names();
 
@@ -4303,6 +4327,8 @@ void draw_hud()
 
 	if (PlayerCfg.HudMode==3) // no hud, "immersion mode"
 		return;
+
+	HUD_prepare_message_frame();
 
 	// Cruise speed
 	if ( Player_num > -1 && Viewer->type==OBJ_PLAYER && Viewer->id==Player_num && PlayerCfg.CurrentCockpitMode != CM_REAR_VIEW)	{

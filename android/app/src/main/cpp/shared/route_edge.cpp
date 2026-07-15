@@ -1,5 +1,4 @@
 #include "route_edge.h"
-#include "route_edge_c.h"
 
 #include <cstdio>
 #include <cstring>
@@ -134,7 +133,7 @@ route_edge_decision passable(
     route_required_action action = route_required_action::none)
 {
 	route_edge_decision result;
-	result.legacy_cost = LEVEL_METADATA_ROUTE_EDGE_PASSABLE;
+	result.progress_cost = LEVEL_METADATA_ROUTE_EDGE_PASSABLE;
 	result.blocker = route_edge_blocker::none;
 	result.action = action;
 	result.wall = wall;
@@ -149,7 +148,7 @@ route_edge_decision progress(
     route_key_requirement key = route_key_requirement::none)
 {
 	route_edge_decision result;
-	result.legacy_cost = LEVEL_METADATA_ROUTE_EDGE_PROGRESS;
+	result.progress_cost = LEVEL_METADATA_ROUTE_EDGE_PROGRESS;
 	result.blocker = blocker;
 	result.action = action;
 	result.wall = wall;
@@ -299,72 +298,3 @@ route_edge_decision evaluate_route_edge(
 }
 
 } // namespace dxx_route
-
-namespace
-{
-
-void copy_problem(char *out, int capacity, const char *problem)
-{
-	if (out && capacity > 0)
-		std::snprintf(out, static_cast<std::size_t>(capacity), "%s",
-		              problem ? problem : "");
-}
-
-} // namespace
-
-extern "C" int route_edge_compare_view(
-    const level_metadata_scan_view *view,
-    route_edge_shadow_summary *summary,
-    char *problem,
-    int problem_capacity)
-{
-	if (summary) {
-		std::memset(summary, 0, sizeof(*summary));
-		summary->first_mismatch_segment = -1;
-		summary->first_mismatch_side = -1;
-	}
-	copy_problem(problem, problem_capacity, "");
-	if (!view || !summary) {
-		copy_problem(problem, problem_capacity,
-		             "route edge comparison requires input and output");
-		return 0;
-	}
-	try {
-		dxx_route::route_snapshot snapshot;
-		std::string detail;
-		if (!dxx_route::build_route_snapshot(*view, snapshot, &detail)) {
-			copy_problem(problem, problem_capacity, detail.c_str());
-			return 0;
-		}
-		dxx_route::route_query query;
-		query.start = snapshot.state.start_position;
-		query.progression.key_mask = snapshot.state.key_mask;
-		query.navigator.companion = false;
-		for (int segment = 0; segment < view->num_segments; ++segment) {
-			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-				const int legacy = level_metadata_scan_route_edge_cost(
-				    view, segment, side);
-				const int shared = dxx_route::evaluate_route_edge(
-				                       snapshot, query, segment, side)
-				                       .legacy_cost;
-				summary->compared_edge_count++;
-				if (legacy == shared)
-					continue;
-				if (summary->mismatch_count == 0) {
-					summary->first_mismatch_segment = segment;
-					summary->first_mismatch_side = side;
-					summary->first_legacy_cost = legacy;
-					summary->first_shared_cost = shared;
-				}
-				summary->mismatch_count++;
-			}
-		}
-		return 1;
-	} catch (const std::exception &error) {
-		copy_problem(problem, problem_capacity, error.what());
-	} catch (...) {
-		copy_problem(problem, problem_capacity,
-		             "unknown route edge comparison failure");
-	}
-	return 0;
-}

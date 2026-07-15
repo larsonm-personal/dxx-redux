@@ -348,7 +348,9 @@ int do_powerup(object *obj)
 				used=0;
 			else
 				used=1;
-			invalidate_escort_goal();
+			escort_note_player_key_flags(
+			    Players[Player_num].flags & ~PLAYER_FLAGS_BLUE_KEY,
+			    Players[Player_num].flags);
 
 			if (Game_mode & GM_MULTI)
 				multi_send_ship_status();
@@ -367,7 +369,9 @@ int do_powerup(object *obj)
 				used=0;
 			else
 				used=1;
-			invalidate_escort_goal();
+			escort_note_player_key_flags(
+			    Players[Player_num].flags & ~PLAYER_FLAGS_RED_KEY,
+			    Players[Player_num].flags);
 
 			if (Game_mode & GM_MULTI)
 				multi_send_ship_status();
@@ -386,7 +390,9 @@ int do_powerup(object *obj)
 				used=0;
 			else
 				used=1;
-			invalidate_escort_goal();
+			escort_note_player_key_flags(
+			    Players[Player_num].flags & ~PLAYER_FLAGS_GOLD_KEY,
+			    Players[Player_num].flags);
 
 			if (Game_mode & GM_MULTI)
 				multi_send_ship_status();

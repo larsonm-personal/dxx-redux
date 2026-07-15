@@ -46,6 +46,8 @@ extern "C" {
 #include "kconfig.h"
 #include "joy.h"
 #include "gr.h"
+#include "hud_counts_shared.h"
+#include "hudmsg.h"
 #include "multi.h"
 #include "songs.h"
 #include "songs_android_shared.h"
@@ -594,8 +596,6 @@ static json serialize_level_metadata_route()
 	json result;
 	json steps = json::array();
 	route_snapshot_summary snapshot = {};
-	route_edge_shadow_summary edge_shadow = {};
-	route_planner_shadow_summary planner_shadow = {};
 	route_planner_plan_summary canonical_plan = {};
 	level_metadata_visibility_cache_summary visibility_cache = {};
 	int count = 0;
@@ -625,143 +625,6 @@ static json serialize_level_metadata_route()
 		result["canonical_snapshot"] = serialize_route_snapshot(snapshot);
 	if (level_metadata_get_live_route_snapshot(&snapshot))
 		result["live_snapshot"] = serialize_route_snapshot(snapshot);
-	if (level_metadata_get_route_edge_shadow(&edge_shadow)) {
-		result["edge_shadow"] = {
-			{ "compared_edge_count", edge_shadow.compared_edge_count },
-			{ "mismatch_count", edge_shadow.mismatch_count },
-			{ "first_mismatch_segment", edge_shadow.first_mismatch_segment },
-			{ "first_mismatch_side", edge_shadow.first_mismatch_side },
-			{ "first_legacy_cost", edge_shadow.first_legacy_cost },
-			{ "first_shared_cost", edge_shadow.first_shared_cost },
-		};
-	}
-	if (level_metadata_get_route_planner_shadow(&planner_shadow)) {
-		result["planner_shadow"] = {
-			{ "compared_progress_state_count", planner_shadow.compared_progress_state_count },
-			{ "compared_node_count", planner_shadow.compared_node_count },
-			{ "mismatch_count", planner_shadow.mismatch_count },
-			{ "first_mismatch_progress_state", planner_shadow.first_mismatch_progress_state },
-			{ "first_mismatch_optimistic", planner_shadow.first_mismatch_optimistic },
-			{ "first_mismatch_segment", planner_shadow.first_mismatch_segment },
-			{ "first_legacy_reachable", planner_shadow.first_legacy_reachable },
-			{ "first_shared_reachable", planner_shadow.first_shared_reachable },
-			{ "first_legacy_progress_weight", planner_shadow.first_legacy_progress_weight },
-			{ "first_shared_progress_weight", planner_shadow.first_shared_progress_weight },
-			{ "first_legacy_parent_segment", planner_shadow.first_legacy_parent_segment },
-			{ "first_shared_parent_segment", planner_shadow.first_shared_parent_segment },
-			{ "first_legacy_parent_side", planner_shadow.first_legacy_parent_side },
-			{ "first_shared_parent_side", planner_shadow.first_shared_parent_side },
-			{ "first_legacy_distance", planner_shadow.first_legacy_distance },
-			{ "first_shared_distance", planner_shadow.first_shared_distance },
-			{ "compared_target_count", planner_shadow.compared_target_count },
-			{ "target_mismatch_count", planner_shadow.target_mismatch_count },
-			{ "first_target_category", planner_shadow.first_target_category },
-			{ "first_target_index", planner_shadow.first_target_index },
-			{ "first_legacy_target_count", planner_shadow.first_legacy_target_count },
-			{ "first_shared_target_count", planner_shadow.first_shared_target_count },
-			{ "first_legacy_target_segment", planner_shadow.first_legacy_target_segment },
-			{ "first_shared_target_segment", planner_shadow.first_shared_target_segment },
-			{ "first_legacy_target_pos", json::array({ planner_shadow.first_legacy_target_pos[0], planner_shadow.first_legacy_target_pos[1], planner_shadow.first_legacy_target_pos[2] }) },
-			{ "first_shared_target_pos", json::array({ planner_shadow.first_shared_target_pos[0], planner_shadow.first_shared_target_pos[1], planner_shadow.first_shared_target_pos[2] }) },
-			{ "compared_target_selection_count", planner_shadow.compared_target_selection_count },
-			{ "target_selection_mismatch_count", planner_shadow.target_selection_mismatch_count },
-			{ "first_selection_progress_state", planner_shadow.first_selection_progress_state },
-			{ "first_legacy_selection_index", planner_shadow.first_legacy_selection_index },
-			{ "first_shared_selection_index", planner_shadow.first_shared_selection_index },
-			{ "first_legacy_selection_progress_weight", planner_shadow.first_legacy_selection_progress_weight },
-			{ "first_shared_selection_progress_weight", planner_shadow.first_shared_selection_progress_weight },
-			{ "first_legacy_selection_distance", planner_shadow.first_legacy_selection_distance },
-			{ "first_shared_selection_distance", planner_shadow.first_shared_selection_distance },
-			{ "compared_key_selection_count", planner_shadow.compared_key_selection_count },
-			{ "key_selection_mismatch_count", planner_shadow.key_selection_mismatch_count },
-			{ "first_key_selection_progress_state", planner_shadow.first_key_selection_progress_state },
-			{ "first_key_selection_key", planner_shadow.first_key_selection_key },
-			{ "first_legacy_key_selection_index", planner_shadow.first_legacy_key_selection_index },
-			{ "first_shared_key_selection_index", planner_shadow.first_shared_key_selection_index },
-			{ "first_legacy_key_selection_progress_weight", planner_shadow.first_legacy_key_selection_progress_weight },
-			{ "first_shared_key_selection_progress_weight", planner_shadow.first_shared_key_selection_progress_weight },
-			{ "first_legacy_key_selection_distance", planner_shadow.first_legacy_key_selection_distance },
-			{ "first_shared_key_selection_distance", planner_shadow.first_shared_key_selection_distance },
-			{ "compared_trigger_source_edge_count", planner_shadow.compared_trigger_source_edge_count },
-			{ "compared_trigger_source_count", planner_shadow.compared_trigger_source_count },
-			{ "trigger_source_mismatch_count", planner_shadow.trigger_source_mismatch_count },
-			{ "first_trigger_source_progress_state", planner_shadow.first_trigger_source_progress_state },
-			{ "first_trigger_source_segment", planner_shadow.first_trigger_source_segment },
-			{ "first_trigger_source_side", planner_shadow.first_trigger_source_side },
-			{ "first_trigger_source_index", planner_shadow.first_trigger_source_index },
-			{ "first_legacy_trigger_source_count", planner_shadow.first_legacy_trigger_source_count },
-			{ "first_shared_trigger_source_count", planner_shadow.first_shared_trigger_source_count },
-			{ "first_legacy_trigger_source_wall", planner_shadow.first_legacy_trigger_source_wall },
-			{ "first_shared_trigger_source_wall", planner_shadow.first_shared_trigger_source_wall },
-			{ "first_legacy_trigger_source_trigger", planner_shadow.first_legacy_trigger_source_trigger },
-			{ "first_shared_trigger_source_trigger", planner_shadow.first_shared_trigger_source_trigger },
-			{ "first_legacy_trigger_source_segment", planner_shadow.first_legacy_trigger_source_segment },
-			{ "first_shared_trigger_source_segment", planner_shadow.first_shared_trigger_source_segment },
-			{ "first_legacy_trigger_source_side", planner_shadow.first_legacy_trigger_source_side },
-			{ "first_shared_trigger_source_side", planner_shadow.first_shared_trigger_source_side },
-			{ "first_legacy_trigger_source_pos", json::array({ planner_shadow.first_legacy_trigger_source_pos[0], planner_shadow.first_legacy_trigger_source_pos[1], planner_shadow.first_legacy_trigger_source_pos[2] }) },
-			{ "first_shared_trigger_source_pos", json::array({ planner_shadow.first_shared_trigger_source_pos[0], planner_shadow.first_shared_trigger_source_pos[1], planner_shadow.first_shared_trigger_source_pos[2] }) },
-			{ "compared_trigger_firing_path_count", planner_shadow.compared_trigger_firing_path_count },
-			{ "trigger_firing_path_mismatch_count", planner_shadow.trigger_firing_path_mismatch_count },
-			{ "first_trigger_firing_path_progress_state", planner_shadow.first_trigger_firing_path_progress_state },
-			{ "first_trigger_firing_path_segment", planner_shadow.first_trigger_firing_path_segment },
-			{ "first_trigger_firing_path_side", planner_shadow.first_trigger_firing_path_side },
-			{ "first_legacy_trigger_firing_path_found", planner_shadow.first_legacy_trigger_firing_path_found },
-			{ "first_shared_trigger_firing_path_found", planner_shadow.first_shared_trigger_firing_path_found },
-			{ "first_legacy_trigger_firing_path_wall", planner_shadow.first_legacy_trigger_firing_path_wall },
-			{ "first_shared_trigger_firing_path_wall", planner_shadow.first_shared_trigger_firing_path_wall },
-			{ "first_legacy_trigger_firing_path_trigger", planner_shadow.first_legacy_trigger_firing_path_trigger },
-			{ "first_shared_trigger_firing_path_trigger", planner_shadow.first_shared_trigger_firing_path_trigger },
-			{ "first_legacy_trigger_firing_path_terminal_segment", planner_shadow.first_legacy_trigger_firing_path_terminal_segment },
-			{ "first_shared_trigger_firing_path_terminal_segment", planner_shadow.first_shared_trigger_firing_path_terminal_segment },
-			{ "first_legacy_trigger_firing_path_progress_weight", planner_shadow.first_legacy_trigger_firing_path_progress_weight },
-			{ "first_shared_trigger_firing_path_progress_weight", planner_shadow.first_shared_trigger_firing_path_progress_weight },
-			{ "first_legacy_trigger_firing_path_terminal_pos", json::array({ planner_shadow.first_legacy_trigger_firing_path_terminal_pos[0], planner_shadow.first_legacy_trigger_firing_path_terminal_pos[1], planner_shadow.first_legacy_trigger_firing_path_terminal_pos[2] }) },
-			{ "first_shared_trigger_firing_path_terminal_pos", json::array({ planner_shadow.first_shared_trigger_firing_path_terminal_pos[0], planner_shadow.first_shared_trigger_firing_path_terminal_pos[1], planner_shadow.first_shared_trigger_firing_path_terminal_pos[2] }) },
-			{ "first_legacy_trigger_firing_path_distance", planner_shadow.first_legacy_trigger_firing_path_distance },
-			{ "first_shared_trigger_firing_path_distance", planner_shadow.first_shared_trigger_firing_path_distance },
-			{ "compared_trigger_dependency_count", planner_shadow.compared_trigger_dependency_count },
-			{ "trigger_dependency_mismatch_count", planner_shadow.trigger_dependency_mismatch_count },
-			{ "first_trigger_dependency_progress_state", planner_shadow.first_trigger_dependency_progress_state },
-			{ "first_trigger_dependency_segment", planner_shadow.first_trigger_dependency_segment },
-			{ "first_trigger_dependency_side", planner_shadow.first_trigger_dependency_side },
-			{ "first_legacy_trigger_dependency_resolved", planner_shadow.first_legacy_trigger_dependency_resolved },
-			{ "first_shared_trigger_dependency_resolved", planner_shadow.first_shared_trigger_dependency_resolved },
-			{ "first_legacy_trigger_dependency_step_count", planner_shadow.first_legacy_trigger_dependency_step_count },
-			{ "first_shared_trigger_dependency_step_count", planner_shadow.first_shared_trigger_dependency_step_count },
-			{ "first_trigger_dependency_step", planner_shadow.first_trigger_dependency_step },
-			{ "compared_complete_route_count", planner_shadow.compared_complete_route_count },
-			{ "complete_route_mismatch_count", planner_shadow.complete_route_mismatch_count },
-			{ "first_legacy_complete_route_status", planner_shadow.first_legacy_complete_route_status },
-			{ "first_shared_complete_route_status", planner_shadow.first_shared_complete_route_status },
-			{ "first_legacy_complete_route_step_count", planner_shadow.first_legacy_complete_route_step_count },
-			{ "first_shared_complete_route_step_count", planner_shadow.first_shared_complete_route_step_count },
-			{ "first_complete_route_step", planner_shadow.first_complete_route_step },
-			{ "first_legacy_complete_route_kind", planner_shadow.first_legacy_complete_route_kind },
-			{ "first_shared_complete_route_kind", planner_shadow.first_shared_complete_route_kind },
-			{ "first_legacy_complete_route_segment", planner_shadow.first_legacy_complete_route_segment },
-			{ "first_shared_complete_route_segment", planner_shadow.first_shared_complete_route_segment },
-			{ "first_legacy_complete_route_wall", planner_shadow.first_legacy_complete_route_wall },
-			{ "first_shared_complete_route_wall", planner_shadow.first_shared_complete_route_wall },
-			{ "first_legacy_complete_route_trigger", planner_shadow.first_legacy_complete_route_trigger },
-			{ "first_shared_complete_route_trigger", planner_shadow.first_shared_complete_route_trigger },
-			{ "compared_unexplored_route_count", planner_shadow.compared_unexplored_route_count },
-			{ "unexplored_route_mismatch_count", planner_shadow.unexplored_route_mismatch_count },
-			{ "first_legacy_unexplored_status", planner_shadow.first_legacy_unexplored_status },
-			{ "first_shared_unexplored_status", planner_shadow.first_shared_unexplored_status },
-			{ "first_legacy_unexplored_component_size", planner_shadow.first_legacy_unexplored_component_size },
-			{ "first_shared_unexplored_component_size", planner_shadow.first_shared_unexplored_component_size },
-			{ "first_legacy_unexplored_target_segment", planner_shadow.first_legacy_unexplored_target_segment },
-			{ "first_shared_unexplored_target_segment", planner_shadow.first_shared_unexplored_target_segment },
-			{ "first_legacy_unexplored_waypoint_segment", planner_shadow.first_legacy_unexplored_waypoint_segment },
-			{ "first_shared_unexplored_waypoint_segment", planner_shadow.first_shared_unexplored_waypoint_segment },
-			{ "first_legacy_unexplored_direct_reachable", planner_shadow.first_legacy_unexplored_direct_reachable },
-			{ "first_shared_unexplored_direct_reachable", planner_shadow.first_shared_unexplored_direct_reachable },
-			{ "first_legacy_unexplored_step_count", planner_shadow.first_legacy_unexplored_step_count },
-			{ "first_shared_unexplored_step_count", planner_shadow.first_shared_unexplored_step_count },
-			{ "first_unexplored_route_step", planner_shadow.first_unexplored_route_step },
-		};
-	}
 	count = metadata->route_step_count;
 	if (count < 0)
 		count = 0;
@@ -794,10 +657,13 @@ static json serialize_level_metadata_route()
 static json serialize_guidebot_route_analysis()
 {
 	const level_metadata_state *metadata = level_metadata_get_live_route_state();
+	route_planner_plan_summary summary = {};
 	json result;
 	json steps = json::array();
 	int count = 0;
-	int selected_index = -1;
+	int selected_index = level_metadata_get_live_route_plan_summary(&summary)
+	                         ? summary.first_pending_step
+	                         : -1;
 
 	if (!metadata) {
 		result["available"] = false;
@@ -810,51 +676,28 @@ static json serialize_guidebot_route_analysis()
 	if (count > LEVEL_METADATA_MAX_ROUTE_STEPS)
 		count = LEVEL_METADATA_MAX_ROUTE_STEPS;
 	for (int index = 0; index < count; index++) {
-		escort_route_step_analysis analysis;
+		const level_metadata_route_step *step = &metadata->route_steps[index];
 		json item;
 		json links = json::array();
 
-		escort_route_step_analysis_clear(&analysis);
-		if (!escort_route_analyze_step(index, &analysis))
-			continue;
-		if (analysis.selected_next)
-			selected_index = index;
 		item["index"] = index;
-		item["kind"] = level_metadata_route_step_kind_name(analysis.kind);
-		item["activation_kind"] = level_metadata_route_activation_kind_name(analysis.activation_kind);
-		item["label"] = metadata->route_steps[index].label;
-		item["activation_pos"] = metadata->route_steps[index].activation_pos_valid ? json::array({ metadata->route_steps[index].activation_pos[0], metadata->route_steps[index].activation_pos[1], metadata->route_steps[index].activation_pos[2] }) : json(nullptr);
-		item["aim_pos"] = metadata->route_steps[index].aim_pos_valid ? json::array({ metadata->route_steps[index].aim_pos[0], metadata->route_steps[index].aim_pos[1], metadata->route_steps[index].aim_pos[2] }) : json(nullptr);
-		item["satisfied"] = analysis.satisfied != 0;
-		item["satisfied_reason"] = escort_route_step_satisfied_reason_name(analysis.satisfied_reason);
-		item["selected_next"] = analysis.selected_next != 0;
-		item["reachable"] = analysis.reachable;
-		item["guidance_mode"] = analysis.guidance_mode;
-		item["key_index"] = analysis.key_index;
-		item["key_carrier_objnum"] = metadata->route_steps[index].key_carrier_objnum;
-		item["key_owned"] = analysis.key_owned;
-		item["key_exists"] = analysis.key_exists;
-		item["trigger"] = analysis.trigger_num;
-		item["trigger_flags"] = analysis.trigger_flags;
-		item["trigger_disabled"] = analysis.trigger_disabled;
-		item["linked_wall_count"] = analysis.linked_wall_count;
-		item["linked_walls_passable"] = analysis.linked_walls_passable;
-		item["first_blocking_link"] = analysis.first_blocking_link;
-		item["first_blocking_seg"] = analysis.first_blocking_seg;
-		item["first_blocking_side"] = analysis.first_blocking_side;
-		item["first_blocking_wall"] = analysis.first_blocking_wall;
-		for (int link = 0; link < analysis.linked_wall_count && link < LEVEL_METADATA_MAX_ROUTE_LINKS; link++) {
-			escort_route_link_analysis link_analysis;
+		item["kind"] = level_metadata_route_step_kind_name(step->kind);
+		item["activation_kind"] = level_metadata_route_activation_kind_name(step->activation_kind);
+		item["label"] = step->label;
+		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
+		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
+		item["selected_next"] = index == selected_index;
+		item["key_index"] = step->key_index;
+		item["key_carrier_objnum"] = step->key_carrier_objnum;
+		item["trigger"] = step->trigger_num;
+		item["opened_link_count"] = step->opened_link_count;
+		for (int link = 0; link < step->opened_link_count && link < LEVEL_METADATA_MAX_ROUTE_LINKS; link++) {
 			json link_item;
 
-			escort_route_link_analysis_clear(&link_analysis);
-			if (!escort_route_analyze_step_link(index, link, &link_analysis))
-				continue;
 			link_item["index"] = link;
-			link_item["seg"] = link_analysis.seg;
-			link_item["side"] = link_analysis.side;
-			link_item["wall"] = link_analysis.wall;
-			link_item["passable"] = link_analysis.passable != 0;
+			link_item["seg"] = step->opened_link_seg[link];
+			link_item["side"] = step->opened_link_side[link];
+			link_item["wall"] = step->opened_link_wall[link];
 			links.push_back(std::move(link_item));
 		}
 		item["links"] = std::move(links);
@@ -949,11 +792,6 @@ static json serialize_guidebot()
 	            live_plan.first_pending_step < route_metadata->route_step_count
 	        ? &route_metadata->route_steps[live_plan.first_pending_step]
 	        : nullptr;
-	escort_route_step_analysis active_analysis;
-	escort_route_step_analysis_clear(&active_analysis);
-	const bool active_analysis_available =
-	    active_step && escort_route_analyze_step(
-	                       live_plan.first_pending_step, &active_analysis) != 0;
 	result["route_goal_activation_pos"] =
 	    active_step && active_step->activation_pos_valid
 	        ? json::array({ f2fl(active_step->activation_pos[0]),
@@ -966,18 +804,6 @@ static json serialize_guidebot()
 	                        f2fl(active_step->aim_pos[1]),
 	                        f2fl(active_step->aim_pos[2]) })
 	        : json(nullptr);
-	result["route_goal_satisfied"] =
-	    active_analysis_available ? json(active_analysis.satisfied != 0) : json(nullptr);
-	result["route_goal_satisfied_reason"] =
-	    active_analysis_available
-	        ? json(escort_route_step_satisfied_reason_name(active_analysis.satisfied_reason))
-	        : json(nullptr);
-	result["route_goal_linked_walls_passable"] =
-	    active_analysis_available && active_analysis.linked_wall_count > 0
-	        ? json(active_analysis.linked_walls_passable != 0)
-	        : json(nullptr);
-	result["route_goal_first_blocking_wall"] =
-	    active_analysis_available ? active_analysis.first_blocking_wall : -1;
 	escort_path_parity_result path_parity = {};
 	escort_get_path_parity_result(&path_parity);
 	result["path_parity"] = {
@@ -1000,14 +826,6 @@ static json serialize_guidebot()
 		{ "route_rng_calls", path_parity.route_rng_calls },
 		{ "rng_calls_match", path_parity.ordinary_rng_calls == path_parity.route_rng_calls },
 	};
-	result["route_selector_compare_count"] = escort_get_route_selector_compare_count();
-	result["route_selector_mismatch_count"] = escort_get_route_selector_mismatch_count();
-	result["route_selector_shared_index"] = escort_get_route_selector_shared_index();
-	result["route_selector_legacy_index"] = escort_get_route_selector_legacy_index();
-	result["route_selector_mismatch_shared_index"] = escort_get_route_selector_mismatch_shared_index();
-	result["route_selector_mismatch_legacy_index"] = escort_get_route_selector_mismatch_legacy_index();
-	result["route_selector_mismatch_shared_goal"] = escort_get_route_selector_mismatch_shared_goal();
-	result["route_selector_mismatch_legacy_goal"] = escort_get_route_selector_mismatch_legacy_goal();
 	result["unexplored_component_size"] = escort_get_unexplored_component_size();
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
 	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();
@@ -1279,6 +1097,38 @@ extern "C" char *game_introspect_get_state(void)
 
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
 	j["in_game"] = in_game;
+
+	/* -- HUD layout ----------------------------------------------- */
+	{
+		const hud_counts_debug_state *counts = hud_counts_get_debug_state();
+		json hud;
+		json message_rects = json::array();
+		const int message_rect_count = HUD_get_message_rect_count();
+
+		for (int i = 0; i < message_rect_count; i++) {
+			int x, y, w, h;
+			if (HUD_get_message_rect(i, &x, &y, &w, &h))
+				message_rects.push_back({ { "x", x }, { "y", y }, { "w", w }, { "h", h } });
+		}
+		auto serialize_count_row = [](const hud_counts_debug_row &row) {
+			return json{
+				{ "present", row.present != 0 },
+				{ "drawn", row.drawn != 0 },
+				{ "x", row.x },
+				{ "y", row.y },
+				{ "w", row.w },
+				{ "h", row.h }
+			};
+		};
+
+		hud["message_rect_count"] = message_rect_count;
+		hud["message_rects"] = std::move(message_rects);
+		hud["progress"]["robots"] = serialize_count_row(counts->robots);
+		hud["progress"]["hostages"] = serialize_count_row(counts->hostages);
+		hud["progress"]["secrets"] = serialize_count_row(counts->secrets);
+		hud["show_robot_hostage_counts"] = PlayerCfg.ShowRobotHostageCounts != 0;
+		j["hud_layout"] = std::move(hud);
+	}
 
 	/* -- Multiplayer state ---------------------------------------- */
 	{

@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "level_metadata_scan.h"
+#include "route_planner_c.h"
 
 #define TEST_SEGMENTS              4
 #define TEST_SIDES                 LEVEL_METADATA_MAX_SIDES
@@ -258,6 +259,12 @@ static int test_segment_center(void *user, int seg, int xyz[3])
 	return 1;
 }
 
+static int test_side_center(void *user, int seg, int side, int xyz[3])
+{
+	(void) side;
+	return test_segment_center(user, seg, xyz);
+}
+
 static int test_start_position(void *user, int xyz[3])
 {
 	(void) user;
@@ -458,6 +465,7 @@ static level_metadata_scan_view test_view(void)
 	memset(&view, 0, sizeof(view));
 	view.num_segments = TEST_SEGMENTS;
 	view.num_walls = TEST_WALLS;
+	view.num_triggers = TEST_TRIGGERS;
 	view.start_segment = 0;
 	view.segment_special_control_center = 3;
 	view.wall_type_blastable = TEST_WALL_BLASTABLE;
@@ -498,6 +506,7 @@ static level_metadata_scan_view test_view(void)
 	view.trigger_flags = test_trigger_flags_at;
 	view.segment_special = test_segment_special;
 	view.segment_center = test_segment_center;
+	view.side_center = test_side_center;
 	view.start_position = test_start_position;
 	view.object_count = test_object_count;
 	view.object_segment = test_object_segment;
@@ -537,90 +546,19 @@ static int expect_string(const char *label, const char *expected, const char *ac
 	return 1;
 }
 
-static int test_shared_route_edge_cost(void)
+static int plan_route(
+    const level_metadata_scan_view *view,
+    int endpoint_kind,
+    int target_segment,
+    level_metadata_state *state,
+    level_metadata_unexplored_route *unexplored)
 {
-	level_metadata_scan_view view = test_view();
-	int failures = 0;
+	route_planner_plan_summary summary;
+	char problem[128];
 
-	test_reset();
-	test_wall_nums[0][0] = 0;
-	test_wall_type[0] = TEST_WALL_CLOSED;
-	test_side_flyable[1][1] = 1;
-	failures += expect_int(
-	    "directional edge ignores reverse flyability",
-	    LEVEL_METADATA_ROUTE_EDGE_BLOCKED,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-	failures += expect_int(
-	    "directional reverse edge flyable",
-	    LEVEL_METADATA_ROUTE_EDGE_PASSABLE,
-	    level_metadata_scan_route_edge_cost(&view, 1, 1));
-
-	test_reset();
-	test_wall_nums[0][0] = 0;
-	test_wall_type[0] = TEST_WALL_DOOR;
-	test_wall_key[0] = TEST_KEY_BLUE;
-	failures += expect_int(
-	    "missing key edge is progress",
-	    LEVEL_METADATA_ROUTE_EDGE_PROGRESS,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
-	failures += expect_int(
-	    "held key edge is passable",
-	    LEVEL_METADATA_ROUTE_EDGE_PASSABLE,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-	view.initial_key_mask = 0;
-
-	test_reset();
-	test_wall_nums[0][0] = 0;
-	test_wall_type[0] = TEST_WALL_DOOR;
-	test_wall_clip_flags[0] = TEST_WALL_CLIP_HIDDEN;
-	failures += expect_int(
-	    "hidden wall edge is progress",
-	    LEVEL_METADATA_ROUTE_EDGE_PROGRESS,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-
-	test_reset();
-	test_wall_nums[0][0] = 0;
-	test_wall_type[0] = TEST_WALL_DOOR;
-	test_wall_flags[0] = TEST_WALL_FLAG_DOOR_LOCKED;
-	failures += expect_int(
-	    "locked door without trigger is blocked",
-	    LEVEL_METADATA_ROUTE_EDGE_BLOCKED,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-
-	test_reset();
-	test_wall_nums[0][0] = 0;
-	test_wall_nums[0][2] = 2;
-	test_wall_type[0] = TEST_WALL_DOOR;
-	test_wall_type[2] = TEST_WALL_OPEN;
-	test_wall_trigger[2] = 0;
-	test_wall_seg[2] = 0;
-	test_wall_sides[2] = 2;
-	test_trigger_type[0] = TEST_TRIGGER_UNLOCK_DOOR;
-	test_wall_flags[0] = TEST_WALL_FLAG_DOOR_LOCKED;
-	view.triggered_side_opener_count = test_triggered_side_opener_count;
-	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
-	view.trigger_type = test_trigger_type_at;
-	failures += expect_int(
-	    "unlock-triggered door edge is progress",
-	    LEVEL_METADATA_ROUTE_EDGE_PROGRESS,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-
-	test_reset();
-	test_wall_nums[0][0] = 0;
-	test_wall_type[0] = TEST_WALL_DOOR;
-	test_wall_key[0] = TEST_KEY_BLUE;
-	test_side_hard_blocked[0][0] = 1;
-	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
-	view.triggered_side_opener_count = NULL;
-	view.triggered_side_opener_wall_num = NULL;
-	view.trigger_type = NULL;
-	failures += expect_int(
-	    "guidebot hard block overrides held key",
-	    LEVEL_METADATA_ROUTE_EDGE_BLOCKED,
-	    level_metadata_scan_route_edge_cost(&view, 0, 0));
-
-	return failures;
+	return route_planner_plan_view(
+	    view, endpoint_kind, target_segment, state, unexplored, &summary,
+	    problem, sizeof(problem));
 }
 
 static int test_reactorless_reachable_exit(void)
@@ -669,24 +607,6 @@ static int test_reactorless_missing_exit(void)
 	failures += expect_string("missing exit route status", "failed", level_metadata_route_status_name(state.route_status));
 	failures += expect_string("missing exit route problem", "missing exit", state.route_problem);
 	failures += expect_string("missing exit route note", "missing reactor", state.route_note);
-	return failures;
-}
-
-static int test_end_route_refresh_preserves_static_metadata(void)
-{
-	level_metadata_scan_view view = test_view();
-	level_metadata_state state;
-	int failures = 0;
-
-	test_reset();
-	level_metadata_scan_level(&view, &state);
-	state.energy_center_count = 37;
-	state.travel_distance = 1234.0;
-	level_metadata_scan_end_route(&view, &state);
-	failures += expect_int("route-only energy centers", 37, state.energy_center_count);
-	failures += expect_double("route-only travel distance", 1234.0, state.travel_distance);
-	failures += expect_string("route-only status", "ok", level_metadata_route_status_name(state.route_status));
-	failures += expect_int("route-only steps", 2, state.route_step_count);
 	return failures;
 }
 
@@ -1145,7 +1065,7 @@ static int test_segment_route_reuses_trigger_dependencies(void)
 	view.trigger_link_count = test_trigger_link_count_at;
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
-	level_metadata_scan_route_to_segment(&view, 2, &state);
+	plan_route(&view, ROUTE_PLANNER_ENDPOINT_SEGMENT, 2, &state, NULL);
 	failures += expect_string("segment route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("segment route steps", 3, state.route_step_count);
 	failures += expect_string("segment route trigger", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
@@ -1179,7 +1099,7 @@ static int test_unexplored_route_acquires_key_for_largest_component(void)
 	test_object_type[0] = TEST_OBJ_POWERUP;
 	test_object_id[0] = TEST_POWERUP_BLUE_KEY;
 	test_object_seg[0] = 0;
-	level_metadata_scan_unexplored_route(&view, &state, &result);
+	plan_route(&view, ROUTE_PLANNER_ENDPOINT_UNEXPLORED, -1, &state, &result);
 	failures += expect_string("keyed unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("keyed unexplored component", 2, result.component_size);
 	failures += expect_int("keyed unexplored target", 1, result.target_seg);
@@ -1214,7 +1134,7 @@ static int test_unexplored_route_keeps_hidden_wall_dependency(void)
 	test_wall_sides[0] = 0;
 	test_wall_seg[1] = 1;
 	test_wall_sides[1] = 1;
-	level_metadata_scan_unexplored_route(&view, &state, &result);
+	plan_route(&view, ROUTE_PLANNER_ENDPOINT_UNEXPLORED, -1, &state, &result);
 	failures += expect_string("hidden unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("hidden unexplored component", 2, result.component_size);
 	failures += expect_int("hidden unexplored target", 1, result.target_seg);
@@ -1238,7 +1158,10 @@ static int test_unexplored_route_clears_target_when_fully_explored(void)
 	test_reset();
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
 		test_segment_explored[seg] = 1;
-	failures += expect_int("fully explored result", 0, level_metadata_scan_unexplored_route(&view, &state, &result));
+	failures += expect_int(
+	    "fully explored result", 1,
+	    plan_route(
+	        &view, ROUTE_PLANNER_ENDPOINT_UNEXPLORED, -1, &state, &result));
 	failures += expect_int("fully explored target", -1, result.target_seg);
 	failures += expect_string("fully explored status", "failed", level_metadata_route_status_name(state.route_status));
 	failures += expect_string("fully explored problem", "no unexplored area", state.route_problem);
@@ -1261,7 +1184,7 @@ static int test_unexplored_route_omits_irrelevant_reactor(void)
 	test_object_count_value = 1;
 	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
 	test_object_seg[0] = 2;
-	level_metadata_scan_unexplored_route(&view, &state, &result);
+	plan_route(&view, ROUTE_PLANNER_ENDPOINT_UNEXPLORED, -1, &state, &result);
 	failures += expect_string("direct unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("direct unexplored target", 3, result.target_seg);
 	failures += expect_int("direct unexplored steps", 2, state.route_step_count);
@@ -1294,7 +1217,7 @@ static int test_route_opens_control_center_links_after_reactor(void)
 	failures += expect_int("control center link route steps", 3, state.route_step_count);
 	failures += expect_string("control center link reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("control center link exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
-	level_metadata_scan_route_to_segment(&view, 2, &state);
+	plan_route(&view, ROUTE_PLANNER_ENDPOINT_SEGMENT, 2, &state, NULL);
 	failures += expect_string("control center unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("control center unexplored steps", 3, state.route_step_count);
 	failures += expect_string("control center unexplored reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
@@ -1546,11 +1469,9 @@ int main(void)
 {
 	int failures = 0;
 
-	failures += test_shared_route_edge_cost();
 	failures += test_level_summary_omits_route_work();
 	failures += test_reactorless_reachable_exit();
 	failures += test_reactorless_missing_exit();
-	failures += test_end_route_refresh_preserves_static_metadata();
 	failures += test_route_key_step();
 	failures += test_route_uses_initial_key_without_powerup();
 	failures += test_route_key_uses_longer_open_path();

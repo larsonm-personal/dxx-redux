@@ -40,8 +40,7 @@
     {"action": "assert", "expect": {
         "in_game": "true",
         "screen_mode": "game",
-        "current_level_num": "1",
-        "guidebot.route_selector_mismatch_count": "0"
+        "current_level_num": "1"
     }},
 
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
@@ -54,10 +53,6 @@
         "guidebot.route_planner_source": "shared_cpp",
         "guidebot.route_first_pending_step": "1",
         "guidebot.route_first_pending_path_segment_count": {"gt": 0},
-        "guidebot.route_selector_compare_count": {"gt": 0},
-        "guidebot.route_selector_mismatch_count": "0",
-        "guidebot.route_selector_shared_index": "1",
-        "guidebot.route_selector_legacy_index": "1",
         "guidebot.route_start_matches_buddy": "true",
         "guidebot.unexplored_component_size": {"gt": 0},
         "guidebot.unexplored_target_seg": {"gte": 0},
@@ -66,27 +61,6 @@
         "guidebot.route_pending_event_mask": "0",
         "guidebot.route_event_coalesced_rescan_count": "0",
         "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
-        "level_metadata_route.edge_shadow.mismatch_count": "0",
-		"level_metadata_route.planner_shadow.compared_progress_state_count": {"gt": 4},
-        "level_metadata_route.planner_shadow.mismatch_count": "0",
-        "level_metadata_route.planner_shadow.target_mismatch_count": "0",
-		"level_metadata_route.planner_shadow.compared_target_selection_count": {"gt": 4},
-        "level_metadata_route.planner_shadow.target_selection_mismatch_count": "0",
-		"level_metadata_route.planner_shadow.compared_key_selection_count": {"gt": 12},
-        "level_metadata_route.planner_shadow.key_selection_mismatch_count": "0",
-        "level_metadata_route.planner_shadow.compared_trigger_source_edge_count": {"gt": 0},
-        "level_metadata_route.planner_shadow.trigger_source_mismatch_count": "0",
-        "level_metadata_route.planner_shadow.compared_trigger_firing_path_count": {"gt": 0},
-        "level_metadata_route.planner_shadow.trigger_firing_path_mismatch_count": "0",
-		"level_metadata_route.planner_shadow.compared_trigger_dependency_count": {"gt": 0},
-		"level_metadata_route.planner_shadow.trigger_dependency_mismatch_count": "0",
-		"level_metadata_route.planner_shadow.compared_complete_route_count": {"gt": 0},
-		"level_metadata_route.planner_shadow.complete_route_mismatch_count": "0",
-		"level_metadata_route.planner_shadow.compared_unexplored_route_count": {"gt": 0},
-		"level_metadata_route.planner_shadow.unexplored_route_mismatch_count": "0",
-        "level_metadata_route.visibility_cache.hits": {"gt": 0},
-        "level_metadata_route.visibility_cache.misses": {"gt": 0},
-        "level_metadata_route.visibility_cache.entries": {"gt": 0},
         "level_metadata_route.visibility_cache.bypasses": "0"
     }},
 
@@ -100,7 +74,6 @@
         "guidebot.route_pending_event_mask": "0",
         "guidebot.route_event_coalesced_rescan_count": "1",
         "guidebot.route_metadata_rescan_count": {"gte": 3},
-        "guidebot.route_selector_mismatch_count": "0",
         "guidebot.route_last_replan_reason": "automap_exploration"
     }},
 

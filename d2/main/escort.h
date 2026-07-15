@@ -26,60 +26,6 @@ extern int escort_get_secret_goal_display_index(void);
 extern int escort_get_secret_goal_seg(void);
 extern int escort_get_secret_goal_side(void);
 #ifdef __ANDROID__
-enum escort_route_step_satisfied_reason {
-	ESCORT_ROUTE_STEP_REASON_NONE = 0,
-	ESCORT_ROUTE_STEP_REASON_START,
-	ESCORT_ROUTE_STEP_REASON_KEY_OWNED,
-	ESCORT_ROUTE_STEP_REASON_KEY_MISSING,
-	ESCORT_ROUTE_STEP_REASON_TRIGGER_DISABLED,
-	ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE,
-	ESCORT_ROUTE_STEP_REASON_LINKS_BLOCKED,
-	ESCORT_ROUTE_STEP_REASON_LATER_REACHABLE,
-	ESCORT_ROUTE_STEP_REASON_REACTOR_DESTROYED,
-	ESCORT_ROUTE_STEP_REASON_REACTOR_ALIVE,
-	ESCORT_ROUTE_STEP_REASON_BOSS_DESTROYED,
-	ESCORT_ROUTE_STEP_REASON_BOSS_ALIVE,
-	ESCORT_ROUTE_STEP_REASON_EXIT_ENTERED,
-	ESCORT_ROUTE_STEP_REASON_EXIT_PENDING,
-	ESCORT_ROUTE_STEP_REASON_WALL_DESTROYED,
-	ESCORT_ROUTE_STEP_REASON_WALL_INTACT,
-	ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE,
-	ESCORT_ROUTE_STEP_REASON_INVALID
-};
-
-typedef struct escort_route_step_analysis {
-	int valid;
-	int index;
-	int kind;
-	int activation_kind;
-	int satisfied;
-	int satisfied_reason;
-	int selected_next;
-	int reachable;
-	int guidance_mode;
-	int key_index;
-	int key_owned;
-	int key_exists;
-	int trigger_num;
-	int trigger_flags;
-	int trigger_disabled;
-	int linked_wall_count;
-	int linked_walls_passable;
-	int first_blocking_link;
-	int first_blocking_seg;
-	int first_blocking_side;
-	int first_blocking_wall;
-} escort_route_step_analysis;
-
-typedef struct escort_route_link_analysis {
-	int valid;
-	int index;
-	int passable;
-	int seg;
-	int side;
-	int wall;
-} escort_route_link_analysis;
-
 #ifdef INTROSPECT_ON
 typedef struct escort_path_parity_result {
 	int valid;
@@ -133,14 +79,6 @@ extern unsigned int escort_get_route_pending_event_mask(void);
 extern unsigned int escort_get_route_event_notification_count(void);
 extern unsigned int escort_get_route_event_coalesced_rescan_count(void);
 extern unsigned int escort_get_route_ignored_nonowner_event_count(void);
-extern unsigned int escort_get_route_selector_compare_count(void);
-extern unsigned int escort_get_route_selector_mismatch_count(void);
-extern int escort_get_route_selector_shared_index(void);
-extern int escort_get_route_selector_legacy_index(void);
-extern int escort_get_route_selector_mismatch_shared_index(void);
-extern int escort_get_route_selector_mismatch_legacy_index(void);
-extern int escort_get_route_selector_mismatch_shared_goal(void);
-extern int escort_get_route_selector_mismatch_legacy_goal(void);
 extern void escort_restore_route_target_mode(int target_mode);
 extern int escort_get_unexplored_component_size(void);
 extern int escort_get_unexplored_target_seg(void);
@@ -149,11 +87,6 @@ extern int escort_get_unexplored_direct_reachable(void);
 extern int escort_get_unexplored_target_visited(void);
 extern const char *escort_get_route_goal_label(void);
 extern const char *escort_get_route_goal_guidance_mode_name(void);
-extern void escort_route_step_analysis_clear(escort_route_step_analysis *analysis);
-extern void escort_route_link_analysis_clear(escort_route_link_analysis *analysis);
-extern int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis);
-extern int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis);
-extern const char *escort_route_step_satisfied_reason_name(int reason);
 extern void escort_route_monitor_completion(void);
 extern void escort_route_notify_wall_changed(int wall_num);
 extern void escort_route_notify_trigger_changed(int trigger_num);

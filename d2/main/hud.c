@@ -31,6 +31,7 @@
 #include "laser.h"
 #include "args.h"
 #include "playsave.h"
+#include "hud_layout_shared.h"
 
 typedef struct hudmsg
 {
@@ -42,35 +43,39 @@ hudmsg HUD_messages[HUD_MAX_NUM_STOR];
 
 
 static int HUD_nmessages = 0;
-int HUD_toolong = 0;
 static int HUD_color = -1;
+static int HUD_message_start = 0;
+static int HUD_message_y = 0;
+static int HUD_nmessage_rects = 0;
+static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP];
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message);
 
 void HUD_clear_messages()
 {
 	HUD_nmessages = 0;
-	HUD_toolong = 0;
+	HUD_message_start = 0;
+	HUD_message_y = 0;
+	HUD_nmessage_rects = 0;
 	memset(&HUD_messages, 0, sizeof(struct hudmsg)*HUD_MAX_NUM_STOR);
+	memset(&HUD_message_rects, 0, sizeof(HUD_message_rects));
 	HUD_color = -1;
 }
 
 
 // ----------------------------------------------------------------------------
-//	Writes a message on the HUD and checks its timer.
-void HUD_render_message_frame()
+//	Expires messages and reserves the area that this frame's messages will draw.
+void HUD_prepare_message_frame()
 {
-	int i,j,y;
-
-	HUD_toolong = 0;
+	grs_font *saved_font;
+	int i;
+	int y;
 
 	if (( HUD_nmessages < 0 ) || (HUD_nmessages > HUD_MAX_NUM_STOR))
 		Int3(); // Get Rob!
 
-	if (HUD_nmessages < 1 )
-		return;
-
-	for (i = 0; i < HUD_nmessages; i++)
+	for (i = 0; i < HUD_nmessages;)
 	{
+		int j;
 		HUD_messages[i].time -= FrameTime;
 		// message expired - remove
 		if (HUD_messages[i].time <= 0)
@@ -83,38 +88,96 @@ void HUD_render_message_frame()
 					memset(&HUD_messages[j], 0, sizeof(struct hudmsg));
 			}
 			HUD_nmessages--;
+			continue;
 		}
+		i++;
 	}
 
-	// display last $HUD_MAX_NUM_DISP messages on the list
-	if (HUD_nmessages > 0 )
-	{
-		int startmsg = ((HUD_nmessages-HUD_MAX_NUM_DISP<0)?0:HUD_nmessages-HUD_MAX_NUM_DISP);
-		if (HUD_color == -1)
-			HUD_color = BM_XRGB(0,28,0);
+	HUD_message_start = HUD_nmessages > HUD_MAX_NUM_DISP ? HUD_nmessages - HUD_MAX_NUM_DISP : 0;
+	HUD_message_y = is_observer() ? Observer_message_y_start : FSPACY(1);
+	if (Guided_missile[Player_num] && Guided_missile[Player_num]->type == OBJ_WEAPON &&
+		Guided_missile[Player_num]->id == GUIDEDMISS_ID &&
+		Guided_missile[Player_num]->signature == Guided_missile_sig[Player_num] &&
+		PlayerCfg.GuidedInBigWindow)
+		HUD_message_y += LINE_SPACING;
+	HUD_nmessage_rects = 0;
+	memset(&HUD_message_rects, 0, sizeof(HUD_message_rects));
+	if (HUD_nmessages < 1)
+		return;
 
-		gr_set_curfont( GAME_FONT );
+	saved_font = grd_curcanv->cv_font;
+	gr_set_curfont(GAME_FONT);
+	y = HUD_message_y;
+	for (i = HUD_message_start; i < HUD_nmessages; i++) {
+		const int pad_x = FSPACX(1);
+		const int pad_y = FSPACY(1);
+		int w, h;
+		hud_layout_rect *rect = &HUD_message_rects[HUD_nmessage_rects++];
 
-		if (is_observer())
-			y = Observer_message_y_start;
-		else
-			y = FSPACY(1);
+		gr_get_string_drawn_size(HUD_messages[i].message, &w, &h);
+		rect->x = (grd_curcanv->cv_bitmap.bm_w - w) / 2 - pad_x;
+		rect->y = y - pad_y;
+		rect->w = w + 2 * pad_x;
+		rect->h = h + 2 * pad_y;
+		y += LINE_SPACING;
+	}
+	gr_set_curfont(saved_font);
+}
 
-		if (Guided_missile[Player_num] && Guided_missile[Player_num]->type==OBJ_WEAPON && Guided_missile[Player_num]->id==GUIDEDMISS_ID &&
-		Guided_missile[Player_num]->signature==Guided_missile_sig[Player_num] && PlayerCfg.GuidedInBigWindow)
-			y+=LINE_SPACING;
+int HUD_message_area_intersects(int x, int y, int w, int h)
+{
+	const hud_layout_rect candidate = { x, y, w, h };
+	int i;
 
-		for (i=startmsg; i<HUD_nmessages; i++ )	{
-			gr_set_fontcolor( HUD_color, -1);
+	for (i = 0; i < HUD_nmessage_rects; i++)
+		if (hud_layout_rects_intersect(&candidate, &HUD_message_rects[i]))
+			return 1;
+	return 0;
+}
 
-			if (i == startmsg && strlen(HUD_messages[i].message) > 38)
-				HUD_toolong = 1;
-			gr_string(0x8000,y, &HUD_messages[i].message[0] );
-			y += LINE_SPACING;
-		}
+int HUD_get_message_rect_count(void)
+{
+	return HUD_nmessage_rects;
+}
+
+int HUD_get_message_rect(int index, int *x, int *y, int *w, int *h)
+{
+	const hud_layout_rect *rect;
+
+	if (index < 0 || index >= HUD_nmessage_rects)
+		return 0;
+	rect = &HUD_message_rects[index];
+	if (x)
+		*x = rect->x;
+	if (y)
+		*y = rect->y;
+	if (w)
+		*w = rect->w;
+	if (h)
+		*h = rect->h;
+	return 1;
+}
+
+// ----------------------------------------------------------------------------
+//	Writes the messages prepared for this HUD frame.
+void HUD_render_message_frame()
+{
+	int i;
+	int y = HUD_message_y;
+
+	if (HUD_nmessages < 1)
+		return;
+	if (HUD_color == -1)
+		HUD_color = BM_XRGB(0,28,0);
+
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(HUD_color, -1);
+	for (i = HUD_message_start; i < HUD_nmessages; i++) {
+		gr_string(0x8000, y, HUD_messages[i].message);
+		y += LINE_SPACING;
 	}
 
-	gr_set_curfont( GAME_FONT );
+	gr_set_curfont(GAME_FONT);
 }
 
 static int is_worth_showing(int class_flag)

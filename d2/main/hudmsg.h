@@ -14,9 +14,12 @@
 #define HM_MAYDUPL		8 // messages that might appear once per frame. for these we want to check all messages we have  in queue and supress it if so
 #define HM_KILLFEED		0x10 // messages describing multiplayer kills/deaths
 
-extern int HUD_toolong;
 extern void HUD_clear_messages();
+extern void HUD_prepare_message_frame();
 extern void HUD_render_message_frame();
+int HUD_message_area_intersects(int x, int y, int w, int h);
+int HUD_get_message_rect_count(void);
+int HUD_get_message_rect(int index, int *x, int *y, int *w, int *h);
 int HUD_init_message(int class_flag, const char * format, ... );
 int HUD_init_message_va(int class_flag, const char * format, va_list args);
 int HUD_init_message_literal(int class_flag, const char *str);

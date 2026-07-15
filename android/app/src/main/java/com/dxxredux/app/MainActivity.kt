@@ -291,8 +291,6 @@ class MainActivity :
         showGuidebotLine: Boolean,
     )
 
-    external fun nativeSetGuidebotNavigateNearestPoint(enabled: Boolean)
-
     external fun nativeSetHeadlightOffByDefaultQol(enabled: Boolean)
 
     external fun nativeSetDebugLogEnabled(
@@ -802,7 +800,6 @@ class MainActivity :
             }
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
-        applyGuidebotNavigationPrefs(prefs)
         applyHeadlightDefaultPrefs(prefs)
         applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
@@ -1814,7 +1811,6 @@ class MainActivity :
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
-        applyGuidebotNavigationPrefs(prefs)
         applyHeadlightDefaultPrefs(prefs)
         applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
@@ -1952,16 +1948,6 @@ class MainActivity :
             nativeSetCoopIndicatorOptions(
                 prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true),
                 prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true),
-            )
-        } catch (_: Exception) {
-            // JNI may not be ready yet when the activity is first coming up
-        }
-    }
-
-    private fun applyGuidebotNavigationPrefs(prefs: android.content.SharedPreferences) {
-        try {
-            nativeSetGuidebotNavigateNearestPoint(
-                prefs.getBoolean(PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT, false),
             )
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up

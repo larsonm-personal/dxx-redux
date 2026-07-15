@@ -65,6 +65,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#ifdef __ANDROID__
+#include "escort.h"
+#endif
 
 #define EXPLOSION_SCALE (F1_0*5/2)		//explosion is the obj size times this 
 
@@ -1647,6 +1650,9 @@ void do_exploding_wall_frame()
 			if (expl_wall_list[i].time>(EXPL_WALL_TIME*3)/4) {
 				segment *seg,*csegp;
 				int cside,a,n;
+#ifdef __ANDROID__
+				int notify_route;
+#endif
 
 				seg = &Segments[segnum];
 
@@ -1658,8 +1664,17 @@ void do_exploding_wall_frame()
 
 				wall_set_tmap_num(seg,sidenum,csegp,cside,a,n-1);
 
+#ifdef __ANDROID__
+				notify_route = !(Walls[seg->sides[sidenum].wall_num].flags & WALL_BLASTED);
+#endif
 				Walls[seg->sides[sidenum].wall_num].flags |= WALL_BLASTED;
 				Walls[csegp->sides[cside].wall_num].flags |= WALL_BLASTED;
+#ifdef __ANDROID__
+				if (notify_route) {
+					escort_route_notify_wall_changed(seg->sides[sidenum].wall_num);
+					escort_route_notify_wall_changed(csegp->sides[cside].wall_num);
+				}
+#endif
 
 			}
 

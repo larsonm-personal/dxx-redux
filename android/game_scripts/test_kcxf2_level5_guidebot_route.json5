@@ -44,7 +44,7 @@
     {"action": "assert", "expect": {"in_game": "true", "current_level_num": "5"}},
     {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "level_metadata_route.status": "ok",
         "level_metadata_route.step_count": "9",
@@ -55,7 +55,7 @@
     }},
 
     {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_status": "ok",
         "guidebot.route_goal_label": {"contains": "trigger 6"},
@@ -91,7 +91,7 @@
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
 
     {"action": "set_debug", "field": "fire_trigger", "value": "6", "post_delay_ms": 500},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_status": "ok",
         "guidebot.route_goal_label": {"contains": "red key"},
@@ -102,7 +102,7 @@
     // Trigger 22 is geometrically nearby but requires a tunnel narrower than
     // the player's ship. The shared high-level route must use trigger 11 first.
     {"action": "set_debug", "field": "player_keys", "value": "blue red", "post_delay_ms": 100},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_status": "ok",
         "guidebot.route_goal_label": {"contains": "trigger 11"},

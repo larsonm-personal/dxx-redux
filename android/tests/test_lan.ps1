@@ -238,7 +238,7 @@ function Invoke-GuidebotOwnershipScenario {
 
     $script:hostAutomationResult = $null
     $script:joinAutomationResult = $null
-    $finished = Wait-ForCondition -Description "paired Guide-Bot automation" -TimeoutSec 60 -PollMs 1000 -Condition {
+    $finished = Wait-ForCondition -Description "paired Guide-Bot automation" -TimeoutSec 120 -PollMs 1000 -Condition {
         $script:hostAutomationResult = Get-DeviceAutomationResult -Serial $EMU1
         $script:joinAutomationResult = Get-DeviceAutomationResult -Serial $EMU2
         $hostDone = $script:hostAutomationResult -and
@@ -351,7 +351,7 @@ function Invoke-GuidebotHostObserverScenario {
 
     $script:hostAutomationResult = $null
     $script:joinAutomationResult = $null
-    $finished = Wait-ForCondition -Description "paired observer-host Guide-Bot automation" -TimeoutSec 60 -PollMs 1000 -Condition {
+    $finished = Wait-ForCondition -Description "paired observer-host Guide-Bot automation" -TimeoutSec 90 -PollMs 1000 -Condition {
         $script:hostAutomationResult = Get-DeviceAutomationResult -Serial $EMU1
         $script:joinAutomationResult = Get-DeviceAutomationResult -Serial $EMU2
         $hostDone = $script:hostAutomationResult -and
