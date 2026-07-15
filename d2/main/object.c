@@ -3034,19 +3034,24 @@ void object_rw_swap(object_rw *obj, int swap)
 }
 
 void set_homing_update_rate(int update_rate, int original_homing) {
+	const int d1_gameplay = d1_in_d2_use_d1_gameplay();
+	const fix acquisition_dot = homing_compat_acquisition_dot(
+		original_homing, d1_gameplay, MIN_TRACKABLE_DOT);
+
 	idealHomerFPS = update_rate;
 	idealHomerFrameTime = F1_0 / update_rate;
 	currentHomerFrameTime = 0;
 	originalHoming = original_homing;
+	Min_acquirable_dot = acquisition_dot;
 
 	//	Set value to determine whether homing missile can see target.
 	//	The lower frametime is, the more likely that it can see its target.
-	if (original_homing && !d1_in_d2_use_d1_gameplay())
+	if (original_homing && !d1_gameplay)
 		Min_trackable_dot = homing_compat_d2_original_retention_dot(
-			idealHomerFrameTime, MIN_TRACKABLE_DOT);
+			idealHomerFrameTime, acquisition_dot);
 	else
 		Min_trackable_dot = homing_compat_d1_retention_dot(idealHomerFrameTime,
-			MIN_TRACKABLE_DOT);
+			acquisition_dot);
 
 	con_printf(CON_DEBUG, "Homing update rate: %d (%s)\n", update_rate,
 		original_homing ? "original" : "redux");

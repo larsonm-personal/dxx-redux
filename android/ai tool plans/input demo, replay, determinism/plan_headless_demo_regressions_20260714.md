@@ -28,22 +28,22 @@ The D1-in-D2 regression wrapper was also tried, but it deliberately selects the 
     -Game d2 -RecordedGame d2 -RunMode headless -TimeoutSeconds 180
 ```
 
-The run continued after failures and attempted all 11 demos in 49.5 seconds.
+The initial run continued after failures and attempted all 11 demos in 49.5 seconds. After fixing the two crash causes, the same command passed all 11 demos in 90.688 seconds.
 
 ## Results
 
 | Demo | Result |
 | --- | --- |
-| `d2_descent2_level10_20260512_231237.dximdemo` | Access violation before result |
-| `d2_descent2_level10_20260514_150656.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260511_192533.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260511_192804.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260511_193107.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260511_215620.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260511_215654.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260511_215831.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260512_084243.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260512_115227.dximdemo` | Access violation before result |
-| `d2_descent2_level9_20260512_115624.dximdemo` | Access violation before result |
+| `d2_descent2_level10_20260512_231237.dximdemo` | Pass |
+| `d2_descent2_level10_20260514_150656.dximdemo` | Pass |
+| `d2_descent2_level9_20260511_192533.dximdemo` | Pass |
+| `d2_descent2_level9_20260511_192804.dximdemo` | Pass |
+| `d2_descent2_level9_20260511_193107.dximdemo` | Pass |
+| `d2_descent2_level9_20260511_215620.dximdemo` | Pass |
+| `d2_descent2_level9_20260511_215654.dximdemo` | Pass |
+| `d2_descent2_level9_20260511_215831.dximdemo` | Pass |
+| `d2_descent2_level9_20260512_084243.dximdemo` | Pass |
+| `d2_descent2_level9_20260512_115227.dximdemo` | Pass |
+| `d2_descent2_level9_20260512_115624.dximdemo` | Pass |
 
-Every D2 headless process exited with Windows status `-1073741819`, or `0xC0000005`, and no actual-result file was written. A direct invocation reproduced the same fault. Earlier tracing placed the first failure after the demo header and player settings parsed successfully, during checkpoint restoration and before level startup. This is one common checkpoint-restore crash affecting the whole committed headless corpus, not a set of comparison mismatches.
+The initial failures shared Windows status `-1073741819`, or `0xC0000005`. Debugging found inconsistent MSVC packing for `Mission`, followed by an unsafe headless-only window close from inside the final simulation frame. Both causes are fixed and every supported committed headless demo now exits normally and matches its embedded result.

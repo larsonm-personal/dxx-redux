@@ -979,6 +979,7 @@ int object_to_object_visibility(object *obj1, object *obj2, int trans_type)
 }
 
 fix	Min_trackable_dot = 3*(F1_0 - MIN_TRACKABLE_DOT)/4 + MIN_TRACKABLE_DOT; //MIN_TRACKABLE_DOT;
+fix Min_acquirable_dot = MIN_TRACKABLE_DOT;
 
 //	-----------------------------------------------------------------------------------------------------------
 //	Return true if weapon *tracker is able to track object Objects[track_goal], else return false.
@@ -1071,7 +1072,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 	else {
 		int	cur_min_trackable_dot;
 
-		cur_min_trackable_dot = MIN_TRACKABLE_DOT;
+		cur_min_trackable_dot = Min_acquirable_dot;
 		if ((tracker->type == OBJ_WEAPON) && (tracker->id == OMEGA_ID))
 			cur_min_trackable_dot = OMEGA_MIN_TRACKABLE_DOT;
 
@@ -1211,7 +1212,7 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 	Assert((Weapon_info[tracker->id].homing_flag) || (tracker->id == OMEGA_ID));
 
 	max_trackable_dist = MAX_TRACKABLE_DIST;
-	min_trackable_dot = MIN_TRACKABLE_DOT;
+	min_trackable_dot = Min_acquirable_dot;
 
 	if (tracker->id == OMEGA_ID) {
 		max_trackable_dist = OMEGA_MAX_TRACKABLE_DIST;

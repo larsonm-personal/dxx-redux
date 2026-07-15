@@ -3,8 +3,10 @@
 
 #include <stdint.h>
 
-#define HOMING_COMPAT_F1_0          65536
-#define HOMING_COMPAT_REFERENCE_FPS 25
+#define HOMING_COMPAT_F1_0               65536
+#define HOMING_COMPAT_REFERENCE_FPS      25
+#define HOMING_COMPAT_D1_ACQUISITION_DOT (3 * HOMING_COMPAT_F1_0 / 4)
+#define HOMING_COMPAT_D2_ACQUISITION_DOT (7 * HOMING_COMPAT_F1_0 / 8)
 
 static inline int homing_compat_original_enabled(int player_setting,
                                                  int netgame_setting, int game_mode, int multi_mask, int coop_mask)
@@ -12,6 +14,12 @@ static inline int homing_compat_original_enabled(int player_setting,
 	if (!(game_mode & multi_mask))
 		return player_setting != 0;
 	return (game_mode & coop_mask) && netgame_setting;
+}
+
+static inline int32_t homing_compat_acquisition_dot(int original_homing,
+                                                    int d1_gameplay, int32_t redux_dot)
+{
+	return original_homing && d1_gameplay ? HOMING_COMPAT_D1_ACQUISITION_DOT : redux_dot;
 }
 
 static inline int32_t homing_compat_d1_retention_dot(int32_t frame_time,

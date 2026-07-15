@@ -48,6 +48,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //where the missions go
 #define MISSION_DIR "missions/"
 
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
 typedef struct {
 	char    *filename;          // filename
 	int     builtin_hogsize;    // the size of the hogfile for a builtin mission, and 0 for an add-on mission
@@ -64,6 +67,9 @@ typedef struct {
 	d_fname	*level_names;
 	d_fname	*secret_level_names;
 } Mission;
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 extern Mission *Current_mission; // current mission
 

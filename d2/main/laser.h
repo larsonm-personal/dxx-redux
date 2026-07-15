@@ -99,6 +99,7 @@ enum weapon_type_t
 struct object;
 
 extern fix Min_trackable_dot;   //  MIN_TRACKABLE_DOT inversely scaled by FrameTime
+extern fix Min_acquirable_dot;  //  Initial acquisition cone selected for the active gameplay model
 
 typedef struct laser_runtime_state {
 	fix fusion_charge;

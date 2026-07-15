@@ -563,8 +563,10 @@ void input_demo_stop_replay_shared(int write_result,
 	if (write_result && write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+#ifndef DXX_HEADLESS_CONSOLE
 	if (Game_wind)
 		window_close(Game_wind);
+#endif
 }
 
 int input_demo_finish_replay_shared(int close_window,
