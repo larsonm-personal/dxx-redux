@@ -144,13 +144,18 @@ Parity has two separate meanings and both must pass:
   - [x] The assigned co-op companion retains its multiplayer robot-control slot across idle timeout and slot pressure. Selecting `Unexplored` and adopting ownership now rebuild semantic waypoints immediately without requesting a classic physical path.
 - [x] Canonical metadata route cut over to the shared C++ planner.
   - Keep non-route metadata aggregation in `level_metadata_scan_level_summary()` while producing route and travel fields with the same shared `route_planner_plan_view()` result consumed by live Guide-Bot routing.
-  - Retain the legacy native planner only behind strict differential comparison until the full mission corpus proves the authoritative cutover is behaviorally stable.
+  - The legacy native planner was retained behind strict differential comparison until the full mission corpus proved the authoritative cutover stable, then physically removed in Phase 8.
   - Expose canonical planner provenance through introspection so integration tests can distinguish shared authority from shadow availability.
   - Split summary-only metadata aggregation from legacy route construction, so normal canonical generation no longer computes and discards a legacy route before calling the shared planner.
   - Bounded malformed trigger-link counts to the engine array and normalized a 255-wall third-party level to the 254-wall engine limit without out-of-bounds metadata reads. Orion, KCXF2, and Plutonia retained their prior valid routes.
   - Regenerated built-in Counterstrike and all 110 mission archives: 109 passed, one descriptor-less archive was skipped, and none failed.
   - Reviewed the only three checked route changes across the corpus. `eq-set` now exposes hidden doors crossed by two routes, `vignett2` uses a verified nearby switch firing position, and `af_d1_beta` preserves its semantic steps while avoiding a shorter traversal that treated a hidden wall as freely passable.
   - Windows D1/D2 builds, all 20 D1 and 23 D2 native tests, all Android ABIs, and the 37-step live KCXF2 fixture pass. Live introspection reports `shared_cpp` for both canonical metadata and Guide-Bot routing.
+- [x] Phase 8 complete: superseded planner implementations and migration scaffolding removed.
+  - Removed the old C semantic planner, shadow APIs, live legacy selector, duplicate satisfaction/visibility/reachability code, optimistic nearest fallback, stale diagnostics, and dead route kinds.
+  - Confirmed no metadata path-depth shim or metadata-specific path constructor remains. Shared C++ planning selects only the high-level semantic segment; classic Guide-Bot movement consumes it on its original schedule.
+  - Fixed passive key and delayed blastable-wall completion notifications found by final live fixtures. Both fixes enqueue owner-local semantic events and do not construct a path, aim, fire, alter movement state, or consume simulation RNG.
+  - Final gates pass: Windows D1/D2, D1 20/20 and D2 23/23 native tests, direct route snapshots, Android unit/all-ABI builds, the frozen 1,274-level corpus and base campaigns, fresh host archive comparison, and KCXF2/Obsidian/Unexplored live fixtures.
 
 ## Non-Goals
 
@@ -650,6 +655,14 @@ Delete only after all prior gates have been green for at least one full regressi
 - Stale tests and debug fields superseded by plan/action diagnostics.
 
 `Metadata_route_path_depth` and `create_path_to_segment_metadata_route()` are removed in Phase 5 rather than deferred cleanup. Keep the classic generic AI pathfinder, its doorway predicate, path scheduling, RNG consumption, path polishing, return-to-player behavior, steering, collision handling, and generic flare behavior unchanged.
+
+Progress (2026-07-14):
+
+- Phase 8 is complete. The old C semantic planner, shadow comparators, legacy live selector, duplicate satisfaction and visibility analysis, optimistic nearest fallback, stale diagnostics, and unproducible route kinds are physically removed.
+- Metadata and live Guide-Bot semantic selection now use the shared C++ planner. Guide-Bot still hands the selected segment to unchanged classic path construction only when the original AI cadence requests a path.
+- Final live testing found and fixed two observer lifecycle gaps: key invalidation had cleared the active semantic action before it could be replanned, and exploding blastable walls had notified only before their delayed passable transition. Both now use owner-local coalesced semantic events without requesting a physical path.
+- Windows D1/D2, D1 20/20 and D2 23/23 native tests, direct route snapshots, Android unit/all-ABI builds, the frozen 1,274-level corpus, strict base campaigns, fresh host archive analysis, and focused KCXF2/Obsidian/Unexplored live fixtures pass.
+- Final source audit confirms the removed shims and migration symbols are absent and the classic pathfinder, movement, flare, and simulation RNG boundaries remain intact.
 
 ## Verification Matrix
 

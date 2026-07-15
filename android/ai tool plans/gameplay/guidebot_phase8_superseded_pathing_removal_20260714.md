@@ -12,11 +12,11 @@ Remove route-planning, fallback, visibility, completion, and diagnostic implemen
 - [x] Replace live route-step satisfaction reconstruction with shared plan/action completion state, then remove duplicate helpers.
 - [x] Remove duplicate live visibility sampling while retaining shared player-guidance visibility and classic AI visibility unchanged.
 - [x] Remove the old C semantic route planner, global scratch arrays, and keyed/non-keyed opener policies from `level_metadata_scan.c`.
-- [ ] Remove dead route kinds, mappings, debug fields, and tests that no longer have a producer; retain stable public data needed by metadata JSON and automap presentation.
-- [ ] Prove no `Metadata_route_path_depth` or `create_path_to_segment_metadata_route` shim remains.
-- [ ] Run scoped quality and all D1/D2 native route, completion, projection, ownership, and determinism tests.
-- [ ] Run Windows D1/D2, Android all-ABI, full route corpus, strict base-campaign, and focused live Guide-Bot fixtures.
-- [ ] Audit every Phase 8 requirement against current source and test evidence, then update the master plan.
+- [x] Remove dead route kinds, mappings, debug fields, and tests that no longer have a producer; retain stable public data needed by metadata JSON and automap presentation.
+- [x] Prove no `Metadata_route_path_depth` or `create_path_to_segment_metadata_route` shim remains.
+- [x] Run scoped quality and all D1/D2 native route, completion, projection, ownership, and determinism tests.
+- [x] Run Windows D1/D2, Android all-ABI, full route corpus, strict base-campaign, and focused live Guide-Bot fixtures.
+- [x] Audit every Phase 8 requirement against current source and test evidence, then update the master plan.
 
 ## Boundaries
 
@@ -41,4 +41,15 @@ Remove route-planning, fallback, visibility, completion, and diagnostic implemen
 - Reduced `level_metadata_scan.c` to non-route mine statistics plus the shared-planner projection wrapper; the old C semantic planner, visibility sampler, opener policy, and route scratch state are gone.
 - Removed old metadata route/shadow declarations and migrated endpoint tests to `route_planner_plan_view`.
 - Confirmed the remaining edge cost constants and route target bound are live shared-planner data, not migration-only APIs.
-- Native builds, route tests, corpus checks, and live fixtures remain to be rerun after this physical deletion.
+- Removed the unproducible hostage route kind, stale selector/debug fields, the obsolete nearest-point preference, and remaining shadow comparison tests.
+
+## Result
+
+- Source audit finds no `Metadata_route_path_depth`, `create_path_to_segment_metadata_route`, shadow comparator, legacy selector, legacy edge-cost, or optimistic nearest-fallback symbol outside historical plan text.
+- Key acquisition now preserves the active semantic action until the owner-local coalesced event observer replans it. Real pickups, automation, and multiplayer key updates use the same hook; classic `Escort_goal_object` invalidation remains immediate.
+- Exploding blastable walls notify semantic routing once when their delayed animation actually sets `WALL_BLASTED`. Explosion timing, damage, animation, RNG, and classic Guide-Bot movement are unchanged.
+- Windows D1 and D2 builds pass. D1 passes 20/20 native tests and D2 passes 23/23, with both direct shared route snapshots passing.
+- Android unit tests and all three debug ABIs assemble successfully. Scoped quality and `git diff --check` pass.
+- The frozen 1,274-level route corpus, strict base-campaign statuses, and all 1,274 travel-time checks pass. Fresh host analysis passes Counterstrike plus 109 archives with one expected descriptor-less skip and no route-contract differences from reviewed metadata.
+- Live fixtures pass for KCXF2 full key/switch/fly-through/exit progression, hidden doors, delayed blastable walls, Obsidian routing, and the text-selected Unexplored wheel slice. Unexplored retains event-coalesced rescans and no idle polling.
+- Classic path construction, `Point_segs`, doorway policy, path cadence and polishing, return-to-player and scram behavior, steering, collision, generic flares, and simulation RNG remain outside the shared semantic planner.
