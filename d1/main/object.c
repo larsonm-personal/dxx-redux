@@ -68,6 +68,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h" 
 #include "timer.h"
+#include "homing_compat.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -131,6 +132,7 @@ static unsigned int homerFrameCount = 0;
 static fix currentHomerFrameTime = F0_0; 
 
 static int doHomerFrame = 0; 
+static int originalHoming = 0;
 
 extern int Unused_object_slots;
 extern int Debris_object_count;
@@ -1871,7 +1873,7 @@ void object_move_one( object * obj )
 			input_demo_rng_trace_clear_object_context();
 			break;
 
-		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount); break; // CED
+		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount, originalHoming); break; // CED
 		case CT_EXPLOSION:	do_explosion_sequence(obj); break;
 
 		#ifndef RELEASE
@@ -2369,19 +2371,17 @@ void object_rw_swap(object_rw *obj, int swap)
 	}
 }
 
-void set_homing_update_rate(int update_rate) {
+void set_homing_update_rate(int update_rate, int original_homing) {
 	idealHomerFPS = update_rate;
 	idealHomerFrameTime = F1_0 / update_rate;
 	currentHomerFrameTime = 0;
+	originalHoming = original_homing;
 
 	//	Set value to determine whether homing missile can see target.
 	//	The lower frametime is, the more likely that it can see its target.
-	if (idealHomerFrameTime <= F1_0/16)
-		Min_trackable_dot = 3*(F1_0 - MIN_TRACKABLE_DOT)/4 + MIN_TRACKABLE_DOT;
-	else if (idealHomerFrameTime < F1_0/4)
-		Min_trackable_dot = fixmul(F1_0 - MIN_TRACKABLE_DOT, F1_0-4*idealHomerFrameTime) + MIN_TRACKABLE_DOT;
-	else
-		Min_trackable_dot = MIN_TRACKABLE_DOT;
+	Min_trackable_dot = homing_compat_d1_retention_dot(idealHomerFrameTime,
+		MIN_TRACKABLE_DOT);
 
-	con_printf(CON_DEBUG, "Homing update rate: %d\n", update_rate);
+	con_printf(CON_DEBUG, "Homing update rate: %d (%s)\n", update_rate,
+		original_homing ? "original" : "redux");
 }

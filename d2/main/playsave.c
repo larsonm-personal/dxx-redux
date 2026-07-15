@@ -228,6 +228,7 @@ int new_player_config()
 	PlayerCfg.NoChatSound = 0;
 	PlayerCfg.ClassicAutoselectWeapon = 0;
 	PlayerCfg.ShowRobotHostageCounts = 0;
+	PlayerCfg.OriginalHoming = 0;
 
 	// Default taunt macros
 	#ifdef NETWORK
@@ -527,6 +528,8 @@ int read_player_d2x(char *filename)
 					PlayerCfg.NoChatSound = atoi(line);
 				if(!strcmp(word,"CLASSICAUTOSELECTWEAPON"))
 					PlayerCfg.ClassicAutoselectWeapon = atoi(line);
+				if(!strcmp(word,"ORIGINALHOMING"))
+					PlayerCfg.OriginalHoming = atoi(line) ? 1 : 0;
 
 				// Observer settings - migrate from old version
 				// If migrating from an older version, set all observer modes to the same value
@@ -798,6 +801,7 @@ int write_player_d2x(char *filename)
 		PHYSFSX_printf(fout,"maxfps=%i\n",PlayerCfg.maxFps);	
 		PHYSFSX_printf(fout,"nochatsound=%i\n",PlayerCfg.NoChatSound);
 		PHYSFSX_printf(fout,"classicautoselectweapon=%i\n",PlayerCfg.ClassicAutoselectWeapon);
+		PHYSFSX_printf(fout,"originalhoming=%i\n",PlayerCfg.OriginalHoming);
 		PHYSFSX_printf(fout,"[end]\n");
 		PHYSFSX_printf(fout, "[observer]\n");
 		PHYSFSX_printf(fout, "obssharesettings=%i\n", PlayerCfg.ObsShareSettings);
@@ -1725,6 +1729,8 @@ int read_netgame_settings_file(const char *filename, netgame_info *ng, int no_na
 				ng->obs_min = strtol(value, NULL, 10);
 			else if (!strcmp(token, "HomingUpdateRate"))
 				ng->HomingUpdateRate = strtol(value, NULL, 10);
+			else if (!strcmp(token, "OriginalHoming"))
+				ng->OriginalHoming = strtol(value, NULL, 10) ? 1 : 0;
 			else if (!strcmp(token, "RemoteHitSpark"))
 				ng->RemoteHitSpark = strtol(value, NULL, 10);
 			else if (!strcmp(token, "AllowCustomModelsTextures"))
@@ -1806,6 +1812,7 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 	PHYSFSX_printf(file, "obs_delay=%i\n", ng->obs_delay);
 	PHYSFSX_printf(file, "obs_min=%i\n", ng->obs_min);
 	PHYSFSX_printf(file, "HomingUpdateRate=%i\n", ng->HomingUpdateRate);
+	PHYSFSX_printf(file, "OriginalHoming=%i\n", ng->OriginalHoming);
 	PHYSFSX_printf(file, "RemoteHitSpark=%i\n", ng->RemoteHitSpark);
 	PHYSFSX_printf(file, "AllowCustomModelsTextures=%i\n", ng->AllowCustomModelsTextures);
 	PHYSFSX_printf(file, "ReducedFlash=%i\n", ng->ReducedFlash);

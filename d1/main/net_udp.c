@@ -3183,6 +3183,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.obs_min; len++;
 		buf[len] = Netgame.host_is_obs; len++;
 		buf[len] = Netgame.HomingUpdateRate; len++;
+		buf[len] = Netgame.OriginalHoming; len++;
 		buf[len] = Netgame.RemoteHitSpark; len++;
 		buf[len] = Netgame.AllowCustomModelsTextures; len++;
 		buf[len] = Netgame.ReducedFlash; len++;
@@ -3456,6 +3457,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.obs_min = data[len]; len++;
 		Netgame.host_is_obs = data[len]; len++;
 		Netgame.HomingUpdateRate = data[len]; len++;
+		Netgame.OriginalHoming = data[len]; len++;
 		Netgame.RemoteHitSpark = data[len]; len++;
 		Netgame.AllowCustomModelsTextures = data[len]; len++;
 		Netgame.ReducedFlash = data[len]; len++;
@@ -4073,6 +4075,7 @@ static int opt_spawn_algorithm;
 static int opt_allowprefcolor; 
 static int opt_low_vulcan;
 static int opt_homing_update_rate;
+static int opt_original_homing;
 static int opt_remote_hit_spark;
 static int opt_allow_custom_models_textures;
 static int opt_reduced_flash;
@@ -4114,9 +4117,9 @@ void net_udp_more_game_options ()
 	char PrimDupText[80],SecDupText[80],SecCapText[80]; 
 	char HomingUpdateRateText[80];
 #ifdef USE_TRACKER
-	newmenu_item m[47];
+	newmenu_item m[48];
 #else
-	newmenu_item m[46];
+	newmenu_item m[47];
 #endif
 
 	snprintf(packstring,sizeof(char)*4,"%d",Netgame.PacketsPerSec);
@@ -4254,6 +4257,8 @@ void net_udp_more_game_options ()
 	opt_homing_update_rate=opt;
 	sprintf( HomingUpdateRateText, "Homing Update Rate: %d", Netgame.HomingUpdateRate);
 	m[opt].type = NM_TYPE_SLIDER; m[opt].value=max(0, Netgame.HomingUpdateRate - 20); m[opt].text= HomingUpdateRateText; m[opt].min_value=0; m[opt].max_value=10; opt++;
+	opt_original_homing=opt;
+	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Original homing (Coop only)"; m[opt].value = Netgame.OriginalHoming; opt++;
 
 	opt_remote_hit_spark=opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Only Show Confirmed Hit Sparks"; m[opt].value = Netgame.RemoteHitSpark; opt++;
@@ -4332,6 +4337,7 @@ menu:
 	Netgame.LowVulcan = m[opt_low_vulcan].value;
 	Netgame.AllowPreferredColors = m[opt_allowprefcolor].value;
 	Netgame.HomingUpdateRate = m[opt_homing_update_rate].value + 20;
+	Netgame.OriginalHoming = m[opt_original_homing].value;
 	Netgame.RemoteHitSpark = m[opt_remote_hit_spark].value;
 	Netgame.AllowCustomModelsTextures = m[opt_allow_custom_models_textures].value;
 	Netgame.ReducedFlash = m[opt_reduced_flash].value;
@@ -4654,6 +4660,7 @@ void netgame_set_defaults(void)
 	Netgame.LowVulcan = 0;
 	Netgame.AllowPreferredColors = 1; 
 	Netgame.HomingUpdateRate = 25;
+	Netgame.OriginalHoming = PlayerCfg.OriginalHoming;
 	Netgame.RemoteHitSpark = 0;
 	Netgame.AllowCustomModelsTextures = 0;
 	Netgame.ReducedFlash = 0;

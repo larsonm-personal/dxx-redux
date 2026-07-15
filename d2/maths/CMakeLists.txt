@@ -45,6 +45,9 @@ if(NOT ANDROID)
     add_executable(test_hud_layout ../../android/tests/test_hud_layout.c)
     target_include_directories(test_hud_layout PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_homing_compat ../../android/tests/test_homing_compat.c)
+    target_include_directories(test_homing_compat PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_android_save_meta
         ../../android/tests/test_android_save_meta.c
         ../../android/app/src/main/cpp/shared/android_save_meta.c)
@@ -199,6 +202,7 @@ if(NOT ANDROID)
             test_deterministic_math
             test_coop_indicator_lines_math
             test_hud_layout
+            test_homing_compat
             test_android_save_meta
             test_android_save_set
             test_playsave_transaction

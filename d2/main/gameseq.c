@@ -77,6 +77,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #  include "multi.h"
 #endif
 #include "playsave.h"
+#include "homing_compat.h"
 #include "ctype.h"
 #include "fireball.h"
 #include "kconfig.h"
@@ -1861,7 +1862,14 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 
 	reset_respawnable_bots();
 
-	set_homing_update_rate(Game_mode & GM_MULTI ? Netgame.HomingUpdateRate : 25);
+	{
+		const int original_homing = homing_compat_original_enabled(
+			PlayerCfg.OriginalHoming, Netgame.OriginalHoming,
+			Game_mode, GM_MULTI, GM_MULTI_COOP);
+		set_homing_update_rate(original_homing ? HOMING_COMPAT_REFERENCE_FPS :
+			(Game_mode & GM_MULTI ? Netgame.HomingUpdateRate : HOMING_COMPAT_REFERENCE_FPS),
+			original_homing);
+	}
 
 	//	Say player can use FLASH cheat to mark path to exit.
 	Last_level_path_created = -1;

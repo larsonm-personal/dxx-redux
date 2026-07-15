@@ -113,7 +113,7 @@ typedef struct laser_runtime_state {
 void Laser_render(struct object *obj);
 void Laser_player_fire(struct object * obj, int type, int gun_num, int make_sound, int harmless_flag, vms_vector shot_orientation); /* CED sniperpackets */
 void Laser_player_fire_spread(struct object *obj, int laser_type, int gun_num, fix spreadr, fix spreadu, int make_sound, int harmless, vms_vector shot_orientation); /* CED sniperpackets */
-void Laser_do_weapon_sequence(struct object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount ); // CED
+void Laser_do_weapon_sequence(struct object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount, int original_homing ); // CED
 void Flare_create(struct object *obj);
 int laser_are_related(int o1, int o2);
 

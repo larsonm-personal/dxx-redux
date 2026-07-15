@@ -556,6 +556,7 @@ typedef struct netgame_info
 	ubyte						LowVulcan;
 	ubyte						AllowPreferredColors;
 	ubyte						HomingUpdateRate;
+	ubyte						OriginalHoming;
 	ubyte						RemoteHitSpark;
 	ubyte						AllowCustomModelsTextures;
 	ubyte						ReducedFlash;

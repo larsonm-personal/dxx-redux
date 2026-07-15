@@ -1495,11 +1495,17 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 //	See if legal to keep tracking currently tracked object.  If not, see if another object is trackable.  If not, return -1,
 //	else return object number of tracking object.
 //	Computes and returns a fairly precise dot product.
-int track_track_goal(int track_goal, object *tracker, fix *dot, unsigned int homerFrameCount)
+int track_track_goal(int track_goal, object *tracker, fix *dot, unsigned int homerFrameCount, int original_homing)
 {
-	if (object_is_trackable(track_goal, tracker, dot)) {  // CED -- && (tracker - Objects) is useless
+	const unsigned int scan_phase = original_homing ?
+		(unsigned int)((tracker - Objects) ^ homerFrameCount) :
+		homerFrameCount - tracker->ctype.laser_info.creation_framecount;
+	const int d2_original = original_homing && !d1_in_d2_use_d1_gameplay();
+
+	if (object_is_trackable(track_goal, tracker, dot) &&
+		(!d2_original || (scan_phase % 8) != 0)) {  // CED -- && (tracker - Objects) is useless
 		return track_goal;
-	} else if (((homerFrameCount - tracker->ctype.laser_info.creation_framecount) % 4) == 0) // CED -- Reverted to 1994 original release code, with homer frame count
+	} else if ((scan_phase % 4) == 0)
 
 /*
 #ifdef NEWHOMER
@@ -1801,13 +1807,13 @@ void Flare_create(object *obj)
 
 //--------------------------------------------------------------------
 //	Set object *objp's orientation to (or towards if I'm ambitious) its velocity.
-void homing_missile_turn_towards_velocity(object *objp, vms_vector *norm_vel)
+void homing_missile_turn_towards_velocity(object *objp, vms_vector *norm_vel, fix turn_time)
 {
 	vms_vector	new_fvec;
 
 	new_fvec = *norm_vel;
 
-	vm_vec_scale(&new_fvec, FrameTime * (d1_in_d2_use_d1_gameplay() ? D1_HOMING_MISSILE_SCALE : HOMING_MISSILE_SCALE));
+	vm_vec_scale(&new_fvec, turn_time * (d1_in_d2_use_d1_gameplay() ? D1_HOMING_MISSILE_SCALE : HOMING_MISSILE_SCALE));
 	vm_vec_add2(&new_fvec, &objp->orient.fvec);
 	vm_vec_normalize_quick(&new_fvec);
 
@@ -1828,7 +1834,7 @@ fix homing_turn_base[NDL] = { 4, 5, 6, 7, 8 };
 
 //-------------------------------------------------------------------------------------------
 //sequence this laser object for this _frame_ (underscores added here to aid MK in his searching!)
-void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount )
+void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount, int original_homing )
 {
 	const int track_player_weapon = input_demo_weapon_trace_active() &&
 		input_demo_replay_is_player_owned_weapon(obj) &&
@@ -1900,7 +1906,7 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 			// CED -- Slow retro homers track cone check to idealHomerFPS
 			if(doHomerFrame) {
 				//	Make sure the object we are tracking is still trackable.
-				track_goal = track_track_goal(track_goal, obj, &dot, homerFrameCount);
+				track_goal = track_track_goal(track_goal, obj, &dot, homerFrameCount, original_homing);
 			
 
 
@@ -1926,6 +1932,8 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 				vm_vec_normalize_quick(&vector_to_object);
 				temp_vec = obj->mtype.phys_info.velocity;
 				speed = vm_vec_normalize_quick(&temp_vec);
+				if (original_homing && d1_in_d2_use_d1_gameplay())
+					dot = vm_vec_dot(&temp_vec, &vector_to_object);
 				max_speed = Weapon_info[obj->id].speed[Difficulty_level];
 				if ((Game_mode & GM_MULTI) && Netgame.OriginalD1Weapons) {
 					if (obj->id == SPREADFIRE_ID) {
@@ -1957,13 +1965,25 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 
 					absdot = abs(F1_0 - dot);
 
-					lifelost = fixmul(absdot*32, d1_in_d2_use_d1_gameplay() ? idealHomerFrameTime : FrameTime);
-					obj->lifeleft -= lifelost;
+					if (original_homing && d1_in_d2_use_d1_gameplay()) {
+						if (absdot > F1_0/8) {
+							if (absdot > F1_0/4)
+								absdot = F1_0/4;
+							lifelost = fixmul(absdot*16, idealHomerFrameTime);
+							obj->lifeleft -= lifelost;
+						}
+					} else {
+						lifelost = fixmul(absdot*32,
+							original_homing || d1_in_d2_use_d1_gameplay() ?
+							idealHomerFrameTime : FrameTime);
+						obj->lifeleft -= lifelost;
+					}
 				}
 
 				//	Only polygon objects have visible orientation, so only they should turn.
 				if (Weapon_info[obj->id].render_type == WEAPON_RENDER_POLYMODEL)
-					homing_missile_turn_towards_velocity(obj, &temp_vec);		//	temp_vec is normalized velocity.
+					homing_missile_turn_towards_velocity(obj, &temp_vec,
+						original_homing ? idealHomerFrameTime : FrameTime);		//	temp_vec is normalized velocity.
 #else // OLD - ORIGINAL - MISSILE TRACKING CODE
 				vm_vec_sub(&vector_to_object, &Objects[track_goal].pos, &obj->pos);
 

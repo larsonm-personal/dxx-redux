@@ -2126,7 +2126,7 @@ struct misc_menu_data {
 
 void do_misc_menu()
 {
-	newmenu_item m[36];
+	newmenu_item m[37];
 	int i = 0;
 	struct misc_menu_data misc_menu_data;
 
@@ -2238,6 +2238,8 @@ void do_misc_menu()
 		}
 		m[35].value = PlayerCfg.PreferMyTeamColors;
 
+		ADD_CHECK(36, "Original homing (Single/Coop)", PlayerCfg.OriginalHoming);
+
 		i = newmenu_do1(NULL, "Misc Options", SDL_arraysize(m), m, menu_misc_options_handler, &misc_menu_data, i);
 
 		PlayerCfg.AutoLeveling			= m[0].value;
@@ -2267,6 +2269,7 @@ void do_misc_menu()
 		PlayerCfg.NoChatSound = m[25].value;
 		PlayerCfg.ShowCustomColors = m[30].value;
 		PlayerCfg.PreferMyTeamColors = (PlayerCfg.MyTeamColor == 8 && PlayerCfg.OtherTeamColor == 8) ? 0 : m[35].value;
+		PlayerCfg.OriginalHoming = m[36].value;
 
 	} while( i>-1 );
 

@@ -130,6 +130,7 @@ typedef struct player_config
 	ubyte NoChatSound;
 	ubyte ClassicAutoselectWeapon;
 	ubyte ShowRobotHostageCounts;
+	ubyte OriginalHoming;
 } __pack__ player_config;
 
 extern struct player_config PlayerCfg;

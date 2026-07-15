@@ -622,6 +622,7 @@ typedef struct netgame_info
 	ubyte						Tracker;
 #endif
 	ubyte						HomingUpdateRate;
+	ubyte						OriginalHoming;
 	ubyte						RemoteHitSpark;
 	ubyte						AllowCustomModelsTextures;
 	ubyte						ReducedFlash;

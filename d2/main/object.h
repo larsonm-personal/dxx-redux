@@ -585,6 +585,6 @@ void reset_player_object(void);
 
 extern void object_rw_swap(object_rw *obj_rw, int swap);
 
-extern void set_homing_update_rate(int update_rate);
+extern void set_homing_update_rate(int update_rate, int original_homing);
 
 #endif
