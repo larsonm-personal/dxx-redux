@@ -12,6 +12,19 @@ Status: Follow-up required
 - [x] Record sources and unresolved claims in this plan
 - [ ] Restore retail smart-child target repetition in Original mode without changing the Redux RNG path
 
+## Gameplay Subtitle Follow-up
+
+- [x] Add a concise practical subtitle beneath the D1 and D2 gameplay setting
+- [x] Verify menu construction, formatting, and both host builds
+
+## Launcher Game Preferences Follow-up
+
+- [x] Trace the launcher Game Preferences player selection, native read, and native write paths
+- [x] Expose Original Homing through the shared player-preference interface for D1 and D2
+- [x] Add the launcher toggle and practical subtitle without duplicating player-file layout in Kotlin
+- [x] Extend the unified launcher test for page load and D1/D2 persistence
+- [x] Run scoped quality checks and relevant Android and host verification
+
 ## Objective
 
 Reconstruct the shipped Descent and Descent II homing guidance behavior from original source, quantify how Redux/Rebirth differs, and add an optional original-homing gameplay setting. The setting applies only to single-player and cooperative games. Competitive multiplayer always retains Redux behavior.
@@ -191,6 +204,8 @@ Redux mode remains unchanged, including the selected network homing update rate.
 - Player persistence and Misc Options toggle: D1/D2 `playsave.*` and `menu.c`
 - Cooperative host setting and synchronization: D1/D2 `multi.h`, `net_udp.c`, and netgame profile persistence
 - Runtime selection: D1/D2 `gameseq.c`, `object.*`, and `laser.*`
+- Launcher Game Preferences: `EnginePreferencesPage.kt` and `NativePilotPreferences.kt`
+- Launcher player-file parsing and patching: `android_pilot_prefs.cpp` through D1/D2 `playsave` helpers
 
 D1-in-D2 uses one runtime acquisition-threshold parameter. It retains the existing D2 `7/8` value in Redux mode and selects D1's retail `3/4` value only in Original mode. The selected value drives both acquisition and retention, so the restoration does not introduce a parallel guidance algorithm.
 
@@ -205,6 +220,10 @@ The default is off. The gameplay checkbox is `Original homing (Single/Coop)`, an
 - D1 Windows x86 RelWithDebInfo full build: passed
 - D2 Windows x86 RelWithDebInfo full build: passed
 - Android `:app:assembleDebug`, including arm64-v8a, armeabi-v7a, x86, and x86_64 native builds: passed
+- D1 and D2 Windows x86 RelWithDebInfo rebuild after adding the setting subtitle: passed
+- Launcher unit suite and Android all-ABI debug assembly after adding pilot-backed launcher control: passed
+- Unified launcher Game Preferences persistence test, including page load and `original_homing=true`: passed for D1 and D2
+- D1 and D2 Windows x86 RelWithDebInfo rebuild after launcher integration: passed
 - `git diff --check`: passed
 
 ## Remaining Limitation

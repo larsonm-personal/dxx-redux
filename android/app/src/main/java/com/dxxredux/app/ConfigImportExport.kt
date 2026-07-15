@@ -339,6 +339,7 @@ object ConfigImportExport {
             try {
                 val prefs = NativePilotPreferences.readEnginePrefs(game, filesDir.absolutePath)
                 if (!prefs.hasPilotFile) continue
+                val homingPrefs = NativePilotPreferences.readOriginalHomingPrefs(game, filesDir.absolutePath)
                 json.put(
                     game,
                     JSONObject().apply {
@@ -346,6 +347,7 @@ object ConfigImportExport {
                         put("auto_leveling", prefs.autoLeveling)
                         put("show_robot_hostage_counts", prefs.showRobotHostageCounts)
                         put("headlight_active_default", prefs.headlightActiveDefault)
+                        put("original_homing", homingPrefs.enabled)
                     },
                 )
             } catch (_: Exception) {
@@ -364,7 +366,7 @@ object ConfigImportExport {
             val obj = json.optJSONObject(game) ?: continue
             if (!obj.has("cockpit_mode") || !obj.has("auto_leveling")) continue
             try {
-                val count =
+                val engineCount =
                     NativePilotPreferences.writeEnginePrefs(
                         game,
                         context.filesDir.absolutePath,
@@ -373,6 +375,17 @@ object ConfigImportExport {
                         obj.optBoolean("show_robot_hostage_counts", false),
                         obj.optBoolean("headlight_active_default", false),
                     )
+                val homingCount =
+                    if (obj.has("original_homing")) {
+                        NativePilotPreferences.writeOriginalHomingPrefs(
+                            game,
+                            context.filesDir.absolutePath,
+                            obj.getBoolean("original_homing"),
+                        )
+                    } else {
+                        0
+                    }
+                val count = maxOf(engineCount, homingCount)
                 results.add(
                     if (count > 0) {
                         "Engine prefs ($game): patched $count file(s)"

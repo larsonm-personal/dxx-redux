@@ -1729,6 +1729,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
 		j["auto_leveling"] = (bool) PlayerCfg.AutoLeveling;
+		j["original_homing"] = (bool) PlayerCfg.OriginalHoming;
 #ifdef DXX_BUILD_DESCENT_II
 		j["headlight_active_default"] = (bool) PlayerCfg.HeadlightActiveDefault;
 #else

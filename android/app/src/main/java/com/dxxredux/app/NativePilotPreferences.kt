@@ -21,6 +21,11 @@ object NativePilotPreferences {
         val dynLightColor: Boolean,
     )
 
+    data class OriginalHomingPrefs(
+        val hasPilotFile: Boolean,
+        val enabled: Boolean,
+    )
+
     data class MusicPrefs(
         val hasPilotFile: Boolean,
         val source: String,
@@ -57,6 +62,20 @@ object NativePilotPreferences {
     @JvmStatic external fun nativeReadVisualPrefsD1(filesDir: String): IntArray
 
     @JvmStatic external fun nativeReadVisualPrefsD2(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeReadOriginalHomingPrefsD1(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeReadOriginalHomingPrefsD2(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeWriteOriginalHomingPrefsD1(
+        filesDir: String,
+        enabled: Boolean,
+    ): Int
+
+    @JvmStatic external fun nativeWriteOriginalHomingPrefsD2(
+        filesDir: String,
+        enabled: Boolean,
+    ): Int
 
     @JvmStatic external fun nativeWriteVisualPrefsD1(
         filesDir: String,
@@ -104,6 +123,12 @@ object NativePilotPreferences {
             hasPilotFile = raw.size >= 1 && raw[0] != 0,
             alphaEffects = raw.size >= 2 && raw[1] != 0,
             dynLightColor = raw.size >= 3 && raw[2] != 0,
+        )
+
+    private fun decodeOriginalHomingPrefs(raw: IntArray): OriginalHomingPrefs =
+        OriginalHomingPrefs(
+            hasPilotFile = raw.size >= 1 && raw[0] != 0,
+            enabled = raw.size >= 2 && raw[1] != 0,
         )
 
     private fun musicSourceName(source: Int): String =
@@ -199,6 +224,45 @@ object NativePilotPreferences {
         filesDir: String,
     ): VisualPrefs =
         decodeVisualPrefs(if (game == "d1") nativeReadVisualPrefsD1(filesDir) else nativeReadVisualPrefsD2(filesDir))
+
+    fun readOriginalHomingPrefs(
+        game: String,
+        filesDir: String,
+    ): OriginalHomingPrefs =
+        decodeOriginalHomingPrefs(
+            if (game == "d1") {
+                nativeReadOriginalHomingPrefsD1(filesDir)
+            } else {
+                nativeReadOriginalHomingPrefsD2(filesDir)
+            },
+        )
+
+    fun readOriginalHomingPrefsForAll(
+        preferredGame: String,
+        filesDir: String,
+    ): OriginalHomingPrefs {
+        val preferred = readOriginalHomingPrefs(preferredGame, filesDir)
+        if (preferred.hasPilotFile) return preferred
+        return readOriginalHomingPrefs(if (preferredGame == "d1") "d2" else "d1", filesDir)
+    }
+
+    fun writeOriginalHomingPrefs(
+        game: String,
+        filesDir: String,
+        enabled: Boolean,
+    ): Int =
+        if (game == "d1") {
+            nativeWriteOriginalHomingPrefsD1(filesDir, enabled)
+        } else {
+            nativeWriteOriginalHomingPrefsD2(filesDir, enabled)
+        }
+
+    fun writeOriginalHomingPrefsToAll(
+        filesDir: String,
+        enabled: Boolean,
+    ): Int =
+        nativeWriteOriginalHomingPrefsD1(filesDir, enabled) +
+            nativeWriteOriginalHomingPrefsD2(filesDir, enabled)
 
     fun readVisualPrefsForAll(
         preferredGame: String,

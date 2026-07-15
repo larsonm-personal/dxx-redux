@@ -191,6 +191,24 @@ static void read_visual_prefs(const char *files_dir,
 	}
 }
 
+static void read_original_homing_prefs(const char *files_dir,
+                                       int *has_pilot,
+                                       int *original_homing)
+{
+	*has_pilot = 0;
+	*original_homing = 0;
+
+	char pilot_path[512];
+#ifdef DXX_BUILD_DESCENT_II
+	if (find_first_pilot(files_dir, "d2x-redux", ".plx", pilot_path, sizeof(pilot_path))) {
+#else
+	if (find_first_pilot(files_dir, "d1x-redux", ".plx", pilot_path, sizeof(pilot_path))) {
+#endif
+		*has_pilot = 1;
+		(void) plx_read_original_homing(pilot_path, original_homing);
+	}
+}
+
 static void read_music_prefs(const char *files_dir,
                              int *has_pilot,
                              int *source,
@@ -224,6 +242,10 @@ struct visual_write_ctx {
 	int dynlight_color;
 };
 
+struct original_homing_write_ctx {
+	int original_homing;
+};
+
 struct music_write_ctx {
 	int source;
 	int prefer_mission;
@@ -235,6 +257,12 @@ static int write_visual_visitor(const char *path, void *ctx)
 {
 	struct visual_write_ctx *wc = (struct visual_write_ctx *) ctx;
 	return plx_write_visual_prefs(path, wc->alpha_effects, wc->dynlight_color);
+}
+
+static int write_original_homing_visitor(const char *path, void *ctx)
+{
+	struct original_homing_write_ctx *wc = (struct original_homing_write_ctx *) ctx;
+	return plx_write_original_homing(path, wc->original_homing);
 }
 
 static int write_music_visitor(const char *path, void *ctx)
@@ -359,6 +387,50 @@ JNI_FUNC(nativeReadVisualPrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 	result = env->NewIntArray(3);
 	env->SetIntArrayRegion(result, 0, 3, raw);
 	return result;
+}
+
+extern "C" JNIEXPORT jintArray JNICALL
+JNI_FUNC(nativeReadOriginalHomingPrefs)(JNIEnv *env, jclass, jstring jfilesDir)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	int has_pilot = 0;
+	int original_homing = 0;
+	jint raw[2];
+	jintArray result;
+
+	read_original_homing_prefs(files_dir, &has_pilot, &original_homing);
+	LOGI("nativeReadOriginalHomingPrefs: has_pilot=%d original_homing=%d",
+	     has_pilot, original_homing);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+
+	raw[0] = (jint) has_pilot;
+	raw[1] = (jint) (original_homing ? 1 : 0);
+	result = env->NewIntArray(2);
+	env->SetIntArrayRegion(result, 0, 2, raw);
+	return result;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+JNI_FUNC(nativeWriteOriginalHomingPrefs)(JNIEnv *env,
+                                         jclass,
+                                         jstring jfilesDir,
+                                         jboolean originalHoming)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	struct original_homing_write_ctx wc;
+	int total;
+
+	wc.original_homing = originalHoming ? 1 : 0;
+#ifdef DXX_BUILD_DESCENT_II
+	total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_original_homing_visitor, &wc);
+#else
+	total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_original_homing_visitor, &wc);
+#endif
+
+	LOGI("nativeWriteOriginalHomingPrefs: original_homing=%d patched=%d",
+	     wc.original_homing, total);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	return (jint) total;
 }
 
 extern "C" JNIEXPORT jint JNICALL

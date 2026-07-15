@@ -125,7 +125,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
-    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_engine_prefs --ei cockpit_mode 2 --ez auto_leveling false --ez headlight_active_default false
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_engine_prefs --ei cockpit_mode 2 --ez auto_leveling false --ez original_homing true
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_music_prefs --es source cd --ez prefer_mission_soundtrack false
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_crash_reports
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_play --ei source 0 --ei track 2
@@ -516,7 +516,7 @@ class SetupActivity : ComponentActivity() {
                         val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
                         val showRobotHostageCounts = intent.getBooleanExtra("show_robot_hostage_counts", false)
                         val headlightActiveDefault = intent.getBooleanExtra("headlight_active_default", false)
-                        val n =
+                        val engineCount =
                             NativePilotPreferences.writeEnginePrefsToAll(
                                 filesDir.absolutePath,
                                 cockpitMode,
@@ -524,12 +524,24 @@ class SetupActivity : ComponentActivity() {
                                 showRobotHostageCounts,
                                 headlightActiveDefault,
                             )
+                        val originalHoming = intent.getBooleanExtra("original_homing", false)
+                        val homingCount =
+                            if (intent.hasExtra("original_homing")) {
+                                NativePilotPreferences.writeOriginalHomingPrefsToAll(
+                                    filesDir.absolutePath,
+                                    originalHoming,
+                                )
+                            } else {
+                                0
+                            }
+                        val n = maxOf(engineCount, homingCount)
                         Log.i(
                             "DXX-Setup",
                             "write_engine_prefs: patched $n file(s) " +
                                 "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
                                 "show_counts=$showRobotHostageCounts " +
-                                "headlight_default=$headlightActiveDefault)",
+                                "headlight_default=$headlightActiveDefault " +
+                                "original_homing=$originalHoming)",
                         )
                     }
 

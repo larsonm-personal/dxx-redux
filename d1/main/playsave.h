@@ -186,6 +186,8 @@ int plx_read_cockpit_mode(const char *path, int *cockpit_mode);
 int plx_write_cockpit_mode(const char *path, int cockpit_mode);
 int plx_read_robot_hostage_counts(const char *path, int *show_counts);
 int plx_write_robot_hostage_counts(const char *path, int show_counts);
+int plx_read_original_homing(const char *path, int *original_homing);
+int plx_write_original_homing(const char *path, int original_homing);
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color);
 int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color);
 int plx_read_music_prefs(const char *path, int *source, int *prefer_mission, int *play_order, int *volume);

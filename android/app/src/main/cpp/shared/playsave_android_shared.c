@@ -210,6 +210,45 @@ int plx_write_robot_hostage_counts(const char *path, int show_counts)
 	                                    "[cockpit]", &entry, 1);
 }
 
+int plx_read_original_homing(const char *path, int *original_homing)
+{
+	FILE *f = fopen(path, "r");
+	char line[256];
+	int in_toggles = 0;
+
+	if (!f) return 0;
+
+	while (fgets(line, sizeof(line), f)) {
+		if (!in_toggles) {
+			if (!d_strnicmp(line, "[toggles]", 9))
+				in_toggles = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "[end]", 5))
+			break;
+		if (!d_strnicmp(line, "originalhoming=", 15)) {
+			if (original_homing)
+				*original_homing = atoi(line + 15) ? 1 : 0;
+			fclose(f);
+			return 1;
+		}
+	}
+
+	fclose(f);
+	return 0;
+}
+
+int plx_write_original_homing(const char *path, int original_homing)
+{
+	char line[32];
+	struct playsave_text_entry entry = { "originalhoming=", line };
+
+	snprintf(line, sizeof(line), "originalhoming=%i\n",
+	         original_homing ? 1 : 0);
+	return playsave_text_update_section(path, playsave_android_options_header(),
+	                                    "[toggles]", &entry, 1);
+}
+
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color)
 {
 	FILE *f = fopen(path, "r");

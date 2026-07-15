@@ -91,6 +91,8 @@ fun EnginePreferencesPage(
     var savedAutoLeveling by remember { mutableStateOf(true) }
     var showRobotHostageCounts by remember { mutableStateOf(false) }
     var savedShowRobotHostageCounts by remember { mutableStateOf(false) }
+    var originalHoming by remember { mutableStateOf(false) }
+    var savedOriginalHoming by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf("") }
     var hasPilotFile by remember { mutableStateOf(false) }
     var showGuidebotLine by remember {
@@ -125,10 +127,12 @@ fun EnginePreferencesPage(
     val hasChanges =
         cockpitMode != savedCockpitMode ||
             autoLeveling != savedAutoLeveling ||
-            showRobotHostageCounts != savedShowRobotHostageCounts
+            showRobotHostageCounts != savedShowRobotHostageCounts ||
+            originalHoming != savedOriginalHoming
 
     fun loadPrefs() {
         val data = NativePilotPreferences.readEnginePrefsForAll(gameVariant, filesDir.absolutePath)
+        val homingData = NativePilotPreferences.readOriginalHomingPrefsForAll(gameVariant, filesDir.absolutePath)
         val musicData = NativePilotPreferences.readMusicPrefsForAll(gameVariant, filesDir.absolutePath)
         cockpitMode = data.cockpitMode
         savedCockpitMode = data.cockpitMode
@@ -136,6 +140,8 @@ fun EnginePreferencesPage(
         savedAutoLeveling = data.autoLeveling
         showRobotHostageCounts = data.showRobotHostageCounts
         savedShowRobotHostageCounts = data.showRobotHostageCounts
+        originalHoming = homingData.enabled
+        savedOriginalHoming = homingData.enabled
         if (musicData.hasPilotFile) {
             useMissionSoundtrackWhenAvailable = musicData.preferMissionSoundtrack
             prefs
@@ -277,6 +283,27 @@ fun EnginePreferencesPage(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Switch(
+                        checked = originalHoming,
+                        onCheckedChange = { originalHoming = it },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Original homing (Single/Coop)", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "D1 is similar at 25 Hz; D2 tracks and reacquires more strongly",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
                         checked = showRobotHostageCounts,
                         onCheckedChange = { showRobotHostageCounts = it },
                         modifier = Modifier.tvFocusBorder(),
@@ -302,6 +329,7 @@ fun EnginePreferencesPage(
                             cockpitMode = CM_FULL_COCKPIT
                             autoLeveling = true
                             showRobotHostageCounts = false
+                            originalHoming = false
                         },
                         modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
                     ) {
@@ -309,7 +337,7 @@ fun EnginePreferencesPage(
                     }
                     Button(
                         onClick = {
-                            val count =
+                            val engineCount =
                                 NativePilotPreferences.writeEnginePrefsToAll(
                                     filesDir.absolutePath,
                                     cockpitMode,
@@ -317,10 +345,17 @@ fun EnginePreferencesPage(
                                     showRobotHostageCounts,
                                     !headlightOffByDefault,
                                 )
+                            val homingCount =
+                                NativePilotPreferences.writeOriginalHomingPrefsToAll(
+                                    filesDir.absolutePath,
+                                    originalHoming,
+                                )
+                            val count = maxOf(engineCount, homingCount)
                             if (count > 0) {
                                 savedCockpitMode = cockpitMode
                                 savedAutoLeveling = autoLeveling
                                 savedShowRobotHostageCounts = showRobotHostageCounts
+                                savedOriginalHoming = originalHoming
                                 hasPilotFile = true
                                 statusMessage = "Saved to $count pilot file(s) across both games"
                             } else {

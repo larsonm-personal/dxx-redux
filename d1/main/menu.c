@@ -2126,7 +2126,7 @@ struct misc_menu_data {
 
 void do_misc_menu()
 {
-	newmenu_item m[37];
+	newmenu_item m[38];
 	int i = 0;
 	struct misc_menu_data misc_menu_data;
 
@@ -2239,6 +2239,8 @@ void do_misc_menu()
 		m[35].value = PlayerCfg.PreferMyTeamColors;
 
 		ADD_CHECK(36, "Original homing (Single/Coop)", PlayerCfg.OriginalHoming);
+		m[37].type = NM_TYPE_TEXT;
+		m[37].text = "D1 is similar at 25 Hz; D2 tracks and reacquires more strongly.";
 
 		i = newmenu_do1(NULL, "Misc Options", SDL_arraysize(m), m, menu_misc_options_handler, &misc_menu_data, i);
 

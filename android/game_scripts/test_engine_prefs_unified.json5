@@ -2,7 +2,7 @@
 //
 // Phase 1: create a pilot from a clean state
 // Phase 2: verify the app-level intro auto-skip launcher pref
-// Phase 3: write cockpit mode and auto-level through the launcher path
+// Phase 3: write cockpit mode, auto-level, and original homing through the launcher path
 // Phase 4: relaunch and verify the running game reports those values
 [
     {"_info": {
@@ -67,7 +67,10 @@
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== Phase 3: Write engine prefs (${GAME}) ==="},
     {"action": "setup_command", "command": "write_engine_prefs",
-     "args": {"cockpit_mode": 2, "auto_leveling": false, "headlight_active_default": false}, "post_delay_ms": 1000},
+     "args": {"cockpit_mode": 2, "auto_leveling": false, "headlight_active_default": false,
+              "original_homing": true}, "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Game Preferences", "post_delay_ms": 500},
+    {"action": "tap_button", "text": "< Back", "post_delay_ms": 250},
     {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
@@ -81,7 +84,8 @@
     {"action": "assert", "expect": {
         "cockpit_mode": "2",
         "auto_leveling": "false",
-        "headlight_active_default": "false"
+        "headlight_active_default": "false",
+        "original_homing": "true"
     }},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
@@ -97,7 +101,8 @@
         "cockpit_mode": "2",
         "current_cockpit_mode": "2",
         "auto_leveling": "false",
-        "headlight_active_default": "false"
+        "headlight_active_default": "false",
+        "original_homing": "true"
     }},
     {"action": "introspect"},
     {"action": "log", "message": "=== TEST: Engine prefs launcher persistence -- COMPLETE ==="}
