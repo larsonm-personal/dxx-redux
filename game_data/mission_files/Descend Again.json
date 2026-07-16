@@ -1034,13 +1034,13 @@
         "mine_volume": 9474304.120377824,
         "mine_volume_normalized": 2.071835878413196,
         "mine_volume_text": "2.1x",
-        "travel_distance": 4272.864466668799,
-        "travel_time_seconds": 85,
-        "travel_time_text": "1M:25S",
+        "travel_distance": 2777.9474665494313,
+        "travel_time_seconds": 56,
+        "travel_time_text": "0M:56S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -1076,39 +1076,9 @@
             },
             "distance": 1876.9944971688997,
             "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 407,
-            "label_pos": {
-              "x": 430.36549377441406,
-              "y": 32.57295227050781,
-              "z": 242.97329711914062
-            },
-            "distance": 515.4883323080288
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 243,
-            "side": 1,
-            "wall": 72,
-            "label_pos": {
-              "x": 347.3656005859375,
-              "y": 67.9010009765625,
-              "z": 146.63067626953125
-            },
-            "distance": 979.4286678113384,
-            "trigger": 0,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 11,

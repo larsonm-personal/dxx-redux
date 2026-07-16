@@ -594,13 +594,13 @@
         "mine_volume": 23133154.725437667,
         "mine_volume_normalized": 5.058746197302163,
         "mine_volume_text": "5.1x",
-        "travel_distance": 2484.767077566527,
-        "travel_time_seconds": 50,
-        "travel_time_text": "0M:50S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 1,
         "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
+        "guidebot_accessible": false,
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
@@ -608,66 +608,14 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 1
-          },
-          {
-            "index": 1,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 719,
-            "label_pos": {
-              "x": 71.21000671386719,
-              "y": -210.61000061035156,
-              "z": -691.4900054931641
-            },
-            "distance": 527.5649154880474
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 7",
-            "seg": 721,
-            "wall": 167,
-            "label_pos": {
-              "x": -104.52572631835938,
-              "y": 75.5120849609375,
-              "z": -300.9896545410156
-            },
-            "distance": 930.9395830166483,
-            "trigger": 7,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 594,
-                "side": 4,
-                "wall": 40
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 456,
-            "side": 4,
-            "wall": 84,
-            "label_pos": {
-              "x": 267.6850128173828,
-              "y": -210.77658081054688,
-              "z": -557.7380218505859
-            },
-            "distance": 1026.2625790618313,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "guidebot_note": "guidebot is present but not reachable from the start",
+        "route_problem": "blue key unreachable",
         "notes": [
-          "guidebot or guidebot start cage placed in this level"
+          "guidebot or guidebot start cage placed in this level",
+          "guidebot is present but not reachable from the start"
         ]
       }
     ],

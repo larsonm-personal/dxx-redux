@@ -1121,6 +1121,10 @@ void do_automap()
 	ubyte pal[256*3];
 	window *automap_wind = NULL;
 	automap *am;
+
+#ifdef __ANDROID__
+	level_metadata_rescan_route_from_object(Players[Player_num].objnum);
+#endif
 	
 	AUTOMAP_LOGI("do_automap() entered");
 

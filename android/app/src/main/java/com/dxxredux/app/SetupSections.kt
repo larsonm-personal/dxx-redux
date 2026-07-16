@@ -2747,9 +2747,10 @@ private fun LevelMetadataLevelDialog(
                     if (row.routeSteps.isEmpty()) {
                         ModDetailLine("No route steps")
                     } else {
+                        val routeHeadings = levelMetadataRouteStepHeadings(row.routeSteps)
                         row.routeSteps.forEachIndexed { displayIndex, step ->
                             Text(
-                                "${displayIndex + 1}. ${step.routeStepTitle()}",
+                                routeHeadings[displayIndex],
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(bottom = 1.dp),
@@ -2841,6 +2842,19 @@ private fun LevelMetadataLevelRow.metadataNotes(): List<String> {
 
 private fun LevelMetadataRouteStep.routeStepTitle(): String =
     routeActivationLabel().ifBlank { label.ifBlank { routeStepFallbackLabel() } }
+
+internal fun levelMetadataRouteStepHeadings(steps: List<LevelMetadataRouteStep>): List<String> {
+    var objectiveNumber = 0
+    return steps.map { step ->
+        val title = step.routeStepTitle()
+        if (step.kind == "start") {
+            title
+        } else {
+            objectiveNumber++
+            "$objectiveNumber. $title"
+        }
+    }
+}
 
 private fun LevelMetadataRouteStep.routeStepDetails(): String =
     buildList {

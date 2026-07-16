@@ -1899,9 +1899,9 @@
         "mine_volume": 29419680.000000425,
         "mine_volume_normalized": 6.433480262084441,
         "mine_volume_text": "6.4x",
-        "travel_distance": 2447.410088894986,
-        "travel_time_seconds": 49,
-        "travel_time_text": "0M:49S",
+        "travel_distance": 2317.720419345972,
+        "travel_time_seconds": 46,
+        "travel_time_text": "0M:46S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1942,22 +1942,9 @@
             "distance": 1579.7901418833458,
             "key": "red",
             "key_carrier_objnum": 76
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 113,
-            "label_pos": {
-              "x": 0.0,
-              "y": 1910.0,
-              "z": 0.0
-            },
-            "distance": 129.689669549014
           }
         ],
-        "route_problem": "exit unreachable"
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 16

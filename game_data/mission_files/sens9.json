@@ -128,9 +128,9 @@
         "mine_volume": 31058843.46268334,
         "mine_volume_normalized": 6.791931672279941,
         "mine_volume_text": "6.8x",
-        "travel_distance": 8159.512489672298,
-        "travel_time_seconds": 163,
-        "travel_time_text": "2M:43S",
+        "travel_distance": 8298.091967378467,
+        "travel_time_seconds": 166,
+        "travel_time_text": "2M:46S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -439,14 +439,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 11",
-            "seg": 374,
+            "seg": 439,
             "wall": 138,
             "label_pos": {
               "x": 539.9253540039062,
               "y": -93.19694519042969,
               "z": -128.53858947753906
             },
-            "distance": 1330.2365744525405,
+            "distance": 1399.5263133056249,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -469,7 +469,7 @@
               "y": -59.68595886230469,
               "z": -163.44265747070312
             },
-            "distance": 96.51093087430965,
+            "distance": 165.80066972739425,
             "key": "red"
           },
           {
@@ -549,7 +549,7 @@
         "mine_volume": 716211.6262688496,
         "mine_volume_normalized": 0.15662078449106093,
         "mine_volume_text": "0.16x",
-        "travel_distance": 206.2987013720192,
+        "travel_distance": 223.0541766140894,
         "travel_time_seconds": 4,
         "travel_time_text": "0M:04S",
         "guidebot_count": 0,
@@ -575,7 +575,7 @@
               "y": 30.0,
               "z": 113.83175659179688
             },
-            "distance": 96.44503076610951
+            "distance": 104.82276838714463
           },
           {
             "index": 2,
@@ -590,7 +590,7 @@
               "y": -8.0,
               "z": 7.38519287109375
             },
-            "distance": 109.85367060590967,
+            "distance": 118.23140822694478,
             "trigger": 3,
             "trigger_type_id": 3,
             "trigger_type": "exit"

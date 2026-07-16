@@ -366,8 +366,8 @@ bool source_visible_from_position(
     int segment,
     const route_position &position)
 {
-	if (valid_wall(snapshot, source.source_wall) && visibility.wall_visible)
-		return visibility.wall_visible(
+	if (valid_wall(snapshot, source.source_wall) && visibility.wall_shootable)
+		return visibility.wall_shootable(
 		    visibility.user, segment, position, source.source_wall);
 	return visibility.target_visible &&
 	       visibility.target_visible(
@@ -384,7 +384,7 @@ bool visible_source_position(
     route_position &position,
     double &extra_distance)
 {
-	static constexpr int sample_weights[] = { 3, 7, 15 };
+	static constexpr int sample_weights[] = { 1, 3, 7, 15 };
 	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
 		{ 7, 6, 2, 3 },
 		{ 0, 4, 7, 3 },
@@ -396,6 +396,21 @@ bool visible_source_position(
 	if (!valid_segment(snapshot, segment))
 		return false;
 	const auto &topology_segment = snapshot.topology.segments[segment];
+	bool found = false;
+	double best_distance = std::numeric_limits<double>::infinity();
+	auto consider = [&](const route_position &candidate) {
+		if (!source_visible_from_position(
+		        snapshot, source, visibility, segment, candidate))
+			return;
+		const double distance = point_distance(
+		    topology_segment.center, candidate);
+		if (found && distance >= best_distance)
+			return;
+		position = candidate;
+		extra_distance = distance;
+		best_distance = distance;
+		found = true;
+	};
 	if (segment == progress.current_segment && progress.current_position.valid &&
 	    source_visible_from_position(
 	        snapshot, source, visibility, segment, progress.current_position)) {
@@ -418,12 +433,7 @@ bool visible_source_position(
 		for (const int weight : sample_weights) {
 			const auto candidate = weighted_position(
 			    topology_segment.center, side_center, weight);
-			if (!source_visible_from_position(
-			        snapshot, source, visibility, segment, candidate))
-				continue;
-			position = candidate;
-			extra_distance = point_distance(topology_segment.center, candidate);
-			return true;
+			consider(candidate);
 		}
 	}
 	for (const auto &vertex : topology_segment.vertices) {
@@ -432,12 +442,7 @@ bool visible_source_position(
 		for (const int weight : sample_weights) {
 			const auto candidate = weighted_position(
 			    topology_segment.center, vertex, weight);
-			if (!source_visible_from_position(
-			        snapshot, source, visibility, segment, candidate))
-				continue;
-			position = candidate;
-			extra_distance = point_distance(topology_segment.center, candidate);
-			return true;
+			consider(candidate);
 		}
 	}
 	for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
@@ -456,17 +461,11 @@ bool visible_source_position(
 			for (const int weight : sample_weights) {
 				const auto candidate = weighted_position(
 				    topology_segment.center, midpoint, weight);
-				if (!source_visible_from_position(
-				        snapshot, source, visibility, segment, candidate))
-					continue;
-				position = candidate;
-				extra_distance = point_distance(
-				    topology_segment.center, candidate);
-				return true;
+				consider(candidate);
 			}
 		}
 	}
-	return false;
+	return found;
 }
 
 std::vector<route_trigger_source> discover_trigger_sources_internal(
@@ -924,15 +923,18 @@ route_trigger_path_selection select_trigger_firing_path(
 				        snapshot, progress, source, visibility, segment,
 				        terminal, extra_distance))
 					continue;
-				candidate.path = build_route_path(search, segment);
-				candidate.path.distance += extra_distance;
-				candidate.path.progress_weight = 0;
+				auto path = build_route_path(search, segment);
+				path.distance += extra_distance;
+				if (candidate.found &&
+				    path.distance >= candidate.path.distance)
+					continue;
+				path.progress_weight = 0;
+				path.terminal_segment = segment;
+				path.terminal_position = terminal;
+				candidate.path = std::move(path);
 				candidate.terminal_segment = segment;
 				candidate.terminal_position = terminal;
-				candidate.path.terminal_segment = segment;
-				candidate.path.terminal_position = terminal;
 				candidate.found = true;
-				break;
 			}
 		} else if (
 		    valid_segment(snapshot, source.source_segment) &&
@@ -2267,14 +2269,14 @@ bool view_target_visible(
 	           target.value.data()) != 0;
 }
 
-bool view_wall_visible(
+bool view_wall_shootable(
     void *user,
     int segment,
     const dxx_route::route_position &from,
     int wall)
 {
 	const auto *context = static_cast<view_visibility_context *>(user);
-	return context->view->wall_visible_from_segment(
+	return context->view->wall_shootable_from_position(
 	           context->view->user, segment, from.value.data(), wall) != 0;
 }
 
@@ -2442,8 +2444,8 @@ extern "C" int route_planner_plan_view(
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
 			visibility.target_visible = view_target_visible;
-		if (view->wall_visible_from_segment)
-			visibility.wall_visible = view_wall_visible;
+		if (view->wall_shootable_from_position)
+			visibility.wall_shootable = view_wall_shootable;
 		const auto result = dxx_route::plan_route(
 		    snapshot, query, visibility);
 		if (!project_plan(
@@ -2484,8 +2486,8 @@ extern "C" int route_planner_segment_reachable_view(
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
 			visibility.target_visible = view_target_visible;
-		if (view->wall_visible_from_segment)
-			visibility.wall_visible = view_wall_visible;
+		if (view->wall_shootable_from_position)
+			visibility.wall_shootable = view_wall_shootable;
 		return dxx_route::plan_route(snapshot, query, visibility).status ==
 		       dxx_route::route_plan_status::ok;
 	} catch (...) {

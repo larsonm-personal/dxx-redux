@@ -1330,9 +1330,9 @@
         "mine_volume": 7461893.638808014,
         "mine_volume_normalized": 1.6317630050035932,
         "mine_volume_text": "1.6x",
-        "travel_distance": 4088.935427464017,
-        "travel_time_seconds": 82,
-        "travel_time_text": "1M:22S",
+        "travel_distance": 4069.304495779787,
+        "travel_time_seconds": 81,
+        "travel_time_text": "1M:21S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1398,7 +1398,7 @@
               "y": -172.36412048339844,
               "z": -166.32717895507812
             },
-            "distance": 991.1208716205915
+            "distance": 981.3054057784765
           },
           {
             "index": 5,
@@ -1413,7 +1413,7 @@
               "y": 73.63587951660156,
               "z": -90.32717895507812
             },
-            "distance": 316.1174685126915,
+            "distance": 306.30200267057654,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1878,9 +1878,9 @@
         "mine_volume": 5072128.057591996,
         "mine_volume_normalized": 1.1091703154243122,
         "mine_volume_text": "1.1x",
-        "travel_distance": 9019.715415853887,
-        "travel_time_seconds": 180,
-        "travel_time_text": "3M:00S",
+        "travel_distance": 9194.080633339934,
+        "travel_time_seconds": 184,
+        "travel_time_text": "3M:04S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1946,7 +1946,7 @@
               "y": -198.37355041503906,
               "z": -121.64811706542969
             },
-            "distance": 1989.2401519244347
+            "distance": 2516.9856275961874
           },
           {
             "index": 5,
@@ -1961,7 +1961,7 @@
               "y": -94.10214233398438,
               "z": 52.359832763671875
             },
-            "distance": 664.974198947409,
+            "distance": 311.5939407617048,
             "trigger": 1,
             "trigger_type_id": 8,
             "trigger_type": "exit"

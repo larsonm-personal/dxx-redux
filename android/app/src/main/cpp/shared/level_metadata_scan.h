@@ -185,7 +185,7 @@ typedef struct level_metadata_scan_view {
 	int (*trigger_link_segment)(void *user, int trigger_num, int link_index);
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
-	int (*wall_visible_from_segment)(void *user, int seg, const int from_pos[3], int wall_num);
+	int (*wall_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);
 } level_metadata_scan_view;
 

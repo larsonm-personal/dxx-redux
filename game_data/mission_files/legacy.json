@@ -154,14 +154,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 78,
+            "seg": 81,
             "wall": 39,
             "label_pos": {
               "x": 0.0,
               "y": 60.0,
               "z": 90.0
             },
-            "distance": 473.64101968743375,
+            "distance": 498.64101968743375,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -184,7 +184,7 @@
               "y": 80.0,
               "z": 25.763565063476562
             },
-            "distance": 225.18366549169167,
+            "distance": 200.18366549169167,
             "key": "red"
           }
         ],
@@ -207,9 +207,9 @@
         "mine_volume": 18988736.35121161,
         "mine_volume_normalized": 4.152446951069606,
         "mine_volume_text": "4.2x",
-        "travel_distance": 3574.4033099229678,
-        "travel_time_seconds": 71,
-        "travel_time_text": "1M:11S",
+        "travel_distance": 3688.029664862654,
+        "travel_time_seconds": 74,
+        "travel_time_text": "1M:14S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -227,14 +227,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 134,
+            "seg": 123,
             "wall": 14,
             "label_pos": {
               "x": 0.0,
               "y": -60.0,
               "z": -230.0
             },
-            "distance": 241.0440826894393,
+            "distance": 297.8572601592823,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -264,7 +264,7 @@
               "y": 0.0,
               "z": 150.0
             },
-            "distance": 310.00774355707506,
+            "distance": 366.8209210269181,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -460,9 +460,9 @@
         "mine_volume": 18824927.46859691,
         "mine_volume_normalized": 4.116625310145714,
         "mine_volume_text": "4.1x",
-        "travel_distance": 10221.557298933201,
-        "travel_time_seconds": 204,
-        "travel_time_text": "3M:24S",
+        "travel_distance": 9546.426356880611,
+        "travel_time_seconds": 191,
+        "travel_time_text": "3M:11S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -516,17 +516,32 @@
           },
           {
             "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 347,
+            "label_pos": {
+              "x": 0.0,
+              "y": 200.0,
+              "z": 485.0
+            },
+            "distance": 1257.8701228814045,
+            "key": "gold"
+          },
+          {
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
-            "seg": 20,
+            "seg": 234,
+            "side": 4,
             "wall": 87,
             "label_pos": {
               "x": 0.0,
               "y": -50.0,
               "z": 10.0
             },
-            "distance": 809.0150862602103,
+            "distance": 2074.208911844037,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -564,20 +579,6 @@
             ]
           },
           {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 347,
-            "label_pos": {
-              "x": 0.0,
-              "y": 200.0,
-              "z": 485.0
-            },
-            "distance": 1994.0840831238856,
-            "key": "gold"
-          },
-          {
             "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
@@ -588,7 +589,7 @@
               "y": 280.0,
               "z": 310.85760498046875
             },
-            "distance": 2537.114617322908,
+            "distance": 1333.0038099289734,
             "key": "red"
           },
           {

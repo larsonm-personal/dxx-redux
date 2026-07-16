@@ -270,17 +270,22 @@ struct test_visibility {
 	int segment = -1;
 	int wall = -1;
 	dxx_route::route_position position;
+	int second_segment = -1;
+	dxx_route::route_position second_position;
 };
 
-bool wall_visible(
+bool wall_shootable(
     void *user,
     int segment,
     const dxx_route::route_position &position,
     int wall)
 {
 	const auto &visible = *static_cast<test_visibility *>(user);
-	return segment == visible.segment && wall == visible.wall &&
-	       position.value == visible.position.value;
+	return wall == visible.wall &&
+	       ((segment == visible.segment &&
+	         position.value == visible.position.value) ||
+	        (segment == visible.second_segment &&
+	         position.value == visible.second_position.value));
 }
 
 dxx_route::route_snapshot make_nested_trigger_snapshot()
@@ -847,7 +852,7 @@ int main()
 	visible.position = visible_snapshot.topology.segments[0].center;
 	dxx_route::route_visibility_query visibility;
 	visibility.user = &visible;
-	visibility.wall_visible = wall_visible;
+	visibility.wall_shootable = wall_shootable;
 	auto reachable_visible_snapshot = triggered_snapshot;
 	reachable_visible_snapshot.topology.walls[0].shootable_trigger = true;
 	reachable_visible_snapshot.topology.walls[0].target.value[0] +=
@@ -866,6 +871,43 @@ int main()
 	       visible.position.value);
 	assert(reachable_visible_firing.terminal_position.value !=
 	       reachable_visible_sources[0].source_position.value);
+	test_visibility rejected_visible;
+	rejected_visible.wall = 0;
+	const auto rejected_visible_firing =
+	    dxx_route::select_trigger_firing_path(
+	        reachable_visible_snapshot, planner_query, source_progress,
+	        reachable_visible_sources,
+	        { &rejected_visible, nullptr, wall_shootable });
+	assert(!rejected_visible_firing.found);
+	auto least_cost_snapshot = reachable_visible_snapshot;
+	least_cost_snapshot.topology.segments[0].vertices[7].valid = true;
+	least_cost_snapshot.topology.segments[0].vertices[7].value = {
+		1000 * 65536,
+		0,
+		0,
+	};
+	test_visibility least_cost_visible;
+	least_cost_visible.wall = 0;
+	least_cost_visible.segment = 0;
+	least_cost_visible.position.valid = true;
+	for (int coordinate = 0; coordinate < 3; ++coordinate)
+		least_cost_visible.position.value[coordinate] =
+		    (least_cost_snapshot.topology.segments[0].center.value[coordinate] +
+		     least_cost_snapshot.topology.segments[0].vertices[7]
+		             .value[coordinate] *
+		         3) /
+		    4;
+	least_cost_visible.second_segment = 1;
+	least_cost_visible.second_position =
+	    least_cost_snapshot.topology.segments[1].center;
+	const auto least_cost_firing = dxx_route::select_trigger_firing_path(
+	    least_cost_snapshot, planner_query, source_progress,
+	    reachable_visible_sources,
+	    { &least_cost_visible, nullptr, wall_shootable });
+	assert(least_cost_firing.found);
+	assert(least_cost_firing.terminal_segment == 1);
+	assert(least_cost_firing.terminal_position.value ==
+	       least_cost_visible.second_position.value);
 	const auto reachable_visible_dependency =
 	    dxx_route::resolve_trigger_dependency(
 	        reachable_visible_snapshot, planner_query, source_progress, 1, 0,

@@ -451,7 +451,7 @@ static int test_target_visible_from_segment(void *user, int seg, const int from_
 	return seg == 0 && target_seg == 1;
 }
 
-static int test_wall_visible_from_segment(void *user, int seg, const int from_pos[3], int wall_num)
+static int test_wall_shootable_from_position(void *user, int seg, const int from_pos[3], int wall_num)
 {
 	(void) user;
 	(void) from_pos;
@@ -834,7 +834,7 @@ static int test_route_shootable_trigger_step(void)
 	view.trigger_link_count = test_trigger_link_count_at;
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
-	view.wall_visible_from_segment = test_wall_visible_from_segment;
+	view.wall_shootable_from_position = test_wall_shootable_from_position;
 	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &state);
 	failures += expect_string("shootable trigger route status", "ok", level_metadata_route_status_name(state.route_status));
@@ -908,7 +908,7 @@ static int test_route_shootable_trigger_precedes_dependency_search(void)
 	view.trigger_link_count = test_trigger_link_count_at;
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
-	view.wall_visible_from_segment = test_wall_visible_from_segment;
+	view.wall_shootable_from_position = test_wall_shootable_from_position;
 	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &state);
 	failures += expect_string("cross-trigger shoot route status", "ok", level_metadata_route_status_name(state.route_status));

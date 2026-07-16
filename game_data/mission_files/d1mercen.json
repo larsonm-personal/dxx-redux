@@ -262,9 +262,9 @@
         "mine_volume": 41493210.07420263,
         "mine_volume_normalized": 9.073713514997513,
         "mine_volume_text": "9.1x",
-        "travel_distance": 9097.022499427088,
-        "travel_time_seconds": 182,
-        "travel_time_text": "3M:02S",
+        "travel_distance": 9005.017806277006,
+        "travel_time_seconds": 180,
+        "travel_time_text": "3M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -316,7 +316,7 @@
               "y": 20.0,
               "z": 240.0
             },
-            "distance": 862.7904416557207
+            "distance": 1554.3271195080308
           },
           {
             "index": 4,
@@ -331,7 +331,7 @@
               "y": -1.52587890625e-05,
               "z": 229.9999542236328
             },
-            "distance": 957.1387162924619,
+            "distance": 173.59734529006877,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -505,9 +505,9 @@
         "mine_volume": 5042334.266074849,
         "mine_volume_normalized": 1.1026550246509856,
         "mine_volume_text": "1.1x",
-        "travel_distance": 2414.330027857185,
-        "travel_time_seconds": 48,
-        "travel_time_text": "0M:48S",
+        "travel_distance": 2479.281216747733,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -531,7 +531,7 @@
               "y": 300.8545379638672,
               "z": 1386.380859375
             },
-            "distance": 1466.793864087212
+            "distance": 1619.2693213931766
           },
           {
             "index": 2,
@@ -546,7 +546,7 @@
               "y": 340.85418701171875,
               "z": 2119.9835815429688
             },
-            "distance": 947.5361637699734,
+            "distance": 860.0118953545568,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

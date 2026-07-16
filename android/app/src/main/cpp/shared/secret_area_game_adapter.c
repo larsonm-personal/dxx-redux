@@ -73,6 +73,7 @@ static int Level_metadata_scan_view_initialized;
 
 #define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
 #define LEVEL_METADATA_FVI_CONFIRM_SPAN                  (64 * F1_0)
+#define LEVEL_METADATA_SWITCH_PROJECTILE_RADIUS          F1_0
 
 enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL = 1,
@@ -85,6 +86,7 @@ typedef struct level_metadata_visibility_key {
 	int from_pos[3];
 	int target_id;
 	int target_pos[3];
+	int clearance_radius;
 } level_metadata_visibility_key;
 
 typedef struct level_metadata_visibility_entry {
@@ -436,6 +438,24 @@ static int secret_area_compute_segment_clearance_radius(int seg, int radius)
 	probe.segnum = seg;
 	probe.size = radius;
 	return object_intersects_wall(&probe) ? 1 : radius;
+}
+
+static int secret_area_position_occupiable(
+    int seg, const vms_vector *position, int radius)
+{
+	object probe;
+	vms_vector point;
+
+	if (!position || seg < 0 || seg >= Num_segments || radius <= 0)
+		return 0;
+	point = *position;
+	if (find_point_seg(&point, seg) != seg)
+		return 0;
+	memset(&probe, 0, sizeof(probe));
+	probe.pos = *position;
+	probe.segnum = seg;
+	probe.size = radius;
+	return !object_intersects_wall(&probe);
 }
 
 static int secret_area_side_clearance_radius(void *user, int seg, int side)
@@ -934,7 +954,8 @@ static int level_metadata_fvi_segmented_visibility(
     const vms_vector *target,
     int target_seg,
     int target_wall_seg,
-    int target_wall_side)
+    int target_wall_side,
+    fix radius)
 {
 	fix distance;
 	int chunks;
@@ -972,9 +993,11 @@ static int level_metadata_fvi_segmented_visibility(
 		query.p0 = &current;
 		query.p1 = &endpoint;
 		query.startseg = current_seg;
-		query.rad = 0;
+		query.rad = radius;
 		query.thisobjnum = -1;
-		query.flags = FQ_TRANSWALL | FQ_GET_SEGLIST;
+		query.flags =
+		    (target_wall_seg >= 0 ? FQ_TRANSPOINT : FQ_TRANSWALL) |
+		    FQ_GET_SEGLIST;
 		fate = find_vector_intersection(&query, &hit_data);
 		if (fate == HIT_NONE)
 			endpoint_seg = hit_data.hit_seg;
@@ -997,40 +1020,6 @@ static int level_metadata_fvi_segmented_visibility(
 	return 0;
 }
 
-static int level_metadata_line_crosses_locked_door(
-    const vms_vector *from,
-    const vms_vector *target,
-    int target_wall_seg,
-    int target_wall_side)
-{
-	int wall_num;
-
-	for (wall_num = 0; wall_num < Num_walls; ++wall_num) {
-		int doorway;
-		int seg;
-		int side;
-
-		if (Walls[wall_num].type != WALL_DOOR ||
-		    Walls[wall_num].keys == KEY_NONE)
-			continue;
-		seg = Walls[wall_num].segnum;
-		side = Walls[wall_num].sidenum;
-		if (seg < 0 || seg >= Num_segments || side < 0 ||
-		    side >= MAX_SIDES_PER_SEGMENT ||
-		    (seg == target_wall_seg && side == target_wall_side))
-			continue;
-		doorway = WALL_IS_DOORWAY(&Segments[seg], side);
-		if ((doorway & WID_FLY_FLAG) ||
-		    ((doorway & WID_RENDER_FLAG) &&
-		     (doorway & WID_RENDPAST_FLAG)))
-			continue;
-		if (level_metadata_line_intersects_side(
-		        from, target, seg, side))
-			return 1;
-	}
-	return 0;
-}
-
 static int level_metadata_fvi_visibility_credible(
     const fvi_info *hit_data,
     const vms_vector *from,
@@ -1038,16 +1027,16 @@ static int level_metadata_fvi_visibility_credible(
     const vms_vector *target,
     int target_seg,
     int target_wall_seg,
-    int target_wall_side)
+    int target_wall_side,
+    fix radius)
 {
 	if (level_metadata_fvi_segment_chain_valid(
 	        hit_data, start_seg, target_seg) ||
 	    level_metadata_fvi_segmented_visibility(
 	        from, start_seg, target, target_seg, target_wall_seg,
-	        target_wall_side))
+	        target_wall_side, radius))
 		return 1;
-	return !level_metadata_line_crosses_locked_door(
-	    from, target, target_wall_seg, target_wall_side);
+	return 0;
 }
 
 static int secret_area_target_visible_from_position_uncached(
@@ -1077,11 +1066,11 @@ static int secret_area_target_visible_from_position_uncached(
 	query.startseg = seg;
 	query.rad = 0;
 	query.thisobjnum = -1;
-	query.flags = FQ_TRANSWALL | FQ_GET_SEGLIST;
+	query.flags = FQ_TRANSPOINT | FQ_GET_SEGLIST;
 	if (find_vector_intersection(&query, &hit_data) != HIT_NONE)
 		return 0;
 	return level_metadata_fvi_visibility_credible(
-	    &hit_data, &from, seg, &target, target_seg, -1, -1);
+	    &hit_data, &from, seg, &target, target_seg, -1, -1, 0);
 }
 
 int level_metadata_target_visible_from_position(
@@ -1123,7 +1112,8 @@ static int secret_area_target_visible_from_segment(
 	    seg, from_pos, target_seg, target_pos);
 }
 
-int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], int wall_num)
+int level_metadata_wall_shootable_from_position(
+    int seg, const int from_pos[3], int wall_num)
 {
 	level_metadata_visibility_key key;
 	fvi_info hit_data;
@@ -1132,6 +1122,7 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	vms_vector target;
 	int wall_seg;
 	int wall_side;
+	int navigator_radius;
 	int fate;
 
 	if (seg < 0 || seg >= Num_segments || !from_pos ||
@@ -1141,25 +1132,33 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	wall_side = Walls[wall_num].sidenum;
 	if (wall_seg < 0 || wall_seg >= Num_segments || wall_side < 0 || wall_side >= MAX_SIDES_PER_SEGMENT)
 		return 0;
-	if (wall_seg == seg)
-		return 1;
+	navigator_radius = secret_area_player_radius();
+	if (navigator_radius <= 0)
+		return 0;
 	memset(&key, 0, sizeof(key));
 	key.kind = LEVEL_METADATA_VISIBILITY_TARGET_WALL;
 	key.from_seg = seg;
 	memcpy(key.from_pos, from_pos, sizeof(key.from_pos));
 	key.target_id = wall_num;
+	key.clearance_radius = navigator_radius;
 	if (level_metadata_visibility_cache_lookup(&key, &fate))
 		return fate;
 	from.x = from_pos[0];
 	from.y = from_pos[1];
 	from.z = from_pos[2];
+	if (!secret_area_position_occupiable(
+	        seg, &from, navigator_radius)) {
+		level_metadata_visibility_cache_store(&key, 0);
+		return 0;
+	}
 	compute_center_point_on_side(&target, &Segments[wall_seg], wall_side);
 	memset(&query, 0, sizeof(query));
 	memset(&hit_data, 0, sizeof(hit_data));
 	query.p0 = &from;
 	query.p1 = &target;
 	query.startseg = seg;
-	query.rad = 0;
+	/* Base lasers have a one-unit collision radius in both engines. */
+	query.rad = LEVEL_METADATA_SWITCH_PROJECTILE_RADIUS;
 	query.thisobjnum = -1;
 	query.flags = FQ_TRANSWALL | FQ_GET_SEGLIST;
 	Level_metadata_visibility_summary.misses++;
@@ -1171,7 +1170,8 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	        hit_data.hit_side == wall_side);
 	if (fate &&
 	    !level_metadata_fvi_visibility_credible(
-	        &hit_data, &from, seg, &target, wall_seg, wall_seg, wall_side)) {
+	        &hit_data, &from, seg, &target, wall_seg, wall_seg, wall_side,
+	        LEVEL_METADATA_SWITCH_PROJECTILE_RADIUS)) {
 		int index;
 
 		if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
@@ -1190,10 +1190,12 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	return fate;
 }
 
-static int secret_area_wall_visible_from_segment(void *user, int seg, const int from_pos[3], int wall_num)
+static int secret_area_wall_shootable_from_position(
+    void *user, int seg, const int from_pos[3], int wall_num)
 {
 	(void) user;
-	return level_metadata_wall_visible_from_position(seg, from_pos, wall_num);
+	return level_metadata_wall_shootable_from_position(
+	    seg, from_pos, wall_num);
 }
 
 static int secret_area_trigger_opens_links(int trigger_num)
@@ -1589,7 +1591,8 @@ static void level_metadata_initialize_scan_view(void)
 	view->trigger_link_segment = secret_area_trigger_link_segment;
 	view->trigger_link_side = secret_area_trigger_link_side;
 	view->target_visible_from_segment = secret_area_target_visible_from_segment;
-	view->wall_visible_from_segment = secret_area_wall_visible_from_segment;
+	view->wall_shootable_from_position =
+	    secret_area_wall_shootable_from_position;
 	view->wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
 	Level_metadata_scan_view_initialized = 1;
 }

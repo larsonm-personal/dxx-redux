@@ -593,9 +593,9 @@
         "mine_volume": 6030143.945859031,
         "mine_volume_normalized": 1.3186687296806594,
         "mine_volume_text": "1.3x",
-        "travel_distance": 30.606601717798213,
-        "travel_time_seconds": 1,
-        "travel_time_text": "0M:01S",
+        "travel_distance": 525.5616185195286,
+        "travel_time_seconds": 11,
+        "travel_time_text": "0M:11S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -619,7 +619,7 @@
               "y": 60.0,
               "z": 389.99993896484375
             },
-            "distance": 30.606601717798213
+            "distance": 525.5616185195286
           }
         ],
         "route_problem": "exit unreachable"
@@ -2346,9 +2346,9 @@
         "mine_volume": 10025455.721960815,
         "mine_volume_normalized": 2.1923614228854795,
         "mine_volume_text": "2.2x",
-        "travel_distance": 1032.8212779355702,
-        "travel_time_seconds": 21,
-        "travel_time_text": "0M:21S",
+        "travel_distance": 485.5460095901032,
+        "travel_time_seconds": 10,
+        "travel_time_text": "0M:10S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2401,22 +2401,9 @@
             },
             "distance": 39.090510764366556,
             "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 562,
-            "label_pos": {
-              "x": 0.0226898193359375,
-              "y": 8.447540283203125,
-              "z": 588.7651062011719
-            },
-            "distance": 547.2752683454669
           }
         ],
-        "route_problem": "exit unreachable"
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": -2,

@@ -335,16 +335,23 @@ static int objective_display_number(
 	const level_metadata_state *canonical = level_metadata_get_canonical_state();
 	const level_metadata_route_step *step;
 	int i;
+	int number = 0;
 
 	if (!metadata || step_index < 0 || step_index >= metadata->route_step_count)
 		return 0;
 	step = &metadata->route_steps[step_index];
 	if (canonical)
 		for (i = 0; i < canonical->route_step_count; ++i) {
+			if (canonical->route_steps[i].kind != LEVEL_METADATA_ROUTE_START)
+				number++;
 			if (objective_steps_match(step, &canonical->route_steps[i]))
-				return i + 1;
+				return number;
 		}
-	return step_index + 1;
+	number = 0;
+	for (i = 0; i <= step_index; ++i)
+		if (metadata->route_steps[i].kind != LEVEL_METADATA_ROUTE_START)
+			number++;
+	return number;
 }
 
 typedef struct objective_label_candidate {

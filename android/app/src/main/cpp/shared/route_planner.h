@@ -101,7 +101,7 @@ struct route_visibility_query {
 	    const route_position &from,
 	    int target_segment,
 	    const route_position &target) = nullptr;
-	bool (*wall_visible)(
+	bool (*wall_shootable)(
 	    void *user,
 	    int segment,
 	    const route_position &from,

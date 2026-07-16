@@ -129,8 +129,6 @@ typedef struct fvi_query {
 //Returns the hit_data->hit_type
 int find_vector_intersection(fvi_query *fq,fvi_info *hit_data);
 
-int level_metadata_line_intersects_side(const vms_vector *p0, const vms_vector *p1, int segnum, int sidenum);
-
 //finds the uv coords of the given point on the given seg & side
 //fills in u & v
 void find_hitpoint_uv(fix *u,fix *v,fix *l,vms_vector *pnt,segment *seg,int sidenum,int facenum);

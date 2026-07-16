@@ -1,4 +1,4 @@
-// TEST: Obsidian level 1 objective guidance and overlapping automap labels.
+// TEST: Obsidian level 2 starts with the reachable blue key.
 [
     {"_info": {
         "games": ["d2"],
@@ -19,90 +19,55 @@
     {"action": "enter_launcher"},
     {"action": "reset_state"},
     {"action": "clear_mods"},
-    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_markers", "display_name": "Obsidian.zip"},
-    {"action": "analyze_level_metadata_all", "label": "obsidian_markers", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
+    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level2", "display_name": "Obsidian.zip"},
     {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000, "optional": true},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "select_mission", "text": "Obsidian", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace", "post_delay_ms": 100},
+    {"action": "key", "key": "2", "post_delay_ms": 100},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
     {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "current_level_num": "1",
-        "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "8"
-    }},
-
-    {"action": "key", "key": "tab", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
-    {"action": "set_objective_overlay", "mode": "all", "post_delay_ms": 300},
-    {"action": "introspect"},
     {"action": "assert", "expect": {
-        "automap.objective_overlay_mode_name": "all",
-        "automap.objective_visible_step_count": "7",
-        "automap.objective_label_candidate_count": "8",
-        "automap.objective_connector_candidate_count": "1",
-        "automap.objective_connector_drawn_count": "1",
-        "automap.next_objective_count": "3",
-        "automap.next_objective_below_level_label": "true",
-        "automap.first_next_objective_text": "1: blue key",
-        "automap.long_guidance_suppressed_count": "0",
-        "automap.objective_label_projected_count": {"gt": 0},
-        "automap.objective_merged_label_count": "1",
-        "automap.objective_first_merged_label": "5&6"
+        "current_level_num": "2",
+        "level_metadata_route.status": "ok"
     }},
-
-    {"action": "key", "key": "escape", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
     {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_activation_kind_name": "shoot_switch",
-        "guidebot.route_goal_trigger": "6",
-        "guidebot.route_goal_seg": "290",
-        "guidebot.route_goal_activation_matches_aim": "false",
-        "guidebot.route_goal_target_matches_activation": "true"
-    }},
-    {"action": "pose_route_guidance", "post_delay_ms": 250},
-    {"action": "send_button", "button": 100, "held": 1},
-    {"action": "wait_ms", "ms": 300},
-    {"action": "send_button", "button": 100, "pressed": 0},
-    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_goal_active": "true",
+        "guidebot.route_status": "ok",
+        "guidebot.route_goal_label": {"contains": "blue key"},
         "guidebot.route_goal_activation_kind_name": "pickup_key",
-        "guidebot.route_goal_label": {"contains": "red key"}
+        "guidebot.route_goal_objective_seg": "101",
+        "guidebot.route_goal_trigger": {"ne": 4},
+        "guidebot.route_analysis.steps[1].label": "blue key",
+        "guidebot.route_analysis.steps[1].activation_kind": "pickup_key"
     }},
-    {"action": "set_debug", "field": "player_keys", "value": "blue red", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "player.has_blue_key": "true",
         "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_trigger": "4",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
-        "guidebot.route_goal_trigger": "5",
-        "guidebot.route_goal_seg": "286",
-        "guidebot.route_goal_activation_matches_aim": "false",
-        "guidebot.route_goal_target_matches_activation": "true"
-    }},
-    {"action": "wait_for", "timeout_ms": 60000, "expect": {
-        "guidebot.route_goal_path_endpoint_seg": "286",
-        "guidebot.route_goal_path_endpoint_matches_target": "true"
+        "guidebot.route_goal_objective_seg": "231",
+        "guidebot.route_goal_objective_wall": "114",
+        "guidebot.route_goal_guidance_mode_name": "reach_firing_position"
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "send_button", "button": 100, "held": 1},
-    {"action": "wait_ms", "ms": 300},
+    {"action": "wait_ms", "ms": 1000},
     {"action": "send_button", "button": 100, "pressed": 0},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_trigger": {"ne": 5}
+        "guidebot.route_goal_trigger": {"ne": 4}
     }},
-    {"action": "introspect"},
-    {"action": "log", "message": "=== TEST: Obsidian level 1 objective markers -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Obsidian level 2 route -- PASS ==="}
 ]

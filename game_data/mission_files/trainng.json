@@ -238,13 +238,13 @@
         "mine_volume": 1512000.0000000205,
         "mine_volume_normalized": 0.330643370569349,
         "mine_volume_text": "0.33x",
-        "travel_distance": 1696.3108891324555,
-        "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
@@ -252,89 +252,9 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 101
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 12,
-            "label_pos": {
-              "x": 100.0,
-              "y": 0.0,
-              "z": 1660.0
-            },
-            "distance": 315.1554445662277
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 2",
-            "seg": 79,
-            "side": 4,
-            "wall": 8,
-            "label_pos": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 510.0
-            },
-            "distance": 225.1554445662277,
-            "trigger": 2,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 44,
-                "side": 4,
-                "wall": 6
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 3",
-            "seg": 44,
-            "side": 4,
-            "wall": 6,
-            "label_pos": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 1010.0
-            },
-            "distance": 520.0,
-            "trigger": 3,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 16,
-                "side": 4,
-                "wall": 4
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 0,
-            "side": 0,
-            "wall": 0,
-            "label_pos": {
-              "x": -10.0,
-              "y": 0.0,
-              "z": 1620.0
-            },
-            "distance": 636.0,
-            "trigger": 0,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 9,
