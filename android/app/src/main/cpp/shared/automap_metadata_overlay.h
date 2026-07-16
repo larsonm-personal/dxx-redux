@@ -10,7 +10,13 @@ void automap_metadata_draw_labels(
 void automap_metadata_draw_connectors(
     int *objective_candidate_count,
     int *objective_drawn_count);
-void automap_metadata_draw_next_objectives(int *objective_count);
+void automap_metadata_draw_next_objectives(
+    int *objective_count, int x, int level_label_y);
+int automap_metadata_get_next_objective_x(void);
+int automap_metadata_get_next_objective_y(void);
+int automap_metadata_get_level_label_y(void);
+const char *automap_metadata_get_first_next_objective_text(void);
+int automap_metadata_get_long_guidance_suppressed_count(void);
 int automap_metadata_get_key_carrier_marker(
     int *objnum, int *key_index, int position[3]);
 int automap_metadata_get_key_carrier_marker_count(void);

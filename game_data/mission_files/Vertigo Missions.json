@@ -508,9 +508,9 @@
         "mine_volume": 11434755.21277424,
         "mine_volume_normalized": 2.5005462997268895,
         "mine_volume_text": "2.5x",
-        "travel_distance": 7374.913399325745,
-        "travel_time_seconds": 147,
-        "travel_time_text": "2M:27S",
+        "travel_distance": 7132.215111466234,
+        "travel_time_seconds": 143,
+        "travel_time_text": "2M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -567,6 +567,33 @@
           },
           {
             "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 294,
+            "side": 4,
+            "wall": 76,
+            "label_pos": {
+              "x": 91.25698852539062,
+              "y": -127.74520874023438,
+              "z": 18.760574340820312
+            },
+            "distance": 696.7559788252242,
+            "opens": [
+              {
+                "seg": 294,
+                "side": 4,
+                "wall": 76
+              },
+              {
+                "seg": 300,
+                "side": 5,
+                "wall": 77
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -576,10 +603,10 @@
               "y": 6.2965545654296875,
               "z": -424.384521484375
             },
-            "distance": 2642.937964563671
+            "distance": 1703.4836978789363
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

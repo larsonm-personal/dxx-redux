@@ -2660,14 +2660,6 @@ private fun LevelMetadataTableRow(
         verticalAlignment = Alignment.Top,
     ) {
         Text(level, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(44.dp))
-        Text(name, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(184.dp))
-        Text(robots, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
-        Text(hostages, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(68.dp))
-        Text(secrets, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
-        Text(matcens, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
-        Text(energy, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
-        Text(volume, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
-        Text(travel, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
         Box(modifier = Modifier.width(44.dp), contentAlignment = Alignment.TopStart) {
             if (bold) {
                 Text("Route", fontSize = 11.sp, fontWeight = weight)
@@ -2677,13 +2669,21 @@ private fun LevelMetadataTableRow(
                 }
             }
         }
+        Text(name, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(184.dp))
+        Text(robots, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
+        Text(hostages, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(68.dp))
+        Text(secrets, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
+        Text(matcens, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
+        Text(energy, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
+        Text(volume, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
+        Text(travel, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
     }
     problem?.let {
         Text(
             it,
             fontSize = 10.sp,
             color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
+            modifier = Modifier.padding(start = 88.dp, bottom = 2.dp),
         )
     }
     note?.let {
@@ -2691,7 +2691,7 @@ private fun LevelMetadataTableRow(
             it,
             fontSize = 10.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
+            modifier = Modifier.padding(start = 88.dp, bottom = 2.dp),
         )
     }
 }

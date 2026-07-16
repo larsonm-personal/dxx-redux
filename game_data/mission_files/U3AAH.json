@@ -186,9 +186,9 @@
         "mine_volume": 28892497.383987084,
         "mine_volume_normalized": 6.318196242862076,
         "mine_volume_text": "6.3x",
-        "travel_distance": 6350.083203937036,
-        "travel_time_seconds": 127,
-        "travel_time_text": "2M:07S",
+        "travel_distance": 6200.269703806322,
+        "travel_time_seconds": 124,
+        "travel_time_text": "2M:04S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -230,17 +230,45 @@
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 149,
+            "side": 5,
+            "wall": 17,
+            "label_pos": {
+              "x": -45.00013732910156,
+              "y": -0.0015106201171875,
+              "z": -308.3066711425781
+            },
+            "distance": 265.9381735759614,
+            "opens": [
+              {
+                "seg": 149,
+                "side": 5,
+                "wall": 17
+              },
+              {
+                "seg": 148,
+                "side": 5,
+                "wall": 16
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 3",
-            "seg": 6,
+            "seg": 1148,
+            "side": 5,
             "wall": 55,
             "label_pos": {
               "x": 104.99980163574219,
               "y": -0.001007080078125,
               "z": -265.8065643310547
             },
-            "distance": 260.54809047974896,
+            "distance": 440.64644995939045,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -288,7 +316,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -298,11 +326,11 @@
               "y": 14.993667602539062,
               "z": -945.872802734375
             },
-            "distance": 1417.531536571208,
+            "distance": 821.6815033848909,
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -329,7 +357,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -342,7 +370,7 @@
             "distance": 1955.234628116766
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

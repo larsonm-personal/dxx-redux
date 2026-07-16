@@ -913,22 +913,10 @@ route_trigger_path_selection select_trigger_firing_path(
 			continue;
 		route_trigger_path_selection candidate;
 		candidate.source = source;
-		if (valid_segment(snapshot, source.source_segment) &&
-		    search.nodes[source.source_segment].reachable) {
-			candidate.path = build_route_path(
-			    search, source.source_segment);
-			candidate.path.distance += point_distance(
-			    snapshot.topology.segments[source.source_segment].center,
-			    source.source_position);
-			candidate.terminal_segment = source.source_segment;
-			candidate.terminal_position = source.source_position;
-			candidate.path.terminal_segment = source.source_segment;
-			candidate.path.terminal_position = source.source_position;
-			candidate.found = true;
-		} else {
-			if (!valid_wall(snapshot, source.source_wall) ||
-			    !snapshot.topology.walls[source.source_wall].shootable_trigger)
-				continue;
+		const bool shootable = valid_wall(snapshot, source.source_wall) &&
+		                       snapshot.topology.walls[source.source_wall]
+		                           .shootable_trigger;
+		if (shootable) {
 			for (const int segment : search.visit_order) {
 				double extra_distance = 0.0;
 				route_position terminal;
@@ -946,6 +934,19 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.found = true;
 				break;
 			}
+		} else if (
+		    valid_segment(snapshot, source.source_segment) &&
+		    search.nodes[source.source_segment].reachable) {
+			candidate.path = build_route_path(
+			    search, source.source_segment);
+			candidate.path.distance += point_distance(
+			    snapshot.topology.segments[source.source_segment].center,
+			    source.source_position);
+			candidate.terminal_segment = source.source_segment;
+			candidate.terminal_position = source.source_position;
+			candidate.path.terminal_segment = source.source_segment;
+			candidate.path.terminal_position = source.source_position;
+			candidate.found = true;
 		}
 		if (!candidate.found ||
 		    (result.found && candidate.path.distance >= result.path.distance))
@@ -2012,6 +2013,7 @@ class dependency_planner
 			state_.progress.current_position = firing.terminal_position;
 			if (shootable) {
 				source.source_segment = firing.terminal_segment;
+				source.source_position = firing.terminal_position;
 				if (source.source_segment != selected_source_segment)
 					source.source_side = -1;
 			} else if (

@@ -21,9 +21,9 @@
         "mine_volume": 24904610.0,
         "mine_volume_normalized": 5.446127111848547,
         "mine_volume_text": "5.4x",
-        "travel_distance": 9801.185663945658,
-        "travel_time_seconds": 196,
-        "travel_time_text": "3M:16S",
+        "travel_distance": 8219.969946318965,
+        "travel_time_seconds": 164,
+        "travel_time_text": "2M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -41,15 +41,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 254,
-            "side": 0,
+            "seg": 278,
             "wall": 56,
             "label_pos": {
               "x": -35.0,
               "y": -60.0,
               "z": 300.0
             },
-            "distance": 473.0961493266702,
+            "distance": 389.2190326460848,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -66,15 +65,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
-            "seg": 202,
-            "side": 0,
+            "seg": 226,
             "wall": 60,
             "label_pos": {
               "x": 0.0,
               "y": -80.0,
               "z": 670.0
             },
-            "distance": 784.0748126286428,
+            "distance": 410.1836735587638,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -104,7 +102,7 @@
               "y": -160.0,
               "z": 60.0
             },
-            "distance": 1545.2074634323478,
+            "distance": 1168.880058534894,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -165,15 +163,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 27,
-            "side": 5,
+            "seg": 121,
             "wall": 80,
             "label_pos": {
               "x": 132.5,
               "y": -180.0,
               "z": 182.5
             },
-            "distance": 1156.941767161638,
+            "distance": 878.7346677677237,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -200,15 +197,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 17",
-            "seg": 106,
-            "side": 0,
+            "seg": 90,
             "wall": 133,
             "label_pos": {
               "x": 0.5,
               "y": -339.5,
               "z": 520.0
             },
-            "distance": 733.2319460499609,
+            "distance": 466.3731607124917,
             "trigger": 17,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -233,7 +229,7 @@
               "y": -339.5,
               "z": 300.5
             },
-            "distance": 404.1083444947825,
+            "distance": 202.05417224739125,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -378,9 +374,9 @@
         "mine_volume": 53915999.99999982,
         "mine_volume_normalized": 11.790322729905238,
         "mine_volume_text": "12x",
-        "travel_distance": 5850.272586553852,
-        "travel_time_seconds": 117,
-        "travel_time_text": "1M:57S",
+        "travel_distance": 5810.272586553852,
+        "travel_time_seconds": 116,
+        "travel_time_text": "1M:56S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -529,7 +525,7 @@
               "y": 180.0,
               "z": 1255.0
             },
-            "distance": 788.7040965957062,
+            "distance": 748.7040965957062,
             "trigger": 24,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -553,9 +549,9 @@
         "mine_volume": 33845417.644493505,
         "mine_volume_normalized": 7.401298259459324,
         "mine_volume_text": "7.4x",
-        "travel_distance": 3447.3917691577726,
-        "travel_time_seconds": 69,
-        "travel_time_text": "1M:09S",
+        "travel_distance": 3404.8917691577726,
+        "travel_time_seconds": 68,
+        "travel_time_text": "1M:08S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -585,16 +581,17 @@
             "index": 2,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 11",
-            "seg": 18,
-            "wall": 173,
+            "label": "Fly-through trigger 13",
+            "seg": 21,
+            "side": 1,
+            "wall": 171,
             "label_pos": {
               "x": 140.0,
-              "y": -60.0,
+              "y": -80.0,
               "z": 340.0
             },
-            "distance": 1163.9451509267992,
-            "trigger": 11,
+            "distance": 1222.6951509267992,
+            "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -616,7 +613,7 @@
               "y": 0.0,
               "z": 160.0
             },
-            "distance": 640.5379626608484,
+            "distance": 539.2879626608483,
             "key": "red"
           },
           {
@@ -698,7 +695,7 @@
         "travel_time_text": "0M:50S",
         "guidebot_count": 12,
         "guidebot_placed": true,
-        "guidebot_accessible": false,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -769,10 +766,8 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "guidebot_note": "guidebot is present but not reachable from the start",
         "notes": [
-          "guidebot or guidebot start cage placed in this level",
-          "guidebot is present but not reachable from the start"
+          "guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

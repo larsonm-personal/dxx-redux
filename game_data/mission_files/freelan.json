@@ -572,9 +572,9 @@
         "mine_volume": 3959828.393887342,
         "mine_volume_normalized": 0.8659332057084026,
         "mine_volume_text": "0.87x",
-        "travel_distance": 5694.0150288735485,
-        "travel_time_seconds": 114,
-        "travel_time_text": "1M:54S",
+        "travel_distance": 5582.801825437952,
+        "travel_time_seconds": 112,
+        "travel_time_text": "1M:52S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -619,15 +619,41 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 1",
+            "seg": 315,
+            "side": 5,
+            "wall": 44,
+            "label_pos": {
+              "x": -120.0,
+              "y": -160.0,
+              "z": 160.0
+            },
+            "distance": 893.681419223682,
+            "trigger": 1,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 361,
+                "side": 4,
+                "wall": 40
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 2",
-            "seg": 185,
+            "seg": 373,
+            "side": 4,
             "wall": 45,
             "label_pos": {
               "x": -120.0,
               "y": -160.0,
               "z": 340.0
             },
-            "distance": 170.6066017177982,
+            "distance": 230.0,
             "trigger": 2,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -640,7 +666,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -650,11 +676,11 @@
               "y": -160.0,
               "z": 340.0
             },
-            "distance": 1094.2880209414805,
+            "distance": 30.0,
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -667,7 +693,7 @@
             "distance": 1894.3124884621243
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

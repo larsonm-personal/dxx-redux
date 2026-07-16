@@ -222,7 +222,11 @@ typedef struct escort_route_goal {
 	int guidance_mode;
 	int guidance_seg;
 	int guidance_side;
+	int target_pos_valid;
+	vms_vector target_pos;
 	int path_endpoint_seg;
+	int path_endpoint_pos_valid;
+	vms_vector path_endpoint_pos;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 } escort_route_goal;
 
@@ -342,7 +346,9 @@ static void escort_route_clear_goal(void)
 	Escort_route_goal.guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
 	Escort_route_goal.guidance_seg = -1;
 	Escort_route_goal.guidance_side = -1;
+	Escort_route_goal.target_pos_valid = 0;
 	Escort_route_goal.path_endpoint_seg = -1;
+	Escort_route_goal.path_endpoint_pos_valid = 0;
 }
 
 static const char *escort_route_goal_label(void)
@@ -457,6 +463,27 @@ int escort_get_route_goal_guidance_side(void)
 int escort_get_route_goal_path_endpoint_seg(void)
 {
 	return Escort_route_goal.active ? Escort_route_goal.path_endpoint_seg : -1;
+}
+
+int escort_get_route_goal_target_pos(int pos[3])
+{
+	if (!pos || !Escort_route_goal.active || !Escort_route_goal.target_pos_valid)
+		return 0;
+	pos[0] = Escort_route_goal.target_pos.x;
+	pos[1] = Escort_route_goal.target_pos.y;
+	pos[2] = Escort_route_goal.target_pos.z;
+	return 1;
+}
+
+int escort_get_route_goal_path_endpoint_pos(int pos[3])
+{
+	if (!pos || !Escort_route_goal.active ||
+	    !Escort_route_goal.path_endpoint_pos_valid)
+		return 0;
+	pos[0] = Escort_route_goal.path_endpoint_pos.x;
+	pos[1] = Escort_route_goal.path_endpoint_pos.y;
+	pos[2] = Escort_route_goal.path_endpoint_pos.z;
+	return 1;
 }
 
 #ifdef INTROSPECT_ON
@@ -965,6 +992,13 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 	Escort_route_goal.guidance_mode = guidance_mode;
 	Escort_route_goal.guidance_seg = target_seg;
 	Escort_route_goal.guidance_side = target_side;
+	if (guidance_mode == ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION &&
+	    step->activation_pos_valid && target_seg == path_terminal_seg) {
+		Escort_route_goal.target_pos_valid = 1;
+		Escort_route_goal.target_pos.x = step->activation_pos[0];
+		Escort_route_goal.target_pos.y = step->activation_pos[1];
+		Escort_route_goal.target_pos.z = step->activation_pos[2];
+	}
 	if (step->kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
 		Escort_route_goal.objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
 		if (Escort_unexplored_route_target.active)
@@ -1122,15 +1156,39 @@ void escort_route_monitor_completion(void)
 static void escort_route_note_path_endpoint(object *objp)
 {
 	ai_static *aip;
+	point_seg *endpoint;
 
 	if (!Escort_route_goal.active || !objp)
 		return;
 	aip = &objp->ctype.ai_info;
 	Escort_route_goal.path_endpoint_seg = -1;
-	if (aip->hide_index >= 0 && aip->path_length > 0)
-		Escort_route_goal.path_endpoint_seg = Point_segs[aip->hide_index + aip->path_length - 1].segnum;
+	Escort_route_goal.path_endpoint_pos_valid = 0;
+	if (aip->hide_index >= 0 && aip->path_length > 0) {
+		endpoint = &Point_segs[aip->hide_index + aip->path_length - 1];
+		Escort_route_goal.path_endpoint_seg = endpoint->segnum;
+		Escort_route_goal.path_endpoint_pos = endpoint->point;
+		Escort_route_goal.path_endpoint_pos_valid = 1;
+	}
 	else if (escort_valid_segment(Escort_route_goal.target_seg))
 		Escort_route_goal.path_endpoint_seg = Escort_route_goal.target_seg;
+}
+
+static void escort_route_apply_target_pos(object *objp)
+{
+	ai_static *aip;
+	point_seg *endpoint;
+
+	if (!Escort_route_goal.active || !Escort_route_goal.target_pos_valid || !objp)
+		return;
+	aip = &objp->ctype.ai_info;
+	if (aip->hide_index < 0 || aip->path_length <= 0)
+		return;
+	endpoint = &Point_segs[aip->hide_index + aip->path_length - 1];
+	if (endpoint->segnum != Escort_route_goal.target_seg ||
+	    find_point_seg(&Escort_route_goal.target_pos, endpoint->segnum) !=
+	        endpoint->segnum)
+		return;
+	endpoint->point = Escort_route_goal.target_pos;
 }
 
 #endif
@@ -2545,8 +2603,10 @@ void escort_create_path_to_goal(object *objp)
 		}
 
 #ifdef __ANDROID__
-		if (using_route_goal)
+		if (using_route_goal) {
+			escort_route_apply_target_pos(objp);
 			escort_route_note_path_endpoint(objp);
+		}
 #endif
 		ailp->mode = AIM_GOTO_OBJECT;
 

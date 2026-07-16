@@ -13,14 +13,15 @@
 #include "powerup.h"
 #include "secretarea.h"
 
-#define K_SECRET_LABEL_UNFOUND_COLOR BM_XRGB(31, 0, 0)
-#define K_SECRET_LABEL_FOUND_COLOR   BM_XRGB(0, 31, 0)
-#define K_OBJECTIVE_LABEL_COLOR      BM_XRGB(10, 63, 63)
-#define K_OBJECTIVE_LABEL_BLUE       BM_XRGB(5, 5, 63)
-#define K_OBJECTIVE_LABEL_GOLD       BM_XRGB(63, 63, 10)
-#define K_OBJECTIVE_LABEL_RED        BM_XRGB(63, 5, 5)
-#define K_NEXT_OBJECTIVE_COLOR       BM_XRGB(63, 5, 5)
-#define K_NEXT_OBJECTIVE_COUNT       3
+#define K_SECRET_LABEL_UNFOUND_COLOR      BM_XRGB(31, 0, 0)
+#define K_SECRET_LABEL_FOUND_COLOR        BM_XRGB(0, 31, 0)
+#define K_OBJECTIVE_LABEL_COLOR           BM_XRGB(10, 63, 63)
+#define K_OBJECTIVE_LABEL_BLUE            BM_XRGB(5, 5, 63)
+#define K_OBJECTIVE_LABEL_GOLD            BM_XRGB(63, 63, 10)
+#define K_OBJECTIVE_LABEL_RED             BM_XRGB(63, 5, 5)
+#define K_NEXT_OBJECTIVE_COLOR            BM_XRGB(63, 5, 5)
+#define K_NEXT_OBJECTIVE_COUNT            3
+#define K_OBJECTIVE_GUIDANCE_MAX_DISTANCE (200 * F1_0)
 
 static int key_carrier_marker_count;
 static int key_carrier_marker_objnum = -1;
@@ -28,6 +29,11 @@ static int key_carrier_marker_key_index = -1;
 static int key_carrier_marker_position[3];
 static int merged_objective_label_count;
 static char first_merged_objective_label[LEVEL_METADATA_MAX_ROUTE_STEPS * 4];
+static int next_objective_x;
+static int next_objective_y;
+static int objective_level_label_y;
+static char first_next_objective_text[LEVEL_METADATA_ROUTE_LABEL_LEN + 16];
+static int long_guidance_suppressed_count;
 
 static int objective_key_powerup_id(int key_index)
 {
@@ -243,6 +249,24 @@ static int objective_has_distinct_guidance_positions(
 	        step->activation_pos[2] != step->aim_pos[2]);
 }
 
+static int objective_guidance_positions_are_readable(
+    const level_metadata_route_step *step)
+{
+	vms_vector activation;
+	vms_vector aim;
+
+	if (!objective_has_distinct_guidance_positions(step))
+		return 0;
+	activation.x = step->activation_pos[0];
+	activation.y = step->activation_pos[1];
+	activation.z = step->activation_pos[2];
+	aim.x = step->aim_pos[0];
+	aim.y = step->aim_pos[1];
+	aim.z = step->aim_pos[2];
+	return vm_vec_dist_quick(&activation, &aim) <=
+	       K_OBJECTIVE_GUIDANCE_MAX_DISTANCE;
+}
+
 static const level_metadata_state *current_objective_route(
     route_planner_plan_summary *plan)
 {
@@ -287,6 +311,40 @@ static const level_metadata_state *objective_label_route(
 	                ? *first_step + 1
 	                : metadata->route_step_count;
 	return metadata;
+}
+
+static int objective_steps_match(
+    const level_metadata_route_step *first,
+    const level_metadata_route_step *second)
+{
+	if (!first || !second || first->kind != second->kind ||
+	    first->activation_kind != second->activation_kind)
+		return 0;
+	if (first->trigger_num >= 0 || second->trigger_num >= 0)
+		return first->trigger_num == second->trigger_num;
+	if (first->key_index >= 0 || second->key_index >= 0)
+		return first->key_index == second->key_index;
+	if (first->wall_num >= 0 || second->wall_num >= 0)
+		return first->wall_num == second->wall_num;
+	return first->seg == second->seg && first->side == second->side;
+}
+
+static int objective_display_number(
+    const level_metadata_state *metadata, int step_index)
+{
+	const level_metadata_state *canonical = level_metadata_get_canonical_state();
+	const level_metadata_route_step *step;
+	int i;
+
+	if (!metadata || step_index < 0 || step_index >= metadata->route_step_count)
+		return 0;
+	step = &metadata->route_steps[step_index];
+	if (canonical)
+		for (i = 0; i < canonical->route_step_count; ++i) {
+			if (objective_steps_match(step, &canonical->route_steps[i]))
+				return i + 1;
+		}
+	return step_index + 1;
 }
 
 typedef struct objective_label_candidate {
@@ -447,9 +505,9 @@ static void draw_objective_labels(
 	int end_step = 0;
 	const level_metadata_state *metadata =
 	    objective_label_route(&first_step, &end_step);
-	int objective_number = 0;
 	int i;
 
+	long_guidance_suppressed_count = 0;
 	if (!metadata)
 		return;
 	for (i = 0; i < metadata->route_step_count; ++i) {
@@ -461,12 +519,12 @@ static void draw_objective_labels(
 
 		if (step->kind == LEVEL_METADATA_ROUTE_START)
 			continue;
-		objective_number++;
 		if (i < first_step || i >= end_step)
 			continue;
+		const int objective_number = objective_display_number(metadata, i);
 		(*visible_step_count)++;
 		color = objective_label_color(step);
-		if (objective_has_distinct_guidance_positions(step)) {
+		if (objective_guidance_positions_are_readable(step)) {
 			collect_objective_label(
 			    labels, &label_count, candidate_count, objective_number, color,
 			    step->activation_pos);
@@ -490,6 +548,8 @@ static void draw_objective_labels(
 			    labels, &label_count, candidate_count, objective_number, color,
 			    dynamic_position);
 		} else if (step->label_pos_valid) {
+			if (objective_has_distinct_guidance_positions(step))
+				long_guidance_suppressed_count++;
 			collect_objective_label(
 			    labels, &label_count, candidate_count, objective_number, color,
 			    step->label_pos);
@@ -557,7 +617,6 @@ void automap_metadata_draw_connectors(
 	int end_step = 0;
 	const level_metadata_state *metadata =
 	    objective_label_route(&first_step, &end_step);
-	int objective_number = 0;
 	int i;
 
 	*objective_candidate_count = 0;
@@ -570,10 +629,10 @@ void automap_metadata_draw_connectors(
 
 		if (step->kind == LEVEL_METADATA_ROUTE_START)
 			continue;
-		objective_number++;
 		if (i < first_step || i >= end_step)
 			continue;
-		if (!objective_has_distinct_guidance_positions(step))
+		const int objective_number = objective_display_number(metadata, i);
+		if (!objective_guidance_positions_are_readable(step))
 			continue;
 		snprintf(label, sizeof(label), "%d", objective_number);
 		(*objective_candidate_count)++;
@@ -630,7 +689,8 @@ static void fit_objective_text(char *text, int max_width)
 	}
 }
 
-void automap_metadata_draw_next_objectives(int *objective_count)
+void automap_metadata_draw_next_objectives(
+    int *objective_count, int x, int level_label_y)
 {
 	route_planner_plan_summary plan;
 	const level_metadata_state *metadata;
@@ -640,6 +700,10 @@ void automap_metadata_draw_next_objectives(int *objective_count)
 	int drawn = 0;
 	int i;
 
+	next_objective_x = x;
+	objective_level_label_y = level_label_y;
+	next_objective_y = level_label_y + LINE_SPACING;
+	first_next_objective_text[0] = '\0';
 	*objective_count = 0;
 	if (mode == LEVEL_METADATA_OBJECTIVES_OFF)
 		return;
@@ -657,18 +721,50 @@ void automap_metadata_draw_next_objectives(int *objective_count)
 	     i < metadata->route_step_count && drawn < max_count;
 	     ++i) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
-		char text[LEVEL_METADATA_ROUTE_LABEL_LEN];
+		char text[LEVEL_METADATA_ROUTE_LABEL_LEN + 16];
+		int objective_number;
 
 		if (step->kind == LEVEL_METADATA_ROUTE_START || !step->label[0])
 			continue;
-		snprintf(text, sizeof(text), "%s", step->label);
+		objective_number = objective_display_number(metadata, i);
+		snprintf(
+		    text, sizeof(text), "%d: %s", objective_number, step->label);
+		if (!drawn)
+			snprintf(
+			    first_next_objective_text,
+			    sizeof(first_next_objective_text), "%s", text);
 		fit_objective_text(
 		    text, grd_curcanv->cv_bitmap.bm_w - FSPACX(4));
-		gr_printf(FSPACX(2), FSPACY(2) + drawn * LINE_SPACING,
+		gr_printf(next_objective_x, next_objective_y + drawn * LINE_SPACING,
 		          "%s", text);
 		drawn++;
 	}
 	*objective_count = drawn;
+}
+
+int automap_metadata_get_next_objective_x(void)
+{
+	return next_objective_x;
+}
+
+int automap_metadata_get_next_objective_y(void)
+{
+	return next_objective_y;
+}
+
+int automap_metadata_get_level_label_y(void)
+{
+	return objective_level_label_y;
+}
+
+const char *automap_metadata_get_first_next_objective_text(void)
+{
+	return first_next_objective_text;
+}
+
+int automap_metadata_get_long_guidance_suppressed_count(void)
+{
+	return long_guidance_suppressed_count;
 }
 
 int secret_area_should_draw_segment_edges(int segnum)

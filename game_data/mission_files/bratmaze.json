@@ -21,9 +21,9 @@
         "mine_volume": 66670128.18212306,
         "mine_volume_normalized": 14.579388821711253,
         "mine_volume_text": "15x",
-        "travel_distance": 19829.429576910796,
-        "travel_time_seconds": 397,
-        "travel_time_text": "6M:37S",
+        "travel_distance": 17970.878382242292,
+        "travel_time_seconds": 359,
+        "travel_time_text": "5M:59S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -82,15 +82,41 @@
             "index": 4,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 9",
+            "seg": 735,
+            "side": 5,
+            "wall": 96,
+            "label_pos": {
+              "x": -289.406982421875,
+              "y": 232.67230224609375,
+              "z": 537.0713043212891
+            },
+            "distance": 3270.3694343007055,
+            "trigger": 9,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 750,
+                "side": 5,
+                "wall": 93
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 15",
-            "seg": 750,
+            "seg": 751,
+            "side": 5,
             "wall": 106,
             "label_pos": {
               "x": -255.55088806152344,
               "y": 232.6722869873047,
               "z": 464.58860778808594
             },
-            "distance": 3355.3691581283842,
+            "distance": 129.99939823237278,
             "trigger": 15,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -103,18 +129,44 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 8",
+            "seg": 735,
+            "side": 0,
+            "wall": 95,
+            "label_pos": {
+              "x": -369.161376953125,
+              "y": 232.6723175048828,
+              "z": 566.0406799316406
+            },
+            "distance": 159.99943896141738,
+            "trigger": 8,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 748,
+                "side": 0,
+                "wall": 89
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 16",
-            "seg": 198,
+            "seg": 749,
+            "side": 0,
             "wall": 107,
             "label_pos": {
               "x": -441.6444091796875,
               "y": 232.6722869873047,
               "z": 532.1843566894531
             },
-            "distance": 1224.9082316753186,
+            "distance": 130.0004121830138,
             "trigger": 16,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -127,18 +179,19 @@
             ]
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 17",
-            "seg": 746,
+            "seg": 747,
+            "side": 4,
             "wall": 108,
             "label_pos": {
               "x": -374.0472869873047,
               "y": 232.6722869873047,
               "z": 718.2772064208984
             },
-            "distance": 1224.9080592291496,
+            "distance": 251.26555205979085,
             "trigger": 17,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -151,7 +204,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 9,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -161,10 +214,10 @@
               "y": 92.67228698730469,
               "z": 591.4328765869141
             },
-            "distance": 254.99935636347925
+            "distance": 259.9993749905294
           },
           {
-            "index": 8,
+            "index": 10,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -444,9 +497,9 @@
         "mine_volume": 53382318.132169284,
         "mine_volume_normalized": 11.673617457688815,
         "mine_volume_text": "12x",
-        "travel_distance": 16256.224256046176,
-        "travel_time_seconds": 325,
-        "travel_time_text": "5M:25S",
+        "travel_distance": 17922.354389064007,
+        "travel_time_seconds": 358,
+        "travel_time_text": "5M:58S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -463,15 +516,267 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 0",
+            "seg": 98,
+            "side": 0,
+            "wall": 26,
+            "label_pos": {
+              "x": -60.0,
+              "y": -32.28143310546875,
+              "z": 1415.4247436523438
+            },
+            "distance": 1498.790741647092,
+            "trigger": 0,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 81,
+                "side": 2,
+                "wall": 7
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 98,
+            "side": 2,
+            "wall": 23,
+            "label_pos": {
+              "x": -30.0,
+              "y": -32.28143310546875,
+              "z": 1415.4247436523438
+            },
+            "opens": [
+              {
+                "seg": 98,
+                "side": 2,
+                "wall": 23
+              },
+              {
+                "seg": 85,
+                "side": 0,
+                "wall": 22
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 1",
+            "seg": 94,
+            "side": 2,
+            "wall": 27,
+            "label_pos": {
+              "x": 60.0,
+              "y": -39.3929443359375,
+              "z": 1275.6063232421875
+            },
+            "distance": 232.49324968482085,
+            "trigger": 1,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 87,
+                "side": 0,
+                "wall": 16
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 2",
+            "seg": 100,
+            "side": 0,
+            "wall": 28,
+            "label_pos": {
+              "x": -60.0,
+              "y": -36.34515380859375,
+              "z": 1335.5285034179688
+            },
+            "distance": 160.8617375761608,
+            "trigger": 2,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 83,
+                "side": 2,
+                "wall": 11
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 3",
+            "seg": 96,
+            "side": 2,
+            "wall": 29,
+            "label_pos": {
+              "x": 60.0,
+              "y": -35.3292236328125,
+              "z": 1355.5025634765625
+            },
+            "distance": 120.6646276913443,
+            "trigger": 3,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 88,
+                "side": 0,
+                "wall": 19
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 4",
+            "seg": 101,
+            "side": 0,
+            "wall": 30,
+            "label_pos": {
+              "x": -60.0,
+              "y": -38.37701416015625,
+              "z": 1295.5803833007812
+            },
+            "distance": 160.88675558371122,
+            "trigger": 4,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 82,
+                "side": 2,
+                "wall": 8
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
+            "seg": 95,
+            "side": 2,
+            "wall": 31,
+            "label_pos": {
+              "x": 60.0,
+              "y": -37.361083984375,
+              "z": 1315.554443359375
+            },
+            "distance": 120.23152928565936,
+            "trigger": 5,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 86,
+                "side": 0,
+                "wall": 15
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 6",
+            "seg": 99,
+            "side": 0,
+            "wall": 32,
+            "label_pos": {
+              "x": -60.0,
+              "y": -34.31329345703125,
+              "z": 1375.4766235351562
+            },
+            "distance": 160.7181178522542,
+            "trigger": 6,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 80,
+                "side": 2,
+                "wall": 4
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 7",
+            "seg": 93,
+            "side": 2,
+            "wall": 33,
+            "label_pos": {
+              "x": 60.0,
+              "y": -41.4248046875,
+              "z": 1235.658203125
+            },
+            "distance": 242.6865425124346,
+            "trigger": 7,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 89,
+                "side": 0,
+                "wall": 20
+              }
+            ]
+          },
+          {
+            "index": 10,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 8",
+            "seg": 102,
+            "side": 0,
+            "wall": 34,
+            "label_pos": {
+              "x": -60.0,
+              "y": -40.40887451171875,
+              "z": 1255.6322631835938
+            },
+            "distance": 121.91117019910965,
+            "trigger": 8,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 84,
+                "side": 2,
+                "wall": 12
+              }
+            ]
+          },
+          {
+            "index": 11,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 9",
-            "seg": 71,
+            "seg": 97,
+            "side": 2,
             "wall": 35,
             "label_pos": {
               "x": 60.0,
               "y": -33.29736328125,
               "z": 1395.45068359375
             },
-            "distance": 1295.3270979874612,
+            "distance": 241.41775849792282,
             "trigger": 9,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -484,7 +789,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 12,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -494,11 +799,11 @@
               "y": 0.0,
               "z": 950.0
             },
-            "distance": 1493.4131316525034,
+            "distance": 1394.208132127286,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 13,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -512,7 +817,7 @@
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 14,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -525,7 +830,7 @@
             "distance": 9053.597244377432
           },
           {
-            "index": 5,
+            "index": 15,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

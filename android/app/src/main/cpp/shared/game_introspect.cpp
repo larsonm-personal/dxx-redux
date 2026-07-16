@@ -753,6 +753,28 @@ static json serialize_guidebot()
 	result["route_goal_guidance_seg"] = escort_get_route_goal_guidance_seg();
 	result["route_goal_guidance_side"] = escort_get_route_goal_guidance_side();
 	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
+	int route_target_pos[3];
+	int route_endpoint_pos[3];
+	const bool route_target_pos_valid =
+	    escort_get_route_goal_target_pos(route_target_pos) != 0;
+	const bool route_endpoint_pos_valid =
+	    escort_get_route_goal_path_endpoint_pos(route_endpoint_pos) != 0;
+	result["route_goal_target_pos"] = route_target_pos_valid
+	                                      ? json::array({ f2fl(route_target_pos[0]),
+	                                                      f2fl(route_target_pos[1]),
+	                                                      f2fl(route_target_pos[2]) })
+	                                      : json(nullptr);
+	result["route_goal_path_endpoint_pos"] =
+	    route_endpoint_pos_valid
+	        ? json::array({ f2fl(route_endpoint_pos[0]),
+	                        f2fl(route_endpoint_pos[1]),
+	                        f2fl(route_endpoint_pos[2]) })
+	        : json(nullptr);
+	result["route_goal_path_endpoint_matches_target"] =
+	    route_target_pos_valid && route_endpoint_pos_valid &&
+	    route_target_pos[0] == route_endpoint_pos[0] &&
+	    route_target_pos[1] == route_endpoint_pos[1] &&
+	    route_target_pos[2] == route_endpoint_pos[2];
 	result["route_goal_path_pending"] = (bool) escort_get_route_goal_path_pending();
 	result["route_goal_instruction"] = escort_get_route_goal_instruction();
 	result["route_target_mode"] = escort_get_route_target_mode();
@@ -804,6 +826,18 @@ static json serialize_guidebot()
 	                        f2fl(active_step->aim_pos[1]),
 	                        f2fl(active_step->aim_pos[2]) })
 	        : json(nullptr);
+	result["route_goal_activation_matches_aim"] =
+	    active_step && active_step->activation_pos_valid &&
+	    active_step->aim_pos_valid &&
+	    active_step->activation_pos[0] == active_step->aim_pos[0] &&
+	    active_step->activation_pos[1] == active_step->aim_pos[1] &&
+	    active_step->activation_pos[2] == active_step->aim_pos[2];
+	result["route_goal_target_matches_activation"] =
+	    active_step && active_step->activation_pos_valid &&
+	    route_target_pos_valid &&
+	    active_step->activation_pos[0] == route_target_pos[0] &&
+	    active_step->activation_pos[1] == route_target_pos[1] &&
+	    active_step->activation_pos[2] == route_target_pos[2];
 	escort_path_parity_result path_parity = {};
 	escort_get_path_parity_result(&path_parity);
 	result["path_parity"] = {
@@ -1390,6 +1424,14 @@ extern "C" char *game_introspect_get_state(void)
 				{ "objective_merged_label_count", automap_metadata_get_merged_objective_label_count() },
 				{ "objective_first_merged_label", automap_metadata_get_first_merged_objective_label() },
 				{ "next_objective_count", avi.next_objective_count },
+				{ "next_objective_x", automap_metadata_get_next_objective_x() },
+				{ "next_objective_y", automap_metadata_get_next_objective_y() },
+				{ "level_label_y", automap_metadata_get_level_label_y() },
+				{ "next_objective_below_level_label",
+				  automap_metadata_get_next_objective_y() >
+				      automap_metadata_get_level_label_y() },
+				{ "first_next_objective_text", automap_metadata_get_first_next_objective_text() },
+				{ "long_guidance_suppressed_count", automap_metadata_get_long_guidance_suppressed_count() },
 				{ "key_carrier_marker_count", automap_metadata_get_key_carrier_marker_count() }
 			};
 			if (automap_metadata_get_key_carrier_marker(

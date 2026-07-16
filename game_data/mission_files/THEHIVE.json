@@ -198,9 +198,9 @@
         "mine_volume": 2279511.4524917854,
         "mine_volume_normalized": 0.4984823742746734,
         "mine_volume_text": "0.50x",
-        "travel_distance": 3919.153373546811,
-        "travel_time_seconds": 78,
-        "travel_time_text": "1M:18S",
+        "travel_distance": 3859.153373546811,
+        "travel_time_seconds": 77,
+        "travel_time_text": "1M:17S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -256,46 +256,6 @@
           },
           {
             "index": 4,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 3",
-            "seg": 248,
-            "side": 4,
-            "wall": 36,
-            "label_pos": {
-              "x": -20.0,
-              "y": 40.0,
-              "z": -70.0
-            },
-            "distance": 496.17753486993007,
-            "trigger": 3,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 258,
-                "side": 2,
-                "wall": 33
-              },
-              {
-                "seg": 259,
-                "side": 2,
-                "wall": 35
-              },
-              {
-                "seg": 257,
-                "side": 0,
-                "wall": 34
-              },
-              {
-                "seg": 256,
-                "side": 0,
-                "wall": 32
-              }
-            ]
-          },
-          {
-            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -307,7 +267,7 @@
               "y": 40.0,
               "z": -60.0
             },
-            "distance": 76.0,
+            "distance": 512.17753486993,
             "trigger": 4,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1090,9 +1050,9 @@
         "mine_volume": 8662645.565800264,
         "mine_volume_normalized": 1.8943428094734034,
         "mine_volume_text": "1.9x",
-        "travel_distance": 7426.56865761621,
-        "travel_time_seconds": 149,
-        "travel_time_text": "2M:29S",
+        "travel_distance": 7370.746733856785,
+        "travel_time_seconds": 147,
+        "travel_time_text": "2M:27S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1174,7 +1134,7 @@
               "y": 20.0,
               "z": 860.0
             },
-            "distance": 308.50634723869996,
+            "distance": 252.68442347927555,
             "trigger": 3,
             "trigger_type_id": 8,
             "trigger_type": "exit"

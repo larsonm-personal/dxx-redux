@@ -2281,60 +2281,6 @@
           },
           {
             "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 653,
-            "side": 0,
-            "wall": 113,
-            "label_pos": {
-              "x": 0.0,
-              "y": -480.0,
-              "z": 725.0
-            },
-            "distance": 150.0,
-            "opens": [
-              {
-                "seg": 653,
-                "side": 0,
-                "wall": 113
-              },
-              {
-                "seg": 647,
-                "side": 2,
-                "wall": 111
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 588,
-            "side": 0,
-            "wall": 97,
-            "label_pos": {
-              "x": 0.0,
-              "y": -460.0,
-              "z": 895.0
-            },
-            "distance": 185.0,
-            "opens": [
-              {
-                "seg": 588,
-                "side": 0,
-                "wall": 97
-              },
-              {
-                "seg": 646,
-                "side": 2,
-                "wall": 110
-              }
-            ]
-          },
-          {
-            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2346,7 +2292,7 @@
               "y": 80.0,
               "z": 905.0
             },
-            "distance": 561.0,
+            "distance": 896.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -5286,60 +5232,6 @@
           },
           {
             "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 653,
-            "side": 0,
-            "wall": 97,
-            "label_pos": {
-              "x": 0.0,
-              "y": -480.0,
-              "z": 725.0
-            },
-            "distance": 150.0,
-            "opens": [
-              {
-                "seg": 653,
-                "side": 0,
-                "wall": 97
-              },
-              {
-                "seg": 647,
-                "side": 2,
-                "wall": 96
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 398,
-            "side": 0,
-            "wall": 117,
-            "label_pos": {
-              "x": 0.0,
-              "y": -460.0,
-              "z": 895.0
-            },
-            "distance": 185.0,
-            "opens": [
-              {
-                "seg": 398,
-                "side": 0,
-                "wall": 117
-              },
-              {
-                "seg": 646,
-                "side": 2,
-                "wall": 116
-              }
-            ]
-          },
-          {
-            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -5351,7 +5243,7 @@
               "y": 80.0,
               "z": 905.0
             },
-            "distance": 561.0,
+            "distance": 896.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

@@ -170,9 +170,9 @@
         "mine_volume": 4051645.5760627924,
         "mine_volume_normalized": 0.8860117391678408,
         "mine_volume_text": "0.89x",
-        "travel_distance": 5020.834053447585,
-        "travel_time_seconds": 100,
-        "travel_time_text": "1M:40S",
+        "travel_distance": 4790.621496446991,
+        "travel_time_seconds": 96,
+        "travel_time_text": "1M:36S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -242,31 +242,6 @@
           },
           {
             "index": 5,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 2",
-            "seg": 306,
-            "side": 5,
-            "wall": 154,
-            "label_pos": {
-              "x": -165.84205627441406,
-              "y": 7.382843017578125,
-              "z": 453.4610595703125
-            },
-            "distance": 535.6054718768598,
-            "trigger": 2,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 262,
-                "side": 5,
-                "wall": 152
-              }
-            ]
-          },
-          {
-            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -278,7 +253,7 @@
               "y": -11.0,
               "z": 749.0
             },
-            "distance": 450.4166893112778,
+            "distance": 755.8096041875446,
             "trigger": 4,
             "trigger_type_id": 8,
             "trigger_type": "exit"

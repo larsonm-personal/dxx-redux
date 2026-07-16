@@ -21,9 +21,9 @@
         "mine_volume": 245931968.31899187,
         "mine_volume_normalized": 53.7802744284026,
         "mine_volume_text": "54x",
-        "travel_distance": 14154.699480822654,
-        "travel_time_seconds": 283,
-        "travel_time_text": "4M:43S",
+        "travel_distance": 12715.530058706088,
+        "travel_time_seconds": 254,
+        "travel_time_text": "4M:14S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -69,15 +69,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 86,
-            "side": 3,
+            "seg": 43,
             "wall": 19,
             "label_pos": {
               "x": 165.0,
               "y": 0.0,
               "z": -240.0
             },
-            "distance": 1615.9559277762903,
+            "distance": 1298.73412804659,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -115,7 +114,7 @@
               "y": -285.0,
               "z": -600.0
             },
-            "distance": 1550.6351413975847,
+            "distance": 1588.1343493790876,
             "key": "red"
           },
           {
@@ -123,15 +122,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 19",
-            "seg": 8750,
-            "side": 5,
+            "seg": 7524,
             "wall": 248,
             "label_pos": {
               "x": -370.625,
               "y": 5.0,
               "z": 145.625
             },
-            "distance": 4999.31009076023,
+            "distance": 249.70990549081554,
             "trigger": 19,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -153,15 +151,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 20",
-            "seg": 8844,
-            "side": 5,
+            "seg": 7470,
             "wall": 249,
             "label_pos": {
               "x": -409.35992431640625,
               "y": -7.4999847412109375,
               "z": -274.375
             },
-            "distance": 713.2829951457297,
+            "distance": 111.41542474071079,
             "trigger": 20,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -175,6 +172,60 @@
           },
           {
             "index": 7,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 3242,
+            "side": 4,
+            "wall": 200,
+            "label_pos": {
+              "x": 10.0,
+              "y": 45.0,
+              "z": -50.0
+            },
+            "distance": 1542.10280790505,
+            "opens": [
+              {
+                "seg": 3242,
+                "side": 4,
+                "wall": 200
+              },
+              {
+                "seg": 3246,
+                "side": 4,
+                "wall": 199
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 5050,
+            "side": 0,
+            "wall": 202,
+            "label_pos": {
+              "x": -7.021240234375,
+              "y": 60.0,
+              "z": 225.0
+            },
+            "distance": 323.21828360018833,
+            "opens": [
+              {
+                "seg": 5050,
+                "side": 0,
+                "wall": 202
+              },
+              {
+                "seg": 5051,
+                "side": 2,
+                "wall": 201
+              }
+            ]
+          },
+          {
+            "index": 9,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -184,10 +235,10 @@
               "y": -41.67878723144531,
               "z": 3.0921478271484375
             },
-            "distance": 758.5689895950305
+            "distance": 3085.268823395858
           },
           {
-            "index": 8,
+            "index": 10,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

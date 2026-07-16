@@ -286,6 +286,27 @@ static int check_line_to_face(vms_vector *newp,const vms_vector *p0,const vms_ve
 
 }
 
+int level_metadata_line_intersects_side(const vms_vector *p0, const vms_vector *p1, int segnum, int sidenum)
+{
+	vms_vector hit_point;
+	vms_vector p0_copy;
+	vms_vector p1_copy;
+	int face;
+	int num_faces;
+
+	if (!p0 || !p1 || segnum < 0 || segnum > Highest_segment_index || sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	p0_copy = *p0;
+	p1_copy = *p1;
+	num_faces = get_num_faces(&Segments[segnum].sides[sidenum]);
+	if (num_faces == 0)
+		num_faces = 1;
+	for (face = 0; face < num_faces; ++face)
+		if (check_line_to_face(&hit_point, &p0_copy, &p1_copy, &Segments[segnum], sidenum, face, num_faces == 1 ? 4 : 3, 0))
+			return 1;
+	return 0;
+}
+
 //returns the value of a determinant
 fix calc_det_value(vms_matrix *det)
 {

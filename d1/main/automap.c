@@ -548,7 +548,8 @@ void draw_automap(automap *am)
 		&am->secret_label_candidate_count, &am->secret_label_projected_count,
 		&am->objective_visible_step_count,
 		&am->objective_label_candidate_count, &am->objective_label_projected_count);
-	automap_metadata_draw_next_objectives(&am->next_objective_count);
+	automap_metadata_draw_next_objectives(
+		&am->next_objective_count, SWIDTH / 64, SHEIGHT / 48);
 
 	name_frame(am);
 

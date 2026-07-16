@@ -21,7 +21,7 @@
         "mine_volume": 8738765.411087506,
         "mine_volume_normalized": 1.910988657497868,
         "mine_volume_text": "1.9x",
-        "travel_distance": 7499.854221775977,
+        "travel_distance": 7484.854244994163,
         "travel_time_seconds": 150,
         "travel_time_text": "2M:30S",
         "guidebot_count": 0,
@@ -200,15 +200,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 348,
-            "side": 3,
+            "seg": 321,
             "wall": 66,
             "label_pos": {
               "x": -0.000457763671875,
               "y": -23.865570068359375,
               "z": -205.0097198486328
             },
-            "distance": 350.1936901839719,
+            "distance": 282.6940108968803,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -231,7 +230,7 @@
               "y": 125.607177734375,
               "z": -135.92129516601562
             },
-            "distance": 202.7362161416499,
+            "distance": 255.23591864692753,
             "key": "red"
           },
           {
@@ -284,9 +283,9 @@
         "mine_volume": 12364658.455483738,
         "mine_volume_normalized": 2.7038970553306143,
         "mine_volume_text": "2.7x",
-        "travel_distance": 7963.231449409565,
-        "travel_time_seconds": 159,
-        "travel_time_text": "2M:39S",
+        "travel_distance": 7384.181264246591,
+        "travel_time_seconds": 148,
+        "travel_time_text": "2M:28S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -304,15 +303,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 155,
-            "side": 4,
+            "seg": 148,
             "wall": 25,
             "label_pos": {
               "x": -0.0001220703125,
               "y": -30.7052001953125,
               "z": 820.8641662597656
             },
-            "distance": 1098.9896787078478,
+            "distance": 980.6917617214228,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -340,7 +338,7 @@
               "y": 169.99012756347656,
               "z": 703.9993896484375
             },
-            "distance": 696.0981684244374,
+            "distance": 577.8002514380128,
             "key": "blue"
           },
           {
@@ -348,15 +346,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 214,
-            "side": 2,
+            "seg": 211,
             "wall": 42,
             "label_pos": {
               "x": 313.91644287109375,
               "y": 140.08082580566406,
               "z": -80.0003662109375
             },
-            "distance": 1471.906080250297,
+            "distance": 1402.9967707626404,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -373,15 +370,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 313,
-            "side": 3,
+            "seg": 310,
             "wall": 53,
             "label_pos": {
               "x": 59.027587890625,
               "y": 70.00398254394531,
               "z": -487.69744873046875
             },
-            "distance": 1025.983781136928,
+            "distance": 902.2569934423063,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -411,7 +407,7 @@
               "y": 138.1844024658203,
               "z": -421.29925537109375
             },
-            "distance": 207.4969896022737,
+            "distance": 152.6795113953085,
             "opens": [
               {
                 "seg": 285,
@@ -444,15 +440,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 373,
-            "side": 3,
+            "seg": 365,
             "wall": 58,
             "label_pos": {
               "x": -455.9288024902344,
               "y": -55.13055419921875,
               "z": 185.98255920410156
             },
-            "distance": 1737.2580284947155,
+            "distance": 1689.7576405942757,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -490,7 +485,7 @@
               "y": 39.99067687988281,
               "z": 186.00608825683594
             },
-            "distance": 364.9689130633475,
+            "distance": 317.4685251629074,
             "key": "red"
           },
           {
@@ -543,9 +538,9 @@
         "mine_volume": 15192247.551214201,
         "mine_volume_normalized": 3.322232762471782,
         "mine_volume_text": "3.3x",
-        "travel_distance": 12102.11509969218,
-        "travel_time_seconds": 242,
-        "travel_time_text": "4M:02S",
+        "travel_distance": 11093.128014093782,
+        "travel_time_seconds": 222,
+        "travel_time_text": "3M:42S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -577,15 +572,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 431,
-            "side": 2,
+            "seg": 425,
             "wall": 64,
             "label_pos": {
               "x": -8.88531494140625,
               "y": -562.9335784912109,
               "z": 1367.7000427246094
             },
-            "distance": 3886.909611983893,
+            "distance": 3817.281519886604,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -615,7 +609,7 @@
               "y": -517.7642059326172,
               "z": 1249.5887451171875
             },
-            "distance": 343.0253177190202,
+            "distance": 273.397225621732,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -646,15 +640,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
-            "seg": 522,
-            "side": 2,
+            "seg": 497,
             "wall": 98,
             "label_pos": {
               "x": -240.000244140625,
               "y": -20.000244140625,
               "z": 803.0000610351562
             },
-            "distance": 3363.9124495302826,
+            "distance": 2929.0469988283717,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -677,7 +670,7 @@
               "y": -0.000244140625,
               "z": 922.9999389648438
             },
-            "distance": 578.5825331531732,
+            "distance": 143.71708245126285,
             "key": "red"
           },
           {

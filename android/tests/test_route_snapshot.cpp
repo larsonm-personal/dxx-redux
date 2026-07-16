@@ -848,6 +848,41 @@ int main()
 	dxx_route::route_visibility_query visibility;
 	visibility.user = &visible;
 	visibility.wall_visible = wall_visible;
+	auto reachable_visible_snapshot = triggered_snapshot;
+	reachable_visible_snapshot.topology.walls[0].shootable_trigger = true;
+	reachable_visible_snapshot.topology.walls[0].target.value[0] +=
+	    LEVEL_METADATA_FIX_SCALE;
+	visible.position =
+	    reachable_visible_snapshot.topology.segments[0].center;
+	const auto reachable_visible_sources = dxx_route::discover_trigger_sources(
+	    reachable_visible_snapshot, source_progress, 1, 0);
+	const auto reachable_visible_firing =
+	    dxx_route::select_trigger_firing_path(
+	        reachable_visible_snapshot, planner_query, source_progress,
+	        reachable_visible_sources, visibility);
+	assert(reachable_visible_firing.found);
+	assert(reachable_visible_firing.terminal_segment == 0);
+	assert(reachable_visible_firing.terminal_position.value ==
+	       visible.position.value);
+	assert(reachable_visible_firing.terminal_position.value !=
+	       reachable_visible_sources[0].source_position.value);
+	const auto reachable_visible_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        reachable_visible_snapshot, planner_query, source_progress, 1, 0,
+	        visibility);
+	assert(reachable_visible_dependency.resolved);
+	assert(reachable_visible_dependency.steps.size() == 1);
+	const auto &reachable_visible_step =
+	    reachable_visible_dependency.steps[0];
+	assert(reachable_visible_step.activation ==
+	       dxx_route::route_activation_kind::shoot_switch);
+	assert(reachable_visible_step.activation_position.value ==
+	       visible.position.value);
+	assert(reachable_visible_step.aim_position.value ==
+	       reachable_visible_snapshot.topology.walls[0].target.value);
+	assert(reachable_visible_step.activation_position.value !=
+	       reachable_visible_step.aim_position.value);
+	visible.position = visible_snapshot.topology.segments[0].center;
 	const auto visible_firing = dxx_route::select_trigger_firing_path(
 	    visible_snapshot, planner_query, source_progress, visible_sources,
 	    visibility);
