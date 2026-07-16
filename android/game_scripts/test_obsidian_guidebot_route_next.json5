@@ -67,7 +67,8 @@
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_objective_trigger": "10",
         "guidebot.route_goal_objective_wall": "95",
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
+        "guidebot.route_goal_guidance_seg": {"gte": 0},
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0}
     }},
 
     {"action": "set_debug", "field": "player_keys", "value": "blue gold", "post_delay_ms": 100},
@@ -81,7 +82,8 @@
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_objective_trigger": "17",
         "guidebot.route_goal_objective_wall": "137",
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
+        "guidebot.route_goal_guidance_seg": {"gte": 0},
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0}
     }},
 
     {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
@@ -95,7 +97,8 @@
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_objective_trigger": "12",
         "guidebot.route_goal_objective_wall": "121",
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
+        "guidebot.route_goal_guidance_seg": {"gte": 0},
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0}
     }},
 
     {"action": "set_debug", "field": "fire_trigger", "value": "12", "post_delay_ms": 500},
@@ -106,7 +109,8 @@
         "guidebot.route_goal_label": {"contains": "Reactor"},
         "guidebot.route_goal_objective_kind": "3",
         "guidebot.route_goal_activation_kind": "6",
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
+        "guidebot.route_goal_guidance_seg": "571",
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0},
         "guidebot.goal_object": "4",
         "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: destroy the reactor"}
     }},

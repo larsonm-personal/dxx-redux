@@ -63,7 +63,8 @@
         "guidebot.route_goal_objective_trigger": "6",
         "guidebot.route_goal_objective_wall": "8",
         "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
-        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
+        "guidebot.route_goal_guidance_seg": {"gte": 0},
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0}
     }},
 
     {"action": "key", "key": "tab", "post_delay_ms": 100},
@@ -109,7 +110,8 @@
         "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
         "guidebot.route_goal_objective_trigger": "11",
         "guidebot.route_goal_objective_wall": "240",
-        "guidebot.route_goal_path_endpoint_seg": "838"
+        "guidebot.route_goal_guidance_seg": "838",
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0}
     }},
 
     {"action": "introspect"},

@@ -163,8 +163,10 @@ static void state_android_write_last_save_set(int coop, const char *pilot,
 	PHYSFS_file *fp;
 	int len;
 
-	if (!pilot || !pilot[0] || !mission || !mission[0])
+	if (!pilot || !pilot[0])
 		return;
+	if (!mission || !mission[0])
+		mission = "default";
 	if (!state_android_last_save_set_path(filename, sizeof(filename), coop))
 		return;
 	state_android_ensure_parent_dirs_for_path(filename);

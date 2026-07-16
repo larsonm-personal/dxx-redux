@@ -35,7 +35,42 @@ Reduce duplicate coverage, improve failure signal, and remove structural sources
 
 ## Status
 
-Three implementation tranches are complete. The two failures in `report_20260710_132022.md` were both resolved as product/architecture defects: lossy Android continuous-input delivery and an over-broad Guide-Bot exit-selection change. No timeout was extended and no demo was re-recorded.
+Four implementation tranches are complete. The two failures in `report_20260710_132022.md` were both resolved as product/architecture defects: lossy Android continuous-input delivery and an over-broad Guide-Bot exit-selection change. No timeout was extended and no demo was re-recorded.
+
+### Continuous-input implementation audit, 2026-07-15
+
+The continuous-input fix is already committed on the current branch, but its two commits have the generic subject `test fixes`, which makes the work difficult to discover from the log:
+
+- `6581b16e` introduces the 11-axis mailbox, D1/D2 game-thread drains, transition retention, generation-correlated automation diagnostics, and SDL queue-saturation coverage
+- `5e2d1f99` makes controller vectors atomic through batched Kotlin/JNI publication and extends native and Kotlin contract coverage
+
+The key production files are `android_axis_mailbox.cpp`, `android_input.c`, `InputMixer.kt`, `MainActivity.kt`, and both engines' `arch/sdl/event.c`. The primary regression contracts are `test_android_axis_mailbox.cpp`, `InputMixerTest.kt`, and `test_axis_mapping.json5`.
+
+A fresh audit found no path that sends continuous Android axes through `SDL_PushEvent`. JNI producers publish latest state under the mailbox lock, multi-axis producer samples share one generation, the game thread drains before polling discrete SDL events, threshold-region transitions retain short axis-button pulses, and `event_flush` leaves continuous state pending. Focused validation passed the complete native host suites for D1 and D2 and all 69 on-device input-routing steps for both games, including a production publish while all 127 usable SDL queue slots were occupied.
+
+## Fourth full-report tranche
+
+Latest full run: 85 passed, 5 failed, 0 timed out, 7 skipped, 0 not run in 1:19:09.
+
+Initial failure clustering:
+
+1. [complete] Diagnose the shared missing live-path endpoint in `test_guidebot_unexplored_goal`, `test_kcxf2_level5_guidebot_route`, and `test_obsidian_guidebot_route_next`
+2. [complete] Classify the secret-area baseline delta against the same recent route-planning changes and regenerate only after confirming the new contract
+3. [complete] Diagnose and fix the independent D1 save/load dispatch failure at the save-set boundary without extending its wait budget
+4. [complete] Rationalize semantic Guide-Bot coverage while retaining dedicated classic movement-path and RNG-parity coverage
+5. [complete] Run focused host, Android, catalog, and code-quality validation and record the outcomes here
+
+Constraints for this tranche remain unchanged: preserve demo determinism, fix engine or orchestration defects at their source, and do not convert failures into passes through larger timeouts or weaker semantic assertions.
+
+### Fourth-tranche outcome
+
+- The three Guide-Bot failures were one duplicated scheduling race. Phase 8 publishes the selected semantic guidance immediately, while `route_goal_path_endpoint_seg` is populated only when the classic AI scheduler later constructs a physical path. The failing Unexplored case passed four consecutive clean reruns without a source change, confirming that the endpoint was not a stable semantic contract.
+- The Unexplored, KCXF2 level 5, and Obsidian scenarios now assert the shared planner's guidance segment and non-empty pending path, in addition to their existing exact objective kind, activation, trigger, wall, key, and route progression contracts. They no longer duplicate the asynchronous classic-path endpoint assertion.
+- Classic physical path construction was not dropped from coverage. `test_kcxf2_guidebot_hidden_door_next` remains the live canary and passed with endpoint 221, 31 ordinary path points, identical ordinary/route paths, identical RNG state and call counts, and completely restored AI state after the parity probe.
+- The save/load scenario had never created a manual save. Its D1 restore result therefore depended on prior shared state. It now treats pause as an independent state transition, creates a real manual save through the production menu, returns explicitly to gameplay, then invokes load directly through the production Android request path.
+- That stronger scenario exposed a product bug for built-in First Strike: an empty mission filename correctly mapped the save path to the `default` set but was rejected when updating `last_single.txt`, so restore could remain pointed at an unrelated prior mission. The save-set writer now records `default` for that canonical empty mission key. The rebuilt APK passes the full scenario for both D1 and D2.
+- The secret baseline delta was the intentional shared-planner cutover already present in the checked mission metadata: stable objective label positions, corrected route distances, and the reviewed route selection changes. Fresh D1 and D2 host analyzers regenerated the baseline with 181 and 234 secrets respectively; an immediate structural rerun matched exactly.
+- Focused validation passed for all three revised semantic Guide-Bot scenarios, the dedicated live-path canary, both games in the save/load scenario, JDK 21 Android unit tests, all three debug ABIs, the regenerated secret baseline, scoped code quality, and the authoritative catalog (54 standalone JSON tests, 17 support scripts, and 39 PowerShell entries). No timeout, retry, demo fixture, or demo expectation changed.
 
 ## Second full-report tranche
 
