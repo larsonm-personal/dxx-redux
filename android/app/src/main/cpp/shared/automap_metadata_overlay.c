@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "3d.h"
@@ -11,9 +12,6 @@
 #include "gr.h"
 #include "powerup.h"
 #include "secretarea.h"
-#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
-#include "escort.h"
-#endif
 
 #define K_SECRET_LABEL_UNFOUND_COLOR BM_XRGB(31, 0, 0)
 #define K_SECRET_LABEL_FOUND_COLOR   BM_XRGB(0, 31, 0)
@@ -21,8 +19,6 @@
 #define K_OBJECTIVE_LABEL_BLUE       BM_XRGB(5, 5, 63)
 #define K_OBJECTIVE_LABEL_GOLD       BM_XRGB(63, 63, 10)
 #define K_OBJECTIVE_LABEL_RED        BM_XRGB(63, 5, 5)
-#define K_GUIDANCE_POSITION_COLOR    BM_XRGB(5, 63, 20)
-#define K_GUIDANCE_TARGET_COLOR      BM_XRGB(63, 25, 5)
 #define K_NEXT_OBJECTIVE_COLOR       BM_XRGB(63, 5, 5)
 #define K_NEXT_OBJECTIVE_COUNT       3
 
@@ -30,6 +26,8 @@ static int key_carrier_marker_count;
 static int key_carrier_marker_objnum = -1;
 static int key_carrier_marker_key_index = -1;
 static int key_carrier_marker_position[3];
+static int merged_objective_label_count;
+static char first_merged_objective_label[LEVEL_METADATA_MAX_ROUTE_STEPS * 4];
 
 static int objective_key_powerup_id(int key_index)
 {
@@ -131,6 +129,16 @@ int automap_metadata_get_key_carrier_marker_count(void)
 	return key_carrier_marker_count;
 }
 
+int automap_metadata_get_merged_objective_label_count(void)
+{
+	return merged_objective_label_count;
+}
+
+const char *automap_metadata_get_first_merged_objective_label(void)
+{
+	return first_merged_objective_label;
+}
+
 static int draw_text_label(const char *label, int color, const g3s_point *point)
 {
 	int w, h, aw;
@@ -223,27 +231,16 @@ static int objective_has_distinct_guidance_positions(
     const level_metadata_route_step *step)
 {
 	return step &&
-	       step->activation_kind ==
-	           LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
+	       (step->activation_kind ==
+	            LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ||
+	        step->activation_kind ==
+	            LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
+	        step->activation_kind ==
+	            LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
 	       step->activation_pos_valid && step->aim_pos_valid &&
 	       (step->activation_pos[0] != step->aim_pos[0] ||
 	        step->activation_pos[1] != step->aim_pos[1] ||
 	        step->activation_pos[2] != step->aim_pos[2]);
-}
-
-static int draw_objective_label_at(
-    const char *label,
-    int color,
-    const int position[3])
-{
-	vms_vector pos;
-	g3s_point point;
-
-	pos.x = position[0];
-	pos.y = position[1];
-	pos.z = position[2];
-	g3_rotate_point(&point, &pos);
-	return draw_text_label(label, color, &point);
 }
 
 static const level_metadata_state *current_objective_route(
@@ -292,11 +289,160 @@ static const level_metadata_state *objective_label_route(
 	return metadata;
 }
 
+typedef struct objective_label_candidate {
+	int objective_number;
+	int color;
+	int screen_x;
+	int screen_y;
+	int width;
+	int height;
+	int group;
+} objective_label_candidate;
+
+static void collect_objective_label(
+    objective_label_candidate labels[LEVEL_METADATA_MAX_ROUTE_STEPS * 2],
+    int *label_count,
+    int *candidate_count,
+    int objective_number,
+    int color,
+    const int position[3])
+{
+	vms_vector pos;
+	g3s_point point;
+	char text[12];
+	int average_width;
+	objective_label_candidate *label;
+
+	(*candidate_count)++;
+	if (*label_count >= LEVEL_METADATA_MAX_ROUTE_STEPS * 2)
+		return;
+	pos.x = position[0];
+	pos.y = position[1];
+	pos.z = position[2];
+	g3_rotate_point(&point, &pos);
+	if (point.p3_codes & CC_BEHIND)
+		return;
+	g3_project_point(&point);
+	if (!(point.p3_flags & PF_PROJECTED) || (point.p3_flags & PF_OVERFLOW))
+		return;
+
+	label = &labels[(*label_count)++];
+	label->objective_number = objective_number;
+	label->color = color;
+	label->screen_x = f2i(point.p3_sx);
+	label->screen_y = f2i(point.p3_sy);
+	snprintf(text, sizeof(text), "%d", objective_number);
+	gr_set_curfont(GAME_FONT);
+	gr_get_string_size(text, &label->width, &label->height, &average_width);
+	label->group = *label_count - 1;
+}
+
+static int objective_label_group_root(
+    objective_label_candidate *labels, int index)
+{
+	while (labels[index].group != index)
+		index = labels[index].group;
+	return index;
+}
+
+static int objective_labels_overlap(
+    const objective_label_candidate *first,
+    const objective_label_candidate *second)
+{
+	return abs(first->screen_x - second->screen_x) * 2 <=
+	           first->width + second->width + 4 &&
+	       abs(first->screen_y - second->screen_y) * 2 <=
+	           first->height + second->height + 4;
+}
+
+static void draw_collected_objective_labels(
+    objective_label_candidate *labels,
+    int label_count,
+    int *projected_count)
+{
+	int i;
+	int j;
+
+	for (i = 0; i < label_count; ++i) {
+		for (j = i + 1; j < label_count; ++j) {
+			int first_root;
+			int second_root;
+			if (!objective_labels_overlap(&labels[i], &labels[j]))
+				continue;
+			first_root = objective_label_group_root(labels, i);
+			second_root = objective_label_group_root(labels, j);
+			if (first_root != second_root)
+				labels[second_root].group = first_root;
+		}
+	}
+	for (i = 0; i < label_count; ++i)
+		labels[i].group = objective_label_group_root(labels, i);
+
+	for (i = 0; i < label_count; ++i) {
+		char text[LEVEL_METADATA_MAX_ROUTE_STEPS * 4];
+		int text_length = 0;
+		int count = 0;
+		int objective_count = 0;
+		int color = labels[i].color;
+		int screen_x = 0;
+		int screen_y = 0;
+		int width;
+		int height;
+		int average_width;
+
+		if (labels[i].group != i)
+			continue;
+		text[0] = '\0';
+		for (j = 0; j < label_count; ++j) {
+			int k;
+			int duplicate = 0;
+			if (labels[j].group != i)
+				continue;
+			screen_x += labels[j].screen_x;
+			screen_y += labels[j].screen_y;
+			count++;
+			if (labels[j].color != color)
+				color = K_OBJECTIVE_LABEL_COLOR;
+			for (k = 0; k < j; ++k)
+				if (labels[k].group == i &&
+				    labels[k].objective_number == labels[j].objective_number) {
+					duplicate = 1;
+					break;
+				}
+			if (!duplicate) {
+				objective_count++;
+				text_length += snprintf(
+				    text + text_length, sizeof(text) - text_length,
+				    "%s%d", text_length ? "&" : "",
+				    labels[j].objective_number);
+			}
+		}
+		if (!count)
+			continue;
+		gr_set_curfont(GAME_FONT);
+		gr_set_fontcolor(color, -1);
+		gr_get_string_size(text, &width, &height, &average_width);
+		gr_printf(
+		    screen_x / count - width / 2, screen_y / count - height / 2,
+		    "%s", text);
+		if (objective_count > 1) {
+			merged_objective_label_count++;
+			if (!first_merged_objective_label[0])
+				snprintf(
+				    first_merged_objective_label,
+				    sizeof(first_merged_objective_label), "%s", text);
+		}
+		(*projected_count)++;
+	}
+}
+
 static void draw_objective_labels(
     int *visible_step_count,
     int *candidate_count,
     int *projected_count)
 {
+	objective_label_candidate labels[LEVEL_METADATA_MAX_ROUTE_STEPS * 2];
+	int label_count = 0;
 	int first_step = 0;
 	int end_step = 0;
 	const level_metadata_state *metadata =
@@ -308,7 +454,6 @@ static void draw_objective_labels(
 		return;
 	for (i = 0; i < metadata->route_step_count; ++i) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
-		char label[12];
 		int color;
 		int dynamic_position[3];
 		int dynamic_objnum;
@@ -320,15 +465,14 @@ static void draw_objective_labels(
 		if (i < first_step || i >= end_step)
 			continue;
 		(*visible_step_count)++;
-		snprintf(label, sizeof(label), "%d", objective_number);
 		color = objective_label_color(step);
 		if (objective_has_distinct_guidance_positions(step)) {
-			(*candidate_count) += 2;
-			if (draw_objective_label_at(
-			        label, color, step->activation_pos))
-				(*projected_count)++;
-			if (draw_objective_label_at(label, color, step->aim_pos))
-				(*projected_count)++;
+			collect_objective_label(
+			    labels, &label_count, candidate_count, objective_number, color,
+			    step->activation_pos);
+			collect_objective_label(
+			    labels, &label_count, candidate_count, objective_number, color,
+			    step->aim_pos);
 		} else if (objective_key_object_position(
 		               step, dynamic_position, &dynamic_objnum,
 		               &dynamic_is_carrier)) {
@@ -342,15 +486,16 @@ static void draw_objective_labels(
 					    sizeof(key_carrier_marker_position));
 				}
 			}
-			(*candidate_count)++;
-			if (draw_objective_label_at(label, color, dynamic_position))
-				(*projected_count)++;
+			collect_objective_label(
+			    labels, &label_count, candidate_count, objective_number, color,
+			    dynamic_position);
 		} else if (step->label_pos_valid) {
-			(*candidate_count)++;
-			if (draw_objective_label_at(label, color, step->label_pos))
-				(*projected_count)++;
+			collect_objective_label(
+			    labels, &label_count, candidate_count, objective_number, color,
+			    step->label_pos);
 		}
 	}
+	draw_collected_objective_labels(labels, label_count, projected_count);
 }
 
 static int draw_objective_connector(
@@ -439,48 +584,6 @@ void automap_metadata_draw_connectors(
 	}
 }
 
-#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
-static void draw_guidebot_guidance_labels(int *candidate_count, int *projected_count)
-{
-	const level_metadata_state *metadata = level_metadata_get_live_route_state();
-	route_planner_plan_summary plan;
-	const level_metadata_route_step *step;
-	vms_vector pos;
-	g3s_point point;
-
-	if (level_metadata_get_objective_mode() == LEVEL_METADATA_OBJECTIVES_OFF ||
-	    !escort_get_route_goal_active() ||
-	    !metadata || !level_metadata_get_live_route_plan_summary(&plan) ||
-	    plan.first_pending_step < 0 ||
-	    plan.first_pending_step >= metadata->route_step_count)
-		return;
-	step = &metadata->route_steps[plan.first_pending_step];
-	if (step->activation_pos_valid) {
-		pos.x = step->activation_pos[0];
-		pos.y = step->activation_pos[1];
-		pos.z = step->activation_pos[2];
-		g3_rotate_point(&point, &pos);
-		(*candidate_count)++;
-		if (draw_text_label("GO", K_GUIDANCE_POSITION_COLOR, &point))
-			(*projected_count)++;
-	}
-	if (step->aim_pos_valid) {
-		int dynamic_position[3];
-		const int *aim_position = step->aim_pos;
-		if (objective_key_object_position(
-		        step, dynamic_position, NULL, NULL))
-			aim_position = dynamic_position;
-		pos.x = aim_position[0];
-		pos.y = aim_position[1];
-		pos.z = aim_position[2];
-		g3_rotate_point(&point, &pos);
-		(*candidate_count)++;
-		if (draw_text_label("X", K_GUIDANCE_TARGET_COLOR, &point))
-			(*projected_count)++;
-	}
-}
-#endif
-
 void automap_metadata_draw_labels(
     int *secret_candidate_count,
     int *secret_projected_count,
@@ -499,12 +602,11 @@ void automap_metadata_draw_labels(
 	key_carrier_marker_objnum = -1;
 	key_carrier_marker_key_index = -1;
 	memset(key_carrier_marker_position, 0, sizeof(key_carrier_marker_position));
+	merged_objective_label_count = 0;
+	first_merged_objective_label[0] = '\0';
 	draw_objective_labels(
 	    objective_visible_step_count, objective_candidate_count,
 	    objective_projected_count);
-#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
-	draw_guidebot_guidance_labels(objective_candidate_count, objective_projected_count);
-#endif
 }
 
 static void fit_objective_text(char *text, int max_width)

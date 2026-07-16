@@ -762,6 +762,9 @@ static int test_route_trigger_step(void)
 	int failures = 0;
 
 	test_reset();
+	test_children[0][2] = 3;
+	test_children[3][1] = 0;
+	test_side_flyable[0][2] = 1;
 	test_wall_nums[0][0] = 0;
 	test_wall_nums[1][1] = 1;
 	test_wall_nums[0][2] = 2;
@@ -1026,11 +1029,9 @@ static int test_route_promotes_unreachable_trigger_blocker(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("unreachable trigger route status", "partial", level_metadata_route_status_name(state.route_status));
-	failures += expect_int("unreachable trigger route steps", 2, state.route_step_count);
-	failures += expect_string("unreachable trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
-	failures += expect_int("unreachable trigger route wall", 2, state.route_steps[1].wall_num);
-	failures += expect_int("unreachable trigger route trigger", 0, state.route_steps[1].trigger_num);
+	failures += expect_string("unreachable trigger route status", "failed", level_metadata_route_status_name(state.route_status));
+	failures += expect_int("unreachable trigger route steps", 1, state.route_step_count);
+	failures += expect_string("unreachable trigger route problem", "trigger source missing", state.route_problem);
 	return failures;
 }
 
@@ -1041,6 +1042,9 @@ static int test_segment_route_reuses_trigger_dependencies(void)
 	int failures = 0;
 
 	test_reset();
+	test_children[0][2] = 3;
+	test_children[3][1] = 0;
+	test_side_flyable[0][2] = 1;
 	test_wall_nums[0][0] = 0;
 	test_wall_nums[1][1] = 1;
 	test_wall_nums[0][2] = 2;
@@ -1232,6 +1236,9 @@ static int test_route_accepts_any_fired_opener_for_side(void)
 	int failures = 0;
 
 	test_reset();
+	test_children[0][2] = 3;
+	test_children[3][1] = 0;
+	test_side_flyable[0][2] = 1;
 	test_wall_nums[1][0] = 0;
 	test_wall_nums[2][1] = 1;
 	test_wall_nums[2][2] = 2;

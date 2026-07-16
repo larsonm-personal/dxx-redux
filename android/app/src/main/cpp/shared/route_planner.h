@@ -227,6 +227,10 @@ bool route_progress_acquire_key(
     route_progress_state &progress,
     route_key_requirement key);
 bool route_progress_fire_trigger(route_progress_state &progress, int trigger);
+void route_progress_traverse_path(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    const route_path_result &path);
 bool route_progress_open_hidden_wall(
     const route_snapshot &snapshot,
     route_progress_state &progress,

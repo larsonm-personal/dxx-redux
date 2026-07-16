@@ -291,11 +291,39 @@ bool trigger_source_wall_valid(
 {
 	if (!valid_wall(snapshot, wall))
 		return false;
+	const auto &topology = snapshot.topology.walls[wall];
+	if (!topology.shootable_trigger) {
+		if (!valid_segment(snapshot, topology.segment) || topology.side < 0 ||
+		    topology.side >= LEVEL_METADATA_MAX_SIDES)
+			return false;
+		const auto &side =
+		    snapshot.topology.segments[topology.segment].sides[topology.side];
+		if (!valid_segment(snapshot, side.child))
+			return false;
+	}
 	const int trigger = snapshot.state.walls[wall].trigger;
 	return valid_trigger(snapshot, trigger) &&
 	       !snapshot.state.triggers[trigger].disabled &&
 	       route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) &&
 	       !state_flag(progress.fired_triggers, trigger);
+}
+
+bool trigger_source_fits_navigator(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_trigger_source &source)
+{
+	if (!valid_wall(snapshot, source.source_wall) ||
+	    snapshot.topology.walls[source.source_wall].shootable_trigger)
+		return true;
+	if (!valid_segment(snapshot, source.source_segment) || source.source_side < 0 ||
+	    source.source_side >= LEVEL_METADATA_MAX_SIDES)
+		return false;
+	const int clearance = snapshot.topology.segments[source.source_segment]
+	                          .sides[source.source_side]
+	                          .clearance_radius;
+	return query.navigator.radius <= 0 || clearance <= 0 ||
+	       clearance >= query.navigator.radius;
 }
 
 bool side_has_trigger_source(
@@ -545,6 +573,31 @@ bool route_progress_fire_trigger(route_progress_state &progress, int trigger)
 		return false;
 	progress.fired_triggers[trigger] = 1;
 	return true;
+}
+
+void route_progress_traverse_path(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    const route_path_result &path)
+{
+	for (std::size_t index = 0;
+	     index < path.sides.size() && index < path.segments.size(); ++index) {
+		const int segment = path.segments[index];
+		const int side = path.sides[index];
+		if (!valid_segment(snapshot, segment) || side < 0 ||
+		    side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		const int wall = snapshot.topology.segments[segment].sides[side].wall;
+		if (!valid_wall(snapshot, wall) ||
+		    snapshot.topology.walls[wall].shootable_trigger)
+			continue;
+		const int trigger = snapshot.state.walls[wall].trigger;
+		if (!valid_trigger(snapshot, trigger) ||
+		    snapshot.state.triggers[trigger].disabled ||
+		    !route_trigger_opens_path(snapshot.topology.triggers[trigger].kind))
+			continue;
+		route_progress_fire_trigger(progress, trigger);
+	}
 }
 
 bool route_progress_open_hidden_wall(
@@ -873,6 +926,9 @@ route_trigger_path_selection select_trigger_firing_path(
 			candidate.path.terminal_position = source.source_position;
 			candidate.found = true;
 		} else {
+			if (!valid_wall(snapshot, source.source_wall) ||
+			    !snapshot.topology.walls[source.source_wall].shootable_trigger)
+				continue;
 			for (const int segment : search.visit_order) {
 				double extra_distance = 0.0;
 				route_position terminal;
@@ -1390,6 +1446,7 @@ class dependency_planner
 
 	void accumulate_path(const route_path_result &path)
 	{
+		route_progress_traverse_path(snapshot_, state_.progress, path);
 		state_.pending_distance += path.distance;
 		state_.pending_path.reached = true;
 		state_.pending_path.distance += path.distance;
@@ -1898,15 +1955,28 @@ class dependency_planner
 
 	bool fire_trigger(int segment, int side, int depth)
 	{
-		const auto raw_sources = discover_trigger_sources_internal(
+		auto raw_sources = discover_trigger_sources_internal(
 		    snapshot_, state_.progress, segment, side, true);
+		raw_sources.erase(
+		    std::remove_if(
+		        raw_sources.begin(), raw_sources.end(), [&](const auto &source) {
+			        return !trigger_source_fits_navigator(snapshot_, query_, source);
+		        }),
+		    raw_sources.end());
 		if (raw_sources.empty()) {
-			set_problem("unknown trigger route dependency");
+			set_problem("trigger source missing");
 			return false;
 		}
 		auto source = raw_sources.front();
-		const auto firing_sources = discover_trigger_sources_internal(
+		auto firing_sources = discover_trigger_sources_internal(
 		    snapshot_, state_.progress, segment, side, false);
+		firing_sources.erase(
+		    std::remove_if(
+		        firing_sources.begin(), firing_sources.end(), [&](const auto &candidate) {
+			        return !trigger_source_fits_navigator(
+			            snapshot_, query_, candidate);
+		        }),
+		    firing_sources.end());
 		const auto firing = select_trigger_firing_path(
 		    snapshot_, query_, state_.progress, firing_sources, visibility_);
 		if (firing.found)

@@ -941,6 +941,11 @@ static int escort_route_step_is_targetable(const level_metadata_route_step *step
 static void escort_route_set_step_goal(const level_metadata_route_step *step, int guidance_mode, int path_terminal_seg)
 {
 	int target_seg = escort_valid_segment(path_terminal_seg) ? path_terminal_seg : step->seg;
+
+	if ((step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
+	     step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
+	    escort_valid_segment(step->seg))
+		target_seg = step->seg;
 	int target_side = target_seg == step->seg ? step->side : -1;
 
 	escort_route_clear_goal();

@@ -71,6 +71,7 @@ Constraints for this tranche remain unchanged: preserve demo determinism, fix en
 - That stronger scenario exposed a product bug for built-in First Strike: an empty mission filename correctly mapped the save path to the `default` set but was rejected when updating `last_single.txt`, so restore could remain pointed at an unrelated prior mission. The save-set writer now records `default` for that canonical empty mission key. The rebuilt APK passes the full scenario for both D1 and D2.
 - The secret baseline delta was the intentional shared-planner cutover already present in the checked mission metadata: stable objective label positions, corrected route distances, and the reviewed route selection changes. Fresh D1 and D2 host analyzers regenerated the baseline with 181 and 234 secrets respectively; an immediate structural rerun matched exactly.
 - Focused validation passed for all three revised semantic Guide-Bot scenarios, the dedicated live-path canary, both games in the save/load scenario, JDK 21 Android unit tests, all three debug ABIs, the regenerated secret baseline, scoped code quality, and the authoritative catalog (54 standalone JSON tests, 17 support scripts, and 39 PowerShell entries). No timeout, retry, demo fixture, or demo expectation changed.
+- A fresh 2026-07-15 rerun reconfirmed the two specifically reported non-Guide-Bot failures: the 44-step production save/load dispatch scenario passed D1 and D2, and the structural secret-area baseline matched exactly with 181 D1 and 234 D2 secrets.
 
 ## Second full-report tranche
 

@@ -1387,6 +1387,8 @@ extern "C" char *game_introspect_get_state(void)
 				{ "objective_label_projected_count", avi.objective_label_projected_count },
 				{ "objective_connector_candidate_count", avi.objective_connector_candidate_count },
 				{ "objective_connector_drawn_count", avi.objective_connector_drawn_count },
+				{ "objective_merged_label_count", automap_metadata_get_merged_objective_label_count() },
+				{ "objective_first_merged_label", automap_metadata_get_first_merged_objective_label() },
 				{ "next_objective_count", avi.next_objective_count },
 				{ "key_carrier_marker_count", automap_metadata_get_key_carrier_marker_count() }
 			};

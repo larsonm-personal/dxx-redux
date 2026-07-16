@@ -13,13 +13,13 @@
 
 #ifdef NDEBUG
 #undef assert
-#define assert(condition)                                                        \
-	do {                                                                         \
-		if (!(condition)) {                                                       \
-			fprintf(stderr, "assertion failed: %s (%s:%d)\n", #condition,       \
-			        __FILE__, __LINE__);                                           \
-			abort();                                                               \
-		}                                                                        \
+#define assert(condition)                                                 \
+	do {                                                                  \
+		if (!(condition)) {                                               \
+			fprintf(stderr, "assertion failed: %s (%s:%d)\n", #condition, \
+			        __FILE__, __LINE__);                                  \
+			abort();                                                      \
+		}                                                                 \
 	} while (0)
 #endif
 
@@ -506,6 +506,7 @@ int main()
 	edge_query.navigator.companion = true;
 	auto triggered_snapshot = first;
 	triggered_snapshot.state.segments[1].sides[0].exit_trigger = false;
+	triggered_snapshot.state.segments[0].sides[0].flyable = true;
 	auto triggered_edge = dxx_route::evaluate_route_edge(
 	    triggered_snapshot, edge_query, 1, 0);
 	assert(triggered_edge.progress_cost ==
@@ -757,6 +758,33 @@ int main()
 	       fly_through_step.aim_position.value);
 	assert(fly_through_step.aim_position.value[0] >
 	       fly_through_step.activation_position.value[0]);
+	auto narrow_trigger_snapshot = fly_through_snapshot;
+	narrow_trigger_snapshot.topology.segments[0].sides[0].clearance_radius = 1;
+	auto narrow_trigger_query = planner_query;
+	narrow_trigger_query.navigator.radius = 2;
+	const auto narrow_trigger_dependency = dxx_route::resolve_trigger_dependency(
+	    narrow_trigger_snapshot, narrow_trigger_query, source_progress, 1, 0);
+	assert(narrow_trigger_dependency.attempted);
+	assert(!narrow_trigger_dependency.resolved);
+	assert(narrow_trigger_dependency.problem == "trigger source missing");
+	auto traversed_progress = source_progress;
+	const auto traversed_search = dxx_route::search_routes(
+	    fly_through_snapshot, planner_query, traversed_progress, false);
+	const auto traversed_path = dxx_route::build_route_path(traversed_search, 1);
+	assert(traversed_path.reached);
+	dxx_route::route_progress_traverse_path(
+	    fly_through_snapshot, traversed_progress, traversed_path);
+	assert(traversed_progress.fired_triggers[0]);
+	assert(dxx_route::discover_trigger_sources(
+	           fly_through_snapshot, traversed_progress, 1, 0)
+	           .empty());
+	auto external_trigger_snapshot = fly_through_snapshot;
+	external_trigger_snapshot.topology.walls[0].side = 2;
+	external_trigger_snapshot.topology.segments[0].sides[2].wall = 0;
+	external_trigger_snapshot.topology.segments[0].sides[2].child = -1;
+	assert(dxx_route::discover_trigger_sources(
+	           external_trigger_snapshot, source_progress, 1, 0)
+	           .empty());
 	const auto nested_snapshot = make_nested_trigger_snapshot();
 	dxx_route::route_query nested_query;
 	nested_query.start = nested_snapshot.state.start_position;
@@ -803,11 +831,13 @@ int main()
 	assert(frontier_plan.partial_frontier_segment >= 0);
 	assert(frontier_plan.partial_frontier_segment != frontier_query.target_segment);
 	auto visible_snapshot = triggered_snapshot;
+	visible_snapshot.state.segments[0].sides[0].flyable = false;
 	visible_snapshot.state.segments[0].sides[0].hard_blocked = true;
 	visible_snapshot.topology.walls[0].segment = 1;
 	visible_snapshot.topology.walls[0].side = 0;
 	visible_snapshot.topology.walls[0].target =
 	    visible_snapshot.topology.segments[1].center;
+	visible_snapshot.topology.walls[0].shootable_trigger = true;
 	const auto visible_sources = dxx_route::discover_trigger_sources(
 	    visible_snapshot, source_progress, 1, 0);
 	assert(visible_sources.size() == 1);
@@ -826,6 +856,15 @@ int main()
 	assert(visible_firing.terminal_position.value == visible.position.value);
 	assert(visible_firing.path.reached);
 	assert(visible_firing.path.segments.size() == 1);
+	auto visible_pass_through_snapshot = visible_snapshot;
+	visible_pass_through_snapshot.topology.walls[0].shootable_trigger = false;
+	const auto visible_pass_through_sources =
+	    dxx_route::discover_trigger_sources(
+	        visible_pass_through_snapshot, source_progress, 1, 0);
+	const auto visible_pass_through = dxx_route::select_trigger_firing_path(
+	    visible_pass_through_snapshot, planner_query, source_progress,
+	    visible_pass_through_sources, visibility);
+	assert(!visible_pass_through.found);
 	source_progress.fired_triggers[0] = 1;
 	assert(dxx_route::discover_trigger_sources(
 	           triggered_snapshot, source_progress, 1, 0)
