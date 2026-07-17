@@ -923,6 +923,8 @@ static int escort_route_step_guidance_mode(const level_metadata_route_step *step
 	switch (step->kind) {
 		case LEVEL_METADATA_ROUTE_TRIGGER:
 			switch (step->activation_kind) {
+				case LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER:
+					return ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 				case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
 					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
 				case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
@@ -969,7 +971,10 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 {
 	int target_seg = escort_valid_segment(path_terminal_seg) ? path_terminal_seg : step->seg;
 
-	if ((step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
+	if (step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER &&
+	    escort_valid_segment(step->seg))
+		target_seg = step->seg;
+	else if ((step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
 	     step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
 	    escort_valid_segment(step->seg))
 		target_seg = step->seg;
@@ -1065,6 +1070,13 @@ static int escort_route_shared_next_goal(int set_goal, int *selected_index)
 		return ESCORT_GOAL_UNSPECIFIED;
 	}
 	guidance_mode = escort_route_step_guidance_mode(step);
+	if (guidance_mode == ESCORT_ROUTE_GUIDANCE_NONE) {
+		if (set_goal)
+			escort_route_clear_goal();
+		if (selected_index)
+			*selected_index = index;
+		return ESCORT_GOAL_UNSPECIFIED;
+	}
 	if (set_goal)
 		escort_route_set_step_goal(
 		    step, guidance_mode,

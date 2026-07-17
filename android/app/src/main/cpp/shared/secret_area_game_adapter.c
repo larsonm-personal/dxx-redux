@@ -1929,8 +1929,7 @@ static int level_metadata_try_reuse_canonical_route(
 	if (!view || !state || !summary ||
 	    !Level_metadata_canonical_plan_summary_valid ||
 	    !Level_metadata_canonical_snapshot_valid ||
-	    !Level_metadata_live_snapshot_valid ||
-	    Level_metadata_canonical_state.route_status != LEVEL_METADATA_ROUTE_OK)
+	    !Level_metadata_live_snapshot_valid)
 		return 0;
 	for (step = 0; step < Level_metadata_canonical_state.route_step_count;
 	     ++step) {

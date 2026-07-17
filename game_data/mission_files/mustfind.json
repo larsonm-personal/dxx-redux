@@ -56,7 +56,7 @@
         "mine_volume": 16950764.477465924,
         "mine_volume_normalized": 3.706784325764846,
         "mine_volume_text": "3.7x",
-        "travel_distance": 5759.131977351804,
+        "travel_distance": 5740.381977351804,
         "travel_time_seconds": 115,
         "travel_time_text": "1M:55S",
         "guidebot_count": 1,
@@ -179,14 +179,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 792,
+            "seg": 791,
             "wall": 218,
             "label_pos": {
               "x": 324.0,
               "y": -48.000244140625,
               "z": 364.0
             },
-            "distance": 9.375,
+            "distance": 20.0,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -211,7 +211,7 @@
               "y": -49.000244140625,
               "z": 509.0
             },
-            "distance": 343.466134833281,
+            "distance": 314.091134833281,
             "trigger": 6,
             "trigger_type_id": 3,
             "trigger_type": "exit"

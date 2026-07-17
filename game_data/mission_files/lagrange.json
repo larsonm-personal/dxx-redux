@@ -21,13 +21,13 @@
         "mine_volume": 9068239.305758307,
         "mine_volume_normalized": 1.9830378367627906,
         "mine_volume_text": "2.0x",
-        "travel_distance": 3547.706797343474,
-        "travel_time_seconds": 71,
-        "travel_time_text": "1M:11S",
+        "travel_distance": 5030.405748832902,
+        "travel_time_seconds": 101,
+        "travel_time_text": "1M:41S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -188,10 +188,93 @@
             "distance": 622.5539116279493,
             "key": "red",
             "key_carrier_objnum": 12
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 8",
+            "seg": 2,
+            "wall": 203,
+            "label_pos": {
+              "x": 140.00698852539062,
+              "y": 190.0,
+              "z": 0.0
+            },
+            "trigger": 8,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 2,
+                "side": 2,
+                "wall": 239
+              },
+              {
+                "seg": 739,
+                "side": 0,
+                "wall": 240
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 737,
+            "label_pos": {
+              "x": 155.00914001464844,
+              "y": 190.0,
+              "z": 0.0
+            },
+            "distance": 795.1613027193491
+          },
+          {
+            "index": 10,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 679,
+            "wall": 197,
+            "label_pos": {
+              "x": -320.0,
+              "y": 190.0,
+              "z": -25.0
+            },
+            "distance": 561.0376487700792,
+            "trigger": 3,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 694,
+                "side": 0,
+                "wall": 195
+              }
+            ]
+          },
+          {
+            "index": 11,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 695,
+            "side": 0,
+            "wall": 196,
+            "label_pos": {
+              "x": -330.0,
+              "y": 190.0,
+              "z": 0.0
+            },
+            "distance": 126.5,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "trigger route dependency loop: trigger 8 source 716:2 wall 203 target 2:2",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

@@ -168,13 +168,13 @@
         "mine_volume": 49783324.06010784,
         "mine_volume_normalized": 10.886591313082013,
         "mine_volume_text": "11x",
-        "travel_distance": 685.2697264016526,
-        "travel_time_seconds": 14,
-        "travel_time_text": "0M:14S",
+        "travel_distance": 4178.561084481539,
+        "travel_time_seconds": 84,
+        "travel_time_text": "1M:24S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -188,14 +188,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
-            "seg": 101,
+            "seg": 91,
             "wall": 26,
             "label_pos": {
               "x": 193.4222869873047,
               "y": -55.833526611328125,
               "z": 105.87380981445312
             },
-            "distance": 11.637344651768469,
+            "distance": 60.125734741072044,
             "trigger": 4,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -228,12 +228,120 @@
               "y": -35.833526611328125,
               "z": 507.8651123046875
             },
-            "distance": 673.6323817498842,
+            "distance": 605.0480338566331,
             "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 6",
+            "seg": 158,
+            "wall": 48,
+            "label_pos": {
+              "x": 163.4222869873047,
+              "y": -275.8335266113281,
+              "z": -184.12619018554688
+            },
+            "trigger": 6,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 158,
+                "side": 5,
+                "wall": 44
+              },
+              {
+                "seg": 48,
+                "side": 2,
+                "wall": 6
+              },
+              {
+                "seg": 159,
+                "side": 4,
+                "wall": 45
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 13",
+            "seg": 283,
+            "side": 3,
+            "wall": 76,
+            "label_pos": {
+              "x": 111.46290588378906,
+              "y": 105.77998352050781,
+              "z": -468.3424377441406
+            },
+            "distance": 1373.2371651984581,
+            "trigger": 13,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 212,
+                "side": 5,
+                "wall": 63
+              },
+              {
+                "seg": 213,
+                "side": 2,
+                "wall": 60
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 215,
+            "label_pos": {
+              "x": 177.870361328125,
+              "y": 85.77864074707031,
+              "z": -487.17999267578125
+            },
+            "distance": 102.55756989581342,
+            "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 323,
+            "label_pos": {
+              "x": -235.630859375,
+              "y": 146.7799835205078,
+              "z": -262.7771759033203
+            },
+            "distance": 1253.4713007340079
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 254,
+            "side": 1,
+            "wall": 73,
+            "label_pos": {
+              "x": 43.42228698730469,
+              "y": 64.16647338867188,
+              "z": 105.87380981445312
+            },
+            "distance": 784.1212800555546,
+            "trigger": 11,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "trigger route dependency loop: trigger 6 source 37:4 wall 48 target 48:2",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

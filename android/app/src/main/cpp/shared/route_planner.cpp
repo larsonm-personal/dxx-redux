@@ -384,14 +384,22 @@ bool visible_source_position(
     route_position &position,
     double &extra_distance)
 {
-	static constexpr int sample_weights[] = { 1, 3, 7, 15 };
-	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
-		{ 7, 6, 2, 3 },
-		{ 0, 4, 7, 3 },
-		{ 0, 1, 5, 4 },
-		{ 2, 6, 5, 1 },
-		{ 4, 5, 6, 7 },
-		{ 3, 2, 1, 0 },
+	static constexpr int sample_weights[] = { 1 };
+	static constexpr int face_sample_weights[] = { 1, 3 };
+	/* Each physical segment edge appears on two faces. Sample it once. */
+	static constexpr int segment_edges[12][2] = {
+		{ 7, 6 },
+		{ 6, 2 },
+		{ 2, 3 },
+		{ 3, 7 },
+		{ 0, 4 },
+		{ 4, 7 },
+		{ 3, 0 },
+		{ 0, 1 },
+		{ 1, 5 },
+		{ 5, 4 },
+		{ 6, 5 },
+		{ 1, 2 },
 	};
 	if (!valid_segment(snapshot, segment))
 		return false;
@@ -430,7 +438,7 @@ bool visible_source_position(
 		const auto &side_center = topology_segment.sides[side].center;
 		if (!side_center.valid)
 			continue;
-		for (const int weight : sample_weights) {
+		for (const int weight : face_sample_weights) {
 			const auto candidate = weighted_position(
 			    topology_segment.center, side_center, weight);
 			consider(candidate);
@@ -445,24 +453,20 @@ bool visible_source_position(
 			consider(candidate);
 		}
 	}
-	for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-		for (int edge = 0; edge < 4; ++edge) {
-			const auto &first =
-			    topology_segment.vertices[side_vertices[side][edge]];
-			const auto &second = topology_segment.vertices
-			                         [side_vertices[side][(edge + 1) % 4]];
-			if (!first.valid || !second.valid)
-				continue;
-			route_position midpoint;
-			midpoint.valid = true;
-			for (int coordinate = 0; coordinate < 3; ++coordinate)
-				midpoint.value[coordinate] =
-				    (first.value[coordinate] + second.value[coordinate]) / 2;
-			for (const int weight : sample_weights) {
-				const auto candidate = weighted_position(
-				    topology_segment.center, midpoint, weight);
-				consider(candidate);
-			}
+	for (const auto &edge : segment_edges) {
+		const auto &first = topology_segment.vertices[edge[0]];
+		const auto &second = topology_segment.vertices[edge[1]];
+		if (!first.valid || !second.valid)
+			continue;
+		route_position midpoint;
+		midpoint.valid = true;
+		for (int coordinate = 0; coordinate < 3; ++coordinate)
+			midpoint.value[coordinate] =
+			    (first.value[coordinate] + second.value[coordinate]) / 2;
+		for (const int weight : sample_weights) {
+			const auto candidate = weighted_position(
+			    topology_segment.center, midpoint, weight);
+			consider(candidate);
 		}
 	}
 	return found;
@@ -1097,6 +1101,8 @@ struct dependency_state {
 	int partial_frontier_segment = -1;
 	std::vector<unsigned char> hidden_door_in_progress;
 	std::string note;
+	bool unresolved_action = false;
+	std::string unresolved_action_problem;
 	bool unresolved_obstruction_valid = false;
 	int unresolved_obstruction_segment = -1;
 	int unresolved_obstruction_side = -1;
@@ -1219,9 +1225,11 @@ class dependency_planner
 	    const route_snapshot &snapshot,
 	    const route_query &query,
 	    const route_progress_state &progress,
-	    const route_visibility_query &visibility)
+	    const route_visibility_query &visibility,
+	    bool allow_unresolved_triggers = false)
 	    : snapshot_(snapshot), query_(query), visibility_(visibility),
-	      targets_(discover_route_targets(snapshot))
+	      targets_(discover_route_targets(snapshot)),
+	      allow_unresolved_triggers_(allow_unresolved_triggers)
 	{
 		state_.progress = progress;
 		state_.hidden_door_in_progress.resize(snapshot.state.walls.size());
@@ -1347,6 +1355,14 @@ class dependency_planner
 		result.progress = state_.progress;
 		result.steps = std::move(state_.steps);
 		result.problem = std::move(state_.problem);
+		if (state_.unresolved_action) {
+			if (status == route_plan_status::ok)
+				result.problem.clear();
+			else if (result.problem.empty())
+				result.problem = state_.unresolved_action_problem.empty()
+				                     ? "switch activation route unresolved"
+				                     : state_.unresolved_action_problem;
+		}
 		result.note = std::move(state_.note);
 		result.partial_frontier_segment = state_.partial_frontier_segment;
 		for (const auto &step : result.steps)
@@ -1491,6 +1507,8 @@ class dependency_planner
 			return false;
 		}
 		finish_step(step);
+		if (step.activation == route_activation_kind::unresolved_trigger)
+			step.activation_position = {};
 		state_.steps.push_back(std::move(step));
 		return true;
 	}
@@ -1899,16 +1917,22 @@ class dependency_planner
 
 	bool append_trigger_step(
 	    route_trigger_source source,
-	    bool use_current_endpoint = false)
+	    bool use_current_endpoint = false,
+	    bool unresolved = false)
 	{
 		if (!valid_trigger(snapshot_, source.trigger))
 			return false;
 		route_semantic_step step;
 		step.kind = route_semantic_step_kind::trigger;
-		step.segment = use_current_endpoint
+		step.segment = unresolved && valid_segment(
+		                                 snapshot_, state_.partial_frontier_segment)
+		                   ? state_.partial_frontier_segment
+		               : unresolved
+		                   ? state_.progress.current_segment
+		               : use_current_endpoint
 		                   ? state_.progress.current_segment
 		                   : source.source_segment;
-		step.side = use_current_endpoint &&
+		step.side = (unresolved || use_current_endpoint) &&
 		                    step.segment != source.source_segment
 		                ? -1
 		                : source.source_side;
@@ -1917,8 +1941,10 @@ class dependency_planner
 		const auto &trigger = snapshot_.topology.triggers[source.trigger];
 		step.trigger_raw_type = trigger.raw_type;
 		step.trigger_type_name = dependency_trigger_type_name(trigger.kind);
-		if (valid_wall(snapshot_, source.source_wall) &&
-		    snapshot_.topology.walls[source.source_wall].shootable_trigger)
+		if (unresolved)
+			step.activation = route_activation_kind::unresolved_trigger;
+		else if (valid_wall(snapshot_, source.source_wall) &&
+		         snapshot_.topology.walls[source.source_wall].shootable_trigger)
 			step.activation = route_activation_kind::shoot_switch;
 		else if (valid_wall(snapshot_, source.source_wall) &&
 		         snapshot_.state.walls[source.source_wall].kind ==
@@ -1927,7 +1953,9 @@ class dependency_planner
 		else
 			step.activation = route_activation_kind::pass_through_trigger;
 		const char *action =
-		    step.activation == route_activation_kind::shoot_switch
+		    step.activation == route_activation_kind::unresolved_trigger
+		        ? "Locate and activate switch"
+		    : step.activation == route_activation_kind::shoot_switch
 		        ? "Shoot switch"
 		    : step.activation == route_activation_kind::fly_through_trigger
 		        ? "Fly-through"
@@ -1954,6 +1982,47 @@ class dependency_planner
 			step.opened_links.push_back({ link.segment, link.side, wall });
 		}
 		return append_step(std::move(step));
+	}
+
+	bool find_unresolved_trigger_source(
+	    int segment,
+	    int side,
+	    int trigger,
+	    route_trigger_source &source)
+	{
+		const auto sources = discover_trigger_sources_internal(
+		    snapshot_, state_.progress, segment, side, true);
+		for (const auto &candidate : sources) {
+			if (candidate.trigger != trigger ||
+			    !valid_wall(snapshot_, candidate.source_wall) ||
+			    !snapshot_.topology.walls[candidate.source_wall]
+			         .shootable_trigger)
+				continue;
+			source = candidate;
+			return true;
+		}
+		return false;
+	}
+
+	bool append_unresolved_trigger(
+	    int segment,
+	    int side,
+	    int trigger,
+	    const std::string &problem)
+	{
+		route_trigger_source source;
+		if (!find_unresolved_trigger_source(segment, side, trigger, source))
+			return false;
+		if (!append_trigger_step(source, false, true) ||
+		    !route_progress_fire_trigger(state_.progress, trigger))
+			return false;
+		state_.unresolved_action = true;
+		if (state_.unresolved_action_problem.empty())
+			state_.unresolved_action_problem =
+			    problem.empty() ? "switch activation route unresolved" : problem;
+		if (state_.problem.empty())
+			state_.problem = state_.unresolved_action_problem;
+		return true;
 	}
 
 	bool fire_trigger(int segment, int side, int depth)
@@ -2055,6 +2124,10 @@ class dependency_planner
 		const int saved_avoided_keys = state_.progress.avoided_key_mask;
 		const auto saved_avoided_triggers = state_.progress.avoided_triggers;
 		std::string last_dependency_problem;
+		std::string unresolved_trigger_problem;
+		int unresolved_trigger_segment = -1;
+		int unresolved_trigger_side = -1;
+		int unresolved_trigger = -1;
 		for (int guard = 0; guard < LEVEL_METADATA_MAX_ROUTE_STEPS; ++guard) {
 			const auto direct = path_to_position(
 			    goal_segment, goal_position, false);
@@ -2093,6 +2166,16 @@ class dependency_planner
 					state_.progress.avoided_triggers = saved_avoided_triggers;
 					state_.failed_key = -1;
 					state_.failed_trigger = -1;
+					continue;
+				}
+				if (unresolved_trigger >= 0 &&
+				    append_unresolved_trigger(
+				        unresolved_trigger_segment, unresolved_trigger_side,
+				        unresolved_trigger, unresolved_trigger_problem)) {
+					if (unresolved_trigger < static_cast<int>(
+					                             state_.progress.avoided_triggers.size()))
+						state_.progress.avoided_triggers[unresolved_trigger] = 0;
+					unresolved_trigger = -1;
 					continue;
 				}
 				set_problem(
@@ -2143,6 +2226,21 @@ class dependency_planner
 						state_ = saved;
 						state_.failed_trigger = failed;
 						last_dependency_problem = trigger_problem;
+						if (allow_unresolved_triggers_ && !state_flag(
+						                                      saved.progress.trigger_in_progress, failed)) {
+							route_trigger_source unresolved_source;
+							if (find_unresolved_trigger_source(
+							        optimistic.first_obstruction_segment,
+							        optimistic.first_obstruction_side, failed,
+							        unresolved_source)) {
+								unresolved_trigger_segment =
+								    optimistic.first_obstruction_segment;
+								unresolved_trigger_side =
+								    optimistic.first_obstruction_side;
+								unresolved_trigger = failed;
+								unresolved_trigger_problem = trigger_problem;
+							}
+						}
 						if (failed >= 0 &&
 						    failed < static_cast<int>(
 						                 state_.progress.avoided_triggers.size()))
@@ -2190,6 +2288,7 @@ class dependency_planner
 	const route_query &query_;
 	const route_visibility_query &visibility_;
 	route_target_inventory targets_;
+	bool allow_unresolved_triggers_;
 	dependency_state state_;
 };
 
@@ -2212,22 +2311,28 @@ route_plan_result plan_route(
     const route_query &query,
     const route_visibility_query &visibility)
 {
-	auto plan_once = [&](const route_query &attempt) {
+	auto plan_once = [&](const route_query &attempt, bool allow_unresolved) {
 		dependency_planner planner(
 		    snapshot, attempt,
-		    initial_route_progress_state(snapshot, attempt), visibility);
+		    initial_route_progress_state(snapshot, attempt), visibility,
+		    allow_unresolved);
 		if (attempt.endpoint == route_endpoint_kind::end_of_level)
 			return planner.plan_end_level();
 		if (attempt.endpoint == route_endpoint_kind::unexplored)
 			return planner.plan_unexplored();
 		return planner.plan_segment(attempt.target_segment);
 	};
-	auto result = plan_once(query);
-	if (result.status == route_plan_status::ok || query.navigator.radius <= 0)
+	auto result = plan_once(query, false);
+	if (result.status != route_plan_status::ok && query.navigator.radius > 0) {
+		route_query relaxed = query;
+		relaxed.navigator.radius = 0;
+		result = plan_once(relaxed, false);
+	}
+	if (result.status == route_plan_status::ok ||
+	    query.endpoint != route_endpoint_kind::end_of_level)
 		return result;
-	route_query relaxed = query;
-	relaxed.navigator.radius = 0;
-	return plan_once(relaxed);
+	auto continued = plan_once(query, true);
+	return continued.steps.size() > result.steps.size() ? continued : result;
 }
 
 } // namespace dxx_route

@@ -94,6 +94,8 @@ const char *level_metadata_route_activation_kind_name(int kind)
 			return "destroy_blastable_wall";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER:
 			return "destroy_key_carrier";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER:
+			return "unresolved_trigger";
 		default:
 			return "unknown";
 	}

@@ -593,7 +593,7 @@
         "mine_volume": 6030143.945859031,
         "mine_volume_normalized": 1.3186687296806594,
         "mine_volume_text": "1.3x",
-        "travel_distance": 535.3679446224616,
+        "travel_distance": 541.0451860228793,
         "travel_time_seconds": 11,
         "travel_time_text": "0M:11S",
         "guidebot_count": 0,
@@ -619,7 +619,7 @@
               "y": 60.0,
               "z": 389.99993896484375
             },
-            "distance": 535.3679446224616
+            "distance": 541.0451860228793
           }
         ],
         "route_problem": "exit unreachable"
@@ -1185,9 +1185,9 @@
         "mine_volume": 14594100.68955284,
         "mine_volume_normalized": 3.191430319062266,
         "mine_volume_text": "3.2x",
-        "travel_distance": 1785.7123441888843,
-        "travel_time_seconds": 36,
-        "travel_time_text": "0M:36S",
+        "travel_distance": 1768.2550646961463,
+        "travel_time_seconds": 35,
+        "travel_time_text": "0M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1225,7 +1225,7 @@
               "y": -180.0,
               "z": 989.9992065429688
             },
-            "distance": 606.4990518185114
+            "distance": 616.9738691466134
           },
           {
             "index": 3,
@@ -1240,7 +1240,7 @@
               "y": -90.0,
               "z": 1149.9992065429688
             },
-            "distance": 323.9320968208399,
+            "distance": 296.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

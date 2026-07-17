@@ -239,9 +239,9 @@
         "mine_volume": 157000744.668035,
         "mine_volume_normalized": 34.33284087231226,
         "mine_volume_text": "34x",
-        "travel_distance": 12442.226119433424,
-        "travel_time_seconds": 249,
-        "travel_time_text": "4M:09S",
+        "travel_distance": 12477.224532519409,
+        "travel_time_seconds": 250,
+        "travel_time_text": "4M:10S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -273,14 +273,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 413,
+            "seg": 402,
             "wall": 164,
             "label_pos": {
               "x": 190.0008544921875,
               "y": 250.00067138671875,
               "z": 2019.992431640625
             },
-            "distance": 3232.4150306119072,
+            "distance": 3249.9142371548996,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -303,7 +303,7 @@
               "y": -69.62432861328125,
               "z": 2109.992431640625
             },
-            "distance": 476.3018315572938,
+            "distance": 493.80103810028584,
             "key": "gold"
           },
           {

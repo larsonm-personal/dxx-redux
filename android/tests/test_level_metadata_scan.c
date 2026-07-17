@@ -458,6 +458,15 @@ static int test_wall_shootable_from_position(void *user, int seg, const int from
 	return seg == 0 && wall_num == 2;
 }
 
+static int test_wall_not_shootable_from_position(void *user, int seg, const int from_pos[3], int wall_num)
+{
+	(void) user;
+	(void) seg;
+	(void) from_pos;
+	(void) wall_num;
+	return 0;
+}
+
 static level_metadata_scan_view test_view(void)
 {
 	level_metadata_scan_view view;
@@ -1035,6 +1044,55 @@ static int test_route_promotes_unreachable_trigger_blocker(void)
 	return failures;
 }
 
+static int test_route_continues_after_unresolved_shootable_trigger(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[1][2] = 2;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_type[2] = TEST_WALL_CLOSED;
+	test_wall_trigger[2] = 0;
+	test_wall_shootable[2] = 1;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 1;
+	test_wall_sides[2] = 2;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 0;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 1;
+	test_trigger_link_sides[0][1] = 1;
+	view.triggered_side_opener_count = test_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	view.wall_shootable_from_position = test_wall_not_shootable_from_position;
+	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("unresolved trigger route status", "ok", level_metadata_route_status_name(state.route_status));
+	failures += expect_string("unresolved trigger route problem", "", state.route_problem);
+	failures += expect_int("unresolved trigger route steps", 3, state.route_step_count);
+	failures += expect_string("unresolved trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("unresolved trigger route activation", "unresolved_trigger", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_string("unresolved trigger route label", "Locate and activate switch trigger 0", state.route_steps[1].label);
+	failures += expect_int("unresolved trigger reachable frontier", 0, state.route_steps[1].seg);
+	failures += expect_int("unresolved trigger switch wall", 2, state.route_steps[1].wall_num);
+	failures += expect_int("unresolved trigger route has no guide pose", 0, state.route_steps[1].activation_pos_valid);
+	failures += expect_int("unresolved trigger route marks switch", 1, state.route_steps[1].label_pos_valid);
+	failures += expect_string("unresolved trigger downstream exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
 static int test_segment_route_reuses_trigger_dependencies(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1489,6 +1547,7 @@ int main(void)
 	failures += test_route_skips_already_opened_trigger_door();
 	failures += test_route_does_not_reoffer_disabled_trigger();
 	failures += test_route_promotes_unreachable_trigger_blocker();
+	failures += test_route_continues_after_unresolved_shootable_trigger();
 	failures += test_segment_route_reuses_trigger_dependencies();
 	failures += test_unexplored_route_acquires_key_for_largest_component();
 	failures += test_unexplored_route_keeps_hidden_wall_dependency();

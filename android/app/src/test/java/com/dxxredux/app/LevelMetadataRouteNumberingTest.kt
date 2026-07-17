@@ -38,7 +38,7 @@ class LevelMetadataRouteNumberingTest {
     }
 
     @Test
-    fun numberingStillBeginsAtOneWhenAStartRowIsUnavailable() {
+	fun numberingStillBeginsAtOneWhenAStartRowIsUnavailable() {
         val steps =
             listOf(
                 LevelMetadataRouteStep(index = 0, kind = "reactor", label = "Reactor"),
@@ -49,5 +49,30 @@ class LevelMetadataRouteNumberingTest {
             listOf("1. Reactor", "2. Exit"),
             levelMetadataRouteStepHeadings(steps),
         )
-    }
+	}
+
+	@Test
+	fun unresolvedObjectiveIsFlaggedWithoutChangingNumbering() {
+		val steps =
+			listOf(
+				LevelMetadataRouteStep(index = 0, kind = "start", label = "Start"),
+				LevelMetadataRouteStep(
+					index = 1,
+					kind = "trigger",
+					activationKind = "unresolved_trigger",
+					calculated = false,
+					label = "Locate and activate switch trigger 8",
+				),
+				LevelMetadataRouteStep(index = 2, kind = "exit", label = "Exit"),
+			)
+
+		assertEquals(
+			listOf(
+				"Start",
+				"1. Locate and activate switch trigger 8 (Not calculated)",
+				"2. Exit",
+			),
+			levelMetadataRouteStepHeadings(steps),
+		)
+	}
 }

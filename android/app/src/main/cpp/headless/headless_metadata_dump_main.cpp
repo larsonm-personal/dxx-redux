@@ -735,6 +735,9 @@ static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(step.kind);
 		item["activation_kind"] = level_metadata_route_activation_kind_name(step.activation_kind);
+		if (step.activation_kind ==
+		    LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER)
+			item["calculated"] = false;
 		if (step.label[0])
 			item["label"] = step.label;
 		if (step.seg >= 0)

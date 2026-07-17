@@ -21,9 +21,9 @@
         "mine_volume": 22680193.234055046,
         "mine_volume_normalized": 4.959692814862436,
         "mine_volume_text": "5.0x",
-        "travel_distance": 9218.926553544137,
-        "travel_time_seconds": 184,
-        "travel_time_text": "3M:04S",
+        "travel_distance": 9244.345649705052,
+        "travel_time_seconds": 185,
+        "travel_time_text": "3M:05S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -65,14 +65,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 16",
-            "seg": 496,
+            "seg": 437,
             "wall": 129,
             "label_pos": {
               "x": 294.1093292236328,
               "y": -411.8915557861328,
               "z": -442.2891540527344
             },
-            "distance": 2058.1410428268414,
+            "distance": 2070.8505909072983,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -100,7 +100,7 @@
               "y": 75.45738220214844,
               "z": -356.3739776611328
             },
-            "distance": 829.2467675370314,
+            "distance": 841.9563156174883,
             "key": "blue"
           },
           {
@@ -1038,9 +1038,9 @@
         "mine_volume": 3774597.874607162,
         "mine_volume_normalized": 0.8254270924629604,
         "mine_volume_text": "0.83x",
-        "travel_distance": 38.31282953515461,
-        "travel_time_seconds": 1,
-        "travel_time_text": "0M:01S",
+        "travel_distance": 75.34921795879904,
+        "travel_time_seconds": 2,
+        "travel_time_text": "0M:02S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1064,7 +1064,7 @@
               "y": -132.9162139892578,
               "z": -15.0
             },
-            "distance": 38.31282953515461
+            "distance": 75.34921795879904
           },
           {
             "index": 2,

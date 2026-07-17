@@ -2851,7 +2851,7 @@ internal fun levelMetadataRouteStepHeadings(steps: List<LevelMetadataRouteStep>)
             title
         } else {
             objectiveNumber++
-            "$objectiveNumber. $title"
+            "$objectiveNumber. $title${if (step.calculated) "" else " (Not calculated)"}"
         }
     }
 }

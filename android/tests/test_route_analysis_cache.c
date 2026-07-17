@@ -75,6 +75,22 @@ int main(void)
 	        output.route_steps[1].aim_pos[2] == 30 &&
 	        output_summary.first_pending_path_terminal_segment == 4,
 	    "preserve firing coordinates and summary");
+	input.route_status = LEVEL_METADATA_ROUTE_PARTIAL;
+	failures += expect(
+	    route_analysis_cache_encode(
+	        &key, &input, &input_summary, record, size) &&
+	        route_analysis_cache_decode(
+	            &key, record, size, &output, &output_summary) &&
+	        output.route_status == LEVEL_METADATA_ROUTE_PARTIAL,
+	    "round trip partial route");
+	input.route_status = LEVEL_METADATA_ROUTE_FAILED;
+	failures += expect(
+	    route_analysis_cache_encode(
+	        &key, &input, &input_summary, record, size) &&
+	        route_analysis_cache_decode(
+	            &key, record, size, &output, &output_summary) &&
+	        output.route_status == LEVEL_METADATA_ROUTE_FAILED,
+	    "round trip failed route");
 	failures += expect(
 	    !route_analysis_cache_decode(
 	        &wrong_key, record, size, &output, &output_summary),

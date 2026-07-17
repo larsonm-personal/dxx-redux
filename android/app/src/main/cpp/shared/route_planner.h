@@ -141,7 +141,9 @@ enum class route_activation_kind {
 	destroy_blastable_wall =
 	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL,
 	destroy_key_carrier =
-	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER,
+	unresolved_trigger =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER
 };
 
 struct route_effect_link {
