@@ -21,9 +21,9 @@
         "mine_volume": 47452668.61059632,
         "mine_volume_normalized": 10.376924796241868,
         "mine_volume_text": "10x",
-        "travel_distance": 8774.560607232137,
-        "travel_time_seconds": 175,
-        "travel_time_text": "2M:55S",
+        "travel_distance": 8621.097809609792,
+        "travel_time_seconds": 172,
+        "travel_time_text": "2M:52S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -41,14 +41,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
-            "seg": 150,
+            "seg": 148,
             "wall": 40,
             "label_pos": {
               "x": 43.45033264160156,
               "y": -819.3073883056641,
               "z": -12.0
             },
-            "distance": 1121.0859559105495,
+            "distance": 1081.8545570993767,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -70,7 +70,7 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 150,
+            "seg": 148,
             "wall": 39,
             "label_pos": {
               "x": 43.45033264160156,
@@ -104,7 +104,7 @@
               "y": -680.0,
               "z": -11.375
             },
-            "distance": 1449.0010695032183,
+            "distance": 1409.7696706920456,
             "key": "blue"
           },
           {
@@ -112,14 +112,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
-            "seg": 382,
+            "seg": 379,
             "wall": 100,
             "label_pos": {
               "x": -428.0,
               "y": -680.0,
               "z": -377.375
             },
-            "distance": 426.0,
+            "distance": 328.5,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -142,7 +142,7 @@
               "y": -680.0,
               "z": -451.375
             },
-            "distance": 134.0,
+            "distance": 156.5,
             "key": "gold"
           },
           {

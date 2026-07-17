@@ -21,9 +21,9 @@
         "mine_volume": 24904610.0,
         "mine_volume_normalized": 5.446127111848547,
         "mine_volume_text": "5.4x",
-        "travel_distance": 7984.223112377926,
-        "travel_time_seconds": 160,
-        "travel_time_text": "2M:40S",
+        "travel_distance": 7205.205286044108,
+        "travel_time_seconds": 144,
+        "travel_time_text": "2M:24S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -48,7 +48,7 @@
               "y": -60.0,
               "z": 300.0
             },
-            "distance": 406.86955750870203,
+            "distance": 385.6923646563933,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -72,7 +72,7 @@
               "y": -80.0,
               "z": 670.0
             },
-            "distance": 428.2164319364123,
+            "distance": 406.6570055690723,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -102,7 +102,7 @@
               "y": -160.0,
               "z": 60.0
             },
-            "distance": 1169.2622920499252,
+            "distance": 1168.880058534894,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -170,7 +170,7 @@
               "y": -180.0,
               "z": 182.5
             },
-            "distance": 934.5051936976448,
+            "distance": 878.7346677677237,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -197,14 +197,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 17",
-            "seg": 113,
+            "seg": 90,
             "wall": 133,
             "label_pos": {
               "x": 0.5,
               "y": -339.5,
               "z": 520.0
             },
-            "distance": 775.1652661749297,
+            "distance": 466.3731607124917,
             "trigger": 17,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -229,7 +229,7 @@
               "y": -339.5,
               "z": 300.5
             },
-            "distance": 352.11945037003784,
+            "distance": 202.05417224739125,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -281,14 +281,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 18",
-            "seg": 97,
+            "seg": 103,
             "wall": 131,
             "label_pos": {
               "x": 0.0,
               "y": -340.0,
               "z": 80.0
             },
-            "distance": 352.11945037003795,
+            "distance": 170.92454728758088,
             "trigger": 18,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -313,7 +313,7 @@
               "y": -339.5,
               "z": 300.5
             },
-            "distance": 352.11945037003784,
+            "distance": 312.0432893683643,
             "trigger": 15,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -820,13 +820,13 @@
         "mine_volume": 21322749.999999914,
         "mine_volume_normalized": 4.6628478371742474,
         "mine_volume_text": "4.7x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 2482.560848576353,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 12,
         "guidebot_placed": true,
-        "guidebot_accessible": false,
-        "route_status": "failed",
+        "guidebot_accessible": true,
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -834,14 +834,70 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 224
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 0",
+            "seg": 224,
+            "wall": 6,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -215.0
+            },
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 242,
+                "side": 0,
+                "wall": 8
+              },
+              {
+                "seg": 243,
+                "side": 0,
+                "wall": 9
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 131,
+            "label_pos": {
+              "x": -205.0,
+              "y": 80.0,
+              "z": -105.0
+            },
+            "distance": 1303.2409089504395
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 0,
+            "side": 5,
+            "wall": 57,
+            "label_pos": {
+              "x": 0.0,
+              "y": 100.0,
+              "z": 460.0
+            },
+            "distance": 1179.3199396259133,
+            "trigger": 22,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "trigger route dependency loop: trigger 0 source 116:4 wall 6 target 242:0",
         "notes": [
-          "guidebot or guidebot start cage placed in this level",
-          "guidebot is present but not reachable from the start"
+          "guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

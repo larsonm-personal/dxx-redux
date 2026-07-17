@@ -598,6 +598,7 @@ static json serialize_level_metadata_route()
 	route_snapshot_summary snapshot = {};
 	route_planner_plan_summary canonical_plan = {};
 	level_metadata_visibility_cache_summary visibility_cache = {};
+	route_analysis_cache_summary analysis_cache = {};
 	int count = 0;
 
 	if (!metadata) {
@@ -619,6 +620,20 @@ static json serialize_level_metadata_route()
 			{ "capacity", visibility_cache.capacity },
 			{ "resets", visibility_cache.resets },
 			{ "bypasses", visibility_cache.bypasses },
+		};
+	}
+	if (level_metadata_get_route_analysis_cache_summary(&analysis_cache)) {
+		result["analysis_cache"] = {
+			{ "build_number", analysis_cache.build_number },
+			{ "hits", analysis_cache.hits },
+			{ "misses", analysis_cache.misses },
+			{ "writes", analysis_cache.writes },
+			{ "rejections", analysis_cache.rejections },
+			{ "io_errors", analysis_cache.io_errors },
+			{ "live_reuses", analysis_cache.live_reuses },
+			{ "live_fallbacks", analysis_cache.live_fallbacks },
+			{ "topology_hash", serialize_route_hash(analysis_cache.topology_hash) },
+			{ "filename", analysis_cache.filename },
 		};
 	}
 	if (level_metadata_get_canonical_route_snapshot(&snapshot))

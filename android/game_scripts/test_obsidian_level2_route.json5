@@ -69,5 +69,11 @@
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_trigger": {"ne": 4}
     }},
+    {"action": "assert", "expect": {
+        "level_metadata_route.analysis_cache.build_number": {"ne": 0},
+        "level_metadata_route.analysis_cache.io_errors": "0",
+        "level_metadata_route.analysis_cache.live_fallbacks": "0",
+        "level_metadata_route.analysis_cache.live_reuses": {"ne": 0}
+    }},
     {"action": "log", "message": "=== TEST: Obsidian level 2 route -- PASS ==="}
 ]

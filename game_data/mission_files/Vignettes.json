@@ -593,7 +593,7 @@
         "mine_volume": 6030143.945859031,
         "mine_volume_normalized": 1.3186687296806594,
         "mine_volume_text": "1.3x",
-        "travel_distance": 525.5616185195286,
+        "travel_distance": 535.3679446224616,
         "travel_time_seconds": 11,
         "travel_time_text": "0M:11S",
         "guidebot_count": 0,
@@ -619,7 +619,7 @@
               "y": 60.0,
               "z": 389.99993896484375
             },
-            "distance": 525.5616185195286
+            "distance": 535.3679446224616
           }
         ],
         "route_problem": "exit unreachable"
@@ -637,9 +637,9 @@
         "mine_volume": 2611250.921086052,
         "mine_volume_normalized": 0.5710269880623001,
         "mine_volume_text": "0.57x",
-        "travel_distance": 1746.609168645852,
-        "travel_time_seconds": 35,
-        "travel_time_text": "0M:35S",
+        "travel_distance": 1993.0832621166173,
+        "travel_time_seconds": 40,
+        "travel_time_text": "0M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -691,7 +691,7 @@
               "y": -70.75807189941406,
               "z": -46.292144775390625
             },
-            "distance": 294.292352329066
+            "distance": 428.8759561152995
           },
           {
             "index": 4,
@@ -706,7 +706,7 @@
               "y": 46.09977722167969,
               "z": 214.5657501220703
             },
-            "distance": 352.8649736109631,
+            "distance": 464.75546329549513,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1185,7 +1185,7 @@
         "mine_volume": 14594100.68955284,
         "mine_volume_normalized": 3.191430319062266,
         "mine_volume_text": "3.2x",
-        "travel_distance": 1783.2184601655115,
+        "travel_distance": 1785.7123441888843,
         "travel_time_seconds": 36,
         "travel_time_text": "0M:36S",
         "guidebot_count": 0,
@@ -1225,7 +1225,7 @@
               "y": -180.0,
               "z": 989.9992065429688
             },
-            "distance": 605.2521098068249
+            "distance": 606.4990518185114
           },
           {
             "index": 3,
@@ -1240,7 +1240,7 @@
               "y": -90.0,
               "z": 1149.9992065429688
             },
-            "distance": 322.6851548091536,
+            "distance": 323.9320968208399,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

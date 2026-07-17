@@ -121,6 +121,11 @@ if(NOT ANDROID)
     target_link_libraries(test_route_snapshot PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_route_snapshot PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_route_analysis_cache
+        ../../android/tests/test_route_analysis_cache.c
+        ../../android/app/src/main/cpp/shared/route_analysis_cache.c)
+    target_include_directories(test_route_analysis_cache PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_controls
         ../../android/tests/test_input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp)

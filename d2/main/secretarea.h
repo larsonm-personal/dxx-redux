@@ -4,6 +4,7 @@
 #include "level_metadata_scan.h"
 #include "route_snapshot_c.h"
 #include "route_planner_c.h"
+#include "route_analysis_cache.h"
 #include "secret_area_scan.h"
 
 void secret_area_rescan_current_level(void);
@@ -21,6 +22,9 @@ const secret_area_state *secret_area_get_state(void);
 const level_metadata_state *level_metadata_get_state(void);
 const level_metadata_state *level_metadata_get_canonical_state(void);
 int level_metadata_get_canonical_route_plan_summary(route_planner_plan_summary *summary);
+int level_metadata_get_route_analysis_cache_summary(route_analysis_cache_summary *summary);
+void level_metadata_mark_route_objective_completed(
+    int kind, int trigger, int wall, int key_index);
 const level_metadata_state *level_metadata_get_live_route_state(void);
 int level_metadata_get_live_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_canonical_route_snapshot(route_snapshot_summary *summary);

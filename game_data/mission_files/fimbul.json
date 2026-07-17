@@ -155,9 +155,9 @@
         "mine_volume": 14564018.126583898,
         "mine_volume_normalized": 3.1848518798986314,
         "mine_volume_text": "3.2x",
-        "travel_distance": 9300.80181918379,
-        "travel_time_seconds": 186,
-        "travel_time_text": "3M:06S",
+        "travel_distance": 9054.76118977203,
+        "travel_time_seconds": 181,
+        "travel_time_text": "3M:01S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -175,14 +175,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 147,
+            "seg": 146,
             "wall": 10,
             "label_pos": {
               "x": 60.0,
               "y": -119.00982666015625,
               "z": 365.0
             },
-            "distance": 1256.3272427467534,
+            "distance": 1240.8584927467534,
             "trigger": 0,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -204,14 +204,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 177,
+            "seg": 157,
             "wall": 18,
             "label_pos": {
               "x": 55.0,
               "y": -119.00982666015625,
               "z": 685.0
             },
-            "distance": 245.9128682763297,
+            "distance": 124.6330631643939,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -241,7 +241,7 @@
               "y": -119.00982666015625,
               "z": 590.0
             },
-            "distance": 319.2117073357014,
+            "distance": 272.10071017080526,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -287,14 +287,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 235,
+            "seg": 246,
             "wall": 53,
             "label_pos": {
               "x": -190.0,
               "y": -214.00982666015625,
               "z": 522.5
             },
-            "distance": 814.0619472726851,
+            "distance": 612.8111359756263,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -317,7 +317,7 @@
               "y": -210.0,
               "z": 1030.0
             },
-            "distance": 880.2306319890948,
+            "distance": 1026.371433963093,
             "key": "gold"
           },
           {
@@ -332,7 +332,7 @@
               "y": -10.0,
               "z": -300.0
             },
-            "distance": 3048.9259617254625,
+            "distance": 3045.3904278195296,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -370,7 +370,7 @@
               "y": -10.000030517578125,
               "z": -185.0
             },
-            "distance": 262.2167393942219,
+            "distance": 258.6812054882892,
             "key": "red"
           },
           {
@@ -423,7 +423,7 @@
         "mine_volume": 37726254.13153828,
         "mine_volume_normalized": 8.249957556221876,
         "mine_volume_text": "8.2x",
-        "travel_distance": 8306.528544069655,
+        "travel_distance": 8301.15226631556,
         "travel_time_seconds": 166,
         "travel_time_text": "2M:46S",
         "guidebot_count": 0,
@@ -509,7 +509,7 @@
               "y": 0.0,
               "z": 417.5
             },
-            "distance": 105.99121931957771,
+            "distance": 103.30308044252938,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -537,7 +537,7 @@
               "y": -65.0,
               "z": -70.0
             },
-            "distance": 586.2146763535125,
+            "distance": 583.5265374764642,
             "key": "red"
           },
           {

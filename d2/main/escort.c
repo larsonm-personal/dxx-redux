@@ -1140,6 +1140,11 @@ void escort_route_monitor_completion(void)
 	Escort_route_completion_check_time = GameTime64;
 	if (Escort_route_pending_event_mask) {
 		unsigned int pending_events = Escort_route_pending_event_mask;
+		level_metadata_mark_route_objective_completed(
+		    Escort_route_goal.objective_kind,
+		    Escort_route_goal.objective_trigger,
+		    Escort_route_goal.objective_wall,
+		    Escort_route_goal.objective_key_index);
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		escort_route_clear_goal();
 		escort_route_note_replan(

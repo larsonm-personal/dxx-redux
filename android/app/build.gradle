@@ -286,6 +286,7 @@ android {
             cmake {
                 arguments '-DANDROID_STL=c++_shared',
                           '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
+                          "-DDXX_ANDROID_VERSION_CODE=${gitVersionCode}",
                           "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}"
             }
         }

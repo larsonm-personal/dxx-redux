@@ -12,17 +12,24 @@
 #include "gameseq.h"
 #include "fvi.h"
 #include "hudmsg.h"
+#include "laser.h"
 #include "level_metadata_scan.h"
 #include "object.h"
 #include "player.h"
+#include "polyobj.h"
 #include "powerup.h"
 #include "robot.h"
 #include "route_snapshot_c.h"
+#include "route_analysis_cache.h"
 #include "secret_area_item_names.h"
 #include "segment.h"
 #include "automap.h"
 #include "switch.h"
 #include "wall.h"
+#include "weapon.h"
+#ifdef __ANDROID__
+#include "physfs.h"
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
@@ -47,6 +54,13 @@ static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
 static int Level_metadata_objective_mode;
+static route_analysis_cache_summary Level_metadata_analysis_cache_summary;
+static unsigned char
+    Level_metadata_completed_canonical_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
+
+#ifndef DXX_ANDROID_VERSION_CODE
+#define DXX_ANDROID_VERSION_CODE 0
+#endif
 
 static void level_metadata_apply_planned_route(
     level_metadata_state *destination,
@@ -73,7 +87,23 @@ static int Level_metadata_scan_view_initialized;
 
 #define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
 #define LEVEL_METADATA_FVI_CONFIRM_SPAN                  (64 * F1_0)
-#define LEVEL_METADATA_SWITCH_PROJECTILE_RADIUS          F1_0
+
+static fix level_metadata_switch_projectile_radius(void)
+{
+	const weapon_info *weapon = &Weapon_info[LASER_ID_L1];
+
+	if (weapon->render_type == WEAPON_RENDER_BLOB ||
+	    weapon->render_type == WEAPON_RENDER_VCLIP)
+		return weapon->blob_size;
+	if (weapon->render_type == WEAPON_RENDER_POLYMODEL &&
+	    weapon->model_num >= 0 && weapon->model_num < N_polygon_models &&
+	    weapon->po_len_to_width_ratio > 0)
+		return fixdiv(Polygon_models[weapon->model_num].rad,
+		              weapon->po_len_to_width_ratio);
+	if (weapon->render_type == WEAPON_RENDER_NONE)
+		return F1_0;
+	return 0;
+}
 
 enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL = 1,
@@ -100,6 +130,45 @@ static level_metadata_visibility_entry *Level_metadata_visibility_entries;
 static int Level_metadata_visibility_count;
 static level_metadata_visibility_cache_summary Level_metadata_visibility_summary;
 
+typedef struct level_metadata_wall_shot_diagnostics {
+	unsigned int requests;
+	unsigned int cache_accepts;
+	unsigned int cache_rejects;
+	unsigned int invalid_inputs;
+	unsigned int unoccupiable_poses;
+	unsigned int target_wall_hits;
+	unsigned int transparent_connected;
+	unsigned int transparent_disconnected;
+	unsigned int blocked_by_other_wall;
+	unsigned int bad_start_points;
+	unsigned int other_fates;
+} level_metadata_wall_shot_diagnostics;
+
+static level_metadata_wall_shot_diagnostics Level_metadata_wall_shot_diagnostics;
+
+static void level_metadata_trace_wall_shot_diagnostics(void)
+{
+	if (!getenv("DXX_SECRET_AREA_DUMP_TRACE"))
+		return;
+	fprintf(stderr,
+	        "SECRET-AREA-DUMP TRACE wall_shots requests=%u cache_accepts=%u "
+	        "cache_rejects=%u invalid=%u unoccupiable=%u target_hits=%u "
+	        "transparent_connected=%u transparent_disconnected=%u "
+	        "blocked_other_wall=%u bad_start=%u other=%u\n",
+	        Level_metadata_wall_shot_diagnostics.requests,
+	        Level_metadata_wall_shot_diagnostics.cache_accepts,
+	        Level_metadata_wall_shot_diagnostics.cache_rejects,
+	        Level_metadata_wall_shot_diagnostics.invalid_inputs,
+	        Level_metadata_wall_shot_diagnostics.unoccupiable_poses,
+	        Level_metadata_wall_shot_diagnostics.target_wall_hits,
+	        Level_metadata_wall_shot_diagnostics.transparent_connected,
+	        Level_metadata_wall_shot_diagnostics.transparent_disconnected,
+	        Level_metadata_wall_shot_diagnostics.blocked_by_other_wall,
+	        Level_metadata_wall_shot_diagnostics.bad_start_points,
+	        Level_metadata_wall_shot_diagnostics.other_fates);
+	fflush(stderr);
+}
+
 static unsigned long long level_metadata_visibility_hash_int(
     unsigned long long hash,
     int value)
@@ -121,6 +190,7 @@ static unsigned long long level_metadata_visibility_hash_key(
 	hash = level_metadata_visibility_hash_int(hash, key->target_id);
 	for (coordinate = 0; coordinate < 3; ++coordinate)
 		hash = level_metadata_visibility_hash_int(hash, key->target_pos[coordinate]);
+	hash = level_metadata_visibility_hash_int(hash, key->clearance_radius);
 	return hash ? hash : 1;
 }
 
@@ -1123,31 +1193,46 @@ int level_metadata_wall_shootable_from_position(
 	int wall_seg;
 	int wall_side;
 	int navigator_radius;
+	fix projectile_radius;
 	int fate;
+	int hit_target_wall;
 
+	Level_metadata_wall_shot_diagnostics.requests++;
 	if (seg < 0 || seg >= Num_segments || !from_pos ||
-	    !secret_area_wall_index_valid(wall_num))
+	    !secret_area_wall_index_valid(wall_num)) {
+		Level_metadata_wall_shot_diagnostics.invalid_inputs++;
 		return 0;
+	}
 	wall_seg = Walls[wall_num].segnum;
 	wall_side = Walls[wall_num].sidenum;
-	if (wall_seg < 0 || wall_seg >= Num_segments || wall_side < 0 || wall_side >= MAX_SIDES_PER_SEGMENT)
+	if (wall_seg < 0 || wall_seg >= Num_segments || wall_side < 0 || wall_side >= MAX_SIDES_PER_SEGMENT) {
+		Level_metadata_wall_shot_diagnostics.invalid_inputs++;
 		return 0;
+	}
 	navigator_radius = secret_area_player_radius();
-	if (navigator_radius <= 0)
+	if (navigator_radius <= 0) {
+		Level_metadata_wall_shot_diagnostics.invalid_inputs++;
 		return 0;
+	}
 	memset(&key, 0, sizeof(key));
 	key.kind = LEVEL_METADATA_VISIBILITY_TARGET_WALL;
 	key.from_seg = seg;
 	memcpy(key.from_pos, from_pos, sizeof(key.from_pos));
 	key.target_id = wall_num;
 	key.clearance_radius = navigator_radius;
-	if (level_metadata_visibility_cache_lookup(&key, &fate))
+	if (level_metadata_visibility_cache_lookup(&key, &fate)) {
+		if (fate)
+			Level_metadata_wall_shot_diagnostics.cache_accepts++;
+		else
+			Level_metadata_wall_shot_diagnostics.cache_rejects++;
 		return fate;
+	}
 	from.x = from_pos[0];
 	from.y = from_pos[1];
 	from.z = from_pos[2];
 	if (!secret_area_position_occupiable(
 	        seg, &from, navigator_radius)) {
+		Level_metadata_wall_shot_diagnostics.unoccupiable_poses++;
 		level_metadata_visibility_cache_store(&key, 0);
 		return 0;
 	}
@@ -1157,21 +1242,35 @@ int level_metadata_wall_shootable_from_position(
 	query.p0 = &from;
 	query.p1 = &target;
 	query.startseg = seg;
-	/* Base lasers have a one-unit collision radius in both engines. */
-	query.rad = LEVEL_METADATA_SWITCH_PROJECTILE_RADIUS;
+	projectile_radius = level_metadata_switch_projectile_radius();
+	query.rad = projectile_radius;
 	query.thisobjnum = -1;
 	query.flags = FQ_TRANSWALL | FQ_GET_SEGLIST;
 	Level_metadata_visibility_summary.misses++;
 	fate = find_vector_intersection(&query, &hit_data);
-	fate = fate == HIT_NONE ||
-	       (fate == HIT_WALL &&
-	        hit_data.hit_type == HIT_WALL &&
-	        hit_data.hit_side_seg == wall_seg &&
-	        hit_data.hit_side == wall_side);
-	if (fate &&
+	hit_target_wall =
+	    fate == HIT_WALL && hit_data.hit_type == HIT_WALL &&
+	    hit_data.hit_side_seg == wall_seg && hit_data.hit_side == wall_side;
+	if (hit_target_wall)
+		Level_metadata_wall_shot_diagnostics.target_wall_hits++;
+	else if (fate == HIT_WALL)
+		Level_metadata_wall_shot_diagnostics.blocked_by_other_wall++;
+	else if (fate == HIT_BAD_P0)
+		Level_metadata_wall_shot_diagnostics.bad_start_points++;
+	else if (fate != HIT_NONE)
+		Level_metadata_wall_shot_diagnostics.other_fates++;
+	/*
+	 * An intended-wall collision is already direct physical proof that FVI
+	 * traversed from the firing pose to the switch without an earlier blocker.
+	 * Do not invalidate that proof using FVI's advisory segment list, which the
+	 * engine itself documents as occasionally incorrect.  A transparent/no-hit
+	 * trace still needs an independently credible connected traversal.
+	 */
+	fate = hit_target_wall || fate == HIT_NONE;
+	if (fate && !hit_target_wall &&
 	    !level_metadata_fvi_visibility_credible(
 	        &hit_data, &from, seg, &target, wall_seg, wall_seg, wall_side,
-	        LEVEL_METADATA_SWITCH_PROJECTILE_RADIUS)) {
+	        projectile_radius)) {
 		int index;
 
 		if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
@@ -1185,6 +1284,9 @@ int level_metadata_wall_shootable_from_position(
 			fflush(stderr);
 		}
 		fate = 0;
+		Level_metadata_wall_shot_diagnostics.transparent_disconnected++;
+	} else if (fate && !hit_target_wall) {
+		Level_metadata_wall_shot_diagnostics.transparent_connected++;
 	}
 	level_metadata_visibility_cache_store(&key, fate);
 	return fate;
@@ -1625,11 +1727,249 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 				        view->navigator_radius)
 					++narrow_side_count;
 		fprintf(stderr,
-		        "SECRET-AREA-DUMP TRACE navigator_radius=%d narrow_sides=%d\n",
-		        view->navigator_radius, narrow_side_count);
+		        "SECRET-AREA-DUMP TRACE navigator_radius=%d narrow_sides=%d "
+		        "base_laser_render=%d base_laser_radius=%d\n",
+		        view->navigator_radius, narrow_side_count,
+		        Weapon_info[LASER_ID_L1].render_type,
+		        level_metadata_switch_projectile_radius());
 	}
 	view->energy_center_group_distance = secret_area_energy_center_group_distance();
 	return view;
+}
+
+static int level_metadata_analysis_cache_key(
+    route_analysis_cache_key *key)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	const unsigned int game = ROUTE_ANALYSIS_CACHE_GAME_D2;
+#else
+	const unsigned int game = ROUTE_ANALYSIS_CACHE_GAME_D1;
+#endif
+
+	return Level_metadata_canonical_snapshot_valid &&
+	       route_analysis_cache_make_key(
+	           DXX_ANDROID_VERSION_CODE, game,
+	           &Level_metadata_canonical_snapshot, key);
+}
+
+static int level_metadata_analysis_cache_load(
+    level_metadata_state *state,
+    route_planner_plan_summary *summary)
+{
+#if defined(__ANDROID__) && DXX_ANDROID_VERSION_CODE > 0
+	route_analysis_cache_key key;
+	PHYSFS_File *file;
+	void *record;
+	PHYSFS_sint64 length;
+	int valid;
+
+	if (!level_metadata_analysis_cache_key(&key) ||
+	    !route_analysis_cache_filename(
+	        &key, Level_metadata_analysis_cache_summary.filename,
+	        sizeof(Level_metadata_analysis_cache_summary.filename)))
+		return 0;
+	Level_metadata_analysis_cache_summary.build_number =
+	    DXX_ANDROID_VERSION_CODE;
+	Level_metadata_analysis_cache_summary.topology_hash = key.topology_hash;
+	file = PHYSFS_openRead(Level_metadata_analysis_cache_summary.filename);
+	if (!file) {
+		Level_metadata_analysis_cache_summary.misses++;
+		return 0;
+	}
+	length = PHYSFS_fileLength(file);
+	if (length != (PHYSFS_sint64) route_analysis_cache_record_size()) {
+		PHYSFS_close(file);
+		Level_metadata_analysis_cache_summary.misses++;
+		Level_metadata_analysis_cache_summary.rejections++;
+		return 0;
+	}
+	record = malloc((size_t) length);
+	if (!record) {
+		PHYSFS_close(file);
+		Level_metadata_analysis_cache_summary.misses++;
+		Level_metadata_analysis_cache_summary.io_errors++;
+		return 0;
+	}
+	valid = PHYSFS_readBytes(file, record, length) == length &&
+	        PHYSFS_close(file) &&
+	        route_analysis_cache_decode(
+	            &key, record, (size_t) length, state, summary);
+	free(record);
+	if (valid) {
+		Level_metadata_analysis_cache_summary.hits++;
+		return 1;
+	}
+	Level_metadata_analysis_cache_summary.misses++;
+	Level_metadata_analysis_cache_summary.rejections++;
+#else
+	(void) state;
+	(void) summary;
+#endif
+	return 0;
+}
+
+static void level_metadata_analysis_cache_save(
+    const level_metadata_state *state,
+    const route_planner_plan_summary *summary)
+{
+#if defined(__ANDROID__) && DXX_ANDROID_VERSION_CODE > 0
+	route_analysis_cache_key key;
+	char version_dir[64];
+	PHYSFS_File *file;
+	void *record;
+	size_t size = route_analysis_cache_record_size();
+	int write_ok = 0;
+
+	if (!level_metadata_analysis_cache_key(&key) ||
+	    !route_analysis_cache_filename(
+	        &key, Level_metadata_analysis_cache_summary.filename,
+	        sizeof(Level_metadata_analysis_cache_summary.filename)))
+		return;
+	record = malloc(size);
+	if (!record ||
+	    !route_analysis_cache_encode(&key, state, summary, record, size)) {
+		free(record);
+		Level_metadata_analysis_cache_summary.io_errors++;
+		return;
+	}
+	PHYSFS_mkdir("route-cache");
+	snprintf(version_dir, sizeof(version_dir), "route-cache/%u", key.build_number);
+	if (!PHYSFS_mkdir(version_dir) && !PHYSFS_exists(version_dir)) {
+		free(record);
+		Level_metadata_analysis_cache_summary.io_errors++;
+		return;
+	}
+	file = PHYSFS_openWrite(Level_metadata_analysis_cache_summary.filename);
+	if (file) {
+		write_ok = PHYSFS_writeBytes(
+		               file, record, (PHYSFS_uint64) size) ==
+		           (PHYSFS_sint64) size;
+		write_ok = PHYSFS_close(file) && write_ok;
+	}
+	if (!write_ok) {
+		PHYSFS_delete(Level_metadata_analysis_cache_summary.filename);
+		Level_metadata_analysis_cache_summary.io_errors++;
+	} else
+		Level_metadata_analysis_cache_summary.writes++;
+	free(record);
+#else
+	(void) state;
+	(void) summary;
+#endif
+}
+
+static int level_metadata_cached_wall_completed(
+    const level_metadata_scan_view *view,
+    int wall)
+{
+	int segment;
+	int side;
+	int type;
+	int flags;
+
+	if (!view || wall < 0 || wall >= view->num_walls ||
+	    !view->wall_segment || !view->wall_side || !view->wall_type ||
+	    !view->wall_flags)
+		return 0;
+	segment = view->wall_segment(view->user, wall);
+	side = view->wall_side(view->user, wall);
+	type = view->wall_type(view->user, wall);
+	flags = view->wall_flags(view->user, wall);
+	return type == view->wall_type_open ||
+	       (flags & view->wall_flag_door_opened) != 0 ||
+	       (view->side_is_flyable && segment >= 0 && side >= 0 &&
+	        view->side_is_flyable(view->user, segment, side));
+}
+
+static int level_metadata_cached_step_completed(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_step *step,
+    int step_index)
+{
+	int link;
+	if (step_index >= 0 && step_index < LEVEL_METADATA_MAX_ROUTE_STEPS &&
+	    Level_metadata_completed_canonical_steps[step_index])
+		return 1;
+
+	switch (step->kind) {
+		case LEVEL_METADATA_ROUTE_START:
+			return 1;
+		case LEVEL_METADATA_ROUTE_KEY:
+			return step->key_index >= 0 && step->key_index < 3 &&
+			       (view->initial_key_mask & (1 << step->key_index)) != 0;
+		case LEVEL_METADATA_ROUTE_REACTOR:
+		case LEVEL_METADATA_ROUTE_BOSS:
+			return view->initial_control_center_destroyed != 0;
+		case LEVEL_METADATA_ROUTE_TRIGGER:
+			if (step->opened_link_count <= 0)
+				return 0;
+			for (link = 0; link < step->opened_link_count; ++link)
+				if (level_metadata_cached_wall_completed(
+				        view, step->opened_link_wall[link]))
+					return 1;
+			return 0;
+		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
+			return level_metadata_cached_wall_completed(view, step->wall_num);
+		default:
+			return 0;
+	}
+}
+
+static int level_metadata_try_reuse_canonical_route(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    route_planner_plan_summary *summary)
+{
+	int step;
+	int firing_pos[3];
+	int replace_firing_pos = 0;
+	const level_metadata_route_step *pending = NULL;
+
+	if (!view || !state || !summary ||
+	    !Level_metadata_canonical_plan_summary_valid ||
+	    !Level_metadata_canonical_snapshot_valid ||
+	    !Level_metadata_live_snapshot_valid ||
+	    Level_metadata_canonical_state.route_status != LEVEL_METADATA_ROUTE_OK)
+		return 0;
+	for (step = 0; step < Level_metadata_canonical_state.route_step_count;
+	     ++step) {
+		pending = &Level_metadata_canonical_state.route_steps[step];
+		if (!level_metadata_cached_step_completed(view, pending, step))
+			break;
+		pending = NULL;
+	}
+	if (!pending || pending->kind == LEVEL_METADATA_ROUTE_EXIT) {
+		if (!pending && !view->initial_control_center_destroyed)
+			return 0;
+	} else if (pending->activation_kind ==
+	           LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH) {
+		if (!pending->activation_pos_valid || pending->wall_num < 0 ||
+		    !view->wall_shootable_from_position)
+			return 0;
+		memcpy(firing_pos, pending->activation_pos, sizeof(firing_pos));
+		if (pending->aim_pos_valid &&
+		    memcmp(firing_pos, pending->aim_pos, sizeof(firing_pos)) == 0) {
+			if (!view->segment_center ||
+			    !view->segment_center(view->user, pending->seg, firing_pos))
+				return 0;
+			replace_firing_pos = 1;
+		}
+		if (!view->wall_shootable_from_position(
+		        view->user, pending->seg, firing_pos, pending->wall_num))
+			return 0;
+	}
+	*state = Level_metadata_canonical_state;
+	if (pending && replace_firing_pos)
+		memcpy(
+		    state->route_steps[step].activation_pos, firing_pos,
+		    sizeof(firing_pos));
+	*summary = Level_metadata_canonical_plan_summary;
+	summary->first_pending_step = pending ? step : -1;
+	summary->first_pending_path_segment_count = pending ? 1 : 0;
+	summary->first_pending_path_terminal_segment = pending ? pending->seg : -1;
+	summary->partial_frontier_segment = -1;
+	return 1;
 }
 
 static void level_metadata_rescan_current_level_internal(
@@ -1646,6 +1986,9 @@ static void level_metadata_rescan_current_level_internal(
 		Level_metadata_live_route_state_valid = 0;
 		Level_metadata_live_plan_summary_valid = 0;
 		Level_metadata_live_snapshot_valid = 0;
+		memset(
+		    Level_metadata_completed_canonical_steps, 0,
+		    sizeof(Level_metadata_completed_canonical_steps));
 		Level_metadata_canonical_snapshot_valid = route_snapshot_build_summary(
 		    view,
 		    &Level_metadata_canonical_snapshot,
@@ -1683,6 +2026,8 @@ static void level_metadata_rescan_current_level_internal(
 		level_metadata_state shared_route;
 		char problem[128];
 
+		memset(&Level_metadata_wall_shot_diagnostics, 0,
+		       sizeof(Level_metadata_wall_shot_diagnostics));
 		level_metadata_scan_level_summary(view, &Level_metadata_canonical_state);
 		level_metadata_state_clear(&shared_route);
 		memset(&Level_metadata_canonical_plan_summary, 0,
@@ -1690,15 +2035,24 @@ static void level_metadata_rescan_current_level_internal(
 		Level_metadata_canonical_plan_summary.first_pending_step = -1;
 		Level_metadata_canonical_plan_summary.first_pending_path_terminal_segment = -1;
 		Level_metadata_canonical_plan_summary.partial_frontier_segment = -1;
-		Level_metadata_canonical_plan_summary_valid = route_planner_plan_view(
-		    view,
-		    ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL,
-		    -1,
-		    &shared_route,
-		    NULL,
-		    &Level_metadata_canonical_plan_summary,
-		    problem,
-		    sizeof(problem));
+		Level_metadata_canonical_plan_summary_valid =
+		    level_metadata_analysis_cache_load(
+		        &shared_route, &Level_metadata_canonical_plan_summary);
+		if (!Level_metadata_canonical_plan_summary_valid) {
+			Level_metadata_canonical_plan_summary_valid = route_planner_plan_view(
+			    view,
+			    ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL,
+			    -1,
+			    &shared_route,
+			    NULL,
+			    &Level_metadata_canonical_plan_summary,
+			    problem,
+			    sizeof(problem));
+			if (Level_metadata_canonical_plan_summary_valid)
+				level_metadata_analysis_cache_save(
+				    &shared_route,
+				    &Level_metadata_canonical_plan_summary);
+		}
 		if (Level_metadata_canonical_plan_summary_valid) {
 			level_metadata_apply_planned_route(
 			    &Level_metadata_canonical_state, &shared_route);
@@ -1715,6 +2069,7 @@ static void level_metadata_rescan_current_level_internal(
 			         problem[0] ? problem : "unknown failure");
 			Level_metadata_canonical_state.route_note[0] = '\0';
 		}
+		level_metadata_trace_wall_shot_diagnostics();
 	}
 	if (route_only) {
 		char problem[128];
@@ -1731,15 +2086,26 @@ static void level_metadata_rescan_current_level_internal(
 		Level_metadata_live_plan_summary.first_pending_step = -1;
 		Level_metadata_live_plan_summary.first_pending_path_terminal_segment = -1;
 		Level_metadata_live_plan_summary.partial_frontier_segment = -1;
-		Level_metadata_live_plan_summary_valid = route_planner_plan_view(
-		    view,
-		    endpoint_kind,
-		    route_target_seg,
-		    &Level_metadata_live_route_state,
-		    unexplored_result,
-		    &Level_metadata_live_plan_summary,
-		    problem,
-		    sizeof(problem));
+		Level_metadata_live_plan_summary_valid =
+		    endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
+		    level_metadata_try_reuse_canonical_route(
+		        view, &Level_metadata_live_route_state,
+		        &Level_metadata_live_plan_summary);
+		if (Level_metadata_live_plan_summary_valid)
+			Level_metadata_analysis_cache_summary.live_reuses++;
+		else {
+			if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL)
+				Level_metadata_analysis_cache_summary.live_fallbacks++;
+			Level_metadata_live_plan_summary_valid = route_planner_plan_view(
+			    view,
+			    endpoint_kind,
+			    route_target_seg,
+			    &Level_metadata_live_route_state,
+			    unexplored_result,
+			    &Level_metadata_live_plan_summary,
+			    problem,
+			    sizeof(problem));
+		}
 		if (!Level_metadata_live_plan_summary_valid) {
 			Level_metadata_live_route_state.route_status = LEVEL_METADATA_ROUTE_FAILED;
 			snprintf(Level_metadata_live_route_state.route_problem,
@@ -1796,6 +2162,45 @@ int level_metadata_get_visibility_cache_summary(
 		return 0;
 	*summary = Level_metadata_visibility_summary;
 	return 1;
+}
+
+int level_metadata_get_route_analysis_cache_summary(
+    route_analysis_cache_summary *summary)
+{
+	if (!summary)
+		return 0;
+	*summary = Level_metadata_analysis_cache_summary;
+	return DXX_ANDROID_VERSION_CODE > 0;
+}
+
+void level_metadata_mark_route_objective_completed(
+    int kind,
+    int trigger,
+    int wall,
+    int key_index)
+{
+	int index;
+
+	for (index = 0;
+	     index < Level_metadata_canonical_state.route_step_count &&
+	     index < LEVEL_METADATA_MAX_ROUTE_STEPS;
+	     ++index) {
+		const level_metadata_route_step *step =
+		    &Level_metadata_canonical_state.route_steps[index];
+		if (Level_metadata_completed_canonical_steps[index] ||
+		    step->kind != kind)
+			continue;
+		if ((kind == LEVEL_METADATA_ROUTE_TRIGGER &&
+		     step->trigger_num != trigger) ||
+		    ((kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR ||
+		      kind == LEVEL_METADATA_ROUTE_BLASTABLE_WALL) &&
+		     step->wall_num != wall) ||
+		    (kind == LEVEL_METADATA_ROUTE_KEY &&
+		     step->key_index != key_index))
+			continue;
+		Level_metadata_completed_canonical_steps[index] = 1;
+		return;
+	}
 }
 
 void secret_area_rescan_current_level(void)

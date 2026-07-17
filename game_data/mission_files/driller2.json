@@ -263,13 +263,13 @@
         "mine_volume": 4976878.166128612,
         "mine_volume_normalized": 1.0883411188900414,
         "mine_volume_text": "1.1x",
-        "travel_distance": 627.0243776938335,
-        "travel_time_seconds": 13,
-        "travel_time_text": "0M:13S",
+        "travel_distance": 2249.36652226443,
+        "travel_time_seconds": 45,
+        "travel_time_text": "0M:45S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -291,10 +291,92 @@
             },
             "distance": 627.0243776938335,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 278,
+            "wall": 116,
+            "label_pos": {
+              "x": 11.821640014648438,
+              "y": -208.67042541503906,
+              "z": 162.9896240234375
+            },
+            "distance": 390.43013469939115,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 371,
+                "side": 3,
+                "wall": 112
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 376,
+            "label_pos": {
+              "x": 11.58636474609375,
+              "y": -199.07522583007812,
+              "z": 165.79632568359375
+            },
+            "distance": 139.9971925500234,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 592,
+            "label_pos": {
+              "x": 322.56809997558594,
+              "y": 61.78076171875,
+              "z": 275.93743896484375
+            },
+            "distance": 569.6238271649486,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 569,
+            "label_pos": {
+              "x": 1.0791778564453125,
+              "y": 18.48956298828125,
+              "z": 40.60023498535156
+            },
+            "distance": 455.7133222574423
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 574,
+            "side": 0,
+            "wall": 108,
+            "label_pos": {
+              "x": 94.54081726074219,
+              "y": 121.4715576171875,
+              "z": 86.06867980957031
+            },
+            "distance": 66.57766789879106,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -312,9 +394,9 @@
         "mine_volume": 6762005.553904716,
         "mine_volume_normalized": 1.4787118440156632,
         "mine_volume_text": "1.5x",
-        "travel_distance": 4546.703934696792,
-        "travel_time_seconds": 91,
-        "travel_time_text": "1M:31S",
+        "travel_distance": 4470.453403911251,
+        "travel_time_seconds": 89,
+        "travel_time_text": "1M:29S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -332,14 +414,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 727,
+            "seg": 714,
             "wall": 209,
             "label_pos": {
               "x": -140.0,
               "y": -80.0,
               "z": 130.0
             },
-            "distance": 289.5,
+            "distance": 262.0,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -362,7 +444,7 @@
               "y": -80.0,
               "z": 80.0
             },
-            "distance": 87.5,
+            "distance": 100.0,
             "key": "blue"
           },
           {
@@ -385,14 +467,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 470,
+            "seg": 468,
             "wall": 220,
             "label_pos": {
               "x": 409.26783752441406,
               "y": -343.2049560546875,
               "z": 389.5272674560547
             },
-            "distance": 1014.7193894295793,
+            "distance": 984.094124036809,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -415,7 +497,7 @@
               "y": -212.4707489013672,
               "z": 298.3492126464844
             },
-            "distance": 260.0027353210872,
+            "distance": 229.37746992831686,
             "key": "red"
           },
           {

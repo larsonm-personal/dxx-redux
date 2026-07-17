@@ -154,14 +154,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 81,
+            "seg": 78,
             "wall": 39,
             "label_pos": {
               "x": 0.0,
               "y": 60.0,
               "z": 90.0
             },
-            "distance": 498.64101968743375,
+            "distance": 473.64101968743375,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -184,7 +184,7 @@
               "y": 80.0,
               "z": 25.763565063476562
             },
-            "distance": 200.18366549169167,
+            "distance": 225.18366549169167,
             "key": "red"
           }
         ],
