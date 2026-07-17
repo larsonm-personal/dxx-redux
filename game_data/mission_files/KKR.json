@@ -41,14 +41,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 12",
-            "seg": 72,
+            "seg": 71,
             "wall": 175,
             "label_pos": {
               "x": 96.55027770996094,
               "y": -101.99986267089844,
               "z": 114.50125122070312
             },
-            "distance": 252.9673143779205,
+            "distance": 241.04757560672894,
             "trigger": 12,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -71,7 +71,7 @@
               "y": -124.0001220703125,
               "z": 96.95777893066406
             },
-            "distance": 806.515397022891,
+            "distance": 818.4351357940825,
             "key": "blue"
           },
           {
@@ -275,9 +275,9 @@
         "mine_volume": 9304034.831582846,
         "mine_volume_normalized": 2.0346014792388467,
         "mine_volume_text": "2.0x",
-        "travel_distance": 6915.130631338143,
-        "travel_time_seconds": 138,
-        "travel_time_text": "2M:18S",
+        "travel_distance": 6778.77628311604,
+        "travel_time_seconds": 136,
+        "travel_time_text": "2M:16S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -381,14 +381,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 506,
+            "seg": 488,
             "wall": 95,
             "label_pos": {
               "x": -73.65489196777344,
               "y": 33.00025939941406,
               "z": -310.43060302734375
             },
-            "distance": 345.41329647428313,
+            "distance": 277.2361223632317,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -413,7 +413,7 @@
               "y": 33.000213623046875,
               "z": -259.4613952636719
             },
-            "distance": 101.8894177407561,
+            "distance": 33.71224362970469,
             "opens": [
               {
                 "seg": 487,

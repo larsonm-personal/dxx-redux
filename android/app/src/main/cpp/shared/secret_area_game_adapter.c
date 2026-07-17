@@ -1202,17 +1202,15 @@ static int level_metadata_route_shot_wall_is_passable(
 		return 0;
 	/*
 	 * A firing pose remains valid when the player can clear an intervening
-	 * hidden door with one shot and fire through it with the next.  Match the
-	 * engine's wall-hit rules: an unlocked, keyless hidden door opens when a
-	 * player weapon hits it.
+	 * door with one shot and fire through it with the next.  Match the engine's
+	 * wall-hit rules: an unlocked, keyless door opens when a player weapon hits
+	 * it.
 	 */
 	if (Walls[wall_num].type == WALL_DOOR &&
 	    Walls[wall_num].keys == KEY_NONE &&
-	    !(Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
-	    Walls[wall_num].clip_num >= 0 &&
-	    Walls[wall_num].clip_num < Num_wall_anims &&
-	    (WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN))
+	    !(Walls[wall_num].flags & WALL_DOOR_LOCKED)) {
 		return 1;
+	}
 	return 0;
 }
 

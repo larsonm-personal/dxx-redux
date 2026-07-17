@@ -649,14 +649,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
-            "seg": 472,
+            "seg": 258,
             "wall": 74,
             "label_pos": {
               "x": -750.0,
               "y": -20.0,
               "z": 80.0
             },
-            "distance": 1218.3971470597508,
+            "distance": 1118.4131382706883,
             "trigger": 8,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -686,7 +686,7 @@
               "y": 0.0,
               "z": 80.0
             },
-            "distance": 268.3530078769211,
+            "distance": 368.3370166659836,
             "trigger": 10,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -2454,14 +2454,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 14",
-            "seg": 255,
+            "seg": 242,
             "wall": 108,
             "label_pos": {
               "x": -580.0,
               "y": -40.0,
               "z": -450.0
             },
-            "distance": 1442.4227937196436,
+            "distance": 1361.17365785321,
             "trigger": 14,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -2484,7 +2484,7 @@
               "y": 5.0,
               "z": -440.0
             },
-            "distance": 225.0,
+            "distance": 306.2491358664335,
             "key": "red"
           },
           {

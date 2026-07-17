@@ -32,6 +32,30 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $metadata = Get-Content -LiteralPath $OutputPath -Raw | ConvertFrom-Json
+
+function Assert-ShootSwitchSegment {
+    param(
+        [Parameter(Mandatory)]$Metadata,
+        [Parameter(Mandatory)][int]$LevelNumber,
+        [Parameter(Mandatory)][int]$Trigger,
+        [Parameter(Mandatory)][int]$Segment
+    )
+
+    $matchingLevel = @($Metadata.levels | Where-Object { $_.level_num -eq $LevelNumber })
+    if ($matchingLevel.Count -ne 1) {
+        throw "Expected exactly one Counterstrike level $LevelNumber record, found $($matchingLevel.Count)"
+    }
+    $matchingStep = @($matchingLevel[0].route_steps | Where-Object { $_.trigger -eq $Trigger })
+    if ($matchingStep.Count -ne 1) {
+        throw "Expected exactly one level $LevelNumber trigger $Trigger route step, found $($matchingStep.Count)"
+    }
+    if ($matchingStep[0].activation_kind -ne 'shoot_switch' -or
+        $matchingStep[0].calculated -eq $false -or
+        $matchingStep[0].seg -ne $Segment) {
+        throw "Level $LevelNumber trigger $Trigger is $($matchingStep[0].activation_kind) at segment $($matchingStep[0].seg), expected calculated shoot_switch at segment $Segment"
+    }
+}
+
 $level = @($metadata.levels | Where-Object { $_.level_num -eq 2 })
 if ($level.Count -ne 1) {
     throw "Expected exactly one Counterstrike level 2 record, found $($level.Count)"
@@ -50,4 +74,10 @@ if ($step[0].seg -eq $step[0].opens[0].seg) {
     throw 'Trigger 21 still routes to its opened wall instead of a firing waypoint'
 }
 
-Write-Host "PASS Counterstrike level 2 trigger 21 firing waypoint: segment $($step[0].seg)"
+# These firing positions require crossing ordinary, visible doors which are
+# unlocked, require no key, and therefore open when hit by a player weapon.
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 2 -Trigger 17 -Segment 65
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 11 -Trigger 10 -Segment 201
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 14 -Trigger 5 -Segment 150
+
+Write-Host "PASS Counterstrike transparent and shoot-open door firing waypoints"

@@ -273,14 +273,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
-            "seg": 259,
+            "seg": 256,
             "wall": 147,
             "label_pos": {
               "x": 294.9962921142578,
               "y": 43.12480163574219,
               "z": 331.7146301269531
             },
-            "distance": 1865.8818624595617,
+            "distance": 1835.0368682663736,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -310,7 +310,7 @@
               "y": 70.96049499511719,
               "z": 449.06236267089844
             },
-            "distance": 323.48414983559866,
+            "distance": 354.3291440287868,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

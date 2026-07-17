@@ -5095,9 +5095,9 @@
         "mine_volume": 5528088.860764011,
         "mine_volume_normalized": 1.2088795858001722,
         "mine_volume_text": "1.2x",
-        "travel_distance": 2067.801077696893,
-        "travel_time_seconds": 41,
-        "travel_time_text": "0M:41S",
+        "travel_distance": 1977.8010776968933,
+        "travel_time_seconds": 40,
+        "travel_time_text": "0M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5115,14 +5115,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
-            "seg": 64,
+            "seg": 93,
             "wall": 38,
             "label_pos": {
               "x": 55.0,
               "y": -25.64056396484375,
               "z": 0.005950927734375
             },
-            "distance": 287.3606797749979,
+            "distance": 57.3606797749979,
             "trigger": 8,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -5150,7 +5150,7 @@
               "y": -65.64056396484375,
               "z": 0.005950927734375
             },
-            "distance": 899.7201989609478
+            "distance": 1039.7201989609478
           },
           {
             "index": 3,

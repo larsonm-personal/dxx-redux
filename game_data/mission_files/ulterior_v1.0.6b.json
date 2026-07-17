@@ -2513,9 +2513,9 @@
         "mine_volume": 43402932.938362524,
         "mine_volume_normalized": 9.491330713846171,
         "mine_volume_text": "9.5x",
-        "travel_distance": 13965.091283489226,
-        "travel_time_seconds": 279,
-        "travel_time_text": "4M:39S",
+        "travel_distance": 13641.586571988897,
+        "travel_time_seconds": 273,
+        "travel_time_text": "4M:33S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -2533,14 +2533,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 191,
+            "seg": 184,
             "wall": 2,
             "label_pos": {
               "x": 330.2914733886719,
               "y": -72.58987426757812,
               "z": 520.1144714355469
             },
-            "distance": 1654.3688605895466,
+            "distance": 1527.6490436206632,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2578,7 +2578,7 @@
               "y": 77.34046936035156,
               "z": 514.9001617431641
             },
-            "distance": 920.0114718578816,
+            "distance": 793.2916548889984,
             "key": "blue"
           },
           {
@@ -2642,14 +2642,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 709,
+            "seg": 706,
             "wall": 54,
             "label_pos": {
               "x": 13.173751831054688,
               "y": -144.31434631347656,
               "z": 290.5859832763672
             },
-            "distance": 1487.5144054056138,
+            "distance": 1452.481866624333,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2672,7 +2672,7 @@
               "y": -147.65969848632812,
               "z": -234.05406188964844
             },
-            "distance": 2914.5030188864916,
+            "distance": 2879.47048010521,
             "key": "red"
           },
           {

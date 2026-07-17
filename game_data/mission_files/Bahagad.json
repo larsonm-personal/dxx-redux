@@ -528,14 +528,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 411,
+            "seg": 405,
             "wall": 118,
             "label_pos": {
               "x": -133.37550354003906,
               "y": -263.9445495605469,
               "z": 4.85943603515625
             },
-            "distance": 2275.2720574016585,
+            "distance": 2193.271332477152,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -563,7 +563,7 @@
               "y": -288.44940185546875,
               "z": 49.94453430175781
             },
-            "distance": 243.88727766937274,
+            "distance": 325.88800259387904,
             "key": "gold"
           },
           {
@@ -729,7 +729,7 @@
         "mine_volume": 12424365.72280947,
         "mine_volume_normalized": 2.7169538093756307,
         "mine_volume_text": "2.7x",
-        "travel_distance": 5555.297717976247,
+        "travel_distance": 5570.297717976247,
         "travel_time_seconds": 111,
         "travel_time_text": "1M:51S",
         "guidebot_count": 1,
@@ -792,14 +792,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 277,
+            "seg": 219,
             "wall": 80,
             "label_pos": {
               "x": 305.51226806640625,
               "y": 125.99993896484375,
               "z": -84.5
             },
-            "distance": 399.7312316895329,
+            "distance": 223.23095703128493,
             "trigger": 7,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -829,7 +829,7 @@
               "y": 105.99993896484375,
               "z": -84.5
             },
-            "distance": 24.000091552734375,
+            "distance": 215.50036621098232,
             "trigger": 8,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
