@@ -1182,6 +1182,40 @@ static int secret_area_target_visible_from_segment(
 	    seg, from_pos, target_seg, target_pos);
 }
 
+typedef struct level_metadata_route_shot_context {
+	int target_wall;
+} level_metadata_route_shot_context;
+
+static int level_metadata_route_shot_wall_is_passable(
+    void *user, int seg, int side)
+{
+	level_metadata_route_shot_context *context =
+	    (level_metadata_route_shot_context *) user;
+	int wall_num;
+
+	if (!context || seg < 0 || seg >= Num_segments || side < 0 ||
+	    side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	wall_num = Segments[seg].sides[side].wall_num;
+	if (!secret_area_wall_index_valid(wall_num) ||
+	    wall_num == context->target_wall)
+		return 0;
+	/*
+	 * A firing pose remains valid when the player can clear an intervening
+	 * hidden door with one shot and fire through it with the next.  Match the
+	 * engine's wall-hit rules: an unlocked, keyless hidden door opens when a
+	 * player weapon hits it.
+	 */
+	if (Walls[wall_num].type == WALL_DOOR &&
+	    Walls[wall_num].keys == KEY_NONE &&
+	    !(Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
+	    Walls[wall_num].clip_num >= 0 &&
+	    Walls[wall_num].clip_num < Num_wall_anims &&
+	    (WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN))
+		return 1;
+	return 0;
+}
+
 int level_metadata_wall_shootable_from_position(
     int seg, const int from_pos[3], int wall_num)
 {
@@ -1196,6 +1230,7 @@ int level_metadata_wall_shootable_from_position(
 	fix projectile_radius;
 	int fate;
 	int hit_target_wall;
+	level_metadata_route_shot_context route_shot_context;
 
 	Level_metadata_wall_shot_diagnostics.requests++;
 	if (seg < 0 || seg >= Num_segments || !from_pos ||
@@ -1246,6 +1281,10 @@ int level_metadata_wall_shootable_from_position(
 	query.rad = projectile_radius;
 	query.thisobjnum = -1;
 	query.flags = FQ_TRANSWALL | FQ_GET_SEGLIST;
+	route_shot_context.target_wall = wall_num;
+	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
+	query.wall_is_passable = level_metadata_route_shot_wall_is_passable;
+	query.wall_is_passable_user = &route_shot_context;
 	Level_metadata_visibility_summary.misses++;
 	fate = find_vector_intersection(&query, &hit_data);
 	hit_target_wall =
@@ -1253,9 +1292,45 @@ int level_metadata_wall_shootable_from_position(
 	    hit_data.hit_side_seg == wall_seg && hit_data.hit_side == wall_side;
 	if (hit_target_wall)
 		Level_metadata_wall_shot_diagnostics.target_wall_hits++;
-	else if (fate == HIT_WALL)
+	else if (fate == HIT_WALL) {
+		if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
+			const int blocker_seg = hit_data.hit_side_seg;
+			const int blocker_side = hit_data.hit_side;
+			const int blocker_wall =
+			    blocker_seg >= 0 && blocker_seg < Num_segments &&
+			            blocker_side >= 0 && blocker_side < MAX_SIDES_PER_SEGMENT
+			        ? Segments[blocker_seg].sides[blocker_side].wall_num
+			        : -1;
+
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP TRACE blocked_wall_ray from_seg=%d "
+			        "target_wall=%d target_trigger=%d blocker_seg=%d "
+			        "blocker_side=%d blocker_wall=%d",
+			        seg, wall_num, Walls[wall_num].trigger, blocker_seg,
+			        blocker_side, blocker_wall);
+			if (blocker_wall >= 0 && blocker_wall < Num_walls)
+				fprintf(stderr,
+				        " blocker_type=%d blocker_state=%d blocker_flags=%d "
+				        "blocker_trigger=%d keys=%d "
+				        "clip=%d clip_flags=%d linked_wall=%d tmap1=%d "
+				        "tmap2=%d doorway_flags=%d child=%d",
+				        Walls[blocker_wall].type, Walls[blocker_wall].state,
+				        Walls[blocker_wall].flags, Walls[blocker_wall].trigger,
+				        Walls[blocker_wall].keys, Walls[blocker_wall].clip_num,
+				        Walls[blocker_wall].clip_num >= 0 &&
+				                Walls[blocker_wall].clip_num < Num_wall_anims
+				            ? WallAnims[Walls[blocker_wall].clip_num].flags
+				            : 0,
+				        Walls[blocker_wall].linked_wall,
+				        Segments[blocker_seg].sides[blocker_side].tmap_num,
+				        Segments[blocker_seg].sides[blocker_side].tmap_num2,
+				        WALL_IS_DOORWAY(&Segments[blocker_seg], blocker_side),
+				        Segments[blocker_seg].children[blocker_side]);
+			fprintf(stderr, "\n");
+			fflush(stderr);
+		}
 		Level_metadata_wall_shot_diagnostics.blocked_by_other_wall++;
-	else if (fate == HIT_BAD_P0)
+	} else if (fate == HIT_BAD_P0)
 		Level_metadata_wall_shot_diagnostics.bad_start_points++;
 	else if (fate != HIT_NONE)
 		Level_metadata_wall_shot_diagnostics.other_fates++;
@@ -1858,62 +1933,15 @@ static void level_metadata_analysis_cache_save(
 #endif
 }
 
-static int level_metadata_cached_wall_completed(
-    const level_metadata_scan_view *view,
-    int wall)
-{
-	int segment;
-	int side;
-	int type;
-	int flags;
-
-	if (!view || wall < 0 || wall >= view->num_walls ||
-	    !view->wall_segment || !view->wall_side || !view->wall_type ||
-	    !view->wall_flags)
-		return 0;
-	segment = view->wall_segment(view->user, wall);
-	side = view->wall_side(view->user, wall);
-	type = view->wall_type(view->user, wall);
-	flags = view->wall_flags(view->user, wall);
-	return type == view->wall_type_open ||
-	       (flags & view->wall_flag_door_opened) != 0 ||
-	       (view->side_is_flyable && segment >= 0 && side >= 0 &&
-	        view->side_is_flyable(view->user, segment, side));
-}
-
 static int level_metadata_cached_step_completed(
     const level_metadata_scan_view *view,
     const level_metadata_route_step *step,
     int step_index)
 {
-	int link;
 	if (step_index >= 0 && step_index < LEVEL_METADATA_MAX_ROUTE_STEPS &&
 	    Level_metadata_completed_canonical_steps[step_index])
 		return 1;
-
-	switch (step->kind) {
-		case LEVEL_METADATA_ROUTE_START:
-			return 1;
-		case LEVEL_METADATA_ROUTE_KEY:
-			return step->key_index >= 0 && step->key_index < 3 &&
-			       (view->initial_key_mask & (1 << step->key_index)) != 0;
-		case LEVEL_METADATA_ROUTE_REACTOR:
-		case LEVEL_METADATA_ROUTE_BOSS:
-			return view->initial_control_center_destroyed != 0;
-		case LEVEL_METADATA_ROUTE_TRIGGER:
-			if (step->opened_link_count <= 0)
-				return 0;
-			for (link = 0; link < step->opened_link_count; ++link)
-				if (level_metadata_cached_wall_completed(
-				        view, step->opened_link_wall[link]))
-					return 1;
-			return 0;
-		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
-		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
-			return level_metadata_cached_wall_completed(view, step->wall_num);
-		default:
-			return 0;
-	}
+	return level_metadata_route_step_completed_by_world_state(view, step);
 }
 
 static int level_metadata_try_reuse_canonical_route(

@@ -1306,9 +1306,9 @@
         "mine_volume": 27036211.769074783,
         "mine_volume_normalized": 5.912264673778748,
         "mine_volume_text": "5.9x",
-        "travel_distance": 6936.639624582404,
-        "travel_time_seconds": 139,
-        "travel_time_text": "2M:19S",
+        "travel_distance": 6696.639624582404,
+        "travel_time_seconds": 134,
+        "travel_time_text": "2M:14S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1389,45 +1389,17 @@
           },
           {
             "index": 4,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 502,
-            "side": 5,
-            "wall": 107,
-            "label_pos": {
-              "x": 10.0,
-              "y": 30.0,
-              "z": -500.0
-            },
-            "distance": 1744.0380867179174,
-            "opens": [
-              {
-                "seg": 502,
-                "side": 5,
-                "wall": 107
-              },
-              {
-                "seg": 523,
-                "side": 4,
-                "wall": 106
-              }
-            ]
-          },
-          {
-            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 9",
-            "seg": 523,
-            "side": 5,
+            "seg": 502,
             "wall": 105,
             "label_pos": {
               "x": 90.0,
               "y": 30.0,
               "z": -500.0
             },
-            "distance": 120.0,
+            "distance": 1744.0380867179174,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1445,7 +1417,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1455,11 +1427,11 @@
               "y": -50.0,
               "z": -498.0
             },
-            "distance": 1894.0977091367893,
+            "distance": 1774.0977091367893,
             "key": "red"
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -1472,7 +1444,7 @@
             "distance": 1731.991441487771
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

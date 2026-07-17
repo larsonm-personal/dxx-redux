@@ -106,6 +106,7 @@ typedef struct fvi_info {
 #define FQ_TRANSWALL		2		//go through transparent walls
 #define FQ_TRANSPOINT	4		//go through trans wall if hit point is transparent
 #define FQ_GET_SEGLIST	8		//build a list of segments
+#define FQ_PASSABLE_WALL_CALLBACK 16 //allow a caller-defined wall boundary
 
 //this data contains the parms to fvi()
 typedef struct fvi_query {
@@ -115,6 +116,8 @@ typedef struct fvi_query {
 	short thisobjnum;
 	int *ignore_obj_list;
 	int flags;
+	int (*wall_is_passable)(void *user, int seg, int side);
+	void *wall_is_passable_user;
 } fvi_query;
 
 //Find out if a vector intersects with anything.

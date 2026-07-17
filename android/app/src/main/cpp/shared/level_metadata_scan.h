@@ -242,6 +242,9 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);
+int level_metadata_route_step_completed_by_world_state(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_step *step);
 
 #ifdef __cplusplus
 }

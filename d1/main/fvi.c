@@ -624,6 +624,8 @@ int fvi_hit_side;		// what side was hit
 int fvi_hit_side_seg;// what seg the hitside is in
 vms_vector wall_norm;	//ptr to surface normal of hit wall
 int fvi_hit_seg2;		// what segment the hit point is in
+static int (*fvi_active_wall_is_passable)(void *user, int seg, int side);
+static void *fvi_active_wall_is_passable_user;
 
 static int fvi_sub(vms_vector *intp,int *ints,const vms_vector *p0,int startseg,const vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg);
 
@@ -647,6 +649,13 @@ int find_vector_intersection(fvi_query *fq,fvi_info *hit_data)
 
 	Assert(fq->ignore_obj_list != (int *)(-1));
 	Assert((fq->startseg <= Highest_segment_index) && (fq->startseg >= 0));
+	if (fq->flags & FQ_PASSABLE_WALL_CALLBACK) {
+		fvi_active_wall_is_passable = fq->wall_is_passable;
+		fvi_active_wall_is_passable_user = fq->wall_is_passable_user;
+	} else {
+		fvi_active_wall_is_passable = NULL;
+		fvi_active_wall_is_passable_user = NULL;
+	}
 
 	fvi_hit_seg = -1;
 	fvi_hit_side = -1;
@@ -927,6 +936,9 @@ static int fvi_sub(vms_vector *intp,int *ints,const vms_vector *p0,int startseg,
 						}
 
 						if ((wid_flag & WID_FLY_FLAG) ||
+							(fvi_active_wall_is_passable && seg->children[side] >= 0 &&
+							 fvi_active_wall_is_passable(
+							     fvi_active_wall_is_passable_user, startseg, side)) ||
 							((wid_flag == WID_TRANSPARENT_WALL) && 
 								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face))))) {
 

@@ -1093,6 +1093,33 @@ static int test_route_continues_after_unresolved_shootable_trigger(void)
 	return failures;
 }
 
+static int test_unlock_trigger_completion_uses_unlocked_wall_state(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_route_step step;
+	int failures = 0;
+
+	test_reset();
+	memset(&step, 0, sizeof(step));
+	step.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	step.trigger_type = TEST_TRIGGER_UNLOCK_DOOR;
+	step.opened_link_count = 2;
+	step.opened_link_wall[0] = 0;
+	step.opened_link_wall[1] = 1;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_flags[0] = TEST_WALL_FLAG_DOOR_LOCKED;
+	test_wall_flags[1] = TEST_WALL_FLAG_DOOR_LOCKED;
+	failures += expect_int(
+	    "locked walls keep unlock objective pending", 0,
+	    level_metadata_route_step_completed_by_world_state(&view, &step));
+	test_wall_flags[1] &= ~TEST_WALL_FLAG_DOOR_LOCKED;
+	failures += expect_int(
+	    "unlocked wall completes unlock objective", 1,
+	    level_metadata_route_step_completed_by_world_state(&view, &step));
+	return failures;
+}
+
 static int test_segment_route_reuses_trigger_dependencies(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1548,6 +1575,7 @@ int main(void)
 	failures += test_route_does_not_reoffer_disabled_trigger();
 	failures += test_route_promotes_unreachable_trigger_blocker();
 	failures += test_route_continues_after_unresolved_shootable_trigger();
+	failures += test_unlock_trigger_completion_uses_unlocked_wall_state();
 	failures += test_segment_route_reuses_trigger_dependencies();
 	failures += test_unexplored_route_acquires_key_for_largest_component();
 	failures += test_unexplored_route_keeps_hidden_wall_dependency();

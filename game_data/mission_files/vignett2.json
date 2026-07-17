@@ -3327,7 +3327,7 @@
         "mine_volume": 7106113.679101213,
         "mine_volume_normalized": 1.5539612291712637,
         "mine_volume_text": "1.6x",
-        "travel_distance": 866.748256964676,
+        "travel_distance": 846.748256964676,
         "travel_time_seconds": 17,
         "travel_time_text": "0M:17S",
         "guidebot_count": 0,
@@ -3344,45 +3344,17 @@
           },
           {
             "index": 1,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 5,
-            "side": 1,
-            "wall": 175,
-            "label_pos": {
-              "x": 0.0,
-              "y": -0.4979248046875,
-              "z": -251.0003204345703
-            },
-            "distance": 120.0,
-            "opens": [
-              {
-                "seg": 5,
-                "side": 1,
-                "wall": 175
-              },
-              {
-                "seg": 796,
-                "side": 3,
-                "wall": 176
-              }
-            ]
-          },
-          {
-            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
-            "seg": 796,
-            "side": 1,
+            "seg": 4,
             "wall": 174,
             "label_pos": {
               "x": 0.0,
               "y": 4.5020751953125,
               "z": -251.0003204345703
             },
-            "distance": 15.0,
+            "distance": 95.0,
             "trigger": 13,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -3400,7 +3372,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -3410,10 +3382,10 @@
               "y": -62.281097412109375,
               "z": -7.392974853515625
             },
-            "distance": 310.374128482338
+            "distance": 330.374128482338
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

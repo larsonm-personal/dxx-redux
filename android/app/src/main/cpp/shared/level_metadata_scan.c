@@ -101,6 +101,68 @@ const char *level_metadata_route_activation_kind_name(int kind)
 	}
 }
 
+static int level_metadata_route_wall_completed(
+    const level_metadata_scan_view *view,
+    int wall)
+{
+	int segment;
+	int side;
+	int type;
+	int flags;
+
+	if (!view || wall < 0 || wall >= view->num_walls ||
+	    !view->wall_segment || !view->wall_side || !view->wall_type ||
+	    !view->wall_flags)
+		return 0;
+	segment = view->wall_segment(view->user, wall);
+	side = view->wall_side(view->user, wall);
+	type = view->wall_type(view->user, wall);
+	flags = view->wall_flags(view->user, wall);
+	return type == view->wall_type_open ||
+	       (flags & view->wall_flag_door_opened) != 0 ||
+	       (view->side_is_flyable && segment >= 0 && side >= 0 &&
+	        view->side_is_flyable(view->user, segment, side));
+}
+
+int level_metadata_route_step_completed_by_world_state(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_step *step)
+{
+	int link;
+
+	if (!view || !step)
+		return 0;
+	switch (step->kind) {
+		case LEVEL_METADATA_ROUTE_START:
+			return 1;
+		case LEVEL_METADATA_ROUTE_KEY:
+			return step->key_index >= 0 && step->key_index < 3 &&
+			       (view->initial_key_mask & (1 << step->key_index)) != 0;
+		case LEVEL_METADATA_ROUTE_REACTOR:
+		case LEVEL_METADATA_ROUTE_BOSS:
+			return view->initial_control_center_destroyed != 0;
+		case LEVEL_METADATA_ROUTE_TRIGGER:
+			if (step->opened_link_count <= 0)
+				return 0;
+			for (link = 0; link < step->opened_link_count; ++link) {
+				int wall = step->opened_link_wall[link];
+				if (step->trigger_type == view->trigger_type_unlock_door &&
+				    wall >= 0 && wall < view->num_walls && view->wall_flags &&
+				    (view->wall_flags(view->user, wall) &
+				     view->wall_flag_door_locked) == 0)
+					return 1;
+				if (level_metadata_route_wall_completed(view, wall))
+					return 1;
+			}
+			return 0;
+		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
+			return level_metadata_route_wall_completed(view, step->wall_num);
+		default:
+			return 0;
+	}
+}
+
 static int valid_segment(const level_metadata_scan_view *view, int seg)
 {
 	return view && seg >= 0 && seg < view->num_segments;

@@ -440,9 +440,9 @@
         "mine_volume": 31058843.46268334,
         "mine_volume_normalized": 6.791931672279941,
         "mine_volume_text": "6.8x",
-        "travel_distance": 8167.965048507237,
-        "travel_time_seconds": 163,
-        "travel_time_text": "2M:43S",
+        "travel_distance": 7847.578414638453,
+        "travel_time_seconds": 157,
+        "travel_time_text": "2M:37S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -565,45 +565,17 @@
           },
           {
             "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 68,
-            "side": 2,
-            "wall": 23,
-            "label_pos": {
-              "x": -8.50250244140625,
-              "y": -16.2431640625,
-              "z": 147.506103515625
-            },
-            "distance": 535.693318127644,
-            "opens": [
-              {
-                "seg": 68,
-                "side": 2,
-                "wall": 23
-              },
-              {
-                "seg": 69,
-                "side": 0,
-                "wall": 22
-              }
-            ]
-          },
-          {
-            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 69,
-            "side": 2,
+            "seg": 35,
             "wall": 30,
             "label_pos": {
               "x": 7.1148681640625,
               "y": -16.2431640625,
               "z": 135.01219177246094
             },
-            "distance": 29.99999880674799,
+            "distance": 405.5,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -636,7 +608,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -648,7 +620,7 @@
               "y": 34.7568359375,
               "z": 150.0
             },
-            "distance": 505.693316934392,
+            "distance": 345.5,
             "opens": [
               {
                 "seg": 78,
@@ -663,7 +635,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -690,7 +662,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -704,7 +676,7 @@
             "key": "blue"
           },
           {
-            "index": 10,
+            "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -733,7 +705,7 @@
             ]
           },
           {
-            "index": 11,
+            "index": 10,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -747,7 +719,7 @@
             "key": "gold"
           },
           {
-            "index": 12,
+            "index": 11,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 11",
@@ -771,7 +743,7 @@
             ]
           },
           {
-            "index": 13,
+            "index": 12,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -785,7 +757,7 @@
             "key": "red"
           },
           {
-            "index": 14,
+            "index": 13,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -798,7 +770,7 @@
             "distance": 1715.2219428450912
           },
           {
-            "index": 15,
+            "index": 14,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -825,7 +797,7 @@
             ]
           },
           {
-            "index": 16,
+            "index": 15,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
