@@ -445,6 +445,11 @@ class SetupActivity : ComponentActivity() {
         resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 2500L)
     }
 
+    internal fun prepareForLevelPreviewLaunch() {
+        resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
+        LevelPreviewReturnRefreshGate.markLaunch()
+    }
+
     private val commandReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
@@ -2000,6 +2005,7 @@ class SetupActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        val returningFromLevelPreview = LevelPreviewReturnRefreshGate.consumeReturn()
         mpGameLaunching = false
         gameRunningFlag = hasReturnableGameActivity()
         // If a LAN host was broadcasting in-game, stop now
@@ -2014,8 +2020,13 @@ class SetupActivity : ComponentActivity() {
         }
         wasLanDiscoveringBeforeLaunch = false
         focusResumeTrigger.intValue++
-        refreshTrigger.intValue++
-        schedulePostResumeRefreshes()
+        if (returningFromLevelPreview) {
+            resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
+            Log.i("DXX-Setup", "Preserving launcher metadata state after read-only level preview")
+        } else {
+            refreshTrigger.intValue++
+            schedulePostResumeRefreshes()
+        }
         // If the host returns from a game, signal the server to reset the lobby
         val mpState =
             com.dxxredux.app.multiplayer.MatchmakingStateHolder

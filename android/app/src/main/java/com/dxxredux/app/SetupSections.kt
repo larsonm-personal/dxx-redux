@@ -2566,6 +2566,7 @@ private fun LevelMetadataDialog(
                                                 return@launch
                                             }
                                         previewRequestPath = launchRequest.requestFile.absolutePath
+                                        (context as? SetupActivity)?.prepareForLevelPreviewLaunch()
                                         previewLauncher.launch(
                                             LevelPreviewActivity.createIntent(context, launchRequest),
                                         )

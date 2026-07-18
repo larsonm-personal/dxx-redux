@@ -249,3 +249,10 @@ The failing D2 snapshot selected `water.256` but reported an empty
 rendering remained uninitialized. After the fix, all three fields agree on
 `water.256`, the palette-aware random smoke assertion passes, and seed
 `344237308` still moves the camera, closes cleanly, and removes owned caches.
+
+### Metadata return stability
+
+- [x] Mark preview launches in the launcher process and cancel pending post-resume refresh callbacks.
+- [x] Consume that marker on preview return so the unchanged metadata result remains composed without reanalysis.
+- [x] Keep normal game/import resume refresh behavior unchanged and add unit coverage for the one-shot return gate.
+- [x] Rebuild and replay the recorded preview-close path. The seeded D2 smoke replay resumed `SetupActivity`, removed the preview request cache, and observed the metadata-preservation branch without a refresh.

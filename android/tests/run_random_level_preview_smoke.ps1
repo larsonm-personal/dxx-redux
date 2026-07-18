@@ -104,6 +104,7 @@ try {
     ) | Out-Null
 
     if (-not (Start-SetupActivity -Serial $Serial)) { throw "SetupActivity did not become ready" }
+    Adb -AdbArgs @("logcat", "-c") | Out-Null
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE", "--es", "script", $deviceScript
     ) | Out-Null
@@ -209,11 +210,15 @@ try {
                 "-name", $requestId, "-print"
             ) -Seconds 8
         } else { "present" }
-        $previewResumed = $activities -match "mResumedActivity:.*LevelPreviewD[12]Activity"
-        return -not $previewResumed -and $requestState -notmatch [regex]::Escape($requestId)
+        $setupResumed = $activities -match "(?m)^\s*(?:topResumedActivity|mResumedActivity|ResumedActivity)[=:].*SetupActivity"
+        return $setupResumed -and $requestState -notmatch [regex]::Escape($requestId)
     }
     if (-not $closed) { throw "Preview did not close cleanly or its request cache remained" }
-    Write-Status "PASS: seeded random preview loaded, changed camera state, stayed alive, and closed cleanly" "Green"
+    $returnLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Setup:I", "*:S") -Seconds 8
+    if ($returnLog -notmatch "Preserving launcher metadata state after read-only level preview") {
+        throw "SetupActivity resumed without preserving metadata state after the preview"
+    }
+    Write-Status "PASS: seeded random preview loaded, changed camera state, stayed alive, and returned without metadata refresh" "Green"
 } finally {
     try {
         if (Test-DeviceOnline -Serial $Serial) {

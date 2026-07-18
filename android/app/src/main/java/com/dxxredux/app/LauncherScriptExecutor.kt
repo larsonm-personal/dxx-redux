@@ -415,6 +415,7 @@ class LauncherScriptExecutor(
                             "level=${selected.second.levelNum} file=${selected.second.levelFile}",
                     )
                     currentStep++
+                    activity.prepareForLevelPreviewLaunch()
                     activity.startActivity(LevelPreviewActivity.createIntent(context, launchRequest))
                 }
 
