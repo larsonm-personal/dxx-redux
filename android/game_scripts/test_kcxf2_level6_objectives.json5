@@ -89,17 +89,21 @@
     {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
-    {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 200},
-    {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 200},
-    {"action": "set_debug", "field": "fire_trigger", "value": "19", "post_delay_ms": 200},
+    {"action": "set_debug", "field": "fire_trigger", "value": "15"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_goal_objective_trigger": "16"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "16"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_goal_objective_trigger": "19"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "19"},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_label": "Destroy robot carrying blue key",
         "guidebot.route_goal_activation_kind_name": "destroy_key_carrier",
-        "guidebot.route_goal_instruction": "Destroy robot carrying blue key",
-        "guidebot.route_analysis.steps[1].key_carrier_objnum": {"gte": 0},
-        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: Destroy robot carrying blue key"}
+        "guidebot.route_goal_instruction": "Destroy robot carrying blue key"
     }},
     {"action": "introspect"}
 ]

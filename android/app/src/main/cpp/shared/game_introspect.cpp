@@ -963,8 +963,7 @@ static json serialize_guidebot()
 	result["route_start_matches_buddy"] =
 	    route_metadata && route_metadata->route_step_count > 0 &&
 	    Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
-	    level_metadata_get_route_start_objnum() == Buddy_objnum &&
-	    level_metadata_get_route_start_seg() == route_metadata->route_steps[0].seg;
+	    level_metadata_get_route_start_objnum() == Buddy_objnum;
 	result["route_analysis"] = serialize_guidebot_route_analysis();
 #endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {

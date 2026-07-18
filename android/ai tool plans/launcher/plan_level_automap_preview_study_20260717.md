@@ -292,3 +292,24 @@ edges and zero revealed-blue edges. D2 seed `344237308` and D1 seed `99173` pass
 - [x] Verify all `automap_get_view_info` call sites.
 - [x] Add an accurate one-line function header in both engine copies.
 - [x] Run scoped formatting and diff validation.
+
+### Large-level preview performance study
+
+- [x] Compare preview and normal-game automap render loops.
+- [x] Identify preview-only work and full-level visibility costs.
+- [x] Report whether the same level would be equally slow in normal gameplay.
+
+Preview uses the normal `do_automap` window and per-frame `draw_automap` /
+`draw_all_edges` path. Uneasy 4 contains at least 8,842 segments, and preview marks
+all segments visited, so the renderer traverses and sorts the complete edge set every
+frame. A normal in-game automap should be faster until much of the mine is explored;
+with the full map visible it should have essentially the same geometry cost. Preview-
+only touch setup is small, route analysis is startup-only, and framebuffer readback
+runs only when introspection is explicitly requested.
+
+### Large-level automap rendering analysis
+
+- [ ] Trace edge processing from automap traversal through OpenGL submission.
+- [ ] Measure Uneasy 4 edge counts and available CPU/GPU frame timings.
+- [ ] Identify repeated work, batching opportunities, and culling limitations.
+- [ ] Rank optimization candidates by likely impact and implementation risk.

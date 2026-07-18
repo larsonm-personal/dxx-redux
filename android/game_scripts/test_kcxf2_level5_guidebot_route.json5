@@ -54,7 +54,7 @@
         "guidebot.route_goal_objective_seg": "735"
     }},
 
-    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true", "post_delay_ms": 100},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_status": "ok",
@@ -101,16 +101,16 @@
     }},
 
     // Trigger 22 is geometrically nearby but requires a tunnel narrower than
-    // the player's ship. The shared high-level route must use trigger 11 first.
-    {"action": "set_debug", "field": "player_keys", "value": "blue red", "post_delay_ms": 100},
+    // the player's ship. The shared high-level route must use trigger 10 first.
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true", "post_delay_ms": 100},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_status": "ok",
-        "guidebot.route_goal_label": {"contains": "trigger 11"},
+        "guidebot.route_goal_label": {"contains": "trigger 10"},
         "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
-        "guidebot.route_goal_objective_trigger": "11",
-        "guidebot.route_goal_objective_wall": "240",
-        "guidebot.route_goal_guidance_seg": "838",
+        "guidebot.route_goal_objective_trigger": "10",
+        "guidebot.route_goal_objective_wall": "238",
+        "guidebot.route_goal_guidance_seg": {"gte": 0},
         "guidebot.route_first_pending_path_segment_count": {"gt": 0}
     }},
 

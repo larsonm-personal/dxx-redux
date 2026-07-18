@@ -412,11 +412,13 @@ class ModManagerMissionZipTest {
 
         val modFile = File(filesDir, "mods/LargeMission.zip")
         val originalLength = modFile.length()
+        val originalLastModified = modFile.lastModified()
         RandomAccessFile(modFile, "rw").use {
             it.setLength(0)
             it.write(byteArrayOf(1, 2, 3, 4))
             it.setLength(originalLength)
         }
+        assertTrue(modFile.setLastModified(originalLastModified))
 
         manager.writeEnabledModPaths("d2")
         val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/LargeMission.zip")

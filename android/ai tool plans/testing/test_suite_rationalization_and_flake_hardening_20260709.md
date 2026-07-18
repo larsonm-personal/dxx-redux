@@ -37,6 +37,32 @@ Reduce duplicate coverage, improve failure signal, and remove structural sources
 
 Four implementation tranches are complete. The two failures in `report_20260710_132022.md` were both resolved as product/architecture defects: lossy Android continuous-input delivery and an over-broad Guide-Bot exit-selection change. No timeout was extended and no demo was re-recorded.
 
+## Fifth full-report tranche
+
+Latest full run: 87 passed, 11 failed, 1 timed out, 7 skipped, 0 not run in 9:53:03. Report: `temp/test_reports/report_20260717_235450.md`.
+
+1. [complete] Reconstruct the PC sleep interval and classify infrastructure-contaminated results separately from deterministic failures
+2. [complete] Diagnose the shared KCXF2 and Obsidian route-contract changes against current metadata and planner semantics
+3. [complete] Repair independent runner and unit-test failures at their source
+4. [complete] Classify mission-corpus and secret-area baseline deltas without overwriting unrelated mission metadata edits
+5. [complete] Run focused regressions, builds, catalog validation, and scoped code quality
+
+Initial evidence places the PC sleep interval inside `test_obsidian_level2_route`: its step 31 began at 03:58 and resumed at 09:21 with an automation elapsed time of 19,370 seconds. The following unresolved-switch timeout is therefore infrastructure-contaminated until a clean rerun. Failures completed before 03:58 and the immediate runner/configuration failures after resume remain legitimate unless focused reruns show otherwise.
+
+### Fifth-tranche outcome
+
+- Fixed a real route-completion ordering defect. A normal Guide-Bot refresh could clear a matching pending world event before the completion monitor marked its canonical step complete. Both refresh and monitor now consume completion through one operation.
+- Replaced synthetic key-flag mutation in the KCXF2 and Obsidian route scenarios with a debug completion hook that invokes the production player/powerup collision. This removes the key object, updates flags, publishes the normal route event, and avoids contradictory world state that could drive sustained AI pathing.
+- Rewrote the Obsidian level 7 scenario as a complete 13-step state-machine test. KCXF2 level 6 now handshakes after triggers 15 and 16 instead of firing three objectives faster than the 250 ms completion coalescer can activate them.
+- Removed compact live-plan index pins, duplicate console-message checks, and exact incidental waypoint pins while retaining exact objective, trigger, wall, activation, key, reactor, and exit contracts.
+- Corrected `route_start_matches_buddy` to report the stable recorded start-object identity. The recorded start segment remains separately available; comparing it to a moving Buddy was inherently transient.
+- Converted the random-preview JSON into an explicitly support-owned template and made its PowerShell driver the sole top-level test. Preview broadcasts are package-scoped, which restored native axis publication and camera movement.
+- Made the Obsidian key-preference host test self-contained, made JVM logging safe outside Android, and made the extracted-record test preserve the size/time fingerprint its name claims to exercise.
+- Regenerated and revalidated the base-game secret-area baseline after reviewing the planner changes. The mission-route corpus fixture remains intentionally pending because `af_d1_beta.json` and `anachron.json` contain unrelated user edits that affect its projection.
+- Clean reruns proved the 19,370-second Obsidian level 2 failure was suspend contamination; the same 33-step case passed in 36 seconds. The following unresolved-switch case also launched normally. Its substantive unresolved-frontier contract passed, and only the reviewed planner status had changed from `partial` to `ok`; the corrected case then passed in 30 seconds.
+- Focused installed scenarios passed: KCXF2 hidden door, full KCXF2 level 5 route, full KCXF2 route-next sequence, KCXF2 level 6 objectives, rewritten Obsidian level 7 route, Obsidian level 2, Obsidian unresolved-switch frontier, and seeded D2 random preview. JDK 21 full unit tests, all three debug ABIs, the automation catalog, Obsidian key preference, scoped code quality, and the refreshed secret baseline passed.
+- No timeout was extended and no demo fixture or expectation was changed. The report's demo corpus passed unchanged.
+
 ### Continuous-input implementation audit, 2026-07-15
 
 The continuous-input fix is already committed on the current branch, but its two commits have the generic subject `test fixes`, which makes the work difficult to discover from the log:

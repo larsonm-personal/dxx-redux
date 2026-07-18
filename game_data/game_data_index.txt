@@ -12,7 +12,6 @@ facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b  game_data/CD i
 ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/ICE.PIG
 de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/WATER.PIG
 c2aa754df2462376cd77b7afb75125c0096ba04f870fcff4d41182995762848f  game_data/mission_files/KCXF2RMv11.7z
-cab844e17bbf730d15de8a53dffe99e5a29dad3dbf2e53e33ad6a51427d25f98  game_data/mission_files/lagrange.zip
 b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418  game_data/mission_files/Lunar Series Revamped.zip
 441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce  game_data/mission_files/Obsidian.zip
 469e7f6700ae32509edfcbab8bceed94e6af152b479428e2966d9dcc7de4a186  game_data/mission_files/plutonia.zip

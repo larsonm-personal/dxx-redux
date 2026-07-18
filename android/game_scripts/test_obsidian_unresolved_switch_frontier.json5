@@ -40,7 +40,7 @@
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "current_level_num": "10",
-        "guidebot.route_status": "partial",
+        "guidebot.route_status": "ok",
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_label": {"contains": "Locate and activate switch trigger 0"},
         "guidebot.route_goal_activation_kind_name": "unresolved_trigger",

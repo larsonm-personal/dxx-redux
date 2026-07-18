@@ -1,9 +1,12 @@
 // TEST: Template for the host-driven seeded random automap preview smoke test.
-// Run android/tests/run_random_level_preview_smoke.ps1; it selects and stages the pack.
+// Owned by the host driver, which selects and stages the pack before resolving
+// these placeholders.
 [
     {"_info": {
         "description": "Launch a seeded random preview level from a staged mission pack",
-        "games": ["d1", "d2"]
+        "games": ["d1", "d2"],
+        "_standalone": false,
+        "_owner": "test_random_level_preview"
     }},
     {"action": "enter_launcher"},
     {

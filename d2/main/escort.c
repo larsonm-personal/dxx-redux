@@ -279,6 +279,19 @@ static void escort_route_note_replan(const char *reason)
 	Escort_route_last_replan_reason = reason && reason[0] ? reason : "unknown";
 }
 
+static void escort_route_consume_pending_completion(void)
+{
+	if (!Escort_route_pending_event_mask)
+		return;
+	if (Escort_route_goal.active && Escort_route_goal.objective_kind >= 0)
+		level_metadata_mark_route_objective_completed(
+		    Escort_route_goal.objective_kind,
+		    Escort_route_goal.objective_trigger,
+		    Escort_route_goal.objective_wall,
+		    Escort_route_goal.objective_key_index);
+	Escort_route_pending_event_mask = 0;
+}
+
 static unsigned int escort_route_next_event_generation(unsigned int generation)
 {
 	generation++;
@@ -1107,7 +1120,7 @@ static void escort_route_refresh_metadata(void)
 	if (!Escort_route_metadata_dirty)
 		return;
 	Escort_route_metadata_dirty = 0;
-	Escort_route_pending_event_mask = 0;
+	escort_route_consume_pending_completion();
 	Escort_route_metadata_rescan_count++;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    escort_is_companion_object(Buddy_objnum)) {
@@ -1152,11 +1165,7 @@ void escort_route_monitor_completion(void)
 	Escort_route_completion_check_time = GameTime64;
 	if (Escort_route_pending_event_mask) {
 		unsigned int pending_events = Escort_route_pending_event_mask;
-		level_metadata_mark_route_objective_completed(
-		    Escort_route_goal.objective_kind,
-		    Escort_route_goal.objective_trigger,
-		    Escort_route_goal.objective_wall,
-		    Escort_route_goal.objective_key_index);
+		escort_route_consume_pending_completion();
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		escort_route_clear_goal();
 		escort_route_note_replan(

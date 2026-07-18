@@ -14,5 +14,5 @@ if (-not (Test-Path -LiteralPath $batchScript)) {
 }
 
 Write-Host "Running mission ZIP batch sample with MaxZips=$MaxZips"
-& $batchScript -MaxZips $MaxZips
+& $batchScript -MaxZips $MaxZips -NoRegressionJson
 exit $LASTEXITCODE

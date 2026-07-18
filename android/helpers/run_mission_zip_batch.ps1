@@ -62,7 +62,10 @@ function ConvertTo-JsonStringContent {
 }
 
 function ConvertTo-NormalizedJsonText {
-    param([Parameter(Mandatory = $true)][string]$Text)
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [switch]$MissionMetadata
+    )
 
     $trimmed = $Text.Trim()
     if (-not $trimmed) { return $Text }
@@ -86,6 +89,9 @@ function ConvertTo-NormalizedJsonText {
         [void]$startInfo.ArgumentList.Add("-3")
     }
     [void]$startInfo.ArgumentList.Add($formatterPath)
+    if ($MissionMetadata) {
+        [void]$startInfo.ArgumentList.Add("--mission-metadata")
+    }
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
@@ -125,11 +131,12 @@ function Write-Utf8NoBomText {
 function Write-TestJsonText {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$Text
+        [Parameter(Mandatory = $true)][string]$Text,
+        [switch]$MissionMetadata
     )
 
     try {
-        Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $Text)
+        Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $Text -MissionMetadata:$MissionMetadata)
     } catch {
         Write-Warning "JSON normalization failed for ${Path}: $($_.Exception.Message)"
         Write-Utf8NoBomText -Path $Path -Text $Text
@@ -557,7 +564,8 @@ function Push-AppPrivateFile {
 function Save-AppTextFile {
     param(
         [Parameter(Mandatory = $true)][string]$DeviceRelativePath,
-        [Parameter(Mandatory = $true)][string]$LocalPath
+        [Parameter(Mandatory = $true)][string]$LocalPath,
+        [switch]$MissionMetadata
     )
     $devicePath = "files/$($DeviceRelativePath.Replace('\', '/'))"
     $text = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $devicePath) -Seconds 30
@@ -565,7 +573,7 @@ function Save-AppTextFile {
         return $false
     }
     if ([IO.Path]::GetExtension($LocalPath).Equals(".json", [StringComparison]::OrdinalIgnoreCase)) {
-        Write-TestJsonText -Path $LocalPath -Text $text
+        Write-TestJsonText -Path $LocalPath -Text $text -MissionMetadata:$MissionMetadata
     } else {
         Write-Utf8NoBomText -Path $LocalPath -Text $text
     }
@@ -750,7 +758,7 @@ foreach ($zip in $zips) {
 
         $metadataSaved = $false
         if ($deviceHealthyAfterRun) {
-            $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath
+            $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath -MissionMetadata
         }
         if ($record["status"] -eq "passed") {
             if (-not $metadataSaved) {

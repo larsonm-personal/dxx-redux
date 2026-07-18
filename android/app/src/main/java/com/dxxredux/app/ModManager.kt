@@ -1120,7 +1120,7 @@ class ModManager(
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to read DXA patch metadata from ${modFile.name}: ${e.message}")
+            logWarning("Failed to read DXA patch metadata from ${modFile.name}: ${e.message}")
             return emptyList()
         }
     }
@@ -1869,6 +1869,14 @@ class ModManager(
     private fun logInfo(message: String) {
         try {
             Log.i(TAG, message)
+        } catch (_: RuntimeException) {
+            // Android Log is not available in local JVM tests
+        }
+    }
+
+    private fun logWarning(message: String) {
+        try {
+            Log.w(TAG, message)
         } catch (_: RuntimeException) {
             // Android Log is not available in local JVM tests
         }

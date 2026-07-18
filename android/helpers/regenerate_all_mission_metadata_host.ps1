@@ -151,7 +151,10 @@ function Test-LargeMissionZipIncluded {
 }
 
 function ConvertTo-NormalizedJsonText {
-    param([Parameter(Mandatory = $true)][string]$Text)
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [switch]$MissionMetadata
+    )
 
     $formatter = Join-Path $scriptDir "normalize_json.py"
     $python = Get-Command python -ErrorAction SilentlyContinue
@@ -170,6 +173,9 @@ function ConvertTo-NormalizedJsonText {
         [void]$startInfo.ArgumentList.Add("-3")
     }
     [void]$startInfo.ArgumentList.Add($formatter)
+    if ($MissionMetadata) {
+        [void]$startInfo.ArgumentList.Add("--mission-metadata")
+    }
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
@@ -218,11 +224,12 @@ function Add-Utf8NoBomText {
 function Write-JsonValue {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)]$Value
+        [Parameter(Mandatory = $true)]$Value,
+        [switch]$MissionMetadata
     )
 
     $json = ConvertTo-Json -InputObject $Value -Depth 100
-    Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $json)
+    Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $json -MissionMetadata:$MissionMetadata)
 }
 
 function Write-FailureJson {
@@ -588,7 +595,7 @@ $counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
 Write-Status "Host metadata: built-in Counterstrike"
 $counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
 $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
-Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike
+Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
 if (-not $NoRegressionCopy) {
     Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
 }
@@ -658,7 +665,7 @@ foreach ($archive in $archives) {
             $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
             $targetIndex++
         }
-        Write-JsonValue -Path $metadataPath -Value ([object[]]$missions)
+        Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
         if (-not $NoRegressionCopy) {
             Copy-Item -LiteralPath $metadataPath -Destination $regressionPath -Force
         }

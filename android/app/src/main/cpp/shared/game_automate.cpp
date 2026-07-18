@@ -1864,6 +1864,30 @@ static int complete_route_objective(char *reason, size_t reason_size)
 		     target_wall, target_seg, target_side, Walls[target_wall].flags);
 		return 1;
 	}
+	if (activation == LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY) {
+		for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+			object *objp = &Objects[objnum];
+			if (objp->type != OBJ_POWERUP ||
+			    (objp->flags & OF_SHOULD_BE_DEAD) ||
+			    objp->segnum != target_seg ||
+			    (objp->id != POW_KEY_BLUE &&
+			     objp->id != POW_KEY_RED &&
+			     objp->id != POW_KEY_GOLD))
+				continue;
+			collide_player_and_powerup(ConsoleObject, objp, &objp->pos);
+			if (!(objp->flags & OF_SHOULD_BE_DEAD)) {
+				snprintf(reason, reason_size,
+				         "complete_route_objective: key was not collected");
+				return 0;
+			}
+			LOGI("complete_route_objective: key object=%d target_seg=%d",
+			     objnum, target_seg);
+			return 1;
+		}
+		snprintf(reason, reason_size,
+		         "complete_route_objective: key object not found");
+		return 0;
+	}
 	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
 		object *objp = &Objects[objnum];
 		int matches = 0;

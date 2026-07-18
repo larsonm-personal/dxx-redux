@@ -1,9 +1,13 @@
 #!/usr/bin/env pwsh
 param(
-    [Parameter(Mandatory)][string]$MetadataPath
+    [string]$MetadataPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $MetadataPath) {
+    $MetadataPath = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'game_data\mission_files\Obsidian.json'
+}
 
 if (-not (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
     throw "Obsidian metadata file not found: $MetadataPath"

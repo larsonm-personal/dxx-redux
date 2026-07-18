@@ -81,17 +81,11 @@ try {
     ) | Out-Null
     Adb -AdbArgs @("shell", "rm", "-f", $deviceTemporaryZip) | Out-Null
 
-    $scriptBody = @(
-        [ordered]@{ _info = [ordered]@{ description = "Seeded random level automap preview smoke"; games = @($selectedGame) } },
-        [ordered]@{ action = "enter_launcher" },
-        [ordered]@{
-            action = "launch_random_level_preview"
-            label = $selectedPack.Zip.Name
-            mod_file = $deviceZip
-            game = $selectedGame
-            seed = $Seed
-        }
-    ) | ConvertTo-Json -Depth 8
+    $templatePath = Join-Path $androidRoot "game_scripts\test_random_level_preview.json5"
+    $scriptBody = Get-Content -LiteralPath $templatePath -Raw
+    $scriptBody = $scriptBody.Replace('${MISSION_ZIP}', $deviceZip)
+    $scriptBody = $scriptBody.Replace('${GAME}', $selectedGame)
+    $scriptBody = $scriptBody.Replace('${SEED}', $Seed.ToString([Globalization.CultureInfo]::InvariantCulture))
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $localScript) | Out-Null
     [IO.File]::WriteAllText($localScript, $scriptBody + "`n", [Text.UTF8Encoding]::new($false))
     $deviceTemporaryScript = "/data/local/tmp/$deviceScript"
@@ -121,7 +115,7 @@ try {
         if ($result -and $result.result -eq "FAIL") { throw "Launcher automation failed: $($result.reason)" }
         $script:selection = Read-AppJson -Path $selectionFile
         if (-not $script:initial) {
-            Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT") | Out-Null
+            Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
             Start-Sleep -Milliseconds 250
             $script:initial = Read-AppJson -Path $introspectionFile
         }
@@ -185,20 +179,20 @@ try {
         )) {
         foreach ($sample in 1..8) {
             Adb -AdbArgs @(
-                "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND",
+                "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "-p", $script:PACKAGE,
                 "--es", "command", "axis", "--ei", "axis", "$($input.Axis)",
                 "--ef", "value", "$($input.Value)", "--ez", "active", "true"
             ) | Out-Null
             Start-Sleep -Milliseconds 80
         }
         Adb -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND",
+            "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "-p", $script:PACKAGE,
             "--es", "command", "axis", "--ei", "axis", "$($input.Axis)",
             "--ef", "value", "0.0", "--ez", "active", "false"
         ) | Out-Null
     }
 
-    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT") | Out-Null
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
     $after = $null
     $refreshed = Wait-ForCondition -Description "post-input preview introspection" -TimeoutSec 20 -PollMs 500 -Condition {
         $script:after = Read-AppJson -Path $introspectionFile
@@ -234,7 +228,7 @@ try {
     }
 
     Adb -AdbArgs @(
-        "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "--es", "command", "close"
+        "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "-p", $script:PACKAGE, "--es", "command", "close"
     ) | Out-Null
     $closed = Wait-ForCondition -Description "preview closes and request cache is removed" -TimeoutSec 30 -PollMs 500 -Condition {
         $activities = Adb-Timeout -AdbArgs @("shell", "dumpsys", "activity", "activities") -Seconds 8
@@ -257,7 +251,7 @@ try {
     try {
         if (Test-DeviceOnline -Serial $Serial) {
             Adb -AdbArgs @(
-                "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "--es", "command", "close"
+                "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "-p", $script:PACKAGE, "--es", "command", "close"
             ) | Out-Null
             if (Start-SetupActivity -Serial $Serial) {
                 $cleanupBody = @(
