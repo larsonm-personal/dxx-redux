@@ -830,6 +830,36 @@ void ogl_cache_level_textures(void)
 	r_cachedtexcount = r_texcount;
 }
 
+static GLfloat *line_batch_vertices;
+static GLfloat *line_batch_colors;
+static int line_batch_capacity;
+static int line_batch_count = -1;
+
+void g3_start_line_batch(int max_lines)
+{
+	if (max_lines > line_batch_capacity) {
+		line_batch_vertices = d_realloc(line_batch_vertices, max_lines * 6 * sizeof(*line_batch_vertices));
+		line_batch_colors = d_realloc(line_batch_colors, max_lines * 8 * sizeof(*line_batch_colors));
+		line_batch_capacity = max_lines;
+	}
+	line_batch_count = 0;
+}
+
+void g3_end_line_batch(void)
+{
+	if (line_batch_count > 0) {
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+		OGL_DISABLE(TEXTURE_2D);
+		glVertexPointer(3, GL_FLOAT, 0, line_batch_vertices);
+		glColorPointer(4, GL_FLOAT, 0, line_batch_colors);
+		glDrawArrays(GL_LINES, 0, line_batch_count * 2);
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+	}
+	line_batch_count = -1;
+}
+
 bool g3_draw_line(const g3s_point *p0,const g3s_point *p1)
 {
 	int c;
@@ -838,9 +868,6 @@ bool g3_draw_line(const g3s_point *p0,const g3s_point *p1)
 	GLfloat vertex_array[] = { f2glf(p0->p3_vec.x),f2glf(p0->p3_vec.y),-f2glf(p0->p3_vec.z), f2glf(p1->p3_vec.x),f2glf(p1->p3_vec.y),-f2glf(p1->p3_vec.z) };
   
 	c=grd_curcanv->cv_color;
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	OGL_DISABLE(TEXTURE_2D);
 	color_r = PAL2Tr(c);
 	color_g = PAL2Tg(c);
 	color_b = PAL2Tb(c);
@@ -848,6 +875,16 @@ bool g3_draw_line(const g3s_point *p0,const g3s_point *p1)
 	color_array[1] = color_array[5] = color_g;
 	color_array[2] = color_array[6] = color_b;
 	color_array[3] = color_array[7] = 1.0;
+	if (line_batch_count >= 0) {
+		Assert(line_batch_count < line_batch_capacity);
+		memcpy(&line_batch_vertices[line_batch_count * 6], vertex_array, sizeof(vertex_array));
+		memcpy(&line_batch_colors[line_batch_count * 8], color_array, sizeof(color_array));
+		line_batch_count++;
+		return 1;
+	}
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	OGL_DISABLE(TEXTURE_2D);
 	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glDrawArrays(GL_LINES, 0, 2);

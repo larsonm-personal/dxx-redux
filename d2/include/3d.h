@@ -190,6 +190,13 @@ bool g3_check_and_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list
 
 //draws a line. takes two points.
 bool g3_draw_line(const g3s_point *p0,const g3s_point *p1);
+#ifdef OGL
+void g3_start_line_batch(int max_lines);
+void g3_end_line_batch(void);
+#else
+#define g3_start_line_batch(max_lines) ((void) 0)
+#define g3_end_line_batch() ((void) 0)
+#endif
 
 //draw a polygon that is always facing you
 //returns 1 if off screen, 0 if drew

@@ -309,7 +309,53 @@ runs only when introspection is explicitly requested.
 
 ### Large-level automap rendering analysis
 
-- [ ] Trace edge processing from automap traversal through OpenGL submission.
-- [ ] Measure Uneasy 4 edge counts and available CPU/GPU frame timings.
-- [ ] Identify repeated work, batching opportunities, and culling limitations.
-- [ ] Rank optimization candidates by likely impact and implementation risk.
+- [x] Trace edge processing from automap traversal through OpenGL submission.
+- [x] Measure Uneasy 4 edge counts and available CPU/GPU frame timings.
+- [x] Identify repeated work, batching opportunities, and culling limitations.
+- [x] Rank optimization candidates by likely impact and implementation risk.
+
+Uneasy 4 builds 45,660 automap edges and submitted 3,039 lines in the sampled
+view. A mostly baseline run advanced only seven event-loop iterations in 16.8
+seconds, with the first frame ready after 7.5 seconds. This is roughly 1.3
+seconds per subsequent iteration even after excluding startup, so the slowdown
+is present without continuous framebuffer introspection.
+
+The dominant cost is GL submission rather than line count. `draw_all_edges`
+calls `g3_draw_line` once per visible edge. On Android, every two-vertex call
+then flushes uniforms, allocates a streaming VBO with `glBufferData`, performs
+separate position and color `glBufferSubData` uploads, configures attributes,
+and issues its own `glDrawArrays`. The sampled frame therefore makes about
+3,039 draw calls and more than 9,000 buffer allocation/upload calls for only
+6,078 vertices.
+
+The first optimization should batch automap endpoints and colors while retaining
+the existing visibility, facing, fade, and ordering decisions, reducing thousands
+of draws to one or a few. Secondary opportunities are restoring a dense list of
+used edge indices instead of scanning the sparse edge hash, replacing or bucketing
+the per-frame Shell sort, and rendering preview frames only after camera or option
+changes. Hierarchical culling has more complexity and should be considered only if
+batching plus dense traversal are insufficient.
+
+### Cross-platform automap batching implementation
+
+- [x] Find the smallest renderer-neutral batching interface compatible with all backends.
+- [x] Batch automap lines without changing visibility, color, fade, or ordering semantics.
+- [x] Mirror the engine changes in D1 and D2.
+- [x] Build D1 and D2 on Windows and Android.
+- [x] Replay the Uneasy 4 profile and compare frame timing and rendered-edge counters.
+- [x] Run scoped formatting and diff validation.
+
+The implementation adds renderer-neutral begin/end hooks around `draw_all_edges`.
+OpenGL buffers the existing `g3_draw_line` vertices and palette-derived colors,
+then submits the lines once. Non-OpenGL builds retain immediate line rendering.
+The visibility traversal, facing checks, fade calculation, and draw ordering are
+unchanged.
+
+The quiet pre-change run drew 3,039 lines and averaged about 1,330 ms per event
+iteration after startup. With batching, the same view drew 3,039 lines and
+averaged 193 ms across 88 post-start iterations, improving approximately 6.9x
+to 5.2 FPS. The full smoke test also passed framebuffer, presented-surface,
+color, camera-motion, clean-close, metadata-preservation, and cache-cleanup
+checks. Batching is a substantial first win but does not make this extreme map
+fully smooth; further work should profile the remaining CPU traversal and the
+single batched draw before expanding the upstream-facing diff.

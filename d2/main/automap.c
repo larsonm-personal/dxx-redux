@@ -1300,6 +1300,7 @@ void draw_all_edges(automap *am)
 	am->edges_drawn_last_frame = 0;
 	am->secret_edges_drawn_last_frame = 0;
 	am->secret_edges_culled_far_dist_last_frame = 0;
+	g3_start_line_batch(am->num_edges);
 
 	for (i=0; i<=am->highest_edge_index; i++ )	{
 		//e = &am->edges[Edge_used_list[i]];
@@ -1416,6 +1417,7 @@ void draw_all_edges(automap *am)
 		if (automap_edge_contains_visible_secret(e))
 			am->secret_edges_drawn_last_frame++;
 	}
+	g3_end_line_batch();
 }
 
 
