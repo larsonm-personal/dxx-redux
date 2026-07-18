@@ -2451,6 +2451,29 @@ bool plan_uses_transparent_shot(const dxx_route::route_plan_result &plan)
 	    });
 }
 
+int plan_unresolved_trigger_count(const dxx_route::route_plan_result &plan)
+{
+	return static_cast<int>(std::count_if(
+	    plan.steps.begin(), plan.steps.end(), [](const auto &step) {
+		    return step.activation ==
+		           dxx_route::route_activation_kind::unresolved_trigger;
+	    }));
+}
+
+bool plans_have_same_objective_sequence(
+    const dxx_route::route_plan_result &left,
+    const dxx_route::route_plan_result &right)
+{
+	return left.steps.size() == right.steps.size() &&
+	       std::equal(
+	           left.steps.begin(), left.steps.end(), right.steps.begin(),
+	           [](const auto &left_step, const auto &right_step) {
+		           return left_step.kind == right_step.kind &&
+		                  left_step.trigger == right_step.trigger &&
+		                  left_step.key == right_step.key;
+	           });
+}
+
 void annotate_bypassable_keys(
     dxx_route::route_plan_result &plan,
     int key_mask)
@@ -2663,7 +2686,10 @@ extern "C" int route_planner_plan_view(
 				const int bypassable_keys =
 				    preceding_keys & plan_key_mask(strict);
 				if (strict.status == dxx_route::route_plan_status::ok &&
-				    !plan_uses_transparent_shot(strict) && bypassable_keys) {
+				    !plan_uses_transparent_shot(strict) && bypassable_keys &&
+				    !plans_have_same_objective_sequence(strict, result) &&
+				    plan_unresolved_trigger_count(strict) <=
+				        plan_unresolved_trigger_count(result)) {
 					annotate_bypassable_keys(strict, bypassable_keys);
 					result = strict;
 				}

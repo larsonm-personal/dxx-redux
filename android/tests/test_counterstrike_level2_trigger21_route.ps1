@@ -80,4 +80,8 @@ Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 2 -Trigger 17 -Segmen
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 11 -Trigger 10 -Segment 201
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 14 -Trigger 5 -Segment 150
 
+# Preferring keys over a transparent shortcut must not replace a calculated
+# objective with the planner's unresolved-trigger fallback
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 3 -Trigger 8 -Segment 297
+
 Write-Host "PASS Counterstrike transparent and shoot-open door firing waypoints"

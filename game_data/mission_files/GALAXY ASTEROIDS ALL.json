@@ -503,9 +503,9 @@
         "mine_volume": 68075660.83394457,
         "mine_volume_normalized": 14.886749968168617,
         "mine_volume_text": "15x",
-        "travel_distance": 14636.743180347321,
-        "travel_time_seconds": 293,
-        "travel_time_text": "4M:53S",
+        "travel_distance": 14466.568826844823,
+        "travel_time_seconds": 289,
+        "travel_time_text": "4M:49S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -554,8 +554,7 @@
               "z": -675.5
             },
             "distance": 66.1543882691372,
-            "key": "blue",
-            "can_be_bypassed": true
+            "key": "blue"
           },
           {
             "index": 3,
@@ -569,23 +568,21 @@
               "z": -380.875
             },
             "distance": 3061.770960122478,
-            "key": "gold",
-            "can_be_bypassed": true
+            "key": "gold"
           },
           {
             "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 24",
-            "seg": 781,
-            "side": 0,
+            "seg": 198,
             "wall": 156,
             "label_pos": {
               "x": -176.25,
               "y": -258.5,
               "z": -28.25
             },
-            "distance": 3691.4152276582727,
+            "distance": 3606.3280509070223,
             "trigger": 24,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -608,7 +605,7 @@
               "y": -189.0,
               "z": 51.75
             },
-            "distance": 474.1436482594438,
+            "distance": 389.0564715081939,
             "key": "red"
           },
           {
@@ -644,9 +641,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
-          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
