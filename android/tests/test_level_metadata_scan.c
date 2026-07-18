@@ -645,6 +645,7 @@ static int test_route_key_step(void)
 	failures += expect_int("key route steps", 3, state.route_step_count);
 	failures += expect_string("key route step", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("key route key index", 0, state.route_steps[1].key_index);
+	failures += expect_int("key route unnecessary keys", 0, state.unnecessary_key_mask);
 	failures += expect_string("key route activation", "pickup_key", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
 	failures += expect_int("key route label position", 1, state.route_steps[1].label_pos_valid);
 	failures += expect_string("key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
@@ -759,6 +760,10 @@ static int test_route_collects_only_required_keys(void)
 	failures += expect_int("required key route steps", 4, state.route_step_count);
 	failures += expect_string("required key route gold", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("required key route gold index", 2, state.route_steps[1].key_index);
+	failures += expect_int(
+	    "required key route unnecessary keys",
+	    LEVEL_METADATA_KEY_MASK_BLUE | LEVEL_METADATA_KEY_MASK_RED,
+	    state.unnecessary_key_mask);
 	failures += expect_string("required key route reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	failures += expect_string("required key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[3].kind));
 	return failures;

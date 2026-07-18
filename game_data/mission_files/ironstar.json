@@ -435,6 +435,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
+        ],
+        "notes": [
+          "gold key not necessary"
         ]
       },
       {
@@ -1308,6 +1311,10 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
+        ],
+        "notes": [
+          "blue key not necessary",
+          "gold key not necessary"
         ]
       },
       {

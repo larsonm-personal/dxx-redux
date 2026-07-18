@@ -1609,6 +1609,8 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "red key not necessary",
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

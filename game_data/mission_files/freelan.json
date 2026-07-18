@@ -92,6 +92,11 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
+        ],
+        "notes": [
+          "blue key not necessary",
+          "red key not necessary",
+          "gold key not necessary"
         ]
       },
       {

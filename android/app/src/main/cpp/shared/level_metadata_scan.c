@@ -529,6 +529,7 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	         route.route_problem);
 	snprintf(state->route_note, sizeof(state->route_note), "%s",
 	         route.route_note);
+	state->unnecessary_key_mask = route.unnecessary_key_mask;
 	state->route_step_count = route.route_step_count;
 	memcpy(state->route_steps, route.route_steps,
 	       sizeof(state->route_steps[0]) * route.route_step_count);

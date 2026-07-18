@@ -662,6 +662,10 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 		return notes;
 	if (metadata->route_note[0])
 		notes.push_back(metadata->route_note);
+	static const char *const key_names[] = { "blue", "red", "gold" };
+	for (int key = 0; key < 3; ++key)
+		if (metadata->unnecessary_key_mask & (1 << key))
+			notes.push_back(std::string(key_names[key]) + " key not necessary");
 	if (metadata->guidebot_placement_note[0] &&
 	    strcmp(metadata->guidebot_placement_note, metadata->route_note))
 		notes.push_back(metadata->guidebot_placement_note);

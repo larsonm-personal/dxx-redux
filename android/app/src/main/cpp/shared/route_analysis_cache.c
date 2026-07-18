@@ -43,6 +43,9 @@ static int route_analysis_cache_state_valid(
 
 	if (state->route_status < LEVEL_METADATA_ROUTE_OK ||
 	    state->route_status > LEVEL_METADATA_ROUTE_FAILED ||
+	    (state->unnecessary_key_mask &
+	     ~(LEVEL_METADATA_KEY_MASK_BLUE | LEVEL_METADATA_KEY_MASK_RED |
+	       LEVEL_METADATA_KEY_MASK_GOLD)) != 0 ||
 	    state->route_step_count < 0 ||
 	    state->route_step_count > LEVEL_METADATA_MAX_ROUTE_STEPS ||
 	    summary->endpoint_kind != ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL ||

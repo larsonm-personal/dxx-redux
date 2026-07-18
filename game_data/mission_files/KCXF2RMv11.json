@@ -1452,6 +1452,7 @@
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -1676,6 +1677,7 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

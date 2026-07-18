@@ -360,6 +360,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
+        ],
+        "notes": [
+          "gold key not necessary"
         ]
       },
       {
@@ -426,7 +429,8 @@
         ],
         "route_note": "no reactor, exit exists",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "blue key not necessary"
         ]
       },
       {

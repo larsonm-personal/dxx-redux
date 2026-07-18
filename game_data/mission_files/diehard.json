@@ -2553,6 +2553,7 @@
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

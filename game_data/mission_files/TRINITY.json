@@ -5258,6 +5258,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
+          "blue key not necessary",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -6278,6 +6279,7 @@
         "route_note": "blue key can be skipped by shooting through a transparent wall",
         "notes": [
           "blue key can be skipped by shooting through a transparent wall",
+          "gold key not necessary",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -9642,6 +9644,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
+          "blue key not necessary",
           "guidebot or guidebot start cage placed in this level"
         ]
       },

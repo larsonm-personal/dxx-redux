@@ -230,6 +230,7 @@ typedef struct level_metadata_state {
 	int route_status;
 	char route_problem[128];
 	char route_note[128];
+	int unnecessary_key_mask;
 	int route_step_count;
 	level_metadata_route_step route_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
 } level_metadata_state;

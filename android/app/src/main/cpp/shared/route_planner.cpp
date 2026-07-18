@@ -2427,6 +2427,22 @@ int plan_key_mask(const dxx_route::route_plan_result &plan)
 	return mask;
 }
 
+int snapshot_present_key_mask(const dxx_route::route_snapshot &snapshot)
+{
+	int mask = 0;
+	for (const auto &object : snapshot.state.objects) {
+		if (object.should_be_dead)
+			continue;
+		const int direct_key = semantic_key_index(object.key);
+		if (direct_key >= 0)
+			mask |= 1 << direct_key;
+		const int contained_key = semantic_key_index(object.contains_key);
+		if (contained_key >= 0 && object.contains_count > 0)
+			mask |= 1 << contained_key;
+	}
+	return mask;
+}
+
 int keys_before_transparent_shot(
     const dxx_route::route_plan_result &plan)
 {
@@ -2701,6 +2717,10 @@ extern "C" int route_planner_plan_view(
 			copy_problem(problem, problem_capacity, detail.c_str());
 			return 0;
 		}
+		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
+		    result.status == dxx_route::route_plan_status::ok)
+			state->unnecessary_key_mask =
+			    snapshot_present_key_mask(snapshot) & ~plan_key_mask(result);
 		return 1;
 	} catch (const std::exception &error) {
 		copy_problem(problem, problem_capacity, error.what());

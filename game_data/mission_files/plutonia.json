@@ -1060,6 +1060,7 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "blue key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -1396,6 +1397,7 @@
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
+          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -4771,6 +4773,7 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -5436,6 +5439,7 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }

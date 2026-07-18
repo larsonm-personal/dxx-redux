@@ -317,7 +317,10 @@
         ],
         "route_note": "no reactor, exit exists",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "blue key not necessary",
+          "red key not necessary",
+          "gold key not necessary"
         ]
       }
     ],

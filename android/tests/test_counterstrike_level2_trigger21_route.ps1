@@ -84,4 +84,27 @@ Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 14 -Trigger 5 -Segmen
 # objective with the planner's unresolved-trigger fallback
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 3 -Trigger 8 -Segment 297
 
+$bonusKeyLevel = @($metadata.levels | Where-Object { $_.level_num -eq 14 })
+if ($bonusKeyLevel.Count -ne 1 -or
+    'blue key not necessary' -notin @($bonusKeyLevel[0].notes)) {
+    throw 'Counterstrike level 14 does not identify its unused blue key'
+}
+if (@($bonusKeyLevel[0].route_steps | Where-Object { $_.kind -eq 'key' -and $_.key -eq 'blue' }).Count -ne 0) {
+    throw 'Counterstrike level 14 blue key unexpectedly appears in the preferred route'
+}
+
+$mixedKeyLevel = @($metadata.levels | Where-Object { $_.level_num -eq 20 })
+if ($mixedKeyLevel.Count -ne 1 -or
+    'gold key not necessary' -notin @($mixedKeyLevel[0].notes)) {
+    throw 'Counterstrike level 20 does not identify its unused gold key'
+}
+$bypassableBlue = @(
+    $mixedKeyLevel[0].route_steps |
+        Where-Object { $_.kind -eq 'key' -and $_.key -eq 'blue' -and $_.can_be_bypassed -eq $true }
+)
+if ($bypassableBlue.Count -ne 1 -or
+    'blue key not necessary' -in @($mixedKeyLevel[0].notes)) {
+    throw 'Counterstrike level 20 conflates its bypassable blue key with its unnecessary gold key'
+}
+
 Write-Host "PASS Counterstrike transparent and shoot-open door firing waypoints"

@@ -47,5 +47,8 @@ if ($objectives[0].can_be_bypassed -ne $true) {
 if ($level[0].route_note -notlike '*blue key can be skipped*transparent wall*') {
     throw "Unexpected route note: $($level[0].route_note)"
 }
+if (@($level[0].notes | Where-Object { $_ -eq 'blue key not necessary' }).Count -ne 0) {
+    throw 'Obsidian level 2 incorrectly marks its preferred blue key unnecessary'
+}
 
 Write-Host 'PASS Obsidian level 2 prefers and annotates the blue-key route'

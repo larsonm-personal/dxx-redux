@@ -71,6 +71,7 @@ static void level_metadata_apply_planned_route(
 	destination->route_status = route->route_status;
 	snprintf(destination->route_problem, sizeof(destination->route_problem), "%s", route->route_problem);
 	snprintf(destination->route_note, sizeof(destination->route_note), "%s", route->route_note);
+	destination->unnecessary_key_mask = route->unnecessary_key_mask;
 	destination->route_step_count = route->route_step_count;
 	memset(destination->route_steps, 0, sizeof(destination->route_steps));
 	memcpy(destination->route_steps, route->route_steps,

@@ -1033,6 +1033,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
+        ],
+        "notes": [
+          "blue key not necessary"
         ]
       }
     ],
