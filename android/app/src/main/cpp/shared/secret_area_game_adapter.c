@@ -107,7 +107,8 @@ static fix level_metadata_switch_projectile_radius(void)
 
 enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL = 1,
-	LEVEL_METADATA_VISIBILITY_TARGET_POSITION = 2
+	LEVEL_METADATA_VISIBILITY_TARGET_POSITION = 2,
+	LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT = 3
 };
 
 typedef struct level_metadata_visibility_key {
@@ -1184,6 +1185,7 @@ static int secret_area_target_visible_from_segment(
 
 typedef struct level_metadata_route_shot_context {
 	int target_wall;
+	int allow_transparency;
 } level_metadata_route_shot_context;
 
 static int level_metadata_route_shot_wall_is_passable(
@@ -1200,6 +1202,9 @@ static int level_metadata_route_shot_wall_is_passable(
 	if (!secret_area_wall_index_valid(wall_num) ||
 	    wall_num == context->target_wall)
 		return 0;
+	if (!context->allow_transparency &&
+	    (WALL_IS_DOORWAY(&Segments[seg], side) & WID_RENDPAST_FLAG))
+		return 0;
 	/*
 	 * A firing pose remains valid when the player can clear an intervening
 	 * door with one shot and fire through it with the next.  Match the engine's
@@ -1214,8 +1219,11 @@ static int level_metadata_route_shot_wall_is_passable(
 	return 0;
 }
 
-int level_metadata_wall_shootable_from_position(
-    int seg, const int from_pos[3], int wall_num)
+static int level_metadata_wall_shootable_from_position_impl(
+    int seg,
+    const int from_pos[3],
+    int wall_num,
+    int allow_transparency)
 {
 	level_metadata_visibility_key key;
 	fvi_info hit_data;
@@ -1248,7 +1256,9 @@ int level_metadata_wall_shootable_from_position(
 		return 0;
 	}
 	memset(&key, 0, sizeof(key));
-	key.kind = LEVEL_METADATA_VISIBILITY_TARGET_WALL;
+	key.kind = allow_transparency
+	               ? LEVEL_METADATA_VISIBILITY_TARGET_WALL
+	               : LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT;
 	key.from_seg = seg;
 	memcpy(key.from_pos, from_pos, sizeof(key.from_pos));
 	key.target_id = wall_num;
@@ -1278,8 +1288,11 @@ int level_metadata_wall_shootable_from_position(
 	projectile_radius = level_metadata_switch_projectile_radius();
 	query.rad = projectile_radius;
 	query.thisobjnum = -1;
-	query.flags = FQ_TRANSWALL | FQ_GET_SEGLIST;
+	query.flags = FQ_GET_SEGLIST;
+	if (allow_transparency)
+		query.flags |= FQ_TRANSWALL;
 	route_shot_context.target_wall = wall_num;
+	route_shot_context.allow_transparency = allow_transparency;
 	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
 	query.wall_is_passable = level_metadata_route_shot_wall_is_passable;
 	query.wall_is_passable_user = &route_shot_context;
@@ -1339,7 +1352,7 @@ int level_metadata_wall_shootable_from_position(
 	 * engine itself documents as occasionally incorrect.  A transparent/no-hit
 	 * trace still needs an independently credible connected traversal.
 	 */
-	fate = hit_target_wall || fate == HIT_NONE;
+	fate = hit_target_wall || (allow_transparency && fate == HIT_NONE);
 	if (fate && !hit_target_wall &&
 	    !level_metadata_fvi_visibility_credible(
 	        &hit_data, &from, seg, &target, wall_seg, wall_seg, wall_side,
@@ -1365,12 +1378,27 @@ int level_metadata_wall_shootable_from_position(
 	return fate;
 }
 
+int level_metadata_wall_shootable_from_position(
+    int seg, const int from_pos[3], int wall_num)
+{
+	return level_metadata_wall_shootable_from_position_impl(
+	    seg, from_pos, wall_num, 1);
+}
+
 static int secret_area_wall_shootable_from_position(
     void *user, int seg, const int from_pos[3], int wall_num)
 {
 	(void) user;
 	return level_metadata_wall_shootable_from_position(
 	    seg, from_pos, wall_num);
+}
+
+static int secret_area_wall_shootable_without_transparency_from_position(
+    void *user, int seg, const int from_pos[3], int wall_num)
+{
+	(void) user;
+	return level_metadata_wall_shootable_from_position_impl(
+	    seg, from_pos, wall_num, 0);
 }
 
 static int secret_area_trigger_opens_links(int trigger_num)
@@ -1768,6 +1796,8 @@ static void level_metadata_initialize_scan_view(void)
 	view->target_visible_from_segment = secret_area_target_visible_from_segment;
 	view->wall_shootable_from_position =
 	    secret_area_wall_shootable_from_position;
+	view->wall_shootable_without_transparency_from_position =
+	    secret_area_wall_shootable_without_transparency_from_position;
 	view->wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
 	Level_metadata_scan_view_initialized = 1;
 }

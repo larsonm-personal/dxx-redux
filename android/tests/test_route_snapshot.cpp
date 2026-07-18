@@ -274,7 +274,7 @@ struct test_visibility {
 	dxx_route::route_position second_position;
 };
 
-bool wall_shootable(
+int wall_shootable(
     void *user,
     int segment,
     const dxx_route::route_position &position,
@@ -282,10 +282,12 @@ bool wall_shootable(
 {
 	const auto &visible = *static_cast<test_visibility *>(user);
 	return wall == visible.wall &&
-	       ((segment == visible.segment &&
-	         position.value == visible.position.value) ||
-	        (segment == visible.second_segment &&
-	         position.value == visible.second_position.value));
+	               ((segment == visible.segment &&
+	                 position.value == visible.position.value) ||
+	                (segment == visible.second_segment &&
+	                 position.value == visible.second_position.value))
+	           ? 1
+	           : 0;
 }
 
 dxx_route::route_snapshot make_nested_trigger_snapshot()

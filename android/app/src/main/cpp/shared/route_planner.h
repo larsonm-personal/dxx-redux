@@ -101,7 +101,12 @@ struct route_visibility_query {
 	    const route_position &from,
 	    int target_segment,
 	    const route_position &target) = nullptr;
-	bool (*wall_shootable)(
+	int (*wall_shootable)(
+	    void *user,
+	    int segment,
+	    const route_position &from,
+	    int wall) = nullptr;
+	int (*wall_shootable_without_transparency)(
 	    void *user,
 	    int segment,
 	    const route_position &from,
@@ -110,6 +115,7 @@ struct route_visibility_query {
 
 struct route_trigger_path_selection {
 	bool found = false;
+	bool uses_transparent_surface = false;
 	route_trigger_source source;
 	route_path_result path;
 	int terminal_segment = -1;
@@ -161,6 +167,8 @@ struct route_semantic_step {
 	int trigger_raw_type = -1;
 	route_key_requirement key = route_key_requirement::none;
 	int key_carrier_object = -1;
+	bool can_be_bypassed = false;
+	bool uses_transparent_surface = false;
 	route_activation_kind activation = route_activation_kind::none;
 	route_position activation_position;
 	route_position aim_position;

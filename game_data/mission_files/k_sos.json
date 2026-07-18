@@ -621,9 +621,9 @@
         "mine_volume": 23068825.0482912,
         "mine_volume_normalized": 5.044678617090955,
         "mine_volume_text": "5.0x",
-        "travel_distance": 7391.07328975409,
-        "travel_time_seconds": 148,
-        "travel_time_text": "2M:28S",
+        "travel_distance": 7362.628282429871,
+        "travel_time_seconds": 147,
+        "travel_time_text": "2M:27S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -682,7 +682,8 @@
               "z": -236.3684844970703
             },
             "distance": 1332.75065447974,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
@@ -696,21 +697,22 @@
               "z": 207.1487579345703
             },
             "distance": 1368.2859437775685,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 2",
-            "seg": 478,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 2",
+            "seg": 482,
             "wall": 102,
             "label_pos": {
               "x": -81.60289001464844,
               "y": 119.89553833007812,
               "z": -350.3512420654297
             },
-            "distance": 563.4415390192847,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -777,7 +779,7 @@
               "y": 94.89553833007812,
               "z": -357.8512420654297
             },
-            "distance": 678.2310582190346,
+            "distance": 1213.2275899141005,
             "key": "red"
           },
           {
@@ -813,7 +815,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },

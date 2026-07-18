@@ -90,6 +90,7 @@ typedef struct level_metadata_route_step {
 	int trigger_type;
 	int key_index;
 	int key_carrier_objnum;
+	int can_be_bypassed;
 	int activation_kind;
 	int activation_pos_valid;
 	int activation_pos[3];
@@ -187,6 +188,7 @@ typedef struct level_metadata_scan_view {
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
 	int (*wall_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
+	int (*wall_shootable_without_transparency_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);
 } level_metadata_scan_view;
 

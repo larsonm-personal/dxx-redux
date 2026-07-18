@@ -21,7 +21,7 @@
         "mine_volume": 30049968.948213886,
         "mine_volume_normalized": 6.571311520199458,
         "mine_volume_text": "6.6x",
-        "travel_distance": 9140.239852436789,
+        "travel_distance": 9125.974509819105,
         "travel_time_seconds": 183,
         "travel_time_text": "3M:03S",
         "guidebot_count": 1,
@@ -77,7 +77,8 @@
               "z": 264.0
             },
             "distance": 167.8394004353406,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
@@ -91,13 +92,15 @@
               "z": -58.95448303222656
             },
             "distance": 2633.7896400788172,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 1",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 1",
             "seg": 300,
             "wall": 77,
             "label_pos": {
@@ -105,7 +108,6 @@
               "y": -102.89872741699219,
               "z": -455.94482421875
             },
-            "distance": 1954.1354628309575,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -128,7 +130,7 @@
               "y": -121.47505187988281,
               "z": -426.5011291503906
             },
-            "distance": 147.99845470844457,
+            "distance": 2087.868574921715,
             "key": "red"
           },
           {
@@ -164,9 +166,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_note": "no reactor, exit exists",
+        "route_note": "no reactor, exit exists; blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
-          "no reactor, exit exists",
+          "no reactor, exit exists; blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },

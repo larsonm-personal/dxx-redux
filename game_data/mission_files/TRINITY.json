@@ -3428,7 +3428,8 @@
               "z": 81.57797241210938
             },
             "distance": 1276.966046445126,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
@@ -3442,21 +3443,22 @@
               "z": 126.35720825195312
             },
             "distance": 2007.2458197791411,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 8",
-            "seg": 297,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 8",
+            "seg": 116,
             "wall": 108,
             "label_pos": {
               "x": 41.316741943359375,
               "y": -138.02520751953125,
               "z": 203.12930297851562
             },
-            "distance": 686.3157655949763,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3484,7 +3486,7 @@
               "y": -138.02369689941406,
               "z": 202.9169921875
             },
-            "distance": 69.88732837927788,
+            "distance": 756.2030939742541,
             "key": "red"
           },
           {
@@ -3520,7 +3522,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -4461,7 +4465,7 @@
         "mine_volume": 21733013.971057583,
         "mine_volume_normalized": 4.752564148162126,
         "mine_volume_text": "4.8x",
-        "travel_distance": 9821.730077242915,
+        "travel_distance": 9785.640013908927,
         "travel_time_seconds": 196,
         "travel_time_text": "3M:16S",
         "guidebot_count": 1,
@@ -4488,7 +4492,8 @@
               "z": 557.2860260009766
             },
             "distance": 1992.9787318173028,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
@@ -4561,21 +4566,22 @@
               "z": 267.45753479003906
             },
             "distance": 130.15439743922207,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 201,
+            "seg": 467,
             "wall": 149,
             "label_pos": {
               "x": 611.7540893554688,
               "y": -227.40277099609375,
               "z": 74.11622619628906
             },
-            "distance": 944.9628672610456,
+            "distance": 1396.7850988282514,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4599,7 +4605,7 @@
               "y": -254.52542114257812,
               "z": 179.66062927246094
             },
-            "distance": 899.1533626529318,
+            "distance": 411.24106775173635,
             "trigger": 38,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4746,7 +4752,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -5635,6 +5643,7 @@
             },
             "distance": 611.7195397287696,
             "key": "blue",
+            "can_be_bypassed": true,
             "key_carrier_objnum": 143
           },
           {
@@ -5649,7 +5658,8 @@
               "z": 1623.436538696289
             },
             "distance": 1304.6007042411281,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
@@ -5693,21 +5703,22 @@
               "z": 1409.5072021484375
             },
             "distance": 350.33491841182934,
-            "key": "red"
+            "key": "red",
+            "can_be_bypassed": true
           },
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 10",
-            "seg": 149,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 10",
+            "seg": 29,
             "wall": 95,
             "label_pos": {
               "x": -302.0150451660156,
               "y": -205.86227416992188,
               "z": 1154.6054992675781
             },
-            "distance": 856.7600738478342,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -5732,7 +5743,7 @@
               "y": -195.51116943359375,
               "z": 1154.2806396484375
             },
-            "distance": 523.6695787080124,
+            "distance": 1380.4296525558464,
             "opens": [
               {
                 "seg": 12,
@@ -5804,7 +5815,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold and red keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold and red keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -6115,9 +6128,9 @@
         "mine_volume": 12855734.26467992,
         "mine_volume_normalized": 2.811285256889936,
         "mine_volume_text": "2.8x",
-        "travel_distance": 5767.27398895609,
-        "travel_time_seconds": 115,
-        "travel_time_text": "1M:55S",
+        "travel_distance": 5616.7508346990735,
+        "travel_time_seconds": 112,
+        "travel_time_text": "1M:52S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -6142,48 +6155,94 @@
               "z": -322.14662170410156
             },
             "distance": 894.8944051387215,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 31",
-            "seg": 252,
-            "wall": 184,
+            "label": "Shoot switch trigger 18",
+            "seg": 172,
+            "wall": 158,
             "label_pos": {
-              "x": 15.701736450195312,
-              "y": -36.290618896484375,
-              "z": -100.66400146484375
+              "x": 112.63404846191406,
+              "y": 4.452423095703125,
+              "z": 8.521713256835938
             },
-            "distance": 1402.004787091303,
-            "trigger": 31,
+            "distance": 809.5318767699126,
+            "trigger": 18,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
               {
-                "seg": 219,
-                "side": 4,
-                "wall": 97
+                "seg": 36,
+                "side": 1,
+                "wall": 13
+              },
+              {
+                "seg": 33,
+                "side": 1,
+                "wall": 3
+              },
+              {
+                "seg": 38,
+                "side": 3,
+                "wall": 1
               }
             ]
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 220,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 12",
+            "seg": 44,
+            "wall": 128,
             "label_pos": {
-              "x": -99.59466552734375,
-              "y": 12.821502685546875,
-              "z": -46.084228515625
+              "x": 264.53175354003906,
+              "y": 75.99330139160156,
+              "z": -88.09971618652344
             },
-            "distance": 154.33655409818684,
-            "key": "gold"
+            "distance": 704.496414710688,
+            "trigger": 12,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 46,
+                "side": 4,
+                "wall": 81
+              }
+            ]
           },
           {
             "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 35",
+            "seg": 122,
+            "side": 4,
+            "wall": 196,
+            "label_pos": {
+              "x": 412.3431854248047,
+              "y": -13.859634399414062,
+              "z": -233.61526489257812
+            },
+            "distance": 826.7763422589388,
+            "trigger": 35,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 107,
+                "side": 5,
+                "wall": 189
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -6193,11 +6252,11 @@
               "y": 71.08843994140625,
               "z": -83.31324768066406
             },
-            "distance": 1183.4116646724751,
+            "distance": 248.42521786540925,
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -6210,7 +6269,7 @@
             "distance": 787.8288374101498
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -6229,7 +6288,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue key can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue key can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -6406,7 +6467,8 @@
               "z": -95.01298522949219
             },
             "distance": 1035.382748140262,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
@@ -6450,6 +6512,7 @@
             },
             "distance": 312.78761970162145,
             "key": "red",
+            "can_be_bypassed": true,
             "key_carrier_objnum": 2
           },
           {
@@ -6468,16 +6531,16 @@
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 16",
-            "seg": 271,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 16",
+            "seg": 302,
             "wall": 148,
             "label_pos": {
               "x": 115.81594848632812,
               "y": -78.76374816894531,
               "z": -242.67832946777344
             },
-            "distance": 677.6837464043514,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -6502,14 +6565,16 @@
               "y": -132.38619995117188,
               "z": -242.62010192871094
             },
-            "distance": 186.52525790975514,
+            "distance": 864.2090043141064,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and red keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and red keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -7004,7 +7069,8 @@
               "z": 281.1432342529297
             },
             "distance": 1116.922794791045,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
@@ -7018,21 +7084,22 @@
               "z": 66.92280578613281
             },
             "distance": 581.0505096112817,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 0",
-            "seg": 246,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 0",
+            "seg": 251,
             "wall": 20,
             "label_pos": {
               "x": -148.00167846679688,
               "y": -207.52310180664062,
               "z": -89.78663635253906
             },
-            "distance": 1068.3903288391707,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -7055,7 +7122,7 @@
               "y": -207.52816772460938,
               "z": -89.79086303710938
             },
-            "distance": 79.9748466795566,
+            "distance": 1148.3651755187275,
             "key": "red"
           },
           {
@@ -7091,7 +7158,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -9121,7 +9190,7 @@
         "mine_volume": 15557197.65110317,
         "mine_volume_normalized": 3.402039859771324,
         "mine_volume_text": "3.4x",
-        "travel_distance": 6368.644295025972,
+        "travel_distance": 6362.3977192998,
         "travel_time_seconds": 127,
         "travel_time_text": "2M:07S",
         "guidebot_count": 1,
@@ -9182,7 +9251,8 @@
               "z": 99.99948120117188
             },
             "distance": 990.8552269826287,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
@@ -9241,21 +9311,22 @@
               "z": 100.0
             },
             "distance": 559.0574323708307,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 1",
-            "seg": 50,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 1",
+            "seg": 57,
             "wall": 90,
             "label_pos": {
               "x": -0.0157318115234375,
               "y": 78.42686462402344,
               "z": 681.5528259277344
             },
-            "distance": 614.5276253449874,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -9288,7 +9359,7 @@
               "y": 112.55223083496094,
               "z": 681.52587890625
             },
-            "distance": 157.0780884974291,
+            "distance": 765.3591381162445,
             "key": "red"
           },
           {
@@ -9324,7 +9395,9 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },

@@ -625,6 +625,8 @@ static json serialize_route_steps(const level_metadata_state *metadata)
 			item["distance"] = step.distance_from_previous;
 		if (step.kind == LEVEL_METADATA_ROUTE_KEY && step.key_index >= 0)
 			item["key"] = levelmeta_key_name(step.key_index);
+		if (step.can_be_bypassed)
+			item["can_be_bypassed"] = true;
 		if (step.key_carrier_objnum >= 0)
 			item["key_carrier_objnum"] = step.key_carrier_objnum;
 		if (step.trigger_num >= 0)

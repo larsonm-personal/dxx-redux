@@ -21,9 +21,9 @@
         "mine_volume": 12241107.712518746,
         "mine_volume_normalized": 2.6768790433661356,
         "mine_volume_text": "2.7x",
-        "travel_distance": 5268.330052169324,
-        "travel_time_seconds": 105,
-        "travel_time_text": "1M:45S",
+        "travel_distance": 4736.198858310371,
+        "travel_time_seconds": 95,
+        "travel_time_text": "1M:35S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -48,7 +48,8 @@
               "z": -0.0968780517578125
             },
             "distance": 910.9387232648794,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
@@ -62,69 +63,11 @@
               "z": -260.0099792480469
             },
             "distance": 899.1660797769491,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 25",
-            "seg": 85,
-            "wall": 153,
-            "label_pos": {
-              "x": -87.5,
-              "y": -40.0,
-              "z": 0.0
-            },
-            "distance": 422.53042366635475,
-            "trigger": 25,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 9,
-                "side": 4,
-                "wall": 5
-              },
-              {
-                "seg": 10,
-                "side": 5,
-                "wall": 7
-              },
-              {
-                "seg": 25,
-                "side": 1,
-                "wall": 9
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 22",
-            "seg": 2,
-            "side": 0,
-            "wall": 32,
-            "label_pos": {
-              "x": -90.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "distance": 261.44521545314615,
-            "trigger": 22,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 116,
-                "side": 4,
-                "wall": 45
-              }
-            ]
-          },
-          {
-            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -134,11 +77,11 @@
               "y": 192.5,
               "z": -268.4491882324219
             },
-            "distance": 1146.0667474905233,
+            "distance": 765.0553451909232,
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 4,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -148,10 +91,10 @@
               "y": -43.75,
               "z": 0.0
             },
-            "distance": 915.2343582321022
+            "distance": 807.187807771034
           },
           {
-            "index": 7,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -163,14 +106,16 @@
               "y": 289.5938720703125,
               "z": 0.0
             },
-            "distance": 712.948504285369,
+            "distance": 1353.850902306586,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "blue and gold keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "blue and gold keys can be skipped by shooting through a transparent wall",
           "guidebot or guidebot start cage placed in this level"
         ]
       },

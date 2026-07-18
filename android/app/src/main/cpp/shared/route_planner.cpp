@@ -959,6 +959,12 @@ route_trigger_path_selection select_trigger_firing_path(
 			continue;
 		result = std::move(candidate);
 	}
+	if (result.found && visibility.wall_shootable_without_transparency &&
+	    valid_wall(snapshot, result.source.source_wall))
+		result.uses_transparent_surface =
+		    !visibility.wall_shootable_without_transparency(
+		        visibility.user, result.terminal_segment,
+		        result.terminal_position, result.source.source_wall);
 	return result;
 }
 
@@ -2107,6 +2113,8 @@ class dependency_planner
 			state_.progress.trigger_in_progress[source.trigger] = 0;
 			return false;
 		}
+		if (firing.found && firing.uses_transparent_surface)
+			state_.steps.back().uses_transparent_surface = true;
 		state_.progress.fired_triggers[source.trigger] = 1;
 		state_.progress.trigger_in_progress[source.trigger] = 0;
 		return true;
@@ -2357,6 +2365,16 @@ int semantic_key_index(dxx_route::route_key_requirement key)
 	}
 }
 
+const char *semantic_key_name(int key)
+{
+	switch (key) {
+		case 0: return "blue";
+		case 1: return "red";
+		case 2: return "gold";
+		default: return "unknown";
+	}
+}
+
 struct view_visibility_context {
 	const level_metadata_scan_view *view;
 };
@@ -2374,7 +2392,7 @@ bool view_target_visible(
 	           target.value.data()) != 0;
 }
 
-bool view_wall_shootable(
+int view_wall_shootable(
     void *user,
     int segment,
     const dxx_route::route_position &from,
@@ -2383,6 +2401,81 @@ bool view_wall_shootable(
 	const auto *context = static_cast<view_visibility_context *>(user);
 	return context->view->wall_shootable_from_position(
 	           context->view->user, segment, from.value.data(), wall) != 0;
+}
+
+int view_wall_shootable_without_transparency(
+    void *user,
+    int segment,
+    const dxx_route::route_position &from,
+    int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->wall_shootable_without_transparency_from_position(
+	           context->view->user, segment, from.value.data(), wall) != 0;
+}
+
+int plan_key_mask(const dxx_route::route_plan_result &plan)
+{
+	int mask = 0;
+	for (const auto &step : plan.steps) {
+		if (step.kind != dxx_route::route_semantic_step_kind::key)
+			continue;
+		const int key = semantic_key_index(step.key);
+		if (key >= 0)
+			mask |= 1 << key;
+	}
+	return mask;
+}
+
+int keys_before_transparent_shot(
+    const dxx_route::route_plan_result &plan)
+{
+	int mask = 0;
+	for (const auto &step : plan.steps) {
+		if (step.uses_transparent_surface)
+			return mask;
+		if (step.kind != dxx_route::route_semantic_step_kind::key)
+			continue;
+		const int key = semantic_key_index(step.key);
+		if (key >= 0)
+			mask |= 1 << key;
+	}
+	return 0;
+}
+
+bool plan_uses_transparent_shot(const dxx_route::route_plan_result &plan)
+{
+	return std::any_of(
+	    plan.steps.begin(), plan.steps.end(), [](const auto &step) {
+		    return step.uses_transparent_surface;
+	    });
+}
+
+void annotate_bypassable_keys(
+    dxx_route::route_plan_result &plan,
+    int key_mask)
+{
+	std::string keys;
+	for (auto &step : plan.steps) {
+		if (step.kind != dxx_route::route_semantic_step_kind::key)
+			continue;
+		const int key = semantic_key_index(step.key);
+		if (key < 0 || (key_mask & (1 << key)) == 0)
+			continue;
+		step.can_be_bypassed = true;
+		if (!keys.empty())
+			keys += " and ";
+		keys += semantic_key_name(key);
+	}
+	if (keys.empty())
+		return;
+	const std::string note =
+	    keys + (key_mask & (key_mask - 1) ? " keys can be skipped" : " key can be skipped") +
+	    " by shooting through a transparent wall";
+	if (plan.note.empty())
+		plan.note = note;
+	else
+		plan.note += "; " + note;
 }
 
 void project_position(
@@ -2410,6 +2503,7 @@ bool project_step(
 	destination.trigger_type = source.trigger_raw_type;
 	destination.key_index = semantic_key_index(source.key);
 	destination.key_carrier_objnum = source.key_carrier_object;
+	destination.can_be_bypassed = source.can_be_bypassed ? 1 : 0;
 	destination.activation_kind = static_cast<int>(source.activation);
 	project_position(
 	    source.activation_position, destination.activation_pos_valid,
@@ -2551,8 +2645,30 @@ extern "C" int route_planner_plan_view(
 			visibility.target_visible = view_target_visible;
 		if (view->wall_shootable_from_position)
 			visibility.wall_shootable = view_wall_shootable;
-		const auto result = dxx_route::plan_route(
-		    snapshot, query, visibility);
+		if (view->wall_shootable_without_transparency_from_position)
+			visibility.wall_shootable_without_transparency =
+			    view_wall_shootable_without_transparency;
+		auto result = dxx_route::plan_route(snapshot, query, visibility);
+		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
+		    result.status == dxx_route::route_plan_status::ok &&
+		    plan_uses_transparent_shot(result) &&
+		    visibility.wall_shootable_without_transparency) {
+			const int preceding_keys = keys_before_transparent_shot(result);
+			if (preceding_keys) {
+				auto strict_visibility = visibility;
+				strict_visibility.wall_shootable =
+				    visibility.wall_shootable_without_transparency;
+				auto strict = dxx_route::plan_route(
+				    snapshot, query, strict_visibility);
+				const int bypassable_keys =
+				    preceding_keys & plan_key_mask(strict);
+				if (strict.status == dxx_route::route_plan_status::ok &&
+				    !plan_uses_transparent_shot(strict) && bypassable_keys) {
+					annotate_bypassable_keys(strict, bypassable_keys);
+					result = strict;
+				}
+			}
+		}
 		if (!project_plan(
 		        result, endpoint_kind, *state, unexplored, *summary,
 		        detail)) {
@@ -2593,6 +2709,9 @@ extern "C" int route_planner_segment_reachable_view(
 			visibility.target_visible = view_target_visible;
 		if (view->wall_shootable_from_position)
 			visibility.wall_shootable = view_wall_shootable;
+		if (view->wall_shootable_without_transparency_from_position)
+			visibility.wall_shootable_without_transparency =
+			    view_wall_shootable_without_transparency;
 		return dxx_route::plan_route(snapshot, query, visibility).status ==
 		       dxx_route::route_plan_status::ok;
 	} catch (...) {

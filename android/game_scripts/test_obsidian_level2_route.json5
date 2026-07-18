@@ -48,7 +48,9 @@
         "guidebot.route_goal_objective_seg": "101",
         "guidebot.route_goal_trigger": {"ne": 4},
         "guidebot.route_analysis.steps[1].label": "blue key",
-        "guidebot.route_analysis.steps[1].activation_kind": "pickup_key"
+        "guidebot.route_analysis.steps[1].activation_kind": "pickup_key",
+        "guidebot.route_analysis.steps[1].can_be_bypassed": "true",
+        "level_metadata_route.steps[1].can_be_bypassed": "true"
     }},
     {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
@@ -67,7 +69,8 @@
     {"action": "send_button", "button": 100, "pressed": 0},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_goal_trigger": {"ne": 4}
+        "guidebot.route_goal_trigger": "5",
+        "guidebot.route_goal_activation_kind_name": "shoot_switch"
     }},
     {"action": "assert", "expect": {
         "level_metadata_route.analysis_cache.build_number": {"ne": 0},

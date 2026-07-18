@@ -898,6 +898,7 @@ class LauncherScriptExecutor(
             }
             if (step.distance > 0.0) item.put("distance", step.distance)
             if (step.key.isNotBlank()) item.put("key", step.key)
+            if (step.canBeBypassed) item.put("can_be_bypassed", true)
             if (step.keyCarrierObjnum >= 0) item.put("key_carrier_objnum", step.keyCarrierObjnum)
             if (step.trigger >= 0) item.put("trigger", step.trigger)
             if (step.triggerTypeId >= 0) item.put("trigger_type_id", step.triggerTypeId)

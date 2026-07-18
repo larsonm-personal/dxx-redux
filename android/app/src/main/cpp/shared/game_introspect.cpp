@@ -658,6 +658,7 @@ static json serialize_level_metadata_route()
 		item["wall"] = step->wall_num;
 		item["trigger"] = step->trigger_num;
 		item["key"] = introspect_route_key_name(step->key_index);
+		item["can_be_bypassed"] = step->can_be_bypassed != 0;
 		item["key_carrier_objnum"] = step->key_carrier_objnum;
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
@@ -703,6 +704,7 @@ static json serialize_guidebot_route_analysis()
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
 		item["selected_next"] = index == selected_index;
 		item["key_index"] = step->key_index;
+		item["can_be_bypassed"] = step->can_be_bypassed != 0;
 		item["key_carrier_objnum"] = step->key_carrier_objnum;
 		item["trigger"] = step->trigger_num;
 		item["opened_link_count"] = step->opened_link_count;

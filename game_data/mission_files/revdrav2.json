@@ -373,9 +373,9 @@
         "mine_volume": 10969296.299530555,
         "mine_volume_normalized": 2.398759987599617,
         "mine_volume_text": "2.4x",
-        "travel_distance": 7290.265607058103,
-        "travel_time_seconds": 146,
-        "travel_time_text": "2M:26S",
+        "travel_distance": 7043.265602510379,
+        "travel_time_seconds": 141,
+        "travel_time_text": "2M:21S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -400,7 +400,8 @@
               "z": 486.9843444824219
             },
             "distance": 1292.067891083681,
-            "key": "red"
+            "key": "red",
+            "can_be_bypassed": true
           },
           {
             "index": 2,
@@ -414,7 +415,8 @@
               "z": 260.64610290527344
             },
             "distance": 1550.1821703749636,
-            "key": "gold"
+            "key": "gold",
+            "can_be_bypassed": true
           },
           {
             "index": 3,
@@ -428,34 +430,11 @@
               "z": -1.9766845703125
             },
             "distance": 2257.928776413341,
-            "key": "blue"
+            "key": "blue",
+            "can_be_bypassed": true
           },
           {
             "index": 4,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 4",
-            "seg": 178,
-            "wall": 123,
-            "label_pos": {
-              "x": -40.65287780761719,
-              "y": -218.50006103515625,
-              "z": 180.64610290527344
-            },
-            "distance": 1761.586764638394,
-            "trigger": 4,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 183,
-                "side": 0,
-                "wall": 22
-              }
-            ]
-          },
-          {
-            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -465,10 +444,10 @@
               "y": -218.50006103515625,
               "z": 176.695068359375
             },
-            "distance": 138.50000227386244
+            "distance": 1754.086764638394
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -480,14 +459,16 @@
               "y": -38.50006103515625,
               "z": 217.64610290527344
             },
-            "distance": 290.00000227386244,
+            "distance": 189.0,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "red and gold and blue keys can be skipped by shooting through a transparent wall",
         "notes": [
+          "red and gold and blue keys can be skipped by shooting through a transparent wall",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
