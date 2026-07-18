@@ -110,7 +110,18 @@ internal fun adminTrayVisibleActions(
     hasCameraWindowCycleActions: Boolean = false,
     automapActive: Boolean = false,
     canShowDifficultyChange: Boolean = false,
+    previewMode: Boolean = false,
 ): List<Int> {
+    if (previewMode) {
+        return if (automapActive) {
+            listOf(
+                TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL,
+                TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES,
+            )
+        } else {
+            emptyList()
+        }
+    }
     val showNetworkActions = isMultiplayerGame || hasPendingLaunchInfo
     val actions =
         mutableListOf(

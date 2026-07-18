@@ -40,11 +40,8 @@ static int g_surface_view_h = 0;
 
 /* ── JNI entry points called from Kotlin ────────────────────── */
 
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeSetSurfaceSize(JNIEnv *env, jobject thiz, jint width, jint height)
+static void android_set_surface_size(jint width, jint height)
 {
-	(void) env;
-	(void) thiz;
 	pthread_mutex_lock(&g_surface_mutex);
 	g_surface_view_w = width > 0 ? width : 0;
 	g_surface_view_h = height > 0 ? height : 0;
@@ -52,8 +49,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetSurfaceSize(JNIEnv *env, jobject thi
 	pthread_mutex_unlock(&g_surface_mutex);
 }
 
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, jobject surface)
+static void android_set_surface(JNIEnv *env, jobject surface)
 {
 	pthread_mutex_lock(&g_surface_mutex);
 
@@ -87,6 +83,36 @@ Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, j
 	}
 
 	pthread_mutex_unlock(&g_surface_mutex);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetSurfaceSize(JNIEnv *env, jobject thiz, jint width, jint height)
+{
+	(void) env;
+	(void) thiz;
+	android_set_surface_size(width, height);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, jobject surface)
+{
+	(void) thiz;
+	android_set_surface(env, surface);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeSetSurfaceSize(JNIEnv *env, jobject thiz, jint width, jint height)
+{
+	(void) env;
+	(void) thiz;
+	android_set_surface_size(width, height);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeSetSurface(JNIEnv *env, jobject thiz, jobject surface)
+{
+	(void) thiz;
+	android_set_surface(env, surface);
 }
 
 /* ── Called from gr_flip() in arch/sdl/gr.c ─────────────────── */

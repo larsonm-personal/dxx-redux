@@ -523,6 +523,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
@@ -664,6 +665,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c

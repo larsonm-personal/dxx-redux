@@ -1,6 +1,7 @@
 /* Shared Android PhysFS search-path initialization for D1 and D2. */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "console.h"
@@ -13,6 +14,7 @@ extern const PHYSFS_Archiver SAF_Archiver;
 void physfsx_android_init_search_paths(const char *game_dir)
 {
 	const char *pref = PHYSFS_getPrefDir("com.dxxredux", game_dir);
+	const char *preview_setdir = getenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR");
 	if (pref) {
 		/* Keep each game's pilots, saves, and configs isolated. */
 		char gamedir[512];
@@ -35,18 +37,20 @@ void physfsx_android_init_search_paths(const char *game_dir)
 		char gd[512];
 		snprintf(gd, sizeof(gd), "%s%s/", pref, game_dir);
 		snprintf(asp, sizeof(asp), "%s.active_set_path", gd);
-		{
+		if (preview_setdir && preview_setdir[0])
+			snprintf(setdir, sizeof(setdir), "%s", preview_setdir);
+		else {
 			FILE *f = fopen(asp, "r");
 			if (f) {
 				if (fgets(setdir, sizeof(setdir), f)) {
 					char *nl = strchr(setdir, '\n');
 					if (nl) *nl = '\0';
-					if (strlen(setdir) > 0)
-						PHYSFS_addToSearchPath(setdir, 0); /* prepend */
 				}
 				fclose(f);
 			}
 		}
+		if (strlen(setdir) > 0)
+			PHYSFS_addToSearchPath(setdir, 0); /* prepend */
 
 		if (strlen(setdir) > 0)
 			snprintf(safpath, sizeof(safpath), "%s/.saf_manifest.json", setdir);
@@ -66,7 +70,7 @@ void physfsx_android_init_search_paths(const char *game_dir)
 	PHYSFSX_addRelToSearchPath("data", 1);
 
 	/* Reverse-prepend enabled mods so their final order matches the UI. */
-	if (pref) {
+	if (pref && (!preview_setdir || !preview_setdir[0])) {
 		char modpath[512];
 		char mod_lines[64][512];
 		char mod_mounts[64][64];

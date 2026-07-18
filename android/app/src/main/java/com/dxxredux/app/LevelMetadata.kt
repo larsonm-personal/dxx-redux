@@ -14,7 +14,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile
 
@@ -25,6 +24,7 @@ private const val LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES = 64L * 1024L * 1024L
 private const val LEVEL_METADATA_D1_PROCESS_SUFFIX = ":levelmeta_d1"
 private const val LEVEL_METADATA_D2_PROCESS_SUFFIX = ":levelmeta_d2"
+private const val LEVEL_METADATA_CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1_000L
 
 internal data class LevelMetadataTarget(
     val displayName: String,
@@ -745,8 +745,10 @@ internal object LevelMetadataAnalyzer {
             }
 
             val appContext = context.applicationContext
-            val requestId = UUID.randomUUID().toString()
-            val workDir = File(appContext.cacheDir, "level_metadata/$requestId")
+            val cacheRoot = File(appContext.cacheDir, "level_metadata")
+            OwnedCacheDirectories.prune(cacheRoot, LEVEL_METADATA_CACHE_MAX_AGE_MS)
+            val workDir = OwnedCacheDirectories.create(cacheRoot)
+            val requestId = workDir.name
             val resultFile = File(workDir, "result.json")
             val checkpointFile = File(workDir, "checkpoint.json")
             val requestFile = File(workDir, "request.json")
@@ -756,6 +758,7 @@ internal object LevelMetadataAnalyzer {
                 try {
                     buildRequestJson(target, requestId, workDir, resultFile, checkpointFile)
                 } catch (e: Exception) {
+                    OwnedCacheDirectories.delete(cacheRoot, workDir)
                     return@withContext LevelMetadataResult.failed(
                         target.displayName,
                         target.game,
@@ -764,13 +767,21 @@ internal object LevelMetadataAnalyzer {
                 }
 
             progress("Writing analysis request", 1)
-            workDir.mkdirs()
-            requestFile.writeText(request.toString(), Charsets.UTF_8)
-            val intent =
-                Intent(appContext, serviceClassForGame(target.game))
-                    .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
-            progress("Starting analysis worker", 2)
-            appContext.startService(intent)
+            try {
+                OwnedCacheDirectories.writeUtf8Atomically(workDir, requestFile.name, request.toString(2) + "\n")
+                val intent =
+                    Intent(appContext, serviceClassForGame(target.game))
+                        .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
+                progress("Starting analysis worker", 2)
+                appContext.startService(intent)
+            } catch (e: Exception) {
+                OwnedCacheDirectories.delete(cacheRoot, workDir)
+                return@withContext LevelMetadataResult.failed(
+                    target.displayName,
+                    target.game,
+                    e.message ?: e.javaClass.simpleName,
+                )
+            }
             val workerStartedAt = System.currentTimeMillis()
             val expectedLevelCount =
                 (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
@@ -786,6 +797,7 @@ internal object LevelMetadataAnalyzer {
                     progress("Reading analysis result", 4)
                     val parsed = parseResultFile(target, resultFile)
                     progress("Analysis complete", 5)
+                    OwnedCacheDirectories.delete(cacheRoot, workDir)
                     return@withContext parsed
                 }
                 if (checkpointFile.isFile) {
@@ -809,13 +821,16 @@ internal object LevelMetadataAnalyzer {
             progress("Collecting diagnostics", 4)
             val diagnostics = collectDiagnostics(appContext, startedAt, checkpointFile)
             val status = if (diagnostics.any { it.contains("crash", ignoreCase = true) }) "crashed" else "timeout"
-            LevelMetadataResult.failed(
-                target.displayName,
-                target.game,
-                if (status == "crashed") "Analysis worker crashed" else "Analysis timed out",
-                diagnostics,
-                status,
-            )
+            val failed =
+                LevelMetadataResult.failed(
+                    target.displayName,
+                    target.game,
+                    if (status == "crashed") "Analysis worker crashed" else "Analysis timed out",
+                    diagnostics,
+                    status,
+                )
+            OwnedCacheDirectories.delete(cacheRoot, workDir)
+            failed
         }
 
     internal fun parseLevelMetadataCheckpointProgress(text: String): MetadataLoadProgress? =
@@ -857,11 +872,34 @@ internal object LevelMetadataAnalyzer {
         workDir: File,
         resultFile: File,
         checkpointFile: File,
+    ): JSONObject =
+        buildPreparedRequestJson(target, requestId, workDir, "dxx-level-metadata-request-v1")
+            .put("result_path", resultFile.absolutePath)
+            .put("checkpoint_path", checkpointFile.absolutePath)
+
+    internal fun buildPreviewRequestJson(
+        target: LevelMetadataTarget,
+        row: LevelMetadataLevelRow,
+        requestId: String,
+        workDir: File,
+        previewWriteDir: File,
+    ): JSONObject =
+        buildPreparedRequestJson(target, requestId, workDir, "dxx-level-preview-request-v1")
+            .put("level_file", row.levelFile)
+            .put("level_num", row.levelNum)
+            .put("secret_level", row.secret)
+            .put("preview_write_dir", previewWriteDir.absolutePath)
+
+    private fun buildPreparedRequestJson(
+        target: LevelMetadataTarget,
+        requestId: String,
+        workDir: File,
+        schema: String,
     ): JSONObject {
         val stageDir = File(workDir, "staged")
         val prepared = prepareTarget(target, stageDir)
         return JSONObject()
-            .put("schema", "dxx-level-metadata-request-v1")
+            .put("schema", schema)
             .put("request_id", requestId)
             .put("game", target.game)
             .put("source_name", target.displayName)
@@ -880,8 +918,6 @@ internal object LevelMetadataAnalyzer {
             .put("hog_paths", JSONArray(prepared.hogPaths))
             .put("normal_level_files", JSONArray(prepared.normalLevelFiles))
             .put("secret_level_files", JSONArray(prepared.secretLevelFiles))
-            .put("result_path", resultFile.absolutePath)
-            .put("checkpoint_path", checkpointFile.absolutePath)
     }
 
     private data class PreparedTarget(

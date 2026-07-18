@@ -26,6 +26,7 @@
 #include "android_log.h"
 #include "android_rewind.h"
 #include "android_crash_handler.h"
+#include "android_level_preview.h"
 
 #define LOG_TAG   "DXX-Redux"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -294,6 +295,78 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	jmethodID killProc = (*env)->GetStaticMethodID(env, processCls, "killProcess", "(I)V");
 	jint pid = (*env)->CallStaticIntMethod(env, processCls, myPid);
 	(*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
+    JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
+{
+	const char *request_path = NULL;
+	const char *data_dir = NULL;
+	PHYSFS_AndroidInit android_init;
+	char *argv_preview[7];
+	int result;
+	const char *error;
+
+	if (g_game_running || !jrequest_path || !jdata_dir)
+		return;
+	g_game_running = 1;
+	g_activity = (*env)->NewGlobalRef(env, thiz);
+	request_path = (*env)->GetStringUTFChars(env, jrequest_path, NULL);
+	if (request_path)
+		data_dir = (*env)->GetStringUTFChars(env, jdata_dir, NULL);
+	if (!request_path || !data_dir) {
+		if (request_path)
+			(*env)->ReleaseStringUTFChars(env, jrequest_path, request_path);
+		if (data_dir)
+			(*env)->ReleaseStringUTFChars(env, jdata_dir, data_dir);
+		if (g_activity) {
+			(*env)->DeleteGlobalRef(env, g_activity);
+			g_activity = NULL;
+		}
+		g_game_running = 0;
+		return;
+	}
+	setenv("SDL_VIDEODRIVER", "dummy", 1);
+	setenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR", data_dir, 1);
+	android_init.jnienv = (void *) env;
+	android_init.context = (void *) thiz;
+	argv_preview[0] = (char *) &android_init;
+	argv_preview[1] = "-hogdir";
+	argv_preview[2] = (char *) data_dir;
+	argv_preview[3] = "-nosound";
+	argv_preview[4] = "-nomusic";
+	argv_preview[5] = "-level-preview-request";
+	argv_preview[6] = (char *) request_path;
+	debug_log(DLOG_GAME, "level preview starting request=%s data=%s", request_path, data_dir);
+	result = main(7, argv_preview);
+	error = android_level_preview_last_error();
+	if (result && (!error || !error[0]))
+		error = "Native preview exited with an error";
+	{
+		jclass cls = (*env)->GetObjectClass(env, thiz);
+		jmethodID finished = (*env)->GetMethodID(
+		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
+		jstring jerror = (*env)->NewStringUTF(env, error ? error : "");
+		if (finished)
+			(*env)->CallVoidMethod(env, thiz, finished, jerror);
+		(*env)->DeleteLocalRef(env, jerror);
+	}
+	(*env)->ReleaseStringUTFChars(env, jrequest_path, request_path);
+	(*env)->ReleaseStringUTFChars(env, jdata_dir, data_dir);
+	unsetenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR");
+	g_game_running = 0;
+	if (g_activity) {
+		(*env)->DeleteGlobalRef(env, g_activity);
+		g_activity = NULL;
+	}
+	{
+		jclass process_cls = (*env)->FindClass(env, "android/os/Process");
+		jmethodID my_pid = (*env)->GetStaticMethodID(env, process_cls, "myPid", "()I");
+		jmethodID kill_process = (*env)->GetStaticMethodID(env, process_cls, "killProcess", "(I)V");
+		jint pid = (*env)->CallStaticIntMethod(env, process_cls, my_pid);
+		(*env)->CallStaticVoidMethod(env, process_cls, kill_process, pid);
+	}
 }
 
 /*

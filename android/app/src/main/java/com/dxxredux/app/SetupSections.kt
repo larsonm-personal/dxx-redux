@@ -1,9 +1,12 @@
 package com.dxxredux.app
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
@@ -2485,6 +2488,23 @@ private fun LevelMetadataDialog(
     var progress by remember(target) {
         mutableStateOf(MetadataLoadProgress("Preparing analysis files", 0, 5))
     }
+    var previewPreparing by remember(target) { mutableStateOf(false) }
+    var previewError by remember(target) { mutableStateOf<String?>(null) }
+    var previewRequestPath by remember(target) { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val previewLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
+            previewRequestPath?.let { LevelPreviewRequestStore.delete(context.cacheDir, it) }
+            previewRequestPath = null
+            previewPreparing = false
+            previewError =
+                if (activityResult.resultCode == Activity.RESULT_OK) {
+                    null
+                } else {
+                    activityResult.data?.getStringExtra(LevelPreviewActivity.EXTRA_ERROR)
+                        ?: "Preview process ended before reporting a result"
+                }
+        }
 
     LaunchedEffect(target) {
         loading = true
@@ -2525,7 +2545,34 @@ private fun LevelMetadataDialog(
                     if (loading) {
                         MetadataLoadProgressView(progress)
                     } else {
-                        LevelMetadataResultContent(result)
+                        LevelMetadataResultContent(
+                            result = result,
+                            target = target,
+                            previewPreparing = previewPreparing,
+                            previewError = previewError,
+                            onPreview = { row ->
+                                if (!previewPreparing) {
+                                    previewPreparing = true
+                                    previewError = null
+                                    scope.launch {
+                                        val launchRequest =
+                                            runCatching {
+                                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                    LevelPreviewRequestStore.create(context.cacheDir, target, row)
+                                                }
+                                            }.getOrElse { error ->
+                                                previewPreparing = false
+                                                previewError = error.message ?: "Could not prepare level preview"
+                                                return@launch
+                                            }
+                                        previewRequestPath = launchRequest.requestFile.absolutePath
+                                        previewLauncher.launch(
+                                            LevelPreviewActivity.createIntent(context, launchRequest),
+                                        )
+                                    }
+                                }
+                            },
+                        )
                     }
                 }
                 SetupScrollArrows(scrollState)
@@ -2535,7 +2582,13 @@ private fun LevelMetadataDialog(
 }
 
 @Composable
-private fun LevelMetadataResultContent(result: LevelMetadataResult?) {
+private fun LevelMetadataResultContent(
+    result: LevelMetadataResult?,
+    target: LevelMetadataTarget,
+    previewPreparing: Boolean,
+    previewError: String?,
+    onPreview: (LevelMetadataLevelRow) -> Unit,
+) {
     if (result == null) {
         ModDetailLine("No analysis result", color = MaterialTheme.colorScheme.error)
         return
@@ -2560,17 +2613,30 @@ private fun LevelMetadataResultContent(result: LevelMetadataResult?) {
 
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
     ModDetailSectionTitle("Levels")
-    LevelMetadataTable(result.levels)
+    LevelMetadataTable(result.levels, target, previewPreparing, previewError, onPreview)
 }
 
 @Composable
-private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
+private fun LevelMetadataTable(
+    levels: List<LevelMetadataLevelRow>,
+    target: LevelMetadataTarget,
+    previewPreparing: Boolean,
+    previewError: String?,
+    onPreview: (LevelMetadataLevelRow) -> Unit,
+) {
     val horizontal = rememberScrollState()
     val vertical = rememberScrollState()
     var selectedLevel by remember(levels) { mutableStateOf<LevelMetadataLevelRow?>(null) }
 
     selectedLevel?.let { row ->
-        LevelMetadataLevelDialog(row = row, onDismiss = { selectedLevel = null })
+        LevelMetadataLevelDialog(
+            row = row,
+            target = target,
+            previewPreparing = previewPreparing,
+            previewError = previewError,
+            onPreview = { onPreview(row) },
+            onDismiss = { selectedLevel = null },
+        )
     }
 
     Box(
@@ -2699,12 +2765,23 @@ private fun LevelMetadataTableRow(
 @Composable
 private fun LevelMetadataLevelDialog(
     row: LevelMetadataLevelRow,
+    target: LevelMetadataTarget,
+    previewPreparing: Boolean,
+    previewError: String?,
+    onPreview: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        dismissButton = {
+            if (row.status.equals("ok", ignoreCase = true) && target.game.isNotBlank()) {
+                TextButton(onClick = onPreview, enabled = !previewPreparing) {
+                    Text(if (previewPreparing) "Preparing preview" else "Preview map")
+                }
+            }
         },
         title = {
             Text(row.levelName.ifBlank { row.levelFile }, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -2729,6 +2806,7 @@ private fun LevelMetadataLevelDialog(
                         DetailRow("File", row.levelFile)
                     }
                     DetailRow("Status", row.status.replaceFirstChar { it.uppercase() })
+                    previewError?.let { ModDetailLine(it, MaterialTheme.colorScheme.error) }
                     DetailRow("Travel", row.travelTimeText.ifBlank { "n/a" })
                     row
                         .metadataNotes()

@@ -7,6 +7,22 @@ import org.junit.Test
 
 class AdminTrayUiTest {
     @Test
+    fun previewAutomapExposesOnlyMetadataDisplaySettings() {
+        assertEquals(
+            listOf(
+                TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL,
+                TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES,
+            ),
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                automapActive = true,
+                previewMode = true,
+            ),
+        )
+    }
+
+    @Test
     fun touchModeKeepsAutomapOutWhenTouchButtonExists() {
         assertFalse(adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = true).contains(TouchOverlayView.ADMIN_AUTOMAP))
     }

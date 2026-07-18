@@ -89,6 +89,16 @@ class AutomapTouchPolicyTest {
     }
 
     @Test
+    fun previewActionsKeepNavigationWithoutPersistentMarkers() {
+        val actions = automapTouchActions(includeMarkers = true, previewMode = true)
+
+        assertEquals(
+            listOf("Close Preview", "Recenter Map"),
+            actions.map { it.label },
+        )
+    }
+
+    @Test
     fun automapMarkerAdminActionMapsOnlyMarkerRange() {
         assertEquals(0, automapMarkerAdminActionIndex(TouchOverlayView.ADMIN_AUTOMAP_MARKER_BASE))
         assertEquals(8, automapMarkerAdminActionIndex(TouchOverlayView.ADMIN_AUTOMAP_MARKER_BASE + 8))

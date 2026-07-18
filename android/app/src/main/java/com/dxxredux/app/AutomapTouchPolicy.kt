@@ -33,15 +33,17 @@ internal fun automapTouchActions(
     includeMarkers: Boolean,
     markerMenuMode: AutomapMarkerMenuMode = AutomapMarkerMenuMode.ROOT,
     markerSlots: IntArray = IntArray(AUTOMAP_TOUCH_MARKER_SLOT_COUNT) { AUTOMAP_MARKER_SLOT_FREE },
+    previewMode: Boolean = false,
 ): List<RemainingTouchAction> =
     buildList {
         add(
             RemainingTouchAction(
-                label = "Close Map",
+                label = if (previewMode) "Close Preview" else "Close Map",
                 adminAction = TouchOverlayView.ADMIN_AUTOMAP,
             ),
         )
-        if (!includeMarkers || markerMenuMode == AutomapMarkerMenuMode.ROOT) {
+        val showMarkers = includeMarkers && !previewMode
+        if (!showMarkers || markerMenuMode == AutomapMarkerMenuMode.ROOT) {
             add(
                 RemainingTouchAction(
                     label = "Recenter Map",
@@ -49,7 +51,7 @@ internal fun automapTouchActions(
                 ),
             )
         }
-        if (!includeMarkers) {
+        if (!showMarkers) {
             return@buildList
         }
 

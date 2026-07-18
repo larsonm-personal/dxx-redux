@@ -87,6 +87,7 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "startup_resume_shared.h"
 #ifdef __ANDROID__
 #include "android_log.h"
+#include "android_level_preview.h"
 #endif
 #include "input_demo_start.h"
 #include "collide.h"
@@ -527,6 +528,14 @@ int main(int argc, char *argv[])
 	CHECKPOINT("fonts loaded");
 
 	set_default_handler(standard_handler);
+
+#ifdef __ANDROID__
+	{
+		const char *level_preview_request = android_level_preview_request_path();
+		if (level_preview_request)
+			return android_level_preview_run(level_preview_request);
+	}
+#endif
 
 	con_printf( CON_DEBUG, "Initializing movie libraries...\n" );
 	init_movies();		//init movie libraries

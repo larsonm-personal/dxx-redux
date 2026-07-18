@@ -29,6 +29,8 @@
 #include "weapon.h"
 #ifdef __ANDROID__
 #include "physfs.h"
+#include "physfsx.h"
+#include <unistd.h>
 #endif
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
@@ -1919,6 +1921,7 @@ static void level_metadata_analysis_cache_save(
 #if defined(__ANDROID__) && DXX_ANDROID_VERSION_CODE > 0
 	route_analysis_cache_key key;
 	char version_dir[64];
+	char temporary_filename[224];
 	PHYSFS_File *file;
 	void *record;
 	size_t size = route_analysis_cache_record_size();
@@ -1943,15 +1946,26 @@ static void level_metadata_analysis_cache_save(
 		Level_metadata_analysis_cache_summary.io_errors++;
 		return;
 	}
-	file = PHYSFS_openWrite(Level_metadata_analysis_cache_summary.filename);
+	if (snprintf(temporary_filename, sizeof(temporary_filename), "%s.tmp-%ld",
+	             Level_metadata_analysis_cache_summary.filename,
+	             (long) getpid()) >= (int) sizeof(temporary_filename)) {
+		free(record);
+		Level_metadata_analysis_cache_summary.io_errors++;
+		return;
+	}
+	file = PHYSFS_openWrite(temporary_filename);
 	if (file) {
 		write_ok = PHYSFS_writeBytes(
 		               file, record, (PHYSFS_uint64) size) ==
 		           (PHYSFS_sint64) size;
 		write_ok = PHYSFS_close(file) && write_ok;
 	}
+	if (write_ok)
+		write_ok = PHYSFSX_rename(
+		    temporary_filename,
+		    Level_metadata_analysis_cache_summary.filename);
 	if (!write_ok) {
-		PHYSFS_delete(Level_metadata_analysis_cache_summary.filename);
+		PHYSFS_delete(temporary_filename);
 		Level_metadata_analysis_cache_summary.io_errors++;
 	} else
 		Level_metadata_analysis_cache_summary.writes++;

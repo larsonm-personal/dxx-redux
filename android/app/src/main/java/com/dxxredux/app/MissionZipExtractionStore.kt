@@ -103,7 +103,15 @@ internal class MissionZipExtractionStore(
     ): MissionZipExtractionRecord? {
         val record = records().firstOrNull { it.ownerFilename == ownerFilename } ?: return null
         if (!record.rootDir.isDirectory) return null
-        if (modFile != null && (!modFile.isFile || modFile.length() != record.ownerSizeBytes)) return null
+        if (modFile != null &&
+            (
+                !modFile.isFile ||
+                    modFile.length() != record.ownerSizeBytes ||
+                    modFile.lastModified() != record.ownerLastModifiedMs
+            )
+        ) {
+            return null
+        }
         val allFilesPresent =
             record.files.all { file ->
                 File(record.rootDir, file.relativePath.replace('/', File.separatorChar)).let {

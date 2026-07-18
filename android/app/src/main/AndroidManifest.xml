@@ -56,6 +56,22 @@
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|keyboardHidden" />
 
+        <!-- Native automap previews are short-lived and isolated from both
+             the launcher and a paused full game. D1 and D2 remain separate
+             so one process never loads both engine libraries. -->
+        <activity
+            android:name=".LevelPreviewD1Activity"
+            android:process=":levelpreview_d1"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".LevelPreviewD2Activity"
+            android:process=":levelpreview_d2"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
         <!-- FileProvider for sharing exported config files -->
         <provider
             android:name="androidx.core.content.FileProvider"

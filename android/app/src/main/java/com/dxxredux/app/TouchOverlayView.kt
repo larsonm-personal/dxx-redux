@@ -128,6 +128,8 @@ class TouchOverlayView
                 adminTrayCheatsSelectedIndex = 0
             }
 
+        var previewMode: Boolean = false
+
         private var gyroConfigured = false
         private var gyroActiveInGame = false
         private var demoRecordingActive = false
@@ -3986,6 +3988,7 @@ class TouchOverlayView
                 hasCameraWindowCycleActions = gameVariant == "d2",
                 automapActive = automapActive,
                 canShowDifficultyChange = adminTrayCanShowDifficultyProvider?.invoke() == true,
+                previewMode = previewMode,
             )
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size

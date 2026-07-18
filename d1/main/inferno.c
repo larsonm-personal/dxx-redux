@@ -72,6 +72,7 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "startup_resume_shared.h"
 #ifdef __ANDROID__
 #include "android_log.h"
+#include "android_level_preview.h"
 #endif
 #include "collide.h"
 #include "newdemo.h"
@@ -465,6 +466,14 @@ int main(int argc, char *argv[])
 	gamefont_init();	// must load after palette data loaded.
 
 	set_default_handler(standard_handler);
+
+#ifdef __ANDROID__
+	{
+		const char *level_preview_request = android_level_preview_request_path();
+		if (level_preview_request)
+			return android_level_preview_run(level_preview_request);
+	}
+#endif
 
 	if (!startup_find_cmd_arg("-resume-save"))
 		show_titles();

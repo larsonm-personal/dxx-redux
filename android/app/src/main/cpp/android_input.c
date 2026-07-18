@@ -1856,4 +1856,74 @@ Java_com_dxxredux_app_MainActivity_nativeSetDifficulty(JNIEnv *env, jobject thiz
 	return JNI_TRUE;
 }
 
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeKeyEvent(
+    JNIEnv *env, jobject thiz, jint action, jint key_code, jint unicode_char)
+{
+	Java_com_dxxredux_app_MainActivity_nativeKeyEvent(
+	    env, thiz, action, key_code, unicode_char);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeJoystickAxis(
+    JNIEnv *env, jobject thiz, jint axis, jfloat value, jboolean touch_active)
+{
+	Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(
+	    env, thiz, axis, value, touch_active);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeJoystickAxes(
+    JNIEnv *env, jobject thiz, jintArray axes, jfloatArray values,
+    jbooleanArray touch_active)
+{
+	Java_com_dxxredux_app_MainActivity_nativeJoystickAxes(
+	    env, thiz, axes, values, touch_active);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeJoystickButton(
+    JNIEnv *env, jobject thiz, jint button, jint pressed)
+{
+	Java_com_dxxredux_app_MainActivity_nativeJoystickButton(
+	    env, thiz, button, pressed);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeAutomapCenter(
+    JNIEnv *env, jobject thiz)
+{
+	Java_com_dxxredux_app_MainActivity_nativeAutomapCenter(env, thiz);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeSecretAreaRevealActive(
+    JNIEnv *env, jobject thiz)
+{
+	return Java_com_dxxredux_app_MainActivity_nativeSecretAreaRevealActive(
+	    env, thiz);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeToggleSecretAreaReveal(
+    JNIEnv *env, jobject thiz)
+{
+	Java_com_dxxredux_app_MainActivity_nativeToggleSecretAreaReveal(env, thiz);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeObjectiveOverlayMode(
+    JNIEnv *env, jobject thiz)
+{
+	return Java_com_dxxredux_app_MainActivity_nativeObjectiveOverlayMode(
+	    env, thiz);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeCycleObjectiveOverlay(
+    JNIEnv *env, jobject thiz)
+{
+	Java_com_dxxredux_app_MainActivity_nativeCycleObjectiveOverlay(env, thiz);
+}
+
 #endif /* ANDROID */
