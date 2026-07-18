@@ -2073,4 +2073,12 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	kconfig_android_apply_default_overrides(
 		kconfig_android_get_layout(KCONFIG_ANDROID_D1), joy_out, MAX_CONTROLS);
 }
+
+void kconfig_set_joystick_item(int idx, int value)
+{
+	if (idx < 0 || idx >= NUM_JOYSTICK_CONTROLS)
+		return;
+	kc_joystick[idx].value = value;
+	PlayerCfg.KeySettings[1][idx] = value;
+}
 #endif /* ANDROID */

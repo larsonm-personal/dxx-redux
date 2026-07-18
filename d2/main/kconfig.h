@@ -87,6 +87,7 @@ extern void kconfig_get_joystick_item(int idx, const char **name, int *type, int
 extern void kconfig_fill_joy_settings(const int *indices, const int *values, int count, ubyte *out);
 extern void kconfig_fill_kb_settings(const int *indices, const int *values, int count, ubyte *out);
 extern void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_out);
+extern void kconfig_set_joystick_item(int idx, int value);
 #endif
 
 #endif /* _KCONFIG_H */

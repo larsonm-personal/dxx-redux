@@ -1,10 +1,13 @@
 package com.dxxredux.app
 
 import android.app.Activity
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -17,6 +20,7 @@ import android.widget.FrameLayout
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import java.io.File
 
 @Suppress("DEPRECATION")
 abstract class LevelPreviewActivity :
@@ -48,6 +52,8 @@ abstract class LevelPreviewActivity :
         touchActive: Boolean,
     )
 
+    private external fun nativeRequestClose()
+
     private external fun nativeJoystickAxes(
         axes: IntArray,
         values: FloatArray,
@@ -69,11 +75,29 @@ abstract class LevelPreviewActivity :
 
     private external fun nativeCycleObjectiveOverlay()
 
+    private external fun nativeRequestIntrospect()
+
+    private external fun nativeSetIntrospectPath(path: String)
+
     private lateinit var runtimeRequest: LevelPreviewRuntimeRequest
     private lateinit var inputMixer: InputMixer
     private lateinit var touchOverlay: TouchOverlayView
     private var nativeStarted = false
     private var nativeFinished = false
+    private var debugReceiverRegistered = false
+
+    private val debugReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                when (intent.action) {
+                    ACTION_INTROSPECT -> nativeRequestIntrospect()
+                    ACTION_COMMAND -> handleDebugCommand(intent)
+                }
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,6 +117,11 @@ abstract class LevelPreviewActivity :
         } catch (e: Throwable) {
             finishWithResult(e.message ?: "Could not load preview engine")
             return
+        }
+        if (BuildConfig.DEBUG) {
+            File(filesDir, INTROSPECTION_FILE).delete()
+            File(filesDir, "$INTROSPECTION_FILE.tmp").delete()
+            nativeSetIntrospectPath(File(filesDir, INTROSPECTION_FILE).absolutePath)
         }
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -200,7 +229,13 @@ abstract class LevelPreviewActivity :
 
     override fun onStop() {
         if (::inputMixer.isInitialized) inputMixer.releaseAll()
+        unregisterDebugReceiver()
         super.onStop()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        registerDebugReceiver()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -220,10 +255,55 @@ abstract class LevelPreviewActivity :
             finishWithResult("")
             return
         }
-        runCatching {
-            nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
-            nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+        runCatching { nativeRequestClose() }
+    }
+
+    private fun handleDebugCommand(intent: Intent) {
+        if (!nativeStarted || nativeFinished) return
+        when (intent.getStringExtra(EXTRA_COMMAND).orEmpty()) {
+            COMMAND_AXIS -> {
+                val axis = intent.getIntExtra(EXTRA_AXIS, -1)
+                val value = intent.getFloatExtra(EXTRA_VALUE, 0f)
+                val active = intent.getBooleanExtra(EXTRA_ACTIVE, value != 0f)
+                if (axis in 0 until AUTOMATION_AXIS_COUNT && value.isFinite()) {
+                    nativeJoystickAxis(axis, value.coerceIn(-1f, 1f), active)
+                }
+            }
+
+            COMMAND_INTROSPECT -> {
+                nativeRequestIntrospect()
+            }
+
+            COMMAND_CENTER -> {
+                nativeAutomapCenter()
+            }
+
+            COMMAND_CLOSE -> {
+                closePreview()
+            }
         }
+    }
+
+    private fun registerDebugReceiver() {
+        if (!BuildConfig.DEBUG || debugReceiverRegistered) return
+        val filter =
+            IntentFilter().apply {
+                addAction(ACTION_INTROSPECT)
+                addAction(ACTION_COMMAND)
+            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(debugReceiver, filter, RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(debugReceiver, filter)
+        }
+        debugReceiverRegistered = true
+    }
+
+    private fun unregisterDebugReceiver() {
+        if (!debugReceiverRegistered) return
+        runCatching { unregisterReceiver(debugReceiver) }
+        debugReceiverRegistered = false
     }
 
     private fun finishWithResult(error: String) {
@@ -253,6 +333,18 @@ abstract class LevelPreviewActivity :
     companion object {
         const val EXTRA_REQUEST_PATH = "level_preview_request_path"
         const val EXTRA_ERROR = "level_preview_error"
+        const val ACTION_INTROSPECT = "com.dxxredux.LEVEL_PREVIEW_INTROSPECT"
+        const val ACTION_COMMAND = "com.dxxredux.LEVEL_PREVIEW_COMMAND"
+        const val INTROSPECTION_FILE = "level_preview_introspect.json"
+        private const val EXTRA_COMMAND = "command"
+        private const val EXTRA_AXIS = "axis"
+        private const val EXTRA_VALUE = "value"
+        private const val EXTRA_ACTIVE = "active"
+        private const val COMMAND_AXIS = "axis"
+        private const val COMMAND_INTROSPECT = "introspect"
+        private const val COMMAND_CENTER = "center"
+        private const val COMMAND_CLOSE = "close"
+        private const val AUTOMATION_AXIS_COUNT = 8
         private const val TAG = "DXX-LevelPreview"
 
         internal fun createIntent(

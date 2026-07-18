@@ -1,5 +1,6 @@
 #include "android_level_preview.h"
 
+#include <atomic>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -17,13 +18,19 @@ extern "C" {
 #include "bm.h"
 #include "event.h"
 #include "game.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "gamepal.h"
+#endif
 #include "gameseq.h"
 #include "gamesave.h"
 #include "gr.h"
 #include "inferno.h"
+#include "kconfig.h"
 #include "mission.h"
 #include "object.h"
+#include "ogl_init.h"
 #include "physfsx.h"
+#include "playsave.h"
 #include "player.h"
 #include "screens.h"
 #include "secretarea.h"
@@ -41,6 +48,17 @@ extern "C" void piggy_init_pigfile(char *filename);
 using json = nlohmann::ordered_json;
 
 static std::string Level_preview_error;
+static json Level_preview_request;
+static std::string Level_preview_introspection;
+static Uint32 Level_preview_started_at;
+static Uint32 Level_preview_first_frame_at;
+static unsigned long long Level_preview_event_iterations;
+static int Level_preview_player_objnum = -1;
+static int Level_preview_player_segment = -1;
+static int Level_preview_is_active;
+static int Level_preview_palette_ready;
+static std::string Level_preview_palette_name;
+static std::atomic<int> Level_preview_close_requested(0);
 
 static int preview_fail(const std::string &message)
 {
@@ -124,7 +142,43 @@ static int select_preview_player(void)
 	Objects[start_objnum].id = 0;
 	ConsoleObject = &Objects[start_objnum];
 	Viewer = ConsoleObject;
+	Level_preview_player_objnum = start_objnum;
+	Level_preview_player_segment = Objects[start_objnum].segnum;
 	return 0;
+}
+
+static void configure_preview_touch_axes(void)
+{
+	/* Use the engine's Android touch-overlay defaults without reading or
+	 * writing a pilot profile.  Preview processes are deliberately isolated. */
+	PlayerCfg.ControlType = CONTROL_USING_JOYSTICK;
+	PlayerCfg.AutomapFreeFlight = 1;
+	kconfig_get_default_settings(
+	    PlayerCfg.KeySettings[0], PlayerCfg.KeySettings[1], PlayerCfg.KeySettings[2]);
+	kc_set_controls();
+	kconfig_set_joystick_item(13, 3);
+	kconfig_set_joystick_item(15, 2);
+	kconfig_set_joystick_item(17, 0);
+	kconfig_set_joystick_item(19, 7);
+	kconfig_set_joystick_item(21, 6);
+	kconfig_set_joystick_item(23, 1);
+}
+
+static void load_preview_palette(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	load_palette(Current_level_palette, 1, 1);
+	Level_preview_palette_name = Current_level_palette;
+#else
+	char palette_name[] = "palette.256";
+	gr_use_palette_table(palette_name);
+	Level_preview_palette_name = "palette.256";
+#endif
+	gr_palette_load(gr_palette);
+#if defined(OGL) && defined(__ANDROID__)
+	ogl_invalidate_game_palette_textures();
+#endif
+	Level_preview_palette_ready = 1;
 }
 
 static int preview_base_window_handler(window *wind, d_event *event, void *data)
@@ -152,6 +206,17 @@ extern "C" int android_level_preview_run(const char *request_path)
 {
 	const Uint32 started_at = SDL_GetTicks();
 	Level_preview_error.clear();
+	Level_preview_request = json::object();
+	Level_preview_introspection.clear();
+	Level_preview_started_at = started_at;
+	Level_preview_first_frame_at = 0;
+	Level_preview_event_iterations = 0;
+	Level_preview_player_objnum = -1;
+	Level_preview_player_segment = -1;
+	Level_preview_is_active = 0;
+	Level_preview_palette_ready = 0;
+	Level_preview_palette_name.clear();
+	Level_preview_close_requested.store(0, std::memory_order_release);
 	if (!request_path || !request_path[0])
 		return preview_fail("Preview request path is missing");
 
@@ -166,6 +231,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 	}
 	if (request.value("schema", "") != "dxx-level-preview-request-v1")
 		return preview_fail("Unsupported preview request schema");
+	Level_preview_request = request;
 
 	const std::string preview_write_dir = request.value("preview_write_dir", "");
 	if (preview_write_dir.empty() || !PHYSFS_setWriteDir(preview_write_dir.c_str()) ||
@@ -183,6 +249,9 @@ extern "C" int android_level_preview_run(const char *request_path)
 	}
 #endif
 	init_game();
+	/* Supply the in-memory sensitivity/deadzone defaults normally established
+	 * when a pilot is created, without reading or writing any pilot file. */
+	new_player_config();
 	Players[Player_num].callsign[0] = '\0';
 	if (load_preview_mission(request))
 		return 1;
@@ -192,6 +261,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 		return preview_fail("Preview level file is missing");
 	if (load_level(level_file.c_str()))
 		return preview_fail(std::string("Could not load preview level ") + level_file);
+	load_preview_palette();
 	Current_level_num = request.value("level_num", 1);
 	Game_mode = GM_NORMAL;
 	if (select_preview_player())
@@ -207,20 +277,76 @@ extern "C" int android_level_preview_run(const char *request_path)
 	    preview_base_window_handler, NULL);
 	if (!Game_wind)
 		return preview_fail("Could not create preview window");
+	configure_preview_touch_axes();
 	do_automap();
 	if (!Automap_active) {
 		window_close(Game_wind);
 		return preview_fail("Could not open automap preview");
 	}
+	Level_preview_first_frame_at = SDL_GetTicks();
+	Level_preview_is_active = 1;
 	debug_log(DLOG_GAME, "level preview first frame ready in %u ms level=%s",
 	          (unsigned int) (SDL_GetTicks() - started_at), level_file.c_str());
-	while (Automap_active && window_get_front())
+	while (Automap_active && window_get_front()) {
+		if (Level_preview_close_requested.exchange(0, std::memory_order_acq_rel)) {
+			window_close(window_get_front());
+			continue;
+		}
+		/* The lightweight path has no pilot lifecycle to restore these after
+		 * engine events that refresh control settings. */
+		configure_preview_touch_axes();
+		/* Automap pauses the engine timer.  Give its controls a stable render
+		 * timestep without advancing GameTime or running game simulation. */
+		FrameTime = F1_0 / 60;
+		++Level_preview_event_iterations;
 		event_process();
+	}
+	Level_preview_is_active = 0;
 	if (Game_wind)
 		window_close(Game_wind);
 	debug_log(DLOG_GAME, "level preview closed after %u ms",
 	          (unsigned int) (SDL_GetTicks() - started_at));
 	return 0;
+}
+
+extern "C" int android_level_preview_active(void)
+{
+	return Level_preview_is_active;
+}
+
+extern "C" void android_level_preview_request_close(void)
+{
+	Level_preview_close_requested.store(1, std::memory_order_release);
+}
+
+extern "C" const char *android_level_preview_introspection_json(void)
+{
+	if (!Level_preview_is_active)
+		return NULL;
+	configure_preview_touch_axes();
+	const Uint32 now = SDL_GetTicks();
+	json preview = {
+		{ "schema", "dxx-level-preview-introspection-v1" },
+		{ "active", true },
+		{ "request_id", Level_preview_request.value("request_id", "") },
+		{ "game", Level_preview_request.value("game", "") },
+		{ "source_name", Level_preview_request.value("source_name", "") },
+		{ "mission_name", Level_preview_request.value("mission_name", "") },
+		{ "mission_filename", Level_preview_request.value("mission_filename", "") },
+		{ "level_file", Level_preview_request.value("level_file", "") },
+		{ "level_num", Level_preview_request.value("level_num", 0) },
+		{ "secret_level", Level_preview_request.value("secret_level", false) },
+		{ "player_start_objnum", Level_preview_player_objnum },
+		{ "player_start_segment", Level_preview_player_segment },
+		{ "map_all", true },
+		{ "palette_ready", Level_preview_palette_ready != 0 },
+		{ "palette_name", Level_preview_palette_name },
+		{ "event_iterations", Level_preview_event_iterations },
+		{ "first_frame_ms", Level_preview_first_frame_at - Level_preview_started_at },
+		{ "uptime_ms", now - Level_preview_started_at }
+	};
+	Level_preview_introspection = preview.dump();
+	return Level_preview_introspection.c_str();
 }
 
 extern "C" const char *android_level_preview_last_error(void)

@@ -25,6 +25,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "game_automate.h"
 #include "android_axis_mailbox.h"
+#include "android_level_preview.h"
 #include "window.h"
 #include "newmenu.h"
 #include "object.h"
@@ -1148,6 +1149,16 @@ extern "C" char *game_introspect_get_state(void)
 
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
 	j["in_game"] = in_game;
+	if (android_level_preview_active()) {
+		const char *preview_json = android_level_preview_introspection_json();
+		try {
+			j["level_preview"] = preview_json ? json::parse(preview_json) : nullptr;
+		} catch (...) {
+			j["level_preview"] = nullptr;
+		}
+	} else {
+		j["level_preview"] = nullptr;
+	}
 
 	/* -- HUD layout ----------------------------------------------- */
 	{
@@ -1412,6 +1423,9 @@ extern "C" char *game_introspect_get_state(void)
 			int carrier_position[3] = {};
 			json automap = {
 				{ "freeflight", (bool) avi.freeflight },
+				{ "view_forward_x", f2fl(avi.view_matrix.fvec.x) },
+				{ "view_forward_y", f2fl(avi.view_matrix.fvec.y) },
+				{ "view_forward_z", f2fl(avi.view_matrix.fvec.z) },
 				{ "view_x", f2fl(avi.view_pos.x) },
 				{ "view_y", f2fl(avi.view_pos.y) },
 				{ "view_z", f2fl(avi.view_pos.z) },
@@ -2022,10 +2036,18 @@ extern "C" void game_introspect_check_and_dump(void)
 	if (!json_str)
 		return;
 
-	FILE *f = fopen(introspect_path, "w");
+	const std::string temporary_path = std::string(introspect_path) + ".tmp";
+	FILE *f = fopen(temporary_path.c_str(), "w");
 	if (f) {
 		fputs(json_str, f);
-		fclose(f);
+		const int flush_result = fflush(f);
+		const int close_result = fclose(f);
+		if (flush_result == 0 && close_result == 0) {
+			if (rename(temporary_path.c_str(), introspect_path) != 0)
+				remove(temporary_path.c_str());
+		} else {
+			remove(temporary_path.c_str());
+		}
 	}
 	free(json_str);
 }

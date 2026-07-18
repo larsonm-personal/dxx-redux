@@ -1,0 +1,16 @@
+// TEST: Template for the host-driven seeded random automap preview smoke test.
+// Run android/tests/run_random_level_preview_smoke.ps1; it selects and stages the pack.
+[
+    {"_info": {
+        "description": "Launch a seeded random preview level from a staged mission pack",
+        "games": ["d1", "d2"]
+    }},
+    {"action": "enter_launcher"},
+    {
+        "action": "launch_random_level_preview",
+        "label": "host-selected mission pack",
+        "mod_file": "${MISSION_ZIP}",
+        "game": "${GAME}",
+        "seed": "${SEED}"
+    }
+]

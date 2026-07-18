@@ -12,6 +12,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
 import java.util.Locale
+import java.util.Random
 
 /**
  * Executes JSON5 automation scripts in the launcher (SetupActivity) process.
@@ -32,6 +33,7 @@ class LauncherScriptExecutor(
 
     companion object {
         private const val TAG = "DXX-LauncherScript"
+        private const val LEVEL_PREVIEW_SMOKE_SELECTION_FILE = "level_preview_smoke_selection.json"
     }
 
     /** Pending game launch set by tap_button with launches_game=true.
@@ -265,6 +267,19 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "delete_mod" -> {
+                    val filename = step.optString("file", step.optString("mod_file", ""))
+                    if (filename.isBlank() || File(filename).name != filename) {
+                        fail("delete_mod: invalid or missing filename")
+                        return
+                    }
+                    withContext(Dispatchers.IO) {
+                        ModManager(context.filesDir).deleteMod(filename)
+                    }
+                    Log.i(TAG, "ASSERT_PASS: deleted mod $filename and its owned extraction cache")
+                    currentStep++
+                }
+
                 "import_mission_zip" -> {
                     val label = step.optString("label", step.optString("file", step.optString("path", "")))
                     val importResult =
@@ -354,6 +369,53 @@ class LauncherScriptExecutor(
                         "ASSERT_PASS: level metadata targets=${results.size} total_levels=$totalLevels",
                     )
                     currentStep++
+                }
+
+                "launch_random_level_preview" -> {
+                    val seed = step.optLong("seed", 0L)
+                    val label = step.optString("label", step.optString("mod_file", "preview"))
+                    val requestedGame = step.optString("game", "")
+                    val targets =
+                        withContext(Dispatchers.IO) {
+                            buildLevelMetadataTargetsForAutomation(step)
+                        }.filter { requestedGame.isBlank() || it.game == requestedGame }
+                    if (targets.isEmpty()) {
+                        fail("launch_random_level_preview: no metadata targets for $label")
+                        return
+                    }
+                    val candidates = mutableListOf<Pair<LevelMetadataTarget, LevelMetadataLevelRow>>()
+                    for (target in targets) {
+                        val result = LevelMetadataAnalyzer.analyze(context, target)
+                        if (result.status == "ok") {
+                            result.levels
+                                .filter { it.status == "ok" && it.levelFile.isNotBlank() }
+                                .forEach { row -> candidates += target to row }
+                        }
+                    }
+                    if (candidates.isEmpty()) {
+                        fail("launch_random_level_preview: no previewable levels for $label")
+                        return
+                    }
+                    val selected = candidates[Random(seed).nextInt(candidates.size)]
+                    val launchRequest =
+                        withContext(Dispatchers.IO) {
+                            LevelPreviewRequestStore.create(context.cacheDir, selected.first, selected.second)
+                        }
+                    writeLevelPreviewSmokeSelection(
+                        seed = seed,
+                        label = label,
+                        candidateCount = candidates.size,
+                        target = selected.first,
+                        row = selected.second,
+                        request = launchRequest,
+                    )
+                    Log.i(
+                        TAG,
+                        "Launching seeded level preview: seed=$seed source=${selected.first.displayName} " +
+                            "level=${selected.second.levelNum} file=${selected.second.levelFile}",
+                    )
+                    currentStep++
+                    activity.startActivity(LevelPreviewActivity.createIntent(context, launchRequest))
                 }
 
                 "tap_button" -> {
@@ -933,6 +995,40 @@ class LauncherScriptExecutor(
                 .toString(2) + "\n",
             Charsets.UTF_8,
         )
+    }
+
+    private fun writeLevelPreviewSmokeSelection(
+        seed: Long,
+        label: String,
+        candidateCount: Int,
+        target: LevelMetadataTarget,
+        row: LevelMetadataLevelRow,
+        request: LevelPreviewLaunchRequest,
+    ) {
+        val output = File(context.filesDir, LEVEL_PREVIEW_SMOKE_SELECTION_FILE)
+        val temporary = File(context.filesDir, "$LEVEL_PREVIEW_SMOKE_SELECTION_FILE.tmp")
+        val json =
+            JSONObject()
+                .put("schema", "dxx-level-preview-smoke-selection-v1")
+                .put("seed", seed)
+                .put("label", label)
+                .put("candidate_level_count", candidateCount)
+                .put("source", target.displayName)
+                .put("game", target.game)
+                .put("mission_name", target.missionName.orEmpty())
+                .put("mission_filename", target.missionFilename.orEmpty())
+                .put("level_num", row.levelNum)
+                .put("secret", row.secret)
+                .put("level_name", row.levelName)
+                .put("level_file", row.levelFile)
+                .put(
+                    "request_id",
+                    request.requestFile.parentFile
+                        ?.name
+                        .orEmpty(),
+                )
+        temporary.writeText(json.toString(2) + "\n", Charsets.UTF_8)
+        Os.rename(temporary.absolutePath, output.absolutePath)
     }
 
     private fun modJson(mod: ModManager.ModInfo): JSONObject =

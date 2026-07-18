@@ -585,6 +585,37 @@ Java_com_dxxredux_app_MainActivity_nativeSetIntrospectPath(JNIEnv *env, jobject 
 	(*env)->ReleaseStringUTFChars(env, jpath, path);
 }
 
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeRequestIntrospect(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	game_introspect_request();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeRequestClose(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	android_level_preview_request_close();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_nativeSetIntrospectPath(
+    JNIEnv *env, jobject thiz, jstring jpath)
+{
+	const char *path;
+	(void) thiz;
+	if (!jpath)
+		return;
+	path = (*env)->GetStringUTFChars(env, jpath, NULL);
+	if (path) {
+		game_introspect_set_path(path);
+		(*env)->ReleaseStringUTFChars(env, jpath, path);
+	}
+}
+
 #ifndef DXX_BUILD_DESCENT_II
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_NativeTextureLookupCache_nativeClearD1(JNIEnv *env, jclass clazz)

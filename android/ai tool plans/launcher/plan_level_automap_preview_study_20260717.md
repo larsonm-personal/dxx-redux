@@ -222,3 +222,30 @@ Document review completed on 2026-07-17. The plan is ASCII-only, has no trailing
 - D1 built-in level 1 opens in the preview Activity and closes to the existing metadata dialog with the visible MAP touch button.
 - Clean close removes the request-specific preview directory. Emulator SHA-256 checks confirm that D1/D2 active-set files, the D2 active-mod file, and both games' configuration files are unchanged. Persistent route-cache file listings are also unchanged.
 - The first D2 device run found and fixed a flattened extracted-mission mount issue before final verification. No native crash appears in the final D1 or D2 runs.
+## Introspection and randomized smoke-test tranche
+
+- [x] Add a preview-specific introspection snapshot written atomically outside game caches.
+- [x] Report the selected mission/level, player start, automap/overlay state, heartbeat, and timing.
+- [x] Add preview-scoped automation input for zoom, rotation, introspection, and clean close.
+- [x] Add seeded random mission-pack and level selection through launcher metadata automation.
+- [x] Add a reproducible host smoke runner that records its seed and selected level.
+- [x] Exercise the runner on an emulator and verify the preview remains active after input and closes cleanly.
+- [ ] Run scoped formatting, unit tests, lint, and affected native builds. Formatting, focused tests, and the x86_64 D1/D2 build pass; `lintDebug` exceeded its five-minute bound without producing a result.
+
+Seed `344237308` selected `k_sos.zip` from 65 eligible D2 packs and level 3,
+`quartzon reservoir` (`level03.rl2`). The preview heartbeat advanced, touch-axis
+input changed the automap camera, and the explicit close request returned to the
+launcher. App-managed cleanup removed the staged archive and its owned extraction;
+the request-specific preview directory was also absent after close.
+
+### Black-render follow-up
+
+- [x] Activate the level palette in the lightweight D1/D2 preview path without loading a pilot or enabling game simulation.
+- [x] Expose palette readiness through preview introspection and reject a palette-less preview in the randomized smoke test.
+- [x] Rebuild and rerun the recorded random seed on the emulator.
+
+The failing D2 snapshot selected `water.256` but reported an empty
+`last_palette_loaded`, proving that level parsing succeeded while palette-indexed
+rendering remained uninitialized. After the fix, all three fields agree on
+`water.256`, the palette-aware random smoke assertion passes, and seed
+`344237308` still moves the camera, closes cleanly, and removes owned caches.
