@@ -274,6 +274,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 		return 1;
 	secret_area_rescan_current_level();
 	secret_area_set_reveal_unfound(0);
+	automap_clear_visited();
 	reveal_preview_automap_segments();
 	level_metadata_set_objective_mode(LEVEL_METADATA_OBJECTIVES_OFF);
 	level_metadata_rescan_route_from_object(Players[0].objnum);

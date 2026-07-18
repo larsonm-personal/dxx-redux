@@ -3710,6 +3710,45 @@ void ogl_freebmtexture(grs_bitmap *bm){
 /*
  * Menu / gauges 
  */
+static GLfloat *ubitmap_batch_vertices;
+static GLfloat *ubitmap_batch_colors;
+static GLfloat *ubitmap_batch_texcoords;
+static int ubitmap_batch_capacity;
+static int ubitmap_batch_count = -1;
+static GLuint ubitmap_batch_texture;
+
+void ogl_ubitmap_batch_begin(int max_bitmaps)
+{
+	if (max_bitmaps > ubitmap_batch_capacity) {
+		ubitmap_batch_vertices = d_realloc(ubitmap_batch_vertices, max_bitmaps * 12 * sizeof(*ubitmap_batch_vertices));
+		ubitmap_batch_colors = d_realloc(ubitmap_batch_colors, max_bitmaps * 24 * sizeof(*ubitmap_batch_colors));
+		ubitmap_batch_texcoords = d_realloc(ubitmap_batch_texcoords, max_bitmaps * 12 * sizeof(*ubitmap_batch_texcoords));
+		ubitmap_batch_capacity = max_bitmaps;
+	}
+	ubitmap_batch_count = 0;
+	ubitmap_batch_texture = 0;
+}
+
+void ogl_ubitmap_batch_end(void)
+{
+	if (ubitmap_batch_count > 0) {
+		OGL_ENABLE(TEXTURE_2D);
+		OGL_BINDTEXTURE(ubitmap_batch_texture);
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glVertexPointer(2, GL_FLOAT, 0, ubitmap_batch_vertices);
+		glColorPointer(4, GL_FLOAT, 0, ubitmap_batch_colors);
+		glTexCoordPointer(2, GL_FLOAT, 0, ubitmap_batch_texcoords);
+		glDrawArrays(GL_TRIANGLES, 0, ubitmap_batch_count * 6);
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+	ubitmap_batch_count = -1;
+	ubitmap_batch_texture = 0;
+}
+
 bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scale) // to scale bitmaps
 {
 	GLfloat xo,yo,xf,yf,u1,u2,v1,v2,color_r,color_g,color_b,h;
@@ -3723,10 +3762,6 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 	xf=(bm->bm_w+x)/(float)last_width;
 	yo=1.0-y/(float)last_height;
 	yf=1.0-(bm->bm_h+y)/(float)last_height;
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	if (dw < 0)
 		dw = grd_curcanv->cv_bitmap.bm_w;
@@ -3817,6 +3852,23 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 	texcoord_array[6] = u1;
 	texcoord_array[7] = v2;
 
+	if (ubitmap_batch_count >= 0) {
+		static const int order[6] = { 0, 1, 2, 0, 2, 3 };
+		int i;
+		Assert(ubitmap_batch_count < ubitmap_batch_capacity);
+		Assert(!ubitmap_batch_texture || ubitmap_batch_texture == bm->gltexture->handle);
+		ubitmap_batch_texture = bm->gltexture->handle;
+		for (i = 0; i < 6; ++i) {
+			memcpy(&ubitmap_batch_vertices[ubitmap_batch_count * 12 + i * 2], &vertex_array[order[i] * 2], 2 * sizeof(GLfloat));
+			memcpy(&ubitmap_batch_colors[ubitmap_batch_count * 24 + i * 4], &color_array[order[i] * 4], 4 * sizeof(GLfloat));
+			memcpy(&ubitmap_batch_texcoords[ubitmap_batch_count * 12 + i * 2], &texcoord_array[order[i] * 2], 2 * sizeof(GLfloat));
+		}
+		ubitmap_batch_count++;
+		return 0;
+	}
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);  

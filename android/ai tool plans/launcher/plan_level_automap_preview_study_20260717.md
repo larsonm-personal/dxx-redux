@@ -359,3 +359,56 @@ color, camera-motion, clean-close, metadata-preservation, and cache-cleanup
 checks. Batching is a substantial first win but does not make this extreme map
 fully smooth; further work should profile the remaining CPU traversal and the
 single batched draw before expanding the upstream-facing diff.
+
+### High-impact-per-line follow-up
+
+- [x] Test compacting the completed automap edge hash into dense traversal storage.
+- [x] Measure and reject dense traversal because it produced no improvement.
+- [x] Profile and remove the next largest repeated per-frame costs with small changes.
+- [x] Mirror the generic automap option in D1 and D2 and verify Windows and Android builds.
+- [x] Replay the full preview smoke test and verify cleanup.
+- [x] Run scoped quality and diff validation.
+
+Simpleperf showed that edge traversal consumed less than 5% of steady-state CPU
+samples after batching, while the emulator graphics pipe consumed about 90%.
+Compacting the sparse edge hash changed 193 ms per loop to 214 ms, within noise,
+so the compaction patch was removed.
+
+The lightweight preview had not called the public `automap_clear_visited`
+lifecycle helper. In D2 this also initializes all marker slots to `-1`; without
+it, nine zero-initialized slots were rendered as live markers at object zero.
+Adding the one missing call removed their spheres, numbers, labels, and lines,
+improving the fixed view from 5.2 FPS to 22.7 FPS.
+
+The remaining profile was dominated by the legacy automap keyboard instruction
+strings. A generic `Automap_show_instructions` option now defaults on in both
+engines, while preview disables it because touch controls replace those desktop
+instructions. The level name remains visible. This reached the existing frame
+limiter at 59.2 FPS on the fixed 45,660-edge, 3,039-visible-line view. The full
+Uneasy 4 smoke test passed render, color, camera, close, metadata, and cleanup
+checks.
+
+### Shared automap text rendering follow-up
+
+- [x] Trace per-glyph rendering and identify the smallest shared batching or upload fix.
+- [x] Restore normal automap instructions in preview.
+- [x] Optimize the shared path so normal in-game automap text receives the same benefit.
+- [x] Measure Uneasy 4 with instructions enabled and compare graphics-pipe samples.
+- [x] Verify D1/D2 Windows and Android builds plus the full preview smoke test.
+- [x] Run scoped quality and diff validation.
+
+Each OpenGL font glyph previously called `ogl_ubitmapm_cs` independently. On
+the Android GLES compatibility path, that meant a buffer allocation, three
+buffer uploads, and a draw call for every character. The expensive part was
+the per-glyph submission rather than instruction layout or string processing.
+
+OpenGL font strings now collect their existing glyph quads and colors and draw
+the shared font-atlas texture once per string. The change is in the common D1
+and D2 OpenGL renderers, so normal in-game menus and automap text benefit as
+well as preview. Software rendering and immediate bitmap calls are unchanged,
+and preview once again displays the normal automap instructions.
+
+With all instructions visible, the fixed Uneasy 4 view improved from 22.7 FPS
+to 58.5 FPS, effectively matching the rejected instruction-hiding experiment's
+59.2 FPS. Android and Windows D1/D2 builds passed, the full preview smoke test
+passed, and normal D1 and D2 launch-to-automap integration tests passed.
