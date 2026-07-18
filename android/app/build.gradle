@@ -59,6 +59,30 @@ def gitVersionCode = {
     }
 }()
 
+def nativeBuildInfoFile = layout.buildDirectory.file('generated/native-build-info/android_native_build_info.h')
+
+tasks.register('generateNativeBuildInfo') {
+    description = 'Generate native build metadata without invalidating the CMake build directory'
+    inputs.property('versionCode', gitVersionCode)
+    outputs.file(nativeBuildInfoFile)
+
+    doLast {
+        def outputFile = nativeBuildInfoFile.get().asFile
+        def content = """\
+#ifndef DXX_ANDROID_NATIVE_BUILD_INFO_H
+#define DXX_ANDROID_NATIVE_BUILD_INFO_H
+
+#define DXX_ANDROID_VERSION_CODE ${gitVersionCode}
+
+#endif
+"""
+        if (!outputFile.exists() || outputFile.text != content) {
+            outputFile.parentFile.mkdirs()
+            outputFile.text = content
+        }
+    }
+}
+
 // ── Download GM soundfont if missing or hash mismatch ────────────────────────
 def soundfontFile = file('src/main/assets/gm.sf2')
 def soundfontUrl = toolVersions['SOUNDFONT_URL']
@@ -146,6 +170,7 @@ tasks.configureEach { task ->
     if (task.name.startsWith('externalNativeBuild') || task.name.startsWith('configureCMake') ||
         task.name.startsWith('buildCMake') || task.name == 'preBuild') {
         task.dependsOn('downloadSoundfont')
+        task.dependsOn('generateNativeBuildInfo')
     }
     if (task.name == 'preBuild') {
         task.dependsOn('generateLauncherArt')
@@ -286,7 +311,6 @@ android {
             cmake {
                 arguments '-DANDROID_STL=c++_shared',
                           '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
-                          "-DDXX_ANDROID_VERSION_CODE=${gitVersionCode}",
                           "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}"
             }
         }

@@ -29,6 +29,8 @@ $deviceScript = "level_preview_smoke_$Seed.json5"
 $localScript = Join-Path $androidRoot "temp\level_preview_smoke\$deviceScript"
 $selectionFile = "files/level_preview_smoke_selection.json"
 $introspectionFile = "files/level_preview_introspect.json"
+$presentedProbeFile = "files/level_preview_presented_probe.json"
+$compositeProbeFile = "files/level_preview_composite_probe.json"
 $requestId = ""
 
 function Read-AppJson {
@@ -100,7 +102,8 @@ try {
     Adb -AdbArgs @("shell", "rm", "-f", $deviceTemporaryScript) | Out-Null
     Adb -AdbArgs @(
         "shell", "run-as", $script:PACKAGE, "rm", "-f", $selectionFile, "$selectionFile.tmp",
-        $introspectionFile, "$introspectionFile.tmp", "files/automation_result.json"
+        $introspectionFile, "$introspectionFile.tmp", $presentedProbeFile, "$presentedProbeFile.tmp",
+        $compositeProbeFile, "$compositeProbeFile.tmp", "files/automation_result.json"
     ) | Out-Null
 
     if (-not (Start-SetupActivity -Serial $Serial)) { throw "SetupActivity did not become ready" }
@@ -111,21 +114,44 @@ try {
 
     $selection = $null
     $initial = $null
+    $presentedProbe = $null
+    $compositeProbe = $null
     $ready = Wait-ForCondition -Description "random level preview introspection" -TimeoutSec $TimeoutSeconds -PollMs 1000 -Condition {
         $result = Read-AppJson -Path "files/automation_result.json"
         if ($result -and $result.result -eq "FAIL") { throw "Launcher automation failed: $($result.reason)" }
         $script:selection = Read-AppJson -Path $selectionFile
-        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT") | Out-Null
-        Start-Sleep -Milliseconds 250
-        $script:initial = Read-AppJson -Path $introspectionFile
+        if (-not $script:initial) {
+            Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT") | Out-Null
+            Start-Sleep -Milliseconds 250
+            $script:initial = Read-AppJson -Path $introspectionFile
+        }
+        $script:presentedProbe = Read-AppJson -Path $presentedProbeFile
+        $script:compositeProbe = Read-AppJson -Path $compositeProbeFile
         return $script:selection -and $script:initial -and $script:initial.level_preview.active -and
         $script:initial.level_preview.palette_ready -and
         -not [string]::IsNullOrWhiteSpace([string]$script:initial.level_preview.palette_name) -and
-        $script:initial.automap_active -and $script:initial.automap
+        $script:initial.automap_active -and $script:initial.automap -and
+        $script:presentedProbe -and $script:compositeProbe
     }
     if (-not $ready) { throw "Preview did not produce a live automap introspection snapshot" }
     $requestId = [string]$selection.request_id
     Write-Status "Selected level $($selection.level_num): $($selection.level_name) [$($selection.level_file)]"
+
+    if ([int]$initial.automap.edge_count -le 0 -or [int]$initial.automap.edges_drawn_last_frame -le 0) {
+        throw "Automap did not submit any level geometry"
+    }
+    if ([int]$initial.framebuffer_probe.gl_error -ne 0 -or
+        [long]$initial.framebuffer_probe.map_visible_pixels -le 100) {
+        throw "Native framebuffer automap viewport is black or unreadable"
+    }
+    if ([int]$presentedProbe.pixel_copy_result -ne 0 -or [long]$presentedProbe.map_visible_pixels -le 100) {
+        throw "Presented SurfaceView automap viewport is black or unreadable"
+    }
+    if ([int]$compositeProbe.pixel_copy_result -ne 0 -or
+        [long]$compositeProbe.rgb_sum -lt ([long]$presentedProbe.rgb_sum / 2)) {
+        throw "Composed preview window does not contain the rendered automap surface"
+    }
+    Start-Sleep -Milliseconds 500
 
     $initialDistance = [double]$initial.automap.view_dist
     $initialViewX = [double]$initial.automap.view_x

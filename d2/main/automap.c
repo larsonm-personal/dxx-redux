@@ -118,6 +118,7 @@ typedef struct automap
 	int			max_segments_away;
 	int			segment_limit;
 	int			secret_reveal_unfound;
+	int			edges_drawn_last_frame;
 	int			secret_edges_drawn_last_frame;
 	int			secret_edges_culled_far_dist_last_frame;
 	int			secret_label_candidate_count;
@@ -206,6 +207,8 @@ int automap_get_view_info(automap_view_info *out) {
 	out->tangles   = am->tangles;
 	out->freeflight = PlayerCfg.AutomapFreeFlight;
 	out->secret_reveal_unfound = am->secret_reveal_unfound;
+	out->edge_count = am->num_edges;
+	out->edges_drawn_last_frame = am->edges_drawn_last_frame;
 	out->secret_edge_count = 0;
 	out->secret_visible_edge_count = 0;
 	out->secret_too_far_edge_count = 0;
@@ -1285,6 +1288,7 @@ void draw_all_edges(automap *am)
 	
 	
 	nbright=0;
+	am->edges_drawn_last_frame = 0;
 	am->secret_edges_drawn_last_frame = 0;
 	am->secret_edges_culled_far_dist_last_frame = 0;
 
@@ -1334,6 +1338,7 @@ void draw_all_edges(automap *am)
 					else
 						gr_setcolor( gr_fade_table[e->color+256*8] );
 					g3_draw_line( &Segment_points[e->verts[0]], &Segment_points[e->verts[1]] );
+					am->edges_drawn_last_frame++;
 					if (automap_edge_contains_visible_secret(e))
 						am->secret_edges_drawn_last_frame++;
 				} 	else {
@@ -1398,6 +1403,7 @@ void draw_all_edges(automap *am)
 			gr_setcolor( gr_fade_table[e->color+color*256] );	
 		}
 		g3_draw_line( p1, p2 );
+		am->edges_drawn_last_frame++;
 		if (automap_edge_contains_visible_secret(e))
 			am->secret_edges_drawn_last_frame++;
 	}

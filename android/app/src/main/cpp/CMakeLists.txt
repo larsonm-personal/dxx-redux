@@ -593,13 +593,13 @@ target_include_directories(
             ${D1_SRC}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/shared
             ${CMAKE_CURRENT_SOURCE_DIR}/extract
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../build/generated/native-build-info
             ${_TSF_DIR}
             ${_DECODERS_DIR})
 
-target_compile_definitions(
-    dxx-redux-d1 PRIVATE INTROSPECT_ON HAVE_LIBPNG
-                         DXX_ANDROID_VERSION_CODE=${DXX_ANDROID_VERSION_CODE})
+target_compile_definitions(dxx-redux-d1 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE INTROSPECT_ON)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # Replace SDL_mixer's music with TinySoundFont, same as D2
@@ -735,17 +735,17 @@ target_include_directories(
             ${D2_SRC}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/shared
             ${CMAKE_CURRENT_SOURCE_DIR}/extract
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../build/generated/native-build-info
             ${_TSF_DIR}
             ${_DECODERS_DIR})
 
 # Enable introspection API (AI-assisted testing, debug Android builds only). The Kotlin layer gates
 # adb access behind BuildConfig.DEBUG. Must also be set on arch_sdl since window.c and event.c live
 # there.
-target_compile_definitions(
-    dxx-redux-d2 PRIVATE INTROSPECT_ON HAVE_LIBPNG
-                         DXX_ANDROID_VERSION_CODE=${DXX_ANDROID_VERSION_CODE})
+target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(dxx-redux-d2 PRIVATE DXX_BUILD_DESCENT_II)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE INTROSPECT_ON)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # Replace SDL_mixer's Timidity-based music with TinySoundFont MIDI synth. digi_mixer_music.c is

@@ -42,6 +42,9 @@ void game_introspect_request(void);
  */
 int game_introspect_dump_requested(void);
 
+/* Sample the resolved framebuffer before swap for render-output assertions. */
+void game_introspect_sample_framebuffer(int width, int height);
+
 /*
  * Called from the game thread (e.g. event_process) each frame.
  * If a dump was requested, writes the current state to the file and
@@ -64,6 +67,11 @@ static inline void game_introspect_request(void) {}
 static inline int game_introspect_dump_requested(void)
 {
 	return 0;
+}
+static inline void game_introspect_sample_framebuffer(int width, int height)
+{
+	(void) width;
+	(void) height;
 }
 static inline void game_introspect_check_and_dump(void) {}
 

@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -84,6 +85,79 @@ extern int r_hires_loaded;
 
 /* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
 extern "C" int ogl_get_egl_recreate_count(void);
+
+static int Framebuffer_probe_width;
+static int Framebuffer_probe_height;
+static unsigned long long Framebuffer_probe_nonblack_pixels;
+static unsigned long long Framebuffer_probe_visible_pixels;
+static unsigned long long Framebuffer_probe_rgb_sum;
+static int Framebuffer_probe_max_channel;
+static int Framebuffer_probe_min_x = -1;
+static int Framebuffer_probe_min_y = -1;
+static int Framebuffer_probe_max_x = -1;
+static int Framebuffer_probe_max_y = -1;
+static unsigned int Framebuffer_probe_gl_error;
+static unsigned long long Framebuffer_probe_map_visible_pixels;
+static unsigned long long Framebuffer_probe_map_rgb_sum;
+static int Framebuffer_probe_map_max_channel;
+
+extern "C" void game_introspect_sample_framebuffer(int width, int height)
+{
+	if (width <= 0 || height <= 0)
+		return;
+	std::vector<unsigned char> pixels((size_t) width * (size_t) height * 4u);
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	Framebuffer_probe_gl_error = glGetError();
+	Framebuffer_probe_width = width;
+	Framebuffer_probe_height = height;
+	Framebuffer_probe_nonblack_pixels = 0;
+	Framebuffer_probe_visible_pixels = 0;
+	Framebuffer_probe_rgb_sum = 0;
+	Framebuffer_probe_max_channel = 0;
+	Framebuffer_probe_min_x = -1;
+	Framebuffer_probe_min_y = -1;
+	Framebuffer_probe_max_x = -1;
+	Framebuffer_probe_max_y = -1;
+	Framebuffer_probe_map_visible_pixels = 0;
+	Framebuffer_probe_map_rgb_sum = 0;
+	Framebuffer_probe_map_max_channel = 0;
+	const int map_min_x = width / 23;
+	const int map_max_x = map_min_x + (int) (width / 1.1);
+	const int map_min_y = height - (height / 6 + (int) (height / 1.45));
+	const int map_max_y = height - height / 6;
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			const size_t offset = ((size_t) y * (size_t) width + (size_t) x) * 4u;
+			const int r = pixels[offset];
+			const int g = pixels[offset + 1];
+			const int b = pixels[offset + 2];
+			const int brightest = r > g ? (r > b ? r : b) : (g > b ? g : b);
+			Framebuffer_probe_rgb_sum += (unsigned int) r + (unsigned int) g + (unsigned int) b;
+			if (brightest > Framebuffer_probe_max_channel)
+				Framebuffer_probe_max_channel = brightest;
+			if (x >= map_min_x && x < map_max_x && y >= map_min_y && y < map_max_y) {
+				Framebuffer_probe_map_rgb_sum += (unsigned int) r + (unsigned int) g + (unsigned int) b;
+				if (brightest > Framebuffer_probe_map_max_channel)
+					Framebuffer_probe_map_max_channel = brightest;
+				if (brightest >= 8)
+					++Framebuffer_probe_map_visible_pixels;
+			}
+			if (brightest != 0)
+				++Framebuffer_probe_nonblack_pixels;
+			if (brightest < 8)
+				continue;
+			++Framebuffer_probe_visible_pixels;
+			if (Framebuffer_probe_min_x < 0 || x < Framebuffer_probe_min_x)
+				Framebuffer_probe_min_x = x;
+			if (Framebuffer_probe_min_y < 0 || y < Framebuffer_probe_min_y)
+				Framebuffer_probe_min_y = y;
+			if (x > Framebuffer_probe_max_x)
+				Framebuffer_probe_max_x = x;
+			if (y > Framebuffer_probe_max_y)
+				Framebuffer_probe_max_y = y;
+		}
+	}
+}
 
 /* -- Android intro tracking globals (defined in android_input.c) -- */
 extern "C" volatile int g_intro_active;
@@ -1438,6 +1512,8 @@ extern "C" char *game_introspect_get_state(void)
 				{ "tangles_h", avi.tangles.h },
 				{ "tangles_b", avi.tangles.b },
 				{ "secret_reveal_unfound", (bool) avi.secret_reveal_unfound },
+				{ "edge_count", avi.edge_count },
+				{ "edges_drawn_last_frame", avi.edges_drawn_last_frame },
 				{ "secret_edge_count", avi.secret_edge_count },
 				{ "secret_visible_edge_count", avi.secret_visible_edge_count },
 				{ "secret_too_far_edge_count", avi.secret_too_far_edge_count },
@@ -1965,6 +2041,29 @@ extern "C" char *game_introspect_get_state(void)
 			         g_fb_avg_r, g_fb_avg_g, g_fb_avg_b, g_fb_avg_a);
 			j["framebuffer_avg"] = std::string(buf);
 		}
+	}
+
+	/* -- Dense framebuffer output probe ----------------------------- */
+	if (Framebuffer_probe_width > 0 && Framebuffer_probe_height > 0) {
+		const unsigned long long pixel_count =
+		    (unsigned long long) Framebuffer_probe_width * (unsigned long long) Framebuffer_probe_height;
+		j["framebuffer_probe"] = {
+			{ "width", Framebuffer_probe_width },
+			{ "height", Framebuffer_probe_height },
+			{ "pixel_count", pixel_count },
+			{ "nonblack_pixels", Framebuffer_probe_nonblack_pixels },
+			{ "visible_pixels", Framebuffer_probe_visible_pixels },
+			{ "rgb_sum", Framebuffer_probe_rgb_sum },
+			{ "max_channel", Framebuffer_probe_max_channel },
+			{ "map_visible_pixels", Framebuffer_probe_map_visible_pixels },
+			{ "map_rgb_sum", Framebuffer_probe_map_rgb_sum },
+			{ "map_max_channel", Framebuffer_probe_map_max_channel },
+			{ "visible_min_x", Framebuffer_probe_min_x },
+			{ "visible_min_y", Framebuffer_probe_min_y },
+			{ "visible_max_x", Framebuffer_probe_max_x },
+			{ "visible_max_y", Framebuffer_probe_max_y },
+			{ "gl_error", Framebuffer_probe_gl_error }
+		};
 	}
 
 	/* -- Recent console output (last 50 con_printf lines) ----------- */

@@ -216,7 +216,6 @@ void event_process(void)
 	timer_update();
 
 #ifdef INTROSPECT_ON
-	game_introspect_check_and_dump();
 	game_automate_tick();
 #endif
 
@@ -255,6 +254,9 @@ void event_process(void)
 
 	if (!(GameArg.SysInputDemoNoRender && input_demo_replay_is_loaded()))
 		gr_flip();
+#ifdef INTROSPECT_ON
+	game_introspect_check_and_dump();
+#endif
 }
 
 void event_toggle_focus(int activate_focus)

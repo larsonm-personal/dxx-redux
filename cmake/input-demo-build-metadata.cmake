@@ -37,7 +37,17 @@ function(dxx_input_demo_apply_build_metadata target)
     dxx_input_demo_get_build_metadata(build_number git_version)
     string(REPLACE "\\" "\\\\" escaped_git_version "${git_version}")
     string(REPLACE "\"" "\\\"" escaped_git_version "${escaped_git_version}")
-    target_compile_definitions(
-        ${target} PRIVATE DXX_INPUT_DEMO_BUILD_NUMBERi=${build_number}
-                          DXX_INPUT_DEMO_GIT_VERSION=\"${escaped_git_version}\")
+    if(ANDROID)
+        set(input_demo_recorder_source
+            "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/input_demo_recorder.cpp"
+        )
+        set_property(
+            SOURCE "${input_demo_recorder_source}" TARGET_DIRECTORY ${target} APPEND
+            PROPERTY COMPILE_DEFINITIONS DXX_INPUT_DEMO_BUILD_NUMBERi=${build_number}
+                     DXX_INPUT_DEMO_GIT_VERSION=\"${escaped_git_version}\")
+    else()
+        target_compile_definitions(
+            ${target} PRIVATE DXX_INPUT_DEMO_BUILD_NUMBERi=${build_number}
+                              DXX_INPUT_DEMO_GIT_VERSION=\"${escaped_git_version}\")
+    endif()
 endfunction()

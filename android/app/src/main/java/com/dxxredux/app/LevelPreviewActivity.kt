@@ -6,11 +6,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
+import android.view.PixelCopy
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -20,6 +24,7 @@ import android.widget.FrameLayout
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import org.json.JSONObject
 import java.io.File
 
 @Suppress("DEPRECATION")
@@ -82,6 +87,7 @@ abstract class LevelPreviewActivity :
     private lateinit var runtimeRequest: LevelPreviewRuntimeRequest
     private lateinit var inputMixer: InputMixer
     private lateinit var touchOverlay: TouchOverlayView
+    private lateinit var previewSurfaceView: SurfaceView
     private var nativeStarted = false
     private var nativeFinished = false
     private var debugReceiverRegistered = false
@@ -93,8 +99,14 @@ abstract class LevelPreviewActivity :
                 intent: Intent,
             ) {
                 when (intent.action) {
-                    ACTION_INTROSPECT -> nativeRequestIntrospect()
-                    ACTION_COMMAND -> handleDebugCommand(intent)
+                    ACTION_INTROSPECT -> {
+                        nativeRequestIntrospect()
+                        requestPresentationProbe()
+                    }
+
+                    ACTION_COMMAND -> {
+                        handleDebugCommand(intent)
+                    }
                 }
             }
         }
@@ -121,6 +133,10 @@ abstract class LevelPreviewActivity :
         if (BuildConfig.DEBUG) {
             File(filesDir, INTROSPECTION_FILE).delete()
             File(filesDir, "$INTROSPECTION_FILE.tmp").delete()
+            File(filesDir, PRESENTATION_PROBE_FILE).delete()
+            File(filesDir, "$PRESENTATION_PROBE_FILE.tmp").delete()
+            File(filesDir, COMPOSITE_PROBE_FILE).delete()
+            File(filesDir, "$COMPOSITE_PROBE_FILE.tmp").delete()
             nativeSetIntrospectPath(File(filesDir, INTROSPECTION_FILE).absolutePath)
         }
 
@@ -134,9 +150,8 @@ abstract class LevelPreviewActivity :
             }
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val surface =
+        previewSurfaceView =
             SurfaceView(this).apply {
-                setBackgroundColor(Color.BLACK)
                 holder.addCallback(this@LevelPreviewActivity)
                 isFocusable = true
                 isFocusableInTouchMode = true
@@ -184,7 +199,7 @@ abstract class LevelPreviewActivity :
 
         setContentView(
             FrameLayout(this).apply {
-                addView(surface, matchParentLayoutParams())
+                addView(previewSurfaceView, matchParentLayoutParams())
                 addView(touchOverlay, matchParentLayoutParams())
             },
         )
@@ -272,6 +287,7 @@ abstract class LevelPreviewActivity :
 
             COMMAND_INTROSPECT -> {
                 nativeRequestIntrospect()
+                requestPresentationProbe()
             }
 
             COMMAND_CENTER -> {
@@ -298,6 +314,112 @@ abstract class LevelPreviewActivity :
             registerReceiver(debugReceiver, filter)
         }
         debugReceiverRegistered = true
+    }
+
+    private fun requestPresentationProbe() {
+        if (!BuildConfig.DEBUG || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        val width = previewSurfaceView.width
+        val height = previewSurfaceView.height
+        if (width <= 0 || height <= 0 || !previewSurfaceView.holder.surface.isValid) return
+        val surfaceBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        PixelCopy.request(
+            previewSurfaceView.holder.surface,
+            surfaceBitmap,
+            { result ->
+                Thread {
+                    writePresentationProbe(surfaceBitmap, result, PRESENTATION_PROBE_FILE)
+                    surfaceBitmap.recycle()
+                }.start()
+            },
+            Handler(Looper.getMainLooper()),
+        )
+        val compositeBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        PixelCopy.request(
+            window,
+            compositeBitmap,
+            { result ->
+                Thread {
+                    writePresentationProbe(compositeBitmap, result, COMPOSITE_PROBE_FILE)
+                    compositeBitmap.recycle()
+                }.start()
+            },
+            Handler(Looper.getMainLooper()),
+        )
+    }
+
+    private fun writePresentationProbe(
+        bitmap: Bitmap,
+        result: Int,
+        filename: String,
+    ) {
+        val width = bitmap.width
+        val height = bitmap.height
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        var nonblackPixels = 0L
+        var visiblePixels = 0L
+        var rgbSum = 0L
+        var maxChannel = 0
+        var minX = -1
+        var minY = -1
+        var maxX = -1
+        var maxY = -1
+        var mapVisiblePixels = 0L
+        var mapRgbSum = 0L
+        var mapMaxChannel = 0
+        val mapMinX = width / 23
+        val mapMaxX = mapMinX + (width / 1.1).toInt()
+        val mapMinY = height / 6
+        val mapMaxY = mapMinY + (height / 1.45).toInt()
+        pixels.forEachIndexed { index, pixel ->
+            val red = Color.red(pixel)
+            val green = Color.green(pixel)
+            val blue = Color.blue(pixel)
+            val brightest = maxOf(red, green, blue)
+            rgbSum += red + green + blue
+            maxChannel = maxOf(maxChannel, brightest)
+            val x = index % width
+            val y = index / width
+            if (x in mapMinX until mapMaxX && y in mapMinY until mapMaxY) {
+                mapRgbSum += red + green + blue
+                mapMaxChannel = maxOf(mapMaxChannel, brightest)
+                if (brightest >= 8) mapVisiblePixels++
+            }
+            if (brightest != 0) nonblackPixels++
+            if (brightest >= 8) {
+                visiblePixels++
+                if (minX < 0 || x < minX) minX = x
+                if (minY < 0 || y < minY) minY = y
+                maxX = maxOf(maxX, x)
+                maxY = maxOf(maxY, y)
+            }
+        }
+        val json =
+            JSONObject()
+                .put("schema", "dxx-level-preview-presentation-v1")
+                .put("pixel_copy_result", result)
+                .put("width", width)
+                .put("height", height)
+                .put("pixel_count", pixels.size)
+                .put("nonblack_pixels", nonblackPixels)
+                .put("visible_pixels", visiblePixels)
+                .put("rgb_sum", rgbSum)
+                .put("max_channel", maxChannel)
+                .put("map_visible_pixels", mapVisiblePixels)
+                .put("map_rgb_sum", mapRgbSum)
+                .put("map_max_channel", mapMaxChannel)
+                .put("visible_min_x", minX)
+                .put("visible_min_y", minY)
+                .put("visible_max_x", maxX)
+                .put("visible_max_y", maxY)
+                .toString(2)
+        val output = File(filesDir, filename)
+        val temporary = File(filesDir, "$filename.tmp")
+        temporary.writeText("$json\n")
+        if (!temporary.renameTo(output)) {
+            output.writeText("$json\n")
+            temporary.delete()
+        }
     }
 
     private fun unregisterDebugReceiver() {
@@ -336,6 +458,8 @@ abstract class LevelPreviewActivity :
         const val ACTION_INTROSPECT = "com.dxxredux.LEVEL_PREVIEW_INTROSPECT"
         const val ACTION_COMMAND = "com.dxxredux.LEVEL_PREVIEW_COMMAND"
         const val INTROSPECTION_FILE = "level_preview_introspect.json"
+        const val PRESENTATION_PROBE_FILE = "level_preview_presented_probe.json"
+        const val COMPOSITE_PROBE_FILE = "level_preview_composite_probe.json"
         private const val EXTRA_COMMAND = "command"
         private const val EXTRA_AXIS = "axis"
         private const val EXTRA_VALUE = "value"

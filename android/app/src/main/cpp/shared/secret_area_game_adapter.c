@@ -28,6 +28,7 @@
 #include "wall.h"
 #include "weapon.h"
 #ifdef __ANDROID__
+#include "android_native_build_info.h"
 #include "physfs.h"
 #include "physfsx.h"
 #include <unistd.h>

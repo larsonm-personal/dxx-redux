@@ -35,6 +35,8 @@ typedef struct automap_view_info {
 	vms_angvec  tangles;
 	int         freeflight;
 	int         secret_reveal_unfound;
+	int         edge_count;
+	int         edges_drawn_last_frame;
 	int         secret_edge_count;
 	int         secret_visible_edge_count;
 	int         secret_too_far_edge_count;

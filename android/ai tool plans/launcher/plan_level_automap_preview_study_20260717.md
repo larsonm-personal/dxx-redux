@@ -256,3 +256,20 @@ rendering remained uninitialized. After the fix, all three fields agree on
 - [x] Consume that marker on preview return so the unchanged metadata result remains composed without reanalysis.
 - [x] Keep normal game/import resume refresh behavior unchanged and add unit coverage for the one-shot return gate.
 - [x] Rebuild and replay the recorded preview-close path. The seeded D2 smoke replay resumed `SetupActivity`, removed the preview request cache, and observed the metadata-preservation branch without a refresh.
+
+### Render-output verification
+
+- [x] Reproduce the black preview and capture the existing framebuffer introspection values.
+- [x] Replace the weak palette-name oracle with dense framebuffer pixel statistics gathered before swap.
+- [x] Trace automap draw, viewport, framebuffer, and presentation state until non-black map geometry is proven.
+- [x] Fix the rendering path without initializing unrelated game systems.
+- [x] Make the randomized preview smoke test fail on an all-black rendered map, then rebuild and replay D1 and D2 cases.
+
+The engine submitted thousands of automap edges and both the resolved GL framebuffer
+and raw Android surface contained the map, while the composed window contained only
+the touch overlay. The preview uniquely assigned an opaque black background to its
+`SurfaceView`; removing it exposed the separately composed game surface, matching the
+normal game Activity. The smoke runner now asserts native map-region pixels, raw
+surface pixels, and raw-versus-composed window intensity. Recorded D2 seed
+`344237308` and D1 seed `99173` pass the render, camera, close, metadata-preservation,
+and cache-cleanup checks.

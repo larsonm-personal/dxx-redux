@@ -2402,6 +2402,7 @@ void gr_flip(void)
 				w, h,
 				&g_fb_sample_r, &g_fb_sample_g, &g_fb_sample_b, &g_fb_sample_a,
 				&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
+			game_introspect_sample_framebuffer(w, h);
 		}
 	}
 	ogl_android_apply_pending_runtime_options("gr_flip");
