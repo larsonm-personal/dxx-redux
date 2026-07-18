@@ -159,6 +159,7 @@ typedef struct automap
 #define K_WALL_DOOR_BLUE        BM_XRGB(0, 0, 31)
 #define K_WALL_DOOR_GOLD        BM_XRGB(31, 31, 0)
 #define K_WALL_DOOR_RED         BM_XRGB(31, 0, 0)
+#define K_WALL_REVEALED_COLOR   BM_XRGB(0, 0, 25)
 #define K_SECRET_REVEAL_UNFOUND_COLOR BM_XRGB(31, 22, 0)
 #define K_SECRET_REVEAL_FOUND_COLOR   BM_XRGB(31, 29, 24)
 #define K_HOSTAGE_COLOR         BM_XRGB(0, 31, 0 )
@@ -179,6 +180,7 @@ static int automap_edge_contains_visible_secret(Edge_info *e)
 }
 
 #ifdef INTROSPECT_ON
+/* Supplies active automap state to Android debug introspection snapshots. */
 int automap_get_view_info(automap_view_info *out) {
 	int i;
 
@@ -194,6 +196,8 @@ int automap_get_view_info(automap_view_info *out) {
 	out->secret_reveal_unfound = am->secret_reveal_unfound;
 	out->edge_count = am->num_edges;
 	out->edges_drawn_last_frame = am->edges_drawn_last_frame;
+	out->normal_color_edge_count = 0;
+	out->revealed_color_edge_count = 0;
 	out->secret_edge_count = 0;
 	out->secret_visible_edge_count = 0;
 	out->secret_too_far_edge_count = 0;
@@ -211,13 +215,19 @@ int automap_get_view_info(automap_view_info *out) {
 	for (i = 0; i <= am->highest_edge_index; i++) {
 		Edge_info *e = &am->edges[i];
 
-		if (!(e->flags & EF_USED) || !automap_edge_contains_visible_secret(e))
+		if (!(e->flags & EF_USED))
 			continue;
-		out->secret_edge_count++;
-		if (e->flags & EF_TOO_FAR)
-			out->secret_too_far_edge_count++;
-		else
-			out->secret_visible_edge_count++;
+		if (e->color == am->wall_normal_color)
+			out->normal_color_edge_count++;
+		if (e->color == K_WALL_REVEALED_COLOR)
+			out->revealed_color_edge_count++;
+		if (automap_edge_contains_visible_secret(e)) {
+			out->secret_edge_count++;
+			if (e->flags & EF_TOO_FAR)
+				out->secret_too_far_edge_count++;
+			else
+				out->secret_visible_edge_count++;
+		}
 	}
 	return 1;
 }
@@ -1226,7 +1236,7 @@ void add_segment_edges(automap *am, segment *seg)
 		if ( color != 255 )	{
 			// If they have a map powerup, draw unvisited areas in dark blue.
 			if (Players[Player_num].flags & PLAYER_FLAGS_MAP_ALL && (!Automap_visited[segnum]))	
-				color = BM_XRGB( 0, 0, 25 );
+				color = K_WALL_REVEALED_COLOR;
 			if (automap_should_draw_secret_reveal_color(segnum)) {
 				color = automap_secret_reveal_color(segnum);
 				no_fade = 1;

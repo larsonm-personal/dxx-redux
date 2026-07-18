@@ -127,6 +127,10 @@ try {
         }
         $script:presentedProbe = Read-AppJson -Path $presentedProbeFile
         $script:compositeProbe = Read-AppJson -Path $compositeProbeFile
+        if ($script:presentedProbe -and [int]$script:presentedProbe.pixel_copy_result -ne 0) {
+            $script:initial = $null
+            return $false
+        }
         return $script:selection -and $script:initial -and $script:initial.level_preview.active -and
         $script:initial.level_preview.palette_ready -and
         -not [string]::IsNullOrWhiteSpace([string]$script:initial.level_preview.palette_name) -and
@@ -139,6 +143,10 @@ try {
 
     if ([int]$initial.automap.edge_count -le 0 -or [int]$initial.automap.edges_drawn_last_frame -le 0) {
         throw "Automap did not submit any level geometry"
+    }
+    if ([int]$initial.automap.normal_color_edge_count -le 0 -or
+        [int]$initial.automap.revealed_color_edge_count -ne 0) {
+        throw "Preview automap geometry still uses the full-map powerup color"
     }
     if ([int]$initial.framebuffer_probe.gl_error -ne 0 -or
         [long]$initial.framebuffer_probe.map_visible_pixels -le 100) {

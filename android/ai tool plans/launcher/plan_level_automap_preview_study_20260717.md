@@ -273,3 +273,22 @@ normal game Activity. The smoke runner now asserts native map-region pixels, raw
 surface pixels, and raw-versus-composed window intensity. Recorded D2 seed
 `344237308` and D1 seed `99173` pass the render, camera, close, metadata-preservation,
 and cache-cleanup checks.
+
+### Preview geometry color
+
+- [x] Identify why preview-only full-map geometry uses the unexplored blue color.
+- [x] Render preview geometry in neutral white without changing normal automap semantics.
+- [x] Add a focused color assertion to the randomized render feedback loop.
+- [x] Build and replay D1 and D2 preview smoke cases.
+
+The preview no longer grants the full-map power-up. After secret discovery state is
+initialized, the isolated preview marks all loaded segments visited, which preserves
+the standard near-white wall color and normal special-door colors. Introspection now
+counts normal and revealed-power-up edge colors; the smoke runner requires normal
+edges and zero revealed-blue edges. D2 seed `344237308` and D1 seed `99173` pass.
+
+### Automap introspection documentation
+
+- [x] Verify all `automap_get_view_info` call sites.
+- [x] Add an accurate one-line function header in both engine copies.
+- [x] Run scoped formatting and diff validation.

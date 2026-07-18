@@ -36,6 +36,8 @@ typedef struct automap_view_info {
 	int         secret_reveal_unfound;
 	int         edge_count;
 	int         edges_drawn_last_frame;
+	int         normal_color_edge_count;
+	int         revealed_color_edge_count;
 	int         secret_edge_count;
 	int         secret_visible_edge_count;
 	int         secret_too_far_edge_count;

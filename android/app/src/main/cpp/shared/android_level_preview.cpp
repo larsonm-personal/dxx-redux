@@ -137,7 +137,6 @@ static int select_preview_player(void)
 	Player_num = 0;
 	N_players = 1;
 	Players[0].objnum = start_objnum;
-	Players[0].flags |= PLAYER_FLAGS_MAP_ALL;
 	Objects[start_objnum].type = OBJ_PLAYER;
 	Objects[start_objnum].id = 0;
 	ConsoleObject = &Objects[start_objnum];
@@ -145,6 +144,13 @@ static int select_preview_player(void)
 	Level_preview_player_objnum = start_objnum;
 	Level_preview_player_segment = Objects[start_objnum].segnum;
 	return 0;
+}
+
+static void reveal_preview_automap_segments(void)
+{
+	Players[0].flags &= ~PLAYER_FLAGS_MAP_ALL;
+	for (int segnum = 0; segnum <= Highest_segment_index; ++segnum)
+		Automap_visited[segnum] = 1;
 }
 
 static void configure_preview_touch_axes(void)
@@ -268,6 +274,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 		return 1;
 	secret_area_rescan_current_level();
 	secret_area_set_reveal_unfound(0);
+	reveal_preview_automap_segments();
 	level_metadata_set_objective_mode(LEVEL_METADATA_OBJECTIVES_OFF);
 	level_metadata_rescan_route_from_object(Players[0].objnum);
 	set_screen_mode(SCREEN_GAME);
@@ -339,6 +346,8 @@ extern "C" const char *android_level_preview_introspection_json(void)
 		{ "player_start_objnum", Level_preview_player_objnum },
 		{ "player_start_segment", Level_preview_player_segment },
 		{ "map_all", true },
+		{ "map_powerup_active", false },
+		{ "all_segments_visited", true },
 		{ "palette_ready", Level_preview_palette_ready != 0 },
 		{ "palette_name", Level_preview_palette_name },
 		{ "event_iterations", Level_preview_event_iterations },

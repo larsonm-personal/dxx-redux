@@ -1514,6 +1514,8 @@ extern "C" char *game_introspect_get_state(void)
 				{ "secret_reveal_unfound", (bool) avi.secret_reveal_unfound },
 				{ "edge_count", avi.edge_count },
 				{ "edges_drawn_last_frame", avi.edges_drawn_last_frame },
+				{ "normal_color_edge_count", avi.normal_color_edge_count },
+				{ "revealed_color_edge_count", avi.revealed_color_edge_count },
 				{ "secret_edge_count", avi.secret_edge_count },
 				{ "secret_visible_edge_count", avi.secret_visible_edge_count },
 				{ "secret_too_far_edge_count", avi.secret_too_far_edge_count },

@@ -194,6 +194,7 @@ static int automap_edge_contains_visible_secret(Edge_info *e)
 }
 
 #ifdef INTROSPECT_ON
+/* Supplies active automap state to Android debug introspection snapshots. */
 int automap_get_view_info(automap_view_info *out) {
 	int i;
 
@@ -209,6 +210,8 @@ int automap_get_view_info(automap_view_info *out) {
 	out->secret_reveal_unfound = am->secret_reveal_unfound;
 	out->edge_count = am->num_edges;
 	out->edges_drawn_last_frame = am->edges_drawn_last_frame;
+	out->normal_color_edge_count = 0;
+	out->revealed_color_edge_count = 0;
 	out->secret_edge_count = 0;
 	out->secret_visible_edge_count = 0;
 	out->secret_too_far_edge_count = 0;
@@ -226,13 +229,19 @@ int automap_get_view_info(automap_view_info *out) {
 	for (i = 0; i <= am->highest_edge_index; i++) {
 		Edge_info *e = &am->edges[i];
 
-		if (!(e->flags & EF_USED) || !automap_edge_contains_visible_secret(e))
+		if (!(e->flags & EF_USED))
 			continue;
-		out->secret_edge_count++;
-		if (e->flags & EF_TOO_FAR)
-			out->secret_too_far_edge_count++;
-		else
-			out->secret_visible_edge_count++;
+		if (e->color == am->wall_normal_color)
+			out->normal_color_edge_count++;
+		if (e->color == K_WALL_REVEALED_COLOR)
+			out->revealed_color_edge_count++;
+		if (automap_edge_contains_visible_secret(e)) {
+			out->secret_edge_count++;
+			if (e->flags & EF_TOO_FAR)
+				out->secret_too_far_edge_count++;
+			else
+				out->secret_visible_edge_count++;
+		}
 	}
 	return 1;
 }
