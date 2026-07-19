@@ -88,6 +88,23 @@ typedef struct level_metadata_game_context {
 static level_metadata_game_context Level_metadata_game_context;
 static level_metadata_scan_view Level_metadata_scan_view;
 static int Level_metadata_scan_view_initialized;
+static level_metadata_progress_callback Level_metadata_progress_callback;
+static void *Level_metadata_progress_user;
+
+void level_metadata_set_progress_callback(
+    level_metadata_progress_callback callback, void *user)
+{
+	Level_metadata_progress_callback = callback;
+	Level_metadata_progress_user = callback ? user : NULL;
+}
+
+static void level_metadata_report_progress(
+    const char *stage, int completed, int total)
+{
+	if (Level_metadata_progress_callback)
+		Level_metadata_progress_callback(
+		    Level_metadata_progress_user, stage, completed, total);
+}
 
 #define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
 #define LEVEL_METADATA_FVI_CONFIRM_SPAN                  (64 * F1_0)
@@ -1821,6 +1838,8 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	view->initial_key_mask = secret_area_current_key_mask();
 	view->initial_control_center_destroyed = Control_center_destroyed != 0;
 	view->navigator_radius = secret_area_player_radius();
+	view->progress_user = Level_metadata_progress_user;
+	view->progress = Level_metadata_progress_callback;
 	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
 		int narrow_side_count = 0;
 		int seg;
@@ -2054,6 +2073,7 @@ static void level_metadata_rescan_current_level_internal(
 	Level_metadata_route_start_objnum = start_objnum;
 	Level_metadata_route_start_seg = view->start_segment;
 	if (!route_only) {
+		level_metadata_report_progress("level_topology", 0, 1);
 		Level_metadata_live_route_state_valid = 0;
 		Level_metadata_live_plan_summary_valid = 0;
 		Level_metadata_live_snapshot_valid = 0;
@@ -2069,6 +2089,7 @@ static void level_metadata_rescan_current_level_internal(
 		if (Level_metadata_canonical_snapshot_valid)
 			level_metadata_seed_snapshot_generations(
 			    &Level_metadata_canonical_snapshot);
+		level_metadata_report_progress("level_topology", 1, 1);
 	} else {
 		route_snapshot_summary previous_snapshot;
 		int previous_valid = Level_metadata_live_snapshot_valid ||
@@ -2099,13 +2120,16 @@ static void level_metadata_rescan_current_level_internal(
 
 		memset(&Level_metadata_wall_shot_diagnostics, 0,
 		       sizeof(Level_metadata_wall_shot_diagnostics));
+		level_metadata_report_progress("level_summary", 0, 1);
 		level_metadata_scan_level_summary(view, &Level_metadata_canonical_state);
+		level_metadata_report_progress("level_summary", 1, 1);
 		level_metadata_state_clear(&shared_route);
 		memset(&Level_metadata_canonical_plan_summary, 0,
 		       sizeof(Level_metadata_canonical_plan_summary));
 		Level_metadata_canonical_plan_summary.first_pending_step = -1;
 		Level_metadata_canonical_plan_summary.first_pending_path_terminal_segment = -1;
 		Level_metadata_canonical_plan_summary.partial_frontier_segment = -1;
+		level_metadata_report_progress("route_planning", 0, 1);
 		Level_metadata_canonical_plan_summary_valid =
 		    level_metadata_analysis_cache_load(
 		        &shared_route, &Level_metadata_canonical_plan_summary);
@@ -2140,6 +2164,7 @@ static void level_metadata_rescan_current_level_internal(
 			         problem[0] ? problem : "unknown failure");
 			Level_metadata_canonical_state.route_note[0] = '\0';
 		}
+		level_metadata_report_progress("route_planning", 1, 1);
 		level_metadata_trace_wall_shot_diagnostics();
 	}
 	if (route_only) {
@@ -2334,7 +2359,9 @@ void secret_area_rescan_current_level(void)
 	view.triggered_side_opener_segment = secret_area_triggered_side_opener_segment;
 	view.triggered_side_opener_side = secret_area_triggered_side_opener_side;
 	view.triggered_side_opener_wall_num = secret_area_triggered_side_opener_wall_num;
+	level_metadata_report_progress("secret_areas", 0, 1);
 	secret_area_scan_level(&view, &Secret_area_state);
+	level_metadata_report_progress("secret_areas", 1, 1);
 	level_metadata_rescan_current_level();
 	secret_area_trace("done");
 }

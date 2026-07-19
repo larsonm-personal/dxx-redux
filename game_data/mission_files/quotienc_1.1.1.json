@@ -2209,9 +2209,9 @@
         "mine_volume": 39228902.50696801,
         "mine_volume_normalized": 8.578555918412771,
         "mine_volume_text": "8.6x",
-        "travel_distance": 11851.030562021404,
-        "travel_time_seconds": 237,
-        "travel_time_text": "3M:57S",
+        "travel_distance": 12156.30985936584,
+        "travel_time_seconds": 243,
+        "travel_time_text": "4M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2268,19 +2268,46 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 455,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 653,
+            "side": 0,
+            "wall": 113,
             "label_pos": {
               "x": 0.0,
               "y": -480.0,
-              "z": 565.0
+              "z": 725.0
             },
-            "distance": 3369.7791821326778
+            "distance": 3424.3653694811865,
+            "opens": [
+              {
+                "seg": 653,
+                "side": 0,
+                "wall": 113
+              },
+              {
+                "seg": 647,
+                "side": 2,
+                "wall": 111
+              }
+            ]
           },
           {
             "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 604,
+            "label_pos": {
+              "x": 87.5,
+              "y": -390.0,
+              "z": 992.5
+            },
+            "distance": 480.34655499796327
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2292,7 +2319,7 @@
               "y": 80.0,
               "z": 905.0
             },
-            "distance": 896.0,
+            "distance": 666.3465549979633,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -5160,9 +5187,9 @@
         "mine_volume": 39228902.50867355,
         "mine_volume_normalized": 8.578555918785739,
         "mine_volume_text": "8.6x",
-        "travel_distance": 11851.030562021404,
-        "travel_time_seconds": 237,
-        "travel_time_text": "3M:57S",
+        "travel_distance": 12156.30985936584,
+        "travel_time_seconds": 243,
+        "travel_time_text": "4M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5219,19 +5246,46 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 455,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 653,
+            "side": 0,
+            "wall": 97,
             "label_pos": {
               "x": 0.0,
               "y": -480.0,
-              "z": 565.0
+              "z": 725.0
             },
-            "distance": 3369.7791821326778
+            "distance": 3424.3653694811865,
+            "opens": [
+              {
+                "seg": 653,
+                "side": 0,
+                "wall": 97
+              },
+              {
+                "seg": 647,
+                "side": 2,
+                "wall": 96
+              }
+            ]
           },
           {
             "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 414,
+            "label_pos": {
+              "x": 87.5,
+              "y": -390.0,
+              "z": 992.5
+            },
+            "distance": 480.34655499796327
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -5243,7 +5297,7 @@
               "y": 80.0,
               "z": 905.0
             },
-            "distance": 896.0,
+            "distance": 666.3465549979633,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

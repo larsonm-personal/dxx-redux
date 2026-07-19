@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.os.Process
+import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -19,6 +20,8 @@ import java.util.zip.ZipFile
 
 private const val LEVEL_METADATA_TIMEOUT_MS = 30_000L
 private const val LEVEL_METADATA_POLL_MS = 200L
+private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 10_000L
+private const val LEVEL_METADATA_MIN_PROGRESS_PERCENT = 5
 private const val LEVEL_METADATA_MAX_ZIP_FILES = 240
 private const val LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES = 64L * 1024L * 1024L
@@ -45,6 +48,48 @@ internal data class LevelMetadataTarget(
     val archivePath: String? = null,
     val archiveEntries: List<String> = emptyList(),
 )
+
+internal data class LevelMetadataCheckpointUpdate(
+    val progress: MetadataLoadProgress,
+    val activityId: String,
+)
+
+internal class LevelMetadataProgressDeadline(
+    startedAtMs: Long,
+    private val initialTimeoutMs: Long = LEVEL_METADATA_TIMEOUT_MS,
+    private val progressExtensionMs: Long = LEVEL_METADATA_PROGRESS_EXTENSION_MS,
+    private val requiredProgressPercent: Int = LEVEL_METADATA_MIN_PROGRESS_PERCENT,
+) {
+    private var deadlineMs = startedAtMs + initialTimeoutMs
+    private var activityId: String? = null
+    private var creditedPercent = 0
+    private var creditedAtMs = startedAtMs
+
+    fun observe(
+        update: LevelMetadataCheckpointUpdate,
+        nowMs: Long,
+    ) {
+        val progress = update.progress
+        if (progress.total <= 0) return
+        val percent = (progress.completed.coerceIn(0, progress.total) * 100 / progress.total).coerceIn(0, 100)
+        if (update.activityId != activityId) {
+            activityId = update.activityId
+            creditedPercent = percent
+            creditedAtMs = nowMs
+            deadlineMs = maxOf(deadlineMs, nowMs + progressExtensionMs)
+            return
+        }
+        val threshold = requiredProgressPercent.coerceAtLeast(1)
+        if (percent < creditedPercent + threshold) return
+        val progressSteps = (percent - creditedPercent) / threshold
+        if (nowMs - creditedAtMs > progressSteps * progressExtensionMs) return
+        creditedPercent += progressSteps * threshold
+        creditedAtMs = nowMs
+        deadlineMs = maxOf(deadlineMs, nowMs + progressExtensionMs)
+    }
+
+    fun isExpired(nowMs: Long): Boolean = nowMs >= deadlineMs
+}
 
 internal data class LevelMetadataRouteOpenLink(
     val seg: Int = -1,
@@ -782,7 +827,8 @@ internal object LevelMetadataAnalyzer {
                     e.message ?: e.javaClass.simpleName,
                 )
             }
-            val workerStartedAt = System.currentTimeMillis()
+            val workerStartedAt = SystemClock.elapsedRealtime()
+            val progressDeadline = LevelMetadataProgressDeadline(workerStartedAt)
             val expectedLevelCount =
                 (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
             if (expectedLevelCount > 0) {
@@ -792,7 +838,7 @@ internal object LevelMetadataAnalyzer {
             }
             var lastCheckpoint = ""
 
-            while (System.currentTimeMillis() - workerStartedAt < LEVEL_METADATA_TIMEOUT_MS) {
+            while (true) {
                 if (resultFile.isFile) {
                     progress("Reading analysis result", 4)
                     val parsed = parseResultFile(target, resultFile)
@@ -806,14 +852,18 @@ internal object LevelMetadataAnalyzer {
                         ?.takeIf { it != lastCheckpoint }
                         ?.let { checkpoint ->
                             lastCheckpoint = checkpoint
-                            parseLevelMetadataCheckpointProgress(checkpoint)?.let { onProgress(it) }
+                            parseLevelMetadataCheckpointUpdate(checkpoint)?.let { update ->
+                                progressDeadline.observe(update, SystemClock.elapsedRealtime())
+                                onProgress(update.progress)
+                            }
                         }
                 }
                 if (!isWorkerProcessRunning(appContext, target.game) &&
-                    System.currentTimeMillis() - workerStartedAt > 1_000L
+                    SystemClock.elapsedRealtime() - workerStartedAt > 1_000L
                 ) {
                     break
                 }
+                if (progressDeadline.isExpired(SystemClock.elapsedRealtime())) break
                 delay(LEVEL_METADATA_POLL_MS)
             }
 
@@ -834,20 +884,56 @@ internal object LevelMetadataAnalyzer {
         }
 
     internal fun parseLevelMetadataCheckpointProgress(text: String): MetadataLoadProgress? =
+        parseLevelMetadataCheckpointUpdate(text)?.progress
+
+    internal fun parseLevelMetadataCheckpointUpdate(text: String): LevelMetadataCheckpointUpdate? =
         runCatching {
             val checkpoint = JSONObject(text)
             val stage = checkpoint.optString("stage")
-            if (stage != "level" && stage != "level_done") return@runCatching null
+            if (stage != "level" && stage != "level_done" && stage != "level_progress") {
+                return@runCatching null
+            }
             val total = checkpoint.optInt("total", 0)
             if (total <= 0) return@runCatching null
             val completed = checkpoint.optInt("completed", 0).coerceIn(0, total)
             val detail = checkpoint.optString("detail").substringAfterLast('/').substringAfterLast('\\')
-            MetadataLoadProgress(
-                if (stage == "level" && detail.isNotBlank()) "Scanning $detail" else "Scanning levels",
-                completed,
-                total,
+            val phase = checkpoint.optString("phase")
+            val label =
+                if (stage == "level_progress") {
+                    levelMetadataTaskLabel(phase, detail)
+                } else if (stage == "level" && detail.isNotBlank()) {
+                    "Scanning $detail"
+                } else {
+                    "Scanning levels"
+                }
+            val activityId =
+                if (stage == "level_progress") {
+                    "$detail:${checkpoint.optInt("task_id", 0)}"
+                } else {
+                    "levels:$detail"
+                }
+            LevelMetadataCheckpointUpdate(
+                MetadataLoadProgress(label, completed, total),
+                activityId,
             )
         }.getOrNull()
+
+    private fun levelMetadataTaskLabel(
+        phase: String,
+        detail: String,
+    ): String {
+        val action =
+            when (phase) {
+                "secret_areas" -> "Scanning secret areas"
+                "level_topology" -> "Indexing level geometry"
+                "level_summary" -> "Summarizing level"
+                "route_planning" -> "Planning completion route"
+                "route_visibility" -> "Checking switch firing paths"
+                "route_target_visibility" -> "Checking objective visibility"
+                else -> "Analyzing level"
+            }
+        return if (detail.isBlank()) action else "$action in $detail"
+    }
 
     private fun serviceClassForGame(game: String): Class<out LevelMetadataAnalysisService> =
         if (game == GameFileFormats.GAME_D1) {

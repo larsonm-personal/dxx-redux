@@ -8,6 +8,7 @@
 #include <exception>
 #include <limits>
 #include <memory>
+#include <unordered_map>
 
 namespace dxx_route
 {
@@ -278,6 +279,17 @@ bool valid_trigger(const route_snapshot &snapshot, int trigger)
 	       trigger < static_cast<int>(snapshot.state.triggers.size());
 }
 
+void report_progress(
+    const route_visibility_query &visibility,
+    const char *stage,
+    int completed,
+    int total)
+{
+	if (visibility.progress)
+		visibility.progress(
+		    visibility.progress_user, stage, completed, total);
+}
+
 bool state_flag(const std::vector<unsigned char> &values, int index)
 {
 	return index >= 0 && index < static_cast<int>(values.size()) &&
@@ -375,9 +387,160 @@ bool source_visible_from_position(
 	           source.source_position);
 }
 
-bool visible_source_position(
+struct visibility_sample_key {
+	unsigned int cache_namespace;
+	int sample_kind;
+	int segment;
+	int target_wall;
+	int target_segment;
+	std::array<int, 3> target_position;
+
+	bool operator==(const visibility_sample_key &other) const
+	{
+		return cache_namespace == other.cache_namespace &&
+		       sample_kind == other.sample_kind && segment == other.segment &&
+		       target_wall == other.target_wall &&
+		       target_segment == other.target_segment &&
+		       target_position == other.target_position;
+	}
+};
+
+struct visibility_sample_key_hash {
+	std::size_t operator()(const visibility_sample_key &key) const
+	{
+		std::size_t hash = key.cache_namespace;
+		auto mix = [&hash](int value) {
+			hash ^= static_cast<unsigned int>(value) + 0x9e3779b9u +
+			        (hash << 6) + (hash >> 2);
+		};
+		mix(key.sample_kind);
+		mix(key.segment);
+		mix(key.target_wall);
+		mix(key.target_segment);
+		for (const int coordinate : key.target_position)
+			mix(coordinate);
+		return hash;
+	}
+};
+
+struct visibility_sample_result {
+	bool found = false;
+	route_position position;
+	double extra_distance = 0.0;
+};
+
+using visibility_sample_cache = std::unordered_map<
+    visibility_sample_key, visibility_sample_result,
+    visibility_sample_key_hash>;
+
+visibility_sample_key make_visibility_sample_key(
+    const route_snapshot &snapshot,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    int sample_kind)
+{
+	visibility_sample_key key = {};
+	key.cache_namespace = visibility.sample_cache_namespace;
+	key.sample_kind = sample_kind;
+	key.segment = segment;
+	key.target_wall =
+	    valid_wall(snapshot, source.source_wall) && visibility.wall_shootable
+	        ? source.source_wall
+	        : -1;
+	key.target_segment = key.target_wall >= 0 ? -1 : source.source_segment;
+	key.target_position = key.target_wall >= 0
+	                          ? std::array<int, 3>{ { 0, 0, 0 } }
+	                          : source.source_position.value;
+	return key;
+}
+
+bool find_cached_visibility_sample(
+    const route_snapshot &snapshot,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    int sample_kind,
+    route_position &position,
+    double &extra_distance,
+    bool &found)
+{
+	if (!visibility.sample_cache)
+		return false;
+	auto &cache = *static_cast<visibility_sample_cache *>(
+	    visibility.sample_cache);
+	const auto item = cache.find(make_visibility_sample_key(
+	    snapshot, source, visibility, segment, sample_kind));
+	if (item == cache.end())
+		return false;
+	found = item->second.found;
+	position = item->second.position;
+	extra_distance = item->second.extra_distance;
+	return true;
+}
+
+void store_cached_visibility_sample(
+    const route_snapshot &snapshot,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    int sample_kind,
+    const route_position &position,
+    double extra_distance,
+    bool found)
+{
+	if (!visibility.sample_cache)
+		return;
+	auto &cache = *static_cast<visibility_sample_cache *>(
+	    visibility.sample_cache);
+	visibility_sample_result result;
+	result.found = found;
+	result.position = position;
+	result.extra_distance = extra_distance;
+	cache[make_visibility_sample_key(
+	    snapshot, source, visibility, segment, sample_kind)] = result;
+}
+
+bool visible_source_center_position(
     const route_snapshot &snapshot,
     const route_progress_state &progress,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    route_position &position,
+    double &extra_distance)
+{
+	if (!valid_segment(snapshot, segment))
+		return false;
+	const auto &topology_segment = snapshot.topology.segments[segment];
+	if (segment == progress.current_segment && progress.current_position.valid &&
+	    source_visible_from_position(
+	        snapshot, source, visibility, segment, progress.current_position)) {
+		position = progress.current_position;
+		extra_distance = 0.0;
+		return true;
+	}
+	bool found = false;
+	if (find_cached_visibility_sample(
+	        snapshot, source, visibility, segment, 0, position,
+	        extra_distance, found))
+		return found;
+	if (!topology_segment.center.valid)
+		return false;
+	found = source_visible_from_position(
+	    snapshot, source, visibility, segment, topology_segment.center);
+	if (found) {
+		position = topology_segment.center;
+		extra_distance = 0.0;
+	}
+	store_cached_visibility_sample(
+	    snapshot, source, visibility, segment, 0, position, extra_distance,
+	    found);
+	return found;
+}
+
+bool visible_source_detailed_position(
+    const route_snapshot &snapshot,
     const route_trigger_source &source,
     const route_visibility_query &visibility,
     int segment,
@@ -405,6 +568,10 @@ bool visible_source_position(
 		return false;
 	const auto &topology_segment = snapshot.topology.segments[segment];
 	bool found = false;
+	if (find_cached_visibility_sample(
+	        snapshot, source, visibility, segment, 1, position,
+	        extra_distance, found))
+		return found;
 	double best_distance = std::numeric_limits<double>::infinity();
 	auto consider = [&](const route_position &candidate) {
 		if (!source_visible_from_position(
@@ -419,21 +586,8 @@ bool visible_source_position(
 		best_distance = distance;
 		found = true;
 	};
-	if (segment == progress.current_segment && progress.current_position.valid &&
-	    source_visible_from_position(
-	        snapshot, source, visibility, segment, progress.current_position)) {
-		position = progress.current_position;
-		extra_distance = 0.0;
-		return true;
-	}
 	if (!topology_segment.center.valid)
 		return false;
-	if (source_visible_from_position(
-	        snapshot, source, visibility, segment, topology_segment.center)) {
-		position = topology_segment.center;
-		extra_distance = 0.0;
-		return true;
-	}
 	for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 		const auto &side_center = topology_segment.sides[side].center;
 		if (!side_center.valid)
@@ -469,7 +623,27 @@ bool visible_source_position(
 			consider(candidate);
 		}
 	}
+	store_cached_visibility_sample(
+	    snapshot, source, visibility, segment, 1, position, extra_distance,
+	    found);
 	return found;
+}
+
+bool visible_source_position(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    route_position &position,
+    double &extra_distance)
+{
+	return visible_source_center_position(
+	           snapshot, progress, source, visibility, segment, position,
+	           extra_distance) ||
+	       visible_source_detailed_position(
+	           snapshot, source, visibility, segment, position,
+	           extra_distance);
 }
 
 std::vector<route_trigger_source> discover_trigger_sources_internal(
@@ -907,31 +1081,42 @@ route_trigger_path_selection select_trigger_firing_path(
 	const auto search = search_routes(snapshot, query, progress, false);
 	if (!search.problem.empty())
 		return result;
-	for (const auto &source : sources) {
+	const int segments = static_cast<int>(search.visit_order.size());
+	const int total = static_cast<int>(sources.size()) * segments * 2;
+	report_progress(visibility, "route_visibility", 0, total);
+	for (std::size_t source_index = 0; source_index < sources.size();
+	     ++source_index) {
+		const auto &source = sources[source_index];
+		const int source_base = static_cast<int>(source_index) * segments * 2;
 		if (!trigger_source_wall_valid(
 		        snapshot, progress, source.source_wall) ||
 		    !valid_trigger(snapshot, source.trigger) ||
 		    state_flag(progress.trigger_in_progress, source.trigger) ||
-		    !source.source_position.valid)
+		    !source.source_position.valid) {
+			report_progress(
+			    visibility, "route_visibility", source_base + segments * 2,
+			    total);
 			continue;
+		}
 		route_trigger_path_selection candidate;
 		candidate.source = source;
 		const bool shootable = valid_wall(snapshot, source.source_wall) &&
 		                       snapshot.topology.walls[source.source_wall]
 		                           .shootable_trigger;
 		if (shootable) {
-			for (const int segment : search.visit_order) {
-				double extra_distance = 0.0;
-				route_position terminal;
-				if (!visible_source_position(
-				        snapshot, progress, source, visibility, segment,
-				        terminal, extra_distance))
-					continue;
+			auto best_distance = [&]() {
+				return candidate.found
+				           ? candidate.path.distance
+				       : result.found ? result.path.distance
+				                      : std::numeric_limits<double>::infinity();
+			};
+			auto accept_position = [&](int segment, const route_position &terminal,
+			                           double extra_distance) {
 				auto path = build_route_path(search, segment);
 				path.distance += extra_distance;
 				if (candidate.found &&
 				    path.distance >= candidate.path.distance)
-					continue;
+					return;
 				path.progress_weight = 0;
 				path.terminal_segment = segment;
 				path.terminal_position = terminal;
@@ -939,7 +1124,46 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.terminal_segment = segment;
 				candidate.terminal_position = terminal;
 				candidate.found = true;
+			};
+			/* Find a center-line candidate cheaply before sampling every face,
+			 * vertex, and edge.  The detailed pass only examines segments whose
+			 * center-path lower bound can still improve the selected route. */
+			for (int index = 0; index < segments; ++index) {
+				const int segment = search.visit_order[index];
+				double extra_distance = 0.0;
+				route_position terminal;
+				if (search.nodes[segment].distance >= best_distance())
+					break;
+				if (visible_source_center_position(
+				        snapshot, progress, source, visibility, segment,
+				        terminal, extra_distance))
+					accept_position(segment, terminal, extra_distance);
+				if ((index & 63) == 63)
+					report_progress(
+					    visibility, "route_visibility",
+					    source_base + index + 1, total);
 			}
+			report_progress(
+			    visibility, "route_visibility", source_base + segments,
+			    total);
+			for (int index = 0; index < segments; ++index) {
+				const int segment = search.visit_order[index];
+				double extra_distance = 0.0;
+				route_position terminal;
+				if (search.nodes[segment].distance >= best_distance())
+					break;
+				if (visible_source_detailed_position(
+				        snapshot, source, visibility, segment, terminal,
+				        extra_distance))
+					accept_position(segment, terminal, extra_distance);
+				if ((index & 63) == 63)
+					report_progress(
+					    visibility, "route_visibility",
+					    source_base + segments + index + 1, total);
+			}
+			report_progress(
+			    visibility, "route_visibility", source_base + segments * 2,
+			    total);
 		} else if (
 		    valid_segment(snapshot, source.source_segment) &&
 		    search.nodes[source.source_segment].reachable) {
@@ -959,6 +1183,7 @@ route_trigger_path_selection select_trigger_firing_path(
 			continue;
 		result = std::move(candidate);
 	}
+	report_progress(visibility, "route_visibility", total, total);
 	if (result.found && visibility.wall_shootable_without_transparency &&
 	    valid_wall(snapshot, result.source.source_wall))
 		result.uses_transparent_surface =
@@ -1452,20 +1677,32 @@ class dependency_planner
 		route_trigger_source visibility_target;
 		visibility_target.source_segment = target.segment;
 		visibility_target.source_position = target.position;
-		for (const int segment : search.visit_order) {
+		const int total = static_cast<int>(search.visit_order.size());
+		report_progress(visibility_, "route_target_visibility", 0, total);
+		for (int index = 0; index < total; ++index) {
+			const int segment = search.visit_order[index];
 			double extra_distance = 0.0;
 			route_position terminal;
 			if (!visible_source_position(
 			        snapshot_, state_.progress, visibility_target,
-			        visibility_, segment, terminal, extra_distance))
+			        visibility_, segment, terminal, extra_distance)) {
+				if ((index & 63) == 63)
+					report_progress(
+					    visibility_, "route_target_visibility", index + 1,
+					    total);
 				continue;
+			}
 			auto path = build_route_path(search, segment);
 			path.distance += extra_distance;
 			path.progress_weight = 0;
 			path.terminal_segment = segment;
 			path.terminal_position = terminal;
+			report_progress(
+			    visibility_, "route_target_visibility", total, total);
 			return path;
 		}
+		report_progress(
+		    visibility_, "route_target_visibility", total, total);
 		return {};
 	}
 
@@ -2678,6 +2915,7 @@ extern "C" int route_planner_plan_view(
 				return 0;
 		}
 		view_visibility_context visibility_context = { view };
+		dxx_route::visibility_sample_cache sample_cache;
 		dxx_route::route_visibility_query visibility;
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
@@ -2687,6 +2925,9 @@ extern "C" int route_planner_plan_view(
 		if (view->wall_shootable_without_transparency_from_position)
 			visibility.wall_shootable_without_transparency =
 			    view_wall_shootable_without_transparency;
+		visibility.progress_user = view->progress_user;
+		visibility.progress = view->progress;
+		visibility.sample_cache = &sample_cache;
 		auto result = dxx_route::plan_route(snapshot, query, visibility);
 		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
 		    result.status == dxx_route::route_plan_status::ok &&
@@ -2695,6 +2936,7 @@ extern "C" int route_planner_plan_view(
 			const int preceding_keys = keys_before_transparent_shot(result);
 			if (preceding_keys) {
 				auto strict_visibility = visibility;
+				strict_visibility.sample_cache_namespace++;
 				strict_visibility.wall_shootable =
 				    visibility.wall_shootable_without_transparency;
 				auto strict = dxx_route::plan_route(
@@ -2749,6 +2991,7 @@ extern "C" int route_planner_segment_reachable_view(
 		query.endpoint = dxx_route::route_endpoint_kind::segment;
 		query.target_segment = target_segment;
 		view_visibility_context visibility_context = { view };
+		dxx_route::visibility_sample_cache sample_cache;
 		dxx_route::route_visibility_query visibility;
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
@@ -2758,6 +3001,9 @@ extern "C" int route_planner_segment_reachable_view(
 		if (view->wall_shootable_without_transparency_from_position)
 			visibility.wall_shootable_without_transparency =
 			    view_wall_shootable_without_transparency;
+		visibility.progress_user = view->progress_user;
+		visibility.progress = view->progress;
+		visibility.sample_cache = &sample_cache;
 		return dxx_route::plan_route(snapshot, query, visibility).status ==
 		       dxx_route::route_plan_status::ok;
 	} catch (...) {

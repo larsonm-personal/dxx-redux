@@ -915,9 +915,9 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
             "seg": 321,
             "label_pos": {
               "x": -590.4111785888672,

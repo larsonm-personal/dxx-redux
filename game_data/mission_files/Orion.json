@@ -564,9 +564,9 @@
         "mine_volume": 12952895.902302735,
         "mine_volume_normalized": 2.8325325130762087,
         "mine_volume_text": "2.8x",
-        "travel_distance": 5216.1414721029305,
-        "travel_time_seconds": 104,
-        "travel_time_text": "1M:44S",
+        "travel_distance": 5036.152608209882,
+        "travel_time_seconds": 101,
+        "travel_time_text": "1M:41S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -623,16 +623,16 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 40,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 28,
             "label_pos": {
-              "x": -37.25,
-              "y": 41.0,
-              "z": -23.625
+              "x": 23.375,
+              "y": 92.625,
+              "z": -96.125
             },
-            "distance": 1132.2140955418188
+            "distance": 1042.2196635952948
           },
           {
             "index": 5,
@@ -647,7 +647,7 @@
               "y": 66.5,
               "z": 51.5
             },
-            "distance": 763.9500964067535,
+            "distance": 673.9556644602292,
             "trigger": 4,
             "trigger_type_id": 8,
             "trigger_type": "exit"

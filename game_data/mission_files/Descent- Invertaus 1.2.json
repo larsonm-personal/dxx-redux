@@ -281,9 +281,9 @@
         "mine_volume": 9047506.455870714,
         "mine_volume_normalized": 1.9785039879742048,
         "mine_volume_text": "2.0x",
-        "travel_distance": 532.0,
-        "travel_time_seconds": 11,
-        "travel_time_text": "0M:11S",
+        "travel_distance": 5290.60816729064,
+        "travel_time_seconds": 106,
+        "travel_time_text": "1M:46S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -298,6 +298,61 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 142,
+            "label_pos": {
+              "x": -30.0,
+              "y": -100.0,
+              "z": -226.5
+            },
+            "distance": 576.5,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 279,
+            "label_pos": {
+              "x": -560.0,
+              "y": -100.0,
+              "z": 20.5
+            },
+            "distance": 1236.253105947119,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 339,
+            "label_pos": {
+              "x": 47.2493896484375,
+              "y": -100.0,
+              "z": 228.43826293945312
+            },
+            "distance": 1323.3209052113257,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 431,
+            "label_pos": {
+              "x": -30.541656494140625,
+              "y": -49.236053466796875,
+              "z": 746.7538452148438
+            },
+            "distance": 1044.2670777085864
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -309,7 +364,7 @@
               "y": -77.0,
               "z": -80.0
             },
-            "distance": 532.0,
+            "distance": 1110.2670784236093,
             "trigger": 1,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -317,10 +372,7 @@
         ],
         "route_note": "no reactor, exit exists",
         "notes": [
-          "no reactor, exit exists",
-          "blue key not necessary",
-          "red key not necessary",
-          "gold key not necessary"
+          "no reactor, exit exists"
         ]
       }
     ],

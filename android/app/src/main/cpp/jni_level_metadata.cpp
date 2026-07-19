@@ -153,6 +153,78 @@ static void write_checkpoint(const json &request, const char *stage,
 	write_checkpoint_progress(request, stage, detail, -1, -1);
 }
 
+struct levelmeta_progress_context {
+	const json *request;
+	const char *level_file;
+	int level_completed;
+	int level_total;
+	int task_id;
+	int last_completed;
+	int last_total;
+	int last_percent;
+	Uint32 last_write_ticks;
+	std::string last_stage;
+};
+
+static void write_level_task_progress(
+    const levelmeta_progress_context &context, const char *phase,
+    int completed, int total)
+{
+	const std::string path = context.request->value("checkpoint_path", "");
+	if (path.empty())
+		return;
+	json out;
+	out["schema"] = "dxx-level-metadata-checkpoint-v1";
+	out["request_id"] = context.request->value("request_id", "");
+	out["stage"] = "level_progress";
+	out["phase"] = phase ? phase : "";
+	out["detail"] = context.level_file ? context.level_file : "";
+	out["source"] = context.request->value("source_name", "");
+	out["game"] = context.request->value("game", "");
+	out["task_id"] = context.task_id;
+	out["completed"] = completed;
+	out["total"] = total;
+	out["level_completed"] = context.level_completed;
+	out["level_total"] = context.level_total;
+	std::ofstream stream(path, std::ios::trunc);
+	if (stream)
+		stream << out.dump(2) << "\n";
+}
+
+static void levelmeta_progress(void *user, const char *stage,
+                               int completed, int total)
+{
+	levelmeta_progress_context *context =
+	    static_cast<levelmeta_progress_context *>(user);
+	if (!context || !context->request || total <= 0)
+		return;
+	if (completed < 0)
+		completed = 0;
+	if (completed > total)
+		completed = total;
+	const std::string current_stage = stage ? stage : "";
+	const int new_task =
+	    current_stage != context->last_stage || total != context->last_total ||
+	    completed < context->last_completed;
+	if (new_task) {
+		context->task_id++;
+		context->last_stage = current_stage;
+		context->last_total = total;
+		context->last_completed = -1;
+		context->last_percent = -1;
+	}
+	const int percent = completed * 100 / total;
+	const Uint32 now = SDL_GetTicks();
+	if (!new_task && percent <= context->last_percent)
+		return;
+	if (!new_task && percent < 100 && now - context->last_write_ticks < 100)
+		return;
+	write_level_task_progress(*context, stage, completed, total);
+	context->last_completed = completed;
+	context->last_percent = percent;
+	context->last_write_ticks = now;
+}
+
 static int init_levelmeta_audio(void)
 {
 	static char sdl_audio_driver[] = "SDL_AUDIODRIVER=dummy";
@@ -834,7 +906,21 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	Current_level_num = level_num;
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();
+	levelmeta_progress_context progress_context = {
+		&request,
+		level_file,
+		completed,
+		total,
+		0,
+		-1,
+		-1,
+		-1,
+		0,
+		"",
+	};
+	level_metadata_set_progress_callback(levelmeta_progress, &progress_context);
 	secret_area_rescan_current_level();
+	level_metadata_set_progress_callback(NULL, NULL);
 	levels.push_back(serialize_current_level_row(level_num, level_file));
 	write_checkpoint_progress(request, "level_done",
 	                          level_file ? level_file : "",

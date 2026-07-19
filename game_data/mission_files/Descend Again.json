@@ -1515,9 +1515,9 @@
         "mine_volume": 55647951.118025966,
         "mine_volume_normalized": 12.169064896125814,
         "mine_volume_text": "12x",
-        "travel_distance": 5035.342227747382,
-        "travel_time_seconds": 101,
-        "travel_time_text": "1M:41S",
+        "travel_distance": 6869.9952578593375,
+        "travel_time_seconds": 137,
+        "travel_time_text": "2M:17S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1560,6 +1560,33 @@
           },
           {
             "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 668,
+            "label_pos": {
+              "x": 18.0496826171875,
+              "y": -71.5,
+              "z": 657.2798919677734
+            },
+            "distance": 2339.1097026398643,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 715,
+            "label_pos": {
+              "x": 195.0496826171875,
+              "y": 89.5,
+              "z": 1120.4601440429688
+            },
+            "distance": 917.3265150559783
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1571,7 +1598,7 @@
               "y": 58.5,
               "z": 657.2798767089844
             },
-            "distance": 2105.10970263988,
+            "distance": 683.3265150559939,
             "trigger": 19,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1579,8 +1606,7 @@
         ],
         "route_note": "no reactor, exit exists",
         "notes": [
-          "no reactor, exit exists",
-          "red key not necessary"
+          "no reactor, exit exists"
         ]
       }
     ],

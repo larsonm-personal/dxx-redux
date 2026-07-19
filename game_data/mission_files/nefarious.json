@@ -1886,13 +1886,13 @@
         "mine_volume": 38704131.953337714,
         "mine_volume_normalized": 8.46379936773297,
         "mine_volume_text": "8.5x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 5368.007303684938,
+        "travel_time_seconds": 107,
+        "travel_time_text": "1M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -1900,9 +1900,106 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 582
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 305,
+            "label_pos": {
+              "x": -32.06721496582031,
+              "y": -117.02029418945312,
+              "z": 412.5558319091797
+            },
+            "distance": 1225.3793313827782,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 358,
+            "label_pos": {
+              "x": -313.7461395263672,
+              "y": -52.020294189453125,
+              "z": 181.69027709960938
+            },
+            "distance": 774.9354735314596,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 51,
+            "label_pos": {
+              "x": 413.7983093261719,
+              "y": -152.02029418945312,
+              "z": 181.69029235839844
+            },
+            "distance": 1001.2626115449305,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 0",
+            "seg": 228,
+            "side": 1,
+            "wall": 52,
+            "label_pos": {
+              "x": -17.06719970703125,
+              "y": 69.47537231445312,
+              "z": 196.03013610839844
+            },
+            "distance": 735.304972484406,
+            "trigger": 0,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 229,
+                "side": 1,
+                "wall": 50
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 178,
+            "label_pos": {
+              "x": -17.06695556640625,
+              "y": 101.97042846679688,
+              "z": 503.4918518066406
+            },
+            "distance": 492.5141072703035
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 54,
+            "side": 4,
+            "wall": 107,
+            "label_pos": {
+              "x": -17.067214965820312,
+              "y": 49.979705810546875,
+              "z": -463.30970764160156
+            },
+            "distance": 1138.6108074710603,
+            "trigger": 7,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ],
-        "route_problem": "exit unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"

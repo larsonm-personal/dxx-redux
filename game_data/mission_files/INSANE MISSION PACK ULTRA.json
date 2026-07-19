@@ -378,7 +378,7 @@
         "mine_volume": 3370666.666666567,
         "mine_volume_normalized": 0.7370956268071237,
         "mine_volume_text": "0.74x",
-        "travel_distance": 1002.0,
+        "travel_distance": 1008.0,
         "travel_time_seconds": 20,
         "travel_time_text": "0M:20S",
         "guidebot_count": 0,
@@ -410,6 +410,19 @@
           },
           {
             "index": 2,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 58,
+            "label_pos": {
+              "x": -95.0,
+              "y": 3.0,
+              "z": -40.0
+            },
+            "distance": 306.0
+          },
+          {
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -421,7 +434,7 @@
               "y": 0.0,
               "z": -40.0
             },
-            "distance": 359.0,
+            "distance": 59.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -446,9 +459,9 @@
         "mine_volume": 27926933.602361135,
         "mine_volume_normalized": 6.1070472592268334,
         "mine_volume_text": "6.1x",
-        "travel_distance": 1664.568290727561,
-        "travel_time_seconds": 33,
-        "travel_time_text": "0M:33S",
+        "travel_distance": 2884.5681982737337,
+        "travel_time_seconds": 58,
+        "travel_time_text": "0M:58S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -463,6 +476,19 @@
           },
           {
             "index": 1,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 55,
+            "label_pos": {
+              "x": -170.60011291503906,
+              "y": 26.708587646484375,
+              "z": -49.60777282714844
+            },
+            "distance": 1399.4825729512359
+          },
+          {
+            "index": 2,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying red key",
@@ -472,12 +498,12 @@
               "y": -57.355133056640625,
               "z": 116.51824951171875
             },
-            "distance": 789.4826344369385,
+            "distance": 609.9999690318754,
             "key": "red",
             "key_carrier_objnum": 105
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -513,9 +539,9 @@
         "mine_volume": 38602224.32656872,
         "mine_volume_normalized": 8.44151426111814,
         "mine_volume_text": "8.4x",
-        "travel_distance": 6291.244387019195,
-        "travel_time_seconds": 126,
-        "travel_time_text": "2M:06S",
+        "travel_distance": 6861.244387019194,
+        "travel_time_seconds": 137,
+        "travel_time_text": "2M:17S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -530,6 +556,19 @@
           },
           {
             "index": 1,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 86,
+            "label_pos": {
+              "x": 27.5,
+              "y": -1197.5,
+              "z": 460.0
+            },
+            "distance": 1650.2042068214448
+          },
+          {
+            "index": 2,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -541,7 +580,7 @@
               "y": 1342.5,
               "z": -545.0
             },
-            "distance": 6291.244387019195,
+            "distance": 5211.040180197749,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

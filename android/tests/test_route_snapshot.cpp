@@ -272,7 +272,26 @@ struct test_visibility {
 	dxx_route::route_position position;
 	int second_segment = -1;
 	dxx_route::route_position second_position;
+	int calls = 0;
 };
+
+struct test_progress {
+	int calls = 0;
+	int completed = -1;
+	int total = 0;
+};
+
+void progress_report(
+    void *user, const char *stage, int completed, int total)
+{
+	auto &progress = *static_cast<test_progress *>(user);
+	assert(stage && std::string(stage) == "route_visibility");
+	assert(total >= 0);
+	assert(completed >= 0 && completed <= total);
+	progress.calls++;
+	progress.completed = completed;
+	progress.total = total;
+}
 
 int wall_shootable(
     void *user,
@@ -280,7 +299,8 @@ int wall_shootable(
     const dxx_route::route_position &position,
     int wall)
 {
-	const auto &visible = *static_cast<test_visibility *>(user);
+	auto &visible = *static_cast<test_visibility *>(user);
+	++visible.calls;
 	return wall == visible.wall &&
 	               ((segment == visible.segment &&
 	                 position.value == visible.position.value) ||
@@ -855,6 +875,9 @@ int main()
 	dxx_route::route_visibility_query visibility;
 	visibility.user = &visible;
 	visibility.wall_shootable = wall_shootable;
+	test_progress firing_progress;
+	visibility.progress_user = &firing_progress;
+	visibility.progress = progress_report;
 	auto reachable_visible_snapshot = triggered_snapshot;
 	reachable_visible_snapshot.topology.walls[0].shootable_trigger = true;
 	reachable_visible_snapshot.topology.walls[0].target.value[0] +=
@@ -873,6 +896,10 @@ int main()
 	       visible.position.value);
 	assert(reachable_visible_firing.terminal_position.value !=
 	       reachable_visible_sources[0].source_position.value);
+	assert(visible.calls == 2);
+	assert(firing_progress.calls >= 2);
+	assert(firing_progress.completed == firing_progress.total);
+	assert(firing_progress.total > 0);
 	test_visibility rejected_visible;
 	rejected_visible.wall = 0;
 	const auto rejected_visible_firing =

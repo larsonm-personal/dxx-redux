@@ -37,4 +37,17 @@ class LevelMetadataCheckpointProgressTest {
             ),
         )
     }
+
+    @Test
+    fun parsesProgressWithinOneLargeLevel() {
+        val update =
+            LevelMetadataAnalyzer.parseLevelMetadataCheckpointUpdate(
+                """{"stage":"level_progress","phase":"route_visibility","detail":"Uneasy4.rl2","task_id":7,"completed":4500,"total":9000}""",
+            )
+
+        assertEquals("Checking switch firing paths in Uneasy4.rl2", update?.progress?.label)
+        assertEquals(4500, update?.progress?.completed)
+        assertEquals(9000, update?.progress?.total)
+        assertEquals("Uneasy4.rl2:7", update?.activityId)
+    }
 }

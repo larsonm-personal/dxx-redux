@@ -7,6 +7,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+. (Join-Path $scriptDir "standard_game_data.ps1")
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = Join-Path $androidRoot "temp\mission_zip_host_metadata\$stamp"
@@ -103,31 +104,6 @@ function Initialize-HostExecutable {
         throw "Host metadata executables were not found after build"
     }
     return @{ d1 = $d1; d2 = $d2 }
-}
-
-function Resolve-DataDir {
-    param(
-        [Parameter(Mandatory = $true)][string[]]$Candidates,
-        [Parameter(Mandatory = $true)][string[]]$RequiredFiles,
-        [Parameter(Mandatory = $true)][string]$Label
-    )
-
-    foreach ($dir in $Candidates) {
-        if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
-            continue
-        }
-        $ok = $true
-        foreach ($file in $RequiredFiles) {
-            if (-not (Test-Path -LiteralPath (Join-Path $dir $file) -PathType Leaf)) {
-                $ok = $false
-                break
-            }
-        }
-        if ($ok) {
-            return (Resolve-Path -LiteralPath $dir).Path
-        }
-    }
-    throw "$Label data directory not found"
 }
 
 function Get-SafeLabel {
@@ -579,14 +555,23 @@ if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
 }
 
 $executables = Initialize-HostExecutable
+$standardDeps = @(Get-StandardGameDataDeps)
+$d1Dependencies = @($standardDeps | Where-Object { $_.file -in @("descent.hog", "descent.pig") })
+$d2Dependencies = @($standardDeps | Where-Object { $_.file -in @("descent2.hog", "descent2.ham", "groupa.pig") })
+$dataSelections = @{
+    d1 = Resolve-StandardGameDataDirectory -Candidates $d1DataCandidates -Dependencies $d1Dependencies -Label "D1"
+    d2 = Resolve-StandardGameDataDirectory -Candidates $d2DataCandidates -Dependencies $d2Dependencies -Label "D2"
+}
 $dataDirs = @{
-    d1 = Resolve-DataDir -Candidates $d1DataCandidates -RequiredFiles @("DESCENT.HOG", "DESCENT.PIG") -Label "D1"
-    d2 = Resolve-DataDir -Candidates $d2DataCandidates -RequiredFiles @("DESCENT2.HOG", "DESCENT2.HAM", "GROUPA.PIG") -Label "D2"
+    d1 = $dataSelections.d1.Path
+    d2 = $dataSelections.d2.Path
 }
 
 Write-Status "Host mission metadata output: $outDir"
 Write-Status "D1 data: $($dataDirs.d1)"
+Write-Status "D1 hashes: $(($dataSelections.d1.Hashes.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
 Write-Status "D2 data: $($dataDirs.d2)"
+Write-Status "D2 hashes: $(($dataSelections.d2.Hashes.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
 
 $counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
 $counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"

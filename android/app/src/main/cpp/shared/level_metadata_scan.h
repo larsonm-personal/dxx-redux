@@ -76,6 +76,9 @@ enum level_metadata_route_edge_cost {
 	LEVEL_METADATA_ROUTE_EDGE_PROGRESS = 1
 };
 
+typedef void (*level_metadata_progress_callback)(
+    void *user, const char *stage, int completed, int total);
+
 #ifdef _MSC_VER
 /* Engine headers can leave MSVC packing at 1 byte; this is a shared ABI. */
 #pragma pack(push, 8)
@@ -190,6 +193,8 @@ typedef struct level_metadata_scan_view {
 	int (*wall_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_shootable_without_transparency_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);
+	void *progress_user;
+	level_metadata_progress_callback progress;
 } level_metadata_scan_view;
 
 typedef struct level_metadata_unexplored_route {
@@ -242,6 +247,8 @@ typedef struct level_metadata_state {
 void level_metadata_state_clear(level_metadata_state *state);
 int level_metadata_scan_level_summary(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state);
+void level_metadata_set_progress_callback(
+    level_metadata_progress_callback callback, void *user);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

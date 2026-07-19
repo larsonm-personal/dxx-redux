@@ -111,6 +111,10 @@ struct route_visibility_query {
 	    int segment,
 	    const route_position &from,
 	    int wall) = nullptr;
+	void *progress_user = nullptr;
+	level_metadata_progress_callback progress = nullptr;
+	void *sample_cache = nullptr;
+	unsigned int sample_cache_namespace = 0;
 };
 
 struct route_trigger_path_selection {

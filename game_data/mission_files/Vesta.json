@@ -198,13 +198,13 @@
         "mine_volume": 43469238.93620182,
         "mine_volume_normalized": 9.505830474834628,
         "mine_volume_text": "9.5x",
-        "travel_distance": 1406.4375472728532,
-        "travel_time_seconds": 28,
-        "travel_time_text": "0M:28S",
+        "travel_distance": 3889.307678719067,
+        "travel_time_seconds": 78,
+        "travel_time_text": "1M:18S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -226,9 +226,66 @@
             },
             "distance": 1406.4375472728532,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 716,
+            "side": 0,
+            "wall": 78,
+            "label_pos": {
+              "x": -67.07191467285156,
+              "y": 321.0,
+              "z": 533.3644714355469
+            },
+            "distance": 987.6224312954228,
+            "opens": [
+              {
+                "seg": 716,
+                "side": 0,
+                "wall": 78
+              },
+              {
+                "seg": 727,
+                "side": 2,
+                "wall": 80
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 205,
+            "label_pos": {
+              "x": 20.094284057617188,
+              "y": 24.026504516601562,
+              "z": -109.88775634765625
+            },
+            "distance": 1198.7312163240824
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 230,
+            "side": 2,
+            "wall": 76,
+            "label_pos": {
+              "x": 35.92881774902344,
+              "y": 221.0,
+              "z": -129.3888397216797
+            },
+            "distance": 296.5164838267088,
+            "trigger": 2,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       },
       {
         "level_num": -1,
