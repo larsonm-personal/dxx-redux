@@ -39,6 +39,8 @@ extern "C" {
 #include "window.h"
 
 #include "android_log.h"
+#include "android_loading_progress.h"
+#include "level_metadata_scan.h"
 }
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -59,6 +61,119 @@ static int Level_preview_is_active;
 static int Level_preview_palette_ready;
 static std::string Level_preview_palette_name;
 static std::atomic<int> Level_preview_close_requested(0);
+static int Level_preview_loading_progress_completed;
+static int Level_preview_loading_progress_max_percent;
+static unsigned long long Level_preview_metadata_progress_callbacks;
+
+class preview_loading_progress_guard
+{
+  public:
+	preview_loading_progress_guard()
+	{
+		android_loading_progress_begin("Preparing Preview", 100);
+		update("Reading preview request", 0);
+	}
+
+	~preview_loading_progress_guard()
+	{
+		finish();
+	}
+
+	void update(const char *label, int percent)
+	{
+		if (!active_)
+			return;
+		if (percent < Level_preview_loading_progress_max_percent)
+			percent = Level_preview_loading_progress_max_percent;
+		if (percent > 100)
+			percent = 100;
+		Level_preview_loading_progress_max_percent = percent;
+		android_loading_progress_update(label, percent, 100);
+	}
+
+	void finish()
+	{
+		if (!active_)
+			return;
+		Level_preview_loading_progress_max_percent = 100;
+		android_loading_progress_end();
+		active_ = false;
+		Level_preview_loading_progress_completed = 1;
+	}
+
+  private:
+	bool active_ = true;
+};
+
+struct preview_metadata_progress_context {
+	preview_loading_progress_guard *loading;
+	int range_start;
+	int range_end;
+	int route_only;
+	int max_percent;
+};
+
+static void preview_metadata_progress(
+    void *user, const char *stage, int completed, int total)
+{
+	preview_metadata_progress_context *context =
+	    static_cast<preview_metadata_progress_context *>(user);
+	const char *label = "Analyzing level";
+	int range_start = 0;
+	int range_end = 1000;
+	int fraction = 0;
+
+	if (!context || !context->loading || !stage)
+		return;
+	++Level_preview_metadata_progress_callbacks;
+	if (total > 0) {
+		if (completed < 0)
+			completed = 0;
+		if (completed > total)
+			completed = total;
+		fraction = static_cast<int>(
+		    static_cast<long long>(completed) * 1000 / total);
+	}
+	if (!strcmp(stage, "level_topology")) {
+		label = "Building map topology";
+		range_end = context->route_only ? 1000 : 150;
+	} else if (!strcmp(stage, "secret_areas")) {
+		label = "Scanning secret areas";
+		range_start = context->route_only ? 0 : 150;
+		range_end = context->route_only ? 1000 : 250;
+	} else if (!strcmp(stage, "level_summary")) {
+		label = "Analyzing level";
+		range_start = context->route_only ? 0 : 250;
+		range_end = context->route_only ? 1000 : 350;
+	} else if (!strcmp(stage, "route_visibility")) {
+		label = "Checking firing paths";
+		range_start = context->route_only ? 0 : 350;
+		range_end = 950;
+	} else if (!strcmp(stage, "route_target_visibility")) {
+		label = "Checking objective visibility";
+		range_start = context->route_only ? 0 : 350;
+		range_end = 950;
+	} else if (!strcmp(stage, "route_planning")) {
+		label = "Planning objectives";
+		if (completed >= total && total > 0) {
+			range_start = 1000;
+			range_end = 1000;
+			fraction = 1000;
+		} else {
+			range_start = context->route_only ? 0 : 350;
+			range_end = range_start;
+		}
+	}
+	const int phase_progress =
+	    range_start + (range_end - range_start) * fraction / 1000;
+	int percent = context->range_start +
+	              (context->range_end - context->range_start) *
+	                  phase_progress / 1000;
+	if (percent < context->max_percent)
+		percent = context->max_percent;
+	context->max_percent = percent;
+	context->loading->update(label, percent);
+}
 
 static int preview_fail(const std::string &message)
 {
@@ -223,6 +338,10 @@ extern "C" int android_level_preview_run(const char *request_path)
 	Level_preview_palette_ready = 0;
 	Level_preview_palette_name.clear();
 	Level_preview_close_requested.store(0, std::memory_order_release);
+	Level_preview_loading_progress_completed = 0;
+	Level_preview_loading_progress_max_percent = 0;
+	Level_preview_metadata_progress_callbacks = 0;
+	preview_loading_progress_guard loading_progress;
 	if (!request_path || !request_path[0])
 		return preview_fail("Preview request path is missing");
 
@@ -238,6 +357,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 	if (request.value("schema", "") != "dxx-level-preview-request-v1")
 		return preview_fail("Unsupported preview request schema");
 	Level_preview_request = request;
+	loading_progress.update("Mounting mission files", 5);
 
 	const std::string preview_write_dir = request.value("preview_write_dir", "");
 	if (preview_write_dir.empty() || !PHYSFS_setWriteDir(preview_write_dir.c_str()) ||
@@ -246,6 +366,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 	if (mount_preview_content(request))
 		return 1;
 
+	loading_progress.update("Loading game data", 10);
 	gamedata_init();
 	texmerge_init(10);
 #ifdef DXX_BUILD_DESCENT_II
@@ -254,30 +375,46 @@ extern "C" int android_level_preview_run(const char *request_path)
 		piggy_init_pigfile(groupa_pig);
 	}
 #endif
+	loading_progress.update("Initializing game", 25);
 	init_game();
 	/* Supply the in-memory sensitivity/deadzone defaults normally established
 	 * when a pilot is created, without reading or writing any pilot file. */
 	new_player_config();
 	Players[Player_num].callsign[0] = '\0';
+	loading_progress.update("Loading mission", 30);
 	if (load_preview_mission(request))
 		return 1;
 
 	const std::string level_file = request.value("level_file", "");
 	if (level_file.empty() || !PHYSFSX_exists(level_file.c_str(), 1))
 		return preview_fail("Preview level file is missing");
+	loading_progress.update(level_file.c_str(), 35);
 	if (load_level(level_file.c_str()))
 		return preview_fail(std::string("Could not load preview level ") + level_file);
+	loading_progress.update("Preparing level palette", 45);
 	load_preview_palette();
 	Current_level_num = request.value("level_num", 1);
 	Game_mode = GM_NORMAL;
 	if (select_preview_player())
 		return 1;
+	preview_metadata_progress_context canonical_progress = {
+		&loading_progress, 48, 75, 0, 48
+	};
+	level_metadata_set_progress_callback(
+	    preview_metadata_progress, &canonical_progress);
 	secret_area_rescan_current_level();
 	secret_area_set_reveal_unfound(0);
 	automap_clear_visited();
 	reveal_preview_automap_segments();
 	level_metadata_set_objective_mode(LEVEL_METADATA_OBJECTIVES_OFF);
+	preview_metadata_progress_context live_progress = {
+		&loading_progress, 75, 96, 1, 75
+	};
+	level_metadata_set_progress_callback(
+	    preview_metadata_progress, &live_progress);
 	level_metadata_rescan_route_from_object(Players[0].objnum);
+	level_metadata_set_progress_callback(NULL, NULL);
+	loading_progress.update("Opening automap", 97);
 	set_screen_mode(SCREEN_GAME);
 
 	Game_wind = window_create(
@@ -286,15 +423,14 @@ extern "C" int android_level_preview_run(const char *request_path)
 	if (!Game_wind)
 		return preview_fail("Could not create preview window");
 	configure_preview_touch_axes();
+	loading_progress.update("Opening automap", 99);
 	do_automap();
 	if (!Automap_active) {
 		window_close(Game_wind);
 		return preview_fail("Could not open automap preview");
 	}
-	Level_preview_first_frame_at = SDL_GetTicks();
 	Level_preview_is_active = 1;
-	debug_log(DLOG_GAME, "level preview first frame ready in %u ms level=%s",
-	          (unsigned int) (SDL_GetTicks() - started_at), level_file.c_str());
+	int first_frame_pending = 1;
 	while (Automap_active && window_get_front()) {
 		if (Level_preview_close_requested.exchange(0, std::memory_order_acq_rel)) {
 			window_close(window_get_front());
@@ -308,6 +444,14 @@ extern "C" int android_level_preview_run(const char *request_path)
 		FrameTime = F1_0 / 60;
 		++Level_preview_event_iterations;
 		event_process();
+		if (first_frame_pending) {
+			first_frame_pending = 0;
+			Level_preview_first_frame_at = SDL_GetTicks();
+			loading_progress.finish();
+			debug_log(DLOG_GAME, "level preview first frame ready in %u ms level=%s",
+			          (unsigned int) (Level_preview_first_frame_at - started_at),
+			          level_file.c_str());
+		}
 	}
 	Level_preview_is_active = 0;
 	if (Game_wind)
@@ -352,7 +496,13 @@ extern "C" const char *android_level_preview_introspection_json(void)
 		{ "palette_ready", Level_preview_palette_ready != 0 },
 		{ "palette_name", Level_preview_palette_name },
 		{ "event_iterations", Level_preview_event_iterations },
-		{ "first_frame_ms", Level_preview_first_frame_at - Level_preview_started_at },
+		{ "first_frame_ms", Level_preview_first_frame_at
+		                        ? Level_preview_first_frame_at - Level_preview_started_at
+		                        : 0 },
+		{ "loading_progress_completed", Level_preview_loading_progress_completed != 0 },
+		{ "loading_progress_max_percent", Level_preview_loading_progress_max_percent },
+		{ "loading_progress_ui_updates", android_loading_progress_get_flush_count() },
+		{ "metadata_progress_callbacks", Level_preview_metadata_progress_callbacks },
 		{ "uptime_ms", now - Level_preview_started_at }
 	};
 	Level_preview_introspection = preview.dump();

@@ -153,6 +153,16 @@ try {
         [long]$compositeProbe.rgb_sum -lt ([long]$presentedProbe.rgb_sum / 2)) {
         throw "Composed preview window does not contain the rendered automap surface"
     }
+    if (-not $initial.level_preview.loading_progress_completed -or
+        [int]$initial.level_preview.loading_progress_max_percent -ne 100 -or
+        [long]$initial.level_preview.metadata_progress_callbacks -le 0) {
+        throw "Preview loading progress did not cover metadata analysis through the first rendered frame"
+    }
+    $loadingUpdates = [int]$initial.level_preview.loading_progress_ui_updates
+    $maximumThrottledUpdates = [Math]::Ceiling([double]$initial.level_preview.first_frame_ms / 300.0) + 3
+    if ($loadingUpdates -lt 2 -or $loadingUpdates -gt $maximumThrottledUpdates) {
+        throw "Preview loading progress UI updates were not throttled: $loadingUpdates updates, maximum $maximumThrottledUpdates"
+    }
     Start-Sleep -Milliseconds 500
 
     $initialDistance = [double]$initial.automap.view_dist

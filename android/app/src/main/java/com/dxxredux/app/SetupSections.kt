@@ -2486,7 +2486,12 @@ private fun LevelMetadataDialog(
     var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
     var loading by remember(target) { mutableStateOf(true) }
     var progress by remember(target) {
-        mutableStateOf(MetadataLoadProgress("Preparing analysis files", 0, 5))
+        mutableStateOf(
+            LevelMetadataAnalysisProgress(
+                overall = MetadataLoadProgress("Overall analysis", 0, 0),
+                currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
+            ),
+        )
     }
     var previewPreparing by remember(target) { mutableStateOf(false) }
     var previewError by remember(target) { mutableStateOf<String?>(null) }
@@ -2509,7 +2514,11 @@ private fun LevelMetadataDialog(
     LaunchedEffect(target) {
         loading = true
         result = null
-        progress = MetadataLoadProgress("Preparing analysis files", 0, 5)
+        progress =
+            LevelMetadataAnalysisProgress(
+                overall = MetadataLoadProgress("Overall analysis", 0, 0),
+                currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
+            )
         result =
             LevelMetadataAnalyzer.analyze(context, target) { update ->
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -2543,7 +2552,7 @@ private fun LevelMetadataDialog(
                             .padding(end = 8.dp),
                 ) {
                     if (loading) {
-                        MetadataLoadProgressView(progress)
+                        LevelMetadataAnalysisProgressView(progress)
                     } else {
                         LevelMetadataResultContent(
                             result = result,

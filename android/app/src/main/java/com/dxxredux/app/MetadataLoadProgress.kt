@@ -57,3 +57,43 @@ internal fun MetadataLoadProgressView(
         } ?: LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
     }
 }
+
+@Composable
+internal fun LevelMetadataAnalysisProgressView(
+    progress: LevelMetadataAnalysisProgress,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                "Analyzing level metadata",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        MetadataLinearProgress(progress.overall)
+        progress.currentLevel?.let { currentLevel ->
+            Spacer(modifier = Modifier.height(10.dp))
+            MetadataLinearProgress(currentLevel)
+        }
+    }
+}
+
+@Composable
+private fun MetadataLinearProgress(progress: MetadataLoadProgress) {
+    Text(
+        if (progress.total > 0) formatMetadataLoadProgress(progress) else progress.label,
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    progress.fraction?.let { fraction ->
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier.fillMaxWidth().height(4.dp),
+        )
+    } ?: LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
+}

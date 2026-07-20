@@ -52,6 +52,13 @@ internal data class LevelMetadataTarget(
 internal data class LevelMetadataCheckpointUpdate(
     val progress: MetadataLoadProgress,
     val activityId: String,
+    val analysisProgress: LevelMetadataAnalysisProgress =
+        LevelMetadataAnalysisProgress(overall = progress),
+)
+
+internal data class LevelMetadataAnalysisProgress(
+    val overall: MetadataLoadProgress,
+    val currentLevel: MetadataLoadProgress? = null,
 )
 
 internal class LevelMetadataProgressDeadline(
@@ -777,16 +784,29 @@ internal object LevelMetadataAnalyzer {
     suspend fun analyze(
         context: Context,
         target: LevelMetadataTarget,
-        onProgress: suspend (MetadataLoadProgress) -> Unit = {},
+        onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
         withContext(Dispatchers.IO) {
             val stepCount = 5
+            val expectedLevelCount =
+                (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
+            var completedLevelCount = 0
 
             suspend fun progress(
                 label: String,
                 completed: Int,
             ) {
-                onProgress(MetadataLoadProgress(label, completed, stepCount))
+                onProgress(
+                    LevelMetadataAnalysisProgress(
+                        overall =
+                            MetadataLoadProgress(
+                                "Overall analysis",
+                                completedLevelCount,
+                                expectedLevelCount,
+                            ),
+                        currentLevel = MetadataLoadProgress(label, completed, stepCount),
+                    ),
+                )
             }
 
             val appContext = context.applicationContext
@@ -829,10 +849,13 @@ internal object LevelMetadataAnalyzer {
             }
             val workerStartedAt = SystemClock.elapsedRealtime()
             val progressDeadline = LevelMetadataProgressDeadline(workerStartedAt)
-            val expectedLevelCount =
-                (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
             if (expectedLevelCount > 0) {
-                onProgress(MetadataLoadProgress("Scanning levels", 0, expectedLevelCount))
+                onProgress(
+                    LevelMetadataAnalysisProgress(
+                        overall = MetadataLoadProgress("Overall analysis", 0, expectedLevelCount),
+                        currentLevel = MetadataLoadProgress("Starting first level", 0, 0),
+                    ),
+                )
             } else {
                 progress("Scanning levels", 3)
             }
@@ -840,6 +863,7 @@ internal object LevelMetadataAnalyzer {
 
             while (true) {
                 if (resultFile.isFile) {
+                    completedLevelCount = expectedLevelCount
                     progress("Reading analysis result", 4)
                     val parsed = parseResultFile(target, resultFile)
                     progress("Analysis complete", 5)
@@ -854,7 +878,9 @@ internal object LevelMetadataAnalyzer {
                             lastCheckpoint = checkpoint
                             parseLevelMetadataCheckpointUpdate(checkpoint)?.let { update ->
                                 progressDeadline.observe(update, SystemClock.elapsedRealtime())
-                                onProgress(update.progress)
+                                completedLevelCount =
+                                    maxOf(completedLevelCount, update.analysisProgress.overall.completed)
+                                onProgress(update.analysisProgress)
                             }
                         }
                 }
@@ -912,9 +938,48 @@ internal object LevelMetadataAnalyzer {
                 } else {
                     "levels:$detail"
                 }
+            val taskProgress = MetadataLoadProgress(label, completed, total)
+            val overallProgress =
+                if (stage == "level_progress") {
+                    val levelTotal = checkpoint.optInt("level_total", 0)
+                    MetadataLoadProgress(
+                        label = "Overall analysis",
+                        completed = checkpoint.optInt("level_completed", 0).coerceIn(0, levelTotal.coerceAtLeast(0)),
+                        total = levelTotal,
+                    )
+                } else {
+                    MetadataLoadProgress("Overall analysis", completed, total)
+                }
+            val currentLevelProgress =
+                when (stage) {
+                    "level_progress" -> {
+                        taskProgress
+                    }
+
+                    "level" -> {
+                        MetadataLoadProgress(
+                            if (detail.isBlank()) "Starting level" else "Starting $detail",
+                            0,
+                            0,
+                        )
+                    }
+
+                    else -> {
+                        MetadataLoadProgress(
+                            if (detail.isBlank()) "Level complete" else "Completed $detail",
+                            1,
+                            1,
+                        )
+                    }
+                }
             LevelMetadataCheckpointUpdate(
-                MetadataLoadProgress(label, completed, total),
-                activityId,
+                progress = taskProgress,
+                activityId = activityId,
+                analysisProgress =
+                    LevelMetadataAnalysisProgress(
+                        overall = overallProgress,
+                        currentLevel = currentLevelProgress,
+                    ),
             )
         }.getOrNull()
 

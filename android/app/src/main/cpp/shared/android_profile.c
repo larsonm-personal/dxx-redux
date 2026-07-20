@@ -15,6 +15,8 @@
 #define ANDROID_PROFILE_TEXTURE_THRESHOLD_US 10000LL
 #define ANDROID_PROFILE_TEXTURE_BURST_GAP_US 250000LL
 #define ANDROID_PROFILE_STORAGE_THRESHOLD_US 2000LL
+#define ANDROID_PROFILE_SLOW_FRAME_US         100000LL
+#define ANDROID_PROFILE_SLOW_LOG_INTERVAL_US  1000000LL
 
 enum android_profile_gl_metric {
 	ANDROID_PROFILE_GL_SWAP = 0,
@@ -68,6 +70,7 @@ static long long g_android_profile_next_sample_ms;
 static long long g_android_profile_sample_start_ms;
 static long long g_android_profile_sample_end_ms;
 static long long g_android_profile_frame_start_us;
+static long long g_android_profile_next_slow_log_us;
 static long long g_android_profile_sample_total_us;
 static long long g_android_profile_sample_max_us;
 static long long g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_COUNT];
@@ -76,6 +79,16 @@ static long long g_android_profile_gl_sample_max_us[ANDROID_PROFILE_GL_COUNT];
 static size_t g_android_profile_batch_len;
 static char g_android_profile_game[8] = "";
 static char g_android_profile_batch[ANDROID_PROFILE_BATCH_CAPACITY];
+static int g_android_profile_level;
+static int g_android_profile_viewer_segment;
+static int g_android_profile_object_draws;
+static long long g_android_profile_object_total_us;
+static long long g_android_profile_object_max_us;
+static int g_android_profile_object_max_objnum;
+static int g_android_profile_object_max_type;
+static int g_android_profile_object_max_id;
+static int g_android_profile_object_max_render_type;
+static int g_android_profile_object_max_model;
 static struct android_profile_bucket_state g_android_profile_buckets[ANDROID_PROFILE_BUCKET_COUNT];
 static struct android_profile_texture_burst_state g_android_profile_texture_burst;
 
@@ -358,6 +371,17 @@ static void android_profile_reset_frame_metrics(void)
 
 	for (i = 0; i < ANDROID_PROFILE_GL_COUNT; i++)
 		g_android_profile_gl_frame_us[i] = 0;
+
+	g_android_profile_level = 0;
+	g_android_profile_viewer_segment = -1;
+	g_android_profile_object_draws = 0;
+	g_android_profile_object_total_us = 0;
+	g_android_profile_object_max_us = 0;
+	g_android_profile_object_max_objnum = -1;
+	g_android_profile_object_max_type = -1;
+	g_android_profile_object_max_id = -1;
+	g_android_profile_object_max_render_type = -1;
+	g_android_profile_object_max_model = -1;
 }
 
 static void android_profile_reset_sample_metrics(void)
@@ -523,15 +547,19 @@ void android_profile_frame_begin(const char *game, unsigned int frame_id)
 			android_profile_start_sample(now_ms, game);
 	}
 
-	if (!g_android_profile_sample_active) {
-		g_android_profile_frame_active = 0;
-		return;
-	}
-
 	g_android_profile_frame_active = 1;
 	g_android_profile_frame_id = frame_id;
 	android_profile_reset_frame_metrics();
 	g_android_profile_frame_start_us = android_profile_now_us();
+}
+
+void android_profile_set_frame_context(int level, int viewer_segment)
+{
+	if (!g_android_profile_frame_active)
+		return;
+
+	g_android_profile_level = level;
+	g_android_profile_viewer_segment = viewer_segment;
 }
 
 void android_profile_bucket_begin(int bucket)
@@ -561,6 +589,36 @@ void android_profile_bucket_end(int bucket)
 	g_android_profile_buckets[bucket].frame_us += now_us - g_android_profile_buckets[bucket].start_us;
 	g_android_profile_buckets[bucket].active = 0;
 	g_android_profile_buckets[bucket].start_us = 0;
+}
+
+long long android_profile_object_begin(void)
+{
+	if (!g_android_profile_frame_active)
+		return 0;
+
+	return android_profile_now_us();
+}
+
+void android_profile_object_end(long long start_us, int objnum, int object_type,
+                                int object_id, int render_type, int model_num)
+{
+	long long elapsed_us;
+
+	if (!g_android_profile_frame_active || start_us <= 0)
+		return;
+
+	elapsed_us = android_profile_now_us() - start_us;
+	g_android_profile_object_draws++;
+	g_android_profile_object_total_us += elapsed_us;
+	if (elapsed_us <= g_android_profile_object_max_us)
+		return;
+
+	g_android_profile_object_max_us = elapsed_us;
+	g_android_profile_object_max_objnum = objnum;
+	g_android_profile_object_max_type = object_type;
+	g_android_profile_object_max_id = object_id;
+	g_android_profile_object_max_render_type = render_type;
+	g_android_profile_object_max_model = model_num;
 }
 
 void android_profile_set_gl_frame_metrics(int swap_us, int gpu_us,
@@ -700,6 +758,37 @@ void android_profile_frame_end(void)
 
 	android_profile_finish_open_buckets(now_us);
 	g_android_profile_frame_active = 0;
+	if (total_us >= ANDROID_PROFILE_SLOW_FRAME_US &&
+	    now_us >= g_android_profile_next_slow_log_us) {
+		debug_log(
+		    DLOG_PROFILING,
+		    "prof_v=1 type=slow_frame game=%s frame=%u level=%d viewer_seg=%d total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld object_us=%lld object_draws=%d max_object_us=%lld max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d",
+		    g_android_profile_game,
+		    g_android_profile_frame_id,
+		    g_android_profile_level,
+		    g_android_profile_viewer_segment,
+		    total_us,
+		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_WAIT].frame_us,
+		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_SIM].frame_us,
+		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RENDER].frame_us,
+		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REPLAY].frame_us,
+		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_SWAP],
+		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_GPU],
+		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_RESOLVE],
+		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_ERROR],
+		    g_android_profile_object_total_us,
+		    g_android_profile_object_draws,
+		    g_android_profile_object_max_us,
+		    g_android_profile_object_max_objnum,
+		    g_android_profile_object_max_type,
+		    g_android_profile_object_max_id,
+		    g_android_profile_object_max_render_type,
+		    g_android_profile_object_max_model);
+		g_android_profile_next_slow_log_us = now_us + ANDROID_PROFILE_SLOW_LOG_INTERVAL_US;
+	}
+	if (!g_android_profile_sample_active)
+		return;
+
 	g_android_profile_sample_frame_count++;
 	g_android_profile_sample_total_us += total_us;
 	if (total_us > g_android_profile_sample_max_us)

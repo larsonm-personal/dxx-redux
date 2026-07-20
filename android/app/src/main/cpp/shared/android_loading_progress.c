@@ -15,6 +15,7 @@ static int g_loading_progress_active = 0;
 static int g_loading_progress_total = 0;
 static int g_loading_progress_done = 0;
 static int g_loading_progress_has_flush = 0;
+static int g_loading_progress_flush_count = 0;
 static char g_loading_progress_phase[64];
 static char g_loading_progress_label[64];
 static struct timespec g_loading_progress_last_flush;
@@ -110,6 +111,7 @@ static void loading_progress_flush_locked(int force)
 		return;
 	g_loading_progress_last_flush = now;
 	g_loading_progress_has_flush = 1;
+	g_loading_progress_flush_count++;
 	strcpy(phase, g_loading_progress_phase);
 	strcpy(label, g_loading_progress_label);
 	if (g_loading_progress_total > 0) {
@@ -131,6 +133,7 @@ void android_loading_progress_begin(const char *phase_label, int total_items)
 	g_loading_progress_total = total_items;
 	g_loading_progress_done = 0;
 	g_loading_progress_has_flush = 0;
+	g_loading_progress_flush_count = 0;
 	g_loading_progress_label[0] = 0;
 	loading_progress_copy_label(g_loading_progress_phase, sizeof(g_loading_progress_phase), phase_label);
 	pthread_mutex_unlock(&g_loading_progress_lock);
@@ -147,6 +150,21 @@ void android_loading_progress_step(const char *item_label)
 	if (item_label && *item_label)
 		loading_progress_copy_label(g_loading_progress_label, sizeof(g_loading_progress_label), item_label);
 	loading_progress_flush_locked(g_loading_progress_done == 1);
+	pthread_mutex_unlock(&g_loading_progress_lock);
+}
+
+void android_loading_progress_update(const char *item_label, int completed, int total_items)
+{
+	pthread_mutex_lock(&g_loading_progress_lock);
+	if (!g_loading_progress_active) {
+		pthread_mutex_unlock(&g_loading_progress_lock);
+		return;
+	}
+	g_loading_progress_total = total_items;
+	g_loading_progress_done = completed;
+	if (item_label && *item_label)
+		loading_progress_copy_label(g_loading_progress_label, sizeof(g_loading_progress_label), item_label);
+	loading_progress_flush_locked(!g_loading_progress_has_flush);
 	pthread_mutex_unlock(&g_loading_progress_lock);
 }
 
@@ -170,6 +188,15 @@ void android_loading_progress_end(void)
 	loading_progress_call_hide();
 }
 
+int android_loading_progress_get_flush_count(void)
+{
+	int count;
+	pthread_mutex_lock(&g_loading_progress_lock);
+	count = g_loading_progress_flush_count;
+	pthread_mutex_unlock(&g_loading_progress_lock);
+	return count;
+}
+
 #else
 
 void android_loading_progress_begin(const char *phase_label, int total_items)
@@ -183,8 +210,20 @@ void android_loading_progress_step(const char *item_label)
 	(void) item_label;
 }
 
+void android_loading_progress_update(const char *item_label, int completed, int total_items)
+{
+	(void) item_label;
+	(void) completed;
+	(void) total_items;
+}
+
 void android_loading_progress_end(void)
 {
+}
+
+int android_loading_progress_get_flush_count(void)
+{
+	return 0;
 }
 
 #endif

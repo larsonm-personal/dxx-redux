@@ -1315,6 +1315,8 @@ int game_handler(window *wind, d_event *event, void *data)
 			#ifdef __ANDROID__
 			static unsigned int android_profile_frame_id = 0;
 			android_profile_frame_begin("d2", ++android_profile_frame_id);
+			android_profile_set_frame_context(Current_level_num,
+			                                  ConsoleObject ? ConsoleObject->segnum : -1);
 			if (android_music_control_apply_pending()) {
 				android_profile_frame_end();
 				return 1;

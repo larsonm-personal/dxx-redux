@@ -68,6 +68,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h" 
 #include "timer.h"
+#ifdef __ANDROID__
+#include "android_profile.h"
+#endif
 #include "homing_compat.h"
 
 #ifdef EDITOR
@@ -691,6 +694,10 @@ void create_vclip_on_object(object *objp, fix size_scale, int vclip_num)
 void render_object(object *obj)
 {
 	int mld_save;
+#ifdef __ANDROID__
+	long long profile_start_us;
+	int profile_model_num;
+#endif
 
 	if ( obj == Viewer )
 		return;
@@ -710,6 +717,13 @@ void render_object(object *obj)
 
 	mld_save = Max_linear_depth;
 	Max_linear_depth = Max_linear_depth_objects;
+#ifdef __ANDROID__
+	profile_start_us = android_profile_object_begin();
+	profile_model_num =
+	    (obj->render_type == RT_POLYOBJ || obj->render_type == RT_MORPH) ?
+	        obj->rtype.pobj_info.model_num :
+	        -1;
+#endif
 
 	switch (obj->render_type)
 	{
@@ -775,6 +789,10 @@ void render_object(object *obj)
 		newdemo_record_render_object(obj);
 
 	Max_linear_depth = mld_save;
+#ifdef __ANDROID__
+	android_profile_object_end(profile_start_us, (int) (obj - Objects), obj->type,
+	                           obj->id, obj->render_type, profile_model_num);
+#endif
 }
 
 void check_and_fix_matrix(vms_matrix *m);

@@ -88,6 +88,7 @@ abstract class LevelPreviewActivity :
     private lateinit var inputMixer: InputMixer
     private lateinit var touchOverlay: TouchOverlayView
     private lateinit var previewSurfaceView: SurfaceView
+    private lateinit var loadingProgressOverlay: LoadingProgressOverlayView
     private var nativeStarted = false
     private var nativeFinished = false
     private var debugReceiverRegistered = false
@@ -196,13 +197,16 @@ abstract class LevelPreviewActivity :
                 TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES -> nativeCycleObjectiveOverlay()
             }
         }
+        loadingProgressOverlay = LoadingProgressOverlayView(this)
 
         setContentView(
             FrameLayout(this).apply {
                 addView(previewSurfaceView, matchParentLayoutParams())
                 addView(touchOverlay, matchParentLayoutParams())
+                addView(loadingProgressOverlay, matchParentLayoutParams())
             },
         )
+        loadingProgressOverlay.showProgress("Preparing Preview", "Starting preview", 0)
         hideSystemBars()
     }
 
@@ -263,6 +267,24 @@ abstract class LevelPreviewActivity :
         if (nativeFinished) return
         nativeFinished = true
         finishWithResult(error.orEmpty())
+    }
+
+    @Suppress("unused")
+    fun showLoadingProgress(
+        phase: String,
+        item: String,
+        percent: Int,
+    ) {
+        runOnUiThread {
+            loadingProgressOverlay.showProgress(phase, item, percent)
+        }
+    }
+
+    @Suppress("unused")
+    fun hideLoadingProgress() {
+        runOnUiThread {
+            loadingProgressOverlay.hideProgress()
+        }
     }
 
     private fun closePreview() {
