@@ -54,6 +54,8 @@ void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 
 static struct merged_wall_cached_texmerge_entry g_merged_wall_cached_texmerge[MERGED_WALL_CACHED_TEXMERGE_COUNT];
 static int g_merged_wall_cached_texmerge_initialized = 0;
+int r_mwall_cache_hits = 0;
+int r_mwall_cache_misses = 0;
 #define MERGED_WALL_PROBE_HIT_BBOX      1
 #define MERGED_WALL_PROBE_HIT_POLYGON   2
 #define MERGED_WALL_PROBE_HIT_PROJECTED 3
@@ -625,6 +627,7 @@ grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
 	for (i = 0; i < count; ++i) {
 		struct merged_wall_cached_texmerge_entry *entry = &entries[i];
 		if (entry->texture && entry->texture->handle > 0 && entry->bottom_bmp == bottom_bmp && entry->top_bmp == overlay_bmp && entry->orient == orient) {
+			r_mwall_cache_hits++;
 			entry->last_time_used = timer_query();
 			if (out_slot)
 				*out_slot = entry->slot;
@@ -634,6 +637,7 @@ grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
 			return &entry->bitmap;
 		}
 	}
+	r_mwall_cache_misses++;
 	return NULL;
 }
 

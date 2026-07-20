@@ -255,6 +255,9 @@ static void draw_outline(int nverts,const g3s_point **pointlist)
 #endif
 
 extern fix Seismic_tremor_magnitude;
+#ifdef ANDROID
+extern int r_water_faces;
+#endif
 
 fix flash_scale;
 
@@ -358,6 +361,12 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		Segments[segnum].sides[sidenum].tmap_num2 = 0;
 		tmap2 = 0;
 	}
+
+#ifdef ANDROID
+	if ((TmapInfo[tmap1].flags & TMI_WATER) ||
+	    (tmap2 && (TmapInfo[tmap2 & 0x3fff].flags & TMI_WATER)))
+		r_water_faces++;
+#endif
 
 #ifdef OGL
 	int use_alt_texmerge = GameArg.DbgAltTexMerge;

@@ -222,6 +222,10 @@ static GLuint current_prog;
 static GLuint shim_vbo;
 static unsigned char *shim_stream_data;
 static int shim_stream_capacity;
+static int shim_vbo_capacity;
+static int shim_vbo_offset;
+
+#define SHIM_VBO_INITIAL_CAPACITY (1024 * 1024)
 
 static int gl_type_size(GLenum type)
 {
@@ -243,6 +247,20 @@ static void gles3_shim_reserve_stream_data(int bytes)
 		shim_stream_data = new_data;
 		shim_stream_capacity = bytes;
 	}
+}
+
+static int gles3_shim_reserve_vbo_data(int bytes)
+{
+	int offset = (shim_vbo_offset + 15) & ~15;
+	if (bytes > shim_vbo_capacity || offset + bytes > shim_vbo_capacity) {
+		shim_vbo_capacity = bytes > SHIM_VBO_INITIAL_CAPACITY
+		                        ? bytes
+		                        : SHIM_VBO_INITIAL_CAPACITY;
+		offset = 0;
+		glBufferData(GL_ARRAY_BUFFER, shim_vbo_capacity, NULL, GL_STREAM_DRAW);
+	}
+	shim_vbo_offset = offset + bytes;
+	return offset;
 }
 
 void gles3_shim_bind_program(GLuint prog)
@@ -343,6 +361,8 @@ void gles3_shim_shutdown(void)
 	free(shim_stream_data);
 	shim_stream_data = NULL;
 	shim_stream_capacity = 0;
+	shim_vbo_capacity = 0;
+	shim_vbo_offset = 0;
 	if (shim_vbo) {
 		glDeleteBuffers(1, &shim_vbo);
 		shim_vbo = 0;
@@ -354,6 +374,16 @@ void gles3_shim_shutdown(void)
 	current_prog = 0;
 	external_prog = 0;
 	state_dirty = 1;
+}
+
+void gles3_shim_begin_frame(void)
+{
+	shim_vbo_offset = 0;
+	if (!shim_vbo_capacity)
+		return;
+	glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
+	glBufferData(GL_ARRAY_BUFFER, shim_vbo_capacity, NULL, GL_STREAM_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 /* ------------------------------------------------------------------ */
@@ -687,15 +717,17 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		int ca_bytes = (color_array_enabled && ca_ptr) ? nverts * ca_row : 0;
 		int ta_bytes = (texcoord_array_enabled && ta_ptr) ? nverts * ta_row : 0;
 		int total = va_bytes + ca_bytes + ta_bytes;
+		int base;
 		int off = 0;
 
 		glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
 		gles3_shim_reserve_stream_data(total);
+		base = gles3_shim_reserve_vbo_data(total);
 
 		if (va_bytes) {
 			memcpy(shim_stream_data + off, va_ptr, va_bytes);
 			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
-			                      va_stride, (const void *) (intptr_t) off);
+			                      va_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(ATTR_POS);
 			off += va_bytes;
 		} else {
@@ -705,7 +737,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ca_bytes) {
 			memcpy(shim_stream_data + off, ca_ptr, ca_bytes);
 			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
-			                      ca_stride, (const void *) (intptr_t) off);
+			                      ca_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(ATTR_COLOR);
 			off += ca_bytes;
 		} else {
@@ -715,14 +747,14 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ta_bytes) {
 			memcpy(shim_stream_data + off, ta_ptr, ta_bytes);
 			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
-			                      ta_stride, (const void *) (intptr_t) off);
+			                      ta_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(ATTR_TEXCOORD);
 			off += ta_bytes;
 		} else {
 			glDisableVertexAttribArray(ATTR_TEXCOORD);
 		}
 		if (total > 0)
-			glBufferData(GL_ARRAY_BUFFER, total, shim_stream_data, GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER, base, total, shim_stream_data);
 	} else {
 		GLsizei nverts = first + count;
 		int va_row = va_stride ? va_stride : va_size * gl_type_size(va_type);
@@ -734,15 +766,17 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		int ta_bytes = ta_ptr ? nverts * ta_row : 0;
 		int ta2_bytes = ta2_ptr ? nverts * ta2_row : 0;
 		int total = va_bytes + ca_bytes + ta_bytes + ta2_bytes;
+		int base;
 		int off = 0;
 
 		glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
 		gles3_shim_reserve_stream_data(total);
+		base = gles3_shim_reserve_vbo_data(total);
 
 		if (va_bytes) {
 			memcpy(shim_stream_data + off, va_ptr, va_bytes);
 			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
-			                      va_stride, (const void *) (intptr_t) off);
+			                      va_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(ATTR_POS);
 			off += va_bytes;
 		} else {
@@ -752,7 +786,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ca_bytes) {
 			memcpy(shim_stream_data + off, ca_ptr, ca_bytes);
 			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
-			                      ca_stride, (const void *) (intptr_t) off);
+			                      ca_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(ATTR_COLOR);
 			off += ca_bytes;
 		} else {
@@ -762,7 +796,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ta_bytes) {
 			memcpy(shim_stream_data + off, ta_ptr, ta_bytes);
 			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
-			                      ta_stride, (const void *) (intptr_t) off);
+			                      ta_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(ATTR_TEXCOORD);
 			off += ta_bytes;
 		} else {
@@ -772,14 +806,14 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ta2_bytes) {
 			memcpy(shim_stream_data + off, ta2_ptr, ta2_bytes);
 			glVertexAttribPointer(3, ta2_size, ta2_type, GL_FALSE,
-			                      ta2_stride, (const void *) (intptr_t) off);
+			                      ta2_stride, (const void *) (intptr_t) (base + off));
 			glEnableVertexAttribArray(3);
 			off += ta2_bytes;
 		} else {
 			glDisableVertexAttribArray(3);
 		}
 		if (total > 0)
-			glBufferData(GL_ARRAY_BUFFER, total, shim_stream_data, GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER, base, total, shim_stream_data);
 	}
 
 	glDrawArrays(mode, first, count);

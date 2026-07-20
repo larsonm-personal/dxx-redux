@@ -246,6 +246,9 @@ int r_texbinds = 0;
 int r_texbind_reuse = 0;
 int r_shader_switches = 0;
 int r_mask_draws = 0;
+int r_water_faces = 0;
+extern int r_mwall_cache_hits;
+extern int r_mwall_cache_misses;
 static GLuint ogl_last_bound_tex = 0;
 #define OGL_BINDTEXTURE(a) do { \
 	if ((GLuint)(a) != ogl_last_bound_tex) { \
@@ -2173,6 +2176,9 @@ void ogl_start_frame(void){
 	int msaa_color_clear = 0;
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
+	r_water_faces=0;
+	r_mwall_cache_hits=0;r_mwall_cache_misses=0;
+	gles3_shim_begin_frame();
 	g_ogl_render_context = 1; /* 3D world */
 	ogl_android_apply_pending_runtime_options("start_frame");
 	/* Bind MSAA FBO if enabled; create/resize as needed.

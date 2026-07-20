@@ -9,6 +9,15 @@
 
 #include "android_log.h"
 
+extern int r_tpolyc;
+extern int r_water_faces;
+extern int r_texbinds;
+extern int r_texbind_reuse;
+extern int r_shader_switches;
+extern int r_mask_draws;
+extern int r_mwall_cache_hits;
+extern int r_mwall_cache_misses;
+
 #define ANDROID_PROFILE_PERIOD_MS            10000LL
 #define ANDROID_PROFILE_WINDOW_MS            1000LL
 #define ANDROID_PROFILE_BATCH_CAPACITY       65536
@@ -762,7 +771,7 @@ void android_profile_frame_end(void)
 	    now_us >= g_android_profile_next_slow_log_us) {
 		debug_log(
 		    DLOG_PROFILING,
-		    "prof_v=1 type=slow_frame game=%s frame=%u level=%d viewer_seg=%d total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld object_us=%lld object_draws=%d max_object_us=%lld max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d",
+		    "prof_v=1 type=slow_frame game=%s frame=%u level=%d viewer_seg=%d total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d object_us=%lld object_draws=%d max_object_us=%lld max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d",
 		    g_android_profile_game,
 		    g_android_profile_frame_id,
 		    g_android_profile_level,
@@ -776,6 +785,14 @@ void android_profile_frame_end(void)
 		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_GPU],
 		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_RESOLVE],
 		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_ERROR],
+		    r_tpolyc,
+		    r_water_faces,
+		    r_texbinds,
+		    r_texbind_reuse,
+		    r_shader_switches,
+		    r_mask_draws,
+		    r_mwall_cache_hits,
+		    r_mwall_cache_misses,
 		    g_android_profile_object_total_us,
 		    g_android_profile_object_draws,
 		    g_android_profile_object_max_us,
@@ -795,7 +812,7 @@ void android_profile_frame_end(void)
 		g_android_profile_sample_max_us = total_us;
 	android_profile_commit_frame_metrics();
 	android_profile_appendf(
-	    "prof_v=1 type=frame sample=%u game=%s frame=%u frame_index=%u total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld",
+	    "prof_v=1 type=frame sample=%u game=%s frame=%u frame_index=%u total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d",
 	    g_android_profile_sample_id,
 	    g_android_profile_game,
 	    g_android_profile_frame_id,
@@ -808,7 +825,15 @@ void android_profile_frame_end(void)
 	    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_SWAP],
 	    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_GPU],
 	    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_RESOLVE],
-	    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_ERROR]);
+	    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_ERROR],
+	    r_tpolyc,
+	    r_water_faces,
+	    r_texbinds,
+	    r_texbind_reuse,
+	    r_shader_switches,
+	    r_mask_draws,
+	    r_mwall_cache_hits,
+	    r_mwall_cache_misses);
 
 	if (now_ms >= g_android_profile_sample_end_ms)
 		android_profile_finish_sample(now_ms);

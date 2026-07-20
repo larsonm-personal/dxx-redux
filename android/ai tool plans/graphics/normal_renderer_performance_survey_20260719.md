@@ -104,3 +104,65 @@ model face loop with a four-line semantic diff per game.
 - The fixed D2 level 7 profiling scenario passed all 20 automation steps on each
   measurement run.
 - Scoped code-quality checks and `git diff --check` passed.
+
+## Animated water follow-up
+
+### Plan
+
+- [x] Map D1/D2 effect animation from frame advance through wall rendering and texture upload/bind
+- [x] Establish repeatable water-heavy D2 views and collect baseline render, texture, and draw behavior
+- [x] Test likely thrashing hypotheses with focused instrumentation or controlled variants
+- [x] Implement only compact changes with measured benefit and D1/D2 parity where applicable
+- [x] Run focused visual/runtime tests, Android and Windows builds, unit tests, and code quality
+- [x] Record measurements, conclusions, and deferred candidates here
+
+### Findings
+
+- `do_special_effects` advances animated wall effects by changing the bitmap index
+  in `Textures`; it does not upload the new frame. Level paging touches every
+  effect frame before play.
+- A fixed view from segment 490 of Counterstrike level 7 rendered about 285 to
+  303 textured polygons, but only three visible faces normally carried
+  `TMI_WATER`. Once the view was established, water animation produced no
+  texture uploads and no merged-wall cache misses. The 32-entry Android merged
+  texture cache therefore was not cycling animated water frames in this view.
+- Robot effects could load new sprite frames during combat, but those loads were
+  event-driven and distinct from the continuously animated water walls.
+- The strong correlation with water came from room complexity. The reactor view
+  issued about 134 to 141 actual texture binds and nearly 300 legacy polygon
+  draws per frame.
+
+### Per-frame streaming VBO
+
+The first upload consolidation still orphaned the GLES stream VBO with
+`glBufferData` once per primitive. The shim now reserves regions in a 1 MiB
+streaming VBO, uploads each packed primitive with `glBufferSubData`, and orphans
+the backing store once at the start of a 3D frame. Draw order and the existing
+one-upload-per-primitive behavior are unchanged.
+
+On the same 1280x720 SwiftShader AVD and fixed reactor pose, stable early samples
+gave:
+
+| Build | Average render time | Textured polygons | Time per polygon |
+| --- | ---: | ---: | ---: |
+| Per-primitive VBO orphan | 58,239 to 60,111 us | 284 to 303 | 192 to 212 us |
+| Per-frame streaming VBO, run 1 | 26,215 to 29,697 us | 290 to 293 | 91 to 102 us |
+| Per-frame streaming VBO, run 2 | 27,165 to 27,590 us | 288 to 293 | 94 us |
+
+This is a reproducible 52 to 55 percent render-time reduction in the relevant
+software-GPU profile. It should not be read as a phone FPS prediction, but it
+directly removes a driver synchronization/allocation hazard amplified by large
+rooms.
+
+### Follow-up validation
+
+- Android debug APK assembled for arm64-v8a, armeabi-v7a, and x86_64.
+- Android debug unit tests passed.
+- Windows D1 and D2 Release builds passed; CTest discovery found no registered
+  tests in either build.
+- The new level 7 water/reactor profile passed twice, 29/29 steps, including
+  invulnerability and final segment assertions.
+- D2 runtime texture option coverage passed, 43/43 steps.
+- D2 door 45 GPU pixel-readback regression passed, 35/35 steps.
+- D1 launch/automap renderer coverage passed, 53/53 steps.
+- Scoped code quality and `git diff --check` passed.

@@ -20,6 +20,7 @@ extern "C" {
 /* ---------- lifecycle ---------- */
 void gles3_shim_init(void);
 void gles3_shim_shutdown(void);
+void gles3_shim_begin_frame(void);
 
 /* ---------- matrix stack ---------- */
 void gles3_shim_matrix_mode(GLenum mode);
