@@ -5885,6 +5885,15 @@ net_udp_level_sync(void)
 	memset(&UDP_MData, 0, sizeof(UDP_mdata_info));
 	net_udp_noloss_init_mdata_queue();
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		COOPLOG("level_sync begin: game=d2 level=%d player=%d players=%d master=%d status=%d",
+		        Current_level_num, Player_num, N_players, multi_i_am_master(),
+		        Network_status);
+		crash_breadcrumb_v("d2 coop net level_sync begin level=%d", Current_level_num);
+	}
+#endif
+
 	net_udp_flush(); // Flush any old packets
 	if (N_players == 0)
 	{
@@ -5904,6 +5913,14 @@ net_udp_level_sync(void)
 	}
 
 	con_printf(CON_DEBUG, "level_sync: result=%d\n", result);
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		COOPLOG("level_sync result: game=d2 level=%d result=%d player=%d players=%d status=%d",
+		        Current_level_num, result, Player_num, N_players, Network_status);
+		crash_breadcrumb_v("d2 coop net level_sync result=%d status=%d", result,
+		                   Network_status);
+	}
+#endif
 multi_powcap_count_powerups_in_mine();
 	if (result)
 	{
@@ -5922,6 +5939,11 @@ multi_powcap_count_powerups_in_mine();
 			window_close(Game_wind);
 		show_menus();
 		net_udp_close();
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("level_sync closed session: game=d2 level=%d result=%d",
+			        Current_level_num, result);
+#endif
 		return -1;
 	}
 	return(0);

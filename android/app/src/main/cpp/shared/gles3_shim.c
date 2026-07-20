@@ -17,6 +17,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <android/log.h>
 #include "android_crash_handler.h"
 #include "android_log.h"
@@ -219,6 +220,8 @@ static int state_dirty = 1;
 static GLuint external_prog;
 static GLuint current_prog;
 static GLuint shim_vbo;
+static unsigned char *shim_stream_data;
+static int shim_stream_capacity;
 
 static int gl_type_size(GLenum type)
 {
@@ -228,6 +231,17 @@ static int gl_type_size(GLenum type)
 		case GL_SHORT:
 		case GL_UNSIGNED_SHORT: return 2;
 		default: return 4; /* GL_FLOAT, GL_INT, GL_UNSIGNED_INT */
+	}
+}
+
+static void gles3_shim_reserve_stream_data(int bytes)
+{
+	if (bytes > shim_stream_capacity) {
+		unsigned char *new_data = realloc(shim_stream_data, bytes);
+		if (!new_data)
+			abort();
+		shim_stream_data = new_data;
+		shim_stream_capacity = bytes;
 	}
 }
 
@@ -326,6 +340,9 @@ void gles3_shim_init(void)
 
 void gles3_shim_shutdown(void)
 {
+	free(shim_stream_data);
+	shim_stream_data = NULL;
+	shim_stream_capacity = 0;
 	if (shim_vbo) {
 		glDeleteBuffers(1, &shim_vbo);
 		shim_vbo = 0;
@@ -673,11 +690,10 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		int off = 0;
 
 		glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
-		if (total > 0)
-			glBufferData(GL_ARRAY_BUFFER, total, NULL, GL_STREAM_DRAW);
+		gles3_shim_reserve_stream_data(total);
 
 		if (va_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, va_bytes, va_ptr);
+			memcpy(shim_stream_data + off, va_ptr, va_bytes);
 			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
 			                      va_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_POS);
@@ -687,7 +703,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		}
 
 		if (ca_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, ca_bytes, ca_ptr);
+			memcpy(shim_stream_data + off, ca_ptr, ca_bytes);
 			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
 			                      ca_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_COLOR);
@@ -697,7 +713,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		}
 
 		if (ta_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, ta_bytes, ta_ptr);
+			memcpy(shim_stream_data + off, ta_ptr, ta_bytes);
 			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
 			                      ta_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_TEXCOORD);
@@ -705,6 +721,8 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		} else {
 			glDisableVertexAttribArray(ATTR_TEXCOORD);
 		}
+		if (total > 0)
+			glBufferData(GL_ARRAY_BUFFER, total, shim_stream_data, GL_STREAM_DRAW);
 	} else {
 		GLsizei nverts = first + count;
 		int va_row = va_stride ? va_stride : va_size * gl_type_size(va_type);
@@ -719,11 +737,10 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		int off = 0;
 
 		glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
-		if (total > 0)
-			glBufferData(GL_ARRAY_BUFFER, total, NULL, GL_STREAM_DRAW);
+		gles3_shim_reserve_stream_data(total);
 
 		if (va_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, va_bytes, va_ptr);
+			memcpy(shim_stream_data + off, va_ptr, va_bytes);
 			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
 			                      va_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_POS);
@@ -733,7 +750,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		}
 
 		if (ca_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, ca_bytes, ca_ptr);
+			memcpy(shim_stream_data + off, ca_ptr, ca_bytes);
 			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
 			                      ca_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_COLOR);
@@ -743,7 +760,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		}
 
 		if (ta_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, ta_bytes, ta_ptr);
+			memcpy(shim_stream_data + off, ta_ptr, ta_bytes);
 			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
 			                      ta_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_TEXCOORD);
@@ -753,7 +770,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		}
 
 		if (ta2_bytes) {
-			glBufferSubData(GL_ARRAY_BUFFER, off, ta2_bytes, ta2_ptr);
+			memcpy(shim_stream_data + off, ta2_ptr, ta2_bytes);
 			glVertexAttribPointer(3, ta2_size, ta2_type, GL_FALSE,
 			                      ta2_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(3);
@@ -761,6 +778,8 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		} else {
 			glDisableVertexAttribArray(3);
 		}
+		if (total > 0)
+			glBufferData(GL_ARRAY_BUFFER, total, shim_stream_data, GL_STREAM_DRAW);
 	}
 
 	glDrawArrays(mode, first, count);

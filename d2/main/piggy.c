@@ -500,7 +500,7 @@ void piggy_init_pigfile(char *filename)
 	char temp_name_read[16];
 	DiskBitmapHeader bmh;
 	int header_size, N_bitmaps, data_start;
-#ifdef EDITOR
+#if defined(EDITOR) || defined(ANDROID)
 	int data_size;
 #endif
 
@@ -551,7 +551,7 @@ void piggy_init_pigfile(char *filename)
 	header_size = N_bitmaps * sizeof(DiskBitmapHeader);
 
 	data_start = header_size + PHYSFS_tell(Piggy_fp);
-#ifdef EDITOR
+#if defined(EDITOR) || defined(ANDROID)
 	data_size = PHYSFS_fileLength(Piggy_fp) - data_start;
 #endif
 	Num_bitmap_files = 1;
@@ -584,6 +584,12 @@ void piggy_init_pigfile(char *filename)
 #ifdef EDITOR
 	Piggy_bitmap_cache_size = data_size + (data_size/10);   //extra mem for new bitmaps
 	Assert( Piggy_bitmap_cache_size > 0 );
+#elif defined(ANDROID)
+	/* Android port: size the cache for the complete PIG bitmap payload.
+	 * The legacy 2.4 MB limit causes avoidable page-out/reload thrashing. */
+	Piggy_bitmap_cache_size = data_size + (data_size/10);
+	if (GameArg.SysLowMem)
+		Piggy_bitmap_cache_size = PIGGY_SMALL_BUFFER_SIZE;
 #else
 	Piggy_bitmap_cache_size = PIGGY_BUFFER_SIZE;
 	if (GameArg.SysLowMem)
@@ -1289,7 +1295,7 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 #endif
 
 			Piggy_bitmap_cache_next += zsize;
-			if ( Piggy_bitmap_cache_next+zsize >= Piggy_bitmap_cache_size ) {
+			if ( Piggy_bitmap_cache_next >= Piggy_bitmap_cache_size ) {
 #ifdef ANDROID
 				piggy_log_pageout_trigger("rle_post", bitmap.index, i, bmp, zsize);
 #endif

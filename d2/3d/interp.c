@@ -455,9 +455,7 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
 					g3_poly_faces_drawn++;
 					int i;
-					g3s_lrgb light, *lrgb_list;
-
-					MALLOC(lrgb_list, g3s_lrgb, nv);
+					g3s_lrgb light, lrgb_list[MAX_POINTS_PER_POLY];
 					//calculate light from surface normal
 					if (glow_num < 0) //no glow
 					{
@@ -491,7 +489,6 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 						point_list[i] = Interp_point_list + wp(p+30)[i];
 
 					g3_draw_tmap(nv,point_list,uvl_list,lrgb_list,model_bitmaps[w(p+28)]);
-					d_free(lrgb_list);
 				}
 
 				p += 30 + ((nv&~1)+1)*2 + nv*12;
@@ -628,11 +625,9 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 				int nv = w(p+2);
 				g3s_uvl *uvl_list;
 				g3s_uvl uvl_copy[MAX_POINTS_PER_POLY];
-				g3s_lrgb light, *lrgb_list;
+				g3s_lrgb light, lrgb_list[MAX_POINTS_PER_POLY];
 				g3s_uvl morph_uvls[3];
 				int i,ntris;
-
-				MALLOC(lrgb_list, g3s_lrgb, nv);
 
 				//calculate light from surface normal
 				if (glow_num < 0) //no glow
@@ -688,8 +683,6 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 				}
 
 				p += 30 + ((nv&~1)+1)*2 + nv*12;
-				d_free(lrgb_list);
-
 				break;
 			}
 

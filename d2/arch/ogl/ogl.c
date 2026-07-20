@@ -373,6 +373,9 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	ogl_init_texture_stats(t);
 	t->is_png = 0;
 	t->flags = flags;
+#ifdef ANDROID
+	t->min_filter = t->mag_filter = 0;
+#endif
 }
 
 void ogl_reset_texture(ogl_texture* t)

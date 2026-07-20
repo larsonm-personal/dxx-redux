@@ -10,6 +10,19 @@
 #include "ogl_texture_android.h"
 #include "pngfile.h"
 
+static void apply_bound_min_mag_filter(ogl_texture *texture, GLenum min_filter,
+                                       GLenum mag_filter)
+{
+	if (texture->min_filter != min_filter) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+		texture->min_filter = min_filter;
+	}
+	if (texture->mag_filter != mag_filter) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+		texture->mag_filter = mag_filter;
+	}
+}
+
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle)
 {
@@ -59,13 +72,9 @@ void android_ogl_apply_bound_texture_filter(ogl_texture *texture, int effective_
 	 * Fullscreen menu and loading art can also arrive without mipmaps on
 	 * Android, notably through the ETC2/KTX path. */
 	if (texture->flags & OGL_FLAG_NOCOLOR) {
-		if (menu_texfilt) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		}
+		apply_bound_min_mag_filter(texture,
+		                           menu_texfilt ? GL_LINEAR : GL_NEAREST,
+		                           menu_texfilt ? GL_LINEAR : GL_NEAREST);
 		return;
 	}
 
@@ -75,18 +84,15 @@ void android_ogl_apply_bound_texture_filter(ogl_texture *texture, int effective_
 		use_nearest = 1;
 
 	if (use_nearest) {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		apply_bound_min_mag_filter(texture, GL_NEAREST, GL_NEAREST);
 	} else if (texture->has_mipmaps) {
 		GLenum min_f = effective_texfilt >= 2
 		                   ? GL_LINEAR_MIPMAP_LINEAR
 		                   : GL_LINEAR_MIPMAP_NEAREST;
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		apply_bound_min_mag_filter(texture, min_f, GL_LINEAR);
 	} else {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		apply_bound_min_mag_filter(texture, GL_LINEAR, GL_LINEAR);
 	}
 }
 
@@ -157,11 +163,9 @@ static int apply_texture_filter(ogl_texture *texture, int texfilt, int *generate
 			if (generated)
 				(*generated)++;
 		}
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		apply_bound_min_mag_filter(texture, min_f, GL_LINEAR);
 	} else {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		apply_bound_min_mag_filter(texture, GL_NEAREST, GL_NEAREST);
 	}
 	return 1;
 }
@@ -218,12 +222,10 @@ void android_ogl_apply_texfilt_all(struct android_ogl_texture_texfilt_state *sta
 				                   ? GL_LINEAR_MIPMAP_LINEAR
 				                   : GL_LINEAR_MIPMAP_NEAREST;
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				apply_bound_min_mag_filter(texture, min_f, GL_LINEAR);
 			}
 		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			apply_bound_min_mag_filter(texture, GL_NEAREST, GL_NEAREST);
 		}
 		updated++;
 	}

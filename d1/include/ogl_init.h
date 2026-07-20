@@ -73,6 +73,9 @@ typedef struct _ogl_texture {
 	int is_png;
 	int has_mipmaps;
 	int flags;
+#ifdef ANDROID
+	GLenum min_filter, mag_filter;
+#endif
 } ogl_texture;
 
 extern ogl_texture* ogl_get_free_texture();

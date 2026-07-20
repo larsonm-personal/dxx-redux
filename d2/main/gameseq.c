@@ -102,6 +102,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamemine.h"
 #ifdef ANDROID
 #include "track_names.h"
+#include "android_crash_handler.h"
 #include "coop_save.h"
 #include "coop_warp.h"
 #include "android_log.h"
@@ -1547,6 +1548,14 @@ void AdvanceLevel(int secret_flag)
 
 	Assert(!secret_flag);
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		COOPLOG("AdvanceLevel begin: game=d2 current=%d last=%d players=%d master=%d",
+		        Current_level_num, Last_level, N_players, multi_i_am_master());
+		crash_breadcrumb_v("d2 coop AdvanceLevel begin current=%d", Current_level_num);
+	}
+#endif
+
 	if (Current_level_num != Last_level) {
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI)
@@ -1569,6 +1578,11 @@ void AdvanceLevel(int secret_flag)
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI)	{
 		result = multi_endlevel(&secret_flag); // Wait for other players to reach this point
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("AdvanceLevel endlevel sync: game=d2 current=%d result=%d players=%d",
+			        Current_level_num, result, N_players);
+#endif
 		if (result) // failed to sync
 		{
 			if (Current_level_num == Last_level)		//player has finished the game!
@@ -1595,7 +1609,17 @@ void AdvanceLevel(int secret_flag)
                 }
 		// END NMN
 
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("AdvanceLevel starting next: game=d2 current=%d next=%d players=%d",
+			        Current_level_num, Next_level_num, N_players);
+#endif
 		StartNewLevel(Next_level_num);
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("AdvanceLevel returned: game=d2 current=%d next=%d game_window=%d",
+			        Current_level_num, Next_level_num, Game_wind != NULL);
+#endif
 
 	}
 }
@@ -1722,6 +1746,14 @@ extern int BigWindowSwitch;
 //	secret_flag set if came from a secret level
 void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 {
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		COOPLOG("StartNewLevelSub begin: game=d2 requested=%d current=%d page=%d players=%d master=%d",
+		        level_num, Current_level_num, page_in_textures, N_players,
+		        multi_i_am_master());
+		crash_breadcrumb_v("d2 coop StartNewLevelSub begin level=%d", level_num);
+	}
+#endif
 	if (!(Game_mode & GM_MULTI)) {
 		last_drawn_cockpit = -1;
 	}
@@ -1750,6 +1782,15 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 
 	LoadLevel(level_num,page_in_textures);
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		COOPLOG("StartNewLevelSub loaded: game=d2 requested=%d current=%d objects=%d segments=%d starts=%d",
+		        level_num, Current_level_num, Highest_object_index + 1,
+		        Highest_segment_index + 1, NumNetPlayerPositions);
+		crash_breadcrumb_v("d2 coop level loaded level=%d", Current_level_num);
+	}
+#endif
+
 	Assert(Current_level_num == level_num);	//make sure level set right
 
 	gameseq_init_network_players(); // Initialize the Players array for
@@ -1763,7 +1804,24 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 #ifdef NETWORK
 	if (Game_mode & GM_NETWORK)
 	{
-		if(multi_level_sync()) // After calling this, Player_num is set
+		int level_sync_result;
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP) {
+			COOPLOG("StartNewLevelSub sync begin: game=d2 level=%d player=%d players=%d master=%d",
+			        Current_level_num, Player_num, N_players, multi_i_am_master());
+			crash_breadcrumb_v("d2 coop level sync begin level=%d", Current_level_num);
+		}
+#endif
+		level_sync_result = multi_level_sync(); // After calling this, Player_num is set
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP) {
+			COOPLOG("StartNewLevelSub sync done: game=d2 level=%d result=%d player=%d players=%d",
+			        Current_level_num, level_sync_result, Player_num, N_players);
+			crash_breadcrumb_v("d2 coop level sync done level=%d result=%d",
+			                   Current_level_num, level_sync_result);
+		}
+#endif
+		if (level_sync_result)
 		{
 			songs_play_song( SONG_TITLE, 1 ); // level song already plays but we fail to start level...
 			return;
@@ -1890,6 +1948,14 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	{
 		game();
 	}
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		COOPLOG("StartNewLevelSub ready: game=d2 level=%d player=%d objects=%d game_window=%d",
+		        Current_level_num, Player_num, Highest_object_index + 1,
+		        Game_wind != NULL);
+		crash_breadcrumb_v("d2 coop StartNewLevelSub ready level=%d", Current_level_num);
+	}
+#endif
 }
 
 #ifdef NETWORK
