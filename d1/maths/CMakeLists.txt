@@ -84,6 +84,11 @@ if(NOT ANDROID)
     target_link_libraries(test_android_rewind_policy PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_android_rewind_policy PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_android_slowdown_detector
+        ../../android/tests/test_android_slowdown_detector.c
+        ../../android/app/src/main/cpp/shared/android_slowdown_detector.c)
+    target_include_directories(test_android_slowdown_detector PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_coop_host_migration_policy
         ../../android/tests/test_coop_host_migration_policy.c
         ../../android/app/src/main/cpp/shared/coop/coop_host_migration_policy.c)
@@ -201,6 +206,7 @@ if(NOT ANDROID)
             test_playsave_text
             test_kconfig_android_shared
             test_android_rewind_policy
+            test_android_slowdown_detector
             test_coop_host_migration_policy
             test_input_demo_rng_mode
             test_android_axis_mailbox

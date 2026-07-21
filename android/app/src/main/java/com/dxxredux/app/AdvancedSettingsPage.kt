@@ -642,6 +642,7 @@ private fun OnlineMetadataSection() {
 @Composable
 private fun DebugLoggingSection(initialLogFiles: List<File>) {
     val ctx = LocalContext.current
+    val prefs = remember { ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE) }
     val scope = rememberCoroutineScope()
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     val categoryStates =
@@ -673,6 +674,29 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
     }
 
     Text("Debug Logging Categories", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(8.dp))
+
+    var automaticSlowdownCapture by remember {
+        mutableStateOf(prefs.getBoolean(PREF_AUTOMATIC_SLOWDOWN_CAPTURE, false))
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Automatic slowdown capture", fontSize = 13.sp)
+            Text(
+                "Writes a small Profiling log only after a sustained slowdown",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = automaticSlowdownCapture,
+            onCheckedChange = { enabled ->
+                automaticSlowdownCapture = enabled
+                prefs.edit().putBoolean(PREF_AUTOMATIC_SLOWDOWN_CAPTURE, enabled).apply()
+            },
+            modifier = Modifier.tvFocusBorder(),
+        )
+    }
     Spacer(modifier = Modifier.height(8.dp))
 
     for (cat in 0 until DebugLogCategory.COUNT) {

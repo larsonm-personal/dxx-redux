@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "android_log.h"
+#include "android_slowdown_detector.h"
 
 extern int r_tpolyc;
 extern int r_water_faces;
@@ -24,8 +25,11 @@ extern int r_mwall_cache_misses;
 #define ANDROID_PROFILE_TEXTURE_THRESHOLD_US 10000LL
 #define ANDROID_PROFILE_TEXTURE_BURST_GAP_US 250000LL
 #define ANDROID_PROFILE_STORAGE_THRESHOLD_US 2000LL
-#define ANDROID_PROFILE_SLOW_FRAME_US         100000LL
-#define ANDROID_PROFILE_SLOW_LOG_INTERVAL_US  1000000LL
+#define ANDROID_PROFILE_SLOW_FRAME_US        100000LL
+#define ANDROID_PROFILE_SLOW_LOG_INTERVAL_US 1000000LL
+#define ANDROID_FLIGHT_BATCH_CAPACITY        65536
+#define ANDROID_FLIGHT_CAPTURE_MAX_BYTES     (256 * 1024)
+#define ANDROID_FLIGHT_HISTORY_US            5000000LL
 
 enum android_profile_gl_metric {
 	ANDROID_PROFILE_GL_SWAP = 0,
@@ -100,6 +104,15 @@ static int g_android_profile_object_max_render_type;
 static int g_android_profile_object_max_model;
 static struct android_profile_bucket_state g_android_profile_buckets[ANDROID_PROFILE_BUCKET_COUNT];
 static struct android_profile_texture_burst_state g_android_profile_texture_burst;
+static struct android_slowdown_detector g_android_slowdown_detector;
+static volatile int g_android_slowdown_capture_requested;
+static int g_android_profile_max_fps;
+static int g_android_profile_vsync;
+static int g_android_profile_object_detail_active;
+static char g_android_flight_batch[ANDROID_FLIGHT_BATCH_CAPACITY];
+static size_t g_android_flight_batch_len;
+static size_t g_android_flight_capture_bytes;
+static unsigned int g_android_flight_dropped_lines;
 
 static const char *g_android_profile_bucket_names[ANDROID_PROFILE_BUCKET_COUNT] = {
 	"wait",
@@ -216,6 +229,203 @@ static void android_profile_appendf(const char *fmt, ...)
 	va_end(ap);
 
 	android_profile_append_line(line);
+}
+
+static void android_flight_reset_batch(void)
+{
+	g_android_flight_batch_len = 0;
+	g_android_flight_batch[0] = '\0';
+}
+
+static void android_flight_flush_batch(void)
+{
+	if (!g_android_flight_batch_len)
+		return;
+
+	debug_log_batch_force(DLOG_PROFILING, g_android_flight_batch);
+	android_flight_reset_batch();
+}
+
+static void android_flight_append_line(const char *line)
+{
+	const size_t line_len = strlen(line);
+
+	if (!line_len || line_len + 2 > sizeof(g_android_flight_batch))
+		return;
+	if (g_android_flight_capture_bytes + line_len + 2 > ANDROID_FLIGHT_CAPTURE_MAX_BYTES - 1024) {
+		g_android_flight_dropped_lines++;
+		return;
+	}
+	if (g_android_flight_batch_len + line_len + 2 > sizeof(g_android_flight_batch))
+		android_flight_flush_batch();
+
+	memcpy(g_android_flight_batch + g_android_flight_batch_len, line, line_len);
+	g_android_flight_batch_len += line_len;
+	g_android_flight_batch[g_android_flight_batch_len++] = '\n';
+	g_android_flight_batch[g_android_flight_batch_len] = '\0';
+	g_android_flight_capture_bytes += line_len + 2;
+}
+
+static void android_flight_appendf(const char *fmt, ...)
+{
+	char line[1024];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(line, sizeof(line), fmt, ap);
+	va_end(ap);
+	android_flight_append_line(line);
+}
+
+static long long android_flight_nonwait_us(const struct android_slowdown_frame *frame)
+{
+	const long long value = (long long) frame->total_us - frame->wait_us;
+	return value > 0 ? value : 0;
+}
+
+static void android_flight_append_frame(const char *type,
+                                        const struct android_slowdown_frame *frame)
+{
+	android_flight_appendf(
+	    "prof_v=2 type=%s capture=%u frame=%u mono_us=%lld level=%d viewer_seg=%d total_us=%d nonwait_us=%lld wait_us=%d sim_us=%d render_us=%d replay_us=%d swap_us=%d gpu_us=%d resolve_us=%d glerr_us=%d tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d object_draws=%d max_object_us=%d max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d max_fps=%d vsync=%d",
+	    type,
+	    g_android_slowdown_detector.capture_id,
+	    frame->frame_id,
+	    (long long) frame->end_us,
+	    frame->level,
+	    frame->viewer_segment,
+	    frame->total_us,
+	    android_flight_nonwait_us(frame),
+	    frame->wait_us,
+	    frame->sim_us,
+	    frame->render_us,
+	    frame->replay_us,
+	    frame->swap_us,
+	    frame->gpu_us,
+	    frame->resolve_us,
+	    frame->gl_error_us,
+	    frame->textured_polys,
+	    frame->water_faces,
+	    frame->texture_binds,
+	    frame->texture_reuses,
+	    frame->shader_switches,
+	    frame->mask_draws,
+	    frame->merged_wall_hits,
+	    frame->merged_wall_misses,
+	    frame->object_draws,
+	    frame->max_object_us,
+	    frame->max_object_num,
+	    frame->max_object_type,
+	    frame->max_object_id,
+	    frame->max_object_render_type,
+	    frame->max_object_model,
+	    frame->max_fps,
+	    frame->vsync);
+}
+
+static void android_flight_append_window(const char *type,
+                                         const struct android_slowdown_window *window)
+{
+	int i;
+	const long long span_us = window->end_us - window->start_us;
+	const long long avg_total_us = window->frames ? window->total_us / window->frames : 0;
+	const long long avg_nonwait_us = window->frames ? window->nonwait_us / window->frames : 0;
+
+	android_flight_appendf(
+	    "prof_v=2 type=%s capture=%u start_us=%lld end_us=%lld span_us=%lld frames=%d fps_milli=%d expected_fps_milli=%d avg_total_us=%lld avg_nonwait_us=%lld max_nonwait_us=%d",
+	    type,
+	    g_android_slowdown_detector.capture_id,
+	    (long long) window->start_us,
+	    (long long) window->end_us,
+	    span_us,
+	    window->frames,
+	    window->fps_milli,
+	    window->expected_fps_milli,
+	    avg_total_us,
+	    avg_nonwait_us,
+	    window->max_nonwait_us);
+	for (i = 0; i < ANDROID_SLOWDOWN_WORST_COUNT; i++) {
+		if (window->worst[i].frame_id)
+			android_flight_append_frame("worst_frame", &window->worst[i]);
+	}
+}
+
+static void android_flight_append_history(void)
+{
+	struct android_slowdown_window bin;
+	const int count = android_slowdown_detector_ring_count(&g_android_slowdown_detector);
+	const struct android_slowdown_frame *last =
+	    android_slowdown_detector_ring_get(&g_android_slowdown_detector, count - 1);
+	const long long cutoff_us = last ? last->end_us - ANDROID_FLIGHT_HISTORY_US : 0;
+	int i;
+
+	memset(&bin, 0, sizeof(bin));
+	for (i = 0; i < count; i++) {
+		const struct android_slowdown_frame *frame =
+		    android_slowdown_detector_ring_get(&g_android_slowdown_detector, i);
+		const int nonwait_us = frame ? (int) android_flight_nonwait_us(frame) : 0;
+		if (!frame || frame->end_us < cutoff_us)
+			continue;
+		if (!bin.start_us)
+			bin.start_us = frame->end_us;
+		if (frame->end_us - bin.start_us >= 100000 && bin.frames) {
+			bin.end_us = frame->end_us;
+			bin.fps_milli = (int) ((long long) bin.frames * 1000000000LL /
+			                       (bin.end_us - bin.start_us));
+			android_flight_append_window("history", &bin);
+			memset(&bin, 0, sizeof(bin));
+			bin.start_us = frame->end_us;
+		}
+		bin.frames++;
+		bin.total_us += frame->total_us;
+		bin.nonwait_us += nonwait_us;
+		if (nonwait_us > bin.max_nonwait_us)
+			bin.max_nonwait_us = nonwait_us;
+	}
+	if (bin.frames) {
+		bin.end_us = last ? last->end_us : bin.start_us;
+		if (bin.end_us > bin.start_us)
+			bin.fps_milli = (int) ((long long) bin.frames * 1000000000LL /
+			                       (bin.end_us - bin.start_us));
+		android_flight_append_window("history", &bin);
+	}
+}
+
+static void android_flight_start_capture(const struct android_slowdown_frame *frame)
+{
+	g_android_flight_capture_bytes = 0;
+	g_android_flight_dropped_lines = 0;
+	android_flight_reset_batch();
+	android_flight_appendf(
+	    "prof_v=2 type=capture_start capture=%u game=%s reason=%s wall_ms=%lld mono_us=%lld level=%d viewer_seg=%d max_fps=%d vsync=%d expected_fps_milli=%d observed_fps_milli=%d duration_ms=60000 history_ms=5000 max_bytes=%d manual_profiling=%d",
+	    g_android_slowdown_detector.capture_id,
+	    g_android_profile_game,
+	    g_android_slowdown_detector.trigger_severe ? "severe" : "sustained",
+	    android_profile_wall_ms(),
+	    (long long) frame->end_us,
+	    frame->level,
+	    frame->viewer_segment,
+	    frame->max_fps,
+	    frame->vsync,
+	    g_android_slowdown_detector.completed_window.expected_fps_milli,
+	    g_android_slowdown_detector.completed_window.fps_milli,
+	    ANDROID_FLIGHT_CAPTURE_MAX_BYTES,
+	    debug_log_enabled[DLOG_PROFILING] ? 1 : 0);
+	android_flight_append_history();
+	android_flight_flush_batch();
+}
+
+static void android_flight_end_capture(const struct android_slowdown_frame *frame)
+{
+	android_flight_appendf(
+	    "prof_v=2 type=capture_end capture=%u game=%s mono_us=%lld frame=%u bytes=%u dropped_lines=%u cooldown_ms=300000",
+	    g_android_slowdown_detector.capture_id,
+	    g_android_profile_game,
+	    (long long) frame->end_us,
+	    frame->frame_id,
+	    (unsigned int) g_android_flight_capture_bytes,
+	    g_android_flight_dropped_lines);
+	android_flight_flush_batch();
 }
 
 static const char *android_profile_texture_lookup_slot_name(int slot)
@@ -536,30 +746,49 @@ static void android_profile_start_sample(long long now_ms, const char *game)
 
 void android_profile_frame_begin(const char *game, unsigned int frame_id)
 {
-	const long long now_ms = android_profile_now_ms();
-	const long long now_us = android_profile_now_us();
+	long long now_ms;
+	long long now_us;
+	const int manual_enabled = debug_log_enabled[DLOG_PROFILING] ? 1 : 0;
 
-	android_profile_maybe_finish_texture_burst(now_us, NULL);
-
-	if (!debug_log_enabled[DLOG_PROFILING]) {
-		android_profile_maybe_finish_texture_burst(now_us, "disabled");
-		if (g_android_profile_sample_active)
-			android_profile_finish_sample(now_ms);
+	if (!g_android_slowdown_capture_requested &&
+	    g_android_slowdown_detector.state == ANDROID_SLOWDOWN_CAPTURING)
+		android_flight_flush_batch();
+	android_slowdown_detector_set_enabled(&g_android_slowdown_detector,
+	                                      g_android_slowdown_capture_requested);
+	if (!manual_enabled &&
+	    g_android_slowdown_detector.state == ANDROID_SLOWDOWN_DISABLED) {
+		g_android_profile_frame_active = 0;
+		g_android_profile_object_detail_active = 0;
 		return;
 	}
 
-	if (g_android_profile_sample_active && now_ms >= g_android_profile_sample_end_ms)
-		android_profile_finish_sample(now_ms);
+	now_ms = android_profile_now_ms();
+	now_us = android_profile_now_us();
 
-	if (!g_android_profile_sample_active) {
-		if (!g_android_profile_next_sample_ms || now_ms >= g_android_profile_next_sample_ms)
-			android_profile_start_sample(now_ms, game);
+	android_profile_maybe_finish_texture_burst(now_us, NULL);
+
+	if (!manual_enabled) {
+		android_profile_maybe_finish_texture_burst(now_us, "disabled");
+		if (g_android_profile_sample_active)
+			android_profile_finish_sample(now_ms);
+	} else {
+		if (g_android_profile_sample_active && now_ms >= g_android_profile_sample_end_ms)
+			android_profile_finish_sample(now_ms);
+
+		if (!g_android_profile_sample_active) {
+			if (!g_android_profile_next_sample_ms || now_ms >= g_android_profile_next_sample_ms)
+				android_profile_start_sample(now_ms, game);
+		}
 	}
 
 	g_android_profile_frame_active = 1;
 	g_android_profile_frame_id = frame_id;
+	android_profile_copy_game(game);
 	android_profile_reset_frame_metrics();
-	g_android_profile_frame_start_us = android_profile_now_us();
+	g_android_profile_frame_start_us = now_us;
+	g_android_profile_object_detail_active =
+	    g_android_profile_sample_active ||
+	    android_slowdown_detector_detail_active(&g_android_slowdown_detector, now_us);
 }
 
 void android_profile_set_frame_context(int level, int viewer_segment)
@@ -569,6 +798,19 @@ void android_profile_set_frame_context(int level, int viewer_segment)
 
 	g_android_profile_level = level;
 	g_android_profile_viewer_segment = viewer_segment;
+}
+
+void android_profile_set_frame_pacing(int max_fps, int vsync)
+{
+	if (!g_android_profile_frame_active)
+		return;
+	g_android_profile_max_fps = max_fps;
+	g_android_profile_vsync = vsync ? 1 : 0;
+}
+
+void android_profile_set_slowdown_capture_enabled(int enabled)
+{
+	g_android_slowdown_capture_requested = enabled ? 1 : 0;
 }
 
 void android_profile_bucket_begin(int bucket)
@@ -586,7 +828,7 @@ void android_profile_bucket_begin(int bucket)
 
 void android_profile_bucket_end(int bucket)
 {
-	const long long now_us = android_profile_now_us();
+	long long now_us;
 
 	if (!g_android_profile_frame_active)
 		return;
@@ -594,6 +836,7 @@ void android_profile_bucket_end(int bucket)
 		return;
 	if (!g_android_profile_buckets[bucket].active)
 		return;
+	now_us = android_profile_now_us();
 
 	g_android_profile_buckets[bucket].frame_us += now_us - g_android_profile_buckets[bucket].start_us;
 	g_android_profile_buckets[bucket].active = 0;
@@ -602,7 +845,7 @@ void android_profile_bucket_end(int bucket)
 
 long long android_profile_object_begin(void)
 {
-	if (!g_android_profile_frame_active)
+	if (!g_android_profile_frame_active || !g_android_profile_object_detail_active)
 		return 0;
 
 	return android_profile_now_us();
@@ -613,11 +856,13 @@ void android_profile_object_end(long long start_us, int objnum, int object_type,
 {
 	long long elapsed_us;
 
-	if (!g_android_profile_frame_active || start_us <= 0)
+	if (!g_android_profile_frame_active)
+		return;
+	g_android_profile_object_draws++;
+	if (start_us <= 0)
 		return;
 
 	elapsed_us = android_profile_now_us() - start_us;
-	g_android_profile_object_draws++;
 	g_android_profile_object_total_us += elapsed_us;
 	if (elapsed_us <= g_android_profile_object_max_us)
 		return;
@@ -669,6 +914,23 @@ void android_profile_texture_load(const char *game, const char *name,
 	long long png_jpg_us = 0;
 	long long png_tga_us = 0;
 
+	if (g_android_slowdown_detector.state == ANDROID_SLOWDOWN_CAPTURING &&
+	    total_us >= ANDROID_PROFILE_TEXTURE_THRESHOLD_US) {
+		android_flight_appendf(
+		    "prof_v=2 type=texture capture=%u game=%s name=%s source=%s w=%d h=%d flags=0x%x total_us=%lld ktx2_read_us=%lld png_read_us=%lld upload_us=%lld mask_us=%lld",
+		    g_android_slowdown_detector.capture_id,
+		    game_name ? game_name : "unknown",
+		    texture_name,
+		    source_name,
+		    width,
+		    height,
+		    flags,
+		    total_us,
+		    ktx2_read_us,
+		    png_read_us,
+		    upload_us,
+		    mask_us);
+	}
 	if (!debug_log_enabled[DLOG_PROFILING])
 		return;
 	if (!game_name || !game_name[0])
@@ -738,6 +1000,17 @@ void android_profile_storage_op(const char *name, const char *op,
 	const char *entry_name = (name && name[0]) ? name : "unknown";
 	const char *op_name = (op && op[0]) ? op : "unknown";
 
+	if (g_android_slowdown_detector.state == ANDROID_SLOWDOWN_CAPTURING &&
+	    total_us >= ANDROID_PROFILE_STORAGE_THRESHOLD_US) {
+		android_flight_appendf(
+		    "prof_v=2 type=storage capture=%u name=%s op=%s offset=%llu size=%llu total_us=%lld",
+		    g_android_slowdown_detector.capture_id,
+		    entry_name,
+		    op_name,
+		    offset,
+		    size,
+		    total_us);
+	}
 	if (!debug_log_enabled[DLOG_PROFILING])
 		return;
 	if (total_us < ANDROID_PROFILE_STORAGE_THRESHOLD_US)
@@ -758,15 +1031,65 @@ void android_profile_storage_op(const char *name, const char *op,
 
 void android_profile_frame_end(void)
 {
-	const long long now_us = android_profile_now_us();
-	const long long now_ms = now_us / 1000LL;
-	const long long total_us = now_us - g_android_profile_frame_start_us;
+	long long now_us;
+	long long now_ms;
+	long long total_us;
+	struct android_slowdown_frame flight_frame;
+	int flight_events = 0;
 
 	if (!g_android_profile_frame_active)
 		return;
+	now_us = android_profile_now_us();
+	now_ms = now_us / 1000LL;
+	total_us = now_us - g_android_profile_frame_start_us;
 
 	android_profile_finish_open_buckets(now_us);
 	g_android_profile_frame_active = 0;
+	g_android_profile_object_detail_active = 0;
+	if (g_android_slowdown_detector.state != ANDROID_SLOWDOWN_DISABLED) {
+		memset(&flight_frame, 0, sizeof(flight_frame));
+		flight_frame.end_us = now_us;
+		flight_frame.frame_id = g_android_profile_frame_id;
+		flight_frame.level = g_android_profile_level;
+		flight_frame.viewer_segment = g_android_profile_viewer_segment;
+		flight_frame.total_us = (int) total_us;
+		flight_frame.wait_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_WAIT].frame_us;
+		flight_frame.sim_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_SIM].frame_us;
+		flight_frame.render_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RENDER].frame_us;
+		flight_frame.replay_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REPLAY].frame_us;
+		flight_frame.swap_us = (int) g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_SWAP];
+		flight_frame.gpu_us = (int) g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_GPU];
+		flight_frame.resolve_us = (int) g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_RESOLVE];
+		flight_frame.gl_error_us = (int) g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_ERROR];
+		flight_frame.textured_polys = r_tpolyc;
+		flight_frame.water_faces = r_water_faces;
+		flight_frame.texture_binds = r_texbinds;
+		flight_frame.texture_reuses = r_texbind_reuse;
+		flight_frame.shader_switches = r_shader_switches;
+		flight_frame.mask_draws = r_mask_draws;
+		flight_frame.merged_wall_hits = r_mwall_cache_hits;
+		flight_frame.merged_wall_misses = r_mwall_cache_misses;
+		flight_frame.object_draws = g_android_profile_object_draws;
+		flight_frame.max_object_us = (int) g_android_profile_object_max_us;
+		flight_frame.max_object_num = g_android_profile_object_max_objnum;
+		flight_frame.max_object_type = g_android_profile_object_max_type;
+		flight_frame.max_object_id = g_android_profile_object_max_id;
+		flight_frame.max_object_render_type = g_android_profile_object_max_render_type;
+		flight_frame.max_object_model = g_android_profile_object_max_model;
+		flight_frame.max_fps = g_android_profile_max_fps;
+		flight_frame.vsync = g_android_profile_vsync;
+		flight_events = android_slowdown_detector_feed(&g_android_slowdown_detector,
+		                                               &flight_frame);
+		if (flight_events & ANDROID_SLOWDOWN_EVENT_TRIGGER)
+			android_flight_start_capture(&flight_frame);
+		if (flight_events & ANDROID_SLOWDOWN_EVENT_WINDOW) {
+			android_flight_append_window("window",
+			                             &g_android_slowdown_detector.completed_window);
+			android_flight_flush_batch();
+		}
+		if (flight_events & ANDROID_SLOWDOWN_EVENT_CAPTURE_END)
+			android_flight_end_capture(&flight_frame);
+	}
 	if (total_us >= ANDROID_PROFILE_SLOW_FRAME_US &&
 	    now_us >= g_android_profile_next_slow_log_us) {
 		debug_log(
@@ -847,6 +1170,7 @@ void android_profile_flush(void)
 		android_profile_finish_sample(android_profile_now_ms());
 	else
 		android_profile_flush_batch();
+	android_flight_flush_batch();
 }
 
 #endif /* defined(ANDROID) || defined(__ANDROID__) */

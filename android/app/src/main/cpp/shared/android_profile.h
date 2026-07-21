@@ -40,6 +40,8 @@ struct android_profile_texture_lookup_metrics {
 
 void android_profile_frame_begin(const char *game, unsigned int frame_id);
 void android_profile_set_frame_context(int level, int viewer_segment);
+void android_profile_set_frame_pacing(int max_fps, int vsync);
+void android_profile_set_slowdown_capture_enabled(int enabled);
 void android_profile_bucket_begin(int bucket);
 void android_profile_bucket_end(int bucket);
 long long android_profile_object_begin(void);
@@ -66,6 +68,8 @@ void android_profile_flush(void);
 
 #define android_profile_frame_begin(game, frame_id)                                                                                             ((void) 0)
 #define android_profile_set_frame_context(level, viewer_segment)                                                                                ((void) 0)
+#define android_profile_set_frame_pacing(max_fps, vsync)                                                                                        ((void) 0)
+#define android_profile_set_slowdown_capture_enabled(enabled)                                                                                   ((void) 0)
 #define android_profile_bucket_begin(bucket)                                                                                                    ((void) 0)
 #define android_profile_bucket_end(bucket)                                                                                                      ((void) 0)
 #define android_profile_object_begin()                                                                                                          0LL

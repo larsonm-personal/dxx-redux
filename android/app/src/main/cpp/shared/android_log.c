@@ -143,4 +143,12 @@ void debug_log_batch(int category, const char *payload)
 	debug_log_call_java_method("debugLogBatchFromNative", category, payload);
 }
 
+void debug_log_batch_force(int category, const char *payload)
+{
+	if (category < 0 || category >= DLOG_COUNT)
+		return;
+
+	debug_log_call_java_method("debugLogBatchForcedFromNative", category, payload);
+}
+
 #endif /* ANDROID */

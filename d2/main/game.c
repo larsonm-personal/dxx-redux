@@ -1317,6 +1317,7 @@ int game_handler(window *wind, d_event *event, void *data)
 			android_profile_frame_begin("d2", ++android_profile_frame_id);
 			android_profile_set_frame_context(Current_level_num,
 			                                  ConsoleObject ? ConsoleObject->segnum : -1);
+			android_profile_set_frame_pacing(PlayerCfg.maxFps, GameCfg.VSync);
 			if (android_music_control_apply_pending()) {
 				android_profile_frame_end();
 				return 1;

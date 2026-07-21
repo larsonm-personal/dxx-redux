@@ -24,6 +24,7 @@
 #endif
 #include "pngfile.h"
 #include "android_log.h"
+#include "android_profile.h"
 #include "android_rewind.h"
 #include "android_crash_handler.h"
 #include "android_level_preview.h"
@@ -814,6 +815,16 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugLogEnabled(JNIEnv *env, jobject
                                                             jint category, jboolean on)
 {
 	debug_log_set_enabled((int) category, on ? 1 : 0);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutomaticSlowdownCapture(JNIEnv *env,
+                                                                     jobject thiz,
+                                                                     jboolean enabled)
+{
+	(void) env;
+	(void) thiz;
+	android_profile_set_slowdown_capture_enabled(enabled ? 1 : 0);
 }
 
 /* ── Auto-net: set up automatic join/host from the matchmaking lobby ── */

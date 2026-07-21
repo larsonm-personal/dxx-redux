@@ -298,6 +298,8 @@ class MainActivity :
         on: Boolean,
     )
 
+    external fun nativeSetAutomaticSlowdownCapture(enabled: Boolean)
+
     external fun nativeJoystickAxis(
         axis: Int,
         value: Float,
@@ -1827,6 +1829,8 @@ class MainActivity :
             DebugLog.setCategoryEnabled(this, cat, enabled)
             nativeSetDebugLogEnabled(cat, enabled)
         }
+        val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+        nativeSetAutomaticSlowdownCapture(prefs.getBoolean(PREF_AUTOMATIC_SLOWDOWN_CAPTURE, false))
     }
 
     private fun applyGraphicsDebugPrefs(prefs: android.content.SharedPreferences) {
@@ -3747,6 +3751,14 @@ class MainActivity :
         payload: String,
     ) {
         DebugLog.logBatch(category, payload)
+    }
+
+    @Suppress("unused")
+    fun debugLogBatchForcedFromNative(
+        category: Int,
+        payload: String,
+    ) {
+        DebugLog.logBatchForcedAsync(this, category, payload)
     }
 
     // ── Hidden keyboard proxy with InputConnection for soft keyboard ──

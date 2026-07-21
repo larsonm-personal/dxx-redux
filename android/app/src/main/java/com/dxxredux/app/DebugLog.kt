@@ -12,6 +12,10 @@ import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Multi-category debug logger. Each category has an independent toggle stored
@@ -37,6 +41,15 @@ object DebugLog {
     private val enabledCategories = BooleanArray(DebugLogCategory.COUNT)
     private val lock = Any()
     private val tsFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
+    private val forcedBatchExecutor =
+        ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue(2),
+            { runnable -> Thread(runnable, "slowdown-log-writer").apply { isDaemon = true } },
+        )
 
     /** True if any category is enabled (controls file open/close). */
     private fun anyEnabled(): Boolean = enabledCategories.any { it }
@@ -179,6 +192,38 @@ object DebugLog {
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to write log batch", e)
             }
+        }
+    }
+
+    /** Queue an automatic diagnostic batch without enabling its category. */
+    fun logBatchForcedAsync(
+        context: Context,
+        category: Int,
+        payload: String,
+    ) {
+        if (category < 0 || category >= DebugLogCategory.COUNT || payload.isBlank()) return
+        val appContext = context.applicationContext
+        try {
+            forcedBatchExecutor.execute {
+                synchronized(lock) {
+                    if (writer == null) openLog(appContext)
+                    writer ?: return@synchronized
+                    try {
+                        val tag = DebugLogCategory.labels[category].uppercase()
+                        var wroteAny = false
+                        payload.lineSequence().forEach { line ->
+                            if (line.isEmpty()) return@forEach
+                            writeLineNoFlush(tag, line)
+                            wroteAny = true
+                        }
+                        if (wroteAny) writer?.flush()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to write forced log batch", e)
+                    }
+                }
+            }
+        } catch (_: RejectedExecutionException) {
+            Log.w(TAG, "Dropping automatic diagnostic batch because the writer queue is full")
         }
     }
 

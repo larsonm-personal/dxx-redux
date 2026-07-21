@@ -1133,39 +1133,67 @@ int game_handler(window *wind, d_event *event, void *data)
 			android_profile_frame_begin("d1", ++android_profile_frame_id);
 			android_profile_set_frame_context(Current_level_num,
 			                                  ConsoleObject ? ConsoleObject->segnum : -1);
+			android_profile_set_frame_pacing(PlayerCfg.maxFps, GameCfg.VSync);
 			if (android_music_control_apply_pending()) {
 				android_profile_frame_end();
 				return 1;
 			}
 			#endif
 			if (input_demo_replay_is_loaded()) {
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_REPLAY);
+				#endif
 				if (!input_demo_step_replay_frame()) {
 					#ifdef __ANDROID__
+					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REPLAY);
 					android_profile_frame_end();
 					#endif
 					return 1;
 				}
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REPLAY);
+				#endif
 			} else {
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_WAIT);
+				#endif
 				calc_frame_time();
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_WAIT);
+				#endif
 				if (!time_paused)
 				{
 					#ifdef __ANDROID__
 					android_rewind_maybe_capture_frame();
+					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_SIM);
 					#endif
 					calc_game_time();
 					GameProcessFrame();
+					#ifdef __ANDROID__
+					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_SIM);
+					#endif
 				}
 			}
 
 			if (!Automap_active)		// efficiency hack
 			{
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_RENDER);
+				#endif
 				if (force_cockpit_redraw) {			//screen need redrawing?
 					init_cockpit();
 					force_cockpit_redraw=0;
 				}
 				game_render_frame();
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_RENDER);
+				#endif
 			}
 			#ifdef __ANDROID__
+			#ifdef OGL
+			android_profile_set_gl_frame_metrics(g_swap_time_us, g_gpu_time_us,
+			                                   g_msaa_resolve_time_us, g_gl_error_time_us);
+			#endif
 			android_profile_frame_end();
 			#endif
 			break;
