@@ -93,24 +93,24 @@ Only one call may edit this file at a time. Replace the state in place and put f
 | R1-CHUNK-0042 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/shared/physfs_archiver_saf.c` | L1-L600 | BR-0084, BR-0085, BR-0086 |
 | R1-CHUNK-0043 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/shared/physfs_archiver_saf.c` | L601-L653 | BR-0085, BR-0087 |
 | R1-CHUNK-0044 | [x] DONE | source | critical | authored-source | `2 related paths` | 538 review lines under android/app/src/main/java | BR-0018, BR-0088, BR-0089, BR-0090 |
-| R1-CHUNK-0045 | [-] ACTIVE | source | critical | authored-source | `2 related paths` | 522 review lines under android/app/src/main/java | - |
-| R1-CHUNK-0046 | [ ] TODO | source | critical | authored-source | `2 related paths` | 256 review lines under android/app/src/main/java | - |
-| R1-CHUNK-0047 | [ ] TODO | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZip.kt` | L1-L360 | - |
-| R1-CHUNK-0048 | [ ] TODO | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt` | L1-L286 | - |
-| R1-CHUNK-0049 | [ ] TODO | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt` | L1-L524 | - |
-| R1-CHUNK-0050 | [ ] TODO | source | critical | authored-source | `2 related paths` | 270 review lines under server/src | - |
-| R1-CHUNK-0051 | [ ] TODO | source | critical | authored-source | `2 related paths` | 562 review lines under server/src | - |
-| R1-CHUNK-0052 | [ ] TODO | source | critical | authored-source | `2 related paths` | 595 review lines under server/src | - |
-| R1-CHUNK-0053 | [ ] TODO | source | critical | authored-source | `3 related paths` | 555 review lines under server/src | - |
-| R1-CHUNK-0054 | [ ] TODO | source | critical | authored-source | `3 related paths` | 445 review lines under server/src | - |
-| R1-CHUNK-0055 | [ ] TODO | source | critical | authored-source | `4 related paths` | 498 review lines under server/src | - |
-| R1-CHUNK-0056 | [ ] TODO | source | critical | authored-source | `server/src/db.rs` | L1-L532 | - |
-| R1-CHUNK-0057 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L1-L600 | - |
-| R1-CHUNK-0058 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L601-L1200 | - |
-| R1-CHUNK-0059 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L1201-L1800 | - |
-| R1-CHUNK-0060 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L1801-L2400 | - |
-| R1-CHUNK-0061 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L2401-L2951 | - |
-| R1-CHUNK-0062 | [ ] TODO | source | critical | build-script | `2 related paths` | 320 review lines under android/app/src/main/cpp | - |
+| R1-CHUNK-0045 | [x] DONE | source | critical | authored-source | `2 related paths` | 522 review lines under android/app/src/main/java | BR-0018, BR-0088, BR-0089, BR-0091, BR-0092 |
+| R1-CHUNK-0046 | [x] DONE | source | critical | authored-source | `2 related paths` | 256 review lines under android/app/src/main/java | BR-0018, BR-0093, BR-0094, BR-0095 |
+| R1-CHUNK-0047 | [x] DONE | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZip.kt` | L1-L360 | BR-0018, BR-0096, BR-0097, BR-0098 |
+| R1-CHUNK-0048 | [x] DONE | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt` | L1-L286 | BR-0088, BR-0089, BR-0099, BR-0100, BR-0101 |
+| R1-CHUNK-0049 | [x] DONE | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt` | L1-L524 | BR-0018, BR-0102, BR-0103, BR-0104, BR-0105 |
+| R1-CHUNK-0050 | [x] DONE | source | critical | authored-source | `2 related paths` | 270 review lines under server/src | BR-0106, BR-0107, BR-0108 |
+| R1-CHUNK-0051 | [x] DONE | source | critical | authored-source | `2 related paths` | 562 review lines under server/src | BR-0109, BR-0110, BR-0111, BR-0112, BR-0113 |
+| R1-CHUNK-0052 | [x] DONE | source | critical | authored-source | `2 related paths` | 595 review lines under server/src | BR-0114, BR-0115, BR-0116, BR-0117, BR-0118, BR-0119, BR-0120 |
+| R1-CHUNK-0053 | [x] DONE | source | critical | authored-source | `3 related paths` | 555 review lines under server/src | BR-0121, BR-0122, BR-0123, BR-0124, BR-0125, BR-0126 |
+| R1-CHUNK-0054 | [x] DONE | source | critical | authored-source | `3 related paths` | 445 review lines under server/src | BR-0127, BR-0128, BR-0129, BR-0130, BR-0131 |
+| R1-CHUNK-0055 | [x] DONE | source | critical | authored-source | `4 related paths` | 498 review lines under server/src | BR-0132, BR-0133, BR-0134, BR-0135, BR-0136 |
+| R1-CHUNK-0056 | [x] DONE | source | critical | authored-source | `server/src/db.rs` | L1-L532 | BR-0137, BR-0138, BR-0139, BR-0140, BR-0141, BR-0142 |
+| R1-CHUNK-0057 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L1-L600 | BR-0143, BR-0144, BR-0145, BR-0146, BR-0147 |
+| R1-CHUNK-0058 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L601-L1200 | BR-0148, BR-0149, BR-0150 |
+| R1-CHUNK-0059 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L1201-L1800 | BR-0133, BR-0150, BR-0151, BR-0152 |
+| R1-CHUNK-0060 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L1801-L2400 | BR-0120, BR-0148, BR-0150, BR-0153, BR-0154, BR-0155 |
+| R1-CHUNK-0061 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L2401-L2951 | BR-0121, BR-0129, BR-0136, BR-0145, BR-0151, BR-0153, BR-0156 |
+| R1-CHUNK-0062 | [ ] ACTIVE | source | critical | build-script | `2 related paths` | 320 review lines under android/app/src/main/cpp | - |
 | R1-CHUNK-0063 | [ ] TODO | source | critical | build-script | `android/get_deps/helpers/get_7zip.ps1` | L1-L88 | - |
 | R1-CHUNK-0064 | [ ] TODO | source | critical | build-script | `2 related paths` | 183 review lines under android/helpers | - |
 | R1-CHUNK-0065 | [ ] TODO | source | critical | build-script | `2 related paths` | 304 review lines under android/helpers | - |
@@ -4483,6 +4483,193 @@ Append one completion note for every finished queue item using the process templ
 - Commands or validation: `git diff`, `git show`, `git log --follow`, `git blame`, `git grep`, `rg`, line-numbered source-to-cache and client-to-server traces, duplicate-finding search, official Android documentation review, and `:app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MissionZipMusicExtractedPreviewTest`; the focused tests passed under the repository JDK 21 after the inherited Java 8 runtime was rejected by Gradle before compilation
 - No-finding areas: canonical containment protects directory-backed tracks; ordinary input and output streams are closed; staging cleanup remains scoped below the cache root; successful top-level ZIP, nested DXA, HOG, MIDI, and extracted-directory cases have focused tests; the Play Games wrapper uses the configured web client ID and does not log the returned authorization code; Activity-time SDK initialization was not split into a finding because it precedes use and the current automatic-authentication path can be valid; and the missing interactive sign-in call was folded into BR-0090 because the independently fatal production problem is the absent keypair fallback for every non-Google path
 
+### R1-CHUNK-0045 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0088, BR-0089, BR-0091, BR-0092
+- Assigned scope checked: all 522 assigned lines in `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt` and `android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt`
+- Context checked: frozen additions and complete file histories; ZIP, 7z, extracted-directory, DXA, nested HOG, SNG, MIDI, and compressed-audio catalog paths; source and track identity, ordering, deduplication, and lookup aliases; staging and fingerprint caches; mission import, replacement, extraction, launch staging, metadata display, AcoustID, and sidecar generation callers; D1 and D2 song-list parsing; native sidecar parsing, fixed capacities, load order, and lookup behavior; relevant implementation plans; and all focused catalog, extracted-preview, display-name, and sidecar tests
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered archive-to-catalog-to-stage and import-to-sidecar-to-native-lookup traces, duplicate-finding search, malformed-container and cache-lifecycle control-flow analysis, ledger searches, and `:app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicNamesTest --tests com.dxxredux.app.MissionZipMusicExtractedPreviewTest --tests com.dxxredux.app.MissionZipMusicDisplayTest`, which passed under repository JDK 21
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` moved from `2af94b155566c7ad7ca3d0d7d6f9c6660e688980` to `ac17d17a1a6a5215673792f4eec55afae2a5cc18` during the call, and unrelated modifications then appeared in `android/app/src/main/cpp/shared/coop/coop_save.c`, `coop_save.h`, `multi_save_transfer.c`, `d1/main/multi.c`, and `d2/main/multi.c`; they were preserved and are outside this frozen queue item. Campaign closure must still cover the post-frozen delta.
+- No-finding areas: ordinary archive, ZIP-entry, extracted-file, and staging streams are closed; HOG header fields use unsigned length conversion without sign extension; song-list tokenization matches the engine's first-whitespace filename parsing for ordinary lines; catalog track IDs include container and entry components; resolved SNG ordering retains unplayable references for display and appends unreferenced playable tracks deterministically; placeholder names are excluded and bundled local matches intentionally precede AcoustID names; `JSONObject` correctly escapes producer output even though the native consumer contract remains BR-0091; per-track fingerprint failures are isolated and progress reaches a terminal callback; and current focused tests cover ordinary ZIP, 7z, DXA, HOG, extracted preview, name priority, and empty-sidecar behavior but not the admitted budget, replacement, interrupted publication, alias-collision, native-limit, or malformed extracted-container cases
+
+### R1-CHUNK-0046 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0093, BR-0094, BR-0095
+- Assigned scope checked: all 256 assigned lines in `android/app/src/main/java/com/dxxredux/app/ArchiveFiles.kt` and `android/app/src/main/java/com/dxxredux/app/ArchiveInputStreams.kt`
+- Context checked: frozen additions and complete file histories; ZIP and Apache Commons 7z entry projection, stream ownership, lookup normalization, exact and case-insensitive matching, and size metadata; eager RAR extraction, SevenZipJBinding handles, item iteration, path canonicalization, output callbacks, result checking, host `tar` fallback, temporary-tree enumeration, and cleanup; setup file import, mission inspection, durable extraction, metadata, music, and readme callers; self-extracting demo and DXA streaming paths; the RAR implementation plan and dependency shape; real demo and RAR fixture availability; and all directly related archive tests
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered archive-open-to-preflight-to-extraction and SFX-byte-to-ZIP-entry traces, dependency API inspection with `javap`, actual `desc14sw.exe` local-header offset inspection, duplicate-finding search, a JShell false-marker control probe, and `:app:testDebugUnitTest --tests com.dxxredux.app.ArchiveInputStreamsTest --tests com.dxxredux.app.MissionZipTest --tests com.dxxredux.app.ModManagerMissionZipTest.missionSevenZipImportsAndStagesAtMissions --tests com.dxxredux.app.ModManagerMissionZipTest.missionRarImportsReetusAndStagesAtMissions`; Gradle passed under JDK 21, with all 18 mission and both stream tests passing, the 7z import passing, and the RAR method reported skipped despite the repository-root fixture being present
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: ordinary successful ZIP, 7z, RAR-facade, entry-stream, random-access-file, SevenZip input, native archive, and output handles have explicit closure; SevenZipJBinding output canonicalization confines ordinary file and directory entries below the target root; absolute and dot-component RAR paths cannot pass that canonical prefix check; subprocess arguments are passed separately rather than through a command shell and merged output is drained before `waitFor`; the marker overlap logic does not miss a valid `P` prefix after mismatch; the checked demo installer has valid local headers at offsets 15,770, 40,690, and 1,449,847; exact archive-path lookup precedes case-insensitive fallback; format dispatch for named ZIP, 7z, and RAR follows the intended policy; and existing happy-path tests do not cover the admitted resource budgets, failed RAR construction, process-death cleanup, competing ZIP markers, compressed-size semantics, or an executing RAR regression
+
+### R1-CHUNK-0047 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0096, BR-0097, BR-0098
+- Assigned scope checked: all 360 assigned lines in `android/app/src/main/java/com/dxxredux/app/MissionZip.kt`
+- Context checked: frozen addition and complete file history; ZIP, 7z, RAR-facade, stream, and extracted-record inspection; descriptor parsing, package admission, game classification, import-mode selection, constituent sorting, readme selection and decoding, mission-set construction, and path normalization; direct and nested mission import, registration, details, durable extraction, launch staging, metadata target construction, automation serialization, D1 and D2 mission-loader HOG conventions, implementation plans for mission import, multi-mission metadata, descriptor/HOG pairing, and durable extraction; and all focused scanner tests
+- Commands or validation: `git diff`, `git show`, `git log`, `git grep`, `rg`, line-numbered scanner-to-registration-to-stage and descriptor-to-metadata traces, engine mission-loader comparison, duplicate-finding search, ledger integrity checks, and `:app:testDebugUnitTest --tests com.dxxredux.app.MissionZipTest`, which passed under repository JDK 21 with 31 actionable Gradle tasks
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: successful archive and descriptor streams are closed; missing files and packages without descriptors or any HOG/DXA are rejected; ZIP storage selection intentionally uses the outer source size and sends non-ZIP formats to durable extraction; expanded mission-asset limits remain part of BR-0018 rather than a separate threshold finding; rooted and generated staging layout is decided consistently from normalized constituent paths; readme lookup is bounded and isolates expected archive errors; MIME mappings match the supported external document extensions; mixed D1/D2 packages deliberately classify as `both`; ordinary same-stem single- and multi-mission packages have focused scan and metadata tests; and stream-only inspection is not used by a frozen production caller, so its zero or unknown local-header sizes were not split into a current-impact finding
+
+### R1-CHUNK-0048 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0088, BR-0089, BR-0099, BR-0100, BR-0101
+- Assigned scope checked: all 286 assigned lines in `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt`
+- Context checked: frozen addition and complete file history; archive, track, staged-content, local-database, and cache-record identities; hashing, fingerprint generation, bundled matching, AcoustID update, JSON load/save, ordering, schema, and supported formats; mission music dialog automatic analysis and explicit lookup flows; import and launch sidecar generation; stage-cache behavior; mod deletion and replacement; FingerprintBridge database loading and identity; AcoustIdClient retry and result contracts; implementation plans; and all focused cache, analysis-skip, display, and sidecar tests
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered archive-to-stage-to-hash-to-cache and cache-to-UI/sidecar traces, concurrent read-modify-write analysis, duplicate-finding search, ledger integrity checks, and `:app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicAnalysisSkipTest`, which passed under repository JDK 21 with 31 actionable Gradle tasks
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: staged-audio hashing streams through a fixed buffer and closes input; successful cache reads tolerate individually malformed records; JSON output is pretty-printed and deterministically sorted; exact lookup includes full track coordinates and content hash; local and web result updates preserve the other result when based on a current record; successful cached fingerprints can be rematched without decoding the audio again; supported formats match the native compressed-audio path; temporary staging paths are intentionally excluded from record identity; ordinary cache round trips, archive metadata invalidation, path relocation, AcoustID preservation, and local-database refresh methods have focused tests, but those tests do not cover the admitted source collision, automatic database revision, failure retry, concurrent or interrupted writes, or retention behavior
+
+### R1-CHUNK-0049 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0102, BR-0103, BR-0104, BR-0105
+- Assigned scope checked: all 524 assigned lines in `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt`
+- Context checked: frozen addition and complete file history; extraction freshness and owner identity; temporary and final tree publication; manifest parsing, schema, upsert, deletion, pruning, linked-file projection, and extracted-record reconstruction; source and extracted file verification; active PhysicsFS path generation; mission metadata source-layout selection; archive path normalization and containment; duplicate and case-only outputs; byte totals, free-space preflight, progress, and generated song-list aliases; direct, nested, ZIP, 7z, and RAR import callers; D1 and D2 mission and song lookup paths; durable-extraction design requirements; and all focused extraction-store and mission-manager tests
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered source-to-extraction-to-manifest-to-launch and staged-path-to-PhysicsFS lookup traces, test-oracle comparison with the design plan, duplicate-finding search, ledger integrity checks, and `:app:testDebugUnitTest --tests com.dxxredux.app.MissionZipExtractionStoreTest --tests com.dxxredux.app.ModManagerMissionZipTest.durableMissionZipLaunchAndDetailsUseFreshExtractedRecord --tests com.dxxredux.app.ModManagerMissionZipTest.missionZipWithTopLevelHmpSongListStagesDescentSongAlias`, which passed under repository JDK 21 with 31 actionable Gradle tasks
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: canonical output checks reject ordinary absolute and escaping dot-component archive paths; extraction writes regular files into a newly owned temporary tree, so archive symlinks cannot redirect writes; successful archive and file streams close; non-ZIP archives use the shared facade; missing owners and missing or wrong-length positive-size extracted files invalidate ordinary records; mission target paths preserve the single shared directory when descriptor and HOG are colocated; explicit owner deletion removes the derived extraction root; details and launch reuse extracted records as designed; ordinary large ZIP import, extracted metadata, delete-with-owner, timestamp invalidation, progress, and top-level song-list staging have tests, but those tests do not cover content identity, actual engine song lookup, mixed layouts, collisions, concurrent extraction, interrupted publication, manifest corruption, or admitted resource budgets
+
+### R1-CHUNK-0050 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0106, BR-0107, BR-0108
+- Assigned scope checked: all 270 assigned lines in `server/src/bin/nat_sim.rs` and `server/src/config.rs`
+- Context checked: frozen additions and complete file histories; config-file selection, JSON5 decoding, environment precedence and parsing, listener and resource defaults, OAuth credentials, explicit verification bypass, proof-of-work and connection limits, admin separation, TLS path pairing, relay and STUN enablement, and force-relay behavior; production defaults, deployment template and scripts; server startup, WebSocket GPGS and keypair authentication, TLS loading, database construction, admin-token handling, and focused integration configuration; standalone NAT-simulator argument parsing, loopback bindings, handles, test runner, and module tests
+- Commands or validation: `git diff`, `git show`, `git log`, `git grep`, `rg`, line-numbered config-to-startup-to-authentication and config-to-TLS traces, template/deployment comparison, duplicate-finding search, ledger integrity checks, and `cargo test --manifest-path server/Cargo.toml`, which passed 102 tests (32 library, 59 integration, and 11 NAT-simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: the NAT simulator binds only loopback, its supported NAT-type values map correctly, and its library behavior has focused coverage; permissive handling of a missing `--nat-type` value or unrelated arguments is confusing for a manual helper but did not meet the finding threshold. Invalid socket addresses stop startup; false-like malformed verification-bypass and force-relay environment values do not enable those modes; blank admin tokens disable admin mutations; zero connection, relay, and proof-of-work limits are explicitly documented operator choices; both-empty TLS paths support an intentional reverse-proxy deployment; and relay or STUN public-address omissions disable their advertised services without exposing a stronger root cause than the configuration-validation findings below
+
+### R1-CHUNK-0051 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0109, BR-0110, BR-0111, BR-0112, BR-0113
+- Assigned scope checked: all 562 assigned lines in `server/src/nat_sim.rs` and `server/src/pow.rs`
+- Context checked: frozen additions and complete file histories; NAT-type mapping contracts, internal and external socket ownership, mapping and allowlist state, multi-client routing, sequential-port selection and overflow, task creation and cancellation, STUN request generation and response parsing, loopback-only exposure, standalone use, NAT design and completion plans, all 11 NAT simulator tests, keypair challenge generation, leading-zero calculation, Ed25519 decoding and verification, public-key identity hashing, WebSocket authentication and pending-PoW flow, database identity lookup and registration, Android client support, and all keypair unit and integration tests
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered socket-to-mapping-to-reply and key-text-to-signature-to-database traces, local Axum WebSocket default inspection, duplicate-finding search, ledger integrity checks, and a 60-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: NAT traffic and the mini STUN listener remain loopback-only; ordinary single-client full-cone, port-restricted, symmetric, and sequential mappings forward expected IPv4 traffic; tiny simulator packets are dropped; STUN responses verify type, magic, and transaction ID before ordinary attribute decoding; random challenges are 256 bits; proof verification uses the configured leading-zero count; public keys and signatures enforce decoded Ed25519 lengths and invalid signatures fail; timestamp freshness and possession checks occur in the authentication caller; server verification cost for a bounded solution is one SHA-256 operation; and difficulty zero or very high values are documented operator configuration choices. WebSocket-wide message sizing, authentication failure throttling, protocol field budgets, challenge state ordering, and database registration races remain assigned to later server chunks and sweeps rather than being duplicated here.
+
+### R1-CHUNK-0052 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0114, BR-0115, BR-0116, BR-0117, BR-0118, BR-0119, BR-0120
+- Assigned scope checked: all 595 assigned lines in `server/src/protocol.rs` and `server/src/rate_limit.rs`
+- Context checked: frozen additions and complete file histories; every client and server message variant and supporting type; protocol-version and game-info limits; Rust and Android schema and constant parity; WebSocket upgrade defaults, JSON decoding, authentication, every authenticated message handler, lobby and ICE storage and fanout, database result insertion, and outbound bounded channels; limiter keys, windows, deque bounds, cleanup cadence and concurrency; production nginx headers and listener defaults; trusted client-address use in connection limiting, observed candidates, STUN allowlisting, and logs; Android connectivity and late-join UDP probing; Axum 0.8.8 message defaults; and all server unit and integration coverage
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git log -G`, `git grep`, `rg`, line-numbered message-to-handler-to-state/database/client traces, local pinned dependency source inspection, deployment comparison, duplicate-finding search, ledger integrity checks, and a 60-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: Rust and Android protocol version constants currently match; UUID and integer decoding rejects wrong JSON types and numeric overflow; callsigns and direct messages receive bounded printable-ASCII validation in their handlers; lobby player counts and serialized game-info size are bounded before storage; raw message frequency, lobby create/join/list, callsign search, and direct messages have sliding-window checks; each accepted limiter event deque is capped by its threshold and stale maps receive periodic cleanup; bounded outbound channels limit message count for slow clients; ordinary protocol-1 authentication, version-too-old rejection, lobby, friend, NAT, relay, keypair, and message flows pass integration coverage. File-hash forwarding and several maintenance or warning variants are dormant or incomplete but expose no distinct active defect beyond the missing message and field budgets, while per-peer connectivity state and handler-specific database error paths remain assigned to later `ws_handler.rs` and `db.rs` chunks.
+
+### R1-CHUNK-0053 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0121, BR-0122, BR-0123, BR-0124, BR-0125, BR-0126
+- Assigned scope checked: all 555 assigned lines in `server/src/friends.rs`, `server/src/http_api.rs`, and `server/src/identity.rs`
+- Context checked: frozen additions and complete file histories; player and callsign schema and updates; friend request, acceptance, removal, blocking, list, presence, notification, and friend-game join flows; lobby code, kick, verified-only, and joinability enforcement; public, combined, and separate-admin router construction; status aggregation and database queries; health and stub behavior; admin token parsing and comparison; ban storage, expiry calculation, authentication checks, active sessions, and integration coverage; Google authorization-code exchange, player lookup, Reqwest defaults, WebSocket authentication caller, connection limits, and failure throttling
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered request-to-database-to-presence/join and HTTP/authentication traces, local pinned Chrono and Reqwest source inspection, duplicate-finding search, ledger integrity checks, and a 60-second-guarded `cargo test --manifest-path server/Cargo.toml`
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: empty admin tokens fail closed for implemented mutations; ordinary configured bearer tokens are compared without data-dependent byte-loop exits; UUID parsing rejects malformed ban targets; permanent and ordinary finite bans use the stored expiry predicate consistently on later authentication; public and admin routers separate as configured; simple status is constant-size; ordinary successful Google responses are checked for HTTP success and parsed into narrow response structures; tokens and authorization codes are not logged. Database-error text on the authenticated admin API, an always-live health response, offline `last_seen` reported as unknown, exact-case callsign matching, and the unauthenticated MOTD stub were not split into findings because they expose no stronger active defect than the admitted authorization, resource-budget, and incomplete-feature findings.
+
+### R1-CHUNK-0054 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0127, BR-0128, BR-0129, BR-0130, BR-0131
+- Assigned scope checked: all 445 assigned lines in `server/src/lib.rs`, `server/src/lobby.rs`, and `server/src/main.rs`
+- Context checked: frozen additions and complete file histories; shared map and counter ownership; WebSocket upgrade, authentication, repeated authentication, session insertion, disconnect, lobby cleanup, STUN allowlist, and connection-cap flows; stable-identity and lobby integration coverage; every lobby field, constructor, state, fullness, joinability, admission, removal, presence, runtime update, active-game listing, normal join, friend join, late-join ICE, and Android caller; configuration, database and TLS initialization; HTTP, admin, relay, STUN, periodic, and WebSocket listener startup and failure; systemd restart policy, nginx topology, health behavior, file logging, pinned tracing-appender retention support, and production defaults
+- Commands or validation: `git diff`, `git show`, `git log`, `git blame`, `git grep`, `rg`, line-numbered connection-to-authentication-to-session-to-cleanup and lobby-list-to-join-to-ICE traces, deployment and pinned dependency source inspection, duplicate-finding search, ledger integrity checks, and a 60-second-guarded `cargo test --manifest-path server/Cargo.toml`
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: database construction propagates open and schema errors; database and TLS failures already stop startup; the shared state has one explicit owner object; lobby construction initializes every runtime field; player-vector fullness and duplicate checks are safe under the handler's normal two-to-eight-player validation; monotonic instants are used for staleness; removals clear pending late-join membership; the kick handler caps its retained UUID set; ordinary waiting-lobby creation, join, readiness, start, leave, kick, code, verified-only, and positive mid-game flows have integration coverage; direct TLS and reverse-proxy plaintext WebSocket modes are intentional; secrets are not included in startup logs. Configuration fallback, TLS pairing, public HTTP budgets, friend authorization, ICE input, active ban revocation, and counter/cleanup behavior are covered by existing findings or later assigned chunks rather than duplicated here.
+
+### R1-CHUNK-0055 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0132, BR-0133, BR-0134, BR-0135, BR-0136
+- Assigned scope checked: all 498 assigned lines in `server/src/relay.rs`, `server/src/stats.rs`, `server/src/stun.rs`, and `server/src/tls.rs`
+- Context checked: frozen additions and complete file histories; relay token allocation, pair slots, candidate-derived initial endpoints, allowlisting, address learning and rebinding, packet framing, forwarding, logging, expiration, global limits, normal and late-join allocation, game start/end/disconnect, Android wrapping and unwrapping, documented security and quota requirements, and relay tests; every stats transition caller, snapshots, peak fields, database persistence, periodic scheduling, lobby state transitions and stale cleanup races; STUN listener ownership, allowlist lifecycle, IPv4 and IPv6 request handling, RFC header fields, response construction, Android discovery, proxy topology, and tests; certificate and key loading, PEM parsing, Rustls defaults, startup failure handling, native TLS accept loop, and existing configuration findings
+- Commands or validation: `git diff`, `git show`, `git log`, `git blame`, `git grep`, `rg`, line-numbered relay-allocation-to-datagram-to-client and lobby-transition-to-cleanup-to-counter traces, implementation-plan comparison, duplicate-finding search, ledger integrity checks, and 60-second-guarded server tests. The first full run passed 101 tests but hit BR-0112's known guessed-port collision in `test_stun_through_symmetric_seq_increments`; the exact focused rerun passed, then a second full run passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: relay datagrams have a fixed receive buffer and reject short and unknown-token packets; known exact source addresses retain their assigned slot; missing destinations are dropped; forwarding preserves the bounded payload and reports send failures; time-based relay cleanup uses monotonic time and `DashMap::retain`; STUN checks its allowlist before work, rejects short headers, wrong types, and wrong magic, echoes the transaction ID, and constructs a bounded IPv4 XOR-MAPPED-ADDRESS response; ordinary allowlisted IPv4 success and denial after disconnect have integration coverage; certificate and key read, PEM parse, empty certificate, missing key, and Rustls certificate/key mismatch errors propagate to fatal startup. Candidate count and destination validation remain BR-0116, effective proxy address and STUN allowlisting remain BR-0114, connection generation and TLS-handshake ownership remain BR-0127, listener supervision and detached STUN lifetime remain BR-0128, TLS path pairing remains BR-0108, and log retention remains BR-0131 rather than being duplicated here.
+
+### R1-CHUNK-0056 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0137, BR-0138, BR-0139, BR-0140, BR-0141, BR-0142
+- Assigned scope checked: all 532 assigned lines of `server/src/db.rs`
+- Context checked: frozen addition and complete file history; schema initialization and constraints; UUID conversion; player, Google, and keypair identity creation and updates; every ban, friendship, match, statistics, connection-event, and admin operation; all frozen callers and ignored-error policies; asynchronous runtime placement; documented persistence, monitoring, retention, and audit contracts; HTTP expiry construction; WebSocket authentication and result flows; and focused integration coverage
+- Commands or validation: `git diff`, `git show`, `git log`, `git blame`, `git grep`, `rg`, line-numbered authentication-to-identity-to-ban and public-event-to-persistence traces, mechanical SQLite timestamp comparison analysis, duplicate-finding search, ledger integrity checks, and a 60-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: database construction propagates open, PRAGMA, and schema failures; foreign keys are enabled; ordinary in-process calls serialize without a data race; parameter binding avoids SQL injection in all assigned operations; UUID parsing rejects malformed stored identities; GPGS lookup and creation are serialized by the same connection guard; friendship acceptance uses a transaction, though its authorization defect remains BR-0121; ordinary permanent-ban, match, friend, and snapshot operations have focused positive tests; ambiguous callsign lookup remains BR-0122, match-result trust and transaction ownership remain BR-0120, live-ban revocation remains BR-0123, duration conversion remains BR-0124, public status amplification remains BR-0126, and snapshot-error observability remains BR-0135 rather than being duplicated here.
+
+### R1-CHUNK-0057 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0143, BR-0144, BR-0145, BR-0146, BR-0147
+- Assigned scope checked: `server/src/ws_handler.rs` L1-L600
+- Context checked: frozen addition and complete file history; lobby and active-game projections; session and outbound-channel representation; plain, TLS, TCP, HTTP, and WebSocket admission; connection, handshake, frame, read, write, and idle lifetime; message rate limiting and JSON errors; protocol and callsign validation; Google, development, known-keypair, new-keypair, and proof-of-work authentication state; database identity and ban calls; adjacent authentication completion and disconnect cleanup; Android protocol, client keepalive, callsign, lobby, resume, and launch consumers; D1/D2 callsign storage; networking and proof-of-work design documents; and all focused integration coverage
+- Commands or validation: `git diff`, `git show`, `git log`, `git blame`, `git grep`, `rg`, line-numbered TCP-to-upgrade-to-task, signed-key-to-database-to-session, outbound-queue-to-send-failure, callsign-to-lobby-to-engine/save, and lobby-creation-to-active-duration traces, duplicate-finding search, ledger integrity checks, and a 60-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: ordinary outbound message count is bounded; each individual write has a ten-second timeout; ordinary Android clients send 30-second WebSocket pings and satisfy the 120-second read-idle policy; close and stream errors leave the read loop; callsigns are trimmed and checked for nonempty printable ASCII before use; Ed25519 public-key and signature lengths are checked by the verifier; new keys receive cryptographically random proof-of-work challenges and bad challenge text or work is rejected; database lookup and registration failures reject authentication; and successful positive Google and keypair flows have integration coverage. Transport and field sizes remain BR-0115, proxy-derived client identity remains BR-0114, authentication failure throttling remains BR-0117, future protocol acceptance remains BR-0119, missing Android keypair support remains BR-0090, connection admission and session generations remain BR-0127, listener supervision remains BR-0128, external Google request bounds remain BR-0125, database ban and blocking policy remains BR-0137 and BR-0139, key identity and registration remain BR-0113 and BR-0141, and active-game admission remains BR-0129 rather than being duplicated here.
+
+### R1-CHUNK-0058 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0148, BR-0149, BR-0150
+- Assigned scope checked: `server/src/ws_handler.rs` L601-L1200
+- Context checked: frozen addition and complete file history; disconnect cleanup, host and non-host lobby teardown, session and counter removal, STUN allowlist ownership, connection-type inference, candidate selection, predicted and observed candidate generation, per-player candidate-pair construction and prioritization, relay allocation, and the beginning of authentication completion; Android connectivity probing, reporting, and socket reuse; later game-start, late-join, and connectivity-result consumers; friend presence projection; lobby presence transitions; STUN authorization; and focused unit and integration coverage
+- Commands or validation: `git diff`, `git show`, `git grep`, `rg`, line-numbered disconnect-to-session-to-friend-presence, authentication-to-STUN-allowlist-to-disconnect, and candidate-generation-to-Android-probe-to-game-start traces, duplicate-finding search, ledger integrity review, and a 55-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: ordinary non-host disconnect removes the player and broadcasts the updated lobby; host disconnect sends a bounded error and removes the orphaned lobby; private-subnet and candidate selection helpers avoid panics on malformed addresses; candidate priorities are deterministic for a fixed input; relay token generation rejects occupied tokens and uses the existing global capacity check. Candidate field validation and Cartesian amplification remain BR-0116, effective proxy addresses remain BR-0114, connection-generation cleanup remains BR-0127, lobby and counter races remain BR-0134 and BR-0135, relay authorization and lifetime remain BR-0132 and BR-0133, IPv6 STUN support remains BR-0136, and outbound delivery failure remains BR-0144 rather than being duplicated here.
+
+### R1-CHUNK-0059 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0133, BR-0150, BR-0151, BR-0152
+- Assigned scope checked: `server/src/ws_handler.rs` L1201-L1800
+- Context checked: frozen addition and complete file history; authentication welcome bundle; lobby creation, listing, game-info and runtime-state updates, end, join, leave, ready, and start transitions; relay-pair planning, rollback, assignment construction, and capacity behavior; session presence and statistics updates; lobby invariants and admission helpers; Android lobby controls, game return, state polling, connectivity reporting, and start and end calls; friend presence projection; stale cleanup; later connectivity and late-join handlers; and focused server integration coverage
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git blame`, `git grep`, `rg`, line-numbered session-to-lobby-to-host-departure, UI-readiness-to-start-transition, game-end-to-session-to-friend-presence, and connection-inference-to-relay-assignment traces, duplicate-finding search, and a 55-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: lobby maximum player count is constrained to the engine-supported range; game and serialized game-info sizes receive local limits in addition to the frame limit; only the host can update game configuration, runtime state, end a game, or start a game; game information cannot change after Waiting; ordinary successful join and leave update the session pointer and presence; relay-limit failure in the initial pair-allocation pass returns the lobby to Waiting and removes tokens allocated by that attempt; and per-player assignment slots are derived consistently from the lobby vector. Atomic admission remains BR-0129, session ownership remains BR-0127, stale cleanup and counters remain BR-0134 and BR-0135, pair-specific connectivity remains BR-0148, relay authentication remains BR-0132, and relay capacity, lifetime, repeat-start, and unusable-allocation rollback remain BR-0133 rather than being duplicated here.
+
+### R1-CHUNK-0060 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0120, BR-0148, BR-0150, BR-0153, BR-0154, BR-0155
+- Assigned scope checked: `server/src/ws_handler.rs` L1801-L2400
+- Context checked: frozen addition and complete file history; final game-start assignments and presence publication; normal and late-join STUN ingestion, candidate distribution, holepunch state, connectivity completion and updates, relay fallback, and proxy messages; file-hash forwarding; kick authorization and membership mutation; match-result persistence and cleanup; lobby, session, pending-late-join, and statistics invariants; pinned DashMap 6.1.0 locking contracts; Android connectivity checking, proxy demultiplexing, late-join handling, game launch, error dispatch, and protocol schema; D1/D2 hybrid star-to-mesh routing; networking design contracts; database writes; and focused integration coverage
+- Commands or validation: `git diff`, `git show`, `git log -S`, `git blame`, `git grep`, `rg`, line-numbered session-guard-to-lobby-guard-to-session-mutation, late-join-admission-to-connectivity-to-proxy, host-kick-to-target-session, file-hash-to-Android-dispatch, and match-report-to-database-to-cleanup traces, pinned DashMap source inspection, duplicate-finding search, and a 55-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: ordinary game-start assignments use matching slot and relay-destination values in both directions; start presence is published to every current session before launch delivery; non-host hashes are forwarded only to the current lobby host; non-hosts cannot invoke the kick mutation; and only the current lobby host passes the match-result role check. Host-only explicit proxy assignment for late join is consistent with the documented Android hybrid topology because non-host traffic can remain proxied through the host, so it was not filed as a missing full mesh. Candidate size, destination, and Cartesian-product abuse remain BR-0116; outbound drops remain BR-0144; relay authentication and lifetime remain BR-0132 and BR-0133; stale generation and counters remain BR-0134 and BR-0135; and synchronous database work remains BR-0139 rather than being duplicated here.
+
+### R1-CHUNK-0061 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0121, BR-0129, BR-0136, BR-0145, BR-0151, BR-0153, BR-0156
+- Assigned scope checked: `server/src/ws_handler.rs` L2401-L2951
+- Context checked: frozen addition and complete file history; friend request delivery, accept, remove, block, list, presence disclosure, and coded-lobby join; database friendship schema and mutations; direct-message authorization, block checks, rate limiting, acknowledgement, and Android lobby-chat fanout and receipt; callsign lookup and identity rules; ordinary and friend admission and prior-lobby ownership; DashMap guard lifetimes; IPv4 and IPv6 candidate parsing, observed-candidate generation, connection classification, candidate selection and priority; networking design plans; and focused unit and integration coverage
+- Commands or validation: `git diff`, `git show`, `git grep`, `rg`, line-numbered callsign-to-friend-row-to-notification, social-mutation-to-database-to-Android-state, friend-presence-to-admission-to-session, lobby-chat-to-per-recipient-message-to-rate-limit, block-check-to-delivery, IPv6-WebSocket-address-to-observed-candidate, and lobby-guard-to-session-broadcast traces, duplicate-finding search, and a 55-second-guarded `cargo test --manifest-path server/Cargo.toml`, which passed all 102 tests (32 library, 59 integration, and 11 NAT simulator tests) plus empty binary and documentation suites
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `ac17d17a1a6a5215673792f4eec55afae2a5cc18`, while unrelated product, plan, and test modifications continued in parallel; they were preserved and are outside this frozen queue item. Campaign closure must cover all post-frozen commits and worktree changes.
+- No-finding areas: direct-message text is bounded to 200 printable ASCII bytes, sender identity and callsign come from the authenticated session, successful block lookups intentionally hide block status from the sender, and per-player message checks bound one account's accepted request rate; connection helper functions reject malformed IPv4 text without panicking, candidate preference is deterministic for a fixed list, observed generation skips loopback, and unit tests cover the ordinary IPv4 selection branches. Friend authorization remains BR-0121; friend protocol double mutation remains BR-0130; session and lobby generation ownership remain BR-0127, BR-0151, and BR-0153; candidate field and fanout abuse remain BR-0116; pair-specific connectivity remains BR-0148; stale presence remains BR-0150; outbound queue failure remains BR-0144; and synchronous database work remains BR-0139 rather than being duplicated here.
+
 ## Findings
 
 Append findings here in numeric order using the exact template in the process document
@@ -4793,7 +4980,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: security/resource-exhaustion
-- Found by: R1-CHUNK-0009, R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0022, R1-CHUNK-0023, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0044
+- Found by: R1-CHUNK-0009, R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0022, R1-CHUNK-0023, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0044, R1-CHUNK-0045, R1-CHUNK-0046, R1-CHUNK-0047, R1-CHUNK-0049
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/stuffit_extract.c:L373-L396` in `maybe_extract_nested_sti`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L103-L130` in `extract_sti2_from_hfs`, `android/app/src/main/cpp/extract/sow_extract.c:L699-L720` in `sow_extract_impl`, `android/app/src/main/cpp/extract/inno_reader.c:L365-L517,L643-L685,L1074-L1301,L1428-L1434` in `decompress_block_stream`, `parse_header_stream1`, `decompress_chunk`, and `inno_open_owned_fd`, `android/app/src/main/cpp/extract/pkg_reader.c:L294-L375,L399-L438,L450-L529` in `cpio_read_entry`, `pkg_open`, and `pkg_extract_all`, and `android/app/src/main/cpp/extract/iso9660_reader.c:L413-L507` in `iso_extract_files_from_source`
 - Related: `android/app/src/main/cpp/extract/stuffit_extract.c:L400-L450`, `android/app/src/main/cpp/extract/sti2_extract.c:L1879-L1935,L2040-L2069`, `android/app/src/main/cpp/extract/mac_hfs_extract.h:L8-L18`, `android/app/src/main/cpp/extract/sow_extract.c:L500-L524,L647-L663`, `android/app/src/main/cpp/extract/inno_reader.c:L1750-L2010,L2087-L2123`, `android/app/src/main/cpp/extract/pkg_reader.h:L22-L39,L58-L66`, `android/app/src/main/cpp/extract/iso9660_reader.c:L256-L369`, `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L220-L330,L410-L444`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L941-L1014,L1220-L1290,L1668-L1735`
 - Evidence: Every nonmatching, nondirectory SIT5 entry of at least 22 declared bytes is decompressed merely to determine whether it contains a nested STi archive. `extract_entry_data` trusts the archive's 32-bit uncompressed size for a single `malloc`, the result is written to a predictable temporary file, and `read_file_to_buffer` allocates another full-size buffer before inspecting it. The Mac HFS path similarly writes the complete `Install Descent` fork to disk, allocates another buffer equal to that file, and passes it to the same unbudgeted STi extractor. SOW extraction trusts archive-controlled 32-bit compressed and original sizes, allocates both complete buffers, and its bit reader pads exhausted input with zero bytes while decoding toward the declared original size. Before Inno entries are even available for preflight, each metadata block trusts a 32-bit stored size for a complete allocation and an LZMA dictionary, then starts a decompressed buffer at four times the compressed payload and repeatedly doubles it without a size, ratio, or overflow ceiling. The decompressed header also controls an uncapped data-entry count used directly in `calloc`. Inno's later buffered data path allocates the complete compressed chunk, sizes its initial output from unchecked file offsets, and repeats the unbounded growth pattern; its streaming paths bound working memory but still decode toward attacker-controlled expanded offsets with no output-byte, ratio, or work budget. PKG parsing trusts 64-bit TOC allocation sizes before files are listed, streams an unbounded count of CPIO entries with individual sizes up to the 11-digit octal maximum, and neither confines reads to the declared Scripts member nor applies per-entry, aggregate-output, expansion-ratio, or work limits. Its 128-entry analysis cap does not constrain the extraction pass, so Kotlin's sum can omit arbitrarily many later outputs. ISO extraction sums and writes every listed declared file size without a per-entry or aggregate ceiling; hundreds of directory records can alias the same source extent, so output can multiply far beyond the source or track size used by Kotlin's one-time free-space preflight. There is no shared per-entry expanded-size limit, compression-ratio limit, aggregate output budget, or native free-space recheck. Kotlin preflights use source, ZIP-entry, track, listed, or truncated catalog sizes, which do not reliably bound nested, aliased, metadata, or compressed output
@@ -4806,6 +4993,21 @@ Append findings here in numeric order using the exact template in the process do
 - Additional related context (R1-CHUNK-0044): `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L950-L977` and `android/app/src/main/java/com/dxxredux/app/MidiBytesPreviewDialog.kt:L78-L92`
 - Additional evidence (R1-CHUNK-0044): Mission music preflight substitutes the outer archive length when a nested DXA entry lacks a trustworthy expanded size, but extraction has no output-byte, expansion-ratio, or decoder-work budget. MIDI preview and fingerprint paths then materialize complete untrusted entries with `readBytes()`, while HOG metadata can request an allocation up to `Int.MAX_VALUE`. A small selected mission archive can therefore expand or declare data far beyond the source-size free-space check and available heap.
 - Additional validation (R1-CHUNK-0044): Add nested DXA and HOG/MIDI fixtures immediately below and above the shared byte, ratio, and work limits; verify rejection occurs before a large allocation or cache write and that normal mission music still stages and previews.
+- Additional location (R1-CHUNK-0045): `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt:L46-L99,L102-L149,L151-L240,L362-L397`
+- Additional evidence (R1-CHUNK-0045): Catalog inspection reads every selected top-level and nested song list into one string, materializes an entire HOG nested inside a DXA, and lets a HOG-declared song-list length request a byte array up to `Int.MAX_VALUE`. It also drains nested ZIP entries and accumulates song references and playable entries without per-entry, aggregate-byte, entry-count, expansion-ratio, or work limits. This work runs automatically during mission import and metadata display, before the user chooses a track, so a small valid mission package can exhaust heap or decoder work merely by being inspected.
+- Additional validation (R1-CHUNK-0045): Exercise catalog inspection with oversized and highly compressed top-level and nested song lists, a nested HOG just below and above the byte budget, excessive entry and reference counts, and HOG sizes near integer boundaries; assert bounded failure retains ordinary mission import and that normal catalogs remain unchanged.
+- Additional location (R1-CHUNK-0046): `android/app/src/main/java/com/dxxredux/app/ArchiveFiles.kt:L62-L147,L151-L228` and `android/app/src/main/java/com/dxxredux/app/ArchiveInputStreams.kt:L11-L27`
+- Additional related context (R1-CHUNK-0046): `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L554-L619`, `android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L48-L77`, and `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L459-L507`
+- Additional evidence (R1-CHUNK-0046): ZIP and 7z metadata are materialized into unbounded entry lists. RAR is more severe: `ArchiveFiles.open` expands every entry into a private temporary tree before a caller can see sizes or perform its later free-space preflight, and the SevenZip callback has no per-entry, total-byte, ratio, item-count, or periodic free-space limit. The fallback `tar` process has no timeout or cancellation and its complete diagnostic output is read into memory. `ExtractedReadableArchive.close` is the only cleanup, so extraction or tree-enumeration failure during construction cannot call it, and process death leaves the expanded `dxx_archive_*` directory outside the launcher's normal temporary cleanup. The direct setup path preflights only the compressed archive length. Separately, the self-extracting ZIP helper scans byte by byte to EOF with no preamble or work bound.
+- Additional suggested fix (R1-CHUNK-0046): Make archive opening accept a shared checked extraction budget and cancellation signal, reject excessive entry counts before list materialization, stream only approved output with ongoing free-space checks, cap subprocess time and captured output, and construct RAR facades through a factory that deletes its unique tree on every failed or cancelled path. Place private roots under a managed app cache directory with startup scavenging for process-death residue, and bound or structurally identify self-extractor prefixes.
+- Additional validation (R1-CHUNK-0046): Add ZIP, 7z, and RAR fixtures around entry-count, expanded-byte, ratio, preamble, subprocess-output, timeout, and free-space limits; inject extractor, enumeration, cancellation, and process-death failures and assert prompt rejection, bounded memory and disk, and no surviving `dxx_archive_*` trees.
+- Additional location (R1-CHUNK-0047): `android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L48-L143` in archive, stream, and extracted-record descriptor inspection
+- Additional evidence (R1-CHUNK-0047): Every file named `.msn` or `.mn2` is decoded into one complete in-memory string before package admission. Archive-backed and extracted-record paths call unbounded `readText`, while stream inspection calls unbounded `readBytes`; there is no descriptor byte, descriptor-count, aggregate-text, compression-ratio, or parse-work ceiling. The later 32 MiB decision applies only to HOG/DXA constituents, and the 10 MiB outer-archive threshold merely selects storage mode after inspection, so a small highly compressed descriptor or many descriptors can exhaust the launcher heap before either policy can help.
+- Additional validation (R1-CHUNK-0047): Add single and repeated descriptor entries around shared per-file and aggregate text limits, including highly compressed data and counts around the item ceiling, and exercise file, stream, 7z/RAR-facade, and extracted-record inspection; assert rejection occurs before large materialization while ordinary legacy descriptors still parse.
+- Additional location (R1-CHUNK-0049): `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L385-L386,L434-L523` and `android/app/src/main/java/com/dxxredux/app/ImportStorageGuard.kt:L51-L60,L94-L100` in durable extraction sizing and writes
+- Additional evidence (R1-CHUNK-0049): Durable extraction sums archive-declared sizes with unchecked signed addition, treats unknown and nonpositive sizes as zero, and performs one free-space check before streaming every entry. The extraction loop has no per-entry, aggregate actual-byte, ratio, item-count, or periodic free-space ceiling and accepts output length rather than requiring declared length. Generated `descent.sng` adds another copy outside the original estimate. A wrapped total, unknown-size backend, misleading metadata, or valid highly compressed data can therefore pass a headroom-only preflight and continue writing until storage or process resources fail; RAR may already have expanded once before this second copy begins.
+- Additional suggested fix (R1-CHUNK-0049): Compute checked declared totals, reject unknown or excessive sizes according to format policy, and enforce the shared extraction budget against actual bytes, items, ratio, and free space while streaming. Include generated outputs in the reservation and require known entry lengths and checksums where the backend exposes them.
+- Additional validation (R1-CHUNK-0049): Exercise unknown sizes, signed-total overflow, declared-versus-actual short and long output, high ratios, excessive items, generated aliases, and declining free space through ZIP, 7z, and RAR paths; assert bounded rollback with no published tree or manifest record.
 - Resolution: Pending
 
 ### BR-0019: P1 - Reject HFS dot components before constructing output paths
@@ -5981,30 +6183,37 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add a mount/unmount loop around a valid manifest and compare `/proc/self/fd` plus a tracking allocator before the first mount and after every unmount; repeat through `PHYSFS_deinit`, malformed-manifest failure, mount rejection, and allocation-failure injection, asserting the input I/O is destroyed exactly once on every path and no descriptor count grows
 - Resolution: Pending
 
-### BR-0088: P2 - Include source identity or content in staged music cache keys
+### BR-0088: P2 - Use content-backed identity for every mission music cache
 
 - [ ] OPEN
 - Type: defect
 - Confidence: high
 - Category: correctness/cache-identity
-- Found by: R1-CHUNK-0044
+- Found by: R1-CHUNK-0044, R1-CHUNK-0045, R1-CHUNK-0048
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipMusicStageManager.kt:L21-L29,L136-L143` in cache lookup and staged-file naming
-- Related: `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt:L23-L34,L243-L290` and `android/app/src/main/java/com/dxxredux/app/MissionZipMusicFingerprintCache.kt:L185-L192`
+- Related: `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt:L23-L34,L243-L290` and `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L185-L192`
 - Evidence: The staged filename hashes only the source basename, byte length, last-modified time, and track-local ID, then accepts an existing cache entry based only on its output length. It omits the canonical source path and any source or entry content hash. Two archives or extracted roots with equal basenames and metadata can therefore map equal track IDs to the same cache file despite different bytes. An in-place replacement that preserves size and timestamp has the same stale-cache behavior. The fingerprint cache repeats the basename, length, and timestamp identity, so downstream fingerprint reuse does not reliably correct the collision.
 - Trigger: Stage matching track paths from two different same-named mission archives or directories whose source length, timestamp, and track length agree but whose audio differs, or replace an archive while preserving those metadata fields
 - Impact: Preview, AcoustID lookup, fingerprinting, inferred names, and generated sidecars can silently use music from a different mission or a previous version, producing durable incorrect metadata without an error
 - Expected: Cache identity distinguishes distinct source objects and invalidates when the relevant bytes change; a hit is validated against that identity rather than length alone
 - Suggested fix: Define one shared versioned mission-source identity using at least the canonical source path plus stable file identity and entry metadata, or preferably a lazily computed content digest for the archive and selected entry. Store and verify that identity beside staged bytes, and use it consistently for staging and fingerprint caches. Keep the full digest or a collision-resistant filename length rather than truncating it to 64 bits.
 - Validation: Add two same-named archive and directory fixtures with identical lengths and timestamps but different audio, plus an in-place same-metadata replacement; assert each stages and fingerprints its own bytes and unchanged inputs still reuse their cache
+- Additional location (R1-CHUNK-0045): `android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt:L14-L24` and `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L452-L495,L724-L770`
+- Additional evidence (R1-CHUNK-0045): The non-extracted name sidecar is keyed only by the sanitized owner filename, and `writeMissionZipMusicNames` accepts any existing regular file without recording or comparing the source archive's size, timestamp, digest, catalog, or schema. Reimport replaces the mission file and extracted owner state but does not delete this sidecar, so even an obviously different archive imported under the same display filename keeps and later copies the previous mission's decoded names.
+- Additional trigger (R1-CHUNK-0045): Import a ZIP mission with recognized music, then import different ZIP content under the same display filename without first deleting the old mod
+- Additional validation (R1-CHUNK-0045): Reimport same-name missions with changed length, timestamp, track inventory, and same-metadata content; assert the sidecar and every upstream cache are invalidated by one shared identity while unchanged content is reused.
+- Additional location (R1-CHUNK-0048): `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L40-L60,L93-L120,L185-L197` and `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L840-L865,L911-L913,L1225-L1229`
+- Additional evidence (R1-CHUNK-0048): The fingerprint cache does have an exact content-hash lookup, but the details dialog first calls `cachedEntries`, which accepts only archive basename, length, and timestamp and returns records without staging or hashing current audio. `missionZipMusicTracksNeedingLocalAnalysis` then treats the presence of a track ID as proof that analysis is complete, so colliding or same-metadata replacement archives never reach `identifyLocal` and its SHA-256 check. The stale cached fingerprint and decoded name are displayed immediately, and automatic local analysis explicitly skips the track.
+- Additional validation (R1-CHUNK-0048): Exercise dialog-open and automatic-analysis selection, not only direct `get`, with same-named archives and in-place replacements that preserve length and timestamp; assert no cached annotation is exposed before content-backed validation and changed audio is restaged and re-fingerprinted.
 - Resolution: Pending
 
-### BR-0089: P2 - Make staged music extraction complete and atomically published
+### BR-0089: P2 - Publish mission music cache artifacts completely and atomically
 
 - [ ] OPEN
 - Type: defect
 - Confidence: high
 - Category: correctness/transactionality
-- Found by: R1-CHUNK-0044
+- Found by: R1-CHUNK-0044, R1-CHUNK-0045, R1-CHUNK-0048
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipMusicStageManager.kt:L36-L84,L309-L365,L377-L414` in cache publication and HOG reads
 - Related: `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L950-L977` and `android/app/src/main/java/com/dxxredux/app/MidiBytesPreviewDialog.kt:L78-L92`
 - Evidence: HOG extraction copies until EOF and reports success even when fewer bytes than the declared entry size were read; the in-memory HOG path likewise returns a short array without rejecting it. Staging never compares a newly written temporary file with the known track size. Publication uses one deterministic `.tmp` path, deletes the previous final file before rename, and falls back to copying directly into the final pathname. Concurrent requests for the same key can interfere with each other's temporary file, and interruption or fallback failure can leave a partial final file. Tracks with unknown size accept any later nonempty residue as a cache hit.
@@ -6013,6 +6222,13 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Declared entries are copied exactly, incomplete input is rejected, and only one fully written and validated file becomes visible at the final cache path
 - Suggested fix: Require exact declared byte counts and validate known output size before publication. Write each attempt to a uniquely named file in the target directory, flush and close it, then atomically move it into place without first deleting the valid destination; serialize or safely coalesce same-key writers. On platforms without atomic replacement, retain the old file until a complete replacement is ready and never stream directly to the public cache pathname.
 - Validation: Add short HOG payload and MIDI fixtures, forced short reads, write and move failure injection, cancellation at each publication step, and concurrent same-key staging; assert failures expose no partial cache hit, a prior valid entry survives replacement failure, and successful callers receive identical complete bytes
+- Additional location (R1-CHUNK-0045): `android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt:L55-L69` and `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L724-L770`
+- Additional evidence (R1-CHUNK-0045): The name sidecar is written directly to its final pathname. A process stop, storage failure, or exception after truncation can leave a partial file, and subsequent import or launch treats `isFile` alone as completion and copies that partial JSON into the active mission directory. The native reader can accept a syntactically complete prefix, so failure may yield incomplete labels rather than a clean rejection.
+- Additional validation (R1-CHUNK-0045): Inject failure and process cancellation at each sidecar write boundary, then retry import and launch; assert only a completely generated and validated temporary file is atomically published, a prior valid sidecar survives failure, and no partial file suppresses regeneration.
+- Additional location (R1-CHUNK-0048): `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L61-L104,L121-L171` in fingerprint-cache read-modify-write and publication
+- Additional evidence (R1-CHUNK-0048): Every record or local/web update independently loads the complete shared JSON file, modifies its snapshot, and writes directly to the final pathname with no lock or atomic replacement. Concurrent dialog, import-sidecar, or launch-sidecar workers can each read the same old snapshot and let the last writer silently discard the other's new track or newer local/web fields. Process death or a storage failure after truncation leaves invalid JSON; `loadEntries` then converts the entire parse failure to an empty list, and the next successful update overwrites the file with only that one record. A stale `Entry` passed to either update method can also restore old fields while replacing the current record.
+- Additional suggested fix (R1-CHUNK-0048): Serialize cache transactions under one process-wide lock, reload and merge the latest record inside that transaction, write a uniquely named same-directory temporary file, flush and close it, and atomically replace the final file while retaining the previous valid generation on failure. Treat parse failure as recoverable corruption requiring quarantine or restoration, not an empty authoritative cache.
+- Additional validation (R1-CHUNK-0048): Race distinct-track records and local versus web updates from multiple cache instances, inject interruption and write failure at every publication boundary, and submit stale entry objects; assert no update is lost, fields merge monotonically, readers see either complete generation, and a prior valid cache survives.
 - Resolution: Pending
 
 ### BR-0090: P1 - Implement the server's keypair fallback for clients without Play Games authentication
@@ -6030,6 +6246,1128 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Play Games users authenticate with a fresh server authorization code, while all other supported clients use the server's persistent signed-key challenge and proof-of-work protocol; development bypass credentials are confined to explicitly insecure local builds and servers
 - Suggested fix: Implement persistent Android Ed25519 key generation and secure storage, extend protocol models with the server's keypair fields, sign the required timestamp and challenge data, solve and answer `PowChallenge`, and select `auth_method = "keypair"` whenever Play Games authentication is unavailable after an explicit state check. Gate the `dev` method behind a debug-only client option paired with a server mode that deliberately accepts it, and surface recoverable Play Games sign-in state instead of silently collapsing it into development auth.
 - Validation: Run end-to-end tests against a production-configured server for an authenticated Play Games user, first-run keypair user, returning persistent-key user, denied or unavailable Play Games, expired or replayed signatures, proof-of-work success and failure, process restart, and a debug-only development server; assert each supported path reaches `Authenticated` with stable identity and unsupported bypasses are rejected
+- Resolution: Pending
+
+### BR-0091: P2 - Define one bounded mission music name sidecar contract
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: api-data-format
+- Found by: R1-CHUNK-0045
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt:L55-L69,L72-L102` in sidecar serialization and lookup-key expansion
+- Related: `android/app/src/main/cpp/shared/track_names.c:L73-L135,L257-L307` and `d1/main/songs.c:L141-L176`, mirrored in `d2/main/songs.c:L141-L176`
+- Evidence: Kotlin emits an unbounded flat object with as many as eight path and basename aliases per track and sorts generic basename keys among exact paths. Native code silently loads only the first 256 pairs into fixed 128-byte path and name arrays, truncates longer values, and does not share or validate those limits with the producer. Its minimal parser also removes a JSON escape marker without decoding the escape, so control and Unicode escapes do not round-trip. Lookup then makes one insertion-order pass and accepts each stored key against either the requested full path or its basename. With `game01.ogg` sorted before `music/b/game01.ogg`, the generic alias for another same-basename track is returned before the exact path can be considered.
+- Trigger: Give two path-qualified mission tracks the same leaf filename but different identified titles, produce more than 256 distinct aliases, or use a decoded title requiring JSON control or Unicode escaping or more than 127 bytes
+- Impact: A playing track can display another track's title, later entries can silently lose all labels, and accepted names can be truncated or textually changed even though the generated JSON is valid
+- Expected: Kotlin and native code implement one explicit versioned schema, exact path identity has priority over any unambiguous fallback, valid text round-trips, and documented limits are enforced before publication rather than by silent consumer truncation
+- Suggested fix: Serialize one canonical record per track with explicit exact-path and optional aliases, parse it with a complete bounded JSON implementation, and either allocate validated values dynamically or share and enforce limits in the writer. Perform an exact case-insensitive path lookup first, then use a basename only when it maps to exactly one record; reject duplicate or over-limit keys and names with an actionable generation error.
+- Validation: Add producer-to-native integration fixtures for duplicate basenames with different names and reversed archive order, exact versus fallback lookup, 255 through 257 records, alias expansion around the limit, 127 and 128-byte values, quotes, backslashes, controls, BMP and non-BMP Unicode, duplicate keys, and malformed JSON; assert exact round trips or explicit rejection with no partial table
+- Resolution: Pending
+
+### BR-0092: P2 - Keep optional music inspection from rejecting extracted missions
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/error-isolation
+- Found by: R1-CHUNK-0045
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt:L102-L149,L151-L240` in extracted catalog inspection and nested container parsing
+- Related: `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L452-L495,L678-L760` and `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt:L46-L99`
+- Evidence: Archive-backed `inspect` catches parser and I/O exceptions and reports no catalog, but `inspectExtracted` performs the same SNG, DXA, and HOG analysis without a failure boundary. `writeMissionZipMusicNames` also computes that catalog before its own best-effort `try`. During extracted-bundle import, the call is inside the transaction whose catch deletes both the newly imported mission and extracted state. A valid mission descriptor and HOG accompanied by a malformed optional `.dxa` can therefore throw from ZIP preamble or entry parsing after successful extraction and cause the whole playable mission import to be rolled back solely because title recognition failed.
+- Trigger: Import an extracted-bundle format such as 7z containing a valid mission descriptor and game HOG plus a truncated, corrupt, or non-ZIP file named with the optional `.dxa` extension
+- Impact: A best-effort metadata and overlay feature makes otherwise usable mission packages impossible to import, while the same malformed optional music in an archive-backed path merely disables inspection
+- Expected: Mission admission is governed by required mission assets; optional music discovery reports or skips a malformed container without deleting the imported mission, and one bad source does not hide valid music in other sources
+- Suggested fix: Give each optional SNG, DXA, and HOG scan a bounded result with diagnostics, catch expected parse and I/O failures per container, and continue cataloging independent sources. Move catalog construction inside the existing best-effort name-generation boundary, while preserving storage-budget failures and required mission extraction failures as fatal.
+- Validation: Import valid ZIP and 7z missions with one malformed optional DXA or HOG beside valid top-level and nested music, plus injected read failures; assert the mission remains registered and launchable, good sources remain listable, a diagnostic identifies the skipped source, and required archive or storage failures still roll back
+- Resolution: Pending
+
+### BR-0093: P2 - Validate the real ZIP start instead of trusting the first marker
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/input-validation
+- Found by: R1-CHUNK-0046
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/ArchiveInputStreams.kt:L9-L27` in `openZipInputStreamSkippingPreamble`
+- Related: `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L220-L259`, `android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L80-L113,L146-L174`, and `android/app/src/test/java/com/dxxredux/app/ArchiveInputStreamsTest.kt:L12-L34`
+- Evidence: The helper searches for the first four bytes `PK 03 04`, pushes only those bytes back, and immediately constructs `ZipInputStream`; it does not validate the remaining local header or retry a later candidate. A self-extracting executable preamble is arbitrary program and resource data and can contain that four-byte sequence before its appended ZIP. A mechanical probe with a valid ZIP behind a 30-byte false local header caused the helper to return an empty entry with compression method 99 and then throw `ZipException` on its first read, never reaching the real archive. The existing test covers one benign ASCII preamble and no competing marker.
+- Trigger: Import a supported self-extracting demo or DXA whose executable preamble happens to contain `PK 03 04` before the actual ZIP, whether coincidentally or as a valid embedded resource
+- Impact: A structurally valid supported package is rejected as corrupt, preventing demo extraction, mission admission, music inspection, or track staging solely because of unrelated prefix bytes
+- Expected: Preamble handling identifies and validates the actual appended ZIP boundary, applies a documented prefix limit, and rejects only when no complete archive is present
+- Suggested fix: Prefer staging seekable inputs and locating the central directory with a ZIP implementation that supports prepended data, or parse the known self-extractor envelope and validate each candidate's complete bounded local header before committing to it. If streaming must remain, retain enough bounded data to resume after an invalid candidate and require plausible version, flags, method, filename, and extra lengths before exposing a `ZipInputStream`.
+- Validation: Add valid plain ZIP and current `desc14sw.exe` fixtures, a valid SFX with an earlier invalid marker, a false but superficially plausible header, overlapping markers, a marker split across short reads, no marker, and an over-limit prefix; assert the real entries are reached or rejection is prompt and specific
+- Resolution: Pending
+
+### BR-0094: P3 - Represent unknown compressed sizes instead of reporting expanded bytes
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/metadata
+- Found by: R1-CHUNK-0046
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/ArchiveFiles.kt:L91-L99,L123-L140` in 7z and extracted-RAR entry projection
+- Related: `android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L17-L23,L48-L76` and `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L1372-L1384`
+- Evidence: ZIP entries preserve separate expanded and compressed sizes, but every 7z entry assigns `entry.size` to both fields and every RAR entry assigns the already extracted file length to both. The details UI then labels the second value `Compressed`, so 7z and RAR entries always appear to have a 1:1 compression ratio even when the facade has no reliable per-entry compressed measurement. The nonnullable `Long` model cannot distinguish unknown from zero or known size and invites future admission or progress code to trust fabricated metadata.
+- Trigger: Open details for any compressible mission constituent stored in 7z or RAR
+- Impact: Users and diagnostics receive incorrect archive-size information, and future consumers can make bad storage or ratio decisions because the API presents an expanded byte count as measured compressed data
+- Expected: The facade distinguishes known compressed size from unavailable metadata and the UI omits or labels unknown values accurately
+- Suggested fix: Model compressed size as nullable or with an explicit known flag, populate it only from a format API with defined semantics, and render `Unknown` or omit the row for extracted or solid formats where a meaningful per-entry value is unavailable
+- Validation: Compare stored and highly compressible ZIP, solid and nonsolid 7z, and RAR fixtures; assert known values match the archive tool within documented semantics and unavailable values are never displayed or consumed as measured bytes
+- Resolution: Pending
+
+### BR-0095: P2 - Make the RAR regression execute when its fixture is present
+
+- [ ] OPEN
+- Type: test
+- Confidence: high
+- Category: test-gap
+- Found by: R1-CHUNK-0046
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt:L109-L134` in `missionRarImportsReetusAndStagesAtMissions`
+- Related: `android/app/src/main/java/com/dxxredux/app/ArchiveFiles.kt:L108-L228`, `android/ai tool plans/asset management/plan_rar_import_support_20260619.md`, and `game_data/mission_files/reetus.rar`
+- Evidence: The test resolves `../game_data/mission_files/reetus.rar` relative to Gradle's `android/app` test project, while the available fixture is at repository-root `game_data/mission_files/reetus.rar`. The focused run reported two selected `ModManagerMissionZipTest` cases with one skipped, and the XML identifies this RAR method's failed assumption even though the repository-root fixture existed. The fixture is ignored and absent in clean CI, so the only RAR test both skips on CI by design and fails to run on a configured developer checkout; no test exercises backend failure, cleanup, or fallback behavior.
+- Trigger: Run the documented Gradle unit suite with the Reetus fixture present at its repository location, or run it in clean CI
+- Impact: RAR initialization, host fallback, extraction, cleanup, mission projection, and launch staging can regress while the suite remains green and the implementation plan's verification claim appears satisfied
+- Expected: A supplied fixture is resolved deterministically and executes, while environments without proprietary data report an explicit optional-fixture skip that is not counted as feature coverage; format-independent failure paths have committed synthetic coverage
+- Suggested fix: Resolve optional game data through one repository-root or configured fixture helper and fail when an explicitly requested fixture is missing. Add small committed or injected extractor tests for path containment, byte and item limits, partial failure, cancellation, retry isolation, and temporary-tree cleanup so CI covers the facade without depending on proprietary RAR creation.
+- Validation: Run the focused method with the repository fixture and assert zero skips plus the expected mission files, run clean CI and confirm the optional skip is reported separately from required coverage, and run the synthetic failure suite on every platform
+- Resolution: Pending
+
+### BR-0096: P2 - Require a valid descriptor-to-assets mission set before import
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/input-validation
+- Found by: R1-CHUNK-0047
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L48-L77,L146-L174,L228-L266,L285-L309` in descriptor collection, candidate recognition, package admission, and mission-set projection
+- Related: `android/app/src/main/java/com/dxxredux/app/GameFileFormats.kt:L386-L459`, `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L452-L495,L866-L889`, `android/app/src/main/java/com/dxxredux/app/LevelMetadata.kt:L256-L299`, and `d1/main/mission.c:L580-L588`, mirrored by `d2/main/mission.c:L826-L836`
+- Evidence: A filename with `.msn` or `.mn2` is always converted into a descriptor object even when its text contains no recognized name, level count, or level, and package admission then checks only that some HOG or DXA exists anywhere in the archive. It never proves that an admitted descriptor has its same-stem HOG, referenced level files, or another playable asset source. `missionSets` does not repair this: every related list always contains the descriptor itself, so `related.ifEmpty { constituents }` is unreachable for every parsed mission and an unrelated HOG/DXA is excluded from that mission's metadata target. The importer nevertheless registers the package under the first descriptor's name and launch staging copies all constituents. The engine's ordinary add-on path derives a same-stem `.hog`, so a junk or orphan descriptor plus an unrelated asset can appear as an enabled level pack but fail metadata analysis and mission loading.
+- Trigger: Import an archive containing `orphan.mn2` with empty or plausible descriptor text and an unrelated `other.hog` or `other.dxa`, or a multi-mission archive in which one descriptor has no matching playable assets
+- Impact: Invalid or partially valid packages are accepted and persisted as enabled mods, can be exposed for the wrong game, produce broken per-mission metadata actions, and fail only later during mission selection or launch with little explanation
+- Expected: Admission succeeds only when at least one structurally valid descriptor can be paired with the assets needed for that mission; invalid or orphan descriptors are diagnosed or omitted without contaminating valid mission sets
+- Suggested fix: Give descriptor parsing an explicit valid/error result with required-field and bounded-count checks, construct mission sets by normalized directory-aware references and the engine's same-stem HOG convention, and admit the package from nonempty playable sets rather than global role presence. Remove the unreachable fallback and retain rejected-descriptor diagnostics for the details UI.
+- Validation: Add empty, random-text, truncated-count, descriptor-only, HOG-only, mismatched-stem, directory-qualified, direct-level, DXA-backed, one-valid-plus-one-orphan, and valid multi-set archives in varied entry orders; assert only playable sets are registered, metadata receives the paired assets, and launch either succeeds or import reports a precise rejection
+- Resolution: Pending
+
+### BR-0097: P3 - Make multi-mission package identity independent of archive order
+
+- [ ] OPEN
+- Type: quality
+- Confidence: high
+- Category: determinism/usability
+- Found by: R1-CHUNK-0047
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L48-L76,L115-L143,L228-L266,L285-L309` in descriptor accumulation and top-level mission selection
+- Related: `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L866-L889`, `android/app/src/main/java/com/dxxredux/app/LevelMetadata.kt:L256-L270`, and `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt:L50-L69`
+- Evidence: `buildResult` selects `missions.firstOrNull()` before constituents are sorted, and `missionSets` preserves the same backend enumeration order. `registerMissionZip` persists that first mission's display name as both the mod name and mission title, while metadata and automation also use the ordered mission-set list. The multi-mission test fixes the expected primary title by writing that descriptor first, but there is no package-level primary marker or deterministic selection rule. Repacking identical files in another order, or enumerating them through another supported archive backend or extracted manifest order, can therefore change the imported mod's visible identity and the default first metadata target without changing content.
+- Trigger: Reorder the entries of a valid two-mission package such as the Descent Maximum-style fixture, convert it between supported archive formats, or rebuild its extracted record in a different order
+- Impact: Equivalent packages can appear under different names and default to different mission details, making imports, screenshots, automation results, and user instructions inconsistent and obscuring that one mod contains multiple missions
+- Expected: Package identity and mission ordering follow an explicit stable rule or package metadata, not incidental container enumeration order
+- Suggested fix: Define a canonical case-insensitive path ordering for mission sets and a separate package display policy, such as an archive-derived bundle name or an explicit deterministic primary selector. Persist or expose all contained mission titles rather than silently treating the first descriptor as the package identity.
+- Validation: Build byte-distinct ZIP, 7z, and extracted-record variants containing the same mission sets in every relevant order; assert identical package title, game classification, mission-set ordering, default metadata selection, and automation JSON
+- Resolution: Pending
+
+### BR-0098: P3 - Decode legacy mission descriptors consistently
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/text-encoding
+- Found by: R1-CHUNK-0047
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZip.kt:L48-L143,L176-L203,L344-L349` in descriptor and readme decoding
+- Related: `android/app/src/main/java/com/dxxredux/app/GameFileFormats.kt:L386-L459` and `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L866-L889`
+- Evidence: All three descriptor paths force UTF-8: archive inspection uses the default UTF-8 `bufferedReader`, stream inspection converts bytes with `Charsets.UTF_8`, and extracted inspection calls `readText(Charsets.UTF_8)`. Java replaces malformed sequences, so legacy Windows-1252 bytes are silently changed in names, authors, editors, and referenced filenames. The same object already has `decodeText`, which detects replacement characters and falls back to Windows-1252 for readmes, but descriptor parsing bypasses it. Mission packages and their metadata originate from DOS and Windows-era tools, making non-UTF-8 text a supported-data concern rather than an exceptional modern input.
+- Trigger: Import a mission whose descriptor contains a Windows-1252 title, author, editor, or asset/level reference with a byte that is invalid UTF-8
+- Impact: The launcher can display replacement characters, persist a corrupted package title, and fail to associate or analyze a referenced file whose decoded name no longer matches the archive entry even though the engine can consume the original mission data
+- Expected: Every inspection backend applies one documented, bounded legacy-compatible descriptor decoding policy and produces identical metadata for identical bytes
+- Suggested fix: Read descriptor bytes through one bounded helper, decode strict UTF-8 when valid and the selected legacy encoding otherwise, and use that helper for archive, stream, and extracted records. Keep the policy alongside the engine-format contract and distinguish decoding diagnostics from structural parse errors.
+- Validation: Add UTF-8 and Windows-1252 descriptors containing accented title, author, and referenced filename fields, malformed UTF-8, and ambiguous ASCII; inspect each through ZIP file, input stream, 7z/RAR facade where available, and extracted record and assert identical text and file pairing without replacement characters
+- Resolution: Pending
+
+### BR-0099: P2 - Reanalyze cached mission tracks when the bundled fingerprint database changes
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/cache-invalidation
+- Found by: R1-CHUNK-0048
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L40-L48,L102-L120` in cached projection and local database refresh
+- Related: `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L840-L865,L911-L913,L1225-L1229`, `android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt:L35-L72`, `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L724-L770`, and `android/app/src/test/java/com/dxxredux/app/MissionZipMusicAnalysisSkipTest.kt:L8-L28`
+- Evidence: Entries record `localMatchDbIdentity`, and `identifyLocal` correctly rematches a cached chromaprint when that identity differs from the current bundled database. The normal dialog path never reaches that check after an app database update: `cachedEntries` returns the old entry, and `missionZipMusicTracksNeedingLocalAnalysis` filters solely on track-ID presence. The focused skip test codifies that any record means complete analysis without passing or checking the current database identity. Existing mission sidecars also suppress import/launch regeneration based only on file existence, so an upgraded bundled database can add or correct matches while previously imported missions continue showing and staging the old result indefinitely. A failed initial database load is similarly recorded under the same asset identity as a no-match and then skipped after a later successful load.
+- Trigger: Upgrade the app with changed `known_discs.json5` or matching configuration while retaining imported missions and their cache, or recover from a transient initial bundled-database load failure
+- Impact: Newly recognized tracks remain labeled unmatched, corrected bundled names and confidence never appear, and stale names can continue into the native mission overlay despite the cache explicitly storing a database version intended to invalidate them
+- Expected: Automatic analysis considers both validated track content and the current bundled database identity, and regenerates dependent sidecars when either identity changes
+- Suggested fix: Pass the current database identity into cached projection or pending-track selection, mark entries with missing or different identities for cheap rematching from their stored chromaprint, and version the generated name sidecar with the same source and database identities. Do not record a completed local result when database loading failed.
+- Validation: Cache matched and unmatched tracks under database A, reopen under database B with added, removed, and renamed records, and simulate a failed then successful database load; assert fingerprints are reused, every track is rematched exactly once, UI and sidecar names update, and unchanged database B opens do no redundant work
+- Resolution: Pending
+
+### BR-0100: P2 - Let explicit AcoustID lookup recover from transient failures
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: reliability/retry-state
+- Found by: R1-CHUNK-0048
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L32-L36,L139-L154` in persisted web-lookup completion state
+- Related: `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L878-L908,L1028-L1073,L1169-L1193`, `android/app/src/main/java/com/dxxredux/app/AcoustIdClient.kt:L55-L142`, and `android/ai tool plans/music/plan_zip_music_metadata_browser_study_20260609.md:L378-L387`
+- Evidence: `hasAcoustIdLookup` is true for every nonblank status, including `failed`, and `lookupTrack` immediately returns such an entry without calling the service again. The timestamp is stored but never used for expiry or retry. More broadly, `AcoustIdClient.lookupFingerprint` returns the same null for a genuine empty result and for exhausted network exceptions, HTTP errors other than retryable server responses, malformed responses, or API error statuses; the caller normally persists all of those as `no_match`. Although the plan intentionally caches failure status to avoid accidental repeated traffic, both the per-track `Lookup` button and explicit `Lookup all` action are then unable to retry until archive identity changes or app data is cleared.
+- Trigger: Perform the first explicit lookup while offline, during a timeout or service error, with a temporarily rejected key or malformed response, then restore normal service and press `Lookup` or `Lookup all` again
+- Impact: Web identification becomes permanently disabled for that track and can misleadingly report a transient service failure as an authoritative no-match, with no in-app recovery path
+- Expected: Success and genuine no-match are distinguishable from retryable failure, automatic operations respect backoff, and an explicit user action can retry failed or expired results
+- Suggested fix: Return a typed AcoustID result separating match, authoritative no-match, retryable failure, permanent configuration error, and cancellation. Persist attempt time and retry policy, let explicit actions override cached failures, expire no-match according to a documented policy if desired, and never swallow coroutine cancellation into a cache status.
+- Validation: Inject offline I/O, timeout, 429 and 5xx exhaustion, 4xx key error, API error JSON, malformed JSON, empty valid results, match, and coroutine cancellation; retry each after recovery through per-track and bulk actions and assert only authoritative states suppress requests according to policy
+- Resolution: Pending
+
+### BR-0101: P3 - Bound and prune the global mission fingerprint cache
+
+- [ ] OPEN
+- Type: quality
+- Confidence: high
+- Category: resource-lifecycle/cache-retention
+- Found by: R1-CHUNK-0048
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L40-L171,L199-L261` in global cache retention and whole-file serialization
+- Related: `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L284-L311` and `android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt:L14-L24`
+- Evidence: The one global file retains a complete encoded chromaprint and metadata record for every archive basename, size, timestamp, track coordinate, and content hash ever recorded. Updates remove only the exact current record; changing an archive's size or timestamp, replacing a track's bytes, renaming a mod, deleting one mod, or clearing all mods leaves every old fingerprint record behind. Every lookup reads and parses the entire file, and every update reparses, sorts, pretty-prints, and rewrites it. There is no entry, byte, age, owner, or live-mod limit and no cleanup API, while `deleteMod` removes only the per-owner name sidecar and extraction state.
+- Trigger: Repeatedly import, analyze, replace, rename, and delete mission archives with compressed music, especially archives with many tracks or frequently changing timestamps
+- Impact: App-private storage and the latency and memory cost of every music-details open, import-sidecar generation, and cache update grow monotonically with obsolete data; eventually one small update rewrites a disproportionately large file and amplifies interruption risk
+- Expected: The cache has an explicit bounded retention policy and removes records that no live owner or recent reusable source can reference without discarding useful unchanged fingerprints prematurely
+- Suggested fix: Index records by the shared content-backed owner identity from BR-0088, remove obsolete owner generations during replacement and deletion, compact invalid or superseded records on successful transactions, and enforce documented age, entry-count, and total-byte ceilings with least-recently-used eviction. Keep per-record chromaprint and text sizes bounded during load.
+- Validation: Cycle archives through repeated same-name changes, renames, deletions, clear-all, and more records than each configured ceiling; assert obsolete owners disappear, limits hold after restart, active entries remain reusable, and lookup/update cost stays bounded
+- Resolution: Pending
+
+### BR-0102: P2 - Bind durable extraction records to source content
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/cache-identity
+- Found by: R1-CHUNK-0049
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L22-L33,L56-L121,L181-L194` in extraction-record identity and freshness
+- Related: `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L678-L721,L951-L990`, `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt:L403-L435`, and `android/ai tool plans/asset management/plan_large_mission_archive_extraction_design_20260619.md:L45-L63,L141-L151`
+- Evidence: A durable cache is considered fresh from owner filename, length, and last-modified time plus extracted file lengths; neither source nor extracted content has a digest or stable file identity. The design explicitly requires `owner_sha256` when available and says a same-name replacement must be marked stale and rebuilt. The focused `durableMissionZipLaunchAndDetailsUseFreshExtractedRecord` test does the opposite: it overwrites the source with different bytes, restores the original length and timestamp, then asserts launch paths and details still use the previous extracted mission. Because launch checks `freshRecord` before reopening the archive, a same-metadata replacement silently mounts old descriptors, HOGs, DXAs, music, and documents. Source mutation during extraction can also bind bytes read from one generation to metadata sampled from a later generation.
+- Trigger: Replace an imported archive in place while preserving its length and timestamp, restore it from a tool or filesystem with coarse timestamps, or race source replacement with extraction
+- Impact: The launcher can display and execute a different mission than the archive currently stored and shown to the user, retaining old game code and assets indefinitely with no stale or repair indication
+- Expected: A record proves the source content generation it represents, and extracted files are verified sufficiently to prevent same-length corruption from masquerading as that generation
+- Suggested fix: Persist a versioned source content digest or equally strong immutable identity, sample and verify it before and after extraction, and include per-file digests for durable outputs or verify them against the source manifest on reuse. Keep length and timestamp only as a fast negative check, and replace the stale-cache test oracle with expected invalidation and repair.
+- Validation: Replace sources and extracted files with different same-length bytes while preserving timestamps, exercise coarse timestamp filesystems and mutation before, during, and after extraction, and assert reuse only for identical content while every changed generation rebuilds atomically
+- Resolution: Pending
+
+### BR-0103: P2 - Publish extraction trees and their manifest as one transaction
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/transactionality
+- Found by: R1-CHUNK-0049
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L56-L97,L163-L194,L294-L376` in tree replacement and manifest mutation
+- Related: `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L452-L495,L678-L721,L951-L990`
+- Evidence: Each owner uses one deterministic `.tmp` directory, which every extraction deletes before use. Publication deletes the valid owner tree before rename and, if rename fails, copies directly into the public pathname. Only afterward does a separate whole-file read-modify-write update `manifest.json`; manifest writes also go directly to the final file. There is no lock across cache instances or owners. Concurrent import, details repair, launch repair, delete, or prune operations can delete another extraction's temporary or final tree and lose each other's manifest entries. Failure or process death can leave a partial public tree, a new tree with an old record, an old tree with a new or missing record, truncated JSON that parses as no records, and orphan trees. `removeOwner` then rewrites from whatever snapshot it can parse, potentially dropping unrelated owners.
+- Trigger: Run same-owner or different-owner extraction and cleanup concurrently, force rename fallback, fail copy or manifest write, or terminate the process at each boundary between old-tree deletion, new-tree publication, and manifest update
+- Impact: Previously working mission caches can disappear or become partial, unrelated records can be lost, storage can accumulate unowned trees, and launch or details can oscillate between repeated extraction, empty paths, and stale data
+- Expected: Readers observe either the complete old generation and matching manifest or the complete new generation and matching manifest; owner transactions do not interfere and failure preserves a valid prior state
+- Suggested fix: Serialize manifest transactions under a process-wide store lock, use unique generation directories, fully validate and fsync the new tree and a temporary manifest, atomically publish the manifest pointer or generation, and retire the old tree only after commit. Recover or scavenge unreferenced generations on startup and make delete/prune participate in the same transaction.
+- Validation: Race same and distinct owners across ensure, remove, and prune; inject failure and process death after every file, rename, copy, fsync, and manifest step; assert no partial generation is mounted, unrelated owners survive, retries converge, and orphan cleanup is deterministic
+- Resolution: Pending
+
+### BR-0104: P2 - Stage mission and root assets according to their engine lookup paths
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/path-layout
+- Found by: R1-CHUNK-0049
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L388-L408,L434-L520` in global rooted-layout selection and staging
+- Related: `android/app/src/main/cpp/shared/physfsx_android_shared.c:L78-L105`, `d1/main/mission.c:L561-L588`, `d1/main/songs.c:L76-L114`, mirrored by `d2/main/mission.c:L804-L836` and `d2/main/songs.c:L76-L114`, and `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt:L225-L249`
+- Evidence: One global boolean controls every archive entry. If no descriptor or HOG already begins with `missions/`, `stagedRelativePath` moves every file, including top-level song lists and loose audio, under `missions/`; its generated `descent.sng` alias is also written there. Active paths mount the extracted or generated root at the PhysicsFS root. Mission loading deliberately looks for descriptors and HOGs under `missions/`, but both game song loaders open `dxx-r.sng`, `descent.sng`, and referenced audio at the mounted root. The Obsidian unit test asserts only that the alias exists under `.../missions/descent.sng`, so it validates the wrong location without launching the soundtrack. Conversely, if any descriptor or HOG is under `missions/`, all paths are preserved; a mixed-layout descriptor and HOG can then remain separated and fail the engine's same-stem mission lookup.
+- Trigger: Launch an unrooted mission ZIP with a top-level custom `.sng` and loose audio or HOG-contained music, such as the Obsidian-style fixture, or a mixed-layout package with only one of a matching descriptor/HOG pair under `missions/`
+- Impact: Mission selection can fail for mixed layouts, and admitted mission soundtracks can silently fall back to base music or fail referenced tracks even though the launcher reports and displays them as available
+- Expected: Descriptors and their same-stem HOGs are exposed together at the engine's mission path, while root-consumed song lists, loose audio, DXAs, and other assets retain the mount paths used by their consumers
+- Suggested fix: Replace the archive-wide switch with an explicit per-entry staging map derived from each mission set and engine lookup contract. Place or alias descriptor/HOG pairs under `missions/`, preserve root assets at root, mount nested archives deliberately, and reject ambiguous mixed layouts instead of relocating unrelated files wholesale.
+- Validation: Launch single and multi-mission packages with rooted, unrooted, and mixed descriptor/HOG pairs; top-level `descent.sng` and `dxx-r.sng`; generated aliases; loose and HOG/DXA-contained audio; and path-qualified references. Assert mission discovery and the exact loaded song list and track through engine introspection, not only filesystem placement.
+- Resolution: Pending
+
+### BR-0105: P2 - Reject colliding archive outputs before extraction
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/input-validation
+- Found by: R1-CHUNK-0049
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L434-L520` in output-path projection and generated aliasing
+- Related: `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L100-L121,L147-L154,L218-L252` and `android/ai tool plans/asset management/plan_large_mission_archive_extraction_design_20260619.md:L163-L175`
+- Evidence: The design requires case-only duplicate detection, but extraction opens each projected output with truncation and never tracks canonical or case-folded destinations. Exact duplicate entries, slash/backslash variants, canonical aliases such as `a/../b`, case-only names, and archive entries colliding with generated `missions/descent.sng` overwrite in iteration order. The manifest still records every source entry. If overwritten versions have different sizes, `freshRecord` can never satisfy all records and reextracts forever; if sizes match, both logical entries resolve to the last bytes silently. Case-insensitive lookup helpers then return whichever duplicate appears first, which can pair metadata or preview with a different file than launch sees.
+- Trigger: Import a ZIP, 7z, or RAR containing two names that project to the same canonical or case-folded staged path, or a rooted package whose existing target collides with the generated song-list alias
+- Impact: Mission descriptors, HOGs, DXAs, music, and documentation can be silently substituted or made permanently stale, with backend and entry-order-dependent results
+- Expected: Every archive and generated output has one unambiguous destination under a documented case policy, or the package is rejected before any public tree is changed
+- Suggested fix: Precompute normalized canonical relative destinations for all archive and generated files, reject exact, alias, file-versus-directory, and case-fold collisions before writing, and use the validated map consistently for extraction, manifest entries, lookups, and progress. Do not resolve duplicate logical entries by first or last iteration order.
+- Validation: Add exact duplicates, case-only variants, separator variants, dot-component aliases, Unicode case pairs under the chosen policy, file/directory conflicts, generated-alias conflicts, and reversed backend ordering; assert deterministic pre-write rejection and preservation of the previous valid generation
+- Resolution: Pending
+
+### BR-0106: P1 - Fail closed when Google authentication is not configured
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/authentication
+- Found by: R1-CHUNK-0050
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/config.rs:L16-L19,L43-L44,L62-L88,L123-L127,L164-L169` in Google credential and verification-bypass configuration
+- Related: `server/src/ws_handler.rs:L475-L535`, `server/config.json5.default:L25-L47`, `server/server_config.json5.template:L15-L24,L58-L60`, and `server/deploy_build.sh`
+- Evidence: The documented bypass is `skip_gpgs_verify`, but the GPGS authentication path also skips verification whenever `google_client_id` is empty. The config loader defaults both Google credentials to empty, the production example and deployment template leave them empty, and the deployment script does not require them. In that state the server accepts the client-supplied token verbatim as the identity key, labels the method `dev`, creates or retrieves that player, and proceeds through normal authentication. No startup validation distinguishes an intentionally keypair-only deployment from an accidentally unconfigured GPGS verifier.
+- Trigger: Start the server from the supplied production defaults, omit `GOOGLE_CLIENT_ID`, or lose the credential fields because configuration loading falls back to defaults, then connect through the GPGS message path with an attacker-chosen token
+- Impact: A remote client can mint arbitrary stable identities without Google authentication, impersonate any identity token it can guess or observe, evade account bans by choosing a new token, and participate in matchmaking flows that operators may believe are authenticated
+- Expected: Missing verification credentials never turn an externally reachable authentication mechanism into a trust-the-client development mechanism; any bypass is explicit, conspicuous, and unavailable in production
+- Suggested fix: Define enabled authentication methods explicitly and validate them before binding listeners. If GPGS is enabled, require the complete credential set and reject all GPGS authentication when verification is unavailable. Keep an intentional development bypass behind a separate opt-in mode with a startup warning and safe binding restrictions, and allow keypair-only deployments to disable the GPGS path rather than accept unverified tokens.
+- Validation: Start with valid credentials, each credential missing independently, both missing, malformed or unreadable config, keypair-only mode, explicit development mode, and production mode; submit arbitrary and real tokens and assert only successfully verified GPGS identities or valid keypair identities authenticate, while every incomplete production configuration exits before listening
+- Resolution: Pending
+
+### BR-0107: P1 - Do not replace broken server configuration with public defaults
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/configuration
+- Found by: R1-CHUNK-0050
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/config.rs:L90-L108,L129-L145,L147-L191` in config loading and default resolution
+- Related: `server/src/main.rs:L9-L85`, `server/src/ws_handler.rs:L475-L535`, and `server/server_config.json5.template:L1-L60`
+- Evidence: A JSON5 parse error prints a warning and substitutes an empty `ConfigFile`; every file read error, including permission, directory, and other I/O failures, silently does the same. Invalid numeric environment values are also silently replaced with hardcoded defaults. The resulting listener defaults bind WebSocket, HTTP, relay, and STUN addresses to all interfaces, select a relative default database, remove TLS paths, and clear Google credentials. Startup then continues, and the blank Google client ID activates the unverified authentication path in BR-0106. An explicitly named `CONFIG_FILE` receives no stronger treatment than an absent optional developer file.
+- Trigger: Deploy with a misspelled or missing config path, deny read permission, truncate or corrupt JSON5, run from the wrong working directory, or provide malformed resource-limit environment values
+- Impact: The process can report a warning or nothing at all yet successfully expose a materially different service, potentially on public interfaces with plaintext transport, a new database, default limits, disabled integrations, and client-controlled authentication identities
+- Expected: A requested or present configuration that cannot be read or validated prevents the server from binding, and any no-file development mode is explicit and uses safe local defaults
+- Suggested fix: Return a typed configuration error from `load`, distinguish not-found from other I/O errors, make an explicitly supplied path mandatory, and fail on parse and environment-conversion errors with the field and source identified. Add a deliberate development preset bound to loopback if fileless startup is required, and perform cross-field production validation before constructing state or listeners.
+- Validation: Exercise absent implicit and explicit files, permission denial, directory paths, malformed and unknown JSON5 fields, invalid booleans and numbers, wrong working directories, and valid file-plus-environment precedence; assert failures exit nonzero before any port or database is opened and explicit development startup uses only documented safe values
+- Resolution: Pending
+
+### BR-0108: P1 - Reject incomplete TLS configuration instead of serving plaintext
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/transport
+- Found by: R1-CHUNK-0050
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/config.rs:L26-L29,L75-L76,L173-L174` in independent TLS path configuration without pair validation
+- Related: `server/src/tls.rs:L6-L14` and `server/src/main.rs:L47-L85`
+- Evidence: Certificate and private-key paths are resolved independently, with no invariant requiring both or neither. The TLS loader returns `Ok(None)` when either path is empty, so omitting or misspelling one side does not fail startup; the server logs that TLS is not configured and serves plain WebSocket traffic. Worse, the initial structured startup field reports `tls=true` solely from a nonempty certificate path, so a present certificate plus missing key first advertises TLS and then downgrades to plaintext. Both-empty paths are legitimate behind nginx, but a one-sided pair is not a meaningful intentional configuration.
+- Trigger: Configure only `TLS_CERT_PATH` or only `TLS_KEY_PATH`, lose one JSON5 field during an edit or fallback, or provide an empty environment override for one member of an otherwise complete pair
+- Impact: A directly exposed server can accept authentication, lobby, chat, address, and session traffic without the transport protection its operator intended, making credentials and gameplay coordination observable or modifiable on the network
+- Expected: TLS is enabled only with a complete valid pair, deliberately disabled only when both values are empty, and startup reports the transport mode from the validated effective configuration
+- Suggested fix: Validate the pair in `ServerConfig` and make exactly-one-present a fatal configuration error before binding. Represent transport mode as an enum or validated TLS object rather than two independent strings, and derive all logging and listener startup from that single state. Preserve the both-empty reverse-proxy mode with an explicit plaintext/proxy setting if ambiguity remains.
+- Validation: Cover both empty, cert only, key only, unreadable files, invalid PEM, mismatched key and certificate, and a valid pair; assert every partial or invalid case exits before listening, both-empty requires the documented plaintext/proxy mode, and logs and actual WebSocket scheme always agree
+- Resolution: Pending
+
+### BR-0109: P2 - Make NAT simulator handles reliably own and stop their tasks
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: resource-lifetime
+- Found by: R1-CHUNK-0051
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/nat_sim.rs:L67-L85,L111-L126,L171-L178,L263-L273,L277-L338` in simulator task ownership and shutdown
+- Related: `server/src/bin/nat_sim.rs:L20-L26` and `server/tests/nat_sim_tests.rs:L40-L476`
+- Evidence: Both handles contain Tokio join handles for tasks whose receive loops otherwise run forever, but neither implements `Drop`; dropping a Tokio `JoinHandle` detaches rather than cancels its task. `NatSimHandle` is weaker still: its main task owns a clone of the shared task vector that contains the main task's handle, and `abort` uses `try_lock`; if any task is pushing a newly created inbound handle at that instant, shutdown silently does nothing and is never retried. The STUN handle also requires every caller to reach an explicit abort. Panics, early returns, cancellation, or ordinary handle replacement therefore leave tasks and bound UDP sockets alive until the runtime itself ends.
+- Trigger: Drop either handle without calling `abort`, exit a test or helper on an assertion or `?` path before cleanup, or call `NatSimHandle::abort` while the task vector is locked during mapping creation
+- Impact: Repeated simulator use in a shared runtime accumulates detached receive loops, socket handles, mapping state, and ports; later tests can interfere with leaked traffic or exhaust runtime and operating-system resources
+- Expected: The handle exclusively owns a cancellation lifecycle, dropping it always initiates cleanup, and an awaited shutdown confirms every spawned task and socket has terminated
+- Suggested fix: Replace the shared vector and best-effort lock with an owned `JoinSet` or explicit cancellation token plus supervisor task. Provide an async shutdown that signals, drains, and awaits all tasks, implement `Drop` as an unconditional abort fallback, and use the same ownership contract for the mini STUN server.
+- Validation: Repeatedly start and drop both handles, cancel and panic callers at every setup stage, race shutdown with first and subsequent mapping creation, and assert all tasks finish, socket counts return to baseline, and explicitly requested ports can be rebound immediately
+- Resolution: Pending
+
+### BR-0110: P2 - Key NAT mappings and return routes by internal client
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/test-infrastructure
+- Found by: R1-CHUNK-0051
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/nat_sim.rs:L39-L64,L150-L195,L219-L245` in mapping identity and inbound routing
+- Related: `server/tests/nat_sim_tests.rs:L412-L450` and `android/ai tool plans/networking/plan.NAT_SIMULATOR.md:L43-L61`
+- Evidence: The enum and design contract specify a mapping per internal source, but `mapping_key` deliberately ignores `src`: full-cone and port-restricted modes use the single literal `default`, while symmetric modes key only by destination. `NatState` also stores one global `internal_client_addr`, overwritten by every outbound packet, so replies for every existing mapping are sent to whichever internal client transmitted most recently. The test named `test_multiple_internal_clients_isolated` observes only outbound payloads and equal source IPs; its comments acknowledge that both clients share one mapping and then accept that contradiction instead of asserting distinct mapped ports or reply ownership.
+- Trigger: Send through one simulator from two internal UDP sockets, then have either external peer reply after the second client has transmitted
+- Impact: Clients share external mappings and allowlists, and inbound traffic for the first client is delivered to the second; tests using a shared simulator cannot model ordinary NAT isolation and can pass while traversal or filtering behavior is wrong
+- Expected: Mapping identity includes the internal endpoint under every NAT type, and each mapping retains the internal return address that created it
+- Suggested fix: Use a typed key containing `src` plus `dest` only for endpoint-dependent modes, store the internal address on each `PortMapping`, and remove the global last-sender field. Make the multi-client test assert distinct external ports, independent allowlists, and bidirectional delivery to the originating socket.
+- Validation: Exercise two and many internal clients against the same and different destinations for every NAT type, interleave sends and replies, and assert unique mappings where required, stable return routing, no cross-client delivery, and correct port-restricted allowlists
+- Resolution: Pending
+
+### BR-0111: P2 - Bounds-check complete STUN attributes before slicing
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/input-validation
+- Found by: R1-CHUNK-0051
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/nat_sim.rs:L379-L420` in `stun_query_through_nat` response parsing
+- Related: `server/tests/nat_sim_tests.rs:L40-L148`
+- Evidence: The parser verifies that an attribute header fits, but when its type is XOR-MAPPED-ADDRESS and its declared length is at least eight it immediately slices `stun_data[pos + 4..pos + 4 + attr_len]`. It never proves that the declared message body, complete attribute value, or padded attribute fits the received datagram. A selected STUN endpoint sees the random transaction ID in the request and can return a matching 24-byte response whose header declares a longer XOR-MAPPED-ADDRESS; the slice then indexes past the datagram and panics instead of returning `None`.
+- Trigger: Query a faulty or adversarial STUN test endpoint that echoes the transaction ID but truncates an XOR-MAPPED-ADDRESS value or declares a message or attribute length larger than the UDP payload
+- Impact: A network response can panic the async caller and abort an integration scenario or test process, preventing the simulator from being used to validate malformed and hostile STUN behavior
+- Expected: Every length and padded step is validated against both the declared message boundary and actual datagram before any indexing, and malformed responses produce a normal error result
+- Suggested fix: Reject a declared STUN body that exceeds the received bytes, compute attribute and padded ends with checked arithmetic, require the address attribute's minimum or exact supported size and family layout, and access fields through checked slices. Return a typed parse error if diagnostics are useful.
+- Validation: Add truncated headers and values, oversized and undersized message lengths, oversized attribute lengths, missing padding, unsupported families, reordered unknown attributes, exact-boundary valid packets, and randomized malformed datagrams; assert no panic and acceptance only of a complete matching response
+- Resolution: Pending
+
+### BR-0112: P2 - Reserve or validate sequential NAT ports without wrapping
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/test-reliability
+- Found by: R1-CHUNK-0051
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/nat_sim.rs:L87-L102,L154-L167` in symmetric-sequential port allocation
+- Related: `server/tests/nat_sim_tests.rs:L128-L148`
+- Evidence: Automatic selection binds an ephemeral socket, adds 200 with `wrapping_add`, and immediately closes the socket; neither the resulting port nor the following range is reserved. The first real mapping binds later inside the detached outbound task and panics on collision. Each subsequent allocation also wraps a `u16`: an explicit base of 65535 makes the next requested port zero, which asks the OS for an arbitrary ephemeral port and violates the sequential contract, while an automatically assigned high port can wrap into an unrelated low range. `start_nat` has already returned successfully before any of these failures can be reported.
+- Trigger: Occupy the guessed port between probe and first traffic, pass a base at the end of the port range, allocate across 65535, or receive a high ephemeral probe port in automatic mode
+- Impact: NAT tests become platform- and timing-dependent, can panic a background task and surface only as a later timeout, or can report random ports while claiming symmetric sequential behavior
+- Expected: A successful start reserves a collision-free valid sequence for the supported mapping budget, and exhaustion or an invalid requested range is returned explicitly without wraparound
+- Suggested fix: Return `Result` from startup and mapping creation, validate explicit bases with checked arithmetic, and reserve actual bound sockets rather than probing then releasing a nearby port. If a dynamic sequence cannot be reserved portably, expose a deterministic allocator with retry and a clear exhaustion error instead of promising strict adjacency.
+- Validation: Occupy the requested and adjacent ports, test bases 0, 1, 65534, and 65535, force automatic choices near the boundary, create mappings through exhaustion, and assert either exact monotonic ports or an immediate typed error with no task panic or timeout
+- Resolution: Pending
+
+### BR-0113: P2 - Derive keypair identity from decoded public-key bytes
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/identity-canonicalization
+- Found by: R1-CHUNK-0051
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/pow.rs:L36-L75` in key verification and identity hashing
+- Related: `server/src/ws_handler.rs:L385-L465`, `server/src/db.rs:L249-L292`, and `server/tests/integration.rs:L1638-L1844`
+- Evidence: Signature verification hex-decodes the public key, so lowercase, uppercase, and mixed-case hex strings represent the same accepted Ed25519 key. `hash_pubkey` instead hashes the original text. The WebSocket caller uses that text hash as the database identity, so changing only hex letter case produces a different `pubkey_hash`, synthetic player identifier, proof-of-work registration, and player record even though the cryptographic key and valid signature are identical. Tests generate only canonical lowercase text and assert only hash length.
+- Trigger: Reconnect with the same Ed25519 key encoded using uppercase or mixed-case hex, including after a client implementation or serialization change
+- Impact: One cryptographic identity fragments into multiple server accounts, losing stable player, friend, and ban state and creating duplicate database rows under a representation detail rather than key possession
+- Expected: Every accepted encoding of the same 32 public-key bytes resolves to exactly one server identity, or the protocol rejects every noncanonical encoding before lookup
+- Suggested fix: Decode and validate the key once into a typed value, hash its 32 canonical bytes, and pass that canonical identity through signature verification and database lookup. If existing server databases matter, migrate or alias textual hashes deliberately; otherwise reject noncanonical encodings before registration.
+- Validation: Authenticate and reconnect with lower-, upper-, and mixed-case encodings of one key and assert one player ID and database mapping; cover invalid lengths and hex, distinct keys, existing textual records, bans, callsign updates, and concurrent first registration
+- Resolution: Pending
+
+### BR-0114: P1 - Recover the authenticated client address behind the trusted proxy
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/networking
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/rate_limit.rs:L13-L17,L52-L58` in IP-keyed connection and authentication limiting
+- Related: `server/src/ws_handler.rs:L167-L252,L1180-L1209`, `server/src/stun.rs:L1-L55`, `server/nginx-dxx-matchmaking.conf:L1-L40`, and `server/config.json5.default:L1-L10`
+- Evidence: The supplied production configuration binds WebSocket on loopback behind nginx, and nginx forwards the real address in `X-Real-IP` and `X-Forwarded-For`. The Axum handler reads only TCP `ConnectInfo`, so every proxied connection is identified as nginx at `127.0.0.1`. That address keys the three-upgrades-per-minute limiter, is stored as each session's public IP, and is inserted into the authenticated STUN allowlist. Consequently the fourth aggregate client upgrade in a minute is rejected, observed public candidates are suppressed as loopback, and STUN datagrams from actual remote source IPs are dropped as not allowlisted.
+- Trigger: Deploy with the repository's production config and nginx file, then connect several independent remote clients or run STUN after WebSocket authentication
+- Impact: The documented production topology globally rate-limits unrelated users and disables the self-hosted STUN and observed-candidate paths, causing connection failures and unnecessary or failed relay fallback under ordinary load
+- Expected: All address-based controls consistently use the original client address when and only when the immediate peer is a configured trusted proxy, while direct deployments use the socket peer and reject spoofed forwarding headers
+- Suggested fix: Centralize effective-client-address extraction with an explicit trusted-proxy configuration or proxy protocol, parse one documented header only from trusted peers, normalize IPv4 and IPv6 forms, and pass the resulting typed address through limiting, sessions, STUN allowlisting, cleanup, and logging. Do not trust client-supplied forwarding headers on public direct listeners.
+- Validation: Run direct and nginx-proxied integration tests with at least four distinct clients, multiple clients behind one NAT, spoofed forwarding headers, IPv4 and IPv6, reconnects, and STUN from each effective address; assert per-client policy, correct allowlist reference counts, observed candidates, and no header spoof bypass
+- Resolution: Pending
+
+### BR-0115: P1 - Bound WebSocket messages and every client-controlled field before work
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/protocol.rs:L13-L15,L18-L160,L343-L357,L398-L402` in the mostly unbounded client schema
+- Related: `server/src/ws_handler.rs:L236-L343,L385-L600,L1262-L2617`, pinned `axum` 0.8.8 `WebSocketUpgrade::max_message_size`, and `server/tests/integration.rs`
+- Evidence: Only `game_info` has a serialized-size constant. Authentication tokens and metadata, lobby codes, NAT types, candidate strings and vectors, connection detail, file-hash entries, match-result strings and player vectors, friend lookup text, and proof-of-work strings have no protocol-level byte or count budgets. The upgrade uses Axum defaults rather than `max_message_size` or `max_frame_size`; the pinned Axum source documents defaults of 64 MB per message and 16 MB per frame. The server therefore buffers a large text message, JSON-decodes it into additional owned strings and vectors, and only then applies the raw-message frequency check or the few handler-specific validations. Three long-lived pre-auth connections from one address can repeatedly submit allowed-size text, and authenticated variants can clone, serialize, hash, log, forward, or synchronously write it.
+- Trigger: Send fragmented WebSocket text near 64 MB containing malformed JSON or a valid variant with one huge string or vector, then repeat within the 30-message-per-second allowance
+- Impact: A small number of remote clients can retain and repeatedly allocate hundreds of megabytes, consume parser and hashing CPU, block async workers in synchronous handlers, and amplify data into outbound queues or the database until the public server becomes unavailable
+- Expected: Transport limits reject frames and messages near the actual compact protocol envelope before full buffering, and every variable field and collection has a semantic byte, character, and element budget validated before expensive work or persistence
+- Suggested fix: Set conservative Axum frame and message ceilings at the upgrade, define shared per-variant field and collection limits beside the protocol schema, validate immediately after decoding, and apply cost-weighted throttles before hashing, external authentication, cloning, sorting, serialization, logging, or SQLite work. Keep Android construction limits synchronized where user or network data can enter.
+- Validation: Exercise exact limits and one-over values using single and fragmented frames for every string and vector family, malformed and deeply nested JSON, repeated large messages, and slow delivery; assert prompt close or typed rejection, bounded peak memory and worker latency, no outbound amplification, and unchanged ordinary Android flows
+- Resolution: Pending
+
+### BR-0116: P1 - Validate and cap ICE candidates before storing or expanding them
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/protocol.rs:L98-L103,L222-L230,L325-L338,L398-L411` in candidate-bearing client and server messages
+- Related: `server/src/ws_handler.rs:L1013-L1104,L1875-L2043`, `android/app/src/main/java/com/dxxredux/app/multiplayer/ConnectivityChecker.kt:L29-L89,L157-L166`, and `android/app/src/main/java/com/dxxredux/app/multiplayer/LocalhostProxy.kt:L280-L308`
+- Evidence: `STUN_RESULT` accepts any number of candidates with arbitrary type and address strings. The handler clones the list into lobby state and once per peer, generates additional entries, then builds and sorts the Cartesian product of every local and remote candidate for every player. Late joining repeats the cross product and forwards every joiner address to the host. Android resolves server-supplied address strings and emits UDP probes; the ordinary checker prioritizes attacker-selected types, while late-join host code loops over the complete unbounded list without a time or count budget. No server validation requires a known candidate type, a syntactically valid IP endpoint, a plausible relationship to the authenticated address, uniqueness, or a safe destination class.
+- Trigger: Join or create a lobby and submit large candidate lists from one or two accounts, or submit high-priority candidates pointing at arbitrary DNS names, loopback, LAN, multicast, or third-party UDP endpoints; for the largest fanout, submit as a late joiner to an in-progress game
+- Impact: Candidate multiplication can allocate and sort superlinear server data and enqueue large copies to every lobby member; it can also coerce peers into DNS resolution and UDP probing of attacker-chosen local or remote targets, with late join producing an immediate packet loop over the full list
+- Expected: ICE input has a small protocol-defined count and byte budget, accepted types and endpoint syntax are canonical, candidate expansion is globally bounded, and clients never receive an unreviewed instruction to probe an arbitrary destination set
+- Suggested fix: Parse candidates into typed enums and `SocketAddr` values, reject unknown types, duplicates, invalid ports, hostnames, and unsafe address classes according to an explicit ICE policy, and cap candidates per type and per player. Generate only a bounded top set of candidate pairs without constructing a full Cartesian product, and independently cap and validate every client probe list.
+- Validation: Submit zero, normal, duplicate, over-count, over-length, unknown-type, invalid-port, hostname, loopback, private, multicast, broadcast, and mismatched-public candidates across two- and eight-player normal and late-join flows; measure bounded allocations and pair counts and assert clients probe only policy-approved endpoints
+- Resolution: Pending
+
+### BR-0117: P2 - Enforce the authentication-failure limiter that the server declares
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/rate-limiting
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/rate_limit.rs:L13-L17,L38-L58,L112-L123` in the unused per-IP authentication-failure map
+- Related: `server/src/ws_handler.rs:L345-L599`
+- Evidence: `ip_auth_fails` is documented as limiting an address to five authentication failures per hour, and `record_auth_fail` is its only API. Frozen-tree search finds no caller. Every invalid version, callsign, missing key field, stale timestamp, bad signature, failed Google exchange, challenge mismatch, and bad proof closes or rejects the connection without recording the failure or consulting an authentication cooldown. The separate upgrade limiter allows three new attempts every minute, so it does not implement the stated five-per-hour policy and still permits repeated external Google verification work.
+- Trigger: Reconnect after each failed Google, keypair, proof-of-work, or malformed authentication attempt and continue across successive one-minute connection windows
+- Impact: The intended long-window abuse control is completely inactive, permitting roughly 180 failed and potentially outbound verification attempts per hour per effective IP instead of five, plus distributed attempts, while operators and reviewers are told the stricter protection exists
+- Expected: Authentication failures are recorded consistently and an address in cooldown is rejected before expensive verification, with successful or harmless protocol errors handled under an explicit reset policy
+- Suggested fix: Centralize authentication failure responses so every relevant branch records one normalized effective client address, separate `is_auth_allowed` from `record_auth_failure`, and check the long-window block before external verification or signature work. Define how successes, proxy addresses, shared NATs, and development mode affect the policy.
+- Validation: Cover every authentication failure branch, five and six attempts, window expiry, success between failures, concurrent attempts, proxy-derived addresses, shared NAT clients, and Google verifier call counts; assert the threshold and retry time are accurate and expensive work stops during cooldown
+- Resolution: Pending
+
+### BR-0118: P2 - Remove stale limiter entries without deleting concurrent fresh events
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/security
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/rate_limit.rs:L112-L142` in `cleanup_map`
+- Related: `server/src/stats.rs:L96-L114`
+- Evidence: Cleanup first iterates each DashMap and copies keys whose last timestamp appears older than one hour, releases those entry guards, and then removes every copied key unconditionally. A concurrent `check` can acquire one of those keys between collection and removal, prune its old deque, and append a fresh accepted event; cleanup then deletes that fresh event and resets the limiter. Periodic cleanup runs concurrently with all WebSocket tasks, and no conditional generation or second age check protects removal.
+- Trigger: Make a new limited request for an address, session, or player while the ten-minute periodic cleanup is between stale-key collection and removal for that same key
+- Impact: An accepted event and its prior history can vanish, granting another full quota and making rate enforcement nondeterministic at cleanup boundaries; a deliberate high-rate client can exploit or repeatedly encounter the reset
+- Expected: Cleanup removes a key only while holding its current entry and only if that same current value is still stale, never overwriting a concurrent accepted event
+- Suggested fix: Use an atomic retain or entry-locked conditional removal that rechecks the current back timestamp, or add generation-aware compare-and-remove semantics. Keep cleanup work bounded without a stale snapshot-to-delete gap.
+- Validation: Add deterministic barrier-based races for each map where cleanup observes stale state and `check` appends before deletion; assert the fresh timestamp remains and consumes quota, then stress cleanup and checks under the race detector or repeated concurrency tests
+- Resolution: Pending
+
+### BR-0119: P2 - Reject unsupported future protocol versions or negotiate them explicitly
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/protocol-versioning
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/protocol.rs:L5-L14,L22-L42` in the stated protocol compatibility contract
+- Related: `server/src/ws_handler.rs:L345-L371`, `server/src/protocol.rs:L190-L204`, `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkConstants.kt:L3-L7`, and `server/tests/integration.rs:L178-L220`
+- Evidence: The constants distinguish the current schema from the oldest accepted schema and say breaking changes bump `CURRENT_PROTOCOL`, but authentication rejects only versions below `MIN_CLIENT_PROTOCOL`. A client claiming any larger value, including `u32::MAX`, is authenticated and processed as current. The existing test covers only the too-old side, and the unused `VERSION_WARNING` variant does not negotiate capabilities. Once a future client increments the version for a breaking change, an old server will falsely accept it and ignore unknown JSON fields or apply old semantics to familiar fields.
+- Trigger: Roll out a client with protocol 2 or send a custom authentication message claiming a future protocol while connecting to this protocol-1 server
+- Impact: Incompatible clients can appear authenticated and enter lobbies before failing or silently misinterpreting game, NAT, result, or connection state, turning a designed version rejection into a late and confusing compatibility break
+- Expected: The server accepts exactly its documented compatible range, rejects future breaking versions with its own current version and update guidance, or completes an explicit capability negotiation proving compatibility
+- Suggested fix: Validate `MIN_CLIENT_PROTOCOL <= protocol_version <= CURRENT_PROTOCOL` unless a separately documented forward-compatible capability scheme applies, remove or implement warning semantics, and centralize the same range contract in server status and Android connection handling.
+- Validation: Test zero, one below minimum, minimum, current, current plus one, and maximum integer against servers with simulated overlapping and nonoverlapping ranges; assert only proven-compatible pairs authenticate and both sides display actionable version information
+- Resolution: Pending
+
+### BR-0120: P2 - Record completed matches from one authoritative transaction
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0052
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/protocol.rs:L125-L131,L257-L258,L350-L357` and `server/src/ws_handler.rs:L2315-L2382` in match completion
+- Related: `server/src/db.rs:L42-L61,L102-L127,L406-L445`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt:L430-L438`, and `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkProtocol.kt`
+- Evidence: The official Android protocol and service contain neither a match-result request nor acknowledgement type and return from a game by sending only `END_GAME`, so ordinary official-client games never reach this handler or increment durable total-games history. A custom host that does reach it supplies the complete participant vector, player IDs, per-player result strings, scores, kills, deaths, aggregate result, and duration. The server proves only that the sender currently hosts the named lobby; it does not compare IDs or count with `lobby.players`, reject duplicates, require the host in the submitted roster, validate plausible fields, or derive authoritative values. Match and player inserts are separate operations whose errors are discarded, after which the lobby is deleted and success is acknowledged even if no complete record committed. Tests exercise database methods directly but no protocol completion, official-client emission, failure, idempotency, or adversarial roster.
+- Trigger: Complete a normal Android game, or use a custom host to submit omitted, duplicate, foreign, fabricated, repeated, or oversized results while injecting any match or player database failure
+- Impact: Normal matches are absent from advertised total and historical statistics, while a custom host can attribute fabricated participation to unrelated accounts or leave partial records; every attempt is reported successful and destroys the only live lobby state needed to retry or reconcile it
+- Expected: The supported client lifecycle reports or triggers exactly one completion for the current game generation, the server derives its roster and metadata from authoritative state, and one durable transaction commits before acknowledgement and terminal cleanup
+- Suggested fix: Define an idempotent generation-scoped completion protocol used by the official Android client, or complete matches from an authoritative server transition if client reporting is unnecessary. Snapshot the lobby roster and metadata at start, accept only bounded facts the server cannot observe, validate exactly one result per actual participant, and write the match plus all players in one database transaction. A failure must preserve or explicitly quarantine the generation for retry rather than acknowledge and discard it.
+- Validation: Complete games through the official client and submit exact, missing, extra, duplicate, foreign, reordered, disconnected, rejoined, repeated, and stale-generation reports plus boundary statistics; inject every database failure and concurrent end or cleanup; assert exactly one complete record and acknowledgement, truthful totals, no unrelated player rows, and recoverable live state on failure
+- Resolution: Pending
+
+### BR-0121: P1 - Enforce the friend-state authorization invariant on accept, presence, and join
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/authorization
+- Found by: R1-CHUNK-0053
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/friends.rs:L65-L118` and `server/src/ws_handler.rs:L2417-L2613` in social-state mutation, disclosure, join, and block enforcement
+- Related: `server/src/db.rs:L305-L403`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt:L517-L560`, and `server/tests/integration.rs:L386-L456,L800-L949,L1322-L1400,L1583-L1636`
+- Evidence: `accept_friend` never requires its pending-row update to affect one row; it always inserts the caller-to-target row as accepted, so any authenticated player can manufacture an accepted relationship to any known player UUID. Friend lists enrich every row, including pending or blocked rows, with live presence and game details. Blocking replaces only the blocker's directed row and leaves an opposite pending or accepted row intact. `JOIN_FRIEND_GAME` never queries the friends table or block state at all, yet explicitly bypasses the lobby code after locating the supplied UUID's session. In addition, the accept, remove, and block handlers discard every database result, log or notify as though the transition succeeded, and send no typed failure to the caller; direct-message block enforcement converts every database read error to `not blocked` and delivers the message. The Android client immediately logs these mutations and refreshes without a success acknowledgement. Positive tests create the expected state first and do not inject database failures or try an unrelated, pending, removed, or blocked join.
+- Trigger: Learn another player's UUID from a prior interaction, accept a request that never existed or leave only a pending row, inspect the friend list, send `JOIN_FRIEND_GAME` for that player while their coded lobby is joinable, or cause a database mutation or block lookup to fail while accepting, removing, blocking, or messaging
+- Impact: An authenticated attacker can forge social state, track another player's presence and game details, and enter a code-protected lobby without being an accepted friend; blocking or removing the attacker does not reliably revoke those capabilities, and database faults can be reported as successful while blocked traffic is delivered
+- Expected: One transactional state machine defines pending direction, mutual acceptance, removal, and blocking; every presence disclosure or friend-only join proves a current accepted, nonblocked relationship; and security-relevant database failure rejects the operation without a success log, notification, or message delivery
+- Suggested fix: Make acceptance a conditional transaction that fails unless exactly one reciprocal pending request exists; represent or query mutual accepted state canonically; make block atomically remove or override both friendship directions; filter pending and blocked list entries to their explicitly permitted metadata; and require the same database authorization predicate immediately before friend-game join. Propagate typed acknowledgements and failures for every social mutation, update Android only after acknowledgement, and fail closed on block-read errors while surfacing an operational diagnostic that does not reveal block state.
+- Validation: Test unsolicited and duplicate accept, crossed requests, pending and accepted lists, unilateral and mutual blocks, remove, re-request, concurrent accept/block/remove, unknown and self IDs, friend-game joins after every transition, and injected prepare, query, write, and commit failures; assert presence, coded-lobby access, mutation notifications, UI state, and direct-message delivery are available only after confirmed current authorization
+- Resolution: Pending
+
+### BR-0122: P2 - Resolve friend requests by stable unambiguous player identity
+
+- [ ] OPEN
+- Type: design
+- Confidence: high
+- Category: correctness/identity
+- Found by: R1-CHUNK-0053
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/friends.rs:L11-L62` in callsign-based friend targeting
+- Related: `server/src/db.rs:L80-L93,L175-L207`, `server/src/ws_handler.rs:L2387-L2414`, and `server/tests/integration.rs:L386-L456`
+- Evidence: Callsigns are mutable on each authentication and the players table does not make them unique. `find_player_by_callsign` nevertheless selects one matching row with `LIMIT 1` and no deterministic ordering. The request handler stores a relationship to that arbitrary UUID, then its caller independently performs the same callsign query to choose which live session receives the notification. With duplicate callsigns or a concurrent rename, the stored target and notified target can differ, and the requester receives no stable identity confirmation.
+- Trigger: Have two accounts use the same callsign, or change one account's callsign while another player sends a friend request to that display name
+- Impact: A request can attach to or notify the wrong account, enabling display-name impersonation and making the resulting friendship impossible for the requester to verify from the action they initiated
+- Expected: User-facing search can return duplicate display names, but the selected request target is one stable player ID and the notification uses that same resolved ID; identity ambiguity is shown to the user rather than resolved by database row order
+- Suggested fix: Introduce an explicit discovery result with a stable public identifier or disambiguating account handle, require the client to submit the selected player ID, and carry the single resolved target through persistence and notification. If callsigns are intended to be unique handles instead, enforce normalized uniqueness transactionally and define rename and migration behavior.
+- Validation: Cover duplicate and case-variant callsigns, concurrent rename and request, reconnect rename, deleted or unavailable targets, notification routing, and UI confirmation; assert a chosen search result always maps to exactly one unchanged player ID
+- Resolution: Pending
+
+### BR-0123: P1 - Revoke an active session when its player is banned
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/access-control
+- Found by: R1-CHUNK-0053
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/http_api.rs:L243-L278` in the implemented admin ban endpoint
+- Related: `server/src/db.rs:L295-L303,L505-L522`, `server/src/ws_handler.rs:L424-L437,L505-L518,L569-L582`, and `server/tests/integration.rs:L412-L427`
+- Evidence: The endpoint only inserts the ban row and returns success. Frozen-tree ban checks occur only during the three authentication completion paths; no authenticated message path rechecks the database, and the endpoint does not close the player's channel, remove the session, leave its lobby, tear down relay state, or revoke STUN access. The existing test validates only database insertion and deletion.
+- Trigger: Ban a player through the authenticated admin endpoint while that player has an established WebSocket session and is hosting, joining, messaging, relaying, or submitting match state
+- Impact: The server reports the player as banned while allowing the existing connection to continue every privileged multiplayer action until it voluntarily disconnects, defeating the operator's immediate containment action and leaving lobby and relay effects active
+- Expected: A successful ban atomically establishes durable reconnect denial and promptly revokes all current capabilities for that player with the same cleanup guarantees as a normal disconnect
+- Suggested fix: Centralize session revocation by player ID, record the ban first, signal and close every active connection generation, and run idempotent lobby, relay, STUN, stats, and session cleanup. Prevent a reconnect or concurrent message from racing between the database commit and revocation, and return success only with a clear durable-versus-active enforcement contract.
+- Validation: Ban idle, lobby-member, host, in-game, relaying, and reconnecting players; race ban with messages and disconnect; inject cleanup failures; and assert prompt socket closure, no further state mutation, consistent lobby migration or deletion, released network resources, and rejection until an optional expiry or unban
+- Resolution: Pending
+
+### BR-0124: P2 - Validate ban durations before integer and time conversion
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/input-validation
+- Found by: R1-CHUNK-0053
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/http_api.rs:L236-L262` in admin ban expiry calculation
+- Related: pinned `chrono` 0.4.44 `TimeDelta::hours` and `server/src/db.rs:L295-L303,L505-L522`
+- Evidence: The JSON schema accepts any `u64` hour count, casts it to `i64` with `as`, and passes it to the panicking `chrono::Duration::hours` constructor before adding it to the current time. Values above `i64::MAX` wrap negative, so values such as `u64::MAX` create an already expired ban, while sufficiently large positive converted values make `Duration::hours` panic as its pinned implementation unwraps an out-of-range `try_hours`. No policy bounds or checked timestamp addition exist.
+- Trigger: Send an authenticated ban request with a mistaken, generated, or deliberately extreme `duration_hours`, including `18446744073709551615` or a very large value below `i64::MAX`
+- Impact: An administrative request can silently create an ineffective expired ban or panic its request task instead of applying and reporting the intended moderation action
+- Expected: The API accepts only a documented practical duration range, computes expiry with checked conversions and checked time addition, and returns a clear 4xx error without changing state for every invalid value
+- Suggested fix: Parse into a bounded domain type, reject zero or excessive durations according to policy, use `i64::try_from`, `TimeDelta::try_hours`, and checked timestamp addition, and store a canonical timestamp only after all validation succeeds. Consider accepting an explicit RFC 3339 expiry if that better expresses the admin contract.
+- Validation: Test omitted, zero, one, maximum accepted, one-over, `i64::MAX`, `i64::MAX + 1`, `u64::MAX`, timestamp overflow, permanent bans, and expiry boundary behavior; assert no panic and exact database state after each response
+- Resolution: Pending
+
+### BR-0125: P1 - Bound and pool external identity-verification requests
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0053
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/identity.rs:L30-L118` in Google token exchange and player lookup
+- Related: `server/src/ws_handler.rs:L475-L509`, `server/src/rate_limit.rs:L38-L58,L112-L123`, and pinned `reqwest` 0.13.2 client defaults
+- Evidence: Every GPGS authentication creates a fresh Reqwest client and awaits two external requests inline. The client has neither a connect timeout nor a total request timeout; the pinned builder defaults both to `None`. Response bodies are consumed with unbounded `text` or `json` helpers. The WebSocket connection remains counted and occupied throughout, the intended authentication-failure limiter is unused as recorded in BR-0117, and recreating the client prevents connection and DNS/TLS pool reuse across attempts.
+- Trigger: Attempt authentication repeatedly while Google's token or games endpoint, DNS, routing, or TLS path stalls or slowly streams a response, using enough source addresses to fill the configured connection budget
+- Impact: Pending public connections and outbound sockets can remain alive indefinitely, consume all server connection capacity, repeat DNS and TLS setup, and hold memory while an external dependency is degraded, turning a provider outage into server unavailability
+- Expected: External verification has explicit connect, per-request, whole-flow, response-byte, and concurrency budgets; shared transport resources are pooled; cancellation releases permits and sockets; and clients receive a bounded retryable failure
+- Suggested fix: Construct one shared hardened Reqwest client at startup with short connect and total timeouts, wrap the complete two-step flow in a deadline, cap response bytes before deserialization, and gate verification with a small semaphore plus the repaired pre-work abuse limiter. Classify transient provider failure separately from invalid credentials and instrument latency, timeout, and saturation without logging secrets.
+- Validation: Inject DNS failure, refused connections, connect and TLS stalls, header and body stalls, oversized and malformed bodies, non-success responses, cancellation, semaphore saturation, and recovery; assert deadlines, bounded memory and sockets, pooled reuse, accurate client errors, and unaffected keypair authentication
+- Resolution: Pending
+
+### BR-0126: P1 - Put concurrency and response-cost budgets around the public status API
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0053
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/http_api.rs:L18-L79,L113-L166` in public router serving and full status generation
+- Related: `server/src/protocol.rs:L13-L15,L343-L357`, `server/src/db.rs:L454-L477`, `server/src/config.rs:L16-L25,L49-L58`, and `server/tests/integration.rs:L361-L384,L711-L731`
+- Evidence: The public Axum server is served directly with no connection, concurrency, request-rate, header, timeout, or response budget. Every unauthenticated `/api/v1/status` request walks all lobbies, clones every callsign, game string, and up-to-5-KiB `game_info`, looks up host sessions, allocates and serializes the complete response, and performs two synchronous SQLite queries behind a process-wide mutex. The configured connection limit applies to WebSockets, not this listener. Existing tests check one small response but no fanout, slow-reader, or concurrent-load behavior.
+- Trigger: Open many keep-alive or slow-reading HTTP connections and repeatedly request full status while the server contains many maximum-size lobby records
+- Impact: A remote unauthenticated client can amplify cheap requests into repeated large allocations, serialization, database-lock work, bandwidth, and retained response tasks, delaying matchmaking handlers or exhausting process and socket resources
+- Expected: Public observability remains cheap and available under hostile traffic through bounded connections and work, a compact stable response, and cached or asynchronously maintained aggregates rather than per-request synchronous global scans
+- Suggested fix: Add trusted-proxy-aware rate limiting, global and per-client concurrency caps, header and request deadlines, response compression policy, and slow-client write timeouts at the HTTP service. Cache a bounded status snapshot on a cadence, omit or page heavy lobby metadata, and move synchronous SQLite aggregation out of request tasks. Keep `/status/simple` or a similarly constant-cost endpoint for probes.
+- Validation: Load test empty and maximum-population states with bursts, keep-alive reuse, slow headers and readers, aborted requests, IPv4/IPv6 and trusted proxy addresses, and concurrent WebSocket/database activity; assert bounded memory, tasks, sockets, response size, database wait, and tail latency while legitimate probes continue succeeding
+- Resolution: Pending
+
+### BR-0127: P1 - Give every WebSocket connection generation-safe session ownership
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/security
+- Found by: R1-CHUNK-0054
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/lib.rs:L20-L30` in the player-keyed shared session registry
+- Related: `server/src/ws_handler.rs:L239-L251,L285-L664,L1179-L1211`, `server/src/stats.rs:L25-L33`, and `server/tests/integration.rs:L32-L160,L327-L359`
+- Evidence: The advertised global connection cap checks `sessions.len()` before upgrade, but this map contains only authenticated players, not accepted sockets, so pre-authentication sockets do not consume the cap and concurrent upgrades can all pass the same non-atomic length check. `complete_auth` then blindly replaces the entry for a player and increments stats and the STUN reference count. Authentication messages remain accepted after `player_id` is set, so one socket can authenticate repeatedly as the same or different players, while simultaneous sockets for one stable identity overwrite each other's sender and lobby state. Disconnect cleanup looks up and removes solely by player ID without proving that the map entry belongs to that socket generation, then decrements only that connection's final counters. Tests reconnect only after fully dropping and delaying the first socket.
+- Trigger: Authenticate twice on one socket, authenticate the same stable key or GPGS identity on two overlapping sockets, or open many sockets before any of them authenticate and then complete authentication concurrently
+- Impact: An old connection can mutate the replacement connection's lobby state and remove it on disconnect; stale player entries and senders can remain forever; online and STUN reference counts drift; lobby hosts or members can be removed by another generation; and unauthenticated or concurrently admitted sockets can exceed or permanently consume the configured server-wide cap
+- Expected: Every accepted socket consumes a global permit, authentication occurs at most once per connection, and session replacement or rejection follows one explicit policy whose cleanup can remove only the exact connection generation that owns an entry
+- Suggested fix: Acquire an owned semaphore permit atomically before upgrade and retain it through socket teardown; assign each connection a generation ID; reject reauthentication and unexpected proof messages after terminal authentication; and use compare-by-generation removal for the player registry. If a new connection supersedes an old one, explicitly close and await the old generation before transferring lobby and network ownership, with counters updated exactly once.
+- Validation: Cover unauthenticated sockets at and above the cap, concurrent upgrades, repeat authentication on one socket, overlapping same-identity sockets, different-identity reauthentication, pending proof followed by another auth, supersession while hosting or joining, both disconnect orders, and send timeout; assert exact maps, counters, allowlist references, lobby membership, message routing, and permit release after every race
+- Resolution: Pending
+
+### BR-0128: P1 - Supervise every required listener and fail startup atomically
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: build-release/operations
+- Found by: R1-CHUNK-0054
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/main.rs:L87-L167` in listener startup and task lifetime
+- Related: `server/src/http_api.rs:L51-L79`, `server/src/relay.rs:L50-L68`, `server/src/stun.rs:L14-L23`, `server/src/http_api.rs:L172-L185`, and `server/deploy_service.sh:L23-L39`
+- Evidence: HTTP, optional admin HTTP, relay, and each configured STUN listener bind inside detached tasks. Each task catches its run error, logs it, and returns successfully; no supervisor awaits it or changes process health, and the code logs that both STUN listeners started immediately after spawning them. A surviving WebSocket listener therefore leaves the process running after any other required bind or runtime failure, while `/health` still reports `ok` if HTTP survived. Conversely, a WebSocket bind or serve failure is logged and `main` returns normally after aborting the other tasks. The supplied systemd unit uses `Restart=on-failure`, so that zero-status exit is not restarted.
+- Trigger: Occupy the configured HTTP, admin, relay, STUN, or WebSocket port before service start, revoke a required socket at runtime, or make one listener task panic while the others remain alive
+- Impact: Deployment can report an active service with moderation, health, relay, or NAT traversal silently absent, or can stop all matchmaking after a WebSocket failure without systemd restarting it; clients then receive advertised endpoints and partial success from a process incapable of providing the configured service
+- Expected: Startup succeeds only after every enabled required socket is bound, any unexpected required-task exit makes readiness fail and terminates the process with a failure status, and coordinated shutdown cancels and awaits the remaining tasks
+- Suggested fix: Pre-bind all configured sockets before announcing readiness and pass them into listener runners; supervise tasks with a `JoinSet` or `select` that preserves returned errors and panics; define which services are required versus optional; and on any required failure signal shutdown, await cleanup, flush logging, and return a nonzero `Result` from `main`. Make health depend on the same supervised readiness state.
+- Validation: Occupy each port individually and in combinations, inject immediate and post-start listener errors and task panics, test one-of-two STUN failure, and send SIGTERM; assert no false startup message or healthy response, deterministic cleanup, nonzero status for unexpected failure, and restart under the generated systemd policy
+- Resolution: Pending
+
+### BR-0129: P2 - Apply one atomic lobby-admission predicate
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/state-machine
+- Found by: R1-CHUNK-0054
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/lobby.rs:L161-L212` and `server/src/ws_handler.rs:L1436-L1539,L2455-L2547` in split joinability and mutation rules
+- Related: `server/src/ws_handler.rs:L93-L135`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt:L658-L682`, and `server/tests/integration.rs`
+- Evidence: `is_joinable` permits an in-game join only when the host reports `NETSTAT_PLAYING` and its update is less than 60 seconds old, and `can_join` adds the kick check. Neither predicate is used by ordinary `JOIN_LOBBY`: after separate code, kick, and verification reads, it calls `add_player`, whose in-game rule checks only `LobbyState::InGame`, fullness, and duplication. Friend join repeats kicked, verified-only, joinability, and mutation as independent map acquisitions, so a concurrent kick or state transition can invalidate authorization before insertion. The active-game list independently includes `Starting` or `InGame` entries for five minutes and Android renders an unconditional Join button. Thus Starting entries are advertised but rejected, while stale or non-playing InGame entries advertised through that list are accepted despite `is_joinable` returning false.
+- Trigger: Select an active game while it is Starting, while its host reports a menu or other non-playing status, or 60 to 300 seconds after its last update, or send `JOIN_LOBBY` directly for that lobby ID
+- Impact: Legitimate UI actions fail against advertised games, while stale or unsafe late joins insert players into an in-progress lobby and begin ICE even though the host is not ready to admit them, producing stuck membership, misleading counts, and inconsistent engine/server rosters
+- Expected: Listing and mutation use one authoritative admission decision, and every mutable restriction is checked under the same lobby lock immediately before insertion with a typed rejection reason
+- Suggested fix: Replace `is_joinable`, unused `can_join`, and permissive `add_player` composition with one `try_join` transition used by ordinary and friend admission that checks state freshness, engine status, capacity, duplication, kicks, code or scoped friend authorization, and verification inputs atomically. Project its nonsecret eligibility result into both lobby and active-game listings, and disable or omit active-game join actions that cannot currently succeed.
+- Validation: Test Waiting, Holepunching, Starting, fresh-playing InGame, fresh-nonplaying InGame, exactly 60 seconds, 60-to-300 seconds, expired, full, duplicate, kicked, coded, friend-authorized, and verified-only cases through listing and both mutations; race host updates, kicks, relationship changes, and concurrent final-slot joins and assert displayed eligibility matches the transition result
+- Resolution: Pending
+
+### BR-0130: P2 - Make friend join either resolve or mutate, not both
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/protocol
+- Found by: R1-CHUNK-0054
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/lobby.rs:L191-L211` in duplicate lobby insertion rejection
+- Related: `server/src/ws_handler.rs:L2455-L2563`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt:L556-L560,L1290-L1297`, `server/tests/integration.rs:L1322-L1400`, and BR-0121
+- Evidence: The server's `JOIN_FRIEND_GAME` handler performs the complete insertion, updates the caller's session, sends a success response, and broadcasts the new lobby roster. Android interprets that success as only a lobby lookup and immediately sends `JOIN_LOBBY` for the same ID. The second request is necessarily rejected: an uncoded lobby reaches `add_player` and returns `JOIN_FAILED` because the UUID is already present, while a coded lobby rejects the missing code first with `LOBBY_CODE_REQUIRED`. Server tests exercise only the first half and have no Android protocol round trip.
+- Trigger: Use the Android Friends tab to join any waiting or active friend's lobby, especially a coded lobby whose code is intentionally bypassed for accepted friends
+- Impact: A successful join is immediately followed by an error, consumes another join-rate event, and leaves client UI/error state contradicting actual server membership; later changes to duplicate or implicit-leave behavior can turn the redundant request into a more destructive transition
+- Expected: The protocol has one owner for lobby mutation and one success event: either friend join atomically authorizes and completes admission, or it returns a scoped authorization grant that one normal join consumes
+- Suggested fix: Choose and document one contract. The smaller current fix is for Android to treat successful `JOIN_FRIEND_GAME_RESP` as completed admission and wait for `LOBBY_UPDATE`; a cleaner unified design can return a short-lived server-bound friend authorization consumed by the ordinary atomic join from BR-0129. Keep the relationship check from BR-0121 in the same server-side transition.
+- Validation: Run Android-to-server tests for waiting and in-game friend joins with coded and uncoded lobbies, rejection, full, kicked, blocked, removed, duplicate tap, and response reordering; assert exactly one admission attempt, no spurious error or rate charge, one roster update, and correct ICE startup
+- Resolution: Pending
+
+### BR-0131: P2 - Bound production log retention by files and bytes
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: resource-lifetime/operations
+- Found by: R1-CHUNK-0054
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/main.rs:L11-L45` in JSON file-appender setup
+- Related: `server/config.json5.default:L15-L20`, `server/deploy_service.sh:L28-L45`, and pinned `tracing-appender` 0.2.4 `RollingFileAppender::builder().max_log_files`
+- Evidence: The production configuration enables daily JSON files under `/var/log/dxx-matchmaking`, but `rolling::daily` only starts a new file each day and does not configure the dependency's available `max_log_files` retention. No logrotate policy, byte quota, age cleanup, or disk-space guard is supplied. The systemd deployment simultaneously sends console output to journald, so the unbounded file copy is additional to the host's normally bounded journal. The public server has dozens of request, authentication, connection, and network-event log sites, including attacker-triggerable failures.
+- Trigger: Run the supplied production deployment for a long period or expose it to sustained invalid authentication, connection, lobby, relay, and network traffic that remains within or distributes around request limits
+- Impact: Log files grow without an upper bound until they consume the service filesystem, after which database writes, logging, deployment, and potentially the host can fail; daily filename rotation delays individual file growth but does not limit total storage
+- Expected: Production logging has an explicit retention age, file count, and total-byte policy with enough reserve for the SQLite database, and one clearly owned rotation mechanism
+- Suggested fix: Prefer journald alone under its configured quotas, or construct the file appender with a small `max_log_files` value and add an external size-based policy and filesystem monitoring. Document expected volume and retention, rate-limit repeated equivalent errors, and alert before free space reaches a database-safety threshold.
+- Validation: Generate logs across rotation boundaries and high-volume public events under a small test quota; assert old files are removed, total bytes remain bounded, current logs and database writes continue, write failures are surfaced, and journald/file duplication matches the selected deployment policy
+- Resolution: Pending
+
+### BR-0132: P1 - Authenticate each relay endpoint and preserve its exact lobby slot
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/protocol-authentication
+- Found by: R1-CHUNK-0055
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/relay.rs:L13-L23,L85-L145` in relay session identity and address learning
+- Related: `server/src/ws_handler.rs:L1106-L1171,L1645-L1672,L1777-L1800,L2109-L2130`, `android/app/src/main/java/com/dxxredux/app/multiplayer/LocalhostProxy.kt:L438-L535`, `server/tests/integration.rs:L1083-L1163,L2429-L2471`, BR-0116, and `android/ai tool plans/networking/plan_networking_audit.md` D11-D12
+- Evidence: A pair records actual lobby slots such as 1 and 3, but `RelaySession` retains only `expected_players = 2`; unknown-source rebinding and learning iterate `0..expected_players`, treating a count as the valid slot IDs. Any pair involving slot 2 or higher is therefore learned or relabeled as slot 0 or 1 when a public candidate was absent or the NAT port changes. The security guard is also session-wide rather than per slot: both candidate-derived IPs enter one `allowed_ips` set, so a participant can change source port and choose a destination that makes the relay overwrite and impersonate the opposite slot from either allowed IP. Late-join and fallback allocations pass no addresses, leaving the set empty, and the checks explicitly fail open when it is empty. The only bearer credential is a truncated 32-bit token sent unchanged in every packet; allocation checks token uniqueness separately from insertion, and the Android receiver strips the header without validating token or reported source slot. Tests assert token assignment and age cleanup but never send a relay datagram or use slots above 1.
+- Trigger: Relay a three-or-more-player pair involving slot 2 or higher, perform a normal NAT source-port rebind, use a late-join or empty-candidate relay, or have either participant send from a new port while selecting the destination slot that causes it to claim the peer
+- Impact: Legitimate multi-player and late-join traffic is labeled as the wrong player and fails or reaches the wrong engine peer; a participant or another process on an admitted IP can hijack the other slot, inject packets under that identity, redirect its inbound traffic, and oscillate endpoint mappings to deny service
+- Expected: Every relay pair stores its two exact slot and player identities, and each datagram proves one endpoint's authority independently of its attacker-selected destination before any binding change or forwarding
+- Suggested fix: Replace count-based inference with two explicit endpoint records containing slot, player ID, generation, independently random high-entropy credential, and current verified address. Give each peer a distinct relay credential through the authenticated signaling channel, include and verify it in the packet header, bind a new address only to that credential, and require a controlled rebinding handshake or sequence policy. Make token allocation and insertion atomic, validate the echoed token and source slot on Android, and bump the protocol version for the incompatible frame change.
+- Validation: Exercise every pair among slots 0 through 7, initial empty and populated endpoints, same and different public IPs, NAT rebinding, late join, reordered first packets, participant attempts to claim its peer, guessed and collided tokens, spoofed source slots, stale generations, and forged direct-to-client datagrams; assert only the authenticated endpoint can bind and every forwarded packet retains the correct source identity
+- Resolution: Pending
+
+### BR-0133: P1 - Bind relay capacity and lifetime to the owning game
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0055
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/relay.rs:L10-L54,L63-L166` in relay lifetime and unmetered forwarding
+- Related: `server/src/ws_handler.rs:L1117-L1171,L1411-L1430,L1587-L1869,L2109-L2130,L2350-L2382`, `server/src/config.rs:L45-L51`, and `android/ai tool plans/networking/NETWORKING_PLAN.md:L508-L518,L730-L746`
+- Evidence: `RelaySession` stores no lobby, game, player IDs, connection generations, last activity, or rate state, so normal end-game, match completion, lobby deletion, kick, and disconnect paths cannot find and remove its tokens. Only a failed partial start removes newly allocated tokens; otherwise every allocation consumes the global map for two hours, even after its owners leave, and active games are also cut off at that absolute creation age. A host may send `START_GAME` repeatedly because the handler has no source-state guard, allocating another set each time. The maximum check is a non-atomic `len` followed later by insert and is global rather than the documented two sessions per player. The documented 50 KiB/s per-session limit is absent: every accepted UDP packet allocates a vector, logs periodically, and forwards at line rate with no per-endpoint, per-session, per-IP, or global packet/byte budget. Late-join allocation failure still approves a relay peer with no usable token.
+- Trigger: Use two or more authenticated accounts to repeatedly start and end or abandon relay games, start the same lobby multiple times, retain a legitimate game beyond two hours, or flood an allocated token with maximum-size UDP packets
+- Impact: Attackers can fill the default 100-session map with dead tokens and deny relay to all later games for up to two hours, race beyond the configured cap, or saturate CPU, allocator, log, ingress, and egress capacity; legitimate long games and capacity-limited late joins fail without a coherent client error
+- Expected: Relay allocations are atomically charged to an owning lobby, game generation, and both players; documented per-player and global count and bandwidth limits are enforced; terminal lifecycle events release them immediately; and only inactive or ownerless sessions expire
+- Suggested fix: Store owner IDs and a game generation in every relay session and maintain an owner-to-token index; make StartGame a guarded idempotent transition; reserve all required capacity atomically before publication; release tokens from every end, removal, kick, disconnect, failed start, and supersession path; track last authenticated activity; and apply token buckets for packets and bytes at endpoint, session, player/IP, and global egress levels before allocation, logging, or send. Return one typed failure and roll back the complete transition when any pair cannot be allocated.
+- Validation: Repeatedly start, end, abandon, kick, disconnect, late-join, and restart two-to-eight-player games; race allocations at each cap; run beyond two hours with and without traffic; inject partial allocation failure; and flood small and maximum datagrams. Assert exact owner indexes and counts, immediate release, active-session survival policy, bounded bandwidth, allocations, and logs, and prompt usable errors without orphan tokens
+- Resolution: Pending
+
+### BR-0134: P1 - Revalidate lobby generation and state age during stale cleanup
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/state-machine
+- Found by: R1-CHUNK-0055
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/stats.rs:L124-L184` in periodic lobby cleanup
+- Related: `server/src/lobby.rs:L81-L116,L138-L158`, `server/src/ws_handler.rs:L1385-L1430,L1587-L1601`, and `server/tests/integration.rs`
+- Evidence: Cleanup first snapshots lobby IDs into `to_remove` and `to_revert`, releases those entry guards, then mutates by ID later. Removal never rechecks the current state, timestamp, or map-removal result before clearing sessions and decrementing counters. A host update, EndGame, disconnect cleanup, or a new holepunch round between phases can therefore be overwritten by the stale decision. Separately, a `Starting` lobby with no first state update uses `created_at_instant`, which is the lobby's original creation time rather than when the game entered Starting. Any lobby that waited more than five minutes can be removed on the next cleanup tick during the normal delay between StartGame and its first update. Holepunch revert rechecks only the enum, not whether `holepunch_started_at` belongs to the observed round.
+- Trigger: Start a game from a lobby older than five minutes near a cleanup tick, refresh or end a stale-looking game after the scan, remove the lobby concurrently in a WebSocket task, or begin a second Holepunching round after the first was queued for reversion
+- Impact: The server can expire a newly starting or freshly updated game, clear players from a lobby they just transitioned, overwrite a new holepunch attempt, send false expiry errors, and double-decrement unsigned counters into enormous values
+- Expected: Staleness is measured from the current state's entry or last valid activity, and cleanup commits only if the same lobby generation still has the exact state and observed timestamp that justified the decision
+- Suggested fix: Record a monotonically increasing lobby generation and `state_entered_at` on every transition. Use a conditional entry mutation or removal that rechecks generation, state, and timestamp while holding the current map entry, and update sessions and counters only after a successful exact removal through one idempotent transition API. Apply the same compare-and-revert rule to Holepunching.
+- Validation: Use paused time and barriers to test old Waiting then Starting, just-before/equal/after timeout updates, EndGame, disconnect, match completion, replacement and removal between scan and commit, and consecutive holepunch rounds; assert no current generation is removed or reverted and every successful cleanup changes maps, sessions, notifications, and counters exactly once
+- Resolution: Pending
+
+### BR-0135: P2 - Make published live and peak statistics truthful
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/observability
+- Found by: R1-CHUNK-0055
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/stats.rs:L9-L109` in counters, peaks, and snapshots
+- Related: `server/src/http_api.rs:L86-L103,L113-L166`, `server/src/ws_handler.rs:L650-L665,L1180-L1204,L1315-L1325,L1411-L1430,L1587-L1692,L2350-L2382`, BR-0127, BR-0133, and BR-0134
+- Evidence: Live values are manually paired wrapping `AtomicU32` increments and decrements with no ownership token, state precondition, compare-and-remove result, or zero guard. Repeat authentication and StartGame increment multiple times, while racing cleanup can decrement after another path already removed the entity; `fetch_sub` then wraps zero to 4,294,967,295. The resulting values are exposed as player and lobby statistics and persisted every five minutes. `peak_online_today` has a reset method but frozen-tree search finds no caller, so it never resets at midnight, while `peak_online_alltime` starts at zero on every process restart and is never loaded from durable history. Snapshot insertion errors are silently ignored.
+- Trigger: Reauthenticate or reconnect concurrently, repeat StartGame, race lobby cleanup with a normal terminal transition, run across UTC midnight, restart the service after a prior peak, or make the snapshot database write fail
+- Impact: Public status and operational monitoring can report billions of players or games, a daily peak that is actually process-lifetime, and an all-time peak that forgets every restart; silent persistence failure removes the only historical evidence operators might use to diagnose drift or attacks
+- Expected: Live counts reflect authoritative current entities, increments and decrements are tied exactly once to successful state transitions, daily windows roll at a defined timezone boundary, all-time values survive restart, and persistence failures are observable
+- Suggested fix: Prefer deriving low-cardinality live counts from generation-safe authoritative registries or update them only inside centralized transition methods that return whether a state actually changed. Use checked/saturating diagnostics only as a final invariant guard, persist and restore the all-time peak, schedule and test UTC daily rollover, and log or meter database failures. Reconcile counters from state periodically if cached values remain necessary.
+- Validation: Exercise duplicate and concurrent connect, disconnect, create, start, end, remove, and cleanup transitions; force every zero-decrement and persistence failure; cross midnight under paused time; restart with recorded history; and assert exact live counts, no wrap, one update per transition, correct daily rollover, durable all-time peak, and actionable error telemetry
+- Resolution: Pending
+
+### BR-0136: P2 - Support or reject IPv6 across STUN and candidate handling
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/networking
+- Found by: R1-CHUNK-0055
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/stun.rs:L24-L38,L41-L105` and `server/src/ws_handler.rs:L734-L790,L1019-L1054` in STUN responses and candidate address handling
+- Related: `server/src/config.rs:L7-L13,L33-L40,L115-L120,L176-L186`, `server/src/ws_handler.rs:L1179-L1235`, `android/app/src/main/java/com/dxxredux/app/multiplayer/ConnectivityChecker.kt`, and `server/tests/integration.rs:L2247-L2419`
+- Evidence: Configuration accepts any `SocketAddr` and the allowlist stores `IpAddr`, so an authenticated IPv6 WebSocket client can be admitted and an IPv6 UDP listener can bind successfully. The STUN loop then explicitly continues for every source other than `IpAddr::V4`, and the response builder hard-codes address family 0x01 and a four-byte address. The WebSocket candidate fallback is also not IPv6-safe: `generate_observed_candidates` formats an IPv6 `public_ip` as `{ip}:{port}` without required brackets, while connection classification extracts addresses with `split(':').next()` and private-host classification parses dotted IPv4 text only. Startup and authentication still advertise the configured listener as available. Unit and integration tests cover only IPv4 candidates and loopback listeners, not native or IPv4-mapped IPv6.
+- Trigger: Bind STUN to `[::]:3478` or deploy to an IPv6-only or IPv6-preferred client path, authenticate that client, and request STUN or rely on the server-generated observed candidate from its IPv6 WebSocket address
+- Impact: The server silently drops STUN requests or publishes malformed and misclassified peer addresses while reporting traversal enabled, forcing unnecessary relay fallback or complete multiplayer connection failure for IPv6-only users
+- Expected: Every accepted and advertised address family receives the correct RFC 5389 response and canonical socket-address candidate representation end to end, or configuration and admission reject unsupported families before advertising them
+- Suggested fix: Add the family 0x02 response with the 16-byte IPv6 address XORed against the magic cookie plus transaction ID and the correct attribute and message lengths; normalize IPv4-mapped addresses deliberately. Parse and format every candidate as `SocketAddr` rather than splitting strings, including bracketed IPv6. If IPv6 is out of scope, validate listeners, WebSocket source addresses, and advertised endpoints as IPv4 and return a fatal field-specific error rather than silently binding or generating unusable candidates.
+- Validation: Send valid binding requests and candidate sets over IPv4, native IPv6, bracketed IPv6, IPv4-mapped IPv6, dual-stack sockets, and IPv6-only deployment; decode responses independently and assert family, port, address, lengths, transaction ID, allowlist denial, observed-candidate round trip, peer probing, and explicit rejection for each unsupported path
+- Resolution: Pending
+
+### BR-0137: P1 - Fail closed when ban enforcement cannot read the database
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/access-control
+- Found by: R1-CHUNK-0056
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/db.rs:L295-L303` in the fallible ban query
+- Related: `server/src/ws_handler.rs:L430-L445,L504-L521,L564-L583`, BR-0123, and `server/tests/integration.rs:L414-L427`
+- Evidence: `is_banned` correctly returns a `Result`, but all three authentication paths convert every query error to `false` with `unwrap_or(false)` and continue authentication. A corrupt or unreadable database, SQLite I/O or allocation failure, locking failure, malformed schema, or poisoned service state is therefore indistinguishable from an explicit no-ban result. The only ban test covers successful permanent-ban reads and never injects a database failure.
+- Trigger: Authenticate a banned identity while its ban lookup returns any SQLite error, including after database corruption, filesystem failure, schema mismatch, or an operational lock failure
+- Impact: Exactly when durable moderation state cannot be trusted, a banned account is admitted with the same lobby, messaging, STUN, relay, and match capabilities as an unbanned account
+- Expected: Failure to establish the ban decision denies or defers authentication, emits actionable telemetry, and never becomes an allow decision
+- Suggested fix: Centralize an authorization check that distinguishes `Ok(false)`, `Ok(true)`, and storage failure; on error send a generic retryable internal failure, close the authentication attempt, and alert or degrade readiness when repeated reads fail. Keep the active-session revocation work in BR-0123 tied to the same policy.
+- Validation: Inject prepare, query, I/O, corrupt-schema, locked-database, and connection failures into each Google, known-keypair, and new-keypair path; assert no AuthOk, session, lobby, STUN, relay, event, or counter mutation occurs and recovery admits an actually unbanned player
+- Resolution: Pending
+
+### BR-0138: P2 - Store and compare ban expiries in one canonical time representation
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/access-control
+- Found by: R1-CHUNK-0056
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/db.rs:L153-L158,L295-L303,L505-L520` in ban expiry storage and comparison
+- Related: `server/src/http_api.rs:L235-L264`, BR-0124, and `server/tests/integration.rs:L414-L427`
+- Evidence: The admin endpoint stores expiries as RFC 3339-like text such as `2026-07-20T01:00:00Z`, while `is_banned` compares that TEXT directly with SQLite `datetime('now')`, which produces `2026-07-20 23:00:00`. SQLite performs a lexical comparison here; on the same date `T` sorts after a space, so an expiry earlier that day still compares as future until the UTC date changes. No test covers a timed ban or its exact boundary.
+- Trigger: Create a finite ban whose expiry and a later authentication attempt occur on the same UTC calendar date
+- Impact: A player remains denied for the rest of the UTC day after the operator-selected expiry, so short bans can last many hours longer than requested and moderation behavior disagrees with the successful admin response
+- Expected: Expiry comparison uses one normalized instant representation and flips from active to inactive at the exact documented boundary
+- Suggested fix: Prefer integer Unix seconds with a schema constraint, or normalize both sides through SQLite `unixepoch` or one rigorously parsed RFC 3339 representation. Add an explicit migration for existing text values and define whether equality is expired.
+- Validation: Use a controllable clock to cover before, exactly at, and after expiry within one day, across midnight and leap-day boundaries, permanent bans, legacy space-separated values, RFC 3339 offsets, malformed stored values, restart, and migration
+- Resolution: Pending
+
+### BR-0139: P1 - Move SQLite work off asynchronous request workers
+
+- [ ] OPEN
+- Type: design
+- Confidence: high
+- Category: concurrency/resource-exhaustion
+- Found by: R1-CHUNK-0056
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/db.rs:L64-L81,L172-L528` in the process-wide synchronous connection and mutex
+- Related: `server/src/ws_handler.rs:L285-L680,L1239-L1259,L1262-L2460`, `server/src/http_api.rs:L113-L166,L242-L304`, `server/src/stats.rs:L90-L120`, BR-0114, BR-0120, BR-0126, and BR-0135
+- Evidence: Every database method performs blocking rusqlite prepare, query, transaction, and disk work directly after taking one `std::sync::Mutex<Connection>`. These methods are called inline from Tokio WebSocket tasks, Axum HTTP handlers, and the periodic async task. Under contention, tasks block operating-system worker threads while waiting for the mutex; the one connection also serializes unrelated authentication, moderation, status, friendship, match, and telemetry work. Public clients can trigger most of these operations, and there is no dedicated blocking executor, queue bound, admission policy, or database latency instrumentation.
+- Trigger: Generate concurrent authentication, friend, match-result, connection, and status traffic while a write, checkpoint, filesystem stall, or other database operation holds the global connection
+- Impact: Database latency and mutex contention can consume Tokio workers and stall timers, socket reads, cleanup, HTTP health, authentication, and matchmaking across otherwise independent clients, turning storage slowness into whole-service unavailability
+- Expected: Blocking persistence runs on bounded dedicated capacity, overload is rejected or backpressured before occupying runtime workers, and critical authorization work has an explicit latency and failure policy
+- Suggested fix: Put the connection behind a dedicated database actor or bounded `spawn_blocking` interface, expose async typed operations, cap queue depth and per-operation time, and separate or cache high-frequency reads where consistency permits. Add transaction-sized APIs rather than moving multi-call workflows one blocking call at a time, and instrument queue, lock, query, checkpoint, and failure latency.
+- Validation: Load authentication, friends, match completion, status, and periodic tasks concurrently while injecting slow reads, slow writes, WAL checkpoints, disk stalls, queue saturation, cancellation, and shutdown; assert bounded Tokio worker latency, queue memory, failure time, and continued health/cleanup service
+- Resolution: Pending
+
+### BR-0140: P1 - Bound attacker-driven SQLite history and identity growth
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0056
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/db.rs:L84-L164,L207-L293,L408-L500` in append-only persistent tables
+- Related: `server/src/ws_handler.rs:L430-L590,L650-L680,L1239-L1259,L2325-L2373`, `server/src/stats.rs:L90-L109`, BR-0117, BR-0120, BR-0131, and `android/ai tool plans/networking/NETWORKING_PLAN.md:L2554-L2569,L2612-L2619`
+- Evidence: Players and keypair identities are never retired, and every successful connection and disconnect appends a `connection_events` row. Match results and per-player rows are also append-only, while five-minute count snapshots grow forever. There is no age, row, or byte retention policy; no compaction, quota, free-space reserve, or write admission; and no bounded maintenance job. The design document merely says disk space should be monitored even though public clients drive identity, connection, and match persistence and database failure affects authorization and the whole service.
+- Trigger: Repeatedly register proof-of-work identities, reconnect authenticated accounts, and complete host-controlled matches over normal operation or distributed traffic, then continue until the database and WAL consume available storage
+- Impact: Remote activity or ordinary long-term use can exhaust the service filesystem, after which authentication, bans, friends, telemetry, and SQLite recovery fail; combined with BR-0137 this can also bypass bans, while the shared disk and mutex amplify the outage across the process
+- Expected: Each telemetry/history class has documented retention and byte budgets, durable identities have an abuse and lifecycle policy, and writes preserve an emergency disk reserve needed for moderation and recovery
+- Suggested fix: Define per-table ownership and retention; periodically delete or archive old connection and snapshot history in bounded batches and checkpoint or vacuum deliberately; cap match and identity creation per verified principal and source; monitor database, WAL, and filesystem bytes; reserve space and shed noncritical telemetry before critical writes fail. Keep immutable audit retention separate from high-volume event data.
+- Validation: Run accelerated months of snapshots plus sustained registration, reconnect, and match traffic under a small disk quota; exercise restart, WAL growth, cleanup interruption, concurrent readers, deletion batches, and low-space thresholds; assert bounded bytes, responsive writes, preserved required records, and deterministic degradation before exhaustion
+- Resolution: Pending
+
+### BR-0141: P2 - Register a keypair identity in one recoverable transaction
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/transactionality
+- Found by: R1-CHUNK-0056
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/db.rs:L249-L293` in keypair lookup and two-row registration
+- Related: `server/src/ws_handler.rs:L428-L474,L539-L590`, BR-0113, and keypair authentication integration tests
+- Evidence: Registration inserts the `players` row and then the `keypair_identities` row as two autocommitted statements. If preparation or execution of the second statement fails, the player and unique synthetic `gpgs_player_id` remain without a keypair mapping. A retry again finds no mapping, then fails on that synthetic ID's unique constraint, permanently poisoning registration unless an operator repairs the database. The earlier lookup and later registration also form a split check-then-act API; concurrent first authentications can both be challenged and one receives an internal error rather than resolving to the established identity.
+- Trigger: Inject a transient failure after the player insert, or complete two valid proof-of-work challenges for the same previously unseen key at about the same time
+- Impact: A transient storage failure can leave durable orphan account state and make that valid cryptographic identity unable to register on every retry; concurrent legitimate attempts receive inconsistent identities or opaque failures
+- Expected: Player creation and identity binding commit together, rollback together, and concurrent registration of the same canonical key deterministically returns the single existing player
+- Suggested fix: Combine lookup, player insertion, and identity insertion in one immediate transaction with conflict handling that re-reads and returns the winner. Derive one canonical key identity as required by BR-0113, avoid duplicating that identity in two independently constrained text columns where possible, and surface typed conflict versus storage errors.
+- Validation: Fail each prepare, insert, and commit step; cancel and restart between statements; race many first registrations and retries for one key and for distinct keys; assert exactly one player and mapping per canonical key, no orphan row, stable returned UUID, and successful retry after every injected failure
+- Resolution: Pending
+
+### BR-0142: P2 - Persist the administrative audit trail that the schema promises
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/auditability
+- Found by: R1-CHUNK-0056
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/db.rs:L146-L151,L503-L528` in the unused audit table and moderation writes
+- Related: `server/src/http_api.rs:L235-L304`, `server/src/main.rs:L11-L45`, BR-0123, BR-0131, and `android/ai tool plans/networking/NETWORKING_PLAN.md:L2655-L2666`
+- Evidence: The schema creates `admin_log`, and the design explicitly requires bans, unbans, kicks, rate-limit actions, commands, and configuration changes to be stored there. The database exposes no audit insertion method and frozen-tree search finds no write to the table. Ban and unban mutate their tables alone; their HTTP handlers emit ordinary tracing lines only, with no durable actor, request source, previous value, outcome, or correlation ID. Those files have their own missing retention policy in BR-0131 and are not the queryable audit trail promised by the schema.
+- Trigger: Ban or unban a player, perform another administrative action, then investigate who changed what after logs rotate, are unavailable, or contain concurrent requests
+- Impact: Operators cannot reconstruct or distinguish successful, failed, repeated, and reversed moderation actions from the database, weakening incident response and accountability for a security-sensitive shared-token interface
+- Expected: Every accepted administrative state change and relevant denial has an append-only, queryable record containing authenticated actor identity, source and correlation metadata, target, validated action, before/after state or outcome, and canonical time
+- Suggested fix: Define an audit event domain type and write the state change plus its success audit record in one transaction. Replace the shared bearer token with attributable credentials if multiple operators are possible, record failures through a bounded separate path, redact secrets, protect audit access, and give this low-volume security record an explicit retention and integrity policy distinct from connection telemetry.
+- Validation: Exercise successful, rejected, duplicate, expired, failed, and concurrent bans and unbans plus every implemented admin action; inject state-write, audit-write, commit, logging, and restart failures; assert atomic state/audit agreement, attributable immutable fields, no secret leakage, deterministic ordering, access control, and documented retention
+- Resolution: Pending
+
+### BR-0143: P1 - Bind keypair authentication to a fresh server challenge and audience
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/authentication
+- Found by: R1-CHUNK-0057
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L385-L465` in known-key signature authentication
+- Related: `server/src/protocol.rs:L22-L41,L157-L160,L175-L188`, `server/src/pow.rs:L36-L75`, `server/tests/integration.rs:L1637-L1922`, BR-0090, and BR-0113
+- Evidence: The client signs only `callsign:timestamp`; the server supplies no nonce before authentication and keeps no replay cache. The public key, protocol version, authentication method, server identity, connection, and deployment audience are absent from the signed transcript. Anyone who obtains one valid Authenticate message can therefore replay it on another connection to the same server while its timestamp is accepted, and a server or endpoint that collects the payload can replay it to another server where that key is already registered. The symmetric `abs_diff` check also accepts a timestamp 120 seconds in the future, making that captured payload valid for up to roughly four minutes from first use. A known key then bypasses proof-of-work and receives AuthOk immediately; tests create a new signature for each connection and never replay one.
+- Trigger: Capture, proxy, log, or solicit a valid keypair Authenticate payload and resend it before its time window closes, including to another DXX server on which the same device key is registered
+- Impact: Possession of a recently observed message is treated as possession of the private key, allowing account impersonation, concurrent session replacement, lobby and messaging actions, and cross-server credential reuse without producing a new signature
+- Expected: Each authentication proves possession for one fresh connection and intended server audience, and the exact proof cannot succeed twice or on another deployment
+- Suggested fix: Begin keypair authentication with a random single-use server nonce and sign a versioned, length-delimited transcript containing a domain separator, server audience or origin, protocol version, auth method, canonical public key, callsign, nonce, and bounded expiry. Consume the nonce atomically on the first attempt, expire it quickly, and bind new-key proof-of-work to the same transcript. Keep TLS mandatory for public transport, but do not use transport confidentiality as the replay defense.
+- Validation: Replay one signed payload on the same connection, simultaneous connections, after success, before and after expiry, with future timestamps, after restart, and against a second server; alter each transcript field independently and assert only one fresh proof for the exact connection and audience authenticates
+- Resolution: Pending
+
+### BR-0144: P1 - Make outbound failure terminate the owning connection
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/resource-lifetime
+- Found by: R1-CHUNK-0057
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L24-L34,L55-L68,L256-L289,L304-L343` in bounded delivery and split WebSocket task ownership
+- Related: `server/src/ws_handler.rs:L601-L688,L1174-L1260,L1262-L2617`, `android/ai tool plans/networking/plan_networking_audit.md:L165-L175`, BR-0115, BR-0127, and BR-0133
+- Evidence: The design says a client more than 256 messages behind is dropped, but `BoundedSender` only returns `try_send` errors and all 69 application sends discard them. A full queue therefore silently loses ordered state transitions, errors, kicks, relay assignments, and acknowledgements without disconnecting or resynchronizing the client. If the socket write errors or reaches its ten-second timeout, only `send_task` exits; the read loop never selects on that task or channel closure. A client can continue sending text or control frames to reset the 120-second read timeout, retain its session and lobby resources, and keep mutating shared state indefinitely even though no response can reach it.
+- Trigger: Authenticate, stop reading until the outbound queue fills or a write times out, then continue sending pings or allowed client messages
+- Impact: A malicious or failed client can retain connection, session, lobby, STUN, relay, and counter state after its outbound half is dead, while legitimate slow clients silently miss non-idempotent protocol events and diverge from authoritative server state
+- Expected: Queue saturation, serialization failure, channel closure, write error, and write timeout all converge on one connection cancellation path that closes both halves and runs generation-safe cleanup exactly once; protocol events are either delivered in order or the client is explicitly disconnected and must resynchronize
+- Suggested fix: Give the connection one cancellation or supervisor owner and `select` the read loop, writer completion, idle deadline, and shutdown signal together. Treat `TrySendError::Full` and `Closed` as terminal for required messages, close the socket with a stable overload code, and route cleanup through the generation-safe transition in BR-0127. If any messages are intentionally coalescible, model a replaceable snapshot separately from reliable ordered control events rather than silently dropping both.
+- Validation: Fill the queue while pausing reads; force serialization failure, peer reset, writer error, timeout, and channel closure; continue sending inbound frames during each failure; assert prompt socket closure, no further mutations, exact once-only session/lobby/STUN/relay/counter cleanup, bounded memory, and either ordered delivery or explicit reconnect/resnapshot behavior
+- Resolution: Pending
+
+### BR-0145: P2 - Enforce one engine-compatible callsign contract at authentication
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/protocol-contract
+- Found by: R1-CHUNK-0057
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L345-L383` in callsign normalization and validation
+- Related: `server/src/db.rs:L84-L100,L172-L245`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingState.kt:L143-L171`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerCallsigns.kt:L37-L108`, `android/app/src/main/java/com/dxxredux/app/multiplayer/LobbyScreen.kt:L274-L314`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerResumePrefs.kt:L250-L273`, `d1/main/player.h:L53-L69`, `d2/main/player.h:L61-L77`, and BR-0122
+- Evidence: The server accepts 1 to 20 arbitrary printable ASCII bytes, while both engines define `CALLSIGN_LEN` as eight and the Android client permits only 1 to 8 alphanumeric, underscore, or hyphen characters and reserves names such as `coopsave`. Server callsigns are persisted, broadcast in lobby and presence state, and copied into cooperative save matching and resume records, but the native UDP game can represent only the truncated eight-byte identity. Callsigns are not unique in SQLite, yet Add Friend resolves `WHERE callsign = :name LIMIT 1` without ordering and the handler repeats that lookup to choose the notification recipient; two accounts can therefore share the exact visible name and make a request target or notify an arbitrary account. Tests cover neither server boundary and uniqueness behavior nor cross-layer parity.
+- Trigger: Authenticate a custom client with a callsign longer than eight, containing server-accepted spaces or punctuation, using a reserved pilot name, sharing its first eight characters with another player, or exactly duplicating another account's visible callsign; then launch, resume, or add that name as a friend
+- Impact: Lobby, friend, history, resume, and server identity can disagree with the name transmitted and stored by the game; distinct server users can collapse to one native callsign; friend requests can reach the wrong identity; save matching can fail; and reserved or path-sensitive pilot semantics can be reached through the public protocol
+- Expected: One documented canonical callsign rule is shared by server, Android, D1, and D2 before identity persistence or lobby publication, with no truncation or ambiguous name-based account selection
+- Suggested fix: Define shared protocol constants and normalization tests for the engine-compatible byte length, character set, case policy, reserved names, and account-level uniqueness policy; reject rather than truncate at the server boundary. Resolve social actions through stable player IDs selected from an unambiguous discovery result, and carry the one resolved ID through persistence and notification instead of repeating name lookup. If longer or duplicate display names are desired, introduce a separately named display field and keep the unique account handle and eight-byte engine callsign explicit.
+- Validation: Test empty, 1, 8, and 9 to 20 characters; spaces, punctuation, non-ASCII, case variants, reserved names, equal eight-byte prefixes, exact duplicate names, rename collisions, and lookup during rename across authentication, lobby UI, UDP launch, save creation, restore offer, reconnect, friend request and notification, and match history; assert one unchanged and unambiguous representation or a clear rejection
+- Resolution: Pending
+
+### BR-0146: P2 - Do not publish a keypair rename when persistence failed
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/error-handling
+- Found by: R1-CHUNK-0057
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L430-L450` in known-key authentication and callsign update
+- Related: `server/src/db.rs:L204-L247`, `server/src/friends.rs:L32-L85`, `server/src/ws_handler.rs:L1174-L1260`, BR-0122, BR-0139, and BR-0140
+- Evidence: For a known key, the handler ignores the result of `find_or_create_player_by_gpgs`, then calls `complete_auth` with the requested callsign. If the callsign or last-seen write fails, the live session and lobby use the new name while the players table and friend queries retain the old name. The Google path rejects the same class of player update failure, so behavior differs by authentication method. Existing known-key coverage reconnects with the same callsign and injects no write failure.
+- Trigger: Reconnect a registered key under a new callsign while SQLite returns a write, disk, schema, or availability error after the successful identity and ban reads
+- Impact: The server reports successful authentication under an identity it did not persist; friend search, friend lists, notifications, match history, lobby display, and later reconnects can disagree about the player's name, enabling confusing stale-name routing and making recovery nondeterministic
+- Expected: Authentication publishes one identity snapshot whose durable and live fields agree, or fails without installing a session when the required update cannot commit
+- Suggested fix: Replace the lookup-plus-ignored-update sequence with one typed database operation that atomically loads the key identity, applies the validated rename, and returns the committed player record. Complete authentication only from that record; if rename persistence is intentionally noncritical, explicitly authenticate with the old returned name and report the rejected rename rather than inventing a live-only value.
+- Validation: Reconnect with the same and changed callsign while failing prepare, update, commit, disk, and recovery steps; assert either a fully consistent durable/live rename or no session, then verify friend search/list, notification, lobby, match history, disconnect, restart, and retry all expose the same callsign
+- Resolution: Pending
+
+### BR-0147: P2 - Track active-game start time and order the capped list deterministically
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/observability
+- Found by: R1-CHUNK-0057
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L115-L145` in active-game projection
+- Related: `server/src/lobby.rs:L81-L116,L138-L158`, `server/src/ws_handler.rs:L1239-L1247,L1587-L1692`, `server/src/protocol.rs:L445-L453`, `android/app/src/main/java/com/dxxredux/app/multiplayer/ActiveGamesTab.kt:L39-L88`, BR-0129, and BR-0134
+- Evidence: `duration_secs` is computed from the lobby's creation timestamp, not when it entered Starting or InGame. A lobby that waits an hour therefore appears as a one-hour active game immediately after start. The projection also iterates a DashMap and calls `take(20)` before any ordering, so when more than 20 games qualify the visible subset and order are arbitrary and can change between requests. The Android browser displays the value as game duration and treats the returned set as the active-games list; the only status test checks that the field exists.
+- Trigger: Leave a lobby waiting before starting it, or have more than 20 concurrent Starting or InGame lobbies and request status repeatedly
+- Impact: Players see false game ages and a nondeterministic subset; eligible games can disappear while older or less relevant entries remain, making late-join discovery unreliable and operational status misleading
+- Expected: Lobby and game lifetimes are distinct, each game generation has an explicit start instant, and a capped public list uses a documented stable order and tie-breaker before truncation
+- Suggested fix: Record wall-clock and monotonic `game_started_at` plus a game generation inside the atomic start transition, clear or replace it on end and restart, compute displayed duration from that instant, collect and sort eligible projections by a documented key such as newest or most joinable first with lobby UUID tie-breaker, then take the cap. Reuse the same timing source for stale cleanup and persisted match boundaries where appropriate.
+- Validation: Use paused time to cover long waiting then immediate start, repeated start generations, clock changes, exact stale boundaries, end and restart, and 19, 20, 21, and many concurrent games inserted in varied orders; assert exact duration, stable membership and ordering, correct cap, and consistency across public status and Android display
+- Resolution: Pending
+
+### BR-0148: P1 - Track and complete connectivity checks per player pair
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/networking
+- Found by: R1-CHUNK-0058
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L1073-L1103,L1875-L2240` in connectivity scheduling, late-join completion, and updates
+- Related: `server/src/lobby.rs:L42-L62,L81-L116`, `server/src/ws_handler.rs:L768-L949,L1586-L1764`, `android/app/src/main/java/com/dxxredux/app/multiplayer/ConnectivityChecker.kt:L20-L85,L125-L134`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt:L747-L810,L1180-L1224`, `server/tests/integration.rs:L2474-L2564`, BR-0116, BR-0132, BR-0133, and BR-0153
+- Evidence: For each player the server flattens the Cartesian candidate sets for every other peer into one globally priority-sorted list. Android sends at most roughly one pair every 200 milliseconds during a single three-second race and returns on the first response, so success reports exactly one peer even in a three-or-more-player lobby; only total failure reports relay for every peer. The server accepts `peer_id` but stores both `ConnectivityOk` and `ConnectivityUpdate` in the reporting player's single `connection_type` and ping, then uses that player-wide value for unrelated pair decisions. The late-join path compounds this: any non-host already in an InGame lobby can resubmit `STUN_RESULT` and become a pending late joiner, and the next `ConnectivityOk` consumes that pending flag without checking that its peer is the host, that the pair was offered, or that the result belongs to the current admission and ICE generation. Subject to BR-0153's deadlock, it then sends a fresh game launch and can allocate another relay. The sole result test has two players and explicitly asserts player-wide state; there is no late-join test.
+- Trigger: Use at least three players with mixed direct and relay connectivity, starve a later peer behind earlier candidates, forge or reorder a connectivity result, or have an existing in-game non-host resubmit STUN and report success for an arbitrary peer
+- Impact: One pair can suppress another pair's relay, valid routes may never be probed, and stale or fabricated results can complete an unrelated late join, relaunch an existing member, and consume relay state; games can hang, partition, or diverge across generations
+- Expected: Connectivity state is keyed by lobby or game generation and unordered player pair, every required pair reaches a terminal direct, relay, or timed-out state, and one pair's result cannot satisfy or alter another pair
+- Suggested fix: Replace `LobbyPlayer.connection_type` as the source of confirmation with a bounded pair-state matrix keyed by lobby or game generation and both player IDs. Create a distinct late-join admission generation before ICE and accept results only for its offered host pair. Schedule bounded probes fairly per peer; have Android continue until each required pair succeeds or times out; validate current membership, peer, candidate, state, and generation; define whether one or both endpoints must confirm; and make completion a single terminal transition. Keep aggregate UI summaries derived from this matrix rather than authoritative.
+- Validation: Exercise three through eight players with mixed LAN, hole-punch, symmetric-NAT, and relay links; existing members versus newly admitted late joiners; asymmetric, stale, reordered, duplicate, forged, self, non-host, and departed-peer reports; candidate lists larger than the probe budget; timeout, retry, reconnect, and game generations; and relay failure. Assert exact per-pair terminal state, fair probing, one late-join completion, required relay allocation, no cross-pair contamination, and deterministic launch behavior.
+- Resolution: Pending
+
+### BR-0149: P2 - Release shared-IP STUN authorization atomically
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/security
+- Found by: R1-CHUNK-0058
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L666-L677` in STUN allowlist reference release
+- Related: `server/src/ws_handler.rs:L1174-L1211`, `server/src/stun.rs:L41-L56`, `server/tests/integration.rs:L2651-L2681`, BR-0114, BR-0127, and BR-0136
+- Evidence: Authentication increments the `DashMap<IpAddr, usize>` entry, but disconnect first reads the count and later performs a separate remove or mutable decrement. Two disconnects sharing a count of two can both observe that removal is unnecessary and decrement sequentially to a retained zero-valued entry. The STUN listener authorizes with `contains_key`, so that source IP remains allowed after its last authenticated connection. Conversely, an authentication can increment an entry after a disconnect's read but before its remove, and that stale remove then deletes authorization for the newly active connection. The lifecycle test uses only one client and no concurrency.
+- Trigger: Authenticate multiple clients through one NAT address and disconnect them concurrently, or overlap the last disconnect for an address with a new authentication from the same address
+- Impact: A formerly authenticated source address can retain STUN service without a live session, or a live client can lose the advertised STUN service; reference counts can remain at zero or diverge further across reconnects
+- Expected: Adding and releasing an address reference is one atomic, idempotent ownership transition, a key exists exactly while at least one current authenticated connection owns it, and stale connection cleanup cannot remove a newer owner's authorization
+- Suggested fix: Encapsulate allowlist acquisition and release behind an owned permit tied to the generation-safe connection lifecycle in BR-0127. Mutate and decide removal through one DashMap entry operation or an equivalent lock, never retain zero, and make release idempotent for the exact connection generation. If authorization is intentionally address-wide, document the shared-NAT semantics and keep the count as an invariant-checked internal detail.
+- Validation: Run two and many sessions behind one IP through every disconnect order, simultaneous final disconnects, concurrent final release and new acquire, repeated cleanup, superseded generations, and mixed IPv4 and IPv6 addresses; assert exact positive counts, key presence iff an owner exists, STUN response iff authorized, and no stale removal of a new generation.
+- Resolution: Pending
+
+### BR-0150: P2 - Keep session presence synchronized with authoritative lobby state
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/state-lifetime
+- Found by: R1-CHUNK-0058
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L617-L641,L1385-L1430,L1849-L1863,L2177-L2192,L2315-L2382` in lobby, game, late-join, and match transitions
+- Related: `server/src/lobby.rs:L16-L39,L81-L116`, `server/src/friends.rs:L65-L120`, `server/src/ws_handler.rs:L1275-L1335,L1510-L1584`, `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L2030-L2038`, BR-0120, BR-0121, BR-0127, BR-0134, and BR-0153
+- Evidence: Presence is a denormalized snapshot in each session and several authoritative transitions do not update it. Host disconnect clears survivors' `lobby_id` values and removes the lobby but leaves their old presence. `EndGame` returns the lobby to Waiting without changing any member from InGame. `UpdateGameState` changes the authoritative player count without changing the copied session count, and late-join completion updates only the joiner. `MatchResult` removes the lobby without clearing any member's `lobby_id` or presence at all. Friend-list construction trusts the stale variant and copied mission and count; depending on the transition it returns `in_game` with no details, details for a Waiting lobby, or details for a removed match. Explicit leave, kick, and stale cleanup demonstrate intended resets, but tests do not assert these terminal states and accept several presence values in the friend lifecycle.
+- Trigger: Disconnect a host, send `END_GAME`, change or late-join the in-game roster, or submit a match result, then request any affected member's friend list before that session enters another lobby or disconnects
+- Impact: Friends receive false lobby or game activity, contradictory or stale joinability and player counts, and missing or obsolete game details for as long as the WebSocket survives; friend-based joins and activity disclosure can therefore act on state that the authoritative lobby no longer has
+- Expected: Presence is derived from or updated atomically with the current lobby generation and state, and every observer sees Online, InLobby, or InGame with details from the same authoritative transition
+- Suggested fix: Prefer deriving friend presence and details from the session's validated current lobby and its current state instead of copying mutable fields into sessions. If cached presence remains necessary, centralize every lobby transition, membership change, and dissolution in generation-aware helpers that update all affected current sessions, clear related pending state, and remove or mutate the lobby in one documented order; treat invariant mismatches as Online for disclosure while recording diagnostics.
+- Validation: Disconnect waiting and in-game hosts; complete normal `END_GAME`; change runtime and membership counts; leave, kick, late-join, reconnect, expire, and replace sessions during each transition; query friend lists before, during, and after; and assert the presence string, details, mission, count, joinability, session fields, notifications, and generation all describe one current lobby state.
+- Resolution: Pending
+
+### BR-0151: P1 - Make lobby replacement and host departure one atomic transition
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/state-machine
+- Found by: R1-CHUNK-0059
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L1269-L1334,L1436-L1568,L2455-L2540` in create, ordinary join, friend join, and leave transitions
+- Related: `server/src/lobby.rs:L81-L116,L118-L220`, `android/app/src/main/java/com/dxxredux/app/multiplayer/LobbyScreen.kt:L52-L74`, BR-0127, BR-0129, BR-0134, BR-0135, and BR-0150
+- Evidence: `CreateLobby` never checks or detaches an existing membership; it inserts a second lobby and overwrites only the session's `lobby_id`, leaving the player in the old lobby and reachable through both lobbies' broadcasts. `JoinFriendGame` has the same multiple-membership defect: it adds the caller to the friend's lobby and overwrites the session without inspecting or removing the source lobby. Ordinary `JoinLobby` does detach from the old lobby, but does so before confirming that the destination exists, accepts the supplied code and verification state, has capacity, or admits the player, so any failed join silently ejects the player from a valid current lobby. Both that path and explicit `LeaveLobby` remove a host exactly like a member: when other players remain, the lobby is retained and broadcast with its immutable `host_player_id` no longer present. The ordinary Android lobby exposes Leave Lobby to the host, while disconnect cleanup follows a different policy and dissolves the hosted lobby. No test creates or friend-joins while already joined, fails a cross-lobby join, or has a host leave with members.
+- Trigger: Create a lobby or friend-join another lobby while already hosting or joined; attempt to switch through ordinary join to a nonexistent, full, coded, kicked, or otherwise rejected lobby; or have the host use the normal Leave Lobby control while another member remains
+- Impact: One session can become a ghost member of multiple lobbies and receive conflicting updates or game starts; failed navigation destroys the prior membership; and hostless lobbies retain players, statistics, and public listings but can never pass host-only update, start, end, or kick checks, leaving other players stranded until separate cleanup
+- Expected: A player belongs to at most one current lobby, a failed create or join preserves the prior membership, and every host departure follows one explicit dissolve or validated transfer policy that updates all members and counters exactly once
+- Suggested fix: Implement one generation-aware lobby transition API for create, join, leave, disconnect, and friend join. Validate and reserve the complete destination admission before committing source removal, use a fixed lock or transaction order with generation rechecks across session and lobby entries, and roll back if the destination commit fails. Reject create while already joined or route it through the same replacement operation. On host departure, either dissolve and notify everyone or atomically elect and publish a new host; never retain a lobby whose host ID is absent.
+- Validation: Exercise host and member create, successful and every failed cross-lobby join, same-lobby join, concurrent final-slot joins, host and member explicit leave, disconnect, friend join, kick, and reconnect; inject a race at each validation and commit boundary; and assert exactly one membership, preserved source on failure, host membership, session pointer and presence parity, deterministic notifications, and exact lobby and game counters.
+- Resolution: Pending
+
+### BR-0152: P2 - Enforce game-start preconditions on the server
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/state-machine
+- Found by: R1-CHUNK-0059
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L1572-L1603` in readiness and game start handling
+- Related: `server/src/lobby.rs:L6-L14,L42-L52,L81-L116`, `android/app/src/main/java/com/dxxredux/app/multiplayer/LobbyScreen.kt:L152-L173`, `server/tests/integration.rs:L545-L665,L1961-L2053`, BR-0133, BR-0134, and BR-0148
+- Evidence: The official Android UI enables Start Game only when at least two players are present and every player is ready. The server checks only that the sender is the host, then unconditionally overwrites the lobby state with Starting and increments game statistics; it does not require Waiting, two players, all players ready, or completed per-pair connectivity. The focused `test_start_game_flow` creates two players, never sends `READY`, and asserts that both receive `GAME_STARTING`, so current coverage codifies the missing server-side rule. Repeated starts and their relay and counter impact are already covered by BR-0133 and BR-0135.
+- Trigger: Have a custom or stale host client send `START_GAME` while alone, while any member is unready, while the lobby is Holepunching, Starting, or InGame, or while a member or connectivity result is changing concurrently
+- Impact: Clients can be launched without the participation and minimum roster promised by the UI, before required routes are known, or from an invalid state; legitimate members can receive an unexpected launch and the lobby, presence, relay, and statistics state can diverge from the intended lifecycle
+- Expected: One authoritative server transition admits StartGame only from the exact eligible lobby generation after all roster, readiness, connectivity, and resource preconditions hold under the same state decision
+- Suggested fix: Add a typed `try_start_game` transition that requires the host to belong to the current Waiting lobby, enforces the supported minimum and maximum roster, verifies every current player is ready, consumes completed pair-specific connectivity from BR-0148, and reserves all relay resources before committing Starting. Return stable rejection codes and make the operation generation-safe and idempotent with the relay ownership work in BR-0133.
+- Validation: Test one and two players, every individual unready player, all ready, every non-Waiting state, repeated and reordered requests, member leave or unready racing start, incomplete and timed-out connectivity, relay reservation failure, and host replacement or reconnect; assert one start notification and statistics transition only for the exact eligible generation and no mutation on rejection.
+- Resolution: Pending
+
+### BR-0153: P1 - Release DashMap guards before nested state transitions
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/resource-lifetime
+- Found by: R1-CHUNK-0060
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L2055-L2200` in late-join connectivity completion
+- Related: `server/src/ws_handler.rs:L55-L67,L85-L105,L617-L641,L1880-L2044,L2218-L2238,L2538-L2540`, pinned `dashmap-6.1.0/src/lib.rs` guard warnings, BR-0127, BR-0134, and BR-0150
+- Evidence: `ConnectivityOk` obtains `state.sessions.get(&player_id)` at line 2055 and retains that DashMap read guard through the outer lexical scope. Successful late-join completion later drops its lobby guard but calls `state.sessions.get_mut(&player_id)` at line 2179 while the same-key session read guard is still live. DashMap 6.1.0 explicitly documents that `get_mut` may deadlock while any reference into the map is held, making the ordinary successful path self-deadlock rather than merely race. The wider handler also nests session then lobby guards in STUN, connectivity, and friend paths while disconnect, broadcast, and cleanup paths take lobby then session guards. Friend join demonstrates the latter directly by retaining a lobby read guard while `broadcast_lobby_update` enters the sessions map. Concurrent tasks can therefore form cross-shard lock cycles and exhaust Tokio workers. There is no late-join or concurrent friend-join integration test.
+- Trigger: Complete a real late join through `CONNECTIVITY_OK`, or concurrently run connectivity, disconnect, kick, cleanup, or friend-state requests whose paths acquire session and lobby DashMap guards in opposite orders
+- Impact: A late join can stop permanently before game launch, and malicious or unlucky concurrent clients can strand worker threads in lock acquisition until the matchmaking server stops serving unrelated connections
+- Expected: No code awaits, reacquires the same DashMap, or enters another shared-state map while a DashMap guard is live; multi-record state transitions use one documented ownership and ordering strategy without blocking executor workers
+- Suggested fix: Snapshot only owned values needed from session and lobby entries, release every guard, then perform the next lookup or send. Compute late-join completion under one lobby guard, release it, and update the current generation's session in a separate checked step. Centralize multi-map transitions behind helpers that enforce a lock-free snapshot and compare-and-commit pattern or one provable global order; consider a lobby actor or unified lock if atomicity cannot otherwise be expressed.
+- Validation: Add a timeout-bounded end-to-end late-join test that reaches launch, then stress concurrent STUN, connectivity, friend queries, kick, disconnect, cleanup, and reconnect on a small Tokio worker pool; assert all tasks terminate, generations remain consistent, and no worker or guard is leaked
+- Resolution: Pending
+
+### BR-0154: P1 - Authorize kicks against the current lobby membership
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/authorization
+- Found by: R1-CHUNK-0060
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L2282-L2311` in kick handling
+- Related: `server/src/lobby.rs:L81-L116`, `server/tests/integration.rs` kick coverage, BR-0127, and BR-0151
+- Evidence: `KickPlayer` verifies that the sender hosts the sender's current lobby but never verifies that `target_player_id` belongs to that lobby. It then records the arbitrary target in the lobby's kicked set while capacity remains, calls `remove_player`, sends `KICKED` to the target session, and clears that session's lobby and presence even when the target is in a different lobby. Player UUIDs are stable and observable through lobby and friend state. A host can therefore detach a member or host of an unrelated lobby while leaving a ghost membership behind there. Once the kicked set reaches its hard limit of 100, the code still removes valid targets without retaining the ban, allowing them to rejoin. Existing tests cover only a valid target in the same lobby.
+- Trigger: Host one lobby and submit another known player's UUID, including the member or host of a different lobby, an offline player, oneself, or a valid member when the kicked set already contains 100 entries
+- Impact: Any host can forcibly disrupt unrelated games, desynchronize a victim's session from its authoritative lobby, create ghost members or an unrecoverable hostless lobby, and evade the promised rejoin ban at the capacity boundary
+- Expected: A kick is authorized only when sender and target are current members of the exact same lobby generation, the sender is its current host, the target is eligible to be kicked, and removal plus retained ban and current-session cleanup commit as one transition
+- Suggested fix: Under a generation-aware lobby transition, require the target in the current member set and define explicit self and host behavior before mutation. Reserve bounded ban retention before removal, atomically remove the member, then clear or notify the target only if its current session still points to that same lobby generation. Reject unknown, offline, cross-lobby, stale-generation, and capacity-exhausted requests without mutating either lobby.
+- Validation: Test valid same-lobby members, cross-lobby members and hosts, unknown and offline IDs, self and host targets, stale sessions, reconnect races, and kicked-set sizes 99 and 100; assert exact authorization, one notification, retained bans, and parity between both sessions and both lobbies
+- Resolution: Pending
+
+### BR-0155: P3 - Remove or complete the dormant file-hash protocol
+
+- [ ] OPEN
+- Type: design
+- Confidence: high
+- Category: maintainability/api-data-format
+- Found by: R1-CHUNK-0060
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/protocol.rs:L119-L120,L343-L348` and `server/src/ws_handler.rs:L2243-L2278` in file-hash reporting
+- Related: `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkProtocol.kt`, `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt` generic error handling, D1 and D2 segment checksum handling, and BR-0115
+- Evidence: The server defines `FileHashEntry` and accepts `FILE_HASHES`, but the Android protocol and matchmaking service contain no entry schema, sender, typed receipt handler, or comparison path, and the server tests contain no coverage. Host submissions are discarded. Non-host submissions are serialized back into a generic `ServerMessage::Error` with code `FILE_HASHES_RECEIVED` and a JSON string in its human-readable message, which the official Android client only logs or displays. The comment that the host performs the comparison is therefore false for the supported client. The native engines already exchange a segment checksum, so any additional compatibility scope is also undefined.
+- Trigger: Run any official-client match, or have a custom client submit file hashes as host or member, including large values admitted by the general WebSocket and field limits
+- Impact: The public protocol creates a false expectation of compatibility enforcement while doing none, adds an untyped payload and logging surface for hostile clients, and leaves future implementers to guess how this overlaps the engine checksum
+- Expected: Compatibility checking has one documented, bounded, typed end-to-end contract implemented by server and Android, or no public request and forwarding surface until that contract exists
+- Suggested fix: Remove the request, model, handler, and misleading comment until the feature is scheduled, or implement a bounded typed manifest from host, typed member comparison and result messages, Android emission and handling, a defined lobby lifecycle, and documentation of exactly what it covers beyond the engine segment checksum. Do not tunnel machine data through a generic error message.
+- Validation: If retained, add server and Android schema-parity tests plus matching, mismatching, missing, duplicate, oversized, reordered, and stale-generation manifests and verify a deterministic user-visible result; if removed, assert neither endpoint advertises or emits the message
+- Resolution: Pending
+
+### BR-0156: P2 - Make lobby chat one authorized server-side broadcast
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/authorization
+- Found by: R1-CHUNK-0061
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:server/src/ws_handler.rs:L2566-L2613` in direct-message delivery
+- Related: `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt:L499-L505,L572-L603,L1129-L1145`, `android/ai tool plans/networking/PHASE_C7_MESSAGING_PLAN.md`, `server/tests/integration.rs:L800-L949,L2218-L2290`, BR-0121, BR-0144, and BR-0145
+- Evidence: The feature plan and Android API define this as in-lobby messaging, and Android implements one chat send by issuing a separate `SEND_MESSAGE` to every current lobby member. The server checks only authentication, a five-per-minute sender limit, text shape, and whether the named target has blocked the sender. It never requires sender and target to share a current lobby or game generation, so any known online UUID receives the text. `test_player_message` creates two unrelated players with no lobby or friendship and explicitly expects delivery. Android appends every received message to its current lobby chat using only the nonunique callsign and text, with no lobby or generation field. The client-side fanout also conflicts with the rate budget: one message in an eight-player lobby needs seven requests, so the sixth and seventh recipients are rejected; two messages in a four-player lobby need six requests and split the second message.
+- Trigger: Authenticate outside a victim's lobby and send to a known online player UUID, or send ordinary chat repeatedly in a lobby with three through eight members until the per-recipient requests consume the five-message window
+- Impact: A client can inject unsolicited or impersonation-prone text into unrelated live lobby screens, while legitimate chat is delivered to inconsistent subsets of the intended roster and silently remains visible to the sender as though it reached everyone
+- Expected: One lobby-scoped request proves the sender's current generation and causes one bounded server-side broadcast to exactly its current members, with block policy and delivery semantics applied consistently and no fanout-dependent rate charge
+- Suggested fix: Replace public target-addressed lobby chat with a `SEND_LOBBY_MESSAGE` carrying text and, if needed, the expected lobby generation. Under one current-membership snapshot, authorize the sender, apply the message limit once, and broadcast a typed message containing stable sender and lobby or generation identity. Either remove arbitrary direct messaging or define and authorize it separately. Make acknowledgement mean accepted broadcast rather than implied per-target delivery, and integrate BR-0121's fail-closed block behavior and BR-0144's outbound cleanup.
+- Validation: Test unrelated, former, pending-friend, blocked, same-lobby, cross-lobby, stale-generation, reconnecting, and leaving senders and recipients; send one and repeated messages in two through eight-player lobbies at rate boundaries; assert exact current recipients, one rate charge, stable sender identity, no cross-lobby display, deterministic acknowledgement, and correct handling of slow or disconnected members
 - Resolution: Pending
 
 ## Disposition log
