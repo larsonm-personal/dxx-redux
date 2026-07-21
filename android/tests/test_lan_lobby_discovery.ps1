@@ -13,9 +13,11 @@
 # Usage:
 #   .\test_lan_lobby_discovery.ps1
 #   .\test_lan_lobby_discovery.ps1 -TimeoutSeconds 30
+#   .\test_lan_lobby_discovery.ps1 -ResumeCoverage
 
 param(
-    [int]$TimeoutSeconds = 30
+    [int]$TimeoutSeconds = 30,
+    [switch]$ResumeCoverage
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,6 +45,7 @@ try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -Error
 "" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
 
 $found = $false
+$passed = $false
 
 function Get-LogcatLines {
     param([string]$Serial, [string[]]$Tags)
@@ -138,8 +141,73 @@ try {
     }
 
     if ($found) {
+        if ($ResumeCoverage) {
+            Write-Status "Joining the discovered lobby..."
+            Send-MpCommand -Serial $EMU2 -Command "lan_join_first_lobby"
+            $joined = Wait-ForCondition -Description "two-player LAN lobby" -TimeoutSec 15 -PollMs 1000 -Condition {
+                Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 300
+                $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2'
+            }
+            if (-not $joined) {
+                Write-Status "FAIL: Joiner did not enter the hosted lobby" "Red"
+                exit 1
+            }
+
+            Send-MpCommand -Serial $EMU2 -Command "lan_set_ready" -Extras @("--ez", "ready", "true")
+            $ready = Wait-ForCondition -Description "both LAN players ready" -TimeoutSec 10 -PollMs 500 -Condition {
+                Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 250
+                $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2' -and $status -match 'all_ready=true'
+            }
+            if (-not $ready) {
+                Write-Status "FAIL: Lobby did not reach ready state" "Red"
+                exit 1
+            }
+
+            Write-Status "Waiting past the previous 10-second idle expiry..."
+            Start-Sleep -Seconds 12
+            Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+            Start-Sleep -Milliseconds 300
+            $idleStatus = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+            if (-not ($idleStatus -and $idleStatus -match 'players=2' -and $idleStatus -match 'all_ready=true')) {
+                Write-Status "FAIL: Lobby membership or ready state expired while idle" "Red"
+                exit 1
+            }
+
+            Write-Status "Backgrounding both apps past the lobby timeout..."
+            foreach ($emu in @($EMU1, $EMU2)) {
+                Send-MpCommand -Serial $emu -Command "lan_notify_backgrounded"
+                Adb-Dev-Timeout -Serial $emu -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") -Seconds 5 | Out-Null
+            }
+            Start-Sleep -Seconds 20
+            foreach ($emu in @($EMU1, $EMU2)) {
+                Adb-Dev-Timeout -Serial $emu -AdbArgs @("shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY") -Seconds 10 | Out-Null
+                Send-MpCommand -Serial $emu -Command "lan_notify_resumed"
+            }
+
+            $resumed = Wait-ForCondition -Description "ready lobby restored after resume" -TimeoutSec 15 -PollMs 1000 -Condition {
+                Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 300
+                $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2' -and $status -match 'all_ready=true'
+            }
+            if (-not $resumed) {
+                Write-Status "FAIL: Lobby did not restore ready membership after background/resume" "Red"
+                exit 1
+            }
+        }
+
         Write-Status ""
-        Write-Status "=== LAN LOBBY DISCOVERY TEST PASSED ===" "Green"
+        $coverage = if ($ResumeCoverage) { "DISCOVERY AND RESUME" } else { "DISCOVERY" }
+        Write-Status "=== LAN LOBBY $coverage TEST PASSED ===" "Green"
+        $passed = $true
         exit 0
     } else {
         Write-Status ""
@@ -156,7 +224,7 @@ try {
         exit 1
     }
 } finally {
-    if (-not $found) {
+    if (-not $passed) {
         # Stop lobby services on failure only; on success leave them running for by-hand testing
         try { & $ADB -s $EMU1 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
         try { & $ADB -s $EMU2 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}

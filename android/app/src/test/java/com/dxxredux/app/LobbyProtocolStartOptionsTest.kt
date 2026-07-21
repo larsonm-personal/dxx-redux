@@ -4,6 +4,8 @@ import com.dxxredux.app.lobby.buildStart
 import com.dxxredux.app.lobby.buildAnnounce
 import com.dxxredux.app.lobby.buildJoin
 import com.dxxredux.app.lobby.buildJoinAck
+import com.dxxredux.app.lobby.buildLeave
+import com.dxxredux.app.lobby.buildReady
 import com.dxxredux.app.lobby.parsePacket
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,10 +44,14 @@ class LobbyProtocolStartOptionsTest {
         val announce = buildAnnounce("lobby", "Host", "d2", "d2", "coop", 2, 4, hostClientId = "host-id")
         val join = buildJoin("lobby", "Wing", clientId = "wing-id")
         val joinAck = buildJoinAck("lobby", "d2", "d2", "coop", 4, "Host", "host-id")
+        val ready = buildReady("lobby", "Wing", true, clientId = "wing-id")
+        val leave = buildLeave("lobby", "Wing", clientId = "wing-id")
 
         assertEquals("host-id", parsePacket(announce, announce.size)?.getString("host_client_id"))
         assertEquals("wing-id", parsePacket(join, join.size)?.getString("client_id"))
         assertEquals("Host", parsePacket(joinAck, joinAck.size)?.getString("host_callsign"))
         assertEquals("host-id", parsePacket(joinAck, joinAck.size)?.getString("host_client_id"))
+        assertEquals("wing-id", parsePacket(ready, ready.size)?.getString("client_id"))
+        assertEquals("wing-id", parsePacket(leave, leave.size)?.getString("client_id"))
     }
 }

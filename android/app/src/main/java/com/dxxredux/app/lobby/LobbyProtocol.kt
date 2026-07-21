@@ -170,11 +170,13 @@ fun buildJoinReject(
 fun buildLeave(
     lobbyId: String,
     callsign: String,
+    clientId: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_LEAVE)
     json.put("lobby_id", lobbyId)
     json.put("callsign", callsign)
+    if (!clientId.isNullOrBlank()) json.put("client_id", clientId)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -183,12 +185,14 @@ fun buildReady(
     lobbyId: String,
     callsign: String,
     ready: Boolean,
+    clientId: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_READY)
     json.put("lobby_id", lobbyId)
     json.put("callsign", callsign)
     json.put("ready", ready)
+    if (!clientId.isNullOrBlank()) json.put("client_id", clientId)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

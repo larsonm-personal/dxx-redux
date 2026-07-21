@@ -1197,6 +1197,62 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "lan_join_first_lobby" -> {
+                        val lobby =
+                            com.dxxredux.app.lobby.LobbyService.discoveredLobbies.value
+                                .firstOrNull()
+                        if (lobby == null) {
+                            Log.w("DXX-MP", "lan_join_first_lobby: no lobby discovered")
+                        } else {
+                            com.dxxredux.app.lobby.LobbyService.joinLobby(
+                                lobby.announce.lobbyId,
+                                lobby.announce.hostAddress,
+                                mpCallsign,
+                            )
+                            Log.i("DXX-MP", "lan_join_first_lobby: joining ${lobby.announce.lobbyId}")
+                        }
+                    }
+
+                    "lan_set_ready" -> {
+                        val joined = com.dxxredux.app.lobby.LobbyService.joinedLobby.value
+                        val ready = intent.getBooleanExtra("ready", true)
+                        if (joined == null) {
+                            Log.w("DXX-MP", "lan_set_ready: not joined")
+                        } else {
+                            com.dxxredux.app.lobby.LobbyService.setReady(
+                                joined.lobbyId,
+                                joined.hostAddr,
+                                mpCallsign,
+                                ready,
+                            )
+                            Log.i("DXX-MP", "lan_set_ready: ready=$ready")
+                        }
+                    }
+
+                    "lan_lobby_status" -> {
+                        val lobbyService = com.dxxredux.app.lobby.LobbyService
+                        val players = lobbyService.hostedLobbyPlayers.value
+                        val playerStatus = players.joinToString(",") { "${it.callsign}:${it.ready}" }
+                        Log.i(
+                            "DXX-MP",
+                            "lan_lobby_status: hosting=${lobbyService.isHosting.value} " +
+                                "joined=${lobbyService.joinedLobby.value != null} players=${players.size} " +
+                                "all_ready=${players.isNotEmpty() && players.all { it.ready }} [$playerStatus]",
+                        )
+                    }
+
+                    "lan_notify_backgrounded" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .notifyAppBackgrounded()
+                        Log.i("DXX-MP", "lan_notify_backgrounded: done")
+                    }
+
+                    "lan_notify_resumed" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .notifyAppResumed(this@SetupActivity, mpCallsign)
+                        Log.i("DXX-MP", "lan_notify_resumed: done")
+                    }
+
                     "dismiss_keyboard" -> {
                         this@SetupActivity.dismissKeyboard()
                         Log.i("DXX-MP", "dismiss_keyboard: done")

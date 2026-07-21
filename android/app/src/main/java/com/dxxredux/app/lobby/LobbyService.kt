@@ -47,6 +47,7 @@ object LobbyService {
     private const val JOINED_HOST_TIMEOUT_MS = 15_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
+    private const val JOINED_LOBBY_REFRESH_MS = 3000L
     private const val BROADCAST_FAILURE_WARNING_THRESHOLD = 3
 
     // -- Public state --
@@ -138,7 +139,15 @@ object LobbyService {
         )
         try {
             openSocket(context)
-            if (_isHosting.value) restartAnnounceLoop()
+            val now = System.currentTimeMillis()
+            if (_isHosting.value) {
+                _hostedLobbyPlayers.value = refreshLanPlayerLeasesAfterResume(_hostedLobbyPlayers.value, now)
+                restartAnnounceLoop()
+            }
+            if (_joinedLobby.value != null) {
+                lastHostSeenMs = now
+                startJoinedLobbyRefresh(immediate = true)
+            }
         } catch (e: Exception) {
             socketRefreshNeededOnResume = true
             _diagnostics.value = "LAN discovery resume failed: ${e.message ?: e.javaClass.simpleName}"
@@ -155,8 +164,11 @@ object LobbyService {
     private var announceJob: Job? = null
     private var pruneJob: Job? = null
     private var joinRetryJob: Job? = null
+    private var joinedLobbyRefreshJob: Job? = null
 
     @Volatile private var lastHostSeenMs: Long = 0L
+
+    @Volatile private var joinedLobbyReady = false
 
     @Volatile private var appBackgrounded = false
 
@@ -232,6 +244,8 @@ object LobbyService {
         _joinedLobby.value = null
         joinRetryJob?.cancel()
         joinRetryJob = null
+        joinedLobbyRefreshJob?.cancel()
+        joinedLobbyRefreshJob = null
         packetsSent.set(0)
         packetsReceived.set(0)
         _diagnostics.value = ""
@@ -246,6 +260,7 @@ object LobbyService {
         hostedOmittedVisualTextureCount = 0
         hostedOmittedVisualModNames = emptyList()
         localClientId = null
+        joinedLobbyReady = false
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
         Log.i(TAG, "LAN discovery stopped")
@@ -318,6 +333,7 @@ object LobbyService {
         NetLog.log("LAN", "Joining lobby $lobbyId at $hostAddress as $callsign")
         Log.i(TAG, "joinLobby: socket=${socket != null} bound=${socket?.isBound} closed=${socket?.isClosed}")
         joinRetryJob?.cancel()
+        joinedLobbyReady = false
         joinRetryJob =
             scope?.launch(Dispatchers.IO) {
                 val data = buildJoin(lobbyId, callsign, localClientId)
@@ -420,7 +436,7 @@ object LobbyService {
     fun leaveLanLobby(callsign: String) {
         val info = _joinedLobby.value ?: return
         NetLog.log("LAN", "Leaving lobby ${info.lobbyId} (host=${info.hostAddr})")
-        val data = buildLeave(info.lobbyId, callsign)
+        val data = buildLeave(info.lobbyId, callsign, localClientId)
         // Send LEAVE multiple times for UDP reliability (A9 fix)
         scope?.launch(Dispatchers.IO) {
             repeat(3) { attempt ->
@@ -432,6 +448,9 @@ object LobbyService {
         _hostedLobbyPlayers.value = emptyList()
         _chatMessages.value = emptyList()
         lastHostSeenMs = 0L
+        joinedLobbyReady = false
+        joinedLobbyRefreshJob?.cancel()
+        joinedLobbyRefreshJob = null
         Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
     }
 
@@ -441,7 +460,7 @@ object LobbyService {
         hostAddress: String,
         callsign: String,
     ) {
-        val data = buildLeave(lobbyId, callsign)
+        val data = buildLeave(lobbyId, callsign, localClientId)
         scope?.launch(Dispatchers.IO) { sendTo(data, hostAddress) }
         Log.i(TAG, "Sent LEAVE to $hostAddress for lobby $lobbyId")
     }
@@ -453,7 +472,8 @@ object LobbyService {
         callsign: String,
         ready: Boolean,
     ) {
-        val data = buildReady(lobbyId, callsign, ready)
+        joinedLobbyReady = ready
+        val data = buildReady(lobbyId, callsign, ready, localClientId)
         scope?.launch(Dispatchers.IO) { sendTo(data, hostAddress) }
     }
 
@@ -617,6 +637,8 @@ object LobbyService {
         receiveJob = null
         announceJob = null
         pruneJob = null
+        joinRetryJob = null
+        joinedLobbyRefreshJob = null
         try {
             multicastLock?.release()
         } catch (_: Exception) {
@@ -640,11 +662,11 @@ object LobbyService {
             }
 
             MSG_LEAVE -> {
-                handleLeave(json)
+                handleLeave(json, senderAddr)
             }
 
             MSG_READY -> {
-                handleReady(json)
+                handleReady(json, senderAddr)
             }
 
             MSG_PLAYER_LIST -> {
@@ -783,7 +805,26 @@ object LobbyService {
         }
 
         val callsign = json.optString("callsign", "Player")
+        val clientId = json.optString("client_id", "").takeIf { it.isNotBlank() }
         val current = _hostedLobbyPlayers.value
+        val existing = current.find { lanPlayerMatchesJoinIdentity(it, callsign, clientId, senderAddr) }
+        if (existing != null) {
+            Log.i(TAG, "handleJoin: $callsign refreshing membership from $senderAddr")
+            _hostedLobbyPlayers.value =
+                current.map { player ->
+                    if (player === existing) {
+                        player.copy(
+                            address = senderAddr,
+                            clientId = player.clientId ?: clientId,
+                            lastSeenMs = System.currentTimeMillis(),
+                        )
+                    } else {
+                        player
+                    }
+                }
+            sendJoinAck(lobbyId, senderAddr)
+            return
+        }
         if (current.size >= hostedMaxPlayers) {
             NetLog.log(
                 "LAN",
@@ -796,46 +837,11 @@ object LobbyService {
             sendTo(buildJoinReject(lobbyId, "lobby full"), senderAddr)
             return
         }
-        val existing = current.find { it.callsign.equals(callsign, ignoreCase = true) }
-        if (existing != null) {
-            if (existing.address == senderAddr) {
-                // Same player re-joining (retry/reconnect) -- bump lastSeen, re-send ACK
-                Log.i(TAG, "handleJoin: $callsign re-joining from same addr $senderAddr, re-sending ACK")
-                _hostedLobbyPlayers.value =
-                    current.map { p ->
-                        if (p.callsign.equals(callsign, ignoreCase = true)) {
-                            p.copy(lastSeenMs = System.currentTimeMillis())
-                        } else {
-                            p
-                        }
-                    }
-                sendTo(
-                    buildJoinAck(
-                        lobbyId,
-                        hostedGame,
-                        hostedMission,
-                        hostedMode,
-                        hostedMaxPlayers,
-                        hostCallsign,
-                        localClientId,
-                        hostedStockVisualsEnforced,
-                        hostedOmittedVisualModCount,
-                        hostedOmittedVisualTextureCount,
-                        hostedOmittedVisualModNames,
-                    ),
-                    senderAddr,
-                )
-                return
-            } else {
-                // Different player with duplicate callsign -- reject
-                NetLog.log("LAN", "JOIN rejected: duplicate callsign '$callsign' from $senderAddr")
-                Log.w(
-                    TAG,
-                    "handleJoin: duplicate callsign '$callsign' from $senderAddr (existing: ${existing.address})",
-                )
-                sendTo(buildJoinReject(lobbyId, "duplicate callsign"), senderAddr)
-                return
-            }
+        if (current.any { it.callsign.equals(callsign, ignoreCase = true) }) {
+            NetLog.log("LAN", "JOIN rejected: duplicate callsign '$callsign' from $senderAddr")
+            Log.w(TAG, "handleJoin: duplicate callsign '$callsign' from $senderAddr")
+            sendTo(buildJoinReject(lobbyId, "duplicate callsign"), senderAddr)
+            return
         }
 
         val updated =
@@ -843,53 +849,55 @@ object LobbyService {
                 LanPlayer(
                     callsign = callsign,
                     address = senderAddr,
-                    clientId = json.optString("client_id", "").takeIf { it.isNotBlank() },
+                    clientId = clientId,
                 )
         _hostedLobbyPlayers.value = updated
-        sendTo(
-            buildJoinAck(
-                lobbyId,
-                hostedGame,
-                hostedMission,
-                hostedMode,
-                hostedMaxPlayers,
-                hostCallsign,
-                localClientId,
-                hostedStockVisualsEnforced,
-                hostedOmittedVisualModCount,
-                hostedOmittedVisualTextureCount,
-                hostedOmittedVisualModNames,
-            ),
-            senderAddr,
-        )
+        sendJoinAck(lobbyId, senderAddr)
         broadcastPlayerList()
         NetLog.log("LAN", "Player joined: $callsign from $senderAddr (${updated.size} players)")
         Log.i(TAG, "Player joined: $callsign from $senderAddr")
     }
 
-    private fun handleLeave(json: JSONObject) {
+    private fun handleLeave(
+        json: JSONObject,
+        senderAddr: String,
+    ) {
         if (!_isHosting.value) return
         val lobbyId = json.optString("lobby_id", "")
         if (lobbyId != hostedLobbyId) return
 
         val callsign = json.optString("callsign", "")
-        val updated = _hostedLobbyPlayers.value.filter { !it.callsign.equals(callsign, ignoreCase = true) }
+        val clientId = json.optString("client_id", "").takeIf { it.isNotBlank() }
+        val leavingPlayer =
+            _hostedLobbyPlayers.value.find { lanPlayerMatchesSender(it, callsign, clientId, senderAddr) }
+                ?: return
+        val updated = _hostedLobbyPlayers.value.filter { it !== leavingPlayer }
         _hostedLobbyPlayers.value = updated
         broadcastPlayerList()
         NetLog.log("LAN", "Player left: $callsign")
         Log.i(TAG, "Player left: $callsign")
     }
 
-    private fun handleReady(json: JSONObject) {
+    private fun handleReady(
+        json: JSONObject,
+        senderAddr: String,
+    ) {
         if (!_isHosting.value) return
         val lobbyId = json.optString("lobby_id", "")
         if (lobbyId != hostedLobbyId) return
 
         val callsign = json.optString("callsign", "")
+        val clientId = json.optString("client_id", "").takeIf { it.isNotBlank() }
         val ready = json.optBoolean("ready", false)
+        val matchingPlayer =
+            _hostedLobbyPlayers.value.find { lanPlayerMatchesSender(it, callsign, clientId, senderAddr) }
+        if (matchingPlayer == null) {
+            NetLog.log("LAN", "Ignored READY from unknown player $callsign at $senderAddr")
+            return
+        }
         val updated =
             _hostedLobbyPlayers.value.map { p ->
-                if (p.callsign.equals(callsign, ignoreCase = true)) {
+                if (p === matchingPlayer) {
                     p.copy(ready = ready, lastSeenMs = System.currentTimeMillis())
                 } else {
                     p
@@ -903,9 +911,9 @@ object LobbyService {
     private fun handlePlayerList(json: JSONObject) {
         // Received by joiners -- update state for the lobby screen
         val lobbyId = json.optString("lobby_id", "")
-        // Validate against our joined/hosted lobby
+        // The host is authoritative and must never consume a PLAYER_LIST packet.
         val joined = _joinedLobby.value
-        val isOurLobby = (joined != null && joined.lobbyId == lobbyId) || hostedLobbyId == lobbyId
+        val isOurLobby = joined != null && joined.lobbyId == lobbyId && !_isHosting.value
         if (!isOurLobby) {
             Log.d(TAG, "handlePlayerList: ignoring for unknown lobby $lobbyId")
             return
@@ -966,6 +974,9 @@ object LobbyService {
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         lastHostSeenMs = System.currentTimeMillis()
+        startJoinedLobbyRefresh(immediate = false)
+        val ready = buildReady(lobbyId, hostCallsign, joinedLobbyReady, localClientId)
+        scope?.launch(Dispatchers.IO) { sendTo(ready, senderAddr) }
     }
 
     private fun handleJoinReject(json: JSONObject) {
@@ -979,6 +990,9 @@ object LobbyService {
         // Clear joined state in case we were in a retry
         if (_joinedLobby.value?.lobbyId == lobbyId) {
             _joinedLobby.value = null
+            joinedLobbyRefreshJob?.cancel()
+            joinedLobbyRefreshJob = null
+            joinedLobbyReady = false
         }
     }
 
@@ -1256,6 +1270,9 @@ object LobbyService {
         _hostedLobbyPlayers.value = emptyList()
         _chatMessages.value = emptyList()
         lastHostSeenMs = 0L
+        joinedLobbyReady = false
+        joinedLobbyRefreshJob?.cancel()
+        joinedLobbyRefreshJob = null
         _diagnostics.value = "Kicked from lobby by host"
         Log.i(TAG, "Kicked from lobby ${joined.lobbyId}")
     }
@@ -1432,6 +1449,9 @@ object LobbyService {
             _hostedLobbyPlayers.value = emptyList()
             _diagnostics.value = "Host disconnected (timeout)"
             lastHostSeenMs = 0L
+            joinedLobbyReady = false
+            joinedLobbyRefreshJob?.cancel()
+            joinedLobbyRefreshJob = null
         }
     }
 
@@ -1465,6 +1485,41 @@ object LobbyService {
                 while (isActive && _isHosting.value) {
                     broadcastAnnounce()
                     delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
+                }
+            }
+    }
+
+    private fun sendJoinAck(
+        lobbyId: String,
+        address: String,
+    ) {
+        sendTo(
+            buildJoinAck(
+                lobbyId,
+                hostedGame,
+                hostedMission,
+                hostedMode,
+                hostedMaxPlayers,
+                hostCallsign,
+                localClientId,
+                hostedStockVisualsEnforced,
+                hostedOmittedVisualModCount,
+                hostedOmittedVisualTextureCount,
+                hostedOmittedVisualModNames,
+            ),
+            address,
+        )
+    }
+
+    private fun startJoinedLobbyRefresh(immediate: Boolean) {
+        if (joinedLobbyRefreshJob?.isActive == true) return
+        joinedLobbyRefreshJob =
+            scope?.launch(Dispatchers.IO) {
+                if (!immediate) delay(JOINED_LOBBY_REFRESH_MS)
+                while (isActive) {
+                    val joined = _joinedLobby.value ?: return@launch
+                    sendTo(buildJoin(joined.lobbyId, hostCallsign, localClientId), joined.hostAddr)
+                    delay(JOINED_LOBBY_REFRESH_MS)
                 }
             }
     }

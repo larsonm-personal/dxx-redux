@@ -1,7 +1,11 @@
 package com.dxxredux.app
 
 import com.dxxredux.app.lobby.LAN_BROADCAST_FAILURE_DIAGNOSTIC
+import com.dxxredux.app.lobby.LanPlayer
 import com.dxxredux.app.lobby.lanDiagnosticAfterBroadcastRecovery
+import com.dxxredux.app.lobby.lanPlayerMatchesJoinIdentity
+import com.dxxredux.app.lobby.lanPlayerMatchesSender
+import com.dxxredux.app.lobby.refreshLanPlayerLeasesAfterResume
 import com.dxxredux.app.lobby.shouldRefreshLanDiscoveryAfterResume
 import com.dxxredux.app.lobby.shouldShowBroadcastFailureWarning
 import org.junit.Assert.assertEquals
@@ -48,5 +52,28 @@ class LobbyDiagnosticsTest {
     fun shouldShowBroadcastFailureWarning_suppressesBackgroundFailures() {
         assertFalse(shouldShowBroadcastFailureWarning(appBackgrounded = true))
         assertTrue(shouldShowBroadcastFailureWarning(appBackgrounded = false))
+    }
+
+    @Test
+    fun lanPlayerMatchesSender_protectsHostAndUsesStableClientIdentity() {
+        val host = LanPlayer("Host", "127.0.0.1", "host-id", ready = true)
+        val joiner = LanPlayer("Wing", "192.168.1.20", "wing-id", ready = true)
+
+        assertFalse(lanPlayerMatchesSender(host, "Host", "host-id", "192.168.1.20"))
+        assertFalse(lanPlayerMatchesSender(joiner, "Wing", "wing-id", "192.168.1.21"))
+        assertTrue(lanPlayerMatchesJoinIdentity(joiner, "Wing", "wing-id", "192.168.1.21"))
+        assertFalse(lanPlayerMatchesSender(joiner, "Host", "host-id", "192.168.1.20"))
+    }
+
+    @Test
+    fun refreshLanPlayerLeasesAfterResume_preservesReadyState() {
+        val host = LanPlayer("Host", "127.0.0.1", "host-id", ready = true, lastSeenMs = 10)
+        val joiner = LanPlayer("Wing", "192.168.1.20", "wing-id", ready = true, lastSeenMs = 20)
+
+        val refreshed = refreshLanPlayerLeasesAfterResume(listOf(host, joiner), nowMs = 1000)
+
+        assertEquals(host, refreshed[0])
+        assertTrue(refreshed[1].ready)
+        assertEquals(1000L, refreshed[1].lastSeenMs)
     }
 }
