@@ -30,6 +30,7 @@
 #include "gameseg.h"
 #include "hudmsg.h"
 #include "mission.h"
+#include "timer.h"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
@@ -146,22 +147,48 @@ static uint32_t coop_restore_flags_durable(void)
 #endif
 }
 
-static int coop_auto_restore_timeout_frames(void)
+#define COOP_AUTO_RESTORE_SETTLE_TIME   (F1_0 / 4)
+#define COOP_AUTO_RESTORE_READY_TIMEOUT (F1_0 * 10)
+#define COOP_RESTORE_ERROR_TIME         (F1_0 * 10)
+
+static int coop_restore_status;
+static fix64 coop_restore_status_expires_at;
+
+void coop_restore_status_waiting(void)
 {
-#ifdef DXX_BUILD_DESCENT_II
-	return 300;
-#else
-	return 150;
+	coop_restore_status = 1;
+	coop_restore_status_expires_at = 0;
+#ifdef __ANDROID__
+	multi_send_coop_restore_status(coop_restore_status);
 #endif
 }
 
-static int coop_auto_restore_timeout_before_alive_check(void)
+void coop_restore_status_complete(void)
 {
-#ifdef DXX_BUILD_DESCENT_II
-	return 1;
-#else
-	return 0;
+	coop_restore_status = 0;
+	coop_restore_status_expires_at = 0;
+}
+
+void coop_restore_status_failed(void)
+{
+	coop_restore_status = 2;
+	coop_restore_status_expires_at = timer_query() + COOP_RESTORE_ERROR_TIME;
+#ifdef __ANDROID__
+	multi_send_coop_restore_status(coop_restore_status);
 #endif
+}
+
+const char *coop_restore_status_message(int *is_error)
+{
+	if (coop_restore_status == 2 && timer_query() >= coop_restore_status_expires_at)
+		coop_restore_status_complete();
+	if (is_error)
+		*is_error = coop_restore_status == 2;
+	if (coop_restore_status == 1)
+		return "Waiting to restore save";
+	if (coop_restore_status == 2)
+		return "Save restore failed";
+	return NULL;
 }
 
 static void coop_write_metadata_extra(coop_save_metadata *meta)
@@ -229,13 +256,13 @@ static void coop_auto_restore_log_armed(int slot, uint32_t gid)
 #endif
 }
 
-static void coop_auto_restore_log_trigger(int slot, uint32_t gid, int frame)
+static void coop_auto_restore_log_trigger(int slot, uint32_t gid, fix64 elapsed)
 {
 #ifdef DXX_BUILD_DESCENT_II
-	COOPLOG("triggering auto-restore from slot %d (game_id=%u) at frame %d",
-	        slot, gid, frame);
+	COOPLOG("triggering auto-restore from slot %d (game_id=%u) after %d ms",
+	        slot, gid, (int) ((elapsed * 1000) / F1_0));
 #else
-	(void) frame;
+	(void) elapsed;
 	COOP_SAVE_LOG(CON_NORMAL,
 	              "coop_save: triggering auto-restore from slot %d (game_id=%u)\n",
 	              slot, gid);
@@ -1015,7 +1042,8 @@ void coop_write_progress_json(void)
 static int coop_auto_restore_armed = 0;
 static uint coop_auto_restore_game_id = 0;
 static int coop_auto_restore_slot = COOP_AUTOSAVE_SLOT;
-static int coop_auto_restore_frames_waited = 0;
+static fix64 coop_auto_restore_armed_at = 0;
+static int coop_auto_restore_wait_log_second = -1;
 static int coop_auto_restore_attempted = 0;
 
 static int coop_read_restore_slot_file(void)
@@ -1065,7 +1093,8 @@ void coop_arm_auto_restore(void)
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_game_id = 0;
 	coop_auto_restore_slot = COOP_AUTOSAVE_SLOT;
-	coop_auto_restore_frames_waited = 0;
+	coop_auto_restore_armed_at = 0;
+	coop_auto_restore_wait_log_second = -1;
 
 	if (!(Game_mode & GM_MULTI_COOP)) {
 		coop_auto_restore_trace("arm_auto_restore skipped, not coop (mode=0x%x)", Game_mode);
@@ -1102,55 +1131,58 @@ void coop_arm_auto_restore(void)
 	coop_auto_restore_slot = slot;
 	coop_auto_restore_game_id = gid;
 	coop_auto_restore_armed = 1;
+	coop_auto_restore_armed_at = timer_query();
+	coop_restore_status_waiting();
 	coop_auto_restore_log_armed(slot, gid);
 }
 
 void coop_try_auto_restore(void)
 {
-	const int timeout_before_alive_check = coop_auto_restore_timeout_before_alive_check();
-	const int timeout_frames = coop_auto_restore_timeout_frames();
+	fix64 elapsed;
+	int elapsed_seconds;
 
 	if (!coop_auto_restore_armed)
 		return;
 
-	coop_auto_restore_frames_waited++;
-	if (coop_auto_restore_frames_waited < 30)
+	elapsed = timer_query() - coop_auto_restore_armed_at;
+	if (elapsed < COOP_AUTO_RESTORE_SETTLE_TIME)
 		return;
 
 	if (!multi_i_am_master()) {
 		coop_auto_restore_trace("auto-restore disarm: not master");
+		coop_restore_status_failed();
 		goto disarm;
 	}
 	if (!(Game_mode & GM_MULTI_COOP)) {
 		coop_auto_restore_trace("auto-restore disarm: not coop (game_mode=0x%x)", Game_mode);
+		coop_restore_status_failed();
 		goto disarm;
 	}
 	if (Endlevel_sequence || Control_center_destroyed) {
 		coop_auto_restore_trace("auto-restore disarm: endlevel=%d CC=%d",
 		                        Endlevel_sequence, Control_center_destroyed);
-		goto disarm;
-	}
-	if (timeout_before_alive_check && coop_auto_restore_frames_waited > timeout_frames) {
-		coop_auto_restore_trace("auto-restore disarm: timeout at %d frames",
-		                        coop_auto_restore_frames_waited);
-		coop_log_player_status();
+		coop_restore_status_failed();
 		goto disarm;
 	}
 	if (!multi_all_players_alive()) {
-		if (timeout_before_alive_check &&
-		    (coop_auto_restore_frames_waited == 30 ||
-		     coop_auto_restore_frames_waited % 60 == 0)) {
-			coop_auto_restore_trace("auto-restore waiting: not all alive (frame %d)",
-			                        coop_auto_restore_frames_waited);
+		elapsed_seconds = (int) (elapsed / F1_0);
+		if (elapsed_seconds != coop_auto_restore_wait_log_second) {
+			coop_auto_restore_wait_log_second = elapsed_seconds;
+			coop_auto_restore_trace("auto-restore waiting: not all alive (%d ms)",
+			                        (int) ((elapsed * 1000) / F1_0));
 			coop_log_player_status();
+		}
+		if (elapsed >= COOP_AUTO_RESTORE_READY_TIMEOUT) {
+			coop_auto_restore_trace("auto-restore failed: players not ready after %d ms",
+			                        (int) ((elapsed * 1000) / F1_0));
+			coop_restore_status_failed();
+			goto disarm;
 		}
 		return;
 	}
-	if (!timeout_before_alive_check && coop_auto_restore_frames_waited > timeout_frames)
-		goto disarm;
 
 	coop_auto_restore_log_trigger(coop_auto_restore_slot,
-	                              coop_auto_restore_game_id, coop_auto_restore_frames_waited);
+	                              coop_auto_restore_game_id, elapsed);
 
 	coop_auto_restore_armed = 0;
 
@@ -1167,5 +1199,8 @@ void coop_disarm_auto_restore(void)
 {
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_attempted = 0;
+	coop_auto_restore_armed_at = 0;
+	coop_auto_restore_wait_log_second = -1;
+	coop_restore_status_complete();
 	coop_progress_restore_attempted_level = 0;
 }

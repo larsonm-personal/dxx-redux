@@ -908,6 +908,12 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
         Write-Status "FAIL: slot-swapped peers did not synchronize" "Red"
         return $false
     }
+    foreach ($intro in @($script:swappedHostIntro, $script:swappedJoinIntro)) {
+        if ($intro.coop_restore.status -eq "error") {
+            Write-Status "FAIL: coop restore entered an error state during synchronization" "Red"
+            return $false
+        }
+    }
 
     if (-not (Invoke-PairedGameAutomation `
                 -PrimarySerial $EMU2 `
@@ -921,6 +927,10 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
 
     $hostIntro = Get-GameIntrospection -Serial $EMU2
     $joinIntro = Get-GameIntrospection -Serial $EMU1
+    if ($hostIntro.coop_restore.status -ne "idle" -or $joinIntro.coop_restore.status -ne "idle") {
+        Write-Status "FAIL: coop restore status did not clear on both peers" "Red"
+        return $false
+    }
     $hostGuidebot = Get-IntroGuidebot -Intro $hostIntro
     $joinGuidebot = Get-IntroGuidebot -Intro $joinIntro
     $stateMatches = $hostGuidebot -and $joinGuidebot -and

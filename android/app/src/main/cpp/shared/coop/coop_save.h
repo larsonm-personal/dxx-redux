@@ -173,4 +173,11 @@ void coop_try_auto_restore(void);
 /* Disarm auto-restore (e.g. if the player doesn't want it). */
 void coop_disarm_auto_restore(void);
 
+/* Persistent HUD state for an automatic coop restore. Waiting remains visible
+ * until explicitly completed or failed; failures expire after 10 seconds. */
+void coop_restore_status_waiting(void);
+void coop_restore_status_complete(void);
+void coop_restore_status_failed(void);
+const char *coop_restore_status_message(int *is_error);
+
 #endif /* COOP_SAVE_H */

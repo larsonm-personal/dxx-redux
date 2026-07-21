@@ -6835,10 +6835,17 @@ void multi_send_restore_game(ubyte slot, uint id)
 #ifdef __ANDROID__
 	if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master()) {
 		char filename[PATH_MAX];
+		int transfer_status;
 
 		multi_android_build_restore_filename(filename, slot, id);
-		if (multi_send_coop_restore_save_transfer(filename, slot, id)) {
+		transfer_status = multi_send_coop_restore_save_transfer(filename, slot, id);
+		if (transfer_status > 0) {
 			COOPLOG("multi_send_restore_game: game=d2 sent restore transfer slot=%d id=%u file='%s'",
+			        slot, id, filename);
+			return;
+		}
+		if (transfer_status < 0) {
+			COOPLOG("multi_send_restore_game: game=d2 restore transfer failed slot=%d id=%u file='%s'",
 			        slot, id, filename);
 			return;
 		}
@@ -7016,8 +7023,13 @@ void multi_restore_game(ubyte slot, uint id)
 	char filename[PATH_MAX];
 	int thisid;
 
-	if ((Endlevel_sequence) || (Control_center_destroyed))
+	if ((Endlevel_sequence) || (Control_center_destroyed)) {
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			coop_restore_status_failed();
+#endif
 		return;
+	}
 
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.mg%d" : "%s.mg%d", Players[Player_num].callsign, slot);
 #ifdef __ANDROID__
@@ -7058,6 +7070,8 @@ void multi_restore_game(ubyte slot, uint id)
 #endif
 			return;
 		}
+		if (Game_mode & GM_MULTI_COOP)
+			coop_restore_status_failed();
 #endif
 		nm_messagebox(NULL, 1, TXT_OK, "A multi-save game was restored\nthat you are missing or does not\nmatch that of the others.\nYou must rejoin if you wish to\ncontinue.");
 		return;
@@ -7065,6 +7079,8 @@ void multi_restore_game(ubyte slot, uint id)
   
 	state_restore_all_sub( filename, 0 );
 #ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		coop_restore_status_complete();
 	COOPLOG("multi_restore_game done: game=d2 current_level=%d net_level=%d player_num=%d objnum=%d connected=%d",
 	        Current_level_num, Netgame.levelnum, Player_num,
 	        Players[Player_num].objnum, Players[Player_num].connected);
@@ -7542,6 +7558,8 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 			multi_do_rewind_save_apply(buf); break;
 		case MULTI_REWIND_SAVE_READY:
 			multi_do_rewind_save_ready(buf); break;
+		case MULTI_COOP_RESTORE_STATUS:
+			multi_do_coop_restore_status(buf); break;
 #endif
 		case MULTI_DIFFICULTY:
 			if (!Endlevel_sequence) multi_do_difficulty(buf); break;

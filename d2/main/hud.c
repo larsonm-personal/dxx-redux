@@ -32,6 +32,9 @@
 #include "args.h"
 #include "playsave.h"
 #include "hud_layout_shared.h"
+#ifdef __ANDROID__
+#include "coop_save.h"
+#endif
 
 typedef struct hudmsg
 {
@@ -47,7 +50,11 @@ static int HUD_color = -1;
 static int HUD_message_start = 0;
 static int HUD_message_y = 0;
 static int HUD_nmessage_rects = 0;
-static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP];
+static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP + 1];
+#ifdef __ANDROID__
+static const char *HUD_restore_status_message;
+static int HUD_restore_status_error;
+#endif
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message);
 
 void HUD_clear_messages()
@@ -102,11 +109,34 @@ void HUD_prepare_message_frame()
 		HUD_message_y += LINE_SPACING;
 	HUD_nmessage_rects = 0;
 	memset(&HUD_message_rects, 0, sizeof(HUD_message_rects));
-	if (HUD_nmessages < 1)
+#ifdef __ANDROID__
+	HUD_restore_status_message = coop_restore_status_message(&HUD_restore_status_error);
+	if (HUD_restore_status_message)
+		HUD_message_y += LINE_SPACING;
+#endif
+	if (HUD_nmessages < 1
+#ifdef __ANDROID__
+	    && !HUD_restore_status_message
+#endif
+	)
 		return;
 
 	saved_font = grd_curcanv->cv_font;
 	gr_set_curfont(GAME_FONT);
+#ifdef __ANDROID__
+	if (HUD_restore_status_message) {
+		const int pad_x = FSPACX(1);
+		const int pad_y = FSPACY(1);
+		int w, h;
+		hud_layout_rect *rect = &HUD_message_rects[HUD_nmessage_rects++];
+
+		gr_get_string_drawn_size(HUD_restore_status_message, &w, &h);
+		rect->x = (grd_curcanv->cv_bitmap.bm_w - w) / 2 - pad_x;
+		rect->y = FSPACY(1) - pad_y;
+		rect->w = w + 2 * pad_x;
+		rect->h = h + 2 * pad_y;
+	}
+#endif
 	y = HUD_message_y;
 	for (i = HUD_message_start; i < HUD_nmessages; i++) {
 		const int pad_x = FSPACX(1);
@@ -165,12 +195,22 @@ void HUD_render_message_frame()
 	int i;
 	int y = HUD_message_y;
 
-	if (HUD_nmessages < 1)
+	if (HUD_nmessages < 1
+#ifdef __ANDROID__
+	    && !HUD_restore_status_message
+#endif
+	)
 		return;
 	if (HUD_color == -1)
 		HUD_color = BM_XRGB(0,28,0);
 
 	gr_set_curfont(GAME_FONT);
+#ifdef __ANDROID__
+	if (HUD_restore_status_message) {
+		gr_set_fontcolor(HUD_restore_status_error ? BM_XRGB(31,0,0) : BM_XRGB(31,24,0), -1);
+		gr_string(0x8000, FSPACY(1), HUD_restore_status_message);
+	}
+#endif
 	gr_set_fontcolor(HUD_color, -1);
 	for (i = HUD_message_start; i < HUD_nmessages; i++) {
 		gr_string(0x8000, y, HUD_messages[i].message);

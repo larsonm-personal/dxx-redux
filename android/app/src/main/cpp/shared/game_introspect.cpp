@@ -41,6 +41,7 @@ extern "C" {
 #include "weapon.h"
 #include "laser.h"
 #include "cntrlcen.h"
+#include "coop_save.h"
 #include "automap.h"
 #include "automap_metadata_overlay.h"
 #include "segment.h"
@@ -1203,6 +1204,14 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- General state -------------------------------------------- */
 	j["screen_mode"] = screen_mode_name(Screen_mode);
 	j["game_mode"] = Game_mode;
+	{
+		int is_error = 0;
+		const char *message = coop_restore_status_message(&is_error);
+		j["coop_restore"] = {
+			{ "status", message ? (is_error ? "error" : "waiting") : "idle" },
+			{ "message", message ? message : "" }
+		};
+	}
 	j["quitting"] = (bool) Quitting;
 	j["intro_active"] = (bool) g_intro_active;
 	j["intro_skip_applied"] = (bool) g_intro_skip_applied;
