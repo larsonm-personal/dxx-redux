@@ -1595,7 +1595,7 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 			for (i=0;i<MAX_STOLEN_ITEMS;i++)
 			 temp_stolen[(int)i]=Stolen_items[(int)i];
 
-			if (multi_explode_robot_sub(robot-Objects, killer_objnum,Robot_info[robot->id].thief))
+			if (multi_explode_robot_sub(robot-Objects, killer_objnum, Robot_info[robot->id].thief, 0))
 			{
 			 if (isthief)
    			for (i=0;i<MAX_STOLEN_ITEMS;i++)

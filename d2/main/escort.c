@@ -73,6 +73,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef __ANDROID__
 #include <android/log.h>
+#include "android_log.h"
 #include "android_menu_scale.h"
 #include "endlevel.h"
 #define ESCORT_DIAG(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "DXX-ESCORT", fmt, ##__VA_ARGS__)
@@ -3818,19 +3819,43 @@ void init_thief_for_level(void)
 }
 
 // --------------------------------------------------------------------------------------------------------------
-void drop_stolen_items(object *objp)
+void drop_stolen_items(object *objp, int remote)
 {
-	int	i;
+	int i;
+
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI)
+		Net_create_loc = 0;
+#endif
 
 	for (i=0; i<MAX_STOLEN_ITEMS; i++) {
 		if (Stolen_items[i] == STOLEN_ITEM_PROXIMITY_MINE)
 			thief_drop_stolen_mine(objp, PROXIMITY_ID);
 		else if (Stolen_items[i] == STOLEN_ITEM_SMART_MINE)
 			thief_drop_stolen_mine(objp, SUPERPROX_ID);
-		else if (Stolen_items[i] != STOLEN_ITEM_NONE)
-			drop_powerup(OBJ_POWERUP, Stolen_items[i], 1, &objp->mtype.phys_info.velocity, &objp->pos, objp->segnum);
+		else if (Stolen_items[i] != STOLEN_ITEM_NONE) {
+			int objnum = -1;
+#ifdef NETWORK
+			if (!(Game_mode & GM_MULTI) || !remote)
+#endif
+				objnum = drop_powerup(OBJ_POWERUP, Stolen_items[i], 1, &objp->mtype.phys_info.velocity, &objp->pos, objp->segnum);
+#ifdef NETWORK
+			if ((Game_mode & GM_MULTI) && objnum >= 0) {
+				vm_vec_zero(&Objects[objnum].mtype.phys_info.velocity);
+				multi_send_create_powerup(Stolen_items[i], Objects[objnum].segnum, objnum, &Objects[objnum].pos);
+			}
+#endif
+#ifdef __ANDROID__
+			COOPLOG("thief drop: remote=%d slot=%d type=%d obj=%d seg=%d", remote, i, Stolen_items[i], objnum, objnum >= 0 ? Objects[objnum].segnum : objp->segnum);
+#endif
+		}
 		Stolen_items[i] = STOLEN_ITEM_NONE;
 	}
+
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI)
+		Net_create_loc = 0;
+#endif
 	Stolen_item_index = 0;
 
 }

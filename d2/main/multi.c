@@ -3124,6 +3124,9 @@ multi_do_create_powerup(const ubyte *buf)
 	my_objnum = call_object_create_egg(&Objects[Players[(int)pnum].objnum], 1, OBJ_POWERUP, powerup_type);
 
 	if (my_objnum < 0) {
+#ifdef __ANDROID__
+		COOPLOG("create powerup failed: sender=%d type=%d remote_obj=%d seg=%d", pnum, powerup_type, objnum, segnum);
+#endif
 		return;
 	}
 
@@ -3139,6 +3142,10 @@ multi_do_create_powerup(const ubyte *buf)
 	obj_relink(my_objnum, segnum);
 
 	map_objnum_local_to_remote(my_objnum, objnum, pnum);
+
+#ifdef __ANDROID__
+	COOPLOG("create powerup recv: sender=%d type=%d remote_obj=%d local_obj=%d seg=%d", pnum, powerup_type, objnum, my_objnum, segnum);
+#endif
 
 	object_create_explosion(segnum, &new_pos, i2f(5), VCLIP_POWERUP_DISAPPEARANCE);
 

@@ -924,10 +924,10 @@ multi_do_robot_fire(const ubyte *buf)
 	}
 }
 
-extern void drop_stolen_items (object *);
+extern void drop_stolen_items(object *, int remote);
 
 int
-multi_explode_robot_sub(int botnum, int killer,char isthief)
+multi_explode_robot_sub(int botnum, int killer, char isthief, int remote)
 {
 	object *robot;
 
@@ -971,8 +971,8 @@ multi_explode_robot_sub(int botnum, int killer,char isthief)
 		//multi_delete_controlled_robot(robot-Objects);
 	}
 
-   if (isthief || Robot_info[robot->id].thief)
-	 drop_stolen_items(robot);
+	if (isthief || Robot_info[robot->id].thief)
+		drop_stolen_items(robot, remote);
 
 	if (Robot_info[robot->id].boss_flag) {
 		if (!Boss_dying)
@@ -1016,7 +1016,7 @@ multi_do_robot_explode(const ubyte *buf)
 		return;
 	}
 
-	rval = multi_explode_robot_sub(botnum, killer,thief);
+	rval = multi_explode_robot_sub(botnum, killer, thief, 1);
 	if (!rval)
 		return;
 

@@ -45,7 +45,7 @@ void multi_do_create_robot(const ubyte *buf);
 void multi_do_boss_actions(const ubyte *buf);
 void multi_do_create_robot_powerups(const ubyte *buf);
 
-int multi_explode_robot_sub(int botnum, int killer,char);
+int multi_explode_robot_sub(int botnum, int killer, char isthief, int remote);
 
 void multi_drop_robot_powerups(int objnum);
 void multi_dump_robots(void);
