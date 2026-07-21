@@ -60,14 +60,14 @@ Only one call may edit this file at a time. Replace the state in place and put f
 | R1-CHUNK-0009 | [x] DONE | source | critical | authored-source | `2 related paths` | 470 review lines under android/app/src/main/cpp | BR-0017, BR-0018 |
 | R1-CHUNK-0010 | [x] DONE | source | critical | authored-source | `2 related paths` | 586 review lines under android/app/src/main/cpp | BR-0018, BR-0019, BR-0020, BR-0021 |
 | R1-CHUNK-0011 | [x] DONE | source | critical | authored-source | `2 related paths` | 242 review lines under android/app/src/main/cpp | BR-0018, BR-0020, BR-0021, BR-0022, BR-0023, BR-0024, BR-0025 |
-| R1-CHUNK-0012 | [ ] TODO | source | critical | authored-source | `2 related paths` | 202 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0013 | [ ] TODO | source | critical | authored-source | `2 related paths` | 334 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0014 | [ ] TODO | source | critical | authored-source | `2 related paths` | 378 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0015 | [ ] TODO | source | critical | authored-source | `2 related paths` | 550 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0016 | [ ] TODO | source | critical | authored-source | `3 related paths` | 450 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0017 | [ ] TODO | source | critical | authored-source | `3 related paths` | 440 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0018 | [ ] TODO | source | critical | authored-source | `4 related paths` | 523 review lines under android/app/src/main/cpp | - |
-| R1-CHUNK-0019 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/extract/extract_cd.c` | L1-L600 | - |
+| R1-CHUNK-0012 | [x] DONE | source | critical | authored-source | `2 related paths` | 202 review lines under android/app/src/main/cpp | BR-0026, BR-0027 |
+| R1-CHUNK-0013 | [x] DONE | source | critical | authored-source | `2 related paths` | 334 review lines under android/app/src/main/cpp | BR-0016, BR-0028, BR-0029, BR-0030 |
+| R1-CHUNK-0014 | [x] DONE | source | critical | authored-source | `2 related paths` | 378 review lines under android/app/src/main/cpp | BR-0018, BR-0031, BR-0032, BR-0033 |
+| R1-CHUNK-0015 | [x] DONE | source | critical | authored-source | `2 related paths` | 550 review lines under android/app/src/main/cpp | BR-0018, BR-0020, BR-0021, BR-0034, BR-0035, BR-0036, BR-0037 |
+| R1-CHUNK-0016 | [x] DONE | source | critical | authored-source | `3 related paths` | 450 review lines under android/app/src/main/cpp | BR-0038, BR-0039, BR-0040, BR-0041 |
+| R1-CHUNK-0017 | [x] DONE | source | critical | authored-source | `3 related paths` | 440 review lines under android/app/src/main/cpp | BR-0020, BR-0024, BR-0042, BR-0043 |
+| R1-CHUNK-0018 | [x] DONE | source | critical | authored-source | `4 related paths` | 523 review lines under android/app/src/main/cpp | BR-0044, BR-0045 |
+| R1-CHUNK-0019 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/extract/extract_cd.c` | L1-L600 | BR-0013, BR-0014, BR-0020, BR-0046, BR-0047 |
 | R1-CHUNK-0020 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/extract/fingerprint_cd.c` | L1-L442 | - |
 | R1-CHUNK-0021 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/extract/hfs_reader.c` | L1-L600 | - |
 | R1-CHUNK-0022 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/extract/inno_reader.c` | L1-L600 | - |
@@ -4154,6 +4154,86 @@ Append one completion note for every finished queue item using the process templ
 - Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered compressed-input-to-allocation-to-output and callback-to-caller traces, duplicate-finding search, `android/tests/test_cue_iso.ps1` with all seven registered native suites passing, and manual `test_sow_direct` extraction of `game_data/DESCENT2.SOW`, which produced 34 files totaling 52,935,956 bytes
 - No-finding areas: basename flattening blocks separator-based archive traversal; output path construction is bounded; known split archives are sorted before append and stale matching targets are cleared in the nested-ZIP flow; valid known SOW data decompresses successfully; ordinary source and output handles close; both Android game targets compile the same implementation; unsupported methods are detected, but their failure status is covered by BR-0020; extended-header seeks and host `long` limits merit malformed-corpus coverage but did not establish another distinct root cause in this range
 
+### R1-CHUNK-0012 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0026, BR-0027
+- Assigned scope checked: `android/app/src/main/cpp/extract/hfs_reader.c` L601-L726 and all 76 lines of `hfs_reader.h`
+- Context checked: frozen additions and complete file histories; the full volume loader, extent reader, catalog node scanner, path builder, list and extraction APIs; Mac HFS and nested STi callers; JNI and Kotlin `Dispatchers.IO` import path; D1 and D2 build inclusion; synthetic partition coverage; real-disc catalog and extraction tests; and prior HFS path-traversal and extraction-budget findings
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered malformed-node-to-catalog-to-output traces, duplicate-finding search, NDK r27d AArch64 Clang `-O2 -Wframe-larger-than=65536` compilation, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites all passed
+- No-finding areas: track reads reject negative and beyond-track byte ranges; file sizes are checked against the three inline extents before extraction; ordinary read and write failures propagate; output descriptors close on success and failure; zero-length files complete without a read; path separators are replaced, while dot components remain covered by BR-0019; expanded-size and storage budgets remain covered by BR-0018; the passing HFS tests cover valid known media but do not exercise malformed catalog record tables or payload boundaries
+
+### R1-CHUNK-0013 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0016, BR-0028, BR-0029, BR-0030
+- Assigned scope checked: `android/app/src/main/cpp/jni_main.c` L1201-L1410 and all 124 lines of `jni_midi_preview.c`
+- Context checked: frozen additions and complete file histories; MainActivity engine-thread startup and main-looper overlay providers; video diagnostics polling; coop warp traversal, mutation, packet send, and overlay callbacks; escort-owner reads; host-migration callback and receiver behavior; MIDI JNI ownership; HOG reads and enumeration; Compose playback lifecycle and seek controls; native synth, render-thread, ring-buffer, and OpenSL lifecycle; D1 and D2 build wiring; and MIDI automation scripts
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered UI-to-JNI-to-game-state and UI-to-JNI-to-render-thread traces, duplicate-finding search, and review of the MIDI automation timing and assertions; no runtime race, failure-injection, seek, or coop-warp test exists in the frozen suite
+- No-finding areas: assigned JNI byte-array data is copied or converted before release; successful HOG reads transfer ownership to Java and free the native buffer; enumeration JSON is freed after `NewStringUTF`; state strings fit their fixed buffer; host migration attaches and detaches native-origin threads and its Java callback performs a thread-safe broadcast; escort indices are range-checked before callsign access in stable state, while unsynchronized transitions are covered by BR-0029; malformed MIDI and HOG allocation behavior remains in the later full implementation chunks
+
+### R1-CHUNK-0014 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0031, BR-0032, BR-0033
+- Assigned scope checked: `android/app/src/main/cpp/extract/sti2_extract.c` L1801-L2117 and all 61 lines of `sti2_extract.h`
+- Context checked: frozen additions and complete file history; archive signature and header scanning; path construction and name sanitization; methods 13, 14, and 15 bit readers and decoder completion; entry allocation and output writes; nested StuffIt and HFS callers; JNI progress propagation; D1 and D2 build inclusion; STi2 real-media tests and StuffIt corpus hash tests; and the referenced XAD StuffIt parser and Arsenic checksum behavior
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered header-to-entry-to-decoder-to-output traces, duplicate-finding search, comparison with the referenced upstream XADMaster implementation, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites including STi2, StuffIt corpus, and demo-oracle tests all passed
+- No-finding areas: archive magic reads are size-guarded; header CRCs are calculated before header fields are accepted; entry compressed spans are checked subtractively before access; supported valid corpus outputs match exact hashes; separator replacement and basename flattening prevent ordinary slash traversal; write and callback failures propagate and descriptors and heap buffers are released on ordinary error paths; cancellation stops before the next file, while broader cancellation semantics remain covered by BR-0021; output allocation and aggregate limits remain covered by BR-0018; basename collision policy and direct-write rollback remain broader archive concerns without a distinct new root cause in this range
+
+### R1-CHUNK-0015 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0020, BR-0021, BR-0034, BR-0035, BR-0036, BR-0037
+- Assigned scope checked: `android/app/src/main/cpp/extract/inno_reader.c` L1801-L2202 and all 148 lines of `inno_reader.h`
+- Context checked: frozen additions and complete file history; archive version detection, file and data-entry parsing, stored, zlib, LZMA1, and LZMA2 buffered and streaming decoders; GOG Galaxy inner-zlib filtering; checksum metadata; file-range and output-size validation; progress callbacks and cleanup; JNI and Kotlin import callers; D1 and D2 build inclusion; native GOG-fd coverage and Android GOG automation; and the referenced upstream innoextract versioned data layout and checksum-filter behavior
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered parser-to-decoder-to-output and callback-to-caller traces, checked-arithmetic and malformed-range analysis, duplicate-finding search, comparison with the referenced upstream innoextract implementation, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites all passed
+- No-finding areas: archive and output descriptors close on ordinary success and failure; streaming regular and Galaxy paths check writes and close errors and remove incomplete output; the buffered path checks short writes; invalid file indices, missing data locations, and unsupported instruction filters fail before output; compressed streaming decoders reject decoder errors and no-progress states; the valid GOG-fd fixture lists expected D1 and D2 entries, but it does not extract payloads or exercise malformed ranges, checksums, cancellation, resource limits, legacy 5.3 layouts, or injected output failures
+
+### R1-CHUNK-0016 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0038, BR-0039, BR-0040, BR-0041
+- Assigned scope checked: all 356 lines of `android/app/src/main/cpp/extract/fingerprint_match.c`, all 67 lines of `game_file_extensions.c`, and all 27 lines of `game_file_extensions.h`
+- Context checked: frozen additions and complete file histories; Chromaprint decoding and runtime database matching; the canonical fingerprint configuration; the album-to-disc merger and its generated flat input; all frozen track and album fingerprint metadata; current database scale and encoded-fingerprint lengths; GOG, PKG, ISO, HFS, StuffIt, and JNI extension consumers; Kotlin `GameFileFormats` and its compatibility wrapper; CMake build wiring; and native and Kotlin test registration
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered matcher-to-merger and extension-table-to-extractor traces, duplicate-finding search, mechanical extension-set and fingerprint-size comparisons, execution of `fingerprint_match.exe` against the locally available 761-entry merged input at thresholds 0.40 and 0.65, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites including `fingerprint_tests` all passed; a direct `ctest` command was unavailable on `PATH`, but the wrapper resolved and ran the repository CTest binary successfully
+- No-finding areas: XOR-popcount arithmetic, offset bounds, minimum overlap, successful Chromaprint allocation ownership, final entry cleanup, pair enumeration, JSON delimiter escaping for ordinary generated identifiers, case-insensitive native extension comparison, leading-dot conventions at each caller, null-terminated extension tables, Windows and POSIX comparator selection, and current shared game-import and generic disc-extract extension values were checked without another actionable issue; the current merged fingerprint input remains below both hard capacities, and existing fingerprint tests validate generation but do not invoke the duplicate matcher or its parser, thresholds, limits, or duration boundaries
+
+### R1-CHUNK-0017 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0020, BR-0024, BR-0042, BR-0043
+- Assigned scope checked: `android/app/src/main/cpp/extract/extract_cd.c` L601-L647, all 205 lines of `extract_gog.c`, and all 188 lines of `fingerprint_audio.c`
+- Context checked: frozen additions and complete file histories; full CD extraction control flow and recursive SOW scanning; Inno and PKG listing and extraction contracts; GOG batch extraction and hashing; shared game-extension policy; PCM decoding and Chromaprint ownership; music-pack and mission-archive fingerprint generators; fpcalc comparison coverage; Windows and POSIX directory enumeration; output JSON consumers; and CMake and CTest registration
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered CLI-to-reader-to-script and directory-to-fingerprint-to-JSON traces, duplicate-finding search, direct execution of `fingerprint_audio.exe` against a nonexistent directory confirming exit 0 with `[]`, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites all passed
+- No-finding areas: format selection, ordinary archive closure, extension filtering, Inno per-file error counting in the standalone CLI, fingerprint allocation cleanup, case-insensitive audio suffix checks, bounded path joining, deterministic filename sorting, comma placement for successful ordinary JSON records, and nonzero exit after a reported decode or path-length failure were checked without another distinct issue; current music directories are far below 4,096 entries and use ordinary names, real GOG automation exercises the production JNI path rather than this standalone CLI, and the passing fingerprint suite tests decoding and generation but not directory-open failure, enumeration capacity, or filename serialization
+
+### R1-CHUNK-0018 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0044, BR-0045
+- Assigned scope checked: `android/app/src/main/cpp/jni_resume_save.cpp` L601-L952, all 92 lines of `jni_saf.c`, all 61 lines of `shared/android_jni_overlay.c`, and all 18 lines of `shared/android_jni_overlay.h`
+- Context checked: frozen additions and complete file histories; recursive save discovery, metadata and legacy-header parsing, explorer JSON, deletion authorization, and thumbnail reads; Kotlin Save Explorer conversion, deletion, and launch callers and unit tests; SAF manifest parsing, PhysFS open flow, Kotlin ContentResolver bridge, manifest ownership, and adb direct-path test mode; overlay track, level, and rewind producers; MainActivity callback methods and UI-thread handoff; and the long-running `startGame` JNI frame and activity global-reference lifecycle
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered save-file-to-explorer-to-launch, manifest-to-PhysFS-to-JNI, and engine-to-JNI-to-UI traces, duplicate-finding search, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites all passed
+- No-finding areas: assigned resume-save JNI strings are released on ordinary paths; metadata-backed candidates retain their validator; deletion checks root prefixes, slot identity, and a timestamp before removal, and normal Kotlin callers pass a native-enumerated slot; thumbnail arrays validate metadata dimensions before allocation and copy; the SAF bridge releases local references, clears callback exceptions, and detaches native-origin threads; ordinary SAF entries are non-null after manifest parsing; the production-compiled absolute-path SAF branch is documented and exercised only by an adb-injected private manifest in the located test, so no normal-app attacker path was established; overlay activity ownership spans the native game call, and Kotlin marshals presentation work to the UI thread; the passing native suites do not exercise Save Explorer legacy validation, JNI local-reference pressure, attach failure, or Java callback exceptions
+
+### R1-CHUNK-0019 completion
+
+- Completed: 2026-07-20
+- Model: sol-5.6-medium
+- Result: BR-0013, BR-0014, BR-0020, BR-0046, BR-0047
+- Assigned scope checked: `android/app/src/main/cpp/extract/extract_cd.c` L1-L600
+- Context checked: frozen addition and complete file history; duplicated SHA-1 and file helpers; CUE parsing and its file and track capacities; raw-track hashing; standalone ISO and BIN/CUE listing and extraction; HFS fallback; output status and JSON contracts; SOW post-processing context; ISO reader return semantics and failure accounting; `extract_all_cds.ps1`, track-hash promotion, regression-spec generation, three committed Mac track manifests, native CMake and CTest registration, and the parallel `fingerprint_cd` implementation
+- Commands or validation: `git diff`, `git show`, `git log --follow --full-history`, `git grep`, `rg`, line-numbered CUE-to-BIN-to-hash and ISO-or-HFS-to-output traces, duplicate-finding search, inspection of all committed HFS error records and their consumers, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites all passed
+- No-finding areas: standard SHA-1 rounds, ordinary full-file ISO hashing, successful descriptor closure, known-good single- and multi-file CUE iteration, per-track file-index use, static track JSON escaping, standalone ISO status lines, ordinary HFS descriptor reuse, and data and audio type selection were checked without another distinct issue; parser capacity defects remain BR-0013 and BR-0014, SOW partial success remains BR-0020, SOW filename serialization remains BR-0042, and the passing suite exercises the shared readers but does not invoke the `extract_cd` CLI, simulate source mutation or short reads, inject output failures, or validate HFS CLI JSON semantics
+
 ## Findings
 
 Append findings here in numeric order using the exact template in the process document
@@ -4424,21 +4504,21 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Confirm each `DiscImportBridge` native symbol has exactly one source definition, both D1 and D2 CMake targets compile that file, a clean Android build succeeds, and ISO, BIN/CUE, Mac, SOW, and StuffIt import tests still invoke the retained implementation
 - Resolution: Pending
 
-### BR-0016: P1 - Serialize CD preview start and stop commands
+### BR-0016: P1 - Serialize launcher preview start and stop commands
 
 - [ ] OPEN
 - Type: defect
 - Confidence: high
 - Category: concurrency/resource-lifetime
-- Found by: R1-CHUNK-0008
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L814-L875` in `commandReceiver`
-- Related: `android/app/src/main/cpp/jni_cd_preview.c:L16-L125`, `android/app/src/main/cpp/shared/cd_preview.c:L443-L660`, `android/game_scripts/test_gog_installer_redbook_unified.json5:L111-L123`, and BR-0005
-- Evidence: `music_cd_play` launches an untracked raw `Thread` and returns from the broadcast immediately, while `music_cd_stop` calls the native singleton synchronously on the receiver thread. There is no future, generation token, executor, or mutex ordering these calls. Every native start begins by stopping global playback, then repopulates shared `s_bin_files`, parses through those handles, initializes global OpenSL objects, and starts a global render thread; stop concurrently joins and destroys those same resources. The integration script avoids the race by waiting four seconds after play before issuing stop
-- Trigger: Send `music_cd_play` followed immediately by `music_cd_stop`, issue two play commands close together, or stop the launcher preview while the background start is still opening SAF descriptors or initializing native playback
-- Impact: Stop can complete before the background thread reaches native start so playback begins after a reported stop; if native start and stop overlap, one thread can close BIN streams or destroy OpenSL objects while the other is using or initializing them, causing undefined native behavior, crashes, leaks, or stale playback state
+- Found by: R1-CHUNK-0008, R1-CHUNK-0013
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L773-L875` in `commandReceiver`
+- Related: `android/app/src/main/java/com/dxxredux/app/MidiBytesPreviewDialog.kt:L58-L100,L141-L168`, `android/app/src/main/cpp/jni_cd_preview.c:L16-L125`, `android/app/src/main/cpp/jni_midi_preview.c:L21-L68`, `android/app/src/main/cpp/shared/cd_preview.c:L443-L660`, `android/app/src/main/cpp/shared/midi_preview.c:L531-L680`, `android/game_scripts/test_midi_preview_hmp_unified.json5:L27-L36`, `android/game_scripts/test_gog_installer_redbook_unified.json5:L99-L123`, and BR-0005
+- Evidence: Both `music_midi_play` and `music_cd_play` launch untracked raw `Thread` instances and return from the broadcast immediately, while their stop commands call native global singletons synchronously on the receiver thread. The MIDI dialog likewise starts a blocking HOG read and native playback in an IO coroutine, but disposal calls stop without waiting; coroutine cancellation does not interrupt those non-suspending native calls or prevent the subsequent start. There is no future, generation token, executor, or mutex ordering these operations. Every native start first stops global playback and then repopulates parser, OpenSL, and render-thread state; concurrent stop joins and destroys those resources. Both integration scripts avoid the race by waiting four seconds after play before issuing stop
+- Trigger: Send either preview play command followed immediately by stop, issue two play commands close together, or dismiss the MIDI dialog while its background HOG read or native start is still running
+- Impact: Stop can complete before an older background start reaches native code, so playback begins after a reported stop or closed dialog; overlapping native start and stop can free parser buffers, close BIN streams, or destroy OpenSL objects while another thread uses or initializes them, causing undefined native behavior, crashes, leaks, or stale playback state
 - Expected: Preview lifecycle commands execute in issue order, a completed stop prevents every older pending start from publishing playback, and native global resources cannot be initialized and destroyed concurrently
 - Suggested fix: Route play, stop, and replacement-play operations through one owned serialized executor or coroutine scope with a cancellation or generation token, and add native lifecycle locking if calls can still arrive from multiple threads. Tie pending work to activity or preview ownership so teardown cancels and joins it before returning
-- Validation: Add a zero-delay automation stress test that repeatedly sends play-stop and play-play-stop, asserts the final state remains stopped with no later restart, and runs under native race or memory instrumentation while checking descriptor, render-thread, and OpenSL cleanup
+- Validation: Add zero-delay MIDI and CD automation stress tests that repeatedly send play-stop and play-play-stop, plus a dialog test that dismisses during a delayed HOG read; assert the final state remains stopped with no later restart and run under native race or memory instrumentation while checking buffer, descriptor, render-thread, and OpenSL cleanup
 - Resolution: Pending
 
 ### BR-0017: P1 - Validate a complete SIT5 entry header before reading its parent offset
@@ -4464,15 +4544,15 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: security/resource-exhaustion
-- Found by: R1-CHUNK-0009, R1-CHUNK-0010, R1-CHUNK-0011
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/stuffit_extract.c:L373-L396` in `maybe_extract_nested_sti`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L103-L130` in `extract_sti2_from_hfs`, and `android/app/src/main/cpp/extract/sow_extract.c:L699-L720` in `sow_extract_impl`
-- Related: `android/app/src/main/cpp/extract/stuffit_extract.c:L400-L450`, `android/app/src/main/cpp/extract/sti2_extract.c:L1879-L1935,L2040-L2069`, `android/app/src/main/cpp/extract/sow_extract.c:L500-L524,L647-L663`, `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L220-L330,L410-L444`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L941-L1014,L1220-L1290`
-- Evidence: Every nonmatching, nondirectory SIT5 entry of at least 22 declared bytes is decompressed merely to determine whether it contains a nested STi archive. `extract_entry_data` trusts the archive's 32-bit uncompressed size for a single `malloc`, the result is written to a predictable temporary file, and `read_file_to_buffer` allocates another full-size buffer before inspecting it. The Mac HFS path similarly writes the complete `Install Descent` fork to disk, allocates another buffer equal to that file, and passes it to the same unbudgeted STi extractor. SOW extraction trusts archive-controlled 32-bit compressed and original sizes, allocates both complete buffers, and its bit reader pads exhausted input with zero bytes while decoding toward the declared original size. There is no per-entry expanded-size limit, compression-ratio limit, aggregate output budget, or native free-space recheck. Kotlin preflights use source, ZIP-entry, or listed sizes, which do not reliably bound nested or compressed output
-- Trigger: Select a crafted StuffIt archive, SOW archive, or Mac HFS disc image whose declared and valid decompressed entry sizes approach available memory or app storage
+- Found by: R1-CHUNK-0009, R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/stuffit_extract.c:L373-L396` in `maybe_extract_nested_sti`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L103-L130` in `extract_sti2_from_hfs`, `android/app/src/main/cpp/extract/sow_extract.c:L699-L720` in `sow_extract_impl`, and `android/app/src/main/cpp/extract/inno_reader.c:L1074-L1301` in `decompress_chunk`
+- Related: `android/app/src/main/cpp/extract/stuffit_extract.c:L400-L450`, `android/app/src/main/cpp/extract/sti2_extract.c:L1879-L1935,L2040-L2069`, `android/app/src/main/cpp/extract/sow_extract.c:L500-L524,L647-L663`, `android/app/src/main/cpp/extract/inno_reader.c:L1750-L2010,L2087-L2123`, `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L220-L330,L410-L444`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L941-L1014,L1220-L1290`
+- Evidence: Every nonmatching, nondirectory SIT5 entry of at least 22 declared bytes is decompressed merely to determine whether it contains a nested STi archive. `extract_entry_data` trusts the archive's 32-bit uncompressed size for a single `malloc`, the result is written to a predictable temporary file, and `read_file_to_buffer` allocates another full-size buffer before inspecting it. The Mac HFS path similarly writes the complete `Install Descent` fork to disk, allocates another buffer equal to that file, and passes it to the same unbudgeted STi extractor. SOW extraction trusts archive-controlled 32-bit compressed and original sizes, allocates both complete buffers, and its bit reader pads exhausted input with zero bytes while decoding toward the declared original size. Inno's buffered path reads the complete compressed chunk, derives an initial output allocation from unchecked archive offsets and sizes, and repeatedly doubles it without an expanded-size or overflow ceiling; its streaming paths bound working memory but still decode toward attacker-controlled expanded offsets with no output-byte, ratio, or work budget. There is no shared per-entry expanded-size limit, compression-ratio limit, aggregate output budget, or native free-space recheck. Kotlin preflights use source, ZIP-entry, or listed sizes, which do not reliably bound nested or compressed output
+- Trigger: Select a crafted StuffIt, SOW, or Inno archive, or a Mac HFS disc image, whose declared or valid decompressed entry sizes approach available memory or app storage
 - Impact: Import can allocate gigabytes, fill app storage, terminate the launcher through memory pressure, and leave partial output or a large temporary file if the process is killed; repeating the import provides a local denial of service against the app
 - Expected: Untrusted archive extraction has explicit per-entry, aggregate-memory, aggregate-output, compression-ratio, and free-space budgets, and nested detection does not require two complete expanded copies
-- Suggested fix: Preflight declared expanded sizes with checked 64-bit totals before allocating or writing, reject entries above documented limits, and pass a shared extraction budget through direct and nested operations. Detect the nested format from a bounded streamed prefix, stream approved output instead of buffering it twice, use a uniquely owned temporary file, and recheck usable space while writing
-- Validation: Add fixtures whose single-entry size, aggregate size, and compression ratio are just below and above each limit; prove over-budget inputs fail before large allocation or output creation, cancellation removes temporary data, and ordinary demo installers still match their oracle hashes
+- Suggested fix: Preflight declared expanded sizes with checked 64-bit totals before allocating or writing, reject entries above documented limits, and pass a shared extraction budget through direct, nested, buffered, and streaming decoder operations. Detect nested formats from a bounded streamed prefix, stream approved output instead of buffering it twice, use uniquely owned temporary files, reject allocation-growth overflow, and recheck usable space while writing
+- Validation: Add StuffIt, SOW, HFS, and Inno fixtures whose single-entry size, aggregate size, compression ratio, offset, and decoder work are just below and above each limit; prove over-budget inputs fail before large allocation or output creation, cancellation removes temporary data, and ordinary demo installers still match their oracle hashes
 - Resolution: Pending
 
 ### BR-0019: P1 - Reject HFS dot components before constructing output paths
@@ -4498,15 +4578,15 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: correctness
-- Found by: R1-CHUNK-0010, R1-CHUNK-0011
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/jni_gog_import.c:L256-L298` in `extract_inno_archive` and `android/app/src/main/cpp/extract/sow_extract.c:L670-L750` in `sow_extract_impl`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L2057-L2188`, `android/app/src/main/cpp/extract/jni_disc_import.c:L439-L477`, `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt:L70-L92`, `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L684-L819,L941-L1035`, and `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L280-L323`
-- Evidence: The Inno loop counts each failure but returns `-1` only when no file succeeded; one successful file followed by any number of failed requested files returns a positive count. The SOW loop similarly converts parser errors to end-of-input, continues after allocation, read, decompression, unsupported-method, and open failures, and returns the number of earlier successes. Its write path does not check `fwrite` or `fclose` at all and increments `extracted` even when the requested bytes were not persisted. Kotlin treats positive counts as successful imports and does not compare every output with the analyzed or archive entry list
-- Trigger: Import an Inno or SOW archive where an early file succeeds and a later requested file fails, or extract a SOW file while the destination fills during its unchecked write
+- Found by: R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0017, R1-CHUNK-0019
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/jni_gog_import.c:L256-L298` in `extract_inno_archive`, `android/app/src/main/cpp/extract/sow_extract.c:L670-L750` in `sow_extract_impl`, `android/app/src/main/cpp/extract/inno_reader.c:L1666-L1686,L2057-L2188`, `android/app/src/main/cpp/extract/pkg_reader.c:L450-L529` in `pkg_extract_all`, and `android/app/src/main/cpp/extract/iso9660_reader.c:L413-L507` in `iso_extract_files_from_source`
+- Related: `android/app/src/main/cpp/extract/extract_gog.c:L98-L188`, `android/app/src/main/cpp/extract/extract_cd.c:L338-L393,L533-L550,L608-L644`, `game_data/extract_all_gog.ps1:L121-L170`, `game_data/extract_all_cds.ps1:L81-L95,L119-L153`, `android/app/src/main/cpp/extract/jni_disc_import.c:L439-L477`, `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt:L70-L92`, `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L684-L819,L941-L1035`, and `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L280-L323`
+- Evidence: The Inno loop counts each failure but returns `-1` only when no file succeeded; one successful file followed by any number of failed requested files returns a positive count. The Inno reader itself logs a GOG Galaxy external-size mismatch but returns success, and its buffered output path ignores `fclose`, so a truncated filtered file or delayed persistence failure can also be counted as extracted. The SOW loop similarly converts parser errors to end-of-input, continues after allocation, read, decompression, unsupported-method, and open failures, and returns the number of earlier successes. Its write path does not check `fwrite` or `fclose` at all and increments `extracted` even when the requested bytes were not persisted; the CD CLI treats every nonnegative SOW result, including zero or a partial count, as success. PKG extraction skips an entry whose destination cannot be opened, ignores `fclose`, and returns the count of other files; if every open fails it returns zero, which `extract_gog` reports as successful completion. The ISO reader likewise breaks an individual file's transfer on a sector read or output write error, leaves the truncated destination in place, increments `extracted`, and proceeds; destination-open failures are skipped. `extract_cd` reports any positive count as successful BIN/CUE extraction, treats every nonnegative standalone-ISO result including zero as success, and does not increment its error count when a listed BIN/CUE track extracts zero files. The batch scripts write the result manifests before checking exit status and skip existing output directories and manifests on later runs, so residue from a failed run can later be treated as complete. Kotlin likewise treats positive native counts as successful imports and does not compare every output with the analyzed or archive entry list
+- Trigger: Import an Inno, SOW, PKG, or ISO source where an early file succeeds and a later requested file fails, use an unwritable output directory, extract a Galaxy entry whose filtered size differs from `external_size`, or inject a source read, destination write, or close failure
 - Impact: The launcher reports a completed import and activates follow-on setup with an incomplete or inconsistent game-data set, while the only indication of missing files is a native log line
 - Expected: Success means every selected file completed and passed its extraction checks; partial output is either rolled back or returned as an explicit failure with a machine-readable list of failed files
 - Suggested fix: Stop on the first requested-file failure and return an error distinct from zero matches, stage outputs transactionally before replacing the set, and propagate the failed filename and reason to Kotlin. If partial imports are intentionally supported, represent that state explicitly and require caller validation before enabling Done
-- Validation: Add two-file Inno and SOW fixtures whose first file succeeds and second file fails, plus a SOW output that injects a short write or close failure; assert no positive success status or enabled completion, verify no partial replacement remains after rollback, and retain full known-installer extraction tests
+- Validation: Add two-file Inno, SOW, PKG, and ISO fixtures whose first file succeeds and second file fails, all-open-fail destinations, a Galaxy external-size mismatch, and readers with injected short-read, short-write, and close failures; assert no positive success status, successful CLI exit, enabled completion, or reusable partial directory, verify rollback, and retain full known-installer and disc extraction tests
 - Resolution: Pending
 
 ### BR-0021: P2 - Honor and propagate documented extraction cancellation
@@ -4515,10 +4595,10 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: correctness/cancellation
-- Found by: R1-CHUNK-0010, R1-CHUNK-0011
+- Found by: R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/jni_gog_import.c:L214-L232` in `gog_progress_cb`
-- Related: `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt:L60-L67`, `android/app/src/main/cpp/extract/inno_reader.c:L2082-L2185`, `android/app/src/main/cpp/extract/pkg_reader.c:L450-L529`, `android/app/src/main/cpp/extract/sow_extract.h:L30-L35`, and `android/app/src/main/cpp/extract/sow_extract.c:L689-L692,L749-L750`
-- Evidence: The Kotlin GOG and native SOW callback contracts say a nonzero return cancels extraction. Every Inno and PKG progress invocation discards the result, so those readers continue all work. SOW checks the callback only between files and breaks, but then returns the ordinary positive extracted count; after one completed file its callers cannot distinguish cancellation from full success and may enable Done or continue post-processing
+- Related: `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt:L60-L67`, `android/app/src/main/cpp/extract/inno_reader.c:L1074-L1301,L1750-L2185`, `android/app/src/main/cpp/extract/pkg_reader.c:L450-L529`, `android/app/src/main/cpp/extract/sow_extract.h:L30-L35`, and `android/app/src/main/cpp/extract/sow_extract.c:L689-L692,L749-L750`
+- Evidence: The Kotlin GOG and native SOW callback contracts say a nonzero return cancels extraction. Every Inno progress result is discarded at initial, decoder-loop, streamed-write, and completion notifications, and PKG likewise discards callback results, so those readers continue all work. SOW checks the callback only between files and breaks, but then returns the ordinary positive extracted count; after one completed file its callers cannot distinguish cancellation from full success and may enable Done or continue post-processing
 - Trigger: Supply a progress implementation that returns 1 while extracting an InnoSetup, PKG, or multi-file SOW archive
 - Impact: GOG work and callbacks continue after cancellation, while SOW can stop but be reported as successfully complete; either behavior violates caller control and can consume storage or publish a partial file set while a UI or lifecycle owner is closing
 - Expected: A nonzero callback result promptly stops all extraction, closes reader and output resources, removes incomplete output, and returns a distinct canceled status without starting another file
@@ -4566,15 +4646,15 @@ Append findings here in numeric order using the exact template in the process do
 - Type: test-gap
 - Confidence: high
 - Category: test-gap
-- Found by: R1-CHUNK-0011
+- Found by: R1-CHUNK-0011, R1-CHUNK-0017
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L92-L95,L122-L146`
-- Related: `android/app/src/main/cpp/extract/test_sow_direct.c:L1-L22`, `android/app/src/main/cpp/extract/sow_extract.c:L181-L524`, and `android/tests/test_cue_iso.ps1:L19-L34`
-- Evidence: CMake builds `test_sow_direct` but does not register it with `add_test`; the seven-test native suite therefore never executes any SOW extraction. The binary itself has no content assertions and exits successfully for every nonnegative result, including zero extracted files. This leaves the branch's custom 768-line native ARJ parser and Huffman decompressor without automated success, corruption, boundary, cancellation, or append-mode coverage
+- Related: `android/app/src/main/cpp/extract/test_sow_direct.c:L1-L22`, `android/app/src/main/cpp/extract/sow_extract.c:L38-L121,L181-L524`, `android/app/src/main/cpp/extract/extract_cd.c:L608-L644`, and `android/tests/test_cue_iso.ps1:L19-L34`
+- Evidence: CMake builds `test_sow_direct` but does not register it with `add_test`; the seven-test native suite therefore never executes any SOW extraction. The binary itself has no content assertions and exits successfully for every nonnegative result, including zero extracted files. The CD tool's post-ISO recursive scan and extraction path is also absent from the suite. This leaves the branch's custom 768-line native ARJ parser, Huffman decompressor, scan capacity and error handling, and caller status accounting without automated success, corruption, boundary, cancellation, append-mode, or post-ISO coverage
 - Trigger: Regress the decoder so a known SOW yields zero or corrupted files, break split-archive append ordering, or introduce malformed-input memory behavior, then run the documented native test script
 - Impact: The required build and test pass remains green while a supported disc and demo import path is broken or unsafe, delaying detection until manual import or gameplay
 - Expected: The standard native suite runs deterministic SOW tests with exact counts and content hashes for stored, compressed, retail, and split archives plus malformed security boundaries
 - Suggested fix: Replace or supplement the CLI smoke tool with an assertion-based test target, use small committed synthetic fixtures for boundary behavior and available real-media oracle hashes for integration coverage, register it in CTest, and make fixture absence an explicit skip rather than a silent zero-success pass
-- Validation: Confirm `ctest -N` lists the SOW suite, run it through `android/tests/test_cue_iso.ps1`, deliberately corrupt an expected hash and decoder result to prove nonzero failure, and retain an append-order oracle for the three-part preview archive
+- Validation: Confirm `ctest -N` lists the SOW suite, run it through `android/tests/test_cue_iso.ps1`, deliberately corrupt an expected hash and decoder result to prove nonzero failure, retain an append-order oracle for the three-part preview archive, and exercise the `extract_cd` scan path with none, one, excess, unreadable, and failed SOW inputs
 - Resolution: Pending
 
 ### BR-0025: P3 - Correct the SOW header's obsolete libarchive description
@@ -4592,6 +4672,380 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: The interface documentation accurately names the self-contained implementation, supported ARJ methods and quirks, provenance, limitations, and responsibility for validation
 - Suggested fix: Replace the libarchive statement with the concise implementation and provenance summary from `sow_extract.c`, and keep supported-method and integrity limitations synchronized with the code
 - Validation: Review the header against source and link dependencies, then ensure generated API documentation and repository searches contain no remaining claim that SOW extraction uses libarchive
+- Resolution: Pending
+
+### BR-0026: P1 - Validate HFS catalog record bounds before decoding
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/memory-safety
+- Found by: R1-CHUNK-0012
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/hfs_reader.c:L546-L592` in `scan_catalog`
+- Related: `android/app/src/main/cpp/extract/hfs_reader.c:L624-L720`, `android/app/src/main/cpp/extract/test_hfs.c:L361-L425,L529-L580`, and `android/app/src/main/cpp/extract/jni_disc_import.c:L509-L546`
+- Evidence: The leaf node's untrusted 16-bit record count directly indexes `node + 512 - 2 * (rec_index + 1)` without proving the footer offset table fits the 512-byte node. At record index 256 the unsigned subtraction wraps and `be16` reads far outside the stack buffer. After locating a record, the only payload check is `data_off + 2 <= 512`, but a directory record reads through `data_off + 9` and a file record reads fixed fields and extents through `data_off + 97`. A type 1 or type 2 byte near the node end therefore causes additional out-of-bounds stack reads even with a small record count
+- Trigger: Import a crafted HFS track containing a catalog leaf with at least 257 declared records, or a record whose aligned data offset is near byte 512 and whose first payload byte selects directory or file parsing
+- Impact: A user-selected disc image can make native catalog listing read outside its stack node, crashing the launcher process or consuming adjacent stack data as file IDs, sizes, and extents before extraction begins
+- Expected: The node descriptor, complete offset table, each record interval, key, and type-specific payload all fit within the node and do not overlap the offset table before any field is decoded
+- Suggested fix: Parse catalog nodes with checked subtractive bounds, cap the record count by the space available after the node descriptor including the terminal offset, derive each record's start and end from the validated offset table, and require the complete directory or file payload size before calling `be32` or `parse_extent_record`. Reject the node on structural inconsistency instead of continuing with partially trusted records
+- Validation: Add synthetic leaf nodes at the maximum valid record count and one above it, records ending before every fixed directory and file field, overlapping or nonmonotonic offsets, and valid boundary records; assert clean rejection and run the HFS suite plus a malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
+- Resolution: Pending
+
+### BR-0027: P2 - Reuse one heap-backed HFS catalog during extraction
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: performance/resource-lifetime
+- Found by: R1-CHUNK-0012
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/hfs_reader.c:L624-L720` in `hfs_list_files` and `hfs_extract_file`
+- Related: `android/app/src/main/cpp/extract/hfs_reader.h:L15-L41`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L133-L172`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L1234-L1289`
+- Evidence: `hfs_file_list_t` embeds 1,024 324-byte entries, so every caller materializes a 331,780-byte value. The fallback Mac extractor keeps that list live while calling `hfs_extract_file` for every matching file; each call allocates another complete list, loads the volume, and scans the whole catalog again, while `hfs_list_files` adds a 1,024-entry internal catalog array. NDK r27d AArch64 Clang at `-O2` reports stack frames of 332,960 bytes for the inlined Mac fallback, 397,584 bytes for `hfs_extract_file`, and 103,328 bytes for `hfs_list_files`, for roughly 834 KiB of nested native frames before JNI, Kotlin, and runtime frames. Extracting K matching files also changes one catalog scan into K additional full scans and volume loads
+- Trigger: Use the supported loose-file fallback on a Mac HFS image without a usable `Install Descent` archive and with several extension-matching game files, especially from the Kotlin `Dispatchers.IO` JNI path
+- Impact: Import performs avoidable repeated I/O and parsing for every selected file and consumes most of a MiB of native stack at peak, increasing latency and leaving little stack headroom on mobile or host worker threads even for ordinary valid input
+- Expected: One validated catalog and volume context is allocated with explicit ownership, reused for selection and extraction, and released after the import; per-file extraction uses the already selected entry and only a bounded transfer buffer
+- Suggested fix: Replace the fixed-array value API with an opaque or caller-owned heap-backed HFS context, scan once, pass a validated entry to an extraction helper, and make file counts and allocation failure explicit. Keep the transfer buffer bounded or heap-backed and avoid loading the volume again inside the per-entry path
+- Validation: Compile Android ABIs with a scoped frame-size warning, assert the HFS call chain has no large fixed catalog frames, instrument a synthetic many-file fallback to prove one catalog scan regardless of selected-file count, and retain exact listing and extraction checks for both known Mac discs
+- Resolution: Pending
+
+### BR-0028: P1 - Serialize MIDI seek with rendering
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency/resource-lifetime
+- Found by: R1-CHUNK-0013
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_midi_preview.c:L63-L78` in `nativeSeek` and `nativeGetState`
+- Related: `android/app/src/main/cpp/shared/midi_preview.c:L287-L379,L636-L694` and `android/app/src/main/java/com/dxxredux/app/MidiBytesPreviewDialog.kt:L63-L75,L155-L168`
+- Evidence: The Compose slider calls `nativeSeek` on the main thread while the MIDI render thread continuously runs `render_midi_frames`. Seek resets and reconfigures the non-thread-safe TinySoundFont instance, rewinds and advances the shared linked-list cursor, rewrites the shared playback double, and resets ring positions while rendering simultaneously mutates the same synth, cursor, time, and ring. No mutex, command queue, pause handshake, or atomic ownership protects these operations. The 100 ms state poll also reads the concurrently written `double s_playback_msec` and related plain integers without synchronization
+- Trigger: Start a MIDI or HMP preview and release the position slider while playback is active, especially while the render thread is dispatching notes; repeated slider releases widen the race window
+- Impact: Concurrent synth and cursor mutation is undefined native behavior that can corrupt preview state or heap internals, crash the launcher, return torn or nonsensical positions, and produce stale or corrupted audio
+- Expected: The render thread has exclusive ownership of synth, message cursor, playback time, and ring reset; UI controls submit ordered commands and state queries consume a synchronized snapshot
+- Suggested fix: Route seek, pause, resume, and stop through a render-thread command queue or guard all shared playback state with one lifecycle mutex and stop rendering during seek. Publish position, duration, and state through atomics or a locked snapshot, and define callback ordering during ring reset
+- Validation: Add a preview test that performs rapid seeks while playing and while paused, verifies bounded monotonic state after each completed seek, and stress it under ThreadSanitizer where available plus AddressSanitizer on an Android or host OpenSL test shim
+- Resolution: Pending
+
+### BR-0029: P1 - Marshal overlay game-state access through the engine thread
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: concurrency
+- Found by: R1-CHUNK-0013
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_main.c:L1193-L1255,L1272-L1314,L1352-L1410`
+- Related: `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L860-L940,L1025-L1124,L1472-L1573,L1684-L1725`, `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt:L223-L300`, `android/app/src/main/java/com/dxxredux/app/WarpButtonOverlay.kt:L73-L94`, and `android/app/src/main/cpp/shared/coop/coop_warp.c:L41-L169,L187-L291`
+- Evidence: MainActivity launches the engine in a dedicated raw thread, but main-looper View handlers call the assigned JNI methods directly. The 500 ms warp poll runs a BFS over mutable `Segments` and `Walls` and dereferences live `Players` and `Objects`; touch callbacks call `coop_warp_execute` and `coop_warp_cycle_target` on the UI thread, directly moving and relinking the player object, advancing shared RNG, writing the shared multiplayer packet buffer, sending network data, and posting HUD messages while simulation and networking continue on the engine thread. Video polling concurrently walks mutable bitmap and texture records, and escort providers read owner and player state during multiplayer transitions. None of these paths uses a command queue, lock, atomic snapshot, or engine-thread assertion
+- Trigger: Display the video, warp, or Guide-Bot overlay during active gameplay or a level or player transition, tap warp or cycle while a simulation or network frame is updating the same state, or disconnect an escort owner during an overlay callsign query
+- Impact: The UI and engine threads race on native world, renderer, RNG, HUD, and network state; a warp can corrupt object-to-segment links or the shared packet buffer, and polling can observe invalid transitional indices or inconsistent texture data, causing crashes, desynchronization, malformed packets, or misleading controls
+- Expected: Only the engine thread traverses or mutates engine-owned state. UI commands are queued into the game event loop, and overlays read immutable snapshots published at a defined frame boundary
+- Suggested fix: Add one Android game-command bridge for warp and cycle actions, process it from the engine loop, and publish compact video, warp, and escort snapshots with explicit synchronization. Reuse that boundary for existing overlay providers and add debug assertions that world mutation runs on the engine thread
+- Validation: Add an integration test that polls every assigned overlay while repeatedly loading levels and disconnecting players, queues warp and cycle during active multiplayer frames, and verifies engine-thread assertions, valid object segment links, packet contents, and stable UI snapshots under ThreadSanitizer or race instrumentation
+- Resolution: Pending
+
+### BR-0030: P1 - Check MIDI audio initialization results before use
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: resource-lifetime
+- Found by: R1-CHUNK-0013
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_midi_preview.c:L29-L39` in `nativeStart`
+- Related: `android/app/src/main/cpp/shared/midi_preview.c:L382-L399,L419-L497,L531-L602`
+- Evidence: The JNI bridge reports the native start result, but `osl_init` checks only object-creation calls. It ignores every `Realize`, `GetInterface`, callback registration, play-state, and initial `Enqueue` result, then dereferences the returned engine, play, and buffer-queue interfaces unconditionally. If realization or interface acquisition fails, the next function-table call can use a null or unusable interface. `render_thread_start` also returns no status: a failed `pthread_create` is logged while `midi_preview_start` still returns success with OpenSL running and no producer
+- Trigger: Start a preview while OpenSL cannot realize an engine or player, cannot provide the required buffer-queue interface, rejects a queue operation, or the process cannot create another native thread because audio or thread resources are exhausted
+- Impact: A recoverable audio initialization failure can become a native null-interface crash; thread-creation failure is falsely reported as playing and leaves an initialized silent player until a later stop
+- Expected: Every fallible OpenSL and pthread step is checked before its result is used, partial objects are destroyed in reverse order, and start returns false with the preview fully stopped
+- Suggested fix: Make `osl_init` and `render_thread_start` use a single checked cleanup path, verify each required interface and operation, set global objects only after successful initialization, and propagate a distinct failure to JNI. Keep stop idempotent for every partial state
+- Validation: Wrap OpenSL and pthread entry points in a testable adapter, inject failure at every initialization step, and assert no null call, success result, live thread, queued buffer, or retained engine, mix, player, MIDI, or ring state remains; retain a real-device successful playback test
+- Resolution: Pending
+
+### BR-0031: P2 - Reject encrypted STi2 entries before extraction
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/compatibility
+- Found by: R1-CHUNK-0014
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L323-L345,L1999-L2010` in `is_valid_method` and `sti2_list_entries`
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L44-L49,L1879-L1942` and `android/app/src/main/cpp/extract/sti2_extract.h:L19-L41`
+- Evidence: The parser defines the StuffIt encrypted flag, accepts a method byte after examining only its low compression bits, then stores only `method & 0x0f` in the public entry. It does not retain an encrypted bit, padding, or entry key. Extraction therefore treats encrypted method `0x80` as stored method 0 and copies encrypted bytes as successful output, or sends encrypted bytes to methods 13 through 15 as if they were compressed plaintext. The referenced XAD parser instead marks these entries encrypted and handles their 16-byte key and padding metadata
+- Trigger: Import a valid password-protected legacy StuffIt or STi archive containing a data fork whose filename matches a requested game extension
+- Impact: The importer can report a successfully extracted game file that is ciphertext or decoder garbage, or fail with no indication that encryption rather than archive corruption is unsupported
+- Expected: Unsupported encrypted entries are identified during listing and rejected before allocation or output creation; any future password support preserves and consumes all required encryption metadata
+- Suggested fix: Add an explicit encrypted field to the internal and public entry metadata, preserve the full method flags, reject encrypted matching entries with a distinct unsupported-encryption result, and only add decryption after the key, padding, and password contract is implemented
+- Validation: Build a valid-header fixture for stored and compressed entries with `STI2_ENCRYPTED_FLAG`, including compressed sizes below and above the 16-byte key requirement, and assert listing records encryption while extraction creates no output and returns the documented unsupported status
+- Resolution: Pending
+
+### BR-0032: P2 - Parse STi2 entries in archive order and enforce the declared structure
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0014
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L471-L512` in `scan_headers`
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L1964-L2021` and `android/app/src/main/cpp/extract/test_sti2.c:L313-L430`
+- Evidence: `scan_headers` tests every byte position in the declared archive span for a 112-byte sequence with plausible methods, a printable name, and a valid header CRC. It does not start at the first file header and advance by `112 + resource_compressed_size + data_compressed_size`, and `sti2_list_entries` records but never reconciles the declared file count. An invalid expected header is silently skipped, while a CRC-valid header-shaped sequence embedded in compressed data is accepted as another entry. The referenced XAD parser reads the next header at the current structural offset, raises on its CRC failure, and seeks over the two declared compressed forks before reading the next header
+- Trigger: Flip a bit in one expected file header while leaving other entries intact, make a compressed fork contain a crafted valid header sequence, or declare a file count inconsistent with the structurally reachable headers
+- Impact: Listing and extraction can return positive success after silently omitting a damaged requested file, or expose a false entry sourced from payload bytes; callers then publish a partial or misleading import instead of rejecting the malformed archive
+- Expected: Every header is reached through checked archive structure, its complete fork spans fit, invalid expected headers fail the archive, and the parsed entry and folder structure is consistent with the declared count
+- Suggested fix: Begin at `STI2_ARCHIVE_HEADER_SIZE`, parse one validated header at a time, use checked additions for both compressed fork lengths, advance exactly to the next header, validate folder nesting, and reject count or end-offset mismatches. If known self-extracting variants require a prefix, detect and bound that prefix explicitly rather than scanning payload bytes
+- Validation: Add fixtures for a corrupted middle header, a fake valid header inside stored and compressed payloads, truncated fork spans, overflowing length sums, unbalanced folders, too few and too many declared entries, and a valid known archive; assert malformed cases fail without any committed output
+- Resolution: Pending
+
+### BR-0033: P2 - Verify STi2 payload checksums and compressed input exhaustion
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0014
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L1879-L1942` in `extract_entry_data`
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L59-L63,L699-L733,L1493-L1522,L1759-L1768,L1814-L1876,L2040-L2069` and `android/app/src/main/cpp/extract/test_sti2.c:L433-L508`
+- Evidence: StuffIt file headers carry resource and data fork CRC16 values at offsets 100 and 102, but the parser does not read either value and accepts stored or decompressed output solely by declared size. Both bit readers synthesize zero bits after physical compressed input ends, so truncated method 13, 14, or 15 input can continue decoding. Method 15 additionally reads its terminal 32-bit checksum into `ignored_crc` and never compares it with the produced bytes. A flipped byte in a stored entry is therefore always written and reported as success, and some damaged compressed streams can also reach the requested output length without an integrity failure
+- Trigger: Corrupt a stored payload byte, truncate or alter a compressed fork while preserving its declared sizes and header CRC, or alter the terminal method 15 checksum
+- Impact: Corrupted or attacker-modified game assets can be counted and presented as successfully imported, causing later load failures, crashes, or nondeterministic gameplay with no extraction-time integrity signal
+- Expected: Decoders fail on any read beyond the compressed span and an entry is committed only when its format checksum matches the complete produced payload
+- Suggested fix: Preserve the data and resource CRC16 fields in entry metadata, make both bit readers carry a hard exhaustion state, compare method 15's terminal CRC32, verify the header CRC16 over every completed data fork, and write through a temporary file that is removed on any decode, checksum, write, or close failure
+- Validation: Add stored and methods 13, 14, and 15 fixtures, flip payload and checksum bits independently, truncate at each decoder boundary, and assert every corrupted case fails without output while the real-media and corpus oracle hashes remain unchanged; run the malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
+- Resolution: Pending
+
+### BR-0034: P2 - Verify Inno file checksums before committing output
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0015
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L2057-L2188` in `inno_extract_file`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L1013-L1017,L1074-L1301,L1666-L2054`, `android/app/src/main/cpp/extract/inno_reader.h:L85-L104`, and `android/app/src/main/cpp/extract/test_gog_fd.c:L1-L159`
+- Evidence: The data-entry parser preserves each Inno 5.3.9-or-newer file's 20-byte SHA-1 value, but no extraction path ever reads that field. Stored, zlib, LZMA1, LZMA2, and GOG Galaxy outputs are accepted using decoder status and declared size only. The referenced innoextract implementation applies the per-file checksum filter during extraction; this reader omits the equivalent integrity decision, and the native GOG test only lists installer entries without extracting or corrupting payloads
+- Trigger: Flip a stored payload byte, or alter compressed input so decoding still produces the declared byte count, while leaving the file's recorded checksum unchanged
+- Impact: Corrupted or attacker-modified game files can be reported and published as successfully imported, leading to delayed load failures, crashes, or nondeterministic behavior without identifying the damaged installer
+- Expected: Every extracted file is committed only after its version-appropriate checksum is calculated over the format-defined byte stream and matches the data entry
+- Suggested fix: Preserve the checksum algorithm with each data entry, stream MD5 or SHA-1 calculation through every output path, mirror the format's filter ordering for GOG Galaxy entries, compare before final publication, and write to a temporary file that is removed on mismatch
+- Validation: Add stored, zlib, LZMA1, LZMA2, and Galaxy fixtures with known checksums; flip payload and checksum bits and truncate inputs independently; assert every mismatch fails with no final output while valid real-installer hashes remain unchanged
+- Resolution: Pending
+
+### BR-0035: P2 - Bound stored Inno file ranges to their declared chunk
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/data-boundary
+- Found by: R1-CHUNK-0015
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1750-L1806` in `stream_chunk_file_range`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L132-L146,L2025-L2054,L2087-L2117`
+- Evidence: The stored streaming branch calculates the physical start from unchecked `data_offset + chunk_offset + 4 + file_offset` and copies exactly `file_size` bytes from the installer without proving `file_offset + file_size` fits `chunk_compressed_size`. It then assigns `outer_pos = range_end` and tests `outer_pos < range_end`, a condition that is necessarily false. The lower-level read helper checks only whether the requested physical bytes exist, so bytes after the declared chunk can satisfy the copy
+- Trigger: Craft a stored data entry whose file range extends beyond its declared chunk while placing readable bytes, such as another chunk or installer metadata, immediately afterward; overflowing offset sums provide additional malformed cases
+- Impact: Extraction can copy unrelated following installer data into a requested game file and report success, violating archive boundaries and potentially exposing embedded metadata or producing attacker-composed output
+- Expected: All offset additions are overflow-checked and a stored entry is rejected unless its complete range is contained within the declared chunk and physical archive span
+- Suggested fix: Use checked additions for `chunk_pos`, `range_end`, and `copy_start`; require `file_offset <= chunk_compressed_size` and `file_size <= chunk_compressed_size - file_offset` before reading; validate the resulting physical span against the archive; and remove the tautological post-copy check
+- Validation: Add exact-boundary, one-byte-over, adjacent-sentinel, and near-`UINT64_MAX` fixtures for offsets and sizes; assert malformed entries fail without output and never read sentinel bytes
+- Resolution: Pending
+
+### BR-0036: P2 - Consume the MD5 field in pre-5.3.9 Inno data entries
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/parser-correctness
+- Found by: R1-CHUNK-0015
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1013-L1024` in `parse_data_entries` and `android/app/src/main/cpp/extract/inno_reader.h:L8-L10`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L505-L570,L922-L1034` and the public `inno_open` API in `android/app/src/main/cpp/extract/inno_reader.h:L107-L120`
+- Evidence: The public header claims support for all Inno 5.3.x Unicode installers. The parser consumes a 20-byte SHA-1 only at version 5.3.9 or newer and consumes no checksum for earlier claimed versions, then immediately reads timestamp and version fields. The referenced innoextract version layout shows that installers from 4.2.0 through 5.3.8 carry a 16-byte MD5 field there. For 5.3.0 through 5.3.8 this parser therefore remains 16 bytes behind and interprets checksum bytes as subsequent fields, misaligning the rest of the entry table
+- Trigger: Open a valid Unicode Inno 5.3.0 through 5.3.8 installer containing one or more data entries
+- Impact: A format version explicitly advertised as supported can fail to list or extract, or can produce corrupted offsets, sizes, flags, and later entries from the misaligned table
+- Expected: Each accepted installer version consumes its exact data-entry layout, or unsupported versions are rejected before any table is parsed
+- Suggested fix: Represent checksum kind and bytes explicitly, consume MD5 for the applicable pre-5.3.9 versions and SHA-1 afterward using one version-layout helper, and reject versions whose complete layout is not implemented. Pair this with BR-0034 so parsed checksums are also enforced
+- Validation: Add valid multi-entry installers or faithful synthetic tables at 5.3.0, 5.3.8, and the 5.3.9 transition; verify subsequent timestamps, flags, offsets, listing, extraction, and checksum decisions, plus clean rejection immediately outside the supported matrix
+- Resolution: Pending
+
+### BR-0037: P3 - Synchronize the Inno reader capability documentation with the implementation
+
+- [ ] OPEN
+- Type: maintainability
+- Confidence: high
+- Category: documentation
+- Found by: R1-CHUNK-0015
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.h:L1-L13`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L8-L16,L1237-L1300,L1943-L2010` and `android/app/src/main/cpp/extract/inno_reader.h:L85-L120`
+- Evidence: The public header says only LZMA1 and zlib are implemented and that LZMA2 returns an error, while the source contains both buffered and streaming LZMA2 decoders and has done so since the file was introduced. The same preamble broadly claims 5.3.x support without documenting the checksum-layout gap in BR-0036, uses the label `AI-slop` instead of a maintainable provenance statement, and does not state the callback's cancellation contract
+- Trigger: A maintainer uses the public header to decide which installer fixtures, decompressor paths, or callback behaviors require review and regression coverage
+- Impact: Reviewers and callers receive a false support matrix, can omit security and compatibility coverage for live LZMA2 code, and cannot reliably distinguish implemented, unsupported, and unverified format features
+- Expected: The public API states the tested version and compression matrix, unsupported filters or encryption, callback semantics, and accurate upstream-derived provenance in neutral project language
+- Suggested fix: Replace the stale preamble with a concise maintained support table or linked design note, document LZMA2 and callback cancellation accurately, narrow version claims until BR-0036 is fixed, and describe the implementation's relationship to innoextract without informal or ambiguous authorship language
+- Validation: Review the documentation against the compiled method switch, parser version gates, callback tests, and a fixture matrix; add a lightweight checklist so capability changes update documentation and coverage together
+- Resolution: Pending
+
+### BR-0038: P2 - Use the canonical fingerprint threshold in the duplicate matcher
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness
+- Found by: R1-CHUNK-0016
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/fingerprint_match.c:L288-L301` in `main`
+- Related: `android/app/src/main/assets/fingerprint_config.json5:L1-L15`, `game_data/update_known_discs_albums.ps1:L24-L35,L158-L174`, and `android/app/src/main/cpp/shared/chromaprint_db.c:L24-L37`
+- Evidence: The command documents its threshold argument as optional and hardcodes 0.40 when it is omitted. The repository's declared single source of truth sets 0.65 and explains that random-noise comparisons peak near 0.50, so the tool's default lies in the false-match region. The merger normally passes the configured value, but it also falls back to 0.40 when configuration loading fails. On the locally available 761-entry merged input, the matcher reported 51,571 pairs at 0.40 versus 1,577 at 0.65. Command-line parsing uses `atof`, so a value such as `nan` also passes both range comparisons and silently makes every `score >= threshold` test false
+- Trigger: Invoke the documented command without a threshold, let the merger fall back after a missing or malformed configuration, or pass a non-finite or partially numeric threshold
+- Impact: Database regeneration can classify tens of thousands of unrelated tracks as duplicates or, for NaN, classify none, producing incorrect exclusions and unstable album-to-disc mappings while the command exits successfully
+- Expected: Every matching surface consumes one validated finite threshold from the canonical configuration, and invalid or unavailable configuration fails instead of selecting a known-unsafe fallback
+- Suggested fix: Require the caller to pass the canonical value or add an explicit config-file argument, remove the independent 0.40 defaults, and parse with `strtof` plus complete-consumption, range, and `isfinite` checks. Keep runtime, scripts, and the audit tool on one loaded configuration contract
+- Validation: Add matcher integration cases at 0.40, 0.65, omitted, malformed, trailing-junk, infinity, and NaN inputs; assert invalid configuration fails nonzero and the repository merger uses exactly the configured threshold
+- Resolution: Pending
+
+### BR-0039: P2 - Fail duplicate analysis when any fingerprint entry is not loaded
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/test-tool
+- Found by: R1-CHUNK-0016
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/fingerprint_match.c:L190-L271` in `load_db`
+- Related: `android/app/src/main/cpp/extract/fingerprint_match.c:L23-L27,L109-L137,L304-L325` and `game_data/update_known_discs_albums.ps1:L95-L174`
+- Evidence: The loader stops successfully at `MAX_ENTRIES` without checking for remaining objects, silently truncates each encoded fingerprint into an 8,192-byte stack buffer, and silently omits entries whose truncated or malformed fingerprint does not decode or whose allocation fails. The file reader also ignores all seek and read return values and passes the declared size after a short read. The merger knows how many objects it wrote but checks only the process exit code, so a partial load is indistinguishable from complete duplicate analysis. Current data fits at 761 merged entries with a 3,854-character maximum fingerprint, but neither public command contract states the limits nor prevents future growth or a single bad generated record from creating false negatives
+- Trigger: Supply more than 4,096 entries, an encoded fingerprint longer than 8,191 bytes, a malformed fingerprint among valid records, an allocation failure, or a short database read
+- Impact: Some tracks receive no duplicate comparison, yet the successful result is used to regenerate `known_discs.json5`; duplicate album tracks can be published and later compete with canonical CD identities without any failing build or diagnostic tied to the omitted record
+- Expected: Success proves every input object was parsed, decoded, and compared exactly once, with explicit bounded-input errors rather than silent omission
+- Suggested fix: Use a strict JSON parser or shared validated loader with dynamically sized fingerprint strings and entries, check file size and every seek/read operation, fail on any malformed or undecodable required record, and report a machine-readable loaded count that the merger compares with its input count. If caps remain, reject at the first excess item
+- Validation: Add exact-limit and one-over databases, an overlength fingerprint, malformed middle and final entries, forced allocation failure, and injected short reads; assert nonzero exit and no consumable result for every incomplete load, plus equality between written, loaded, and compared counts on valid input
+- Resolution: Pending
+
+### BR-0040: P2 - Make fingerprint duration tolerance independent of entry order
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness
+- Found by: R1-CHUNK-0016
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/fingerprint_match.c:L84-L97` in `best_similarity`
+- Related: `android/app/src/main/assets/fingerprint_config.json5:L10-L15`, `android/app/src/main/cpp/shared/chromaprint_db.c:L311-L340`, and `game_data/update_known_discs_albums.ps1:L64-L150`
+- Evidence: Pair similarity is intended to be symmetric, but the duration prefilter divides `a->duration_ms` by `b->duration_ms` and applies fixed bounds of 0.90 through 1.10. Durations 90,000 and 100,000 therefore pass in that order, while the same pair reversed yields 1.111 and is rejected before fingerprint comparison. The merger's construction order places CD entries before albums and sorts albums, so whether an otherwise identical boundary pair is considered can depend on which source happens to be longer and on input ordering. The runtime database matcher repeats the same one-direction ratio against its query
+- Trigger: Compare identical or qualifying fingerprints whose positive durations lie in the asymmetric part of the tolerance boundary, such as 90,000 and 100,000 milliseconds, then swap their order
+- Impact: Duplicate discovery and runtime identification can disagree or change after harmless database reordering, leaving a duplicate album track unexcluded or rejecting a valid query depending only on which duration is used as the denominator
+- Expected: The configured duration tolerance defines one documented symmetric comparison, and swapping two entries cannot change eligibility or score
+- Suggested fix: Centralize a checked duration-compatibility helper using an explicitly symmetric denominator, such as the larger duration, or reciprocal bounds derived from the chosen relative-error definition; use it in both audit and runtime matchers
+- Validation: Add below, exact, and above-boundary duration pairs in both orders with identical fingerprints, assert identical decisions, and run the same vectors through `fingerprint_match` and `chromaprint_db_match`
+- Resolution: Pending
+
+### BR-0041: P3 - Establish one owner for native and Kotlin extension policy
+
+- [ ] OPEN
+- Type: maintainability
+- Confidence: high
+- Category: maintainability
+- Found by: R1-CHUNK-0016
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/game_file_extensions.h:L8-L17`
+- Related: `android/app/src/main/cpp/extract/game_file_extensions.c:L13-L47`, `android/app/src/main/java/com/dxxredux/app/AndroidGameFileExtensions.kt:L3-L16`, `android/app/src/main/java/com/dxxredux/app/GameFileFormats.kt:L41-L224,L310-L316`, and `android/app/src/test/java/com/dxxredux/app/AndroidGameFileExtensionsTest.kt:L7-L21`
+- Evidence: The C header calls its tables the single source of truth and says to align them with Kotlin, while the Kotlin wrapper says format knowledge lives in `GameFileFormats` and must be aligned with C. Both sides therefore claim ownership while duplicating game-import, disc-extract, and GOG-audio policy in different representations, and the Mac native list adds a third specialized set. The shared game and generic disc values currently agree, but the only focused test asserts Kotlin behavior and cannot detect native drift. History already shows the native disc table being removed, specialized, and re-added independently as import support changed
+- Trigger: Add or reclassify a game format in `GameFileFormats` or one native table while following that file's source-of-truth comment, without discovering and updating every mirror
+- Impact: Kotlin can classify and offer a file that native GOG, PKG, ISO, HFS, or StuffIt extraction silently omits, or native code can extract a format that launcher validation does not recognize; contradictory ownership makes the omission likely to survive review
+- Expected: One artifact owns extension roles, every language consumes generated or mechanically verified values, and platform-specific exceptions are explicit rather than implicit list drift
+- Suggested fix: Define the role flags in one neutral manifest and generate the compact C tables and Kotlin map, or designate one side as authoritative and add a cross-language parity test that parses the other. Rewrite both comments to state the actual ownership and document why the Mac set differs
+- Validation: Add a test that compares every shared role and case-insensitive lookup across native and Kotlin representations, deliberately change one side to prove the test fails, and retain focused cases for GOG audio, generic disc extraction, and Mac-only exceptions
+- Resolution: Pending
+
+### BR-0042: P2 - Encode every extractor filename as valid JSON
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: api-data-format
+- Found by: R1-CHUNK-0017
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/extract_gog.c:L116-L130,L169-L176`
+- Related: `android/app/src/main/cpp/extract/extract_cd.c:L619-L639`, `android/app/src/main/cpp/extract/fingerprint_audio.c:L121-L129,L154-L184`, `game_data/extract_all_gog.ps1:L140-L153`, `game_data/fingerprint_music_packs.ps1:L308-L329`, and `game_data/fingerprint_mission_zip_music.ps1:L719-L742`
+- Evidence: `extract_gog` interpolates archive-controlled Inno destinations and CPIO names directly inside JSON strings without escaping quotes, backslashes, control bytes, or encoding errors. The CD tool normalizes backslashes in a SOW path but otherwise emits it raw. `fingerprint_audio` escapes only quote and backslash, leaving newline, tab, carriage return, and other control bytes from a legal POSIX filename unencoded. These commands advertise JSON output, and the fingerprint workflows pass stdout directly to `ConvertFrom-Json`; one such name makes the complete otherwise-successful result syntactically invalid while the native command can exit zero
+- Trigger: List an installer entry or fingerprint an audio file whose name contains a quote, backslash, newline, tab, another byte below 0x20, or a filename encoding that is not valid UTF-8 for the consumer
+- Impact: Extraction reports and generated fingerprint metadata become unparsable or can be structurally misrepresented, aborting batch regeneration after expensive decoding and preventing callers from reliably associating results with source files
+- Expected: Every command emits valid UTF-8 JSON for every filename accepted by its platform, with complete JSON string escaping and an explicit policy for unrepresentable native names
+- Suggested fix: Replace the three ad hoc emitters with one small tested JSON-string writer or a lightweight existing serializer that escapes all required control characters and validates or converts platform filenames to UTF-8; keep diagnostic text exclusively on stderr
+- Validation: Add CLI integration fixtures with quote, backslash, tab, newline, control-byte, non-ASCII, and invalid-encoding names where the platform permits them; parse stdout with strict JSON readers on Windows and POSIX and verify exact round trips or documented rejection
+- Resolution: Pending
+
+### BR-0043: P2 - Fail audio fingerprinting when directory enumeration is incomplete
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/test-tool
+- Found by: R1-CHUNK-0017
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/fingerprint_audio.c:L79-L118` in `collect_audio_files`
+- Related: `android/app/src/main/cpp/extract/fingerprint_audio.c:L30-L36,L132-L187`, `game_data/fingerprint_music_packs.ps1:L308-L329`, `game_data/fingerprint_mission_zip_music.ps1:L700-L742`, and `android/tests/test_fpcalc_and_acoustid.ps1:L121-L155`
+- Evidence: Both `FindFirstFileA` and `opendir` failure return the same zero count as an empty directory, and `main` prints `[]` and exits zero. Direct execution against a nonexistent directory confirmed that behavior. Enumeration also stops silently at `MAX_FILES` and does not distinguish `FindNextFileA` or `readdir` errors from end-of-directory. The fingerprint generators accept a successful nonempty subset without comparing it to the extracted or directory audio count, so capacity or mid-scan omissions are publishable; the ANSI Windows API additionally makes unrepresentable paths another fail-open enumeration case
+- Trigger: Pass a missing, unreadable, or non-ANSI Windows directory, inject a directory-read error, or fingerprint a directory containing more than 4,096 matching files
+- Impact: The tool can report successful empty or partial analysis, causing music packs or mission archives to lose track fingerprints and later database matches without identifying which source files were never examined
+- Expected: Success proves complete enumeration of the requested directory and every eligible file is either represented in output or causes a nonzero result with an explicit failure record
+- Suggested fix: Return distinct empty, error, and capacity-exceeded states; use checked dynamic storage or reject on the first excess file; inspect terminal enumeration errors; use wide-character Windows enumeration with UTF-8 conversion; and have callers compare enumerated, fingerprinted, and expected counts before publishing metadata
+- Validation: Test empty, nonexistent, unreadable, non-ASCII, exact-limit, one-over, and injected mid-enumeration-error directories on Windows and POSIX; assert only a genuinely empty readable directory succeeds with `[]` and every valid audio filename appears exactly once
+- Resolution: Pending
+
+### BR-0044: P1 - Make repeated overlay JNI callbacks resource- and exception-safe
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: stability/jni-lifecycle
+- Found by: R1-CHUNK-0018
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/android_jni_overlay.c:L13-L30` in `call_java_string_method`
+- Related: `android/app/src/main/cpp/jni_main.c:L120-L148,L261-L281`, `android/app/src/main/cpp/shared/android_rewind.c:L74-L81`, `android/app/src/main/cpp/shared/track_names.c:L328-L406`, and `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L3663-L3696`
+- Evidence: Every overlay callback obtains an activity class local reference but never deletes it. During normal play these calls run on the thread already executing the long-lived `MainActivity.startGame` native method, so the references belong to one JNI local frame and are not reclaimed until the game exits. Track, level, and rewind notifications therefore grow that frame for the life of the session and can eventually overflow ART's local-reference table. The same helper marks itself attached without checking whether `AttachCurrentThread` succeeded, dereferences `env` and allocation results unconditionally, and neither detects nor clears an exception from method lookup, string conversion, or the Java callback, leaving later JNI work to run with a pending exception
+- Trigger: Generate enough track, level, or rewind overlay notifications in one game process to exhaust local-reference capacity, or encounter an attachment, allocation, modified-UTF-8 conversion, method lookup, or Java callback failure
+- Impact: A long-running game can abort from local-reference-table overflow; rarer callback failures can dereference an invalid JNI environment or poison subsequent native-to-Java calls instead of degrading only the optional overlay
+- Expected: Each callback releases every local reference on every path, validates attachment and JNI results, and handles callback exceptions according to an explicit nonfatal overlay policy
+- Suggested fix: Check the exact `GetEnv` result and the return value from `AttachCurrentThread`; reject null text or define its conversion; check class, method, and string creation; delete both `jstr` and `cls` through one cleanup path; detect, log, and clear Java exceptions when the overlay is intentionally best-effort; and detach only after a successful attachment. A safely cached global class and method ID is also reasonable if lifecycle ownership remains explicit
+- Validation: Under CheckJNI, stress thousands of track, level, and rewind callbacks during one `startGame` invocation and assert local-reference usage stays bounded; inject attachment, string-allocation, lookup, and Java-callback failures and verify no crash, pending exception, leaked reference, or incorrect detach
+- Resolution: Pending
+
+### BR-0045: P2 - Validate legacy save headers before offering Resume
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/input-validation
+- Found by: R1-CHUNK-0018
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_resume_save.cpp:L646-L652` in `save_explorer_slot_json`
+- Related: `android/app/src/main/cpp/jni_resume_save.cpp:L156-L207,L378-L399,L611-L719`, `android/app/src/main/java/com/dxxredux/app/SaveExplorerBridge.kt:L40-L65,L108-L177`, `android/app/src/main/java/com/dxxredux/app/SetupSaveExplorer.kt:L793-L823,L882-L911`, and `android/app/src/test/java/com/dxxredux/app/SaveExplorerTest.kt:L154-L169`
+- Evidence: For a metadata-less single-player file under a recognized D1 or D2 save tree, the explorer sets `loadable = true` solely from the scope, game path, and a non-sentinel pilot name. It has already run `read_save_header_preview`, which checks the `DGSS` magic, compatible version, required header reads, and mission field, but does not require that check to succeed. Consequently a zero-length, truncated, wrong-magic, or arbitrary file named like `pilot.sg0` is serialized as loadable with fabricated fallback fields. Kotlin's `toResumeCandidate` trusts the native `loadable` flag and exposes it as a resumable candidate; the focused tests construct trusted slot DTOs and do not cover native malformed-file classification
+- Trigger: Leave or import a malformed or unrelated metadata-less file with a save-slot suffix such as `.sg0` beneath a recognized single-player save-set path and open Save Explorer
+- Impact: The launcher offers Resume for a file it has not established is a compatible save, producing a misleading candidate and deferring rejection or unsafe malformed-input handling to the game loader
+- Expected: A metadata-less legacy candidate is loadable only after the native save parser proves at least the complete compatibility header and required structure are valid for the selected game
+- Suggested fix: Require `have_preview` for the legacy fallback at minimum, and preferably call one shared engine-owned validation routine that checks the complete load preconditions rather than maintaining a weaker launcher parser. Preserve invalid files as explicit orphan entries with a precise reason instead of synthesizing resume metadata
+- Validation: Add native-to-Kotlin explorer fixtures for valid legacy D1 and D2 saves and for empty, truncated, wrong-magic, old-version, missing-mission, cross-game, and random-byte `.sgN` files; assert only valid fixtures become resume candidates and invalid files remain inspectable but not loadable
+- Resolution: Pending
+
+### BR-0046: P2 - Reject incomplete CD reads instead of publishing partial hashes
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0019
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/extract_cd.c:L231-L248,L498-L515`
+- Related: `android/app/src/main/cpp/extract/extract_cd.c:L455-L472`, `android/app/src/main/cpp/extract/fingerprint_cd.c:L228-L245,L320-L375`, `android/app/src/main/cpp/extract/cue_parser.c:L135-L164`, `game_data/extract_all_cds.ps1:L119-L153`, and `game_data/hash_disc_tracks.ps1:L76-L95`
+- Evidence: The CUE reader ignores both seeks, accepts a negative `ftell`, and ignores `fread`. If length discovery fails, `len` can be `-1`, making the allocation size zero, the requested read size enormous after unsigned conversion, and `buf[len]` a write before the allocation. A short read of a regular file instead leaves uninitialized bytes for the parser to consume. After parsing, per-track hashing ignores the seek result; when any sector read is short or fails, it only prints a warning, finalizes the SHA-1 over the prefix, emits that digest as an ordinary successful track record, and leaves `errors` unchanged. The parallel fingerprint CLI duplicates both patterns. The extraction script saves all emitted records as `track_hashes.json`, and the database generator promotes any track with a number, type, and SHA-1 without knowing whether the declared sector range was fully read
+- Trigger: Pass a non-seekable CUE stream, encounter a CUE short read, truncate or replace a BIN after its size pass, inject a sector read error, or make the computed track seek fail
+- Impact: The host tool can corrupt memory while reading the CUE or publish a stable-looking SHA-1 for an empty or partial track and exit successfully; that digest can enter checked-in track manifests and the canonical known-disc database, causing false or irreproducible disc identities
+- Expected: CUE loading succeeds only after an exact bounded regular-file read, and a track hash is emitted only after a validated seek and every declared sector has been read exactly once
+- Suggested fix: Replace the duplicated seek-and-`ftell` readers with one checked bounded file loader that rejects non-seekable, oversized, changed, or short inputs; validate every track has a positive in-file byte range; check `lseek`; and convert any short sector read into a nonzero command result without emitting a success SHA-1. Share the exact hashing helper between extraction and fingerprint tools
+- Validation: Add seek-failure, negative-length, CUE short-read, BIN truncation-between-stat-and-read, mid-track read-error, zero-sector, and complete valid-track cases for both CLIs; assert failures emit no promotable digest, exit nonzero without memory errors under sanitizers, and leave canonical manifests unchanged
+- Resolution: Pending
+
+### BR-0047: P2 - Report successful HFS extraction as success
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: api-data-format
+- Found by: R1-CHUNK-0019
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/extract_cd.c:L558-L586`
+- Related: `game_data/extract_all_cds.ps1:L129-L153`, `game_data/hash_disc_tracks.ps1:L76-L95`, `game_data/CD images/Descent - Mac macplay/track_hashes.json:L2`, `game_data/CD images/d1 mac 2nd bin+cue/track_hashes.json:L2`, `game_data/CD images/d2 mac/track_hashes.json:L2`, and `android/ai tool plans/CD, installer parsing/on_device_mac_extract.md:L53,L94,L160,L470`
+- Evidence: After detecting HFS and extracting a positive file count, the tool increments both success counters and exits successfully but deliberately emits `"error": "ISO listing failed"` to avoid changing old fixtures. All three checked-in Mac track manifests therefore describe their successfully extracted data track as an error. Repository planning claims both that HFS is reported instead of a false ISO error and, elsewhere, that the false error is correct. Current promotion scripts silently discard the error while accepting the SHA-1, so the field is neither a truthful status nor an enforced compatibility contract
+- Trigger: Successfully process any supported HFS BIN/CUE image through `extract_cd` and save its JSON lines with `extract_all_cds.ps1`
+- Impact: Machine-readable output contradicts the actual result and exit status, checked-in provenance permanently claims a failure, and any caller that correctly treats an `error` field as failure will reject supported Mac extraction while existing callers hide genuine status mistakes by ignoring it
+- Expected: A successful HFS record contains no error and explicitly identifies the filesystem and extracted count; an error record is emitted only when HFS detection or extraction actually fails
+- Suggested fix: Restore a truthful success schema such as `filesystem: "hfs"` plus `files_extracted` and optional partition metadata, update the three generated manifests and contradictory planning text in the publication series, and make the batch script validate that successful records lack `error` while failed records cause a nonzero run
+- Validation: Run the CLI against the three known Mac discs, parse stdout strictly, assert the HFS data record has the exact SHA-1, filesystem, and positive extracted count with no error, verify failed ISO and HFS fixtures still emit errors and exit nonzero, and regenerate consumers without changing disc identity
 - Resolution: Pending
 
 ## Disposition log

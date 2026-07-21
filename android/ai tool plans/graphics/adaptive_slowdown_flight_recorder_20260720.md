@@ -281,3 +281,45 @@ Phone use: enable only `Automatic slowdown capture` in Advanced. Leave the
 for about one minute after it begins, then return to Advanced and export the
 new log. A successful independent trigger begins with
 `prof_v=2 type=capture_start ... manual_profiling=0`.
+
+## Healthy coop baseline review
+
+- [x] Identify enabled categories and profiling record types in the supplied log
+- [x] Quantify frame, phase, GL, renderer, object, texture, and storage distributions
+- [x] Separate intentional frame pacing and instrumentation cost from actionable work
+- [x] Record low-risk optimization candidates or conclude that no change is justified
+
+The 1.20 MB, roughly 20-minute log has manual Profiling enabled. It contains 104
+one-second samples, 2,619 sampled gameplay frames, 950 UI-poll summaries, 33
+texture bursts, 11 individually slow level-load textures, and no `slow_frame`,
+storage, or automatic `prof_v=2` capture records.
+
+All sampled gameplay stays at the intentional 25 FPS cap. Frame time averages
+39.85 ms, of which 38.16 ms is limiter wait. Simulation averages 0.163 ms and
+has a 0.431 ms p99. CPU render averages 1.52 ms, with 3.26 ms p95, 4.91 ms p99,
+and a single 7.66 ms maximum. GPU time averages 1.62 ms, reaches 3.63 ms p99 and
+4.65 ms maximum, while swap reaches only 0.252 ms p99. GL errors are zero.
+
+Render time correlates primarily with ordinary scene complexity: textured
+polygons `r=0.767`, GPU time `r=0.741`, and texture binds `r=0.695`. Water-face
+count has a much weaker `r=0.298`. Source inspection confirms `TMI_WATER` only
+increments the diagnostic counter in this render path; water faces do not use a
+special draw routine. Animated effects are advanced once in simulation rather
+than once per visible face, and the sub-millisecond simulation measurements
+rule that loop out as a concern in this run. Higher render time in water-bearing
+views is therefore best explained by the rest of those scenes, not animation
+thrash.
+
+The only conspicuous costs occur during level loading. Two large bursts load
+3,843 textures in 0.97 seconds and 2,955 textures in 0.64 seconds. A few stock
+textures take 31-35 ms in upload or mask work, but they occur during cache flush
+and level setup, not sampled gameplay, and caused no frame-rate incident. This
+could be a separate level-transition latency investigation, but it does not
+justify a normal-renderer change from this evidence.
+
+No performance code change is recommended from the healthy run. For ordinary
+testing, leave manual Profiling off and Automatic slowdown capture on. That
+avoids the manual sampler's 2,619 per-frame text records, 950 once-per-second UI
+records, and 1.20 MB file while retaining automatic evidence if performance
+actually falls. The new `prof_v=2` capture already includes level, segment,
+object, render, GL, and pacing context that this healthy v1 frame stream lacks.
