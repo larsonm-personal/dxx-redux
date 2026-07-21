@@ -456,6 +456,10 @@ if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
 
 $md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
 
+$retentionArtifacts = @($reportFile, $quickDemoRoot, $quickPrimaryResultRoot) | Where-Object { Test-Path -LiteralPath $_ }
+$retentionArtifacts += @(Get-ChildItem -LiteralPath $ReportDir -File | Where-Object { $_.Name -like "*_$timestamp.*" } | Select-Object -ExpandProperty FullName)
+& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $retentionArtifacts
+
 if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
     exit 1
 }

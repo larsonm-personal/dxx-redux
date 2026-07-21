@@ -15,7 +15,9 @@ param(
     [ValidateRange(1, 1000)][int]$KeepFileGenerations = 1,
     [ValidateRange(0, 8760)][double]$MinimumAgeHours = 1,
     [string]$RepositoryRoot = "",
-    [string[]]$Roots
+    [string[]]$Roots,
+    [string[]]$FamilySeeds,
+    [switch]$IgnoreUnrecognizedFamilySeeds
 )
 
 $ErrorActionPreference = "Stop"
@@ -260,6 +262,23 @@ function Get-ArtifactStats {
 
 $scratchRoots = @(Resolve-ScratchRoots)
 $observed = @(Get-ObservedItems -ScratchRoots $scratchRoots)
+if ($FamilySeeds) {
+    $seedFamilies = @()
+    foreach ($seedValue in $FamilySeeds) {
+        $seedPath = [IO.Path]::GetFullPath($seedValue)
+        $seed = @($observed | Where-Object { $_.Item.FullName.Equals($seedPath, $pathComparison) })
+        if ($seed.Count -ne 1 -or -not $seed[0].Family) {
+            if ($IgnoreUnrecognizedFamilySeeds) {
+                Write-Verbose "Ignoring unrecognized family seed: $seedPath"
+                continue
+            }
+            throw "Family seed is not a recognized timestamped artifact in the selected roots: $seedPath"
+        }
+        $seedFamilies += $seed[0].Family
+    }
+    $seedFamilies = @($seedFamilies | Sort-Object -Unique)
+    $observed = @($observed | Where-Object { $_.Family -and $_.Family -in $seedFamilies })
+}
 $kept = @()
 $candidates = @()
 foreach ($className in @('timestamped-generation-directory', 'timestamped-output-file')) {

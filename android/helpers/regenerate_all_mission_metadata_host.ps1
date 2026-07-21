@@ -550,6 +550,7 @@ function Write-SummaryRecord {
 }
 
 New-Item -ItemType Directory -Force -Path $metadataDir, $rawDir, $logsDir, $stagesDir | Out-Null
+& (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $outDir
 if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
     throw "Mission metadata source directory not found: $zipDir"
 }

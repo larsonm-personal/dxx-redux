@@ -44,6 +44,7 @@ $importsDir = Join-Path $OutDir "imports"
 $artifactsDir = Join-Path $OutDir "artifacts"
 $resolvedScriptDir = Join-Path $OutDir "resolved_scripts"
 New-Item -ItemType Directory -Force -Path $metadataDir, $importsDir, $artifactsDir, $resolvedScriptDir | Out-Null
+& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $OutDir
 $script:LogFile = Join-Path $OutDir "batch.log"
 $script:MissionZipBatchRecoveryCount = 0
 
@@ -817,6 +818,6 @@ if ($failed.Count -gt 0) {
         Write-Host "  $($item.name) -- $reason" -ForegroundColor Red
     }
     Write-Status "Failed ZIP summary: $failedSummaryPath" "Yellow"
-    exit 1
 }
+if ($failed.Count -gt 0) { exit 1 }
 exit 0

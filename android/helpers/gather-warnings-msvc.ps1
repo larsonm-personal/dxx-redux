@@ -81,3 +81,4 @@ if (-not $D1Only) {
 
 Write-Host ""
 Write-Host "Written to: $logFile"
+& (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile

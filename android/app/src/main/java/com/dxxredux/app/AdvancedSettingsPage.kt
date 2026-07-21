@@ -32,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -80,6 +82,15 @@ internal fun formatAdvancedPageLoadProgress(progress: AdvancedPageLoadProgress):
     val completed = progress.completed.coerceIn(0, total)
     return "${progress.label} $completed/$total"
 }
+
+internal data class DebugLogFileFingerprint(
+    val path: String,
+    val length: Long,
+    val lastModified: Long,
+)
+
+internal fun debugLogFileFingerprint(files: List<File>): List<DebugLogFileFingerprint> =
+    files.map { DebugLogFileFingerprint(it.absolutePath, it.length(), it.lastModified()) }
 
 private fun annotateStorageHelperSymlinks(entries: List<StorageFileEntry>): List<StorageFileEntry> {
     val helperTargets = mutableMapOf<String, String>()
@@ -638,9 +649,28 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
             mutableStateListOf(*Array(DebugLogCategory.COUNT) { DebugLog.isCategoryEnabled(ctx, it) })
         }
     var logFiles by remember(initialLogFiles) { mutableStateOf(initialLogFiles) }
+    var logFingerprint by remember(initialLogFiles) {
+        mutableStateOf(debugLogFileFingerprint(initialLogFiles))
+    }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
+
+    suspend fun refreshLogFiles() {
+        val refreshed = withContext(Dispatchers.IO) { DebugLog.listLogFiles(ctx) }
+        val refreshedFingerprint = debugLogFileFingerprint(refreshed)
+        if (refreshedFingerprint != logFingerprint) {
+            logFiles = refreshed
+            logFingerprint = refreshedFingerprint
+        }
+    }
+
+    LaunchedEffect(ctx) {
+        while (isActive) {
+            delay(1000)
+            refreshLogFiles()
+        }
+    }
 
     Text("Debug Logging Categories", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(8.dp))
@@ -661,9 +691,20 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
         }
     }
 
-    if (logFiles.isNotEmpty()) {
-        Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text("Log Files (${logFiles.size})", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.weight(1f))
+        OutlinedButton(
+            onClick = { scope.launch { refreshLogFiles() } },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+            modifier = Modifier.height(28.dp),
+        ) {
+            Text("Refresh", fontSize = 11.sp)
+        }
+    }
+
+    if (logFiles.isNotEmpty()) {
         Spacer(modifier = Modifier.height(4.dp))
         for (file in logFiles) {
             Row(

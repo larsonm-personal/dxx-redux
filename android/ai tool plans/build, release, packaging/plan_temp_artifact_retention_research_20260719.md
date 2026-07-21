@@ -60,3 +60,17 @@ The test now creates a uniquely named fixture below the operating-system temp di
 - [x] Add static verification without executing cleanup.
 
 PowerShell emits no `Measure-Object` result for an empty pipeline under this strict-mode access pattern. Both aggregations now start at zero and call `Measure-Object` only for non-empty collections. Static parsing and scoped code-quality checks passed.
+
+## Producer-side retention
+
+- [x] Reconfirm all tracked producers that create accumulating timestamped artifacts.
+- [x] Add one shared producer retention entry point with a default keep count of five.
+- [x] Invoke retention from package, mission, test-suite, determinism, and warning producers.
+- [x] Ensure producer calls scope cleanup to their own artifact families.
+- [x] Add static and fixture coverage without cleaning repository artifacts.
+
+`retain-recent-artifacts.ps1` accepts the artifacts created by the current producer run, derives their family identities through the class-based cleanup engine, and keeps the newest five generations of only those families. This prevents a warning-log run from rotating unrelated test results that happen to share the same `temp` root. Repository-external custom outputs and non-timestamped custom mission batch directories are left alone.
+
+Producer hooks now cover timestamped AAB packages, emulator and host mission metadata batches, full and quick test reports/logs/result directories, determinism matrix runs, and Android/MSVC warning logs. The emulator metadata wrapper is covered through its call into `run_mission_zip_batch.ps1`.
+
+All changed PowerShell files pass parser checks and the repository's scoped code-quality pass. The deletion fixture was extended to verify the default five-generation rotation, but neither it nor either cleanup entry point was executed, following the user's instruction.

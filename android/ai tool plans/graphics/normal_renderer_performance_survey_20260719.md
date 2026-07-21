@@ -166,3 +166,97 @@ rooms.
 - D2 door 45 GPU pixel-readback regression passed, 35/35 steps.
 - D1 launch/automap renderer coverage passed, 53/53 steps.
 - Scoped code quality and `git diff --check` passed.
+
+## On-device VBO A/B investigation
+
+- [x] Add a profiling-only automatic A/B controller for the prior per-draw orphan path and the per-frame streaming path
+- [x] Accumulate VBO upload calls, bytes, sampled CPU call time, frame counts, and frame-time distribution without per-frame file writes
+- [x] Emit one compact Profiling-category summary per completed interval, including warmup and mode identity
+- [x] Verify alternating modes and bounded log volume on the emulator reactor scenario
+- [x] Build Android all ABIs, run renderer regressions and unit tests, and document phone test instructions
+
+### A/B implementation and overhead
+
+Enabling only the launcher Advanced tab's `Profiling` log category activates the
+experiment. It alternates the packed per-draw `glBufferData` orphan path and the
+per-frame streaming `glBufferSubData` path. Each mode has a 3 second unmeasured
+warmup followed by a 12 second measurement. Upload calls and bytes are exact,
+while CPU time around upload and orphan calls is sampled once per 64 calls to
+avoid hundreds of clock reads per frame. Frame and render timing reuse the
+existing profiler clocks.
+
+One `type=vbo_ab` summary is written after each measurement, or about four lines
+per minute. Existing Profiling-category sampling remains batched. A 55 second
+emulator reactor run produced a 79,031 byte exported debug log, so the file
+volume is about 86 KiB per minute rather than an unbounded per-draw trace.
+
+The emulator successfully alternated both modes over three complete windows.
+It continued to favor `per_frame_stream`, while retaining exact calls and bytes
+needed to normalize intervals with different visible effects. The phone run is
+expected to determine whether its hardware driver reverses that result.
+
+### A/B validation
+
+- Android all-ABI debug build and debug unit tests passed.
+- Windows D1 and D2 builds passed.
+- D2 reactor A/B scenario passed, 29/29 steps, and emitted both mode summaries.
+- D2 runtime texture options passed, 43/43 steps.
+- D2 door 45 GPU pixel-readback regression passed, 35/35 steps.
+- D1 launch/automap coverage passed, 53/53 steps.
+
+## First hardware A/B log analysis
+
+- [x] Parse and pair all complete per-draw and per-frame measurement windows
+- [x] Normalize frame and render timing against upload calls and bytes per frame
+- [x] Check scene stability, outliers, texture activity, and other profiler buckets
+- [x] Record the hardware conclusion and choose the next renderer experiment
+- [x] Remove the per-frame streaming path and A/B controller, restoring packed per-draw uploads
+- [x] Rebuild and run renderer, unit, and code-quality validation
+
+### Hardware result
+
+The arm64 phone log contained three `per_draw_orphan` windows and two
+`per_frame_stream` windows in a stable level 4 view with 98 textured polygons,
+zero water faces, 123 texture binds, 230 VBO uploads, and about 52.56 KiB of
+vertex data per frame.
+
+| Mode | FPS | Frame avg | Render avg | Sampled upload call |
+| --- | ---: | ---: | ---: | ---: |
+| Packed per-draw orphan | 25.0 | 39,887 us | 572 us | 0.6 us |
+| Per-frame stream | 10.5 | 94,520 us | 94,421 us | 408.1 us |
+
+The streaming path also orphaned twice per game frame because this render route
+starts two OGL frames. More importantly, 230 sampled `glBufferSubData` calls at
+about 408 us each account for essentially the entire 94 ms render time. GPU work
+remained about 1 ms, simulation stayed below 0.25 ms, and no texture load burst
+overlapped the completed comparisons. This is a phone-driver synchronization
+stall, not water animation, robot AI, geometry variation, or GPU shading load.
+
+The phone-validated fix removes the ring allocation, per-frame orphan,
+`glBufferSubData`, and temporary A/B timing code. It retains the earlier useful
+consolidation that packs all enabled client arrays into one staging buffer and
+performs one `glBufferData` upload per draw.
+
+Validation after the removal passed Android `assembleDebug` for arm64-v8a,
+armeabi-v7a, and x86_64; all Android debug unit tests; Windows D1 and D2 builds;
+the D2 reactor profile (29/29), D2 door GPU readback (35/35), D2 runtime texture
+options (43/43), and D1 launch/automap (53/53) scenarios; scoped code quality;
+and `git diff --check`.
+
+## 25 FPS wait attribution
+
+- [x] Trace the Android profile `wait` bucket to the frame pacing implementation
+- [x] Identify the configuration value, default, and user control producing 25 FPS
+- [x] Check whether profiling, multiplayer, or Android-specific state overrides it
+- [x] Record the conclusion without changing an intentional battery-saving policy
+
+Finding: D2 wraps `calc_frame_time()` in the Android `wait` profiler bucket. With
+VSync disabled, that function uses the pilot's `PlayerCfg.maxFps`; a saved value
+of 25 therefore targets a 40 ms frame and calls `timer_delay()`, which yields via
+`SDL_Delay`. The measured roughly 38-39 ms wait plus sub-millisecond rendering is
+the intended limiter, not renderer load. `maxfps` is exposed in the in-game
+Graphics Options menu, persisted in the pilot file, and clamped to 25-200. New
+pilots default to the release `MAXIMUM_FPS` of 200, so 25 is a saved pilot choice,
+not an Android, profiling, or multiplayer override. VSync is off by default and,
+when enabled, bypasses this explicit limiter in favor of presentation pacing.
+No runtime behavior was changed.

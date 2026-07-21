@@ -179,6 +179,7 @@ if (-not (Test-Path -LiteralPath $outDir)) {
 $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $runDir = Join-Path $outDir $timestamp
 New-Item -ItemType Directory -Path $runDir -Force | Out-Null
+& (Join-Path $PSScriptRoot '..\helpers\retain-recent-artifacts.ps1') -Artifacts $runDir
 
 $results = New-Object System.Collections.Generic.List[object]
 $stateTraceByKey = @{}

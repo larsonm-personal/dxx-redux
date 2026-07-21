@@ -146,6 +146,7 @@ $outPath = Join-Path $outDir $outName
 
 Copy-Item $aab.FullName $outPath
 $sizeMB = [math]::Round((Get-Item $outPath).Length / 1MB, 1)
+& (Join-Path $PSScriptRoot "helpers\retain-recent-artifacts.ps1") -Artifacts $outPath
 
 Write-Host ""
 Write-Host "AAB built successfully: $outPath ($sizeMB MB)"

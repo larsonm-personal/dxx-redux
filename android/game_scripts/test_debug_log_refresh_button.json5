@@ -1,0 +1,12 @@
+// TEST: The Advanced page always exposes an immediate debug-log refresh action.
+[
+    {"_info": {
+        "description": "Verify current debug logs can be refreshed without relaunching the app",
+        "games": ["d2"]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "tap_button", "text": "Advanced", "post_delay_ms": 600},
+    {"action": "assert_button", "text": "Refresh", "exact": true},
+    {"action": "tap_button", "text": "Refresh", "exact": true, "post_delay_ms": 500},
+    {"action": "assert_button", "text": "Refresh", "exact": true}
+]

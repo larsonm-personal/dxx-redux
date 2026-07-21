@@ -2169,7 +2169,6 @@ void ogl_start_frame(void){
 	r_shader_switches=0;r_mask_draws=0;
 	r_water_faces=0;
 	r_mwall_cache_hits=0;r_mwall_cache_misses=0;
-	gles3_shim_begin_frame();
 	g_ogl_render_context = 1; /* 3D world */
 	ogl_android_apply_pending_runtime_options("start_frame");
 	/* Bind MSAA FBO if enabled; create/resize as needed.

@@ -183,6 +183,7 @@ object DebugLog {
     }
 
     fun listLogFiles(context: Context): List<File> {
+        flush()
         val dir = File(context.filesDir, DIR_NAME)
         if (!dir.isDirectory) return emptyList()
         return dir
@@ -190,6 +191,16 @@ object DebugLog {
             ?.filter { it.isFile && it.name.startsWith("debuglog_") }
             ?.sortedByDescending { it.lastModified() }
             ?: emptyList()
+    }
+
+    fun flush() {
+        synchronized(lock) {
+            try {
+                writer?.flush()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to flush log file", e)
+            }
+        }
     }
 
     fun shareLogFile(

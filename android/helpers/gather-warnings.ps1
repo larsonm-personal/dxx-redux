@@ -89,3 +89,4 @@ Write-Host "  Kotlin:       $kotlinCount"
 Write-Host "  Total:        $($warnings.Count)"
 Write-Host ""
 Write-Host "Written to: $logFile"
+& (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile

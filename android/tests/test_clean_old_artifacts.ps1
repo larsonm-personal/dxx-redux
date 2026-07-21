@@ -6,6 +6,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $helper = Join-Path $repoRoot "android\helpers\clean-old-artifacts.ps1"
+$retentionHelper = Join-Path $repoRoot "android\helpers\retain-recent-artifacts.ps1"
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) "dxx-clean-old-artifacts-TEST_ONLY-$([guid]::NewGuid().ToString('N'))"
 
 function Assert-Exists {
@@ -72,6 +73,17 @@ try {
             "temp\TEST_ONLY_vendor_workspace\TEST_ONLY_nested\TEST_ONLY_history_20260102_010101.test-output"
         )) {
         New-FixtureFile -RelativePath $relativePath
+    }
+
+    $retentionFamily = 1..6 | ForEach-Object {
+        $relativePath = "temp\TEST_ONLY_retention\TEST_ONLY_generation_2026010$($_)_010101.test-output"
+        New-FixtureFile -RelativePath $relativePath
+        Join-Path $fixtureRoot $relativePath
+    }
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts $retentionFamily[-1] | Out-Null
+    Assert-Missing -RelativePath "temp\TEST_ONLY_retention\TEST_ONLY_generation_20260101_010101.test-output"
+    foreach ($path in $retentionFamily[1..5]) {
+        Assert-Exists -RelativePath ([IO.Path]::GetRelativePath($fixtureRoot, $path))
     }
 
     $preview = & $helper -RepositoryRoot $fixtureRoot -MinimumAgeHours 0 2>&1 | Out-String

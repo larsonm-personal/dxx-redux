@@ -1837,6 +1837,10 @@ $md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
 Write-Host "  Report: $reportFile" -ForegroundColor Cyan
 Write-Host ""
 
+$retentionArtifacts = @($reportFile, $inputDemoPrimaryRoot) | Where-Object { Test-Path -LiteralPath $_ }
+$retentionArtifacts += @(Get-ChildItem -LiteralPath $ReportDir -File | Where-Object { $_.Name -like "*_$timestamp.*" } | Select-Object -ExpandProperty FullName)
+& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $retentionArtifacts
+
 # -- Cleanup auto-provisioned infrastructure (reverse order) --
 
 if ($script:startedDocker) {
