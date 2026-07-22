@@ -173,6 +173,14 @@ function SendSetupCommand {
     }
 }
 
+$script:launcherDpadCleanupDone = $false
+function Invoke-LauncherDpadCleanup {
+    if ($script:launcherDpadCleanupDone) { return }
+    $script:launcherDpadCleanupDone = $true
+    try { Stop-AppAndWait } catch {}
+}
+Register-EngineEvent PowerShell.Exiting -Action { Invoke-LauncherDpadCleanup } | Out-Null
+
 # --- Setup ---
 Info "Checking emulator..."
 Ensure-EmulatorHealthy
@@ -183,13 +191,9 @@ if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
     Fail "Could not resolve game data deps"
 }
 
-# Reset active file set to "default" -- previous tests may have switched sets
-Info "Resetting file set state..."
-Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/file_sets.json") | Out-Null
-Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
-
 Info "Force-stopping app..."
-& $script:ADB shell am force-stop com.dxxredux.app
+Stop-AppAndWait
+Reset-GameState
 & $script:ADB shell am force-stop com.google.android.documentsui 2>$null
 
 Info "Launching SetupActivity..."
@@ -271,7 +275,7 @@ Info "  PASS: DPAD_RIGHT moved focus to Touch Layout"
 
 # --- Cleanup ---
 SendKey 4  # BACK
-& $script:ADB shell am force-stop com.dxxredux.app
 
 Info ""
 Info "All tests passed"
+Invoke-LauncherDpadCleanup

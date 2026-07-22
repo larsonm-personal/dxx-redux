@@ -207,6 +207,51 @@ if (!$NoBuild) {
     Write-Host "Step 1: Skipping build (--NoBuild)" -ForegroundColor DarkGray
 }
 
+$localGameData = Resolve-LocalSafTestFile
+$fileSize = 0
+$GAME_DATA_DIR = $script:DEFAULT_SET_DIR
+
+$script:safCleanupDone = $false
+function Invoke-SafCleanup {
+    if ($script:safCleanupDone) { return }
+    $script:safCleanupDone = $true
+
+    if ($NoCleanup) {
+        Write-Host ""
+        Write-Host "Step 9: Skipping cleanup (--NoCleanup)" -ForegroundColor DarkGray
+        return
+    }
+
+    Write-Host ""
+    Write-Host "Step 9: Cleaning up..." -ForegroundColor Yellow
+
+    Invoke-AdbWithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE" | Out-Null
+    Start-Sleep -Seconds 1
+
+    # Restore the file to the app's files dir. run-as cannot read
+    # /data/local/tmp on every image, so prefer the local test data.
+    $restoreTmp = "/data/local/tmp/$TEST_FILE"
+    if ($localGameData -and (Test-Path -LiteralPath $localGameData)) {
+        Adb push $localGameData $restoreTmp | Out-Null
+        Adb shell "run-as $PACKAGE cp $restoreTmp $GAME_DATA_DIR/$TEST_FILE" | Out-Null
+    } else {
+        Adb shell "run-as $PACKAGE cp $SAF_DIR/$TEST_FILE $GAME_DATA_DIR/$TEST_FILE" | Out-Null
+    }
+    Adb shell "rm -f $restoreTmp" | Out-Null
+
+    Adb shell "run-as $PACKAGE rm -f $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
+    Adb shell "rm -rf $SAF_DIR" | Out-Null
+
+    $restored = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE" 2>&1
+    if ($fileSize -gt 0 -and $restored.ToString().Trim() -eq $fileSize.ToString()) {
+        Write-Host "[OK] $TEST_FILE restored to app files dir" -ForegroundColor Green
+    } else {
+        Write-Host "[WARN] $TEST_FILE restore may have failed (size=$restored, expected=$fileSize)" -ForegroundColor Yellow
+    }
+}
+
+Register-EngineEvent PowerShell.Exiting -Action { Invoke-SafCleanup } | Out-Null
+
 # -- Step 2: Stop the game if running -----------------------------------
 Write-Host ""
 Write-Host "Step 2: Stopping game..." -ForegroundColor Yellow
@@ -217,12 +262,12 @@ if ($null -eq $stopResult) {
 Start-Sleep -Seconds 2
 Write-Progress-Flush "[OK] Game stopped" Green
 
-# Clean stale pilot/config files so the game starts fresh
+# Clean state that may have survived an earlier test or interrupted SAF run.
+Reset-GameState
 Adb shell "run-as $PACKAGE find files -name '*.plr' -delete" | Out-Null
 Adb shell "run-as $PACKAGE find files -name '*.plx' -delete" | Out-Null
-Adb shell "run-as $PACKAGE find files -name 'descent.cfg' -delete" | Out-Null
-Adb shell "run-as $PACKAGE rm -f files/controller_config.json" | Out-Null
-Adb shell "run-as $PACKAGE rm -f files/file_sets.json" | Out-Null
+Adb shell "run-as $PACKAGE rm -f $($script:DEFAULT_SET_DIR)/.saf_manifest.json" | Out-Null
+Adb shell "rm -rf $SAF_DIR" | Out-Null
 
 # -- Step 3: Install APK -----------------------------------------------
 Write-Host ""
@@ -241,7 +286,6 @@ Write-Host ""
 Write-Progress-Flush "Step 4: Moving $TEST_FILE to SAF test location..." Yellow
 
 # Get the file size from the active default file set.
-$GAME_DATA_DIR = $script:DEFAULT_SET_DIR
 $sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
 if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
     # File missing -- a previous timed-out run may not have cleaned up.
@@ -267,7 +311,6 @@ Write-Host "  File size: $fileSize bytes"
 # Note: /sdcard/ is not accessible from native code due to scoped storage.
 # Use /data/local/tmp/ which is world-readable on emulators.
 Adb shell "mkdir -p $SAF_DIR" | Out-Null
-$localGameData = Resolve-LocalSafTestFile
 if ($localGameData) {
     Adb push $localGameData "$SAF_DIR/$TEST_FILE" | Out-Null
 } else {
@@ -326,11 +369,11 @@ Write-Progress-Flush "Step 6: Creating .saf_manifest.json..." Yellow
 $manifestJson = @"
 {
   "files": [
-    {
-      "filename": "$($TEST_FILE.ToLower())",
-      "content_uri": "$SAF_DIR/$TEST_FILE",
-      "size_bytes": $fileSize
-    }
+{
+  "filename": "$($TEST_FILE.ToLower())",
+  "content_uri": "$SAF_DIR/$TEST_FILE",
+  "size_bytes": $fileSize
+}
   ]
 }
 "@
@@ -493,38 +536,7 @@ switch ($result) {
 Write-Host "========================================" -ForegroundColor Cyan
 
 # -- Step 9: Cleanup ---------------------------------------------------
-if (!$NoCleanup) {
-    Write-Host ""
-    Write-Host "Step 9: Cleaning up..." -ForegroundColor Yellow
-
-    # Stop the game
-    Invoke-AdbWithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE" | Out-Null
-    Start-Sleep -Seconds 1
-
-    # Restore the file to app's files dir
-    # Note: run-as can't read /data/local/tmp/ on every image, so re-push from local game_data.
-    $restoreTmp = "/data/local/tmp/$TEST_FILE"
-    if ($localGameData -and (Test-Path -LiteralPath $localGameData)) {
-        Adb push $localGameData $restoreTmp | Out-Null
-    }
-    Adb shell "run-as $PACKAGE cp $restoreTmp $GAME_DATA_DIR/$TEST_FILE" | Out-Null
-    Adb shell "rm -f $restoreTmp" | Out-Null
-
-    # Remove SAF test artifacts
-    Adb shell "run-as $PACKAGE rm -f $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
-    Adb shell "rm -rf $SAF_DIR" | Out-Null
-
-    # Verify restore
-    $restored = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE" 2>&1
-    if ($restored.ToString().Trim() -eq $fileSize.ToString()) {
-        Write-Host "[OK] $TEST_FILE restored to app files dir" -ForegroundColor Green
-    } else {
-        Write-Host "[WARN] $TEST_FILE restore may have failed (size=$restored, expected=$fileSize)" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host ""
-    Write-Host "Step 9: Skipping cleanup (--NoCleanup)" -ForegroundColor DarkGray
-}
+Invoke-SafCleanup
 
 Write-Host ""
 if ($result -eq "PASS") {

@@ -72,6 +72,7 @@ try {
     if (-not (Test-DeviceOnline -Serial $Serial)) {
         throw "Android device $Serial is not online"
     }
+    Reset-DeviceGameState -Serial $Serial
     $deviceTemporaryZip = "/data/local/tmp/$deviceZip"
     $push = Adb -AdbArgs @("push", $selectedPack.Zip.FullName, $deviceTemporaryZip)
     if ($push -match "failed") { throw "adb push failed: $push" }
@@ -125,11 +126,24 @@ try {
             $script:initial = $null
             return $false
         }
-        return $script:selection -and $script:initial -and $script:initial.level_preview.active -and
+        $previewReady = $script:selection -and $script:initial -and $script:initial.level_preview.active -and
         $script:initial.level_preview.palette_ready -and
         -not [string]::IsNullOrWhiteSpace([string]$script:initial.level_preview.palette_name) -and
         $script:initial.automap_active -and $script:initial.automap -and
         $script:presentedProbe -and $script:compositeProbe
+        if (-not $previewReady) { return $false }
+
+        $renderReady = [int]$script:initial.framebuffer_probe.gl_error -eq 0 -and
+        [long]$script:initial.framebuffer_probe.map_visible_pixels -gt 100 -and
+        [int]$script:presentedProbe.pixel_copy_result -eq 0 -and
+        [long]$script:presentedProbe.map_visible_pixels -gt 100 -and
+        [int]$script:compositeProbe.pixel_copy_result -eq 0 -and
+        [long]$script:compositeProbe.rgb_sum -ge ([long]$script:presentedProbe.rgb_sum / 2)
+        if (-not $renderReady) {
+            $script:initial = $null
+            return $false
+        }
+        return $true
     }
     if (-not $ready) { throw "Preview did not produce a live automap introspection snapshot" }
     $requestId = [string]$selection.request_id
@@ -299,5 +313,8 @@ try {
     } catch {
         Write-Warning "Smoke cleanup failed: $($_.Exception.Message)"
     }
+    try {
+        if (Test-DeviceOnline -Serial $Serial) { Stop-AppAndWait }
+    } catch {}
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

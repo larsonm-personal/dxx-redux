@@ -34,26 +34,38 @@ if (-not (Test-Path -LiteralPath $cuePath -PathType Leaf)) {
 
 Ensure-EmulatorHealthy
 
-Write-Status "Staging SAF redbook fixture"
-Adb -AdbArgs @("push", $binPath, "/data/local/tmp/test_disc.bin") | Out-Null
-Adb -AdbArgs @("push", $cuePath, "/data/local/tmp/test_disc.cue") | Out-Null
-Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") | Out-Null
-Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/test_disc.cue", "files/test_disc.cue") | Out-Null
-Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/test_disc.cue") | Out-Null
+try {
+    Write-Status "Staging SAF redbook fixture"
+    Adb -AdbArgs @("push", $binPath, "/data/local/tmp/test_disc.bin") | Out-Null
+    Adb -AdbArgs @("push", $cuePath, "/data/local/tmp/test_disc.cue") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/test_disc.cue", "files/test_disc.cue") | Out-Null
+    Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/test_disc.cue") | Out-Null
 
-$stagedCue = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/test_disc.cue") -Seconds 5
-$stagedBin = Adb-Timeout -AdbArgs @("shell", "ls", "/data/local/tmp/test_disc.bin") -Seconds 5
-if (-not $stagedCue -or $stagedCue -match "No such file" -or -not $stagedBin -or $stagedBin -match "No such file") {
-    Write-Status "FAIL: could not stage SAF redbook fixture on device" "Red"
-    exit 1
+    $stagedCue = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/test_disc.cue") -Seconds 5
+    $stagedBin = Adb-Timeout -AdbArgs @("shell", "ls", "/data/local/tmp/test_disc.bin") -Seconds 5
+    if (-not $stagedCue -or $stagedCue -match "No such file" -or -not $stagedBin -or $stagedBin -match "No such file") {
+        Write-Status "FAIL: could not stage SAF redbook fixture on device" "Red"
+        exit 1
+    }
+
+    $runTest = Join-Path (Join-Path $androidRoot "helpers") "run_test.ps1"
+    & $runTest -ScriptName $scriptName -TimeoutSeconds $TimeoutSeconds -Game d2
+    $exitCode = $LASTEXITCODE
+} finally {
+    try { Stop-AppAndWait } catch {}
+    try {
+        Adb -AdbArgs @(
+            "shell", "run-as", $script:PACKAGE, "rm", "-f",
+            "files/test_disc.cue", "files/mods/mod_manifest.json"
+        ) | Out-Null
+    } catch {}
+    try {
+        Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/test_disc.bin", "/data/local/tmp/test_disc.cue") | Out-Null
+    } catch {}
 }
 
-$runTest = Join-Path (Join-Path $androidRoot "helpers") "run_test.ps1"
-& $runTest -ScriptName $scriptName -TimeoutSeconds $TimeoutSeconds -Game d2
-$exitCode = $LASTEXITCODE
-
-try {
-    Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/test_disc.bin") | Out-Null
-} catch {}
-
+if ($null -eq $exitCode) {
+    $exitCode = 1
+}
 exit $exitCode

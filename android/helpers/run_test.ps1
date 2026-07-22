@@ -130,6 +130,14 @@ if ($gameList.Count -gt 1) {
 # -- Run for each game ---------------------------------------
 
 $allPassed = $true
+$script:runTestCleanupDone = $false
+function Invoke-RunTestCleanup {
+    if ($script:runTestCleanupDone) { return }
+    $script:runTestCleanupDone = $true
+    try { Stop-AppAndWait } catch {}
+}
+Register-EngineEvent PowerShell.Exiting -Action { Invoke-RunTestCleanup } | Out-Null
+
 foreach ($gameId in $gameList) {
     if ($gameList.Count -gt 1) {
         Write-Host ""
@@ -395,5 +403,6 @@ foreach ($gameId in $gameList) {
     }
 }
 
+Invoke-RunTestCleanup
 if (-not $allPassed) { exit 1 }
 exit 0

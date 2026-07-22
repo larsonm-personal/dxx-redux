@@ -45,7 +45,6 @@ try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -Error
 "" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
 
 $found = $false
-$passed = $false
 
 function Get-LogcatLines {
     param([string]$Serial, [string[]]$Tags)
@@ -67,8 +66,9 @@ try {
     }
     Write-Status "Both emulators online"
 
-    # Force-stop and restart apps
+    # Clear app and launcher state inherited from earlier multiplayer tests.
     foreach ($emu in @($EMU1, $EMU2)) {
+        Reset-DeviceGameState -Serial $emu
         if (-not (Start-SetupActivity -Serial $emu)) {
             Write-Status "FAIL: SetupActivity did not become ready on $emu" "Red"
             exit 1
@@ -207,7 +207,6 @@ try {
         Write-Status ""
         $coverage = if ($ResumeCoverage) { "DISCOVERY AND RESUME" } else { "DISCOVERY" }
         Write-Status "=== LAN LOBBY $coverage TEST PASSED ===" "Green"
-        $passed = $true
         exit 0
     } else {
         Write-Status ""
@@ -224,9 +223,17 @@ try {
         exit 1
     }
 } finally {
-    if (-not $passed) {
-        # Stop lobby services on failure only; on success leave them running for by-hand testing
-        try { & $ADB -s $EMU1 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
-        try { & $ADB -s $EMU2 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
+    foreach ($emu in @($EMU1, $EMU2)) {
+        try {
+            Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.MP_COMMAND",
+                "--es", "command", "lan_stop_lobby"
+            ) -Seconds 5 | Out-Null
+        } catch {}
+        try {
+            Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "am", "force-stop", $PACKAGE
+            ) -Seconds 5 | Out-Null
+        } catch {}
     }
 }

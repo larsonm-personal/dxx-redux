@@ -819,5 +819,6 @@ if ($failed.Count -gt 0) {
     }
     Write-Status "Failed ZIP summary: $failedSummaryPath" "Yellow"
 }
+Stop-AppAndWait
 if ($failed.Count -gt 0) { exit 1 }
 exit 0

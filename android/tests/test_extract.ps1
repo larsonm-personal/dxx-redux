@@ -171,6 +171,12 @@ function Invoke-Cleanup {
     $script:_cleanupDone = $true
     # Fire-and-forget force-stop with short timeout
     try { Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) -Timeout 5 | Out-Null } catch {}
+    try {
+        Adb -CmdArgs @(
+            'shell', 'run-as', $PACKAGE, 'rm', '-f',
+            'files/file_sets.json', 'files/mods/mod_manifest.json'
+        ) -Timeout 5 | Out-Null
+    } catch {}
 }
 Register-EngineEvent PowerShell.Exiting -Action { Invoke-Cleanup } | Out-Null
 
@@ -895,6 +901,15 @@ Write-Status "Sanitizing device state..."
 # Force-stop the app first
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
+Adb -CmdArgs @(
+    'shell', 'run-as', $PACKAGE, 'rm', '-f',
+    'files/mods/mod_manifest.json',
+    'files/pending_resume_launch.json', 'files/pending_resume_launch.json.tmp',
+    'files/automation_result.json', 'files/automation_result.json.tmp',
+    'files/automation_log.jsonl',
+    'shared_prefs/dxx_prefs.xml', 'shared_prefs/dxx_prefs.xml.bak',
+    'shared_prefs/launcher_prefs.xml', 'shared_prefs/launcher_prefs.xml.bak'
+) | Out-Null
 
 # Launch SetupActivity (needed for broadcasts to work)
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null

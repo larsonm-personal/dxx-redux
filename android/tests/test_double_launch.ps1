@@ -39,10 +39,19 @@ function GetGamePid {
     if ($result) { return $result.Trim() } else { return "" }
 }
 
+$script:doubleLaunchCleanupDone = $false
+function Invoke-DoubleLaunchCleanup {
+    if ($script:doubleLaunchCleanupDone) { return }
+    $script:doubleLaunchCleanupDone = $true
+    try { Stop-AppAndWait } catch {}
+}
+Register-EngineEvent PowerShell.Exiting -Action { Invoke-DoubleLaunchCleanup } | Out-Null
+
 # Clean state
 Log "=== Double-launch crash test (game=$Game) ==="
 Log "Force-stopping app..."
 Stop-AppAndWait
+Reset-GameState
 Adb -AdbArgs @("logcat", "-c") | Out-Null
 
 # Phase 1: Start the game
@@ -179,4 +188,5 @@ if ($pid5 -ne $pid1) {
 
 Log "PASS: Double-launch guard prevented crash, game still running (PID $pid1)"
 Log "=== Test complete ==="
+Invoke-DoubleLaunchCleanup
 exit 0

@@ -64,4 +64,45 @@ if (-not (Wait-ProcessDead -TimeoutMs 250)) {
     throw 'Wait-ProcessDead did not return true after both processes were gone'
 }
 
+$script:ResetEvents = @()
+function Stop-AppAndWait {
+    $script:ResetEvents += "stop:$env:ANDROID_SERIAL"
+}
+function Adb {
+    param([string[]]$AdbArgs)
+    $script:ResetEvents += "adb:$($AdbArgs -join ' ')"
+    return ''
+}
+
+$savedSerial = $env:ANDROID_SERIAL
+$env:ANDROID_SERIAL = 'original-serial'
+try {
+    Reset-DeviceGameState -Serial 'test-serial'
+    if ($env:ANDROID_SERIAL -ne 'original-serial') {
+        throw 'Reset-DeviceGameState did not restore ANDROID_SERIAL'
+    }
+} finally {
+    if ($savedSerial) { $env:ANDROID_SERIAL = $savedSerial }
+    else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
+}
+
+if ($script:ResetEvents[0] -ne 'stop:test-serial') {
+    throw 'Reset-DeviceGameState did not stop the selected device before cleanup'
+}
+$resetCommands = $script:ResetEvents -join "`n"
+foreach ($requiredArtifact in @(
+        'files/mods/mod_manifest.json',
+        'files/audio_sources.json',
+        'files/audio_playlist.json',
+        'files/pending_resume_launch.json',
+        'files/automation_result.json',
+        'files/automation_log.jsonl',
+        'files/file_sets.json',
+        'quick_record_sidecar.*'
+    )) {
+    if ($resetCommands -notmatch [regex]::Escape($requiredArtifact)) {
+        throw "Reset-GameState did not clear $requiredArtifact"
+    }
+}
+
 Write-Host 'PASS'

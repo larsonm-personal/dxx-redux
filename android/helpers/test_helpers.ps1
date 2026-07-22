@@ -487,12 +487,36 @@ function Reset-GameState {
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/controller_config.json") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "rm", "-f", "files/mods/mod_manifest.json",
+        "files/audio_sources.json", "files/audio_playlist.json",
+        "files/pending_resume_launch.json", "files/pending_resume_launch.json.tmp",
+        "files/automation_result.json", "files/automation_result.json.tmp",
+        "files/automation_log.jsonl", "files/introspect.json") | Out-Null
+    # Remove artifacts installed by the quick-record integration test without
+    # deleting user demos or dependency files staged for the next test.
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "find", "files/imported/sets", "-type", "f", "-name", "'quick_record_sidecar.*'", "-delete") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "shared_prefs/dxx_prefs.xml", "shared_prefs/dxx_prefs.xml.bak",
         "shared_prefs/launcher_prefs.xml", "shared_prefs/launcher_prefs.xml.bak") | Out-Null
     # Reset active file set to "default" -- previous tests may have
     # created/switched to a different set that is now empty.
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/file_sets.json") | Out-Null
+}
+
+function Reset-DeviceGameState {
+    param([Parameter(Mandatory)][string]$Serial)
+
+    $previousSerial = $env:ANDROID_SERIAL
+    try {
+        $env:ANDROID_SERIAL = $Serial
+        Stop-AppAndWait
+        Reset-GameState
+    } finally {
+        if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial }
+        else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
+    }
 }
 
 function Wait-SetupActivityReady {

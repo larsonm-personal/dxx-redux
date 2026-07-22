@@ -69,6 +69,15 @@ try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -Error
 
 function Cleanup {
     Write-Status "Cleaning up..."
+    try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}
+    try { if ($logcatProc2 -and -not $logcatProc2.HasExited) { Stop-Process -Id $logcatProc2.Id -Force } } catch {}
+    foreach ($emu in @($EMU1, $EMU2)) {
+        try {
+            Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "am", "force-stop", $PACKAGE
+            ) -Seconds 5 | Out-Null
+        } catch {}
+    }
     $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
     if ($UseRelay -and (Test-Path $relayLog)) {
         $lines = Get-Content $relayLog -ErrorAction SilentlyContinue
@@ -998,12 +1007,7 @@ try {
     Write-Status "Game data verified on both emulators" "Green"
 
     foreach ($emu in @($EMU1, $EMU2)) {
-        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "am", "force-stop", $PACKAGE
-        ) -Seconds 5 | Out-Null
-        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "run-as", $PACKAGE, "rm", "-f", "files/file_sets.json"
-        ) -Seconds 5 | Out-Null
+        Reset-DeviceGameState -Serial $emu
     }
 
     # -- Step 1: Launch SetupActivity on both --
@@ -1348,8 +1352,8 @@ try {
     }
 
 } finally {
+    Cleanup
     if (-not $testPassed) {
-        Cleanup
         if (Test-Path $script:LogFile) {
             Get-Content $script:LogFile -ErrorAction SilentlyContinue | Write-Output
         }

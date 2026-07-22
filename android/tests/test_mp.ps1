@@ -108,6 +108,8 @@ function Test-AllLobbyPlayersReady {
 
 function Cleanup {
     Write-Status "Cleaning up..."
+    try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}
+    try { if ($logcatProc2 -and -not $logcatProc2.HasExited) { Stop-Process -Id $logcatProc2.Id -Force } } catch {}
     # Force-stop the app on both emulators BEFORE killing the server.
     # Otherwise the relay dies first, the game detects a timeout ~15s later,
     # and shows "Host left the game!" dialogs.
@@ -162,16 +164,9 @@ try {
     }
     Write-Status "Game data verified on both emulators" "Green"
 
-    # Ensure active file set is 'default' (a previous test may have changed it).
-    # Delete file_sets.json -- FileSetManager.getActive() defaults to "default"
-    # when the file is missing.  Force-stop first so a running app can't re-create it.
+    # Clear state inherited from earlier single- or dual-emulator tests.
     foreach ($emu in @($EMU1, $EMU2)) {
-        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "am", "force-stop", $PACKAGE
-        ) -Seconds 5 | Out-Null
-        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "run-as", $PACKAGE, "rm", "-f", "files/file_sets.json"
-        ) -Seconds 5 | Out-Null
+        Reset-DeviceGameState -Serial $emu
     }
 
     # Kill stale PowerShell processes to prevent handle leaks
@@ -804,9 +799,7 @@ try {
         Write-Status "  stack: $($_.ScriptStackTrace)" "Gray"
     }
 } finally {
-    if (-not $testPassed) {
-        Cleanup
-    }
+    Cleanup
     if ($testPassed) {
         exit 0
     } else {
