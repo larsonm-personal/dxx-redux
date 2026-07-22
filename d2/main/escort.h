@@ -108,6 +108,8 @@ extern void escort_spawn_at_player(void);
 extern void escort_warp_to_player(void);
 extern void escort_get_input_demo_checkpoint_state(struct input_demo_checkpoint_escort_state *escort_state);
 extern void escort_get_input_demo_checkpoint_thief_state(struct input_demo_checkpoint_thief_state *thief_state);
+extern void thief_apply_network_mode(struct object *objp, int mode, int victim_pnum, int prepare_path);
+extern void thief_prepare_for_local_control(struct object *objp);
 extern int Buddy_objnum, Buddy_allowed_to_talk;
 
 #ifdef NETWORK

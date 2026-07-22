@@ -145,6 +145,10 @@ if(NOT ANDROID)
         ../../android/tests/test_escort_exit_policy.c)
     target_include_directories(test_escort_exit_policy PRIVATE ../main)
 
+    add_executable(test_thief_network_policy
+        ../../android/tests/test_thief_network_policy.c)
+    target_include_directories(test_thief_network_policy PRIVATE ../main)
+
     add_executable(test_input_demo_controls
         ../../android/tests/test_input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp)
@@ -228,6 +232,7 @@ if(NOT ANDROID)
             test_level_metadata_scan
             test_escort_owner_policy
             test_escort_exit_policy
+            test_thief_network_policy
             test_input_demo_controls
             test_input_demo_fixture
             test_input_demo_recorder

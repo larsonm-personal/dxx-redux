@@ -988,6 +988,50 @@ static json serialize_guidebot()
 	}
 	return result;
 }
+
+static json serialize_thief()
+{
+	json result;
+	json stolen_items = json::array();
+	int objnum = -1;
+
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type == OBJ_ROBOT && Robot_info[Objects[i].id].thief &&
+		    !(Objects[i].flags & OF_EXPLODING)) {
+			objnum = i;
+			break;
+		}
+	for (int i = 0; i < MAX_STOLEN_ITEMS; ++i)
+		stolen_items.push_back(Stolen_items[i]);
+
+	result["present"] = objnum >= 0;
+	result["object_num"] = objnum >= 0 ? json(objnum) : json(nullptr);
+	result["stolen_item_index"] = Stolen_item_index;
+	result["stolen_items"] = std::move(stolen_items);
+	if (objnum < 0)
+		return result;
+
+	const object &thief = Objects[objnum];
+	result["signature"] = thief.signature;
+	result["segment"] = thief.segnum;
+	result["position"] = json::array({ thief.pos.x, thief.pos.y, thief.pos.z });
+	result["velocity"] = json::array({ thief.mtype.phys_info.velocity.x,
+	                                   thief.mtype.phys_info.velocity.y,
+	                                   thief.mtype.phys_info.velocity.z });
+	result["ai_mode"] = Ai_local_info[objnum].mode;
+	result["path_index"] = thief.ctype.ai_info.cur_path_index;
+	result["path_length"] = thief.ctype.ai_info.path_length;
+#ifdef NETWORK
+	result["remote_owner"] = thief.ctype.ai_info.REMOTE_OWNER;
+	result["remote_slot"] = thief.ctype.ai_info.REMOTE_SLOT_NUM;
+	result["locally_controlled"] =
+	    thief.ctype.ai_info.REMOTE_OWNER == Player_num &&
+	    thief.ctype.ai_info.REMOTE_SLOT_NUM >= 0 &&
+	    thief.ctype.ai_info.REMOTE_SLOT_NUM < MAX_ROBOTS_CONTROLLED &&
+	    robot_controlled[thief.ctype.ai_info.REMOTE_SLOT_NUM] == objnum;
+#endif
+	return result;
+}
 #endif
 
 static const char *merged_wall_snapshot_cover_kind_name(int kind)
@@ -1924,6 +1968,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["secret_areas"] = serialize_secret_areas();
 #ifdef DXX_BUILD_DESCENT_II
 		j["guidebot"] = serialize_guidebot();
+		j["thief"] = serialize_thief();
 #endif
 		j["merged_wall_snapshot"] = serialize_merged_wall_snapshot();
 
@@ -1937,6 +1982,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["secret_areas"] = nullptr;
 #ifdef DXX_BUILD_DESCENT_II
 		j["guidebot"] = nullptr;
+		j["thief"] = nullptr;
 #endif
 		j["merged_wall_snapshot"] = nullptr;
 	}

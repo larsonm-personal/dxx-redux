@@ -77,6 +77,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "hudmsg.h"
 #include "robot.h"
 #include "escort.h"
+#include "thief_network_policy.h"
 #ifdef USE_UDP
 #include "net_udp.h"
 #endif
@@ -5310,33 +5311,88 @@ void multi_do_guided (const ubyte *buf)
 	update_object_seg(Guided_missile[(int)pnum]);
 }
 
-void multi_send_stolen_items ()
+void multi_send_thief_state(object *thief, int contact)
 {
-	if (is_observer()) { return; }
+	int i, count = 0;
+	short remote_objnum = -1;
+	sbyte object_owner = -1;
 
-	int i,count=1;
-	multibuf[0]=MULTI_STOLEN_ITEMS;
+	if (is_observer())
+		return;
+	if (thief && (thief < Objects || thief > Objects + Highest_object_index ||
+	              thief->type != OBJ_ROBOT || !Robot_info[thief->id].thief))
+		thief = NULL;
+	if (thief)
+		remote_objnum = objnum_local_to_remote((int)(thief-Objects), &object_owner);
 
-	for (i=0;i<MAX_STOLEN_ITEMS;i++)
-	{
-		multibuf[i+1]=Stolen_items[i];
-		count++;      // So I like to break my stuff into smaller chunks, so what?
-	}
+	multibuf[count++] = MULTI_STOLEN_ITEMS;
+	multibuf[count++] = Player_num;
+	multibuf[count++] = contact ? THIEF_STATE_CONTACT : 0;
+	PUT_INTEL_SHORT(multibuf+count, remote_objnum); count += 2;
+	multibuf[count++] = object_owner;
+	multibuf[count++] = thief ? (ubyte)Ai_local_info[thief-Objects].mode : THIEF_NETWORK_NO_MODE;
+	for (i=0; i<MAX_STOLEN_ITEMS; i++)
+		multibuf[count++] = Stolen_items[i];
 	multibuf[count++] = (ubyte)Stolen_item_index;
+#ifdef __ANDROID__
+	COOPLOG("thief state send: contact=%d victim=%d obj=%d mode=%d stolen_index=%d",
+	        contact, Player_num, thief ? (int)(thief-Objects) : -1,
+	        thief ? Ai_local_info[thief-Objects].mode : -1,
+	        Stolen_item_index);
+#endif
 	multi_send_data(multibuf, count, 2);
 }
 
-void multi_do_stolen_items (const ubyte *buf)
+void multi_send_stolen_items()
 {
 	int i;
+	object *thief = NULL;
 
-	for (i=0;i<MAX_STOLEN_ITEMS;i++)
-	{
-		Stolen_items[i]=buf[i+1];
-	}
-	Stolen_item_index = buf[MAX_STOLEN_ITEMS+1];
-	if ((Stolen_item_index < 0) || (Stolen_item_index >= MAX_STOLEN_ITEMS))
-		Stolen_item_index = 0;
+	for (i=0; i<=Highest_object_index; i++)
+		if (Objects[i].type == OBJ_ROBOT && Robot_info[Objects[i].id].thief &&
+		    !(Objects[i].flags & OF_EXPLODING)) {
+			thief = &Objects[i];
+			break;
+		}
+	multi_send_thief_state(thief, 0);
+}
+
+void multi_do_stolen_items(const ubyte *buf)
+{
+	int i;
+	int sender = buf[1];
+	int contact = buf[2] & THIEF_STATE_CONTACT;
+	short remote_objnum = GET_INTEL_SHORT(buf+3);
+	int botnum = -1;
+	int mode = buf[6];
+	int stolen_index = buf[7+MAX_STOLEN_ITEMS];
+
+	for (i=0; i<MAX_STOLEN_ITEMS; i++)
+		Stolen_items[i] = buf[7+i];
+	Stolen_item_index = stolen_index < MAX_STOLEN_ITEMS ? stolen_index : 0;
+
+	if (sender < 0 || sender >= MAX_PLAYERS || remote_objnum < 0)
+		return;
+	botnum = objnum_remote_to_local(remote_objnum, (sbyte)buf[5]);
+	if (botnum < 0 || botnum > Highest_object_index ||
+	    Objects[botnum].type != OBJ_ROBOT || !Robot_info[Objects[botnum].id].thief)
+		return;
+	if (!thief_network_mode_is_valid(mode, AIM_THIEF_ATTACK,
+	                                 AIM_THIEF_RETREAT, AIM_THIEF_WAIT))
+		return;
+
+	thief_apply_network_mode(&Objects[botnum], mode, sender,
+	                         thief_network_should_prepare_path(contact,
+	                                                           Objects[botnum].ctype.ai_info.REMOTE_OWNER,
+	                                                           Player_num));
+#ifdef __ANDROID__
+	COOPLOG("thief state recv: contact=%d victim=%d obj=%d owner=%d local=%d mode=%d stolen_index=%d",
+	        contact, sender, botnum,
+	        Objects[botnum].ctype.ai_info.REMOTE_OWNER, Player_num,
+	        Ai_local_info[botnum].mode, Stolen_item_index);
+#endif
+	if (contact && Objects[botnum].ctype.ai_info.REMOTE_OWNER == Player_num)
+		multi_send_robot_position(botnum, 1);
 }
 
 void multi_send_wall_status (int wallnum,ubyte type,ubyte flags,ubyte state)

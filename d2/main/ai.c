@@ -978,6 +978,10 @@ _exit_cheat:
 
 			if (do_stuff) {
 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
+#ifdef NETWORK
+				if (Game_mode & GM_MULTI)
+					multi_send_robot_fire(objnum, MULTI_ROBOT_FIRE_FLARE, &obj->orient.fvec);
+#endif
 				ailp->next_fire = F1_0/2;
 				// SIM RNG: this changes the live flare refire delay for the companion
 				if (!Buddy_allowed_to_talk) // If buddy not talking, make him fire flares less often.
@@ -989,8 +993,16 @@ _exit_cheat:
 
 	if (robptr->thief) {
 
+#ifdef NETWORK
+		if ((Game_mode & GM_MULTI) && !ai_multiplayer_awareness(obj, 80))
+			return;
+#endif
 		compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 		do_thief_frame(obj, dist_to_player, player_visibility, &vec_to_player);
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI)
+			ai_multi_send_robot_position(objnum, -1);
+#endif
 
 		if (ready_to_fire(robptr, ailp)) {
 			int do_stuff = 0;
@@ -1004,6 +1016,10 @@ _exit_cheat:
 			if (do_stuff) {
 				// @mk, 05/08/95: Firing flare from center of object, this is dumb...
 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
+#ifdef NETWORK
+				if (Game_mode & GM_MULTI)
+					multi_send_robot_fire(objnum, MULTI_ROBOT_FIRE_FLARE, &obj->orient.fvec);
+#endif
 				ailp->next_fire = F1_0/2;
 				// SIM RNG: this changes the live flare refire delay for the thief
 				if (Stolen_item_index == 0)     // If never stolen an item, fire flares less often (bad: Stolen_item_index wraps, but big deal)

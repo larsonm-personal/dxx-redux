@@ -12,13 +12,44 @@ Identify why the D2 thief robot visibly snaps or warps between positions in coop
 - [done] Design ownership, simulation, packet scheduling, collision, and RNG behavior for the fix
 - [done] Design focused diagnostics and automated regression coverage
 - [done] Define implementation phases, risks, and validation gates
-- [not requested] Implement the fix
+- [done] Implement the core ownership, state replication, flare replication, diagnostics, introspection, and focused test changes
+- [pending] Run the two-client behavioral regression and manual acceptance pass
 
 ## Constraints
 
 - D1 has no thief robot, so source changes are expected to be D2-only unless shared infrastructure is involved
 - Preserve authoritative robot simulation and eventual convergence; visual smoothing must not create divergent gameplay state
 - Preserve unrelated worktree changes
+- Keep the existing branch `MULTI_PROTO_VERSION`; this feature does not add another bump
+
+## Implementation Status
+
+Implemented on 2026-07-21:
+
+- Thief AI now passes through `ai_multiplayer_awareness()` before any thief-specific simulation, so only the current movement owner updates paths, velocity, orientation, AI RNG, or flare decisions
+- Owner frames coalesce an authoritative robot-position send; position packets now include a validated thief mode byte
+- `MULTI_STOLEN_ITEMS` now carries CONTACT/SNAPSHOT state, object identity, thief mode, the stolen-item ring, and its index
+- A contacted peer still owns its inventory mutation, while only the movement owner constructs the retreat path
+- Ownership acquisition validates the synchronized mode, rebuilds an appropriate local path, and queues a forced first pose
+- Thief and guidebot center-fired flares use a named replicated robot-fire subtype
+- Android diagnostics cover thief ownership claims, large pose corrections, contact state, and flare send/receive events
+- D2 introspection exposes live thief pose, ownership, mode, path, and stolen-item state
+- A native policy test covers mode validation and CONTACT owner-path policy
+- The existing `MULTI_PROTO_VERSION` remains unchanged at `30014`
+
+Validation completed:
+
+- `run-windows-build.ps1 -Target d2`: passed
+- `buildd2\maths\test_thief_network_policy.exe`: passed
+- `android\gradlew.bat :app:assembleDebug` with JDK 21: passed
+- Scoped Android code quality: passed
+- `git diff --check`: passed, with only existing CRLF conversion warnings
+
+Still required before behavioral sign-off:
+
+- Two-client/emulator run that measures correction deltas and verifies attack/retreat convergence, failed-theft retreat, ownership handoff, and one flare per peer
+- Manual visual acceptance under normal latency and a higher-latency/relay scenario
+- Coop restore coverage for `Stolen_item_index`; the normal D2 AI save data includes `Stolen_items` but the current audit did not find the index in that same block
 
 ## Findings
 
@@ -73,7 +104,7 @@ Do not add interpolation in the first fix. Removing contradictory local accelera
 
 ### 3. Mode synchronization
 
-Extend D2 `MULTI_ROBOT_POSITION` by one byte and bump the D2 multiplayer protocol version.
+Extend D2 `MULTI_ROBOT_POSITION` by one byte. Keep the existing branch multiplayer protocol version unchanged: the branch already has one compatibility bump relative to master/main, and that single bump represents the complete branch packet set.
 
 Suggested appended byte:
 
@@ -92,7 +123,7 @@ Mode synchronization is required because `collide_robot_and_player()` uses `AIM_
 
 ### 4. Contact and theft state
 
-Replace the current snapshot-only semantics of `MULTI_STOLEN_ITEMS` with a versioned, fixed-size thief state packet. The D2 protocol bump means backward packet compatibility is unnecessary.
+Replace the current snapshot-only semantics of `MULTI_STOLEN_ITEMS` with a fixed-size thief state packet. The existing branch protocol boundary means backward packet compatibility with intermediate branch revisions is unnecessary.
 
 Suggested fields:
 
@@ -160,7 +191,7 @@ The guidebot uses the same direct center-fired flare pattern and is already owne
 
 ## Packet and Compatibility Changes
 
-- Bump `MULTI_PROTO_VERSION` in D2 only
+- Keep the existing branch `MULTI_PROTO_VERSION`; do not add a per-feature bump
 - Increase the fixed size of `MULTI_ROBOT_POSITION` by one byte
 - Increase and redefine the fixed size of `MULTI_STOLEN_ITEMS`
 - Keep D1 unchanged because it has no thief and its protocol is independently compiled
@@ -262,7 +293,7 @@ Acceptance criteria:
 - Queue owner positions consistently
 - Append validated thief mode to robot position packets
 - Add ownership-acquisition path preparation
-- Bump the D2 protocol version
+- Confirm the existing branch protocol remains different from master/main without changing it again
 
 ### Phase C: Preserve contact semantics
 
@@ -295,7 +326,7 @@ Acceptance criteria:
 | Failed theft does not make owner retreat | Send CONTACT state even when zero items are stolen |
 | New owner resumes an obsolete local path | Invalidate/rebuild thief path on ownership acquisition |
 | Owner-only AI removes remote flares | Add explicit center-flare robot fire replication |
-| Position packet change breaks parsing | Fixed-size append plus D2 protocol bump and packet-size tests |
+| Position packet change breaks parsing | Fixed-size append under the existing branch protocol boundary plus packet-size tests |
 | Contact packet races with an older position | Owner immediately changes to retreat and queues a new position; log and test ordering under simulated latency |
 | Ownership churn causes a correction | Preserve existing minimum control time, measure churn first, tune only if needed |
 | Coop restore leaves an invalid owner slot | Reset runtime control slots, validate mode, and let normal claim establish ownership |
@@ -307,7 +338,7 @@ Acceptance criteria:
 - `d2/main/ai.c`: owner gate, position queue, flare send
 - `d2/main/escort.c` and `escort.h`: retreat transition and ownership preparation helpers
 - `d2/main/multibot.c` and `multibot.h`: mode byte, claim preparation, flare subtype
-- `d2/main/multi.c` and `multi.h`: thief CONTACT/SNAPSHOT packet and protocol version
+- `d2/main/multi.c` and `multi.h`: thief CONTACT/SNAPSHOT packet and fixed packet sizes
 - `d2/main/collide.c`: keep local collision authority while avoiding remote path mutation
 - `android/app/src/main/cpp/shared/game_introspect.cpp`: D2 thief state and counters
 - `android/game_scripts/`: host/joiner thief regression scripts

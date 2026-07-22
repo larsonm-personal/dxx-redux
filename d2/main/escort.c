@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "thief_network_policy.h"
 #include "escort_exit_policy.h"
 #include "escort_owner_policy.h"
 #include "secretarea.h"
@@ -91,7 +92,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/editor.h"
 #endif
 
-extern void multi_send_stolen_items();
 void say_escort_goal(int goal_num);
 struct escort_menu;
 static void show_escort_menu(struct escort_menu *menu);
@@ -3412,6 +3412,56 @@ void recreate_thief(object *objp)
 
 fix	Thief_wait_times[NDL] = {F1_0*30, F1_0*25, F1_0*20, F1_0*15, F1_0*10};
 
+void thief_apply_network_mode(object *objp, int mode, int victim_pnum, int prepare_path)
+{
+	ai_local *ailp;
+	int avoid_seg;
+
+	if (!objp || objp->type != OBJ_ROBOT || !Robot_info[objp->id].thief)
+		return;
+	if (!thief_network_mode_is_valid(mode, AIM_THIEF_ATTACK,
+	                                 AIM_THIEF_RETREAT, AIM_THIEF_WAIT))
+		return;
+
+	ailp = &Ai_local_info[objp-Objects];
+	ailp->mode = mode;
+	if (mode == AIM_THIEF_RETREAT)
+		ailp->next_action_time = Thief_wait_times[Difficulty_level]/2;
+	if (!prepare_path)
+		return;
+
+	if (victim_pnum >= 0 && victim_pnum < MAX_PLAYERS &&
+	    Players[victim_pnum].objnum >= 0 &&
+	    Players[victim_pnum].objnum <= Highest_object_index)
+		avoid_seg = Objects[Players[victim_pnum].objnum].segnum;
+	else
+		avoid_seg = ConsoleObject->segnum;
+
+	if (mode == AIM_THIEF_ATTACK)
+		create_path_to_player(objp, 30, 1);
+	else if (mode == AIM_THIEF_RETREAT)
+		create_n_segment_path(objp, 10, avoid_seg);
+	else {
+		objp->ctype.ai_info.hide_index = -1;
+		objp->ctype.ai_info.path_length = 0;
+		objp->ctype.ai_info.cur_path_index = 0;
+	}
+	ailp->mode = mode;
+}
+
+void thief_prepare_for_local_control(object *objp)
+{
+	int mode;
+
+	if (!objp || objp->type != OBJ_ROBOT || !Robot_info[objp->id].thief)
+		return;
+	mode = Ai_local_info[objp-Objects].mode;
+	if (!thief_network_mode_is_valid(mode, AIM_THIEF_ATTACK,
+	                                 AIM_THIEF_RETREAT, AIM_THIEF_WAIT))
+		mode = AIM_THIEF_ATTACK;
+	thief_apply_network_mode(objp, mode, Player_num, 1);
+}
+
 //	-------------------------------------------------------------------------------------------------
 void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms_vector *vec_to_player)
 {
@@ -3782,18 +3832,20 @@ int attempt_to_steal_item(object *objp, int player_num)
 		} else
 			break;
 	}
-	create_n_segment_path(objp, 10, ConsoleObject->segnum);
-	Ai_local_info[objp-Objects].next_action_time = Thief_wait_times[Difficulty_level]/2;
-	Ai_local_info[objp-Objects].mode = AIM_THIEF_RETREAT;
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI) {
+		int prepare_path = objp->ctype.ai_info.REMOTE_OWNER == Player_num;
+
+		thief_apply_network_mode(objp, AIM_THIEF_RETREAT, player_num, prepare_path);
+		multi_send_thief_state(objp, 1);
+	} else
+#endif
+		thief_apply_network_mode(objp, AIM_THIEF_RETREAT, player_num, 1);
 	if (rval) {
 		PALETTE_FLASH_ADD(30, 15, -20);
 		update_laser_weapon_info();
 //		digi_link_sound_to_pos( SOUND_NASTY_ROBOT_HIT_1, objp->segnum, 0, &objp->pos, 0 , DEFAULT_ROBOT_SOUND_VOLUME);
 //	I removed this to make the "steal sound" more obvious -AP
-#ifdef NETWORK
-                if (Game_mode & GM_NETWORK)
-                 multi_send_stolen_items();
-#endif
 	}
 	return rval;
 }

@@ -46,6 +46,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "wall.h"
 #include "escort.h"
+#include "thief_network_policy.h"
 #ifdef __ANDROID__
 #include "android_log.h"
 #endif
@@ -391,6 +392,15 @@ multi_add_controlled_robot(int objnum, int agitation)
 	Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM = i;
 	robot_controlled_time[i] = GameTime64;
 	robot_last_send_time[i] = robot_last_message_time[i] = GameTime64;
+	if (Robot_info[Objects[objnum].id].thief) {
+		thief_prepare_for_local_control(&Objects[objnum]);
+		robot_send_pending[i] = 2;
+#ifdef __ANDROID__
+		COOPLOG("thief control claim: obj=%d sig=%d owner=%d slot=%d mode=%d",
+		        objnum, Objects[objnum].signature, Player_num, i,
+		        Ai_local_info[objnum].mode);
+#endif
+	}
 	return(1);
 }	
 
@@ -555,6 +565,10 @@ multi_send_robot_position_sub(int objnum, int now)
 	memcpy(&(multibuf[loc]), (ubyte *)&(sp.xo), 14);
 	loc += 14;
 #endif
+	multibuf[loc] = Robot_info[Objects[objnum].id].thief
+	                    ? (ubyte)Ai_local_info[objnum].mode
+	                    : THIEF_NETWORK_NO_MODE;
+	loc++;
 	multi_send_data(multibuf, loc, now?1:0);
 }
 
@@ -631,6 +645,12 @@ multi_send_robot_fire(int objnum, int gun_num, vms_vector *fire)
 	    }
 		memcpy(robot_fire_buf[slot], multibuf, loc);
 		robot_fired[slot] = 1;
+#ifdef __ANDROID__
+		if (gun_num == MULTI_ROBOT_FIRE_FLARE)
+			COOPLOG("robot flare send: obj=%d sig=%d owner=%d mode=%d",
+			        objnum, Objects[objnum].signature, Player_num,
+			        Ai_local_info[objnum].mode);
+#endif
 	}
 	else
 		multi_send_data(multibuf, loc, 0); // Not our robot, send ASAP
@@ -834,6 +854,10 @@ multi_do_robot_position(const ubyte *buf)
 	short botnum, remote_botnum;
 	char pnum;
 	int loc = 1;
+	ubyte thief_mode;
+#ifdef __ANDROID__
+	vms_vector old_pos;
+#endif
 #ifdef WORDS_BIGENDIAN
 	shortpos sp;
 #endif
@@ -842,6 +866,7 @@ multi_do_robot_position(const ubyte *buf)
 
 	remote_botnum = GET_INTEL_SHORT(buf + loc);
 	botnum = objnum_remote_to_local(remote_botnum, (sbyte)buf[loc+2]); loc += 3;
+	thief_mode = buf[loc + sizeof(shortpos)];
 
 	if ((botnum < 0) || (botnum > Highest_object_index)) {
 		return;
@@ -850,6 +875,9 @@ multi_do_robot_position(const ubyte *buf)
 	if ((Objects[botnum].type != OBJ_ROBOT) || (Objects[botnum].flags & OF_EXPLODING)) {
 		return;
 	}
+#ifdef __ANDROID__
+	old_pos = Objects[botnum].pos;
+#endif
 		
 	if (Objects[botnum].ctype.ai_info.REMOTE_OWNER != pnum)
 	{	
@@ -875,6 +903,22 @@ multi_do_robot_position(const ubyte *buf)
 	memcpy((ubyte *)(sp.bytemat), (ubyte *)(buf + loc), 9);		loc += 9;
 	memcpy((ubyte *)&(sp.xo), (ubyte *)(buf + loc), 14);
 	extract_shortpos(&Objects[botnum], &sp, 1);
+#endif
+	if (Robot_info[Objects[botnum].id].thief &&
+	    thief_network_mode_is_valid(thief_mode, AIM_THIEF_ATTACK,
+	                                AIM_THIEF_RETREAT, AIM_THIEF_WAIT))
+		Ai_local_info[botnum].mode = thief_mode;
+#ifdef __ANDROID__
+	if (Robot_info[Objects[botnum].id].thief) {
+		fix correction = vm_vec_dist_quick(&old_pos, &Objects[botnum].pos);
+
+		if (correction > Objects[botnum].size)
+			COOPLOG("thief position correction: obj=%d sig=%d sender=%d owner=%d mode=%d delta=%d seg=%d",
+			        botnum, Objects[botnum].signature, pnum,
+			        Objects[botnum].ctype.ai_info.REMOTE_OWNER,
+			        Ai_local_info[botnum].mode, correction,
+			        Objects[botnum].segnum);
+	}
 #endif
 
 	set_thrust_from_velocity(&Objects[botnum]); // Smooth movement using updated velocity
@@ -915,6 +959,16 @@ multi_do_robot_fire(const ubyte *buf)
 			Laser_create_new_easy( &fire, &gun_point, botnum, PROXIMITY_ID, 1);
 		else
 			Laser_create_new_easy( &fire, &gun_point, botnum, SUPERPROX_ID, 1);
+	}
+	else if (gun_num == MULTI_ROBOT_FIRE_FLARE)
+	{
+		Laser_create_new_easy(&fire, &Objects[botnum].pos, botnum, FLARE_ID, 1);
+#ifdef __ANDROID__
+		COOPLOG("robot flare recv: obj=%d sig=%d owner=%d mode=%d",
+		        botnum, Objects[botnum].signature,
+		        Objects[botnum].ctype.ai_info.REMOTE_OWNER,
+		        Ai_local_info[botnum].mode);
+#endif
 	}
 	else 
 	{

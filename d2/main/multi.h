@@ -97,7 +97,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_DECLOAK              , 2)	\
 	VALUE(MULTI_DEINVULN             , 2)	\
 	VALUE(MULTI_MENU_CHOICE          , 2)	\
-	VALUE(MULTI_ROBOT_POSITION       , 5+sizeof(shortpos))	\
+	VALUE(MULTI_ROBOT_POSITION       , 6+sizeof(shortpos))	\
 	VALUE(MULTI_PLAYER_EXPLODE        , 97+9)	\
 	VALUE(MULTI_BEGIN_SYNC            , 41)	\
 	VALUE(MULTI_DOOR_OPEN            , 5)	\
@@ -125,7 +125,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_MARKER               , 55)	\
 	VALUE(MULTI_DROP_WEAPON          , 12)	\
 	VALUE(MULTI_GUIDED               , 3+sizeof(shortpos))	\
-	VALUE(MULTI_STOLEN_ITEMS         , 12)	\
+	VALUE(MULTI_STOLEN_ITEMS         , 18)	\
 	VALUE(MULTI_WALL_STATUS          , 6)	/* send to new players */	\
 	VALUE(MULTI_SEISMIC              , 9)	\
 	VALUE(MULTI_LIGHT                , 18)	\
@@ -493,6 +493,7 @@ extern void multi_powcap_cap_objects();
 extern void multi_do_powcap_update(const ubyte *buf);
 extern void multi_send_powcap_update();
 extern void multi_send_stolen_items();
+extern void multi_send_thief_state(object *thief, int contact);
 extern void multi_send_kill_goal_counts();
 extern void multi_send_trigger_specific(char pnum,char trig);
 extern void multi_send_door_open_specific(int pnum,int segnum, int side,ubyte flag);
