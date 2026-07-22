@@ -6412,23 +6412,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Launch single and multi-mission packages with rooted, unrooted, and mixed descriptor/HOG pairs; top-level `descent.sng` and `dxx-r.sng`; generated aliases; loose and HOG/DXA-contained audio; and path-qualified references. Assert mission discovery and the exact loaded song list and track through engine introspection, not only filesystem placement.
 - Resolution: Pending
 
-### BR-0105: P2 - Reject colliding archive outputs before extraction
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/input-validation
-- Found by: R1-CHUNK-0049
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L434-L520` in output-path projection and generated aliasing
-- Related: `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt:L100-L121,L147-L154,L218-L252` and `android/ai tool plans/asset management/plan_large_mission_archive_extraction_design_20260619.md:L163-L175`
-- Evidence: The design requires case-only duplicate detection, but extraction opens each projected output with truncation and never tracks canonical or case-folded destinations. Exact duplicate entries, slash/backslash variants, canonical aliases such as `a/../b`, case-only names, and archive entries colliding with generated `missions/descent.sng` overwrite in iteration order. The manifest still records every source entry. If overwritten versions have different sizes, `freshRecord` can never satisfy all records and reextracts forever; if sizes match, both logical entries resolve to the last bytes silently. Case-insensitive lookup helpers then return whichever duplicate appears first, which can pair metadata or preview with a different file than launch sees.
-- Trigger: Import a ZIP, 7z, or RAR containing two names that project to the same canonical or case-folded staged path, or a rooted package whose existing target collides with the generated song-list alias
-- Impact: Mission descriptors, HOGs, DXAs, music, and documentation can be silently substituted or made permanently stale, with backend and entry-order-dependent results
-- Expected: Every archive and generated output has one unambiguous destination under a documented case policy, or the package is rejected before any public tree is changed
-- Suggested fix: Precompute normalized canonical relative destinations for all archive and generated files, reject exact, alias, file-versus-directory, and case-fold collisions before writing, and use the validated map consistently for extraction, manifest entries, lookups, and progress. Do not resolve duplicate logical entries by first or last iteration order.
-- Validation: Add exact duplicates, case-only variants, separator variants, dot-component aliases, Unicode case pairs under the chosen policy, file/directory conflicts, generated-alias conflicts, and reversed backend ordering; assert deterministic pre-write rejection and preservation of the previous valid generation
-- Resolution: Pending
-
 ### BR-0106: P1 - Fail closed when Google authentication is not configured
 
 - [ ] OPEN

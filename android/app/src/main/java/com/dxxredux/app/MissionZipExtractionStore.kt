@@ -431,6 +431,70 @@ private fun missionFileSourceLayout(
     return if (root.isDirectory) MissionFileSourceLayout(root, prefix) else MissionFileSourceLayout(extractedRoot, "")
 }
 
+private data class MissionZipPlannedEntry(
+    val archiveEntry: ArchiveFileEntry,
+    val entryPath: String,
+    val relativePath: String,
+)
+
+private data class MissionZipExtractionPlan(
+    val files: List<MissionZipPlannedEntry>,
+    val generatedSongListSource: MissionZipPlannedEntry?,
+)
+
+private fun missionZipExtractionPlan(
+    entries: List<ArchiveFileEntry>,
+    scan: MissionZip.ScanResult,
+): MissionZipExtractionPlan {
+    val candidates =
+        entries.mapNotNull { entry ->
+            val entryPath = normalizeArchivePath(entry.path)
+            if (entryPath.isBlank()) return@mapNotNull null
+            MissionZipPlannedEntry(entry, entryPath, stagedRelativePath(scan, entryPath))
+        }
+    val songLists =
+        candidates.filter { candidate ->
+            !candidate.archiveEntry.isDirectory &&
+                '/' !in candidate.entryPath &&
+                launcherExtensionOf(candidate.entryPath) == "sng" &&
+                candidate.entryPath.lowercase(Locale.US) !in MISSION_ZIP_SONG_LIST_FILES
+        }
+    val engineSongListExists =
+        candidates.any { candidate ->
+            !candidate.archiveEntry.isDirectory &&
+                '/' !in candidate.entryPath &&
+                candidate.entryPath.lowercase(Locale.US) in MISSION_ZIP_SONG_LIST_FILES
+        }
+    val generatedSongListSource = songLists.singleOrNull().takeIf { !engineSongListExists }
+    val generatedRelativePath = "$MISSION_ZIP_GENERATED_MISSION_DIR/descent.sng"
+    val projections =
+        candidates.map { candidate ->
+            ArchiveOutputProjection(
+                sourcePath = candidate.entryPath,
+                relativePath = candidate.relativePath,
+                isDirectory = candidate.archiveEntry.isDirectory,
+            )
+        } +
+            listOfNotNull(
+                generatedSongListSource?.let {
+                    ArchiveOutputProjection("<generated descent.sng>", generatedRelativePath, false)
+                },
+            )
+    val validated = validateArchiveOutputProjections(projections, "mission archive")
+    return MissionZipExtractionPlan(
+        files =
+            candidates
+                .zip(validated.take(candidates.size))
+                .filterNot { it.first.archiveEntry.isDirectory }
+                .map { (candidate, output) -> candidate.copy(relativePath = output.relativePath) },
+        generatedSongListSource =
+            generatedSongListSource?.let { source ->
+                val index = candidates.indexOf(source)
+                source.copy(relativePath = validated[index].relativePath)
+            },
+    )
+}
+
 internal fun extractZipToRoot(
     modFile: File,
     targetRoot: File,
@@ -438,11 +502,7 @@ internal fun extractZipToRoot(
     onProgress: (Long, Long, String) -> Unit = { _, _, _ -> },
 ): List<MissionZipExtractedFile> {
     val stageRoot = targetRoot.canonicalFile
-    if (stageRoot.exists()) stageRoot.deleteRecursively()
-    stageRoot.mkdirs()
     val extractedFiles = mutableListOf<MissionZipExtractedFile>()
-    val songLists = mutableListOf<File>()
-    var engineSongListExists = false
     var totalBytes = 0L
     var extractedBytes = 0L
     var lastReportedBytes = -1024L * 1024L
@@ -459,6 +519,9 @@ internal fun extractZipToRoot(
         }
     }
     ArchiveFiles.open(modFile).use { archive ->
+        val plan = missionZipExtractionPlan(archive.entries, scan)
+        if (stageRoot.exists()) stageRoot.deleteRecursively()
+        stageRoot.mkdirs()
         archive.entries.forEach { entry ->
             extractionBudget.registerEntry(
                 if (entry.isDirectory) 0 else entry.sizeBytes,
@@ -473,11 +536,10 @@ internal fun extractZipToRoot(
             totalBytes,
             "extract ${modFile.name}",
         )
-        for (entry in archive.entries) {
-            if (entry.isDirectory) continue
-            val normalized = entry.path.replace('\\', '/').trim('/')
-            if (normalized.isBlank()) continue
-            val relativePath = stagedRelativePath(scan, normalized)
+        for (planned in plan.files) {
+            val entry = planned.archiveEntry
+            val normalized = planned.entryPath
+            val relativePath = planned.relativePath
             val output =
                 File(
                     stageRoot,
@@ -509,34 +571,26 @@ internal fun extractZipToRoot(
                     relativePath = relativePath,
                     sizeBytes = output.length(),
                 )
-            val leaf = normalized.substringAfterLast('/').lowercase(Locale.US)
-            if ('/' !in normalized && launcherExtensionOf(leaf) == "sng") {
-                if (leaf in MISSION_ZIP_SONG_LIST_FILES) {
-                    engineSongListExists = true
-                } else {
-                    songLists += output
+        }
+        plan.generatedSongListSource?.let { generatedSource ->
+            val source = File(stageRoot, generatedSource.relativePath.replace('/', File.separatorChar))
+            val relativePath = "$MISSION_ZIP_GENERATED_MISSION_DIR/descent.sng"
+            val target = File(stageRoot, relativePath.replace('/', File.separatorChar))
+            ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "extract descent.sng")
+            target.parentFile?.mkdirs()
+            extractionBudget.registerEntry(source.length(), source.length(), relativePath)
+            source.inputStream().use { input ->
+                FileOutputStream(target).use { output ->
+                    input.copyToBounded(output, extractionBudget, source.length(), relativePath)
                 }
             }
+            extractedFiles +=
+                MissionZipExtractedFile(
+                    entryPath = "",
+                    relativePath = relativePath,
+                    sizeBytes = target.length(),
+                )
         }
-    }
-    if (!engineSongListExists && songLists.size == 1) {
-        val source = songLists.single()
-        val relativePath = "$MISSION_ZIP_GENERATED_MISSION_DIR/descent.sng"
-        val target = File(stageRoot, relativePath.replace('/', File.separatorChar))
-        ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "extract descent.sng")
-        target.parentFile?.mkdirs()
-        extractionBudget.registerEntry(source.length(), source.length(), relativePath)
-        source.inputStream().use { input ->
-            FileOutputStream(target).use { output ->
-                input.copyToBounded(output, extractionBudget, source.length(), relativePath)
-            }
-        }
-        extractedFiles +=
-            MissionZipExtractedFile(
-                entryPath = "",
-                relativePath = relativePath,
-                sizeBytes = target.length(),
-            )
     }
     onProgress(totalBytes, totalBytes, "")
     return extractedFiles

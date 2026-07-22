@@ -13,6 +13,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.RandomAccessFile
+import java.text.Normalizer
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -60,6 +62,70 @@ internal object ArchiveFiles {
 }
 
 internal fun normalizeArchivePath(path: String): String = path.replace('\\', '/').trim('/')
+
+internal data class ArchiveOutputProjection(
+    val sourcePath: String,
+    val relativePath: String,
+    val isDirectory: Boolean,
+)
+
+internal fun validateArchiveOutputProjections(
+    projections: List<ArchiveOutputProjection>,
+    label: String,
+): List<ArchiveOutputProjection> {
+    val normalized =
+        projections.map { projection ->
+            val relativePath = canonicalArchiveRelativePath(projection.relativePath)
+            require(!relativePath.isNullOrBlank()) {
+                "$label has an invalid output path: ${projection.sourcePath}"
+            }
+            projection.copy(relativePath = relativePath)
+        }
+    val filesByKey = normalized.filterNot { it.isDirectory }.groupBy { archiveOutputKey(it.relativePath) }
+    filesByKey
+        .filterValues { it.size > 1 }
+        .toSortedMap()
+        .values
+        .firstOrNull()
+        ?.let { collision ->
+            val sources = collision.map { it.sourcePath }.sorted().joinToString(", ")
+            throw IllegalArgumentException("$label has colliding file outputs: $sources")
+        }
+    val directoryKeys = mutableSetOf<String>()
+    for (projection in normalized) {
+        if (projection.isDirectory) directoryKeys += archiveOutputKey(projection.relativePath)
+        val components = projection.relativePath.split('/')
+        for (end in 1 until components.size) {
+            directoryKeys += archiveOutputKey(components.take(end).joinToString("/"))
+        }
+    }
+    normalized
+        .filterNot { it.isDirectory }
+        .sortedBy { archiveOutputKey(it.relativePath) }
+        .firstOrNull { archiveOutputKey(it.relativePath) in directoryKeys }
+        ?.let { collision ->
+            throw IllegalArgumentException(
+                "$label has a file and directory output collision: ${collision.sourcePath}",
+            )
+        }
+    return normalized
+}
+
+private fun canonicalArchiveRelativePath(path: String): String? {
+    val components = mutableListOf<String>()
+    for (component in path.replace('\\', '/').split('/')) {
+        when (component) {
+            "", "." -> Unit
+            ".." -> if (components.isEmpty()) return null else components.removeAt(components.lastIndex)
+            else -> components += component
+        }
+    }
+    return components.joinToString("/")
+}
+
+// Collision policy is Unicode NFC plus locale-independent case folding
+private fun archiveOutputKey(path: String): String =
+    Normalizer.normalize(path, Normalizer.Form.NFC).lowercase(Locale.ROOT)
 
 private class ZipReadableArchive(
     file: File,
@@ -223,12 +289,30 @@ private fun extractRarWithSevenZipBinding(
             val inArchive = SevenZip.openInArchive(null, input)
             try {
                 val budget = ExtractionBudget()
-                for (index in 0 until inArchive.getNumberOfItems()) {
-                    val isDirectory = inArchive.getProperty(index, PropID.IS_FOLDER) as? Boolean ?: false
-                    val path = inArchive.getStringProperty(index, PropID.PATH)?.replace('\\', '/')?.trim('/')
-                    if (path.isNullOrBlank()) continue
-                    val size = (inArchive.getProperty(index, PropID.SIZE) as? Number)?.toLong() ?: -1L
-                    val packedSize = (inArchive.getProperty(index, PropID.PACKED_SIZE) as? Number)?.toLong() ?: -1L
+                val items =
+                    (0 until inArchive.getNumberOfItems()).mapNotNull { index ->
+                        val path = inArchive.getStringProperty(index, PropID.PATH)?.replace('\\', '/')?.trim('/')
+                        if (path.isNullOrBlank()) return@mapNotNull null
+                        RarExtractionItem(
+                            index = index,
+                            path = path,
+                            isDirectory = inArchive.getProperty(index, PropID.IS_FOLDER) as? Boolean ?: false,
+                            size = (inArchive.getProperty(index, PropID.SIZE) as? Number)?.toLong() ?: -1L,
+                            packedSize =
+                                (inArchive.getProperty(index, PropID.PACKED_SIZE) as? Number)?.toLong() ?: -1L,
+                        )
+                    }
+                val outputs =
+                    validateArchiveOutputProjections(
+                        items.map { ArchiveOutputProjection(it.path, it.path, it.isDirectory) },
+                        "RAR archive",
+                    )
+                for ((item, outputPath) in items.zip(outputs)) {
+                    val index = item.index
+                    val path = outputPath.relativePath
+                    val isDirectory = item.isDirectory
+                    val size = item.size
+                    val packedSize = item.packedSize
                     budget.registerEntry(if (isDirectory) 0 else size, if (isDirectory) 0 else packedSize, path)
                     val output = File(canonicalRoot, path.replace('/', File.separatorChar)).canonicalFile
                     if (!output.path.startsWith(canonicalRoot.path + File.separator)) continue
@@ -266,10 +350,19 @@ private fun extractRarWithSevenZipBinding(
     }
 }
 
+private data class RarExtractionItem(
+    val index: Int,
+    val path: String,
+    val isDirectory: Boolean,
+    val size: Long,
+    val packedSize: Long,
+)
+
 private fun extractRarWithHostTar(
     archive: File,
     targetRoot: File,
 ) {
+    validateHostTarArchiveOutputs(archive, targetRoot)
     val diagnosticFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.log")
     diagnosticFile.delete()
     val process =
@@ -306,6 +399,62 @@ private fun extractRarWithHostTar(
     val exitCode = process.exitValue()
     if (exitCode != 0) {
         throw IllegalArgumentException("host tar failed with exit code $exitCode: $output")
+    }
+}
+
+private fun validateHostTarArchiveOutputs(
+    archive: File,
+    targetRoot: File,
+) {
+    val listingFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.list")
+    val errorFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.list.log")
+    listingFile.delete()
+    errorFile.delete()
+    val process =
+        ProcessBuilder("tar", "-tf", archive.absolutePath)
+            .redirectOutput(listingFile)
+            .redirectError(errorFile)
+            .start()
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300)
+    try {
+        while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
+            if (System.nanoTime() >= deadline) throw IOException("host tar listing exceeded 300 seconds")
+            if (listingFile.length() + errorFile.length() > ExtractionLimits.MAX_DESCRIPTOR_BYTES) {
+                throw IOException("host tar listing exceeds ${ExtractionLimits.MAX_DESCRIPTOR_BYTES} bytes")
+            }
+        }
+        val diagnostics =
+            errorFile.inputStream().use {
+                it
+                    .readBytesBounded(ExtractionLimits.MAX_DESCRIPTOR_BYTES, "host tar listing diagnostics")
+                    .toString(Charsets.UTF_8)
+            }
+        if (process.exitValue() != 0) {
+            throw IllegalArgumentException(
+                "host tar listing failed with exit code ${process.exitValue()}: $diagnostics",
+            )
+        }
+        val listing =
+            listingFile.inputStream().use {
+                it
+                    .readBytesBounded(ExtractionLimits.MAX_DESCRIPTOR_BYTES, "host tar listing")
+                    .toString(Charsets.UTF_8)
+            }
+        validateArchiveOutputProjections(
+            listing
+                .lineSequence()
+                .filter { it.isNotBlank() }
+                .map { path -> ArchiveOutputProjection(path, path.trimEnd('/'), path.endsWith('/')) }
+                .toList(),
+            "RAR archive",
+        )
+    } catch (error: Exception) {
+        process.destroyForcibly()
+        process.waitFor(5, TimeUnit.SECONDS)
+        throw error
+    } finally {
+        listingFile.delete()
+        errorFile.delete()
     }
 }
 
