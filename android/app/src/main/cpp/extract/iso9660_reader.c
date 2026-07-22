@@ -43,6 +43,8 @@
 
 #include "iso9660_reader.h"
 
+#include "extract_limits.h"
+
 #ifdef ANDROID
 #include <android/log.h>
 #define ISO_LOG(...) __android_log_print(ANDROID_LOG_INFO, "ISO9660", __VA_ARGS__)
@@ -418,6 +420,7 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
                                          void *user_data)
 {
 	int i, extracted = 0;
+	uint64_t output_bytes = 0;
 	long long total_bytes = 0, done_bytes = 0;
 	unsigned char sector[USER_DATA_SIZE];
 
@@ -425,10 +428,18 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 
 	/* Calculate total bytes for progress */
 	for (i = 0; i < file_list->num_files; i++) {
-		if (!file_list->files[i].is_dir &&
-		    ext_matches(file_list->files[i].path, extensions))
-			total_bytes += file_list->files[i].size;
+		if (file_list->files[i].is_dir ||
+		    !ext_matches(file_list->files[i].path, extensions))
+			continue;
+		if (!dxx_extract_entry_allowed(file_list->files[i].size,
+		                               file_list->files[i].size) ||
+		    dxx_extract_add_bytes(&output_bytes, file_list->files[i].size,
+		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
+			return -1;
 	}
+	if (!dxx_extract_has_free_space(output_dir, output_bytes))
+		return -1;
+	total_bytes = (long long) output_bytes;
 
 	for (i = 0; i < file_list->num_files; i++) {
 		const iso_file_entry_t *entry = &file_list->files[i];

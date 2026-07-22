@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "extract_limits.h"
 #include "hfs_reader.h"
 #include "mac_hfs_extract.h"
 #include "sti2_extract.h"
@@ -80,6 +81,10 @@ static int read_file_to_buffer(const char *path, unsigned char **out_data, size_
 		fclose(f);
 		return -1;
 	}
+	if (!dxx_extract_memory_allowed((uint64_t) len, 0)) {
+		fclose(f);
+		return -1;
+	}
 	data = (unsigned char *) malloc((size_t) len);
 	if (!data && len != 0) {
 		fclose(f);
@@ -107,8 +112,22 @@ static int extract_sti2_from_hfs(int bin_fd, int track_start_sector, int track_n
 	char archive_path[1024];
 	unsigned char *archive_data = NULL;
 	size_t archive_size = 0;
+	hfs_file_list_t list;
+	int i;
 	int extracted;
 
+	if (hfs_list_files(bin_fd, track_start_sector, track_num_sectors, &list) < 0)
+		return -1;
+	for (i = 0; i < list.num_files; i++) {
+		if (!list.files[i].is_dir &&
+		    str_equals_ignore_case(list.files[i].path, "Install Descent")) {
+			if (!dxx_extract_memory_allowed(list.files[i].data_size, 0))
+				return -1;
+			break;
+		}
+	}
+	if (i == list.num_files)
+		return -1;
 	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
 	if (hfs_extract_file(bin_fd, track_start_sector, track_num_sectors,
 	                     "Install Descent", archive_path) < 0)
@@ -135,7 +154,7 @@ static int extract_hfs_matching_files(int bin_fd, int track_start_sector, int tr
                                       extract_progress_fn progress, void *user_data)
 {
 	hfs_file_list_t list;
-	long long total_bytes = 0;
+	uint64_t total_bytes = 0;
 	long long done_bytes = 0;
 	int extracted = 0;
 	int i;
@@ -144,10 +163,16 @@ static int extract_hfs_matching_files(int bin_fd, int track_start_sector, int tr
 		return -1;
 
 	for (i = 0; i < list.num_files; i++) {
-		if (!list.files[i].is_dir &&
-		    ext_matches(path_basename(list.files[i].path), extensions))
-			total_bytes += list.files[i].data_size;
+		if (list.files[i].is_dir ||
+		    !ext_matches(path_basename(list.files[i].path), extensions))
+			continue;
+		if (list.files[i].data_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+		    dxx_extract_add_bytes(&total_bytes, list.files[i].data_size,
+		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
+			return -1;
 	}
+	if (!dxx_extract_has_free_space(output_dir, total_bytes))
+		return -1;
 
 	for (i = 0; i < list.num_files; i++) {
 		char output_path[1024];
@@ -165,7 +190,7 @@ static int extract_hfs_matching_files(int bin_fd, int track_start_sector, int tr
 			return -1;
 		done_bytes += written;
 		extracted++;
-		if (progress && progress(name, done_bytes, total_bytes, user_data) != 0)
+		if (progress && progress(name, done_bytes, (long long) total_bytes, user_data) != 0)
 			return -1;
 	}
 

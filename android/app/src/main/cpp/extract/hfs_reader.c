@@ -32,6 +32,7 @@
 #endif
 
 #include "hfs_reader.h"
+#include "extract_limits.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -693,6 +694,8 @@ int hfs_extract_file(int bin_fd, int track_start_sector, int track_num_sectors,
 		}
 	}
 	if (!entry)
+		return -1;
+	if (entry->data_size > DXX_EXTRACT_MAX_ENTRY_BYTES)
 		return -1;
 	if ((long long) entry->data_size > extent_record_capacity(&vol, entry->data_extents))
 		return -1;

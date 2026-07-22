@@ -37,6 +37,8 @@
 
 #include "inno_reader.h"
 
+#include "extract_limits.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -383,6 +385,11 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 		INNO_LOG("block header CRC mismatch at 0x%llx", (unsigned long long) offset);
 		return NULL;
 	}
+	if (stored_size > DXX_EXTRACT_MAX_METADATA_BYTES ||
+	    !dxx_extract_memory_allowed(stored_size, stored_size)) {
+		INNO_LOG("metadata block exceeds extraction budget: %u", stored_size);
+		return NULL;
+	}
 
 	*bytes_consumed = 9 + stored_size;
 
@@ -446,12 +453,18 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 	/* LZMA properties: 1 byte props + 4 bytes dict_size */
 	uint8_t lzma_props[5];
 	memcpy(lzma_props, raw, 5);
+	if (get_u32(lzma_props + 1) > DXX_EXTRACT_MAX_METADATA_BYTES) {
+		free(raw);
+		return NULL;
+	}
 
 	uint8_t *lzma_data = raw + 5;
 	size_t lzma_data_len = raw_len - 5;
 
 	/* Start with 4x compressed size estimate, grow if needed */
-	size_t decomp_cap = lzma_data_len * 4;
+	size_t decomp_cap = lzma_data_len > DXX_EXTRACT_MAX_METADATA_BYTES / 4u
+	                        ? (size_t) DXX_EXTRACT_MAX_METADATA_BYTES
+	                        : lzma_data_len * 4u;
 	if (decomp_cap < 65536) decomp_cap = 65536;
 	uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
 	if (!decomp) {
@@ -477,7 +490,15 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 	while (src_pos < lzma_data_len) {
 		/* Grow output buffer if needed */
 		if (decomp_len >= decomp_cap) {
-			decomp_cap *= 2;
+			if (decomp_cap >= DXX_EXTRACT_MAX_METADATA_BYTES) {
+				LzmaDec_Free(&dec, &g_lzma_alloc);
+				free(decomp);
+				free(raw);
+				return NULL;
+			}
+			decomp_cap *= 2u;
+			if (decomp_cap > DXX_EXTRACT_MAX_METADATA_BYTES)
+				decomp_cap = (size_t) DXX_EXTRACT_MAX_METADATA_BYTES;
 			uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
 			if (!tmp) {
 				LzmaDec_Free(&dec, &g_lzma_alloc);
@@ -512,6 +533,10 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 
 	LzmaDec_Free(&dec, &g_lzma_alloc);
 	free(raw);
+	if (!dxx_extract_ratio_allowed(decomp_len, lzma_data_len)) {
+		free(decomp);
+		return NULL;
+	}
 
 	*out_len = decomp_len;
 	return decomp;
@@ -682,6 +707,10 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	uint32_t uninstall_run_entry_count = get_u32(buf + pos);
 	pos += 4;
 
+	if (data_entry_count > DXX_EXTRACT_MAX_ENTRIES) {
+		INNO_LOG("too many data entries: %u", data_entry_count);
+		return -1;
+	}
 	arc->data_entry_count = (int) data_entry_count;
 
 	/* ── Windows version range (20 bytes) ── */
@@ -864,7 +893,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	/* ── Parse file entries (the ones we care about!) ── */
 	if (file_count > INNO_MAX_FILES) {
 		INNO_LOG("too many files: %u (max %d)", file_count, INNO_MAX_FILES);
-		file_count = INNO_MAX_FILES;
+		return -1;
 	}
 	arc->file_count = (int) file_count;
 
@@ -1071,6 +1100,23 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 
 /* ── Chunk decompressor (for setup-1.bin data) ───────────────────── */
 
+static int grow_decompressed_buffer(uint8_t **buffer, size_t *capacity,
+                                    size_t output_limit)
+{
+	size_t next_capacity;
+	uint8_t *resized;
+
+	if (!buffer || !*buffer || !capacity || *capacity >= output_limit)
+		return -1;
+	next_capacity = *capacity > output_limit / 2u ? output_limit : *capacity * 2u;
+	resized = (uint8_t *) realloc(*buffer, next_capacity);
+	if (!resized)
+		return -1;
+	*buffer = resized;
+	*capacity = next_capacity;
+	return 0;
+}
+
 static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
                                  const inno_data_entry_t *de,
                                  inno_compress_method_t method,
@@ -1079,6 +1125,7 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
                                  const char *progress_name)
 {
 	uint64_t chunk_pos = data_offset + de->chunk_offset;
+	uint64_t required_output;
 
 	/* Read and verify zlb magic */
 	uint8_t magic[4];
@@ -1089,14 +1136,23 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 	}
 
 	uint64_t comp_size = de->chunk_compressed_size; /* size after zlb magic */
+	inno_compress_method_t actual_method = de->chunk_compressed ? method : INNO_COMPRESS_STORED;
+	if (de->file_offset > UINT64_MAX - de->file_size)
+		return NULL;
+	required_output = de->file_offset + de->file_size;
+	if (comp_size > DXX_EXTRACT_MAX_MEMORY_BYTES ||
+	    required_output > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+	    (actual_method == INNO_COMPRESS_STORED && required_output > comp_size) ||
+	    (actual_method != INNO_COMPRESS_STORED &&
+	     required_output > DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size) ||
+	    !dxx_extract_ratio_allowed(required_output, comp_size))
+		return NULL;
 	uint8_t *comp_data = (uint8_t *) malloc((size_t) comp_size);
 	if (!comp_data) return NULL;
 	if (read_at(fd, chunk_pos + 4, comp_data, (size_t) comp_size) < 0) {
 		free(comp_data);
 		return NULL;
 	}
-
-	inno_compress_method_t actual_method = de->chunk_compressed ? method : INNO_COMPRESS_STORED;
 
 	/* Cap per-iteration output size so decompression loops iterate
 	   frequently enough for progress callbacks to fire. */
@@ -1109,8 +1165,12 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 	if (actual_method == INNO_COMPRESS_ZLIB) {
 		/* Zlib decompression */
-		size_t decomp_cap = (size_t) (de->file_offset + de->file_size) * 2;
+		size_t output_limit = (size_t) (DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size);
+		size_t decomp_cap = required_output > output_limit / 2u
+		                         ? output_limit
+		                         : (size_t) required_output * 2u;
 		if (decomp_cap < 65536) decomp_cap = 65536;
+		if (decomp_cap > output_limit) decomp_cap = output_limit;
 		uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
 		if (!decomp) {
 			free(comp_data);
@@ -1143,15 +1203,13 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 			}
 			if (zs.avail_out == 0) {
 				if (total_out >= decomp_cap) {
-					decomp_cap *= 2;
-					uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
-					if (!tmp) {
+					if (grow_decompressed_buffer(&decomp, &decomp_cap,
+					                             output_limit) < 0) {
 						inflateEnd(&zs);
 						free(decomp);
 						free(comp_data);
 						return NULL;
 					}
-					decomp = tmp;
 				}
 				zs.next_out = decomp + total_out;
 				size_t remain = decomp_cap - total_out;
@@ -1163,6 +1221,10 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		inflateEnd(&zs);
 		free(comp_data);
 
+		if (!dxx_extract_ratio_allowed(total_out, comp_size)) {
+			free(decomp);
+			return NULL;
+		}
 		*out_len = total_out;
 		return decomp;
 	}
@@ -1175,8 +1237,12 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		uint8_t lzma_props[5];
 		memcpy(lzma_props, comp_data, 5);
 
-		size_t decomp_cap = (size_t) (de->file_offset + de->file_size) * 2;
+		size_t output_limit = (size_t) (DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size);
+		size_t decomp_cap = required_output > output_limit / 2u
+		                         ? output_limit
+		                         : (size_t) required_output * 2u;
 		if (decomp_cap < 65536) decomp_cap = 65536;
+		if (decomp_cap > output_limit) decomp_cap = output_limit;
 		uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
 		if (!decomp) {
 			free(comp_data);
@@ -1203,15 +1269,13 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 				last_progress_pos = src_pos;
 			}
 			if (decomp_len >= decomp_cap) {
-				decomp_cap *= 2;
-				uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
-				if (!tmp) {
+				if (grow_decompressed_buffer(&decomp, &decomp_cap,
+				                             output_limit) < 0) {
 					LzmaDec_Free(&dec, &g_lzma_alloc);
 					free(decomp);
 					free(comp_data);
 					return NULL;
 				}
-				decomp = tmp;
 			}
 			size_t avail = decomp_cap - decomp_len;
 			size_t dest_len = avail < DECOMP_STEP ? avail : DECOMP_STEP;
@@ -1230,6 +1294,10 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		LzmaDec_Free(&dec, &g_lzma_alloc);
 		free(comp_data);
+		if (!dxx_extract_ratio_allowed(decomp_len, comp_size)) {
+			free(decomp);
+			return NULL;
+		}
 		*out_len = decomp_len;
 		return decomp;
 	}
@@ -1241,8 +1309,12 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		}
 		uint8_t lzma2_prop = comp_data[0]; /* single property byte */
 
-		size_t decomp_cap = (size_t) (de->file_offset + de->file_size) * 2;
+		size_t output_limit = (size_t) (DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size);
+		size_t decomp_cap = required_output > output_limit / 2u
+		                         ? output_limit
+		                         : (size_t) required_output * 2u;
 		if (decomp_cap < 65536) decomp_cap = 65536;
+		if (decomp_cap > output_limit) decomp_cap = output_limit;
 		uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
 		if (!decomp) {
 			free(comp_data);
@@ -1269,15 +1341,13 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 				last_progress_pos2 = src_pos;
 			}
 			if (decomp_len >= decomp_cap) {
-				decomp_cap *= 2;
-				uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
-				if (!tmp) {
+				if (grow_decompressed_buffer(&decomp, &decomp_cap,
+				                             output_limit) < 0) {
 					Lzma2Dec_Free(&dec, &g_lzma_alloc);
 					free(decomp);
 					free(comp_data);
 					return NULL;
 				}
-				decomp = tmp;
 			}
 			size_t avail2 = decomp_cap - decomp_len;
 			size_t dest_len = avail2 < DECOMP_STEP ? avail2 : DECOMP_STEP;
@@ -1296,6 +1366,10 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		Lzma2Dec_Free(&dec, &g_lzma_alloc);
 		free(comp_data);
+		if (!dxx_extract_ratio_allowed(decomp_len, comp_size)) {
+			free(decomp);
+			return NULL;
+		}
 		*out_len = decomp_len;
 		return decomp;
 	}
@@ -1626,6 +1700,13 @@ static int gog_galaxy_stream_writer_feed(const uint8_t *data, size_t len, void *
 
 		size_t produced = sizeof(out_buf) - writer->zs.avail_out;
 		if (produced > 0) {
+			if (writer->written > DXX_EXTRACT_MAX_ENTRY_BYTES - produced ||
+			    (writer->fe->external_size > 0 &&
+			     writer->written + produced > writer->fe->external_size)) {
+				INNO_LOG("GOG Galaxy output exceeds extraction budget for %s",
+				         writer->fe->destination);
+				return -1;
+			}
 			if (fwrite(out_buf, 1, produced, writer->out) != produced) {
 				INNO_LOG("write error while streaming GOG Galaxy file %s: %s",
 				         writer->fe->destination,
@@ -1756,14 +1837,24 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
                                    inno_chunk_sink_fn sink,
                                    void *sink_data)
 {
-	uint64_t chunk_pos = data_offset + de->chunk_offset;
+	uint64_t chunk_pos;
 	uint64_t range_start = de->file_offset;
-	uint64_t range_end = de->file_offset + de->file_size;
+	uint64_t range_end;
 	uint8_t magic[4];
 	uint64_t comp_size = de->chunk_compressed_size;
 	inno_compress_method_t actual_method =
 	    de->chunk_compressed ? method : INNO_COMPRESS_STORED;
 	uint64_t outer_pos = 0;
+	if (data_offset > UINT64_MAX - de->chunk_offset ||
+	    de->file_offset > UINT64_MAX - de->file_size)
+		return -1;
+	chunk_pos = data_offset + de->chunk_offset;
+	range_end = de->file_offset + de->file_size;
+	if (comp_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+	    range_end > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+	    !dxx_extract_ratio_allowed(range_end, comp_size) ||
+	    (actual_method == INNO_COMPRESS_STORED && range_end > comp_size))
+		return -1;
 
 	if (read_at(fd, chunk_pos, magic, 4) < 0) return -1;
 	if (magic[0] != 'z' || magic[1] != 'l' || magic[2] != 'b' || magic[3] != 0x1A) {
@@ -2073,9 +2164,27 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	}
 
 	inno_data_entry_t *de = &arc->data_entries[fe->location];
+	uint64_t output_size;
+	uint64_t compressed_size;
+	uint64_t extracted_after = arc->extracted_bytes;
 
 	if (de->call_instruction_optimized) {
 		INNO_LOG("exe instruction filter not implemented (file %s)", fe->destination);
+		return -1;
+	}
+	if (fe->gog_galaxy && fe->external_size == 0) {
+		INNO_LOG("missing expanded size for GOG Galaxy file %s", fe->destination);
+		return -1;
+	}
+	output_size = fe->gog_galaxy ? fe->external_size : de->file_size;
+	compressed_size = fe->gog_galaxy ? de->file_size : de->chunk_compressed_size;
+	if (!dxx_extract_entry_allowed(output_size, compressed_size) ||
+	    !dxx_extract_entry_allowed(de->file_size, de->chunk_compressed_size) ||
+	    arc->extracted_files >= DXX_EXTRACT_MAX_ENTRIES ||
+	    dxx_extract_add_bytes(&extracted_after, output_size,
+	                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0 ||
+	    !dxx_extract_has_free_space(output_path, output_size)) {
+		INNO_LOG("file exceeds extraction budget: %s", fe->destination);
 		return -1;
 	}
 
@@ -2098,6 +2207,8 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 			         (long long) de->chunk_compressed_size,
 			         (long long) de->chunk_compressed_size, user_data);
 		}
+		arc->extracted_bytes = extracted_after;
+		arc->extracted_files++;
 		return 0;
 	}
 
@@ -2113,6 +2224,8 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 			         (long long) de->chunk_compressed_size,
 			         (long long) de->chunk_compressed_size, user_data);
 		}
+		arc->extracted_bytes = extracted_after;
+		arc->extracted_files++;
 		return 0;
 	}
 
@@ -2184,6 +2297,8 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		         (long long) de->chunk_compressed_size,
 		         (long long) de->chunk_compressed_size, user_data);
 	}
+	arc->extracted_bytes = extracted_after;
+	arc->extracted_files++;
 
 	return 0;
 }

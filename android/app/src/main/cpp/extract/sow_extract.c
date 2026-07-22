@@ -35,6 +35,8 @@
 
 #include "sow_extract.h"
 
+#include "extract_limits.h"
+
 /* ── Directory scanning ─────────────────────────────────────────────── */
 
 /* Case-insensitive extension check */
@@ -501,6 +503,9 @@ static unsigned char *arj_decompress(const unsigned char *comp_data,
                                      unsigned int comp_size,
                                      unsigned int orig_size)
 {
+	if (!dxx_extract_entry_allowed(orig_size, comp_size) ||
+	    !dxx_extract_memory_allowed(comp_size, orig_size))
+		return NULL;
 	unsigned char *out = (unsigned char *) malloc(orig_size);
 	if (!out) return NULL;
 
@@ -645,21 +650,51 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 	mkdirs(output_dir);
 
 	/* First pass: count total bytes for progress */
-	long long total_bytes = 0;
+	uint64_t total_bytes = 0;
 	{
 		arj_entry_t e;
 		long saved_pos;
+		unsigned int entry_count = 0;
 		while ((saved_pos = ftell(fp)) >= 0) {
 			int r = arj_read_entry(fp, &e, file_size);
-			if (r <= 0) break;
+			uint64_t output_size;
+
+			if (r < 0) {
+				fclose(fp);
+				return -1;
+			}
+			if (r == 0) break;
+			if (e.data_offset < 0 || e.data_offset > file_size ||
+			    e.comp_size > (uint64_t) file_size - (uint64_t) e.data_offset) {
+				fclose(fp);
+				return -1;
+			}
 			if (e.file_type == ARJ_TYPE_BINARY && e.filename[0] != '\0') {
-				if (ext_matches(e.filename, extensions))
-					total_bytes += e.orig_size;
+				if (ext_matches(e.filename, extensions)) {
+					output_size = e.method == ARJ_METHOD_STORED ? e.comp_size : e.orig_size;
+					if (++entry_count > DXX_EXTRACT_MAX_ENTRIES ||
+					    (e.method == ARJ_METHOD_STORED && e.comp_size != e.orig_size) ||
+					    !dxx_extract_entry_allowed(output_size, e.comp_size) ||
+					    !dxx_extract_memory_allowed(e.comp_size,
+					                                e.method == ARJ_METHOD_STORED ? 0 : e.orig_size) ||
+					    dxx_extract_add_bytes(&total_bytes, output_size,
+					                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+						fclose(fp);
+						return -1;
+					}
+				}
 			}
 			/* Skip compressed data to reach next entry */
-			fseek(fp, e.data_offset + e.comp_size, SEEK_SET);
+			if (fseek(fp, e.data_offset + e.comp_size, SEEK_SET) != 0) {
+				fclose(fp);
+				return -1;
+			}
 		}
 		fseek(fp, 0, SEEK_SET);
+	}
+	if (!dxx_extract_has_free_space(output_dir, total_bytes)) {
+		fclose(fp);
+		return -1;
 	}
 
 	/* Second pass: extract */
@@ -688,7 +723,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 
 		/* Progress callback */
 		if (progress) {
-			if (progress(filename, bytes_done, total_bytes, user_data)) break;
+			if (progress(filename, bytes_done, (long long) total_bytes, user_data)) break;
 		}
 
 		/* Build output path — flatten to just filename */

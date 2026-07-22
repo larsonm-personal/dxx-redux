@@ -97,6 +97,8 @@ typedef struct {
 	int file_count;
 	inno_data_entry_t *data_entries; /* heap-allocated */
 	int data_entry_count;
+	uint64_t extracted_bytes;
+	uint32_t extracted_files;
 
 	/* file handle (kept open for extraction) */
 	int fd;

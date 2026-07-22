@@ -6,6 +6,8 @@
  */
 
 #include "pkg_reader.h"
+
+#include "extract_limits.h"
 #include "game_file_extensions.h"
 
 #include <stdio.h>
@@ -292,7 +294,14 @@ static int cpio_read_entry(gz_stream_t *gs, cpio_entry_t *entry)
 	}
 
 	int namesize = octal_val(hdr + 59, 6);
-	entry->filesize = (uint64_t) octal_val64(hdr + 65, 11);
+	{
+		int64_t filesize = octal_val64(hdr + 65, 11);
+		if (filesize < 0) {
+			LOG_E("pkg: invalid cpio filesize\n");
+			return -1;
+		}
+		entry->filesize = (uint64_t) filesize;
+	}
 	entry->mode = (uint32_t) octal_val(hdr + 18, 6);
 
 	if (namesize <= 0 || namesize >= PKG_PATH_LEN) {
@@ -352,12 +361,28 @@ static int pkg_scan_cpio(pkg_archive_t *arc)
 		return -1;
 
 	arc->file_count = 0;
+	arc->scanned_bytes = 0;
+	arc->output_bytes = 0;
 	cpio_entry_t entry;
+	unsigned int entry_count = 0;
 	int ret;
 
 	while ((ret = cpio_read_entry(&gs, &entry)) == 1) {
 		const char *basename;
-		if (is_game_file(entry.name, &basename) && arc->file_count < PKG_MAX_FILES) {
+		if (++entry_count > DXX_EXTRACT_MAX_ENTRIES ||
+		    entry.filesize > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+		    dxx_extract_add_bytes(&arc->scanned_bytes, entry.filesize,
+		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+			ret = -1;
+			break;
+		}
+		if (is_game_file(entry.name, &basename)) {
+			if (arc->file_count >= PKG_MAX_FILES ||
+			    dxx_extract_add_bytes(&arc->output_bytes, entry.filesize,
+			                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+				ret = -1;
+				break;
+			}
 			pkg_file_entry_t *f = &arc->files[arc->file_count++];
 			snprintf(f->name, PKG_PATH_LEN, "%s", basename);
 			f->size = entry.filesize;
@@ -372,6 +397,8 @@ static int pkg_scan_cpio(pkg_archive_t *arc)
 	}
 
 	gz_close(&gs);
+	if (ret >= 0 && !dxx_extract_ratio_allowed(arc->scanned_bytes, arc->scripts_length))
+		return -1;
 	return (ret < 0) ? -1 : arc->file_count;
 }
 
@@ -397,6 +424,10 @@ int pkg_open(const char *pkg_path, pkg_archive_t *arc)
 		goto fail;
 
 	/* Read and decompress TOC */
+	if (!dxx_extract_memory_allowed(xhdr.toc_compressed, xhdr.toc_uncompressed) ||
+	    xhdr.toc_uncompressed > DXX_EXTRACT_MAX_METADATA_BYTES ||
+	    !dxx_extract_ratio_allowed(xhdr.toc_uncompressed, xhdr.toc_compressed))
+		goto fail;
 	uint8_t *toc_comp = (uint8_t *) malloc((size_t) xhdr.toc_compressed);
 	if (!toc_comp) goto fail;
 
@@ -452,6 +483,7 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
                     int skip_audio)
 {
 	if (arc->fd < 0 || arc->file_count == 0) return 0;
+	if (!dxx_extract_has_free_space(output_dir, arc->output_bytes)) return -1;
 
 	mkdir_p(output_dir);
 
@@ -460,12 +492,22 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		return -1;
 
 	int extracted = 0;
+	uint64_t scanned_bytes = 0;
+	uint64_t output_bytes = 0;
+	unsigned int entry_count = 0;
 	cpio_entry_t entry;
 	int ret;
 
 	while ((ret = cpio_read_entry(&gs, &entry)) == 1) {
 		const char *basename;
 		int is_game = is_game_file(entry.name, &basename);
+		if (++entry_count > DXX_EXTRACT_MAX_ENTRIES ||
+		    entry.filesize > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+		    dxx_extract_add_bytes(&scanned_bytes, entry.filesize,
+		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+			ret = -1;
+			break;
+		}
 
 		if (!is_game || entry.filesize == 0 ||
 		    (skip_audio && is_audio_ext(basename))) {
@@ -474,6 +516,11 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 				break;
 			}
 			continue;
+		}
+		if (dxx_extract_add_bytes(&output_bytes, entry.filesize,
+		                          arc->output_bytes) < 0) {
+			ret = -1;
+			break;
 		}
 
 		/* Build output path */
@@ -526,6 +573,9 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 	}
 
 	gz_close(&gs);
+	if (ret >= 0 && (!dxx_extract_ratio_allowed(scanned_bytes, arc->scripts_length) ||
+	                 output_bytes > arc->output_bytes))
+		return -1;
 	return (ret < 0) ? -1 : extracted;
 }
 

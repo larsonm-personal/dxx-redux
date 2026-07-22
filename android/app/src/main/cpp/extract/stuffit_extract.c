@@ -13,6 +13,8 @@
 
 #include "stuffit_extract.h"
 
+#include "extract_limits.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,6 +107,10 @@ static int read_file_to_buffer(const char *path, unsigned char **out_data,
 	len = ftell(f);
 	fseek(f, 0, SEEK_SET);
 	if (len < 0) {
+		fclose(f);
+		return -1;
+	}
+	if (!dxx_extract_memory_allowed((uint64_t) len, 0)) {
 		fclose(f);
 		return -1;
 	}
@@ -421,6 +427,7 @@ int stuffit_extract(const char *sit_path, const char *output_dir,
 	unsigned char *archive_data = NULL;
 	size_t archive_size = 0;
 	sti2_entry_list_t list;
+	uint64_t output_bytes = 0;
 	int extracted = 0;
 
 	if (!sit_path || !output_dir) return -1;
@@ -435,7 +442,23 @@ int stuffit_extract(const char *sit_path, const char *output_dir,
 		free(archive_data);
 		return -1;
 	}
+	for (int i = 0; i < list.num_entries; i++) {
+		if (list.entries[i].is_directory)
+			continue;
+		if (!dxx_extract_entry_allowed(list.entries[i].uncompressed_size,
+		                               list.entries[i].compressed_size) ||
+		    !dxx_extract_memory_allowed(list.entries[i].uncompressed_size, 0) ||
+		    dxx_extract_add_bytes(&output_bytes, list.entries[i].uncompressed_size,
+		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+			free(archive_data);
+			return -1;
+		}
+	}
 	if (mkdirs_for_path(output_dir) < 0) {
+		free(archive_data);
+		return -1;
+	}
+	if (!dxx_extract_has_free_space(output_dir, output_bytes)) {
 		free(archive_data);
 		return -1;
 	}

@@ -33,6 +33,8 @@ typedef struct {
 	int fd;                      /* file descriptor (kept open) */
 	uint64_t scripts_abs_offset; /* absolute offset of gzip data in file */
 	uint64_t scripts_length;     /* length of gzip data */
+	uint64_t scanned_bytes;      /* complete expanded cpio payload bytes */
+	uint64_t output_bytes;       /* selected game-file bytes */
 
 	pkg_file_entry_t files[PKG_MAX_FILES];
 	int file_count;

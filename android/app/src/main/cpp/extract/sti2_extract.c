@@ -37,6 +37,8 @@
 
 #include "sti2_extract.h"
 
+#include "extract_limits.h"
+
 #define STI2_ARCHIVE_HEADER_SIZE 22u
 #define STI2_FILE_HEADER_SIZE    112u
 #define STI2_HEADER_SIGNATURE    0x724c6175u
@@ -1888,6 +1890,9 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 	if ((size_t) entry->data_offset > archive_size ||
 	    (size_t) entry->compressed_size > archive_size - (size_t) entry->data_offset)
 		return -1;
+	if (!dxx_extract_entry_allowed(entry->uncompressed_size, entry->compressed_size) ||
+	    !dxx_extract_memory_allowed(entry->uncompressed_size, 0))
+		return -1;
 
 	*out_data = NULL;
 	*out_size = 0;
@@ -2076,6 +2081,7 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 	sti2_entry_list_t list;
 	long long bytes_done = 0;
 	long long bytes_total = 0;
+	uint64_t output_bytes = 0;
 	int extracted = 0;
 	int i;
 
@@ -2087,10 +2093,18 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 		return -1;
 
 	for (i = 0; i < list.num_entries; i++) {
-		if (!list.entries[i].is_directory &&
-		    ext_matches(basename_only(list.entries[i].path), extensions))
-			bytes_total += list.entries[i].uncompressed_size;
+		if (list.entries[i].is_directory ||
+		    !ext_matches(basename_only(list.entries[i].path), extensions))
+			continue;
+		if (!dxx_extract_entry_allowed(list.entries[i].uncompressed_size,
+		                               list.entries[i].compressed_size) ||
+		    dxx_extract_add_bytes(&output_bytes, list.entries[i].uncompressed_size,
+		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
+			return -1;
 	}
+	if (!dxx_extract_has_free_space(output_dir, output_bytes))
+		return -1;
+	bytes_total = (long long) output_bytes;
 
 	for (i = 0; i < list.num_entries; i++) {
 		char output_path[STI2_PATH_LEN * 2];
