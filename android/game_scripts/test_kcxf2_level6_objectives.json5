@@ -89,6 +89,10 @@
     {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_objective_trigger": "15"
+    }},
     {"action": "set_debug", "field": "fire_trigger", "value": "15"},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "guidebot.route_goal_objective_trigger": "16"
