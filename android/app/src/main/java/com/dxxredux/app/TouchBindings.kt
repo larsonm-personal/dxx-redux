@@ -128,6 +128,7 @@ object TouchBindings {
     const val META_GUIDE_NEXT_GOAL = 1041
     const val META_GUIDE_WARP_TO_ME = 1042
     const val META_GUIDE_FIND_UNEXPLORED = 1043
+    const val META_COOP_RESTART_LEVEL = 1044
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =

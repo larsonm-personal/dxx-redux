@@ -112,6 +112,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "merged_wall_debug.h"
 #endif
 #ifdef __ANDROID__
+#include "coop/coop_level_restart.h"
 #include "coop_save.h"
 #include "coop_warp.h"
 #endif
@@ -1465,6 +1466,9 @@ void StartNewLevel(int level_num)
 		do_briefing_screens(Briefing_text_filename, level_num);
 	}
 	StartNewLevelSub(level_num, 1, 0 );
+#ifdef __ANDROID__
+	coop_level_restart_note_natural_level(level_num);
+#endif
 
 }
 

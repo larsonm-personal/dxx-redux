@@ -110,6 +110,7 @@ internal fun adminTrayVisibleActions(
     hasCameraWindowCycleActions: Boolean = false,
     automapActive: Boolean = false,
     canShowDifficultyChange: Boolean = false,
+    canShowCoopLevelRestart: Boolean = false,
     previewMode: Boolean = false,
 ): List<Int> {
     if (previewMode) {
@@ -152,6 +153,9 @@ internal fun adminTrayVisibleActions(
     }
     if (isMultiplayerGame && hasGuidebotAbdicateAction) {
         actions.add(6, TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT)
+    }
+    if (canShowCoopLevelRestart && !automapActive) {
+        actions.add(actions.indexOf(TouchOverlayView.ADMIN_OPEN_MENU) + 1, TouchOverlayView.ADMIN_RESTART_LEVEL)
     }
     if (gamepadOnlyMode) {
         if (isMultiplayerGame) actions.add(TouchOverlayView.ADMIN_WARP)

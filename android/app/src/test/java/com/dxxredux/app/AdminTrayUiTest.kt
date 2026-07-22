@@ -100,6 +100,33 @@ class AdminTrayUiTest {
     }
 
     @Test
+    fun readyCoopLevelRestartAppearsBesideGameMenu() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+                canShowCoopLevelRestart = true,
+            )
+
+        val menuIndex = actions.indexOf(TouchOverlayView.ADMIN_OPEN_MENU)
+        assertEquals(TouchOverlayView.ADMIN_RESTART_LEVEL, actions[menuIndex + 1])
+        assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_RESTART_LEVEL))
+    }
+
+    @Test
+    fun coopLevelRestartStaysHiddenUntilNativeCheckpointIsReady() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+            )
+
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_RESTART_LEVEL))
+    }
+
+    @Test
     fun d2TouchModeIncludesCameraWindowCycleActions() {
         val actions =
             adminTrayVisibleActions(

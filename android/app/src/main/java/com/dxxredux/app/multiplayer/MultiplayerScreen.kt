@@ -953,6 +953,7 @@ internal data class CoopSaveEntry(
     val totalScore: Int = 0,
     val mission: String = "",
     val game: String = "", // "d1" or "d2", used for recent games display
+    val checkpointId: String? = null,
 )
 
 /** Format a unix timestamp as a relative time string like "5 min ago". */
@@ -1031,6 +1032,7 @@ internal fun readCoopAutosaveHistory(
 
 internal data class CoopRestoreSelection(
     val slot: Int?,
+    val checkpointId: String? = null,
 )
 
 private const val COOP_RESTORE_START_FRESH_SENTINEL = -1
@@ -1044,11 +1046,29 @@ internal fun writeCoopRestoreSlot(
     val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
     val file = File(filesDir, "$subdir/coop_restore_slot.txt")
     file.parentFile?.mkdirs()
-    if (slot != null) {
-        file.writeText(slot.toString())
-    } else {
-        file.writeText(COOP_RESTORE_START_FRESH_SENTINEL.toString())
-    }
+    file.writeText(
+        if (slot != null) {
+            JSONObject().put("kind", "slot").put("slot", slot).toString()
+        } else {
+            JSONObject().put("kind", "fresh").toString()
+        },
+    )
+}
+
+internal fun writeCoopRestoreCheckpoint(
+    filesDir: File,
+    game: String,
+    checkpointId: String,
+) {
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val file = File(filesDir, "$subdir/coop_restore_slot.txt")
+    file.parentFile?.mkdirs()
+    file.writeText(
+        JSONObject()
+            .put("kind", "level_start_highest")
+            .put("checkpoint_id", checkpointId)
+            .toString(),
+    )
 }
 
 /** Read the currently written restore slot, or null if none. */
@@ -1065,7 +1085,30 @@ internal fun readCoopRestoreSelection(
     val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
     val file = File(filesDir, "$subdir/coop_restore_slot.txt")
     return try {
-        val slot = if (file.exists()) file.readText().trim().toIntOrNull() else return null
+        val text = if (file.exists()) file.readText().trim() else return null
+        if (text.startsWith("{")) {
+            val json = JSONObject(text)
+            return when (json.optString("kind")) {
+                "slot" -> {
+                    json.optInt("slot", -1).takeIf { it in 0..9 }?.let { CoopRestoreSelection(it) }
+                }
+
+                "level_start_highest" -> {
+                    json.optString("checkpoint_id").takeIf { it.isNotBlank() }?.let {
+                        CoopRestoreSelection(null, it)
+                    }
+                }
+
+                "fresh" -> {
+                    CoopRestoreSelection(null)
+                }
+
+                else -> {
+                    null
+                }
+            }
+        }
+        val slot = text.toIntOrNull() ?: return null
         when (slot) {
             in 0..9 -> CoopRestoreSelection(slot)
             COOP_RESTORE_START_FRESH_SENTINEL -> CoopRestoreSelection(null)
@@ -1076,7 +1119,8 @@ internal fun readCoopRestoreSelection(
     }
 }
 
-internal fun initialCoopRestoreEnabled(selection: CoopRestoreSelection?): Boolean = selection?.slot != null
+internal fun initialCoopRestoreEnabled(selection: CoopRestoreSelection?): Boolean =
+    selection?.slot != null || selection?.checkpointId != null
 
 internal fun shouldAutoEnableCoopRestore(selection: CoopRestoreSelection?): Boolean = selection == null
 
@@ -1085,15 +1129,106 @@ internal fun initialCoopSaveSelection(
     selection: CoopRestoreSelection?,
 ): CoopSaveEntry? =
     if (selection != null) {
-        selection.slot?.let { slot -> coopSaves.firstOrNull { it.slot == slot } }
+        if (selection.checkpointId != null) {
+            coopSaves.firstOrNull { it.checkpointId == selection.checkpointId }
+        } else {
+            selection.slot?.let { slot -> coopSaves.firstOrNull { it.slot == slot } }
+        }
     } else {
         coopSaves.firstOrNull { it.type == "full_save" }
+            ?: coopSaves.firstOrNull { it.type == "level_start_highest" }
     }
 
 internal fun restoreSaveForHostedLevel(
     selectedSave: CoopSaveEntry?,
     levelNum: Int,
-): CoopSaveEntry? = selectedSave?.takeIf { it.slot >= 0 && it.level == levelNum }
+): CoopSaveEntry? =
+    selectedSave?.takeIf {
+        (it.slot >= 0 || it.checkpointId != null) && it.level == levelNum
+    }
+
+internal fun readCoopLevelStartCheckpoints(
+    filesDir: File,
+    game: String,
+    mission: String?,
+    context: android.content.Context,
+): List<CoopSaveEntry> {
+    if (mission == null) return emptyList()
+    return readCoopLevelStartCheckpointsForClient(
+        filesDir,
+        game,
+        mission,
+        ClientIdentity.getInstallationId(context),
+    )
+}
+
+internal fun readCoopLevelStartCheckpointsForClient(
+    filesDir: File,
+    game: String,
+    mission: String,
+    myClientId: String,
+): List<CoopSaveEntry> {
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val dir = File(filesDir, subdir)
+    return dir
+        .listFiles { file ->
+            file.isFile && file.name.startsWith("coop_level_start_") && file.name.endsWith(".json")
+        }?.mapNotNull { file ->
+            try {
+                val json = JSONObject(file.readText())
+                if (json.optString("type") != "level_start_highest" ||
+                    !json.optString("mission").equals(mission, ignoreCase = true) ||
+                    json.optInt("level", 0) <= 0
+                ) {
+                    return@mapNotNull null
+                }
+                val ids = json.optJSONArray("client_ids") ?: return@mapNotNull null
+                val clientIds = (0 until ids.length()).map { ids.optString(it, "") }
+                if (myClientId !in clientIds) return@mapNotNull null
+                val savePath = json.optString("save_path")
+                val saveFile = File(dir, savePath).canonicalFile
+                if (savePath.isBlank() ||
+                    !saveFile.path.startsWith(dir.canonicalPath + File.separator) ||
+                    !saveFile.isFile ||
+                    saveFile.length() != json.optLong("size", -1) ||
+                    coopLevelStartChecksum(saveFile.readBytes()) != json.optLong("checksum", -1)
+                ) {
+                    return@mapNotNull null
+                }
+                val names = json.optJSONArray("callsigns")
+                CoopSaveEntry(
+                    slot = -1,
+                    level = json.getInt("level"),
+                    timestamp = json.optLong("timestamp", 0),
+                    numPlayers = json.optInt("num_players", 0),
+                    callsigns =
+                        if (names ==
+                            null
+                        ) {
+                            emptyList()
+                        } else {
+                            (0 until names.length()).map { names.optString(it, "?") }
+                        },
+                    clientIds = clientIds,
+                    type = "level_start_highest",
+                    totalScore = json.optInt("total_score", 0),
+                    mission = json.optString("mission"),
+                    game = game,
+                    checkpointId = json.optString("checkpoint_id").takeIf { it.isNotBlank() },
+                ).takeIf { it.checkpointId != null }
+            } catch (_: Exception) {
+                null
+            }
+        }?.sortedByDescending { it.level } ?: emptyList()
+}
+
+internal fun coopLevelStartChecksum(data: ByteArray): Long {
+    var hash = 2166136261L
+    data.forEach { byte ->
+        hash = (hash xor (byte.toInt() and 0xff).toLong()) * 16777619L and 0xffffffffL
+    }
+    return if (hash == 0L) 1L else hash
+}
 
 /**
  * Read coop_progress.json and return a CoopSaveEntry of type "checkpoint".

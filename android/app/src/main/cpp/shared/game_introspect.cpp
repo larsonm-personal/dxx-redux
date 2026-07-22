@@ -42,6 +42,7 @@ extern "C" {
 #include "laser.h"
 #include "cntrlcen.h"
 #include "coop_save.h"
+#include "coop/coop_level_restart.h"
 #include "automap.h"
 #include "automap_metadata_overlay.h"
 #include "segment.h"
@@ -1248,6 +1249,7 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- General state -------------------------------------------- */
 	j["screen_mode"] = screen_mode_name(Screen_mode);
 	j["game_mode"] = Game_mode;
+	j["coop_level_restart_state"] = coop_level_restart_get_state();
 	{
 		int is_error = 0;
 		const char *message = coop_restore_status_message(&is_error);

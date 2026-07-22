@@ -87,6 +87,52 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
+    fun retainedLevelStartSelectionRoundTripsAsTypedChoice() {
+        val filesDir = tempFolder.newFolder()
+
+        writeCoopRestoreCheckpoint(filesDir, "d2", "d2")
+
+        val selection = readCoopRestoreSelection(filesDir, "d2") ?: error("retained selection missing")
+        assertNull(selection.slot)
+        assertEquals("d2", selection.checkpointId)
+        assertTrue(initialCoopRestoreEnabled(selection))
+        assertFalse(shouldAutoEnableCoopRestore(selection))
+    }
+
+    @Test
+    fun retainedLevelStartOfferRequiresMatchingSaveChecksum() {
+        val filesDir = tempFolder.newFolder()
+        val gameDir = filesDir.resolve("d2x-redux")
+        val savePath = "savesets/coop/d2/level_start_highest.sav"
+        val save = gameDir.resolve(savePath)
+        val bytes = "level-start-state".toByteArray()
+        save.parentFile?.mkdirs()
+        save.writeBytes(bytes)
+        gameDir.resolve("coop_level_start_d2.json").writeText(
+            """{
+                "type":"level_start_highest",
+                "checkpoint_id":"d2",
+                "mission":"d2",
+                "level":6,
+                "timestamp":123,
+                "num_players":2,
+                "callsigns":["Miner","Wing"],
+                "client_ids":["local-id","peer-id"],
+                "save_path":"$savePath",
+                "size":${bytes.size},
+                "checksum":${coopLevelStartChecksum(bytes)}
+            }""".trimIndent(),
+        )
+
+        val offers = readCoopLevelStartCheckpointsForClient(filesDir, "d2", "d2", "local-id")
+        assertEquals(1, offers.size)
+        assertEquals(6, offers.single().level)
+
+        save.appendText("corrupt")
+        assertTrue(readCoopLevelStartCheckpointsForClient(filesDir, "d2", "d2", "local-id").isEmpty())
+    }
+
+    @Test
     fun initialCoopSaveSelectionHonorsExplicitFreshChoice() {
         val save5 =
             CoopSaveEntry(
@@ -102,6 +148,32 @@ class MultiplayerResumePrefsTest {
         assertEquals(save5, initialCoopSaveSelection(saves, null))
         assertNull(initialCoopSaveSelection(saves, CoopRestoreSelection(null)))
         assertEquals(save6, initialCoopSaveSelection(saves, CoopRestoreSelection(6)))
+    }
+
+    @Test
+    fun initialCoopSaveSelectionSupportsRetainedLevelStart() {
+        val fullSave =
+            CoopSaveEntry(
+                slot = 5,
+                level = 4,
+                timestamp = 100L,
+                numPlayers = 2,
+                callsigns = listOf("Miner", "Wing"),
+            )
+        val retained =
+            fullSave.copy(
+                slot = -1,
+                level = 6,
+                type = "level_start_highest",
+                checkpointId = "d2",
+            )
+
+        assertEquals(retained, initialCoopSaveSelection(listOf(retained), null))
+        assertEquals(
+            retained,
+            initialCoopSaveSelection(listOf(fullSave, retained), CoopRestoreSelection(null, "d2")),
+        )
+        assertEquals(retained, restoreSaveForHostedLevel(retained, 6))
     }
 
     @Test

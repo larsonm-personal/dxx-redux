@@ -646,6 +646,7 @@ class TouchOverlayView
             const val ADMIN_CYCLE_LEFT_VIEW = 25
             const val ADMIN_CYCLE_RIGHT_VIEW = 26
             const val ADMIN_AUTOMAP_OBJECTIVES = 27
+            const val ADMIN_RESTART_LEVEL = 28
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -812,6 +813,7 @@ class TouchOverlayView
         var adminTrayFovProvider: (() -> Int)? = null
         var adminTrayFovSetter: ((Int) -> Unit)? = null
         var adminTrayCanShowDifficultyProvider: (() -> Boolean)? = null
+        var adminTrayCanShowCoopLevelRestartProvider: (() -> Boolean)? = null
         var adminTrayDifficultyProvider: (() -> Int)? = null
         var adminTrayDifficultySetter: ((Int) -> Boolean)? = null
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
@@ -3881,6 +3883,10 @@ class TouchOverlayView
                     "Game Menu"
                 }
 
+                ADMIN_RESTART_LEVEL -> {
+                    "Restart Level"
+                }
+
                 ADMIN_NET_STATS -> {
                     "Net Stats"
                 }
@@ -3988,6 +3994,7 @@ class TouchOverlayView
                 hasCameraWindowCycleActions = gameVariant == "d2",
                 automapActive = automapActive,
                 canShowDifficultyChange = adminTrayCanShowDifficultyProvider?.invoke() == true,
+                canShowCoopLevelRestart = adminTrayCanShowCoopLevelRestartProvider?.invoke() == true,
                 previewMode = previewMode,
             )
 

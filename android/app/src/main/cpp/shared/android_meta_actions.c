@@ -20,6 +20,7 @@
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "android_rewind.h"
+#include "coop/coop_level_restart.h"
 #include "android_save_meta.h"
 #include "game.h"
 #include "hudmsg.h"
@@ -41,6 +42,7 @@ volatile int android_escort_next_goal_pending = 0;
 volatile int android_escort_warp_to_me_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
 volatile int android_rewind_pending = 0;
+volatile int android_coop_restart_level_pending = 0;
 extern int HandleSystemKey(int key);
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -316,6 +318,15 @@ int android_handle_ingame_saveload_request(void)
 		return 1;
 	}
 
+	if (android_coop_restart_level_pending) {
+		android_coop_restart_level_pending = 0;
+		if (!coop_level_restart_request())
+			HUD_init_message_literal(HM_DEFAULT, "Level-start checkpoint unavailable");
+		else
+			HUD_init_message_literal(HM_DEFAULT, "Restarting level from checkpoint");
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -375,6 +386,12 @@ int meta_action_dispatch(int action_id, int pressed)
 	if (action_id == META_REWIND) {
 		if (pressed)
 			android_rewind_pending = 1;
+		return 0;
+	}
+
+	if (action_id == META_COOP_RESTART_LEVEL) {
+		if (pressed)
+			android_coop_restart_level_pending = 1;
 		return 0;
 	}
 

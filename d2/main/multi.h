@@ -469,11 +469,14 @@ int multi_i_am_master(void);
 int multi_who_is_master(void);
 void change_playernum_to(int new_pnum);
 #ifdef __ANDROID__
+struct rewind_memory_buffer;
 void multi_send_rewind_request(void);
 int multi_perform_rewind_request(int requester, int *rewound_seconds);
 int multi_send_coop_restore_save_transfer(const char *filename, ubyte slot, uint id);
 int multi_coop_restore_transfer_pending(void);
 int multi_save_transfer_timeout_suspended(void);
+int multi_save_transfer_busy(void);
+int multi_send_level_restart_transfer(const struct rewind_memory_buffer *buffer);
 void multi_do_rewind_request(const ubyte *buf);
 void multi_do_rewind_result(const ubyte *buf);
 void multi_do_rewind_save_begin(const ubyte *buf);

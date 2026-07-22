@@ -100,8 +100,9 @@ internal fun CreateGameDialog(
     val coopSaves =
         if (mode == "coop") {
             val saves = readCoopAutosaveHistory(context.filesDir, game, mission, context)
+            val retained = readCoopLevelStartCheckpoints(context.filesDir, game, mission, context)
             val checkpoint = readCoopProgressAsEntry(context.filesDir, game, mission, context)
-            if (checkpoint != null) saves + checkpoint else saves
+            saves + retained + listOfNotNull(checkpoint)
         } else {
             emptyList()
         }
@@ -285,7 +286,12 @@ internal fun CreateGameDialog(
                                 ) { Text("Start fresh (no restore)") }
                             }
                             coopSaves.forEach { save ->
-                                val typeTag = if (save.type == "checkpoint") "[Chk]" else "[Save]"
+                                val typeTag =
+                                    when (save.type) {
+                                        "checkpoint" -> "[Chk]"
+                                        "level_start_highest" -> "[Start]"
+                                        else -> "[Save]"
+                                    }
                                 val scoreStr = if (save.totalScore > 0) " ${save.totalScore}pts" else ""
                                 val label =
                                     "$typeTag L${save.level} - ${save.numPlayers}p" +
@@ -446,7 +452,11 @@ internal fun CreateGameDialog(
                     )
                     val restoreSave = restoreSaveForHostedLevel(selectedSave, levelNum)
                     val restoreSlot = restoreSave?.slot
-                    writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
+                    if (restoreSave?.checkpointId != null) {
+                        writeCoopRestoreCheckpoint(context.filesDir, game, restoreSave.checkpointId)
+                    } else {
+                        writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
+                    }
                     if (mode == "coop") {
                         val selectedSlot = selectedSave?.slot ?: -1
                         val selectedLevel = selectedSave?.level ?: -1

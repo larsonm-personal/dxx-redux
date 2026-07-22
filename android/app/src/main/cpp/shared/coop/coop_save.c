@@ -12,6 +12,7 @@
 #include <physfs.h>
 
 #include "coop_save.h"
+#include "coop_level_restart.h"
 #include "coop_restore_remap.h"
 
 #include "player.h"
@@ -313,46 +314,69 @@ void coop_snapshot_player(int pnum, coop_player_record *rec)
 	rec->original_slot = (uint8_t) pnum;
 }
 
-void coop_write_save_metadata(void *fp)
+static int coop_build_save_metadata(coop_save_metadata *meta)
 {
-	coop_save_metadata meta;
 	int i;
 
-	if (!(Game_mode & GM_MULTI_COOP))
-		return;
+	if (!meta || !(Game_mode & GM_MULTI_COOP))
+		return 0;
 
-	memset(&meta, 0, sizeof(meta));
-	meta.tag = COOP_SAVE_META_TAG;
-	meta.version = COOP_SAVE_META_VER;
-	meta.wall_clock_timestamp = (uint32_t) time(NULL);
-	meta.level_num = Current_level_num;
-	strncpy(meta.mission_name, Netgame.mission_name, 8);
-	meta.mission_name[8] = '\0';
-	meta.difficulty = Netgame.difficulty;
-	meta.difficulty_changed = Difficulty_level_changed ? 1 : 0;
-	meta.difficulty_min = (uint8_t) Difficulty_level_min_seen;
-	meta.difficulty_max = (uint8_t) Difficulty_level_max_seen;
-	coop_write_metadata_extra(&meta);
+	memset(meta, 0, sizeof(*meta));
+	meta->tag = COOP_SAVE_META_TAG;
+	meta->version = COOP_SAVE_META_VER;
+	meta->wall_clock_timestamp = (uint32_t) time(NULL);
+	meta->level_num = Current_level_num;
+	strncpy(meta->mission_name, Netgame.mission_name, 8);
+	meta->mission_name[8] = '\0';
+	meta->difficulty = Netgame.difficulty;
+	meta->difficulty_changed = Difficulty_level_changed ? 1 : 0;
+	meta->difficulty_min = (uint8_t) Difficulty_level_min_seen;
+	meta->difficulty_max = (uint8_t) Difficulty_level_max_seen;
+	coop_write_metadata_extra(meta);
 
-	meta.num_active_players = 0;
+	meta->num_active_players = 0;
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		if (Players[i].connected == CONNECT_PLAYING) {
-			coop_snapshot_player(i, &meta.active_players[meta.num_active_players]);
-			meta.num_active_players++;
+			coop_snapshot_player(i, &meta->active_players[meta->num_active_players]);
+			meta->num_active_players++;
 		}
 	}
 
 	/* Copy absent player records into the metadata trailer */
-	meta.num_absent_players = 0;
+	meta->num_absent_players = 0;
 	for (i = 0; i < coop_num_absent && i < COOP_MAX_REMEMBERED_PLAYERS; i++) {
-		memcpy(&meta.absent_players[i], &coop_absent_list[i], sizeof(coop_player_record));
-		meta.num_absent_players++;
+		memcpy(&meta->absent_players[i], &coop_absent_list[i], sizeof(coop_player_record));
+		meta->num_absent_players++;
 	}
+	return 1;
+}
+
+void coop_write_save_metadata(void *fp)
+{
+	coop_save_metadata meta;
+
+	if (!fp || !coop_build_save_metadata(&meta))
+		return;
 
 	PHYSFS_write((PHYSFS_file *) fp, &meta, sizeof(meta), 1);
 	COOP_SAVE_LOG(CON_DEBUG, "coop_save: wrote metadata trailer (%d active, %d absent)\n",
 	              meta.num_active_players, meta.num_absent_players);
 }
+
+#ifdef ANDROID
+int coop_write_save_metadata_rewind(rewind_file *file)
+{
+	coop_save_metadata meta;
+
+	if (!file || !coop_build_save_metadata(&meta))
+		return 0;
+	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1)
+		return 0;
+	COOP_SAVE_LOG(CON_DEBUG, "coop_save: wrote memory metadata trailer (%d active, %d absent)\n",
+	              meta.num_active_players, meta.num_absent_players);
+	return 1;
+}
+#endif
 
 int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
                             coop_save_metadata *meta)
@@ -1049,7 +1073,7 @@ static int coop_auto_restore_attempted = 0;
 static int coop_read_restore_slot_file(void)
 {
 	PHYSFS_file *fp;
-	char buf[16];
+	char buf[128];
 	PHYSFS_sint64 len;
 	int slot;
 	char *end;
@@ -1071,11 +1095,22 @@ static int coop_read_restore_slot_file(void)
 	PHYSFS_delete("coop_restore_slot.txt");
 
 	buf[len] = '\0';
+	if (strstr(buf, "\"kind\":\"level_start_highest\"") ||
+	    strstr(buf, "\"kind\": \"level_start_highest\""))
+		return -2;
+	if (strstr(buf, "\"kind\":\"fresh\"") ||
+	    strstr(buf, "\"kind\": \"fresh\""))
+		return -1;
+	if (strstr(buf, "\"slot\":"))
+		memmove(buf, strstr(buf, "\"slot\":") + 7,
+		        strlen(strstr(buf, "\"slot\":") + 7) + 1);
 	parsed = strtol(buf, &end, 10);
+	while (*end == ' ' || *end == '}' || *end == '\r' || *end == '\n')
+		end++;
 	if (end == buf || *end != '\0')
 		return -1;
 	slot = (int) parsed;
-	if (slot < 0 || slot > 9)
+	if (slot < -2 || slot > 9)
 		return -1;
 	return slot;
 }
@@ -1106,8 +1141,23 @@ void coop_arm_auto_restore(void)
 	}
 
 	slot = coop_read_restore_slot_file();
-	if (slot < 0) {
+	if (slot == -1) {
 		coop_auto_restore_log_no_slot();
+		return;
+	}
+	if (slot == -2) {
+		if (!state_android_build_coop_sidecar_filename(
+		        filename, PATH_MAX, "level_start_highest.sav") ||
+		    !PHYSFSX_exists(filename, 0)) {
+			coop_auto_restore_log_slot_not_viable(slot);
+			return;
+		}
+		coop_auto_restore_slot = slot;
+		coop_auto_restore_game_id = COOP_AUTOSAVE_GAME_ID;
+		coop_auto_restore_armed = 1;
+		coop_auto_restore_armed_at = timer_query();
+		coop_restore_status_waiting();
+		coop_auto_restore_log_armed(slot, coop_auto_restore_game_id);
 		return;
 	}
 
@@ -1185,6 +1235,12 @@ void coop_try_auto_restore(void)
 	                              coop_auto_restore_game_id, elapsed);
 
 	coop_auto_restore_armed = 0;
+	coop_level_restart_note_restore_begin();
+	if (coop_auto_restore_slot == -2) {
+		if (!coop_level_restart_load_retained_and_request())
+			coop_restore_status_failed();
+		return;
+	}
 
 	multi_send_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
 	if (!multi_coop_restore_transfer_pending())

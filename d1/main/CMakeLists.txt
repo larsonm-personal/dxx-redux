@@ -187,6 +187,7 @@ if(UDP)
 		target_sources(dxx-redux-d1 PRIVATE
 			../../android/app/src/main/cpp/shared/net/auto_net.c
             ../../android/app/src/main/cpp/shared/coop/coop_save.c
+            ../../android/app/src/main/cpp/shared/coop/coop_level_restart.c
             ../../android/app/src/main/cpp/shared/coop/coop_warp.c
             ../../android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c)
     endif()

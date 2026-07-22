@@ -9,6 +9,7 @@
 #include "android_rewind_policy.h"
 #include "byteswap.h"
 #include "coop_save.h"
+#include "coop/coop_level_restart.h"
 #include "fix.h"
 #include "game.h"
 #include "hudmsg.h"
@@ -55,6 +56,7 @@ typedef struct multi_save_send_transfer {
 	int begin_sent;
 	int apply_sent;
 	int coop_restore_pending;
+	int level_restart_pending;
 	ubyte coop_restore_slot;
 	uint coop_restore_game_id;
 	fix64 started_at;
@@ -64,13 +66,14 @@ typedef struct multi_save_send_transfer {
 	unsigned char *data;
 } multi_save_send_transfer;
 
-#define MULTI_SAVE_TRANSFER_KIND_REWIND  0
-#define MULTI_SAVE_TRANSFER_KIND_RESTORE 1
-#define MULTI_SAVE_TRANSFER_READY_BUFFER 1
-#define MULTI_SAVE_TRANSFER_READY_APPLY  2
-#define MULTI_SAVE_TRANSFER_MAX_BYTES    (2u * 1024u * 1024u)
-#define MULTI_SAVE_TRANSFER_CHUNKS_FRAME 8
-#define MULTI_SAVE_TRANSFER_TIMEOUT      (F1_0 * 60)
+#define MULTI_SAVE_TRANSFER_KIND_REWIND        0
+#define MULTI_SAVE_TRANSFER_KIND_RESTORE       1
+#define MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART 2
+#define MULTI_SAVE_TRANSFER_READY_BUFFER       1
+#define MULTI_SAVE_TRANSFER_READY_APPLY        2
+#define MULTI_SAVE_TRANSFER_MAX_BYTES          (2u * 1024u * 1024u)
+#define MULTI_SAVE_TRANSFER_CHUNKS_FRAME       8
+#define MULTI_SAVE_TRANSFER_TIMEOUT            (F1_0 * 60)
 
 static multi_rewind_save_transfer Rewind_save_transfer;
 static multi_save_send_transfer Save_send_transfer;
@@ -238,7 +241,8 @@ static void multi_rewind_apply_received_transfer(void)
 		return;
 	}
 
-	if (Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE) {
+	if (Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE ||
+	    Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART) {
 		buffer.data = Rewind_save_transfer.data;
 		buffer.size = Rewind_save_transfer.total_size;
 		buffer.capacity = Rewind_save_transfer.total_size;
@@ -249,11 +253,17 @@ static void multi_rewind_apply_received_transfer(void)
 		multi_save_transfer_finish_restore();
 		if (restored) {
 			coop_restore_status_complete();
-			HUD_init_message_literal(HM_DEFAULT, "Host save restored");
+			HUD_init_message_literal(HM_DEFAULT,
+			                         Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART
+			                             ? "Level restarted"
+			                             : "Host save restored");
 			multi_send_score();
 		} else {
 			coop_restore_status_failed();
-			HUD_init_message_literal(HM_DEFAULT, "Host save failed");
+			HUD_init_message_literal(HM_DEFAULT,
+			                         Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART
+			                             ? "Level restart failed"
+			                             : "Host save failed");
 		}
 		COOPLOG("coop restore transfer apply: status=%d bytes=%u chunks=%d",
 		        restored, Rewind_save_transfer.total_size,
@@ -304,7 +314,8 @@ static int multi_send_save_transfer_buffer(const unsigned char *data,
 	    total_size > MULTI_SAVE_TRANSFER_MAX_BYTES)
 		return 0;
 	if (transfer_kind != MULTI_SAVE_TRANSFER_KIND_REWIND &&
-	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_RESTORE)
+	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_RESTORE &&
+	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART)
 		return 0;
 	total_chunks = (int) ((total_size + MULTI_REWIND_SAVE_CHUNK_PAYLOAD - 1) /
 	                      MULTI_REWIND_SAVE_CHUNK_PAYLOAD);
@@ -429,7 +440,8 @@ void multi_save_transfer_frame(void)
 	uint restore_game_id;
 
 	if (Rewind_save_transfer.active &&
-	    Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE &&
+	    (Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE ||
+	     Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART) &&
 	    timer_query() > Rewind_save_transfer.started_at + MULTI_SAVE_TRANSFER_TIMEOUT) {
 		COOPLOG("coop restore receive timeout: id=%u chunks=%d/%d",
 		        Rewind_save_transfer.transfer_id,
@@ -443,6 +455,8 @@ void multi_save_transfer_frame(void)
 	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master()) {
 		if (Save_send_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE)
 			coop_restore_status_failed();
+		if (Save_send_transfer.level_restart_pending)
+			coop_level_restart_transfer_finished(0);
 		multi_save_send_reset();
 		return;
 	}
@@ -455,6 +469,8 @@ void multi_save_transfer_frame(void)
 		        Save_send_transfer.total_chunks);
 		if (Save_send_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE)
 			coop_restore_status_failed();
+		if (Save_send_transfer.level_restart_pending)
+			coop_level_restart_transfer_finished(0);
 		multi_save_send_reset();
 		return;
 	}
@@ -487,12 +503,26 @@ void multi_save_transfer_frame(void)
 		return;
 	}
 
-	if (!Save_send_transfer.coop_restore_pending) {
+	if (!Save_send_transfer.coop_restore_pending &&
+	    !Save_send_transfer.level_restart_pending) {
 		multi_save_send_reset();
 		return;
 	}
 	if (!multi_save_transfer_all_players_applying())
 		return;
+
+	if (Save_send_transfer.level_restart_pending) {
+		int restored;
+
+		multi_save_send_reset();
+		multi_save_transfer_begin_restore();
+		restored = coop_level_restart_apply_host();
+		multi_save_transfer_finish_restore();
+		coop_level_restart_transfer_finished(restored);
+		HUD_init_message_literal(HM_DEFAULT,
+		                         restored ? "Level restarted" : "Level restart failed");
+		return;
+	}
 
 	restore_slot = Save_send_transfer.coop_restore_slot;
 	restore_game_id = Save_send_transfer.coop_restore_game_id;
@@ -593,6 +623,37 @@ int multi_coop_restore_transfer_pending(void)
 	return (Save_send_transfer.active &&
 	        Save_send_transfer.coop_restore_pending) ||
 	       Coop_restore_transfer_failed;
+}
+
+int multi_save_transfer_busy(void)
+{
+	return Save_send_transfer.active || Rewind_save_transfer.active;
+}
+
+int multi_send_level_restart_transfer(const rewind_memory_buffer *buffer)
+{
+	int sent;
+
+	if (!buffer || !buffer->data || !buffer->size ||
+	    !(Game_mode & GM_MULTI_COOP) || !multi_i_am_master())
+		return 0;
+	if (!multi_rewind_has_connected_clients()) {
+		int restored;
+
+		multi_save_transfer_begin_restore();
+		restored = coop_level_restart_apply_host();
+		multi_save_transfer_finish_restore();
+		coop_level_restart_transfer_finished(restored);
+		return restored;
+	}
+	if (!Netgame.PacketLossPrevention)
+		return 0;
+	sent = multi_send_save_transfer_buffer(
+	    buffer->data, buffer->size, MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART,
+	    Player_num, 0, GameTime64, 0, 0);
+	if (sent)
+		Save_send_transfer.level_restart_pending = 1;
+	return sent;
 }
 
 static void multi_send_rewind_result(int requester, int status, int rewound_seconds)
@@ -746,7 +807,8 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 		return;
 	}
 	if (transfer_kind != MULTI_SAVE_TRANSFER_KIND_REWIND &&
-	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_RESTORE) {
+	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_RESTORE &&
+	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART) {
 		COOPLOG("save transfer begin rejected: unknown kind=%d",
 		        transfer_kind);
 		multi_rewind_receive_reset();
@@ -796,6 +858,8 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 	HUD_init_message_literal(HM_DEFAULT,
 	                         transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE
 	                             ? "Receiving host save"
+	                         : transfer_kind == MULTI_SAVE_TRANSFER_KIND_LEVEL_RESTART
+	                             ? "Receiving level restart"
 	                             : "Receiving host rewind");
 	multi_rewind_send_ready(MULTI_SAVE_TRANSFER_READY_BUFFER);
 	COOPLOG("save transfer begin: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",

@@ -578,8 +578,10 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_save_meta_write_params android_params;
 	char android_desc[STATE_ANDROID_DESC_LENGTH + 1];
 
-	if (rewind_file_is_memory(fp))
+	if (rewind_file_is_memory(fp)) {
+		coop_write_save_metadata_rewind(fp);
 		return;
+	}
 	physfs_fp = rewind_file_physfs_handle(fp);
 	coop_write_save_metadata(physfs_fp);
 	memset(&android_params, 0, sizeof(android_params));

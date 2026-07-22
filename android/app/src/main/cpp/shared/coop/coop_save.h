@@ -17,6 +17,9 @@
 
 #include "pstypes.h"
 #include "fix.h"
+#ifdef ANDROID
+#include "rewind_file.h"
+#endif
 
 #ifdef DXX_BUILD_DESCENT_II
 #define COOP_SAVE_METADATA_EXTRA_FIELDS                                         \
@@ -90,6 +93,9 @@ void coop_snapshot_player(int pnum, coop_player_record *rec);
 /* Write the coop metadata trailer to an already-open save file.
  * Call this just before PHYSFS_close(). */
 void coop_write_save_metadata(void *fp);
+#ifdef ANDROID
+int coop_write_save_metadata_rewind(rewind_file *file);
+#endif
 
 /* Try to read the coop metadata trailer from an open save file.
  * Seeks to the position after the existing data (caller should pass

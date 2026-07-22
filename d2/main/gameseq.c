@@ -101,6 +101,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "credits.h"
 #include "gamemine.h"
 #ifdef ANDROID
+#include "coop/coop_level_restart.h"
 #include "track_names.h"
 #include "android_crash_handler.h"
 #include "coop_save.h"
@@ -2089,6 +2090,9 @@ void StartNewLevel(int level_num)
 	ShowLevelIntro(level_num);
 
 	StartNewLevelSub(level_num, 1, 0 );
+#ifdef __ANDROID__
+	coop_level_restart_note_natural_level(level_num);
+#endif
 
 }
 

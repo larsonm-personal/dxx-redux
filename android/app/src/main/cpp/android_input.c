@@ -19,6 +19,7 @@
 #include <android/keycodes.h>
 #include "android_log.h"
 #include "android_rewind.h"
+#include "coop/coop_level_restart.h"
 #include "android_save_meta.h"
 #include "android_axis_mailbox.h"
 #ifdef INTROSPECT_ON
@@ -33,6 +34,14 @@
 
 /* Automap_active is defined in automap.c; we only need the extern. */
 extern int Automap_active;
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetCoopLevelRestartState(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	return (jint) coop_level_restart_get_state();
+}
 
 #define LOG_TAG   "DXX-Input"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)

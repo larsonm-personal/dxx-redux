@@ -65,6 +65,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "args.h"
 #ifdef __ANDROID__
+#include "coop/coop_level_restart.h"
 #include "coop_save.h"
 #include "coop/coop_host_migration.h"
 #include "coop_warp.h"
@@ -1443,6 +1444,7 @@ void multi_do_frame(void)
 	multi_save_transfer_frame();
 	/* android port: restore inventory from progress checkpoint (Track B) */
 	coop_load_progress_inventory();
+	coop_level_restart_maybe_capture_ready();
 	/* android port: dump control state at coop start for debugging */
 	if (Game_mode & GM_MULTI_COOP) {
 		static int coop_diag_level = -1;
@@ -1618,6 +1620,9 @@ multi_leave_game(void)
 
 	if (!(Game_mode & GM_MULTI))
 		return;
+#ifdef __ANDROID__
+	coop_level_restart_clear();
+#endif
 
 	if (Game_mode & GM_NETWORK)
 	{

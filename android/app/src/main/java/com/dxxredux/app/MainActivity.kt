@@ -341,6 +341,8 @@ class MainActivity :
 
     external fun nativeIsHostSelectingPlayers(): Boolean
 
+    external fun nativeGetCoopLevelRestartState(): Int
+
     external fun nativeStartSelectedPlayers()
 
     external fun nativeIsLevelCompleteActive(): Boolean
@@ -1049,6 +1051,13 @@ class MainActivity :
                 }
             }
         }
+        touchOverlay.adminTrayCanShowCoopLevelRestartProvider = {
+            try {
+                nativeGetCoopLevelRestartState() == 2
+            } catch (_: Exception) {
+                false
+            }
+        }
         touchOverlay.adminTrayCallback = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_INCREASE_VIEW -> {
@@ -1077,6 +1086,17 @@ class MainActivity :
 
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
                     openGameMenuFromControllerSettings()
+                }
+
+                TouchOverlayView.ADMIN_RESTART_LEVEL -> {
+                    android.app.AlertDialog
+                        .Builder(this)
+                        .setTitle("Restart Level")
+                        .setMessage("Restart from the beginning of this level? Current level progress will be lost.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Restart") { _, _ ->
+                            NativeMetaActions.nativeMetaAction(TouchBindings.META_COOP_RESTART_LEVEL, 1)
+                        }.show()
                 }
 
                 TouchOverlayView.ADMIN_NET_STATS -> {

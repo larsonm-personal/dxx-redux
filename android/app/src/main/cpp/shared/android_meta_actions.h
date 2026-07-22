@@ -57,6 +57,7 @@ struct window;
 #define META_GUIDE_NEXT_GOAL       1041
 #define META_GUIDE_WARP_TO_ME      1042
 #define META_GUIDE_FIND_UNEXPLORED 1043
+#define META_COOP_RESTART_LEVEL    1044
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
@@ -98,6 +99,7 @@ extern volatile int android_demo_record_toggle_pending;
 /* Set on UI thread by META_REWIND, consumed on the game thread
  * in gamecntl.c to trigger Android rewind handling. */
 extern volatile int android_rewind_pending;
+extern volatile int android_coop_restart_level_pending;
 
 /* Requests produced by android_input.c and consumed on the game thread. */
 extern volatile int g_android_open_save_menu;
