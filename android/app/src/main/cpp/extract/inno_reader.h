@@ -103,6 +103,7 @@ typedef struct {
 	/* offset table */
 	uint64_t header_offset; /* start of setup-0.bin in file */
 	uint64_t data_offset;   /* start of setup-1.bin in file */
+	uint64_t source_size;   /* complete installer size      */
 
 	/* entries */
 	inno_file_entry_t files[INNO_MAX_FILES];

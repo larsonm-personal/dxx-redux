@@ -41,6 +41,23 @@ so campaign closure must still obtain that independent verification
 
 ## Finalized findings
 
+### BR-0035: P1 - Bound every Inno file range to its declared chunk
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: security/data-boundary
+- Found by: R1-CHUNK-0015, R1-CHUNK-0023, R1-CHUNK-0024
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1074-L1113` in `decompress_chunk`, `L1750-L1806` in `stream_chunk_file_range`, and `L2129-L2142` in `inno_extract_file`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L132-L146,L996-L1011,L2025-L2054,L2087-L2117`
+- Evidence: The stored streaming branch calculates the physical start from unchecked `data_offset + chunk_offset + 4 + file_offset` and copies exactly `file_size` bytes without proving `file_offset + file_size` fits `chunk_compressed_size`. It then assigns `outer_pos = range_end` and tests `outer_pos < range_end`, a condition that is necessarily false. The buffered path also uses unchecked `file_offset + file_size` to size decoder buffers and later compares that wrapping sum with `chunk_len`; a near-`UINT64_MAX` offset plus a small size can wrap below `chunk_len`, after which `chunk + file_offset` forms an out-of-bounds pointer passed to `fwrite`. The lower-level read helper checks only whether requested physical bytes exist, not whether they remain in the declared chunk
+- Trigger: Craft a stored or compressed data entry whose file range extends beyond its declared chunk while bytes follow it, or whose near-`UINT64_MAX` offset and size wrap their end below the available buffered length
+- Impact: Extraction can copy unrelated installer data into a requested game file and report success, or perform an out-of-bounds native heap read and crash the launcher while writing the selected file
+- Expected: All offset additions are overflow-checked and every buffered or streaming entry is rejected unless its complete range is contained within the declared compressed or expanded chunk and physical archive span
+- Suggested fix: Centralize one subtractive range validator before decoder allocation or output: require `file_offset <= chunk_length` and `file_size <= chunk_length - file_offset`, use checked additions for physical positions, validate the resulting source span against the archive, and remove the tautological streaming post-copy check. Never form a pointer or convert a size until those checks pass
+- Validation: Add buffered and streaming stored, zlib, LZMA1, and LZMA2 cases at exact boundaries, one byte over, adjacent sentinels, and near `UINT64_MAX`; assert malformed entries fail without output, never read sentinel or invalid heap bytes, and remain clean under AddressSanitizer and UndefinedBehaviorSanitizer
+- Resolution: Fixed on 2026-07-21. The archive records its complete source length when opened, and one shared validator now checks `data_offset + chunk_offset`, the four-byte chunk header, the complete declared compressed payload, and `file_offset + file_size` without unchecked arithmetic. Stored entries additionally require the file range to fit subtractively within `chunk_compressed_size`. Buffered and streaming extraction both invoke this validator before allocation, decoding, source reads, pointer formation, or temporary output creation; the buffered post-decode check is also subtractive, and the tautological stored-stream check was removed. Regression coverage accepts an exact stored boundary and rejects a one-byte-over adjacent sentinel, near-`UINT64_MAX` file and chunk offsets, an installer-truncated physical span, a malformed range at the streaming threshold, and a zlib range extending beyond decoded output, all without committed output. Real Inno 5.5.7 and 5.6.2 fixtures continue to pass, covering valid LZMA1 and LZMA2 data. Scoped code quality and all 9 native extraction suites passed. AddressSanitizer and UndefinedBehaviorSanitizer execution was not available in the Windows test toolchain. Independent P1 verification remains a campaign closure action.
+
 ### BR-0034: P2 - Verify Inno file checksums before committing output
 
 - [x] FIXED

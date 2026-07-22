@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zlib.h>
+
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -50,6 +52,17 @@ static int file_exists(const char *path)
 	if (!file) return 0;
 	fclose(file);
 	return 1;
+}
+
+static int file_equals(const char *path, const void *expected, size_t expected_size)
+{
+	uint8_t actual[64];
+	if (expected_size > sizeof(actual)) return 0;
+	FILE *file = fopen(path, "rb");
+	if (!file) return 0;
+	size_t size = fread(actual, 1, sizeof(actual), file);
+	fclose(file);
+	return size == expected_size && memcmp(actual, expected, expected_size) == 0;
 }
 
 static int check_checksum_extraction(inno_archive_t *arc, const char *label,
@@ -134,6 +147,7 @@ static int check_galaxy_checksum_order(void)
 		return 1;
 	}
 	arc.compression = INNO_COMPRESS_STORED;
+	arc.source_size = sizeof(magic) + sizeof(inner_zlib);
 	arc.file_count = 1;
 	arc.data_entry_count = 1;
 	arc.data_entries = &data;
@@ -167,6 +181,125 @@ static int check_galaxy_checksum_order(void)
 		failures++;
 	}
 	CLOSE_FD(arc.fd);
+	remove(source_path);
+	remove(output_path);
+	return failures ? 1 : 0;
+}
+
+static void init_range_archive(inno_archive_t *arc, inno_data_entry_t *data,
+                               int fd, uint64_t source_size)
+{
+	memset(arc, 0, sizeof(*arc));
+	memset(data, 0, sizeof(*data));
+	arc->fd = fd;
+	arc->source_size = source_size;
+	arc->compression = INNO_COMPRESS_STORED;
+	arc->file_count = 1;
+	arc->data_entry_count = 1;
+	arc->data_entries = data;
+	strcpy(arc->files[0].destination, "range.bin");
+	data->checksum_type = INNO_CHECKSUM_SHA1;
+}
+
+static int expect_range_failure(inno_archive_t *arc, const char *output_path,
+                                const char *case_name)
+{
+	remove(output_path);
+	if (inno_extract_file(arc, 0, output_path, NULL, NULL) == 0 ||
+	    file_exists(output_path)) {
+		fprintf(stderr, "%s range was accepted\n", case_name);
+		remove(output_path);
+		return 1;
+	}
+	return 0;
+}
+
+static int check_chunk_range_boundaries(void)
+{
+	static const uint8_t exact_sha1[20] = {
+		0x92, 0x4f, 0x61, 0x66, 0x1a, 0x34, 0x72, 0xda, 0x74, 0x30,
+		0x7a, 0x35, 0xf2, 0xc8, 0xd2, 0x2e, 0x07, 0xe8, 0x4a, 0x4d
+	};
+	const uint8_t magic[4] = { 'z', 'l', 'b', 0x1a };
+	const uint8_t stored_payload[5] = { 'a', 'b', 'c', 'd', 'X' };
+	const char *source_path = "test_gog_fd_range_source.tmp";
+	const char *output_path = "test_gog_fd_range_output.tmp";
+	remove(source_path);
+	remove(output_path);
+	FILE *source = fopen(source_path, "wb");
+	if (!source) return 1;
+	int write_failed = fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+	                   fwrite(stored_payload, 1, sizeof(stored_payload), source) != sizeof(stored_payload);
+	if (fclose(source) != 0) write_failed = 1;
+	if (write_failed) {
+		remove(source_path);
+		return 1;
+	}
+
+	int fd = OPEN_RB(source_path);
+	if (fd < 0) {
+		remove(source_path);
+		return 1;
+	}
+	inno_archive_t arc;
+	inno_data_entry_t data;
+	init_range_archive(&arc, &data, fd, sizeof(magic) + sizeof(stored_payload));
+	data.chunk_compressed_size = 4;
+	data.file_offset = 1;
+	data.file_size = 3;
+	memcpy(data.sha1, exact_sha1, sizeof(exact_sha1));
+	int failures = 0;
+	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
+	    !file_equals(output_path, "bcd", 3)) {
+		fprintf(stderr, "exact stored chunk boundary failed\n");
+		failures++;
+	}
+	remove(output_path);
+
+	data.file_size = 4;
+	failures += expect_range_failure(&arc, output_path, "stored one-byte-over");
+	data.file_offset = UINT64_MAX - 1;
+	data.file_size = 4;
+	failures += expect_range_failure(&arc, output_path, "wrapping file");
+	data.file_offset = 0;
+	data.file_size = 1;
+	data.chunk_offset = UINT64_MAX;
+	failures += expect_range_failure(&arc, output_path, "wrapping chunk");
+	data.chunk_offset = 0;
+	data.chunk_compressed_size = 6;
+	failures += expect_range_failure(&arc, output_path, "physical span");
+	data.chunk_compressed_size = 64ULL * 1024ULL * 1024ULL;
+	data.file_offset = data.chunk_compressed_size;
+	arc.source_size = 4 + data.chunk_compressed_size;
+	failures += expect_range_failure(&arc, output_path, "streamed stored one-byte-over");
+	CLOSE_FD(fd);
+
+	uint8_t compressed[64];
+	uLongf compressed_size = sizeof(compressed);
+	if (compress2(compressed, &compressed_size, (const Bytef *) "abcd", 4,
+	              Z_BEST_SPEED) != Z_OK) {
+		remove(source_path);
+		return 1;
+	}
+	source = fopen(source_path, "wb");
+	if (!source) return 1;
+	write_failed = fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+	               fwrite(compressed, 1, compressed_size, source) != compressed_size ||
+	               fwrite("X", 1, 1, source) != 1;
+	if (fclose(source) != 0) write_failed = 1;
+	fd = write_failed ? -1 : OPEN_RB(source_path);
+	if (fd < 0) {
+		remove(source_path);
+		return 1;
+	}
+	init_range_archive(&arc, &data, fd, 4 + compressed_size + 1);
+	arc.compression = INNO_COMPRESS_ZLIB;
+	data.chunk_compressed = 1;
+	data.chunk_compressed_size = compressed_size;
+	data.file_offset = 2;
+	data.file_size = 3;
+	failures += expect_range_failure(&arc, output_path, "zlib expanded one-byte-over");
+	CLOSE_FD(fd);
 	remove(source_path);
 	remove(output_path);
 	return failures ? 1 : 0;
@@ -225,6 +358,7 @@ int main(int argc, char **argv)
 	};
 
 	int failures = 0;
+	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();
 	failures += check_installer(argv[1], d1_expected, 2, 7, "d1");
 	failures += check_installer(argv[2], d2_expected, 5, 21, "d2");

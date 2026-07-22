@@ -285,6 +285,14 @@ static int read_at(int fd, uint64_t offset, void *buf, size_t len)
 	return 0;
 }
 
+static int get_fd_size(int fd, uint64_t *size_out)
+{
+	long long end = LSEEK(fd, 0, SEEK_END);
+	if (end < 0) return -1;
+	*size_out = (uint64_t) end;
+	return 0;
+}
+
 static uint16_t get_u16(const uint8_t *p)
 {
 	return (uint16_t) (p[0] | (p[1] << 8));
@@ -1287,29 +1295,61 @@ static int grow_decompressed_buffer(uint8_t **buffer, size_t *capacity,
 	return 0;
 }
 
-static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
+static int validate_chunk_file_range(const inno_archive_t *arc,
+                                     const inno_data_entry_t *de,
+                                     inno_compress_method_t method,
+                                     uint64_t *chunk_pos_out,
+                                     uint64_t *payload_pos_out,
+                                     uint64_t *range_end_out)
+{
+	uint64_t chunk_pos;
+	uint64_t payload_pos;
+	if (!arc || !de || arc->fd < 0 ||
+	    arc->data_offset > UINT64_MAX - de->chunk_offset)
+		return -1;
+	chunk_pos = arc->data_offset + de->chunk_offset;
+	if (chunk_pos > arc->source_size ||
+	    arc->source_size - chunk_pos < 4)
+		return -1;
+	payload_pos = chunk_pos + 4;
+	if (de->chunk_compressed_size > arc->source_size - payload_pos ||
+	    de->file_size > UINT64_MAX - de->file_offset)
+		return -1;
+	if (method == INNO_COMPRESS_STORED &&
+	    (de->file_offset > de->chunk_compressed_size ||
+	     de->file_size > de->chunk_compressed_size - de->file_offset))
+		return -1;
+	if (chunk_pos_out) *chunk_pos_out = chunk_pos;
+	if (payload_pos_out) *payload_pos_out = payload_pos;
+	if (range_end_out) *range_end_out = de->file_offset + de->file_size;
+	return 0;
+}
+
+static uint8_t *decompress_chunk(inno_archive_t *arc,
                                  const inno_data_entry_t *de,
                                  inno_compress_method_t method,
                                  size_t *out_len,
                                  inno_progress_fn progress, void *progress_data,
                                  const char *progress_name)
 {
-	uint64_t chunk_pos = data_offset + de->chunk_offset;
+	uint64_t chunk_pos;
+	uint64_t payload_pos;
 	uint64_t required_output;
+	inno_compress_method_t actual_method =
+	    de->chunk_compressed ? method : INNO_COMPRESS_STORED;
+	if (validate_chunk_file_range(arc, de, actual_method, &chunk_pos,
+	                              &payload_pos, &required_output) < 0)
+		return NULL;
 
 	/* Read and verify zlb magic */
 	uint8_t magic[4];
-	if (read_at(fd, chunk_pos, magic, 4) < 0) return NULL;
+	if (read_at(arc->fd, chunk_pos, magic, 4) < 0) return NULL;
 	if (magic[0] != 'z' || magic[1] != 'l' || magic[2] != 'b' || magic[3] != 0x1A) {
 		INNO_LOG("missing zlb magic at 0x%llx", (unsigned long long) chunk_pos);
 		return NULL;
 	}
 
 	uint64_t comp_size = de->chunk_compressed_size; /* size after zlb magic */
-	inno_compress_method_t actual_method = de->chunk_compressed ? method : INNO_COMPRESS_STORED;
-	if (de->file_offset > UINT64_MAX - de->file_size)
-		return NULL;
-	required_output = de->file_offset + de->file_size;
 	if (comp_size > DXX_EXTRACT_MAX_MEMORY_BYTES ||
 	    required_output > DXX_EXTRACT_MAX_ENTRY_BYTES ||
 	    (actual_method == INNO_COMPRESS_STORED && required_output > comp_size) ||
@@ -1319,7 +1359,7 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		return NULL;
 	uint8_t *comp_data = (uint8_t *) malloc((size_t) comp_size);
 	if (!comp_data) return NULL;
-	if (read_at(fd, chunk_pos + 4, comp_data, (size_t) comp_size) < 0) {
+	if (read_at(arc->fd, payload_pos, comp_data, (size_t) comp_size) < 0) {
 		free(comp_data);
 		return NULL;
 	}
@@ -1564,6 +1604,12 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	arc->fd = -1;
 	arc->fd = fd;
 	if (!source_name) source_name = "<fd>";
+	if (get_fd_size(fd, &arc->source_size) < 0) {
+		INNO_LOG("cannot determine installer size for %s", source_name);
+		CLOSE_FD(fd);
+		arc->fd = -1;
+		return -1;
+	}
 
 	/* ── Find offset table ── */
 	uint64_t table_offset = 0;
@@ -1727,7 +1773,7 @@ int inno_open_fd(int source_fd, inno_archive_t *arc)
 
 typedef int (*inno_chunk_sink_fn)(const uint8_t *data, size_t len, void *user_data);
 
-static int stream_chunk_file_range(int fd, uint64_t data_offset,
+static int stream_chunk_file_range(const inno_archive_t *arc,
                                    const inno_file_entry_t *fe,
                                    const inno_data_entry_t *de,
                                    inno_compress_method_t method,
@@ -1979,7 +2025,7 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 	writer.out = out;
 	writer.written = 0;
 	inno_sha1_init(&writer.sha1);
-	if (stream_chunk_file_range(arc->fd, arc->data_offset, fe, de,
+	if (stream_chunk_file_range(arc, fe, de,
 	                            arc->compression, progress, user_data,
 	                            raw_file_stream_writer_feed, &writer) < 0) {
 		fclose(out);
@@ -2020,7 +2066,7 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 	return 0;
 }
 
-static int stream_chunk_file_range(int fd, uint64_t data_offset,
+static int stream_chunk_file_range(const inno_archive_t *arc,
                                    const inno_file_entry_t *fe,
                                    const inno_data_entry_t *de,
                                    inno_compress_method_t method,
@@ -2030,6 +2076,7 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
                                    void *sink_data)
 {
 	uint64_t chunk_pos;
+	uint64_t payload_pos;
 	uint64_t range_start = de->file_offset;
 	uint64_t range_end;
 	uint8_t magic[4];
@@ -2037,18 +2084,16 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
 	inno_compress_method_t actual_method =
 	    de->chunk_compressed ? method : INNO_COMPRESS_STORED;
 	uint64_t outer_pos = 0;
-	if (data_offset > UINT64_MAX - de->chunk_offset ||
-	    de->file_offset > UINT64_MAX - de->file_size)
+	if (validate_chunk_file_range(arc, de, actual_method, &chunk_pos,
+	                              &payload_pos, &range_end) < 0)
 		return -1;
-	chunk_pos = data_offset + de->chunk_offset;
-	range_end = de->file_offset + de->file_size;
 	if (comp_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
 	    range_end > DXX_EXTRACT_MAX_ENTRY_BYTES ||
 	    !dxx_extract_ratio_allowed(range_end, comp_size) ||
 	    (actual_method == INNO_COMPRESS_STORED && range_end > comp_size))
 		return -1;
 
-	if (read_at(fd, chunk_pos, magic, 4) < 0) return -1;
+	if (read_at(arc->fd, chunk_pos, magic, 4) < 0) return -1;
 	if (magic[0] != 'z' || magic[1] != 'l' || magic[2] != 'b' || magic[3] != 0x1A) {
 		INNO_LOG("missing zlb magic at 0x%llx", (unsigned long long) chunk_pos);
 		return -1;
@@ -2056,14 +2101,14 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
 
 	if (actual_method == INNO_COMPRESS_STORED) {
 		uint8_t in_buf[INNO_STREAM_BUFFER_SIZE];
-		uint64_t copy_start = chunk_pos + 4 + range_start;
+		uint64_t copy_start = payload_pos + range_start;
 		uint64_t remaining = de->file_size;
 		uint64_t copied = range_start;
 		while (remaining > 0) {
 			size_t want = sizeof(in_buf);
 			if ((uint64_t) want > remaining)
 				want = (size_t) remaining;
-			if (read_at(fd, copy_start, in_buf, want) < 0)
+			if (read_at(arc->fd, copy_start, in_buf, want) < 0)
 				return -1;
 			if (emit_chunk_range(in_buf, want, &copied,
 			                     range_start, range_end, sink, sink_data) < 0)
@@ -2078,14 +2123,6 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
 				         (long long) comp_size, progress_data);
 			}
 		}
-		outer_pos = range_end;
-		if (outer_pos < range_end) {
-			INNO_LOG("stored chunk too small for %s: need %llu bytes, have %llu",
-			         fe->destination,
-			         (unsigned long long) range_end,
-			         (unsigned long long) outer_pos);
-			return -1;
-		}
 		return 0;
 	}
 
@@ -2096,7 +2133,7 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
 		int zret;
 		size_t last_progress_in = 0;
 		memset(&zs, 0, sizeof(zs));
-		init_stream_input(&input, fd, chunk_pos + 4, comp_size, 0);
+		init_stream_input(&input, arc->fd, payload_pos, comp_size, 0);
 		if (inflateInit(&zs) != Z_OK) {
 			return -1;
 		}
@@ -2159,12 +2196,12 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
 		if (comp_size < 5) {
 			return -1;
 		}
-		if (read_at(fd, chunk_pos + 4, lzma_props, 5) < 0)
+		if (read_at(arc->fd, payload_pos, lzma_props, 5) < 0)
 			return -1;
 		uint8_t out_buf[INNO_STREAM_BUFFER_SIZE];
 		CLzmaDec dec;
 		size_t last_progress_pos = 0;
-		init_stream_input(&input, fd, chunk_pos + 9, comp_size - 5, 5);
+		init_stream_input(&input, arc->fd, payload_pos + 5, comp_size - 5, 5);
 		LzmaDec_Construct(&dec);
 		if (LzmaDec_Allocate(&dec, lzma_props, 5, &g_lzma_alloc) != SZ_OK) {
 			return -1;
@@ -2229,12 +2266,12 @@ static int stream_chunk_file_range(int fd, uint64_t data_offset,
 		if (comp_size < 1) {
 			return -1;
 		}
-		if (read_at(fd, chunk_pos + 4, &lzma2_prop, 1) < 0)
+		if (read_at(arc->fd, payload_pos, &lzma2_prop, 1) < 0)
 			return -1;
 		uint8_t out_buf[INNO_STREAM_BUFFER_SIZE];
 		CLzma2Dec dec;
 		size_t last_progress_pos2 = 0;
-		init_stream_input(&input, fd, chunk_pos + 5, comp_size - 1, 1);
+		init_stream_input(&input, arc->fd, payload_pos + 1, comp_size - 1, 1);
 		Lzma2Dec_Construct(&dec);
 		if (Lzma2Dec_Allocate(&dec, lzma2_prop, &g_lzma_alloc) != SZ_OK) {
 			return -1;
@@ -2317,7 +2354,7 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 		free(temporary_path);
 		return -1;
 	}
-	if (stream_chunk_file_range(arc->fd, arc->data_offset, fe, de,
+	if (stream_chunk_file_range(arc, fe, de,
 	                            arc->compression, progress, user_data,
 	                            gog_galaxy_stream_writer_feed, &writer) < 0) {
 		gog_galaxy_stream_writer_finish(&writer, NULL);
@@ -2375,6 +2412,12 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	uint64_t output_size;
 	uint64_t compressed_size;
 	uint64_t extracted_after = arc->extracted_bytes;
+	inno_compress_method_t actual_method =
+	    de->chunk_compressed ? arc->compression : INNO_COMPRESS_STORED;
+	if (validate_chunk_file_range(arc, de, actual_method, NULL, NULL, NULL) < 0) {
+		INNO_LOG("invalid chunk range for %s", fe->destination);
+		return -1;
+	}
 
 	if (de->call_instruction_optimized) {
 		INNO_LOG("exe instruction filter not implemented (file %s)", fe->destination);
@@ -2439,8 +2482,7 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 
 	/* Decompress the chunk */
 	size_t chunk_len = 0;
-	uint8_t *chunk = decompress_chunk(arc->fd, arc->data_offset, de,
-	                                  arc->compression, &chunk_len,
+	uint8_t *chunk = decompress_chunk(arc, de, arc->compression, &chunk_len,
 	                                  progress, user_data, fe->destination);
 	if (!chunk) {
 		INNO_LOG("failed to decompress chunk for %s", fe->destination);
@@ -2448,7 +2490,8 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	}
 
 	/* Verify we have enough data */
-	if (de->file_offset + de->file_size > chunk_len) {
+	if (de->file_offset > chunk_len ||
+	    de->file_size > chunk_len - (size_t) de->file_offset) {
 		INNO_LOG("chunk too small for %s: need %llu+%llu, have %zu",
 		         fe->destination,
 		         (unsigned long long) de->file_offset,
