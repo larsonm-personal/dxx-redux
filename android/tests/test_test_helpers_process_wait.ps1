@@ -39,6 +39,44 @@ foreach ($case in $expectedStatuses.GetEnumerator()) {
     }
 }
 
+$script:HealthChecks = [System.Collections.Generic.Queue[bool]]::new()
+$script:AdbRestarts = 0
+function Test-EmulatorHealthy {
+    return $script:HealthChecks.Dequeue()
+}
+function Restart-AdbServer {
+    $script:AdbRestarts++
+}
+
+$script:HealthChecks.Enqueue($false)
+$script:HealthChecks.Enqueue($true)
+if (-not (Confirm-EmulatorHealthWithAdbRecovery -RetryDelayMilliseconds 0)) {
+    throw 'Transient emulator health failure was not retried'
+}
+if ($script:AdbRestarts -ne 0) {
+    throw 'ADB was restarted when the emulator recovered on retry'
+}
+
+$script:HealthChecks.Enqueue($false)
+$script:HealthChecks.Enqueue($false)
+$script:HealthChecks.Enqueue($true)
+if (-not (Confirm-EmulatorHealthWithAdbRecovery -RetryDelayMilliseconds 0)) {
+    throw 'Emulator health was not rechecked after ADB restart'
+}
+if ($script:AdbRestarts -ne 1) {
+    throw "Expected one ADB restart, got $script:AdbRestarts"
+}
+
+$script:HealthChecks.Enqueue($false)
+$script:HealthChecks.Enqueue($false)
+$script:HealthChecks.Enqueue($false)
+if (Confirm-EmulatorHealthWithAdbRecovery -RetryDelayMilliseconds 0) {
+    throw 'Persistent emulator health failure was accepted after ADB restart'
+}
+if ($script:AdbRestarts -ne 2) {
+    throw "Expected two total ADB restarts, got $script:AdbRestarts"
+}
+
 $script:TimeoutCalls = 0
 $script:GameProcessAlive = $true
 

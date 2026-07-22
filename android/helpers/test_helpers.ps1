@@ -128,6 +128,22 @@ function Restart-AdbServer {
     Start-Sleep -Seconds 2
 }
 
+function Confirm-EmulatorHealthWithAdbRecovery {
+    param([int]$RetryDelayMilliseconds = 2000)
+
+    if (Test-EmulatorHealthy) { return $true }
+
+    Write-Status "Health check failed, retrying..." "Yellow"
+    if ($RetryDelayMilliseconds -gt 0) {
+        Start-Sleep -Milliseconds $RetryDelayMilliseconds
+    }
+    if (Test-EmulatorHealthy) { return $true }
+
+    Write-Status "Health check still failing, resetting ADB transport..." "Yellow"
+    Restart-AdbServer
+    return Test-EmulatorHealthy
+}
+
 function Invoke-LauncherStartupRecovery {
     param(
         [string]$Reason = "SetupActivity not responding",
@@ -1294,16 +1310,10 @@ function Watch-AutomationResult {
 
         $elapsed = [int]$sw.Elapsed.TotalSeconds
         if ($elapsed - $lastHealthCheck -ge 15) {
-            if (-not (Test-EmulatorHealthy)) {
-                # Retry once -- adb can be slow under heavy game load (level loading,
-                # title screens) without the emulator actually being dead.
-                Write-Status "Health check failed, retrying in 2s..." "Yellow"
-                Start-Sleep -Seconds 2
-                if (-not (Test-EmulatorHealthy)) {
-                    Write-Status "FAIL: Emulator crashed during test (after ${elapsed}s)" "Red"
-                    Write-DeviceFailureDiagnostics -Reason "emulator health check failed after ${elapsed}s"
-                    return $false
-                }
+            if (-not (Confirm-EmulatorHealthWithAdbRecovery)) {
+                Write-Status "FAIL: Emulator or ADB transport unavailable during test (after ${elapsed}s)" "Red"
+                Write-DeviceFailureDiagnostics -Reason "emulator health check failed after ADB reset at ${elapsed}s"
+                return $false
             }
             $lastHealthCheck = $elapsed
 

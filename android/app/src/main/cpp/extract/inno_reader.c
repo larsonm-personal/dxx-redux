@@ -1256,6 +1256,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 
 	for (uint32_t i = 0; i < file_count; i++) {
 		inno_file_entry_t *fe = &arc->files[i];
+		int gog_galaxy_candidate = 0;
 		/* source (encoded_string) */
 		if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		/* destination (encoded_string) */
@@ -1288,10 +1289,10 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 			char before_install[512];
 			if (read_string(buf, buf_len, &pos, before_install,
 			                sizeof(before_install), ver->unicode) < 0) return -1;
-			/* GOG Galaxy pattern: before_install('hash', 'real/path', 'N')
-			 * Extract arg 2 (the real path) to overwrite the hash destination */
+			/* GOG indirection pattern: before_install('hash', 'real/path', 'N')
+			 * Extract arg 2 (the real path) to overwrite the hash destination and
+			 * identify the nested Galaxy zlib payload. */
 			if (before_install[0]) {
-				fe->gog_galaxy = 1;
 				/* Find second argument: skip first 'xxx', then find next 'xxx' */
 				const char *p = strchr(before_install, '\'');
 				if (p) p = strchr(p + 1, '\''); /* end of arg1 */
@@ -1302,6 +1303,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 					if (end && end > p) {
 						size_t len = (size_t) (end - p);
 						if (len < sizeof(fe->destination)) {
+							gog_galaxy_candidate = 1;
 							memcpy(fe->destination, p, len);
 							fe->destination[len] = '\0';
 						}
@@ -1327,6 +1329,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 			fe->external_size = get_u64(buf + pos);
 			pos += 8;
 		}
+		fe->gog_galaxy = gog_galaxy_candidate;
 
 		/* permission (int16, >= 4.1.0) */
 		if (v >= INNO_VER(4, 1, 0)) {
@@ -2150,7 +2153,7 @@ static int gog_galaxy_stream_writer_feed(const uint8_t *data, size_t len, void *
 				         writer->fe->destination);
 				return -1;
 			}
-			if (fwrite(out_buf, 1, produced, writer->out) != produced) {
+			if (writer->out && fwrite(out_buf, 1, produced, writer->out) != produced) {
 				INNO_LOG("write error while streaming GOG Galaxy file %s: %s",
 				         writer->fe->destination,
 				         strerror(errno));
@@ -2619,6 +2622,24 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 	return 0;
 }
 
+static int measure_gog_galaxy_file_streamed(inno_archive_t *arc,
+                                            const inno_file_entry_t *fe,
+                                            const inno_data_entry_t *de,
+                                            size_t *written_out)
+{
+	gog_galaxy_stream_writer_t writer;
+	if (gog_galaxy_stream_writer_init(&writer, fe, de, NULL, NULL, NULL) < 0)
+		return -1;
+	if (stream_chunk_file_range(arc, fe, de, arc->compression, NULL, NULL,
+	                            gog_galaxy_stream_writer_feed, &writer) < 0) {
+		gog_galaxy_stream_writer_finish(&writer, NULL);
+		return -1;
+	}
+	if (gog_galaxy_stream_writer_finish(&writer, written_out) < 0)
+		return -1;
+	return inno_checksum_matches(&writer.checksum, de, fe->destination);
+}
+
 int inno_extract_file(inno_archive_t *arc, int file_index,
                       const char *output_path,
                       inno_progress_fn progress, void *user_data)
@@ -2658,10 +2679,13 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		return -1;
 	}
 	if (fe->gog_galaxy && fe->external_size == 0) {
-		INNO_LOG("missing expanded size for GOG Galaxy file %s", fe->destination);
-		return -1;
+		size_t measured_size = 0;
+		if (measure_gog_galaxy_file_streamed(arc, fe, de, &measured_size) < 0)
+			return -1;
+		output_size = measured_size;
+	} else {
+		output_size = fe->gog_galaxy ? fe->external_size : de->file_size;
 	}
-	output_size = fe->gog_galaxy ? fe->external_size : de->file_size;
 	compressed_size = fe->gog_galaxy ? de->file_size : de->chunk_compressed_size;
 	if (!dxx_extract_entry_allowed(output_size, compressed_size) ||
 	    !dxx_extract_entry_allowed(de->file_size, de->chunk_compressed_size) ||
@@ -2702,6 +2726,14 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		if (extract_gog_galaxy_file_streamed(arc, fe, de, output_path,
 		                                     progress, user_data,
 		                                     &written) < 0) {
+			return -1;
+		}
+		if (written != output_size) {
+			INNO_LOG("GOG Galaxy measured size changed for %s: expected %llu got %zu",
+			         fe->destination,
+			         (unsigned long long) output_size,
+			         written);
+			remove(output_path);
 			return -1;
 		}
 		if (progress) {

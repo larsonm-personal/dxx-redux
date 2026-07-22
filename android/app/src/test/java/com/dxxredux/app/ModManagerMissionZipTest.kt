@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
+import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -331,7 +332,6 @@ class ModManagerMissionZipTest {
         )
     }
 
-
     @Test
     fun largeMissionZipImportsDurableExtractionAndDeletesWithOwner() {
         val filesDir = File("build/test-mod-manager-mission-zip-large-extract").absoluteFile
@@ -480,8 +480,10 @@ class ModManagerMissionZipTest {
         val filesDir = File("build/test-mod-manager-mission-zip-large-inner-hog").absoluteFile
         filesDir.deleteRecursively()
         filesDir.mkdirs()
+        val source = createLargeNestedHogMissionZip()
+        assertTrue(source.length() <= MissionZip.DURABLE_EXTRACT_THRESHOLD_BYTES)
 
-        val imported = ModManager(filesDir).importMissionZipFile(createLargeNestedHogMissionZip(), "LargeInnerHog.zip")
+        val imported = ModManager(filesDir).importMissionZipFile(source, "LargeInnerHog.zip")
 
         assertNotNull(imported)
         imported!!
@@ -544,6 +546,7 @@ class ModManagerMissionZipTest {
         val zipFile = File.createTempFile("missionzip-manager-large-inner-hog", ".zip")
         zipFile.deleteOnExit()
         ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.setLevel(Deflater.BEST_SPEED)
             zip.putNextEntry(ZipEntry("Uneasy4.hog"))
             val buffer = ByteArray(1024 * 1024)
             val chunks = (MissionZip.SMALL_NESTED_ARCHIVE_LIMIT_BYTES / buffer.size).toInt() + 1

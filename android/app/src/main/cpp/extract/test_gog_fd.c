@@ -190,13 +190,15 @@ static int check_checksum_extraction(inno_archive_t *arc, const char *label,
 	uint64_t selected_size = UINT64_MAX;
 	for (int i = 0; i < arc->file_count; i++) {
 		inno_file_entry_t *file = &arc->files[i];
-		if (file->gog_galaxy != gog_galaxy ||
-		    (gog_galaxy && file->external_size == 0) ||
+		if (!has_game_extension(file->destination) ||
+		    file->gog_galaxy != gog_galaxy ||
 		    file->location == 0xFFFFFFFF ||
 		    file->location >= (uint32_t) arc->data_entry_count)
 			continue;
 		inno_data_entry_t *data = &arc->data_entries[file->location];
-		uint64_t output_size = gog_galaxy ? file->external_size : data->file_size;
+		uint64_t output_size = gog_galaxy && file->external_size > 0
+		                           ? file->external_size
+		                           : data->file_size;
 		if (data->checksum_type == INNO_CHECKSUM_SHA1 && output_size < selected_size) {
 			selected = i;
 			selected_size = output_size;
@@ -270,7 +272,7 @@ static int check_galaxy_checksum_order(void)
 	arc.data_entry_count = 1;
 	arc.data_entries = &data;
 	strcpy(arc.files[0].destination, "galaxy.bin");
-	arc.files[0].external_size = 5;
+	arc.files[0].external_size = 0;
 	arc.files[0].gog_galaxy = 1;
 	data.file_size = sizeof(inner_zlib);
 	data.chunk_compressed_size = sizeof(inner_zlib);
@@ -290,6 +292,12 @@ static int check_galaxy_checksum_order(void)
 			failures++;
 		}
 		if (file) fclose(file);
+	}
+	remove(output_path);
+	arc.files[0].external_size = 5;
+	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0) {
+		fprintf(stderr, "synthetic sized Galaxy extraction failed\n");
+		failures++;
 	}
 	remove(output_path);
 	data.checksum[0] ^= 0x01;
@@ -443,7 +451,8 @@ static int check_chunk_range_boundaries(void)
 }
 
 static int check_installer(const char *path, const char **expected, int expected_count,
-                           int expected_game_count, const char *label)
+                           int expected_game_count, int expected_galaxy_game_count,
+                           const char *label)
 {
 	int fd = OPEN_RB(path);
 	if (fd < 0) {
@@ -460,13 +469,22 @@ static int check_installer(const char *path, const char **expected, int expected
 	}
 
 	int game_count = 0;
+	int galaxy_game_count = 0;
 	int failures = 0;
 	for (int i = 0; i < arc.file_count; i++) {
-		if (has_game_extension(arc.files[i].destination)) game_count++;
+		if (!has_game_extension(arc.files[i].destination)) continue;
+		game_count++;
+		if (arc.files[i].gog_galaxy) galaxy_game_count++;
 	}
 	if (game_count != expected_game_count) {
 		fprintf(stderr, "%s: expected %d game files, got %d\n",
 		        path, expected_game_count, game_count);
+		failures++;
+	}
+	if (expected_galaxy_game_count >= 0 &&
+	    galaxy_game_count != expected_galaxy_game_count) {
+		fprintf(stderr, "%s: expected %d Galaxy game files, got %d\n",
+		        path, expected_galaxy_game_count, galaxy_game_count);
 		failures++;
 	}
 	for (int i = 0; i < expected_count; i++) {
@@ -498,7 +516,7 @@ int main(int argc, char **argv)
 	failures += check_checksum_layout_transition();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();
-	failures += check_installer(argv[1], d1_expected, 2, 7, "d1");
-	failures += check_installer(argv[2], d2_expected, 5, 21, "d2");
+	failures += check_installer(argv[1], d1_expected, 2, 7, 7, "d1");
+	failures += check_installer(argv[2], d2_expected, 5, 21, -1, "d2");
 	return failures ? 1 : 0;
 }
