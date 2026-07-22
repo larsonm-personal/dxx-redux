@@ -12,6 +12,8 @@
  *   - Main thread: JNI calls (init/start/stop/pause/seek/get_state)
  *   - Render thread: advances MIDI timeline, renders TSF -> ring buffer
  *   - OpenSL ES callback: reads ring buffer, outputs audio
+ * Control calls are serialized, and mutable playback state is protected by
+ * one mutex shared with rendering. The callback never waits for that mutex
  */
 
 #ifndef MIDI_PREVIEW_H

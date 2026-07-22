@@ -5240,7 +5240,8 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: The render thread has exclusive ownership of synth, message cursor, playback time, and ring reset; UI controls submit ordered commands and state queries consume a synchronized snapshot
 - Suggested fix: Route seek, pause, resume, and stop through a render-thread command queue or guard all shared playback state with one lifecycle mutex and stop rendering during seek. Publish position, duration, and state through atomics or a locked snapshot, and define callback ordering during ring reset
 - Validation: Add a preview test that performs rapid seeks while playing and while paused, verifies bounded monotonic state after each completed seek, and stress it under ThreadSanitizer where available plus AddressSanitizer on an Android or host OpenSL test shim
-- Resolution: Pending
+- Remediation status: Code-complete on 2026-07-21, but this P1 remains open pending the independent verification call required by `branch_adversarial_review_process.md`. The live implementation now serializes JNI lifecycle and control calls, guards synth, MIDI cursor, playback time, and state snapshots with one playback mutex shared by rendering and seek, serializes ring reset against the OpenSL reader with a dedicated non-blocking callback guard, and publishes callback enablement atomically. Stop releases the playback lock before joining the render thread. Seven focused synchronization contract tests, scoped code quality, all three Android debug ABIs, and all 10 native suites pass. ThreadSanitizer and a maintained on-device rapid-seek stress run were not available in this tranche
+- Resolution: Pending independent P1 verification
 
 ### BR-0029: P1 - Marshal overlay game-state access through the engine thread
 

@@ -100,12 +100,16 @@ static int s_midi_buf_len = 0;
 
 static volatile int s_playing = 0;
 static volatile int s_paused = 0;
+static volatile int s_output_enabled = 0;
 static double s_playback_msec = 0.0;
 static int s_duration_ms = 0;
 static int s_output_rate = 48000;
 static float s_volume = 0.7f;
 static float s_gain_db = -10.0f;
 static int s_max_voices = 48;
+static pthread_mutex_t s_control_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t s_playback_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t s_ring_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Render thread */
 static pthread_t s_render_tid;
@@ -342,6 +346,7 @@ static int render_midi_frames(short *out, int frames)
 	/* Song ended */
 	if (!s_midi_cur && rendered < frames + rendered) {
 		s_playing = 0;
+		__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 	}
 	return rendered;
 }
@@ -357,22 +362,26 @@ static void *render_thread_func(void *data)
 	LOGI("MIDI preview render thread started");
 
 	while (__atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST)) {
+		int sleep_usec = 0;
+		int stop = 0;
+		pthread_mutex_lock(&s_playback_mutex);
 		if (!s_playing || s_paused) {
-			usleep(20000);
-			continue;
+			sleep_usec = 20000;
+		} else {
+			unsigned int space = RB_SAMPLES - rb_available();
+			if (space < CHUNK * 2u) {
+				sleep_usec = 5000;
+			} else {
+				int got = render_midi_frames(buf, CHUNK);
+				if (got > 0)
+					rb_write(buf, got * 2);
+				stop = !s_playing;
+			}
 		}
+		pthread_mutex_unlock(&s_playback_mutex);
 
-		unsigned int space = RB_SAMPLES - rb_available();
-		if (space < CHUNK * 2u) {
-			usleep(5000);
-			continue;
-		}
-
-		int got = render_midi_frames(buf, CHUNK);
-		if (got > 0)
-			rb_write(buf, got * 2);
-
-		if (!s_playing) break;
+		if (stop) break;
+		if (sleep_usec) usleep((useconds_t) sleep_usec);
 	}
 
 	LOGI("MIDI preview render thread exiting");
@@ -382,7 +391,9 @@ static void *render_thread_func(void *data)
 static void render_thread_start(void)
 {
 	if (s_thread_created) return;
+	pthread_mutex_lock(&s_ring_reset_mutex);
 	rb_reset();
+	pthread_mutex_unlock(&s_ring_reset_mutex);
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
 	if (pthread_create(&s_render_tid, NULL, render_thread_func, NULL) == 0)
 		s_thread_created = 1;
@@ -408,8 +419,11 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 
 	memset(buf, 0, needed * sizeof(short));
 
-	if (s_playing && !s_paused) {
-		rb_read(buf, needed);
+	if (__atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE) &&
+	    pthread_mutex_trylock(&s_ring_reset_mutex) == 0) {
+		if (__atomic_load_n(&s_output_enabled, __ATOMIC_RELAXED))
+			rb_read(buf, needed);
+		pthread_mutex_unlock(&s_ring_reset_mutex);
 	}
 
 	(*bq)->Enqueue(bq, buf, needed * sizeof(short));
@@ -498,18 +512,26 @@ static void osl_shutdown(void)
 
 /* ── Public API ──────────────────────────────────────────────────────── */
 
+static void midi_preview_stop_internal(void);
+
 int midi_preview_init(AAssetManager *mgr)
 {
-	if (s_tsf) return 1; /* already initialized */
+	pthread_mutex_lock(&s_control_mutex);
+	if (s_tsf) {
+		pthread_mutex_unlock(&s_control_mutex);
+		return 1; /* already initialized */
+	}
 
 	if (!mgr) {
 		LOGE("No AAssetManager");
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
 	AAsset *asset = AAssetManager_open(mgr, "gm.sf2", AASSET_MODE_BUFFER);
 	if (!asset) {
 		LOGE("gm.sf2 not found in APK assets");
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
@@ -521,10 +543,12 @@ int midi_preview_init(AAssetManager *mgr)
 
 	if (!s_tsf) {
 		LOGE("tsf_load_memory failed for gm.sf2");
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
 	LOGI("SoundFont loaded (%d presets)", tsf_get_presetcount(s_tsf));
+	pthread_mutex_unlock(&s_control_mutex);
 	return 1;
 }
 
@@ -533,16 +557,19 @@ int midi_preview_start(const unsigned char *data, int len,
 {
 	unsigned char *midi_data = NULL;
 	int midi_len = 0;
+	pthread_mutex_lock(&s_control_mutex);
 
 	/* Stop any existing preview */
-	midi_preview_stop();
+	midi_preview_stop_internal();
 
 	if (!data || len <= 0 || sample_rate <= 0) {
 		LOGE("Invalid args");
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 	if (!s_tsf) {
 		LOGE("Not initialized -- call midi_preview_init first");
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
@@ -550,12 +577,16 @@ int midi_preview_start(const unsigned char *data, int len,
 	if (is_hmp) {
 		if (!hmp2mid_mem(data, len, &midi_data, &midi_len)) {
 			LOGE("HMP -> MIDI conversion failed");
+			pthread_mutex_unlock(&s_control_mutex);
 			return 0;
 		}
 	} else {
 		/* Standard MIDI: copy the data */
 		midi_data = (unsigned char *) d_malloc(len);
-		if (!midi_data) return 0;
+		if (!midi_data) {
+			pthread_mutex_unlock(&s_control_mutex);
+			return 0;
+		}
 		memcpy(midi_data, data, len);
 		midi_len = len;
 	}
@@ -565,6 +596,7 @@ int midi_preview_start(const unsigned char *data, int len,
 	if (!s_midi) {
 		LOGE("tml_load_memory failed");
 		d_free(midi_data);
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
@@ -573,16 +605,19 @@ int midi_preview_start(const unsigned char *data, int len,
 
 	s_midi_buf = midi_data;
 	s_midi_buf_len = midi_len;
+	pthread_mutex_lock(&s_playback_mutex);
 	s_midi_cur = s_midi;
 	s_playback_msec = 0.0;
 	s_output_rate = sample_rate;
 	s_paused = 0;
 	s_playing = 1;
+	__atomic_store_n(&s_output_enabled, 1, __ATOMIC_RELEASE);
 
 	/* Configure TSF */
 	tsf_reset(s_tsf);
 	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	tsf_set_max_voices(s_tsf, s_max_voices);
+	pthread_mutex_unlock(&s_playback_mutex);
 
 	LOGI("Starting MIDI playback (%d bytes, duration=%dms, rate=%d)",
 	     midi_len, s_duration_ms, sample_rate);
@@ -590,25 +625,34 @@ int midi_preview_start(const unsigned char *data, int len,
 	/* Init OpenSL ES */
 	if (!osl_init(sample_rate)) {
 		LOGE("OpenSL ES init failed");
+		pthread_mutex_lock(&s_playback_mutex);
 		tml_free(s_midi);
 		s_midi = NULL;
 		s_midi_cur = NULL;
 		d_free(s_midi_buf);
 		s_playing = 0;
+		__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+		pthread_mutex_unlock(&s_playback_mutex);
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
 	render_thread_start();
+	pthread_mutex_unlock(&s_control_mutex);
 	return 1;
 }
 
-void midi_preview_stop(void)
+static void midi_preview_stop_internal(void)
 {
+	pthread_mutex_lock(&s_playback_mutex);
 	s_playing = 0;
 	s_paused = 0;
+	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_playback_mutex);
 	render_thread_stop();
 	osl_shutdown();
 
+	pthread_mutex_lock(&s_playback_mutex);
 	if (s_midi) {
 		tml_free(s_midi);
 		s_midi = NULL;
@@ -621,22 +665,43 @@ void midi_preview_stop(void)
 	rb_reset();
 	s_duration_ms = 0;
 	s_playback_msec = 0.0;
+	pthread_mutex_unlock(&s_playback_mutex);
+}
+
+void midi_preview_stop(void)
+{
+	pthread_mutex_lock(&s_control_mutex);
+	midi_preview_stop_internal();
+	pthread_mutex_unlock(&s_control_mutex);
 }
 
 void midi_preview_pause(void)
 {
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
 	s_paused = 1;
+	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
 }
 
 void midi_preview_resume(void)
 {
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
 	s_paused = 0;
+	__atomic_store_n(&s_output_enabled, s_playing ? 1 : 0, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
 }
 
 int midi_preview_seek(float fraction)
 {
-	if (!s_playing && !s_paused) return 0;
-	if (!s_midi || !s_midi_buf) return 0;
+	int result = 0;
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
+	if ((!s_playing && !s_paused) || !s_midi || !s_midi_buf)
+		goto done;
 	if (fraction < 0.0f) fraction = 0.0f;
 	if (fraction > 1.0f) fraction = 1.0f;
 
@@ -676,12 +741,22 @@ int midi_preview_seek(float fraction)
 	}
 
 	s_playback_msec = target_ms;
+	pthread_mutex_lock(&s_ring_reset_mutex);
 	rb_reset();
-	return 1;
+	pthread_mutex_unlock(&s_ring_reset_mutex);
+	result = 1;
+
+done:
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
+	return result;
 }
 
 int midi_preview_get_state(int *out_position_ms, int *out_duration_ms)
 {
+	int state;
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
 	if (out_position_ms) {
 		int pos = (int) s_playback_msec;
 		if (pos > s_duration_ms) pos = s_duration_ms;
@@ -689,7 +764,13 @@ int midi_preview_get_state(int *out_position_ms, int *out_duration_ms)
 	}
 	if (out_duration_ms) *out_duration_ms = s_duration_ms;
 
-	if (s_playing && !s_paused) return MDP_PLAYING;
-	if (s_paused) return MDP_PAUSED;
-	return MDP_STOPPED;
+	if (s_playing && !s_paused)
+		state = MDP_PLAYING;
+	else if (s_paused)
+		state = MDP_PAUSED;
+	else
+		state = MDP_STOPPED;
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
+	return state;
 }
