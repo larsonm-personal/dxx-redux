@@ -424,6 +424,34 @@ static int build_synthetic_hfs_probe(void)
 	       strcmp(info.volume_name, "Descent") == 0;
 }
 
+static int catalog_name_safety_tests(void)
+{
+	static const unsigned char ordinary[] = "MacPlay Demos";
+	static const unsigned char slash[] = "Mac/Play";
+	static const unsigned char dot[] = ".";
+	static const unsigned char dotdot[] = "..";
+	char name[HFS_NAME_LEN];
+
+	if (hfs_test_copy_catalog_name(ordinary, (int) sizeof(ordinary) - 1,
+	                               name, sizeof(name)) < 0 ||
+	    strcmp(name, "MacPlay Demos") != 0)
+		return 0;
+	if (hfs_test_copy_catalog_name(slash, (int) sizeof(slash) - 1,
+	                               name, sizeof(name)) < 0 ||
+	    strcmp(name, "Mac_Play") != 0)
+		return 0;
+	if (hfs_test_copy_catalog_name(dot, (int) sizeof(dot) - 1,
+	                               name, sizeof(name)) == 0)
+		return 0;
+	if (hfs_test_copy_catalog_name(dotdot, (int) sizeof(dotdot) - 1,
+	                               name, sizeof(name)) == 0)
+		return 0;
+	if (hfs_test_copy_catalog_name(ordinary, 0, name, sizeof(name)) == 0)
+		return 0;
+
+	return 1;
+}
+
 static int probe_cue(const char *cue_path, hfs_partition_info_t *out)
 {
 	char cue_dir[1024];
@@ -592,6 +620,14 @@ int main(void)
 		PASS();
 	else {
 		FAIL("synthetic probe mismatch");
+		ok = 0;
+	}
+
+	TEST("catalog_component_path_safety");
+	if (catalog_name_safety_tests())
+		PASS();
+	else {
+		FAIL("unsafe catalog component accepted");
 		ok = 0;
 	}
 

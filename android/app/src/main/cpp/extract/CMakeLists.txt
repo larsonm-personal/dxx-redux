@@ -99,6 +99,7 @@ add_executable(
     test_hfs ${CMAKE_CURRENT_SOURCE_DIR}/test_hfs.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
              ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c)
 target_include_directories(test_hfs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_hfs PRIVATE HFS_READER_TESTING)
 
 # ── test_sti2 ──────────────────────────────────────────────────────
 add_executable(

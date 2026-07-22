@@ -293,42 +293,7 @@ Write-Host "`n--- Stage 5: Extract files from HFS volume ---" -ForegroundColor Y
 
 $HfsExtractDir = Join-Path $TempDir "hfs_files"
 
-# Write a small inline Python script
-$pyScript = @"
-import sys, os
-sys.path.insert(0, os.path.dirname(__file__))
-import machfs
-
-img_path = sys.argv[1]
-out_dir = sys.argv[2]
-
-with open(img_path, 'rb') as f:
-    img_data = f.read()
-
-vol = machfs.Volume()
-vol.read(img_data)
-print(f'Volume: {vol.name}')
-
-def extract(vol, out_dir, path=''):
-    os.makedirs(out_dir, exist_ok=True)
-    for name, obj in sorted(vol.items()):
-        full = path + '/' + name if path else name
-        if isinstance(obj, machfs.Folder):
-            extract(obj, os.path.join(out_dir, name), full)
-        elif isinstance(obj, machfs.File):
-            if obj.data and len(obj.data) > 0:
-                outpath = os.path.join(out_dir, name)
-                with open(outpath, 'wb') as f:
-                    f.write(obj.data)
-                print(f'  {full} ({len(obj.data)} bytes)')
-
-extract(vol, out_dir)
-print('HFS extraction complete.')
-"@
-
-$pyFile = Join-Path $TempDir "extract_hfs.py"
-$pyScript | Set-Content -Path $pyFile -Encoding UTF8
-
+$pyFile = Join-Path $RepoRoot "android/helpers/extract_hfs_machfs.py"
 & $Python $pyFile $HfsImgPath $HfsExtractDir
 if ($LASTEXITCODE -ne 0) {
     Write-Error "HFS extraction failed"

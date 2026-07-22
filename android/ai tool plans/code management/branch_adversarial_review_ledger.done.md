@@ -38,6 +38,26 @@ so campaign closure must still obtain that independent verification
 - Validation: Add malformed fixtures for every offset from `archive_size - 1` through the first valid 48-byte boundary, assert clean rejection, and run the parser tests under AddressSanitizer or an equivalent native bounds checker
 - Resolution: Fixed in the 2026-07-21 worktree by centralizing the subtractive 48-byte span check in `sit5_entry_header_fits` and applying it before both entry parsing and parent-offset access. `test_stuffit_malformed` places an exact 100-byte archive at a guard-page boundary and rejects every `first_offset` from 52 through 99. Scoped code quality passed, and `android/tests/test_cue_iso.ps1` passed all 8 native suites, including malformed SIT5, STi2, StuffIt corpus, and demo-oracle coverage
 
+### BR-0019: P1 - Reject HFS dot components before constructing output paths
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: security/path-traversal
+- Found by: R1-CHUNK-0010, R1-CHUNK-0028, R1-CHUNK-0069
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/mac_hfs_extract.c:L152-L169` in `extract_hfs_matching_files`
+- Related: `android/app/src/main/cpp/extract/mac_hfs_extract.h:L13-L18`, `android/app/src/main/cpp/extract/hfs_reader.c:L183-L200,L345-L377,L624-L663,L669-L704`, `android/app/src/main/java/com/dxxredux/app/SetupDiscImport.kt:L237-L285`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L1261-L1294`
+- Evidence: HFS catalog names are untrusted bytes. `copy_catalog_name` replaces slash and backslash but preserves names equal to `.` or `..`; `build_catalog_path` then joins those components with `/`. The assigned extractor accepts a file when its basename has a game extension and concatenates the complete catalog path directly after `output_dir`. A directory named `..` containing `escape.hog` therefore produces `<output_dir>/../escape.hog`, which `mkdirs_for_file` and `open` resolve outside the selected set directory
+- Trigger: Import a crafted HFS data track whose catalog contains a directory named `..` and a child file such as `escape.hog` with valid extents
+- Impact: The archive can create or truncate extension-matching files in parent directories outside the chosen file set, corrupt another set or other app-private game data, and evade the later hoisting and cleanup that walk only within the selected set
+- Expected: Every extracted destination is derived from normalized safe components and is proven to remain beneath the intended output root before any directory creation or file open
+- Suggested fix: Reject empty, `.`, and `..` catalog components during decoding, build destinations through one checked path helper, and verify the normalized destination has the canonical output directory as its parent prefix. Prefer flattening approved game basenames when directory structure is not required
+- Validation: Add a synthetic HFS fixture with `.`, `..`, separator, and ordinary nested components; assert malicious entries are rejected without creating anything outside a temporary output root, and run the test on Windows and a POSIX host to cover both path implementations
+- Additional location (R1-CHUNK-0069): `game_data/extract_mac_cd.ps1:L296-L326` in the inline machfs extraction program
+- Additional evidence (R1-CHUNK-0069): machfs decodes HFS catalog names to strings and exposes them through `Volume.items()` without rejecting `.`, `..`, slash, or backslash. The inline Python recursively passes each name to `os.path.join` before `os.makedirs` or `open`, with no canonical containment check. A crafted folder named `..`, or a native-separator name, therefore escapes `_mac_extract_temp/hfs_files`; the script's `finally` removes only `_mac_extract_temp`, leaving the outside write behind.
+- Additional validation (R1-CHUNK-0069): Run the inline extractor against synthetic machfs objects and serialized HFS fixtures containing dot, rooted, drive-qualified, forward-slash, backslash, mixed-separator, and ordinary components; require rejection before creation, unchanged sentinel bytes outside the unique root, and successful extraction of normal catalog names on Windows and POSIX.
+- Resolution: Fixed in the 2026-07-21 worktree. Native HFS catalog decoding now rejects empty, `.`, and `..` file and directory components before entries can reach path construction, with a second path-builder guard. The legacy oracle script now calls a tracked Python helper that rejects empty, dot, rooted, drive-qualified, NUL, forward-slash, and backslash names and proves each canonical child remains strictly below the selected extraction root before creating it. Focused Python tests preserve an outside sentinel while rejecting malicious names and extract an ordinary nested file. The real-media HFS suite passes all seven tests, scoped code quality passes, PowerShell AST parsing reports zero errors, Python byte-compilation passes, and `android/tests/test_cue_iso.ps1` passes all nine native extraction suites. The independent R1-CHUNK-0021 and R1-CHUNK-0069 reviews reconfirmed the original native and legacy sinks before remediation
+
 ### BR-0031: P2 - Reject encrypted STi2 entries before extraction
 
 - [x] FIXED
@@ -75,5 +95,6 @@ so campaign closure must still obtain that independent verification
 ## Disposition log
 
 - 2026-07-21: BR-0017 fixed by the Codex remediation call at the maintainer's request. Worktree evidence is the shared fixed-header bounds predicate and guarded malformed-offset test. Validation passed scoped code quality and all 8 tests in `android/tests/test_cue_iso.ps1`. Independent P1 verification remains a campaign closure action
+- 2026-07-21: BR-0019 fixed by the Codex remediation call at the maintainer's request. Native catalog components fail closed before path construction, and the legacy machfs helper validates canonical containment before filesystem mutation. Focused Python and real-media HFS tests passed, along with scoped code quality and all 9 native extraction suites
 - 2026-07-21: BR-0031 fixed by the Codex remediation call at the maintainer's request. Encryption metadata is preserved and encrypted matching entries return a distinct unsupported status before allocation or output creation. Scoped code quality and all 9 native extraction tests passed
 - 2026-07-21: BR-0178 fixed by the Codex remediation call at the maintainer's request. Method 14 canonical-tree construction now rejects unrepresentable, oversubscribed, colliding, and invalid-branch code sets before unsafe shifts or symbol decoding. Scoped code quality and all 9 native extraction tests passed; sanitizer execution was unavailable in the Windows toolchain

@@ -181,11 +181,19 @@ static void copy_pstring(const unsigned char *src, int src_len,
 	dst[len] = '\0';
 }
 
-static void copy_catalog_name(const unsigned char *src, int src_len,
-                              char *dst, int dst_len)
+static int catalog_name_is_safe(const char *name)
+{
+	return name && name[0] && strcmp(name, ".") != 0 && strcmp(name, "..") != 0;
+}
+
+static int copy_catalog_name(const unsigned char *src, int src_len,
+                             char *dst, int dst_len)
 {
 	int i;
 	int out_len = 0;
+
+	if (!src || !dst || src_len <= 0 || dst_len <= 0)
+		return -1;
 
 	for (i = 0; i < src_len && out_len < dst_len - 1; i++) {
 		unsigned char c = src[i];
@@ -198,7 +206,16 @@ static void copy_catalog_name(const unsigned char *src, int src_len,
 			dst[out_len++] = '?';
 	}
 	dst[out_len] = '\0';
+	return catalog_name_is_safe(dst) ? 0 : -1;
 }
+
+#ifdef HFS_READER_TESTING
+int hfs_test_copy_catalog_name(const unsigned char *src, int src_len,
+                               char *dst, int dst_len)
+{
+	return copy_catalog_name(src, src_len, dst, dst_len);
+}
+#endif
 
 static void parse_extent_record(const unsigned char *p, hfs_extent_t extents[HFS_MAX_EXTENTS])
 {
@@ -351,6 +368,10 @@ static int build_catalog_path(const hfs_catalog_entry_t *entries, int count, int
 
 	if (!entries || !out || out_len <= 0 || index < 0 || index >= count || depth > HFS_MAX_DEPTH)
 		return -1;
+	if (!catalog_name_is_safe(entries[index].name)) {
+		out[0] = '\0';
+		return -1;
+	}
 
 	if (entries[index].id == HFS_ROOT_DIR_ID) {
 		out[0] = '\0';
@@ -573,8 +594,10 @@ static int scan_catalog(int bin_fd, const hfs_volume_t *vol,
 
 			memset(&entry, 0, sizeof(entry));
 			entry.parent_id = parent_id;
-			copy_catalog_name(node + rec_off + 7, (int) name_len,
-			                  entry.name, sizeof(entry.name));
+			if ((node[data_off] == 1 || node[data_off] == 2) &&
+			    copy_catalog_name(node + rec_off + 7, (int) name_len,
+			                      entry.name, sizeof(entry.name)) < 0)
+				return -1;
 
 			switch (node[data_off]) {
 				case 1:

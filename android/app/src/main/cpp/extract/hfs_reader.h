@@ -69,6 +69,11 @@ int hfs_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
 int hfs_extract_file(int bin_fd, int track_start_sector, int track_num_sectors,
                      const char *hfs_path, const char *output_path);
 
+#ifdef HFS_READER_TESTING
+int hfs_test_copy_catalog_name(const unsigned char *src, int src_len,
+                               char *dst, int dst_len);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
