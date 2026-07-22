@@ -64,6 +64,7 @@
 - before starting another cleanup or validation pass after any timeout, interrupted agent run, or "file is newer" popup, list stale formatter tasks with `android\helpers\stop-stale-formatters.ps1` and kill them with `android\helpers\stop-stale-formatters.ps1 -Kill` if needed
 - `android\run-code-quality.ps1` now uses `android\temp\run-code-quality.lock.json` to fail fast if another cleanup pass is still active. if that lock is stale, kill the old formatter task and rerun instead of forcing saves over newer edits
 - cmake files added by this branch (android/, cmake/, android/tools/etc2tool/) are formatted with cmake-format and linted with cmake-lint (cheshirekow/cmakelang). run individually with `android\helpers\run-cmake-format.ps1` (auto-format) or `android\helpers\run-cmake-lint.ps1` (lint only). both are also included in the full `run-code-quality.ps1` pass. upstream files in d1/ and d2/ are excluded. config: `.cmake-format.yaml` at repo root
+- when making file edits, *do not* remove existing comments that are handmade. make every attempt to preserve comments. many AI edits delete comments wholesale and can eliminate signifant human effort on this most important task
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)

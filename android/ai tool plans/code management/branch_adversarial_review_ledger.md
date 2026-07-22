@@ -5361,22 +5361,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add valid multi-entry installers or faithful main-header and data-entry tables at 5.3.0, 5.3.8, and the 5.3.9 transition; verify compression, counts, subsequent timestamps, flags, offsets, listing, extraction, and checksum decisions, plus clean rejection immediately outside the supported matrix
 - Resolution: Pending
 
-### BR-0037: P3 - Synchronize the Inno reader capability documentation with the implementation
-
-- [ ] OPEN
-- Type: maintainability
-- Confidence: high
-- Category: documentation
-- Found by: R1-CHUNK-0015, R1-CHUNK-0022, R1-CHUNK-0023, R1-CHUNK-0024
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1-L16` and `android/app/src/main/cpp/extract/inno_reader.h:L1-L13`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L8-L16,L1237-L1300,L1943-L2010` and `android/app/src/main/cpp/extract/inno_reader.h:L85-L120`
-- Evidence: The public header says only LZMA1 and zlib are implemented and that LZMA2 returns an error, while the source contains both buffered and streaming LZMA2 decoders and has done so since the file was introduced. The preamble also says encryption returns errors even though BR-0058 shows its flag is discarded, broadly claims 5.3.x support despite both MD5 layout gaps in BR-0036, uses the label `AI-slop` instead of a maintainable provenance statement, and does not state the callback's cancellation contract
-- Trigger: A maintainer uses the public header to decide which installer fixtures, decompressor paths, or callback behaviors require review and regression coverage
-- Impact: Reviewers and callers receive a false support matrix, can omit security and compatibility coverage for live LZMA2 code, and cannot reliably distinguish implemented, unsupported, and unverified format features
-- Expected: The public API states the tested version and compression matrix, unsupported filters or encryption, callback semantics, and accurate upstream-derived provenance in neutral project language
-- Suggested fix: Replace the stale preamble with a concise maintained support table or linked design note, document LZMA2 and callback cancellation accurately, narrow version claims until BR-0036 is fixed, and describe the implementation's relationship to innoextract without informal or ambiguous authorship language
-- Validation: Review the documentation against the compiled method switch, parser version gates, callback tests, and a fixture matrix; add a lightweight checklist so capability changes update documentation and coverage together
-- Resolution: Pending
 
 ### BR-0038: P2 - Use the canonical fingerprint threshold in the duplicate matcher
 

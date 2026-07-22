@@ -16,6 +16,12 @@
  */
 
 /*
+ * Maintenance note: the historical preamble above is preserved verbatim.
+ * Its capability claims are superseded by the implementation-checked matrix
+ * in INNO_READER_CAPABILITIES.md.
+ */
+
+/*
  * Copyright (C) 2011-2020 Daniel Scharrer
  *
  * This software is provided 'as-is', without any express or implied

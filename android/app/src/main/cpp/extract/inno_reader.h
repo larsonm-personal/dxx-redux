@@ -14,6 +14,12 @@
  */
 
 /*
+ * Maintenance note: the historical preamble above is preserved verbatim.
+ * Its capability claims are superseded by the implementation-checked matrix
+ * in INNO_READER_CAPABILITIES.md.
+ */
+
+/*
  * Copyright (C) 2011-2020 Daniel Scharrer
  *
  * This software is provided 'as-is', without any express or implied
@@ -105,6 +111,10 @@ typedef struct {
 } inno_archive_t;
 
 /* -- Progress callback (same signature as iso/sow modules) ------ */
+/*
+ * Reports compressed-input progress. The return value is currently ignored,
+ * so this callback is informational and cannot cancel extraction.
+ */
 typedef int (*inno_progress_fn)(const char *current_file,
                                 long long bytes_done,
                                 long long bytes_total,

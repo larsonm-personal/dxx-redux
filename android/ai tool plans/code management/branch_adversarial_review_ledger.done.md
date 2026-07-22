@@ -41,6 +41,24 @@ so campaign closure must still obtain that independent verification
 
 ## Finalized findings
 
+### BR-0037: P3 - Synchronize the Inno reader capability documentation with the implementation
+
+- [x] FIXED
+- Type: maintainability
+- Confidence: high
+- Category: documentation
+- Found by: R1-CHUNK-0015, R1-CHUNK-0022, R1-CHUNK-0023, R1-CHUNK-0024
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1-L16` and `android/app/src/main/cpp/extract/inno_reader.h:L1-L13`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L8-L16,L1237-L1300,L1943-L2010` and `android/app/src/main/cpp/extract/inno_reader.h:L85-L120`
+- Evidence: The public header says only LZMA1 and zlib are implemented and that LZMA2 returns an error, while the source contains both buffered and streaming LZMA2 decoders and has done so since the file was introduced. The preamble also says encryption returns errors even though BR-0058 shows its flag is discarded, broadly claims 5.3.x support despite both MD5 layout gaps in BR-0036, uses the label `AI-slop` instead of a maintainable provenance statement, and does not state the callback's cancellation contract
+- Trigger: A maintainer uses the public header to decide which installer fixtures, decompressor paths, or callback behaviors require review and regression coverage
+- Impact: Reviewers and callers receive a false support matrix, can omit security and compatibility coverage for live LZMA2 code, and cannot reliably distinguish implemented, unsupported, and unverified format features
+- Expected: The public API states the tested version and compression matrix, unsupported filters or encryption, callback semantics, and accurate upstream-derived provenance in neutral project language
+- Suggested fix: Replace the stale preamble with a concise maintained support table or linked design note, document LZMA2 and callback cancellation accurately, narrow version claims until BR-0036 is fixed, and describe the implementation's relationship to innoextract without informal or ambiguous authorship language
+- Validation: Review the documentation against the compiled method switch, parser version gates, callback tests, and a fixture matrix; add a lightweight checklist so capability changes update documentation and coverage together
+- Resolution: Fixed on 2026-07-21. The handmade source and public-header preambles remain verbatim, and additive maintenance notes link them to a single maintained capability matrix with neutral innoextract-derived provenance. The matrix records the actual stored, zlib, LZMA1, and LZMA2 buffered and streaming paths; BZip2 and call-instruction-filter rejection; the accepted versus tested version ranges; the unresolved pre-5.3.9 MD5 and encrypted-chunk gaps under BR-0036 and BR-0058; descriptor ownership; and the informational, non-cancelling progress callback contract. A focused consistency test checks the documentation against the compiled version gate, method switches, encryption metadata, callback use, and source/header links. Scoped code quality passed, the four documentation consistency tests passed, both registered Inno fixtures opened as Unicode 5.5.7 and 5.6.2, and all 9 native extraction suites passed.
+
+
 ### BR-0018: P1 - Enforce extraction budgets for untrusted archive entries
 
 - [x] FIXED
@@ -165,6 +183,7 @@ so campaign closure must still obtain that independent verification
 
 ## Disposition log
 
+- 2026-07-21: BR-0037 fixed by replacing stale Inno reader claims with a maintained capability matrix tied to a focused consistency test. Scoped code quality, four documentation tests, both real Inno fixture opens, and all 9 native extraction suites passed; BR-0036 and BR-0058 remain active implementation findings
 - 2026-07-21: BR-0018 fixed after the maintainer requested resumption of the previously restricted scope. Shared extraction limits now cover the native decoders, Kotlin archive and mission paths, legacy Mac CD extraction, and PowerShell batch and fingerprint helpers. Focused Kotlin, Python, and PowerShell validation, scoped code quality, and all 9 native extraction suites passed
 - 2026-07-21: BR-0017 fixed by the Codex remediation call at the maintainer's request. Worktree evidence is the shared fixed-header bounds predicate and guarded malformed-offset test. Validation passed scoped code quality and all 8 tests in `android/tests/test_cue_iso.ps1`. Independent P1 verification remains a campaign closure action
 - 2026-07-21: BR-0019 fixed by the Codex remediation call at the maintainer's request. Native catalog components fail closed before path construction, and the legacy machfs helper validates canonical containment before filesystem mutation. Focused Python and real-media HFS tests passed, along with scoped code quality and all 9 native extraction suites
