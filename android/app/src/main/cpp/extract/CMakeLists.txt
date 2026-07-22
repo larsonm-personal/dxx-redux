@@ -174,6 +174,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c)
 target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
+target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
 
 set(GOG_D1_INSTALLER
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_1.4a_(16596).exe"

@@ -24,10 +24,10 @@ class InnoCapabilityDocumentationTests(unittest.TestCase):
 
     def test_documented_version_gate_matches_the_parser(self):
         self.assertIn("v < INNO_VER(5, 3, 0) || v > INNO_VER(5, 6, 99)", self.source)
-        self.assertIn("5.3.0 through 5.3.8", self.docs)
-        self.assertIn("5.3.9 through 5.6.99", self.docs)
+        self.assertIn("5.3.0 through 5.6.99", self.docs)
+        self.assertIn("5.3.8 MD5 and 5.3.9 SHA-1", self.docs)
         self.assertIn("5.5.7 and 5.6.2 Unicode", self.docs)
-        self.assertIn("BR-0036", self.docs)
+        self.assertIn("MD5 before 5.3.9 and SHA-1 from 5.3.9 onward", self.docs)
 
     def test_documented_data_methods_match_decoder_switches(self):
         implemented = ("STORED", "ZLIB", "LZMA1", "LZMA2")

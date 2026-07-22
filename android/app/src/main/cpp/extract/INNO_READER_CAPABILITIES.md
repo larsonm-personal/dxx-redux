@@ -9,8 +9,7 @@ is not a complete innoextract replacement and does not depend on Boost.
 
 | Range | Status | Notes |
 | --- | --- | --- |
-| Inno Setup 5.3.0 through 5.3.8 | Accepted by the current version gate, not supported | The MD5-era header and data-entry layouts are not consumed correctly. See BR-0036 |
-| Inno Setup 5.3.9 through 5.6.99, Unicode | Intended parser range | The registered real-installer fixtures currently cover 5.5.7 and 5.6.2 Unicode metadata and file listings |
+| Inno Setup 5.3.0 through 5.6.99, Unicode | Intended parser range | Faithful transition fixtures cover the 5.3.8 MD5 and 5.3.9 SHA-1 layouts; registered real installers cover 5.5.7 and 5.6.2 Unicode metadata, listings, and extraction |
 | Inno Setup before 5.3.0 or after 5.6.99 | Rejected | `inno_open` returns an error before parsing entry tables |
 | Non-Unicode installers | Unverified | The parser has legacy string branches, but no registered fixture establishes support |
 
@@ -29,6 +28,7 @@ cover its version-dependent layouts.
 | LZMA2 data chunks | Implemented | Buffered and streaming extraction paths |
 | BZip2 data chunks | Unsupported and rejected | No BZip2 decoder is linked |
 | GOG Galaxy inner zlib stream | Implemented | Used only for entries identified by the current Galaxy heuristic |
+| File integrity checksums | Implemented | MD5 before 5.3.9 and SHA-1 from 5.3.9 onward; checked before output publication |
 | Executable call-instruction filter | Unsupported and rejected | `inno_extract_file` rejects `call_instruction_optimized` entries before output |
 | Encrypted chunks | Unsupported, not reliably rejected | The encrypted flag is currently discarded, so stored ciphertext can be treated as ordinary data and compressed ciphertext can fail later. See BR-0058 |
 

@@ -65,6 +65,124 @@ static int file_equals(const char *path, const void *expected, size_t expected_s
 	return size == expected_size && memcmp(actual, expected, expected_size) == 0;
 }
 
+static void put_u32(uint8_t *buffer, size_t *position, uint32_t value)
+{
+	for (int i = 0; i < 4; i++)
+		buffer[(*position)++] = (uint8_t) (value >> (i * 8));
+}
+
+static void put_u64(uint8_t *buffer, size_t *position, uint64_t value)
+{
+	for (int i = 0; i < 8; i++)
+		buffer[(*position)++] = (uint8_t) (value >> (i * 8));
+}
+
+static size_t build_header_fixture(uint8_t *buffer, const inno_version_t *version,
+                                   size_t digest_size,
+                                   inno_compress_method_t compression)
+{
+	memset(buffer, 0, 512);
+	size_t position = (version->patch >= 8 ? 29 : 28) * 4;
+	position += 16 * 4;
+	position += 20 + 8 + 4;
+	position += digest_size + 8;
+	position += 12 + 5;
+	buffer[position++] = (uint8_t) compression;
+	position += 2;
+	if (version->patch >= 3) position += 2;
+	if (version->patch >= 6) position += 4;
+	position += 5;
+	return position;
+}
+
+static size_t append_data_fixture(uint8_t *buffer, size_t position,
+                                  size_t digest_size, int index)
+{
+	put_u32(buffer, &position, (uint32_t) index);
+	put_u32(buffer, &position, (uint32_t) (index + 10));
+	put_u32(buffer, &position, (uint32_t) (100 + index));
+	put_u64(buffer, &position, (uint64_t) (200 + index));
+	put_u64(buffer, &position, (uint64_t) (300 + index));
+	put_u64(buffer, &position, (uint64_t) (400 + index));
+	for (size_t i = 0; i < digest_size; i++)
+		buffer[position++] = (uint8_t) (0x20 + index * 0x20 + i);
+	position += 16;
+	buffer[position++] = index == 0 ? 0x80 : 0x10;
+	buffer[position++] = 0;
+	return position;
+}
+
+static int check_checksum_layout_transition(void)
+{
+	const inno_version_t versions[3] = {
+		{ 5, 3, 0, 1 },
+		{ 5, 3, 8, 1 },
+		{ 5, 3, 9, 1 }
+	};
+	const inno_checksum_type_t expected_types[3] = {
+		INNO_CHECKSUM_MD5,
+		INNO_CHECKSUM_MD5,
+		INNO_CHECKSUM_SHA1
+	};
+	const size_t expected_sizes[3] = { 16, 16, 20 };
+	int failures = 0;
+	for (int version_index = 0; version_index < 3; version_index++) {
+		inno_checksum_type_t type;
+		size_t digest_size;
+		if (inno_test_checksum_layout(&versions[version_index], &type,
+		                              &digest_size) < 0 ||
+		    type != expected_types[version_index] ||
+		    digest_size != expected_sizes[version_index]) {
+			fprintf(stderr, "5.3.%d checksum layout mismatch\n",
+			        versions[version_index].patch);
+			failures++;
+			continue;
+		}
+
+		uint8_t header[512];
+		size_t header_size = build_header_fixture(header, &versions[version_index],
+		                                          digest_size,
+		                                          INNO_COMPRESS_LZMA1);
+		inno_compress_method_t compression = INNO_COMPRESS_STORED;
+		if (inno_test_parse_header_stream(header, header_size,
+		                                  &versions[version_index],
+		                                  &compression) < 0 ||
+		    compression != INNO_COMPRESS_LZMA1) {
+			fprintf(stderr, "5.3.%d password digest width misaligned header\n",
+			        versions[version_index].patch);
+			failures++;
+		}
+
+		uint8_t table[192] = { 0 };
+		size_t table_size = append_data_fixture(table, 0, digest_size, 0);
+		table_size = append_data_fixture(table, table_size, digest_size, 1);
+		inno_data_entry_t entries[2];
+		if (inno_test_parse_data_entries(table, table_size,
+		                                 &versions[version_index], entries, 2) < 0) {
+			fprintf(stderr, "5.3.%d multi-entry checksum table failed\n",
+			        versions[version_index].patch);
+			failures++;
+			continue;
+		}
+		for (int entry = 0; entry < 2; entry++) {
+			uint8_t expected_first = (uint8_t) (0x20 + entry * 0x20);
+			if (entries[entry].checksum_type != expected_types[version_index] ||
+			    entries[entry].checksum[0] != expected_first ||
+			    entries[entry].checksum[digest_size - 1] !=
+			        (uint8_t) (expected_first + digest_size - 1) ||
+			    entries[entry].file_offset != (uint64_t) (200 + entry) ||
+			    entries[entry].chunk_compressed_size != (uint64_t) (400 + entry) ||
+			    entries[entry].chunk_compressed != (entry == 0) ||
+			    entries[entry].call_instruction_optimized != (entry == 1)) {
+				fprintf(stderr, "5.3.%d data entry %d is misaligned\n",
+				        versions[version_index].patch, entry);
+				failures++;
+			}
+		}
+	}
+	return failures ? 1 : 0;
+}
+
 static int check_checksum_extraction(inno_archive_t *arc, const char *label,
                                      int gog_galaxy)
 {
@@ -100,9 +218,9 @@ static int check_checksum_extraction(inno_archive_t *arc, const char *label,
 	remove(output_path);
 
 	inno_data_entry_t *data = &arc->data_entries[arc->files[selected].location];
-	data->sha1[0] ^= 0x01;
+	data->checksum[0] ^= 0x01;
 	int result = inno_extract_file(arc, selected, output_path, NULL, NULL);
-	data->sha1[0] ^= 0x01;
+	data->checksum[0] ^= 0x01;
 	if (result == 0 || file_exists(output_path)) {
 		fprintf(stderr, "%s: checksum mismatch published output for %s\n",
 		        label, arc->files[selected].destination);
@@ -157,7 +275,7 @@ static int check_galaxy_checksum_order(void)
 	data.file_size = sizeof(inner_zlib);
 	data.chunk_compressed_size = sizeof(inner_zlib);
 	data.checksum_type = INNO_CHECKSUM_SHA1;
-	memcpy(data.sha1, inner_sha1, sizeof(inner_sha1));
+	memcpy(data.checksum, inner_sha1, sizeof(inner_sha1));
 
 	int failures = 0;
 	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0) {
@@ -174,7 +292,7 @@ static int check_galaxy_checksum_order(void)
 		if (file) fclose(file);
 	}
 	remove(output_path);
-	data.sha1[0] ^= 0x01;
+	data.checksum[0] ^= 0x01;
 	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) == 0 ||
 	    file_exists(output_path)) {
 		fprintf(stderr, "synthetic Galaxy checksum mismatch published output\n");
@@ -207,7 +325,7 @@ static int expect_range_failure(inno_archive_t *arc, const char *output_path,
 	remove(output_path);
 	if (inno_extract_file(arc, 0, output_path, NULL, NULL) == 0 ||
 	    file_exists(output_path)) {
-		fprintf(stderr, "%s range was accepted\n", case_name);
+		fprintf(stderr, "%s was accepted\n", case_name);
 		remove(output_path);
 		return 1;
 	}
@@ -219,6 +337,10 @@ static int check_chunk_range_boundaries(void)
 	static const uint8_t exact_sha1[20] = {
 		0x92, 0x4f, 0x61, 0x66, 0x1a, 0x34, 0x72, 0xda, 0x74, 0x30,
 		0x7a, 0x35, 0xf2, 0xc8, 0xd2, 0x2e, 0x07, 0xe8, 0x4a, 0x4d
+	};
+	static const uint8_t exact_md5[16] = {
+		0xe2, 0xfc, 0x71, 0x4c, 0x47, 0x27, 0xee, 0x93,
+		0x95, 0xf3, 0x24, 0xcd, 0x2e, 0x7f, 0x33, 0x1f
 	};
 	const uint8_t magic[4] = { 'z', 'l', 'b', 0x1a };
 	const uint8_t stored_payload[5] = { 'a', 'b', 'c', 'd', 'X' };
@@ -247,7 +369,7 @@ static int check_chunk_range_boundaries(void)
 	data.chunk_compressed_size = 4;
 	data.file_offset = 1;
 	data.file_size = 3;
-	memcpy(data.sha1, exact_sha1, sizeof(exact_sha1));
+	memcpy(data.checksum, exact_sha1, sizeof(exact_sha1));
 	int failures = 0;
 	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
 	    !file_equals(output_path, "bcd", 3)) {
@@ -255,7 +377,22 @@ static int check_chunk_range_boundaries(void)
 		failures++;
 	}
 	remove(output_path);
+	data.file_offset = 0;
+	data.file_size = 4;
+	data.checksum_type = INNO_CHECKSUM_MD5;
+	memcpy(data.checksum, exact_md5, sizeof(exact_md5));
+	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
+	    !file_equals(output_path, "abcd", 4)) {
+		fprintf(stderr, "valid MD5 extraction failed\n");
+		failures++;
+	}
+	remove(output_path);
+	data.checksum[0] ^= 0x01;
+	failures += expect_range_failure(&arc, output_path, "MD5 mismatch");
+	data.checksum[0] ^= 0x01;
+	data.checksum_type = INNO_CHECKSUM_SHA1;
 
+	data.file_offset = 1;
 	data.file_size = 4;
 	failures += expect_range_failure(&arc, output_path, "stored one-byte-over");
 	data.file_offset = UINT64_MAX - 1;
@@ -358,6 +495,7 @@ int main(int argc, char **argv)
 	};
 
 	int failures = 0;
+	failures += check_checksum_layout_transition();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();
 	failures += check_installer(argv[1], d1_expected, 2, 7, "d1");

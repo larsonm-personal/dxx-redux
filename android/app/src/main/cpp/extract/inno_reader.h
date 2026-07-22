@@ -42,6 +42,7 @@
 #ifndef INNO_READER_H
 #define INNO_READER_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -63,7 +64,8 @@ typedef enum {
 
 typedef enum {
 	INNO_CHECKSUM_NONE = 0,
-	INNO_CHECKSUM_SHA1 = 1,
+	INNO_CHECKSUM_MD5 = 1,
+	INNO_CHECKSUM_SHA1 = 2,
 } inno_checksum_type_t;
 
 /* -- InnoSetup version --------------------------------------------- */
@@ -88,7 +90,7 @@ typedef struct {
 	uint64_t file_offset;  /* offset within decompressed chunk */
 	uint64_t file_size;    /* decompressed file size          */
 	uint64_t chunk_compressed_size;
-	uint8_t sha1[20];
+	uint8_t checksum[20];
 	inno_checksum_type_t checksum_type;
 	uint8_t chunk_compressed;           /* ChunkCompressed flag            */
 	uint8_t call_instruction_optimized; /* filter flag               */
@@ -159,6 +161,18 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
  * Close an archive and free resources.
  */
 void inno_close(inno_archive_t *arc);
+
+#ifdef INNO_READER_TESTING
+int inno_test_checksum_layout(const inno_version_t *version,
+                              inno_checksum_type_t *type_out,
+                              size_t *digest_size_out);
+int inno_test_parse_header_stream(const uint8_t *buffer, size_t buffer_size,
+                                  const inno_version_t *version,
+                                  inno_compress_method_t *compression_out);
+int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
+                                 const inno_version_t *version,
+                                 inno_data_entry_t *entries, int entry_count);
+#endif
 
 #ifdef __cplusplus
 }

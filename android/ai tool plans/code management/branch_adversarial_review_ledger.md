@@ -5276,24 +5276,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Wrap OpenSL and pthread entry points in a testable adapter, inject failure at every initialization step, and assert no null call, success result, live thread, queued buffer, or retained engine, mix, player, MIDI, or ring state remains; retain a real-device successful playback test
 - Resolution: Pending
 
-### BR-0036: P2 - Consume the pre-5.3.9 Inno MD5 fields
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/parser-correctness
-- Found by: R1-CHUNK-0015, R1-CHUNK-0023
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L704-L705` in `parse_header_stream1`, `L1013-L1024` in `parse_data_entries`, and `android/app/src/main/cpp/extract/inno_reader.h:L8-L10`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L505-L570,L620-L751,L922-L1034` and the public `inno_open` API in `android/app/src/main/cpp/extract/inno_reader.h:L107-L120`
-- Evidence: The public header claims support for all Inno 5.3.x Unicode installers. Before 5.3.9, the main header carries a 16-byte password MD5 plus the 8-byte salt, but `parse_header_stream1` unconditionally skips a 20-byte SHA-1 plus salt and starts all following fields four bytes late. Independently, `parse_data_entries` consumes a 20-byte file SHA-1 only at 5.3.9 or newer and consumes no checksum for earlier claimed versions, although those entries carry a 16-byte MD5, so it starts timestamps and every later entry 16 bytes early. The two misalignments make the complete advertised 5.3.0 through 5.3.8 range structurally unsupported
-- Trigger: Open a valid Unicode Inno 5.3.0 through 5.3.8 installer containing one or more data entries
-- Impact: A format version explicitly advertised as supported can fail before listing, or can produce corrupted compression, counts, offsets, sizes, flags, and later entries from misaligned tables
-- Expected: Each accepted installer version consumes its exact main-header and data-entry layouts, or unsupported versions are rejected before either table is parsed
-- Suggested fix: Represent the password and file checksum kinds and widths in one version-layout descriptor, consume MD5 for the applicable pre-5.3.9 fields and SHA-1 afterward, and reject versions whose complete layout is not implemented. Pair this with BR-0034 so parsed file checksums are also enforced
-- Validation: Add valid multi-entry installers or faithful main-header and data-entry tables at 5.3.0, 5.3.8, and the 5.3.9 transition; verify compression, counts, subsequent timestamps, flags, offsets, listing, extraction, and checksum decisions, plus clean rejection immediately outside the supported matrix
-- Resolution: Pending
-
-
 ### BR-0038: P2 - Use the canonical fingerprint threshold in the duplicate matcher
 
 - [ ] OPEN

@@ -218,17 +218,176 @@ static void inno_sha1_final(inno_sha1_ctx_t *ctx, uint8_t digest[20])
 	}
 }
 
-static int inno_sha1_matches(inno_sha1_ctx_t *ctx, const inno_data_entry_t *de,
-                             const char *destination)
+/* -- MD5 (RFC 1321, used for Inno file integrity before 5.3.9) ----- */
+typedef struct {
+	uint32_t state[4];
+	uint64_t bytes;
+	uint8_t block[64];
+	size_t block_len;
+} inno_md5_ctx_t;
+
+static uint32_t md5_rotate_left(uint32_t value, unsigned bits)
+{
+	return (value << bits) | (value >> (32 - bits));
+}
+
+static void inno_md5_transform(inno_md5_ctx_t *ctx, const uint8_t block[64])
+{
+	static const uint32_t constants[64] = {
+		0xd76aa478U, 0xe8c7b756U, 0x242070dbU, 0xc1bdceeeU,
+		0xf57c0fafU, 0x4787c62aU, 0xa8304613U, 0xfd469501U,
+		0x698098d8U, 0x8b44f7afU, 0xffff5bb1U, 0x895cd7beU,
+		0x6b901122U, 0xfd987193U, 0xa679438eU, 0x49b40821U,
+		0xf61e2562U, 0xc040b340U, 0x265e5a51U, 0xe9b6c7aaU,
+		0xd62f105dU, 0x02441453U, 0xd8a1e681U, 0xe7d3fbc8U,
+		0x21e1cde6U, 0xc33707d6U, 0xf4d50d87U, 0x455a14edU,
+		0xa9e3e905U, 0xfcefa3f8U, 0x676f02d9U, 0x8d2a4c8aU,
+		0xfffa3942U, 0x8771f681U, 0x6d9d6122U, 0xfde5380cU,
+		0xa4beea44U, 0x4bdecfa9U, 0xf6bb4b60U, 0xbebfbc70U,
+		0x289b7ec6U, 0xeaa127faU, 0xd4ef3085U, 0x04881d05U,
+		0xd9d4d039U, 0xe6db99e5U, 0x1fa27cf8U, 0xc4ac5665U,
+		0xf4292244U, 0x432aff97U, 0xab9423a7U, 0xfc93a039U,
+		0x655b59c3U, 0x8f0ccc92U, 0xffeff47dU, 0x85845dd1U,
+		0x6fa87e4fU, 0xfe2ce6e0U, 0xa3014314U, 0x4e0811a1U,
+		0xf7537e82U, 0xbd3af235U, 0x2ad7d2bbU, 0xeb86d391U
+	};
+	static const uint8_t shifts[64] = {
+		7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+		5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+		4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+		6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+	};
+	uint32_t words[16];
+	for (int i = 0; i < 16; i++) {
+		words[i] = (uint32_t) block[i * 4] |
+		           ((uint32_t) block[i * 4 + 1] << 8) |
+		           ((uint32_t) block[i * 4 + 2] << 16) |
+		           ((uint32_t) block[i * 4 + 3] << 24);
+	}
+	uint32_t a = ctx->state[0];
+	uint32_t b = ctx->state[1];
+	uint32_t c = ctx->state[2];
+	uint32_t d = ctx->state[3];
+	for (int i = 0; i < 64; i++) {
+		uint32_t f;
+		int word;
+		if (i < 16) {
+			f = (b & c) | ((~b) & d);
+			word = i;
+		} else if (i < 32) {
+			f = (d & b) | ((~d) & c);
+			word = (5 * i + 1) & 15;
+		} else if (i < 48) {
+			f = b ^ c ^ d;
+			word = (3 * i + 5) & 15;
+		} else {
+			f = c ^ (b | (~d));
+			word = (7 * i) & 15;
+		}
+		uint32_t next = d;
+		d = c;
+		c = b;
+		b += md5_rotate_left(a + f + constants[i] + words[word], shifts[i]);
+		a = next;
+	}
+	ctx->state[0] += a;
+	ctx->state[1] += b;
+	ctx->state[2] += c;
+	ctx->state[3] += d;
+}
+
+static void inno_md5_init(inno_md5_ctx_t *ctx)
+{
+	ctx->state[0] = 0x67452301U;
+	ctx->state[1] = 0xefcdab89U;
+	ctx->state[2] = 0x98badcfeU;
+	ctx->state[3] = 0x10325476U;
+	ctx->bytes = 0;
+	ctx->block_len = 0;
+}
+
+static void inno_md5_update(inno_md5_ctx_t *ctx, const uint8_t *data, size_t len)
+{
+	ctx->bytes += len;
+	while (len > 0) {
+		size_t count = sizeof(ctx->block) - ctx->block_len;
+		if (count > len) count = len;
+		memcpy(ctx->block + ctx->block_len, data, count);
+		ctx->block_len += count;
+		data += count;
+		len -= count;
+		if (ctx->block_len == sizeof(ctx->block)) {
+			inno_md5_transform(ctx, ctx->block);
+			ctx->block_len = 0;
+		}
+	}
+}
+
+static void inno_md5_final(inno_md5_ctx_t *ctx, uint8_t digest[16])
+{
+	uint64_t bit_count = ctx->bytes * 8;
+	uint8_t padding[72] = { 0x80 };
+	size_t padding_len = ctx->block_len < 56 ? 56 - ctx->block_len : 120 - ctx->block_len;
+	for (int i = 0; i < 8; i++)
+		padding[padding_len + i] = (uint8_t) (bit_count >> (i * 8));
+	inno_md5_update(ctx, padding, padding_len + 8);
+	for (int i = 0; i < 4; i++) {
+		digest[i * 4] = (uint8_t) ctx->state[i];
+		digest[i * 4 + 1] = (uint8_t) (ctx->state[i] >> 8);
+		digest[i * 4 + 2] = (uint8_t) (ctx->state[i] >> 16);
+		digest[i * 4 + 3] = (uint8_t) (ctx->state[i] >> 24);
+	}
+}
+
+typedef struct {
+	inno_checksum_type_t type;
+	union {
+		inno_md5_ctx_t md5;
+		inno_sha1_ctx_t sha1;
+	} state;
+} inno_checksum_ctx_t;
+
+static int inno_checksum_init(inno_checksum_ctx_t *ctx,
+                              inno_checksum_type_t type)
+{
+	ctx->type = type;
+	if (type == INNO_CHECKSUM_MD5)
+		inno_md5_init(&ctx->state.md5);
+	else if (type == INNO_CHECKSUM_SHA1)
+		inno_sha1_init(&ctx->state.sha1);
+	else
+		return -1;
+	return 0;
+}
+
+static void inno_checksum_update(inno_checksum_ctx_t *ctx,
+                                 const uint8_t *data, size_t len)
+{
+	if (ctx->type == INNO_CHECKSUM_MD5)
+		inno_md5_update(&ctx->state.md5, data, len);
+	else
+		inno_sha1_update(&ctx->state.sha1, data, len);
+}
+
+static int inno_checksum_matches(inno_checksum_ctx_t *ctx,
+                                 const inno_data_entry_t *de,
+                                 const char *destination)
 {
 	uint8_t digest[20];
-	if (de->checksum_type != INNO_CHECKSUM_SHA1) {
+	size_t digest_size;
+	if (ctx->type != de->checksum_type) {
 		INNO_LOG("missing supported file checksum for %s", destination);
 		return -1;
 	}
-	inno_sha1_final(ctx, digest);
-	if (memcmp(digest, de->sha1, sizeof(digest)) != 0) {
-		INNO_LOG("SHA-1 mismatch for %s", destination);
+	if (ctx->type == INNO_CHECKSUM_MD5) {
+		inno_md5_final(&ctx->state.md5, digest);
+		digest_size = 16;
+	} else {
+		inno_sha1_final(&ctx->state.sha1, digest);
+		digest_size = 20;
+	}
+	if (memcmp(digest, de->checksum, digest_size) != 0) {
+		INNO_LOG("file checksum mismatch for %s", destination);
 		return -1;
 	}
 	return 0;
@@ -749,6 +908,25 @@ static int parse_version_string(const uint8_t id[64], inno_version_t *ver)
 	return 0;
 }
 
+typedef struct {
+	inno_checksum_type_t type;
+	size_t digest_size;
+} inno_checksum_layout_t;
+
+static inno_checksum_layout_t checksum_layout_for_version(const inno_version_t *ver)
+{
+	inno_checksum_layout_t layout;
+	int version = INNO_VER(ver->major, ver->minor, ver->patch);
+	if (version >= INNO_VER(5, 3, 9)) {
+		layout.type = INNO_CHECKSUM_SHA1;
+		layout.digest_size = 20;
+	} else {
+		layout.type = INNO_CHECKSUM_MD5;
+		layout.digest_size = 16;
+	}
+	return layout;
+}
+
 /* ── Header stream parser ────────────────────────────────────────── */
 
 /* Read a length-prefixed string from a buffer.
@@ -824,6 +1002,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 {
 	size_t pos = 0;
 	int v = INNO_VER(ver->major, ver->minor, ver->patch);
+	inno_checksum_layout_t checksum_layout = checksum_layout_for_version(ver);
 
 	/* ── Main header strings ── */
 	int num_header_strings;
@@ -908,7 +1087,8 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	}
 
 	/* password_sha1 (20) + password_salt (8) */
-	if (skip_bytes(buf, buf_len, &pos, 28) < 0) return -1;
+	/* The version layout supersedes the historical SHA-1-only label above */
+	if (skip_bytes(buf, buf_len, &pos, checksum_layout.digest_size + 8) < 0) return -1;
 
 	/* extra_disk_space_required (8) + slices_per_disk (4) */
 	if (skip_bytes(buf, buf_len, &pos, 12) < 0) return -1;
@@ -1183,6 +1363,7 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 {
 	size_t pos = 0;
 	int v = INNO_VER(ver->major, ver->minor, ver->patch);
+	inno_checksum_layout_t checksum_layout = checksum_layout_for_version(ver);
 
 	for (int i = 0; i < arc->data_entry_count; i++) {
 		inno_data_entry_t *de = &arc->data_entries[i];
@@ -1217,12 +1398,11 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		pos += 8;
 
 		/* SHA-1 hash (20 bytes, >= 5.3.9) */
-		if (v >= INNO_VER(5, 3, 9)) {
-			if (pos + 20 > buf_len) return -1;
-			memcpy(de->sha1, buf + pos, 20);
-			de->checksum_type = INNO_CHECKSUM_SHA1;
-			pos += 20;
-		}
+		/* Earlier supported versions carry MD5 in the same layout slot */
+		if (pos + checksum_layout.digest_size > buf_len) return -1;
+		memcpy(de->checksum, buf + pos, checksum_layout.digest_size);
+		de->checksum_type = checksum_layout.type;
+		pos += checksum_layout.digest_size;
 
 		/* timestamp (int64) */
 		if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
@@ -1275,6 +1455,47 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 	}
 	return 0;
 }
+
+#ifdef INNO_READER_TESTING
+int inno_test_checksum_layout(const inno_version_t *version,
+                              inno_checksum_type_t *type_out,
+                              size_t *digest_size_out)
+{
+	if (!version || !type_out || !digest_size_out) return -1;
+	inno_checksum_layout_t layout = checksum_layout_for_version(version);
+	*type_out = layout.type;
+	*digest_size_out = layout.digest_size;
+	return 0;
+}
+
+int inno_test_parse_header_stream(const uint8_t *buffer, size_t buffer_size,
+                                  const inno_version_t *version,
+                                  inno_compress_method_t *compression_out)
+{
+	if (!buffer || !version || !compression_out) return -1;
+	inno_archive_t archive;
+	inno_version_t mutable_version = *version;
+	memset(&archive, 0, sizeof(archive));
+	if (parse_header_stream1(buffer, buffer_size, &mutable_version, &archive) < 0)
+		return -1;
+	*compression_out = archive.compression;
+	return 0;
+}
+
+int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
+                                 const inno_version_t *version,
+                                 inno_data_entry_t *entries, int entry_count)
+{
+	if (!buffer || !version || !entries || entry_count < 0) return -1;
+	inno_archive_t archive;
+	inno_version_t mutable_version = *version;
+	memset(&archive, 0, sizeof(archive));
+	memset(entries, 0, (size_t) entry_count * sizeof(*entries));
+	archive.data_entries = entries;
+	archive.data_entry_count = entry_count;
+	return parse_data_entries(buffer, buffer_size, &mutable_version, &archive);
+}
+#endif
 
 /* ── Chunk decompressor (for setup-1.bin data) ───────────────────── */
 
@@ -1794,7 +2015,7 @@ typedef struct {
 	size_t last_progress_in;
 	int finished;
 	int initialized;
-	inno_sha1_ctx_t sha1;
+	inno_checksum_ctx_t checksum;
 } gog_galaxy_stream_writer_t;
 
 static int emit_chunk_range(const uint8_t *buf, size_t buf_len,
@@ -1874,7 +2095,10 @@ static int gog_galaxy_stream_writer_init(gog_galaxy_stream_writer_t *writer,
 	writer->progress = progress;
 	writer->progress_data = progress_data;
 	writer->inner_size = (size_t) de->file_size;
-	inno_sha1_init(&writer->sha1);
+	if (inno_checksum_init(&writer->checksum, de->checksum_type) < 0) {
+		INNO_LOG("unsupported file checksum for %s", fe->destination);
+		return -1;
+	}
 	if (inflateInit(&writer->zs) != Z_OK) {
 		INNO_LOG("inflateInit failed for GOG Galaxy file %s", fe->destination);
 		return -1;
@@ -1898,7 +2122,7 @@ static int gog_galaxy_stream_writer_feed(const uint8_t *data, size_t len, void *
 		         writer->fe->destination);
 		return -1;
 	}
-	inno_sha1_update(&writer->sha1, data, len);
+	inno_checksum_update(&writer->checksum, data, len);
 
 	writer->zs.next_in = (Bytef *) data;
 	writer->zs.avail_in = (uInt) len;
@@ -1990,13 +2214,13 @@ typedef struct {
 	const inno_file_entry_t *fe;
 	FILE *out;
 	size_t written;
-	inno_sha1_ctx_t sha1;
+	inno_checksum_ctx_t checksum;
 } raw_file_stream_writer_t;
 
 static int raw_file_stream_writer_feed(const uint8_t *data, size_t len, void *user_data)
 {
 	raw_file_stream_writer_t *writer = (raw_file_stream_writer_t *) user_data;
-	inno_sha1_update(&writer->sha1, data, len);
+	inno_checksum_update(&writer->checksum, data, len);
 	if (fwrite(data, 1, len, writer->out) != len) {
 		INNO_LOG("write error while streaming file %s: %s",
 		         writer->fe->destination,
@@ -2024,7 +2248,12 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 	writer.fe = fe;
 	writer.out = out;
 	writer.written = 0;
-	inno_sha1_init(&writer.sha1);
+	if (inno_checksum_init(&writer.checksum, de->checksum_type) < 0) {
+		fclose(out);
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
 	if (stream_chunk_file_range(arc, fe, de,
 	                            arc->compression, progress, user_data,
 	                            raw_file_stream_writer_feed, &writer) < 0) {
@@ -2043,7 +2272,7 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 		free(temporary_path);
 		return -1;
 	}
-	if (inno_sha1_matches(&writer.sha1, de, fe->destination) < 0) {
+	if (inno_checksum_matches(&writer.checksum, de, fe->destination) < 0) {
 		fclose(out);
 		remove(temporary_path);
 		free(temporary_path);
@@ -2369,7 +2598,7 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 		free(temporary_path);
 		return -1;
 	}
-	if (inno_sha1_matches(&writer.sha1, de, fe->destination) < 0) {
+	if (inno_checksum_matches(&writer.checksum, de, fe->destination) < 0) {
 		fclose(out);
 		remove(temporary_path);
 		free(temporary_path);
@@ -2414,6 +2643,11 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	uint64_t extracted_after = arc->extracted_bytes;
 	inno_compress_method_t actual_method =
 	    de->chunk_compressed ? arc->compression : INNO_COMPRESS_STORED;
+	if (de->checksum_type != INNO_CHECKSUM_MD5 &&
+	    de->checksum_type != INNO_CHECKSUM_SHA1) {
+		INNO_LOG("unsupported file checksum for %s", fe->destination);
+		return -1;
+	}
 	if (validate_chunk_file_range(arc, de, actual_method, NULL, NULL, NULL) < 0) {
 		INNO_LOG("invalid chunk range for %s", fe->destination);
 		return -1;
@@ -2504,10 +2738,10 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	/* Write to output file */
 	uint8_t *file_data = chunk + de->file_offset;
 	size_t file_len = (size_t) de->file_size;
-	inno_sha1_ctx_t sha1;
-	inno_sha1_init(&sha1);
-	inno_sha1_update(&sha1, file_data, file_len);
-	if (inno_sha1_matches(&sha1, de, fe->destination) < 0) {
+	inno_checksum_ctx_t checksum;
+	inno_checksum_init(&checksum, de->checksum_type);
+	inno_checksum_update(&checksum, file_data, file_len);
+	if (inno_checksum_matches(&checksum, de, fe->destination) < 0) {
 		free(chunk);
 		return -1;
 	}
