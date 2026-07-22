@@ -51,6 +51,7 @@
 #include <errno.h>
 
 #ifdef _WIN32
+#include <windows.h>
 #include <io.h>
 #include <fcntl.h>
 #define OPEN_RB(path)       _open((path), _O_RDONLY | _O_BINARY)
@@ -58,6 +59,7 @@
 #define LSEEK(fd, off, w)   _lseeki64((fd), (off), (w))
 #define CLOSE_FD(fd)        _close(fd)
 #define DUP_FD(fd)          _dup(fd)
+#define GET_PID()           _getpid()
 #include <direct.h>
 #define MKDIR(d) _mkdir(d)
 #else
@@ -69,6 +71,7 @@
 #define LSEEK(fd, off, w)   lseek((fd), (off), (w))
 #define CLOSE_FD(fd)        close(fd)
 #define DUP_FD(fd)          dup(fd)
+#define GET_PID()           getpid()
 #define MKDIR(d)            mkdir((d), 0755)
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -107,6 +110,166 @@ static const ISzAlloc g_lzma_alloc = { lzma_alloc, lzma_free };
 static uint32_t inno_crc32(const uint8_t *data, size_t len)
 {
 	return (uint32_t) crc32(crc32(0, Z_NULL, 0), data, (uInt) len);
+}
+
+/* -- SHA-1 (RFC 3174, used by Inno 5.3.9 and newer) ---------------- */
+typedef struct {
+	uint32_t state[5];
+	uint64_t bytes;
+	uint8_t block[64];
+	size_t block_len;
+} inno_sha1_ctx_t;
+
+static uint32_t sha1_rotate_left(uint32_t value, unsigned bits)
+{
+	return (value << bits) | (value >> (32 - bits));
+}
+
+static void inno_sha1_transform(inno_sha1_ctx_t *ctx, const uint8_t block[64])
+{
+	uint32_t words[80];
+	for (int i = 0; i < 16; i++) {
+		words[i] = ((uint32_t) block[i * 4] << 24) |
+		           ((uint32_t) block[i * 4 + 1] << 16) |
+		           ((uint32_t) block[i * 4 + 2] << 8) |
+		           (uint32_t) block[i * 4 + 3];
+	}
+	for (int i = 16; i < 80; i++)
+		words[i] = sha1_rotate_left(words[i - 3] ^ words[i - 8] ^
+		                                words[i - 14] ^ words[i - 16],
+		                            1);
+
+	uint32_t a = ctx->state[0];
+	uint32_t b = ctx->state[1];
+	uint32_t c = ctx->state[2];
+	uint32_t d = ctx->state[3];
+	uint32_t e = ctx->state[4];
+	for (int i = 0; i < 80; i++) {
+		uint32_t f;
+		uint32_t k;
+		if (i < 20) {
+			f = (b & c) | ((~b) & d);
+			k = 0x5A827999U;
+		} else if (i < 40) {
+			f = b ^ c ^ d;
+			k = 0x6ED9EBA1U;
+		} else if (i < 60) {
+			f = (b & c) | (b & d) | (c & d);
+			k = 0x8F1BBCDCU;
+		} else {
+			f = b ^ c ^ d;
+			k = 0xCA62C1D6U;
+		}
+		uint32_t next = sha1_rotate_left(a, 5) + f + e + k + words[i];
+		e = d;
+		d = c;
+		c = sha1_rotate_left(b, 30);
+		b = a;
+		a = next;
+	}
+	ctx->state[0] += a;
+	ctx->state[1] += b;
+	ctx->state[2] += c;
+	ctx->state[3] += d;
+	ctx->state[4] += e;
+}
+
+static void inno_sha1_init(inno_sha1_ctx_t *ctx)
+{
+	ctx->state[0] = 0x67452301U;
+	ctx->state[1] = 0xEFCDAB89U;
+	ctx->state[2] = 0x98BADCFEU;
+	ctx->state[3] = 0x10325476U;
+	ctx->state[4] = 0xC3D2E1F0U;
+	ctx->bytes = 0;
+	ctx->block_len = 0;
+}
+
+static void inno_sha1_update(inno_sha1_ctx_t *ctx, const uint8_t *data, size_t len)
+{
+	ctx->bytes += len;
+	while (len > 0) {
+		size_t count = sizeof(ctx->block) - ctx->block_len;
+		if (count > len) count = len;
+		memcpy(ctx->block + ctx->block_len, data, count);
+		ctx->block_len += count;
+		data += count;
+		len -= count;
+		if (ctx->block_len == sizeof(ctx->block)) {
+			inno_sha1_transform(ctx, ctx->block);
+			ctx->block_len = 0;
+		}
+	}
+}
+
+static void inno_sha1_final(inno_sha1_ctx_t *ctx, uint8_t digest[20])
+{
+	uint64_t bit_count = ctx->bytes * 8;
+	uint8_t padding[72] = { 0x80 };
+	size_t padding_len = ctx->block_len < 56 ? 56 - ctx->block_len : 120 - ctx->block_len;
+	for (int i = 0; i < 8; i++)
+		padding[padding_len + i] = (uint8_t) (bit_count >> (56 - i * 8));
+	inno_sha1_update(ctx, padding, padding_len + 8);
+	for (int i = 0; i < 5; i++) {
+		digest[i * 4] = (uint8_t) (ctx->state[i] >> 24);
+		digest[i * 4 + 1] = (uint8_t) (ctx->state[i] >> 16);
+		digest[i * 4 + 2] = (uint8_t) (ctx->state[i] >> 8);
+		digest[i * 4 + 3] = (uint8_t) ctx->state[i];
+	}
+}
+
+static int inno_sha1_matches(inno_sha1_ctx_t *ctx, const inno_data_entry_t *de,
+                             const char *destination)
+{
+	uint8_t digest[20];
+	if (de->checksum_type != INNO_CHECKSUM_SHA1) {
+		INNO_LOG("missing supported file checksum for %s", destination);
+		return -1;
+	}
+	inno_sha1_final(ctx, digest);
+	if (memcmp(digest, de->sha1, sizeof(digest)) != 0) {
+		INNO_LOG("SHA-1 mismatch for %s", destination);
+		return -1;
+	}
+	return 0;
+}
+
+static FILE *open_temporary_output(const char *output_path, char **temporary_path_out)
+{
+	size_t path_len = strlen(output_path);
+	char *temporary_path = (char *) malloc(path_len + 48);
+	if (!temporary_path) return NULL;
+	for (unsigned attempt = 0; attempt < 100; attempt++) {
+		snprintf(temporary_path, path_len + 48, "%s.inno.%ld.%u.tmp",
+		         output_path, (long) GET_PID(), attempt);
+		FILE *out = fopen(temporary_path, "wbx");
+		if (out) {
+			*temporary_path_out = temporary_path;
+			return out;
+		}
+		if (errno != EEXIST) break;
+	}
+	INNO_LOG("cannot create temporary output for %s: %s", output_path, strerror(errno));
+	free(temporary_path);
+	return NULL;
+}
+
+static int commit_temporary_output(const char *temporary_path, const char *output_path)
+{
+#ifdef _WIN32
+	if (!MoveFileExA(temporary_path, output_path,
+	                 MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+		INNO_LOG("cannot commit %s: Windows error %lu", output_path,
+		         (unsigned long) GetLastError());
+		return -1;
+	}
+#else
+	if (rename(temporary_path, output_path) != 0) {
+		INNO_LOG("cannot commit %s: %s", output_path, strerror(errno));
+		return -1;
+	}
+#endif
+	return 0;
 }
 
 /* ── Helpers: read from fd at a specific offset ──────────────────── */
@@ -1049,6 +1212,7 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		if (v >= INNO_VER(5, 3, 9)) {
 			if (pos + 20 > buf_len) return -1;
 			memcpy(de->sha1, buf + pos, 20);
+			de->checksum_type = INNO_CHECKSUM_SHA1;
 			pos += 20;
 		}
 
@@ -1173,8 +1337,8 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		/* Zlib decompression */
 		size_t output_limit = (size_t) (DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size);
 		size_t decomp_cap = required_output > output_limit / 2u
-		                         ? output_limit
-		                         : (size_t) required_output * 2u;
+		                        ? output_limit
+		                        : (size_t) required_output * 2u;
 		if (decomp_cap < 65536) decomp_cap = 65536;
 		if (decomp_cap > output_limit) decomp_cap = output_limit;
 		uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
@@ -1245,8 +1409,8 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		size_t output_limit = (size_t) (DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size);
 		size_t decomp_cap = required_output > output_limit / 2u
-		                         ? output_limit
-		                         : (size_t) required_output * 2u;
+		                        ? output_limit
+		                        : (size_t) required_output * 2u;
 		if (decomp_cap < 65536) decomp_cap = 65536;
 		if (decomp_cap > output_limit) decomp_cap = output_limit;
 		uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
@@ -1317,8 +1481,8 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		size_t output_limit = (size_t) (DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size);
 		size_t decomp_cap = required_output > output_limit / 2u
-		                         ? output_limit
-		                         : (size_t) required_output * 2u;
+		                        ? output_limit
+		                        : (size_t) required_output * 2u;
 		if (decomp_cap < 65536) decomp_cap = 65536;
 		if (decomp_cap > output_limit) decomp_cap = output_limit;
 		uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
@@ -1584,6 +1748,7 @@ typedef struct {
 	size_t last_progress_in;
 	int finished;
 	int initialized;
+	inno_sha1_ctx_t sha1;
 } gog_galaxy_stream_writer_t;
 
 static int emit_chunk_range(const uint8_t *buf, size_t buf_len,
@@ -1663,6 +1828,7 @@ static int gog_galaxy_stream_writer_init(gog_galaxy_stream_writer_t *writer,
 	writer->progress = progress;
 	writer->progress_data = progress_data;
 	writer->inner_size = (size_t) de->file_size;
+	inno_sha1_init(&writer->sha1);
 	if (inflateInit(&writer->zs) != Z_OK) {
 		INNO_LOG("inflateInit failed for GOG Galaxy file %s", fe->destination);
 		return -1;
@@ -1686,6 +1852,7 @@ static int gog_galaxy_stream_writer_feed(const uint8_t *data, size_t len, void *
 		         writer->fe->destination);
 		return -1;
 	}
+	inno_sha1_update(&writer->sha1, data, len);
 
 	writer->zs.next_in = (Bytef *) data;
 	writer->zs.avail_in = (uInt) len;
@@ -1777,11 +1944,13 @@ typedef struct {
 	const inno_file_entry_t *fe;
 	FILE *out;
 	size_t written;
+	inno_sha1_ctx_t sha1;
 } raw_file_stream_writer_t;
 
 static int raw_file_stream_writer_feed(const uint8_t *data, size_t len, void *user_data)
 {
 	raw_file_stream_writer_t *writer = (raw_file_stream_writer_t *) user_data;
+	inno_sha1_update(&writer->sha1, data, len);
 	if (fwrite(data, 1, len, writer->out) != len) {
 		INNO_LOG("write error while streaming file %s: %s",
 		         writer->fe->destination,
@@ -1801,36 +1970,53 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
                                          size_t *written_out)
 {
 	raw_file_stream_writer_t writer;
-	FILE *out = fopen(output_path, "wb");
+	char *temporary_path = NULL;
+	FILE *out = open_temporary_output(output_path, &temporary_path);
 	if (!out) {
-		INNO_LOG("cannot create %s: %s", output_path, strerror(errno));
 		return -1;
 	}
 	writer.fe = fe;
 	writer.out = out;
 	writer.written = 0;
+	inno_sha1_init(&writer.sha1);
 	if (stream_chunk_file_range(arc->fd, arc->data_offset, fe, de,
 	                            arc->compression, progress, user_data,
 	                            raw_file_stream_writer_feed, &writer) < 0) {
 		fclose(out);
-		remove(output_path);
+		remove(temporary_path);
+		free(temporary_path);
 		return -1;
 	}
-	if (fclose(out) != 0) {
-		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
-		remove(output_path);
-		return -1;
-	}
-	if (written_out)
-		*written_out = writer.written;
 	if (writer.written != (size_t) de->file_size) {
 		INNO_LOG("streamed file size mismatch for %s: expected %llu got %zu",
 		         fe->destination,
 		         (unsigned long long) de->file_size,
 		         writer.written);
-		remove(output_path);
+		fclose(out);
+		remove(temporary_path);
+		free(temporary_path);
 		return -1;
 	}
+	if (inno_sha1_matches(&writer.sha1, de, fe->destination) < 0) {
+		fclose(out);
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
+	if (fclose(out) != 0) {
+		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
+	if (commit_temporary_output(temporary_path, output_path) < 0) {
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
+	free(temporary_path);
+	if (written_out)
+		*written_out = writer.written;
 	return 0;
 }
 
@@ -2120,14 +2306,15 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
                                             size_t *written_out)
 {
 	gog_galaxy_stream_writer_t writer;
-	FILE *out = fopen(output_path, "wb");
+	char *temporary_path = NULL;
+	FILE *out = open_temporary_output(output_path, &temporary_path);
 	if (!out) {
-		INNO_LOG("cannot create %s: %s", output_path, strerror(errno));
 		return -1;
 	}
 	if (gog_galaxy_stream_writer_init(&writer, fe, de, out, progress, user_data) < 0) {
 		fclose(out);
-		remove(output_path);
+		remove(temporary_path);
+		free(temporary_path);
 		return -1;
 	}
 	if (stream_chunk_file_range(arc->fd, arc->data_offset, fe, de,
@@ -2135,19 +2322,34 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 	                            gog_galaxy_stream_writer_feed, &writer) < 0) {
 		gog_galaxy_stream_writer_finish(&writer, NULL);
 		fclose(out);
-		remove(output_path);
+		remove(temporary_path);
+		free(temporary_path);
 		return -1;
 	}
 	if (gog_galaxy_stream_writer_finish(&writer, written_out) < 0) {
 		fclose(out);
-		remove(output_path);
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
+	if (inno_sha1_matches(&writer.sha1, de, fe->destination) < 0) {
+		fclose(out);
+		remove(temporary_path);
+		free(temporary_path);
 		return -1;
 	}
 	if (fclose(out) != 0) {
 		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
-		remove(output_path);
+		remove(temporary_path);
+		free(temporary_path);
 		return -1;
 	}
+	if (commit_temporary_output(temporary_path, output_path) < 0) {
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
+	free(temporary_path);
 	return 0;
 }
 
@@ -2259,10 +2461,17 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	/* Write to output file */
 	uint8_t *file_data = chunk + de->file_offset;
 	size_t file_len = (size_t) de->file_size;
+	inno_sha1_ctx_t sha1;
+	inno_sha1_init(&sha1);
+	inno_sha1_update(&sha1, file_data, file_len);
+	if (inno_sha1_matches(&sha1, de, fe->destination) < 0) {
+		free(chunk);
+		return -1;
+	}
 
-	FILE *out = fopen(output_path, "wb");
+	char *temporary_path = NULL;
+	FILE *out = open_temporary_output(output_path, &temporary_path);
 	if (!out) {
-		INNO_LOG("cannot create %s: %s", output_path, strerror(errno));
 		free(chunk);
 		return -1;
 	}
@@ -2287,16 +2496,23 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 			}
 		}
 	}
-	fclose(out);
+	int close_failed = fclose(out) != 0;
 
-	if (written != file_len) {
+	if (written != file_len || close_failed) {
 		INNO_LOG("write error for %s", output_path);
-		remove(output_path);
+		remove(temporary_path);
+		free(temporary_path);
 		free(chunk);
 		return -1;
 	}
 
 	free(chunk);
+	if (commit_temporary_output(temporary_path, output_path) < 0) {
+		remove(temporary_path);
+		free(temporary_path);
+		return -1;
+	}
+	free(temporary_path);
 
 	if (progress) {
 		progress(fe->destination,

@@ -5276,23 +5276,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Wrap OpenSL and pthread entry points in a testable adapter, inject failure at every initialization step, and assert no null call, success result, live thread, queued buffer, or retained engine, mix, player, MIDI, or ring state remains; retain a real-device successful playback test
 - Resolution: Pending
 
-### BR-0034: P2 - Verify Inno file checksums before committing output
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0015, R1-CHUNK-0023, R1-CHUNK-0024
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1013-L1017,L2057-L2188` in `parse_data_entries` and `inno_extract_file`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L1013-L1017,L1074-L1301,L1666-L2054`, `android/app/src/main/cpp/extract/inno_reader.h:L85-L104`, and `android/app/src/main/cpp/extract/test_gog_fd.c:L1-L159`
-- Evidence: The data-entry parser preserves each Inno 5.3.9-or-newer file's 20-byte SHA-1 value, but no extraction path ever reads that field. Stored, zlib, LZMA1, LZMA2, and GOG Galaxy outputs are accepted using produced length and declared size only; the buffered decoders in BR-0059 can additionally return partial buffers after terminal errors. The referenced innoextract implementation applies the per-file checksum filter during extraction; this reader omits the equivalent integrity decision, and the native GOG test only lists installer entries without extracting or corrupting payloads
-- Trigger: Flip a stored payload byte, or alter compressed input so decoding still produces the declared byte count, while leaving the file's recorded checksum unchanged
-- Impact: Corrupted or attacker-modified game files can be reported and published as successfully imported, leading to delayed load failures, crashes, or nondeterministic behavior without identifying the damaged installer
-- Expected: Every extracted file is committed only after its version-appropriate checksum is calculated over the format-defined byte stream and matches the data entry
-- Suggested fix: Preserve the checksum algorithm with each data entry, stream MD5 or SHA-1 calculation through every output path, mirror the format's filter ordering for GOG Galaxy entries, compare before final publication, and write to a temporary file that is removed on mismatch
-- Validation: Add stored, zlib, LZMA1, LZMA2, and Galaxy fixtures with known checksums; flip payload and checksum bits and truncate inputs independently; assert every mismatch fails with no final output while valid real-installer hashes remain unchanged
-- Resolution: Pending
-
 ### BR-0035: P1 - Bound every Inno file range to its declared chunk
 
 - [ ] OPEN

@@ -61,6 +61,11 @@ typedef enum {
 	INNO_COMPRESS_LZMA2 = 4,
 } inno_compress_method_t;
 
+typedef enum {
+	INNO_CHECKSUM_NONE = 0,
+	INNO_CHECKSUM_SHA1 = 1,
+} inno_checksum_type_t;
+
 /* -- InnoSetup version --------------------------------------------- */
 typedef struct {
 	int major, minor, patch;
@@ -84,6 +89,7 @@ typedef struct {
 	uint64_t file_size;    /* decompressed file size          */
 	uint64_t chunk_compressed_size;
 	uint8_t sha1[20];
+	inno_checksum_type_t checksum_type;
 	uint8_t chunk_compressed;           /* ChunkCompressed flag            */
 	uint8_t call_instruction_optimized; /* filter flag               */
 } inno_data_entry_t;

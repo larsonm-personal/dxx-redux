@@ -41,6 +41,23 @@ so campaign closure must still obtain that independent verification
 
 ## Finalized findings
 
+### BR-0034: P2 - Verify Inno file checksums before committing output
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0015, R1-CHUNK-0023, R1-CHUNK-0024
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1013-L1017,L2057-L2188` in `parse_data_entries` and `inno_extract_file`
+- Related: `android/app/src/main/cpp/extract/inno_reader.c:L1013-L1017,L1074-L1301,L1666-L2054`, `android/app/src/main/cpp/extract/inno_reader.h:L85-L104`, and `android/app/src/main/cpp/extract/test_gog_fd.c:L1-L159`
+- Evidence: The data-entry parser preserves each Inno 5.3.9-or-newer file's 20-byte SHA-1 value, but no extraction path ever reads that field. Stored, zlib, LZMA1, LZMA2, and GOG Galaxy outputs are accepted using produced length and declared size only; the buffered decoders in BR-0059 can additionally return partial buffers after terminal errors. The referenced innoextract implementation applies the per-file checksum filter during extraction; this reader omits the equivalent integrity decision, and the native GOG test only lists installer entries without extracting or corrupting payloads
+- Trigger: Flip a stored payload byte, or alter compressed input so decoding still produces the declared byte count, while leaving the file's recorded checksum unchanged
+- Impact: Corrupted or attacker-modified game files can be reported and published as successfully imported, leading to delayed load failures, crashes, or nondeterministic behavior without identifying the damaged installer
+- Expected: Every extracted file is committed only after its version-appropriate checksum is calculated over the format-defined byte stream and matches the data entry
+- Suggested fix: Preserve the checksum algorithm with each data entry, stream MD5 or SHA-1 calculation through every output path, mirror the format's filter ordering for GOG Galaxy entries, compare before final publication, and write to a temporary file that is removed on mismatch
+- Validation: Add stored, zlib, LZMA1, LZMA2, and Galaxy fixtures with known checksums; flip payload and checksum bits and truncate inputs independently; assert every mismatch fails with no final output while valid real-installer hashes remain unchanged
+- Resolution: Fixed on 2026-07-21. Parsed Inno 5.3.9-and-newer data entries now retain an explicit SHA-1 checksum kind. Buffered and streamed regular extraction calculate SHA-1 over the complete file byte stream, while GOG Galaxy extraction calculates it over the inner compressed bytes before applying the Galaxy zlib filter, matching the format's filter order. Files are written to uniquely claimed sibling temporary paths and atomically replace the destination only after size, checksum, write, and close validation; unsupported or missing checksum kinds fail closed. The real Inno 5.5.7 and 5.6.2 fixtures extract successfully with their recorded hashes, and altered checksum metadata fails without a final output. Pre-5.3.9 MD5 layout and compatibility remain tracked separately by BR-0036. Scoped code quality and all 9 native extraction suites passed.
+
 ### BR-0033: P2 - Verify STi2 payload checksums and compressed input exhaustion
 
 - [x] FIXED
