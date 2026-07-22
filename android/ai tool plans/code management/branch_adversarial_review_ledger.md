@@ -81,7 +81,7 @@ Only one call may edit either adversarial review ledger at a time. Replace queue
 | R1-CHUNK-0030 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/extract/pkg_reader.h` | L1-L77 | BR-0018, BR-0020, BR-0021, BR-0065, BR-0066, BR-0067, BR-0068, BR-0069, BR-0070 |
 | R1-CHUNK-0031 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/extract/sow_extract.c` | L1-L600 | BR-0018, BR-0020, BR-0022, BR-0023, BR-0024, BR-0025, BR-0042, BR-0065, BR-0071, BR-0072 |
 | R1-CHUNK-0032 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/extract/sti2_extract.c` | L1-L600 | BR-0018, BR-0031, BR-0032, BR-0033, BR-0073 |
-| R1-CHUNK-0033 | [x] SKIP | source | critical | authored-source | `android/app/src/main/cpp/extract/sti2_extract.c` | L601-L1200 | Skipped for cybersecurity reasons (gpt 5.6-sol flagged/refused. user-approved 2026-07-20) |
+| R1-CHUNK-0033 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/extract/sti2_extract.c` | L601-L1200 | BR-0033, BR-0178 |
 | R1-CHUNK-0034 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/extract/sti2_extract.c` | L1201-L1800 | BR-0018, BR-0033, BR-0073 |
 | R1-CHUNK-0035 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_fingerprint.c` | L1-L273 | BR-0038, BR-0039, BR-0040, BR-0046, BR-0048, BR-0074, BR-0075 |
 | R1-CHUNK-0036 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_level_metadata.cpp` | L1-L600 | BR-0076 |
@@ -119,7 +119,7 @@ Only one call may edit either adversarial review ledger at a time. Replace queue
 | R1-CHUNK-0068 | [x] DONE | source | critical | build-script | `game_data/extract_dos_demos.ps1` | L1-L277 | BR-0018, BR-0020, BR-0157, BR-0169, BR-0170, BR-0172, BR-0173, BR-0174, BR-0175 |
 | R1-CHUNK-0069 | [x] SKIP | source | critical | build-script | `game_data/extract_mac_cd.ps1` | L1-L450 | Skipped for cybersecurity reasons (gpt-5.6-sol flagged/refused. user-approved 2026-07-21) |
 | R1-CHUNK-0070 | [x] DONE | source | critical | build-script | `game_data/extract_mac_demos.ps1` | L1-L198 | BR-0020, BR-0157, BR-0169, BR-0170, BR-0173, BR-0174 |
-| R1-CHUNK-0071 | [ ] TODO | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | - |
+| R1-CHUNK-0071 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | BR-0018, BR-0020, BR-0157, BR-0176, BR-0177 |
 | R1-CHUNK-0072 | [ ] TODO | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L601-L780 | - |
 | R1-CHUNK-0073 | [ ] TODO | source | critical | test-source | `2 related paths` | 515 review lines under android/app/src/main/cpp | - |
 | R1-CHUNK-0074 | [ ] TODO | source | critical | test-source | `2 related paths` | 73 review lines under android/app/src/main/cpp | - |
@@ -4364,7 +4364,7 @@ Append one completion note for every finished queue item using the process templ
 - Commands or validation: `git diff`, `git show`, `git log --follow`, `git blame`, `git grep`, `rg`, line-numbered provenance-to-upstream-license-to-build traces and header-to-entry-to-decoder traces, repository-wide license and notice inventory, duplicate-finding search, comparison with the referenced upstream XADMaster implementation and license, and `android/tests/test_cue_iso.ps1`, whose seven registered native suites including STi2, StuffIt corpus, and demo-oracle tests all passed
 - No-finding areas: byte-order and CRC helpers are called with complete fixed fields in ordinary paths; fixed method-13 tables and prefix-tree dimensions are internally consistent for the known decoders; separators are flattened before output and ordinary known-media names fit the fixed representation; path truncation, basename collisions, Windows-reserved names, and ASCII-only header admission remain archive-policy and compatibility gaps but did not establish a separate root cause beyond the existing structural, capacity, and partial-output findings; archive allocation budgets remain BR-0018, encrypted method flags remain BR-0031, byte-scanning instead of structural parsing remains BR-0032, and hard compressed-input exhaustion plus payload integrity remain BR-0033; current fixtures do not exercise encrypted entries, malformed code trees, non-ASCII or reserved names, deep ancestry, aliasing basenames, capacity exhaustion, corrupted payloads, or truncated compressed streams
 
-### R1-CHUNK-0033 skip disposition
+### R1-CHUNK-0033 prior skip disposition (superseded)
 
 - Approved: 2026-07-20 by the user
 - Disposition: Skipped for cybersecurity reasons
@@ -4372,6 +4372,18 @@ Append one completion note for every finished queue item using the process templ
 - Substitute validation: None; the user explicitly waived review and validation of this range for cybersecurity reasons and directed the campaign to continue at R1-CHUNK-0034
 - work rejected by codex 5.6 sol
 - Partial-work handling: The in-progress investigation was stopped, its unrun scratch probe was removed, and no finding was admitted from the partial review
+- Superseded: 2026-07-21 after the user confirmed account verification and requested a retry; the completed review below now provides coverage for the assigned range
+
+### R1-CHUNK-0033 completion
+
+- Completed: 2026-07-21
+- Model: GPT-5 Codex
+- Result: BR-0033, BR-0178
+- Assigned scope checked: `android/app/src/main/cpp/extract/sti2_extract.c` L601-L1200
+- Context checked: frozen addition and complete file history; prefix-code node construction, fast-table generation, dynamic method 13 code lengths, low-bit input and exhaustion behavior, method 13 literal and match decoding, method 14 tree recursion, canonical-code construction, symbol traversal, block headers, history-window offsets, output termination, the continuation in L1201-L1225, public extraction dispatch, real-media and corpus tests, existing STi2 findings, and the referenced XADMaster `XADStuffItOldHandles.m` implementation
+- Commands or validation: `git cat-file -e`, `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered decoder review, duplicate-finding search across both ledgers, a shallow checkout and comparison with the referenced upstream XADMaster implementation, and an arithmetic boundary probe demonstrating an attacker-encodable 37-bit length following zero lengths produces a 37-bit shift of a 32-bit accumulator. This was a review-only call; no product tests were run and no product code was changed
+- Worktree note: This retry edited only the canonical active ledger. Pre-existing BR-0018 and BR-0031 remediation changes were preserved. The upstream comparison checkout is confined to ignored `temp/unar-review-r1-chunk-0033`. Campaign closure must cover the frozen-to-live delta
+- No-finding areas: prefix-node and lookup-table capacities cover the static method 13 tables; dynamic method 13 repeat writes check their 321-entry destination; method 13 output and history writes remain inside their fixed buffers; method 14 recursive tree destinations fit the 308-, 150-, and 616-element arrays and guarded repeats cannot write beyond the requested code count; method 14 symbol traversal stays within a tree built by the local constructor; ordinary decoder allocations and cleanup are bounded for the fixed method 14 state. Zero-padded physical exhaustion and accepting declared-size output without payload integrity remain BR-0033, allocation and work ceilings remain BR-0018, copied-code provenance remains BR-0073, and malformed method 14 code-length shifts are BR-0178. Current fixtures still do not exercise method 14 or sanitizer-backed malformed code trees
 
 ### R1-CHUNK-0034 completion
 
@@ -4758,6 +4770,17 @@ Append one completion note for every finished queue item using the process templ
 - Worktree note: This review wrote only the canonical active ledger. Unrelated pre-existing changes were preserved, and concurrent changes appeared in native extraction files during the call; this review did not inspect or modify them. No product, script, archive, extracted output, oracle, test, build, emulator, or temporary probe file was changed by this review.
 - No-finding areas: the frozen script parses; the configured package and output names are fixed; all six available archives match their documented SHA-256 values; every current output tree contains its configured expected names; every tracked oracle size and digest matches local output; installer and output iteration is deterministic for the current corpus; external-tool nonzero exit is checked; JSON is emitted with stable configured archive order; and ordinary successful cleanup targets the package-specific staging tree. Incomplete and nontransactional output and oracle publication remains BR-0020, unauthenticated unar acquisition remains BR-0157, warning-only success remains BR-0169, cache and oracle provenance remains BR-0170, shared temporary ownership remains BR-0173, and host-tool mismatch remains BR-0174 rather than being duplicated.
 
+### R1-CHUNK-0071 completion
+
+- Completed: 2026-07-21
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0020, BR-0157, BR-0176, BR-0177
+- Assigned scope checked: `game_data/fingerprint_mission_zip_music.ps1` L1-L600
+- Context checked: frozen addition and complete file history; ZIP and self-extracting ZIP opening, HOG member parsing, nested ZIP, DXA, 7z, and RAR recursion, external-tool discovery and execution, stream and temporary-file cleanup, audio output naming and provenance mapping, JSON string emission, mission tracklist discovery, schema and lookup-key construction, AcoustID request, retry, cache, and tracklist-fallback behavior; the batch caller, album database consumer, seven current tracklists, nine generated mission sidecars, all 113 locally available mission archives, and related extraction-budget, partial-publication, dependency-integrity, serialization, and cache findings
+- Commands or validation: `git cat-file -e`, `git diff --name-status`, `git diff --stat`, `git show`, `git log --follow`, `git blame`, `git grep`, `git ls-tree`, `rg`, frozen in-memory PowerShell AST parsing, mission-archive count and size inventory, an in-memory PowerShell hashtable comparer probe, an in-memory quoted-URL comment-strip probe, strict parsing and duplicate-key checks for every current tracklist, case-insensitive and reserved-name checks across all generated mission filenames, SHA-1 comparison of every generated sidecar with its current source archive, and provenance, fingerprint, and positive-duration validation for all 160 generated tracks
+- Worktree note: This review wrote only the canonical active ledger. Concurrent remediation changed and committed native extraction scope during the call; live `HEAD` ended at `a699edfbbd1273e96f99a00bccb2f647d8409ed2`, and the remaining unrelated plan, CMake, limit-header, and test changes were preserved without inspection. No product, script, source archive, generated sidecar, database, build, emulator, network service, or temporary file was changed by this review. Campaign closure must cover the frozen-to-live delta.
+- No-finding areas: the frozen script parses; SHA-1 streams, HOG input streams, ZIP archives, entry streams, output streams, hash instances, and ordinary nested temporary files are disposed on their explicit success and exception paths; HOG payload lengths are checked against remaining bytes; internal ZIP and HOG member names never become output directory paths; supported audio suffix checks are case-insensitive; current tracklists have the expected schema and no conflicting explicit lookup keys; all current generated filenames are case-insensitively unique and avoid Windows device names; all current source hashes match and all 160 track records have nonempty provenance and fingerprints with positive durations; AcoustID pacing and retry counts are bounded. Unbounded materialization and recursive archive work remains BR-0018 under concurrent remediation, partial HOG acceptance remains BR-0020, and unverified 7-Zip selection remains BR-0157 rather than being duplicated.
+
 ## Findings
 
 This file contains open findings only. Finalized findings and their disposition
@@ -5049,9 +5072,9 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add zero-delay MIDI and CD automation stress tests that repeatedly send play-stop and play-play-stop, plus a dialog test that dismisses during a delayed HOG read; assert the final state remains stopped with no later restart and run under native race or memory instrumentation while checking buffer, descriptor, render-thread, and OpenSL cleanup
 - Resolution: Pending
 
-###  : P1 - Enforce extraction budgets for untrusted archive entries
+### BR-0018: P1 - Enforce extraction budgets for untrusted archive entries
 
-- [ ] OPEN
+- [~] PARTIALLY FINISHED - BLOCKED BY CYBERSECURITY LIMITS
 - Type: defect
 - Confidence: high
 - Category: security/resource-exhaustion
@@ -5092,7 +5115,7 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0068): `game_data/extract_dos_demos.ps1:L94-L113,L149-L151` in ZIP-compatible staging extraction
 - Additional evidence (R1-CHUNK-0068): The helper enumerates and expands every archive entry before DOSBox starts, with no per-entry or aggregate expanded-byte, compression-ratio, entry-count, decoder-work, or free-space limit. The current four archives are small, but their fixed filenames are local inputs rather than an enforced content boundary, so a replacement can exhaust memory, disk, or test time before installer validation or the 120-second DOSBox deadline applies.
 - Additional validation (R1-CHUNK-0068): Replace each configured package with synthetic archives around explicit per-entry, aggregate-byte, entry-count, ratio, free-space, and wall-clock thresholds; assert rejection before large allocation or writes, bounded cleanup, a failing item result, and unchanged extraction for the four verified packages.
-- Resolution: Pending
+- Resolution: Partially mitigated on 2026-07-21. The native StuffIt/STi2, HFS, SOW, Inno, PKG, and ISO paths now enforce fixed per-entry, aggregate-output, compression-ratio, metadata or working-memory, and free-space limits as applicable. Focused boundary tests cover the shared native arithmetic, and the complete nine-test native extraction suite passes. The Kotlin launcher archive, mission, music, and durable-extraction paths and the PowerShell inspection and staging paths remain unimplemented because GPT cybersecurity restrictions prevented completing that portion. Accepted residual risk: crafted ZIP, 7z, RAR, mission, music, durable-extraction, and batch-script inputs can still consume excessive memory, disk, subprocess output, or time. Owner and milestone: project maintainer or an authorized non-restricted remediation pass before the first release. BR-0018 remains active and is not moved to the done ledger because its restricted scope is incomplete
 
 ### BR-0019: P1 - Reject HFS dot components before constructing output paths
 
@@ -5117,7 +5140,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: correctness
-- Found by: R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0017, R1-CHUNK-0019, R1-CHUNK-0021, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0026, R1-CHUNK-0027, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0067, R1-CHUNK-0068, R1-CHUNK-0070
+- Found by: R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0017, R1-CHUNK-0019, R1-CHUNK-0021, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0026, R1-CHUNK-0027, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0067, R1-CHUNK-0068, R1-CHUNK-0070, R1-CHUNK-0071
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/jni_gog_import.c:L256-L298` in `extract_inno_archive`, `android/app/src/main/cpp/extract/sow_extract.c:L670-L750` in `sow_extract_impl`, `android/app/src/main/cpp/extract/inno_reader.c:L1666-L1686,L2057-L2188`, `android/app/src/main/cpp/extract/pkg_reader.c:L450-L529` in `pkg_extract_all`, `android/app/src/main/cpp/extract/iso9660_reader.c:L413-L507` in `iso_extract_files_from_source`, and `android/app/src/main/cpp/extract/hfs_reader.c:L669-L725` in `hfs_extract_file`
 - Related: `android/app/src/main/cpp/extract/extract_gog.c:L98-L188`, `android/app/src/main/cpp/extract/extract_cd.c:L338-L393,L533-L586,L608-L644`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L103-L130,L133-L195`, `android/app/src/main/cpp/extract/mac_hfs_extract.h:L8-L18`, `android/app/src/main/cpp/extract/pkg_reader.h:L58-L66`, `android/app/src/main/cpp/extract/iso9660_reader.h:L73-L110`, `game_data/extract_all_gog.ps1:L121-L170`, `game_data/extract_all_cds.ps1:L81-L95,L119-L153`, `android/app/src/main/cpp/extract/jni_disc_import.c:L311-L392,L439-L547`, `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt:L70-L92`, `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L684-L819,L941-L1035`, and `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L280-L323`
 - Evidence: The Inno loop counts each failure but returns `-1` only when no file succeeded; one successful file followed by any number of failed requested files returns a positive count. The Inno reader itself logs a GOG Galaxy external-size mismatch but returns success, and its buffered output path ignores `fclose`, so a truncated filtered file or delayed persistence failure can also be counted as extracted. The SOW loop similarly converts parser errors to end-of-input, continues after allocation, read, decompression, unsupported-method, and open failures, and returns the number of earlier successes. Its write path does not check `fwrite` or `fclose` at all and increments `extracted` even when the requested bytes were not persisted; the CD CLI treats every nonnegative SOW result, including zero or a partial count, as success. PKG extraction skips an entry whose destination cannot be opened, ignores `fclose`, and returns the count of other files; if every open fails it returns zero, which `extract_gog` reports as successful completion. The ISO reader likewise breaks an individual file's transfer on a sector read or output write error, leaves the truncated destination in place, increments `extracted`, and proceeds; destination-open failures are skipped. HFS extraction also writes directly to the final path, leaves a truncated destination after a fork read or output write failure, and ignores `fclose`; the Mac loose-file fallback returns on the first failed file without rolling back files it already completed. The Mac wrapper's public header exposes only one integer result and does not distinguish a missing `Install Descent` archive, zero matching STi2 entries, nested parse or extraction failure, or cancellation. The implementation sends every nonpositive nested result into direct-HFS fallback even though the plan specifies fallback when no installer is found; if a nested extraction writes early files and fails later, a positive loose-file fallback result masks that failure and publishes the mixed partial output as success. `extract_cd` reports any positive count as successful BIN/CUE extraction, treats every nonnegative standalone-ISO result including zero as success, and does not increment its error count when a listed BIN/CUE track extracts zero files. The batch scripts write the result manifests before checking exit status and skip existing output directories and manifests on later runs, so residue from a failed run can later be treated as complete. Kotlin likewise treats positive native counts as successful imports and does not compare every output with the analyzed or archive entry list
@@ -5135,6 +5158,9 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0070): `game_data/extract_mac_demos.ps1:L115-L191` in cache acceptance, expected-file checks, flattened publication, and oracle replacement
 - Additional evidence (R1-CHUNK-0070): A non-Force run accepts any one recursively discovered game file as a complete cache. A fresh run warns but continues when configured expected files are missing, copies every discovered file directly into the final directory by basename with overwrite, and never clears stale files even under Force. `-WriteOracle` records those partial or colliding results and replaces the complete tracked oracle whenever at least one configured oracle archive produced files, so one absent or incomplete archive can silently disappear from the regression truth while stale output remains publishable.
 - Additional validation (R1-CHUNK-0070): For each Mac package, remove each expected member, add same-basename members in separate directories, retain stale output, and omit one oracle-enabled archive while another succeeds. Assert no incomplete or colliding extraction is published, a prior complete generation and oracle survive failure, and oracle replacement requires the exact configured archive and file manifest.
+- Additional location (R1-CHUNK-0071): `game_data/fingerprint_mission_zip_music.ps1:L188-L227,L230-L288` in HOG member parsing and nested archive result aggregation
+- Additional evidence (R1-CHUNK-0071): `Read-ExactBytes` returns null for an incomplete read, but `Extract-HogAudio` converts a truncated 13-byte name or four-byte length field into an ordinary loop break and returns the count of earlier audio members. Its ZIP caller adds that positive count and continues, while each audio destination is created directly before the HOG has been fully validated. A mission containing one valid audio member followed by a truncated header can therefore be accepted downstream as a successful partial soundtrack instead of failing and rolling back.
+- Additional validation (R1-CHUNK-0071): Add HOG fixtures truncated at every byte of the name and length fields after zero and one valid audio members, plus injected destination write failures; require a distinct failure, removal of all files from the failed generation, and no reusable fingerprint sidecar while complete HOG and nested ZIP cases still succeed.
 - Resolution: Pending
 
 ### BR-0021: P2 - Honor and propagate documented extraction cancellation
@@ -5305,23 +5331,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Every fallible OpenSL and pthread step is checked before its result is used, partial objects are destroyed in reverse order, and start returns false with the preview fully stopped
 - Suggested fix: Make `osl_init` and `render_thread_start` use a single checked cleanup path, verify each required interface and operation, set global objects only after successful initialization, and propagate a distinct failure to JNI. Keep stop idempotent for every partial state
 - Validation: Wrap OpenSL and pthread entry points in a testable adapter, inject failure at every initialization step, and assert no null call, success result, live thread, queued buffer, or retained engine, mix, player, MIDI, or ring state remains; retain a real-device successful playback test
-- Resolution: Pending
-
-### BR-0031: P2 - Reject encrypted STi2 entries before extraction
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/compatibility
-- Found by: R1-CHUNK-0014
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L323-L345,L1999-L2010` in `is_valid_method` and `sti2_list_entries`
-- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L44-L49,L1879-L1942` and `android/app/src/main/cpp/extract/sti2_extract.h:L19-L41`
-- Evidence: The parser defines the StuffIt encrypted flag, accepts a method byte after examining only its low compression bits, then stores only `method & 0x0f` in the public entry. It does not retain an encrypted bit, padding, or entry key. Extraction therefore treats encrypted method `0x80` as stored method 0 and copies encrypted bytes as successful output, or sends encrypted bytes to methods 13 through 15 as if they were compressed plaintext. The referenced XAD parser instead marks these entries encrypted and handles their 16-byte key and padding metadata
-- Trigger: Import a valid password-protected legacy StuffIt or STi archive containing a data fork whose filename matches a requested game extension
-- Impact: The importer can report a successfully extracted game file that is ciphertext or decoder garbage, or fail with no indication that encryption rather than archive corruption is unsupported
-- Expected: Unsupported encrypted entries are identified during listing and rejected before allocation or output creation; any future password support preserves and consumes all required encryption metadata
-- Suggested fix: Add an explicit encrypted field to the internal and public entry metadata, preserve the full method flags, reject encrypted matching entries with a distinct unsupported-encryption result, and only add decryption after the key, padding, and password contract is implemented
-- Validation: Build a valid-header fixture for stored and compressed entries with `STI2_ENCRYPTED_FLAG`, including compressed sizes below and above the 16-byte key requirement, and assert listing records encryption while extraction creates no output and returns the documented unsupported status
 - Resolution: Pending
 
 ### BR-0032: P2 - Parse STi2 entries in archive order and enforce the declared structure
@@ -7469,7 +7478,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: security/supply-chain
-- Found by: R1-CHUNK-0062, R1-CHUNK-0068, R1-CHUNK-0070
+- Found by: R1-CHUNK-0062, R1-CHUNK-0068, R1-CHUNK-0070, R1-CHUNK-0071
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L9-L67,L171-L258` and `android/get_deps/helpers/get_7zip.ps1:L45-L88` in external source and tool acquisition
 - Related: `android/get_deps/tool_versions.conf:L163-L169`, `android/get_deps/check-updates.ps1:L1766-L1789`, `android/ai tool plans/CD audio/plan_chromaprint_song_recognition.md:L221-L244`, `android/tests/test_cue_iso.ps1`, `android/helpers/run_cue_iso_tests.sh`, `android/run_all_tests.ps1`, local primary `cmake --help-command file` documentation, and repository dependency-pinning instructions
 - Evidence: The project declares CMake 3.16 as supported, downloads the Chromaprint release archive without `URL_HASH`, and downloads `minimp3.h`, `minimp3_ex.h`, `stb_vorbis.c`, and `dr_flac.h` without `EXPECTED_HASH`. Three downloads are trusted forever once a pathname exists; the STB check rejects only a zero-length file, so any nonempty altered cache is compiled. CMake's own documentation says HTTPS verification became enabled by default only in 3.31 and was previously off unless `CMAKE_TLS_VERIFY` was set. The 7-Zip installer is more direct: it downloads the unversioned `https://www.7-zip.org/a/7zr.exe` with no digest or signature check and immediately executes it to unpack a second archive that also has no digest. The plan explicitly required a 7-Zip SHA-256, but the configuration and updater have no hash fields. Both cached local executables are unsigned, and an existing bootstrap is accepted without content or version validation. Thus supported configurations can accept network or cache-controlled native bytes that are then compiled or executed by routine test, metadata, and asset workflows.
@@ -7484,6 +7493,9 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0070): `game_data/extract_mac_demos.ps1:L31-L43,L98-L105`, `android/get_deps/tool_versions.conf:L146-L152`, and `android/get_deps/helpers/get_unar.sh:L26-L60` in unar resolution, acquisition, and execution
 - Additional evidence (R1-CHUNK-0070): The oracle generator reads only `UNAR_DIR_NAME`, accepts any file named `unar.exe` in the shared cache, and executes it without checking the configured version or a digest. The installer downloads an unversioned `unarWindows.zip` URL without a repository-owned hash and permanently trusts any pre-existing executable. The local cache reported v1.8.1 during review, but neither that version string nor the executable bytes are authenticated before a tool that parses proprietary archives and defines regression truth runs with developer permissions.
 - Additional validation (R1-CHUNK-0070): Replace the unversioned response, archive contents, and cached `unar.exe` independently, including a same-version or same-size mutation; require a committed digest check before first and cached execution, and verify the pinned clean tool reproduces the checked-in oracle.
+- Additional location (R1-CHUNK-0071): `game_data/fingerprint_mission_zip_music.ps1:L28-L37,L322-L341` in 7-Zip resolution and mission-archive execution
+- Additional evidence (R1-CHUNK-0071): The fingerprint workflow prefers whichever `7za` or `7z` executable appears first on PATH, without version or digest validation. If neither exists, it invokes the already-unverified bootstrap covered by this finding and trusts the returned pathname. It then executes that native binary against user-supplied mission archives with write access to the checkout's generated-music tree, so a PATH shadow or altered cache bypasses the repository's dependency identity entirely.
+- Additional validation (R1-CHUNK-0071): Place controlled same-name executables earlier on PATH, mutate the verified-cache candidate, and exercise online and offline 7z mission processing; require one repository-owned version and digest check before execution and identical output from the authenticated tool on every supported host.
 - Resolution: Pending
 
 ### BR-0158: P2 - Report absent extraction fixtures as skipped or failed
@@ -7808,6 +7820,40 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Every supported package output resolves deterministically to the canonical version in one shared package model, and aliases with identical bytes cannot change the selected label by scan order
 - Suggested fix: Drive package filename, digest, output ownership, expected files, and canonical label from one machine-readable manifest consumed by the PowerShell helpers and Kotlin model. At minimum add the missing explicit mapping, sort scan inputs, and detect conflicting labels for a deduplication key rather than silently keeping the first.
 - Validation: Regenerate from `d2demo10_extracted` alone, the other D2 demo output alone, and both directories in reversed creation and enumeration orders, with and without Force; assert all shared assets receive exactly `D2 Demo v1.0`, output is byte-stable, and an intentionally conflicting mapping fails clearly.
+- Resolution: Pending
+
+### BR-0176: P2 - Allocate platform-independent audio output names
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/api-data-format
+- Found by: R1-CHUNK-0071
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/fingerprint_mission_zip_music.ps1:L52-L59,L122-L141` in `Get-SafeFilePart` and `New-UniqueAudioPath`
+- Related: `game_data/fingerprint_mission_zip_music.ps1:L247-L280,L299-L317,L744-L757` and `game_data/update_known_discs_albums.ps1:L107-L157`
+- Evidence: Output-name collision detection delegates to `Test-Path`, so it follows the host filesystem's case rules, while the PowerShell hashtable used for `SourceMap` is always case-insensitive. On a case-sensitive host, source members such as `Song.ogg` and `song.ogg` can therefore create two distinct files but occupy one map key; an in-memory probe produced one entry whose second source replaced the first. Later fingerprint records for both filenames resolve through that overwritten map and can receive the second member's `source_path` and `original_name`. On a case-insensitive host the second file instead receives a numeric suffix, so the generated filenames and downstream sequential track identities differ by host. The sanitizer also leaves Windows device basenames such as `CON.ogg` valid, causing otherwise legal archive members to fail only on Windows. The current 160-record mission corpus has no case-only or reserved-name boundary, so it does not exercise this behavior.
+- Trigger: Fingerprint a ZIP, 7z, RAR, DXA, or HOG soundtrack containing case-only filename variants, paths that collapse to the same sanitized base, or a Windows-reserved leaf such as `CON.ogg`, on both Windows and a case-sensitive supported host
+- Impact: Generated sidecars can associate a fingerprint with the wrong archive member, attach a tracklist title to the wrong track, assign different filenames and track numbers by host, or fail an otherwise readable mission only on Windows
+- Expected: One deterministic, portable naming policy gives every source member a stable unique filename and exact provenance independent of host filesystem comparison rules and enumeration order
+- Suggested fix: Sort source identities canonically, normalize names against an explicit `OrdinalIgnoreCase` allocation set, handle trailing dots, spaces, and Windows device basenames, and derive collision suffixes from the canonical full source path rather than discovery order. Store provenance in an exact-key map only after the portable unique name is fixed.
+- Validation: Create ZIP, nested ZIP, 7z, RAR, and HOG fixtures with `Song.ogg` and `song.ogg`, separator and punctuation aliases, long names, trailing dots and spaces, and every Windows device basename; enumerate members in reversed orders and run on Windows and Linux. Assert byte-identical filenames and sidecars, one exact provenance record per fingerprint, stable tracklist names and track numbers, and no host-only failure.
+- Resolution: Pending
+
+### BR-0177: P2 - Parse tracklist strings without regex comment removal
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/api-data-format
+- Found by: R1-CHUNK-0071
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/fingerprint_mission_zip_music.ps1:L383-L387` in `Read-Json5File`
+- Related: `game_data/fingerprint_mission_zip_music.ps1:L390-L441,L629-L638` and `game_data/mission_files/*.tracklist.json`
+- Evidence: The helper removes `//...` and `/*...*/` with regular expressions before JSON parsing, without recognizing quoted strings. A focused in-memory probe using the supported tracklist schema and title `https://example.invalid/song` was truncated after `https:` and failed `ConvertFrom-Json`. The same corruption applies to literal comment markers in titles, filenames, source paths, and the AcoustID configuration. Current tracklists contain no such strings, so ordinary corpus validation cannot detect it.
+- Trigger: Add a valid tracklist or configuration string containing a URL, a double-slash archive path, or literal `/*` and `*/` text, then fingerprint its mission
+- Impact: The complete mission is reported as failed before extraction or naming, preventing reproducible soundtrack metadata generation for values that are legal in JSON and in the declared sidecar fields
+- Expected: Comment syntax is recognized only outside quoted strings, or strict `.json` sidecars are parsed directly without a lossy preprocessing pass
+- Suggested fix: Use one maintained JSON5 parser shared by repository tooling, or keep `.tracklist.json` strict and pass it directly to `ConvertFrom-Json`; parse the separate JSON5 configuration with a string-aware implementation. Add schema validation after parsing instead of transforming string contents.
+- Validation: Parse sidecars containing escaped quotes, backslashes, `https://`, double-slash paths, literal block-comment markers, real line and block comments where supported, and malformed unterminated comments; assert valid string bytes survive exactly, malformed input fails clearly, and all current tracklists retain their names.
 - Resolution: Pending
 
 ## Final disposition archive

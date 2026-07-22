@@ -107,6 +107,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
 target_include_directories(test_sti2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_sti2 PRIVATE STI2_EXTRACT_TESTING)
 
 # ── test_stuffit_corpus ────────────────────────────────────────────
 add_executable(test_stuffit_corpus ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp
@@ -121,6 +122,9 @@ target_link_libraries(test_stuffit_corpus PRIVATE nlohmann_json::nlohmann_json)
 
 # ── CTest integration ───────────────────────────────────────────────
 enable_testing()
+add_executable(test_extract_limits ${CMAKE_CURRENT_SOURCE_DIR}/test_extract_limits.c)
+target_include_directories(test_extract_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME extract_limit_tests COMMAND test_extract_limits)
 add_test(NAME cue_iso_tests COMMAND test_cue_iso)
 set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME hfs_tests COMMAND test_hfs)

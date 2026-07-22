@@ -9,11 +9,11 @@ notes in the active ledger may refer to findings archived here
 
 ## SIT remediation scope note
 
-BR-0017 is the completed SIT5 fix in this tranche. Other SIT and StuffIt-related
-findings, including BR-0031 through BR-0033 and SIT portions of broader findings,
-remain open in the active ledger. A portion of the requested SIT work was held
-back by GPT restrictions, so no unimplemented scope was marked fixed or moved
-here
+BR-0017, BR-0031, and BR-0178 are the completed SIT and STi2 fixes in this
+tranche. Other SIT and StuffIt-related findings, including BR-0032, BR-0033,
+and the incomplete BR-0018 scope, remain open in the active ledger. A portion
+of the requested work was held back by GPT restrictions, so no unimplemented
+scope was marked fixed or moved here
 
 BR-0017 is code-complete and guard-page tested. The independent verification
 call required for every P1 by the campaign process has not yet been recorded,
@@ -38,7 +38,42 @@ so campaign closure must still obtain that independent verification
 - Validation: Add malformed fixtures for every offset from `archive_size - 1` through the first valid 48-byte boundary, assert clean rejection, and run the parser tests under AddressSanitizer or an equivalent native bounds checker
 - Resolution: Fixed in the 2026-07-21 worktree by centralizing the subtractive 48-byte span check in `sit5_entry_header_fits` and applying it before both entry parsing and parent-offset access. `test_stuffit_malformed` places an exact 100-byte archive at a guard-page boundary and rejects every `first_offset` from 52 through 99. Scoped code quality passed, and `android/tests/test_cue_iso.ps1` passed all 8 native suites, including malformed SIT5, STi2, StuffIt corpus, and demo-oracle coverage
 
+### BR-0031: P2 - Reject encrypted STi2 entries before extraction
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness/compatibility
+- Found by: R1-CHUNK-0014
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L323-L345,L1999-L2010` in `is_valid_method` and `sti2_list_entries`
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L44-L49,L1879-L1942` and `android/app/src/main/cpp/extract/sti2_extract.h:L19-L41`
+- Evidence: The parser defines the StuffIt encrypted flag, accepts a method byte after examining only its low compression bits, then stores only `method & 0x0f` in the public entry. It does not retain an encrypted bit, padding, or entry key. Extraction therefore treats encrypted method `0x80` as stored method 0 and copies encrypted bytes as successful output, or sends encrypted bytes to methods 13 through 15 as if they were compressed plaintext. The referenced XAD parser instead marks these entries encrypted and handles their 16-byte key and padding metadata
+- Trigger: Import a valid password-protected legacy StuffIt or STi archive containing a data fork whose filename matches a requested game extension
+- Impact: The importer can report a successfully extracted game file that is ciphertext or decoder garbage, or fail with no indication that encryption rather than archive corruption is unsupported
+- Expected: Unsupported encrypted entries are identified during listing and rejected before allocation or output creation; any future password support preserves and consumes all required encryption metadata
+- Suggested fix: Add an explicit encrypted field to the internal and public entry metadata, preserve the full method flags, reject encrypted matching entries with a distinct unsupported-encryption result, and only add decryption after the key, padding, and password contract is implemented
+- Validation: Build a valid-header fixture for stored and compressed entries with `STI2_ENCRYPTED_FLAG`, including compressed sizes below and above the 16-byte key requirement, and assert listing records encryption while extraction creates no output and returns the documented unsupported status
+- Resolution: Fixed on 2026-07-21. Public entry metadata now preserves data- and resource-fork encryption flags, direct and matching extraction return `STI2_EXTRACT_UNSUPPORTED_ENCRYPTION` before allocation or filesystem mutation, and matching extraction propagates the distinct status. Valid-header fixtures cover encrypted stored data and encrypted method 13 data with compressed sizes below and above 16 bytes, verify listing metadata, and verify that neither extraction path creates output. Scoped code quality passed and all 9 native extraction tests passed
+
+### BR-0178: P2 - Reject oversized StuffIt method 14 code lengths
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness/undefined-behavior
+- Found by: R1-CHUNK-0033
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L1022-L1130` in `method14_read_tree`, especially L1094-L1107
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L699-L733,L1133-L1225`, `android/app/src/main/cpp/extract/test_sti2.c:L313-L508`, upstream XADMaster `XADStuffItOldHandles.m:L141-L216`, and BR-0033
+- Evidence: Method 14 derives each code length from attacker-controlled `j`, `o`, and symbol fields, allowing values above the 32-bit width of `buff` and the canonical-code accumulator. After sorting the lengths, L1102 shifts the 32-bit unsigned `j` by the difference between adjacent lengths without bounding that difference. The encoding can choose the zero marker with `j = 5` and `o = 8`, emit 307 zero lengths, then emit a final length of 37; canonical construction then evaluates `j <<= 37`. A shift count greater than or equal to the promoted operand width is undefined C behavior. The imported XAD routine contains the same unchecked operation, so copying it into this branch did not supply a malformed-input guard
+- Trigger: Import a StuffIt entry using method 14 whose first tree encodes a long code-length gap, such as zero lengths followed by length 37, before any file payload is produced
+- Impact: A user-selected malformed archive invokes undefined native behavior during tree construction. Results vary by compiler and architecture and can include sanitizer termination, inconsistent tree construction, decoder failure, or, when combined with the missing integrity enforcement in BR-0033, acceptance of platform-dependent output
+- Expected: Method 14 rejects every code length or adjacent-length delta that cannot be represented safely by its 32-bit canonical-code and tree representation before performing a shift
+- Suggested fix: Define the supported maximum code length from the representation width, reject decoded lengths above it, validate adjacent deltas before shifting, and reject oversubscribed, incomplete, or colliding canonical sets before symbol decoding. Keep hard compressed-input exhaustion and output integrity coordinated with BR-0033
+- Validation: Add method 14 tree fixtures with lengths 0, 31, 32, 33, and 37, large adjacent gaps, oversubscribed and incomplete sets, and the zero-marker sequence above; assert prompt failure without output for every invalid tree and stable valid decoding under AddressSanitizer and UndefinedBehaviorSanitizer
+- Resolution: Fixed on 2026-07-21 by moving canonical method 14 tree construction into `method14_build_tree`. It rejects empty trees, lengths above 32 bits, unsafe shifts, canonical-code overflow, oversubscribed sets, leaf collisions, out-of-range nodes, and attempts to traverse a leaf as a branch before symbol decoding. Representable incomplete trees remain supported. Test-only coverage verifies empty input rejection, valid 31- and 32-bit boundaries, rejection at 33 and 37 bits, a valid complete one-bit tree, and an oversubscribed one-bit tree. Scoped code quality passed and all 9 native extraction tests passed. Sanitizer execution was not available in this Windows toolchain
+
 ## Disposition log
 
 - 2026-07-21: BR-0017 fixed by the Codex remediation call at the maintainer's request. Worktree evidence is the shared fixed-header bounds predicate and guarded malformed-offset test. Validation passed scoped code quality and all 8 tests in `android/tests/test_cue_iso.ps1`. Independent P1 verification remains a campaign closure action
-
+- 2026-07-21: BR-0031 fixed by the Codex remediation call at the maintainer's request. Encryption metadata is preserved and encrypted matching entries return a distinct unsupported status before allocation or output creation. Scoped code quality and all 9 native extraction tests passed
+- 2026-07-21: BR-0178 fixed by the Codex remediation call at the maintainer's request. Method 14 canonical-tree construction now rejects unrepresentable, oversubscribed, colliding, and invalid-branch code sets before unsafe shifts or symbol decoding. Scoped code quality and all 9 native extraction tests passed; sanitizer execution was unavailable in the Windows toolchain

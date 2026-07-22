@@ -1021,6 +1021,106 @@ static void method14_update(unsigned short first, unsigned short last,
 	}
 }
 
+static int method14_build_tree(sti2_method14_decoder_t *decoder,
+                               unsigned short code_size,
+                               unsigned short *result)
+{
+	unsigned int code_value = 0;
+	unsigned int i;
+	unsigned int next_node = 2;
+
+	if (!decoder || !result || code_size == 0 || code_size > 308)
+		return -1;
+	for (i = 0; i < code_size; i++) {
+		decoder->code_copy[i] = decoder->code[i];
+		decoder->freq[i] = (unsigned short) i;
+	}
+	method14_update(0, code_size, decoder->code_copy, decoder->freq);
+	for (i = 0; i < code_size && decoder->code_copy[i] == 0; i++);
+	if (i == code_size)
+		return -1;
+	for (; i < code_size; i++) {
+		unsigned int code_length = decoder->code_copy[i];
+		unsigned int previous_length = i ? decoder->code_copy[i - 1] : 0;
+		unsigned int shift;
+		unsigned int reversed = 0;
+		unsigned int bits;
+
+		if (code_length > 32 || code_length < previous_length)
+			return -1;
+		shift = code_length - previous_length;
+		if (shift >= 32) {
+			if (code_value != 0)
+				return -1;
+		} else {
+			if (code_value > (UINT_MAX >> shift))
+				return -1;
+			code_value <<= shift;
+		}
+		if (code_length < 32 && code_value >= (1u << code_length))
+			return -1;
+		for (bits = code_value; code_length != 0; code_length--, bits >>= 1)
+			reversed = (reversed << 1) | (bits & 1u);
+		decoder->buff[decoder->freq[i]] = reversed;
+		if (i + 1u < code_size) {
+			if (code_value == UINT_MAX)
+				return -1;
+			code_value++;
+		}
+	}
+
+	memset(result, 0, sizeof(*result) * code_size * 2u);
+	for (i = 0; i < code_size; i++) {
+		unsigned int node = 0;
+		unsigned int value = decoder->buff[i];
+		unsigned int bit;
+
+		for (bit = 0; bit < decoder->code[i]; bit++) {
+			unsigned int branch = node + (value & 1u);
+			int is_last = decoder->code[i] - 1u <= bit;
+
+			if (branch >= code_size * 2u)
+				return -1;
+			if (is_last) {
+				if (result[branch] != 0)
+					return -1;
+				result[branch] = (unsigned short) (code_size * 2u + i);
+			} else {
+				if (result[branch] == 0) {
+					if (next_node + 1u >= code_size * 2u)
+						return -1;
+					result[branch] = (unsigned short) next_node;
+					next_node += 2;
+				} else if (result[branch] >= code_size * 2u) {
+					return -1;
+				}
+				node = result[branch];
+			}
+			value >>= 1;
+		}
+	}
+	return 0;
+}
+
+#ifdef STI2_EXTRACT_TESTING
+int sti2_test_method14_code_lengths(const unsigned char *lengths, unsigned int count)
+{
+	sti2_method14_decoder_t *decoder;
+	unsigned short tree[308 * 2];
+	int status;
+
+	if (!lengths || count == 0 || count > 308)
+		return -1;
+	decoder = (sti2_method14_decoder_t *) calloc(1, sizeof(*decoder));
+	if (!decoder)
+		return -1;
+	memcpy(decoder->code, lengths, count);
+	status = method14_build_tree(decoder, (unsigned short) count, tree);
+	free(decoder);
+	return status;
+}
+#endif
+
 static int method14_read_tree(sti2_method14_decoder_t *decoder,
                               unsigned short code_size,
                               unsigned short *result)
@@ -1093,41 +1193,8 @@ static int method14_read_tree(sti2_method14_decoder_t *decoder,
 		}
 	}
 
-	for (i = 0; i < code_size; i++) {
-		decoder->code_copy[i] = decoder->code[i];
-		decoder->freq[i] = (unsigned short) i;
-	}
-	method14_update(0, code_size, decoder->code_copy, decoder->freq);
-	for (i = 0; i < code_size && !decoder->code_copy[i]; i++);
-	for (j = 0; i < code_size; i++, j++) {
-		if (i)
-			j <<= decoder->code_copy[i] - decoder->code_copy[i - 1];
-		k = decoder->code_copy[i];
-		m = 0;
-		for (l = j; k--; l >>= 1)
-			m = (m << 1) | (l & 1u);
-		decoder->buff[decoder->freq[i]] = m;
-	}
-	memset(result, 0, sizeof(*result) * code_size * 2u);
-	j = 2;
-	for (i = 0; i < code_size; i++) {
-		l = 0;
-		m = decoder->buff[i];
-		for (k = 0; k < decoder->code[i]; k++) {
-			l += (m & 1u);
-			if (decoder->code[i] - 1u <= k) {
-				result[l] = (unsigned short) (code_size * 2u + i);
-			} else {
-				if (!result[l]) {
-					if (j + 1u >= code_size * 2u) return -1;
-					result[l] = (unsigned short) j;
-					j += 2;
-				}
-				l = result[l];
-			}
-			m >>= 1;
-		}
-	}
+	if (method14_build_tree(decoder, code_size, result) < 0)
+		return -1;
 	br_byte_boundary(&decoder->br);
 	return 0;
 }
@@ -1887,6 +1954,8 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 
 	if (!archive_data || !entry || !out_data || !out_size || entry->is_directory)
 		return -1;
+	if (entry->data_encrypted)
+		return STI2_EXTRACT_UNSUPPORTED_ENCRYPTION;
 	if ((size_t) entry->data_offset > archive_size ||
 	    (size_t) entry->compressed_size > archive_size - (size_t) entry->data_offset)
 		return -1;
@@ -2013,6 +2082,8 @@ int sti2_list_entries(const unsigned char *archive_data, size_t archive_size,
 		entry->uncompressed_size = headers[i].data_uncompressed_size;
 		entry->data_method = headers[i].data_method & STI2_COMPRESSION_MASK;
 		entry->resource_method = headers[i].resource_method & STI2_COMPRESSION_MASK;
+		entry->data_encrypted = (headers[i].data_method & STI2_ENCRYPTED_FLAG) != 0;
+		entry->resource_encrypted = (headers[i].resource_method & STI2_ENCRYPTED_FLAG) != 0;
 		entry->file_type = headers[i].file_type;
 		entry->creator = headers[i].creator;
 		entry->finder_flags = headers[i].finder_flags;
@@ -2047,12 +2118,14 @@ int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
 {
 	unsigned char *data;
 	unsigned int size;
+	int result;
 	int fd;
 
 	if (!output_path)
 		return -1;
-	if (extract_entry_data(archive_data, archive_size, entry, &data, &size) < 0)
-		return -1;
+	result = extract_entry_data(archive_data, archive_size, entry, &data, &size);
+	if (result < 0)
+		return result;
 	if (mkdirs_for_file(output_path) < 0) {
 		free(data);
 		return -1;
@@ -2089,13 +2162,13 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 		return -1;
 	if (sti2_list_entries(archive_data, archive_size, &list) < 0)
 		return -1;
-	if (mkdirs_for_path(output_dir) < 0)
-		return -1;
 
 	for (i = 0; i < list.num_entries; i++) {
 		if (list.entries[i].is_directory ||
 		    !ext_matches(basename_only(list.entries[i].path), extensions))
 			continue;
+		if (list.entries[i].data_encrypted)
+			return STI2_EXTRACT_UNSUPPORTED_ENCRYPTION;
 		if (!dxx_extract_entry_allowed(list.entries[i].uncompressed_size,
 		                               list.entries[i].compressed_size) ||
 		    dxx_extract_add_bytes(&output_bytes, list.entries[i].uncompressed_size,
@@ -2103,6 +2176,8 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 			return -1;
 	}
 	if (!dxx_extract_has_free_space(output_dir, output_bytes))
+		return -1;
+	if (mkdirs_for_path(output_dir) < 0)
 		return -1;
 	bytes_total = (long long) output_bytes;
 
@@ -2120,7 +2195,7 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, name);
 		written = sti2_extract_entry(archive_data, archive_size, &list.entries[i], output_path);
 		if (written < 0)
-			return -1;
+			return written;
 		bytes_done += written;
 		extracted++;
 		if (progress && progress(name, bytes_done, bytes_total, user_data) != 0)

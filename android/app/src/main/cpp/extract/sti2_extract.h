@@ -11,6 +11,8 @@ extern "C" {
 #define STI2_PATH_LEN    256
 #define STI2_MAX_ENTRIES 128
 
+#define STI2_EXTRACT_UNSUPPORTED_ENCRYPTION (-2)
+
 typedef int (*sti2_progress_fn)(const char *current_file,
                                 long long bytes_done,
                                 long long bytes_total,
@@ -27,6 +29,8 @@ typedef struct {
 	unsigned int resource_uncompressed_size;
 	unsigned int data_method;
 	unsigned int resource_method;
+	int data_encrypted;
+	int resource_encrypted;
 	unsigned int file_type;
 	unsigned int creator;
 	unsigned int finder_flags;
@@ -53,6 +57,10 @@ int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
 int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size,
                           const char **extensions, const char *output_dir,
                           sti2_progress_fn progress, void *user_data);
+
+#ifdef STI2_EXTRACT_TESTING
+int sti2_test_method14_code_lengths(const unsigned char *lengths, unsigned int count);
+#endif
 
 #ifdef __cplusplus
 }

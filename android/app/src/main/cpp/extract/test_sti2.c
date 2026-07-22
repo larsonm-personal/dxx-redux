@@ -310,6 +310,162 @@ static void cleanup_test_output_dir(const char *dir, const char *const *files, i
 	remove_dir(dir);
 }
 
+static void put_be16(unsigned char *p, unsigned int value)
+{
+	p[0] = (unsigned char) (value >> 8);
+	p[1] = (unsigned char) value;
+}
+
+static void put_be32(unsigned char *p, unsigned int value)
+{
+	p[0] = (unsigned char) (value >> 24);
+	p[1] = (unsigned char) (value >> 16);
+	p[2] = (unsigned char) (value >> 8);
+	p[3] = (unsigned char) value;
+}
+
+static unsigned int fixture_crc16(const unsigned char *data, size_t len)
+{
+	unsigned int crc = 0;
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		unsigned int bit;
+
+		crc ^= data[i];
+		for (bit = 0; bit < 8; bit++)
+			crc = (crc & 1u) ? (crc >> 1) ^ 0xa001u : crc >> 1;
+	}
+	return crc & 0xffffu;
+}
+
+static size_t build_encrypted_fixture(unsigned char *archive, size_t capacity,
+                                      unsigned int method, unsigned int compressed_size,
+                                      unsigned int uncompressed_size)
+{
+	static const char name[] = "encrypted.hog";
+	const size_t header_offset = 22u;
+	const size_t payload_offset = header_offset + 112u;
+	size_t total_size = payload_offset + compressed_size;
+	unsigned char *header;
+
+	if (capacity < total_size)
+		return 0;
+	memset(archive, 0, total_size);
+	memcpy(archive, "STin", 4);
+	put_be16(archive + 4, 1);
+	put_be32(archive + 6, (unsigned int) total_size);
+	put_be32(archive + 10, 0x724c6175u);
+
+	header = archive + header_offset;
+	header[1] = (unsigned char) method;
+	header[2] = (unsigned char) strlen(name);
+	memcpy(header + 3, name, strlen(name));
+	put_be32(header + 88, uncompressed_size);
+	put_be32(header + 96, compressed_size);
+	put_be16(header + 110, fixture_crc16(header, 110));
+	memset(archive + payload_offset, 0x5a, compressed_size);
+	return total_size;
+}
+
+static int run_encrypted_entry_reject_test(void)
+{
+	static const struct {
+		unsigned int method;
+		unsigned int compressed_size;
+		unsigned int uncompressed_size;
+	} cases[] = {
+		{ 0x80u, 8u, 8u },
+		{ 0x8du, 8u, 32u },
+		{ 0x8du, 20u, 32u },
+	};
+	static const char *extensions[] = { "hog", NULL };
+	const char *output_path = "test_sti2_encrypted_output.hog";
+	const char *output_dir = "test_sti2_encrypted_matching";
+	unsigned char archive[22u + 112u + 32u];
+	unsigned int i;
+
+	TEST("sti2_rejects_encrypted_entries_before_output");
+	remove(output_path);
+	remove_dir(output_dir);
+	for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+		sti2_entry_list_t list;
+		size_t archive_size = build_encrypted_fixture(archive, sizeof(archive),
+		                                              cases[i].method,
+		                                              cases[i].compressed_size,
+		                                              cases[i].uncompressed_size);
+
+		if (archive_size == 0 || sti2_list_entries(archive, archive_size, &list) != 1 ||
+		    !list.entries[0].data_encrypted || list.entries[0].resource_encrypted ||
+		    list.entries[0].data_method != (cases[i].method & 0x0fu)) {
+			FAIL("encrypted metadata was not preserved");
+			return 0;
+		}
+		if (sti2_extract_entry(archive, archive_size, &list.entries[0], output_path) !=
+		        STI2_EXTRACT_UNSUPPORTED_ENCRYPTION ||
+		    file_exists(output_path)) {
+			remove(output_path);
+			FAIL("encrypted direct extraction was not rejected cleanly");
+			return 0;
+		}
+		if (sti2_extract_matching(archive, archive_size, extensions, output_dir,
+		                          NULL, NULL) != STI2_EXTRACT_UNSUPPORTED_ENCRYPTION ||
+		    file_exists(output_dir)) {
+			remove_dir(output_dir);
+			FAIL("encrypted matching extraction mutated output");
+			return 0;
+		}
+	}
+	PASS();
+	return 1;
+}
+
+static int run_method14_code_length_test(void)
+{
+	unsigned char lengths[308];
+
+	TEST("sti2_method14_rejects_invalid_code_lengths");
+	memset(lengths, 0, sizeof(lengths));
+	if (sti2_test_method14_code_lengths(lengths, 308) >= 0) {
+		FAIL("empty method 14 tree accepted");
+		return 0;
+	}
+	lengths[307] = 31;
+	if (sti2_test_method14_code_lengths(lengths, 308) < 0) {
+		FAIL("31-bit method 14 code rejected");
+		return 0;
+	}
+	lengths[307] = 32;
+	if (sti2_test_method14_code_lengths(lengths, 308) < 0) {
+		FAIL("32-bit method 14 code rejected");
+		return 0;
+	}
+	lengths[307] = 33;
+	if (sti2_test_method14_code_lengths(lengths, 308) >= 0) {
+		FAIL("33-bit method 14 code accepted");
+		return 0;
+	}
+	lengths[307] = 37;
+	if (sti2_test_method14_code_lengths(lengths, 308) >= 0) {
+		FAIL("37-bit method 14 code accepted");
+		return 0;
+	}
+	memset(lengths, 0, sizeof(lengths));
+	lengths[0] = 1;
+	lengths[1] = 1;
+	if (sti2_test_method14_code_lengths(lengths, 2) < 0) {
+		FAIL("complete method 14 tree rejected");
+		return 0;
+	}
+	lengths[2] = 1;
+	if (sti2_test_method14_code_lengths(lengths, 3) >= 0) {
+		FAIL("oversubscribed method 14 tree accepted");
+		return 0;
+	}
+	PASS();
+	return 1;
+}
+
 static int run_header_reject_test(void)
 {
 	unsigned char bogus[STI2_PATH_LEN];
@@ -580,6 +736,10 @@ int main(void)
 
 	printf("STi2 tests\n");
 
+	if (!run_method14_code_length_test())
+		ok = 0;
+	if (!run_encrypted_entry_reject_test())
+		ok = 0;
 	if (!run_header_reject_test())
 		ok = 0;
 	if (!run_real_archive_listing_test())

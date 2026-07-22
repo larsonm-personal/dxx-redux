@@ -66,12 +66,18 @@ static inline int dxx_extract_has_free_space(const char *path, uint64_t bytes)
 	memcpy(existing, path, strlen(path) + 1u);
 	for (;;) {
 #ifdef _WIN32
-		if (GetFileAttributesA(existing) != INVALID_FILE_ATTRIBUTES)
-			break;
+		{
+			DWORD attributes = GetFileAttributesA(existing);
+			if (attributes != INVALID_FILE_ATTRIBUTES &&
+			    (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+				break;
+		}
 #else
-		struct stat path_stats;
-		if (stat(existing, &path_stats) == 0)
-			break;
+		{
+			struct stat path_stats;
+			if (stat(existing, &path_stats) == 0 && S_ISDIR(path_stats.st_mode))
+				break;
+		}
 #endif
 		slash = strrchr(existing, '/');
 #ifdef _WIN32
