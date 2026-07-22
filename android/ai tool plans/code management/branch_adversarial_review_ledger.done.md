@@ -29,9 +29,9 @@ notes in the active ledger may refer to findings archived here
 
 ## SIT remediation scope note
 
-BR-0017, BR-0018, BR-0031, and BR-0178 are completed in this tranche. Other SIT
-and StuffIt-related findings, including BR-0032 and BR-0033, remain open in the
-active ledger. A portion of BR-0018 was initially held back by GPT restrictions;
+BR-0017, BR-0018, BR-0031, BR-0032, BR-0033, and BR-0178 are completed in this
+tranche. Other SIT and StuffIt-related findings remain open in the active ledger.
+A portion of BR-0018 was initially held back by GPT restrictions;
 after account verification, that scope was retried, implemented, validated, and
 moved here. No unimplemented scope was marked fixed
 
@@ -40,6 +40,40 @@ call required for every P1 by the campaign process has not yet been recorded,
 so campaign closure must still obtain that independent verification
 
 ## Finalized findings
+
+### BR-0033: P2 - Verify STi2 payload checksums and compressed input exhaustion
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0014
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L1879-L1942` in `extract_entry_data`
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L59-L63,L699-L733,L1493-L1522,L1759-L1768,L1814-L1876,L2040-L2069` and `android/app/src/main/cpp/extract/test_sti2.c:L433-L508`
+- Evidence: StuffIt file headers carry resource and data fork CRC16 values at offsets 100 and 102, but the parser does not read either value and accepts stored or decompressed output solely by declared size. Both bit readers synthesize zero bits after physical compressed input ends, so truncated method 13, 14, or 15 input can continue decoding. Method 15 additionally reads its terminal 32-bit checksum into `ignored_crc` and never compares it with the produced bytes. A flipped byte in a stored entry is therefore always written and reported as success, and some damaged compressed streams can also reach the requested output length without an integrity failure
+- Trigger: Corrupt a stored payload byte, truncate or alter a compressed fork while preserving its declared sizes and header CRC, or alter the terminal method 15 checksum
+- Impact: Corrupted or attacker-modified game assets can be counted and presented as successfully imported, causing later load failures, crashes, or nondeterministic gameplay with no extraction-time integrity signal
+- Expected: Decoders fail on any read beyond the compressed span and an entry is committed only when its format checksum matches the complete produced payload
+- Suggested fix: Preserve the data and resource CRC16 fields in entry metadata, make both bit readers carry a hard exhaustion state, compare method 15's terminal CRC32, verify the header CRC16 over every completed data fork, and write through a temporary file that is removed on any decode, checksum, write, or close failure
+- Validation: Add stored and methods 13, 14, and 15 fixtures, flip payload and checksum bits independently, truncate at each decoder boundary, and assert every corrupted case fails without output while the real-media and corpus oracle hashes remain unchanged; run the malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
+- Resolution: Fixed on 2026-07-21. STi2 listings now preserve data- and resource-fork CRC16 metadata, and extraction rejects completed output whose data CRC16 does not match. The method 13/14 bit reader and method 15 arithmetic bit reader record any attempt to read beyond the compressed span, and successful decoders reject that exhaustion. Method 15 also computes the terminal IEEE CRC32 over emitted bytes and requires the decoded trailer value to match. Each output is written to a uniquely claimed sibling temporary file and atomically replaces the destination only after successful decode, checksum, write, and close; every failure removes the temporary file. Stored-payload corruption and checksum mismatches fail without output, real method 13 and 15 corpus streams reject material truncation, corrupted method 15 trailers are rejected, and the real MacPlay and StuffIt corpus hashes remain unchanged. Method 14 uses the same tested hard-exhaustion reader as method 13 and retains its focused tree tests; no real method 14 archive fixture is registered in this repository. Scoped code quality and all 9 native extraction suites passed. AddressSanitizer and UndefinedBehaviorSanitizer execution was not available in the Windows test toolchain.
+
+### BR-0032: P2 - Parse STi2 entries in archive order and enforce the declared structure
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0014
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sti2_extract.c:L471-L512` in `scan_headers`
+- Related: `android/app/src/main/cpp/extract/sti2_extract.c:L1964-L2021` and `android/app/src/main/cpp/extract/test_sti2.c:L313-L430`
+- Evidence: `scan_headers` tests every byte position in the declared archive span for a 112-byte sequence with plausible methods, a printable name, and a valid header CRC. It does not start at the first file header and advance by `112 + resource_compressed_size + data_compressed_size`, and `sti2_list_entries` records but never reconciles the declared file count. An invalid expected header is silently skipped, while a CRC-valid header-shaped sequence embedded in compressed data is accepted as another entry. The referenced XAD parser reads the next header at the current structural offset, raises on its CRC failure, and seeks over the two declared compressed forks before reading the next header
+- Trigger: Flip a bit in one expected file header while leaving other entries intact, make a compressed fork contain a crafted valid header sequence, or declare a file count inconsistent with the structurally reachable headers
+- Impact: Listing and extraction can return positive success after silently omitting a damaged requested file, or expose a false entry sourced from payload bytes; callers then publish a partial or misleading import instead of rejecting the malformed archive
+- Expected: Every header is reached through checked archive structure, its complete fork spans fit, invalid expected headers fail the archive, and the parsed entry and folder structure is consistent with the declared count
+- Suggested fix: Begin at `STI2_ARCHIVE_HEADER_SIZE`, parse one validated header at a time, use checked additions for both compressed fork lengths, advance exactly to the next header, validate folder nesting, and reject count or end-offset mismatches. If known self-extracting variants require a prefix, detect and bound that prefix explicitly rather than scanning payload bytes
+- Validation: Add fixtures for a corrupted middle header, a fake valid header inside stored and compressed payloads, truncated fork spans, overflowing length sums, unbalanced folders, too few and too many declared entries, and a valid known archive; assert malformed cases fail without any committed output
+- Resolution: Fixed on 2026-07-21. STi2 parsing now begins at the archive header boundary and recursively consumes the declared root and folder child counts in physical archive order. Every expected header must fit and pass its CRC, parent offsets and folder terminators must match the active folder, checked resource and data fork spans must end at the declared subtree boundary, and the final structural offset must equal the declared archive size. Header-shaped bytes inside stored or compressed payloads are no longer considered entries. Focused fixtures cover corrupt middle headers, fake payload headers, truncated and overflowing fork spans, invalid parents, unbalanced folders, and both count mismatches. The real MacPlay archive listing and extraction oracles remain unchanged. Scoped code quality passed and all 9 native extraction suites passed.
 
 ### BR-0037: P3 - Synchronize the Inno reader capability documentation with the implementation
 
@@ -183,6 +217,8 @@ so campaign closure must still obtain that independent verification
 
 ## Disposition log
 
+- 2026-07-21: BR-0033 fixed by preserving and verifying STi2 fork CRC16 values, hard-failing decoder input exhaustion, validating method 15's terminal CRC32, and atomically publishing verified output. Focused corruption tests, real method 13 and 15 corpus truncation tests, scoped code quality, and all 9 native extraction suites passed; sanitizer execution and a real method 14 archive fixture were unavailable
+- 2026-07-21: BR-0032 fixed by replacing bytewise STi2 header discovery with checked recursive archive-order traversal. Malformed structural fixtures, the real MacPlay archive oracle, scoped code quality, and all 9 native extraction suites passed
 - 2026-07-21: BR-0037 fixed by replacing stale Inno reader claims with a maintained capability matrix tied to a focused consistency test. Scoped code quality, four documentation tests, both real Inno fixture opens, and all 9 native extraction suites passed; BR-0036 and BR-0058 remain active implementation findings
 - 2026-07-21: BR-0018 fixed after the maintainer requested resumption of the previously restricted scope. Shared extraction limits now cover the native decoders, Kotlin archive and mission paths, legacy Mac CD extraction, and PowerShell batch and fingerprint helpers. Focused Kotlin, Python, and PowerShell validation, scoped code quality, and all 9 native extraction suites passed
 - 2026-07-21: BR-0017 fixed by the Codex remediation call at the maintainer's request. Worktree evidence is the shared fixed-header bounds predicate and guarded malformed-offset test. Validation passed scoped code quality and all 8 tests in `android/tests/test_cue_iso.ps1`. Independent P1 verification remains a campaign closure action

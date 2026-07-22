@@ -829,6 +829,7 @@ static int run_manifest_supported_hash_test(void)
 {
 	int archive_index;
 	int supported_count = 0;
+	int truncated_method15_count = 0;
 
 	TEST("stuffit_supported_hashes_match_manifest");
 	for (archive_index = 0; archive_index < (int) (sizeof(stuffit_archives) / sizeof(stuffit_archives[0])); archive_index++) {
@@ -877,10 +878,52 @@ static int run_manifest_supported_hash_test(void)
 				return 0;
 			}
 			remove(actual_path);
+			if ((list.entries[index].data_method == 13u ||
+			     list.entries[index].data_method == 15u) &&
+			    list.entries[index].compressed_size > 1u) {
+				sti2_entry_t truncated = list.entries[index];
+
+				truncated.compressed_size /= 2u;
+				if (sti2_extract_entry(archive_data.data(), archive_data.size(),
+				                       &truncated, actual_path) >= 0 ||
+				    file_exists(actual_path)) {
+					remove(actual_path);
+					FAIL("truncated supported entry was accepted");
+					return 0;
+				}
+				if (truncated.data_method == 15u)
+					truncated_method15_count++;
+			}
+			if (list.entries[index].data_method == 15u &&
+			    list.entries[index].compressed_size > 0u) {
+				unsigned int distance;
+				int rejected = 0;
+
+				for (distance = 1; distance <= list.entries[index].compressed_size &&
+				                   distance <= 64u;
+				     distance++) {
+					size_t corrupt_offset = (size_t) list.entries[index].data_offset +
+					                        list.entries[index].compressed_size - distance;
+
+					archive_data[corrupt_offset] ^= 1u;
+					written = sti2_extract_entry(archive_data.data(), archive_data.size(),
+					                             &list.entries[index], actual_path);
+					archive_data[corrupt_offset] ^= 1u;
+					if (written < 0 && !file_exists(actual_path)) {
+						rejected = 1;
+						break;
+					}
+					remove(actual_path);
+				}
+				if (!rejected) {
+					FAIL("corrupted method 15 trailer was accepted");
+					return 0;
+				}
+			}
 		}
 	}
-	if (supported_count == 0) {
-		FAIL("no supported entries hashed");
+	if (supported_count == 0 || truncated_method15_count == 0) {
+		FAIL("supported truncation coverage missing");
 		return 0;
 	}
 	PASS();
@@ -970,6 +1013,7 @@ static int run_manifest_method13_test(void)
 {
 	int archive_index;
 	int method13_count = 0;
+	int truncated_count = 0;
 
 	TEST("stuffit_method13_hashes_match_manifest");
 	for (archive_index = 0; archive_index < (int) (sizeof(stuffit_method13_archives) / sizeof(stuffit_method13_archives[0])); archive_index++) {
@@ -1011,10 +1055,21 @@ static int run_manifest_method13_test(void)
 				return 0;
 			}
 			remove(actual_path);
+			if (entry.compressed_size > 1u) {
+				entry.compressed_size /= 2u;
+				if (sti2_extract_entry(archive_data.data(), archive_data.size(),
+				                       &entry, actual_path) >= 0 ||
+				    file_exists(actual_path)) {
+					remove(actual_path);
+					FAIL("truncated method 13 entry was accepted");
+					return 0;
+				}
+				truncated_count++;
+			}
 		}
 	}
-	if (method13_count == 0) {
-		FAIL("no method 13 entries checked");
+	if (method13_count == 0 || truncated_count == 0) {
+		FAIL("method 13 truncation coverage missing");
 		return 0;
 	}
 	PASS();

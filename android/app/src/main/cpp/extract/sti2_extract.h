@@ -27,8 +27,12 @@ typedef struct {
 	unsigned int resource_offset;
 	unsigned int resource_compressed_size;
 	unsigned int resource_uncompressed_size;
+	unsigned int data_crc;
+	unsigned int resource_crc;
 	unsigned int data_method;
 	unsigned int resource_method;
+	int data_crc_present;
+	int resource_crc_present;
 	int data_encrypted;
 	int resource_encrypted;
 	unsigned int file_type;
@@ -60,6 +64,7 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 
 #ifdef STI2_EXTRACT_TESTING
 int sti2_test_method14_code_lengths(const unsigned char *lengths, unsigned int count);
+int sti2_test_bit_reader_exhaustion(void);
 #endif
 
 #ifdef __cplusplus

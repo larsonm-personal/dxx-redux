@@ -19,9 +19,11 @@
 #include <direct.h>
 #include <fcntl.h>
 #include <io.h>
+#include <windows.h>
 #define close_fd(fd)               _close(fd)
 #define mkdir_one(path, mode)      _mkdir(path)
 #define open_fd(path, flags, mode) _open(path, flags, mode)
+#define replace_file(src, dst)     (MoveFileExA((src), (dst), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) ? 0 : -1)
 #define write_fd(fd, buf, n)       _write(fd, buf, (unsigned int) (n))
 #define O_BINARY                   _O_BINARY
 #else
@@ -31,6 +33,7 @@
 #define close_fd(fd)               close(fd)
 #define mkdir_one(path, mode)      mkdir((path), (mode))
 #define open_fd(path, flags, mode) open((path), (flags), (mode))
+#define replace_file(src, dst)     rename((src), (dst))
 #define write_fd(fd, buf, n)       write(fd, buf, (n))
 #define O_BINARY                   0
 #endif
@@ -62,6 +65,8 @@
 #define SITFH_DATALENGTH  88u
 #define SITFH_COMPRLENGTH 92u
 #define SITFH_COMPDLENGTH 96u
+#define SITFH_RSRCCRC     100u
+#define SITFH_DATACRC     102u
 #define SITFH_HDRCRC      110u
 
 #define STI2_MAX_DEPTH        32
@@ -80,6 +85,8 @@ typedef struct {
 	unsigned int data_uncompressed_size;
 	unsigned int resource_compressed_size;
 	unsigned int data_compressed_size;
+	unsigned int resource_crc;
+	unsigned int data_crc;
 	unsigned int resource_method;
 	unsigned int data_method;
 	unsigned int file_type;
@@ -87,6 +94,7 @@ typedef struct {
 	unsigned int finder_flags;
 	char name[STI2_NAME_LEN];
 	int is_directory;
+	int is_name_printable;
 } sti2_header_t;
 
 typedef struct {
@@ -114,6 +122,7 @@ typedef struct {
 	size_t byte_pos;
 	unsigned long long bitbuf;
 	int bit_count;
+	int exhausted;
 } sti2_bit_reader_t;
 
 typedef struct {
@@ -129,6 +138,7 @@ typedef struct {
 	size_t size;
 	size_t byte_pos;
 	int bit_pos;
+	int exhausted;
 } sti2_msb_bit_reader_t;
 
 typedef struct {
@@ -172,6 +182,9 @@ typedef struct {
 	int rand_count;
 	int rand_index;
 	int repeat;
+	uint32_t crc;
+	uint32_t expected_crc;
+	int has_expected_crc;
 	int count;
 	int last;
 } sti2_method15_decoder_t;
@@ -260,6 +273,16 @@ static unsigned int crc16_ibm(const unsigned char *data, size_t len)
 	return crc & 0xffffu;
 }
 
+static uint32_t crc32_ieee_byte(uint32_t crc, unsigned char byte)
+{
+	unsigned int bit;
+
+	crc ^= byte;
+	for (bit = 0; bit < 8; bit++)
+		crc = (crc & 1u) ? (crc >> 1) ^ 0xedb88320u : crc >> 1;
+	return crc;
+}
+
 static void copy_name_component(const unsigned char *src, unsigned int src_len,
                                 char *dst, int dst_len)
 {
@@ -316,6 +339,18 @@ static int is_printable_name(const unsigned char *src, unsigned int len)
 
 	for (i = 0; i < len; i++) {
 		if (src[i] < 32 || src[i] > 126)
+			return 0;
+	}
+
+	return 1;
+}
+
+static int is_valid_name(const unsigned char *src, unsigned int len)
+{
+	unsigned int i;
+
+	for (i = 0; i < len; i++) {
+		if (src[i] < 32 || src[i] == 127)
 			return 0;
 	}
 
@@ -470,45 +505,152 @@ static int build_header_path(const sti2_header_t *headers, int count, int index,
 	return 0;
 }
 
-static int scan_headers(const unsigned char *archive_data, size_t archive_size,
-                        sti2_header_t *headers, int *out_count)
+static int folder_marker(unsigned int resource_method, unsigned int data_method)
 {
-	int count = 0;
-	size_t i;
+	unsigned int resource_folder = resource_method & STI2_FOLDER_MASK;
+	unsigned int data_folder = data_method & STI2_FOLDER_MASK;
+	int resource_marker = resource_folder == STI2_START_FOLDER ? 1 : resource_folder == STI2_END_FOLDER ? 2
+	                                                                                                    : 0;
+	int data_marker = data_folder == STI2_START_FOLDER ? 1 : data_folder == STI2_END_FOLDER ? 2
+	                                                                                        : 0;
 
-	for (i = 0; i + STI2_FILE_HEADER_SIZE <= archive_size; i++) {
-		unsigned int resource_method = archive_data[i + SITFH_COMPRMETHOD];
-		unsigned int data_method = archive_data[i + SITFH_COMPDMETHOD];
-		unsigned int name_len = archive_data[i + SITFH_FNAMESIZE];
+	if (resource_marker && data_marker && resource_marker != data_marker)
+		return -1;
+	return resource_marker ? resource_marker : data_marker;
+}
 
-		if (name_len == 0 || name_len > 31)
-			continue;
-		if (!is_valid_method(resource_method) || !is_valid_method(data_method))
-			continue;
-		if (!is_printable_name(archive_data + i + SITFH_FNAME, name_len))
-			continue;
-		if (crc16_ibm(archive_data + i, SITFH_HDRCRC) != be16(archive_data + i + SITFH_HDRCRC))
-			continue;
-		if (count >= STI2_MAX_ENTRIES)
+static int parse_header(const unsigned char *archive_data, size_t archive_size,
+                        size_t offset, sti2_header_t *header, unsigned int *child_count)
+{
+	unsigned int resource_method;
+	unsigned int data_method;
+	unsigned int name_len;
+
+	if (!header || !child_count || offset > archive_size ||
+	    archive_size - offset < STI2_FILE_HEADER_SIZE)
+		return -1;
+
+	resource_method = archive_data[offset + SITFH_COMPRMETHOD];
+	data_method = archive_data[offset + SITFH_COMPDMETHOD];
+	name_len = archive_data[offset + SITFH_FNAMESIZE];
+	if (name_len == 0 || name_len > 31)
+		return -1;
+	if (!is_valid_method(resource_method) || !is_valid_method(data_method))
+		return -1;
+	if (folder_marker(resource_method, data_method) < 0)
+		return -1;
+	if (!is_valid_name(archive_data + offset + SITFH_FNAME, name_len))
+		return -1;
+	if (crc16_ibm(archive_data + offset, SITFH_HDRCRC) !=
+	    be16(archive_data + offset + SITFH_HDRCRC))
+		return -1;
+
+	header->offset = (unsigned int) offset;
+	header->parent_offset = be32(archive_data + offset + SITFH_PARENTOFFS);
+	header->resource_uncompressed_size = be32(archive_data + offset + SITFH_RSRCLENGTH);
+	header->data_uncompressed_size = be32(archive_data + offset + SITFH_DATALENGTH);
+	header->resource_compressed_size = be32(archive_data + offset + SITFH_COMPRLENGTH);
+	header->data_compressed_size = be32(archive_data + offset + SITFH_COMPDLENGTH);
+	header->resource_crc = be16(archive_data + offset + SITFH_RSRCCRC);
+	header->data_crc = be16(archive_data + offset + SITFH_DATACRC);
+	header->resource_method = resource_method;
+	header->data_method = data_method;
+	header->file_type = be32(archive_data + offset + SITFH_FTYPE);
+	header->creator = be32(archive_data + offset + SITFH_CREATOR);
+	header->finder_flags = be16(archive_data + offset + SITFH_FNDRFLAGS);
+	header->is_directory = folder_marker(resource_method, data_method) == 1;
+	header->is_name_printable = is_printable_name(archive_data + offset + SITFH_FNAME, name_len);
+	copy_name_component(archive_data + offset + SITFH_FNAME, name_len,
+	                    header->name, sizeof(header->name));
+	*child_count = be16(archive_data + offset + 48u);
+	return 0;
+}
+
+static int parse_headers_in_order(const unsigned char *archive_data, size_t archive_size,
+                                  size_t *offset, unsigned int direct_count,
+                                  unsigned int parent_offset, int depth,
+                                  sti2_header_t *headers, int *header_count)
+{
+	unsigned int i;
+
+	if (!offset || !headers || !header_count || depth > STI2_MAX_DEPTH)
+		return -1;
+
+	for (i = 0; i < direct_count; i++) {
+		sti2_header_t *header;
+		unsigned int child_count;
+		unsigned int marker;
+		size_t content_offset;
+		size_t entry_end;
+
+		if (*header_count >= STI2_MAX_ENTRIES)
+			return -1;
+		header = &headers[*header_count];
+		if (parse_header(archive_data, archive_size, *offset, header, &child_count) < 0)
+			return -1;
+		if (header->parent_offset != parent_offset)
+			return -1;
+		marker = (unsigned int) folder_marker(header->resource_method, header->data_method);
+		if (marker == 2)
 			return -1;
 
-		headers[count].offset = (unsigned int) i;
-		headers[count].parent_offset = be24(archive_data + i + SITFH_PARENTOFFS);
-		headers[count].resource_uncompressed_size = be32(archive_data + i + SITFH_RSRCLENGTH);
-		headers[count].data_uncompressed_size = be32(archive_data + i + SITFH_DATALENGTH);
-		headers[count].resource_compressed_size = be32(archive_data + i + SITFH_COMPRLENGTH);
-		headers[count].data_compressed_size = be32(archive_data + i + SITFH_COMPDLENGTH);
-		headers[count].resource_method = resource_method;
-		headers[count].data_method = data_method;
-		headers[count].file_type = be32(archive_data + i + SITFH_FTYPE);
-		headers[count].creator = be32(archive_data + i + SITFH_CREATOR);
-		headers[count].finder_flags = be16(archive_data + i + SITFH_FNDRFLAGS);
-		headers[count].is_directory = ((data_method & STI2_FOLDER_MASK) == STI2_START_FOLDER) ||
-		                              ((resource_method & STI2_FOLDER_MASK) == STI2_START_FOLDER);
-		copy_name_component(archive_data + i + SITFH_FNAME, name_len,
-		                    headers[count].name, sizeof(headers[count].name));
-		count++;
+		content_offset = *offset + STI2_FILE_HEADER_SIZE;
+		entry_end = content_offset;
+		if (content_offset > archive_size ||
+		    header->resource_compressed_size > archive_size - entry_end)
+			return -1;
+		entry_end += header->resource_compressed_size;
+		if (header->data_compressed_size > archive_size - entry_end)
+			return -1;
+		entry_end += header->data_compressed_size;
+		(*header_count)++;
+
+		if (marker == 1) {
+			sti2_header_t *end_header;
+			unsigned int end_child_count;
+			int end_marker;
+
+			*offset = content_offset;
+			if (parse_headers_in_order(archive_data, archive_size, offset, child_count,
+			                           header->offset, depth + 1, headers, header_count) < 0)
+				return -1;
+			if (*header_count >= STI2_MAX_ENTRIES)
+				return -1;
+			end_header = &headers[*header_count];
+			if (parse_header(archive_data, archive_size, *offset, end_header,
+			                 &end_child_count) < 0)
+				return -1;
+			end_marker = folder_marker(end_header->resource_method, end_header->data_method);
+			if (end_marker != 2 || end_header->parent_offset != header->offset)
+				return -1;
+			(*header_count)++;
+			*offset += STI2_FILE_HEADER_SIZE;
+			if (*offset != entry_end)
+				return -1;
+		} else {
+			if (child_count != 0)
+				return -1;
+			*offset = entry_end;
+		}
 	}
+
+	return 0;
+}
+
+static int scan_headers(const unsigned char *archive_data, size_t archive_size,
+                        unsigned int declared_file_count,
+                        sti2_header_t *headers, int *out_count)
+{
+	size_t offset = STI2_ARCHIVE_HEADER_SIZE;
+	int count = 0;
+
+	if (declared_file_count > STI2_MAX_ENTRIES)
+		return -1;
+	if (parse_headers_in_order(archive_data, archive_size, &offset, declared_file_count,
+	                           0, 0, headers, &count) < 0)
+		return -1;
+	if (offset != archive_size)
+		return -1;
 
 	*out_count = count;
 	return 0;
@@ -705,6 +847,8 @@ static void br_fill(sti2_bit_reader_t *br, int min_bits)
 
 		if (br->byte_pos < br->size)
 			next = br->data[br->byte_pos++];
+		else
+			br->exhausted = 1;
 		br->bitbuf |= (unsigned long long) next << br->bit_count;
 		br->bit_count += 8;
 	}
@@ -948,7 +1092,7 @@ static int decompress_method13(const unsigned char *data, size_t comp_size,
 		}
 	}
 
-	return (int) out_pos;
+	return decoder.br.exhausted ? -1 : (int) out_pos;
 }
 
 #define STI2_METHOD14_WINDOW 0x40000u
@@ -1119,6 +1263,7 @@ int sti2_test_method14_code_lengths(const unsigned char *lengths, unsigned int c
 	free(decoder);
 	return status;
 }
+
 #endif
 
 static int method14_read_tree(sti2_method14_decoder_t *decoder,
@@ -1288,7 +1433,7 @@ static int decompress_method14(const unsigned char *data, size_t comp_size,
 		}
 		br_byte_boundary(&decoder->br);
 	}
-	status = (out_pos == out_size) ? (int) out_pos : -1;
+	status = (out_pos == out_size && !decoder->br.exhausted) ? (int) out_pos : -1;
 
 cleanup:
 	free(decoder);
@@ -1570,8 +1715,10 @@ static int msb_br_get_bit(sti2_msb_bit_reader_t *br)
 {
 	int bit;
 
-	if (br->byte_pos >= br->size)
+	if (br->byte_pos >= br->size) {
+		br->exhausted = 1;
 		return 0;
+	}
 	bit = (br->data[br->byte_pos] >> (7 - br->bit_pos)) & 1;
 	br->bit_pos++;
 	if (br->bit_pos == 8) {
@@ -1590,6 +1737,21 @@ static int msb_br_get_bits(sti2_msb_bit_reader_t *br, int bits)
 		value = (value << 1) | msb_br_get_bit(br);
 	return value;
 }
+
+#ifdef STI2_EXTRACT_TESTING
+int sti2_test_bit_reader_exhaustion(void)
+{
+	static const unsigned char data[] = { 0 };
+	sti2_bit_reader_t lsb;
+	sti2_msb_bit_reader_t msb;
+
+	br_init(&lsb, data, sizeof(data));
+	br_get(&lsb, 9);
+	msb_br_init(&msb, data, sizeof(data));
+	msb_br_get_bits(&msb, 9);
+	return lsb.exhausted && msb.exhausted ? 0 : -1;
+}
+#endif
 
 static void method15_reset_arithmetic_model(sti2_arithmetic_model_t *model)
 {
@@ -1829,10 +1991,12 @@ static int method15_read_block(sti2_method15_decoder_t *state)
 	if (end_marker < 0)
 		return -1;
 	if (end_marker) {
-		int ignored_crc;
+		int expected_crc;
 
-		if (method15_next_bit_string(&state->decoder, &state->initial_model, 32, &ignored_crc) < 0)
+		if (method15_next_bit_string(&state->decoder, &state->initial_model, 32, &expected_crc) < 0)
 			return -1;
+		state->expected_crc = (uint32_t) expected_crc;
+		state->has_expected_crc = 1;
 		state->end_of_blocks = 1;
 	}
 	new_transform = (uint32_t *) malloc(sizeof(*new_transform) * (size_t) state->num_bytes);
@@ -1850,6 +2014,7 @@ static int method15_init_decoder(sti2_method15_decoder_t *state,
 	int marker;
 
 	memset(state, 0, sizeof(*state));
+	state->crc = 0xffffffffu;
 	method15_init_arithmetic_decoder(&state->decoder, br);
 	if (method15_init_arithmetic_model(&state->initial_model, 0, 1, 1, 256) < 0 ||
 	    method15_init_arithmetic_model(&state->selector_model, 0, 10, 8, 1024) < 0 ||
@@ -1936,8 +2101,11 @@ static int decompress_method15(const unsigned char *data, size_t comp_size,
 			}
 		}
 		out[out_pos++] = (unsigned char) out_byte;
+		state.crc = crc32_ieee_byte(state.crc, (unsigned char) out_byte);
 	}
-	status = (int) out_pos;
+	if (!br.exhausted && state.end_of_blocks && state.has_expected_crc &&
+	    state.expected_crc == ~state.crc)
+		status = (int) out_pos;
 
 cleanup:
 	free(state.block);
@@ -1965,8 +2133,11 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 
 	*out_data = NULL;
 	*out_size = 0;
-	if (entry->uncompressed_size == 0)
+	if (entry->uncompressed_size == 0) {
+		if (entry->data_crc_present && entry->data_crc != crc16_ibm(NULL, 0))
+			return -1;
 		return 0;
+	}
 
 	dst = (unsigned char *) malloc(entry->uncompressed_size);
 	if (!dst)
@@ -2009,6 +2180,10 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 		default:
 			free(dst);
 			return -1;
+	}
+	if (entry->data_crc_present && crc16_ibm(dst, entry->uncompressed_size) != entry->data_crc) {
+		free(dst);
+		return -1;
 	}
 
 	*out_data = dst;
@@ -2053,7 +2228,8 @@ int sti2_list_entries(const unsigned char *archive_data, size_t archive_size,
 
 	out->declared_file_count = be16(archive_data + 4);
 	out->declared_total_size = declared_total_size;
-	if (scan_headers(archive_data, declared_total_size, headers, &header_count) < 0)
+	if (scan_headers(archive_data, declared_total_size, out->declared_file_count,
+	                 headers, &header_count) < 0)
 		return -1;
 
 	for (i = 0; i < header_count; i++) {
@@ -2063,7 +2239,7 @@ int sti2_list_entries(const unsigned char *archive_data, size_t archive_size,
 
 		is_end_folder = ((headers[i].data_method & STI2_FOLDER_MASK) == STI2_END_FOLDER) ||
 		                ((headers[i].resource_method & STI2_FOLDER_MASK) == STI2_END_FOLDER);
-		if (is_end_folder)
+		if (is_end_folder || !headers[i].is_name_printable)
 			continue;
 		if (build_header_path(headers, header_count, i, path, sizeof(path), 0) < 0)
 			return -1;
@@ -2077,9 +2253,13 @@ int sti2_list_entries(const unsigned char *archive_data, size_t archive_size,
 		entry->resource_offset = headers[i].offset + STI2_FILE_HEADER_SIZE;
 		entry->resource_compressed_size = headers[i].resource_compressed_size;
 		entry->resource_uncompressed_size = headers[i].resource_uncompressed_size;
+		entry->resource_crc = headers[i].resource_crc;
+		entry->resource_crc_present = 1;
 		entry->data_offset = headers[i].offset + STI2_FILE_HEADER_SIZE + headers[i].resource_compressed_size;
 		entry->compressed_size = headers[i].data_compressed_size;
 		entry->uncompressed_size = headers[i].data_uncompressed_size;
+		entry->data_crc = headers[i].data_crc;
+		entry->data_crc_present = 1;
 		entry->data_method = headers[i].data_method & STI2_COMPRESSION_MASK;
 		entry->resource_method = headers[i].resource_method & STI2_COMPRESSION_MASK;
 		entry->data_encrypted = (headers[i].data_method & STI2_ENCRYPTED_FLAG) != 0;
@@ -2118,8 +2298,10 @@ int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
 {
 	unsigned char *data;
 	unsigned int size;
+	char temp_path[STI2_PATH_LEN * 2 + 32];
+	unsigned int attempt;
 	int result;
-	int fd;
+	int fd = -1;
 
 	if (!output_path)
 		return -1;
@@ -2131,18 +2313,34 @@ int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
 		return -1;
 	}
 
-	fd = open_fd(output_path, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0644);
+	for (attempt = 0; attempt < 100; attempt++) {
+		int path_len = snprintf(temp_path, sizeof(temp_path), "%s.sti2.tmp.%u",
+		                        output_path, attempt);
+
+		if (path_len < 0 || (size_t) path_len >= sizeof(temp_path)) {
+			free(data);
+			return -1;
+		}
+		fd = open_fd(temp_path, O_CREAT | O_EXCL | O_WRONLY | O_BINARY, 0644);
+		if (fd >= 0 || errno != EEXIST)
+			break;
+	}
 	if (fd < 0) {
 		free(data);
 		return -1;
 	}
 	if (size != 0 && write_all(fd, data, size) < 0) {
 		close_fd(fd);
+		remove(temp_path);
 		free(data);
 		return -1;
 	}
 
-	close_fd(fd);
+	if (close_fd(fd) != 0 || replace_file(temp_path, output_path) != 0) {
+		remove(temp_path);
+		free(data);
+		return -1;
+	}
 	free(data);
 	return (int) size;
 }

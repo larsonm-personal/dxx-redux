@@ -368,6 +368,146 @@ static size_t build_encrypted_fixture(unsigned char *archive, size_t capacity,
 	return total_size;
 }
 
+static void build_archive_header(unsigned char *archive, unsigned int file_count,
+                                 unsigned int total_size)
+{
+	memset(archive, 0, 22u);
+	memcpy(archive, "STin", 4);
+	put_be16(archive + 4, file_count);
+	put_be32(archive + 6, total_size);
+	put_be32(archive + 10, 0x724c6175u);
+}
+
+static void build_file_header(unsigned char *header, const char *name,
+                              unsigned int resource_method, unsigned int data_method,
+                              unsigned int parent_offset, unsigned int child_count,
+                              unsigned int resource_compressed_size,
+                              unsigned int data_compressed_size)
+{
+	size_t name_len = strlen(name);
+
+	memset(header, 0, 112u);
+	header[0] = (unsigned char) resource_method;
+	header[1] = (unsigned char) data_method;
+	header[2] = (unsigned char) name_len;
+	memcpy(header + 3, name, name_len);
+	put_be16(header + 48, child_count);
+	put_be32(header + 58, parent_offset);
+	put_be32(header + 84, resource_compressed_size);
+	put_be32(header + 88, data_compressed_size);
+	put_be32(header + 92, resource_compressed_size);
+	put_be32(header + 96, data_compressed_size);
+	put_be16(header + 110, fixture_crc16(header, 110));
+}
+
+static int run_structural_validation_test(void)
+{
+	static const char *extensions[] = { "hog", NULL };
+	const char *malformed_output = "test_sti2_malformed_structure";
+	unsigned char archive[512];
+	sti2_entry_list_t list;
+	unsigned char *root = archive + 22u;
+	unsigned char *second = root + 112u;
+	unsigned char *third = second + 112u;
+
+	TEST("sti2_enforces_archive_order_and_declared_structure");
+
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 1, 246u);
+	build_file_header(root, "real.hog", 0, 0, 0, 0, 0, 112u);
+	build_file_header(second, "fake.hog", 0, 0, 0, 0, 0, 0);
+	if (sti2_list_entries(archive, 246u, &list) != 1 ||
+	    strcmp(list.entries[0].path, "real.hog") != 0) {
+		FAIL("header-shaped payload was parsed as an entry");
+		return 0;
+	}
+	root[1] = 13u;
+	put_be16(root + 110, fixture_crc16(root, 110));
+	if (sti2_list_entries(archive, 246u, &list) != 1 ||
+	    strcmp(list.entries[0].path, "real.hog") != 0) {
+		FAIL("header-shaped compressed payload was parsed as an entry");
+		return 0;
+	}
+
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 2, 246u);
+	build_file_header(root, "first.hog", 0, 0, 0, 0, 0, 0);
+	build_file_header(second, "second.hog", 0, 0, 0, 0, 0, 0);
+	second[3] ^= 1u;
+	remove_dir(malformed_output);
+	if (sti2_list_entries(archive, 246u, &list) >= 0) {
+		FAIL("corrupted middle header was skipped");
+		return 0;
+	}
+	if (sti2_extract_matching(archive, 246u, extensions, malformed_output,
+	                          NULL, NULL) >= 0 ||
+	    file_exists(malformed_output)) {
+		FAIL("malformed structure committed extraction output");
+		return 0;
+	}
+
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 1, 137u);
+	build_file_header(root, "truncated.hog", 0, 0, 0, 0, 0, 4u);
+	if (sti2_list_entries(archive, 137u, &list) >= 0) {
+		FAIL("truncated fork span was accepted");
+		return 0;
+	}
+
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 1, 134u);
+	build_file_header(root, "overflow.hog", 0, 0, 0, 0, 0xffffffffu, 1u);
+	if (sti2_list_entries(archive, 134u, &list) >= 0) {
+		FAIL("overflowing fork span was accepted");
+		return 0;
+	}
+
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 1, 358u);
+	build_file_header(root, "folder", 0x20u, 0x20u, 0, 1, 0, 224u);
+	build_file_header(second, "child.hog", 0, 0, 22u, 0, 0, 0);
+	build_file_header(third, "folder", 0x21u, 0x21u, 22u, 0, 0, 224u);
+	if (sti2_list_entries(archive, 358u, &list) != 2 ||
+	    strcmp(list.entries[0].path, "folder") != 0 ||
+	    strcmp(list.entries[1].path, "folder/child.hog") != 0) {
+		FAIL("valid nested folder structure was rejected");
+		return 0;
+	}
+
+	put_be32(second + 58, 0);
+	put_be16(second + 110, fixture_crc16(second, 110));
+	if (sti2_list_entries(archive, 358u, &list) >= 0) {
+		FAIL("invalid parent link was accepted");
+		return 0;
+	}
+	build_file_header(second, "child.hog", 0, 0, 22u, 0, 0, 0);
+	third[0] = 0;
+	third[1] = 0;
+	put_be16(third + 110, fixture_crc16(third, 110));
+	if (sti2_list_entries(archive, 358u, &list) >= 0) {
+		FAIL("unbalanced folder was accepted");
+		return 0;
+	}
+
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 1, 246u);
+	build_file_header(root, "first.hog", 0, 0, 0, 0, 0, 0);
+	build_file_header(second, "second.hog", 0, 0, 0, 0, 0, 0);
+	if (sti2_list_entries(archive, 246u, &list) >= 0) {
+		FAIL("too-small declared root count was accepted");
+		return 0;
+	}
+	put_be16(archive + 4, 2);
+	put_be32(archive + 6, 134u);
+	if (sti2_list_entries(archive, 134u, &list) >= 0) {
+		FAIL("too-large declared root count was accepted");
+		return 0;
+	}
+
+	PASS();
+	return 1;
+}
+
 static int run_encrypted_entry_reject_test(void)
 {
 	static const struct {
@@ -415,6 +555,75 @@ static int run_encrypted_entry_reject_test(void)
 			FAIL("encrypted matching extraction mutated output");
 			return 0;
 		}
+	}
+	PASS();
+	return 1;
+}
+
+static int run_payload_checksum_test(void)
+{
+	static const unsigned char expected[] = { 'D', 'E', 'S', 'C', 'E', 'N', 'T' };
+	const char *output_path = "test_sti2_payload_crc.hog";
+	unsigned char archive[22u + 112u + sizeof(expected)];
+	unsigned char *header = archive + 22u;
+	unsigned char *payload = header + 112u;
+	unsigned char *actual = NULL;
+	sti2_entry_list_t list;
+	size_t actual_size = 0;
+
+	TEST("sti2_verifies_payload_crc_before_output_commit");
+	memset(archive, 0, sizeof(archive));
+	build_archive_header(archive, 1, (unsigned int) sizeof(archive));
+	build_file_header(header, "payload.hog", 0, 0, 0, 0, 0, sizeof(expected));
+	memcpy(payload, expected, sizeof(expected));
+	put_be16(header + 102, fixture_crc16(payload, sizeof(expected)));
+	put_be16(header + 110, fixture_crc16(header, 110));
+	remove(output_path);
+
+	if (sti2_list_entries(archive, sizeof(archive), &list) != 1 ||
+	    !list.entries[0].data_crc_present ||
+	    list.entries[0].data_crc != fixture_crc16(payload, sizeof(expected)) ||
+	    sti2_extract_entry(archive, sizeof(archive), &list.entries[0], output_path) !=
+	        (int) sizeof(expected) ||
+	    read_binary_file(output_path, &actual, &actual_size) < 0 ||
+	    actual_size != sizeof(expected) || memcmp(actual, expected, sizeof(expected)) != 0) {
+		free(actual);
+		remove(output_path);
+		FAIL("valid stored payload checksum was rejected");
+		return 0;
+	}
+	free(actual);
+	actual = NULL;
+	remove(output_path);
+
+	payload[0] ^= 1u;
+	if (sti2_extract_entry(archive, sizeof(archive), &list.entries[0], output_path) >= 0 ||
+	    file_exists(output_path)) {
+		remove(output_path);
+		FAIL("corrupted stored payload was committed");
+		return 0;
+	}
+	payload[0] ^= 1u;
+	put_be16(header + 102, fixture_crc16(payload, sizeof(expected)) ^ 1u);
+	put_be16(header + 110, fixture_crc16(header, 110));
+	if (sti2_list_entries(archive, sizeof(archive), &list) != 1 ||
+	    sti2_extract_entry(archive, sizeof(archive), &list.entries[0], output_path) >= 0 ||
+	    file_exists(output_path)) {
+		remove(output_path);
+		FAIL("mismatched stored payload checksum was committed");
+		return 0;
+	}
+
+	PASS();
+	return 1;
+}
+
+static int run_bit_reader_exhaustion_test(void)
+{
+	TEST("sti2_bit_readers_record_input_exhaustion");
+	if (sti2_test_bit_reader_exhaustion() < 0) {
+		FAIL("bit reader synthesized unreported input");
+		return 0;
 	}
 	PASS();
 	return 1;
@@ -739,6 +948,12 @@ int main(void)
 	if (!run_method14_code_length_test())
 		ok = 0;
 	if (!run_encrypted_entry_reject_test())
+		ok = 0;
+	if (!run_payload_checksum_test())
+		ok = 0;
+	if (!run_bit_reader_exhaustion_test())
+		ok = 0;
+	if (!run_structural_validation_test())
 		ok = 0;
 	if (!run_header_reject_test())
 		ok = 0;
