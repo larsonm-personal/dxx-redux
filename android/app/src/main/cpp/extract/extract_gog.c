@@ -55,6 +55,7 @@
 #include "inno_reader.h"
 #include "pkg_reader.h"
 #include "game_file_extensions.h"
+#include "json_writer.h"
 
 /* ── Cross-platform case-insensitive compare ─────────────────────── */
 #ifndef _WIN32
@@ -122,8 +123,10 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 		if (arc.files[i].location < (uint32_t) arc.data_entry_count)
 			size = arc.data_entries[arc.files[i].location].file_size;
 
-		printf("  {\"index\": %d, \"dest\": \"%s\", \"size\": %llu, \"game\": %s}%s\n",
-		       i, dest, (unsigned long long) size,
+		printf("  {\"index\": %d, \"dest\": ", i);
+		json_write_string(stdout, dest);
+		printf(", \"size\": %llu, \"game\": %s}%s\n",
+		       (unsigned long long) size,
 		       is_game ? "true" : "false",
 		       (i < arc.file_count - 1) ? "," : "");
 	}
@@ -169,8 +172,10 @@ static int extract_pkg(const char *pkg_path, const char *out_dir)
 	/* List game files */
 	printf("[\n");
 	for (int i = 0; i < arc.file_count; i++) {
-		printf("  {\"index\": %d, \"dest\": \"%s\", \"size\": %llu, \"game\": true}%s\n",
-		       i, arc.files[i].name, (unsigned long long) arc.files[i].size,
+		printf("  {\"index\": %d, \"dest\": ", i);
+		json_write_string(stdout, arc.files[i].name);
+		printf(", \"size\": %llu, \"game\": true}%s\n",
+		       (unsigned long long) arc.files[i].size,
 		       (i < arc.file_count - 1) ? "," : "");
 	}
 	printf("]\n");

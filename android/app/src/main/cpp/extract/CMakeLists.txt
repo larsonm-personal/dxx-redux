@@ -73,6 +73,7 @@ set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
@@ -123,6 +124,11 @@ target_link_libraries(test_stuffit_corpus PRIVATE nlohmann_json::nlohmann_json)
 
 # ── CTest integration ───────────────────────────────────────────────
 enable_testing()
+add_executable(test_json_writer ${CMAKE_CURRENT_SOURCE_DIR}/test_json_writer.cpp
+                                ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
+target_include_directories(test_json_writer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_json_writer PRIVATE nlohmann_json::nlohmann_json)
+add_test(NAME json_writer_tests COMMAND test_json_writer)
 add_executable(test_extract_limits ${CMAKE_CURRENT_SOURCE_DIR}/test_extract_limits.c)
 target_include_directories(test_extract_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME extract_limit_tests COMMAND test_extract_limits)
@@ -164,7 +170,8 @@ add_test(
 add_executable(
     extract_gog
     ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c)
 target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
 
@@ -279,7 +286,8 @@ set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
 add_executable(
     fingerprint_cd
     ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
-    ${SHARED_DIR}/pcm_decoders.c ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c ${SHARED_DIR}/pcm_decoders.c
+    ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
 target_include_directories(fingerprint_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
                                                   ${_DECODERS_DIR})
 target_compile_definitions(fingerprint_cd PRIVATE CHROMAPRINT_NODLL)
@@ -292,8 +300,10 @@ endif()
 
 # ── fingerprint_audio (loose MP3/OGG/FLAC files) ────────────────────
 add_executable(
-    fingerprint_audio ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_audio.c ${SHARED_DIR}/pcm_decoders.c
-                      ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
+    fingerprint_audio
+    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_audio.c ${SHARED_DIR}/pcm_decoders.c
+    ${SHARED_DIR}/fingerprint_gen.c ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
+    ${_DECODERS_DIR}/stb_vorbis.c)
 target_include_directories(fingerprint_audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
                                                      ${_DECODERS_DIR})
 target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL)
@@ -305,7 +315,8 @@ else()
 endif()
 
 # ── fingerprint_match (find duplicate fingerprints in a JSON DB) ─────
-add_executable(fingerprint_match ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c)
+add_executable(fingerprint_match ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c
+                                 ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
 target_include_directories(fingerprint_match PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(fingerprint_match PRIVATE CHROMAPRINT_NODLL)
 target_link_libraries(fingerprint_match PRIVATE chromaprint)

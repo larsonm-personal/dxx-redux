@@ -48,6 +48,7 @@
 #include "mac_hfs_extract.h"
 #include "sow_extract.h"
 #include "game_file_extensions.h"
+#include "json_writer.h"
 
 /* ── Minimal SHA-1 (RFC 3174) ──────────────────────────────────────── */
 
@@ -322,17 +323,21 @@ static void print_iso_json_line(const char *sha_hex, int files_extracted, const 
 {
 	if (error) {
 		if (sha_hex && *sha_hex) {
-			printf("{\"track\": 1, \"type\": \"data\", \"sha1\": \"%s\", \"source_format\": \"iso\", \"error\": \"%s\"}\n",
-			       sha_hex, error);
+			printf("{\"track\": 1, \"type\": \"data\", \"sha1\": ");
+			json_write_string(stdout, sha_hex);
+			printf(", \"source_format\": \"iso\", \"error\": ");
 		} else {
-			printf("{\"track\": 1, \"type\": \"data\", \"source_format\": \"iso\", \"error\": \"%s\"}\n",
-			       error);
+			printf("{\"track\": 1, \"type\": \"data\", \"source_format\": \"iso\", \"error\": ");
 		}
+		json_write_string(stdout, error);
+		printf("}\n");
 		return;
 	}
 
-	printf("{\"track\": 1, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": %d, \"source_format\": \"iso\"}\n",
-	       sha_hex, files_extracted);
+	printf("{\"track\": 1, \"type\": \"data\", \"sha1\": ");
+	json_write_string(stdout, sha_hex);
+	printf(", \"files_extracted\": %d, \"source_format\": \"iso\"}\n",
+	       files_extracted);
 }
 
 static void extract_iso_image(const char *iso_path,
@@ -629,14 +634,16 @@ int main(int argc, char *argv[])
 				int sow_count = sow_extract(sow_list.paths[si], sow_dir,
 				                            NULL, progress_cb, NULL);
 				if (sow_count >= 0) {
-					printf("{\"sow\": \"%s\", \"files_extracted\": %d}\n",
-					       rel_json, sow_count);
+					printf("{\"sow\": ");
+					json_write_string(stdout, rel_json);
+					printf(", \"files_extracted\": %d}\n", sow_count);
 					total_files_extracted += sow_count;
 					fprintf(stderr, "  Extracted %d files from %s\n",
 					        sow_count, rel);
 				} else {
-					printf("{\"sow\": \"%s\", \"error\": \"extraction failed\"}\n",
-					       rel_json);
+					printf("{\"sow\": ");
+					json_write_string(stdout, rel_json);
+					printf(", \"error\": \"extraction failed\"}\n");
 					errors++;
 				}
 			}

@@ -5344,23 +5344,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add a test that compares every shared role and case-insensitive lookup across native and Kotlin representations, deliberately change one side to prove the test fails, and retain focused cases for GOG audio, generic disc extraction, and Mac-only exceptions
 - Resolution: Pending
 
-### BR-0042: P2 - Encode every native tool string as valid JSON
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: api-data-format
-- Found by: R1-CHUNK-0017, R1-CHUNK-0020, R1-CHUNK-0029, R1-CHUNK-0031
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/extract_gog.c:L116-L130,L169-L176` and `android/app/src/main/cpp/extract/fingerprint_cd.c:L276-L285,L408-L417`
-- Related: `android/app/src/main/cpp/extract/pkg_reader.c:L294-L345,L358-L364`, `android/app/src/main/cpp/extract/sow_extract.c:L38-L121`, `android/app/src/main/cpp/extract/extract_cd.c:L619-L639`, `android/app/src/main/cpp/extract/fingerprint_audio.c:L121-L129,L154-L184`, `game_data/extract_all_gog.ps1:L140-L153`, `game_data/fingerprint_disc_tracks.ps1:L182-L202`, `game_data/fingerprint_music_packs.ps1:L308-L329`, and `game_data/fingerprint_mission_zip_music.ps1:L719-L742`
-- Evidence: `extract_gog` interpolates archive-controlled Inno destinations and CPIO names directly inside JSON strings without escaping quotes, backslashes, control bytes, or encoding errors. The CD tool normalizes backslashes in a SOW path but otherwise emits it raw. `fingerprint_audio` escapes only quote and backslash, leaving newline, tab, carriage return, and other control bytes from a legal POSIX filename unencoded. `fingerprint_cd` applies the same quote-and-backslash-only helper to a CUE-controlled `TITLE`, so a quoted title containing a tab or another permitted input byte below 0x20 also breaks its JSON line. These commands advertise JSON output, and the fingerprint workflows pass stdout directly into generated arrays and later `ConvertFrom-Json`; one such value makes the complete otherwise-successful result syntactically invalid while the native command can exit zero
-- Trigger: List an installer entry, fingerprint an audio filename, or parse a CUE title containing a quote, backslash, newline, tab, another byte below 0x20, or text that is not valid UTF-8 for the consumer
-- Impact: Extraction reports and generated fingerprint metadata become unparsable or can be structurally misrepresented, aborting batch regeneration after expensive decoding and preventing callers from reliably associating results with source files
-- Expected: Every command emits valid UTF-8 JSON for every filename accepted by its platform, with complete JSON string escaping and an explicit policy for unrepresentable native names
-- Suggested fix: Replace the three ad hoc emitters with one small tested JSON-string writer or a lightweight existing serializer that escapes all required control characters and validates or converts platform filenames to UTF-8; keep diagnostic text exclusively on stderr
-- Validation: Add CLI integration fixtures with quote, backslash, tab, newline, control-byte, non-ASCII, and invalid-encoding filenames and CUE titles where the platform permits them; parse stdout with strict JSON readers on Windows and POSIX and verify exact round trips or documented rejection
-- Resolution: Pending
-
 ### BR-0043: P2 - Fail audio fingerprinting when directory enumeration is incomplete
 
 - [ ] OPEN

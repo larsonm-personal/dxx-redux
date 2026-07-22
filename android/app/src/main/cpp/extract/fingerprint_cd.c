@@ -42,6 +42,7 @@
 
 #include "cue_parser.h"
 #include "fingerprint_gen.h"
+#include "json_writer.h"
 
 /* ── Minimal SHA-1 (same implementation as extract_cd.c) ──────────── */
 
@@ -274,14 +275,9 @@ static void path_join(char *out, int out_len, const char *a, const char *b)
 }
 
 /* Escape a string for JSON output (handles quotes and backslashes) */
-static void json_escape(const char *src, char *dst, int dst_len)
+static void json_escape(FILE *output, const char *src)
 {
-	int i = 0;
-	while (*src && i < dst_len - 2) {
-		if (*src == '"' || *src == '\\') dst[i++] = '\\';
-		dst[i++] = *src++;
-	}
-	dst[i] = '\0';
+	json_write_string(output, src);
 }
 
 /* ── Main ────────────────────────────────────────────────────────────── */
@@ -406,14 +402,15 @@ int main(int argc, char *argv[])
 			free(audio_buf);
 
 			if (rc == 0 && fp.encoded) {
-				char title_escaped[CUE_TITLE_LEN * 2];
-				json_escape(t->title, title_escaped, sizeof(title_escaped));
-
 				printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\", "
-				       "\"chromaprint\": \"%s\", \"duration_ms\": %d",
-				       t->track_num, sha_hex, fp.encoded, fp.duration_ms);
-				if (t->title[0])
-					printf(", \"title\": \"%s\"", title_escaped);
+				       "\"chromaprint\": ",
+				       t->track_num, sha_hex);
+				json_escape(stdout, fp.encoded);
+				printf(", \"duration_ms\": %d", fp.duration_ms);
+				if (t->title[0]) {
+					printf(", \"title\": ");
+					json_escape(stdout, t->title);
+				}
 				printf("}\n");
 
 				fprintf(stderr, "  Track %d: audio  sha1=%s  fp_len=%d  duration=%dms\n",

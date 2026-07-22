@@ -26,6 +26,7 @@
 #endif
 
 #include "fingerprint_gen.h"
+#include "json_writer.h"
 
 /* Maximum files we'll handle in one directory */
 #define MAX_FILES    4096
@@ -119,14 +120,9 @@ static int collect_audio_files(const char *dir)
 }
 
 /* Escape a string for JSON output */
-static void json_escape(const char *src, char *dst, int dst_len)
+static void json_escape(FILE *output, const char *src)
 {
-	int i = 0;
-	while (*src && i < dst_len - 2) {
-		if (*src == '"' || *src == '\\') dst[i++] = '\\';
-		dst[i++] = *src++;
-	}
-	dst[i] = '\0';
+	json_write_string(output, src);
 }
 
 int main(int argc, char *argv[])
@@ -153,9 +149,6 @@ int main(int argc, char *argv[])
 
 	printf("[\n");
 	for (i = 0; i < count; i++) {
-		char escaped[MAX_PATH_LEN * 2];
-		json_escape(s_filenames[i], escaped, sizeof(escaped));
-
 		fprintf(stderr, "  [%d/%d] %s ...", i + 1, count, s_filenames[i]);
 		if (join_path(full_path, sizeof(full_path), dir, s_filenames[i]) < 0) {
 			fprintf(stderr, " PATH TOO LONG\n");
@@ -169,8 +162,11 @@ int main(int argc, char *argv[])
 		if (rc == 0 && fp.encoded) {
 			if (printed > 0)
 				printf(",\n");
-			printf("  {\"filename\": \"%s\", \"chromaprint\": \"%s\", \"duration_ms\": %d}",
-			       escaped, fp.encoded, fp.duration_ms);
+			printf("  {\"filename\": ");
+			json_escape(stdout, s_filenames[i]);
+			printf(", \"chromaprint\": ");
+			json_escape(stdout, fp.encoded);
+			printf(", \"duration_ms\": %d}", fp.duration_ms);
 			printed++;
 			fprintf(stderr, " %dms\n", fp.duration_ms);
 		} else {

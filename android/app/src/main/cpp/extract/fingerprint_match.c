@@ -18,6 +18,8 @@
 #include <string.h>
 #include <chromaprint.h>
 
+#include "json_writer.h"
+
 /* ── Matching parameters ──────────────────────────────────────────── */
 
 #define MAX_OFFSET         15
@@ -275,12 +277,7 @@ static int load_db(const char *data, int len)
 
 static void print_escaped(FILE *f, const char *s)
 {
-	fputc('"', f);
-	for (; *s; s++) {
-		if (*s == '"' || *s == '\\') fputc('\\', f);
-		fputc(*s, f);
-	}
-	fputc('"', f);
+	json_write_string(f, s);
 }
 
 /* ── Main ─────────────────────────────────────────────────────────── */
