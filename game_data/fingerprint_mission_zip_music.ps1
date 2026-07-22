@@ -10,6 +10,7 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipAcoustId,
     [switch]$UpdateDatabase,
+    [switch]$BudgetTestOnly,
     [string]$Zip,
     [string]$MissionDir = (Join-Path $PSScriptRoot "mission_files"),
     [string]$OutputRoot = (Join-Path $PSScriptRoot "music")
@@ -19,11 +20,68 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\test_env.ps1"
+. "$repoRoot\android\helpers\bounded_extraction.ps1"
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $buildDir = Join-Path $repoRoot "android/tests/build"
 $fpExe = Join-Path $buildDir "Release/fingerprint_audio.exe"
+$MaxArchiveEntries = 4096
+$MaxArchiveEntryBytes = 512MB
+$MaxArchiveTotalBytes = 2GB
+$MaxArchiveRatio = 1000L
+$MaxArchiveSeconds = 300
+$MaxZipPreambleBytes = 16MB
+
+function Register-ArchiveEntry {
+    param([long]$Length, [long]$CompressedLength, [string]$Name)
+    $script:ArchiveBudget.Entries++
+    if ($script:ArchiveBudget.Entries -gt $MaxArchiveEntries) { throw "Archive exceeds $MaxArchiveEntries entries" }
+    if ($Length -gt $MaxArchiveEntryBytes) { throw "$Name exceeds $MaxArchiveEntryBytes bytes" }
+    if ($CompressedLength -gt 0) {
+        $quotient = [math]::Floor($Length / $CompressedLength)
+        if ($quotient -gt $MaxArchiveRatio -or ($quotient -eq $MaxArchiveRatio -and ($Length % $CompressedLength) -gt 0)) {
+            throw "$Name exceeds the ${MaxArchiveRatio}:1 expansion ratio"
+        }
+    }
+    if ($Length -gt $MaxArchiveTotalBytes - $script:ArchiveBudget.DeclaredBytes) { throw "Archive exceeds $MaxArchiveTotalBytes declared bytes" }
+    $script:ArchiveBudget.DeclaredBytes += $Length
+}
+
+function Copy-BoundedStream {
+    param(
+        [System.IO.Stream]$InputStream,
+        [System.IO.Stream]$OutputStream,
+        [long]$CompressedLength,
+        [string]$Name,
+        [long]$ExactLength = -1
+    )
+    $buffer = New-Object byte[] 65536
+    $entryBytes = 0L
+    while ($true) {
+        $want = if ($ExactLength -ge 0) { [math]::Min($buffer.Length, $ExactLength - $entryBytes) } else { $buffer.Length }
+        if ($want -le 0) { break }
+        $read = $InputStream.Read($buffer, 0, [int]$want)
+        if ($read -le 0) { break }
+        $entryBytes += $read
+        $script:ArchiveBudget.ActualBytes += $read
+        if ($entryBytes -gt $MaxArchiveEntryBytes -or $script:ArchiveBudget.ActualBytes -gt $MaxArchiveTotalBytes) {
+            throw 'Archive output budget exceeded'
+        }
+        if ($CompressedLength -gt 0 -and $entryBytes -gt $CompressedLength * $MaxArchiveRatio) {
+            throw "$Name exceeds the ${MaxArchiveRatio}:1 expansion ratio"
+        }
+        if (([DateTime]::UtcNow - $script:ArchiveBudget.Started).TotalSeconds -gt $MaxArchiveSeconds) {
+            throw "Archive work exceeds $MaxArchiveSeconds seconds"
+        }
+        if ($OutputStream -is [IO.FileStream] -and ($script:ArchiveBudget.ActualBytes % 8MB) -lt $read) {
+            $drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($OutputStream.Name))
+            if ($drive.AvailableFreeSpace -lt 50MB) { throw 'Archive extraction exhausted free-space headroom' }
+        }
+        $OutputStream.Write($buffer, 0, $read)
+    }
+    if ($ExactLength -ge 0 -and $entryBytes -ne $ExactLength) { throw "Unexpected length for $Name" }
+}
 
 function Get-7zaPath {
     $onPath = Get-Command 7za -ErrorAction SilentlyContinue
@@ -108,15 +166,8 @@ function Copy-LimitedBytes {
         [System.IO.Stream]$OutputStream,
         [Int64]$Length
     )
-    $buffer = New-Object byte[] 65536
-    $remaining = $Length
-    while ($remaining -gt 0) {
-        $want = [Math]::Min([Int64]$buffer.Length, $remaining)
-        $read = $InputStream.Read($buffer, 0, [int]$want)
-        if ($read -le 0) { throw "Unexpected end of stream while copying $Length bytes" }
-        $OutputStream.Write($buffer, 0, $read)
-        $remaining -= $read
-    }
+    Copy-BoundedStream -InputStream $InputStream -OutputStream $OutputStream -CompressedLength $Length `
+        -Name 'HOG member' -ExactLength $Length
 }
 
 function New-UniqueAudioPath {
@@ -151,36 +202,46 @@ function Copy-EntryToTempFile {
     $inStream = $Entry.Open()
     try {
         $outStream = [System.IO.File]::Create($tempPath)
-        try { $inStream.CopyTo($outStream) } finally { $outStream.Dispose() }
+        try {
+            Copy-BoundedStream -InputStream $inStream -OutputStream $outStream `
+                -CompressedLength $Entry.CompressedLength -Name $Entry.FullName
+        } finally { $outStream.Dispose() }
     } finally {
         $inStream.Dispose()
     }
     return $tempPath
 }
 
-function Find-ZipPayloadOffset {
-    param([byte[]]$Bytes)
-    for ($i = 0; $i -le $Bytes.Length - 4; $i++) {
-        if ($Bytes[$i] -eq 0x50 -and $Bytes[$i + 1] -eq 0x4b -and
-            $Bytes[$i + 2] -eq 0x03 -and $Bytes[$i + 3] -eq 0x04) {
-            return $i
-        }
-    }
-    return -1
-}
-
 function Get-ZipPayloadPath {
     param([string]$ArchivePath, [string]$TempRoot)
-    $bytes = [System.IO.File]::ReadAllBytes($ArchivePath)
-    $offset = Find-ZipPayloadOffset $bytes
-    if ($offset -lt 0) { throw "Could not find ZIP payload in $ArchivePath" }
+    $input = [IO.File]::OpenRead($ArchivePath)
+    $signature = [byte[]](0x50, 0x4b, 0x03, 0x04)
+    $matched = 0
+    $offset = -1L
+    try {
+        while ($input.Position -lt $MaxZipPreambleBytes) {
+            $next = $input.ReadByte()
+            if ($next -lt 0) { break }
+            if ($next -eq $signature[$matched]) {
+                $matched++
+                if ($matched -eq $signature.Length) { $offset = $input.Position - $signature.Length; break }
+            } else {
+                $matched = if ($next -eq $signature[0]) { 1 } else { 0 }
+            }
+        }
+    } finally { $input.Dispose() }
+    if ($offset -lt 0) { throw "Could not find a ZIP payload within $MaxZipPreambleBytes bytes in $ArchivePath" }
     if ($offset -eq 0) { return $ArchivePath }
     $zipPath = Join-Path $TempRoot "$([Guid]::NewGuid().ToString()).zip"
+    $input = [IO.File]::OpenRead($ArchivePath)
+    [void]$input.Seek($offset, [IO.SeekOrigin]::Begin)
     $outStream = [System.IO.File]::Create($zipPath)
     try {
-        $outStream.Write($bytes, $offset, $bytes.Length - $offset)
+        Copy-BoundedStream -InputStream $input -OutputStream $outStream -CompressedLength ($input.Length - $offset) `
+            -Name ([IO.Path]::GetFileName($ArchivePath))
     } finally {
         $outStream.Dispose()
+        $input.Dispose()
     }
     return $zipPath
 }
@@ -206,6 +267,7 @@ function Extract-HogAudio {
             if ($null -eq $lenBytes) { break }
             $entryName = Get-HogEntryName $nameBytes
             $length = [Int64][BitConverter]::ToUInt32($lenBytes, 0)
+            Register-ArchiveEntry -Length $length -CompressedLength $length -Name $entryName
             if ($length -lt 0 -or $length -gt ($stream.Length - $stream.Position)) {
                 throw "Invalid HOG member length $length for $entryName in $HogPath"
             }
@@ -245,6 +307,9 @@ function Extract-ZipAudio {
             $zip = [System.IO.Compression.ZipFile]::OpenRead($payloadPath)
         }
         foreach ($entry in $zip.Entries) {
+            Register-ArchiveEntry -Length $entry.Length -CompressedLength $entry.CompressedLength -Name $entry.FullName
+        }
+        foreach ($entry in $zip.Entries) {
             if ($entry.FullName.EndsWith("/")) { continue }
             $entryName = $entry.FullName -replace '\\', '/'
             $sourcePath = if ($SourcePrefix) { "$SourcePrefix!$entryName" } else { $entryName }
@@ -254,7 +319,10 @@ function Extract-ZipAudio {
                 $inStream = $entry.Open()
                 try {
                     $outStream = [System.IO.File]::Create($dest)
-                    try { $inStream.CopyTo($outStream) } finally { $outStream.Dispose() }
+                    try {
+                        Copy-BoundedStream -InputStream $inStream -OutputStream $outStream `
+                            -CompressedLength $entry.CompressedLength -Name $entry.FullName
+                    } finally { $outStream.Dispose() }
                 } finally {
                     $inStream.Dispose()
                 }
@@ -299,12 +367,18 @@ function Extract-DirectoryAudio {
     $count = 0
     $files = Get-ChildItem -LiteralPath $DirectoryPath -File -Recurse
     foreach ($file in $files) {
+        Register-ArchiveEntry -Length $file.Length -CompressedLength 0 -Name $file.FullName
         $relative = [System.IO.Path]::GetRelativePath($DirectoryPath, $file.FullName).Replace('\', '/')
         $sourcePath = if ($SourcePrefix) { "$SourcePrefix!$relative" } else { $relative }
         $ext = $file.Extension.ToLowerInvariant()
         if (Test-AudioName $file.Name) {
             $dest = New-UniqueAudioPath -OutputDir $OutputDir -SourcePath $sourcePath -SourceMap $SourceMap
-            Copy-Item -LiteralPath $file.FullName -Destination $dest -Force
+            $input = [IO.File]::OpenRead($file.FullName)
+            $output = [IO.File]::Create($dest)
+            try { Copy-BoundedStream -InputStream $input -OutputStream $output -CompressedLength 0 -Name $file.Name } finally {
+                $output.Dispose()
+                $input.Dispose()
+            }
             $count++
         } elseif ($ext -eq ".hog") {
             $count += Extract-HogAudio -HogPath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap
@@ -331,9 +405,10 @@ function Extract-SevenZipAudio {
     New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
     try {
         $sevenZip = Get-7zaPath
-        $output = & $sevenZip x "-o$extractDir" -y -- $ArchivePath 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "7z extract failed for ${ArchivePath}: $($output -join ' ')"
+        $bounded = Invoke-BoundedExtractor -OutputDirectory $extractDir -FilePath $sevenZip `
+            -ArgumentList @('x', "-o$extractDir", '-y', '--', $ArchivePath)
+        if ($bounded.ExitCode -ne 0) {
+            throw "7z extract failed for ${ArchivePath}: $($bounded.Output -join ' ')"
         }
         return Extract-DirectoryAudio -DirectoryPath $extractDir -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
     } finally {
@@ -353,9 +428,10 @@ function Extract-RarAudio {
     New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
     try {
         $tar = Get-TarPath
-        $output = & $tar -xf $ArchivePath -C $extractDir 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "RAR extract failed for ${ArchivePath}: $($output -join ' ')"
+        $bounded = Invoke-BoundedExtractor -OutputDirectory $extractDir -FilePath $tar `
+            -ArgumentList @('-xf', $ArchivePath, '-C', $extractDir)
+        if ($bounded.ExitCode -ne 0) {
+            throw "RAR extract failed for ${ArchivePath}: $($bounded.Output -join ' ')"
         }
         return Extract-DirectoryAudio -DirectoryPath $extractDir -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
     } finally {
@@ -613,6 +689,8 @@ function Write-ChromaprintInfo {
     [System.IO.File]::WriteAllText($Path, ($lines -join "`n"), [System.Text.UTF8Encoding]::new($false))
 }
 
+if ($BudgetTestOnly) { return }
+
 if (-not $SkipBuild -and -not (Test-Path $fpExe)) {
     Write-Host "Building fingerprint_audio.exe..."
     $srcDir = Join-Path $repoRoot "android/app/src/main/cpp/extract"
@@ -702,6 +780,7 @@ foreach ($zipFile in $zipFiles) {
         New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 
         $sourceMap = @{}
+        $script:ArchiveBudget = @{ Entries = 0; DeclaredBytes = 0L; ActualBytes = 0L; Started = [DateTime]::UtcNow }
         try {
             $count = Extract-MissionArchiveAudio -ArchivePath $zipFile.FullName -OutputDir $albumDir -SourcePrefix $zipFile.Name -SourceMap $sourceMap -TempRoot $tempRoot
         } finally {

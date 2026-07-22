@@ -25,6 +25,7 @@ $RepoRoot   = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\helpers\test_env.ps1"
+. "$RepoRoot\android\helpers\bounded_extraction.ps1"
 
 $SrcDir     = Join-RegressionPath $RepoRoot "android" "app" "src" "main" "cpp" "extract"
 $BuildDir   = Join-RegressionPath $RepoRoot "android" "tests" "build"
@@ -119,12 +120,10 @@ foreach ($folder in $folders) {
     # Run extract_cd.exe
     $outDir = $dataTracksDir
     try {
-        # Run with $ErrorActionPreference relaxed so stderr doesn't throw
-        $prevEAP = $ErrorActionPreference
-        $ErrorActionPreference = "Continue"
-        $output = & $ExePath $sourceFile $outDir 2>&1
-        $exitCode = $LASTEXITCODE
-        $ErrorActionPreference = $prevEAP
+        $bounded = Invoke-BoundedExtractor -OutputDirectory $outDir -FilePath $ExePath `
+            -ArgumentList @($sourceFile, $outDir)
+        $output = $bounded.Output
+        $exitCode = $bounded.ExitCode
 
         # Separate stdout (JSON lines) from stderr (progress)
         $jsonLines = @()

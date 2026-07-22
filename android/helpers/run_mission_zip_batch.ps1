@@ -21,6 +21,7 @@ $ErrorActionPreference = "Stop"
 $helpersDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
+. (Join-Path $helpersDir "bounded_extraction.ps1")
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-7zaPath {
@@ -367,11 +368,27 @@ function Add-ZipMissionGameHints {
     param(
         [Parameter(Mandatory = $true)]$Archive,
         [Parameter(Mandatory = $true)][hashtable]$Counts,
-        [int]$Depth = 0
+        [int]$Depth = 0,
+        [hashtable]$Budget = $null
     )
 
+    if (-not $Budget) {
+        $Budget = @{ Entries = 0; ExpandedBytes = 0L; Started = [DateTime]::UtcNow }
+    }
     foreach ($entry in $Archive.Entries) {
+        $Budget.Entries++
+        if ($Budget.Entries -gt 4096) { throw 'Mission inspection exceeds 4096 entries' }
         if (-not $entry.Name) { continue }
+        if ($entry.Length -gt 512MB) { throw "$($entry.FullName) exceeds 512 MiB" }
+        if ($entry.CompressedLength -gt 0) {
+            $quotient = [math]::Floor($entry.Length / $entry.CompressedLength)
+            if ($quotient -gt 1000 -or ($quotient -eq 1000 -and ($entry.Length % $entry.CompressedLength) -gt 0)) {
+                throw "$($entry.FullName) exceeds the 1000:1 expansion ratio"
+            }
+        }
+        if ($entry.Length -gt 2GB - $Budget.ExpandedBytes) { throw 'Mission inspection exceeds 2 GiB' }
+        $Budget.ExpandedBytes += $entry.Length
+        if (([DateTime]::UtcNow - $Budget.Started).TotalSeconds -gt 300) { throw 'Mission inspection exceeds 300 seconds' }
         $name = $entry.Name.ToLowerInvariant()
         switch ([IO.Path]::GetExtension($name)) {
             ".msn" { $Counts.d1 += 10 }
@@ -385,11 +402,18 @@ function Add-ZipMissionGameHints {
                 $stream = $entry.Open()
                 $memory = New-Object System.IO.MemoryStream
                 try {
-                    $stream.CopyTo($memory)
+                    $buffer = New-Object byte[] 65536
+                    $written = 0L
+                    while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        $written += $read
+                        if ($written -gt 100MB) { throw 'Nested ZIP exceeds the 100 MiB inspection limit' }
+                        if (([DateTime]::UtcNow - $Budget.Started).TotalSeconds -gt 300) { throw 'Mission inspection exceeds 300 seconds' }
+                        $memory.Write($buffer, 0, $read)
+                    }
                     $memory.Position = 0
                     $nested = New-Object System.IO.Compression.ZipArchive($memory, [System.IO.Compression.ZipArchiveMode]::Read, $true)
                     try {
-                        Add-ZipMissionGameHints -Archive $nested -Counts $Counts -Depth ($Depth + 1)
+                        Add-ZipMissionGameHints -Archive $nested -Counts $Counts -Depth ($Depth + 1) -Budget $Budget
                     } finally {
                         $nested.Dispose()
                     }
@@ -410,16 +434,26 @@ function Get-MissionArchiveEntryNames {
     $ext = [IO.Path]::GetExtension($ArchivePath).ToLowerInvariant()
     if ($ext -eq ".7z") {
         $sevenZip = Get-7zaPath
-        $output = & $sevenZip l -slt -- $ArchivePath 2>&1
-        if ($LASTEXITCODE -ne 0) {
+        $listingRoot = Join-Path ([IO.Path]::GetTempPath()) ("dxx_7z_list_" + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $listingRoot | Out-Null
+        try {
+            $bounded = Invoke-BoundedExtractor -OutputDirectory $listingRoot -FilePath $sevenZip `
+                -ArgumentList @('l', '-slt', '--', $ArchivePath) -TimeoutSeconds 120 -MaxDiagnosticBytes 1048576
+        } finally {
+            Remove-Item -LiteralPath $listingRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        $output = $bounded.Output
+        if ($bounded.ExitCode -ne 0) {
             throw "7z list failed for ${ArchivePath}: $($output -join ' ')"
         }
-        return @(
+        $entries = @(
             $output |
                 Where-Object { $_ -match '^Path = (.+)$' } |
                 ForEach-Object { $Matches[1] } |
                 Where-Object { $_ -and $_ -ne $ArchivePath }
         )
+        if ($entries.Count -gt 4096) { throw '7z listing exceeds 4096 entries' }
+        return $entries
     }
 
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)

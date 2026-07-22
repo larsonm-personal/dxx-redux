@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.util.Locale
 import java.util.zip.ZipInputStream
@@ -48,6 +49,7 @@ object MissionZipMusic {
         val sources =
             runCatching {
                 ArchiveFiles.open(file).use { archive ->
+                    val metadataBudget = musicMetadataBudget()
                     buildList {
                         val archiveBuilder =
                             SourceBuilder(
@@ -63,7 +65,13 @@ object MissionZipMusic {
                                     archive.openInputStream(entry).use { input ->
                                         archiveBuilder.addSongList(
                                             normalized,
-                                            input.readBytes().toString(Charsets.UTF_8),
+                                            input
+                                                .readBytesBounded(
+                                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                                    normalized,
+                                                    metadataBudget,
+                                                    entry.compressedSizeBytes,
+                                                ).toString(Charsets.UTF_8),
                                         )
                                     }
                                 }
@@ -103,6 +111,8 @@ object MissionZipMusic {
         if (!record.rootDir.isDirectory) return null
         val sources =
             buildList {
+                val entryBudget = ExtractionBudget()
+                val metadataBudget = musicMetadataBudget()
                 val archiveBuilder =
                     SourceBuilder(
                         id = "archive",
@@ -114,9 +124,21 @@ object MissionZipMusic {
                     val relativePath = normalizePath(file.relativePath)
                     val diskFile = File(record.rootDir, relativePath.replace('/', File.separatorChar))
                     if (!diskFile.isFile) continue
+                    entryBudget.registerEntry(file.sizeBytes, file.sizeBytes, relativePath)
                     when (extensionOf(relativePath)) {
                         "sng" -> {
-                            archiveBuilder.addSongList(relativePath, diskFile.readText(Charsets.UTF_8))
+                            archiveBuilder.addSongList(
+                                relativePath,
+                                diskFile.inputStream().use {
+                                    it
+                                        .readBytesBounded(
+                                            ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                            relativePath,
+                                            metadataBudget,
+                                            file.sizeBytes,
+                                        ).toString(Charsets.UTF_8)
+                                },
+                            )
                         }
 
                         in PLAYABLE_EXTENSIONS -> {
@@ -153,6 +175,8 @@ object MissionZipMusic {
         input: InputStream,
         sourceFilePath: String? = null,
     ): MissionZipMusicSource? {
+        val entryBudget = ExtractionBudget()
+        val metadataBudget = musicMetadataBudget()
         val builder =
             SourceBuilder(
                 id = "dxa:$archiveEntryPath",
@@ -162,11 +186,25 @@ object MissionZipMusic {
         openZipInputStreamSkippingPreamble(input).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
+                entryBudget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory) {
                     val nestedPath = normalizePath(entry.name)
                     when (extensionOf(nestedPath)) {
                         "sng" -> {
-                            builder.addSongList(archiveEntryPath, zip.readBytes().toString(Charsets.UTF_8))
+                            builder.addSongList(
+                                archiveEntryPath,
+                                zip
+                                    .readBytesBounded(
+                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                        nestedPath,
+                                        metadataBudget,
+                                        entry.compressedSize,
+                                    ).toString(Charsets.UTF_8),
+                            )
                         }
 
                         in PLAYABLE_EXTENSIONS -> {
@@ -181,7 +219,13 @@ object MissionZipMusic {
                         }
 
                         "hog" -> {
-                            val nestedHogBytes = zip.readBytes()
+                            val nestedHogBytes =
+                                zip.readBytesBounded(
+                                    ExtractionLimits.MAX_ENTRY_BYTES,
+                                    nestedPath,
+                                    entryBudget,
+                                    entry.compressedSize,
+                                )
                             scanHog(
                                 archiveEntryPath = archiveEntryPath,
                                 input = ByteArrayInputStream(nestedHogBytes),
@@ -212,6 +256,8 @@ object MissionZipMusic {
                 containerPath = containerPath,
             )
         if (input.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return null
+        val entryBudget = ExtractionBudget()
+        val metadataBudget = musicMetadataBudget()
         while (true) {
             val nameBytes = input.readNBytesCompat(13)
             if (nameBytes.isEmpty() || nameBytes.size != 13) break
@@ -219,9 +265,18 @@ object MissionZipMusic {
             if (lenBytes.size != 4) break
             val entryName = hogEntryName(nameBytes)
             val size = leInt(lenBytes).toLong() and 0xffff_ffffL
+            entryBudget.registerEntry(size, size, entryName)
             val ext = extensionOf(entryName)
             if (leafName(entryName).lowercase(Locale.US) in SONG_LIST_FILES) {
-                val bytes = input.readNBytesCompat(size.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                if (size > ExtractionLimits.MAX_DESCRIPTOR_BYTES) {
+                    throw IOException("$entryName exceeds ${ExtractionLimits.MAX_DESCRIPTOR_BYTES} bytes")
+                }
+                val bytes =
+                    input.readBytesBoundedExact(
+                        size,
+                        entryName,
+                        metadataBudget,
+                    )
                 builder.addSongList(archiveEntryPath, bytes.toString(Charsets.UTF_8))
             } else {
                 if (ext in PLAYABLE_EXTENSIONS) {
@@ -259,6 +314,9 @@ object MissionZipMusic {
             text: String,
         ) {
             parseSongListReferences(text).forEachIndexed { index, name ->
+                if (songReferences.size >= ExtractionLimits.MAX_ENTRIES) {
+                    throw IOException("Song lists exceed ${ExtractionLimits.MAX_ENTRIES} references")
+                }
                 songReferences += SongReference(name, archiveEntryPath, index)
             }
         }
@@ -381,6 +439,24 @@ object MissionZipMusic {
         }
         return if (total == count) out else out.copyOf(total)
     }
+
+    private fun InputStream.readBytesBoundedExact(
+        count: Long,
+        label: String,
+        budget: ExtractionBudget,
+    ): ByteArray {
+        if (count > Int.MAX_VALUE) throw IOException("$label exceeds the in-memory read limit")
+        val bytes = readNBytesCompat(count.toInt())
+        if (bytes.size.toLong() != count) throw IOException("Unexpected end of $label")
+        budget.accountActual(bytes.size, bytes.size.toLong(), count, label)
+        return bytes
+    }
+
+    private fun musicMetadataBudget() =
+        ExtractionBudget(
+            maxEntryBytes = ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+            maxTotalBytes = ExtractionLimits.MAX_METADATA_BYTES,
+        )
 
     private fun InputStream.skipFullyCompat(count: Long) {
         var remaining = count

@@ -19,6 +19,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
 $DemoDir = Join-Path $ScriptDir "demo installers"
+. (Join-Path $RepoRoot 'android\helpers\bounded_extraction.ps1')
 
 # --- Load DOSBox path from tool_versions.conf ---
 $confFile = Join-Path (Join-Path (Join-Path $RepoRoot "android") "get_deps") "tool_versions.conf"
@@ -97,19 +98,7 @@ function Expand-ZipCompatibleArchive {
         [Parameter(Mandatory = $true)][string]$DestinationPath
     )
 
-    New-Item -ItemType Directory -Force -Path $DestinationPath | Out-Null
-    $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
-    try {
-        foreach ($entry in $archive.Entries) {
-            if ([string]::IsNullOrWhiteSpace($entry.Name)) { continue }
-            $target = Join-Path $DestinationPath $entry.FullName
-            $targetDir = Split-Path $target -Parent
-            if ($targetDir) { New-Item -ItemType Directory -Force -Path $targetDir | Out-Null }
-            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $true)
-        }
-    } finally {
-        $archive.Dispose()
-    }
+    Expand-BoundedZipArchive -ArchivePath $ArchivePath -DestinationPath $DestinationPath
 }
 
 foreach ($inst in $Installers) {

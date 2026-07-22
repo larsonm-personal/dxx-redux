@@ -48,9 +48,16 @@ object MissionZip {
     fun inspect(file: File): ScanResult? {
         if (!file.isFile) return null
         ArchiveFiles.open(file).use { archive ->
+            val budget = ExtractionBudget()
+            val metadataBudget = descriptorBudget()
             val constituents = mutableListOf<Constituent>()
             val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
             for (entry in archive.entries) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.sizeBytes,
+                    if (entry.isDirectory) 0 else entry.compressedSizeBytes,
+                    entry.path,
+                )
                 if (entry.isDirectory) continue
                 val name = leafName(entry.path)
                 val role = GameFileFormats.missionZipRoleForFile(name)
@@ -63,7 +70,16 @@ object MissionZip {
                         compressedSizeBytes = entry.compressedSizeBytes,
                     )
                 if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
-                    val text = archive.openInputStream(entry).bufferedReader().use { it.readText() }
+                    val text =
+                        archive.openInputStream(entry).use {
+                            it
+                                .readBytesBounded(
+                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                    entry.path,
+                                    metadataBudget,
+                                    entry.compressedSizeBytes,
+                                ).toString(Charsets.UTF_8)
+                        }
                     missions += parseMissionDescriptor(entry.path, text)
                 }
             }
@@ -78,11 +94,18 @@ object MissionZip {
     }
 
     fun inspect(input: InputStream): ScanResult? {
+        val budget = ExtractionBudget()
+        val metadataBudget = descriptorBudget()
         val constituents = mutableListOf<Constituent>()
         val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
         openZipInputStreamSkippingPreamble(input).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory) {
                     val name = leafName(entry.name)
                     val role = GameFileFormats.missionZipRoleForFile(name)
@@ -96,7 +119,17 @@ object MissionZip {
                             compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
                         )
                     if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
-                        missions += parseMissionDescriptor(entry.name, zip.readBytes().toString(Charsets.UTF_8))
+                        missions +=
+                            parseMissionDescriptor(
+                                entry.name,
+                                zip
+                                    .readBytesBounded(
+                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                        entry.name,
+                                        metadataBudget,
+                                        entry.compressedSize,
+                                    ).toString(Charsets.UTF_8),
+                            )
                     }
                 }
                 zip.closeEntry()
@@ -113,12 +146,15 @@ object MissionZip {
     }
 
     internal fun inspectExtracted(record: MissionZipExtractionRecord): ScanResult? {
+        val budget = ExtractionBudget()
+        val metadataBudget = descriptorBudget()
         val constituents = mutableListOf<Constituent>()
         val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
         for (file in record.files) {
             val entryPath = normalizePath(file.entryPath).takeIf { it.isNotBlank() } ?: continue
             val name = leafName(entryPath)
             val role = GameFileFormats.missionZipRoleForFile(name)
+            budget.registerEntry(file.sizeBytes, file.sizeBytes, entryPath)
             constituents +=
                 Constituent(
                     path = entryPath,
@@ -130,7 +166,19 @@ object MissionZip {
             if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
                 val diskFile = File(record.rootDir, file.relativePath.replace('/', File.separatorChar))
                 if (diskFile.isFile) {
-                    missions += parseMissionDescriptor(entryPath, diskFile.readText(Charsets.UTF_8))
+                    missions +=
+                        diskFile.inputStream().use {
+                            parseMissionDescriptor(
+                                entryPath,
+                                it
+                                    .readBytesBounded(
+                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                        entryPath,
+                                        metadataBudget,
+                                        file.sizeBytes,
+                                    ).toString(Charsets.UTF_8),
+                            )
+                        }
                 }
             }
         }
@@ -144,12 +192,18 @@ object MissionZip {
     }
 
     fun isImportCandidate(input: InputStream): Boolean {
+        val budget = ExtractionBudget()
         var hasMissionDescriptor = false
         var hasMissionAssets = false
         var hasRebirthChildZip = false
         openZipInputStreamSkippingPreamble(input).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory) {
                     val name = leafName(entry.name)
                     val role = GameFileFormats.missionZipRoleForFile(name)
@@ -172,6 +226,12 @@ object MissionZip {
         }
         return (hasMissionDescriptor && hasMissionAssets) || hasRebirthChildZip
     }
+
+    private fun descriptorBudget() =
+        ExtractionBudget(
+            maxEntryBytes = ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+            maxTotalBytes = ExtractionLimits.MAX_METADATA_BYTES,
+        )
 
     fun readTextFile(
         file: File,

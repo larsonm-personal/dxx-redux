@@ -11,9 +11,14 @@ private val ZIP_LOCAL_FILE_HEADER = byteArrayOf(0x50, 0x4b, 0x03, 0x04)
 internal fun openZipInputStreamSkippingPreamble(input: InputStream): ZipInputStream {
     val stream = PushbackInputStream(BufferedInputStream(input), ZIP_LOCAL_FILE_HEADER.size)
     var matched = 0
+    var scanned = 0L
     while (true) {
+        if (scanned >= ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES) {
+            throw ZipException("ZIP preamble exceeds ${ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES} bytes")
+        }
         val next = stream.read()
         if (next < 0) throw ZipException("ZIP local file header not found")
+        scanned++
         val expected = ZIP_LOCAL_FILE_HEADER[matched].toInt() and 0xff
         if (next == expected) {
             matched++

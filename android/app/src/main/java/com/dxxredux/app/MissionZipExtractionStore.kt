@@ -446,6 +446,8 @@ internal fun extractZipToRoot(
     var totalBytes = 0L
     var extractedBytes = 0L
     var lastReportedBytes = -1024L * 1024L
+    var lastSpaceCheckBytes = 0L
+    val extractionBudget = ExtractionBudget()
 
     fun report(
         path: String,
@@ -457,6 +459,13 @@ internal fun extractZipToRoot(
         }
     }
     ArchiveFiles.open(modFile).use { archive ->
+        archive.entries.forEach { entry ->
+            extractionBudget.registerEntry(
+                if (entry.isDirectory) 0 else entry.sizeBytes,
+                if (entry.isDirectory) 0 else entry.compressedSizeBytes,
+                entry.path,
+            )
+        }
         totalBytes = missionZipLaunchStageBytes(archive.entries)
         report("", force = true)
         ImportStorageGuard.requireFreeSpace(
@@ -478,12 +487,17 @@ internal fun extractZipToRoot(
             output.parentFile?.mkdirs()
             archive.openInputStream(entry).use { input ->
                 FileOutputStream(output).use { outputStream ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        val count = input.read(buffer)
-                        if (count <= 0) break
-                        outputStream.write(buffer, 0, count)
+                    input.copyToBounded(
+                        output = outputStream,
+                        budget = extractionBudget,
+                        compressedSize = entry.compressedSizeBytes,
+                        label = normalized,
+                    ) { count ->
                         extractedBytes += count.toLong()
+                        if (extractedBytes - lastSpaceCheckBytes >= 8L * 1024L * 1024L) {
+                            ImportStorageGuard.requireFreeSpace(stageRoot, 0, "extract ${modFile.name}")
+                            lastSpaceCheckBytes = extractedBytes
+                        }
                         report(normalized)
                     }
                 }
@@ -511,7 +525,12 @@ internal fun extractZipToRoot(
         val target = File(stageRoot, relativePath.replace('/', File.separatorChar))
         ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "extract descent.sng")
         target.parentFile?.mkdirs()
-        source.copyTo(target, overwrite = true)
+        extractionBudget.registerEntry(source.length(), source.length(), relativePath)
+        source.inputStream().use { input ->
+            FileOutputStream(target).use { output ->
+                input.copyToBounded(output, extractionBudget, source.length(), relativePath)
+            }
+        }
         extractedFiles +=
             MissionZipExtractedFile(
                 entryPath = "",

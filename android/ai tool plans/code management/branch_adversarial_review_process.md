@@ -194,6 +194,8 @@ Valid final finding states are `FIXED`, `DISMISSED`, `DEFERRED`, and `DUPLICATE`
 
 Queue rows and chunk completion notes stay in the active ledger because they are campaign coverage evidence and may refer to both open and archived finding IDs. Do not move a finding merely because work started or a partial mitigation landed. Unimplemented, restricted, or unverified scope stays open in the active ledger and is described explicitly rather than being folded into a completed finding
 
+Superseded skip, waiver, and other finalized review-disposition blocks move to `branch_adversarial_review_ledger.done.md` once later review coverage replaces them. Keep the corresponding queue row and completed chunk note in the active ledger so coverage remains auditable without retaining disposed status blocks there
+
 ### 7. Close the campaign
 
 `CLOSE-001` is complete only when:

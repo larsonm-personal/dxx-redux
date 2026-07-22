@@ -28,6 +28,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$MaxCdImageBytes = [long](800MB)
+$MaxEntryBytes = [long](512MB)
+$MaxTotalBytes = [long](2GB)
+$MaxEntries = 4096
+$MaxExpansionRatio = [long]1000
+$FreeHeadroom = [long](50MB)
+$ExtractorTimeoutSeconds = 300
+$MaxDiagnosticBytes = 1MB
+
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
 $DepBase = (Get-Content (Join-Path $RepoRoot "dependency_base.txt") -Raw).Trim()
@@ -153,6 +162,11 @@ if ($nextTrack -and $nextTrack.Index) {
     $endSector = $totalFileSectors
 }
 $numSectors = $endSector - $startSector
+$rawDataBytes = [long]$numSectors * 2048
+if ($startSector -lt 0 -or $numSectors -le 0 -or $rawDataBytes -gt $MaxCdImageBytes) {
+    Write-Error "Data track exceeds the supported extraction budget"
+    exit 1
+}
 
 Write-Host "  Data track: Track $($dataTrack.Number), mode $($dataTrack.Mode)"
 Write-Host "  Sectors: $startSector to $($endSector - 1) ($numSectors sectors)"
@@ -257,8 +271,16 @@ for ($pmIdx = 1; $pmIdx -lt 64; $pmIdx++) {
 
 $pmBuf = $null
 
-if ($hfsPartOffset -lt 0) {
+if ($hfsPartOffset -lt 0 -or $hfsPartSize -le 0 -or
+    $hfsPartOffset -gt $rawDataBytes - $hfsPartSize -or $hfsPartSize -gt $MaxCdImageBytes) {
     Write-Error "No Apple_HFS partition found in partition map"
+    exit 1
+}
+
+$driveRoot = [System.IO.Path]::GetPathRoot($TempDir)
+$requiredWorkingBytes = $rawDataBytes + $hfsPartSize + $MaxTotalBytes + $FreeHeadroom
+if (-not $driveRoot -or [System.IO.DriveInfo]::new($driveRoot).AvailableFreeSpace -lt $requiredWorkingBytes) {
+    Write-Error "Insufficient free space for bounded Mac CD extraction"
     exit 1
 }
 
@@ -294,7 +316,8 @@ Write-Host "`n--- Stage 5: Extract files from HFS volume ---" -ForegroundColor Y
 $HfsExtractDir = Join-Path $TempDir "hfs_files"
 
 $pyFile = Join-Path $RepoRoot "android/helpers/extract_hfs_machfs.py"
-& $Python $pyFile $HfsImgPath $HfsExtractDir
+& $Python $pyFile $HfsImgPath $HfsExtractDir `
+    $MaxCdImageBytes $MaxEntries $MaxEntryBytes $MaxTotalBytes $FreeHeadroom
 if ($LASTEXITCODE -ne 0) {
     Write-Error "HFS extraction failed"
     exit 1
@@ -337,7 +360,21 @@ if (-not $StuffitFile) {
     Write-Warning "No StuffIt archive found in HFS volume -- will collect files directly from HFS"
 } else {
     Write-Host "  StuffIt archive: $(Split-Path $StuffitFile -Leaf)"
-    & $UnarExe -o $UnarOutDir $StuffitFile 2>&1
+    $stuffitSize = (Get-Item -LiteralPath $StuffitFile).Length
+    $maxUnarOutput = if ($stuffitSize -gt [long]($MaxTotalBytes / $MaxExpansionRatio)) {
+        $MaxTotalBytes
+    } else {
+        [long]$stuffitSize * $MaxExpansionRatio
+    }
+    $boundedExtractor = Join-Path $RepoRoot "android/helpers/run_bounded_extractor.py"
+    & $Python $boundedExtractor `
+        --output-dir $UnarOutDir `
+        --timeout-seconds $ExtractorTimeoutSeconds `
+        --max-files $MaxEntries `
+        --max-file-bytes $MaxEntryBytes `
+        --max-total-bytes $maxUnarOutput `
+        --max-diagnostic-bytes $MaxDiagnosticBytes `
+        -- $UnarExe -o $UnarOutDir $StuffitFile
     if ($LASTEXITCODE -ne 0) {
         Write-Error "unar extraction failed"
         exit 1

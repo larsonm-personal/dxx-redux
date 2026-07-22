@@ -180,8 +180,13 @@ class MissionZipMusicStageManagerTest {
     ) {
         putNextEntry(ZipEntry(name))
         val chunk = ByteArray(1024 * 1024)
+        var state = 0x13579bdf
         var remaining = sizeBytes
         while (remaining > 0) {
+            for (index in 0 until 4096) {
+                state = state * 1103515245 + 12345
+                chunk[index] = (state ushr 16).toByte()
+            }
             val count = minOf(chunk.size.toLong(), remaining).toInt()
             write(chunk, 0, count)
             remaining -= count.toLong()

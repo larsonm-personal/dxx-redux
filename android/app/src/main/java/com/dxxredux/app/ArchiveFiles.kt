@@ -10,8 +10,10 @@ import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.io.Closeable
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.RandomAccessFile
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -65,18 +67,31 @@ private class ZipReadableArchive(
     private val zip = ZipFile(file)
     override val format: String = "zip"
     override val entries: List<ArchiveFileEntry> =
-        zip
-            .entries()
-            .asSequence()
-            .map { entry ->
-                ArchiveFileEntry(
-                    path = entry.name,
-                    isDirectory = entry.isDirectory,
-                    sizeBytes = entry.size.coerceAtLeast(0),
-                    compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
-                    handle = entry,
-                )
-            }.toList()
+        try {
+            ExtractionBudget().let { budget ->
+                zip
+                    .entries()
+                    .asSequence()
+                    .map { entry ->
+                        ArchiveFileEntry(
+                            path = entry.name,
+                            isDirectory = entry.isDirectory,
+                            sizeBytes = entry.size.coerceAtLeast(0),
+                            compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
+                            handle = entry,
+                        ).also {
+                            budget.registerEntry(
+                                if (it.isDirectory) 0 else it.sizeBytes,
+                                if (it.isDirectory) 0 else it.compressedSizeBytes,
+                                it.path,
+                            )
+                        }
+                    }.toList()
+            }
+        } catch (error: Exception) {
+            zip.close()
+            throw error
+        }
 
     override fun openInputStream(entry: ArchiveFileEntry): InputStream = zip.getInputStream(entry.handle as ZipEntry)
 
@@ -89,14 +104,29 @@ private class SevenZReadableArchive(
     private val sevenZ = SevenZFile.builder().setFile(file).get()
     override val format: String = "7z"
     override val entries: List<ArchiveFileEntry> =
-        sevenZ.entries.map { entry ->
-            ArchiveFileEntry(
-                path = entry.name.orEmpty(),
-                isDirectory = entry.isDirectory,
-                sizeBytes = entry.size.coerceAtLeast(0),
-                compressedSizeBytes = entry.size.coerceAtLeast(0),
-                handle = entry,
-            )
+        try {
+            ExtractionBudget().let { budget ->
+                sevenZ.entries.map { entry ->
+                    ArchiveFileEntry(
+                        path = entry.name.orEmpty(),
+                        isDirectory = entry.isDirectory,
+                        sizeBytes = entry.size.coerceAtLeast(0),
+                        // Commons Compress does not expose the per-entry compressed size here.
+                        // Actual-byte limits still apply when the entry is materialized.
+                        compressedSizeBytes = 0,
+                        handle = entry,
+                    ).also {
+                        budget.registerEntry(
+                            if (it.isDirectory) 0 else it.sizeBytes,
+                            if (it.isDirectory) 0 else it.compressedSizeBytes,
+                            it.path,
+                        )
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            sevenZ.close()
+            throw error
         }
 
     override fun openInputStream(entry: ArchiveFileEntry): InputStream =
@@ -119,26 +149,38 @@ private class ExtractedReadableArchive(
     override val entries: List<ArchiveFileEntry>
 
     init {
-        extractRarArchiveToDirectory(file, root)
-        entries =
-            root
-                .walkTopDown()
-                .drop(1)
-                .map { child ->
-                    val relative =
-                        root
-                            .toPath()
-                            .relativize(child.toPath())
-                            .toString()
-                            .replace('\\', '/')
-                    ArchiveFileEntry(
-                        path = relative,
-                        isDirectory = child.isDirectory,
-                        sizeBytes = if (child.isFile) child.length() else 0L,
-                        compressedSizeBytes = if (child.isFile) child.length() else 0L,
-                        handle = child,
-                    )
-                }.toList()
+        try {
+            extractRarArchiveToDirectory(file, root)
+            val budget = ExtractionBudget()
+            entries =
+                root
+                    .walkTopDown()
+                    .drop(1)
+                    .map { child ->
+                        val relative =
+                            root
+                                .toPath()
+                                .relativize(child.toPath())
+                                .toString()
+                                .replace('\\', '/')
+                        ArchiveFileEntry(
+                            path = relative,
+                            isDirectory = child.isDirectory,
+                            sizeBytes = if (child.isFile) child.length() else 0L,
+                            compressedSizeBytes = if (child.isFile) child.length() else 0L,
+                            handle = child,
+                        ).also {
+                            budget.registerEntry(
+                                if (it.isDirectory) 0 else it.sizeBytes,
+                                if (it.isDirectory) 0 else it.compressedSizeBytes,
+                                it.path,
+                            )
+                        }
+                    }.toList()
+        } catch (error: Exception) {
+            root.deleteRecursively()
+            throw error
+        }
     }
 
     override fun openInputStream(entry: ArchiveFileEntry): InputStream = (entry.handle as File).inputStream()
@@ -156,6 +198,8 @@ internal fun extractRarArchiveToDirectory(
     runCatching {
         extractRarWithSevenZipBinding(archive, targetRoot)
     }.getOrElse { sevenZipError ->
+        targetRoot.deleteRecursively()
+        targetRoot.mkdirs()
         runCatching {
             extractRarWithHostTar(archive, targetRoot)
         }.getOrElse { tarError ->
@@ -178,10 +222,14 @@ private fun extractRarWithSevenZipBinding(
         try {
             val inArchive = SevenZip.openInArchive(null, input)
             try {
+                val budget = ExtractionBudget()
                 for (index in 0 until inArchive.getNumberOfItems()) {
                     val isDirectory = inArchive.getProperty(index, PropID.IS_FOLDER) as? Boolean ?: false
                     val path = inArchive.getStringProperty(index, PropID.PATH)?.replace('\\', '/')?.trim('/')
                     if (path.isNullOrBlank()) continue
+                    val size = (inArchive.getProperty(index, PropID.SIZE) as? Number)?.toLong() ?: -1L
+                    val packedSize = (inArchive.getProperty(index, PropID.PACKED_SIZE) as? Number)?.toLong() ?: -1L
+                    budget.registerEntry(if (isDirectory) 0 else size, if (isDirectory) 0 else packedSize, path)
                     val output = File(canonicalRoot, path.replace('/', File.separatorChar)).canonicalFile
                     if (!output.path.startsWith(canonicalRoot.path + File.separator)) continue
                     if (isDirectory) {
@@ -189,11 +237,17 @@ private fun extractRarWithSevenZipBinding(
                         continue
                     }
                     output.parentFile?.mkdirs()
+                    var entryBytes = 0L
                     FileOutputStream(output).use { fileOutput ->
                         val result =
                             inArchive.extractSlow(
                                 index,
                                 ISequentialOutStream { data ->
+                                    entryBytes += data.size
+                                    budget.accountActual(data.size, entryBytes, packedSize, path)
+                                    if (entryBytes % (8L * 1024L * 1024L) < data.size) {
+                                        ImportStorageGuard.requireFreeSpace(canonicalRoot, 0, "extract $path")
+                                    }
                                     fileOutput.write(data)
                                     data.size
                                 },
@@ -216,13 +270,50 @@ private fun extractRarWithHostTar(
     archive: File,
     targetRoot: File,
 ) {
+    val diagnosticFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.log")
+    diagnosticFile.delete()
     val process =
         ProcessBuilder("tar", "-xf", archive.absolutePath, "-C", targetRoot.absolutePath)
             .redirectErrorStream(true)
+            .redirectOutput(diagnosticFile)
             .start()
-    val output = process.inputStream.bufferedReader().use { it.readText() }
-    val exitCode = process.waitFor()
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300)
+    try {
+        while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
+            if (System.nanoTime() >= deadline) throw IOException("host tar exceeded 300 seconds")
+            if (diagnosticFile.length() > ExtractionLimits.MAX_DESCRIPTOR_BYTES) {
+                throw IOException("host tar diagnostics exceed ${ExtractionLimits.MAX_DESCRIPTOR_BYTES} bytes")
+            }
+            validateExtractedTree(targetRoot)
+        }
+    } catch (error: Exception) {
+        process.destroyForcibly()
+        process.waitFor(5, TimeUnit.SECONDS)
+        diagnosticFile.delete()
+        throw error
+    }
+    validateExtractedTree(targetRoot)
+    val output =
+        try {
+            diagnosticFile.inputStream().use {
+                it
+                    .readBytesBounded(ExtractionLimits.MAX_DESCRIPTOR_BYTES, "host tar diagnostics")
+                    .toString(Charsets.UTF_8)
+            }
+        } finally {
+            diagnosticFile.delete()
+        }
+    val exitCode = process.exitValue()
     if (exitCode != 0) {
         throw IllegalArgumentException("host tar failed with exit code $exitCode: $output")
     }
+}
+
+private fun validateExtractedTree(targetRoot: File) {
+    val budget = ExtractionBudget()
+    targetRoot.walkTopDown().drop(1).forEach { child ->
+        val relative = targetRoot.toPath().relativize(child.toPath()).toString()
+        budget.registerEntry(if (child.isFile) child.length() else 0, 0, relative)
+    }
+    ImportStorageGuard.requireFreeSpace(targetRoot, 0, "extract ${targetRoot.name}")
 }

@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.Locale
@@ -16,6 +17,7 @@ class MissionZipMusicStageManager(
         track: MissionZipMusicTrack,
     ): File? {
         if (!track.playable || track.kind != MissionZipMusic.KIND_COMPRESSED_AUDIO) return null
+        if (track.sizeBytes > ExtractionLimits.MAX_ENTRY_BYTES) return null
         val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
         if (!archive.isFile && !archive.isDirectory) return null
         val output = stagedFile(archive, track)
@@ -64,7 +66,7 @@ class MissionZipMusicStageManager(
 
                             else -> {
                                 archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
-                                    FileOutputStream(temp).use { outputStream -> input.copyTo(outputStream) }
+                                    copyTrack(input, temp, track.sizeBytes, track.archiveEntryPath)
                                 }
                                 true
                             }
@@ -89,6 +91,7 @@ class MissionZipMusicStageManager(
         track: MissionZipMusicTrack,
     ): ByteArray? {
         if (!track.playable || track.kind != MissionZipMusic.KIND_MIDI) return null
+        if (track.sizeBytes > ExtractionLimits.MAX_ENTRY_BYTES) return null
         val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
         if (!archive.isFile && !archive.isDirectory) return null
         return runCatching {
@@ -118,7 +121,9 @@ class MissionZipMusicStageManager(
                         }
 
                         else -> {
-                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { it.readBytes() }
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use {
+                                readTrack(it, track.sizeBytes, track.archiveEntryPath)
+                            }
                         }
                     }
                 }
@@ -172,9 +177,7 @@ class MissionZipMusicStageManager(
             }
 
             else -> {
-                file.inputStream().use { input ->
-                    FileOutputStream(output).use { outputStream -> input.copyTo(outputStream) }
-                }
+                file.inputStream().use { input -> copyTrack(input, output, file.length(), file.name) }
                 true
             }
         }
@@ -199,7 +202,7 @@ class MissionZipMusicStageManager(
             }
 
             else -> {
-                file.readBytes()
+                file.inputStream().use { readTrack(it, file.length(), file.name) }
             }
         }
     }
@@ -223,9 +226,7 @@ class MissionZipMusicStageManager(
             }
 
             else -> {
-                file.inputStream().use { input ->
-                    FileOutputStream(output).use { outputStream -> input.copyTo(outputStream) }
-                }
+                file.inputStream().use { input -> copyTrack(input, output, file.length(), file.name) }
                 true
             }
         }
@@ -248,7 +249,7 @@ class MissionZipMusicStageManager(
             }
 
             else -> {
-                file.readBytes()
+                file.inputStream().use { readTrack(it, file.length(), file.name) }
             }
         }
 
@@ -258,10 +259,18 @@ class MissionZipMusicStageManager(
         output: File,
     ): Boolean {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
+            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
-                    FileOutputStream(output).use { zip.copyTo(it) }
+                    FileOutputStream(output).use {
+                        zip.copyToBounded(it, budget, entry.compressedSize, entry.name)
+                    }
                     return true
                 }
                 zip.closeEntry()
@@ -276,10 +285,21 @@ class MissionZipMusicStageManager(
         nestedEntryPath: String,
     ): ByteArray? {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
+            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
-                    return zip.readBytes()
+                    return zip.readBytesBounded(
+                        ExtractionLimits.MAX_ENTRY_BYTES,
+                        entry.name,
+                        budget,
+                        entry.compressedSize,
+                    )
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
@@ -294,8 +314,14 @@ class MissionZipMusicStageManager(
         hogEntryName: String,
     ): ByteArray? {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
+            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
                     return readFromHog(zip, hogEntryName)
                 }
@@ -311,6 +337,7 @@ class MissionZipMusicStageManager(
         hogEntryName: String,
     ): ByteArray? {
         if (hog.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return null
+        val budget = ExtractionBudget()
         while (true) {
             val nameBytes = hog.readNBytesCompat(13)
             if (nameBytes.isEmpty() || nameBytes.size != 13) return null
@@ -318,8 +345,12 @@ class MissionZipMusicStageManager(
             if (lenBytes.size != 4) return null
             val name = hogEntryName(nameBytes)
             val size = leInt(lenBytes).toLong() and 0xffff_ffffL
+            budget.registerEntry(size, size, name)
             if (name.equals(hogEntryName, ignoreCase = true)) {
-                return hog.readNBytesCompat(size.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                if (size > ExtractionLimits.MAX_ENTRY_BYTES || size > Int.MAX_VALUE) return null
+                val bytes = hog.readNBytesCompat(size.toInt())
+                if (bytes.size.toLong() != size) return null
+                return bytes
             }
             hog.skipFullyCompat(size)
         }
@@ -332,8 +363,14 @@ class MissionZipMusicStageManager(
         output: File,
     ): Boolean {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
+            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
                     return extractFromHog(zip, hogEntryName, output)
                 }
@@ -350,6 +387,7 @@ class MissionZipMusicStageManager(
         output: File,
     ): Boolean {
         if (hog.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return false
+        val budget = ExtractionBudget()
         while (true) {
             val nameBytes = hog.readNBytesCompat(13)
             if (nameBytes.isEmpty() || nameBytes.size != 13) return false
@@ -357,8 +395,9 @@ class MissionZipMusicStageManager(
             if (lenBytes.size != 4) return false
             val name = hogEntryName(nameBytes)
             val size = leInt(lenBytes).toLong() and 0xffff_ffffL
+            budget.registerEntry(size, size, name)
             if (name.equals(hogEntryName, ignoreCase = true)) {
-                FileOutputStream(output).use { out -> hog.copyLimitedTo(out, size) }
+                FileOutputStream(output).use { out -> hog.copyLimitedTo(out, size, budget, name) }
                 return true
             }
             hog.skipFullyCompat(size)
@@ -377,15 +416,39 @@ class MissionZipMusicStageManager(
     private fun InputStream.copyLimitedTo(
         output: FileOutputStream,
         byteCount: Long,
+        budget: ExtractionBudget,
+        label: String,
     ) {
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var remaining = byteCount
         while (remaining > 0) {
             val read = read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
-            if (read < 0) return
+            if (read < 0) throw IOException("Unexpected end of $label")
+            budget.accountActual(read, byteCount - remaining + read, byteCount, label)
             output.write(buffer, 0, read)
             remaining -= read.toLong()
         }
+    }
+
+    private fun copyTrack(
+        input: InputStream,
+        output: File,
+        declaredSize: Long,
+        label: String,
+    ) {
+        val budget = ExtractionBudget()
+        budget.registerEntry(declaredSize, declaredSize, label)
+        FileOutputStream(output).use { input.copyToBounded(it, budget, declaredSize, label) }
+    }
+
+    private fun readTrack(
+        input: InputStream,
+        declaredSize: Long,
+        label: String,
+    ): ByteArray {
+        val budget = ExtractionBudget()
+        budget.registerEntry(declaredSize, declaredSize, label)
+        return input.readBytesBounded(ExtractionLimits.MAX_ENTRY_BYTES, label, budget, declaredSize)
     }
 
     private fun InputStream.readNBytesCompat(count: Int): ByteArray {

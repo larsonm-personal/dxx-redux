@@ -21,6 +21,7 @@ $RepoRoot     = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\helpers\test_env.ps1"
+. "$RepoRoot\android\helpers\bounded_extraction.ps1"
 
 $SrcDir       = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir     = Join-Path $RepoRoot "android\tests\build"
@@ -137,12 +138,11 @@ foreach ($installer in $installers) {
         # Pre-create output directory (extract_gog only does one level)
         New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
 
-        # Run extract_gog.exe -- stdout is JSON file listing, stderr is progress
-        $prevEAP = $ErrorActionPreference
-        $ErrorActionPreference = "Continue"
-        $output = & $ExePath $installer.FullName $extractDir 2>&1
-        $exitCode = $LASTEXITCODE
-        $ErrorActionPreference = $prevEAP
+        # Bound child time, combined diagnostics, and materialized output.
+        $bounded = Invoke-BoundedExtractor -OutputDirectory $extractDir -FilePath $ExePath `
+            -ArgumentList @($installer.FullName, $extractDir)
+        $output = $bounded.Output
+        $exitCode = $bounded.ExitCode
 
         # Show stderr (progress)
         foreach ($line in $output) {

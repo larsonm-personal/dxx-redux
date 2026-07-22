@@ -6,6 +6,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.util.zip.ZipException
 import java.util.zip.ZipOutputStream
 
@@ -30,6 +31,17 @@ class ArchiveInputStreamsTest {
     fun rejectsStreamsWithoutZipLocalHeader() {
         assertThrows(ZipException::class.java) {
             openZipInputStreamSkippingPreamble(ByteArrayInputStream("not a zip".toByteArray()))
+        }
+    }
+
+    @Test
+    fun rejectsAnExcessiveSelfExtractorPreamble() {
+        val zeroStream =
+            object : InputStream() {
+                override fun read(): Int = 0
+            }
+        assertThrows(ZipException::class.java) {
+            openZipInputStreamSkippingPreamble(zeroStream)
         }
     }
 
