@@ -95,6 +95,11 @@ add_executable(test_sow_direct ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_direct.c
                                ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
 target_include_directories(test_sow_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_executable(test_sow_huffman ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_huffman.c
+                                ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
+target_include_directories(test_sow_huffman PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_sow_huffman PRIVATE SOW_EXTRACT_TESTING)
+
 # ── test_hfs ───────────────────────────────────────────────────────
 add_executable(
     test_hfs ${CMAKE_CURRENT_SOURCE_DIR}/test_hfs.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
@@ -132,6 +137,7 @@ add_test(NAME json_writer_tests COMMAND test_json_writer)
 add_executable(test_extract_limits ${CMAKE_CURRENT_SOURCE_DIR}/test_extract_limits.c)
 target_include_directories(test_extract_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME extract_limit_tests COMMAND test_extract_limits)
+add_test(NAME sow_huffman_tests COMMAND test_sow_huffman)
 add_test(NAME cue_iso_tests COMMAND test_cue_iso)
 set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME hfs_tests COMMAND test_hfs)

@@ -285,8 +285,14 @@ static int huff_make_table(hufftree_t *ht, int nchar, const unsigned char *bitle
 	int avail = nchar;
 	int i, ch, len, nextcode;
 
-	for (i = 0; i < nchar; i++)
+	if (!ht || !bitlen || nchar <= 0 || nchar > NC || tablebits <= 0 ||
+	    tablebits > HUFF_TABLE_BITS)
+		return -1;
+
+	for (i = 0; i < nchar; i++) {
+		if (bitlen[i] > 16) return -1;
 		count[bitlen[i]]++;
+	}
 
 	start[1] = 0;
 	for (i = 1; i <= 16; i++)
@@ -324,6 +330,7 @@ static int huff_make_table(hufftree_t *ht, int nchar, const unsigned char *bitle
 			i = len - tablebits;
 			while (i > 0) {
 				if (*p == 0) {
+					if (avail >= 2 * NC) return -1;
 					ht->right[avail] = ht->left[avail] = 0;
 					*p = (unsigned short) avail++;
 				}
@@ -367,7 +374,7 @@ typedef struct {
 	unsigned int decoded;
 } arj_decoder_t;
 
-static void read_pt_len(arj_decoder_t *dec, int nn, int nbit, int i_special)
+static int read_pt_len(arj_decoder_t *dec, int nn, int nbit, int i_special)
 {
 	unsigned char buf[NPT];
 	memset(buf, 0, sizeof(buf));
@@ -375,14 +382,16 @@ static void read_pt_len(arj_decoder_t *dec, int nn, int nbit, int i_special)
 	int n = br_getbits(&dec->br, nbit);
 	if (n == 0) {
 		int c = br_getbits(&dec->br, nbit);
+		if (c >= nn) return -1;
 		memset(dec->p_tree.len, 0, NPT);
 		memset(dec->p_tree.table, 0, sizeof(dec->p_tree.table));
 		for (int i = 0; i < (1 << PT_TABLE_BITS); i++)
 			dec->p_tree.table[i] = (unsigned short) c;
 		dec->p_tree.n = nn;
-		return;
+		return 0;
 	}
-	if (n > NPT) n = NPT; /* reference bounds at NPT, not nn */
+	if (n > NPT) return -1; /* reference bounds at NPT, not nn */
+	if (n > nn) return -1;
 
 	int i = 0;
 	while (i < n) {
@@ -395,6 +404,7 @@ static void read_pt_len(arj_decoder_t *dec, int nn, int nbit, int i_special)
 				c++;
 			}
 		}
+		if (c > 16) return -1;
 		br_fillbuf(&dec->br, (c < 7) ? 3 : c - 3);
 		buf[i++] = (unsigned char) c;
 		if (i == i_special) {
@@ -404,11 +414,14 @@ static void read_pt_len(arj_decoder_t *dec, int nn, int nbit, int i_special)
 	}
 	while (i < nn) buf[i++] = 0;
 	memcpy(dec->p_tree.len, buf, nn);
-	int rc = huff_make_table(&dec->p_tree, nn, buf, PT_TABLE_BITS);
-	if (rc < 0) fprintf(stderr, "  [ERROR] make_table failed for pt/pos nn=%d\n", nn);
+	if (huff_make_table(&dec->p_tree, nn, buf, PT_TABLE_BITS) < 0) {
+		fprintf(stderr, "  [ERROR] make_table failed for pt/pos nn=%d\n", nn);
+		return -1;
+	}
+	return 0;
 }
 
-static void read_c_len(arj_decoder_t *dec)
+static int read_c_len(arj_decoder_t *dec)
 {
 	unsigned char buf[NC];
 	memset(buf, 0, sizeof(buf));
@@ -416,13 +429,15 @@ static void read_c_len(arj_decoder_t *dec)
 	int n = br_getbits(&dec->br, CBIT);
 	if (n == 0) {
 		int c = br_getbits(&dec->br, CBIT);
+		if (c >= NC) return -1;
 		memset(dec->c_tree.len, 0, NC);
 		memset(dec->c_tree.table, 0, sizeof(dec->c_tree.table));
 		for (int i = 0; i < HUFF_TABLE_SIZE; i++)
 			dec->c_tree.table[i] = (unsigned short) c;
 		dec->c_tree.n = NC;
-		return;
+		return 0;
 	}
+	if (n > NC) return -1;
 
 	int i = 0;
 	while (i < n) {
@@ -442,8 +457,11 @@ static void read_c_len(arj_decoder_t *dec)
 	}
 	while (i < NC) buf[i++] = 0;
 	memcpy(dec->c_tree.len, buf, NC);
-	int rc = huff_make_table(&dec->c_tree, NC, buf, HUFF_TABLE_BITS);
-	if (rc < 0) fprintf(stderr, "  [ERROR] make_table failed for c_tree\n");
+	if (huff_make_table(&dec->c_tree, NC, buf, HUFF_TABLE_BITS) < 0) {
+		fprintf(stderr, "  [ERROR] make_table failed for c_tree\n");
+		return -1;
+	}
+	return 0;
 }
 
 static int arj_decode_block(arj_decoder_t *dec, unsigned char *out, unsigned int out_cap)
@@ -451,9 +469,9 @@ static int arj_decode_block(arj_decoder_t *dec, unsigned char *out, unsigned int
 	unsigned int blocksize = br_getbits(&dec->br, 16);
 	if (blocksize == 0) return 0;
 
-	read_pt_len(dec, NT, TBIT, 3);
-	read_c_len(dec);
-	read_pt_len(dec, NP, PBIT, -1);
+	if (read_pt_len(dec, NT, TBIT, 3) < 0 || read_c_len(dec) < 0 ||
+	    read_pt_len(dec, NP, PBIT, -1) < 0)
+		return -1;
 
 	unsigned int count = 0;
 	while (count < blocksize && dec->decoded < dec->orig_size) {
@@ -518,7 +536,7 @@ static unsigned char *arj_decompress(const unsigned char *comp_data,
 	memset(dec.dic, 0x00, DICSIZ); /* zero-fill dictionary (LZH convention) */
 
 	while (dec.decoded < orig_size) {
-		if (!arj_decode_block(&dec, out, orig_size))
+		if (arj_decode_block(&dec, out, orig_size) <= 0)
 			break;
 	}
 
@@ -528,6 +546,33 @@ static unsigned char *arj_decompress(const unsigned char *comp_data,
 	}
 	return out;
 }
+
+#ifdef SOW_EXTRACT_TESTING
+int sow_test_huff_make_table(const unsigned char *bitlen, int nchar, int tablebits)
+{
+	hufftree_t tree;
+	memset(&tree, 0, sizeof(tree));
+	return huff_make_table(&tree, nchar, bitlen, tablebits);
+}
+
+int sow_test_read_pt_len(const unsigned char *data, unsigned int size, int nn)
+{
+	arj_decoder_t dec;
+	memset(&dec, 0, sizeof(dec));
+	br_init(&dec.br, data, size);
+	return read_pt_len(&dec, nn, TBIT, -1);
+}
+
+int sow_test_decode_block(const unsigned char *data, unsigned int size)
+{
+	unsigned char out = 0;
+	arj_decoder_t dec;
+	memset(&dec, 0, sizeof(dec));
+	br_init(&dec.br, data, size);
+	dec.orig_size = 1;
+	return arj_decode_block(&dec, &out, 1);
+}
+#endif
 
 /* ── SOW/ARJ file iterator ──────────────────────────────────────────── */
 
