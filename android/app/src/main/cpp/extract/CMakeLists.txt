@@ -131,6 +131,16 @@ add_test(NAME stuffit_corpus_tests COMMAND test_stuffit_corpus)
 set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(
+    test_stuffit_malformed
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_malformed.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
+target_include_directories(test_stuffit_malformed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_stuffit_malformed PRIVATE STUFFIT_EXTRACT_TESTING)
+add_test(NAME stuffit_malformed_tests COMMAND test_stuffit_malformed)
+set_tests_properties(stuffit_malformed_tests PROPERTIES WORKING_DIRECTORY
+                                                        ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(
     test_stuffit_direct
     ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_direct.c ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)

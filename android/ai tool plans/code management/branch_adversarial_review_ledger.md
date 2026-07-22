@@ -25,7 +25,7 @@ Review the frozen commits even if the live branch moves. `R1-CLOSE-001` must acc
 - `[x] SKIP`: disposition recorded with a concrete reason and substitute validation
 - `[!] BLOCKED`: cannot be completed without named evidence or authority
 
-Only one call may edit this file at a time. Replace the state in place and put finding IDs or `none` in the Result column
+Only one call may edit either adversarial review ledger at a time. Replace queue state in place and put finding IDs or `none` in the Result column
 
 ## Inventory summary
 
@@ -116,7 +116,7 @@ Only one call may edit this file at a time. Replace the state in place and put f
 | R1-CHUNK-0065 | [x] DONE | source | critical | build-script | `2 related paths` | 304 review lines under android/helpers | BR-0161, BR-0162, BR-0163, BR-0164 |
 | R1-CHUNK-0066 | [x] DONE | source | critical | build-script | `android/helpers/run_mission_zip_batch.ps1` | L1-L600 | BR-0018, BR-0165, BR-0166, BR-0167, BR-0168 |
 | R1-CHUNK-0067 | [x] DONE | source | critical | build-script | `2 related paths` | 405 review lines under game_data | BR-0018, BR-0020, BR-0169, BR-0170, BR-0171 |
-| R1-CHUNK-0068 | [ ] TODO | source | critical | build-script | `game_data/extract_dos_demos.ps1` | L1-L277 | - |
+| R1-CHUNK-0068 | [x] DONE | source | critical | build-script | `game_data/extract_dos_demos.ps1` | L1-L277 | BR-0018, BR-0020, BR-0157, BR-0169, BR-0170, BR-0172, BR-0173, BR-0174, BR-0175 |
 | R1-CHUNK-0069 | [ ] TODO | source | critical | build-script | `game_data/extract_mac_cd.ps1` | L1-L450 | - |
 | R1-CHUNK-0070 | [ ] TODO | source | critical | build-script | `game_data/extract_mac_demos.ps1` | L1-L198 | - |
 | R1-CHUNK-0071 | [ ] TODO | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | - |
@@ -4736,7 +4736,22 @@ Append one completion note for every finished queue item using the process templ
 - Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `88c7f8aa688198cc5224c8d511ecc03937a9bfda`; both assigned paths and their examined callers have no frozen-to-live delta. No product, script, source media, extracted data, build, test, emulator, or generated-result files were changed.
 - No-finding areas: repository-relative path setup and cross-platform tool discovery are used; configure and build failures ultimately prevent extractor use; native child exit codes are captured per source; ordinary source ordering and hashing are deterministic for the current single-source, unique-basename corpus; current known-version filenames and hashes are lowercase and parse under the helper's limited comment removal; ordinary existing GOG outputs are enumerated and hashed deterministically; result JSON is diagnostic and ignored by version and regression consumers; current checked-in source layouts match the scripts' expected directory conventions; native per-file incomplete-success and reusable partial output remain BR-0020, extraction resource ceilings remain BR-0018, regression-spec source digest enforcement remains BR-0008, and the analogous fingerprint-manifest failure remains BR-0049 rather than being duplicated.
 
+### R1-CHUNK-0068 completion
+
+- Completed: 2026-07-21
+- Model: sol-5.6-medium
+- Result: BR-0018, BR-0020, BR-0157, BR-0169, BR-0170, BR-0172, BR-0173, BR-0174, BR-0175
+- Assigned scope checked: `game_data/extract_dos_demos.ps1` L1-L277
+- Context checked: frozen addition, complete file history, and relevant blame; DOSBox-X configuration and acquisition; archive extraction, installer discovery, scripted input, DOSBox launch, expected-file polling, process termination, output discovery, cache reuse, force behavior, publication, cleanup, and final status; the four configured DOS demo packages and their current archive and output inventories; production package hashes, labels, and expected-file lists; README source and output hashes; downstream demo-output scanning, version resolution, deduplication, and known-version generation; Linux compatibility planning; and related extraction-budget, transactional-publication, download-integrity, batch-status, and cache-provenance findings
+- Commands or validation: `git diff`, `git show`, `git log --follow`, `git blame`, `git grep`, `rg`, line-numbered source-to-staging-to-process-to-publication and output-to-version-map traces, duplicate-finding search, repository-configured PSScriptAnalyzer passing against the frozen script definition in memory, read-only ZIP inventories for all four current archives, SHA-256 comparison of every current source with the documented and production package digest, required-output size and digest comparisons for both populated output directories, and a focused path probe proving that joining `../../escaped.txt` beneath the staging directory resolves outside that directory
+- Worktree note: This review edited only the canonical ledger. Live `HEAD` remained `7a826a4f2e2a650a315a6d57b255777c4c7a8bb1`; the assigned path has no frozen-to-live delta. Unrelated worktree changes were present and preserved. No product, script, source archive, extracted output, build, emulator, or generated-result file was changed. DOSBox-X was not run because the executable at the configured dependency path is absent; the process behavior was reviewed statically and against existing outputs.
+- No-finding areas: all four current archives match their recorded package hashes, open through the ZIP-compatible reader, contain exactly one `INSTALL.EXE`, have small expanded sizes, and contain no duplicate or traversal names; both populated output directories' required files match documented sizes and hashes; archive handles are disposed on ordinary and exceptional extraction paths; the polling loop has a finite deadline; generated input, batch, and configuration files use fixed ASCII content with quoted mount paths; and normal source paths are repository-relative. Unbounded expansion remains BR-0018, incomplete and nontransactional publication remains BR-0020, unverified DOSBox acquisition remains BR-0157, warning-only batch failures remain BR-0169, and cache provenance drift remains BR-0170 rather than being duplicated.
+
 ## Findings
+
+This file contains open findings only. Finalized findings and their disposition
+evidence are archived in `branch_adversarial_review_ledger.done.md`. Queue rows
+and chunk completion notes may continue to reference archived finding IDs
 
 Append findings here in numeric order using the exact template in the process document
 
@@ -5023,30 +5038,13 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add zero-delay MIDI and CD automation stress tests that repeatedly send play-stop and play-play-stop, plus a dialog test that dismisses during a delayed HOG read; assert the final state remains stopped with no later restart and run under native race or memory instrumentation while checking buffer, descriptor, render-thread, and OpenSL cleanup
 - Resolution: Pending
 
-### BR-0017: P1 - Validate a complete SIT5 entry header before reading its parent offset
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0009
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/stuffit_extract.c:L331-L334` in `sit5_parse_entries`
-- Related: `android/app/src/main/cpp/extract/stuffit_extract.c:L178-L190,L354-L369`, `android/app/src/main/cpp/extract/jni_disc_import.c:L481-L502`, and `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L378-L464`
-- Evidence: The loop rejects only `current_offset >= archive_size`, then immediately reads four bytes from `archive_data + current_offset + 26`. The complete-entry check in `sit5_parse_entry` runs only after that read. The archive header controls `first_offset`, and `sit5_list_entries` accepts every value below `archive_size`; therefore an offset in the final 29 bytes passes the first check but makes the parent-offset read cross the heap buffer boundary
-- Trigger: Import a 100-byte SIT5-looking file with a nonzero root count and `first_offset` set near the end of the file, such as 99
-- Impact: A user-selected malformed archive causes an out-of-bounds native heap read before parsing can reject it, which can crash the launcher process and may expose adjacent-memory behavior to further parser exploitation
-- Expected: No entry field is read until the parser has established that the entire minimum fixed header is present, using overflow-safe bounds arithmetic
-- Suggested fix: Before reading `parent_offset` or calling the entry parser, require `current_offset <= archive_size - 48` after first proving `archive_size >= 48`. Centralize fixed-header validation so all field reads share the same checked span, and use subtractive checks for subsequent variable-length sections
-- Validation: Add malformed fixtures for every offset from `archive_size - 1` through the first valid 48-byte boundary, assert clean rejection, and run the parser tests under AddressSanitizer or an equivalent native bounds checker
-- Resolution: Pending
-
 ### BR-0018: P1 - Enforce extraction budgets for untrusted archive entries
 
 - [ ] OPEN
 - Type: defect
 - Confidence: high
 - Category: security/resource-exhaustion
-- Found by: R1-CHUNK-0009, R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0022, R1-CHUNK-0023, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0044, R1-CHUNK-0045, R1-CHUNK-0046, R1-CHUNK-0047, R1-CHUNK-0049, R1-CHUNK-0066, R1-CHUNK-0067
+- Found by: R1-CHUNK-0009, R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0022, R1-CHUNK-0023, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0044, R1-CHUNK-0045, R1-CHUNK-0046, R1-CHUNK-0047, R1-CHUNK-0049, R1-CHUNK-0066, R1-CHUNK-0067, R1-CHUNK-0068
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/stuffit_extract.c:L373-L396` in `maybe_extract_nested_sti`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L103-L130` in `extract_sti2_from_hfs`, `android/app/src/main/cpp/extract/sow_extract.c:L699-L720` in `sow_extract_impl`, `android/app/src/main/cpp/extract/inno_reader.c:L365-L517,L643-L685,L1074-L1301,L1428-L1434` in `decompress_block_stream`, `parse_header_stream1`, `decompress_chunk`, and `inno_open_owned_fd`, `android/app/src/main/cpp/extract/pkg_reader.c:L294-L375,L399-L438,L450-L529` in `cpio_read_entry`, `pkg_open`, and `pkg_extract_all`, and `android/app/src/main/cpp/extract/iso9660_reader.c:L413-L507` in `iso_extract_files_from_source`
 - Related: `android/app/src/main/cpp/extract/stuffit_extract.c:L400-L450`, `android/app/src/main/cpp/extract/sti2_extract.c:L1879-L1935,L2040-L2069`, `android/app/src/main/cpp/extract/mac_hfs_extract.h:L8-L18`, `android/app/src/main/cpp/extract/sow_extract.c:L500-L524,L647-L663`, `android/app/src/main/cpp/extract/inno_reader.c:L1750-L2010,L2087-L2123`, `android/app/src/main/cpp/extract/pkg_reader.h:L22-L39,L58-L66`, `android/app/src/main/cpp/extract/iso9660_reader.c:L256-L369`, `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L220-L330,L410-L444`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L941-L1014,L1220-L1290,L1668-L1735`
 - Evidence: Every nonmatching, nondirectory SIT5 entry of at least 22 declared bytes is decompressed merely to determine whether it contains a nested STi archive. `extract_entry_data` trusts the archive's 32-bit uncompressed size for a single `malloc`, the result is written to a predictable temporary file, and `read_file_to_buffer` allocates another full-size buffer before inspecting it. The Mac HFS path similarly writes the complete `Install Descent` fork to disk, allocates another buffer equal to that file, and passes it to the same unbudgeted STi extractor. SOW extraction trusts archive-controlled 32-bit compressed and original sizes, allocates both complete buffers, and its bit reader pads exhausted input with zero bytes while decoding toward the declared original size. Before Inno entries are even available for preflight, each metadata block trusts a 32-bit stored size for a complete allocation and an LZMA dictionary, then starts a decompressed buffer at four times the compressed payload and repeatedly doubles it without a size, ratio, or overflow ceiling. The decompressed header also controls an uncapped data-entry count used directly in `calloc`. Inno's later buffered data path allocates the complete compressed chunk, sizes its initial output from unchecked file offsets, and repeats the unbounded growth pattern; its streaming paths bound working memory but still decode toward attacker-controlled expanded offsets with no output-byte, ratio, or work budget. PKG parsing trusts 64-bit TOC allocation sizes before files are listed, streams an unbounded count of CPIO entries with individual sizes up to the 11-digit octal maximum, and neither confines reads to the declared Scripts member nor applies per-entry, aggregate-output, expansion-ratio, or work limits. Its 128-entry analysis cap does not constrain the extraction pass, so Kotlin's sum can omit arbitrarily many later outputs. ISO extraction sums and writes every listed declared file size without a per-entry or aggregate ceiling; hundreds of directory records can alias the same source extent, so output can multiply far beyond the source or track size used by Kotlin's one-time free-space preflight. There is no shared per-entry expanded-size limit, compression-ratio limit, aggregate output budget, or native free-space recheck. Kotlin preflights use source, ZIP-entry, track, listed, or truncated catalog sizes, which do not reliably bound nested, aliased, metadata, or compressed output
@@ -5080,6 +5078,9 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0067): `game_data/extract_all_gog.ps1:L140-L153` and `game_data/extract_all_cds.ps1:L119-L140` in native extractor invocation and output capture
 - Additional evidence (R1-CHUNK-0067): Both batch helpers run the untrusted native extractor without a wall-clock deadline and collect its complete combined stdout and stderr in memory before processing any line. `extract_gog` prints one JSON object for every Inno or PKG catalog entry before extraction, so archive-controlled entry counts and diagnostics add a second unbounded host-memory and work surface around the already unbudgeted native readers. These helpers are invoked automatically by game-data resolution and extraction-regression recovery callers, so a malformed local source can indefinitely occupy a test run rather than produce a bounded failed item.
 - Additional validation (R1-CHUNK-0067): Run synthetic GOG and CD sources around entry-count, captured-output, and wall-clock limits, including a child that stalls after partial output; assert bounded memory, prompt child-tree termination, a nonzero per-source result, preserved diagnostics within an explicit cap, and continued or safely terminated batch behavior according to the declared policy.
+- Additional location (R1-CHUNK-0068): `game_data/extract_dos_demos.ps1:L94-L113,L149-L151` in ZIP-compatible staging extraction
+- Additional evidence (R1-CHUNK-0068): The helper enumerates and expands every archive entry before DOSBox starts, with no per-entry or aggregate expanded-byte, compression-ratio, entry-count, decoder-work, or free-space limit. The current four archives are small, but their fixed filenames are local inputs rather than an enforced content boundary, so a replacement can exhaust memory, disk, or test time before installer validation or the 120-second DOSBox deadline applies.
+- Additional validation (R1-CHUNK-0068): Replace each configured package with synthetic archives around explicit per-entry, aggregate-byte, entry-count, ratio, free-space, and wall-clock thresholds; assert rejection before large allocation or writes, bounded cleanup, a failing item result, and unchanged extraction for the four verified packages.
 - Resolution: Pending
 
 ### BR-0019: P1 - Reject HFS dot components before constructing output paths
@@ -5105,7 +5106,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: correctness
-- Found by: R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0017, R1-CHUNK-0019, R1-CHUNK-0021, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0026, R1-CHUNK-0027, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0067
+- Found by: R1-CHUNK-0010, R1-CHUNK-0011, R1-CHUNK-0015, R1-CHUNK-0017, R1-CHUNK-0019, R1-CHUNK-0021, R1-CHUNK-0024, R1-CHUNK-0025, R1-CHUNK-0026, R1-CHUNK-0027, R1-CHUNK-0028, R1-CHUNK-0029, R1-CHUNK-0030, R1-CHUNK-0031, R1-CHUNK-0067, R1-CHUNK-0068
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/jni_gog_import.c:L256-L298` in `extract_inno_archive`, `android/app/src/main/cpp/extract/sow_extract.c:L670-L750` in `sow_extract_impl`, `android/app/src/main/cpp/extract/inno_reader.c:L1666-L1686,L2057-L2188`, `android/app/src/main/cpp/extract/pkg_reader.c:L450-L529` in `pkg_extract_all`, `android/app/src/main/cpp/extract/iso9660_reader.c:L413-L507` in `iso_extract_files_from_source`, and `android/app/src/main/cpp/extract/hfs_reader.c:L669-L725` in `hfs_extract_file`
 - Related: `android/app/src/main/cpp/extract/extract_gog.c:L98-L188`, `android/app/src/main/cpp/extract/extract_cd.c:L338-L393,L533-L586,L608-L644`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L103-L130,L133-L195`, `android/app/src/main/cpp/extract/mac_hfs_extract.h:L8-L18`, `android/app/src/main/cpp/extract/pkg_reader.h:L58-L66`, `android/app/src/main/cpp/extract/iso9660_reader.h:L73-L110`, `game_data/extract_all_gog.ps1:L121-L170`, `game_data/extract_all_cds.ps1:L81-L95,L119-L153`, `android/app/src/main/cpp/extract/jni_disc_import.c:L311-L392,L439-L547`, `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt:L70-L92`, `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L684-L819,L941-L1035`, and `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L280-L323`
 - Evidence: The Inno loop counts each failure but returns `-1` only when no file succeeded; one successful file followed by any number of failed requested files returns a positive count. The Inno reader itself logs a GOG Galaxy external-size mismatch but returns success, and its buffered output path ignores `fclose`, so a truncated filtered file or delayed persistence failure can also be counted as extracted. The SOW loop similarly converts parser errors to end-of-input, continues after allocation, read, decompression, unsupported-method, and open failures, and returns the number of earlier successes. Its write path does not check `fwrite` or `fclose` at all and increments `extracted` even when the requested bytes were not persisted; the CD CLI treats every nonnegative SOW result, including zero or a partial count, as success. PKG extraction skips an entry whose destination cannot be opened, ignores `fclose`, and returns the count of other files; if every open fails it returns zero, which `extract_gog` reports as successful completion. The ISO reader likewise breaks an individual file's transfer on a sector read or output write error, leaves the truncated destination in place, increments `extracted`, and proceeds; destination-open failures are skipped. HFS extraction also writes directly to the final path, leaves a truncated destination after a fork read or output write failure, and ignores `fclose`; the Mac loose-file fallback returns on the first failed file without rolling back files it already completed. The Mac wrapper's public header exposes only one integer result and does not distinguish a missing `Install Descent` archive, zero matching STi2 entries, nested parse or extraction failure, or cancellation. The implementation sends every nonpositive nested result into direct-HFS fallback even though the plan specifies fallback when no installer is found; if a nested extraction writes early files and fails later, a positive loose-file fallback result masks that failure and publishes the mixed partial output as success. `extract_cd` reports any positive count as successful BIN/CUE extraction, treats every nonnegative standalone-ISO result including zero as success, and does not increment its error count when a listed BIN/CUE track extracts zero files. The batch scripts write the result manifests before checking exit status and skip existing output directories and manifests on later runs, so residue from a failed run can later be treated as complete. Kotlin likewise treats positive native counts as successful imports and does not compare every output with the analyzed or archive entry list
@@ -5117,6 +5118,9 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0067): `game_data/extract_all_cds.ps1:L81-L96,L119-L153` and `game_data/extract_all_gog.ps1:L121-L169` in cache reuse, direct extraction, and failure handling
 - Additional evidence (R1-CHUNK-0067): The CD helper writes captured JSON to the final `track_hashes.json` before checking the child exit, and both helpers extract directly into their final reusable directories. A failed child therefore leaves the exact directory or directory-plus-manifest existence predicate that a later non-Force run treats as completed. `-Force` first deletes the prior known output, so a failure also destroys the last complete oracle instead of preserving it until replacement succeeds.
 - Additional validation (R1-CHUNK-0067): Inject failure before output, after one file, after JSON emission, and during final publication for each batch helper, both with and without a prior complete cache; assert no failed run creates a reusable completion predicate, a prior valid cache survives, and a later ordinary run retries rather than skips the failed source.
+- Additional location (R1-CHUNK-0068): `game_data/extract_dos_demos.ps1:L115-L134,L200-L270` in cache reuse, completion polling, output selection, and publication
+- Additional evidence (R1-CHUNK-0068): Any one existing HOG, PIG, HAM, or MVL makes a non-Force run skip the package. During extraction, early DOSBox exit and timeout do not require a successful child status or every configured file, and publication copies every discovered allowed extension whenever at least one exists. The D2 poll lists omit `D2DEMO.DEM` even though the production package model requires it. Files are flattened by basename into the final directory with overwrite, while Force does not clear old output, so missing, failed, colliding, or stale files can be published together as a successful-looking cache.
+- Additional validation (R1-CHUNK-0068): For each package, remove each required file in turn, force early child exit and timeout, inject duplicate basenames, and begin with stale extra or conflicting output, both with and without Force; require an exact manifest and hashes before atomic replacement, preservation of a prior valid generation on failure, and retry rather than skip for every incomplete cache.
 - Resolution: Pending
 
 ### BR-0021: P2 - Honor and propagate documented extraction cancellation
@@ -7451,7 +7455,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: security/supply-chain
-- Found by: R1-CHUNK-0062
+- Found by: R1-CHUNK-0062, R1-CHUNK-0068
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L9-L67,L171-L258` and `android/get_deps/helpers/get_7zip.ps1:L45-L88` in external source and tool acquisition
 - Related: `android/get_deps/tool_versions.conf:L163-L169`, `android/get_deps/check-updates.ps1:L1766-L1789`, `android/ai tool plans/CD audio/plan_chromaprint_song_recognition.md:L221-L244`, `android/tests/test_cue_iso.ps1`, `android/helpers/run_cue_iso_tests.sh`, `android/run_all_tests.ps1`, local primary `cmake --help-command file` documentation, and repository dependency-pinning instructions
 - Evidence: The project declares CMake 3.16 as supported, downloads the Chromaprint release archive without `URL_HASH`, and downloads `minimp3.h`, `minimp3_ex.h`, `stb_vorbis.c`, and `dr_flac.h` without `EXPECTED_HASH`. Three downloads are trusted forever once a pathname exists; the STB check rejects only a zero-length file, so any nonempty altered cache is compiled. CMake's own documentation says HTTPS verification became enabled by default only in 3.31 and was previously off unless `CMAKE_TLS_VERIFY` was set. The 7-Zip installer is more direct: it downloads the unversioned `https://www.7-zip.org/a/7zr.exe` with no digest or signature check and immediately executes it to unpack a second archive that also has no digest. The plan explicitly required a 7-Zip SHA-256, but the configuration and updater have no hash fields. Both cached local executables are unsigned, and an existing bootstrap is accepted without content or version validation. Thus supported configurations can accept network or cache-controlled native bytes that are then compiled or executed by routine test, metadata, and asset workflows.
@@ -7460,6 +7464,9 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Every remotely acquired source, archive, bootstrap, and executable is identified by an immutable release and verified against a repository-owned cryptographic digest before it can enter a compiler or process, independent of tool version, environment defaults, or an existing cache file
 - Suggested fix: Pin repository fetches to full commits and release archives to committed SHA-256 `URL_HASH` values. Add `EXPECTED_HASH SHA256=...`, explicit `TLS_VERIFY ON`, bounded timeouts, and status checks to every CMake single-file download. Add separate versioned SHA-256 fields for the 7-Zip bootstrap and package, download to unique temporary paths, verify before the first execution or extraction, and revalidate every cached executable on every use; Authenticode may be an additional check but not a substitute for the pinned digest. Make the updater change URLs and reviewed hashes together. Keep source URL, version, digest, license, and update procedure in one dependency manifest, and make offline use consume only a previously verified cache.
 - Validation: Configure and bootstrap with minimum and current tool versions through a recording proxy; substitute a wrong network body, mutate each cached file without changing its size, move a tag or unversioned bootstrap response, disable the network after verified population, and use expected clean inputs; assert every altered or unverifiable source, archive, and executable fails before compilation or execution and verified online and offline builds are byte-identical
+- Additional location (R1-CHUNK-0068): `android/get_deps/helpers/get_dosbox.sh:L21-L79` in DOSBox-X acquisition and `game_data/extract_dos_demos.ps1:L23-L45,L200-L205` in cached executable resolution and launch
+- Additional evidence (R1-CHUNK-0068): The helper discovers the first release asset whose name matches `mingw-win64`, downloads and expands it without a repository-owned digest or signature check, copies the first located `dosbox-x.exe` into the shared dependency cache, and later accepts any executable at that pathname. The demo extractor immediately runs those cached native bytes. Pinning only the release tag does not authenticate either the selected asset body or a subsequently altered cache.
+- Additional validation (R1-CHUNK-0068): Substitute the release metadata, archive response, archive contents, and cached executable independently, including same-size mutations and multiple matching assets; assert each unreviewed identity fails before extraction or execution while a digest-pinned online install and offline cached reuse produce the same verified tool.
 - Resolution: Pending
 
 ### BR-0158: P2 - Report absent extraction fixtures as skipped or failed
@@ -7655,7 +7662,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: test-gap/false-pass
-- Found by: R1-CHUNK-0067
+- Found by: R1-CHUNK-0067, R1-CHUNK-0068
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/extract_all_cds.ps1:L76-L189` and `game_data/extract_all_gog.ps1:L107-L216` in aggregate result reporting
 - Related: `android/tests/extract_regression_spec_helpers.ps1:L244-L277`, `android/tests/input_demo_game_data.ps1:L147-L200`, and `android/helpers/test_helpers.ps1:L600-L665`
 - Evidence: The CD script appends missing-source, child-exit, and exception failures to `$failures`; the GOG script increments `$totalErrors` for child failures and missing output. Both print those nonzero totals but then reach end-of-file without `exit` or a terminating error, so the child PowerShell process returns zero. A focused PowerShell process that likewise recorded and printed one failure returned exit code zero. Extraction-regression recovery explicitly relies on the CD helper's process status before generating specs, and both game-data auto-resolution paths also inspect that status, so the scripts' own recorded failures are invisible to their callers. The GOG path also accepts an empty final directory as zero extracted files without incrementing its error count.
@@ -7664,6 +7671,9 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Every selected source has an explicit success, valid skip, or failure outcome; any failure or invalid empty extraction makes the process return nonzero after the complete report, while an idempotent all-valid-cache run remains successful
 - Suggested fix: Track one final failure count shared with the report, validate that each newly extracted supported source produced its required nonempty output and metadata, and end with an explicit nonzero exit when the count is positive. Preserve per-source continuation where useful, but make callers unable to confuse a completed report with a successful batch.
 - Validation: Exercise all-success, all-valid-cache, empty-corpus, missing-source, child exits 1 and 7, thrown processing error, empty-success output, and mixed good-bad-good batches through direct invocation and each recovery caller; assert exact counts, continued reporting where intended, and process status zero only for the declared successful states.
+- Additional location (R1-CHUNK-0068): `game_data/extract_dos_demos.ps1:L115-L159,L240-L277` in per-package warning paths and aggregate completion
+- Additional evidence (R1-CHUNK-0068): Missing archives, a missing installer, a timeout without expected files, and a run that yields no game files are reported only as warnings followed by `continue` or normal fallthrough. The script keeps no failed-item total and always prints `Done` at end-of-file, so automation receives exit zero for all-warning and mixed-success runs even though requested oracle outputs are absent.
+- Additional validation (R1-CHUNK-0068): Exercise each warning path alone and in good-bad-good batches, plus empty and all-valid-cache states; assert exact item outcomes and a nonzero final process status whenever any configured required package fails under the declared optional-input policy.
 - Resolution: Pending
 
 ### BR-0170: P2 - Bind extraction caches to an unambiguous source identity
@@ -7672,7 +7682,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: correctness/data-integrity
-- Found by: R1-CHUNK-0067
+- Found by: R1-CHUNK-0067, R1-CHUNK-0068
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/extract_all_cds.ps1:L81-L110` and `game_data/extract_all_gog.ps1:L121-L139` in source selection and cache reuse
 - Related: `game_data/generate_regression_specs.ps1:L225-L249,L290,L356-L365`, BR-0008, and BR-0020
 - Evidence: The CD helper skips solely when `data_tracks` and `track_hashes.json` exist, before it identifies or hashes the current CUE, ISO, referenced BIN files, extractor binary, or extraction policy. If several CUE or ISO files exist, it silently chooses unsorted element zero and prefers any CUE over every ISO. The GOG helper keys its reusable directory only by extensionless basename and also stores no installer or tool identity, so replacing an installer in place or adding same-basename `.exe` and `.pkg` sources reuses old or shared output. The spec generator then hashes every current CD source or the current installer while deriving expected files from the stale cache, allowing a newly generated spec to bind one source generation to another generation's extracted bytes. The current corpus happens to have one CUE or ISO in each of 34 folders and four unique GOG basenames, but the ordinary same-name replacement path remains unguarded.
@@ -7681,6 +7691,9 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: A cache is reusable only when one explicitly selected source set, all referenced payload digests, extractor build identity, and extraction-policy version match its recorded provenance; ambiguous input sets fail rather than depend on enumeration order
 - Suggested fix: Define one deterministic input-selection contract and reject unsupported multiplicity. Publish a completion manifest beside each cache containing canonical source names and SHA-256 values, referenced CUE payload identities, tool or source revision, policy version, and output inventory; validate it before skipping. Include the full source identity in GOG cache ownership, preflight basename collisions, and coordinate transactional publication and prior-cache preservation with BR-0020.
 - Validation: Replace each source type with same-name same-size and different-size content, edit a CUE reference or BIN, change the policy or tool revision, supply CUE-plus-ISO and multi-CUE folders, and add same-basename EXE/PKG installers. Assert stale inputs re-extract or fail clearly, ambiguous inputs never choose by incidental order, valid unchanged caches skip, and generated specs bind exactly the current source and output generation.
+- Additional location (R1-CHUNK-0068): `game_data/extract_dos_demos.ps1:L51-L89,L115-L134` in package definition and cache reuse, with the production model at `android/app/src/main/java/com/dxxredux/app/DemoInstallerPackages.kt:L63-L78`
+- Additional evidence (R1-CHUNK-0068): Reuse is based only on output-directory name and the presence of any one major game file; it records no archive digest, DOSBox identity, scripted-input revision, expected-file policy, or exact output manifest. The helper also duplicates the production package table but omits the required D2 demo file from both D2 polling lists. The current four archives match the production digests, but replacing one in place or changing either table leaves an old or policy-incomplete cache eligible for reuse.
+- Additional validation (R1-CHUNK-0068): Replace an archive with same-name same-size and different-size content, mutate the DOSBox binary, scripted inputs, and expected-file policy, and introduce drift in either package table; require re-extraction or a clear failure unless a completion manifest proves the exact source, tool, policy, and outputs still match.
 - Resolution: Pending
 
 ### BR-0171: P2 - Do not terminate unrelated compiler processes by name
@@ -7700,16 +7713,85 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Run an unrelated long-lived compiler-named fixture and two barrier-synchronized repository builds, then exercise normal build, owned timeout, stale recorded child, PID reuse, and `-SkipBuild` paths. Assert unrelated processes survive, only owned children are reaped, concurrent callers serialize or isolate deterministically, and ordinary extraction still resolves the intended tool.
 - Resolution: Pending
 
-## Disposition log
+### BR-0172: P1 - Confine DOS demo archive entries to the staging root
 
-Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: security/path-traversal
+- Found by: R1-CHUNK-0068
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/extract_dos_demos.ps1:L94-L113` in `Expand-ZipCompatibleArchive`
+- Related: `game_data/extract_dos_demos.ps1:L138-L151,L272-L273`, `android/app/src/main/java/com/dxxredux/app/DemoInstallerPackages.kt:L63-L78`, and BR-0157
+- Evidence: For every non-directory entry, the helper passes `Join-Path $DestinationPath $entry.FullName` directly to `ExtractToFile` with overwrite enabled. It neither rejects rooted or dot-containing entry names nor canonicalizes the result and proves containment beneath the staging directory. A focused probe using the helper's path construction showed that `../../escaped.txt` resolves outside `src` to a sibling of the run directory. Cleanup removes only `$tempBase`, so a sufficiently deep traversal can overwrite a writable file elsewhere on the host and leave it behind. The current archives contain no such names, but the script does not enforce their documented hashes and therefore cannot rely on that corpus property.
+- Trigger: Replace any configured ZIP-compatible demo package with an archive containing an entry such as `../../escaped.txt`, followed by arbitrary additional parent components and a writable target name
+- Impact: Running the reference-oracle helper can create or overwrite files outside its private staging tree with the invoking developer's permissions, including files in temporary or checkout locations reachable by relative traversal
+- Expected: Every archive member is accepted only after its normalized destination is proven to remain below one uniquely owned staging root, before any parent directory or file is created
+- Suggested fix: Reject rooted names, empty and dot path components, invalid separators, and names whose `GetFullPath` destination is not strictly beneath the canonical staging prefix using the host's path comparison rules. Extract only after that check, avoid following pre-existing reparse points within the private root, and combine this with BR-0157's package digest verification and BR-0018's budgets.
+- Validation: Add forward- and backslash traversal, absolute, drive-qualified, UNC, mixed-separator, case-boundary, sibling-prefix, duplicate, and platform-relevant junction or symlink fixtures; assert failure before every outside write, no surviving residue, and unchanged bytes outside the root while the four verified packages still extract.
+- Resolution: Pending
+
+### BR-0173: P2 - Give each DOS demo run owned process and temporary resources
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: resource-lifetime/concurrency
+- Found by: R1-CHUNK-0068
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/extract_dos_demos.ps1:L138-L151,L200-L246,L272-L273` in temporary-tree and DOSBox lifecycle management
+- Related: `game_data/extract_dos_demos.ps1:L115-L270` and BR-0020
+- Evidence: Each package uses the predictable shared tree `%TEMP%\dxx_dosbox_<sanitized-name>` and recursively deletes it before starting, so concurrent invocations for the same package can erase or modify each other's mounted files. The package body has no `try/finally`; exceptions or interruption after `Start-Process` can bypass both process termination and directory cleanup. The normal kill path neither waits for confirmed exit nor disposes the process object or terminates an owned child tree, and final cleanup suppresses every error, allowing a live DOSBox process, locks, or stale staging data to survive.
+- Trigger: Start two invocations concurrently, interrupt or throw during polling, scanning, copying, or cleanup, make process termination fail, or let DOSBox retain a child or file handle after the one-second delay
+- Impact: Runs can delete or publish each other's data, orphan emulator processes, retain proprietary expanded installer contents, and make later retries fail or consume stale bytes nondeterministically
+- Expected: Every invocation has collision-free temporary ownership and a guaranteed cleanup path that stops only its process tree, waits for termination, disposes handles, and reports retained resources without destroying another run's state
+- Suggested fix: Create a cryptographically unique private temp directory per invocation, preflight or lock final output ownership, and wrap each package in `try/finally`. Retain the exact process handle or a Windows job object, terminate only that owned tree on timeout or failure, wait and dispose it, then perform checked cleanup while preserving diagnostics and a prior complete output generation.
+- Validation: Run barrier-synchronized invocations of the same and different packages, inject exceptions and interruption after every lifecycle phase, spawn an owned child, hold staging files open, and force kill and cleanup failures; assert no cross-run deletion or publication, no owned process survives, residue is identified and recoverable, and valid sequential runs remain deterministic.
+- Resolution: Pending
+
+### BR-0174: P2 - Gate DOS demo extraction to a supported DOSBox host
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: compatibility/tooling
+- Found by: R1-CHUNK-0068
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/extract_dos_demos.ps1:L1-L45,L200-L205` in host-independent entry and Windows-specific process launch
+- Related: `android/get_deps/helpers/get_dosbox.sh:L21-L79` and `android/ai tool plans/testing/2026-07-12-cross-platform-linux-compatibility.md:L125-L147`
+- Evidence: The script advertises a portable `pwsh` shebang but constructs a backslash path ending in `dosbox-x.exe` and unconditionally uses the Windows-only `Start-Process -WindowStyle` path. Its advertised Bash installer always selects a `mingw-win64` ZIP and installs `dosbox-x.exe`, with no native-Linux or macOS selection and no explicit Windows-host rejection. The repository's Linux compatibility plan identifies this tool as Windows-only and requires either a compatible asset or a clear optional-tool wall, but the executable workflow fails late instead.
+- Trigger: Invoke the helper from native PowerShell on Linux or macOS, or follow its advertised Bash dependency setup on a non-Windows host
+- Impact: The reference-oracle workflow downloads or resolves an unusable Windows binary and then fails through platform-specific path or process behavior, obscuring whether the archives or extraction logic are at fault and preventing supported non-Windows development flows from handling the optional step predictably
+- Expected: The helper either resolves and launches a verified DOSBox-X build for the current host or rejects unsupported hosts immediately with a documented optional-tool status and exact supported alternative
+- Suggested fix: Centralize platform-aware DOSBox-X asset, executable-name, path, and process-launch resolution. If only Windows is supported, test the host before dependency lookup, emit one actionable unsupported message, document how CI and Linux callers skip the optional oracle step, and avoid presenting the Bash downloader and `pwsh` shebang as native cross-platform support.
+- Validation: Run dependency resolution and the extractor on native Windows, Linux, macOS, WSL, and Git Bash where supported; assert the correct verified asset and launch options on supported hosts, an immediate stable unsupported result elsewhere, and no download of an unusable foreign binary.
+- Resolution: Pending
+
+### BR-0175: P2 - Map every DOS demo output to its canonical version
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0068
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/hash_assets.ps1:L33-L47,L173-L180,L233-L245,L278-L293` in demo-folder version resolution and digest deduplication
+- Related: `game_data/extract_dos_demos.ps1:L73-L89,L115-L119,L262-L269` and `android/app/src/main/java/com/dxxredux/app/DemoInstallerPackages.kt:L63-L78`
+- Evidence: The extractor explicitly produces `d2demo10_extracted`, and the production package model labels that archive `D2 Demo v1.0`, but `hash_assets.ps1` has a mapping only for `descent 2 demo 1-0_extracted`. An unmapped folder is accepted with its folder name as the version. Because known-version entries are deduplicated by filename and digest and the first scanned instance wins, a Force regeneration with only `d2demo10_extracted`, or with that alias enumerated first, records identical D2 demo assets as version `d2demo10_extracted` instead of `D2 Demo v1.0`.
+- Trigger: Run the DOS demo helper for `d2demo10.zip`, then regenerate known versions with that output as the only D2 DOS demo directory or as the first enumerated directory containing a shared file digest
+- Impact: Generated version metadata contains a noncanonical source-folder label, and the result can vary with local alias availability or directory enumeration order even though the underlying package identity and bytes are known
+- Expected: Every supported package output resolves deterministically to the canonical version in one shared package model, and aliases with identical bytes cannot change the selected label by scan order
+- Suggested fix: Drive package filename, digest, output ownership, expected files, and canonical label from one machine-readable manifest consumed by the PowerShell helpers and Kotlin model. At minimum add the missing explicit mapping, sort scan inputs, and detect conflicting labels for a deduplication key rather than silently keeping the first.
+- Validation: Regenerate from `d2demo10_extracted` alone, the other D2 demo output alone, and both directories in reversed creation and enumeration orders, with and without Force; assert all shared assets receive exactly `D2 Demo v1.0`, output is byte-stable, and an intentionally conflicting mapping fails clearly.
+- Resolution: Pending
+
+## Final disposition archive
+
+Finalized finding blocks and dated disposition entries are moved to
+`branch_adversarial_review_ledger.done.md`
 
 ## Campaign closure
 
 - [ ] Every queue item is `DONE` or has an approved `SKIP` disposition
 - [ ] No queue item remains `ACTIVE` or `BLOCKED`
 - [ ] Every P0 and P1 finding received an independent verification call
-- [ ] Every finding has a final disposition or an explicitly accepted deferral owner
+- [ ] No open finding remains here, and every finding has a final disposition or an explicitly accepted deferral owner in `branch_adversarial_review_ledger.done.md`
 - [ ] Required build, lint, unit, integration, emulator, and server validations are recorded
 - [ ] `git diff c01d8fe4686c63d931b1e543a6305bbafaa944a9..HEAD` was reviewed through a delta campaign or proven empty
 - [ ] A human maintainer reviewed open risks and AI-generated dispositions

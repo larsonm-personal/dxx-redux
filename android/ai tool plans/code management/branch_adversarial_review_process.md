@@ -4,12 +4,13 @@
 
 This process turns the complete branch diff into deterministic review units that can be handled by sequential `sol-5.6-medium` calls. It is designed to survive interruptions, branch movement, remediation commits, and context loss
 
-The process has two permanent artifacts:
+The process has three permanent artifacts:
 
 - This file defines how review calls work
-- `branch_adversarial_review_ledger.md` is the only canonical file for the queue, review notes, findings, dispositions, and closure evidence
+- `branch_adversarial_review_ledger.md` is the canonical active file for the queue, review notes, open findings, and closure evidence
+- `branch_adversarial_review_ledger.done.md` is the canonical archive for findings with final dispositions and their disposition-log entries
 
-Scratch patches, command output, and generated delta ledgers may be written under `temp/`. Do not create separate finding files
+Scratch patches, command output, and generated delta ledgers may be written under `temp/`. Do not create other finding files. Finding IDs are unique across both ledgers and must never be reused
 
 ## Core decisions
 
@@ -46,11 +47,11 @@ Up to 16 small related paths may share a call. These are assigned-line budgets, 
 
 Review calls inspect and report. They do not edit product code. This avoids silently invalidating later chunks and keeps each finding attributable to the frozen snapshot
 
-Remediation calls are separate. They may fix one coherent finding or a tightly coupled group, run validation, and update the finding disposition in the same ledger
+Remediation calls are separate. They may fix one coherent finding or a tightly coupled group, run validation, finalize each disposition, and move each finalized finding to the done ledger
 
 ### Use one writer
 
-Only one call may edit the ledger at a time. Sequential calls avoid duplicate IDs and Markdown merge conflicts. A call claims a queue item by changing it to `ACTIVE` before doing substantive work
+Only one call may edit either ledger at a time. Sequential calls avoid duplicate IDs and Markdown merge conflicts. A call claims a queue item by changing it to `ACTIVE` before doing substantive work. A remediation call may edit both ledgers as one transaction when it archives a finding
 
 ## Generate the first ledger
 
@@ -187,9 +188,11 @@ Use a separate call for each coherent fix tranche. The call must:
 - Add or improve an integration test when the behavior is significant
 - Run scoped formatting and lint checks
 - Run the relevant host, Android, server, unit, integration, or emulator validations
-- Update the finding status and append a disposition-log entry with commit or worktree evidence
+- Update the finding status and resolution, then move the complete finding block and its disposition-log entry from the active ledger to `branch_adversarial_review_ledger.done.md`
 
 Valid final finding states are `FIXED`, `DISMISSED`, `DEFERRED`, and `DUPLICATE`. A deferral requires an owner or future milestone, a reason, and an explicit statement of accepted risk
+
+Queue rows and chunk completion notes stay in the active ledger because they are campaign coverage evidence and may refer to both open and archived finding IDs. Do not move a finding merely because work started or a partial mitigation landed. Unimplemented, restricted, or unverified scope stays open in the active ledger and is described explicitly rather than being folded into a completed finding
 
 ### 7. Close the campaign
 
@@ -199,7 +202,7 @@ Valid final finding states are `FIXED`, `DISMISSED`, `DEFERRED`, and `DUPLICATE`
 - Every queue item is `DONE` or has an approved `SKIP` record
 - No item remains `ACTIVE` or `BLOCKED`
 - Required independent finding verification is recorded
-- Every finding has a final disposition or approved deferral
+- No open finding remains in the active ledger, and every finding has a final disposition or approved deferral in the done ledger
 - Relevant validation evidence is present
 - The frozen review head to live `HEAD` delta is empty or covered by appended delta campaigns
 - A human maintainer has reviewed the open-risk and AI-disposition summary
@@ -210,16 +213,16 @@ The closing note must report counts by severity, category, and disposition, list
 
 Each review call performs exactly one queue item
 
-1. Read `AGENTS.md`, `.github/copilot-instructions.md`, this process, and the ledger
+1. Read `AGENTS.md`, `.github/copilot-instructions.md`, this process, and both ledgers
 2. Confirm the frozen commits named by the item still exist
 3. If one item is already `ACTIVE`, resume it. Otherwise claim the first eligible `TODO` item by changing its state to `ACTIVE`
 4. Create an internal task plan. The canonical ledger is the plan file for this campaign, so do not create a separate per-chunk plan file
 5. Inspect the assigned diff or paths plus enough surrounding context to understand behavior
-6. Search the ledger before adding a finding so related symptoms share one root-cause finding
+6. Search both ledgers before adding a finding so related symptoms share one root-cause finding and archived IDs are not reused
 7. Append each supported finding using the required template
 8. Append a chunk completion note, including explicit no-finding evidence when applicable
 9. Change the queue state to `DONE` and put finding IDs or `none` in the Result column
-10. Check that only the ledger changed during a review-only call
+10. Check that only the active ledger changed during a review-only call
 
 If interrupted after claiming, leave the row `ACTIVE`. The next call resumes it and records that it recovered an interrupted claim
 
@@ -230,7 +233,7 @@ If truly blocked, use `BLOCKED` and record the exact missing evidence, failed co
 ```text
 Continue the adversarial branch review for exactly one queue item using sol-5.6-medium
 
-Read AGENTS.md, .github/copilot-instructions.md, android/ai tool plans/code management/branch_adversarial_review_process.md, and the canonical ledger. Resume the existing ACTIVE item or claim the first eligible TODO item. Review the frozen Git snapshot, not the live worktree. Inspect the assigned scope and enough callers, callees, tests, paired D1/D2 code, and interface context to support or disprove issues. Do not modify product code. Record only evidence-backed, branch-caused findings using the exact ledger template. Search for duplicates first. Append a completion note even when there are no findings, update the queue row, and stop after this one item
+Read AGENTS.md, .github/copilot-instructions.md, android/ai tool plans/code management/branch_adversarial_review_process.md, and both adversarial review ledgers. Resume the existing ACTIVE item or claim the first eligible TODO item. Review the frozen Git snapshot, not the live worktree. Inspect the assigned scope and enough callers, callees, tests, paired D1/D2 code, and interface context to support or disprove issues. Do not modify product code. Record only evidence-backed, branch-caused findings using the exact ledger template. Search both ledgers for duplicates and used IDs first. Append a completion note even when there are no findings, update the queue row, and stop after this one item
 ```
 
 For a named-item run, replace the claim sentence with `Claim and review <ID>`
@@ -238,13 +241,13 @@ For a named-item run, replace the claim sentence with `Claim and review <ID>`
 ## Standard prompt for a verification call
 
 ```text
-Independently verify finding <BR-ID> using sol-5.6-medium. Read the review process and ledger, then try to disprove the finding against the frozen snapshot and relevant callers, guards, tests, and platform behavior. Do not fix code. Record confirmed, narrowed, duplicate, dismissed, or investigation status with concrete evidence in the canonical ledger
+Independently verify finding <BR-ID> using sol-5.6-medium. Read the review process and both ledgers, then try to disprove the finding against the frozen snapshot and relevant callers, guards, tests, and platform behavior. Do not fix code. Record confirmed, narrowed, duplicate, dismissed, or investigation status with concrete evidence in the active ledger
 ```
 
 ## Standard prompt for a remediation call
 
 ```text
-Remediate finding <BR-ID> using sol-5.6-medium. Read repository instructions, the review process, the complete finding, related findings, and the live code. Implement the smallest complete root-cause fix, add appropriate regression coverage, run scoped code quality and relevant builds or tests, then update the canonical ledger with the disposition and exact validation evidence
+Remediate finding <BR-ID> using sol-5.6-medium. Read repository instructions, the review process, both ledgers, the complete finding, related findings, and the live code. Implement the smallest complete root-cause fix, add appropriate regression coverage, run scoped code quality and relevant builds or tests, finalize the finding with exact validation evidence, and move its complete block and disposition entry to branch_adversarial_review_ledger.done.md. Leave partial, restricted, or unverified scope open in the active ledger
 ```
 
 ## Review method for authored code
@@ -424,7 +427,7 @@ Change the finding checkbox line rather than adding a second status:
 - `[x] DEFERRED`
 - `[x] DUPLICATE of BR-xxxx`
 
-Then replace `Resolution: Pending` with dated evidence and add one entry to the disposition log
+Then replace `Resolution: Pending` with dated evidence and add one entry to the disposition log in `branch_adversarial_review_ledger.done.md`. Move the complete finalized finding block to that file in the same edit, preserving the original frozen evidence and ID. The active ledger keeps queue rows and chunk completion notes that refer to the archived ID, but it must not retain a second copy of the finalized finding
 
 A dismissal must explain which premise, path, or impact was false. A fix must name the commit or worktree change and validation. A duplicate must point to the surviving root-cause finding
 

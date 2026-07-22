@@ -29,6 +29,7 @@
 #define SIT5_ENTRY_ID          0xa5a5a5a5u
 #define SIT5_ARCHIVE_SIZE      100u
 #define SIT5_ARCHIVE_VER       5u
+#define SIT5_ENTRY_FIXED_SIZE  48u
 #define SIT5_FLAG_DIR          0x40u
 #define SIT5_FLAG_CRYPTED      0x20u
 #define SIT5_NESTED_NAME_LIMIT 64
@@ -195,6 +196,12 @@ static int sit5_build_path(const char *parent, const unsigned char *name_bytes,
 	return out[0] ? 0 : -1;
 }
 
+static int sit5_entry_header_fits(size_t archive_size, unsigned int entry_offset)
+{
+	return archive_size >= SIT5_ENTRY_FIXED_SIZE &&
+	       (size_t) entry_offset <= archive_size - SIT5_ENTRY_FIXED_SIZE;
+}
+
 static int sit5_parse_entry(const unsigned char *archive_data, size_t archive_size,
                             unsigned int entry_offset, const char *parent,
                             sit5_parsed_entry_t *out)
@@ -216,7 +223,7 @@ static int sit5_parse_entry(const unsigned char *archive_data, size_t archive_si
 	unsigned int child_count = 0;
 	int is_dir;
 
-	if (!archive_data || !out || entry_offset + 48u > archive_size) return -1;
+	if (!archive_data || !out || !sit5_entry_header_fits(archive_size, entry_offset)) return -1;
 	if (be32(archive_data + entry_offset) != SIT5_ENTRY_ID) return -1;
 	version = archive_data[entry_offset + 4];
 	if (version != 1u && version != 3u) return -1;
@@ -229,7 +236,7 @@ static int sit5_parse_entry(const unsigned char *archive_data, size_t archive_si
 	comp_len = be32(archive_data + entry_offset + 38);
 	is_dir = (flags & SIT5_FLAG_DIR) != 0;
 	if (header_size < 48u || header_end > archive_size) return -1;
-	cursor = entry_offset + 48u;
+	cursor = entry_offset + SIT5_ENTRY_FIXED_SIZE;
 	if (is_dir) {
 		child_count = be16(archive_data + entry_offset + 46);
 		if (data_len == 0xffffffffu) {
@@ -328,7 +335,7 @@ static int sit5_parse_entries(const unsigned char *archive_data, size_t archive_
 		unsigned int parent_offset;
 		const char *parent;
 
-		if (current_offset >= archive_size) return -1;
+		if (!sit5_entry_header_fits(archive_size, current_offset)) return -1;
 		parent_offset = be32(archive_data + current_offset + 26);
 		parent = sit5_find_parent(dirs, dir_count, parent_offset);
 		if (sit5_parse_entry(archive_data, archive_size, current_offset, parent, &parsed) < 0) return -1;
@@ -369,6 +376,16 @@ static int sit5_list_entries(const unsigned char *archive_data, size_t archive_s
 		return -1;
 	return out->num_entries;
 }
+
+#ifdef STUFFIT_EXTRACT_TESTING
+int stuffit_test_sit5_list_entries(const unsigned char *archive_data,
+                                   size_t archive_size)
+{
+	sti2_entry_list_t list;
+
+	return sit5_list_entries(archive_data, archive_size, &list);
+}
+#endif
 
 static int maybe_extract_nested_sti(const unsigned char *sit_data, size_t sit_size,
                                     const sti2_entry_t *entry,
