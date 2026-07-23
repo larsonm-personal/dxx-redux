@@ -49,12 +49,13 @@
 #define APM_SIG 0x504d
 #define HFS_SIG 0x4244
 
-#define HFS_MAX_BLOCK_SIZE  8192
-#define HFS_MAX_MAP_ENTRIES 128
-#define HFS_NODE_SIZE       512
-#define HFS_ROOT_PARENT_ID  1u
-#define HFS_ROOT_DIR_ID     2u
-#define HFS_MAX_DEPTH       32
+#define HFS_MAX_BLOCK_SIZE       8192
+#define HFS_MAX_MAP_ENTRIES      128
+#define HFS_NODE_SIZE            512
+#define HFS_NODE_DESCRIPTOR_SIZE 14
+#define HFS_ROOT_PARENT_ID       1u
+#define HFS_ROOT_DIR_ID          2u
+#define HFS_MAX_DEPTH            32
 
 typedef struct {
 	unsigned int id;
@@ -591,6 +592,93 @@ fail:
 	return -1;
 }
 
+static unsigned int catalog_node_record_offset(const unsigned char *node,
+                                               unsigned int index)
+{
+	return be16(node + HFS_NODE_SIZE - 2u * (index + 1u));
+}
+
+static int scan_catalog_node(hfs_catalog_t *catalog, const unsigned char *node)
+{
+	unsigned int offset_table_start;
+	unsigned int previous_offset = 0;
+	unsigned int rec_count;
+	unsigned int rec_index;
+
+	if (!catalog || !node)
+		return -1;
+	if (node[8] != 0xff)
+		return 0;
+
+	rec_count = be16(node + 10);
+	if (rec_count > (HFS_NODE_SIZE - HFS_NODE_DESCRIPTOR_SIZE) / 2u - 1u)
+		return -1;
+	offset_table_start = HFS_NODE_SIZE - 2u * (rec_count + 1u);
+	for (rec_index = 0; rec_index <= rec_count; rec_index++) {
+		unsigned int offset = catalog_node_record_offset(node, rec_index);
+
+		if (offset < HFS_NODE_DESCRIPTOR_SIZE || offset > offset_table_start ||
+		    (rec_index > 0 && offset <= previous_offset))
+			return -1;
+		previous_offset = offset;
+	}
+
+	for (rec_index = 0; rec_index < rec_count; rec_index++) {
+		unsigned int rec_off = catalog_node_record_offset(node, rec_index);
+		unsigned int rec_end = catalog_node_record_offset(node, rec_index + 1u);
+		unsigned int record_size = rec_end - rec_off;
+		unsigned int key_len;
+		unsigned int name_len;
+		unsigned int data_off;
+		unsigned int payload_size;
+		unsigned int record_type;
+		hfs_catalog_entry_t entry;
+
+		if (record_size < 7u)
+			return -1;
+		key_len = node[rec_off];
+		if (key_len < 6u || key_len > 37u || 1u + key_len > record_size)
+			return -1;
+		name_len = node[rec_off + 6u];
+		if (name_len > 31u || name_len + 6u > key_len)
+			return -1;
+
+		data_off = rec_off + 1u + key_len;
+		if (data_off & 1u)
+			data_off++;
+		if (data_off >= rec_end)
+			return -1;
+		payload_size = rec_end - data_off;
+		record_type = node[data_off];
+		if ((record_type == 1u && payload_size < 10u) ||
+		    (record_type == 2u && payload_size < 98u))
+			return -1;
+		if (record_type != 1u && record_type != 2u)
+			continue;
+
+		memset(&entry, 0, sizeof(entry));
+		entry.parent_id = be32(node + rec_off + 2u);
+		if (copy_catalog_name(node + rec_off + 7u, (int) name_len,
+		                      entry.name, sizeof(entry.name)) < 0)
+			return -1;
+
+		if (record_type == 1u) {
+			entry.id = be32(node + data_off + 6u);
+			entry.is_dir = 1;
+		} else {
+			entry.id = be32(node + data_off + 20u);
+			entry.data_size = be32(node + data_off + 26u);
+			entry.resource_size = be32(node + data_off + 36u);
+			parse_extent_record(node + data_off + 74u, entry.data_extents);
+			parse_extent_record(node + data_off + 86u, entry.resource_extents);
+		}
+		if (entry.id != 0 && add_catalog_entry(catalog, &entry) < 0)
+			return -1;
+	}
+
+	return 0;
+}
+
 static int scan_catalog(hfs_catalog_t *catalog)
 {
 	unsigned char node[HFS_NODE_SIZE];
@@ -609,74 +697,12 @@ static int scan_catalog(hfs_catalog_t *catalog)
 #endif
 
 	for (node_index = 0; node_index < node_count; node_index++) {
-		unsigned int rec_count;
-		unsigned int rec_index;
-
 		if (read_fork_bytes(catalog->bin_fd, &catalog->volume,
 		                    catalog->volume.catalog_extents,
 		                    (long long) node_index * HFS_NODE_SIZE,
-		                    node, sizeof(node)) < 0)
+		                    node, sizeof(node)) < 0 ||
+		    scan_catalog_node(catalog, node) < 0)
 			return -1;
-		if (node[8] != 0xff)
-			continue;
-
-		rec_count = be16(node + 10);
-		for (rec_index = 0; rec_index < rec_count; rec_index++) {
-			unsigned int rec_off = be16(node + HFS_NODE_SIZE - 2 * (rec_index + 1));
-			unsigned int key_len;
-			unsigned int name_len;
-			unsigned int parent_id;
-			unsigned int data_off;
-			hfs_catalog_entry_t entry;
-
-			if (rec_off < 14 || rec_off >= HFS_NODE_SIZE - 2)
-				continue;
-
-			key_len = node[rec_off];
-			if (key_len < 6 || key_len > 37 || rec_off + 1 + key_len > HFS_NODE_SIZE)
-				continue;
-
-			name_len = node[rec_off + 6];
-			if (name_len > 31 || rec_off + 7 + name_len > HFS_NODE_SIZE || name_len + 6 > key_len)
-				continue;
-
-			parent_id = be32(node + rec_off + 2);
-			data_off = rec_off + 1 + key_len;
-			if (data_off & 1)
-				data_off++;
-			if (data_off + 2 > HFS_NODE_SIZE)
-				continue;
-
-			memset(&entry, 0, sizeof(entry));
-			entry.parent_id = parent_id;
-			if ((node[data_off] == 1 || node[data_off] == 2) &&
-			    copy_catalog_name(node + rec_off + 7, (int) name_len,
-			                      entry.name, sizeof(entry.name)) < 0)
-				return -1;
-
-			switch (node[data_off]) {
-				case 1:
-					entry.id = be32(node + data_off + 6);
-					entry.is_dir = 1;
-					if (entry.id != 0 && add_catalog_entry(catalog, &entry) < 0)
-						return -1;
-					break;
-
-				case 2:
-					entry.id = be32(node + data_off + 20);
-					entry.is_dir = 0;
-					entry.data_size = be32(node + data_off + 26);
-					entry.resource_size = be32(node + data_off + 36);
-					parse_extent_record(node + data_off + 74, entry.data_extents);
-					parse_extent_record(node + data_off + 86, entry.resource_extents);
-					if (entry.id != 0 && add_catalog_entry(catalog, &entry) < 0)
-						return -1;
-					break;
-
-				default:
-					break;
-			}
-		}
 	}
 
 	return 0;
@@ -952,5 +978,20 @@ void hfs_test_reset_scan_count(void)
 int hfs_test_get_scan_count(void)
 {
 	return hfs_test_scan_count;
+}
+
+int hfs_test_scan_catalog_node(const unsigned char *node, int node_size)
+{
+	hfs_catalog_t catalog;
+	int result;
+
+	if (!node || node_size != HFS_NODE_SIZE)
+		return -1;
+	memset(&catalog, 0, sizeof(catalog));
+	result = scan_catalog_node(&catalog, node);
+	if (result == 0)
+		result = catalog.entry_count;
+	free(catalog.entries);
+	return result;
 }
 #endif

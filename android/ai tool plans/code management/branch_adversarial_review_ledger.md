@@ -5166,7 +5166,8 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: The node descriptor, complete offset table, each record interval, key, and type-specific payload all fit within the node and do not overlap the offset table before any field is decoded
 - Suggested fix: Parse catalog nodes with checked subtractive bounds, cap the record count by the space available after the node descriptor including the terminal offset, derive each record's start and end from the validated offset table, and require the complete directory or file payload size before calling `be32` or `parse_extent_record`. Reject the node on structural inconsistency instead of continuing with partially trusted records
 - Validation: Add synthetic leaf nodes at the maximum valid record count and one above it, records ending before every fixed directory and file field, overlapping or nonmonotonic offsets, and valid boundary records; assert clean rejection and run the HFS suite plus a malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
-- Resolution: Pending
+- Remediation status: Code-complete on 2026-07-22, but this P1 remains open pending the independent verification call required by `branch_adversarial_review_process.md`. The live parser now validates the complete footer offset table, strictly increasing record intervals, key bounds, aligned payload start, and all directory and file fields before decoding. The focused HFS suite passes 9/9 against both known Mac discs, the complete native extraction suite passes 13/13, the malformed-node corpus passes combined AddressSanitizer and UndefinedBehaviorSanitizer on an x86_64 Android emulator, scoped code quality passes, and all three Android debug ABIs build
+- Resolution: Pending independent P1 verification
 
 ### BR-0028: P1 - Serialize MIDI seek with rendering
 

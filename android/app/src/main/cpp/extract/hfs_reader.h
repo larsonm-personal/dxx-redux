@@ -90,6 +90,7 @@ int hfs_test_dynamic_catalog_growth(int entry_count);
 void hfs_test_set_allocation_fail_after(int allocations);
 void hfs_test_reset_scan_count(void);
 int hfs_test_get_scan_count(void);
+int hfs_test_scan_catalog_node(const unsigned char *node, int node_size);
 #endif
 
 #ifdef __cplusplus

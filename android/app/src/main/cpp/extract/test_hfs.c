@@ -31,9 +31,10 @@
 #include "cue_parser.h"
 #include "hfs_reader.h"
 
-#define RAW_SECTOR_SIZE  2352
-#define USER_DATA_OFFSET 16
-#define USER_DATA_SIZE   2048
+#define RAW_SECTOR_SIZE    2352
+#define USER_DATA_OFFSET   16
+#define USER_DATA_SIZE     2048
+#define HFS_TEST_NODE_SIZE 512
 
 #define PRIMARY_CUE_PATH   "../../../../../../game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue"
 #define SECONDARY_CUE_PATH "../../../../../../game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].CUE"
@@ -437,6 +438,136 @@ static int catalog_name_safety_tests(void)
 	return 1;
 }
 
+static void put_catalog_node_offset(unsigned char *node, unsigned int index,
+                                    unsigned int offset)
+{
+	put_be16(node + HFS_TEST_NODE_SIZE - 2u * (index + 1u), offset);
+}
+
+static unsigned int build_catalog_test_record(unsigned char *node,
+                                              unsigned int start,
+                                              unsigned int record_type,
+                                              unsigned int payload_size)
+{
+	unsigned int data_offset;
+
+	node[start] = record_type == 1u || record_type == 2u ? 7 : 6;
+	put_be32(node + start + 2u, 1);
+	if (node[start] == 7) {
+		node[start + 6u] = 1;
+		node[start + 7u] = 'A';
+	} else {
+		node[start + 6u] = 0;
+	}
+	data_offset = start + 1u + node[start];
+	if (data_offset & 1u)
+		data_offset++;
+	if (payload_size > 0)
+		node[data_offset] = (unsigned char) record_type;
+	if (record_type == 1u && payload_size >= 10u)
+		put_be32(node + data_offset + 6u, 3);
+	if (record_type == 2u && payload_size >= 98u)
+		put_be32(node + data_offset + 20u, 3);
+	return data_offset + payload_size;
+}
+
+static int scan_single_catalog_test_record(unsigned int record_type,
+                                           unsigned int payload_size)
+{
+	unsigned char node[HFS_TEST_NODE_SIZE] = { 0 };
+	unsigned int end;
+
+	node[8] = 0xff;
+	put_be16(node + 10, 1);
+	end = build_catalog_test_record(node, 14, record_type, payload_size);
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, end);
+	return hfs_test_scan_catalog_node(node, sizeof(node));
+}
+
+static int catalog_record_bounds_tests(void)
+{
+	unsigned char node[HFS_TEST_NODE_SIZE];
+	unsigned int end;
+	unsigned int i;
+
+	for (i = 1; i < 10; i++) {
+		if (scan_single_catalog_test_record(1, i) >= 0)
+			return 0;
+	}
+	if (scan_single_catalog_test_record(1, 10) != 1)
+		return 0;
+	for (i = 1; i < 98; i++) {
+		if (scan_single_catalog_test_record(2, i) >= 0)
+			return 0;
+	}
+	if (scan_single_catalog_test_record(2, 98) != 1)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 47);
+	end = 14;
+	for (i = 0; i < 47; i++) {
+		put_catalog_node_offset(node, i, end);
+		end = build_catalog_test_record(node, end, 0, 1);
+	}
+	put_catalog_node_offset(node, 47, end);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) != 0)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 48);
+	end = 14;
+	for (i = 0; i < 48; i++) {
+		put_catalog_node_offset(node, i, end);
+		end += end & 1u ? 8u : 9u;
+	}
+	put_catalog_node_offset(node, 48, end);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 249);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 2);
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, 30);
+	put_catalog_node_offset(node, 2, 29);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
+		return 0;
+	put_catalog_node_offset(node, 1, 14);
+	put_catalog_node_offset(node, 2, 30);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 1);
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, 509);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
+		return 0;
+	put_catalog_node_offset(node, 1, 20);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 1);
+	node[14] = 7;
+	node[20] = 2;
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, 22);
+	return hfs_test_scan_catalog_node(node, sizeof(node)) < 0;
+}
+
 static int probe_cue(const char *cue_path, hfs_partition_info_t *out)
 {
 	char cue_dir[1024];
@@ -651,6 +782,14 @@ int main(void)
 		PASS();
 	else {
 		FAIL("unsafe catalog component accepted");
+		ok = 0;
+	}
+
+	TEST("catalog_record_bounds");
+	if (catalog_record_bounds_tests())
+		PASS();
+	else {
+		FAIL("malformed catalog record accepted");
 		ok = 0;
 	}
 
