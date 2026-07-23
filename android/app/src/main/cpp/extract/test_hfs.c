@@ -310,21 +310,6 @@ static int load_hfs_list_from_cue(const char *cue_path,
 	return rc;
 }
 
-static int extract_hfs_file_from_cue(const char *cue_path, const char *hfs_path, const char *output_path)
-{
-	cue_data_track_t track;
-	int rc;
-
-	rc = open_cue_data_track(cue_path, &track);
-	if (rc < 0)
-		return rc;
-
-	rc = hfs_extract_file(track.fd, track.track_start_sector, track.track_num_sectors,
-	                      hfs_path, output_path);
-	close_cue_data_track(&track);
-	return rc;
-}
-
 static const hfs_file_entry_t *find_entry_by_path(const hfs_file_list_t *list,
                                                   const char *path,
                                                   int is_dir)
@@ -560,6 +545,7 @@ static int run_primary_catalog_test(void)
 	hfs_file_list_t list;
 	const hfs_file_entry_t *install_entry;
 	const hfs_file_entry_t *demos_dir;
+	int valid;
 
 	TEST("real_primary_macplay_catalog_listing");
 	if (!file_exists(PRIMARY_CUE_PATH)) {
@@ -571,12 +557,15 @@ static int run_primary_catalog_test(void)
 		return 0;
 	}
 	if (info.physical_block_size != 512 || strcmp(info.volume_name, "Descent") != 0) {
+		hfs_file_list_free(&list);
 		FAIL("unexpected HFS volume metadata");
 		return 0;
 	}
 	install_entry = find_entry_by_path(&list, "Install Descent", 0);
 	demos_dir = find_entry_by_path(&list, "MacPlay Demos", 1);
-	if (!install_entry || !demos_dir || list.num_files < 100) {
+	valid = install_entry && demos_dir && list.num_files >= 100;
+	hfs_file_list_free(&list);
+	if (!valid) {
 		FAIL("expected catalog entries missing");
 		return 0;
 	}
@@ -587,20 +576,54 @@ static int run_primary_catalog_test(void)
 static int run_primary_extract_tests(void)
 {
 	unsigned char prefix[8];
+	cue_data_track_t track;
+	hfs_catalog_t *catalog = NULL;
+	const hfs_file_entry_t *install_entry = NULL;
 	int bytes;
+	int i;
 	const char *install_out = "test_hfs_install_descent.bin";
+	const char *install_out_2 = "test_hfs_install_descent_2.bin";
 
 	TEST("real_primary_install_descent_extract");
 	if (!file_exists(PRIMARY_CUE_PATH)) {
 		SKIP("sample media not present");
 		return 1;
 	}
-	if (extract_hfs_file_from_cue(PRIMARY_CUE_PATH, "Install Descent", install_out) < 0) {
+	if (open_cue_data_track(PRIMARY_CUE_PATH, &track) < 0) {
+		FAIL("could not open MacPlay data track");
+		return 0;
+	}
+	hfs_test_reset_scan_count();
+	if (hfs_catalog_open(track.fd, track.track_start_sector,
+	                     track.track_num_sectors, &catalog) < 0) {
+		close_cue_data_track(&track);
+		FAIL("catalog open failed");
+		return 0;
+	}
+	for (i = 0; i < hfs_catalog_file_count(catalog); i++) {
+		const hfs_file_entry_t *candidate = hfs_catalog_file_at(catalog, i);
+		if (candidate && !candidate->is_dir &&
+		    strcmp(candidate->path, "Install Descent") == 0) {
+			install_entry = candidate;
+			break;
+		}
+	}
+	if (!install_entry ||
+	    hfs_catalog_extract_entry(catalog, install_entry, install_out) < 0 ||
+	    hfs_catalog_extract_entry(catalog, install_entry, install_out_2) < 0 ||
+	    hfs_test_get_scan_count() != 1) {
+		hfs_catalog_close(catalog);
+		close_cue_data_track(&track);
+		remove(install_out);
+		remove(install_out_2);
 		FAIL("extract failed");
 		return 0;
 	}
+	hfs_catalog_close(catalog);
+	close_cue_data_track(&track);
 	bytes = read_file_prefix(install_out, prefix, 4);
 	remove(install_out);
+	remove(install_out_2);
 	if (bytes != 4 || memcmp(prefix, "STi2", 4) != 0) {
 		FAIL("missing STi2 magic");
 		return 0;
@@ -630,6 +653,24 @@ int main(void)
 		FAIL("unsafe catalog component accepted");
 		ok = 0;
 	}
+
+	TEST("heap_catalog_growth_and_failures");
+	hfs_test_set_allocation_fail_after(-1);
+	if (hfs_test_dynamic_catalog_growth(1025) == 1025 &&
+	    hfs_test_dynamic_catalog_growth(4096) == 4096 &&
+	    hfs_test_dynamic_catalog_growth(4097) < 0) {
+		hfs_test_set_allocation_fail_after(0);
+		if (hfs_test_dynamic_catalog_growth(1) < 0)
+			PASS();
+		else {
+			FAIL("allocation failure was not reported");
+			ok = 0;
+		}
+	} else {
+		FAIL("dynamic catalog growth bounds mismatch");
+		ok = 0;
+	}
+	hfs_test_set_allocation_fail_after(-1);
 
 	TEST("synthetic_non_hfs_track");
 	{

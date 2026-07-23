@@ -84,6 +84,46 @@ typedef struct {
 	char volume_name[HFS_VOLUME_NAME_LEN];
 } hfs_volume_t;
 
+struct hfs_catalog {
+	int bin_fd;
+	hfs_volume_t volume;
+	hfs_catalog_entry_t *entries;
+	int entry_count;
+	int entry_capacity;
+	hfs_file_list_t files;
+	int file_capacity;
+};
+
+#ifdef HFS_READER_TESTING
+static int hfs_test_allocations_before_failure = -1;
+static int hfs_test_scan_count;
+#endif
+
+static int hfs_allocation_should_fail(void)
+{
+#ifdef HFS_READER_TESTING
+	if (hfs_test_allocations_before_failure == 0)
+		return 1;
+	if (hfs_test_allocations_before_failure > 0)
+		hfs_test_allocations_before_failure--;
+#endif
+	return 0;
+}
+
+static void *hfs_catalog_calloc(size_t count, size_t size)
+{
+	if (hfs_allocation_should_fail())
+		return NULL;
+	return calloc(count, size);
+}
+
+static void *hfs_catalog_realloc(void *ptr, size_t size)
+{
+	if (hfs_allocation_should_fail())
+		return NULL;
+	return realloc(ptr, size);
+}
+
 static unsigned int be16(const unsigned char *p)
 {
 	return ((unsigned int) p[0] << 8) | (unsigned int) p[1];
@@ -341,23 +381,35 @@ static int find_catalog_entry_by_id(const hfs_catalog_entry_t *entries, int coun
 	return -1;
 }
 
-static int add_catalog_entry(hfs_catalog_entry_t *entries, int *count,
+static int add_catalog_entry(hfs_catalog_t *catalog,
                              const hfs_catalog_entry_t *entry)
 {
+	hfs_catalog_entry_t *grown;
+	int new_capacity;
 	int existing;
 
-	if (!entries || !count || !entry)
+	if (!catalog || !entry)
 		return -1;
 
-	existing = find_catalog_entry_by_id(entries, *count, entry->id);
+	existing = find_catalog_entry_by_id(catalog->entries, catalog->entry_count, entry->id);
 	if (existing >= 0)
 		return existing;
-	if (*count >= HFS_MAX_FILES)
+	if ((unsigned int) catalog->entry_count >= DXX_EXTRACT_MAX_ENTRIES)
 		return -1;
+	if (catalog->entry_count == catalog->entry_capacity) {
+		new_capacity = catalog->entry_capacity ? catalog->entry_capacity * 2 : 128;
+		if ((unsigned int) new_capacity > DXX_EXTRACT_MAX_ENTRIES)
+			new_capacity = (int) DXX_EXTRACT_MAX_ENTRIES;
+		grown = (hfs_catalog_entry_t *) hfs_catalog_realloc(
+		    catalog->entries, (size_t) new_capacity * sizeof(*grown));
+		if (!grown)
+			return -1;
+		catalog->entries = grown;
+		catalog->entry_capacity = new_capacity;
+	}
 
-	entries[*count] = *entry;
-	(*count)++;
-	return *count - 1;
+	catalog->entries[catalog->entry_count] = *entry;
+	return catalog->entry_count++;
 }
 
 static int build_catalog_path(const hfs_catalog_entry_t *entries, int count, int index,
@@ -539,26 +591,29 @@ fail:
 	return -1;
 }
 
-static int scan_catalog(int bin_fd, const hfs_volume_t *vol,
-                        hfs_catalog_entry_t *entries, int *entry_count)
+static int scan_catalog(hfs_catalog_t *catalog)
 {
 	unsigned char node[HFS_NODE_SIZE];
 	unsigned int node_count;
 	unsigned int node_index;
 
-	if (!vol || !entries || !entry_count)
+	if (!catalog)
 		return -1;
 
-	*entry_count = 0;
-	node_count = vol->catalog_file_size / HFS_NODE_SIZE;
+	catalog->entry_count = 0;
+	node_count = catalog->volume.catalog_file_size / HFS_NODE_SIZE;
 	if (node_count == 0)
 		return -1;
+#ifdef HFS_READER_TESTING
+	hfs_test_scan_count++;
+#endif
 
 	for (node_index = 0; node_index < node_count; node_index++) {
 		unsigned int rec_count;
 		unsigned int rec_index;
 
-		if (read_fork_bytes(bin_fd, vol, vol->catalog_extents,
+		if (read_fork_bytes(catalog->bin_fd, &catalog->volume,
+		                    catalog->volume.catalog_extents,
 		                    (long long) node_index * HFS_NODE_SIZE,
 		                    node, sizeof(node)) < 0)
 			return -1;
@@ -603,8 +658,8 @@ static int scan_catalog(int bin_fd, const hfs_volume_t *vol,
 				case 1:
 					entry.id = be32(node + data_off + 6);
 					entry.is_dir = 1;
-					if (entry.id != 0)
-						add_catalog_entry(entries, entry_count, &entry);
+					if (entry.id != 0 && add_catalog_entry(catalog, &entry) < 0)
+						return -1;
 					break;
 
 				case 2:
@@ -614,8 +669,8 @@ static int scan_catalog(int bin_fd, const hfs_volume_t *vol,
 					entry.resource_size = be32(node + data_off + 36);
 					parse_extent_record(node + data_off + 74, entry.data_extents);
 					parse_extent_record(node + data_off + 86, entry.resource_extents);
-					if (entry.id != 0)
-						add_catalog_entry(entries, entry_count, &entry);
+					if (entry.id != 0 && add_catalog_entry(catalog, &entry) < 0)
+						return -1;
 					break;
 
 				default:
@@ -624,6 +679,65 @@ static int scan_catalog(int bin_fd, const hfs_volume_t *vol,
 		}
 	}
 
+	return 0;
+}
+
+static int append_public_entry(hfs_catalog_t *catalog,
+                               const hfs_catalog_entry_t *entry,
+                               const char *path)
+{
+	hfs_file_entry_t *grown;
+	hfs_file_entry_t *dst;
+	int new_capacity;
+
+	if (!catalog || !entry || !path)
+		return -1;
+	if ((unsigned int) catalog->files.num_files >= DXX_EXTRACT_MAX_ENTRIES)
+		return -1;
+	if (catalog->files.num_files == catalog->file_capacity) {
+		new_capacity = catalog->file_capacity ? catalog->file_capacity * 2 : 128;
+		if ((unsigned int) new_capacity > DXX_EXTRACT_MAX_ENTRIES)
+			new_capacity = (int) DXX_EXTRACT_MAX_ENTRIES;
+		grown = (hfs_file_entry_t *) hfs_catalog_realloc(
+		    catalog->files.files, (size_t) new_capacity * sizeof(*grown));
+		if (!grown)
+			return -1;
+		catalog->files.files = grown;
+		catalog->file_capacity = new_capacity;
+	}
+
+	dst = &catalog->files.files[catalog->files.num_files++];
+	memset(dst, 0, sizeof(*dst));
+	snprintf(dst->path, sizeof(dst->path), "%s", path);
+	dst->id = entry->id;
+	dst->parent_id = entry->parent_id;
+	dst->data_size = entry->data_size;
+	dst->resource_size = entry->resource_size;
+	memcpy(dst->data_extents, entry->data_extents, sizeof(dst->data_extents));
+	memcpy(dst->resource_extents, entry->resource_extents, sizeof(dst->resource_extents));
+	dst->is_dir = entry->is_dir;
+	return 0;
+}
+
+static int build_public_catalog(hfs_catalog_t *catalog)
+{
+	int i;
+
+	for (i = 0; i < catalog->entry_count; i++) {
+		char path[HFS_PATH_LEN];
+
+		if (catalog->entries[i].id == HFS_ROOT_DIR_ID)
+			continue;
+		if (build_catalog_path(catalog->entries, catalog->entry_count, i,
+		                       path, sizeof(path), 0) < 0 &&
+		    !path[0])
+			continue;
+		if (!path[0] || output_has_path(&catalog->files, path,
+		                                catalog->entries[i].is_dir))
+			continue;
+		if (append_public_entry(catalog, &catalog->entries[i], path) < 0)
+			return -1;
+	}
 	return 0;
 }
 
@@ -648,105 +762,195 @@ int hfs_find_partition(int bin_fd, int track_start_sector, int track_num_sectors
 int hfs_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
                    hfs_file_list_t *out)
 {
-	hfs_catalog_entry_t entries[HFS_MAX_FILES];
-	hfs_volume_t vol;
-	int entry_count;
-	int i;
+	hfs_catalog_t *catalog;
 
 	if (!out)
 		return -1;
 
 	memset(out, 0, sizeof(*out));
-	if (load_volume(bin_fd, track_start_sector, track_num_sectors, &vol, NULL, 1) < 0)
+	if (hfs_catalog_open(bin_fd, track_start_sector, track_num_sectors, &catalog) < 0)
 		return -1;
-	if (scan_catalog(bin_fd, &vol, entries, &entry_count) < 0)
-		return -1;
-
-	for (i = 0; i < entry_count; i++) {
-		char path[HFS_PATH_LEN];
-		hfs_file_entry_t *dst;
-
-		if (entries[i].id == HFS_ROOT_DIR_ID)
-			continue;
-		if (build_catalog_path(entries, entry_count, i, path, sizeof(path), 0) < 0 && !path[0])
-			continue;
-		if (!path[0] || output_has_path(out, path, entries[i].is_dir))
-			continue;
-		if (out->num_files >= HFS_MAX_FILES)
-			return -1;
-
-		dst = &out->files[out->num_files++];
-		memset(dst, 0, sizeof(*dst));
-		snprintf(dst->path, sizeof(dst->path), "%s", path);
-		dst->id = entries[i].id;
-		dst->parent_id = entries[i].parent_id;
-		dst->data_size = entries[i].data_size;
-		dst->resource_size = entries[i].resource_size;
-		memcpy(dst->data_extents, entries[i].data_extents, sizeof(dst->data_extents));
-		memcpy(dst->resource_extents, entries[i].resource_extents, sizeof(dst->resource_extents));
-		dst->is_dir = entries[i].is_dir;
-	}
-
+	*out = catalog->files;
+	catalog->files.files = NULL;
+	catalog->files.num_files = 0;
+	hfs_catalog_close(catalog);
 	return out->num_files;
 }
 
-int hfs_extract_file(int bin_fd, int track_start_sector, int track_num_sectors,
-                     const char *hfs_path, const char *output_path)
+void hfs_file_list_free(hfs_file_list_t *list)
 {
-	hfs_file_list_t list;
-	hfs_volume_t vol;
-	unsigned char buffer[65536];
-	const hfs_file_entry_t *entry = NULL;
+	if (!list)
+		return;
+	free(list->files);
+	memset(list, 0, sizeof(*list));
+}
+
+int hfs_catalog_open(int bin_fd, int track_start_sector, int track_num_sectors,
+                     hfs_catalog_t **out)
+{
+	hfs_catalog_t *catalog;
+
+	if (!out)
+		return -1;
+	*out = NULL;
+	catalog = (hfs_catalog_t *) hfs_catalog_calloc(1, sizeof(*catalog));
+	if (!catalog)
+		return -1;
+	catalog->bin_fd = bin_fd;
+	if (load_volume(bin_fd, track_start_sector, track_num_sectors,
+	                &catalog->volume, NULL, 1) < 0 ||
+	    scan_catalog(catalog) < 0 || build_public_catalog(catalog) < 0) {
+		hfs_catalog_close(catalog);
+		return -1;
+	}
+	*out = catalog;
+	return 0;
+}
+
+void hfs_catalog_close(hfs_catalog_t *catalog)
+{
+	if (!catalog)
+		return;
+	free(catalog->files.files);
+	free(catalog->entries);
+	free(catalog);
+}
+
+int hfs_catalog_file_count(const hfs_catalog_t *catalog)
+{
+	return catalog ? catalog->files.num_files : -1;
+}
+
+const hfs_file_entry_t *hfs_catalog_file_at(const hfs_catalog_t *catalog, int index)
+{
+	if (!catalog || index < 0 || index >= catalog->files.num_files)
+		return NULL;
+	return &catalog->files.files[index];
+}
+
+int hfs_catalog_extract_entry(hfs_catalog_t *catalog,
+                              const hfs_file_entry_t *entry,
+                              const char *output_path)
+{
+	unsigned char *buffer;
 	int out_fd = -1;
+	int entry_index;
+	int entry_owned = 0;
 	long long remaining;
 	long long offset = 0;
-	int i;
 
-	if (!hfs_path || !output_path)
+	if (!catalog || !entry || entry->is_dir || !output_path)
 		return -1;
-
-	if (load_volume(bin_fd, track_start_sector, track_num_sectors, &vol, NULL, 1) < 0)
-		return -1;
-	if (hfs_list_files(bin_fd, track_start_sector, track_num_sectors, &list) < 0)
-		return -1;
-
-	for (i = 0; i < list.num_files; i++) {
-		if (!list.files[i].is_dir && path_equals_ignore_case(list.files[i].path, hfs_path)) {
-			entry = &list.files[i];
+	for (entry_index = 0; entry_index < catalog->files.num_files; entry_index++) {
+		if (entry == &catalog->files.files[entry_index]) {
+			entry_owned = 1;
 			break;
 		}
 	}
-	if (!entry)
+	if (!entry_owned)
 		return -1;
-	if (entry->data_size > DXX_EXTRACT_MAX_ENTRY_BYTES)
+	if (entry->data_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+	    (long long) entry->data_size >
+	        extent_record_capacity(&catalog->volume, entry->data_extents))
 		return -1;
-	if ((long long) entry->data_size > extent_record_capacity(&vol, entry->data_extents))
+	buffer = (unsigned char *) hfs_catalog_calloc(1, 65536);
+	if (!buffer)
 		return -1;
 	if (mkdirs_for_file(output_path) < 0)
-		return -1;
+		goto fail;
 
 	out_fd = open_fd(output_path, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0644);
 	if (out_fd < 0)
-		return -1;
+		goto fail;
 
 	remaining = entry->data_size;
 	while (remaining > 0) {
-		int chunk = (int) (remaining > (long long) sizeof(buffer) ? sizeof(buffer) : remaining);
+		int chunk = (int) (remaining > 65536 ? 65536 : remaining);
 
-		if (read_fork_bytes(bin_fd, &vol, entry->data_extents, offset, buffer, chunk) < 0)
+		if (read_fork_bytes(catalog->bin_fd, &catalog->volume,
+		                    entry->data_extents, offset, buffer, chunk) < 0 ||
+		    write_fd(out_fd, buffer, chunk) != chunk)
 			goto fail;
-		if (write_fd(out_fd, buffer, chunk) != chunk)
-			goto fail;
-
 		offset += chunk;
 		remaining -= chunk;
 	}
 
 	close_fd(out_fd);
+	free(buffer);
 	return entry->data_size;
 
 fail:
 	if (out_fd >= 0)
 		close_fd(out_fd);
+	free(buffer);
 	return -1;
 }
+
+int hfs_catalog_extract_path(hfs_catalog_t *catalog, const char *hfs_path,
+                             const char *output_path)
+{
+	int i;
+
+	if (!catalog || !hfs_path || !output_path)
+		return -1;
+	for (i = 0; i < catalog->files.num_files; i++) {
+		const hfs_file_entry_t *entry = &catalog->files.files[i];
+		if (!entry->is_dir && path_equals_ignore_case(entry->path, hfs_path))
+			return hfs_catalog_extract_entry(catalog, entry, output_path);
+	}
+	return -1;
+}
+
+int hfs_extract_file(int bin_fd, int track_start_sector, int track_num_sectors,
+                     const char *hfs_path, const char *output_path)
+{
+	hfs_catalog_t *catalog;
+	int result;
+
+	if (!hfs_path || !output_path)
+		return -1;
+	if (hfs_catalog_open(bin_fd, track_start_sector, track_num_sectors, &catalog) < 0)
+		return -1;
+	result = hfs_catalog_extract_path(catalog, hfs_path, output_path);
+	hfs_catalog_close(catalog);
+	return result;
+}
+
+#ifdef HFS_READER_TESTING
+int hfs_test_dynamic_catalog_growth(int entry_count)
+{
+	hfs_catalog_t catalog;
+	hfs_catalog_entry_t entry;
+	int i;
+	int result = 0;
+
+	memset(&catalog, 0, sizeof(catalog));
+	memset(&entry, 0, sizeof(entry));
+	for (i = 0; i < entry_count; i++) {
+		entry.id = (unsigned int) i + 1u;
+		if (add_catalog_entry(&catalog, &entry) < 0) {
+			result = -1;
+			break;
+		}
+	}
+	if (result == 0)
+		result = catalog.entry_count;
+	free(catalog.entries);
+	return result;
+}
+
+void hfs_test_set_allocation_fail_after(int allocations)
+{
+	hfs_test_allocations_before_failure = allocations;
+}
+
+void hfs_test_reset_scan_count(void)
+{
+	hfs_test_scan_count = 0;
+}
+
+int hfs_test_get_scan_count(void)
+{
+	return hfs_test_scan_count;
+}
+#endif

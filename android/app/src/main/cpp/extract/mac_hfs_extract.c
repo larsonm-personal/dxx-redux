@@ -105,32 +105,31 @@ static int read_file_to_buffer(const char *path, unsigned char **out_data, size_
 	return 0;
 }
 
-static int extract_sti2_from_hfs(int bin_fd, int track_start_sector, int track_num_sectors,
+static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
                                  const char *output_dir, const char **extensions,
                                  extract_progress_fn progress, void *user_data)
 {
 	char archive_path[1024];
 	unsigned char *archive_data = NULL;
 	size_t archive_size = 0;
-	hfs_file_list_t list;
+	const hfs_file_entry_t *entry = NULL;
 	int i;
 	int extracted;
 
-	if (hfs_list_files(bin_fd, track_start_sector, track_num_sectors, &list) < 0)
-		return -1;
-	for (i = 0; i < list.num_files; i++) {
-		if (!list.files[i].is_dir &&
-		    str_equals_ignore_case(list.files[i].path, "Install Descent")) {
-			if (!dxx_extract_memory_allowed(list.files[i].data_size, 0))
+	for (i = 0; i < hfs_catalog_file_count(catalog); i++) {
+		entry = hfs_catalog_file_at(catalog, i);
+		if (entry && !entry->is_dir &&
+		    str_equals_ignore_case(entry->path, "Install Descent")) {
+			if (!dxx_extract_memory_allowed(entry->data_size, 0))
 				return -1;
 			break;
 		}
+		entry = NULL;
 	}
-	if (i == list.num_files)
+	if (!entry)
 		return -1;
 	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
-	if (hfs_extract_file(bin_fd, track_start_sector, track_num_sectors,
-	                     "Install Descent", archive_path) < 0)
+	if (hfs_catalog_extract_entry(catalog, entry, archive_path) < 0)
 		return -1;
 	if (read_file_to_buffer(archive_path, &archive_data, &archive_size) < 0) {
 		remove(archive_path);
@@ -149,43 +148,41 @@ static int extract_sti2_from_hfs(int bin_fd, int track_start_sector, int track_n
 	return extracted;
 }
 
-static int extract_hfs_matching_files(int bin_fd, int track_start_sector, int track_num_sectors,
+static int extract_hfs_matching_files(hfs_catalog_t *catalog,
                                       const char *output_dir, const char **extensions,
                                       extract_progress_fn progress, void *user_data)
 {
-	hfs_file_list_t list;
 	uint64_t total_bytes = 0;
 	long long done_bytes = 0;
 	int extracted = 0;
 	int i;
 
-	if (hfs_list_files(bin_fd, track_start_sector, track_num_sectors, &list) < 0)
-		return -1;
-
-	for (i = 0; i < list.num_files; i++) {
-		if (list.files[i].is_dir ||
-		    !ext_matches(path_basename(list.files[i].path), extensions))
+	for (i = 0; i < hfs_catalog_file_count(catalog); i++) {
+		const hfs_file_entry_t *entry = hfs_catalog_file_at(catalog, i);
+		if (!entry || entry->is_dir ||
+		    !ext_matches(path_basename(entry->path), extensions))
 			continue;
-		if (list.files[i].data_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
-		    dxx_extract_add_bytes(&total_bytes, list.files[i].data_size,
+		if (entry->data_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+		    dxx_extract_add_bytes(&total_bytes, entry->data_size,
 		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
 			return -1;
 	}
 	if (!dxx_extract_has_free_space(output_dir, total_bytes))
 		return -1;
 
-	for (i = 0; i < list.num_files; i++) {
+	for (i = 0; i < hfs_catalog_file_count(catalog); i++) {
 		char output_path[1024];
+		const hfs_file_entry_t *entry = hfs_catalog_file_at(catalog, i);
 		int written;
-		const char *name = path_basename(list.files[i].path);
+		const char *name;
 
-		if (list.files[i].is_dir ||
+		if (!entry || entry->is_dir ||
+		    !(name = path_basename(entry->path)) ||
 		    !ext_matches(name, extensions))
 			continue;
 
-		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, list.files[i].path);
-		written = hfs_extract_file(bin_fd, track_start_sector, track_num_sectors,
-		                           list.files[i].path, output_path);
+		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, entry->path);
+		written = hfs_catalog_extract_entry(catalog, entry, output_path);
 		if (written < 0)
 			return -1;
 		done_bytes += written;
@@ -204,18 +201,21 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
                                      extract_progress_fn progress,
                                      void *user_data)
 {
+	hfs_catalog_t *catalog;
 	int extracted;
 	const char **fallback_extensions = hfs_extensions ? hfs_extensions : sti2_extensions;
 
 	if (bin_fd < 0 || !output_dir)
 		return -1;
+	if (hfs_catalog_open(bin_fd, track_start_sector, track_num_sectors, &catalog) < 0)
+		return -1;
 
-	extracted = extract_sti2_from_hfs(bin_fd, track_start_sector, track_num_sectors,
-	                                  output_dir, sti2_extensions, progress, user_data);
+	extracted = extract_sti2_from_hfs(catalog, output_dir, sti2_extensions,
+	                                  progress, user_data);
 	if (extracted <= 0)
-		extracted = extract_hfs_matching_files(bin_fd, track_start_sector, track_num_sectors,
-		                                       output_dir, fallback_extensions,
+		extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
 		                                       progress, user_data);
+	hfs_catalog_close(catalog);
 
 	return extracted;
 }

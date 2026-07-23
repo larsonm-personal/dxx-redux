@@ -5168,23 +5168,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add synthetic leaf nodes at the maximum valid record count and one above it, records ending before every fixed directory and file field, overlapping or nonmonotonic offsets, and valid boundary records; assert clean rejection and run the HFS suite plus a malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
 - Resolution: Pending
 
-### BR-0027: P2 - Reuse one heap-backed HFS catalog during extraction
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: performance/resource-lifetime
-- Found by: R1-CHUNK-0012, R1-CHUNK-0021
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/hfs_reader.c:L326-L342,L520-L720` in `add_catalog_entry`, `scan_catalog`, `hfs_list_files`, and `hfs_extract_file`
-- Related: `android/app/src/main/cpp/extract/hfs_reader.h:L15-L41`, `android/app/src/main/cpp/extract/mac_hfs_extract.c:L133-L172`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L1234-L1289`
-- Evidence: `hfs_file_list_t` embeds 1,024 324-byte entries, so every caller materializes a 331,780-byte value. The fallback Mac extractor keeps that list live while calling `hfs_extract_file` for every matching file; each call allocates another complete list, loads the volume, and scans the whole catalog again, while `hfs_list_files` adds a 1,024-entry internal catalog array. NDK r27d AArch64 Clang at `-O2` reports stack frames of 332,960 bytes for the inlined Mac fallback, 397,584 bytes for `hfs_extract_file`, and 103,328 bytes for `hfs_list_files`, for roughly 834 KiB of nested native frames before JNI, Kotlin, and runtime frames. Extracting K matching files also changes one catalog scan into K additional full scans and volume loads. Independently, `add_catalog_entry` returns `-1` after 1,024 unique CNIDs, but `scan_catalog` ignores that return and reports success, so the public listing silently omits every later entry
-- Trigger: Use the supported loose-file fallback on a Mac HFS image without a usable `Install Descent` archive and with several extension-matching game files, especially from the Kotlin `Dispatchers.IO` JNI path, or list a valid or crafted catalog with more than 1,024 unique entries
-- Impact: Import performs avoidable repeated I/O and parsing for every selected file and consumes most of a MiB of native stack at peak, increasing latency and leaving little stack headroom on mobile or host worker threads even for ordinary valid input; large catalogs are silently incomplete and can hide selected game files after the fixed cutoff
-- Expected: One validated, dynamically sized catalog and volume context is allocated with explicit ownership, reused for selection and extraction, and released after the import; per-file extraction uses the already selected entry and only a bounded transfer buffer; capacity or allocation failures are explicit rather than successful truncation
-- Suggested fix: Replace the fixed-array value API with an opaque or caller-owned heap-backed HFS context, scan once, pass a validated entry to an extraction helper, and make file counts and allocation failure explicit. Keep the transfer buffer bounded or heap-backed and avoid loading the volume again inside the per-entry path
-- Validation: Compile Android ABIs with a scoped frame-size warning, assert the HFS call chain has no large fixed catalog frames, instrument synthetic many-file fallbacks to prove one catalog scan regardless of selected-file count and complete behavior above 1,024 entries, verify an allocation failure is reported, and retain exact listing and extraction checks for both known Mac discs
-- Resolution: Pending
-
 ### BR-0028: P1 - Serialize MIDI seek with rendering
 
 - [ ] OPEN

@@ -118,7 +118,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
 target_include_directories(test_sti2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_definitions(test_sti2 PRIVATE STI2_EXTRACT_TESTING)
+target_compile_definitions(test_sti2 PRIVATE STI2_EXTRACT_TESTING HFS_READER_TESTING)
 
 # ── test_stuffit_corpus ────────────────────────────────────────────
 add_executable(test_stuffit_corpus ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp

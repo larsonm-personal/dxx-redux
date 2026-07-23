@@ -903,6 +903,7 @@ static int run_real_native_mac_extract_test(void)
 		return 0;
 	}
 
+	hfs_test_reset_scan_count();
 	extracted = mac_extract_files_from_hfs_track(track.fd,
 	                                             track.track_start_sector,
 	                                             track.track_num_sectors,
@@ -912,10 +913,11 @@ static int run_real_native_mac_extract_test(void)
 	                                             NULL,
 	                                             NULL);
 	close_cue_data_track(&track);
-	if (extracted != (int) (sizeof(expected_names) / sizeof(expected_names[0]))) {
+	if (extracted != (int) (sizeof(expected_names) / sizeof(expected_names[0])) ||
+	    hfs_test_get_scan_count() != 1) {
 		cleanup_test_output_dir(output_dir, expected_names,
 		                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
-		FAIL("unexpected extracted count");
+		FAIL("unexpected extracted count or catalog scan count");
 		return 0;
 	}
 

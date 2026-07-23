@@ -17,7 +17,6 @@ extern "C" {
 #define HFS_NAME_LEN           32
 #define HFS_PATH_LEN           256
 #define HFS_MAX_EXTENTS        3
-#define HFS_MAX_FILES          1024
 
 typedef struct {
 	unsigned int start_block;
@@ -36,9 +35,11 @@ typedef struct {
 } hfs_file_entry_t;
 
 typedef struct {
-	hfs_file_entry_t files[HFS_MAX_FILES];
+	hfs_file_entry_t *files;
 	int num_files;
 } hfs_file_list_t;
+
+typedef struct hfs_catalog hfs_catalog_t;
 
 typedef struct {
 	unsigned int physical_block_size;
@@ -61,9 +62,22 @@ int hfs_track_has_partition_map(int bin_fd, int track_start_sector, int track_nu
 int hfs_find_partition(int bin_fd, int track_start_sector, int track_num_sectors,
                        hfs_partition_info_t *out);
 
-/* Returns the number of files and directories found, or -1 on failure */
+/* Returns the number found, or -1. Free a successful result with hfs_file_list_free. */
 int hfs_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
                    hfs_file_list_t *out);
+void hfs_file_list_free(hfs_file_list_t *list);
+
+/* Opens one owned volume/catalog context. The caller must close it. */
+int hfs_catalog_open(int bin_fd, int track_start_sector, int track_num_sectors,
+                     hfs_catalog_t **out);
+void hfs_catalog_close(hfs_catalog_t *catalog);
+int hfs_catalog_file_count(const hfs_catalog_t *catalog);
+const hfs_file_entry_t *hfs_catalog_file_at(const hfs_catalog_t *catalog, int index);
+int hfs_catalog_extract_entry(hfs_catalog_t *catalog,
+                              const hfs_file_entry_t *entry,
+                              const char *output_path);
+int hfs_catalog_extract_path(hfs_catalog_t *catalog, const char *hfs_path,
+                             const char *output_path);
 
 /* Extracts a single HFS data-fork file by path. Returns bytes extracted, or -1 on failure */
 int hfs_extract_file(int bin_fd, int track_start_sector, int track_num_sectors,
@@ -72,6 +86,10 @@ int hfs_extract_file(int bin_fd, int track_start_sector, int track_num_sectors,
 #ifdef HFS_READER_TESTING
 int hfs_test_copy_catalog_name(const unsigned char *src, int src_len,
                                char *dst, int dst_len);
+int hfs_test_dynamic_catalog_growth(int entry_count);
+void hfs_test_set_allocation_fail_after(int allocations);
+void hfs_test_reset_scan_count(void);
+int hfs_test_get_scan_count(void);
 #endif
 
 #ifdef __cplusplus
