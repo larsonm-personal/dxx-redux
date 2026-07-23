@@ -210,6 +210,22 @@ static unsigned int read_u32(const unsigned char *p)
 	       ((unsigned int) p[2] << 16) | ((unsigned int) p[3] << 24);
 }
 
+static unsigned int arj_crc32_update(unsigned int crc, const unsigned char *data,
+                                     size_t len)
+{
+	while (len-- > 0) {
+		crc ^= *data++;
+		for (int bit = 0; bit < 8; bit++)
+			crc = (crc & 1u) ? (crc >> 1) ^ 0xedb88320u : crc >> 1;
+	}
+	return crc;
+}
+
+static unsigned int arj_crc32(const unsigned char *data, size_t len)
+{
+	return ~arj_crc32_update(0xffffffffu, data, len);
+}
+
 /* ── Bit reader for Huffman stream ──────────────────────────────────── */
 /*
  * Matches the canonical ARJ bitbuf model: a 16-bit left-aligned register
@@ -224,11 +240,20 @@ typedef struct {
 	unsigned int bitbuf;    /* 16-bit left-aligned bit buffer */
 	unsigned char byte_buf; /* pending byte (MSB = next bit) */
 	int bitcount;           /* valid bits remaining in byte_buf */
+	uint64_t consumed_bits;
+	int exhausted;
 } bitreader_t;
 
 /* Consume n bits from the stream and refill.  Mirrors ARJ fillbuf(). */
 static void br_fillbuf(bitreader_t *br, int n)
 {
+	uint64_t total_bits = (uint64_t) br->data_len * 8u;
+	if ((uint64_t) n > total_bits - br->consumed_bits) {
+		br->consumed_bits = total_bits;
+		br->exhausted = 1;
+	} else {
+		br->consumed_bits += (unsigned int) n;
+	}
 	while (br->bitcount < n) {
 		br->bitbuf = ((br->bitbuf << br->bitcount) |
 		              ((unsigned int) br->byte_buf >> (8 - br->bitcount))) &
@@ -260,7 +285,11 @@ static void br_init(bitreader_t *br, const unsigned char *data, unsigned int len
 	br->bitbuf = 0;
 	br->byte_buf = 0;
 	br->bitcount = 0;
+	br->consumed_bits = 0;
+	br->exhausted = 0;
 	br_fillbuf(br, 16); /* prime the buffer with 2 bytes */
+	br->consumed_bits = 0;
+	br->exhausted = 0;
 }
 
 /* ── Huffman table decoder ──────────────────────────────────────────── */
@@ -467,15 +496,17 @@ static int read_c_len(arj_decoder_t *dec)
 static int arj_decode_block(arj_decoder_t *dec, unsigned char *out, unsigned int out_cap)
 {
 	unsigned int blocksize = br_getbits(&dec->br, 16);
+	if (dec->br.exhausted) return -1;
 	if (blocksize == 0) return 0;
 
 	if (read_pt_len(dec, NT, TBIT, 3) < 0 || read_c_len(dec) < 0 ||
-	    read_pt_len(dec, NP, PBIT, -1) < 0)
+	    read_pt_len(dec, NP, PBIT, -1) < 0 || dec->br.exhausted)
 		return -1;
 
 	unsigned int count = 0;
 	while (count < blocksize && dec->decoded < dec->orig_size) {
 		unsigned short c = huff_decode(&dec->c_tree, &dec->br, HUFF_TABLE_BITS);
+		if (dec->br.exhausted) return -1;
 		if (c <= 255) {
 			/* literal byte */
 			dec->dic[dec->dic_pos] = (unsigned char) c;
@@ -497,6 +528,7 @@ static int arj_decode_block(arj_decoder_t *dec, unsigned char *out, unsigned int
 				p--;
 				pos = ((unsigned int) 1 << p) + br_getbits(&dec->br, p);
 			}
+			if (dec->br.exhausted) return -1;
 
 			int src = (int) dec->dic_pos - (int) pos - 1;
 			if (src < 0) src += DICSIZ;
@@ -580,6 +612,7 @@ typedef struct {
 	char filename[260];
 	unsigned int comp_size;
 	unsigned int orig_size;
+	unsigned int original_crc;
 	int method;       /* 0=stored, 1-3=compressed */
 	int file_type;    /* 0=binary, 2=archive header */
 	long data_offset; /* offset of compressed data in the file */
@@ -618,8 +651,11 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 	unsigned char hdr[ARJ_MAX_HEADER + 4];
 	if (fread(hdr, 1, header_size + 4, fp) != header_size + 4) return -1;
 
+	if (arj_crc32(hdr, header_size) != read_u32(hdr + header_size)) return -1;
+
 	unsigned int first_hdr_size = read_u8(hdr);
-	if (first_hdr_size < 30) return -1;
+	if (header_size < 30 || first_hdr_size < 30 || first_hdr_size > header_size)
+		return -1;
 
 	entry->method = read_u8(hdr + 5);
 	entry->file_type = read_u8(hdr + 6);
@@ -629,9 +665,11 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 	if (entry->file_type == ARJ_TYPE_COMMENT) {
 		entry->comp_size = 0;
 		entry->orig_size = 0;
+		entry->original_crc = 0;
 	} else {
 		entry->comp_size = read_u32(hdr + 12);
 		entry->orig_size = read_u32(hdr + 16);
+		entry->original_crc = read_u32(hdr + 20);
 	}
 
 	/* Extract filename — first null-terminated string after fixed header */
@@ -666,7 +704,24 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 		if (fread(ehbuf, 1, 2, fp) != 2) return -1;
 		unsigned int ext_size = read_u16(ehbuf);
 		if (ext_size == 0) break;
-		fseek(fp, ext_size + 4, SEEK_CUR); /* data + CRC */
+		long ext_offset = ftell(fp);
+		if (ext_offset < 0 || ext_offset > file_size ||
+		    ext_size > (uint64_t) file_size - (uint64_t) ext_offset ||
+		    4u > (uint64_t) file_size - (uint64_t) ext_offset - ext_size)
+			return -1;
+		unsigned int crc = 0xffffffffu;
+		unsigned int remaining = ext_size;
+		while (remaining > 0) {
+			unsigned char chunk[512];
+			size_t amount = remaining < sizeof(chunk) ? remaining : sizeof(chunk);
+			if (fread(chunk, 1, amount, fp) != amount) return -1;
+			crc = arj_crc32_update(crc, chunk, amount);
+			remaining -= (unsigned int) amount;
+		}
+		unsigned char crcbuf[4];
+		if (fread(crcbuf, 1, sizeof(crcbuf), fp) != sizeof(crcbuf) ||
+		    ~crc != read_u32(crcbuf))
+			return -1;
 	}
 
 	entry->data_offset = ftell(fp);
@@ -810,6 +865,12 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		if (!out_data) {
 			fprintf(stderr, "sow_extract: decompression failed for '%s'\n",
 			        filename);
+			continue;
+		}
+		if (arj_crc32(out_data, out_size) != e.original_crc) {
+			fprintf(stderr, "sow_extract: payload CRC mismatch for '%s'\n",
+			        filename);
+			free(out_data);
 			continue;
 		}
 

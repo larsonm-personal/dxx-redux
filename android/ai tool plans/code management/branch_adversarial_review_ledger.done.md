@@ -232,6 +232,40 @@ so campaign closure must still obtain that independent verification
 - Additional validation (R1-CHUNK-0069): Run the inline extractor against synthetic machfs objects and serialized HFS fixtures containing dot, rooted, drive-qualified, forward-slash, backslash, mixed-separator, and ordinary components; require rejection before creation, unchanged sentinel bytes outside the unique root, and successful extraction of normal catalog names on Windows and POSIX.
 - Resolution: Fixed in the 2026-07-21 worktree. Native HFS catalog decoding now rejects empty, `.`, and `..` file and directory components before entries can reach path construction, with a second path-builder guard. The legacy oracle script now calls a tracked Python helper that rejects empty, dot, rooted, drive-qualified, NUL, forward-slash, and backslash names and proves each canonical child remains strictly below the selected extraction root before creating it. Focused Python tests preserve an outside sentinel while rejecting malicious names and extract an ordinary nested file. The real-media HFS suite passes all seven tests, scoped code quality passes, PowerShell AST parsing reports zero errors, Python byte-compilation passes, and `android/tests/test_cue_iso.ps1` passes all nine native extraction suites. The independent R1-CHUNK-0021 and R1-CHUNK-0069 reviews reconfirmed the original native and legacy sinks before remediation
 
+### BR-0022: P1 - Reject invalid Huffman code lengths before table construction
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: security/memory-safety
+- Found by: R1-CHUNK-0011, R1-CHUNK-0031
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sow_extract.c:L277-L287` in `huff_make_table`
+- Related: `android/app/src/main/cpp/extract/sow_extract.c:L368-L407,L409-L455,L500-L524` and `android/app/src/main/cpp/extract/jni_disc_import.c:L451-L477`
+- Evidence: `huff_make_table` increments `count[bitlen[i]]` where `count` has indices 0 through 16, but it never validates the archive-derived bit length. `read_pt_len` starts at 7 and increments once for every leading set bit in a 13-bit mask, allowing a value as high as 20 before passing the array to the table builder. A value above 16 therefore writes beyond the stack array before the later table-consistency checks can reject anything; subsequent `start[len]` and `weight[len]` accesses are also out of range
+- Trigger: Import a method 1 through 3 SOW entry whose compressed Huffman header encodes a nonzero table with a variable-length code above 16, such as an all-ones unary extension
+- Impact: A user-selected archive performs an out-of-bounds native stack write during decompression and can crash or corrupt the launcher process before the extractor reports failure
+- Expected: Every decoded code length is validated against the table format maximum before it indexes any array, and a malformed table aborts decompression without using partially initialized state
+- Suggested fix: Make the length readers and table builder return checked errors, reject values outside 0 through 16 and symbol counts outside their destination arrays, propagate `huff_make_table` failures through `arj_decode_block`, and stop padding malformed input into usable decoder state
+- Validation: Add boundary fixtures for lengths 0, 16, 17, and the maximum unary value, fuzz compressed table headers, and run the SOW parser under AddressSanitizer and UndefinedBehaviorSanitizer while asserting all malformed cases fail without output
+- Resolution: Fixed on 2026-07-21 and independently verified on 2026-07-22. The frozen snapshot accepts archive-derived lengths above 16 before indexing 17-element construction arrays. The live builder validates pointers, symbol counts, table widths, every code length, and internal-node capacity before construction. The length readers reject oversized counts, invalid degenerate symbols, and unary lengths 17 through 20 before storing or consuming them, while table-construction errors propagate through block decompression and prevent output acceptance. Focused coverage exercises lengths 0 and 16, every invalid byte value from 17 through 255, the maximum unary extension, oversized counts, invalid selectors, and block-level failure propagation. Independent scoped code quality passed and all 11 registered native extraction suites passed, including `sow_huffman_tests`. Earlier remediation validation also passed all three Android debug ABIs and extracted a known valid 34-file, 52,935,956-byte SOW. AddressSanitizer compilation was attempted, but the installed MSVC toolchain lacks its runtime library; UndefinedBehaviorSanitizer was unavailable
+
+### BR-0023: P2 - Verify ARJ header and payload CRCs before accepting output
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0011, R1-CHUNK-0031
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sow_extract.c:L567-L585,L699-L746` in `arj_read_entry` and `sow_extract_impl`
+- Related: `android/app/src/main/cpp/extract/sow_extract.c:L211-L262,L500-L524`, `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L941-L1035`, and `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L280-L323`
+- Evidence: The parser reads the four bytes following each basic header but never compares the header CRC, does not retain or verify the original-file CRC stored in the fixed file header, and accepts output solely when decoding reaches the declared size. The bit reader substitutes zero bytes after compressed input is exhausted, so a truncated stream can continue decoding rather than necessarily failing at its physical boundary. Stored entries are copied without any integrity check as well
+- Trigger: Import a SOW archive with a flipped header, stored payload byte, or compressed payload byte that still permits the simplified parser or decoder to produce the declared number of bytes
+- Impact: Corrupted or attacker-modified game assets are counted and presented as successfully imported, leading to later load failures, crashes, or nondeterministic game behavior with no extraction-time integrity error
+- Expected: Both ARJ header metadata and every extracted payload are accepted only after their specified CRCs match, and compressed input exhaustion is a hard decode error
+- Suggested fix: Parse and verify the basic and extended header CRCs before trusting sizes or names, stream the specified original-file CRC over produced bytes before committing output, track bit-reader exhaustion explicitly, and remove temporary output on any mismatch
+- Validation: Add valid stored and compressed fixtures, flip one bit independently in each header and payload region, truncate the compressed stream, and assert every corrupted case fails without a committed file while known SOW fixtures retain stable hashes
+- Resolution: Fixed on 2026-07-22. The SOW reader now validates each basic header CRC before parsing its fields, validates every extended header CRC with bounded streaming reads, retains the original-file CRC, and validates stored or decompressed bytes before opening the destination. The bit reader separately tracks logically consumed bits, allowing normal lookahead padding while hard-failing any decode that consumes beyond the compressed span. A registered integration suite covers valid stored and one-literal compressed entries, corrupt basic and extended headers, corrupt stored and successfully decoded compressed payloads, and compressed truncation; every corrupt case leaves no output file. Scoped code quality and all 12 registered native extraction suites passed. Android debug native builds passed for arm64-v8a, armeabi-v7a, and x86_64. A real Test Flight compressed SOW extracted 19 files totaling 3,172,830 bytes under the new checks
+
 ### BR-0031: P2 - Reject encrypted STi2 entries before extraction
 
 - [x] FIXED
@@ -302,6 +336,8 @@ so campaign closure must still obtain that independent verification
 
 ## Disposition log
 
+- 2026-07-22: BR-0023 fixed by validating ARJ basic, extended-header, and original-file CRCs before output publication and by rejecting compressed bit consumption past the declared payload. Focused integrity fixtures, scoped code quality, all 12 native extraction suites, all three Android debug ABIs, and a real compressed SOW extraction passed
+- 2026-07-22: BR-0022 fixed by validating every Huffman construction input and propagating malformed-table failures through SOW block decompression. Independent code tracing, scoped code quality, and all 11 native extraction suites passed; sanitizer execution remained unavailable in the configured Windows toolchain
 - 2026-07-21: BR-0042 fixed by routing native extraction and fingerprint JSON strings through one byte-safe UTF-8 writer. Strict hostile-string parsing, scoped code quality, and all 10 native extraction suites passed; POSIX-only filename integration remains represented by direct byte-boundary coverage in the Windows tranche
 - 2026-07-21: BR-0105 fixed by validating canonical, Unicode case-folded archive and generated output projections before mission or RAR extraction. Thirty focused Kotlin tests, scoped code quality, and all 10 native suites passed; the environment-gated RAR fixture was skipped
 - 2026-07-21: BR-0033 fixed by preserving and verifying STi2 fork CRC16 values, hard-failing decoder input exhaustion, validating method 15's terminal CRC32, and atomically publishing verified output. Focused corruption tests, real method 13 and 15 corpus truncation tests, scoped code quality, and all 9 native extraction suites passed; sanitizer execution and a real method 14 archive fixture were unavailable

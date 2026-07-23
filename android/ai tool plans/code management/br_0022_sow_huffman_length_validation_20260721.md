@@ -16,7 +16,7 @@ producing output
 - [x] Run scoped code quality, native tests, and Android ABI builds
 - [x] Audit handmade comments and update the BR-0022 disposition with exact
   verification evidence
-- [ ] Complete the independent P1 verification call and move the finalized
+- [x] Complete the independent P1 verification call and move the finalized
   finding to the done ledger
 
 ## Validation record
@@ -29,4 +29,7 @@ producing output
 - AddressSanitizer compilation was attempted, but the installed MSVC toolchain
   does not contain the required ASan runtime library; UndefinedBehaviorSanitizer
   is not available in the configured host toolchain
-- Independent P1 verification remains pending
+- Independent verification on 2026-07-22 confirmed the frozen out-of-bounds
+  path and the live fail-closed validation and propagation behavior
+- The independent run passed scoped code quality and all 11 registered native
+  extraction suites, including `sow_huffman_tests`
