@@ -8,11 +8,14 @@
         "in_game": "true",
         "is_network": "true",
         "multiplayer.my_player_num": "0",
-        "multiplayer.num_connected": "2"
+        "multiplayer.num_connected": "2",
+        "guidebot.released": "false",
+        "guidebot.owner_player": "-1",
+        "guidebot.buddy_objnum": {"gte": 0}
     }},
 
     {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
-    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "set_debug", "field": "release_guidebot_cage", "value": "true", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.released": "true",
         "guidebot.owner_player": "0",

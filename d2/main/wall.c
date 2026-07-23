@@ -298,6 +298,9 @@ void blast_blastable_wall(segment *seg, int side)
 		Walls[seg->sides[side].wall_num].flags |= WALL_BLASTED;
 		if (cwall_num > -1)
 			Walls[cwall_num].flags |= WALL_BLASTED;
+#ifdef __ANDROID__
+		escort_notify_blastable_wall_destroyed();
+#endif
 	}
 #ifdef __ANDROID__
 	escort_route_notify_wall_changed(seg->sides[side].wall_num);

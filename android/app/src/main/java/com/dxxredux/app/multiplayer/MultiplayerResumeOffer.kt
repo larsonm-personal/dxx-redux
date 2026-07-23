@@ -22,7 +22,7 @@ internal fun MultiplayerResumeOfferCard(
     modifier: Modifier = Modifier,
 ) {
     val missionLabel = record.mission.ifBlank { if (record.game == "d1") "First Strike" else "Counterstrike!" }
-    val restoreLabel = record.coopRestoreSlot?.let { "Save slot $it" } ?: "Fresh start"
+    val restoreLabel = multiplayerResumeRestoreLabel(record)
     val networkLabel = if (record.transport == "lan") "LAN" else "Online"
     val title = if (record.role == "host") "Last $networkLabel Coop" else "Last $networkLabel Host"
     val detailLabel =
@@ -58,3 +58,10 @@ internal fun MultiplayerResumeOfferCard(
         }
     }
 }
+
+internal fun multiplayerResumeRestoreLabel(record: MultiplayerResumeRecord): String =
+    when {
+        !record.coopRestoreCheckpointId.isNullOrBlank() -> "Level-start checkpoint"
+        record.coopRestoreSlot != null -> "Save slot ${record.coopRestoreSlot}"
+        else -> "Fresh start"
+    }

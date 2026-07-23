@@ -1687,6 +1687,12 @@ int ok_for_buddy_to_talk(void)
 	}
 
 	Buddy_allowed_to_talk = 1;
+#if defined(__ANDROID__) && defined(NETWORK)
+	if (Game_mode & GM_MULTI_COOP)
+		COOPLOG("guidebot cage release detected: obj=%d seg=%d player=%d owner=%d",
+		        Buddy_objnum, Objects[Buddy_objnum].segnum, Player_num,
+		        Escort_owner_player);
+#endif
 
 #ifdef NETWORK
 	/* android port: only the master simulates passive cage release while the
@@ -2325,6 +2331,18 @@ static int escort_goal_command_allowed(void)
 
 	return 1;
 }
+
+#ifdef __ANDROID__
+void escort_notify_blastable_wall_destroyed(void)
+{
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && !multi_i_am_master())
+		return;
+#endif
+	if (!Buddy_allowed_to_talk)
+		ok_for_buddy_to_talk();
+}
+#endif
 
 static int escort_owned_key_flags(void)
 {

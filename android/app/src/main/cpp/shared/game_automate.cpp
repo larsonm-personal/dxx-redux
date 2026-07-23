@@ -1761,6 +1761,81 @@ static int clear_level_robots(char *reason, size_t reason_size)
 	return 1;
 }
 
+static int release_guidebot_cage(char *reason, size_t reason_size)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	unsigned char processed[MAX_WALLS] = {};
+	int segments[MAX_SIDES_PER_SEGMENT + 1];
+	int segment_count = 1;
+	int destroyed = 0;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "release_guidebot_cage: game is not running");
+		return 0;
+	}
+	if (Buddy_objnum < 0 || Buddy_objnum > Highest_object_index ||
+	    Objects[Buddy_objnum].type != OBJ_ROBOT ||
+	    !Robot_info[Objects[Buddy_objnum].id].companion) {
+		snprintf(reason, reason_size, "release_guidebot_cage: companion not found");
+		return 0;
+	}
+	if (Objects[Buddy_objnum].segnum < 0 ||
+	    Objects[Buddy_objnum].segnum > Highest_segment_index) {
+		snprintf(reason, reason_size, "release_guidebot_cage: companion segment is invalid");
+		return 0;
+	}
+
+	segments[0] = Objects[Buddy_objnum].segnum;
+	for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+		const int child = Segments[segments[0]].children[side];
+		if (IS_CHILD(child))
+			segments[segment_count++] = child;
+	}
+	auto destroy_wall = [&](int segnum, int side) {
+		const int wall_num = Segments[segnum].sides[side].wall_num;
+		if (wall_num < 0 || wall_num >= MAX_WALLS || processed[wall_num] ||
+		    Walls[wall_num].type != WALL_BLASTABLE ||
+		    (Walls[wall_num].flags & WALL_BLASTED))
+			return;
+		processed[wall_num] = 1;
+		const int child = Segments[segnum].children[side];
+		if (IS_CHILD(child)) {
+			const int connected_side = find_connect_side(&Segments[segnum], &Segments[child]);
+			if (connected_side >= 0) {
+				const int connected_wall = Segments[child].sides[connected_side].wall_num;
+				if (connected_wall >= 0 && connected_wall < MAX_WALLS)
+					processed[connected_wall] = 1;
+			}
+		}
+		wall_destroy(&Segments[segnum], side);
+		destroyed++;
+	};
+	for (int i = 0; i < segment_count; ++i) {
+		const int segnum = segments[i];
+		for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
+			destroy_wall(segnum, side);
+	}
+	for (int segnum = 0; !destroyed && segnum <= Highest_segment_index; ++segnum) {
+		for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
+			destroy_wall(segnum, side);
+	}
+	if (!destroyed) {
+		escort_notify_blastable_wall_destroyed();
+		if (!Buddy_allowed_to_talk) {
+			snprintf(reason, reason_size,
+			         "release_guidebot_cage: cage remains intact");
+			return 0;
+		}
+	}
+	LOGI("release_guidebot_cage: obj=%d seg=%d destroyed=%d",
+	     Buddy_objnum, Objects[Buddy_objnum].segnum, destroyed);
+	return 1;
+#else
+	snprintf(reason, reason_size, "release_guidebot_cage: requires Descent 2");
+	return 0;
+#endif
+}
+
 static int automation_key_flags_from_value(const char *value)
 {
 	char *end = NULL;
@@ -3439,6 +3514,14 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "player_keys") {
 				char reason[128];
 				if (!set_player_key_flags(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+			} else if (s.field == "release_guidebot_cage") {
+				char reason[128];
+				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
+				    !release_guidebot_cage(reason, sizeof(reason))) {
 					log_append("set_debug", "fail", reason);
 					stop_script_fail(reason);
 					break;

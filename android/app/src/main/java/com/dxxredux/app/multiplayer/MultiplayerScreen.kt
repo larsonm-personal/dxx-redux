@@ -241,7 +241,7 @@ private fun ServerBrowserContent(
 
     fun createOnlineResumeLobby(record: MultiplayerResumeRecord) {
         HostGameDefaults.save(context, record.toHostDefaults())
-        writeCoopRestoreSlot(context.filesDir, record.game, record.coopRestoreSlot)
+        writeCoopRestoreChoice(context.filesDir, record.game, record.coopRestoreSelection())
         CoopDesyncLog.log(
             "online resume lobby create: game=${record.game} mission=${record.mission} level=${record.levelNum} " +
                 "restore_slot=${record.coopRestoreSlot ?: -1} restore_level=${record.coopRestoreLevel ?: -1}",
@@ -308,7 +308,9 @@ private fun ServerBrowserContent(
         Spacer(Modifier.height(8.dp))
 
         val offerRecord =
-            resumeRecord?.takeIf {
+            remember(resumeRecord) {
+                resumeRecord?.let { resolveCoopHostResumeRecord(context, it) }
+            }?.takeIf {
                 it.isHostLanCoop() || it.isClientLanCoop() || it.isHostOnlineCoop() || it.isClientOnlineCoop()
             }
         if (!dismissResumeOffer && offerRecord != null) {
@@ -325,7 +327,11 @@ private fun ServerBrowserContent(
                     if (offerRecord.transport == "lan") {
                         if (offerRecord.isHostLanCoop()) {
                             HostGameDefaults.save(context, offerRecord.toHostDefaults())
-                            writeCoopRestoreSlot(context.filesDir, offerRecord.game, offerRecord.coopRestoreSlot)
+                            writeCoopRestoreChoice(
+                                context.filesDir,
+                                offerRecord.game,
+                                offerRecord.coopRestoreSelection(),
+                            )
                             CoopDesyncLog.log(
                                 "lan resume offer accepted: game=${offerRecord.game} mission=${offerRecord.mission} " +
                                     "level=${offerRecord.levelNum} restore_slot=${offerRecord.coopRestoreSlot ?: -1} " +
@@ -1069,6 +1075,19 @@ internal fun writeCoopRestoreCheckpoint(
             .put("checkpoint_id", checkpointId)
             .toString(),
     )
+}
+
+internal fun writeCoopRestoreChoice(
+    filesDir: File,
+    game: String,
+    selection: CoopRestoreSelection?,
+) {
+    val checkpointId = selection?.checkpointId
+    if (checkpointId != null) {
+        writeCoopRestoreCheckpoint(filesDir, game, checkpointId)
+    } else {
+        writeCoopRestoreSlot(filesDir, game, selection?.slot)
+    }
 }
 
 /** Read the currently written restore slot, or null if none. */

@@ -299,6 +299,7 @@ private fun LanDiscoveryView(
     var dismissResumeOffer by remember { mutableStateOf(false) }
     var resumeStatus by remember { mutableStateOf<String?>(null) }
     val resumeRecord = remember { MultiplayerResumePrefs.load(context) }
+    val resolvedResumeRecord = remember(resumeRecord) { resumeRecord?.let { resolveCoopHostResumeRecord(context, it) } }
     val recentIps = remember { mutableStateOf(LanIpsPrefs.load(context)) }
     var permissionGranted by remember {
         mutableStateOf(
@@ -345,7 +346,7 @@ private fun LanDiscoveryView(
     fun hostResume(record: MultiplayerResumeRecord) {
         val hostCallsign = record.localCallsign
         HostGameDefaults.save(context, record.toHostDefaults())
-        writeCoopRestoreSlot(context.filesDir, record.game, record.coopRestoreSlot)
+        writeCoopRestoreChoice(context.filesDir, record.game, record.coopRestoreSelection())
         CallsignPrefs.save(context, hostCallsign)
         MatchmakingStateHolder.update { it.copy(callsign = hostCallsign) }
         hostedGame = record.game
@@ -522,7 +523,7 @@ private fun LanDiscoveryView(
         }
 
         // -- Action buttons --
-        val offerRecord = resumeRecord?.takeIf { it.isHostLanCoop() || it.isClientLanCoop() }
+        val offerRecord = resolvedResumeRecord?.takeIf { it.isHostLanCoop() || it.isClientLanCoop() }
         if (!dismissResumeOffer && offerRecord != null && !isHosting) {
             item {
                 MultiplayerResumeOfferCard(

@@ -91,6 +91,9 @@ extern const char *escort_get_route_goal_label(void);
 extern const char *escort_get_route_goal_guidance_mode_name(void);
 extern void escort_route_monitor_completion(void);
 extern void escort_route_notify_wall_changed(int wall_num);
+#ifdef __ANDROID__
+extern void escort_notify_blastable_wall_destroyed(void);
+#endif
 extern void escort_route_notify_trigger_changed(int trigger_num);
 extern void escort_route_notify_object_changed(int objnum);
 extern void escort_route_notify_reactor_changed(void);

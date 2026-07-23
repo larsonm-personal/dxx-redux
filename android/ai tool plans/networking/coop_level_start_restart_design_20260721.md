@@ -334,3 +334,13 @@ Use introspection fields for checkpoint state, identity, capture generation, and
 - Android native build for arm64-v8a, armeabi-v7a, and x86_64: passed
 - Focused tray, typed-selection, and retained-checkpoint integrity unit tests: passed
 - Full Android unit run: 489 passed, 1 skipped, with one unrelated existing mission ZIP expansion-ratio test failure
+
+## Resume-offer correctness follow-up
+
+1. [x] Extend multiplayer resume records with the typed retained-checkpoint identity.
+2. [x] Re-resolve host resume choices against current valid saves and prefer the highest restorable level when the recorded choice is stale or missing.
+3. [x] Use the resolved typed choice for labels and LAN/online launch handoff so a retained checkpoint cannot become an implicit fresh start.
+4. [x] Add focused record, resolver, label, and handoff tests.
+5. [x] Run scoped code quality, focused Kotlin tests, and the Android build. Windows host verification was not repeated because this follow-up changes Kotlin only.
+
+Validation: the focused resume tests and the complete debug APK assembly passed. The APK assembly also rebuilt all three Android native ABIs successfully.

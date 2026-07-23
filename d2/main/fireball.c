@@ -1670,6 +1670,7 @@ void do_exploding_wall_frame()
 				Walls[seg->sides[sidenum].wall_num].flags |= WALL_BLASTED;
 				Walls[csegp->sides[cside].wall_num].flags |= WALL_BLASTED;
 #ifdef __ANDROID__
+				escort_notify_blastable_wall_destroyed();
 				if (notify_route) {
 					escort_route_notify_wall_changed(seg->sides[sidenum].wall_num);
 					escort_route_notify_wall_changed(csegp->sides[cside].wall_num);

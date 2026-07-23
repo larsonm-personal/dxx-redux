@@ -36,6 +36,7 @@ internal data class MultiplayerResumeRecord(
     val peerCallsigns: List<String> = emptyList(),
     val peerClientIds: List<String> = emptyList(),
     val coopRestoreSlot: Int? = null,
+    val coopRestoreCheckpointId: String? = null,
     val coopRestoreSaveTime: Long? = null,
     val coopRestoreLevel: Int? = null,
     val restoreWasSelected: Boolean = false,
@@ -139,6 +140,7 @@ internal fun encodeMultiplayerResumeRecord(record: MultiplayerResumeRecord): Str
         .put("peer_callsigns", record.peerCallsigns.toJsonArray())
         .put("peer_client_ids", record.peerClientIds.toJsonArray())
         .putNullable("coop_restore_slot", record.coopRestoreSlot)
+        .putNullable("coop_restore_checkpoint_id", record.coopRestoreCheckpointId)
         .putNullable("coop_restore_save_time", record.coopRestoreSaveTime)
         .putNullable("coop_restore_level", record.coopRestoreLevel)
         .put("restore_was_selected", record.restoreWasSelected)
@@ -185,6 +187,7 @@ internal fun decodeMultiplayerResumeRecord(raw: String?): MultiplayerResumeRecor
             peerCallsigns = json.optStringList("peer_callsigns"),
             peerClientIds = json.optStringList("peer_client_ids"),
             coopRestoreSlot = json.optNullableInt("coop_restore_slot"),
+            coopRestoreCheckpointId = json.optNullableString("coop_restore_checkpoint_id"),
             coopRestoreSaveTime = json.optNullableLong("coop_restore_save_time"),
             coopRestoreLevel = json.optNullableInt("coop_restore_level"),
             restoreWasSelected = json.optBoolean("restore_was_selected", false),
@@ -236,11 +239,11 @@ internal object MultiplayerResumePrefs {
         val lobby = state.currentLobby
         val hostPlayer = lobby?.players?.firstOrNull { it.playerId == lobby.hostPlayerId }
         val localClientId = ClientIdentity.getInstallationId(context)
-        val restoreSlot =
+        val restoreSelection =
             if (info.isHost &&
                 info.mode == "coop"
             ) {
-                readCoopRestoreSlot(context.filesDir, info.game)
+                readCoopRestoreSelection(context.filesDir, info.game)
             } else {
                 null
             }
@@ -271,8 +274,10 @@ internal object MultiplayerResumePrefs {
                 lobbyId = lobby?.lobbyId,
                 peerCallsigns = lobby?.players?.map { it.callsign }.orEmpty(),
                 peerClientIds = lobby?.players?.map { it.playerId }.orEmpty(),
-                coopRestoreSlot = restoreSlot,
-                restoreWasSelected = restoreSlot != null,
+                coopRestoreSlot = restoreSelection?.slot,
+                coopRestoreCheckpointId = restoreSelection?.checkpointId,
+                coopRestoreLevel = info.levelNum.takeIf { restoreSelection != null },
+                restoreWasSelected = restoreSelection != null,
             ),
         )
     }
@@ -286,18 +291,91 @@ internal object MultiplayerResumePrefs {
         val current = load(context) ?: return
         if (current.game != game || current.mode != "coop") return
         val restoreSlot = selectedSave?.slot?.takeIf { it >= 0 }
+        val restoreCheckpointId = selectedSave?.checkpointId
         save(
             context,
             current.copy(
                 updatedAtMs = System.currentTimeMillis(),
                 levelNum = levelNum ?: selectedSave?.level ?: current.levelNum,
                 coopRestoreSlot = restoreSlot,
-                coopRestoreSaveTime = selectedSave?.timestamp?.takeIf { restoreSlot != null },
-                coopRestoreLevel = selectedSave?.level?.takeIf { restoreSlot != null },
-                restoreWasSelected = restoreSlot != null,
+                coopRestoreCheckpointId = restoreCheckpointId,
+                coopRestoreSaveTime =
+                    selectedSave?.timestamp?.takeIf {
+                        restoreSlot != null || restoreCheckpointId != null
+                    },
+                coopRestoreLevel =
+                    selectedSave?.level?.takeIf {
+                        restoreSlot != null || restoreCheckpointId != null
+                    },
+                restoreWasSelected = true,
             ),
         )
     }
+}
+
+internal fun MultiplayerResumeRecord.coopRestoreSelection(): CoopRestoreSelection? =
+    when {
+        !coopRestoreCheckpointId.isNullOrBlank() -> CoopRestoreSelection(null, coopRestoreCheckpointId)
+        coopRestoreSlot != null -> CoopRestoreSelection(coopRestoreSlot)
+        restoreWasSelected -> CoopRestoreSelection(null)
+        else -> null
+    }
+
+internal fun resolveCoopHostResumeRecord(
+    record: MultiplayerResumeRecord,
+    coopSaves: List<CoopSaveEntry>,
+): MultiplayerResumeRecord {
+    if (record.role != "host" || record.mode != "coop") return record
+    val restorable = coopSaves.filter { it.type == "full_save" || it.type == "level_start_highest" }
+    val requested =
+        when {
+            !record.coopRestoreCheckpointId.isNullOrBlank() -> {
+                restorable.firstOrNull { it.checkpointId == record.coopRestoreCheckpointId }
+            }
+
+            record.coopRestoreSlot != null -> {
+                restorable.firstOrNull {
+                    it.slot == record.coopRestoreSlot &&
+                        (record.coopRestoreSaveTime == null || it.timestamp == record.coopRestoreSaveTime) &&
+                        it.level == (record.coopRestoreLevel ?: record.levelNum)
+                }
+            }
+
+            record.restoreWasSelected -> {
+                return record
+            }
+
+            else -> {
+                null
+            }
+        }
+    val selected =
+        requested ?: restorable.maxWithOrNull(compareBy<CoopSaveEntry> { it.level }.thenBy { it.timestamp })
+            ?: return record.copy(
+                coopRestoreSlot = null,
+                coopRestoreCheckpointId = null,
+                coopRestoreSaveTime = null,
+                coopRestoreLevel = null,
+                restoreWasSelected = false,
+            )
+    return record.copy(
+        levelNum = selected.level,
+        coopRestoreSlot = selected.slot.takeIf { it >= 0 },
+        coopRestoreCheckpointId = selected.checkpointId,
+        coopRestoreSaveTime = selected.timestamp,
+        coopRestoreLevel = selected.level,
+        restoreWasSelected = true,
+    )
+}
+
+internal fun resolveCoopHostResumeRecord(
+    context: Context,
+    record: MultiplayerResumeRecord,
+): MultiplayerResumeRecord {
+    if (record.role != "host" || record.mode != "coop") return record
+    val saves = readCoopAutosaveHistory(context.filesDir, record.game, record.mission, context)
+    val retained = readCoopLevelStartCheckpoints(context.filesDir, record.game, record.mission, context)
+    return resolveCoopHostResumeRecord(record, saves + retained)
 }
 
 private fun JSONObject.putNullable(

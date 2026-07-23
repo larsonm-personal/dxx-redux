@@ -44,6 +44,7 @@ class MultiplayerResumePrefsTest {
                 peerCallsigns = listOf("Miner", "Wing"),
                 peerClientIds = listOf("local-id", "peer-id"),
                 coopRestoreSlot = 7,
+                coopRestoreCheckpointId = null,
                 coopRestoreSaveTime = 99L,
                 coopRestoreLevel = 7,
                 restoreWasSelected = true,
@@ -97,6 +98,73 @@ class MultiplayerResumePrefsTest {
         assertEquals("d2", selection.checkpointId)
         assertTrue(initialCoopRestoreEnabled(selection))
         assertFalse(shouldAutoEnableCoopRestore(selection))
+    }
+
+    @Test
+    fun resumeRecordRoundTripsRetainedCheckpointChoice() {
+        val record = hostResumeRecord(level = 6).copy(
+            coopRestoreCheckpointId = "d2",
+            coopRestoreLevel = 6,
+            restoreWasSelected = true,
+        )
+
+        val decoded = decodeMultiplayerResumeRecord(encodeMultiplayerResumeRecord(record))
+
+        assertEquals(record, decoded)
+        assertEquals("d2", decoded?.coopRestoreSelection()?.checkpointId)
+        assertEquals("Level-start checkpoint", decoded?.let(::multiplayerResumeRestoreLabel))
+    }
+
+    @Test
+    fun legacyFreshResumeFallsBackToHighestValidSave() {
+        val retained = coopSave(level = 6, timestamp = 300L).copy(
+            slot = -1,
+            type = "level_start_highest",
+            checkpointId = "d2",
+        )
+        val level7 = coopSave(level = 7, timestamp = 200L)
+        val record = hostResumeRecord(level = 6)
+
+        val resolved = resolveCoopHostResumeRecord(record, listOf(retained, level7))
+
+        assertEquals(7, resolved.levelNum)
+        assertEquals(level7.slot, resolved.coopRestoreSlot)
+        assertNull(resolved.coopRestoreCheckpointId)
+        assertEquals("Save slot ${level7.slot}", multiplayerResumeRestoreLabel(resolved))
+    }
+
+    @Test
+    fun staleRecordedSlotFallsBackToHighestValidSave() {
+        val level7 = coopSave(level = 7, timestamp = 200L)
+        val stale = hostResumeRecord(level = 6).copy(
+            coopRestoreSlot = 5,
+            coopRestoreSaveTime = 100L,
+            coopRestoreLevel = 6,
+            restoreWasSelected = true,
+        )
+
+        val resolved = resolveCoopHostResumeRecord(stale, listOf(level7))
+
+        assertEquals(7, resolved.levelNum)
+        assertEquals(level7.slot, resolved.coopRestoreSlot)
+    }
+
+    @Test
+    fun validTypedCheckpointAndExplicitFreshRemainSelected() {
+        val retained = coopSave(level = 6, timestamp = 300L).copy(
+            slot = -1,
+            type = "level_start_highest",
+            checkpointId = "d2",
+        )
+        val level7 = coopSave(level = 7, timestamp = 200L)
+        val typed = hostResumeRecord(level = 6).copy(
+            coopRestoreCheckpointId = "d2",
+            restoreWasSelected = true,
+        )
+        val fresh = hostResumeRecord(level = 6).copy(restoreWasSelected = true)
+
+        assertEquals("d2", resolveCoopHostResumeRecord(typed, listOf(level7, retained)).coopRestoreCheckpointId)
+        assertEquals(fresh, resolveCoopHostResumeRecord(fresh, listOf(level7, retained)))
     }
 
     @Test
@@ -365,6 +433,32 @@ class MultiplayerResumePrefsTest {
         assertEquals("true", gameInfo["player_spew_no_expire"]?.jsonPrimitive?.content)
         assertEquals("true", gameInfo["clients_can_request_rewind"]?.jsonPrimitive?.content)
     }
+
+    private fun hostResumeRecord(level: Int): MultiplayerResumeRecord =
+        MultiplayerResumeRecord(
+            updatedAtMs = 1L,
+            role = "host",
+            transport = "lan",
+            game = "d2",
+            mission = "d2",
+            mode = "coop",
+            difficulty = 1,
+            levelNum = level,
+            maxPlayers = 4,
+            localCallsign = "Miner",
+        )
+
+    private fun coopSave(
+        level: Int,
+        timestamp: Long,
+    ): CoopSaveEntry =
+        CoopSaveEntry(
+            slot = 6,
+            level = level,
+            timestamp = timestamp,
+            numPlayers = 2,
+            callsigns = listOf("Miner", "Wing"),
+        )
 
     private fun lanAnnounce(
         hostClientId: String?,
