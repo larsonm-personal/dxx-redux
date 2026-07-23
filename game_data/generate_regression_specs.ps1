@@ -281,6 +281,10 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     # Classify
     $classification = Get-DiscClassification $discId $game $extractedFiles
     $resolvedGame = Resolve-GameForSpec $game $classification
+    $expectedFiles = @($classification.min_files | Sort-Object)
+    if ($expectedFiles.Count -eq 0 -and $extractedFiles.Count -gt 0) {
+        $expectedFiles = @($extractedFiles | Sort-Object)
+    }
 
     # Build spec
     $spec = [ordered]@{
@@ -292,7 +296,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
         classification = $classification.type
         expected_mission = $classification.mission
         expected_level1 = $classification.level1
-        expected_files = ($classification.min_files | Sort-Object)
+        expected_files = $expectedFiles
         audio_tracks = $audioTracks
         total_extracted = $extractedFiles.Count
     }

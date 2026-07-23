@@ -1,9 +1,12 @@
 /*
  * sow_extract.h -- Extract game files from Descent .sow (ARJ) archives.
  *
- * SOW files are ARJ-compressed archives used by Interplay's installer on
- * original Descent II CD-ROMs.  This module wraps libarchive to extract
- * game assets from them.
+ * SOW files are ARJ archives used by Interplay's installer on original
+ * Descent II CD-ROMs.  This self-contained reader supports ARJ method 0
+ * (stored) and methods 1-3 (LZSS+Huffman), based on Haruhiko Okumura's
+ * public-domain AR algorithm.  It handles Interplay's concatenated archives
+ * and comment-field filenames, and verifies header and payload CRCs before
+ * accepting extracted data.  Other ARJ methods are not supported.
  *
  * Three on-disc patterns exist:
  *   1. d2data/descent2.sow              (most retail discs)

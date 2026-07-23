@@ -300,11 +300,6 @@ function Write-MissionZipBatchResult {
     }
 }
 
-function Test-AppPackageInstalled {
-    $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds 10
-    return ($path -and $path -match 'package:')
-}
-
 function Restore-MissionZipBatchDevice {
     param([Parameter(Mandatory = $true)][string]$Reason)
 

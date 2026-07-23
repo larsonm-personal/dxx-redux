@@ -100,6 +100,11 @@ function Test-EmulatorHealthy {
     return $true
 }
 
+function Test-AppPackageInstalled {
+    $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds 10
+    return ($path -and $path -match '^package:')
+}
+
 function Ensure-EmulatorHealthy {
     # Check emulator health; restart via emu_health.ps1 if needed.
     # Returns $true on success, exits on unrecoverable failure.
@@ -162,6 +167,44 @@ function Invoke-LauncherStartupRecovery {
     }
 
     Write-Status "Launcher recovery complete" "Green"
+    return $true
+}
+
+function Start-PrimarySetupActivity {
+    param([int]$TimeoutSeconds = 60)
+
+    Stop-AppAndWait
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
+    Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+    return Wait-SetupActivityReady -TimeoutSeconds $TimeoutSeconds
+}
+
+function Ensure-LauncherTestDeviceReady {
+    param([int]$TimeoutSeconds = 60)
+
+    Ensure-EmulatorHealthy | Out-Null
+    if (-not (Test-AppPackageInstalled)) {
+        Write-Status "Test APK is not installed -- installing it now" "Yellow"
+        if (-not (Install-ApkOnDevice)) {
+            return $false
+        }
+    }
+    if (Start-PrimarySetupActivity -TimeoutSeconds $TimeoutSeconds) {
+        Stop-AppAndWait
+        return $true
+    }
+
+    if (-not (Invoke-LauncherStartupRecovery -Reason "SetupActivity preflight timed out")) {
+        return $false
+    }
+    Ensure-EmulatorHealthy | Out-Null
+    if (-not (Install-ApkOnDevice)) {
+        return $false
+    }
+    if (-not (Start-PrimarySetupActivity -TimeoutSeconds $TimeoutSeconds)) {
+        return $false
+    }
+    Stop-AppAndWait
     return $true
 }
 

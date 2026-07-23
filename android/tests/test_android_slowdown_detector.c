@@ -89,6 +89,20 @@ static void test_sustained_scheduler_slowdown_triggers(void)
 	expect_true("sustained scheduler slowdown", events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
 }
 
+static void test_under_eight_fps_triggers(void)
+{
+	struct android_slowdown_detector detector;
+	struct android_slowdown_frame frame;
+	int events;
+
+	android_slowdown_detector_init(&detector);
+	android_slowdown_detector_set_enabled(&detector, 1);
+	init_frame(&frame, 120);
+	feed_frames(&detector, &frame, 600, 8333, 1000);
+	events = feed_frames(&detector, &frame, 10, 500000, 1000);
+	expect_true("under 8 FPS", events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
+}
+
 static void test_cap_change_does_not_trigger(void)
 {
 	struct android_slowdown_detector detector;
@@ -145,6 +159,7 @@ int main(void)
 	test_25_fps_wait_does_not_trigger();
 	test_sustained_render_slowdown_triggers();
 	test_sustained_scheduler_slowdown_triggers();
+	test_under_eight_fps_triggers();
 	test_cap_change_does_not_trigger();
 	test_three_severe_frames_trigger();
 	test_capture_ends_and_cools_down();

@@ -97,8 +97,8 @@ foreach ($folder in $folders) {
     }
 
     # Find .cue or .iso source file
-    $cueFiles = Get-ChildItem -Path $folder.FullName -Filter "*.cue" -File
-    $isoFiles = Get-ChildItem -Path $folder.FullName -Filter "*.iso" -File
+    $cueFiles = @(Get-ChildItem -Path $folder.FullName -Filter "*.cue" -File)
+    $isoFiles = @(Get-ChildItem -Path $folder.FullName -Filter "*.iso" -File)
     if ($cueFiles.Count -gt 0) {
         $sourceFile = $cueFiles[0].FullName
         $sourceLabel = "CUE"
@@ -140,7 +140,7 @@ foreach ($folder in $folders) {
 
         # Save track hashes
         if ($jsonLines.Count -gt 0) {
-            $jsonLines = $jsonLines | ForEach-Object { $_ -replace "`r", "" }
+            $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
             "[`n  " + ($jsonLines -join ",`n  ") + "`n]" | Set-Content -NoNewline $hashFile -Encoding UTF8
             Write-Host "  Saved $($jsonLines.Count) track hashes to track_hashes.json"
         }
@@ -174,7 +174,7 @@ if ($failures.Count -gt 0) {
     Write-Host "`n  Failures:" -ForegroundColor Red
     foreach ($f in $failures) {
         Write-Host "    $($f.Name): $($f.Error)" -ForegroundColor Red
-        if ($f.Details) {
+        if ($f.ContainsKey('Details') -and $f.Details) {
             foreach ($d in ($f.Details -split "`n")) {
                 Write-Host "      $d" -ForegroundColor DarkRed
             }
@@ -185,4 +185,8 @@ if ($failures.Count -gt 0) {
 if ($successes.Count -gt 0) {
     Write-Host "`n  Successful:" -ForegroundColor Green
     foreach ($s in $successes) { Write-Host "    $s" }
+}
+
+if ($failures.Count -gt 0) {
+    exit 1
 }

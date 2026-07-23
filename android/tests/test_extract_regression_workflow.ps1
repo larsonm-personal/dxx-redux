@@ -1,0 +1,71 @@
+#!/usr/bin/env pwsh
+
+$ErrorActionPreference = 'Stop'
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+$tempRoot = Join-Path $repoRoot 'android\temp\test_extract_regression_workflow'
+$helperPath = Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1'
+$validatorPath = Join-Path $PSScriptRoot 'validate_extract_regression_specs.ps1'
+. $helperPath
+
+if (Test-Path -LiteralPath $tempRoot) {
+    Remove-Item -LiteralPath $tempRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Path $tempRoot | Out-Null
+
+try {
+    $stablePath = Join-Path $tempRoot 'stable.json5'
+    $spec = [ordered]@{
+        source_type = 'cd'
+        expected_files = @('descent.hog')
+        total_extracted = 1
+    }
+    Write-CanonicalRegressionSpec -path $stablePath -spec $spec -sourceName 'stable' -generated '2000-01-01 00:00:00'
+    $initial = [System.IO.File]::ReadAllText($stablePath)
+    Write-CanonicalRegressionSpec -path $stablePath -spec $spec -sourceName 'stable' -generated '2099-01-01 00:00:00'
+    $unchanged = [System.IO.File]::ReadAllText($stablePath)
+    if ($unchanged -cne $initial -or $unchanged -notmatch 'Generated: 2000-01-01 00:00:00') {
+        throw 'Semantically unchanged spec was rewritten'
+    }
+
+    $spec.total_extracted = 2
+    Write-CanonicalRegressionSpec -path $stablePath -spec $spec -sourceName 'stable' -generated '2099-01-01 00:00:00'
+    $changed = [System.IO.File]::ReadAllText($stablePath)
+    if ($changed -ceq $initial -or $changed -notmatch 'Generated: 2099-01-01 00:00:00' -or
+        (Read-Json5File $stablePath).total_extracted -ne 2) {
+        throw 'Semantic spec change was not written with the new generated time'
+    }
+
+    if (-not (Test-ExtractRegressionInfrastructureFailure 'setup_timeout') -or
+        -not (Test-ExtractRegressionInfrastructureFailure 'emulator_offline') -or
+        (Test-ExtractRegressionInfrastructureFailure 'files_missing')) {
+        throw 'Infrastructure failure classification is incorrect'
+    }
+
+    $emptyRoot = Join-Path $tempRoot 'cds'
+    $emptyDisc = Join-Path $emptyRoot 'empty-oracle'
+    New-Item -ItemType Directory -Path $emptyDisc | Out-Null
+    Set-Content -LiteralPath (Join-Path $emptyDisc 'source.iso') -Value 'fixture' -NoNewline
+    $emptySpec = [ordered]@{
+        source_type = 'cd'
+        disc_image_type = 'iso'
+        source_files = @(@{ name = 'source.iso'; sha256 = 'fixture' })
+        expected_files = @()
+        total_extracted = 0
+        import_mode = 'setup_iso'
+    }
+    Write-CanonicalRegressionSpec -path (Join-Path $emptyDisc 'extract_regression.json5') `
+        -spec $emptySpec -sourceName 'empty-oracle' -generated '2000-01-01 00:00:00'
+
+    $pwsh = Get-ExtractRegressionPwshPath
+    $validationOutput = & $pwsh -NoProfile -NonInteractive -File $validatorPath -CdRoot $emptyRoot *>&1
+    if ($LASTEXITCODE -eq 0 -or
+        "$validationOutput" -notmatch 'expected_files must contain at least one extraction oracle') {
+        throw 'Empty expected_files oracle did not fail validation'
+    }
+
+    Write-Host 'Extract regression workflow tests passed'
+} finally {
+    if (Test-Path -LiteralPath $tempRoot) {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force
+    }
+}

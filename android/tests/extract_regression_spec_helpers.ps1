@@ -42,6 +42,10 @@ function Get-JsonProperties($value) {
         })
 }
 
+function Test-ExtractRegressionInfrastructureFailure($failureStep) {
+    return $failureStep -in @('emulator_offline', 'setup_timeout')
+}
+
 function Add-CanonicalProperty($target, $source, $name, [ref]$handled) {
     if (Test-JsonProperty $source $name) {
         $target[$name] = Get-JsonPropertyValue $source $name
@@ -164,15 +168,21 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
     if (-not $sourceName) {
         $sourceName = [System.IO.Path]::GetFileName((Split-Path $path -Parent))
     }
-    if (-not $generated) {
-        $generated = $header.Generated
+    $canonical = ConvertTo-CanonicalRegressionSpec $spec
+    $json = ($canonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
+        try {
+            $existingCanonical = ConvertTo-CanonicalRegressionSpec (Read-Json5File $path)
+            $existingJson = ($existingCanonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
+            if ($existingJson -ceq $json -and $header.SourceName -ceq $sourceName) {
+                return
+            }
+        } catch {}
     }
     if (-not $generated) {
         $generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     }
 
-    $canonical = ConvertTo-CanonicalRegressionSpec $spec
-    $json = ($canonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
     $content = "// Auto-generated regression spec for: $sourceName`n// Generated: $generated`n$json`n"
     [System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))
 }

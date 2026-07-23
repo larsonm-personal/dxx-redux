@@ -163,6 +163,13 @@ function Read-Json5 {
     return Read-Json5File $Path
 }
 
+Write-Host "Preflighting emulator, APK, and SetupActivity..." -ForegroundColor Cyan
+if (-not (Ensure-LauncherTestDeviceReady)) {
+    Write-Host "FAIL: Extraction test device could not start SetupActivity" -ForegroundColor Red
+    exit 98
+}
+Write-Host "Extraction test device ready" -ForegroundColor Green
+
 # -- Run tests ------------------------------------------------
 
 $results = @()
@@ -188,7 +195,11 @@ foreach ($specPath in $specs) {
 
     # Pre-flight: verify emulator is healthy before each test
     if (-not (Test-EmulatorHealthy)) {
-        try { Ensure-EmulatorHealthy } catch {
+        try {
+            if (-not (Ensure-LauncherTestDeviceReady)) {
+                throw 'SetupActivity recovery failed'
+            }
+        } catch {
             Write-Host "  Emulator not recoverable. Stopping" -ForegroundColor Red
             $results += [PSCustomObject]@{ Source = $sourceName; Status = 'FAIL'; Time = '00:00'; ExitCode = 98 }
             $failures++
@@ -248,6 +259,10 @@ foreach ($specPath in $specs) {
 
     if ($status -eq 'FAIL') {
         $failures++
+        if ($exitCode -eq 98) {
+            Write-Host "Stopping after extraction test infrastructure failure" -ForegroundColor Red
+            break
+        }
         if ($MaxFailures -gt 0 -and $failures -ge $MaxFailures) {
             Write-Host "Stopping after $failures failure(s) (-MaxFailures $MaxFailures)" -ForegroundColor Red
             break

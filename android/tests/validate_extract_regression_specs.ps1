@@ -51,11 +51,15 @@ foreach ($specFile in $specPaths) {
     $specDir = Split-Path $specFile.FullName -Parent
     $sourceFiles = @($spec.source_files)
     $sourceNames = @($sourceFiles | ForEach-Object { $_.name })
+    $expectedFiles = @($spec.expected_files | Where-Object { $_ })
     $sourceSet = @{}
     foreach ($name in $sourceNames) {
         if ($name) {
             $sourceSet[$name] = $true
         }
+    }
+    if ($expectedFiles.Count -eq 0) {
+        Add-Failure $specFile.FullName 'expected_files must contain at least one extraction oracle'
     }
 
     foreach ($name in $sourceNames) {

@@ -191,7 +191,7 @@ foreach ($folder in $folders) {
     }
 
     if ($jsonLines.Count -gt 0) {
-        $jsonLines = $jsonLines | ForEach-Object { $_ -replace "`r", "" }
+        $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
         "[`n  " + ($jsonLines -join ",`n  ") + "`n]" | Set-Content -NoNewline $fpFile -Encoding UTF8
         Write-Host "  Saved $($jsonLines.Count) track fingerprints" -ForegroundColor Green
         $successes += $name

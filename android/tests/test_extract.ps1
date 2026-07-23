@@ -722,6 +722,7 @@ $script:testMode = 'full'
 function Write-TestResult {
     # Persist last_test_result into the spec json5 file.
     if (-not $SpecPath -or -not (Test-Path $SpecPath)) { return }
+    if (Test-ExtractRegressionInfrastructureFailure $script:testFailureStep) { return }
 
     $lastTestResult = [ordered]@{
         status = $script:testStatus
@@ -764,6 +765,12 @@ Write-Host "  Type: $($spec.source_type) / $($spec.classification)" -ForegroundC
 Write-Host "  Game: $($spec.game)" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
+
+$expectedFiles = @($spec.expected_files | Where-Object { $_ })
+if ($expectedFiles.Count -eq 0) {
+    Write-Status 'FAIL: Regression spec has no expected_files extraction oracle' 'Red'
+    Exit-Test 1 'fail' 'invalid_spec'
+}
 
 # Check if this is a non-launchable spec
 $canLaunch = ($null -ne $spec.expected_mission)
@@ -879,13 +886,13 @@ if ($devices -notmatch 'emulator-\d+\s+device') {
     }
     if ($devices -notmatch 'emulator-\d+\s+device') {
         Write-Status "FAIL: No running emulator found" 'Red'
-        Exit-Test 1 'fail' 'emulator_offline'
+        Exit-Test 98 'fail' 'emulator_offline'
     }
 }
 $boot = Adb -CmdArgs @('shell', 'getprop', 'sys.boot_completed')
 if ($boot.Trim() -ne '1') {
     Write-Status "FAIL: Emulator not fully booted" 'Red'
-    Exit-Test 1 'fail' 'emulator_offline'
+    Exit-Test 98 'fail' 'emulator_offline'
 }
 Write-Status "Emulator online" 'Green'
 
@@ -915,7 +922,7 @@ Adb -CmdArgs @(
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
 if (-not (Wait-SetupReady)) {
     Write-Status 'FAIL: SetupActivity not responding' 'Red'
-    Exit-Test 1 'fail' 'setup_timeout'
+    Exit-Test 98 'fail' 'setup_timeout'
 }
 
 # Keep extract runs deterministic regardless of previous launcher tests.
@@ -982,7 +989,7 @@ Start-Sleep -Seconds 1
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
 if (-not (Wait-SetupReady)) {
     Write-Status 'FAIL: SetupActivity not responding after restart' 'Red'
-    Exit-Test 1 'fail' 'setup_timeout'
+    Exit-Test 98 'fail' 'setup_timeout'
 }
 
 Write-Status "Canary check: verifying device is clean..."
@@ -1111,8 +1118,6 @@ if ($useDirectCdImport) {
         $state = Get-SetupIntrospection
         if (-not $state) { continue }
         $remoteFiles = @($state.set_files | Where-Object { $_ })
-        $expectedFiles = @()
-        if ($spec.expected_files -is [array]) { $expectedFiles = $spec.expected_files }
         $haveExpected = $true
         foreach ($ef in $expectedFiles) {
             if (-not ($remoteFiles | Where-Object { $_.ToLower() -eq $ef.ToLower() })) {
@@ -1191,8 +1196,6 @@ if ($useDirectCdImport) {
         $state = Get-SetupIntrospection
         if (-not $state) { continue }
         $remoteFiles = @($state.set_files | Where-Object { $_ })
-        $expectedFiles = @()
-        if ($spec.expected_files -is [array]) { $expectedFiles = $spec.expected_files }
         $haveExpected = $true
         foreach ($ef in $expectedFiles) {
             if (-not ($remoteFiles | Where-Object { $_.ToLower() -eq $ef.ToLower() })) {
@@ -1269,7 +1272,7 @@ if ($useDirectCdImport) {
     Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
     if (-not (Wait-SetupReady)) {
         Write-Status 'FAIL: SetupActivity not responding after file push' 'Red'
-        Exit-Test 1 'fail' 'setup_timeout'
+        Exit-Test 98 'fail' 'setup_timeout'
     }
 }
 
@@ -1285,8 +1288,6 @@ if (-not $state) {
 $remoteFiles = @($state.set_files | Where-Object { $_ })
 
 # Check expected files present
-$expectedFiles = @()
-if ($spec.expected_files -is [array]) { $expectedFiles = $spec.expected_files }
 $missingFiles = @()
 foreach ($ef in $expectedFiles) {
     $efLower = $ef.ToLower()
@@ -1418,7 +1419,7 @@ Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'descent.
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
 if (-not (Wait-SetupReady)) {
     Write-Status 'FAIL: SetupActivity not responding before game launch' 'Red'
-    Exit-Test 1 'fail' 'setup_timeout'
+    Exit-Test 98 'fail' 'setup_timeout'
 }
 
 # Launch through the launcher automation path. It passes the script on the
