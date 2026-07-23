@@ -93,7 +93,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_ENDLEVEL_START       , 3)	\
 	VALUE(MULTI_CREATE_EXPLOSION     , 2)	\
 	VALUE(MULTI_CONTROLCEN_FIRE      , 16)	\
-	VALUE(MULTI_CREATE_POWERUP       , 19)	\
+	VALUE(MULTI_CREATE_POWERUP       , 19+sizeof(vms_vector))	\
 	VALUE(MULTI_DECLOAK              , 2)	\
 	VALUE(MULTI_DEINVULN             , 2)	\
 	VALUE(MULTI_MENU_CHOICE          , 2)	\
@@ -305,7 +305,7 @@ void multi_send_controlcen_fire(vms_vector *to_target, int gun_num, int objnum);
 void multi_send_cloak(void);
 void multi_send_decloak(void);
 void multi_send_invuln(void);
-void multi_send_create_powerup(int powerup_type, int segnum, int objnum, vms_vector *pos);
+void multi_send_create_powerup(int powerup_type, int segnum, int objnum, const vms_vector *pos, const vms_vector *velocity);
 void multi_send_play_sound(int sound_num, fix volume);
 void multi_send_audio_taunt(int taunt_num);
 void multi_send_score(void);

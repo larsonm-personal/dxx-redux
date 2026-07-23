@@ -3911,12 +3911,18 @@ void drop_stolen_items(object *objp, int remote)
 				objnum = drop_powerup(OBJ_POWERUP, Stolen_items[i], 1, &objp->mtype.phys_info.velocity, &objp->pos, objp->segnum);
 #ifdef NETWORK
 			if ((Game_mode & GM_MULTI) && objnum >= 0) {
-				vm_vec_zero(&Objects[objnum].mtype.phys_info.velocity);
-				multi_send_create_powerup(Stolen_items[i], Objects[objnum].segnum, objnum, &Objects[objnum].pos);
+				// Preserve this item's random spew direction on every peer
+				multi_send_create_powerup(Stolen_items[i], Objects[objnum].segnum, objnum,
+				                          &Objects[objnum].pos, &Objects[objnum].mtype.phys_info.velocity);
 			}
 #endif
 #ifdef __ANDROID__
-			COOPLOG("thief drop: remote=%d slot=%d type=%d obj=%d seg=%d", remote, i, Stolen_items[i], objnum, objnum >= 0 ? Objects[objnum].segnum : objp->segnum);
+			COOPLOG("thief drop: remote=%d slot=%d type=%d obj=%d seg=%d velocity=(%d,%d,%d)",
+			        remote, i, Stolen_items[i], objnum,
+			        objnum >= 0 ? Objects[objnum].segnum : objp->segnum,
+			        objnum >= 0 ? Objects[objnum].mtype.phys_info.velocity.x : 0,
+			        objnum >= 0 ? Objects[objnum].mtype.phys_info.velocity.y : 0,
+			        objnum >= 0 ? Objects[objnum].mtype.phys_info.velocity.z : 0);
 #endif
 		}
 		Stolen_items[i] = STOLEN_ITEM_NONE;

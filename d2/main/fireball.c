@@ -847,7 +847,7 @@ void maybe_drop_net_powerup(int powerup_type)
 
 		pick_random_point_in_seg(&new_pos, segnum);
 
-		multi_send_create_powerup(powerup_type, segnum, objnum, &new_pos);
+		multi_send_create_powerup(powerup_type, segnum, objnum, &new_pos, &vmd_zero_vector);
 
 		Objects[objnum].pos = new_pos;
 		vm_vec_zero(&Objects[objnum].mtype.phys_info.velocity);

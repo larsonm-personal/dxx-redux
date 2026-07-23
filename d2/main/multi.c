@@ -3103,7 +3103,7 @@ multi_do_create_powerup(const ubyte *buf)
 	int my_objnum;
 	char pnum;
 	int count = 1;
-	vms_vector new_pos;
+	vms_vector new_pos, new_velocity;
 	char powerup_type;
 
 	if (Endlevel_sequence || Control_center_destroyed)
@@ -3120,10 +3120,14 @@ multi_do_create_powerup(const ubyte *buf)
 	}
 
 	memcpy(&new_pos, buf+count, sizeof(vms_vector)); count+=sizeof(vms_vector);
+	memcpy(&new_velocity, buf+count, sizeof(vms_vector)); count+=sizeof(vms_vector);
 #ifdef WORDS_BIGENDIAN
 	new_pos.x = (fix)SWAPINT((int)new_pos.x);
 	new_pos.y = (fix)SWAPINT((int)new_pos.y);
 	new_pos.z = (fix)SWAPINT((int)new_pos.z);
+	new_velocity.x = (fix)SWAPINT((int)new_velocity.x);
+	new_velocity.y = (fix)SWAPINT((int)new_velocity.y);
+	new_velocity.z = (fix)SWAPINT((int)new_velocity.z);
 #endif
 
 	Net_create_loc = 0;
@@ -3142,15 +3146,16 @@ multi_do_create_powerup(const ubyte *buf)
 	}
 
 	Objects[my_objnum].pos = new_pos;
-
-	vm_vec_zero(&Objects[my_objnum].mtype.phys_info.velocity);
+	Objects[my_objnum].mtype.phys_info.velocity = new_velocity;
 
 	obj_relink(my_objnum, segnum);
 
 	map_objnum_local_to_remote(my_objnum, objnum, pnum);
 
 #ifdef __ANDROID__
-	COOPLOG("create powerup recv: sender=%d type=%d remote_obj=%d local_obj=%d seg=%d", pnum, powerup_type, objnum, my_objnum, segnum);
+	COOPLOG("create powerup recv: sender=%d type=%d remote_obj=%d local_obj=%d seg=%d velocity=(%d,%d,%d)",
+	        pnum, powerup_type, objnum, my_objnum, segnum,
+	        new_velocity.x, new_velocity.y, new_velocity.z);
 #endif
 
 	object_create_explosion(segnum, &new_pos, i2f(5), VCLIP_POWERUP_DISAPPEARANCE);
@@ -4323,7 +4328,7 @@ multi_send_controlcen_fire(vms_vector *to_goal, int best_gun_num, int objnum)
 }
 
 void
-multi_send_create_powerup(int powerup_type, int segnum, int objnum, vms_vector *pos)
+multi_send_create_powerup(int powerup_type, int segnum, int objnum, const vms_vector *pos, const vms_vector *velocity)
 {
 	if (is_observer()) { return; }
 
@@ -4358,14 +4363,19 @@ multi_send_create_powerup(int powerup_type, int segnum, int objnum, vms_vector *
 	PUT_INTEL_SHORT(multibuf+count, objnum );     count += 2;
 #ifndef WORDS_BIGENDIAN
 	memcpy(multibuf+count, pos, sizeof(vms_vector));  count += sizeof(vms_vector);
+	memcpy(multibuf+count, velocity, sizeof(vms_vector));  count += sizeof(vms_vector);
 #else
 	swapped_vec.x = (fix)INTEL_INT( (int)pos->x );
 	swapped_vec.y = (fix)INTEL_INT( (int)pos->y );
 	swapped_vec.z = (fix)INTEL_INT( (int)pos->z );
 	memcpy(multibuf+count, &swapped_vec, 12);				count += 12;
+	swapped_vec.x = (fix)INTEL_INT( (int)velocity->x );
+	swapped_vec.y = (fix)INTEL_INT( (int)velocity->y );
+	swapped_vec.z = (fix)INTEL_INT( (int)velocity->z );
+	memcpy(multibuf+count, &swapped_vec, 12);				count += 12;
 #endif
 	//                                                                                                            -----------
-	//                                                                                                            Total =  19
+	//                                                                                                            Total =  31
 	multi_send_data(multibuf, count, 2);
 
 	if (Network_send_objects && multi_objnum_is_past(objnum))
