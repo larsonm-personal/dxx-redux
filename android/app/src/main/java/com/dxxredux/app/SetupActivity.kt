@@ -801,8 +801,14 @@ class SetupActivity : ComponentActivity() {
                             }
                             val isHmp = track.filename.lowercase().endsWith(".hmp")
                             val sr = MidiPreviewBridge.getNativeSampleRate(this@SetupActivity)
-                            MidiPreviewBridge.start(data, isHmp, sr)
-                            Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
+                            if (MidiPreviewBridge.start(data, isHmp, sr)) {
+                                Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
+                            } else {
+                                Log.e(
+                                    "DXX-Setup",
+                                    "music_midi_play: failed to start ${track.filename} from ${src.label}",
+                                )
+                            }
                         }.start()
                     }
 

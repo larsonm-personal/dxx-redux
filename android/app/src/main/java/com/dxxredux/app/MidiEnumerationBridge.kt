@@ -8,6 +8,9 @@ import kotlinx.serialization.json.Json
  * and mission directories.
  */
 object MidiEnumerationBridge {
+    // HMP conversion and TML parsing share legacy native state and must not overlap.
+    internal val nativeDataLock = Any()
+
     init {
         System.loadLibrary("dxx-redux-d2")
     }
@@ -35,7 +38,7 @@ object MidiEnumerationBridge {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun enumerateTracks(filesDir: String): EnumerationResult {
-        val raw = nativeEnumerateTracks(filesDir)
+        val raw = synchronized(nativeDataLock) { nativeEnumerateTracks(filesDir) }
         return try {
             json.decodeFromString<EnumerationResult>(raw)
         } catch (e: Exception) {

@@ -565,6 +565,8 @@ class LauncherScriptExecutor(
     }
 
     private fun resetGameState() {
+        MidiPreviewBridge.stop()
+        CdPreviewBridge.stop()
         val dir = context.filesDir
         val saveRegex = Regex("""\.(?:sg|mg)[0-9]$""", RegexOption.IGNORE_CASE)
         val patterns =
@@ -616,7 +618,8 @@ class LauncherScriptExecutor(
         clearPendingResumeLaunchState(context)
         Log.i(
             TAG,
-            "Game state reset (deleted plr/plx/sg/mg/cfg/pending resume files and preferences, " +
+            "Game state reset (stopped music previews, deleted plr/plx/sg/mg/cfg/pending resume files " +
+                "and preferences, " +
                 "staged_input_demos=$stagedDemosDeleted)",
         )
     }

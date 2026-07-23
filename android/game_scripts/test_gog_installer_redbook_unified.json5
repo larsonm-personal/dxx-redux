@@ -98,7 +98,12 @@
 
     {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Testing MIDI preview playback (track 3)"},
     {"action": "setup_command", "when": "${AUDIO_CHECKS_WHEN}", "command": "music_midi_play",
-     "args": {"source": 0, "track": 2}, "post_delay_ms": 4000},
+     "args": {"source": 0, "track": 2}},
+
+    // Track enumeration and synth initialization run asynchronously. Wait for
+    // their observable completion instead of assuming a fixed startup delay.
+    {"action": "wait_for", "when": "${AUDIO_CHECKS_WHEN}",
+     "field": "music_preview.midi.state", "value": "playing", "timeout_ms": 20000},
 
     {"action": "assert", "when": "${AUDIO_CHECKS_WHEN}", "expect": {
         "music_preview.midi.state": "playing",
@@ -112,7 +117,10 @@
 
     {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Testing CD audio preview playback (track 3)"},
     {"action": "setup_command", "when": "${AUDIO_CHECKS_WHEN}", "command": "music_cd_play",
-     "args": {"source": 0, "track": 2}, "post_delay_ms": 4000},
+     "args": {"source": 0, "track": 2}},
+
+    {"action": "wait_for", "when": "${AUDIO_CHECKS_WHEN}",
+     "field": "music_preview.cd.state", "value": "playing", "timeout_ms": 20000},
 
     {"action": "assert", "when": "${AUDIO_CHECKS_WHEN}", "expect": {
         "music_preview.cd.state": "playing",

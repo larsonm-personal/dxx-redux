@@ -43,7 +43,10 @@ object MidiPreviewBridge {
         data: ByteArray,
         isHmp: Boolean,
         sampleRate: Int,
-    ): Boolean = nativeStart(data, isHmp, sampleRate)
+    ): Boolean =
+        synchronized(MidiEnumerationBridge.nativeDataLock) {
+            nativeStart(data, isHmp, sampleRate)
+        }
 
     fun stop() = nativeStop()
 
