@@ -1314,8 +1314,9 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 		if (Game_mode & GM_MULTI_COOP) {
 			COOPLOG("StartNewLevelSub sync done: game=d1 level=%d result=%d player=%d players=%d",
 			        Current_level_num, level_sync_result, Player_num, N_players);
-			crash_breadcrumb_v("d1 coop level sync done level=%d result=%d",
-			                   Current_level_num, level_sync_result);
+			crash_breadcrumb_v("d1 coop level sync done level=%d result=%d player=%d players=%d status=%d",
+			                   Current_level_num, level_sync_result, Player_num,
+			                   N_players, Network_status);
 		}
 #endif
 		if (level_sync_result)
@@ -1346,6 +1347,11 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	gr_use_palette_table( "palette.256" );
 	gr_palette_load(gr_palette);
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		crash_breadcrumb_v("d1 coop init player_stats done player=%d", Player_num);
+#endif
+
 #ifndef SHAREWARE
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI_COOP) && Network_rejoined)
@@ -1368,6 +1374,12 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 
 	gameseq_remove_unused_players();
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		crash_breadcrumb_v("d1 coop init multi_prep done player=%d objects=%d",
+		                   Player_num, Highest_object_index + 1);
+#endif
+
 	Game_suspended = 0;
 
 	Control_center_destroyed = 0;
@@ -1385,6 +1397,15 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	reset_special_effects();
 	init_exploding_walls();
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		crash_breadcrumb_v("d1 coop init subsystems done player=%d obj=%d",
+		                   Player_num,
+		                   Player_num >= 0 && Player_num < MAX_PLAYERS
+		                       ? Players[Player_num].objnum
+		                       : -1);
+#endif
+
 #ifdef NETWORK
 	if (Network_rejoined == 1)
 	{
@@ -1393,7 +1414,18 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	}
 	else
 #endif
+	{
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			crash_breadcrumb_v("d1 coop StartLevel enter player=%d", Player_num);
+#endif
 		StartLevel(0);		// Note link to above if!
+	}
+
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		crash_breadcrumb_v("d1 coop StartLevel done player=%d", Player_num);
+#endif
 
 	copy_defaults_to_robot_all();
 	init_controlcen_for_level();

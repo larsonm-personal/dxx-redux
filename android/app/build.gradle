@@ -361,6 +361,14 @@ android {
         resValues true
     }
 
+    packaging {
+        jniLibs {
+            // xCrash launches libxcrash_dumper.so with execl(), so it must exist
+            // as an extracted filesystem file instead of only inside the APK
+            useLegacyPackaging = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11

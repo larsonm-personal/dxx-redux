@@ -3,14 +3,15 @@
 #include <limits.h>
 #include <string.h>
 
-#define WINDOW_US         1000000LL
-#define DISCONTINUITY_US  500000LL
-#define LEVEL_SUPPRESS_US 3000000LL
-#define CAPTURE_US        60000000LL
-#define COOLDOWN_US       300000000LL
-#define SEVERE_FRAME_US   100000
-#define SEVERE_SPAN_US    2000000LL
-#define SLOW_PERCENT      70
+#define WINDOW_US               1000000LL
+#define DISCONTINUITY_US        30000000LL
+#define LEVEL_SUPPRESS_US       3000000LL
+#define CAPTURE_US              60000000LL
+#define COOLDOWN_US             300000000LL
+#define SEVERE_FRAME_US         100000
+#define SEVERE_SPAN_US          2000000LL
+#define SLOW_PERCENT            70
+#define ABSOLUTE_SLOW_FPS_MILLI 8000
 
 static int32_t clamp_i64_to_i32(int64_t value)
 {
@@ -114,7 +115,9 @@ static int finish_window(struct android_slowdown_detector *detector, int64_t now
 
 	slow = expected_fps_milli > 0 &&
 	       (int64_t) window->fps_milli * 100 < (int64_t) expected_fps_milli * SLOW_PERCENT;
-	if (slow)
+	if (window->fps_milli < ABSOLUTE_SLOW_FPS_MILLI)
+		detector->slow_windows = 2;
+	else if (slow)
 		detector->slow_windows++;
 	else
 		detector->slow_windows = 0;

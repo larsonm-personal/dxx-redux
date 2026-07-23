@@ -143,7 +143,7 @@ void net_udp_send_rejoin_sync(int player_num);
 void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte send_to_observers, uint player_token);
 void net_udp_send_netgame_update();
 void net_udp_do_refuse_stuff (UDP_sequence_packet *their);
-void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr );
+int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr );
 void net_udp_read_object_packet( ubyte *data, int data_len );
 void net_udp_ping_frame(fix64 time);
 void net_udp_p2p_ping_frame(fix64 time); 
@@ -5094,7 +5094,7 @@ net_udp_set_game_mode(int gamemode, ubyte join_as_obs)
 	}
 }
 
-void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr )
+int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr )
 {
 	int i, j;
 	char temp_callsign[CALLSIGN_LEN+1];
@@ -5105,7 +5105,11 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 		int packet_valid = net_udp_process_game_info(data, data_len, sender_addr, 0, 1);
 		if(! packet_valid ) {
 			con_printf(CON_DEBUG, "read_sync_packet: INVALID packet, dropping\n");
-			return; 
+#ifdef __ANDROID__
+			if (Game_mode & GM_MULTI_COOP)
+				crash_breadcrumb_v("d2 sync reject invalid_packet len=%d", data_len);
+#endif
+			return 0;
 		}
 		con_printf(CON_DEBUG, "read_sync_packet: packet valid, processing\n");
 	}
@@ -5116,12 +5120,16 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 
 	if (Netgame.segments_checksum != my_segments_checksum)
 	{
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			crash_breadcrumb_v("d2 sync reject checksum remote=%u local=%u",
+			                   (unsigned) Netgame.segments_checksum,
+			                   (unsigned) my_segments_checksum);
+#endif
 		Network_status = NETSTAT_MENU;
 		net_udp_close();
 		nm_messagebox(TXT_ERROR, 1, TXT_OK, TXT_NETLEVEL_NMATCH);
-#ifdef RELEASE
-		return;
-#endif
+		return 0;
 	}
 
 	// Discover my player number
@@ -5140,9 +5148,13 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 		if ( Netgame.players[i].protocol.udp.isyou == 1 && (!d_stricmp( Netgame.players[i].callsign, temp_callsign)) )
 		{
 			if (Player_num!=-1) {
-				Int3(); // Hey, we've found ourselves twice
+#ifdef __ANDROID__
+				if (Game_mode & GM_MULTI_COOP)
+					crash_breadcrumb_v("d2 sync reject duplicate_self slot=%d callsign=%.8s",
+					                   i, temp_callsign);
+#endif
 				Network_status = NETSTAT_MENU;
-				return; 
+				return 0;
 			}
 			if(!is_observer()) {
 				change_playernum_to(i);
@@ -5191,8 +5203,13 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 	con_printf(CON_DEBUG, "read_sync_packet: Player_num=%d Network_status=%d\n", Player_num, Network_status);
 	if ( Player_num < 0 && !is_observer()) {
 		con_printf(CON_DEBUG, "read_sync_packet: Player_num < 0, aborting\n");
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			crash_breadcrumb_v("d2 sync reject local_not_found callsign=%.8s players=%d",
+			                   temp_callsign, N_players);
+#endif
 		Network_status = NETSTAT_MENU;
-		return;
+		return 0;
 	}
 
 	if (Network_rejoined)
@@ -5242,8 +5259,12 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 	Network_status = NETSTAT_PLAYING;
 #ifdef __ANDROID__
 	android_resync_request_pending = 0;
+	if (Game_mode & GM_MULTI_COOP)
+		crash_breadcrumb_v("d2 sync accepted player=%d players=%d callsign=%.8s",
+		                   Player_num, N_players, Players[Player_num].callsign);
 #endif
 	multi_sort_kill_list();
+	return 1;
 }
 
 int net_udp_send_sync(void)
@@ -5314,7 +5335,16 @@ int net_udp_send_sync(void)
 		net_udp_send_game_info(Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0, player_tokens[i]);
 		connection_statuses[i].type = CONNT_DIRECT;
 	}
-	net_udp_read_sync_packet(NULL, 0, Netgame.players[Player_num].protocol.udp.addr); // Read it myself, as if I had sent it
+	if (!net_udp_read_sync_packet(NULL, 0, Netgame.players[Player_num].protocol.udp.addr) ||
+	    Network_status != NETSTAT_PLAYING ||
+	    (Player_num < 0 && !is_observer())) {
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			crash_breadcrumb_v("d2 send_sync local_reject player=%d players=%d status=%d",
+			                   Player_num, N_players, Network_status);
+#endif
+		return -1;
+	}
 	con_printf(CON_DEBUG, "send_sync: completed, entering game\n");
 	return 0;
 }
