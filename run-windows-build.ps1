@@ -488,6 +488,15 @@ foreach ($game in $targets) {
     if ($LASTEXITCODE -ne 0) {
         throw "CMake build failed for $game"
     }
+
+    $sourceRevision = & git -C $repoRoot rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and $sourceRevision) {
+        $stampDirectory = Join-Path $repoRoot "temp\input_demo_build_stamps"
+        New-Item -ItemType Directory -Path $stampDirectory -Force | Out-Null
+        [System.IO.File]::WriteAllText(
+            (Join-Path $stampDirectory "$game.stamp"),
+            ([string]$sourceRevision).Trim())
+    }
 }
 
 Write-Host "Windows build complete for $($targets -join ', ')"

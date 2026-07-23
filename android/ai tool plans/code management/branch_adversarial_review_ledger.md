@@ -5134,23 +5134,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add Inno, PKG, SOW, ISO, StuffIt, and HFS tests whose callbacks cancel at the initial, mid-file where supported, and between-file notifications, including a nested Mac STi2 cancellation with a valid loose HFS candidate, plus CheckJNI tests whose Java callback throws; assert bounded additional work, no fallback, later callbacks, JNI calls, or files, a distinct canceled status where no exception occurred, preservation of the original exception, removal of partial output, and clean descriptor and archive closure
 - Resolution: Pending
 
-### BR-0024: P2 - Register assertion-based SOW extraction tests with CTest
-
-- [ ] OPEN
-- Type: test-gap
-- Confidence: high
-- Category: test-gap
-- Found by: R1-CHUNK-0011, R1-CHUNK-0017, R1-CHUNK-0031
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L92-L95,L122-L146`
-- Related: `android/app/src/main/cpp/extract/test_sow_direct.c:L1-L22`, `android/app/src/main/cpp/extract/sow_extract.c:L38-L121,L181-L524`, `android/app/src/main/cpp/extract/extract_cd.c:L608-L644`, and `android/tests/test_cue_iso.ps1:L19-L34`
-- Evidence: CMake builds `test_sow_direct` but does not register it with `add_test`; the seven-test native suite therefore never executes any SOW extraction. The binary itself has no content assertions and exits successfully for every nonnegative result, including zero extracted files. The CD tool's post-ISO recursive scan and extraction path is also absent from the suite. This leaves the branch's custom 768-line native ARJ parser, Huffman decompressor, scan capacity and error handling, and caller status accounting without automated success, corruption, boundary, cancellation, append-mode, or post-ISO coverage
-- Trigger: Regress the decoder so a known SOW yields zero or corrupted files, break split-archive append ordering, or introduce malformed-input memory behavior, then run the documented native test script
-- Impact: The required build and test pass remains green while a supported disc and demo import path is broken or unsafe, delaying detection until manual import or gameplay
-- Expected: The standard native suite runs deterministic SOW tests with exact counts and content hashes for stored, compressed, retail, and split archives plus malformed security boundaries
-- Suggested fix: Replace or supplement the CLI smoke tool with an assertion-based test target, use small committed synthetic fixtures for boundary behavior and available real-media oracle hashes for integration coverage, register it in CTest, and make fixture absence an explicit skip rather than a silent zero-success pass
-- Validation: Confirm `ctest -N` lists the SOW suite, run it through `android/tests/test_cue_iso.ps1`, deliberately corrupt an expected hash and decoder result to prove nonzero failure, retain an append-order oracle for the three-part preview archive, and exercise the `extract_cd` scan path with none, one, excess, unreadable, and failed SOW inputs
-- Resolution: Pending
-
 ### BR-0025: P3 - Correct the SOW header's obsolete libarchive description
 
 - [ ] OPEN

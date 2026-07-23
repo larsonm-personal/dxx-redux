@@ -34,6 +34,31 @@ function Get-InputDemoBuildStampPath {
     return Join-RegressionPath $RepoRoot 'temp' 'input_demo_build_stamps' "$GameName.stamp"
 }
 
+function Get-InputDemoSourceRevision {
+    param([string]$RepoRoot)
+
+    $revision = & git -C $RepoRoot rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $revision) {
+        return $null
+    }
+    return ([string]$revision).Trim()
+}
+
+function Test-InputDemoBuildStampRevision {
+    param(
+        [string]$RepoRoot,
+        [string]$GameName,
+        [string]$SourceRevision
+    )
+
+    $buildStampPath = Get-InputDemoBuildStampPath -RepoRoot $RepoRoot -GameName $GameName
+    if (-not (Test-Path -LiteralPath $buildStampPath -PathType Leaf)) {
+        return $false
+    }
+    $stampRevision = ([System.IO.File]::ReadAllText($buildStampPath)).Trim()
+    return $stampRevision -and $stampRevision -eq $SourceRevision
+}
+
 function Get-InputDemoExecutablePath {
     param(
         [string]$RepoRoot,
@@ -137,12 +162,6 @@ function Invoke-InputDemoHostBuild {
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
     Write-Host "Build guardrail: rebuilding host target $buildTarget"
     Invoke-RegressionHostBuild -RepoRoot $RepoRoot -Target $buildTarget -Label $GameName
-    $stampPath = Get-InputDemoBuildStampPath -RepoRoot $RepoRoot -GameName $GameName
-    $stampDirectory = Split-Path -Path $stampPath -Parent
-    if (-not (Test-Path -LiteralPath $stampDirectory -PathType Container)) {
-        New-Item -ItemType Directory -Path $stampDirectory -Force | Out-Null
-    }
-    [System.IO.File]::WriteAllText($stampPath, [DateTime]::UtcNow.ToString('O'))
 }
 
 function Get-InputDemoExecutableFreshnessIssue {
@@ -168,6 +187,15 @@ function Get-InputDemoExecutableFreshnessIssue {
 
     $exeItem = Get-Item -LiteralPath $ExecutablePath
     $buildStampPath = Get-InputDemoBuildStampPath -RepoRoot $RepoRoot -GameName $GameName
+    $sourceRevision = Get-InputDemoSourceRevision -RepoRoot $RepoRoot
+    if ($sourceRevision -and
+        -not (Test-InputDemoBuildStampRevision -RepoRoot $RepoRoot -GameName $GameName -SourceRevision $sourceRevision)) {
+        return @{
+            Missing = $false
+            SourceRelative = 'source revision'
+            Message = "$Description was not built from the current source revision`nExe: $ExecutablePath`nCurrent revision: $sourceRevision`nRun: $(if (Test-RegressionWindowsHost) { '.\\run-windows-build.ps1 -Target ' + $GameName } else { './run-linux-build.sh --target ' + $GameName })"
+        }
+    }
     $buildStampTimeUtc = if (Test-Path -LiteralPath $buildStampPath -PathType Leaf) {
         (Get-Item -LiteralPath $buildStampPath).LastWriteTimeUtc
     } else {

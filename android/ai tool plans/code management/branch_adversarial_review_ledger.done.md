@@ -266,6 +266,23 @@ so campaign closure must still obtain that independent verification
 - Validation: Add valid stored and compressed fixtures, flip one bit independently in each header and payload region, truncate the compressed stream, and assert every corrupted case fails without a committed file while known SOW fixtures retain stable hashes
 - Resolution: Fixed on 2026-07-22. The SOW reader now validates each basic header CRC before parsing its fields, validates every extended header CRC with bounded streaming reads, retains the original-file CRC, and validates stored or decompressed bytes before opening the destination. The bit reader separately tracks logically consumed bits, allowing normal lookahead padding while hard-failing any decode that consumes beyond the compressed span. A registered integration suite covers valid stored and one-literal compressed entries, corrupt basic and extended headers, corrupt stored and successfully decoded compressed payloads, and compressed truncation; every corrupt case leaves no output file. Scoped code quality and all 12 registered native extraction suites passed. Android debug native builds passed for arm64-v8a, armeabi-v7a, and x86_64. A real Test Flight compressed SOW extracted 19 files totaling 3,172,830 bytes under the new checks
 
+### BR-0024: P2 - Register assertion-based SOW extraction tests with CTest
+
+- [x] FIXED
+- Type: test-gap
+- Confidence: high
+- Category: test-gap
+- Found by: R1-CHUNK-0011, R1-CHUNK-0017, R1-CHUNK-0031
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L92-L95,L122-L146`
+- Related: `android/app/src/main/cpp/extract/test_sow_direct.c:L1-L22`, `android/app/src/main/cpp/extract/sow_extract.c:L38-L121,L181-L524`, `android/app/src/main/cpp/extract/extract_cd.c:L608-L644`, and `android/tests/test_cue_iso.ps1:L19-L34`
+- Evidence: CMake builds `test_sow_direct` but does not register it with `add_test`; the seven-test native suite therefore never executes any SOW extraction. The binary itself has no content assertions and exits successfully for every nonnegative result, including zero extracted files. The CD tool's post-ISO recursive scan and extraction path is also absent from the suite. This leaves the branch's custom 768-line native ARJ parser, Huffman decompressor, scan capacity and error handling, and caller status accounting without automated success, corruption, boundary, cancellation, append-mode, or post-ISO coverage
+- Trigger: Regress the decoder so a known SOW yields zero or corrupted files, break split-archive append ordering, or introduce malformed-input memory behavior, then run the documented native test script
+- Impact: The required build and test pass remains green while a supported disc and demo import path is broken or unsafe, delaying detection until manual import or gameplay
+- Expected: The standard native suite runs deterministic SOW tests with exact counts and content hashes for stored, compressed, retail, and split archives plus malformed security boundaries
+- Suggested fix: Replace or supplement the CLI smoke tool with an assertion-based test target, use small committed synthetic fixtures for boundary behavior and available real-media oracle hashes for integration coverage, register it in CTest, and make fixture absence an explicit skip rather than a silent zero-success pass
+- Validation: Confirm `ctest -N` lists the SOW suite, run it through `android/tests/test_cue_iso.ps1`, deliberately corrupt an expected hash and decoder result to prove nonzero failure, retain an append-order oracle for the three-part preview archive, and exercise the `extract_cd` scan path with none, one, excess, unreadable, and failed SOW inputs
+- Resolution: Fixed on 2026-07-22. CTest now registers three SOW suites: malformed Huffman boundaries, synthetic extraction integrity, and a real-media count and SHA-256 oracle. The real-media suite requires exactly 34 retail outputs and verifies the D2 HOG, HAM, and PIG hashes. It then applies preview parts in append order with exact per-part counts of 8, 2, and 17, requires exactly 25 final files, and verifies the DEM, HAM, HOG, and PIG hashes. Missing real-media fixtures produce an explicit CTest skip. Synthetic coverage asserts stored and compressed success, header and payload corruption, truncation, empty and one-file scans, invalid scan arguments, and cancellation before output. `ctest -N` lists all three suites. A deliberately incorrect retail HOG hash made the oracle exit 1. Scoped code quality, direct CMake formatting and linting, and all 13 registered native extraction suites passed. Overflow, unreadable-tree, link-cycle, and deterministic scan-order behavior remain correctly tracked as the separate BR-0072 product defect rather than being encoded as successful behavior here
+
 ### BR-0031: P2 - Reject encrypted STi2 entries before extraction
 
 - [x] FIXED
@@ -336,6 +353,7 @@ so campaign closure must still obtain that independent verification
 
 ## Disposition log
 
+- 2026-07-22: BR-0024 fixed by registering synthetic, malformed, retail, and split-archive SOW assertions with CTest. Exact counts and seven real-media hashes pass, a deliberately wrong hash fails, and all 13 native suites pass; deeper scan semantics remain under BR-0072
 - 2026-07-22: BR-0023 fixed by validating ARJ basic, extended-header, and original-file CRCs before output publication and by rejecting compressed bit consumption past the declared payload. Focused integrity fixtures, scoped code quality, all 12 native extraction suites, all three Android debug ABIs, and a real compressed SOW extraction passed
 - 2026-07-22: BR-0022 fixed by validating every Huffman construction input and propagating malformed-table failures through SOW block decompression. Independent code tracing, scoped code quality, and all 11 native extraction suites passed; sanitizer execution remained unavailable in the configured Windows toolchain
 - 2026-07-21: BR-0042 fixed by routing native extraction and fingerprint JSON strings through one byte-safe UTF-8 writer. Strict hostile-string parsing, scoped code quality, and all 10 native extraction suites passed; POSIX-only filename integration remains represented by direct byte-boundary coverage in the Windows tranche

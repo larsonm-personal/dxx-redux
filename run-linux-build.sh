@@ -245,6 +245,14 @@ build_one() {
 
     echo "Building $game"
     "$CMAKE_PATH" "${build_args[@]}"
+
+    local source_revision stamp_dir
+    source_revision="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
+    if [[ -n "$source_revision" ]]; then
+        stamp_dir="$REPO_ROOT/temp/input_demo_build_stamps"
+        mkdir -p "$stamp_dir"
+        printf '%s' "$source_revision" >"$stamp_dir/$game.stamp"
+    fi
 }
 
 if [[ "$TARGET" == "both" ]]; then

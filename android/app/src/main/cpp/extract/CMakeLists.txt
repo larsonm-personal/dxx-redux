@@ -143,6 +143,19 @@ target_include_directories(test_extract_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 add_test(NAME extract_limit_tests COMMAND test_extract_limits)
 add_test(NAME sow_huffman_tests COMMAND test_sow_huffman)
 add_test(NAME sow_integrity_tests COMMAND test_sow_integrity)
+set(SOW_RETAIL_FIXTURE "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/DESCENT2.SOW")
+set(SOW_SPLIT_FIXTURE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff"
+)
+add_test(
+    NAME sow_real_media_tests
+    COMMAND
+        ${CMAKE_COMMAND} -DTEST_SOW_DIRECT=$<TARGET_FILE:test_sow_direct>
+        "-DRETAIL_SOW=${SOW_RETAIL_FIXTURE}" "-DSPLIT_SOW_DIR=${SOW_SPLIT_FIXTURE_DIR}"
+        -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/sow_real_media_tests -P
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_real_media.cmake)
+set_tests_properties(sow_real_media_tests PROPERTIES SKIP_REGULAR_EXPRESSION
+                                                     "SKIP: SOW real-media fixtures unavailable")
 add_test(NAME cue_iso_tests COMMAND test_cue_iso)
 set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME hfs_tests COMMAND test_hfs)

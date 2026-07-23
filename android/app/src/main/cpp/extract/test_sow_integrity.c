@@ -160,6 +160,16 @@ static int file_exists(const char *path)
 	return 1;
 }
 
+static int cancel_progress(const char *filename, long long done, long long total,
+                           void *user_data)
+{
+	(void) filename;
+	(void) done;
+	(void) total;
+	(*(int *) user_data)++;
+	return 1;
+}
+
 static int run_case(const char *name, const fixture_t *fixture,
                     const unsigned char *expected, size_t expected_size,
                     int should_succeed)
@@ -210,9 +220,30 @@ int main(void)
 
 	make_dir("sow_integrity_temp");
 	make_dir("sow_integrity_temp/output");
+	make_dir("sow_integrity_temp/scan");
+	{
+		sow_file_list_t list;
+		if (sow_scan_dir("sow_integrity_temp/scan", &list) != 0 ||
+		    sow_scan_dir(NULL, &list) != -1 ||
+		    sow_scan_dir("sow_integrity_temp/scan", NULL) != -1) {
+			fprintf(stderr, "SOW empty-scan or argument validation failed\n");
+			failures++;
+		}
+	}
 
 	fixture_t fixture = make_fixture(0, stored, sizeof(stored) - 1u,
 	                                 stored, sizeof(stored) - 1u, 1);
+	if (write_fixture("sow_integrity_temp/scan/one.SoW", &fixture) < 0) {
+		fprintf(stderr, "failed to write SOW scan fixture\n");
+		failures++;
+	} else {
+		sow_file_list_t list;
+		if (sow_scan_dir("sow_integrity_temp/scan", &list) != 1 || list.count != 1 ||
+		    strstr(list.paths[0], "one.SoW") == NULL) {
+			fprintf(stderr, "SOW one-file scan failed\n");
+			failures++;
+		}
+	}
 	failures += run_case("valid_stored", &fixture, stored, sizeof(stored) - 1u, 1);
 	fixture.data[fixture.basic_header_offset + 8u] ^= 1u;
 	failures += run_case("bad_basic_header", &fixture, stored,
@@ -245,6 +276,27 @@ int main(void)
 	failures += run_case("truncated_compressed", &fixture, literal_a,
 	                     sizeof(literal_a), 0);
 
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	if (write_fixture("sow_integrity_temp/cancel.sow", &fixture) < 0) {
+		fprintf(stderr, "failed to write SOW cancellation fixture\n");
+		failures++;
+	} else {
+		static const char *extensions[] = { "hog", NULL };
+		int callbacks = 0;
+		remove("sow_integrity_temp/output/crc_test.hog");
+		if (sow_extract("sow_integrity_temp/cancel.sow", "sow_integrity_temp/output",
+		                extensions, cancel_progress, &callbacks) != 0 ||
+		    callbacks != 1 ||
+		    file_exists("sow_integrity_temp/output/crc_test.hog")) {
+			fprintf(stderr, "SOW cancellation did not stop before output\n");
+			failures++;
+		}
+		remove("sow_integrity_temp/cancel.sow");
+	}
+
+	remove("sow_integrity_temp/scan/one.SoW");
+	remove_dir("sow_integrity_temp/scan");
 	remove_dir("sow_integrity_temp/output");
 	remove_dir("sow_integrity_temp");
 	if (failures != 0) return 1;
