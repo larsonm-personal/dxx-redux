@@ -121,7 +121,7 @@ Only one call may edit either adversarial review ledger at a time. Replace queue
 | R1-CHUNK-0070 | [x] DONE | source | critical | build-script | `game_data/extract_mac_demos.ps1` | L1-L198 | BR-0020, BR-0157, BR-0169, BR-0170, BR-0173, BR-0174 |
 | R1-CHUNK-0071 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | BR-0018, BR-0020, BR-0157, BR-0176, BR-0177 |
 | R1-CHUNK-0072 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L601-L780 | BR-0043, BR-0049, BR-0169, BR-0170, BR-0174, BR-0179, BR-0180 |
-| R1-CHUNK-0073 | [ ] TODO | source | critical | test-source | `2 related paths` | 515 review lines under android/app/src/main/cpp | - |
+| R1-CHUNK-0073 | [x] DONE | source | critical | test-source | `2 related paths` | 515 review lines under android/app/src/main/cpp | BR-0158, BR-0181 |
 | R1-CHUNK-0074 | [ ] TODO | source | critical | test-source | `2 related paths` | 73 review lines under android/app/src/main/cpp | - |
 | R1-CHUNK-0075 | [ ] TODO | source | critical | test-source | `4 related paths` | 596 review lines under android/app/src/main/cpp | - |
 | R1-CHUNK-0076 | [ ] TODO | source | critical | test-source | `5 related paths` | 90 review lines under android/app/src/main/cpp | - |
@@ -4793,6 +4793,17 @@ Append one completion note for every finished queue item using the process templ
 - Worktree note: This review edited only the canonical active ledger. The pre-existing `game_data/CD images/Descent II (USA) (Alt)/extract_regression.json5` worktree change and live post-snapshot remediation of the assigned script were preserved without inspection. No product script, mission archive, extracted audio, sidecar, database, build, test, emulator, network service, or temporary file was changed by this review.
 - No-finding areas: the assigned PowerShell parses; `Write-ChromaprintInfo` uses a string-aware JSON encoder and UTF-8 without BOM; current source archives have no extension-differentiated basename collision; current generated sidecars contain source hashes and correspond to the current corpus; explicit source-hash mismatches trigger reprocessing; native stdout is parsed before publication; zero usable fingerprints are rejected; ordinary extraction staging cleanup is in `finally`; process stderr is surfaced; and nonzero database-merger status is propagated. Exact fingerprint-set completeness remains BR-0043, partial native success remains BR-0049, aggregate success remains BR-0169, missing cache identity remains BR-0170, host-tool resolution remains BR-0174, archive output identity is BR-0179, and concurrent or interrupted publication is BR-0180 rather than being duplicated.
 
+### R1-CHUNK-0073 completion
+
+- Completed: 2026-07-22
+- Model: sol-5.6-medium
+- Result: BR-0158, BR-0181
+- Assigned scope checked: `android/app/src/main/cpp/extract/test_fingerprint.c` L1-L415 and `android/app/src/main/cpp/extract/test_gog_fd.c` L1-L100
+- Context checked: both frozen additions and their complete histories; CMake targets and CTest registration; Chromaprint source and test-data acquisition; shared PCM decoding and fingerprint generation; fpcalc reference parsing and similarity logic; Inno descriptor duplication, catalog ownership, close behavior, extension filtering, and proprietary installer paths; the standard native extraction runner; and related fingerprint correctness, incomplete-load, supply-chain, fixture-availability, and false-pass findings in both ledgers
+- Commands or validation: `git cat-file -e`, `git diff`, `git show`, `git log --follow`, `git grep`, `rg`, line-numbered test-to-production and CTest traces, duplicate-finding and ID search, current fpcalc fixture byte and value inventory, direct `test_fingerprint` execution with all six tests passing, and an in-memory exact-prefix probe demonstrating that the test's minimum-overlap similarity returns 1.0 for a five-value prefix of a longer reference
+- Worktree note: This review edited only the canonical active ledger. Concurrent or pre-existing extraction-regression helper, specification, plan, fixture, and batch-script changes were preserved without inspection. The live `test_gog_fd.c` differs substantially from the frozen snapshot and was not used as review evidence. No product source, test source, fixture, build output, archive, generated metadata, or temporary file was changed by this review.
+- No-finding areas: both frozen test files compile into registered CTest targets; the fingerprint test invokes all six named cases and returns nonzero after an assertion failure; its success paths release PCM, Chromaprint, and wrapper allocations; the current 10-second reference contains 59 values and the available suite passes; the GOG test checks exact game-file counts plus required D1 and D2 basenames when fixtures exist; `inno_open_fd` duplicates the caller descriptor as documented, and both caller and archive copies are closed on the ordinary path. Unauthenticated Chromaprint source and fixture acquisition remains BR-0157, green missing-fixture execution remains BR-0158, and incomplete fpcalc comparison is BR-0181 rather than being duplicated.
+
 ## Findings
 
 This file contains open findings only. Finalized findings and their disposition
@@ -5132,23 +5143,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: A nonzero callback result promptly stops all extraction, closes reader and output resources, removes incomplete output, and returns a distinct canceled status without starting another file
 - Suggested fix: Check and propagate every progress return through streaming and buffered decoder loops, use one distinct cancellation result across readers, remove the current partial destination, stop outer archive loops immediately, and make JNI and Kotlin preserve that status without fallback or post-processing. After each Java callback, detect a pending exception, stop native work immediately without making more JNI calls, clean up native resources and partial output, and let the original exception propagate
 - Validation: Add Inno, PKG, SOW, ISO, StuffIt, and HFS tests whose callbacks cancel at the initial, mid-file where supported, and between-file notifications, including a nested Mac STi2 cancellation with a valid loose HFS candidate, plus CheckJNI tests whose Java callback throws; assert bounded additional work, no fallback, later callbacks, JNI calls, or files, a distinct canceled status where no exception occurred, preservation of the original exception, removal of partial output, and clean descriptor and archive closure
-- Resolution: Pending
-
-### BR-0025: P3 - Correct the SOW header's obsolete libarchive description
-
-- [ ] OPEN
-- Type: documentation
-- Confidence: high
-- Category: documentation
-- Found by: R1-CHUNK-0011, R1-CHUNK-0031
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sow_extract.h:L1-L6`
-- Related: `android/app/src/main/cpp/extract/sow_extract.c:L1-L16,L181-L524` and `android/app/src/main/cpp/extract/CMakeLists.txt:L92-L95`
-- Evidence: The public header says the module wraps libarchive, while the implementation explicitly has no external library dependency and contains its own ARJ bit reader, Huffman table builder, LZSS dictionary, header parser, and decoder. The build target links no libarchive library
-- Trigger: A maintainer evaluates decoder provenance, security ownership, dependency updates, or a future format fix using the public header as the subsystem summary
-- Impact: Reviewers can incorrectly assume mature third-party validation and maintenance cover untrusted SOW parsing, miss the custom decoder's testing and hardening burden, or waste time searching for a dependency that is not used
-- Expected: The interface documentation accurately names the self-contained implementation, supported ARJ methods and quirks, provenance, limitations, and responsibility for validation
-- Suggested fix: Replace the libarchive statement with the concise implementation and provenance summary from `sow_extract.c`, and keep supported-method and integrity limitations synchronized with the code
-- Validation: Review the header against source and link dependencies, then ensure generated API documentation and repository searches contain no remaining claim that SOW extraction uses libarchive
 - Resolution: Pending
 
 ### BR-0026: P1 - Validate HFS catalog record bounds before decoding
@@ -7265,7 +7259,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: test-gap/false-pass
-- Found by: R1-CHUNK-0062
+- Found by: R1-CHUNK-0062, R1-CHUNK-0073
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L122-L169` in CTest registration
 - Related: `android/app/src/main/cpp/extract/test_gog_fd.c:L35-L82`, `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake:L1-L91`, ignored `game_data/gog installers/*.exe` and `game_data/demo installers/*.sit`, `android/tests/test_cue_iso.ps1`, and BR-0024
 - Evidence: CTest always registers `gog_fd_tests` against two ignored proprietary installers. `check_installer` prints `skip missing fixture` but returns success for each absent path, so a clean checkout executes zero GOG assertions and reports the test passed. The StuffIt demo-oracle test similarly returns success when its tracked oracle is absent, when CMake is older than 3.19 despite the project's 3.16 minimum, or when every ignored demo archive is absent; CTest has no skip return code or property and counts each case as passed. Focused executions with two nonexistent GOG paths and a nonexistent StuffIt fixture directory both exited zero after checking no fixture, while the standard runner labels all seven registered tests passed. Separately, BR-0024 records that the built SOW test is not registered at all.
@@ -7667,6 +7661,23 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Each invocation owns unique temporary and child-output resources, and readers observe either the complete prior generation or one completely validated replacement whose source, audio set, provenance, and sidecar agree
 - Suggested fix: Preflight or lock output ownership, build every attempt in a cryptographically unique private same-volume generation directory, validate exact source and fingerprint sets, flush and close all files, then atomically replace one versioned generation or manifest pointer. Retire the prior generation only after commit, clean owned resources in an outer `finally`, and report retained residue without deleting another run's state.
 - Validation: Barrier-synchronize same-source ordinary and Force runs, inject cancellation and failure after each delete, extraction, child launch, parse, write, flush, move, and cleanup boundary, and retain a valid prior generation. Assert no cross-run deletion or mixed provenance, readers see only complete generations, the prior result survives every failed replacement, cleanup residue is attributable, and retries converge deterministically.
+- Resolution: Pending
+
+### BR-0181: P2 - Compare the complete fpcalc reference fingerprint
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: test-gap/false-pass
+- Found by: R1-CHUNK-0073
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/test_fingerprint.c:L111-L159,L311-L340` in fpcalc reference parsing and comparison
+- Related: `android/app/src/main/cpp/shared/fingerprint_gen.c:L68-L102`, `android/app/src/main/cpp/shared/pcm_decoders.c`, and `android/app/src/main/cpp/extract/CMakeLists.txt:L302-L318`
+- Evidence: `load_fpcalc_reference` accepts a partial numeric list, silently caps it at 512 values, and never verifies that `strtoul` advanced or consumed the complete line. With the current newline-terminated reference, the loop reaches the trailing newline after the 59th value and repeatedly counts failed conversions until the 512-slot cap because the input pointer does not advance. `fp_similarity` then compares only `min(a_len, b_len)` and requires merely five overlapping values, with no length or complete-reference assertion. A focused probe of that exact minimum-overlap rule gave similarity 1.0 to a five-value prefix of a 20-value reference. The MP3 test therefore can pass when decoding preserves the correct prefix but omits tail audio and its fingerprint values, provided the separately checked duration remains within the allowed 500 milliseconds, even though the test claims comparison with the complete known-good fpcalc output.
+- Trigger: Regress MP3 decoding so it omits a tail short enough to remain within the 500-millisecond duration tolerance while retaining the earlier fingerprint values, or supply a malformed, overlong, or partially numeric fpcalc reference line
+- Impact: The only cross-decoder reference test can stay green while production publishes incomplete fingerprints with reduced matching accuracy, and malformed reference data can be treated as a valid oracle instead of invalidating the test
+- Expected: The reference parser accepts exactly one complete bounded numeric fingerprint, records its true length, and the test compares all expected output with a documented length and similarity policy that cannot accept an arbitrary prefix
+- Suggested fix: Parse tokens with complete-consumption and progress checks, reject empty, malformed, trailing, and over-capacity input, assert the expected reference length, and require candidate length equality or a narrowly documented tolerance before scoring the complete arrays. Keep a separate explicit test for any desired alignment or decoder variance.
+- Validation: Add exact reference, five-value prefix, missing-tail, extra-tail, malformed-token, trailing-comma, newline, exact-cap, and one-over-cap cases; assert only the complete expected fingerprint passes while the current MP3 fixture retains its documented decoder tolerance.
 - Resolution: Pending
 
 ## Final disposition archive

@@ -283,6 +283,23 @@ so campaign closure must still obtain that independent verification
 - Validation: Confirm `ctest -N` lists the SOW suite, run it through `android/tests/test_cue_iso.ps1`, deliberately corrupt an expected hash and decoder result to prove nonzero failure, retain an append-order oracle for the three-part preview archive, and exercise the `extract_cd` scan path with none, one, excess, unreadable, and failed SOW inputs
 - Resolution: Fixed on 2026-07-22. CTest now registers three SOW suites: malformed Huffman boundaries, synthetic extraction integrity, and a real-media count and SHA-256 oracle. The real-media suite requires exactly 34 retail outputs and verifies the D2 HOG, HAM, and PIG hashes. It then applies preview parts in append order with exact per-part counts of 8, 2, and 17, requires exactly 25 final files, and verifies the DEM, HAM, HOG, and PIG hashes. Missing real-media fixtures produce an explicit CTest skip. Synthetic coverage asserts stored and compressed success, header and payload corruption, truncation, empty and one-file scans, invalid scan arguments, and cancellation before output. `ctest -N` lists all three suites. A deliberately incorrect retail HOG hash made the oracle exit 1. Scoped code quality, direct CMake formatting and linting, and all 13 registered native extraction suites passed. Overflow, unreadable-tree, link-cycle, and deterministic scan-order behavior remain correctly tracked as the separate BR-0072 product defect rather than being encoded as successful behavior here
 
+### BR-0025: P3 - Correct the SOW header's obsolete libarchive description
+
+- [x] FIXED
+- Type: documentation
+- Confidence: high
+- Category: documentation
+- Found by: R1-CHUNK-0011, R1-CHUNK-0031
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sow_extract.h:L1-L6`
+- Related: `android/app/src/main/cpp/extract/sow_extract.c:L1-L16,L181-L524` and `android/app/src/main/cpp/extract/CMakeLists.txt:L92-L95`
+- Evidence: The public header says the module wraps libarchive, while the implementation explicitly has no external library dependency and contains its own ARJ bit reader, Huffman table builder, LZSS dictionary, header parser, and decoder. The build target links no libarchive library
+- Trigger: A maintainer evaluates decoder provenance, security ownership, dependency updates, or a future format fix using the public header as the subsystem summary
+- Impact: Reviewers can incorrectly assume mature third-party validation and maintenance cover untrusted SOW parsing, miss the custom decoder's testing and hardening burden, or waste time searching for a dependency that is not used
+- Expected: The interface documentation accurately names the self-contained implementation, supported ARJ methods and quirks, provenance, limitations, and responsibility for validation
+- Suggested fix: Replace the libarchive statement with the concise implementation and provenance summary from `sow_extract.c`, and keep supported-method and integrity limitations synchronized with the code
+- Validation: Review the header against source and link dependencies, then ensure generated API documentation and repository searches contain no remaining claim that SOW extraction uses libarchive
+- Resolution: Fixed on 2026-07-22. The public SOW header now identifies the in-tree reader as a self-contained ARJ implementation, documents support for stored method 0 and LZSS+Huffman methods 1-3, names the public-domain Okumura AR provenance, records Interplay's concatenated-archive and comment-field filename quirks, and states the CRC-validation and unsupported-method boundaries. Repository and CMake searches confirm that no live SOW documentation claims a libarchive dependency and no SOW target links one. Scoped code quality passed, and the focused Huffman, integrity, and real-media SOW suites passed 3/3.
+
 ### BR-0027: P2 - Reuse one heap-backed HFS catalog during extraction
 
 - [x] FIXED
@@ -370,6 +387,7 @@ so campaign closure must still obtain that independent verification
 
 ## Disposition log
 
+- 2026-07-22: BR-0025 fixed by replacing the obsolete SOW libarchive claim with the self-contained ARJ implementation, provenance, supported methods, Interplay quirks, and integrity boundaries. Scoped code quality and all three focused SOW suites pass
 - 2026-07-22: BR-0027 fixed by replacing fixed HFS catalog arrays with one reusable heap-backed context and direct validated-entry extraction. Growth, allocation, scan-count, real-media oracle, frame-size, Android ABI, and all 13 native-suite checks pass
 - 2026-07-22: BR-0024 fixed by registering synthetic, malformed, retail, and split-archive SOW assertions with CTest. Exact counts and seven real-media hashes pass, a deliberately wrong hash fails, and all 13 native suites pass; deeper scan semantics remain under BR-0072
 - 2026-07-22: BR-0023 fixed by validating ARJ basic, extended-header, and original-file CRCs before output publication and by rejecting compressed bit consumption past the declared payload. Focused integrity fixtures, scoped code quality, all 12 native extraction suites, all three Android debug ABIs, and a real compressed SOW extraction passed
