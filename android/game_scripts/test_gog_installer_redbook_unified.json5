@@ -121,6 +121,7 @@
 
     {"action": "wait_for", "when": "${AUDIO_CHECKS_WHEN}",
      "field": "music_preview.cd.state", "value": "playing", "timeout_ms": 20000},
+    {"action": "wait_ms", "when": "${AUDIO_CHECKS_WHEN}", "ms": 1500},
 
     {"action": "assert", "when": "${AUDIO_CHECKS_WHEN}", "expect": {
         "music_preview.cd.state": "playing",

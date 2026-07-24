@@ -526,19 +526,20 @@ Validation results:
 
 Scope selected on 2026-07-23:
 
-- [ ] Reuse one Obsidian import, metadata analysis, and runner session for
+- [x] Reuse one Obsidian import, metadata analysis, and runner session for
   levels 1, 2, 3, 10, and 7
-- [ ] Keep `test_obsidian_level1_objective_markers` as the combined owner
-- [ ] Use clean game-menu handoffs between compatible level phases
-- [ ] Put the terminal level 7 route phase last
-- [ ] Remove the four absorbed standalone Obsidian scripts
-- [ ] Run expectation-preservation, catalog, quality, and emulator validation
-- [ ] Record final validation results
+- [x] Keep `test_obsidian_level1_objective_markers` as the combined owner
+- [x] Use clean game-menu or launcher handoffs between level phases
+- [x] Put the terminal level 7 route phase last
+- [x] Remove the four absorbed standalone Obsidian scripts
+- [x] Run expectation-preservation, catalog, quality, and emulator validation
+- [x] Record final validation results
 
 Planned phase order:
 
 1. Run the existing level 1 objective-marker and remaining-route coverage
-2. Close the automap, abort, and run the level 2 route scenario
+2. Close the automap, hand off through the launcher, and run the level 2 route
+   scenario with fresh process-local cache counters
 3. Abort and run the level 3 fly-through Guide-Bot goal scenario
 4. Abort and run the level 10 unresolved-switch frontier scenario
 5. Abort and run the level 7 complete route-next scenario last
@@ -551,3 +552,20 @@ Compatibility constraints:
   original phases
 - Preserve the existing base and imported metadata preamble exactly once
 - Do not require the terminal level 7 phase to return to the main menu
+
+Validation results:
+
+- Semantic multiset comparison confirmed that every expectation from the four
+  absorbed scripts remains in the owner
+- Automation catalog valid with 35 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- Combined Obsidian owner passed 191 of 191 steps in about 3 minutes 37 seconds
+  of wall time
+- Levels 1, 2, 3, 10, and 7 each reached their original pass boundary
+- Level 2's original zero-live-fallback cache assertion requires fresh static
+  counters, so the level 1 boundary uses the existing launcher handoff and
+  reselects the preserved pilot; the archive import, metadata analysis, and
+  outer test-runner setup remain shared
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK

@@ -25,8 +25,7 @@
     {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "trine2.zip", "label": "trine2", "display_name": "trine2.zip"},
     {"action": "analyze_level_metadata_all", "label": "trine2", "mod_file": "trine2.zip", "game": "d1", "status": "ok", "min_total_levels": 10},
-    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     {"action": "log", "message": "=== TEST: Trine 2 D1-in-D2 custom textures ==="},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},

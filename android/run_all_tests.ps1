@@ -377,6 +377,7 @@ $noInfraTests = @(
     "test_secret_area_baseline_diff",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
+    "test_test_report_runtimes",
     "test_test_helpers_process_wait",
     "test_validate_extract_regression_specs",
     "test_validate_automation_catalog"
@@ -681,6 +682,56 @@ $tierServer = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requir
 $tierSingleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
 $tierDualEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" })
 $tierExtract = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "extract" })
+$executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExtract) + @($tierDualEmu)
+
+$historicalRuntimeByName = @{}
+$historicalReportPath = ""
+try {
+    $runtimeReader = Join-Path $helpersDir "get-test-report-runtimes.ps1"
+    foreach ($record in @(& $runtimeReader -ReportDir $ReportDir -ExcludeReportPath $reportFile)) {
+        $historicalRuntimeByName[$record.Name] = [Math]::Max(1, [int]$record.Seconds)
+        $historicalReportPath = $record.ReportPath
+    }
+} catch {
+    Write-Host "WARN: Could not read historical test runtimes: $_" -ForegroundColor Yellow
+}
+
+$knownSelectedRuntimes = @(
+    $executionTests |
+        Where-Object { $historicalRuntimeByName.ContainsKey($_.Name) } |
+        ForEach-Object { [int]$historicalRuntimeByName[$_.Name] } |
+        Sort-Object
+)
+$fallbackRuntime = 1
+if ($knownSelectedRuntimes.Count -gt 0) {
+    $middle = [int][Math]::Floor($knownSelectedRuntimes.Count / 2)
+    $fallbackRuntime = if (($knownSelectedRuntimes.Count % 2) -eq 0) {
+        [int][Math]::Max(1, [Math]::Round(
+                ($knownSelectedRuntimes[$middle - 1] + $knownSelectedRuntimes[$middle]) / 2,
+                [MidpointRounding]::AwayFromZero
+            ))
+    } else {
+        $knownSelectedRuntimes[$middle]
+    }
+}
+
+$totalEstimatedRuntime = 0
+for ($index = 0; $index -lt $executionTests.Count; $index++) {
+    $test = $executionTests[$index]
+    $estimatedRuntime = if ($historicalRuntimeByName.ContainsKey($test.Name)) {
+        [int]$historicalRuntimeByName[$test.Name]
+    } else {
+        $fallbackRuntime
+    }
+    $test["ProgressIndex"] = $index + 1
+    $test["EstimatedRuntime"] = $estimatedRuntime
+    $totalEstimatedRuntime += $estimatedRuntime
+}
+$remainingEstimatedRuntime = $totalEstimatedRuntime
+foreach ($test in $executionTests) {
+    $test["RemainingEstimatedRuntime"] = $remainingEstimatedRuntime
+    $remainingEstimatedRuntime -= $test["EstimatedRuntime"]
+}
 
 $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
 $selectedRegressionDemoSections = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoSection } | Where-Object { $_ } | Sort-Object -Unique)
@@ -1239,6 +1290,12 @@ Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
 Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
+$historicalTimingCount = @($executionTests | Where-Object { $historicalRuntimeByName.ContainsKey($_.Name) }).Count
+if ($historicalReportPath) {
+    Write-Host "  Historical timings:    $historicalTimingCount/$($executionTests.Count) from $(Split-Path $historicalReportPath -Leaf)"
+} else {
+    Write-Host "  Historical timings:      unavailable; using equal test weights"
+}
 $demoGraphicsProfile = if ($ExtendedGraphics) { "full graphics" } else { "graphics canaries" }
 if ($selectedRegressionDemoSections.Count -gt 0) {
     Write-Host "  Demo regressions:      d1=$($regressionDemoCounts['d1']) d2=$($regressionDemoCounts['d2']) demo(s), sections: $($selectedRegressionDemoSections -join ', '), replay runs: $selectedRegressionDemoReplayCount"
@@ -1309,6 +1366,16 @@ function Invoke-SingleTest {
     $testTimeout = $TestTimeoutSeconds
     if ($Test.TimeoutSeconds) { $testTimeout = $Test.TimeoutSeconds }
 
+    $remainingPercent = if ($totalEstimatedRuntime -gt 0) {
+        [int][Math]::Round(
+            100 * $Test.RemainingEstimatedRuntime / $totalEstimatedRuntime,
+            [MidpointRounding]::AwayFromZero
+        )
+    } else {
+        0
+    }
+    $suiteElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
+    Write-Host "  Test $($Test.ProgressIndex)/$($executionTests.Count), $suiteElapsed elapsed, estimated $remainingPercent% remaining" -ForegroundColor Cyan
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
     Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${testTimeout}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -1837,7 +1904,7 @@ $md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
 Write-Host "  Report: $reportFile" -ForegroundColor Cyan
 Write-Host ""
 
-$retentionArtifacts = @($reportFile, $inputDemoPrimaryRoot) | Where-Object { Test-Path -LiteralPath $_ }
+$retentionArtifacts = @(@($reportFile, $inputDemoPrimaryRoot) | Where-Object { Test-Path -LiteralPath $_ })
 $retentionArtifacts += @(Get-ChildItem -LiteralPath $ReportDir -File | Where-Object { $_.Name -like "*_$timestamp.*" } | Select-Object -ExpandProperty FullName)
 & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $retentionArtifacts
 
