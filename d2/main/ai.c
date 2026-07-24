@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef NETWORK
 #include "multi.h"
 #include "escort.h"
+#include "escort_owner_policy.h"
 #endif
 #include "gameseq.h"
 #include "key.h"
@@ -351,6 +352,7 @@ void do_ai_frame(object *obj)
 	vms_vector  gun_point;
 	vms_vector  vis_vec_pos;
 	fix         schedule_dist_to_player = 0;
+	int         retry_recovery_allowed = !(Game_mode & GM_MULTI);
 #ifdef NETWORK
 	/* android port: remote guidebots are pose replicas.  Returning here keeps
 	 * local path following, flare creation, and simulation RNG owner-only. */
@@ -360,6 +362,12 @@ void do_ai_frame(object *obj)
 		if (Escort_owner_player == -1 && !multi_i_am_master())
 			return;
 	}
+	retry_recovery_allowed = escort_retry_recovery_allowed(
+	    (Game_mode & GM_MULTI) != 0,
+	    (Game_mode & GM_MULTI_COOP) != 0,
+	    Robot_info[obj->id].companion != 0,
+	    Escort_owner_player == Player_num ||
+	        (Escort_owner_player == -1 && multi_i_am_master()));
 #endif
 	if (!d1_in_d2_use_d1_gameplay())
 		ailp->next_action_time -= FrameTime;
@@ -571,7 +579,7 @@ _exit_cheat:
 	// This is largely a hack to speed up physics and deal with stupid
 	// AI.  This is low level communication between systems of a sort
 	// that should not be done.
-	if ((ailp->retry_count) && !(Game_mode & GM_MULTI)) {
+	if (ailp->retry_count && retry_recovery_allowed) {
 		ailp->consecutive_retries += ailp->retry_count;
 		ailp->retry_count = 0;
 		if (ailp->consecutive_retries > 3) {

@@ -78,6 +78,15 @@ int escort_owner_key_change_relevant(int changed_player, int effective_owner)
 	return changed_player >= 0 && changed_player == effective_owner;
 }
 
+int escort_retry_recovery_allowed(
+    int multiplayer,
+    int cooperative,
+    int companion,
+    int local_authority)
+{
+	return !multiplayer || (cooperative && companion && local_authority);
+}
+
 int escort_route_event_should_dirty(
     int local_authority,
     int route_active,

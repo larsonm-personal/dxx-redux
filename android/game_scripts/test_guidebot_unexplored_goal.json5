@@ -19,10 +19,8 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
-    {"action": "log", "message": "=== TEST: guidebot unexplored goal ==="},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -43,6 +41,43 @@
         "current_level_num": "1"
     }},
 
+    {"action": "log", "message": "=== TEST: guidebot cage release ==="},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "in_game": "true",
+        "current_level_num": "1",
+        "guidebot.released": "false",
+        "guidebot.buddy_objnum": {"gte": 0}
+    }},
+    {"action": "set_debug", "field": "release_guidebot_cage", "value": "true", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.buddy_objnum": {"gte": 0}
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: guidebot cage release PASS ==="},
+
+    {"action": "log", "message": "=== TEST: guidebot HUD progress layout ==="},
+    {"action": "set_debug", "field": "show_robot_hostage_counts", "value": "true", "post_delay_ms": 250},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "hud_layout.show_robot_hostage_counts": "true",
+        "hud_layout.progress.robots.present": "true",
+        "hud_layout.progress.robots.drawn": "true",
+        "hud_layout.progress.hostages.present": "true",
+        "hud_layout.progress.hostages.drawn": "true"
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 250},
+    {"action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "hud_layout.message_rect_count": {"gt": 0},
+        "hud_layout.progress.robots.present": "true",
+        "hud_layout.progress.robots.drawn": "true",
+        "hud_layout.progress.hostages.present": "true",
+        "hud_layout.progress.hostages.drawn": "true"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: guidebot HUD progress layout -- PASS ==="},
+
+    {"action": "log", "message": "=== TEST: guidebot unexplored goal ==="},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {

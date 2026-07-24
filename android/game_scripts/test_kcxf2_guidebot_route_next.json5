@@ -23,14 +23,176 @@
     {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "kcxf2rmv11.7z", "label": "kcxf2_guidebot", "display_name": "KCXF2RMv11.7z"},
     {"action": "analyze_level_metadata_all", "label": "kcxf2_guidebot", "mod_file": "KCXF2RMv11.7z", "game": "d2", "status": "ok", "min_total_levels": 8},
-    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
-    {"action": "log", "message": "=== TEST: KCXF2 guidebot route next ==="},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000, "optional": true},
 
+    {"action": "log", "message": "=== TEST: KCXF2 guidebot blastable wall next ==="},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "assert", "expect": {"menu.items": {"contains": "Project KCX-F2"}}},
+    {"action": "select_mission", "text": "Project KCX-F2", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+
+    // Resolve the two earlier switch dependencies through the test adapter so
+    // this fixture can focus on the ordinary player-damage wall transition.
+    {"action": "set_debug", "field": "fire_trigger", "value": "1", "post_delay_ms": 500},
+    {"action": "set_debug", "field": "fire_trigger", "value": "2", "post_delay_ms": 500},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "level_metadata_route.status": "ok",
+        "level_metadata_route.planner_source": "shared_cpp",
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_label": {"contains": "Destroy blastable wall"},
+        "guidebot.route_goal_objective_kind": "9",
+        "guidebot.route_goal_activation_kind": "9",
+        "guidebot.route_goal_activation_kind_name": "destroy_blastable_wall",
+        "guidebot.route_goal_objective_seg": "182",
+        "guidebot.route_goal_objective_side": "2",
+        "guidebot.route_goal_objective_wall": "13",
+        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
+        "guidebot.route_goal_instruction": {"contains": "shoot the blastable wall"},
+        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: shoot the blastable wall"}
+    }},
+    {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
+    {"action": "assert", "expect": {
+        "guidebot.path_parity.valid": "true",
+        "guidebot.path_parity.match": "true",
+        "guidebot.path_parity.rng_state_match": "true",
+        "guidebot.path_parity.rng_calls_match": "true",
+        "guidebot.path_parity.restored_state_match": "true"
+    }},
+    {"action": "wait_ms", "ms": 5000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_objective_wall": "13"
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_objective_kind": "5",
+        "guidebot.route_goal_activation_kind_name": "enter_exit",
+        "guidebot.route_goal_objective_wall": {"ne": 13}
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: KCXF2 guidebot blastable wall next -- PASS ==="},
+
+    {"action": "set_debug", "field": "android_game_request", "value": "game_menu", "post_delay_ms": 300},
+    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
+    {"action": "select", "text": "Abort Game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "current_level_num", "value": "0", "timeout_ms": 10000},
+
+    {"action": "log", "message": "=== TEST: KCXF2 guidebot hidden door next ==="},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "assert", "expect": {"menu.items": {"contains": "Project KCX-F2"}}},
+    {"action": "select_mission", "text": "Project KCX-F2", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace", "post_delay_ms": 100},
+    {"action": "key", "key": "4", "post_delay_ms": 100},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "4"}},
+
+    {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "level_metadata_route.status": "ok",
+        "level_metadata_route.planner_source": "shared_cpp",
+        "guidebot.released": "true",
+        "guidebot.buddy_objnum": {"gte": 0},
+        "guidebot.route_status": "ok",
+        "guidebot.route_start_matches_buddy": "true",
+        "guidebot.route_analysis.selected_index": "1",
+        "guidebot.route_analysis.steps[1].kind": "hidden_door",
+        "guidebot.route_analysis.steps[1].selected_next": "true",
+        "guidebot.route_analysis.steps[1].links[0].seg": "221",
+        "guidebot.route_analysis.steps[1].links[0].side": "4",
+        "guidebot.route_analysis.steps[1].links[0].wall": "61",
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_label": {"contains": "Open hidden door"},
+        "guidebot.route_goal_objective_kind": "6",
+        "guidebot.route_goal_activation_kind": "5",
+        "guidebot.route_goal_objective_wall": "61",
+        "guidebot.route_goal_instruction": {"contains": "open the marked hidden door"},
+        "guidebot.route_goal_activation_pos[0]": {"range": [-10000, 10000]},
+        "guidebot.route_goal_aim_pos[0]": {"range": [-10000, 10000]},
+        "guidebot.route_goal_guidance_mode_name": "reach_hidden_door",
+        "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
+        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: follow me, then open the marked hidden door"}
+    }},
+    {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
+    {"action": "assert", "expect": {
+        "guidebot.path_parity.valid": "true",
+        "guidebot.path_parity.match": "true",
+        "guidebot.path_parity.ai_state_match": "true",
+        "guidebot.path_parity.restored_state_match": "true",
+        "guidebot.path_parity.first_mismatch": "-1",
+        "guidebot.path_parity.ordinary_length": {"gte": 1},
+        "guidebot.path_parity.length_match": "true",
+        "guidebot.path_parity.rng_state_match": "true",
+        "guidebot.path_parity.rng_calls_match": "true"
+    }},
+    {"action": "wait_ms", "ms": 7000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_seg": "221",
+        "guidebot.route_goal_objective_wall": "61",
+        "guidebot.route_goal_path_endpoint_seg": "221"
+    }},
+
+    // Move the player to the shared activation pose, face the hidden door, and
+    // open it through ordinary forward thrust. Guide-Bot only observes this.
+    {"action": "pose_route_guidance", "post_delay_ms": 250},
+    {"action": "send_axis", "axis": 1, "axis_value": -1.0, "post_delay_ms": 0},
+    {"action": "wait_ms", "ms": 5000},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 0},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_label": {"contains": "Boss"},
+        "guidebot.route_goal_objective_kind": "4",
+        "guidebot.route_goal_activation_kind_name": "destroy_boss",
+        "guidebot.route_goal_objective_wall": {"ne": 61}
+    }},
+
+    // Continue from the boss guidance point, as the player would in normal
+    // progression, so the earlier auto-closing hidden door is behind both.
+    {"action": "pose_route_guidance", "post_delay_ms": 250},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_activation_kind_name": "destroy_boss"
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 60000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_activation_kind_name": "enter_exit"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: KCXF2 guidebot hidden door next -- PASS ==="},
+
+    {"action": "enter_launcher"},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "player", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+
+    {"action": "log", "message": "=== TEST: KCXF2 guidebot route next ==="},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "assert", "expect": {"menu.items": {"contains": "Project KCX-F2"}}},
@@ -207,5 +369,92 @@
         "guidebot.route_goal_activation_kind_name": "enter_exit"
     }},
     {"action": "introspect"},
-    {"action": "log", "message": "=== TEST: KCXF2 guidebot route next -- PASS ==="}
+    {"action": "log", "message": "=== TEST: KCXF2 guidebot route next -- PASS ==="},
+
+    {"action": "set_debug", "field": "android_game_request", "value": "game_menu", "post_delay_ms": 300},
+    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
+    {"action": "select", "text": "Abort Game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "current_level_num", "value": "0", "timeout_ms": 10000},
+
+    {"action": "log", "message": "=== TEST: KCXF2 level 6 objectives ==="},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Project KCX-F2", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace", "post_delay_ms": 100},
+    {"action": "key", "key": "6", "post_delay_ms": 100},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "current_level_num": "6",
+        "level_metadata_route.status": "ok",
+        "level_metadata_route.step_count": "7",
+        "level_metadata_route.steps[4].kind": "key",
+        "level_metadata_route.steps[4].activation_kind": "destroy_key_carrier",
+        "level_metadata_route.steps[4].label": "Destroy robot carrying blue key",
+        "level_metadata_route.steps[4].key_carrier_objnum": {"gte": 0}
+    }},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "automap.objective_overlay_mode_name": "off",
+        "automap.objective_visible_step_count": "0"
+    }},
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "all",
+        "automap.objective_visible_step_count": "6",
+        "automap.objective_label_candidate_count": {"gte": 6},
+        "automap.objective_label_projected_count": {"gt": 0},
+        "automap.key_carrier_marker_count": "1",
+        "automap.key_carrier_marker_objnum": {"gte": 0},
+        "automap.key_carrier_marker_key_index": "0",
+        "automap.key_carrier_marker_position[0]": {"range": [-10000, 10000]},
+        "automap.next_objective_count": "3"
+    }},
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "remaining",
+        "automap.objective_visible_step_count": "6",
+        "automap.next_objective_count": "3"
+    }},
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "next",
+        "automap.objective_visible_step_count": "1",
+        "automap.next_objective_count": "1"
+    }},
+    {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "off",
+        "automap.objective_visible_step_count": "0",
+        "automap.next_objective_count": "0"
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_objective_trigger": "15"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "15"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_goal_objective_trigger": "16"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "16"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.route_goal_objective_trigger": "19"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "19"},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_label": "Destroy robot carrying blue key",
+        "guidebot.route_goal_activation_kind_name": "destroy_key_carrier",
+        "guidebot.route_goal_instruction": "Destroy robot carrying blue key"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: KCXF2 level 6 objectives -- PASS ==="}
 ]

@@ -32,3 +32,25 @@ Determine why the D2 guidebot can remain stuck on a wall edge in a cooperative g
 ## Conclusion
 
 The most likely cause of the persistent wall-edge stall is the inherited blanket multiplayer exclusion around AI collision-retry recovery. Wall-edge collision ambiguity is an acknowledged engine condition, but single-player normally has a recovery path while this branch's cooperative Guide-Bot does not. Owner packet starvation is a secondary possibility if the incident was observed by a non-owner, but Android sends pending companion position updates first, and a visually plausible wall-edge stall that persists until an owner-issued warp more strongly fits a genuinely stuck authoritative object.
+
+## Implementation follow-up
+
+- [x] Allow retry recovery for the authoritative cooperative Guide-Bot only
+- [x] Add focused regression coverage for recovery eligibility
+- [x] Run scoped formatting and lint checks
+- [x] Run the required Windows build and relevant tests
+- [x] Record validation results
+
+## Implementation notes
+
+- Added a pure recovery-eligibility policy that preserves the original single-player behavior.
+- Multiplayer recovery is enabled only when the game is cooperative, the robot is a companion, and the local peer has simulation authority.
+- The temporary unowned state remains recoverable on the cooperative master, matching the existing owner-only AI gate.
+- Remote Guide-Bot replicas and ordinary multiplayer robots remain excluded.
+
+## Validation
+
+- Scoped `android/run-code-quality.ps1 -Fix`: passed
+- `run-windows-build.ps1 -Target d2`: passed
+- D2 maths test suite: 26 of 26 passed
+- The build emitted only the existing `weapon.c` C4715 warnings for `POrderList` and `SOrderList`

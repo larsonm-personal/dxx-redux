@@ -18,6 +18,11 @@ int escort_owner_request_allowed(int current_owner,
                                  unsigned int request_generation);
 int escort_owner_generation_is_newer(unsigned int candidate, unsigned int current);
 int escort_owner_key_change_relevant(int changed_player, int effective_owner);
+int escort_retry_recovery_allowed(
+    int multiplayer,
+    int cooperative,
+    int companion,
+    int local_authority);
 
 #define ESCORT_ROUTE_EVENT_WALL    (1u << 0)
 #define ESCORT_ROUTE_EVENT_TRIGGER (1u << 1)

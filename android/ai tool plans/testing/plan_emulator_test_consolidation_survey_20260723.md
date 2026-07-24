@@ -430,3 +430,124 @@ Validation results:
 - Combined D2 owner passed 58 of 58 steps in 25.791 seconds
 - No APK rebuild was required because this tranche changes JSON automation and
   the plan only; emulator validation used the source-matching installed APK
+
+## Seventh Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Merge Guide-Bot cage-release coverage into
+  `test_guidebot_unexplored_goal`
+- [x] Merge Guide-Bot HUD progress-layout coverage into the same owner
+- [x] Remove the two absorbed standalone scripts if the combined route passes
+- [x] Run expectation-preservation, catalog, quality, and emulator validation
+- [x] Record final validation results
+
+Planned phase order:
+
+1. Load Counterstrike level 1 with a fresh D2 pilot
+2. Assert the Guide-Bot starts caged, release the cage physically, and assert
+   normal released state
+3. Enable robot and hostage progress rows
+4. Issue the HUD scenario's Unexplored command and assert the message rectangle
+   does not suppress either progress row
+5. Reissue Unexplored for the route scenario and preserve its complete initial
+   route assertions
+6. Apply the paired automap transition and preserve the coalesced-rescan and
+   settled-route assertions
+
+Compatibility constraints:
+
+- Preserve every expectation from all three scripts
+- Keep cage release first because both later scenarios require a released
+  Guide-Bot
+- Keep the complete unexplored-route phase last so it validates any state left
+  by the HUD command rather than assuming isolation
+- Retain both Unexplored commands because the first owns HUD overlap behavior
+  and the second owns route selection behavior
+- Use `enter_game` so launch does not depend on the current SetupActivity page
+
+Validation results:
+
+- Semantic multiset comparison confirmed that every expectation from the two
+  absorbed scripts remains in the owner
+- Automation catalog valid with 42 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- Combined D2 owner passed 44 of 44 steps in 29.403 seconds
+- The run confirmed that the second Unexplored command resets the route event
+  counters as required before the automap coalescing assertions
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK
+
+## Eighth Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Reuse one KCXF2 import and runner session for levels 1, 4, 5, and 6
+- [x] Keep `test_kcxf2_guidebot_route_next` as the combined owner
+- [x] Use clean menu or launcher handoffs between level phases
+- [x] Remove the three absorbed standalone KCXF2 scripts
+- [x] Run expectation-preservation, catalog, quality, and emulator validation
+- [x] Record final validation results
+
+Planned phase order:
+
+1. Import KCXF2 and analyze its metadata once
+2. Run the level 1 blastable-wall next-objective scenario
+3. Abort to the main menu and run the level 4 hidden-door scenario
+4. Hand off through the launcher and run the existing level 5 route scenario
+5. Abort to the main menu and run the level 6 objective-overlay scenario
+
+Compatibility constraints:
+
+- Preserve every scenario-specific action and expectation from all four scripts
+- Re-select KCXF2 and the requested starting level after each abort
+- Keep level-local debug mutations inside their original phase
+- Clear saves and crash reports before the single shared import
+- Preserve one full metadata analysis before the first gameplay phase
+
+Validation results:
+
+- Semantic multiset comparison confirmed that every expectation from the three
+  absorbed scripts remains in the owner
+- Automation catalog valid with 39 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- Combined KCXF2 owner passed 176 of 176 steps in about 3 minutes 5 seconds
+  of wall time
+- Levels 1, 4, 5, and 6 each reached their original pass boundary
+- Level 4 ends with a non-game window in front, so that boundary uses the
+  existing launcher handoff and reselects the preserved pilot; the archive
+  import, metadata analysis, and outer test-runner setup remain shared
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK
+
+## Ninth Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [ ] Reuse one Obsidian import, metadata analysis, and runner session for
+  levels 1, 2, 3, 10, and 7
+- [ ] Keep `test_obsidian_level1_objective_markers` as the combined owner
+- [ ] Use clean game-menu handoffs between compatible level phases
+- [ ] Put the terminal level 7 route phase last
+- [ ] Remove the four absorbed standalone Obsidian scripts
+- [ ] Run expectation-preservation, catalog, quality, and emulator validation
+- [ ] Record final validation results
+
+Planned phase order:
+
+1. Run the existing level 1 objective-marker and remaining-route coverage
+2. Close the automap, abort, and run the level 2 route scenario
+3. Abort and run the level 3 fly-through Guide-Bot goal scenario
+4. Abort and run the level 10 unresolved-switch frontier scenario
+5. Abort and run the level 7 complete route-next scenario last
+
+Compatibility constraints:
+
+- Preserve every scenario-specific action and expectation from all five scripts
+- Re-select Obsidian and the requested starting level after each abort
+- Keep level-local key, trigger, robot, and Guide-Bot mutations inside their
+  original phases
+- Preserve the existing base and imported metadata preamble exactly once
+- Do not require the terminal level 7 phase to return to the main menu
