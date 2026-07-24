@@ -238,3 +238,58 @@ Validation results:
 - D2 owner passed 66 of 66 steps in 52.204 seconds
 - D1 owner passed 42 of 42 steps in 40.153 seconds
 - Final diff contains no launcher automation helper change
+
+## Third Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Merge keyboard viewport coverage into the owner's fresh-pilot launch
+- [x] Merge D2 menu-scale assertions into the first main-menu phase
+- [x] Merge joystick-menu navigation into the post-listbox Options phase
+- [x] Merge the D2 reticle scroll-box assertion into the Options phase
+- [x] Merge pause-menu return assertions into the owner's in-level pause phase
+- [x] Keep D2 readable tiny-help standalone because its direct-render assertion
+  conflicts with the owner's 3:4, 1280x960 config
+- [x] Remove the five absorbed standalone scripts
+- [x] Keep `test_pause_menu_viewport_d2` and
+  `test_controls_readability_d2` out of this owner because they deliberately
+  write a conflicting 9:16, 1280x720 config
+- [x] Run structural, catalog, quality, and emulator validation
+- [x] Record final validation results
+
+Planned phase order:
+
+1. Launch with the owner's 3:4, 1280x960 config
+2. Exercise soft-keyboard pilot entry, type `test`, and accept the pilot
+3. Assert D2 main-menu scaling
+4. Relaunch and assert the existing pilot listbox and newmenu render paths
+5. Exercise joystick customization for D1/D2 and reticle options for D2
+6. Load level 1 and combine the pause-menu render and return assertions
+
+Deferred compatible pair:
+
+- `test_pause_menu_viewport_d2` and `test_controls_readability_d2` share the
+  same 9:16, 1280x720 config and loaded D2 level
+- Combining them separately preserves their explicit narrow-viewport contract
+  instead of silently changing this owner's 3:4 render-path coverage
+
+Empirical configuration exception:
+
+- The combined D2 emulator run reached the readable tiny-help assertion but
+  reported `menu_scale.direct_render=false` under the owner's 3:4, 1280x960
+  config
+- The standalone test's `direct_render=true` assertion is preserved unchanged
+  instead of weakening its viewport-specific contract
+
+Validation results:
+
+- Structural comparison confirmed that every assertion leaf from the five
+  absorbed scripts remains in the owner
+- The restored `test_readable_tiny_help_d2` matches its HEAD version
+- Automation catalog valid with 50 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- D1 owner passed 64 of 64 filtered steps in 14.826 seconds
+- D2 owner passed 76 of 76 filtered steps in 30.924 seconds
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK

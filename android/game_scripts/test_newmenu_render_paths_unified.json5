@@ -35,22 +35,60 @@
      "content": "AspectX=3\nAspectY=4\nResolutionX=1280\nResolutionY=960\n"},
     {"action": "write_config", "file": "d2x-redux/descent.cfg",
      "content": "AspectX=3\nAspectY=4\nResolutionX=1280\nResolutionY=960\n"},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "d1", "when": "d1"},
+    {"action": "enter_game", "game": "d2", "when": "d2"},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+
+    // Fresh launch: exercise the pilot-name input while the soft keyboard and
+    // viewport offset are active, then verify the main menu is reached.
+    {"action": "log", "message": "=== TEST: Keyboard Viewport Offset ==="},
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 1: On pilot name entry -- keyboard should be open"},
+    {"action": "key", "key": "t", "post_delay_ms": 100},
+    {"action": "key", "key": "e", "post_delay_ms": 100},
+    {"action": "key", "key": "s", "post_delay_ms": 100},
+    {"action": "key", "key": "t", "post_delay_ms": 100},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 2: Typed 'test' -- accepting pilot name"},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 3: Reached main menu after pilot creation -- no crash"},
+    {"action": "assert", "expect": {"screen_mode": "menu"}},
+    {"action": "log", "message": "=== TEST: Keyboard Viewport Offset -- COMPLETE ==="},
+
+    // D2 high-resolution menu scale introspection shares the owner's 3:4,
+    // 1280x960 config and can run before the listbox relaunch.
+    {"action": "log", "message": "=== TEST: D2 menu scale introspection ===", "when": "d2"},
+    {"action": "introspect", "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "menu_scale.active": "true",
+        "keyboard_viewport.scale_blit_active": "true",
+        "menu_scale.target_fill": {"range": [0.84, 0.86]},
+        "menu_scale.scale": {"gt": 1.05},
+        "menu_scale.direct_render": "true",
+        "menu_scale.render_scale": {"gt": 1.05},
+        "menu_scale.render_w": {"gt": 0},
+        "menu_scale.render_h": {"gt": 0},
+        "menu_scale.src.w": {"gt": 0},
+        "menu_scale.src.h": {"gt": 0},
+        "menu_scale.dst.w": {"gt": 0},
+        "menu_scale.dst.h": {"gt": 0}
+    }},
+    {"action": "log", "message": "=== TEST: D2 menu scale introspection -- PASS ===", "when": "d2"},
 
     // A clean install opens the pilot-name newmenu directly.  Save the default
     // pilot, then relaunch so the listbox render path is genuinely exercised.
     {"action": "enter_launcher"},
     {"action": "wait_for", "field": "game_running", "value": "false", "timeout_ms": 10000},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "d1", "when": "d1"},
+    {"action": "enter_game", "game": "d2", "when": "d2"},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "menu_type", "value": "listbox", "timeout_ms": 20000},
@@ -75,6 +113,33 @@
     {"action": "assert", "expect": {
         "menu.type": "newmenu"
     }},
+
+    // Options -> Controls -> Customize Joystick
+    {"action": "log", "message": "=== TEST: Joystick Menu Introspection ==="},
+    {"action": "select", "text": "Controls...", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "CUSTOMIZE JOYSTICK", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: Joystick Menu Introspection -- COMPLETE ==="},
+    {"action": "key", "key": "escape", "post_delay_ms": 150},
+    {"action": "key", "key": "escape", "post_delay_ms": 150},
+
+    // D2 Options -> Graphics Options -> Reticle Options
+    {"action": "log", "message": "=== TEST: D2 reticle options scroll box ===", "when": "d2"},
+    {"action": "select", "text": "Graphics Options...", "when": "d2",
+     "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Reticle Options", "when": "d2",
+     "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "introspect", "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "menu.type": "newmenu",
+        "menu.is_scroll_box": "true",
+        "menu.subtitle": "Reticle Options",
+        "menu.selected_index": {"gte": 0}
+    }},
+    {"action": "log", "message": "=== TEST: D2 reticle options scroll box -- PASS ===", "when": "d2"},
+    {"action": "key", "key": "escape", "when": "d2", "post_delay_ms": 150},
+    {"action": "key", "key": "escape", "when": "d2", "post_delay_ms": 150},
+
     {"action": "key", "key": "escape", "post_delay_ms": 150},
 
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
@@ -86,10 +151,17 @@
     {"action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100},
 
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1"
+    }},
+    {"action": "log", "message": "=== TEST: In-game pause menu return and render path ==="},
     {"action": "key", "key": "escape", "post_delay_ms": 200},
     {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
     {"action": "assert", "expect": {
         "game_window_is_front": "false",
+        "menu_type": "newmenu",
         "menu.type": "newmenu",
         "menu_scale.active": "true",
         "menu_scale.direct_render": "true",
@@ -97,5 +169,12 @@
     }},
     {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "game_window_is_front": "true",
+        "current_level_num": "1"
+    }},
+    {"action": "log", "message": "=== TEST: In-game pause menu return and render path -- PASS ==="},
     {"action": "introspect"}
 ]
