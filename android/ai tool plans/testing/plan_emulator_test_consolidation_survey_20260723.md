@@ -391,3 +391,42 @@ Validation results:
   D2, direct Obsidian archive, imported Obsidian, and all objective assertions
 - No APK rebuild was required because this tranche changes JSON automation and
   the plan only; emulator validation used the source-matching installed APK
+
+## Sixth Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Merge D2 pause-menu viewport coverage into
+  `test_controls_readability_d2`
+- [x] Remove the absorbed pause-menu viewport script
+- [x] Run expectation-preservation, catalog, quality, and emulator validation
+- [x] Record final validation results
+
+Planned phase order:
+
+1. Write the shared 9:16, 1280x720 configuration and load Counterstrike level 1
+2. Open the pause menu and assert its logical scaled viewport
+3. Close the pause menu and wait for the game window to return to the front
+4. Open the in-game options and Controls menu
+5. Exercise keyboard, joystick, mouse, and weapon-key editor scaling
+6. Verify weapon-key paging and the bottom of the Controls scroll box
+
+Compatibility constraints:
+
+- Preserve every expectation from both scripts
+- Keep the pause phase first because it returns cleanly to an unmodified level
+- Explicitly close the pause menu before opening the in-game options
+- Preserve the shared 9:16 render-path contract rather than moving these checks
+  into the incompatible 3:4 newmenu owner
+- Use `enter_game` so launch does not depend on the current SetupActivity page
+
+Validation results:
+
+- Semantic multiset comparison confirmed that every pause-menu expectation
+  remains in the controls-readability owner
+- Automation catalog valid with 44 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- Combined D2 owner passed 58 of 58 steps in 25.791 seconds
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK

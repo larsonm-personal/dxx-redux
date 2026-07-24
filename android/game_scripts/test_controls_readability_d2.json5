@@ -26,7 +26,7 @@
      "content": "AspectX=9\nAspectY=16\nResolutionX=1280\nResolutionY=720\nCornerTextInset=1\n"},
     {"action": "write_config", "file": "d2x-redux/descent.cfg",
      "content": "AspectX=9\nAspectY=16\nResolutionX=1280\nResolutionY=720\nCornerTextInset=1\n"},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
@@ -40,6 +40,24 @@
     {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
 
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+
+    // D2 in-level pause menu uses the logical menu viewport. This covers the
+    // generic scaled menu path that regressed offscreen on physical devices.
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "key", "key": "esc", "post_delay_ms": 300},
+    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
+    {"action": "assert", "expect": {
+        "game_window_is_front": "false",
+        "menu.type": "newmenu",
+        "menu_scale.active": "true",
+        "menu_scale.dst.w": {"gte": 900},
+        "menu_scale.dst.h": {"lte": 612}
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== STAGED: D2 Pause Menu Viewport ==="},
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
     {"action": "key", "key": "f2", "post_delay_ms": 200},
     {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 10000},
     {"action": "select", "text": "Controls", "post_delay_ms": 100, "timeout_ms": 5000},
