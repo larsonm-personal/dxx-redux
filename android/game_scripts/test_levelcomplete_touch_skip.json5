@@ -1,4 +1,8 @@
-// TEST: D2 level-complete page should ignore a carried touch, then allow a later tap anywhere to advance
+// TEST: D2 level-complete and mine-exit paths arm the shared touch-suppress guard.
+//
+// Local emulator data in this workspace does not include the D2 .mve files,
+// and the endlevel movie call is synchronous enough that automation resumes
+// after the short active window.
 [
     {"_info": {
         "games": ["d2"],
@@ -56,5 +60,16 @@
     {"action": "send_touch_tap"},
     {"action": "wait_for", "field": "levelcomplete_active", "value": "false", "timeout_ms": 2000},
 
-    {"action": "log", "message": "=== TEST: Level-complete touch suppress and tap advance -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Level-complete touch suppress and tap advance -- PASS ==="},
+
+    // Advancing the level-complete screen opens level 2's briefing. Reuse that
+    // transition instead of relaunching the game for the mine-exit assertion.
+    {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    {"action": "log", "message": "=== TEST: Mine Exit path arms touch suppress window ==="},
+    {"action": "trigger_endlevel"},
+    {"action": "assert", "expect": {"cutscene_tap_suppress_arms": {"gte": 1}}},
+    {"action": "log", "message": "=== TEST: Mine Exit path arms touch suppress window -- PASS ==="}
 ]

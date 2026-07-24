@@ -1,4 +1,4 @@
-// TEST: Obsidian level 1 objective guidance and overlapping automap labels.
+// TEST: Obsidian level 1 objective guidance, markers, and remaining route.
 [
     {"_info": {
         "games": ["d2"],
@@ -104,5 +104,30 @@
         "guidebot.route_goal_trigger": {"ne": 5}
     }},
     {"action": "introspect"},
-    {"action": "log", "message": "=== TEST: Obsidian level 1 objective markers -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Obsidian level 1 objective markers -- PASS ==="},
+
+    // Preserve the former next-objectives scenario after its prerequisite
+    // switch guidance has already been exercised above.
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "set_objective_overlay", "mode": "remaining", "post_delay_ms": 300},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
+    {"action": "set_debug", "field": "player_keys", "value": "blue red", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "6", "post_delay_ms": 200},
+    {"action": "set_debug", "field": "fire_trigger", "value": "5", "post_delay_ms": 200},
+    {"action": "set_debug", "field": "fire_trigger", "value": "8", "post_delay_ms": 200},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "automap.objective_overlay_mode_name": "remaining",
+        "automap.objective_visible_step_count": "2",
+        "automap.objective_label_candidate_count": "2",
+        "automap.objective_connector_candidate_count": "0",
+        "automap.objective_merged_label_count": "0",
+        "automap.next_objective_count": "2",
+        "automap.first_next_objective_text": "6: Reactor"
+    }},
+    {"action": "log", "message": "=== TEST: Obsidian level 1 next objectives -- PASS ==="}
 ]

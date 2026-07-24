@@ -24,6 +24,28 @@
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== TEST: Shared music track controls (${GAME}) ==="},
     {"action": "reset_state"},
+
+    {"action": "log", "when": "d2", "message": "=== TEST: Shared HMP memory conversion ==="},
+    {"action": "wait_for", "when": "d2",
+     "field": "d2.ready", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "when": "d2", "expect": {
+        "music_preview.midi_sources[0].id": "d2-builtin",
+        "music_preview.midi_sources[0].track_count": {"gte": 3}
+    }},
+    {"action": "setup_command", "when": "d2", "command": "music_midi_play",
+     "args": {"source": 0, "track": 2}, "post_delay_ms": 4000},
+    {"action": "assert", "when": "d2", "expect": {
+        "music_preview.midi.state": "playing",
+        "music_preview.midi.position_ms": {"gt": 1000},
+        "music_preview.midi.duration_ms": {"gt": 1000}
+    }},
+    {"action": "setup_command", "when": "d2",
+     "command": "music_midi_stop", "post_delay_ms": 500},
+    {"action": "assert", "when": "d2",
+     "expect": {"music_preview.midi.state": "stopped"}},
+    {"action": "log", "when": "d2",
+     "message": "=== TEST: Shared HMP memory conversion -- COMPLETE ==="},
+
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_music_prefs",

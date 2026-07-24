@@ -52,6 +52,7 @@
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 60000, "expect": {
         "level_metadata_route.status": "ok",
+        "level_metadata_route.step_count": "9",
         "guidebot.released": "true",
         "guidebot.buddy_objnum": {"gte": 0},
         "guidebot.route_status": "ok",
@@ -83,6 +84,7 @@
         "guidebot.route_goal_aim_pos[0]": {"range": [-10000, 10000]},
         "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
         "guidebot.route_goal_guidance_seg": {"gte": 0},
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0},
         "guidebot.route_first_pending_path_terminal_seg": {"gte": 0}
     }},
 
@@ -92,6 +94,32 @@
     {"action": "assert", "expect": {
         "guidebot.route_goal_objective_trigger": "6"
     }},
+
+    // Preserve the former level-5 route scenario's automap mode matrix while
+    // the route is waiting for the player to fire trigger 6.
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "set_objective_overlay", "mode": "all", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "all",
+        "automap.objective_visible_step_count": "8",
+        "automap.next_objective_count": "3"
+    }},
+    {"action": "set_objective_overlay", "mode": "remaining", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "remaining",
+        "automap.objective_visible_step_count": "7",
+        "automap.next_objective_count": "3"
+    }},
+    {"action": "set_objective_overlay", "mode": "next", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "automap.objective_overlay_mode_name": "next",
+        "automap.objective_visible_step_count": "1",
+        "automap.next_objective_count": "1"
+    }},
+    {"action": "set_objective_overlay", "mode": "off", "post_delay_ms": 100},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
 
     // The reflective grate has frame-dependent openings and the ship bobs, so
     // an actual shot is too nondeterministic to gate the crossing test. Advance
@@ -105,6 +133,7 @@
         "guidebot.route_goal_label": {"contains": "red key"},
         "guidebot.route_goal_objective_kind": "1",
         "guidebot.route_goal_activation_kind_name": "pickup_key",
+        "guidebot.route_goal_objective_seg": "776",
         "guidebot.route_goal_objective_trigger": {"ne": 6},
         "guidebot.route_first_pending_path_terminal_seg": {"gte": 0}
     }},
@@ -122,8 +151,10 @@
         "guidebot.route_goal_objective_wall": "238",
         "guidebot.route_goal_instruction": {"contains": "fly through the marked opening"},
         "guidebot.route_goal_guidance_mode_name": "reach_objective",
+        "guidebot.route_first_pending_path_segment_count": {"gt": 0},
         "guidebot.route_first_pending_path_terminal_seg": {"gte": 0}
     }},
+    {"action": "log", "message": "=== TEST: KCXF2 level 5 guidebot route -- PASS ==="},
 
     // Guide-Bot must not cross the trigger for the player.
     {"action": "wait_ms", "ms": 3000},

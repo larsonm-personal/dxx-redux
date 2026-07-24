@@ -1,4 +1,4 @@
-// TEST: Hold a stable view in the D2 level 7 reactor and animated water room.
+// TEST: Load D2 level 7, exercise the bitmap cache, and profile its reactor and water room.
 [
     {"_info": {
         "description": "Profile the D2 level 7 reactor and animated water scene",
@@ -30,6 +30,11 @@
     {"action": "select", "text": "Trainee", "optional": true},
     {"action": "skip_briefing", "timeout_ms": 60000},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 5000},
+    {"action": "assert", "expect": {"in_game": "true", "current_level_num": "7"}},
+    {"action": "log", "message": "=== TEST: D2 level 7 bitmap cache -- PASS ==="},
+
     {"action": "pose_view", "segment": 490, "x": -33.631653, "y": -294.644287, "z": 127.573486,
      "pitch": 0, "bank": 0, "heading": 32768, "post_delay_ms": 1000},
     {"action": "key", "key": "a", "post_delay_ms": 0},
@@ -46,5 +51,6 @@
         "current_level_num": "7",
         "player.invulnerable": "true",
         "position.segment": "490"
-    }}
+    }},
+    {"action": "log", "message": "=== TEST: D2 level 7 reactor and water profile -- PASS ==="}
 ]
