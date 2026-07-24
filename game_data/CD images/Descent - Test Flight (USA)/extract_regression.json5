@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent - Test Flight (USA)
-// Generated: 2026-05-24 17:34:36
+// Generated: 2026-07-23 20:53:07
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -26,11 +26,11 @@
   "total_extracted": 5,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "skip",
-    "failure_step": "not_ready",
+    "status": "pass",
+    "failure_step": "",
     "level_reached": null,
     "files_verified": 2,
-    "classification_confirmed": false,
+    "classification_confirmed": true,
     "test_mode": "file_only"
   }
 }

@@ -30,13 +30,30 @@ class DiscImportHoistTest {
     fun leavesUnknownNestedFilesInPlace() {
         val setDir = createTempDirectory("disc-import-ignore").toFile()
         val nestedDir = File(setDir, "missions").apply { mkdirs() }
-        val missionFile = File(nestedDir, "level1.rl2").apply { writeBytes(byteArrayOf(7, 8, 9)) }
+        val missionFile = File(nestedDir, "readme.txt").apply { writeBytes(byteArrayOf(7, 8, 9)) }
 
         val hoisted = hoistNestedImportedGameFiles(setDir)
 
         assertEquals(0, hoisted)
         assertTrue(missionFile.exists())
         assertTrue(nestedDir.exists())
+    }
+
+    @Test
+    fun hoistsCustomMissionFilesFromNestedCdFolders() {
+        val setDir = createTempDirectory("disc-import-missions").toFile()
+        val nestedDir = File(setDir, "missions").apply { mkdirs() }
+        File(nestedDir, "CUSTOM.HOG").writeBytes(byteArrayOf(1, 2, 3))
+        File(nestedDir, "CUSTOM.MSN").writeText("name = Custom")
+        File(nestedDir, "CUSTOM.MN2").writeText("name = Custom 2")
+
+        val hoisted = hoistNestedImportedGameFiles(setDir)
+
+        assertEquals(3, hoisted)
+        assertTrue(File(setDir, "CUSTOM.HOG").isFile)
+        assertTrue(File(setDir, "CUSTOM.MSN").isFile)
+        assertTrue(File(setDir, "CUSTOM.MN2").isFile)
+        assertFalse(nestedDir.exists())
     }
 
     @Test
@@ -52,5 +69,25 @@ class DiscImportHoistTest {
         assertFalse(nestedFile.exists())
         assertEquals(4, File(setDir, "DESCENT2.HOG").length())
         assertFalse(nestedDir.exists())
+    }
+
+    @Test
+    fun tracksImportCompletionAndFailure() {
+        SetupImportTracker.reset()
+        assertEquals("idle", SetupImportTracker.snapshot().status)
+
+        SetupImportTracker.begin("cd")
+        assertEquals(SetupImportSnapshot(kind = "cd", status = "running"), SetupImportTracker.snapshot())
+
+        SetupImportTracker.complete("cd", 17)
+        assertEquals(
+            SetupImportSnapshot(kind = "cd", status = "complete", resultCount = 17),
+            SetupImportTracker.snapshot(),
+        )
+
+        SetupImportTracker.begin("iso")
+        SetupImportTracker.complete("iso", -1)
+        assertEquals("failed", SetupImportTracker.snapshot().status)
+        assertEquals("extract_failed", SetupImportTracker.snapshot().error)
     }
 }

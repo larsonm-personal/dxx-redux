@@ -34,6 +34,7 @@
 
 #define PRIMARY_CUE_PATH   "../../../../../../game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue"
 #define PRIMARY_OUTPUT_DIR "../../../../../../game_data/CD images/Descent - Mac macplay/data_tracks"
+#define D2_CUE_PATH        "../../../../../../game_data/CD images/d2 mac/Descent_II.cue"
 
 #ifdef _WIN32
 #define remove_dir _rmdir
@@ -886,6 +887,7 @@ static int run_real_native_mac_extract_test(void)
 		"yep9.dem"
 	};
 	const char *output_dir = "test_sti2_native_extract";
+	const char *hfs_extensions[] = { "__none__", NULL };
 	cue_data_track_t track;
 	int extracted;
 	int i;
@@ -909,7 +911,7 @@ static int run_real_native_mac_extract_test(void)
 	                                             track.track_num_sectors,
 	                                             output_dir,
 	                                             NULL,
-	                                             NULL,
+	                                             hfs_extensions,
 	                                             NULL,
 	                                             NULL);
 	close_cue_data_track(&track);
@@ -931,6 +933,79 @@ static int run_real_native_mac_extract_test(void)
 			cleanup_test_output_dir(output_dir, expected_names,
 			                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
 			FAIL("native extraction output mismatch");
+			return 0;
+		}
+	}
+
+	cleanup_test_output_dir(output_dir, expected_names,
+	                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+	PASS();
+	return 1;
+}
+
+static int run_real_d2_native_mac_extract_test(void)
+{
+	static const char *expected_names[] = {
+		"alien1.pig",
+		"alien2.pig",
+		"D2-2PLYR.HOG",
+		"D2-2PLYR.MN2",
+		"D2CHAOS.HOG",
+		"D2CHAOS.MN2",
+		"DESCENT2.HAM",
+		"DESCENT2.HOG",
+		"DESCENT2.S11",
+		"DESCENT2.S22",
+		"fire.pig",
+		"groupa.pig",
+		"ice.pig",
+		"intro.mvl",
+		"other.mvl",
+		"robots.mvl",
+		"water.pig"
+	};
+	const char *extensions[] = {
+		"hog", "pig", "ham", "s11", "s22", "mvl", "dem", "msn", "mn2", NULL
+	};
+	const char *output_dir = "test_sti2_d2_native_extract";
+	cue_data_track_t track;
+	int extracted;
+	int i;
+
+	TEST("real_d2_mac_native_extract_restores_full_oracle");
+	if (!file_exists(D2_CUE_PATH)) {
+		SKIP("sample media not present");
+		return 1;
+	}
+
+	cleanup_test_output_dir(output_dir, expected_names,
+	                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+	if (open_cue_data_track(D2_CUE_PATH, &track) < 0) {
+		FAIL("could not open D2 Mac data track");
+		return 0;
+	}
+	extracted = mac_extract_files_from_hfs_track(track.fd,
+	                                             track.track_start_sector,
+	                                             track.track_num_sectors,
+	                                             output_dir,
+	                                             extensions,
+	                                             extensions,
+	                                             NULL,
+	                                             NULL);
+	close_cue_data_track(&track);
+	if (extracted != (int) (sizeof(expected_names) / sizeof(expected_names[0]))) {
+		cleanup_test_output_dir(output_dir, expected_names,
+		                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+		FAIL("unexpected D2 extracted count");
+		return 0;
+	}
+	for (i = 0; i < (int) (sizeof(expected_names) / sizeof(expected_names[0])); i++) {
+		char actual_path[1024];
+		path_join(actual_path, sizeof(actual_path), output_dir, expected_names[i]);
+		if (!file_exists(actual_path)) {
+			cleanup_test_output_dir(output_dir, expected_names,
+			                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+			FAIL("D2 expected output missing");
 			return 0;
 		}
 	}
@@ -964,6 +1039,8 @@ int main(void)
 	if (!run_real_archive_extract_test())
 		ok = 0;
 	if (!run_real_native_mac_extract_test())
+		ok = 0;
+	if (!run_real_d2_native_mac_extract_test())
 		ok = 0;
 
 	printf("\nSummary: %d passed, %d skipped, %d total\n",

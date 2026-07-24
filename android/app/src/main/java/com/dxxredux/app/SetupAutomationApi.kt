@@ -771,7 +771,24 @@ internal fun SetupActivity.writeIntrospectJson() {
 
         val setFiles = setDir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
         root.put("set_files", JSONArray(setFiles))
+        val recursiveSetFiles =
+            setDir
+                .walkTopDown()
+                .filter { it.isFile }
+                .map { it.relativeTo(setDir).invariantSeparatorsPath }
+                .sorted()
+                .toList()
+        root.put("set_files_recursive", JSONArray(recursiveSetFiles))
         root.put("active_set_path", setDir.absolutePath)
+        val importState = SetupImportTracker.snapshot()
+        root.put(
+            "import_state",
+            JSONObject()
+                .put("kind", importState.kind)
+                .put("status", importState.status)
+                .put("result_count", importState.resultCount)
+                .put("error", importState.error),
+        )
 
         val stagedInputDemos = InputDemoManager.listStagedDemos(dir)
         root.put("staged_input_demo_count", stagedInputDemos.size)

@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: d2 mac
-// Generated: 2026-05-24 17:34:35
+// Generated: 2026-07-23 20:49:56
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -29,11 +29,11 @@
   "total_extracted": 17,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "skip",
-    "failure_step": "not_ready",
+    "status": "pass",
+    "failure_step": "",
     "level_reached": null,
-    "files_verified": 1,
-    "classification_confirmed": false,
+    "files_verified": 5,
+    "classification_confirmed": true,
     "test_mode": "file_only"
   }
 }

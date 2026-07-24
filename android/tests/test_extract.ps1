@@ -194,6 +194,37 @@ function Get-SetupIntrospection {
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
+function Get-MissingExpectedFiles {
+    param([object[]]$ExpectedFiles, [object[]]$RemoteFiles)
+
+    return @($ExpectedFiles | Where-Object {
+            $expected = $_.ToString().ToLowerInvariant()
+            -not ($RemoteFiles | Where-Object { $_.ToString().ToLowerInvariant() -eq $expected })
+        })
+}
+
+function Write-DirectImportDiagnostics {
+    param($State, [object[]]$ExpectedFiles)
+
+    if (-not $State) {
+        Write-Status '  Setup introspection unavailable' 'Yellow'
+        return
+    }
+    $remoteFiles = @($State.set_files | Where-Object { $_ })
+    $missing = @(Get-MissingExpectedFiles -ExpectedFiles $ExpectedFiles -RemoteFiles $remoteFiles)
+    $importStatus = if ($State.import_state) { $State.import_state.status } else { 'unavailable' }
+    $importKind = if ($State.import_state) { $State.import_state.kind } else { '' }
+    $importError = if ($State.import_state) { $State.import_state.error } else { '' }
+    $importCount = if ($State.import_state) { $State.import_state.result_count } else { -1 }
+    $recursiveCount = @($State.set_files_recursive | Where-Object { $_ }).Count
+    Write-Status "  Import state: kind=$importKind status=$importStatus result=$importCount error=$importError" 'Yellow'
+    Write-Status "  Root files visible: $($remoteFiles.Count)" 'Yellow'
+    Write-Status "  Recursive files visible: $recursiveCount" 'Yellow'
+    if ($missing.Count -gt 0) {
+        Write-Status "  Missing expected files ($($missing.Count)): $($missing -join ', ')" 'Yellow'
+    }
+}
+
 function Wait-SetupReady {
     # Poll until SetupActivity's broadcast receiver is alive.
     param([int]$TimeoutSeconds = 30)
@@ -717,7 +748,7 @@ $script:testFailureStep = 'unknown'
 $script:testLevel = $null
 $script:testFilesVerified = 0
 $script:testClassConfirmed = $false
-$script:testMode = 'full'
+$script:testMode = if ($SkipLaunch) { 'file_only' } else { 'full' }
 
 function Write-TestResult {
     # Persist last_test_result into the spec json5 file.
@@ -732,7 +763,7 @@ function Write-TestResult {
         classification_confirmed = $script:testClassConfirmed
         test_mode = $script:testMode
     }
-    Set-RegressionSpecLastTestResult $SpecPath $lastTestResult
+    Set-RegressionSpecLastTestResult $SpecPath $lastTestResult | Out-Null
 }
 
 function Exit-Test {
@@ -1109,8 +1140,6 @@ if ($useDirectCdImport) {
     Send-SetupCdImport -CuePath $deviceCuePath -BinPaths $deviceImagePaths -IncludeAudio $true
 
     $importReady = $false
-    $lastImportSignature = ''
-    $stableImportPolls = 0
     $importTimeoutSeconds = 300
     $importSw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
@@ -1118,29 +1147,25 @@ if ($useDirectCdImport) {
         $state = Get-SetupIntrospection
         if (-not $state) { continue }
         $remoteFiles = @($state.set_files | Where-Object { $_ })
-        $haveExpected = $true
-        foreach ($ef in $expectedFiles) {
-            if (-not ($remoteFiles | Where-Object { $_.ToLower() -eq $ef.ToLower() })) {
-                $haveExpected = $false
-                break
-            }
-        }
+        $missingExpected = @(Get-MissingExpectedFiles -ExpectedFiles $expectedFiles -RemoteFiles $remoteFiles)
+        $haveExpected = $missingExpected.Count -eq 0
         $haveTotal = $true
         if ($expectedFiles.Count -eq 0 -and $spec.total_extracted) {
             $haveTotal = $remoteFiles.Count -ge [int]$spec.total_extracted
         }
-        if ($haveExpected -and $haveTotal) {
+        $importState = $state.import_state
+        if ($importState -and $importState.kind -eq 'cd' -and $importState.status -eq 'failed') {
+            Write-Status 'FAIL: Direct CD import reported failure' 'Red'
+            Write-DirectImportDiagnostics -State $state -ExpectedFiles $expectedFiles
+            Exit-Test 1 'fail' 'import_failed' -TestMode $script:testMode
+        }
+        if ($importState -and $importState.kind -eq 'cd' -and $importState.status -eq 'complete' -and
+            $haveExpected -and $haveTotal) {
             $importReady = $true
             break
         }
-        $signature = ($remoteFiles | Sort-Object) -join "`n"
-        if ($signature -and $signature -eq $lastImportSignature) {
-            $stableImportPolls++
-        } else {
-            $lastImportSignature = $signature
-            $stableImportPolls = 0
-        }
-        if ($allowIncompleteDirectImportSkip -and $stableImportPolls -ge 3) {
+        if ($importState -and $importState.kind -eq 'cd' -and $importState.status -eq 'complete' -and
+            $allowIncompleteDirectImportSkip) {
             $verified = @($expectedFiles | Where-Object {
                     $ef = $_.ToLower()
                     $remoteFiles | Where-Object { $_.ToLower() -eq $ef }
@@ -1148,15 +1173,23 @@ if ($useDirectCdImport) {
             Write-Status "SKIP: Direct CD import settled without expected launch files" 'Yellow'
             Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $verified
         }
-        if (-not $canLaunch -and $expectedFiles.Count -eq 0 -and $stableImportPolls -ge 3) {
+        if ($importState -and $importState.kind -eq 'cd' -and $importState.status -eq 'complete' -and
+            -not $canLaunch -and $expectedFiles.Count -eq 0) {
             Write-Status "PASS (file-only): Direct CD import settled for $($spec.classification)" 'Green'
             Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified 0 -ClassConfirmed $true
+        }
+        if ($importState -and $importState.kind -eq 'cd' -and $importState.status -eq 'complete') {
+            Write-Status 'FAIL: Direct CD import completed without all expected files' 'Red'
+            Write-DirectImportDiagnostics -State $state -ExpectedFiles $expectedFiles
+            $verified = $expectedFiles.Count - $missingExpected.Count
+            Exit-Test 1 'fail' 'import_incomplete' -TestMode $script:testMode -FilesVerified $verified
         }
     }
 
     if (-not $importReady) {
         Write-Status "FAIL: Timed out waiting for direct CD import to finish" 'Red'
-        Exit-Test 1 'fail' 'file_push_failed'
+        Write-DirectImportDiagnostics -State $state -ExpectedFiles $expectedFiles
+        Exit-Test 1 'fail' 'import_timeout' -TestMode $script:testMode
     }
 
     $pushCount = @($state.set_files | Where-Object { $_ }).Count
@@ -1187,8 +1220,6 @@ if ($useDirectCdImport) {
     Send-SetupIsoImport -IsoPath $deviceIsoPath
 
     $importReady = $false
-    $lastImportSignature = ''
-    $stableImportPolls = 0
     $importTimeoutSeconds = 300
     $importSw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
@@ -1196,29 +1227,25 @@ if ($useDirectCdImport) {
         $state = Get-SetupIntrospection
         if (-not $state) { continue }
         $remoteFiles = @($state.set_files | Where-Object { $_ })
-        $haveExpected = $true
-        foreach ($ef in $expectedFiles) {
-            if (-not ($remoteFiles | Where-Object { $_.ToLower() -eq $ef.ToLower() })) {
-                $haveExpected = $false
-                break
-            }
-        }
+        $missingExpected = @(Get-MissingExpectedFiles -ExpectedFiles $expectedFiles -RemoteFiles $remoteFiles)
+        $haveExpected = $missingExpected.Count -eq 0
         $haveTotal = $true
         if ($expectedFiles.Count -eq 0 -and $spec.total_extracted) {
             $haveTotal = $remoteFiles.Count -ge [int]$spec.total_extracted
         }
-        if ($haveExpected -and $haveTotal) {
+        $importState = $state.import_state
+        if ($importState -and $importState.kind -eq 'iso' -and $importState.status -eq 'failed') {
+            Write-Status 'FAIL: Direct ISO import reported failure' 'Red'
+            Write-DirectImportDiagnostics -State $state -ExpectedFiles $expectedFiles
+            Exit-Test 1 'fail' 'import_failed' -TestMode $script:testMode
+        }
+        if ($importState -and $importState.kind -eq 'iso' -and $importState.status -eq 'complete' -and
+            $haveExpected -and $haveTotal) {
             $importReady = $true
             break
         }
-        $signature = ($remoteFiles | Sort-Object) -join "`n"
-        if ($signature -and $signature -eq $lastImportSignature) {
-            $stableImportPolls++
-        } else {
-            $lastImportSignature = $signature
-            $stableImportPolls = 0
-        }
-        if ($allowIncompleteDirectImportSkip -and $stableImportPolls -ge 3) {
+        if ($importState -and $importState.kind -eq 'iso' -and $importState.status -eq 'complete' -and
+            $allowIncompleteDirectImportSkip) {
             $verified = @($expectedFiles | Where-Object {
                     $ef = $_.ToLower()
                     $remoteFiles | Where-Object { $_.ToLower() -eq $ef }
@@ -1226,15 +1253,23 @@ if ($useDirectCdImport) {
             Write-Status "SKIP: Direct ISO import settled without expected launch files" 'Yellow'
             Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $verified
         }
-        if (-not $canLaunch -and $expectedFiles.Count -eq 0 -and $stableImportPolls -ge 3) {
+        if ($importState -and $importState.kind -eq 'iso' -and $importState.status -eq 'complete' -and
+            -not $canLaunch -and $expectedFiles.Count -eq 0) {
             Write-Status "PASS (file-only): Direct ISO import settled for $($spec.classification)" 'Green'
             Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified 0 -ClassConfirmed $true
+        }
+        if ($importState -and $importState.kind -eq 'iso' -and $importState.status -eq 'complete') {
+            Write-Status 'FAIL: Direct ISO import completed without all expected files' 'Red'
+            Write-DirectImportDiagnostics -State $state -ExpectedFiles $expectedFiles
+            $verified = $expectedFiles.Count - $missingExpected.Count
+            Exit-Test 1 'fail' 'import_incomplete' -TestMode $script:testMode -FilesVerified $verified
         }
     }
 
     if (-not $importReady) {
         Write-Status "FAIL: Timed out waiting for direct ISO import to finish" 'Red'
-        Exit-Test 1 'fail' 'file_push_failed'
+        Write-DirectImportDiagnostics -State $state -ExpectedFiles $expectedFiles
+        Exit-Test 1 'fail' 'import_timeout' -TestMode $script:testMode
     }
 
     $pushCount = @($state.set_files | Where-Object { $_ }).Count
@@ -1374,20 +1409,20 @@ if (-not $canLaunch) {
     Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
-if ($SkipLaunch) {
-    Write-Status "PASS (file-only, -SkipLaunch): $($spec.classification) - $pushCount files, can_launch=$($state.can_launch)" 'Green'
-    if (-not $KeepFiles) {
-        Send-SetupCommand 'clear_set' -Name $TEST_SET
-    }
-    Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
-}
-
 if ($spec.disc_id -eq 'descent-ii-usa-3-level-interactive-preview') {
     Write-Status 'SKIP (file-only): D2 preview demo launch remains unsupported on Android; files verified' 'Yellow'
     if (-not $KeepFiles) {
         Send-SetupCommand 'clear_set' -Name $TEST_SET
     }
     Exit-Test 0 'skip' 'android_launch_unsupported' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
+}
+
+if ($SkipLaunch) {
+    Write-Status "PASS (file-only, -SkipLaunch): $($spec.classification) - $pushCount files, can_launch=$($state.can_launch)" 'Green'
+    if (-not $KeepFiles) {
+        Send-SetupCommand 'clear_set' -Name $TEST_SET
+    }
+    Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
 # Skip launch if the game says it can't launch (missing required files)

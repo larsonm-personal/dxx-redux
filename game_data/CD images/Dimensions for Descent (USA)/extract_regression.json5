@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Dimensions for Descent (USA)
-// Generated: 2026-05-24 17:34:46
+// Generated: 2026-07-23 21:16:13
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -115,7 +115,7 @@
     "status": "pass",
     "failure_step": "",
     "level_reached": null,
-    "files_verified": 0,
+    "files_verified": 88,
     "classification_confirmed": true,
     "test_mode": "file_only"
   }

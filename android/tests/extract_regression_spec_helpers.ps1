@@ -43,7 +43,25 @@ function Get-JsonProperties($value) {
 }
 
 function Test-ExtractRegressionInfrastructureFailure($failureStep) {
-    return $failureStep -in @('emulator_offline', 'setup_timeout')
+    return $failureStep -in @('emulator_offline', 'setup_timeout', 'adb_staging_failed')
+}
+
+function Get-ExtractRegressionEvidenceRank($result) {
+    if ($null -eq $result) {
+        return 0
+    }
+    if ((Get-JsonPropertyValue $result 'test_mode') -eq 'full') {
+        return 2
+    }
+    return 1
+}
+
+function Test-ExtractRegressionResultShouldReplace($existing, $candidate) {
+    if ($null -eq $existing) {
+        return $true
+    }
+    return (Get-ExtractRegressionEvidenceRank $candidate) -ge
+    (Get-ExtractRegressionEvidenceRank $existing)
 }
 
 function Add-CanonicalProperty($target, $source, $name, [ref]$handled) {
@@ -189,6 +207,10 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
 
 function Set-RegressionSpecLastTestResult($path, $lastTestResult) {
     $spec = Read-Json5File $path
+    $existing = Get-JsonPropertyValue $spec 'last_test_result'
+    if (-not (Test-ExtractRegressionResultShouldReplace $existing $lastTestResult)) {
+        return $false
+    }
     if (Test-JsonProperty $spec 'last_test_result') {
         $spec.PSObject.Properties.Remove('last_test_result')
     }
@@ -198,6 +220,7 @@ function Set-RegressionSpecLastTestResult($path, $lastTestResult) {
         $spec | Add-Member -NotePropertyName 'last_test_result' -NotePropertyValue $lastTestResult
     }
     Write-CanonicalRegressionSpec -path $path -spec $spec
+    return $true
 }
 
 function Get-ExtractRegressionOracleStatus {

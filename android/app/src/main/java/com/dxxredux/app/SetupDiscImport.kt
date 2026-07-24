@@ -6,6 +6,47 @@ import android.util.Log
 import java.io.File
 import java.util.Locale
 
+internal data class SetupImportSnapshot(
+    val kind: String = "",
+    val status: String = "idle",
+    val resultCount: Int = 0,
+    val error: String = "",
+)
+
+internal object SetupImportTracker {
+    @Volatile
+    private var current = SetupImportSnapshot()
+
+    fun begin(kind: String) {
+        current = SetupImportSnapshot(kind = kind, status = "running")
+    }
+
+    fun complete(
+        kind: String,
+        resultCount: Int,
+    ) {
+        current =
+            if (resultCount >= 0) {
+                SetupImportSnapshot(kind = kind, status = "complete", resultCount = resultCount)
+            } else {
+                SetupImportSnapshot(kind = kind, status = "failed", resultCount = resultCount, error = "extract_failed")
+            }
+    }
+
+    fun fail(
+        kind: String,
+        error: String,
+    ) {
+        current = SetupImportSnapshot(kind = kind, status = "failed", resultCount = -1, error = error)
+    }
+
+    fun snapshot(): SetupImportSnapshot = current
+
+    fun reset() {
+        current = SetupImportSnapshot()
+    }
+}
+
 internal data class GogAudioPair(
     val baseName: String,
     val gogFileName: String,
@@ -249,7 +290,7 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
         .filter { it.isFile && it.parentFile != setDir }
         .forEach { file ->
             val lowercaseName = file.name.lowercase()
-            if (lowercaseName !in ALL_GAME_FILENAMES || file.length() <= 1L) return@forEach
+            if (!isDirectGameDataImportName(lowercaseName) || file.length() <= 1L) return@forEach
 
             val existing = rootFiles[lowercaseName]
             if (existing != null && existing.absolutePath == file.absolutePath) return@forEach

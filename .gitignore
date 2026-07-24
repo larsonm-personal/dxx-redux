@@ -103,6 +103,7 @@ game_data/**
 !game_data/mission_files/*.json
 !game_data/music/**/chromaprint_info.json5
 !game_data/manage_data.ps1
+!game_data/run_all_cd_regressions.ps1
 !game_data/fingerprint_mission_zip_music.ps1
 !game_data/test_data_manifest.json
 !game_data/extract_dos_demos.ps1

@@ -700,37 +700,53 @@ class SetupActivity : ComponentActivity() {
                                 ?: listOfNotNull(intent.getStringExtra("bin_path")?.takeIf { it.isNotBlank() })
                         if (binPaths.isEmpty()) return
                         val audio = intent.getBooleanExtra("include_audio", true)
+                        SetupImportTracker.begin("cd")
                         Thread {
-                            val fsm = FileSetManager(filesDir)
-                            val setDir = fsm.getSetDir(fsm.getActive())
-                            val count =
-                                importDiscImageFromPath(
-                                    filesDir = filesDir,
-                                    setDir = setDir,
-                                    context = this@SetupActivity,
-                                    cuePath = cuePath,
-                                    binPaths = binPaths,
-                                    includeAudio = audio,
+                            try {
+                                val fsm = FileSetManager(filesDir)
+                                val setDir = fsm.getSetDir(fsm.getActive())
+                                val count =
+                                    importDiscImageFromPath(
+                                        filesDir = filesDir,
+                                        setDir = setDir,
+                                        context = this@SetupActivity,
+                                        cuePath = cuePath,
+                                        binPaths = binPaths,
+                                        includeAudio = audio,
+                                    )
+                                SetupImportTracker.complete("cd", count)
+                                Log.i(
+                                    "DXX-Setup",
+                                    "import_cd cue='$cuePath' images=${binPaths.size} -> $count file(s) to ${setDir.name} (audio=$audio)",
                                 )
-                            Log.i(
-                                "DXX-Setup",
-                                "import_cd cue='$cuePath' images=${binPaths.size} -> $count file(s) to ${setDir.name} (audio=$audio)",
-                            )
-                            requestSetupRefresh()
+                            } catch (e: Exception) {
+                                SetupImportTracker.fail("cd", e.javaClass.simpleName)
+                                Log.e("DXX-Setup", "import_cd failed for '$cuePath'", e)
+                            } finally {
+                                requestSetupRefresh()
+                            }
                         }.start()
                     }
 
                     "import_iso" -> {
                         val path = intent.getStringExtra("iso_path") ?: return
+                        SetupImportTracker.begin("iso")
                         Thread {
-                            val fsm = FileSetManager(filesDir)
-                            val setDir = fsm.getSetDir(fsm.getActive())
-                            val count = importIsoImageFromPath(setDir, path)
-                            Log.i(
-                                "DXX-Setup",
-                                "import_iso iso='$path' -> $count file(s) to ${setDir.name}",
-                            )
-                            requestSetupRefresh()
+                            try {
+                                val fsm = FileSetManager(filesDir)
+                                val setDir = fsm.getSetDir(fsm.getActive())
+                                val count = importIsoImageFromPath(setDir, path)
+                                SetupImportTracker.complete("iso", count)
+                                Log.i(
+                                    "DXX-Setup",
+                                    "import_iso iso='$path' -> $count file(s) to ${setDir.name}",
+                                )
+                            } catch (e: Exception) {
+                                SetupImportTracker.fail("iso", e.javaClass.simpleName)
+                                Log.e("DXX-Setup", "import_iso failed for '$path'", e)
+                            } finally {
+                                requestSetupRefresh()
+                            }
                         }.start()
                     }
 

@@ -37,8 +37,54 @@ try {
 
     if (-not (Test-ExtractRegressionInfrastructureFailure 'setup_timeout') -or
         -not (Test-ExtractRegressionInfrastructureFailure 'emulator_offline') -or
+        -not (Test-ExtractRegressionInfrastructureFailure 'adb_staging_failed') -or
         (Test-ExtractRegressionInfrastructureFailure 'files_missing')) {
         throw 'Infrastructure failure classification is incorrect'
+    }
+
+    $evidencePath = Join-Path $tempRoot 'evidence.json5'
+    $fullPass = [ordered]@{
+        status = 'pass'
+        failure_step = ''
+        level_reached = 'Lunar Outpost'
+        files_verified = 2
+        classification_confirmed = $true
+        test_mode = 'full'
+    }
+    $evidenceSpec = [ordered]@{
+        source_type = 'cd'
+        expected_files = @('descent.hog', 'descent.pig')
+        total_extracted = 2
+        last_test_result = $fullPass
+    }
+    Write-CanonicalRegressionSpec -path $evidencePath -spec $evidenceSpec `
+        -sourceName 'evidence' -generated '2000-01-01 00:00:00'
+    $fileOnlyPass = [ordered]@{
+        status = 'pass'
+        failure_step = ''
+        level_reached = $null
+        files_verified = 2
+        classification_confirmed = $true
+        test_mode = 'file_only'
+    }
+    if (Set-RegressionSpecLastTestResult $evidencePath $fileOnlyPass) {
+        throw 'File-only evidence unexpectedly replaced a full result'
+    }
+    $preserved = (Read-Json5File $evidencePath).last_test_result
+    if ($preserved.test_mode -ne 'full' -or $preserved.level_reached -ne 'Lunar Outpost') {
+        throw 'Full result was not preserved'
+    }
+    $fullFail = [ordered]@{
+        status = 'fail'
+        failure_step = 'launch_failed'
+        level_reached = $null
+        files_verified = 2
+        classification_confirmed = $true
+        test_mode = 'full'
+    }
+    if (-not (Set-RegressionSpecLastTestResult $evidencePath $fullFail) -or
+        (Read-Json5File $evidencePath).last_test_result.status -ne 'fail') {
+        throw 'Equal-strength full evidence did not replace the prior result'
     }
 
     $emptyRoot = Join-Path $tempRoot 'cds'
@@ -69,3 +115,5 @@ try {
         Remove-Item -LiteralPath $tempRoot -Recurse -Force
     }
 }
+
+exit 0

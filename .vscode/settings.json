@@ -33,11 +33,11 @@
         "build/": true,
         "buildd2/": true,
         "d2/build/": true,
-        "temp/": true
     },
     // search.exclude adds to files.exclude for search; keep game_data searchable in explorer
     "search.exclude": {
         "game_data/": true,
-        "game_data_to_copy_to_emulator/": true
+        "game_data_to_copy_to_emulator/": true,
+        "temp/": true
     }
 }

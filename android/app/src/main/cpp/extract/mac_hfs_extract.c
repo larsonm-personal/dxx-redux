@@ -2,6 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 #include "extract_limits.h"
 #include "hfs_reader.h"
 #include "mac_hfs_extract.h"
@@ -37,6 +44,13 @@ static int str_equals_ignore_case(const char *a, const char *b)
 	return *a == '\0' && *b == '\0';
 }
 
+static int is_descent_installer_name(const char *path)
+{
+	return str_equals_ignore_case(path, "Install Descent") ||
+	       str_equals_ignore_case(path, "Install Descent 2") ||
+	       str_equals_ignore_case(path, "Install Descent II");
+}
+
 static int ext_matches(const char *filename, const char **extensions)
 {
 	const char *dot;
@@ -58,50 +72,110 @@ static int ext_matches(const char *filename, const char **extensions)
 	return 0;
 }
 
-static int read_file_to_buffer(const char *path, unsigned char **out_data, size_t *out_size)
+static int file_exists(const char *path)
 {
-	FILE *f;
-	long len;
-	unsigned char *data;
-
-	if (!out_data || !out_size)
-		return -1;
-	*out_data = NULL;
-	*out_size = 0;
-
-	f = fopen(path, "rb");
+	FILE *f = fopen(path, "rb");
 	if (!f)
-		return -1;
-	if (fseek(f, 0, SEEK_END) != 0) {
-		fclose(f);
-		return -1;
-	}
-	len = ftell(f);
-	if (len < 0 || fseek(f, 0, SEEK_SET) != 0) {
-		fclose(f);
-		return -1;
-	}
-	if (!dxx_extract_memory_allowed((uint64_t) len, 0)) {
-		fclose(f);
-		return -1;
-	}
-	data = (unsigned char *) malloc((size_t) len);
-	if (!data && len != 0) {
-		fclose(f);
-		return -1;
-	}
-	if ((size_t) len != 0 && fread(data, 1, (size_t) len, f) != (size_t) len) {
-		free(data);
-		fclose(f);
-		return -1;
-	}
-	if (fclose(f) != 0) {
-		free(data);
-		return -1;
-	}
+		return 0;
+	fclose(f);
+	return 1;
+}
 
-	*out_data = data;
-	*out_size = (size_t) len;
+typedef struct {
+	const unsigned char *data;
+	size_t size;
+#ifdef _WIN32
+	HANDLE file;
+	HANDLE mapping;
+#else
+	int fd;
+#endif
+} mapped_file_t;
+
+static void unmap_file(mapped_file_t *mapped)
+{
+	if (!mapped)
+		return;
+#ifdef _WIN32
+	if (mapped->data)
+		UnmapViewOfFile(mapped->data);
+	if (mapped->mapping)
+		CloseHandle(mapped->mapping);
+	if (mapped->file && mapped->file != INVALID_HANDLE_VALUE)
+		CloseHandle(mapped->file);
+#else
+	if (mapped->data && mapped->size)
+		munmap((void *) mapped->data, mapped->size);
+	if (mapped->fd >= 0)
+		close(mapped->fd);
+#endif
+	memset(mapped, 0, sizeof(*mapped));
+#ifndef _WIN32
+	mapped->fd = -1;
+#endif
+}
+
+static int map_file_read_only(const char *path, mapped_file_t *mapped)
+{
+	if (!path || !mapped)
+		return -1;
+	memset(mapped, 0, sizeof(*mapped));
+#ifdef _WIN32
+	{
+		LARGE_INTEGER size;
+		mapped->file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL,
+		                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (mapped->file == INVALID_HANDLE_VALUE)
+			return -1;
+		if (!GetFileSizeEx(mapped->file, &size) || size.QuadPart <= 0 ||
+		    (uint64_t) size.QuadPart > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+		    (uint64_t) size.QuadPart > (uint64_t) SIZE_MAX) {
+			unmap_file(mapped);
+			return -1;
+		}
+		mapped->size = (size_t) size.QuadPart;
+		mapped->mapping = CreateFileMappingA(mapped->file, NULL, PAGE_READONLY, 0, 0, NULL);
+		if (!mapped->mapping) {
+			unmap_file(mapped);
+			return -1;
+		}
+		mapped->data = (const unsigned char *) MapViewOfFile(
+		    mapped->mapping, FILE_MAP_READ, 0, 0, 0);
+		if (!mapped->data) {
+			unmap_file(mapped);
+			return -1;
+		}
+	}
+#else
+	{
+		struct stat st;
+		mapped->fd = open(path, O_RDONLY);
+		if (mapped->fd < 0)
+			return -1;
+		if (fstat(mapped->fd, &st) != 0 || st.st_size <= 0 ||
+		    (uint64_t) st.st_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+		    (uint64_t) st.st_size > (uint64_t) SIZE_MAX) {
+			unmap_file(mapped);
+			return -1;
+		}
+		mapped->size = (size_t) st.st_size;
+		mapped->data = (const unsigned char *) mmap(
+		    NULL, mapped->size, PROT_READ, MAP_PRIVATE, mapped->fd, 0);
+		if (mapped->data == MAP_FAILED) {
+			mapped->data = NULL;
+			unmap_file(mapped);
+			return -1;
+		}
+	}
+#endif
+	return 0;
+}
+
+static int hfs_sti2_entry_allowed(uint64_t data_size)
+{
+	if (data_size == 0 || data_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
+	    data_size > (uint64_t) SIZE_MAX)
+		return -1;
 	return 0;
 }
 
@@ -110,8 +184,7 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
                                  extract_progress_fn progress, void *user_data)
 {
 	char archive_path[1024];
-	unsigned char *archive_data = NULL;
-	size_t archive_size = 0;
+	mapped_file_t archive = { 0 };
 	const hfs_file_entry_t *entry = NULL;
 	int i;
 	int extracted;
@@ -119,32 +192,42 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
 	for (i = 0; i < hfs_catalog_file_count(catalog); i++) {
 		entry = hfs_catalog_file_at(catalog, i);
 		if (entry && !entry->is_dir &&
-		    str_equals_ignore_case(entry->path, "Install Descent")) {
-			if (!dxx_extract_memory_allowed(entry->data_size, 0))
+		    is_descent_installer_name(entry->path)) {
+			if (hfs_sti2_entry_allowed(entry->data_size) < 0) {
+				fprintf(stderr, "mac_hfs_extract: Install Descent size %u exceeds archive mapping limit\n",
+				        entry->data_size);
 				return -1;
+			}
 			break;
 		}
 		entry = NULL;
 	}
-	if (!entry)
+	if (!entry) {
+		fprintf(stderr, "mac_hfs_extract: Descent installer was not found in HFS catalog\n");
 		return -1;
+	}
 	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
-	if (hfs_catalog_extract_entry(catalog, entry, archive_path) < 0)
+	if (hfs_catalog_extract_entry(catalog, entry, archive_path) < 0) {
+		fprintf(stderr, "mac_hfs_extract: failed to extract Install Descent from HFS\n");
 		return -1;
-	if (read_file_to_buffer(archive_path, &archive_data, &archive_size) < 0) {
+	}
+	if (map_file_read_only(archive_path, &archive) < 0) {
+		fprintf(stderr, "mac_hfs_extract: failed to map Install Descent archive\n");
 		remove(archive_path);
 		return -1;
 	}
-	remove(archive_path);
-	if (!sti2_is_archive(archive_data, archive_size)) {
-		free(archive_data);
+	if (!sti2_is_archive(archive.data, archive.size)) {
+		fprintf(stderr, "mac_hfs_extract: Install Descent is not a recognized STi2 archive\n");
+		unmap_file(&archive);
+		remove(archive_path);
 		return -1;
 	}
 
-	extracted = sti2_extract_matching(archive_data, archive_size,
+	extracted = sti2_extract_matching(archive.data, archive.size,
 	                                  extensions, output_dir,
 	                                  progress, user_data);
-	free(archive_data);
+	unmap_file(&archive);
+	remove(archive_path);
 	return extracted;
 }
 
@@ -181,7 +264,9 @@ static int extract_hfs_matching_files(hfs_catalog_t *catalog,
 		    !ext_matches(name, extensions))
 			continue;
 
-		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, entry->path);
+		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, name);
+		if (file_exists(output_path))
+			continue;
 		written = hfs_catalog_extract_entry(catalog, entry, output_path);
 		if (written < 0)
 			return -1;
@@ -203,6 +288,7 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
 {
 	hfs_catalog_t *catalog;
 	int extracted;
+	int fallback_extracted;
 	const char **fallback_extensions = hfs_extensions ? hfs_extensions : sti2_extensions;
 
 	if (bin_fd < 0 || !output_dir)
@@ -212,9 +298,14 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
 
 	extracted = extract_sti2_from_hfs(catalog, output_dir, sti2_extensions,
 	                                  progress, user_data);
-	if (extracted <= 0)
-		extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
-		                                       progress, user_data);
+	fallback_extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
+	                                                progress, user_data);
+	if (fallback_extracted < 0)
+		extracted = -1;
+	else if (extracted <= 0)
+		extracted = fallback_extracted;
+	else
+		extracted += fallback_extracted;
 	hfs_catalog_close(catalog);
 
 	return extracted;

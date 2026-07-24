@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent II - Destination Quartzon (USA) (Logitech OEM)
-// Generated: 2026-05-24 17:34:40
+// Generated: 2026-07-23 21:03:19
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -75,11 +75,11 @@
   "total_extracted": 14,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "skip",
-    "failure_step": "not_ready",
+    "status": "pass",
+    "failure_step": "",
     "level_reached": null,
     "files_verified": 3,
-    "classification_confirmed": false,
+    "classification_confirmed": true,
     "test_mode": "file_only"
   }
 }
