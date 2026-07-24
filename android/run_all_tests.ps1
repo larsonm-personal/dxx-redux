@@ -1374,8 +1374,10 @@ function Invoke-SingleTest {
     } else {
         0
     }
+    $remainingMinutesTotal = [int][Math]::Ceiling($Test.RemainingEstimatedRuntime / 60.0)
+    $remainingEstimate = "{0:00}:{1:00}" -f [Math]::Floor($remainingMinutesTotal / 60), ($remainingMinutesTotal % 60)
     $suiteElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
-    Write-Host "  Test $($Test.ProgressIndex)/$($executionTests.Count), $suiteElapsed elapsed, estimated $remainingPercent% remaining" -ForegroundColor Cyan
+    Write-Host "  Test $($Test.ProgressIndex)/$($executionTests.Count), $suiteElapsed elapsed, estimated $remainingEstimate remaining ($remainingPercent%)" -ForegroundColor Cyan
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
     Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${testTimeout}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()

@@ -16,6 +16,8 @@ suite run after emulator-test consolidation.
 - [x] Fix consolidation regressions without weakening assertions
 - [x] Run focused runner, catalog, quality, and emulator validation
 - [x] Record validation results and any failures unrelated to consolidation
+- [x] Add an `hh:mm` weighted remaining-time estimate to each progress header
+- [x] Validate the updated header through the full-suite runner
 
 ## Failure findings
 
@@ -35,6 +37,9 @@ suite run after emulator-test consolidation.
 - A filtered `run_all_tests.ps1` run matched its historical timing, printed
   `Test 1/1, 00:00:00 elapsed, estimated 100% remaining`, passed, retained its
   artifacts, and exited 0.
+- The remaining-time follow-up printed
+  `Test 1/1, 00:00:00 elapsed, estimated 00:01 remaining (100%)`, passed,
+  retained its artifacts, and exited 0.
 - Automation catalog validation passed with 35 standalone JSON tests, 18
   support scripts, and 54 PowerShell entries.
 - Extraction regression validation passed for all 34 CD specs.
