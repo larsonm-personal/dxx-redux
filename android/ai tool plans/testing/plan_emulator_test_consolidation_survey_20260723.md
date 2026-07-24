@@ -187,3 +187,54 @@ Validation results:
 - Level-complete and mine-exit touch-suppression owner passed on the emulator
 - A structural comparison against the six absorbed scripts confirmed that
   every former assertion leaf remains in its owner
+
+## Second Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Merge launcher button discovery into the OGL runtime owner
+- [x] Keep the Advanced debug-log refresh check standalone after isolated
+  reruns showed its off-screen assertion is not currently composable
+- [x] Merge launcher graphics debug preference checks into the OGL runtime owner
+- [x] Merge the D2 MSAA FBO smoke check into the OGL runtime owner
+- [x] Do not land the investigated launcher scroll-helper change; neither
+  accessibility action moved the Advanced Compose page
+- [x] Remove the three absorbed standalone scripts
+- [x] Preserve the existing D1 owner path
+- [x] Run catalog, assertion-preservation, and scoped quality checks
+- [x] Run the combined owner for D1 and D2 on the emulator
+- [x] Record final validation results
+
+Planned D2 phase order:
+
+1. Reset launcher state and perform button discovery
+2. Enter Advanced and exercise the immediate debug-log refresh action
+3. Enable and assert the video-info, graphics-log, and texture-log preferences
+4. Write `MsaaLevel=2` to both D2 config locations
+5. Launch D2 once and assert texture logging and MSAA at the main menu
+6. Load level 1, assert the MSAA gameplay render path, and run the existing
+   runtime texture-option sequence
+7. Return to the launcher and restore all three debug preferences
+
+Empirical exception:
+
+- `test_debug_log_refresh_button` passed in the 2026-07-22 full report, but
+  its unchanged standalone script now fails because `assert_button` cannot
+  scroll the Advanced Compose page to `Refresh`
+- The same assertion fails when embedded in the owner, both before and after
+  trying the directional accessibility scroll action first
+- Keep this test standalone rather than weakening or silently dropping its
+  pre-click and post-click button assertions
+
+Validation results:
+
+- Structural comparison confirmed that every assertion leaf and button
+  assertion from the three absorbed scripts remains in the owner
+- Automation catalog valid with 55 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality passed
+- Android debug APK assembly and debug unit tests passed during the scroll
+  investigation; the final source-matching APK also assembled successfully
+- D2 owner passed 66 of 66 steps in 52.204 seconds
+- D1 owner passed 42 of 42 steps in 40.153 seconds
+- Final diff contains no launcher automation helper change

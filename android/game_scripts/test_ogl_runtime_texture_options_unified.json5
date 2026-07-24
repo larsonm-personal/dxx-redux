@@ -24,19 +24,56 @@
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== TEST: Shared OGL runtime texture options ==="},
     {"action": "reset_state"},
+
+    // Verify button discovery and that tap_button auto-scrolls to Advanced
+    // when game data makes it initially off-screen.
+    {"action": "log", "message": "=== TEST: Launcher button discovery ===", "when": "d2"},
+    {"action": "wait_ms", "ms": 500, "when": "d2"},
+    {"action": "assert_button", "text": "About", "when": "d2"},
+    {"action": "assert_button", "text": "Define Controls", "when": "d2"},
+    {"action": "tap_button", "text": "About", "post_delay_ms": 500, "when": "d2"},
+    {"action": "tap_button", "text": "Advanced", "post_delay_ms": 300, "when": "d2"},
+    {"action": "log", "message": "Button discovery and tap test passed", "when": "d2"},
+    {"action": "log", "message": "=== TEST: Launcher button discovery -- PASS ===", "when": "d2"},
+
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+
+    {"action": "log", "message": "=== TEST: Launcher graphics debug prefs bridge ===", "when": "d2"},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_video_info_debug_options", "value": true},
+     "post_delay_ms": 250, "when": "d2"},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_graphics_enabled", "value": true}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "dlog_texture_enabled", "value": true},
+     "post_delay_ms": 250, "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "debug_prefs.show_video_info_debug_options": "true",
+        "debug_prefs.graphics_log_enabled": "true",
+        "debug_prefs.texture_log_enabled": "true",
+        "debug_prefs.graphics_debug_logging": "true"
+    }},
+
+    // D2 MSAA FBO smoke preamble. Verify the requested level at the main menu
+    // and again after gameplay reaches the 3D render path.
+    {"action": "log", "message": "=== TEST: D2 MSAA FBO smoke ===", "when": "d2"},
+    {"action": "write_config", "file": "descent.cfg", "content": "MsaaLevel=2\n", "when": "d2"},
+    {"action": "write_config", "file": "d2x-redux/descent.cfg", "content": "MsaaLevel=2\n", "when": "d2"},
+    {"action": "enter_game", "game": "d1", "when": "d1"},
+    {"action": "enter_game", "game": "d2", "when": "d2"},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "assert", "when": "d2", "expect": {
+        "screen_mode": "menu",
+        "debug_flags.texture_log": "true",
+        "msaa_samples": "2"
+    }},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
@@ -51,6 +88,11 @@
     {"action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+    {"action": "wait_ms", "ms": 500, "when": "d2"},
+    {"action": "assert", "when": "d2",
+     "expect": {"in_game": "true", "screen_mode": "game", "msaa_samples": "2"}},
+    {"action": "introspect", "when": "d2"},
+    {"action": "log", "message": "=== TEST: D2 MSAA FBO smoke -- PASS ===", "when": "d2"},
 
     {"action": "set_debug", "field": "graphics_option", "value": "tex_filt:0", "post_delay_ms": 300},
     {"action": "set_debug", "field": "graphics_option", "value": "aniso_level:2", "post_delay_ms": 300},
@@ -73,7 +115,21 @@
 
     {"action": "enter_launcher"},
     {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_video_info_debug_options", "value": false},
+     "post_delay_ms": 250, "when": "d2"},
+    {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_graphics_enabled", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "dlog_texture_enabled", "value": false},
+     "post_delay_ms": 250, "when": "d2"},
     {"action": "assert", "expect": {"debug_prefs.graphics_log_enabled": "false"}},
+    {"action": "assert", "when": "d2", "expect": {
+        "debug_prefs.show_video_info_debug_options": "false",
+        "debug_prefs.graphics_log_enabled": "false",
+        "debug_prefs.texture_log_enabled": "false",
+        "debug_prefs.graphics_debug_logging": "false"
+    }},
+    {"action": "log", "message": "=== TEST: Launcher graphics debug prefs bridge -- COMPLETE ===",
+     "when": "d2"},
     {"action": "log", "message": "=== TEST: Shared OGL runtime texture options -- PASS ==="}
 ]
