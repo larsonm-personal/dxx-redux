@@ -12,11 +12,17 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
+            {"file": "obsidian.zip", "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce", "target": "files/mods"},
             {"file": "obsidian.zip", "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce", "target": "files/mission_zip_batch_cache"}
         ]
     }},
 
     {"action": "enter_launcher"},
+    {"action": "analyze_level_metadata_all", "label": "counterstrike", "file": "descent2.hog", "game": "d2", "status": "ok", "min_total_levels": 30},
+    {"action": "log", "message": "Base D2 level metadata launcher analysis passed"},
+    {"action": "analyze_level_metadata", "label": "base_d2", "file": "descent2.hog", "game": "d2", "status": "ok", "min_levels": 30},
+    {"action": "analyze_level_metadata", "label": "obsidian", "mod_file": "obsidian.zip", "game": "d2", "status": "ok", "min_levels": 18},
+    {"action": "log", "message": "Level metadata launcher analysis passed"},
     {"action": "reset_state"},
     {"action": "clear_mods"},
     {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_markers", "display_name": "Obsidian.zip"},

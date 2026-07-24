@@ -343,3 +343,51 @@ Validation results:
   missile transition from seven to six
 - No APK rebuild was required because this tranche changes JSON automation and
   the plan only; emulator validation used the source-matching installed APK
+
+## Fifth Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Merge base D2 launcher metadata analysis into the Obsidian level-1 owner
+- [x] Merge direct Obsidian archive metadata analysis into the same owner
+- [x] Remove the two absorbed standalone metadata scripts
+- [x] Keep the parameterized Plutonia metadata script standalone
+- [x] Keep Lunar Series metadata standalone
+- [x] Run action-preservation, catalog, quality, and emulator validation
+- [x] Record final validation results
+
+Planned phase order:
+
+1. Enter the launcher with base D2 data and a directly provisioned
+   `obsidian.zip`
+2. Run the former base D2 all-level metadata analysis
+3. Run the former paired base and Obsidian direct-archive analyses
+4. Reset state and clear mods so direct analysis cannot affect gameplay setup
+5. Import Obsidian through the owner's existing mission ZIP path
+6. Run the owner's existing imported metadata analysis and level-1 objective
+   coverage
+
+Compatibility constraints:
+
+- Preserve the exact metadata action parameters and minimum level counts
+- Provision the archive in both the direct-analysis and mission-import
+  locations because those paths exercise different launcher behavior
+- Keep Plutonia standalone because it remains parameterized and has no
+  compatible in-level consumer
+- Keep Lunar Series standalone because it is D1-only and intentionally clears
+  and imports a different mod set
+
+Validation results:
+
+- Semantic comparison confirmed that every non-preamble action from the two
+  absorbed metadata scripts remains unchanged in the owner
+- Automation catalog valid with 45 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- The first emulator attempt passed every new metadata phase, then hit the
+  owner's pre-existing final objective timing failure when trigger 8 remained
+  pending
+- The unchanged rerun passed 65 of 65 steps in 26.440 seconds, including base
+  D2, direct Obsidian archive, imported Obsidian, and all objective assertions
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK
