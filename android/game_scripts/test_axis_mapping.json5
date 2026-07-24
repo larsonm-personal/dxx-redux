@@ -38,8 +38,10 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "setup_command", "command": "write_default_config",
+     "when": "d2", "post_delay_ms": 1000},
+    {"action": "enter_game", "game": "d1", "when": "d1"},
+    {"action": "enter_game", "game": "d2", "when": "d2"},
 
     {"action": "log", "message": "=== TEST: Axis Routing Regression ==="},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
@@ -52,7 +54,8 @@
     {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select", "text": "Rookie", "when": "d1", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select", "text": "Trainee", "when": "d2", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100},
     {"action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
@@ -243,5 +246,75 @@
         "axis_mailbox.automation_active": false
     }},
 
-    {"action": "log", "message": "=== TEST: Android Input Routing -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Android Input Routing -- PASS ==="},
+
+    // Keyboard Defaults Regression
+    //
+    // Root cause this catches:
+    //   kconfig_fill_kb_settings() used memset(out, 0xFF, MAX_CONTROLS)
+    //   which cleared all keyboard bindings to unbound. The fix changed
+    //   this to memcpy(out, DefaultKeySettings[0], MAX_CONTROLS) so
+    //   default keyboard bindings (like TAB=automap) survive the init.
+    //
+    // Phase 1: TAB opens automap, proving TAB is bound in keyboard config.
+    // Phase 2: ESC closes automap and returns to the game.
+    {"action": "log", "message": "=== TEST: Keyboard Defaults Regression ==="},
+    {"action": "log", "message": "Phase 1: Press TAB to open automap"},
+    {"action": "assert", "expect": {"automap_active": "false"}},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 3000},
+    {"action": "assert", "expect": {"automap_active": "true"}},
+    {"action": "log", "message": "Phase 1: PASS -- TAB opened automap (keyboard defaults working)"},
+    {"action": "log", "message": "Phase 2: ESC closes automap"},
+    {"action": "key", "key": "esc", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 3000},
+    {"action": "assert", "expect": {
+        "automap_active": "false",
+        "game_window_is_front": "true"
+    }},
+    {"action": "log", "message": "Phase 2: PASS -- automap dismissed, back in game"},
+    {"action": "log", "message": "=== TEST: Keyboard Defaults Regression -- ALL PHASES PASS ==="},
+
+    // Hold the mixer-mapped Fire Primary button long enough for the control
+    // state to be sampled, then assert the bound fire state before releasing.
+    {"action": "log", "message": "=== TEST: Fire Primary (held button) ===", "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1"
+    }},
+    {"action": "send_button", "button": 100, "held": 1, "when": "d2"},
+    {"action": "wait_ms", "ms": 300, "when": "d2"},
+    {"action": "introspect", "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "fire_primary_state": {"ne": 0}
+    },
+     "_comment": "Holding Fire Primary should drive the bound control state"},
+    {"action": "send_button", "button": 100, "pressed": 0, "when": "d2"},
+    {"action": "wait_for", "field": "fire_primary_state", "value": "0",
+     "when": "d2", "timeout_ms": 3000},
+    {"action": "log", "message": "=== TEST: Fire Primary (held button) -- PASS ===", "when": "d2"},
+
+    // A fresh D2 pilot on Trainee starts with seven concussion missiles.
+    // Verify the live button mapping before intentionally changing the ammo.
+    {"action": "log", "message": "=== TEST: Fire Secondary (one-frame tap) ===", "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1",
+        "joystick_controls.items[1].name": {"eq": "Fire secondary"},
+        "joystick_controls.items[1].value": {"eq": "101"},
+        "player.secondary_weapon": {"eq": "0"},
+        "player.secondary_ammo[0]": {"eq": "7"}
+    }},
+
+    // A true tap should spend one missile and then stop. If the button-up path
+    // is missed, ammo will continue dropping while the fire state stays latched.
+    {"action": "send_button", "button": 101, "when": "d2", "post_delay_ms": 50},
+    {"action": "wait_ms", "ms": 1500, "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "player.secondary_weapon": {"eq": "0"},
+        "player.secondary_ammo[0]": {"eq": "6"}
+    }},
+    {"action": "log", "message": "=== TEST: Fire Secondary (one-frame tap) -- PASS ===", "when": "d2"}
 ]

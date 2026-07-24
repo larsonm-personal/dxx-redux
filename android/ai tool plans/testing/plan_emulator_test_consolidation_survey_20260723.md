@@ -293,3 +293,53 @@ Validation results:
 - D2 owner passed 76 of 76 filtered steps in 30.924 seconds
 - No APK rebuild was required because this tranche changes JSON automation and
   the plan only; emulator validation used the source-matching installed APK
+
+## Fourth Implementation Tranche
+
+Scope selected on 2026-07-23:
+
+- [x] Merge keyboard-default TAB and automap coverage into `test_axis_mapping`
+- [x] Merge the D2 primary-fire hold coverage into `test_axis_mapping`
+- [x] Merge the D2 secondary-fire tap coverage into `test_axis_mapping`
+- [x] Remove the three absorbed standalone scripts
+- [x] Run structural, catalog, quality, and emulator validation
+- [x] Record final validation results
+
+Planned phase order:
+
+1. Reset launcher state and write the default config for D2
+2. Create a fresh pilot and load Counterstrike level 1 on Trainee for D2 or
+   First Strike level 1 on Rookie for D1
+3. Run the existing analog-axis, D-pad, and trigger-axis routing coverage,
+   releasing every injected input
+4. Press TAB, assert that the default keyboard binding opens the automap, and
+   dismiss it with Escape
+5. For D2, hold and release primary fire, then wait for its live control state
+   to return to neutral
+6. For D2, assert the default secondary binding and seven-missile starting
+   count, tap secondary fire once, and assert that exactly one missile was used
+
+Compatibility constraints:
+
+- Preserve every expectation from all three absorbed scripts
+- Keep the secondary-fire phase last because it intentionally mutates ammo
+- Run the primary-fire phase first because it does not consume secondary ammo
+- Use Trainee only for D2 so the exact seven-to-six ammo contract is preserved
+- Keep D1 on the owner's existing Rookie path
+- Use game-selecting `enter_game` actions because the owner's former
+  page-dependent `Descent N` button sequence fails when SetupActivity resumes
+  on its configuration page
+
+Validation results:
+
+- Semantic multiset comparison confirmed that every expectation from the three
+  absorbed scripts remains in the owner
+- Automation catalog valid with 47 standalone JSON tests, 18 support scripts,
+  and 53 PowerShell entries
+- Scoped code quality and `git diff --check` passed
+- D1 owner passed 81 of 81 filtered steps in 25.711 seconds
+- D2 owner passed 97 of 97 filtered steps in 40.447 seconds
+- The D2 run confirmed primary-fire neutralization and the exact secondary
+  missile transition from seven to six
+- No APK rebuild was required because this tranche changes JSON automation and
+  the plan only; emulator validation used the source-matching installed APK
