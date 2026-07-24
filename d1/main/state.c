@@ -1042,6 +1042,14 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.ai_info.behavior               = obj->ctype.ai_info.behavior; 
 			for (i = 0; i < MAX_AI_FLAGS; i++)
 				obj_rw->ctype.ai_info.flags[i]       = obj->ctype.ai_info.flags[i]; 
+			/*
+			 * Multiplayer robot ownership is runtime transport state.  The
+			 * robot_controlled[] slot table is intentionally not part of a
+			 * save, so persisting its object-side owner/slot half creates an
+			 * invalid association after restore.
+			 */
+			obj_rw->ctype.ai_info.REMOTE_OWNER = -1;
+			obj_rw->ctype.ai_info.REMOTE_SLOT_NUM = 0;
 			obj_rw->ctype.ai_info.hide_segment           = obj->ctype.ai_info.hide_segment;
 			obj_rw->ctype.ai_info.hide_index             = obj->ctype.ai_info.hide_index;
 			obj_rw->ctype.ai_info.path_length            = obj->ctype.ai_info.path_length;
@@ -2200,6 +2208,20 @@ RetryObjectLoading:
 		}
 	}
 	special_reset_objects();
+
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP) {
+		int restored_robot_owners = 0;
+
+		for (i = 0; i <= Highest_object_index; i++)
+			if (Objects[i].type == OBJ_ROBOT &&
+			    Objects[i].control_type == CT_AI &&
+			    Objects[i].ctype.ai_info.REMOTE_OWNER != -1)
+				restored_robot_owners++;
+		COOPLOG("restore robot ownership payload: owned=%d expected=0",
+		        restored_robot_owners);
+	}
+#endif
 
 	//Restore wall info
 	Num_walls = PHYSFSX_readSXE32(fp, swap);

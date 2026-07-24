@@ -145,3 +145,19 @@ Analyze the supplied D2 level 9 cooperative log for:
 - No save-format bump is technically required because the structure and byte
   count do not change. Existing saves can retain the old bug under this scoped
   requirement; all saves written after the change are clean.
+
+## Implemented thief save fix
+
+- `d2/main/state.c` now overwrites `REMOTE_OWNER` with `-1` and
+  `REMOTE_SLOT_NUM` with `0` in the temporary `object_rw` representation after
+  copying persistent AI flags. The live robot object is unchanged.
+- D2 Android coop restore now logs
+  `restore robot ownership payload: owned=N thief_owned=N expected=0`
+  immediately after reading objects. A save written by the fixed build should
+  report zero before explicit guidebot ownership reconstruction.
+- No restore-time repair, legacy-save migration, save layout change, or special
+  thief restore path was added.
+- Lightweight validation:
+  - `git diff --check` passed.
+  - The Windows D2 `dxx-redux-d2-headless-metadata` target compiled and linked,
+    including the modified `state.c`.
