@@ -525,7 +525,7 @@ int state_android_read_coop_metadata_trailer(rewind_file *file,
 	struct PHYSFS_File *physfs_file;
 	PHYSFS_sint64 saved_pos;
 	PHYSFS_sint64 file_len;
-	PHYSFS_sint64 coop_meta_start;
+	PHYSFS_sint64 coop_trailer_end;
 	android_save_meta_disk android_meta;
 	int have_android_meta;
 	int have_coop_meta = 0;
@@ -538,15 +538,12 @@ int state_android_read_coop_metadata_trailer(rewind_file *file,
 		file_len = rewind_file_length(file);
 		have_android_meta = state_android_read_android_metadata_trailer(
 		    file, &android_meta);
-		coop_meta_start = file_len - (PHYSFS_sint64) sizeof(*meta);
+		coop_trailer_end = file_len;
 		if (have_android_meta)
-			coop_meta_start -= (PHYSFS_sint64) sizeof(android_save_meta_disk);
-		if (coop_meta_start >= 0 && rewind_file_seek(file, coop_meta_start) &&
-		    rewind_file_read(file, meta, sizeof(*meta), 1) == 1 &&
-		    meta->tag == COOP_SAVE_META_TAG && meta->version >= 1 &&
-		    meta->num_active_players <= MAX_PLAYERS &&
-		    meta->num_absent_players <= COOP_MAX_REMEMBERED_PLAYERS)
-			have_coop_meta = 1;
+			coop_trailer_end -=
+			    (PHYSFS_sint64) sizeof(android_save_meta_disk);
+		have_coop_meta = coop_read_save_metadata_rewind(
+		    file, coop_trailer_end, meta);
 		rewind_file_seek(file, saved_pos);
 		return have_coop_meta;
 	}
@@ -560,30 +557,32 @@ int state_android_read_coop_metadata_trailer(rewind_file *file,
 	have_android_meta = android_save_meta_read_physfs(
 	    physfs_file, file_len, &android_meta);
 
-	coop_meta_start = file_len - (PHYSFS_sint64) sizeof(coop_save_metadata);
+	coop_trailer_end = file_len;
 	if (have_android_meta)
-		coop_meta_start -= (PHYSFS_sint64) sizeof(android_meta);
-	if (coop_meta_start >= 0)
+		coop_trailer_end -= (PHYSFS_sint64) sizeof(android_meta);
+	if (coop_trailer_end >= 0)
 		have_coop_meta = coop_read_save_metadata(
-		    physfs_file, coop_meta_start, meta);
+		    physfs_file, coop_trailer_end, meta);
 
 	rewind_file_seek(file, saved_pos);
 	return have_coop_meta;
 }
 
-void state_android_write_save_metadata(rewind_file *fp, const char *desc,
-                                       const char *mission_filename)
+int state_android_write_save_metadata(rewind_file *fp, const char *desc,
+                                      const char *mission_filename)
 {
 	struct PHYSFS_File *physfs_fp;
 	android_save_meta_write_params android_params;
 	char android_desc[STATE_ANDROID_DESC_LENGTH + 1];
 
 	if (rewind_file_is_memory(fp)) {
-		coop_write_save_metadata_rewind(fp);
-		return;
+		return !(Game_mode & GM_MULTI_COOP) ||
+		       coop_write_save_metadata_rewind(fp);
 	}
 	physfs_fp = rewind_file_physfs_handle(fp);
-	coop_write_save_metadata(physfs_fp);
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    !coop_write_save_metadata(physfs_fp))
+		return 0;
 	memset(&android_params, 0, sizeof(android_params));
 	memcpy(android_desc, desc, STATE_ANDROID_DESC_LENGTH);
 	android_desc[STATE_ANDROID_DESC_LENGTH] = '\0';
@@ -606,10 +605,12 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_params.guidebot_route_target_mode = (uint8_t) escort_get_route_target_mode();
 #endif
 	android_save_meta_apply_cached_thumbnail(&android_params);
-	android_save_meta_write_physfs(physfs_fp, &android_params);
+	if (!android_save_meta_write_physfs(physfs_fp, &android_params))
+		return 0;
 	state_android_write_last_save_set(
 	    (Game_mode & GM_MULTI_COOP) ? 1 : 0, Players[Player_num].callsign,
 	    mission_filename);
+	return 1;
 }
 
 void state_android_restore_music_type_from_meta(const android_save_meta_disk *meta)

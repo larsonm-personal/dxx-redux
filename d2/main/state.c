@@ -81,6 +81,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_save_meta.h"
 #include "state_android_shared.h"
 #include "coop_save.h"
+#include "coop/coop_powerup_duplication.h"
 #include "coop/coop_restore_remap.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
@@ -2364,7 +2365,13 @@ int state_save_all_sub(char *filename, char *desc)
 	state_write_runtime_state(fp);
 
 #ifdef __ANDROID__
-	state_android_write_save_metadata(fp, desc, mission_filename);
+	if (!state_android_write_save_metadata(fp, desc, mission_filename)) {
+		con_printf(CON_URGENT,
+			"coop_save: failed to write complete metadata\n");
+		PHYSFS_close(fp);
+		start_time();
+		return 0;
+	}
 #endif
 
 	PHYSFS_close(fp);
@@ -3281,6 +3288,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		if (have_coop_meta) {
 			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
+			Netgame.DuplicateEnergyShields =
+				coop_meta.duplicate_energy_shields;
+			if (!coop_powerup_duplication_apply_pending()) {
+				con_printf(CON_URGENT,
+					"coop_save: invalid per-player powerup state\n");
+				PHYSFS_close(fp);
+				return 0;
+			}
 			/* Repopulate the absent player list so returning players get inventory back */
 			if (Game_mode & GM_MULTI_COOP)
 				coop_load_absent_from_metadata(&coop_meta);
@@ -3297,6 +3312,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 						HUD_init_message(HM_DEFAULT, "Guide-Bot: %s has control", Players[Escort_owner_player].callsign);
 				}
 			}
+			} else if (Game_mode & GM_MULTI_COOP) {
+				con_printf(CON_URGENT,
+					"coop_save: unsupported or missing coop metadata\n");
+				PHYSFS_close(fp);
+				return 0;
 			} else if (!(have_android_meta &&
 				file_len - pos_after_base == (PHYSFS_sint64)sizeof(android_meta)) &&
 				pos_after_base != file_len)

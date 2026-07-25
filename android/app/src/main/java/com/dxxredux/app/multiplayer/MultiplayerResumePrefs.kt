@@ -23,6 +23,7 @@ internal data class MultiplayerResumeRecord(
     val levelNum: Int,
     val maxPlayers: Int,
     val coopQol: Boolean = true,
+    val duplicateEnergyShields: Boolean = false,
     val fullDeathSpew: Boolean = true,
     val playerSpewNoExpire: Boolean = true,
     val localCallsign: String,
@@ -80,6 +81,7 @@ internal fun MultiplayerResumeRecord.toHostDefaults(): HostGameDefaults.Defaults
         levelNum = levelNum,
         maxPlayers = maxPlayers,
         coopQol = coopQol,
+        duplicateEnergyShields = duplicateEnergyShields,
         fullDeathSpew = fullDeathSpew,
         playerSpewNoExpire = playerSpewNoExpire,
         clientsCanRequestRewind = clientsCanRequestRewind,
@@ -95,6 +97,7 @@ internal fun MultiplayerResumeRecord.toGameInfoJson(): JsonObject =
             "difficulty" to JsonPrimitive(difficulty),
             "level_num" to JsonPrimitive(levelNum),
             "coop_qol" to JsonPrimitive(coopQol),
+            "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
             "full_death_spew" to JsonPrimitive(fullDeathSpew),
             "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
@@ -127,6 +130,7 @@ internal fun encodeMultiplayerResumeRecord(record: MultiplayerResumeRecord): Str
         .put("level_num", record.levelNum)
         .put("max_players", record.maxPlayers)
         .put("coop_qol", record.coopQol)
+        .put("duplicate_energy_shields", record.duplicateEnergyShields)
         .put("full_death_spew", record.fullDeathSpew)
         .put("player_spew_no_expire", record.playerSpewNoExpire)
         .put("local_callsign", record.localCallsign)
@@ -174,6 +178,7 @@ internal fun decodeMultiplayerResumeRecord(raw: String?): MultiplayerResumeRecor
             levelNum = json.optInt("level_num", 1),
             maxPlayers = json.optInt("max_players", 4),
             coopQol = json.optBoolean("coop_qol", true),
+            duplicateEnergyShields = json.optBoolean("duplicate_energy_shields", false),
             fullDeathSpew = json.optBoolean("full_death_spew", true),
             playerSpewNoExpire = json.optBoolean("player_spew_no_expire", true),
             localCallsign = callsign,
@@ -260,6 +265,7 @@ internal object MultiplayerResumePrefs {
                 levelNum = info.levelNum,
                 maxPlayers = info.maxPlayers,
                 coopQol = info.coopQol,
+                duplicateEnergyShields = info.duplicateEnergyShields,
                 fullDeathSpew = info.fullDeathSpew,
                 playerSpewNoExpire = info.playerSpewNoExpire,
                 clientsCanRequestRewind = info.clientsCanRequestRewind,

@@ -69,7 +69,7 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30013 // Redux 1.2 + full death spew + persistent player spew + Android paced save transfer + coop difficulty changes
+#define MULTI_PROTO_VERSION 30014 // Redux 1.2 + per-player coop energy/shield pickups
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -141,6 +141,10 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_DIFFICULTY           , 3)   \
 	VALUE(MULTI_REWIND_SAVE_READY    , MULTI_REWIND_SAVE_READY_LEN)   \
 	VALUE(MULTI_COOP_RESTORE_STATUS  , 2)   \
+	VALUE(MULTI_COOP_POWERUP_COLLECTED, 10)   \
+	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_BEGIN, 5)   \
+	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_ENTRY, 55)   \
+	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_END, 5)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -569,6 +573,7 @@ typedef struct netgame_info
 	ubyte						GaussAmmoStyle;
 	ubyte						FullDeathSpew;
 	ubyte						PlayerSpewNoExpire;
+	ubyte						DuplicateEnergyShields;
 	ubyte						team_color[2];
 	ubyte						NewSpawnAlgorithm;
 } __pack__ netgame_info;

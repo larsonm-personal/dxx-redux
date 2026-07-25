@@ -291,6 +291,7 @@ private fun LanDiscoveryView(
     var hostedLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
     var hostedFreshLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
     var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
+    var hostedDuplicateEnergyShields by remember { mutableStateOf(hostDefaults.duplicateEnergyShields) }
     var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
     var hostedPlayerSpewNoExpire by remember { mutableStateOf(hostDefaults.playerSpewNoExpire) }
     var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
@@ -356,6 +357,7 @@ private fun LanDiscoveryView(
         hostedLevelNum = record.levelNum
         hostedFreshLevelNum = record.levelNum
         hostedCoopQol = record.coopQol
+        hostedDuplicateEnergyShields = record.duplicateEnergyShields
         hostedFullDeathSpew = record.fullDeathSpew
         hostedPlayerSpewNoExpire = record.playerSpewNoExpire
         hostedClientsCanRequestRewind = record.clientsCanRequestRewind
@@ -736,6 +738,7 @@ private fun LanDiscoveryView(
                             hostedDifficulty,
                             hostedLevelNum,
                             coopQol = hostedCoopQol,
+                            duplicateEnergyShields = hostedDuplicateEnergyShields,
                             fullDeathSpew = hostedFullDeathSpew,
                             playerSpewNoExpire = hostedPlayerSpewNoExpire,
                             clientsCanRequestRewind = hostedClientsCanRequestRewind,
@@ -820,6 +823,7 @@ private fun LanDiscoveryView(
                 difficulty,
                 levelNum,
                 coopQol,
+                duplicateEnergyShields,
                 fullDeathSpew,
                 playerSpewNoExpire,
                 clientsCanRequestRewind,
@@ -833,6 +837,7 @@ private fun LanDiscoveryView(
                 hostedLevelNum = levelNum
                 hostedFreshLevelNum = levelNum
                 hostedCoopQol = coopQol
+                hostedDuplicateEnergyShields = duplicateEnergyShields
                 hostedFullDeathSpew = fullDeathSpew
                 hostedPlayerSpewNoExpire = playerSpewNoExpire
                 hostedClientsCanRequestRewind = clientsCanRequestRewind

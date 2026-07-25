@@ -31,6 +31,7 @@ class MultiplayerResumePrefsTest {
                 levelNum = 7,
                 maxPlayers = 4,
                 coopQol = true,
+                duplicateEnergyShields = true,
                 fullDeathSpew = false,
                 playerSpewNoExpire = false,
                 localCallsign = "Miner",

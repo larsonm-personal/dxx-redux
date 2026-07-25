@@ -841,6 +841,7 @@ extern int auto_host_max_players;
 extern int auto_host_level_num;
 extern int auto_host_difficulty;
 extern int auto_host_coop_qol;
+extern int auto_host_duplicate_energy_shields;
 extern int auto_host_full_death_spew;
 extern int auto_host_player_spew_no_expire;
 extern int auto_host_clients_can_request_rewind;
@@ -890,7 +891,9 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
                                                      jint myPort, jstring jMission, jint mode,
                                                      jint maxPlayers, jint levelNum, jint difficulty,
-                                                     jboolean coopQol, jboolean fullDeathSpew,
+                                                     jboolean coopQol,
+                                                     jboolean duplicateEnergyShields,
+                                                     jboolean fullDeathSpew,
                                                      jboolean playerSpewNoExpire,
                                                      jboolean clientsCanRequestRewind,
                                                      jboolean hostObserver)
@@ -906,6 +909,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	auto_host_level_num = (int) levelNum;
 	auto_host_difficulty = (int) difficulty;
 	auto_host_coop_qol = coopQol ? 1 : 0;
+	auto_host_duplicate_energy_shields = duplicateEnergyShields ? 1 : 0;
 	auto_host_full_death_spew = fullDeathSpew ? 1 : 0;
 	auto_host_player_spew_no_expire = playerSpewNoExpire ? 1 : 0;
 	auto_host_clients_can_request_rewind = clientsCanRequestRewind ? 1 : 0;
@@ -913,16 +917,18 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	android_rewind_set_clients_can_request(auto_host_clients_can_request_rewind);
 	auto_host_pending = 1;
 	debug_log(DLOG_COOP_DESYNC,
-	          "[COOP] nativeSetAutoHost: port=%d mission=%s mode=%d max=%d level=%d diff=%d coop_qol=%d client_rewind=%d host_observer=%d",
+	          "[COOP] nativeSetAutoHost: port=%d mission=%s mode=%d max=%d level=%d diff=%d coop_qol=%d duplicate_energy_shields=%d client_rewind=%d host_observer=%d",
 	          auto_host_my_port, auto_host_mission, auto_host_mode,
 	          auto_host_max_players, auto_host_level_num,
 	          auto_host_difficulty, auto_host_coop_qol,
+	          auto_host_duplicate_energy_shields,
 	          auto_host_clients_can_request_rewind,
 	          auto_host_observer);
-	LOGI("nativeSetAutoHost: port=%d mission=%s mode=%d max=%d lvl=%d diff=%d coop_qol=%d full_death_spew=%d player_spew_no_expire=%d client_rewind=%d host_observer=%d",
+	LOGI("nativeSetAutoHost: port=%d mission=%s mode=%d max=%d lvl=%d diff=%d coop_qol=%d duplicate_energy_shields=%d full_death_spew=%d player_spew_no_expire=%d client_rewind=%d host_observer=%d",
 	     auto_host_my_port, auto_host_mission, auto_host_mode,
 	     auto_host_max_players, auto_host_level_num, auto_host_difficulty,
-	     auto_host_coop_qol, auto_host_full_death_spew,
+	     auto_host_coop_qol, auto_host_duplicate_energy_shields,
+	     auto_host_full_death_spew,
 	     auto_host_player_spew_no_expire,
 	     auto_host_clients_can_request_rewind,
 	     auto_host_observer);

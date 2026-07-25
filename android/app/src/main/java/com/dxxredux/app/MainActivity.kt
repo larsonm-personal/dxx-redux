@@ -493,6 +493,7 @@ class MainActivity :
         levelNum: Int,
         difficulty: Int,
         coopQol: Boolean,
+        duplicateEnergyShields: Boolean,
         fullDeathSpew: Boolean,
         playerSpewNoExpire: Boolean,
         clientsCanRequestRewind: Boolean,
@@ -763,6 +764,7 @@ class MainActivity :
             val levelNum = intent.getIntExtra("mp_level_num", 1)
             val difficulty = intent.getIntExtra("mp_difficulty", 1)
             val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
+            val duplicateEnergyShields = intent.getBooleanExtra("mp_duplicate_energy_shields", false)
             val fullDeathSpew = intent.getBooleanExtra("mp_full_death_spew", true)
             val playerSpewNoExpire = intent.getBooleanExtra("mp_player_spew_no_expire", true)
             val clientsCanRequestRewind = intent.getBooleanExtra("mp_clients_can_request_rewind", false)
@@ -775,6 +777,7 @@ class MainActivity :
                 levelNum,
                 difficulty,
                 coopQol,
+                duplicateEnergyShields,
                 fullDeathSpew,
                 playerSpewNoExpire,
                 clientsCanRequestRewind,

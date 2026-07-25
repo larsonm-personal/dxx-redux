@@ -1004,6 +1004,7 @@ object LobbyService {
         difficulty: Int,
         levelNum: Int,
         coopQol: Boolean = true,
+        duplicateEnergyShields: Boolean = false,
         fullDeathSpew: Boolean = true,
         playerSpewNoExpire: Boolean = true,
         clientsCanRequestRewind: Boolean = false,
@@ -1029,6 +1030,7 @@ object LobbyService {
                 levelNum = levelNum,
                 maxPlayers = hostedMaxPlayers,
                 coopQol = coopQol,
+                duplicateEnergyShields = duplicateEnergyShields,
                 fullDeathSpew = fullDeathSpew,
                 playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
@@ -1085,6 +1087,7 @@ object LobbyService {
                     hostCallsign = hostCallsign,
                     hostClientId = localClientId,
                     coopQol = coopQol,
+                    duplicateEnergyShields = duplicateEnergyShields,
                     fullDeathSpew = fullDeathSpew,
                     playerSpewNoExpire = playerSpewNoExpire,
                     clientsCanRequestRewind = clientsCanRequestRewind,
@@ -1123,6 +1126,7 @@ object LobbyService {
         val levelNum = json.optInt("level_num", 1)
         val maxPlayers = json.optInt("max_players", 4)
         val coopQol = json.optBoolean("coop_qol", true)
+        val duplicateEnergyShields = json.optBoolean("duplicate_energy_shields", false)
         val fullDeathSpew = json.optBoolean("full_death_spew", true)
         val playerSpewNoExpire = json.optBoolean("player_spew_no_expire", true)
         val clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false)
@@ -1160,6 +1164,7 @@ object LobbyService {
                 hostCallsign = joinedInfo.hostCallsign,
                 hostClientId = joinedInfo.hostClientId,
                 coopQol = coopQol,
+                duplicateEnergyShields = duplicateEnergyShields,
                 fullDeathSpew = fullDeathSpew,
                 playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,

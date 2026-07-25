@@ -14,6 +14,7 @@
 #include "coop_save.h"
 #include "coop_level_restart.h"
 #include "coop_player_session.h"
+#include "coop_powerup_duplication.h"
 #include "coop_restore_remap.h"
 
 #include "player.h"
@@ -333,6 +334,8 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	meta->difficulty_changed = Difficulty_level_changed ? 1 : 0;
 	meta->difficulty_min = (uint8_t) Difficulty_level_min_seen;
 	meta->difficulty_max = (uint8_t) Difficulty_level_max_seen;
+	meta->duplicate_energy_shields =
+	    Netgame.DuplicateEnergyShields ? 1 : 0;
 	coop_write_metadata_extra(meta);
 
 	meta->num_active_players = 0;
@@ -352,78 +355,132 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	return 1;
 }
 
-void coop_write_save_metadata(void *fp)
+static uint32_t coop_save_checksum(const void *data, size_t size,
+                                   uint32_t checksum)
 {
+	const uint8_t *bytes = (const uint8_t *) data;
+	size_t i;
+
+	for (i = 0; i < size; i++) {
+		checksum ^= bytes[i];
+		checksum *= 16777619u;
+	}
+	return checksum;
+}
+
+static int coop_write_save_payload(rewind_file *file)
+{
+	size_t count = coop_powerup_duplication_count();
+	const coop_powerup_collection *items =
+	    coop_powerup_duplication_data();
+	size_t items_size;
 	coop_save_metadata meta;
+	coop_save_footer footer;
+	uint32_t checksum = 2166136261u;
 
-	if (!fp || !coop_build_save_metadata(&meta))
-		return;
+	if (!file || !coop_build_save_metadata(&meta) ||
+	    count > UINT32_MAX ||
+	    count > (SIZE_MAX - sizeof(meta)) / sizeof(*items) ||
+	    sizeof(meta) + count * sizeof(*items) > UINT32_MAX)
+		return 0;
+	if (!meta.duplicate_energy_shields && count)
+		return 0;
+	items_size = count * sizeof(*items);
+	memset(&footer, 0, sizeof(footer));
+	footer.tag = COOP_SAVE_FOOTER_TAG;
+	footer.version = COOP_SAVE_META_VER;
+	footer.payload_size = (uint32_t) (sizeof(meta) + items_size);
+	footer.collection_count = (uint32_t) count;
+	checksum = coop_save_checksum(&meta, sizeof(meta), checksum);
+	if (items_size)
+		checksum = coop_save_checksum(items, items_size, checksum);
+	footer.checksum = checksum;
+	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1 ||
+	    (items_size &&
+	     rewind_file_write(file, items, items_size, 1) != 1) ||
+	    rewind_file_write(file, &footer, sizeof(footer), 1) != 1)
+		return 0;
+	COOP_SAVE_LOG(CON_DEBUG,
+	              "coop_save: wrote metadata trailer (%d active, %d absent, %u pickups)\n",
+	              meta.num_active_players, meta.num_absent_players,
+	              footer.collection_count);
+	return 1;
+}
 
-	PHYSFS_write((PHYSFS_file *) fp, &meta, sizeof(meta), 1);
-	COOP_SAVE_LOG(CON_DEBUG, "coop_save: wrote metadata trailer (%d active, %d absent)\n",
-	              meta.num_active_players, meta.num_absent_players);
+int coop_write_save_metadata(void *fp)
+{
+	REWIND_PHYSFS_FILE(file, (PHYSFS_file *) fp);
+
+	if (!fp)
+		return 0;
+	return coop_write_save_payload(file);
 }
 
 #ifdef ANDROID
 int coop_write_save_metadata_rewind(rewind_file *file)
 {
-	coop_save_metadata meta;
-
-	if (!file || !coop_build_save_metadata(&meta))
-		return 0;
-	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1)
-		return 0;
-	COOP_SAVE_LOG(CON_DEBUG, "coop_save: wrote memory metadata trailer (%d active, %d absent)\n",
-	              meta.num_active_players, meta.num_absent_players);
-	return 1;
+	return coop_write_save_payload(file);
 }
 #endif
 
-int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
-                            coop_save_metadata *meta)
+int coop_read_save_metadata_rewind(rewind_file *file,
+                                   PHYSFS_sint64 trailer_end,
+                                   coop_save_metadata *meta)
 {
-	uint32_t tag;
-	PHYSFS_sint64 file_len, bytes_to_read, rest_len;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 payload_start;
+	coop_save_footer footer;
+	coop_powerup_collection *items = NULL;
+	size_t items_size;
+	uint32_t checksum = 2166136261u;
+	int result = 0;
 
-	/* The metadata trailer starts right after the existing save data */
-	if (PHYSFS_seek((PHYSFS_file *) fp, expected_end) == 0)
+	if (!file || !meta ||
+	    trailer_end < (PHYSFS_sint64) sizeof(footer))
 		return 0;
-
-	/* Check if there's enough data for at least the tag */
-	file_len = PHYSFS_fileLength((PHYSFS_file *) fp);
-	if (file_len < expected_end + (PHYSFS_sint64) sizeof(uint32_t))
-		return 0;
-
-	if (PHYSFS_read((PHYSFS_file *) fp, &tag, sizeof(tag), 1) != 1)
-		return 0;
-	if (tag != COOP_SAVE_META_TAG)
-		return 0;
-
-	/* Read the rest of the struct (skip the tag we already read) */
-	memset(meta, 0, sizeof(*meta));
-	meta->tag = tag;
-	rest_len = file_len - expected_end - (PHYSFS_sint64) sizeof(uint32_t);
-	bytes_to_read = (PHYSFS_sint64) sizeof(*meta) - (PHYSFS_sint64) sizeof(uint32_t);
-	if (rest_len < bytes_to_read)
-		bytes_to_read = rest_len;
-	if (bytes_to_read <= 0 ||
-	    PHYSFS_read((PHYSFS_file *) fp, ((char *) meta) + sizeof(uint32_t),
-	                (uint) bytes_to_read, 1) != 1) {
-		con_printf(CON_URGENT, "coop_save: truncated metadata trailer\n");
-		return 0;
+	saved_pos = rewind_file_tell(file);
+	if (!rewind_file_seek(
+	        file, trailer_end - (PHYSFS_sint64) sizeof(footer)) ||
+	    rewind_file_read(file, &footer, sizeof(footer), 1) != 1 ||
+	    footer.tag != COOP_SAVE_FOOTER_TAG ||
+	    footer.version != COOP_SAVE_META_VER ||
+	    footer.payload_size < sizeof(*meta) ||
+	    footer.collection_count >
+	        (footer.payload_size - sizeof(*meta)) /
+	            sizeof(coop_powerup_collection) ||
+	    footer.payload_size !=
+	        sizeof(*meta) +
+	            footer.collection_count *
+	                sizeof(coop_powerup_collection))
+		goto done;
+	payload_start = trailer_end - (PHYSFS_sint64) sizeof(footer) -
+	                footer.payload_size;
+	if (payload_start < 0 ||
+	    !rewind_file_seek(file, payload_start) ||
+	    rewind_file_read(file, meta, sizeof(*meta), 1) != 1)
+		goto done;
+	items_size = footer.collection_count *
+	             sizeof(coop_powerup_collection);
+	if (items_size) {
+		items = (coop_powerup_collection *) malloc(items_size);
+		if (!items ||
+		    rewind_file_read(file, items, items_size, 1) != 1)
+			goto done;
 	}
-
-	/* Basic sanity */
-	if (meta->version < 1 || meta->num_active_players > 8 ||
-	    meta->num_absent_players > COOP_MAX_REMEMBERED_PLAYERS) {
+	checksum = coop_save_checksum(meta, sizeof(*meta), checksum);
+	if (items_size)
+		checksum = coop_save_checksum(items, items_size, checksum);
+	if (checksum != footer.checksum ||
+	    meta->tag != COOP_SAVE_META_TAG ||
+	    meta->version != COOP_SAVE_META_VER ||
+	    meta->num_active_players > 8 ||
+	    meta->num_absent_players > COOP_MAX_REMEMBERED_PLAYERS ||
+	    meta->duplicate_energy_shields > 1 ||
+	    (!meta->duplicate_energy_shields &&
+	     footer.collection_count)) {
 		con_printf(CON_URGENT, "coop_save: invalid metadata (ver=%d, active=%d, absent=%d)\n",
 		           meta->version, meta->num_active_players, meta->num_absent_players);
-		return 0;
-	}
-	if (meta->version < 4) {
-		meta->difficulty_changed = 0;
-		meta->difficulty_min = meta->difficulty;
-		meta->difficulty_max = meta->difficulty;
+		goto done;
 	}
 	if (meta->difficulty_changed > 1 || meta->difficulty > 4 ||
 	    meta->difficulty_min > 4 ||
@@ -431,12 +488,29 @@ int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
 		con_printf(CON_URGENT, "coop_save: invalid difficulty metadata (difficulty=%d, changed=%d, min=%d, max=%d)\n",
 		           meta->difficulty, meta->difficulty_changed,
 		           meta->difficulty_min, meta->difficulty_max);
-		return 0;
+		goto done;
 	}
+	if (!coop_powerup_duplication_set_pending(
+	        items, footer.collection_count))
+		goto done;
+	COOP_SAVE_LOG(CON_DEBUG,
+	              "coop_save: read metadata trailer (ver=%d, %d active, %d absent, %u pickups)\n",
+	              meta->version, meta->num_active_players,
+	              meta->num_absent_players, footer.collection_count);
+	result = 1;
+done:
+	free(items);
+	rewind_file_seek(file, saved_pos);
+	return result;
+}
 
-	COOP_SAVE_LOG(CON_DEBUG, "coop_save: read metadata trailer (ver=%d, %d active, %d absent)\n",
-	              meta->version, meta->num_active_players, meta->num_absent_players);
-	return 1;
+int coop_read_save_metadata(void *fp, PHYSFS_sint64 trailer_end,
+                            coop_save_metadata *meta)
+{
+	REWIND_PHYSFS_FILE(file, (PHYSFS_file *) fp);
+
+	return fp ? coop_read_save_metadata_rewind(
+	                file, trailer_end, meta) : 0;
 }
 
 int coop_find_player_in_metadata(const char *callsign,

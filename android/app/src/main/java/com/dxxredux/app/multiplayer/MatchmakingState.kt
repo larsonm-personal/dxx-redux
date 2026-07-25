@@ -90,6 +90,7 @@ data class GameLaunchInfo(
     val hostCallsign: String? = null,
     val hostClientId: String? = null,
     val coopQol: Boolean = true,
+    val duplicateEnergyShields: Boolean = false,
     val fullDeathSpew: Boolean = true,
     val playerSpewNoExpire: Boolean = true,
     val clientsCanRequestRewind: Boolean = false,
@@ -188,6 +189,7 @@ object HostGameDefaults {
         val levelNum: Int = 1,
         val maxPlayers: Int = 4,
         val coopQol: Boolean = true,
+        val duplicateEnergyShields: Boolean = false,
         val fullDeathSpew: Boolean = true,
         val playerSpewNoExpire: Boolean = true,
         val clientsCanRequestRewind: Boolean = false,
@@ -205,6 +207,7 @@ object HostGameDefaults {
             levelNum = prefs.getInt("host_level_num", 1),
             maxPlayers = prefs.getInt("host_max_players", 4),
             coopQol = prefs.getBoolean("host_coop_qol", true),
+            duplicateEnergyShields = prefs.getBoolean("host_duplicate_energy_shields", false),
             fullDeathSpew = prefs.getBoolean("host_full_death_spew", true),
             playerSpewNoExpire = prefs.getBoolean("host_player_spew_no_expire", true),
             clientsCanRequestRewind = prefs.getBoolean("host_clients_can_request_rewind", false),
@@ -226,6 +229,7 @@ object HostGameDefaults {
             .putInt("host_level_num", d.levelNum)
             .putInt("host_max_players", d.maxPlayers)
             .putBoolean("host_coop_qol", d.coopQol)
+            .putBoolean("host_duplicate_energy_shields", d.duplicateEnergyShields)
             .putBoolean("host_full_death_spew", d.fullDeathSpew)
             .putBoolean("host_player_spew_no_expire", d.playerSpewNoExpire)
             .putBoolean("host_clients_can_request_rewind", d.clientsCanRequestRewind)

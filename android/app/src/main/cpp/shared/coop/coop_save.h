@@ -31,7 +31,8 @@
 
 /* --- constants --- */
 #define COOP_SAVE_META_TAG          0x434F4F50 /* "COOP" */
-#define COOP_SAVE_META_VER          4
+#define COOP_SAVE_META_VER          5
+#define COOP_SAVE_FOOTER_TAG        0x35504643 /* "CFP5" */
 #define COOP_MAX_REMEMBERED_PLAYERS 16
 #define COOP_CLIENT_ID_LEN          36         /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS       10         /* max(d1=5, d2=10) */
@@ -82,7 +83,17 @@ typedef struct coop_save_metadata {
 	uint8_t difficulty_changed; /* v4 */
 	uint8_t difficulty_min;     /* v4 */
 	uint8_t difficulty_max;     /* v4 */
+	uint8_t duplicate_energy_shields; /* v5 */
 } coop_save_metadata;
+
+typedef struct coop_save_footer {
+	uint32_t tag;
+	uint16_t version;
+	uint16_t reserved;
+	uint32_t payload_size;
+	uint32_t collection_count;
+	uint32_t checksum;
+} coop_save_footer;
 
 /* --- helpers (implemented in coop_save.c) --- */
 
@@ -92,7 +103,7 @@ void coop_snapshot_player(int pnum, coop_player_record *rec);
 
 /* Write the coop metadata trailer to an already-open save file.
  * Call this just before PHYSFS_close(). */
-void coop_write_save_metadata(void *fp);
+int coop_write_save_metadata(void *fp);
 #ifdef ANDROID
 int coop_write_save_metadata_rewind(rewind_file *file);
 #endif
@@ -103,6 +114,11 @@ int coop_write_save_metadata_rewind(rewind_file *file);
  * parsed, 0 if missing or corrupt. On success, fills *meta. */
 int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
                             coop_save_metadata *meta);
+#ifdef ANDROID
+int coop_read_save_metadata_rewind(rewind_file *file,
+                                   PHYSFS_sint64 trailer_end,
+                                   coop_save_metadata *meta);
+#endif
 
 /* Find a player in the metadata by client_id (preferred) or callsign
  * (fallback). Returns:

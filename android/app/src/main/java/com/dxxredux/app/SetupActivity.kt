@@ -1030,6 +1030,8 @@ class SetupActivity : ComponentActivity() {
                         val mode = intent.getStringExtra("mode") ?: "anarchy"
                         val maxPlayers = intent.getIntExtra("max_players", 4)
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
+                        val duplicateEnergyShields =
+                            intent.getBooleanExtra("duplicate_energy_shields", false)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val playerSpewNoExpire = intent.getBooleanExtra("player_spew_no_expire", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
@@ -1041,6 +1043,7 @@ class SetupActivity : ComponentActivity() {
                                     "mission" to JsonPrimitive(mission),
                                     "mode" to JsonPrimitive(mode),
                                     "coop_qol" to JsonPrimitive(coopQol),
+                                    "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
                                     "full_death_spew" to JsonPrimitive(fullDeathSpew),
                                     "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
                                     "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
@@ -1127,6 +1130,8 @@ class SetupActivity : ComponentActivity() {
                         val levelNum = intent.getIntExtra("level_num", 1)
                         val difficulty = intent.getIntExtra("difficulty", 1)
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
+                        val duplicateEnergyShields =
+                            intent.getBooleanExtra("duplicate_energy_shields", false)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val playerSpewNoExpire = intent.getBooleanExtra("player_spew_no_expire", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
@@ -1155,6 +1160,7 @@ class SetupActivity : ComponentActivity() {
                                 lanHostPort = hostPort,
                                 isLan = true,
                                 coopQol = coopQol,
+                                duplicateEnergyShields = duplicateEnergyShields,
                                 fullDeathSpew = fullDeathSpew,
                                 playerSpewNoExpire = playerSpewNoExpire,
                                 clientsCanRequestRewind = clientsCanRequestRewind,
@@ -1383,6 +1389,8 @@ class SetupActivity : ComponentActivity() {
                     val levelNum = json["level_num"]?.jsonPrimitive?.int ?: 1
                     val maxPlayers = json["max_players"]?.jsonPrimitive?.int ?: 4
                     val coopQol = json["coop_qol"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
+                    val duplicateEnergyShields =
+                        json["duplicate_energy_shields"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
                     val fullDeathSpew = json["full_death_spew"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
                     val playerSpewNoExpire =
                         json["player_spew_no_expire"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
@@ -1401,6 +1409,7 @@ class SetupActivity : ComponentActivity() {
                             difficulty,
                             levelNum,
                             coopQol = coopQol,
+                            duplicateEnergyShields = duplicateEnergyShields,
                             fullDeathSpew = fullDeathSpew,
                             playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = false,
@@ -1726,6 +1735,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_level_num", info.levelNum)
             mpIntent.putExtra("mp_difficulty", info.difficulty)
             mpIntent.putExtra("mp_coop_qol", info.coopQol)
+            mpIntent.putExtra("mp_duplicate_energy_shields", info.duplicateEnergyShields)
             mpIntent.putExtra("mp_full_death_spew", info.fullDeathSpew)
             mpIntent.putExtra("mp_player_spew_no_expire", info.playerSpewNoExpire)
             mpIntent.putExtra("mp_clients_can_request_rewind", info.clientsCanRequestRewind)

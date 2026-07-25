@@ -57,6 +57,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "textures.h"
 #include "multi.h"
+#ifdef __ANDROID__
+#include "coop/coop_powerup_duplication.h"
+#endif
 #include "cntrlcen.h"
 #include "newdemo.h"
 #include "input_demo_hooks.h"
@@ -1753,10 +1756,25 @@ void collide_player_and_powerup( object * player, object * powerup, vms_vector *
 
 	if (!Endlevel_sequence && !Player_is_dead && (player->id == Player_num )) {
 		int powerup_used;
+#ifdef __ANDROID__
+		int duplicate_for_player = coop_powerup_duplication_eligible(powerup);
+
+		if (duplicate_for_player &&
+		    coop_powerup_duplication_collected(powerup, Player_num))
+			return;
+#endif
 
 		powerup_used = do_powerup(powerup);
 
 		if (powerup_used)	{
+#ifdef __ANDROID__
+			if (duplicate_for_player) {
+				if (coop_powerup_duplication_record(powerup, Player_num)) {
+					coop_powerup_duplication_send(powerup);
+					return;
+				}
+			}
+#endif
 			powerup->flags |= OF_SHOULD_BE_DEAD;
 			#ifdef NETWORK
 			if (Game_mode & GM_MULTI)

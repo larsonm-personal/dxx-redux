@@ -59,6 +59,7 @@ internal fun CreateGameDialog(
         difficulty: Int,
         levelNum: Int,
         coopQol: Boolean,
+        duplicateEnergyShields: Boolean,
         fullDeathSpew: Boolean,
         playerSpewNoExpire: Boolean,
         clientsCanRequestRewind: Boolean,
@@ -75,6 +76,7 @@ internal fun CreateGameDialog(
     var difficulty by remember { mutableStateOf(defaults.difficulty) }
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
+    var duplicateEnergyShields by remember { mutableStateOf(defaults.duplicateEnergyShields) }
     var fullDeathSpew by remember { mutableStateOf(defaults.fullDeathSpew) }
     var playerSpewNoExpire by remember { mutableStateOf(defaults.playerSpewNoExpire) }
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
@@ -346,6 +348,28 @@ internal fun CreateGameDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Switch(
+                                checked = duplicateEnergyShields,
+                                onCheckedChange = { duplicateEnergyShields = it },
+                                modifier = Modifier.tvFocusBorder(),
+                            )
+                            Column {
+                                Text(
+                                    "Energy and shields duplicated for each player",
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                                Text(
+                                    "Level and robot drops can be collected once by every player",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Switch(
                                 checked = clientsCanRequestRewind,
                                 onCheckedChange = { clientsCanRequestRewind = it },
                                 modifier = Modifier.tvFocusBorder(),
@@ -444,6 +468,7 @@ internal fun CreateGameDialog(
                             levelNum = levelNum,
                             maxPlayers = maxPlayers,
                             coopQol = coopQol,
+                            duplicateEnergyShields = duplicateEnergyShields,
                             fullDeathSpew = fullDeathSpew,
                             playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = clientsCanRequestRewind,
@@ -478,6 +503,7 @@ internal fun CreateGameDialog(
                         difficulty,
                         levelNum,
                         coopQol,
+                        duplicateEnergyShields,
                         fullDeathSpew,
                         playerSpewNoExpire,
                         clientsCanRequestRewind,

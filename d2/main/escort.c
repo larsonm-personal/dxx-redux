@@ -76,6 +76,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <android/log.h>
 #include "android_log.h"
 #include "android_menu_scale.h"
+#include "coop/coop_powerup_duplication.h"
 #include "endlevel.h"
 #define ESCORT_DIAG(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "DXX-ESCORT", fmt, ##__VA_ARGS__)
 #define ANDROID_JOY_BUTTON_A 0
@@ -2116,7 +2117,12 @@ int exists_in_mine_2(int segnum, int objtype, int objid, int special)
 					return objnum;
 			}
 
-			if (curobjp->type == objtype) {
+			if (curobjp->type == objtype
+#ifdef __ANDROID__
+			    && !(objtype == OBJ_POWERUP &&
+			         coop_powerup_duplication_hide(curobjp))
+#endif
+			) {
 				//	Don't find escort robots if looking for robot!
 				if ((curobjp->type == OBJ_ROBOT) && (Robot_info[curobjp->id].companion))
 					;

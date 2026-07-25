@@ -103,6 +103,7 @@ if(ANDROID)
     target_sources(dxx-redux-d1 PRIVATE
         ../../android/app/src/main/cpp/shared/coop/coop_host_migration.c
         ../../android/app/src/main/cpp/shared/coop/coop_host_migration_policy.c
+        ../../android/app/src/main/cpp/shared/coop/coop_powerup_duplication.c
         ../../android/app/src/main/cpp/shared/kconfig_android_shared.c
         ../../android/app/src/main/cpp/shared/multi_save_transfer.c
         ../../android/app/src/main/cpp/shared/state_android_shared.c

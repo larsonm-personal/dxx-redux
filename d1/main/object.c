@@ -70,6 +70,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #ifdef __ANDROID__
 #include "android_profile.h"
+#include "coop/coop_powerup_duplication.h"
 #endif
 #include "homing_compat.h"
 
@@ -697,6 +698,9 @@ void render_object(object *obj)
 #ifdef __ANDROID__
 	long long profile_start_us;
 	int profile_model_num;
+
+	if (coop_powerup_duplication_hide(obj))
+		return;
 #endif
 
 	if ( obj == Viewer )

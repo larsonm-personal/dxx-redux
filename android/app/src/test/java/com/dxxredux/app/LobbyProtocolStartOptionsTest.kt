@@ -14,7 +14,7 @@ import org.junit.Test
 
 class LobbyProtocolStartOptionsTest {
     @Test
-    fun buildStart_includesDeathSpewOption() {
+    fun buildStart_includesCoopPickupAndDeathSpewOptions() {
         val packet =
             buildStart(
                 lobbyId = "lobby",
@@ -27,6 +27,7 @@ class LobbyProtocolStartOptionsTest {
                 levelNum = 1,
                 maxPlayers = 4,
                 coopQol = true,
+                duplicateEnergyShields = true,
                 fullDeathSpew = false,
                 playerSpewNoExpire = false,
                 clientsCanRequestRewind = true,
@@ -34,6 +35,7 @@ class LobbyProtocolStartOptionsTest {
         val json = parsePacket(packet, packet.size) ?: error("packet did not parse")
 
         assertTrue(json.getBoolean("coop_qol"))
+        assertTrue(json.getBoolean("duplicate_energy_shields"))
         assertFalse(json.getBoolean("full_death_spew"))
         assertFalse(json.getBoolean("player_spew_no_expire"))
         assertTrue(json.getBoolean("clients_can_request_rewind"))

@@ -22,9 +22,65 @@ the normal shared behavior and can be picked up only once total.
 - [x] Choose a proposed state and synchronization design
 - [x] Reconcile the plan with the cooperative duplicate-weapon energy change
 - [x] Define lossless coop disk-save and in-memory rewind serialization
-- [ ] Implement the feature
-- [ ] Add and run regression coverage
-- [ ] Run formatting, builds, and tests
+- [x] Implement the feature
+- [ ] Add and run two-client regression coverage
+- [x] Run scoped formatting checks, Android builds, and launcher tests
+
+## Implementation progress, 2026-07-25
+
+Implemented in D1 and D2:
+
+- Added the independent, default-off host toggle through the native netgame
+  packet, Android host UI, launcher defaults, config export/import, LAN and
+  matchmaking start data, resume data, and host-migration data.
+- Persisted the changed future-host default in both launcher preferences and
+  native netgame profile configuration.
+- Added a shared tracker keyed by object signature plus stable client ID, with
+  callsign fallback. Player slots are used only to resolve the current stable
+  identity.
+- Kept player death spew and D2 player-spat powerups on the original globally
+  single-use path by excluding `OF_PLAYER_DROPPED` and `PF_SPAT_BY_PLAYER`.
+- Kept weapon objects out of the tracker, including weapons that award energy
+  through the all-players-own-the-weapon enhancement.
+- Added mapped collection packets and a complete host snapshot at the end of
+  late-join object synchronization. Every peer therefore retains the history
+  required for later host migration.
+- Added local collision and rendering filtering, plus D2 guidebot objective
+  filtering. The existing automap only renders key powerups, so it does not
+  expose collected energy or shield objects.
+- Added a framed coop save trailer containing the saved toggle and every live
+  object-to-stable-player collection relation. Disk saves and in-memory
+  rewind/level-restart saves use the same payload writer and parser.
+- Restore now validates the footer, version, sizes, checksum, identities,
+  duplicate relations, object signatures, object IDs, and eligibility before
+  atomically replacing tracker state. Missing old-format coop metadata is an
+  explicit restore failure, as compatibility was not required.
+- Save write failures now propagate to the game save operation. Single-player
+  saves retain their prior metadata path and do not require a coop trailer.
+- Expired or removed dynamic robot drops are pruned before snapshot or save;
+  live dynamic drops use existing remote/local object mapping.
+
+Verification completed:
+
+- `git diff --check`: passed.
+- `:app:compileDebugKotlin :app:externalNativeBuildDebug`: passed for Kotlin
+  and Android arm64-v8a, armeabi-v7a, and x86_64.
+- `:app:testDebugUnitTest` for `LobbyProtocolStartOptionsTest` and
+  `MultiplayerResumePrefsTest`: passed.
+- `:app:assembleDebug`: passed and produced the debug APK.
+- `run-windows-build.ps1 -Target d1`: D1 gameplay and headless executables
+  compiled and linked, then the aggregate build stopped in the existing
+  `test_coop_player_session` target because its MSVC include path cannot find
+  `SDL_types.h`.
+- `run-windows-build.ps1 -Target d2`: D2 gameplay and both headless
+  executables compiled and linked, then the same existing test target stopped
+  the aggregate build because its MSVC include path cannot find `physfs.h`.
+
+Still deferred:
+
+- Maintained two-client emulator coverage for pickup races, late join, save
+  restore, reconnect, and host migration.
+- Dedicated malformed-save and allocation-failure native policy tests.
 
 ## Current behavior and constraints
 

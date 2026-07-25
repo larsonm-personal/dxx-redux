@@ -113,6 +113,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef __ANDROID__
 #include "coop/coop_level_restart.h"
+#include "coop/coop_powerup_duplication.h"
 #include "coop_save.h"
 #include "coop_warp.h"
 #endif
@@ -1245,6 +1246,7 @@ void DoPlayerDead()
 void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 {
 #ifdef __ANDROID__
+	coop_powerup_duplication_reset();
 	if (Game_mode & GM_MULTI_COOP) {
 		COOPLOG("StartNewLevelSub begin: game=d1 requested=%d current=%d page=%d players=%d master=%d",
 		        level_num, Current_level_num, page_in_textures, N_players,

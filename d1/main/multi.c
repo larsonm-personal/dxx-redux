@@ -66,6 +66,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef __ANDROID__
 #include "coop/coop_level_restart.h"
+#include "coop/coop_powerup_duplication.h"
 #include "coop_save.h"
 #include "coop/coop_host_migration.h"
 #include "coop_warp.h"
@@ -5717,6 +5718,14 @@ multi_process_data(const ubyte *buf, int len)
 			multi_do_rewind_save_ready(buf); break;
 		case MULTI_COOP_RESTORE_STATUS:
 			multi_do_coop_restore_status(buf); break;
+		case MULTI_COOP_POWERUP_COLLECTED:
+			coop_powerup_duplication_receive(buf); break;
+		case MULTI_COOP_POWERUP_SNAPSHOT_BEGIN:
+			coop_powerup_duplication_receive_snapshot_begin(buf); break;
+		case MULTI_COOP_POWERUP_SNAPSHOT_ENTRY:
+			coop_powerup_duplication_receive_snapshot_entry(buf); break;
+		case MULTI_COOP_POWERUP_SNAPSHOT_END:
+			coop_powerup_duplication_receive_snapshot_end(buf); break;
 #endif
 		case MULTI_DIFFICULTY:
 			if (!Endlevel_sequence) multi_do_difficulty(buf); break;

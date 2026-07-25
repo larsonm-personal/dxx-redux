@@ -229,6 +229,7 @@ fun buildStart(
     levelNum: Int = 1,
     maxPlayers: Int = 4,
     coopQol: Boolean = true,
+    duplicateEnergyShields: Boolean = false,
     fullDeathSpew: Boolean = true,
     playerSpewNoExpire: Boolean = true,
     clientsCanRequestRewind: Boolean = false,
@@ -250,6 +251,7 @@ fun buildStart(
     json.put("level_num", levelNum)
     json.put("max_players", maxPlayers)
     json.put("coop_qol", coopQol)
+    json.put("duplicate_energy_shields", duplicateEnergyShields)
     json.put("full_death_spew", fullDeathSpew)
     json.put("player_spew_no_expire", playerSpewNoExpire)
     json.put("clients_can_request_rewind", clientsCanRequestRewind)

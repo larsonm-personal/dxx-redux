@@ -61,6 +61,7 @@
 #include "android_profile.h"
 #include "android_crash_handler.h"
 #include "coop_indicator_lines.h"
+#include "coop/coop_powerup_duplication.h"
 #include "coop/coop_player_session.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
@@ -3192,6 +3193,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.GaussAmmoStyle; len++;
 		buf[len] = Netgame.FullDeathSpew; len++;
 		buf[len] = Netgame.PlayerSpewNoExpire; len++;
+		buf[len] = Netgame.DuplicateEnergyShields; len++;
 		buf[len] = Netgame.team_color[0];						len++;
 		buf[len] = Netgame.team_color[1];						len++;
 		buf[len] = Netgame.NewSpawnAlgorithm; len++;
@@ -3466,6 +3468,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.GaussAmmoStyle = data[len]; len++;
 		Netgame.FullDeathSpew = data[len]; len++;
 		Netgame.PlayerSpewNoExpire = data[len]; len++;
+		Netgame.DuplicateEnergyShields = data[len]; len++;
 		Netgame.team_color[0] = data[len];						len++;
 		Netgame.team_color[1] = data[len];						len++;
 		Netgame.NewSpawnAlgorithm = data[len]; len++;
@@ -4085,6 +4088,7 @@ static int opt_full_death_spew;
 static int opt_player_spew_no_expire;
 #ifdef __ANDROID__
 static int opt_coop_qol;
+static int opt_duplicate_energy_shields;
 #endif
 static int opt_gauss_duplicating, opt_gauss_depleting, opt_gauss_steady_recharge, opt_gauss_steady_respawn;
 
@@ -4119,9 +4123,9 @@ void net_udp_more_game_options ()
 	char PrimDupText[80],SecDupText[80],SecCapText[80]; 
 	char HomingUpdateRateText[80];
 #ifdef USE_TRACKER
-	newmenu_item m[48];
+	newmenu_item m[49];
 #else
-	newmenu_item m[47];
+	newmenu_item m[48];
 #endif
 
 	snprintf(packstring,sizeof(char)*4,"%d",Netgame.PacketsPerSec);
@@ -4275,6 +4279,8 @@ void net_udp_more_game_options ()
 	/* android port: coop QoL enhancements toggle */
 	opt_coop_qol=opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Coop QoL (guidebot, arrows, warp)"; m[opt].value=(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) != 0; opt++;
+	opt_duplicate_energy_shields=opt;
+	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Energy and shields duplicated for each player"; m[opt].value=Netgame.DuplicateEnergyShields; opt++;
 #endif
 
 	Assert(opt <= SDL_arraysize(m));
@@ -4324,6 +4330,7 @@ menu:
 		Netgame.game_flags |= NETGAME_FLAG_COOP_QOL;
 	else
 		Netgame.game_flags &= ~NETGAME_FLAG_COOP_QOL;
+	Netgame.DuplicateEnergyShields = m[opt_duplicate_energy_shields].value;
 #endif
 	Netgame.NoFriendlyFire = m[opt_ffire].value;
 #ifdef USE_TRACKER
@@ -4668,6 +4675,7 @@ void netgame_set_defaults(void)
 	Netgame.ReducedFlash = 0;
 	Netgame.FullDeathSpew = 0;
 	Netgame.PlayerSpewNoExpire = 0;
+	Netgame.DuplicateEnergyShields = 0;
 	Netgame.GaussAmmoStyle = GAUSS_STYLE_DEPLETING;
 	Netgame.NewSpawnAlgorithm = 0;
 
@@ -7822,6 +7830,10 @@ void net_udp_send_extras ()
 		multi_send_powcap_update();
 	if (Network_sending_extras==1 && Game_mode & GM_BOUNTY)
 		multi_send_bounty();
+#ifdef __ANDROID__
+	if (Network_sending_extras==1 && Game_mode & GM_MULTI_COOP)
+		coop_powerup_duplication_send_snapshot(Player_joining_extras);
+#endif
 
 	Network_sending_extras--;
 	if (!Network_sending_extras)

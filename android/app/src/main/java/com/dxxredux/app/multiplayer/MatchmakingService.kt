@@ -1084,6 +1084,11 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: true,
+                            duplicateEnergyShields =
+                                gs.gameInfo["duplicate_energy_shields"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: false,
                             fullDeathSpew =
                                 gs.gameInfo["full_death_spew"]
                                     ?.jsonPrimitive

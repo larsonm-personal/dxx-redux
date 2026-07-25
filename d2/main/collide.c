@@ -60,6 +60,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef NETWORK
 #include "multi.h"
+#ifdef __ANDROID__
+#include "coop/coop_powerup_duplication.h"
+#endif
 #endif
 #include "cntrlcen.h"
 #include "newdemo.h"
@@ -2945,6 +2948,13 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 		int powerup_used;
 		int energy_before = Players[Player_num].energy;
 		int shields_before = Players[Player_num].shields;
+#ifdef __ANDROID__
+		int duplicate_for_player = coop_powerup_duplication_eligible(powerup);
+
+		if (duplicate_for_player &&
+		    coop_powerup_duplication_collected(powerup, Player_num))
+			return;
+#endif
 
 		if (input_demo_replay_powerup_probe_active())
 			input_demo_log_replay_powerup_probe_before(powerup, energy_before, shields_before);
@@ -2955,6 +2965,14 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 				Players[Player_num].energy, shields_before, Players[Player_num].shields);
 
 		if (powerup_used)	{
+#ifdef __ANDROID__
+			if (duplicate_for_player) {
+				if (coop_powerup_duplication_record(powerup, Player_num)) {
+					coop_powerup_duplication_send(powerup);
+					return;
+				}
+			}
+#endif
 			powerup->flags |= OF_SHOULD_BE_DEAD;
 			#ifdef NETWORK
 			if (Game_mode & GM_MULTI)

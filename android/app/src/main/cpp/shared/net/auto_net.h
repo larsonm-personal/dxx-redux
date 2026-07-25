@@ -40,6 +40,8 @@ extern int auto_host_level_num;
 extern int auto_host_difficulty;
 /* Host-side coop QoL default (0/1). */
 extern int auto_host_coop_qol;
+/* Host-side per-player energy and shield pickup default (0/1) */
+extern int auto_host_duplicate_energy_shields;
 /* Host-side full death spew default (0/1) */
 extern int auto_host_full_death_spew;
 /* Host-side player spew persistence default (0/1) */

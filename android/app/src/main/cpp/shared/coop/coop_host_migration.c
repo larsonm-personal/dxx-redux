@@ -35,6 +35,7 @@ static void coop_host_migration_write_metadata(void)
 		                    "  \"level_num\": %d,\n"
 		                    "  \"max_players\": %d,\n"
 		                    "  \"coop_qol\": %s,\n"
+		                    "  \"duplicate_energy_shields\": %s,\n"
 		                    "  \"full_death_spew\": %s,\n"
 		                    "  \"player_spew_no_expire\": %s\n"
 		                    "}\n",
@@ -44,6 +45,7 @@ static void coop_host_migration_write_metadata(void)
 		                    Current_level_num,
 		                    Netgame.max_numplayers,
 		                    (Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false",
+		                    Netgame.DuplicateEnergyShields ? "true" : "false",
 		                    Netgame.FullDeathSpew ? "true" : "false",
 		                    Netgame.PlayerSpewNoExpire ? "true" : "false");
 
