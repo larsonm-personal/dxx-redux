@@ -96,7 +96,10 @@ if(NOT ANDROID)
 
     add_executable(test_coop_player_session
         ../../android/tests/test_coop_player_session.c)
-    target_include_directories(test_coop_player_session PRIVATE ../../android/app/src/main/cpp/shared/coop)
+    target_include_directories(test_coop_player_session PRIVATE
+        ../../android/app/src/main/cpp/shared/coop
+        ${PHYSFS_INCLUDE_DIR}
+        ${SDL_INCLUDE_DIR})
 
     add_executable(test_input_demo_rng_mode
         ../../android/tests/test_input_demo_rng_mode.c

@@ -68,13 +68,11 @@ Verification completed:
 - `:app:testDebugUnitTest` for `LobbyProtocolStartOptionsTest` and
   `MultiplayerResumePrefsTest`: passed.
 - `:app:assembleDebug`: passed and produced the debug APK.
-- `run-windows-build.ps1 -Target d1`: D1 gameplay and headless executables
-  compiled and linked, then the aggregate build stopped in the existing
-  `test_coop_player_session` target because its MSVC include path cannot find
-  `SDL_types.h`.
-- `run-windows-build.ps1 -Target d2`: D2 gameplay and both headless
-  executables compiled and linked, then the same existing test target stopped
-  the aggregate build because its MSVC include path cannot find `physfs.h`.
+- Fixed `test_coop_player_session` to inherit the discovered PhysFS and SDL
+  include directories in both D1 and D2.
+- `run-windows-build.ps1 -Target d1`: passed.
+- `run-windows-build.ps1 -Target d2`: passed.
+- Both generated `test_coop_player_session.exe` binaries: passed.
 
 Still deferred:
 
