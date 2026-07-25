@@ -1221,13 +1221,13 @@
         "mine_volume": 35169487.004613996,
         "mine_volume_normalized": 7.690845055820326,
         "mine_volume_text": "7.7x",
-        "travel_distance": 4892.616359210174,
-        "travel_time_seconds": 98,
-        "travel_time_text": "1M:38S",
+        "travel_distance": 6899.503475878257,
+        "travel_time_seconds": 138,
+        "travel_time_text": "2M:18S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -1391,10 +1391,40 @@
             "distance": 553.5000634299895,
             "key": "red",
             "key_carrier_objnum": 13
+          },
+          {
+            "index": 7,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 514,
+            "label_pos": {
+              "x": 9.968429565429688,
+              "y": -79.99516296386719,
+              "z": 1058.435791015625
+            },
+            "distance": 1081.5319443605554
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 327,
+            "side": 1,
+            "wall": 43,
+            "label_pos": {
+              "x": 0.0,
+              "y": 19.934967041015625,
+              "z": 380.0093688964844
+            },
+            "distance": 925.3551723075268,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
