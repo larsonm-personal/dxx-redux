@@ -13,6 +13,7 @@
 
 #include "coop_save.h"
 #include "coop_level_restart.h"
+#include "coop_player_session.h"
 #include "coop_restore_remap.h"
 
 #include "player.h"
@@ -80,12 +81,12 @@ int coop_remap_restored_players(rewind_file *file,
 		}
 
 		saved_objnum = Players[i].objnum;
-		memcpy(&Players[i], &restore_players[saved_slot], sizeof(player));
-		Players[i].objnum = saved_objnum;
+		coop_restore_player_game_state(&Players[i], &restore_players[saved_slot]);
 		coop_player_got[i] = 1;
 		got_players++;
-		COOPLOG("mapped P%d '%s' -> save slot %d, objnum=%d", i,
-		        Players[i].callsign, saved_slot, saved_objnum);
+		COOPLOG("mapped P%d '%s' <- save slot %d '%s', objnum=%d", i,
+		        Players[i].callsign, saved_slot,
+		        restore_players[saved_slot].callsign, saved_objnum);
 
 		obj = &Objects[Players[i].objnum];
 		obj->id = i;

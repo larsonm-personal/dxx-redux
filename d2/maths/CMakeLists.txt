@@ -99,6 +99,10 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/coop/coop_host_migration_policy.c)
     target_include_directories(test_coop_host_migration_policy PRIVATE ../../android/app/src/main/cpp/shared/coop)
 
+    add_executable(test_coop_player_session
+        ../../android/tests/test_coop_player_session.c)
+    target_include_directories(test_coop_player_session PRIVATE ../../android/app/src/main/cpp/shared/coop)
+
     add_executable(test_input_demo_rng_mode
         ../../android/tests/test_input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)
@@ -227,6 +231,7 @@ if(NOT ANDROID)
             test_android_rewind_policy
             test_android_slowdown_detector
             test_coop_host_migration_policy
+            test_coop_player_session
             test_input_demo_rng_mode
             test_android_axis_mailbox
             test_level_metadata_scan

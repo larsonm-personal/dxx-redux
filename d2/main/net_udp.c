@@ -68,6 +68,7 @@
 #include "android_log.h"
 #include "android_crash_handler.h"
 #include "coop_indicator_lines.h"
+#include "coop/coop_player_session.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
 	char _mpdiag_buf[256]; \
@@ -5098,6 +5099,14 @@ int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sende
 {
 	int i, j;
 	char temp_callsign[CALLSIGN_LEN+1];
+#ifdef __ANDROID__
+	char temp_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
+#endif
+
+#ifdef __ANDROID__
+	memcpy(temp_client_id, auto_net_client_id, sizeof(temp_client_id));
+	temp_client_id[sizeof(temp_client_id) - 1] = '\0';
+#endif
 
 	con_printf(CON_DEBUG, "read_sync_packet: data=%p len=%d master=%d\n", data, data_len, multi_i_am_master());
 	if (data)
@@ -5145,7 +5154,14 @@ int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sende
 	}
 
 	for (i=0; i<N_players; i++ ) {
+#ifdef __ANDROID__
+		if (coop_sync_identity_matches(
+		        temp_client_id, Netgame.players[i].client_id,
+		        Netgame.players[i].protocol.udp.isyou == 1 &&
+		            !d_stricmp(Netgame.players[i].callsign, temp_callsign)))
+#else
 		if ( Netgame.players[i].protocol.udp.isyou == 1 && (!d_stricmp( Netgame.players[i].callsign, temp_callsign)) )
+#endif
 		{
 			if (Player_num!=-1) {
 #ifdef __ANDROID__
@@ -5205,8 +5221,8 @@ int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sende
 		con_printf(CON_DEBUG, "read_sync_packet: Player_num < 0, aborting\n");
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP)
-			crash_breadcrumb_v("d2 sync reject local_not_found callsign=%.8s players=%d",
-			                   temp_callsign, N_players);
+			crash_breadcrumb_v("d2 sync reject local_not_found callsign=%.8s client=%.8s players=%d",
+			                   temp_callsign, temp_client_id, N_players);
 #endif
 		Network_status = NETSTAT_MENU;
 		return 0;
