@@ -4,11 +4,11 @@
   Regenerates and validates all CD extraction regression data.
 
 .DESCRIPTION
-  Runs host extraction, structural spec validation, and the complete file-only
-  Android extraction suite against the existing regression specs. Each stage
-  runs in a child PowerShell process, and the workflow stops immediately when a
-  stage returns a nonzero exit code. Use -RefreshOracle to regenerate specs as
-  an explicit maintenance operation.
+  Runs host extraction, structural spec validation, and the complete Android
+  extraction and launch suite against the existing regression specs. Each
+  stage runs in a child PowerShell process, and the workflow stops immediately
+  when a stage returns a nonzero exit code. Use -RefreshOracle to regenerate
+  specs as an explicit maintenance operation.
 
 .PARAMETER NoForce
   Reuse existing host extraction data when available.
@@ -17,9 +17,9 @@
   Explicitly regenerate regression specs from the current host extraction.
   Normal regression runs compare current extraction against the existing specs.
 
-.PARAMETER FullLaunch
-  Run the Android extraction suite with game launch checks instead of its
-  file-only mode.
+.PARAMETER SkipLaunch
+  Run extraction and file verification without launching each game. This
+  reduced-coverage mode does not update persisted regression results.
 
 .EXAMPLE
   .\game_data\run_all_cd_regressions.ps1
@@ -27,7 +27,7 @@
 param(
     [switch]$NoForce,
     [switch]$RefreshOracle,
-    [switch]$FullLaunch
+    [switch]$SkipLaunch
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,12 +38,12 @@ function Get-CdRegressionStages {
         [string]$RepoRoot,
         [switch]$NoForce,
         [switch]$RefreshOracle,
-        [switch]$FullLaunch
+        [switch]$SkipLaunch
     )
 
     $forceArgs = if ($NoForce) { @() } else { @('-Force') }
     $testArgs = @('-All')
-    if (-not $FullLaunch) {
+    if ($SkipLaunch) {
         $testArgs += '-SkipLaunch'
     }
 
@@ -104,7 +104,7 @@ function Invoke-CdRegressionStages {
 if ($MyInvocation.InvocationName -ne '.') {
     $stages = @(
         Get-CdRegressionStages -RepoRoot $script:RepoRoot -NoForce:$NoForce `
-            -RefreshOracle:$RefreshOracle -FullLaunch:$FullLaunch
+            -RefreshOracle:$RefreshOracle -SkipLaunch:$SkipLaunch
     )
     try {
         Invoke-CdRegressionStages -Stages $stages

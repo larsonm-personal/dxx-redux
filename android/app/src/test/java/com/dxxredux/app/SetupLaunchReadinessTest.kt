@@ -76,17 +76,64 @@ class SetupLaunchReadinessTest {
     }
 
     @Test
+    fun d2OemSetCountsAsLaunchReady() {
+        val setDir = createTempDirectory("d2-oem-ready").toFile()
+        writeD2PartialFiles(setDir, hogSize = 6132957)
+
+        assertTrue(
+            launchDataReadyForGame(
+                game = "d2",
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            ),
+        )
+    }
+
+    @Test
+    fun d2Quartzon3dSetCountsAsLaunchReady() {
+        val setDir = createTempDirectory("d2-quartzon-3d-ready").toFile()
+        writeD2PartialFiles(setDir, hogSize = 14024077)
+
+        assertTrue(
+            launchDataReadyForGame(
+                game = "d2",
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            ),
+        )
+    }
+
+    @Test
+    fun incompleteD2OemSetIsNotLaunchReady() {
+        val setDir = createTempDirectory("d2-oem-missing").toFile()
+        writeD2PartialFiles(setDir, hogSize = 6132957)
+        File(setDir, "water.pig").delete()
+
+        assertFalse(
+            launchDataReadyForGame(
+                game = "d2",
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            ),
+        )
+    }
+
+    @Test
     fun d1InD2ReadinessIsReadyWhenNoD1MissionZipIsEnabled() {
         val filesDir = createTempDirectory("d1-in-d2-not-needed").toFile()
         val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
         writeD2Files(setDir)
 
-        val readiness = d1InD2Readiness(
-            filesDir = filesDir,
-            setDir = setDir,
-            manifest = AssetManifest(setDir),
-            safManifest = SafManifest.forDir(setDir),
-        )
+        val readiness =
+            d1InD2Readiness(
+                filesDir = filesDir,
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            )
 
         assertFalse(readiness.needed)
         assertTrue(readiness.ready)
@@ -102,12 +149,13 @@ class SetupLaunchReadinessTest {
         val imported = ModManager(filesDir).importMissionZipFile(createD1MissionZip(), "d1pack.zip")
         assertTrue(imported?.game == "d1")
 
-        val degraded = d1InD2Readiness(
-            filesDir = filesDir,
-            setDir = setDir,
-            manifest = AssetManifest(setDir),
-            safManifest = SafManifest.forDir(setDir),
-        )
+        val degraded =
+            d1InD2Readiness(
+                filesDir = filesDir,
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            )
 
         assertTrue(degraded.needed)
         assertFalse(degraded.ready)
@@ -116,12 +164,13 @@ class SetupLaunchReadinessTest {
 
         writeFile(setDir, "descent.hog")
         writeFile(setDir, "descent.pig")
-        val ready = d1InD2Readiness(
-            filesDir = filesDir,
-            setDir = setDir,
-            manifest = AssetManifest(setDir),
-            safManifest = SafManifest.forDir(setDir),
-        )
+        val ready =
+            d1InD2Readiness(
+                filesDir = filesDir,
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            )
 
         assertTrue(ready.needed)
         assertTrue(ready.ready)
@@ -132,6 +181,19 @@ class SetupLaunchReadinessTest {
     private fun writeD2Files(setDir: File) {
         for (info in D2_FILES.filter { it.required }) {
             writeFile(setDir, info.filename)
+        }
+    }
+
+    private fun writeD2PartialFiles(
+        setDir: File,
+        hogSize: Int,
+    ) {
+        for (info in D2_PARTIAL_FILES.filter { it.required }) {
+            writeFile(
+                setDir,
+                info.filename,
+                size = if (info.filename == "descent2.hog") hogSize else 4,
+            )
         }
     }
 

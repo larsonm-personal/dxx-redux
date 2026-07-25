@@ -17,7 +17,10 @@ Assert-True ($defaultStages.Count -eq 3) 'Default workflow should contain three 
 Assert-True ($defaultStages[0].Arguments -contains '-Force') 'Extraction should be forced by default'
 Assert-True ($defaultStages.Name -notcontains 'Refresh regression specs') 'Default workflow must not rewrite its oracle'
 Assert-True ($defaultStages[2].Arguments -contains '-All') 'Regression suite should run all specs'
-Assert-True ($defaultStages[2].Arguments -contains '-SkipLaunch') 'Regression suite should default to file-only mode'
+Assert-True ($defaultStages[2].Arguments -notcontains '-SkipLaunch') 'Regression suite should default to full launch mode'
+
+$fileOnlyStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -SkipLaunch)
+Assert-True ($fileOnlyStages[2].Arguments -contains '-SkipLaunch') 'Explicit file-only mode should skip game launches'
 
 $refreshStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -RefreshOracle)
 Assert-True ($refreshStages.Count -eq 4) 'Oracle refresh workflow should contain four stages'

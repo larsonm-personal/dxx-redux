@@ -17,11 +17,14 @@
   "game": "d2",
   "classification": "d2_oem",
   "expected_mission": "D2 Destination:Quartzon",
-  "expected_level1": "Drec Sphere",
+  "expected_level1": "Ahayweh Gate",
   "expected_files": [
     "descent2.ham",
     "descent2.hog",
-    "groupa.pig"
+    "descent2.s11",
+    "descent2.s22",
+    "groupa.pig",
+    "water.pig"
   ],
   "audio_tracks": 12,
   "total_extracted": 14,

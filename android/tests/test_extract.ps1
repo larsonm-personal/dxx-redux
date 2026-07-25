@@ -753,6 +753,7 @@ $script:testMode = if ($SkipLaunch) { 'file_only' } else { 'full' }
 function Write-TestResult {
     # Persist last_test_result into the spec json5 file.
     if (-not $SpecPath -or -not (Test-Path $SpecPath)) { return }
+    if ($SkipLaunch) { return }
     if (Test-ExtractRegressionInfrastructureFailure $script:testFailureStep) { return }
 
     $lastTestResult = [ordered]@{

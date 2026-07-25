@@ -106,13 +106,37 @@ function Get-DiscClassification($discId, $game, $extractedFiles) {
         }
     }
 
+    # Quartzon 3D exposes the eight A/B levels through a full-mission wrapper.
+    if ($discId -eq 'descent-ii-destination-quartzon-3d-europe') {
+        return @{
+            type = 'd2_oem'
+            mission = 'Descent 2: Counterstrike!'
+            level1 = 'Ahayweh Gate'
+            min_files = @(
+                'descent2.hog',
+                'descent2.ham',
+                'descent2.s11',
+                'descent2.s22',
+                'groupa.pig',
+                'water.pig'
+            )
+        }
+    }
+
     # D2 OEM (Destination Quartzon) - has descent2.hog but disc id contains "quartzon"
     if ($discId -match 'quartzon') {
         return @{
             type = 'd2_oem'
             mission = 'D2 Destination:Quartzon'
-            level1 = 'Drec Sphere'  # placeholder - needs verification
-            min_files = @('descent2.hog', 'descent2.ham', 'groupa.pig')
+            level1 = 'Ahayweh Gate'
+            min_files = @(
+                'descent2.hog',
+                'descent2.ham',
+                'descent2.s11',
+                'descent2.s22',
+                'groupa.pig',
+                'water.pig'
+            )
         }
     }
 

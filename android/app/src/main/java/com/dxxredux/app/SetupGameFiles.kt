@@ -235,7 +235,7 @@ internal fun checkFiles(
 
 internal fun descriptionForFile(filename: String): String {
     val lower = filename.lowercase()
-    val allFiles = D2_FILES + D2_DEMO_FILES + D1_FILES
+    val allFiles = D2_FILES + D2_DEMO_FILES + D2_PARTIAL_FILES + D1_FILES
     return allFiles
         .firstOrNull { info ->
             info.filename.equals(lower, ignoreCase = true) ||
@@ -308,6 +308,24 @@ internal val D2_DEMO_FILES =
         GameFileInfo("exit.ham", "Mac demo exit data", required = false),
     )
 
+// The first size must match OEM_MISSION_HOGSIZE in d2/main/mission.h. The
+// Quartzon 3D release wraps the same A/B-level data in a larger HOG.
+private val D2_PARTIAL_HOG_SIZES = setOf(6132957L, 14024077L)
+
+internal val D2_PARTIAL_FILES =
+    listOf(
+        GameFileInfo("descent2.hog", "OEM game data", required = true),
+        GameFileInfo("descent2.ham", "Models & objects", required = true),
+        GameFileInfo("groupa.pig", "Quartzon textures", required = true),
+        GameFileInfo("water.pig", "Brimspark textures", required = true),
+        GameFileInfo(
+            "descent2.s22",
+            "Sound effects",
+            required = true,
+            alternatives = listOf("descent2.s11"),
+        ),
+    )
+
 internal fun detectD2FileList(
     dir: File,
     safManifest: SafManifest? = null,
@@ -319,7 +337,11 @@ internal fun detectD2FileList(
             val entries = sm.read()
             demoFiles.any { demo -> entries.any { it.filename.equals(demo, ignoreCase = true) } }
         } ?: false
-    return if (hasDemoOnDisk || hasDemoInSaf) D2_DEMO_FILES else D2_FILES
+    if (hasDemoOnDisk || hasDemoInSaf) return D2_DEMO_FILES
+
+    val safEntries = safManifest?.read() ?: emptyList()
+    val hogSize = fileSizeForLaunchCheck(dir, safEntries, "descent2.hog")
+    return if (hogSize in D2_PARTIAL_HOG_SIZES) D2_PARTIAL_FILES else D2_FILES
 }
 
 internal val D1_FILES =
@@ -411,7 +433,7 @@ internal fun visibleDemoInstallerOffers(
     }
 
 internal val ALL_GAME_FILENAMES: Set<String> by lazy {
-    (D2_FILES + D2_DEMO_FILES + D1_FILES)
+    (D2_FILES + D2_DEMO_FILES + D2_PARTIAL_FILES + D1_FILES)
         .flatMap { info ->
             listOf(info.filename) + info.alternatives
         }.map { it.lowercase() }
