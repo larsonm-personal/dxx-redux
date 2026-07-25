@@ -41,6 +41,18 @@ struct android_profile_texture_lookup_metrics {
 void android_profile_frame_begin(const char *game, unsigned int frame_id);
 void android_profile_set_frame_context(int level, int viewer_segment);
 void android_profile_set_frame_pacing(int max_fps, int vsync);
+void android_profile_set_simulation_metrics(unsigned int simulation_frame_id,
+                                            int frame_time_us);
+void android_profile_note_flip(void);
+long long android_profile_network_begin(void);
+void android_profile_network_packet(int packet_bytes);
+void android_profile_network_end(long long start_us);
+void android_profile_remote_robot_update(int objnum, int signature);
+void android_profile_remote_robot_live(int objnum, int signature,
+                                       int remote_owned);
+void android_profile_set_scene_object_counts(int active_objects,
+                                             int projectile_objects,
+                                             int reactor_objects);
 void android_profile_set_slowdown_capture_enabled(int enabled);
 void android_profile_bucket_begin(int bucket);
 void android_profile_bucket_end(int bucket);
@@ -69,6 +81,14 @@ void android_profile_flush(void);
 #define android_profile_frame_begin(game, frame_id)                                                                                             ((void) 0)
 #define android_profile_set_frame_context(level, viewer_segment)                                                                                ((void) 0)
 #define android_profile_set_frame_pacing(max_fps, vsync)                                                                                        ((void) 0)
+#define android_profile_set_simulation_metrics(simulation_frame_id, frame_time_us)                                                              ((void) 0)
+#define android_profile_note_flip()                                                                                                             ((void) 0)
+#define android_profile_network_begin()                                                                                                         0LL
+#define android_profile_network_packet(packet_bytes)                                                                                            ((void) 0)
+#define android_profile_network_end(start_us)                                                                                                   ((void) 0)
+#define android_profile_remote_robot_update(objnum, signature)                                                                                  ((void) 0)
+#define android_profile_remote_robot_live(objnum, signature, remote_owned)                                                                      ((void) 0)
+#define android_profile_set_scene_object_counts(active_objects, projectile_objects, reactor_objects)                                            ((void) 0)
 #define android_profile_set_slowdown_capture_enabled(enabled)                                                                                   ((void) 0)
 #define android_profile_bucket_begin(bucket)                                                                                                    ((void) 0)
 #define android_profile_bucket_end(bucket)                                                                                                      ((void) 0)

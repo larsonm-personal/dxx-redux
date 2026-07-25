@@ -169,6 +169,7 @@ struct route_state_object {
 	bool should_be_dead = false;
 	bool boss = false;
 	bool companion = false;
+	bool fleeing = false;
 };
 
 struct route_state_fingerprints {

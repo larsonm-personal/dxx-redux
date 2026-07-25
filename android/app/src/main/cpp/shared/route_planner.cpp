@@ -1976,10 +1976,7 @@ class dependency_planner
 	bool append_key_step(const route_target &target, int key)
 	{
 		route_semantic_step step;
-		const bool robot_carrier =
-		    target.contained && target.object >= 0 &&
-		    static_cast<std::size_t>(target.object) < snapshot_.state.objects.size() &&
-		    snapshot_.state.objects[target.object].kind == route_object_kind::robot;
+		const bool robot_carrier = is_robot_carrier(target);
 		step.kind = route_semantic_step_kind::key;
 		step.segment = target.segment;
 		step.key = target.key;
@@ -1996,6 +1993,56 @@ class dependency_planner
 		step.aim_position = target.position;
 		step.label_position = target.position;
 		return append_step(std::move(step));
+	}
+
+	bool is_robot_carrier(const route_target &target) const
+	{
+		return target.contained && target.object >= 0 &&
+		       static_cast<std::size_t>(target.object) <
+		           snapshot_.state.objects.size() &&
+		       snapshot_.state.objects[target.object].kind ==
+		           route_object_kind::robot;
+	}
+
+	void preserve_carrier_continuation_anchor(const route_target &target)
+	{
+		/* A fleeing carrier can cross an opened asymmetric door toward the
+		 * player, so continuation stays on the last safely reversible side */
+		if (!is_robot_carrier(target) ||
+		    !snapshot_.state.objects[target.object].fleeing ||
+		    state_.steps.empty())
+			return;
+		const auto &path = state_.steps.back().path;
+		for (std::size_t index = 0;
+		     index < path.sides.size() && index + 1 < path.segments.size();
+		     ++index) {
+			const int anchor_segment = path.segments[index];
+			const int carrier_side_segment = path.segments[index + 1];
+			if (!valid_segment(snapshot_, anchor_segment) ||
+			    !valid_segment(snapshot_, carrier_side_segment))
+				continue;
+			const int forward_side = path.sides[index];
+			if (forward_side < 0 || forward_side >= LEVEL_METADATA_MAX_SIDES)
+				continue;
+			const int reverse_side = snapshot_.topology
+			                             .segments[anchor_segment]
+			                             .sides[forward_side]
+			                             .reverse_side;
+			if (reverse_side < 0 || reverse_side >= LEVEL_METADATA_MAX_SIDES)
+				continue;
+			const auto reverse = evaluate_route_edge(
+			    snapshot_, query_, state_.progress, carrier_side_segment,
+			    reverse_side);
+			if (reverse.progress_cost != LEVEL_METADATA_ROUTE_EDGE_BLOCKED)
+				continue;
+			const auto &anchor =
+			    snapshot_.topology.segments[anchor_segment].center;
+			if (!anchor.valid)
+				continue;
+			state_.progress.current_segment = anchor_segment;
+			state_.progress.current_position = anchor;
+			return;
+		}
 	}
 
 	bool acquire_key(int key, int depth)
@@ -2037,9 +2084,13 @@ class dependency_planner
 			state_.progress.key_in_progress &= ~bit;
 			return false;
 		}
-		append_key_step(target, key);
+		if (!append_key_step(target, key)) {
+			state_.progress.key_in_progress &= ~bit;
+			return false;
+		}
 		state_.progress.key_mask |= bit;
 		state_.progress.key_in_progress &= ~bit;
+		preserve_carrier_continuation_anchor(target);
 		return true;
 	}
 

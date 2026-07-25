@@ -10,6 +10,7 @@
 #define COOLDOWN_US             300000000LL
 #define SEVERE_FRAME_US         100000
 #define SEVERE_SPAN_US          2000000LL
+#define HARD_STALL_US           250000
 #define SLOW_PERCENT            70
 #define ABSOLUTE_SLOW_FPS_MILLI 8000
 
@@ -31,6 +32,17 @@ static int32_t frame_nonwait_us(const struct android_slowdown_frame *frame)
 	return clamp_i64_to_i32(value);
 }
 
+static int32_t frame_stall_us(const struct android_slowdown_frame *frame)
+{
+	int32_t value = frame_nonwait_us(frame);
+
+	if (frame->begin_gap_us > value)
+		value = frame->begin_gap_us;
+	if (frame->flip_gap_us > value)
+		value = frame->flip_gap_us;
+	return value;
+}
+
 static void reset_window(struct android_slowdown_detector *detector, int64_t start_us)
 {
 	memset(&detector->current_window, 0, sizeof(detector->current_window));
@@ -46,6 +58,7 @@ static void reset_baseline(struct android_slowdown_detector *detector,
 	detector->configured_vsync = frame->vsync;
 	detector->suppress_until_us = frame->end_us + LEVEL_SUPPRESS_US;
 	memset(detector->severe_frame_us, 0, sizeof(detector->severe_frame_us));
+	detector->hard_stall_us = 0;
 	reset_window(detector, frame->end_us);
 }
 
@@ -61,11 +74,11 @@ static void ring_push(struct android_slowdown_detector *detector,
 static void insert_worst(struct android_slowdown_window *window,
                          const struct android_slowdown_frame *frame)
 {
-	const int32_t nonwait_us = frame_nonwait_us(frame);
+	const int32_t stall_us = frame_stall_us(frame);
 	int i;
 
 	for (i = 0; i < ANDROID_SLOWDOWN_WORST_COUNT; i++) {
-		if (nonwait_us <= frame_nonwait_us(&window->worst[i]))
+		if (stall_us <= frame_stall_us(&window->worst[i]))
 			continue;
 		if (i + 1 < ANDROID_SLOWDOWN_WORST_COUNT)
 			memmove(&window->worst[i + 1], &window->worst[i],
@@ -78,7 +91,11 @@ static void insert_worst(struct android_slowdown_window *window,
 static void note_severe_frame(struct android_slowdown_detector *detector,
                               const struct android_slowdown_frame *frame)
 {
-	if (frame_nonwait_us(frame) < SEVERE_FRAME_US)
+	const int32_t stall_us = frame_stall_us(frame);
+
+	if (stall_us >= HARD_STALL_US)
+		detector->hard_stall_us = frame->end_us;
+	if (stall_us < SEVERE_FRAME_US)
 		return;
 	detector->severe_frame_us[0] = detector->severe_frame_us[1];
 	detector->severe_frame_us[1] = detector->severe_frame_us[2];
@@ -88,8 +105,10 @@ static void note_severe_frame(struct android_slowdown_detector *detector,
 static int severe_triggered(const struct android_slowdown_detector *detector,
                             int64_t now_us)
 {
-	return detector->severe_frame_us[0] > 0 &&
-	       now_us - detector->severe_frame_us[0] <= SEVERE_SPAN_US;
+	return (detector->hard_stall_us > 0 &&
+	        now_us - detector->hard_stall_us <= SEVERE_SPAN_US) ||
+	       (detector->severe_frame_us[0] > 0 &&
+	        now_us - detector->severe_frame_us[0] <= SEVERE_SPAN_US);
 }
 
 static int finish_window(struct android_slowdown_detector *detector, int64_t now_us)
@@ -162,6 +181,7 @@ int android_slowdown_detector_feed(struct android_slowdown_detector *detector,
 	if (detector->last_frame_us && frame->end_us - detector->last_frame_us >= DISCONTINUITY_US) {
 		detector->slow_windows = 0;
 		memset(detector->severe_frame_us, 0, sizeof(detector->severe_frame_us));
+		detector->hard_stall_us = 0;
 		reset_window(detector, frame->end_us);
 	}
 	detector->last_frame_us = frame->end_us;
@@ -186,6 +206,18 @@ int android_slowdown_detector_feed(struct android_slowdown_detector *detector,
 	window->nonwait_us += nonwait_us;
 	if (nonwait_us > window->max_nonwait_us)
 		window->max_nonwait_us = nonwait_us;
+	if (frame->begin_gap_us > window->max_begin_gap_us)
+		window->max_begin_gap_us = frame->begin_gap_us;
+	if (frame->flip_gap_us > window->max_flip_gap_us)
+		window->max_flip_gap_us = frame->flip_gap_us;
+	if (frame->network_us > window->max_network_us)
+		window->max_network_us = frame->network_us;
+	window->network_us += frame->network_us;
+	window->network_packets += frame->network_packets;
+	window->network_bytes += frame->network_bytes;
+	window->remote_robot_updates += frame->remote_robot_updates;
+	if (frame->max_remote_robot_age_ms > window->max_remote_robot_age_ms)
+		window->max_remote_robot_age_ms = frame->max_remote_robot_age_ms;
 	insert_worst(window, frame);
 
 	window_finished = finish_window(detector, frame->end_us);

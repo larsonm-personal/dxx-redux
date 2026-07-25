@@ -698,7 +698,12 @@ int pick_up_quads()
 //called when a primary weapon is picked up
 //returns true if actually picked up
 int pick_up_primary(int weapon_index) {
-	return pick_up_primary_helper(weapon_index, 0); 
+	int picked_up = pick_up_primary_helper(weapon_index, 0);
+
+	if (picked_up && (Game_mode & GM_MULTI))
+		multi_send_ship_status();
+
+	return picked_up;
 }
 
 int delayed_primary_autoselect_weapon_index = -1; 

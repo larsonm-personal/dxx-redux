@@ -967,6 +967,15 @@ static int secret_area_object_is_boss(void *user, int objnum)
 	return Robot_info[Objects[objnum].id].boss_flag != 0;
 }
 
+static int secret_area_object_is_fleeing(void *user, int objnum)
+{
+	(void) user;
+	if (objnum < 0 || objnum >= num_objects)
+		return 0;
+	return Objects[objnum].type == OBJ_ROBOT &&
+	       Objects[objnum].ctype.ai_info.behavior == AIB_RUN_FROM;
+}
+
 #ifdef DXX_BUILD_DESCENT_II
 static int secret_area_object_is_companion(void *user, int objnum)
 {
@@ -1803,6 +1812,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->object_contains_count = secret_area_object_contains_count;
 	view->object_position = secret_area_object_position;
 	view->object_is_boss = secret_area_object_is_boss;
+	view->object_is_fleeing = secret_area_object_is_fleeing;
 #ifdef DXX_BUILD_DESCENT_II
 	view->object_is_companion = secret_area_object_is_companion;
 #endif

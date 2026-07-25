@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define ANDROID_SLOWDOWN_RING_CAPACITY 1024
+#define ANDROID_SLOWDOWN_RING_CAPACITY 768
 #define ANDROID_SLOWDOWN_WORST_COUNT   3
 
 #define ANDROID_SLOWDOWN_EVENT_TRIGGER     0x01
@@ -22,6 +22,10 @@ struct android_slowdown_frame {
 	uint32_t frame_id;
 	int16_t level;
 	int16_t viewer_segment;
+	int32_t begin_gap_us;
+	int32_t flip_gap_us;
+	uint32_t simulation_frame_id;
+	int32_t frame_time_us;
 	int32_t total_us;
 	int32_t wait_us;
 	int32_t sim_us;
@@ -40,6 +44,18 @@ struct android_slowdown_frame {
 	int32_t merged_wall_hits;
 	int32_t merged_wall_misses;
 	int32_t object_draws;
+	int32_t network_us;
+	int16_t network_packets;
+	int32_t network_bytes;
+	int16_t remote_robot_updates;
+	int16_t local_robot_count;
+	int16_t remote_robot_count;
+	int16_t stale_remote_robot_count;
+	int16_t unknown_remote_robot_age;
+	int32_t max_remote_robot_age_ms;
+	int16_t active_object_count;
+	int16_t projectile_object_count;
+	int16_t reactor_object_count;
 	int32_t max_object_us;
 	int16_t max_object_num;
 	int16_t max_object_type;
@@ -59,6 +75,14 @@ struct android_slowdown_window {
 	int32_t fps_milli;
 	int32_t expected_fps_milli;
 	int32_t max_nonwait_us;
+	int32_t max_begin_gap_us;
+	int32_t max_flip_gap_us;
+	int32_t max_network_us;
+	int64_t network_us;
+	int32_t network_packets;
+	int64_t network_bytes;
+	int32_t remote_robot_updates;
+	int32_t max_remote_robot_age_ms;
 	struct android_slowdown_frame worst[ANDROID_SLOWDOWN_WORST_COUNT];
 };
 
@@ -71,6 +95,7 @@ struct android_slowdown_detector {
 	int64_t capture_end_us;
 	int64_t cooldown_end_us;
 	int64_t severe_frame_us[ANDROID_SLOWDOWN_WORST_COUNT];
+	int64_t hard_stall_us;
 	uint32_t ring_write;
 	uint32_t ring_count;
 	uint32_t capture_id;

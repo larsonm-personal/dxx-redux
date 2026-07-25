@@ -6615,14 +6615,13 @@ void multi_send_ship_status_for_frame()
 	PUT_INTEL_SHORT(multibuf + 63, Players[Player_num].primary_ammo[7]);
 	PUT_INTEL_SHORT(multibuf + 65, Players[Player_num].primary_ammo[8]);
 	PUT_INTEL_SHORT(multibuf + 67, Players[Player_num].primary_ammo[9]);
+	multibuf[69] = Players[Player_num].primary_weapon_flags >> 8;
 
-#ifdef __ANDROID__
-	/* android port: in coop, broadcast to all peers for QoL overlay */
+	/* android port: coop inventory is needed by shared pickup rules and the QoL overlay */
 	if (Game_mode & GM_MULTI_COOP)
-		multi_send_data(multibuf, 69, 2);
+		multi_send_data(multibuf, 70, 2);
 	else
-#endif
-		multi_send_data_direct( multibuf, 69, multi_who_is_master(), 2);
+		multi_send_data_direct( multibuf, 70, multi_who_is_master(), 2);
 }
 
 void multi_do_ship_status( const ubyte *buf )
@@ -6660,11 +6659,11 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[buf[1]].primary_ammo[7] = GET_INTEL_SHORT(buf + 63);
 		Players[buf[1]].primary_ammo[8] = GET_INTEL_SHORT(buf + 65);
 		Players[buf[1]].primary_ammo[9] = GET_INTEL_SHORT(buf + 67);
+		Players[buf[1]].primary_weapon_flags |= (ushort)buf[69] << 8;
 	}
-#ifdef __ANDROID__
 	else if ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num)
 	{
-		/* android port: update all remote player fields for coop caching */
+		/* android port: update all remote player fields for coop inventory caching */
 		int pnum = buf[1];
 		int old_flags = Players[pnum].flags;
 		Players[pnum].laser_level = buf[2];
@@ -6687,13 +6686,13 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[pnum].primary_ammo[7] = GET_INTEL_SHORT(buf + 63);
 		Players[pnum].primary_ammo[8] = GET_INTEL_SHORT(buf + 65);
 		Players[pnum].primary_ammo[9] = GET_INTEL_SHORT(buf + 67);
+		Players[pnum].primary_weapon_flags |= (ushort)buf[69] << 8;
 		int i;
 		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
 			Players[pnum].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
 		escort_note_player_key_flags_for_player(
 		    pnum, old_flags, Players[pnum].flags);
 	}
-#endif
 }
 
 bool is_observing_player() {

@@ -234,6 +234,11 @@ int object_is_companion(void *, int)
 	return 0;
 }
 
+int object_is_fleeing(void *, int)
+{
+	return 1;
+}
+
 int segment_center(void *, int segment, int xyz[3])
 {
 	xyz[0] = segment * 100;
@@ -381,6 +386,62 @@ dxx_route::route_snapshot make_nested_trigger_snapshot()
 	return snapshot;
 }
 
+dxx_route::route_snapshot make_fleeing_carrier_snapshot(bool fleeing)
+{
+	dxx_route::route_snapshot snapshot;
+	snapshot.topology.segments.resize(3);
+	snapshot.state.segments.resize(3);
+	for (int segment = 0; segment < 3; ++segment) {
+		auto &center = snapshot.topology.segments[segment].center;
+		center.valid = true;
+		center.value = { segment * 10 * 65536, 0, 0 };
+	}
+	auto connect = [&](int from, int side, int to, int reverse, int wall) {
+		auto &topology_side = snapshot.topology.segments[from].sides[side];
+		topology_side.child = to;
+		topology_side.reverse_side = reverse;
+		topology_side.wall = wall;
+		topology_side.center = snapshot.topology.segments[from].center;
+	};
+	connect(0, 0, 1, 0, 0);
+	connect(1, 0, 0, 0, 1);
+	connect(0, 1, 2, 0, 2);
+	connect(2, 0, 0, 1, 3);
+
+	snapshot.topology.walls.resize(4);
+	snapshot.state.walls.resize(4);
+	auto configure_door = [&](int wall, int segment, int side) {
+		snapshot.topology.walls[wall].segment = segment;
+		snapshot.topology.walls[wall].side = side;
+		snapshot.state.walls[wall].kind =
+		    dxx_route::route_wall_kind::door;
+		snapshot.state.walls[wall].key =
+		    dxx_route::route_key_requirement::none;
+	};
+	configure_door(0, 0, 0);
+	configure_door(1, 1, 0);
+	configure_door(2, 0, 1);
+	configure_door(3, 2, 0);
+	snapshot.state.walls[1].locked = true;
+	snapshot.state.walls[2].key =
+	    dxx_route::route_key_requirement::blue;
+	snapshot.state.walls[3].key =
+	    dxx_route::route_key_requirement::blue;
+
+	snapshot.state.objects.resize(1);
+	auto &carrier = snapshot.state.objects[0];
+	carrier.segment = 1;
+	carrier.kind = dxx_route::route_object_kind::robot;
+	carrier.contains_count = 1;
+	carrier.contains_key = dxx_route::route_key_requirement::blue;
+	carrier.position = snapshot.topology.segments[1].center;
+	carrier.fleeing = fleeing;
+	snapshot.state.start_segment = 0;
+	snapshot.state.start_position = snapshot.topology.segments[0].center;
+	snapshot.state.control_center_destroyed = true;
+	return snapshot;
+}
+
 level_metadata_scan_view make_view(test_level &level)
 {
 	level_metadata_scan_view view = {};
@@ -447,6 +508,7 @@ level_metadata_scan_view make_view(test_level &level)
 	view.object_position = object_position;
 	view.object_is_boss = object_is_boss;
 	view.object_is_companion = object_is_companion;
+	view.object_is_fleeing = object_is_fleeing;
 	view.segment_center = segment_center;
 	view.side_center = side_center;
 	view.segment_vertex = segment_vertex;
@@ -515,6 +577,7 @@ int main()
 	assert(first.state.objects[0].kind == dxx_route::route_object_kind::robot);
 	assert(!first.state.objects[0].should_be_dead);
 	assert(first.state.objects[0].boss);
+	assert(first.state.objects[0].fleeing);
 	dxx_route::route_query edge_query;
 	edge_query.progression.key_mask = first.state.key_mask;
 	auto blastable_edge = dxx_route::evaluate_route_edge(
@@ -1096,6 +1159,29 @@ int main()
 	       dxx_route::route_activation_kind::destroy_key_carrier);
 	assert(carrier_step->key_carrier_object == 0);
 	assert(carrier_step->label == "Destroy robot carrying blue key");
+	const auto fleeing_carrier_snapshot =
+	    make_fleeing_carrier_snapshot(true);
+	auto fleeing_carrier_query = planner_query;
+	fleeing_carrier_query.endpoint =
+	    dxx_route::route_endpoint_kind::segment;
+	fleeing_carrier_query.target_segment = 2;
+	const auto fleeing_carrier_plan = dxx_route::plan_route(
+	    fleeing_carrier_snapshot, fleeing_carrier_query);
+	assert(fleeing_carrier_plan.status ==
+	       dxx_route::route_plan_status::ok);
+	assert(fleeing_carrier_plan.steps.size() == 3);
+	assert(fleeing_carrier_plan.steps[1].activation ==
+	       dxx_route::route_activation_kind::destroy_key_carrier);
+	assert(fleeing_carrier_plan.steps[1].path.terminal_segment == 1);
+	assert(fleeing_carrier_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::unexplored);
+	assert(fleeing_carrier_plan.steps[2].path.segments.front() == 0);
+	auto stationary_carrier_snapshot = fleeing_carrier_snapshot;
+	stationary_carrier_snapshot.state.objects[0].fleeing = false;
+	const auto stationary_carrier_plan = dxx_route::plan_route(
+	    stationary_carrier_snapshot, fleeing_carrier_query);
+	assert(stationary_carrier_plan.status !=
+	       dxx_route::route_plan_status::ok);
 	const auto selected_key = dxx_route::select_key_target(
 	    key_snapshot, planner_query,
 	    dxx_route::initial_route_progress_state(key_snapshot, planner_query),

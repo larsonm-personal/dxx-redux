@@ -155,6 +155,7 @@ int	Game_mode = GM_GAME_OVER;
 int	Global_laser_firing_count = 0;
 int	Global_missile_firing_count = 0;
 fix64	Next_flare_fire_time = 0;
+static unsigned int Game_simulation_frame_id = 0;
 
 //	Function prototypes for GAME.C exclusively.
 
@@ -167,6 +168,37 @@ void game_init_render_sub_buffers(int x, int y, int w, int h);
 extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
+
+#ifdef __ANDROID__
+static void android_profile_scene_state(void)
+{
+	int active_objects = 0;
+	int projectile_objects = 0;
+	int reactor_objects = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+		int owner;
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		active_objects++;
+		if (obj->type == OBJ_WEAPON)
+			projectile_objects++;
+		else if (obj->type == OBJ_CNTRLCEN)
+			reactor_objects++;
+		if (obj->type != OBJ_ROBOT)
+			continue;
+		owner = obj->ctype.ai_info.REMOTE_OWNER;
+		android_profile_remote_robot_live(
+		    i, obj->signature,
+		    (Game_mode & GM_MULTI) && owner >= 0 && owner != Player_num);
+	}
+	android_profile_set_scene_object_counts(
+	    active_objects, projectile_objects, reactor_objects);
+}
+#endif
 
 // Cheats
 game_cheats cheats;
@@ -1170,6 +1202,10 @@ int game_handler(window *wind, d_event *event, void *data)
 					calc_game_time();
 					GameProcessFrame();
 					#ifdef __ANDROID__
+					android_profile_set_simulation_metrics(
+					    Game_simulation_frame_id,
+					    (int) ((FrameTime * 15625LL) / 1024));
+					android_profile_scene_state();
 					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_SIM);
 					#endif
 				}
@@ -1281,6 +1317,7 @@ void GameProcessFrame(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;
+	Game_simulation_frame_id++;
 
 	input_demo_update_rng_trace_context();
 	input_demo_debug_log_player_motion_state("entry");

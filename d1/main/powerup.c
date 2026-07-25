@@ -186,6 +186,25 @@ int pick_up_energy(void)
 	return used;
 }
 
+static int all_coop_players_have_primary(int weapon_index)
+{
+	int i;
+	ubyte flag = 1 << weapon_index;
+
+	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
+		if (Players[i].connected != CONNECT_DISCONNECTED &&
+		    !(Players[i].primary_weapon_flags & flag))
+			return 0;
+
+	return 1;
+}
+
+static int duplicate_primary_gives_energy(int weapon_index)
+{
+	return !(Game_mode & GM_MULTI) ||
+	       ((Game_mode & GM_MULTI_COOP) && all_coop_players_have_primary(weapon_index));
+}
+
 int pick_up_vulcan_ammo(void)
 {
 	int	used=0;
@@ -423,17 +442,17 @@ int do_powerup(object *obj)
 			break;
 		case	POW_SPREADFIRE_WEAPON:
 			used = pick_up_primary(SPREADFIRE_INDEX);
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_primary_gives_energy(SPREADFIRE_INDEX))
 				used = pick_up_energy();
 			break;
 		case	POW_PLASMA_WEAPON:
 			used = pick_up_primary(PLASMA_INDEX);
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_primary_gives_energy(PLASMA_INDEX))
 				used = pick_up_energy();
 			break;
 		case	POW_FUSION_WEAPON:
 			used = pick_up_primary(FUSION_INDEX);
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_primary_gives_energy(FUSION_INDEX))
 				used = pick_up_energy();
 			break;
 

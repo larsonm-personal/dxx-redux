@@ -176,6 +176,38 @@ extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
 extern void do_final_boss_frame(void);
+
+#ifdef __ANDROID__
+static void android_profile_scene_state(void)
+{
+	int active_objects = 0;
+	int projectile_objects = 0;
+	int reactor_objects = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+		int owner;
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		active_objects++;
+		if (obj->type == OBJ_WEAPON)
+			projectile_objects++;
+		else if (obj->type == OBJ_CNTRLCEN)
+			reactor_objects++;
+		if (obj->type != OBJ_ROBOT)
+			continue;
+		owner = obj->ctype.ai_info.REMOTE_OWNER;
+		android_profile_remote_robot_live(
+		    i, obj->signature,
+		    (Game_mode & GM_MULTI) && owner >= 0 && owner != Player_num);
+	}
+	android_profile_set_scene_object_counts(
+	    active_objects, projectile_objects, reactor_objects);
+}
+#endif
+
 static int input_demo_replay_manual_paused = 0;
 static int input_demo_replay_manual_step = 0;
 
@@ -1360,6 +1392,10 @@ int game_handler(window *wind, d_event *event, void *data)
 					calc_game_time();
 					GameProcessFrame();
 					#ifdef __ANDROID__
+					android_profile_set_simulation_metrics(
+					    Game_simulation_frame_id,
+					    (int) ((FrameTime * 15625LL) / 1024));
+					android_profile_scene_state();
 					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_SIM);
 					#endif
 				}

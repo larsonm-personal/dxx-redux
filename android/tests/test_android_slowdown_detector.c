@@ -31,6 +31,8 @@ static int feed_frames(struct android_slowdown_detector *detector,
 	for (i = 0; i < count; i++) {
 		frame->frame_id++;
 		frame->end_us += frame_period_us;
+		frame->begin_gap_us = frame_period_us;
+		frame->flip_gap_us = frame_period_us;
 		frame->total_us = frame_period_us;
 		frame->wait_us = frame_period_us > work_us ? frame_period_us - work_us : 0;
 		frame->render_us = work_us;
@@ -136,6 +138,47 @@ static void test_three_severe_frames_trigger(void)
 	expect_true("three severe frames", events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
 }
 
+static void test_single_hard_cadence_stall_triggers(void)
+{
+	struct android_slowdown_detector detector;
+	struct android_slowdown_frame frame;
+	int events;
+
+	android_slowdown_detector_init(&detector);
+	android_slowdown_detector_set_enabled(&detector, 1);
+	init_frame(&frame, 120);
+	feed_frames(&detector, &frame, 480, 8333, 1000);
+	events = feed_frames(&detector, &frame, 1, 300000, 1000);
+	expect_true("single hard cadence stall",
+	            events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
+}
+
+static void test_network_and_robot_metrics_aggregate(void)
+{
+	struct android_slowdown_detector detector;
+	struct android_slowdown_frame frame;
+
+	android_slowdown_detector_init(&detector);
+	android_slowdown_detector_set_enabled(&detector, 1);
+	init_frame(&frame, 25);
+	frame.network_us = 2000;
+	frame.network_packets = 3;
+	frame.network_bytes = 900;
+	frame.remote_robot_updates = 2;
+	frame.max_remote_robot_age_ms = 450;
+	feed_frames(&detector, &frame, 26, 40000, 1000);
+	expect_true("network time aggregate",
+	            detector.completed_window.network_us == 52000);
+	expect_true("network packet aggregate",
+	            detector.completed_window.network_packets == 78);
+	expect_true("network byte aggregate",
+	            detector.completed_window.network_bytes == 23400);
+	expect_true("remote update aggregate",
+	            detector.completed_window.remote_robot_updates == 52);
+	expect_true("remote age maximum",
+	            detector.completed_window.max_remote_robot_age_ms == 450);
+}
+
 static void test_capture_ends_and_cools_down(void)
 {
 	struct android_slowdown_detector detector;
@@ -162,6 +205,8 @@ int main(void)
 	test_under_eight_fps_triggers();
 	test_cap_change_does_not_trigger();
 	test_three_severe_frames_trigger();
+	test_single_hard_cadence_stall_triggers();
+	test_network_and_robot_metrics_aggregate();
 	test_capture_ends_and_cools_down();
 
 	if (failures) {

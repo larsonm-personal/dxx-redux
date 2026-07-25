@@ -47,6 +47,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #include "byteswap.h"
 #include "wall.h"
+#ifdef __ANDROID__
+#include "android_profile.h"
+#endif
 
 void multi_delete_controlled_robot(int objnum);
 void multi_send_robot_position_sub(int objnum, int now);
@@ -715,6 +718,9 @@ multi_do_robot_position(const ubyte *buf)
 	memcpy((ubyte *)(sp.bytemat), (ubyte *)(buf + loc), 9);		loc += 9;
 	memcpy((ubyte *)&(sp.xo), (ubyte *)(buf + loc), 14);
 	extract_shortpos(&Objects[botnum], &sp, 1);
+#endif
+#ifdef __ANDROID__
+	android_profile_remote_robot_update(botnum, Objects[botnum].signature);
 #endif
 
 	set_thrust_from_velocity(&Objects[botnum]); // Smooth movement using updated velocity

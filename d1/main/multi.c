@@ -5011,12 +5011,10 @@ void multi_send_ship_status_for_frame()
 	PUT_INTEL_SHORT(multibuf + 41, Players[Player_num].primary_ammo[3]);
 	PUT_INTEL_SHORT(multibuf + 43, Players[Player_num].primary_ammo[4]);
 
-#ifdef __ANDROID__
-	/* android port: in coop, broadcast to all peers for QoL overlay */
+	/* android port: coop inventory is needed by shared pickup rules and the QoL overlay */
 	if (Game_mode & GM_MULTI_COOP)
 		multi_send_data(multibuf, 45, 2);
 	else
-#endif
 		multi_send_data_direct( multibuf, 45, multi_who_is_master(), 2);
 }
 
@@ -5045,10 +5043,9 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[buf[1]].primary_ammo[3] = GET_INTEL_SHORT(buf + 41);
 		Players[buf[1]].primary_ammo[4] = GET_INTEL_SHORT(buf + 43);
 	}
-#ifdef __ANDROID__
 	else if ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num)
 	{
-		/* android port: update all remote player fields for coop caching */
+		/* android port: update all remote player fields for coop inventory caching */
 		int pnum = buf[1];
 		Players[pnum].laser_level = buf[2];
 		Players[pnum].flags = GET_INTEL_SHORT(buf + 3);
@@ -5068,7 +5065,6 @@ void multi_do_ship_status( const ubyte *buf )
 		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
 			Players[pnum].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
 	}
-#endif
 }
 
 bool is_observing_player() {

@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "thief_network_policy.h"
 #ifdef __ANDROID__
 #include "android_log.h"
+#include "android_profile.h"
 #endif
 
 
@@ -903,6 +904,9 @@ multi_do_robot_position(const ubyte *buf)
 	memcpy((ubyte *)(sp.bytemat), (ubyte *)(buf + loc), 9);		loc += 9;
 	memcpy((ubyte *)&(sp.xo), (ubyte *)(buf + loc), 14);
 	extract_shortpos(&Objects[botnum], &sp, 1);
+#endif
+#ifdef __ANDROID__
+	android_profile_remote_robot_update(botnum, Objects[botnum].signature);
 #endif
 	if (Robot_info[Objects[botnum].id].thief &&
 	    thief_network_mode_is_valid(thief_mode, AIM_THIEF_ATTACK,

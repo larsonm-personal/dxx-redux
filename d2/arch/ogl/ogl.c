@@ -2381,6 +2381,7 @@ void gr_flip(void)
 #ifdef ANDROID
 	int trace_flip = 0;
 
+	android_profile_note_flip();
 	{
 		static int s_flip_count = 0;
 		s_flip_count++;

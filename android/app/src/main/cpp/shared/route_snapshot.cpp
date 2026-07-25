@@ -263,6 +263,7 @@ route_state_fingerprints fingerprint_state(const route_state &state)
 		objects.add_bool(object.should_be_dead);
 		objects.add_bool(object.boss);
 		objects.add_bool(object.companion);
+		objects.add_bool(object.fleeing);
 	}
 	result.objects = objects.value();
 
@@ -326,6 +327,7 @@ std::uint64_t hash_state(const route_state &state)
 		hasher.add_bool(object.should_be_dead);
 		hasher.add_bool(object.boss);
 		hasher.add_bool(object.companion);
+		hasher.add_bool(object.fleeing);
 	}
 	return hasher.value();
 }
@@ -499,6 +501,8 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		              view.object_is_boss(view.user, object_index) != 0;
 		object.companion = view.object_is_companion &&
 		                   view.object_is_companion(view.user, object_index) != 0;
+		object.fleeing = view.object_is_fleeing &&
+		                 view.object_is_fleeing(view.user, object_index) != 0;
 	}
 
 	for (int wall_index = 0; wall_index < view.num_walls; ++wall_index) {

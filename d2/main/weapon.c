@@ -856,6 +856,9 @@ int pick_up_primary(int weapon_index)
    if (weapon_index!=LASER_INDEX)
    	HUD_init_message(HM_DEFAULT, "%s!",PRIMARY_WEAPON_NAMES(weapon_index));
 
+	if (Game_mode & GM_MULTI)
+		multi_send_ship_status();
+
 	return 1;
 }
 

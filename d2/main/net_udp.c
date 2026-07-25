@@ -66,6 +66,7 @@
 #ifdef __ANDROID__
 #include "auto_net.h"
 #include "android_log.h"
+#include "android_profile.h"
 #include "android_crash_handler.h"
 #include "coop_indicator_lines.h"
 #include "coop/coop_player_session.h"
@@ -6141,6 +6142,8 @@ void net_udp_listen()
 	ubyte packet[UPID_MAX_SIZE];
 	struct _sockaddr sender_addr;
 #ifdef __ANDROID__
+	long long android_profile_network_start =
+	    android_profile_network_begin();
 	static int rx_pdata = 0;
 	static int rx_mdata = 0;
 	static fix64 last_rx_heartbeat = 0;
@@ -6151,6 +6154,7 @@ void net_udp_listen()
 		size = udp_receive_packet( 0, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
 #ifdef __ANDROID__
+			android_profile_network_packet(size);
 			switch (packet[0]) {
 				case UPID_PDATA: rx_pdata++; break;
 				case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
@@ -6167,6 +6171,7 @@ void net_udp_listen()
 		size = udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
 #ifdef __ANDROID__
+			android_profile_network_packet(size);
 			switch (packet[0]) {
 				case UPID_PDATA: rx_pdata++; break;
 				case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
@@ -6183,6 +6188,9 @@ void net_udp_listen()
 	{
 		size = udp_receive_packet( 2, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
+#ifdef __ANDROID__
+			android_profile_network_packet(size);
+#endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 			size = udp_receive_packet( 2, packet, UPID_MAX_SIZE, &sender_addr );
 		}
@@ -6207,6 +6215,7 @@ void net_udp_listen()
 			last_rx_heartbeat = now;
 		}
 	}
+	android_profile_network_end(android_profile_network_start);
 #endif
 }
 
