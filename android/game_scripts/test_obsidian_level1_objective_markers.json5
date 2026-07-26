@@ -125,7 +125,9 @@
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
     {"action": "introspect"},
-    {"action": "assert", "expect": {
+    // Trigger 8 starts an opening-wall transition. Wait for the route snapshot
+    // to observe that completed state instead of sampling during the transition.
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "automap.objective_overlay_mode_name": "remaining",
         "automap.objective_visible_step_count": "2",
         "automap.objective_label_candidate_count": "2",

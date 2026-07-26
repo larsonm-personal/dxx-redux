@@ -16,8 +16,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"MISSION": "First Strike", "LEVEL": "11", "LEVEL_KEY_1": "1", "LEVEL_KEY_2": "1", "GAME_NUM": "1"},
-            "d2": {"MISSION": "Counterstrike", "LEVEL": "24", "LEVEL_KEY_1": "2", "LEVEL_KEY_2": "4", "GAME_NUM": "2"}
+            "d1": {"MISSION": "First Strike", "LEVEL": "11", "LEVEL_KEY_1": "1", "LEVEL_KEY_2": "1", "GAME": "d1"},
+            "d2": {"MISSION": "Counterstrike", "LEVEL": "24", "LEVEL_KEY_1": "2", "LEVEL_KEY_2": "4", "GAME": "d2"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -42,8 +42,9 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    // reset_state clears launcher preferences after SetupActivity has rendered.
+    // Use the automation launch preflight instead of the stale button inventory.
+    {"action": "enter_game", "game": "${GAME}"},
 
     {"action": "log", "message": "=== TEST: Death (Insane) ==="},
 
