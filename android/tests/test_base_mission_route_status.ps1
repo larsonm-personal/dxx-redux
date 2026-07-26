@@ -19,19 +19,35 @@ if ($descentFailures.Count -gt 0) {
     throw "Descent route regressions:`n$($summary -join "`n")"
 }
 
-$allowedCounterstrikePartial = 10
 $counterstrikeFailures = @(
     Get-MissionLevels -Path $counterstrikePath |
-        Where-Object { $_.route_status -ne "ok" -and $_.level_num -ne $allowedCounterstrikePartial }
+        Where-Object { $_.route_status -ne "ok" }
 )
 if ($counterstrikeFailures.Count -gt 0) {
     $summary = $counterstrikeFailures | ForEach-Object { "level $($_.level_num): $($_.route_status) $($_.route_problem)" }
     throw "Counterstrike route regressions:`n$($summary -join "`n")"
 }
 
-$level10 = Get-MissionLevels -Path $counterstrikePath | Where-Object { $_.level_num -eq $allowedCounterstrikePartial }
-if (-not $level10 -or $level10.route_status -ne "partial") {
-    throw "Counterstrike level 10 exception changed; review and update this regression intentionally"
-}
+$level10 = Get-MissionLevels -Path $counterstrikePath | Where-Object { $_.level_num -eq 10 }
+$expectedLevel10Steps = @(
+    "start:none"
+    "key:destroy_key_carrier:blue"
+    "key:destroy_key_carrier:gold"
+    "key:destroy_key_carrier:red"
+    "trigger:shoot_switch:18"
+    "trigger:shoot_switch:25"
+    "reactor:destroy_reactor"
+    "exit:enter_exit:0"
+)
+$actualLevel10Steps = @(
+    $level10.route_steps | ForEach-Object {
+        @($_.kind, $_.activation_kind, $_.key, $_.trigger) |
+            Where-Object { $null -ne $_ } |
+            Join-String -Separator ":"
+        }
+    )
+    if (-not $level10 -or (Compare-Object $expectedLevel10Steps $actualLevel10Steps)) {
+        throw "Counterstrike level 10 carrier route changed:`n$($actualLevel10Steps -join "`n")"
+    }
 
-Write-Host "PASS: base mission route statuses"
+    Write-Host "PASS: base mission route statuses"
