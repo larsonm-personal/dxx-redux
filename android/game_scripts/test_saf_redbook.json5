@@ -69,7 +69,7 @@
 
     // ── Phase 2: Launch game ────────────────────────────────────
 
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     // Skip intro, then handle either the direct pilot-name prompt or the
     // select-pilot list.

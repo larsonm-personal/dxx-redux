@@ -35,7 +35,7 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
 
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
@@ -73,7 +73,7 @@
     {"action": "write_config", "file": "descent.cfg",
      "content": "AspectX=3\nAspectY=4\nResolutionX=640\nResolutionY=480\n"},
 
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},

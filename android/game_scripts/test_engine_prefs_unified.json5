@@ -35,8 +35,7 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "${GAME}"},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -51,8 +50,7 @@
     {"action": "log", "message": "=== Phase 2: Verify intro auto-skip pref (${GAME}) ==="},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": true}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "${GAME}"},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "assert", "expect": {
         "intro_active": "false",
@@ -71,8 +69,7 @@
               "original_homing": true}, "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Game Preferences", "post_delay_ms": 500},
     {"action": "tap_button", "text": "< Back", "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "${GAME}"},
 
     // -- Phase 4: Verify running game sees saved prefs --
     {"action": "log", "message": "=== Phase 4: Verify engine prefs in game (${GAME}) ==="},

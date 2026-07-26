@@ -60,6 +60,13 @@ foreach ($file in $jsonFiles) {
     if (-not ($info._standalone -eq $false)) {
         $standaloneJson[$file.BaseName] = $file
     }
+
+    if ($file.BaseName -notmatch '_manual(?:_|$)') {
+        $scriptText = Get-Content -LiteralPath $file.FullName -Raw
+        if ($scriptText -match '(?s)\{[^{}]*"action"\s*:\s*"tap_button"[^{}]*"text"\s*:\s*"(?:Launch )?Descent\b[^"]*"[^{}]*\}') {
+            $failures.Add("$($file.Name): automated game launch must use enter_game instead of launcher button taps")
+        }
+    }
 }
 
 foreach ($name in $standaloneJson.Keys) {

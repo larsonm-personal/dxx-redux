@@ -41,19 +41,15 @@ $script:PRIMARY_AVD_NAME = "Nexus5X_Light_1"
 $script:SECONDARY_AVD_NAME = "Nexus5X_Light_2"
 
 function Adb {
-    param([string[]]$AdbArgs)
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    $output = & $script:ADB @AdbArgs 2>&1 | Out-String
-    $ErrorActionPreference = $prevEAP
-    return $output.Trim()
+    param([string[]]$AdbArgs, [int]$Seconds = 30)
+    return (Adb-Timeout -AdbArgs $AdbArgs -Seconds $Seconds -IncludeStandardError)
 }
 
 function Adb-Timeout {
     # Run an adb command with a timeout; returns $null if it hangs.
     # Uses ProcessStartInfo instead of Start-Job because Start-Job with
     # adb.exe hangs on Windows PowerShell 5.1 (pipe/handle inheritance issue).
-    param([string[]]$AdbArgs, [int]$Seconds = 8)
+    param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError)
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
     $psi.Arguments = ($AdbArgs | ForEach-Object {
@@ -74,8 +70,11 @@ function Adb-Timeout {
         }
         # Process exited; wait for async reads to finish (already done since process exited)
         $out = $stdoutTask.GetAwaiter().GetResult()
-        if ([string]::IsNullOrEmpty($out)) { return "" }
-        return $out.Trim()
+        $err = $stderrTask.GetAwaiter().GetResult()
+        $streams = if ($IncludeStandardError) { @($out, $err) } else { @($out) }
+        return ($streams |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                ForEach-Object { $_.Trim() }) -join "`n"
     } catch {
         return $null
     }
@@ -129,7 +128,7 @@ function Restart-AdbServer {
     Write-Status "Restarting ADB server..." "DarkGray"
     Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 1
-    & $script:ADB start-server 2>$null | Out-Null
+    Adb-Timeout -AdbArgs "start-server" -Seconds 10 | Out-Null
     Start-Sleep -Seconds 2
 }
 
@@ -316,18 +315,18 @@ function Write-DeviceFailureDiagnostics {
 
 function Adb-Dev {
     # Run adb targeting a specific device serial.
-    param([string]$Serial, [string[]]$AdbArgs)
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    $fullArgs = @("-s", $Serial) + $AdbArgs
-    $output = & $script:ADB @fullArgs 2>&1 | Out-String
-    $ErrorActionPreference = $prevEAP
-    return $output.Trim()
+    param([string]$Serial, [string[]]$AdbArgs, [int]$Seconds = 30)
+    return (Adb-Dev-Timeout -Serial $Serial -AdbArgs $AdbArgs -Seconds $Seconds -IncludeStandardError)
 }
 
 function Adb-Dev-Timeout {
     # Run adb targeting a specific device serial, with a timeout.
-    param([string]$Serial, [string[]]$AdbArgs, [int]$Seconds = 10)
+    param(
+        [string]$Serial,
+        [string[]]$AdbArgs,
+        [int]$Seconds = 10,
+        [switch]$IncludeStandardError
+    )
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
     $allArgs = @("-s", $Serial) + $AdbArgs
@@ -347,8 +346,11 @@ function Adb-Dev-Timeout {
             return $null
         }
         $out = $stdoutTask.GetAwaiter().GetResult()
-        if ([string]::IsNullOrEmpty($out)) { return "" }
-        return $out.Trim()
+        $err = $stderrTask.GetAwaiter().GetResult()
+        $streams = if ($IncludeStandardError) { @($out, $err) } else { @($out) }
+        return ($streams |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                ForEach-Object { $_.Trim() }) -join "`n"
     } catch {
         return $null
     }
@@ -356,7 +358,7 @@ function Adb-Dev-Timeout {
 
 function Test-DeviceOnline {
     param([string]$Serial)
-    $devices = & $script:ADB devices 2>&1 | Out-String
+    $devices = Adb-Timeout -AdbArgs "devices" -Seconds 5
     return $devices -match "$Serial\s+device"
 }
 
@@ -376,10 +378,12 @@ function Send-TapButton {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $shownAvailable = $false
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
-        & $script:ADB -s $Serial logcat -c 2>&1 | Out-Null
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("logcat", "-c") -Seconds 5 | Out-Null
         Send-MpCommand -Serial $Serial -Command "tap_button" -Extras @("--es", "text", $Text)
         Start-Sleep -Milliseconds $PollMs
-        $log = & $script:ADB -s $Serial logcat -d -t 20 -s "DXX-MP:*" 2>&1 | Out-String
+        $log = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+            "logcat", "-d", "-t", "20", "-s", "DXX-MP:*"
+        ) -Seconds 5
         if ($log -match "tap_button: tapped") { return $true }
         if ($log -match 'tap_button:.*not found \(available: ([^)]*)\)') {
             if (-not $shownAvailable) {

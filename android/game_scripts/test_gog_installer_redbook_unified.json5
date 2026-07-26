@@ -154,7 +154,7 @@
     // tap_button validates enabled + auto-scrolls to find off-screen buttons.
     // The Mac pkg path skips audio preview checks, so it can reach this button
     // while the launcher is still finishing its background hash pass.
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true, "timeout_ms": 180000},
+    {"action": "enter_game", "game": "d2"},
 
     // ── Phase 5: In-game verification ───────────────────────────
 

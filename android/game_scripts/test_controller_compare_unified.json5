@@ -42,8 +42,7 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "${GAME}"},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -66,8 +65,7 @@
     // Keep a valid-version config for launch preflight, but omit settings so
     // android_apply_gamepad_defaults cannot hide a broken pilot-file patch.
     {"action": "write_config", "file": "controller_config.json", "content": "{\"version\":4}\n"},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "${GAME}"},
 
     // -- Phase 3: Read settings back from the real pilot --
 

@@ -43,8 +43,7 @@
     {"action": "write_config", "file": "mods/mod_manifest.json",
      "content": "{\"mods\":[{\"filename\":\"d2-hires-sounds.dxa\",\"displayName\":\"D2 Hires Sounds\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2-hires-${RESOLUTION}-textures-ktx2.dxa\",\"displayName\":\"D2 Hires ${RESOLUTION} Textures\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
-    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 1000},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
     {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} ==="},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},

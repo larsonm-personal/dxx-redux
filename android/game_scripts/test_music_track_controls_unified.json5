@@ -55,8 +55,7 @@
          "play_order": 0,
          "volume": 8
      }, "post_delay_ms": 500},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "enter_game", "game": "${GAME}"},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},

@@ -26,7 +26,7 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},

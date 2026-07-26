@@ -8,6 +8,15 @@ $helperSource = Get-Content "$PSScriptRoot\..\helpers\test_helpers.ps1" -Raw
 if ($helperSource -notmatch '\$devices\s*=\s*Adb-Timeout\s+-AdbArgs\s+"devices"\s+-Seconds\s+5') {
     throw 'Emulator health device-list probe is not bounded'
 }
+if ($helperSource -notmatch 'return \(Adb-Timeout -AdbArgs \$AdbArgs -Seconds \$Seconds -IncludeStandardError\)') {
+    throw 'Default ADB helper is not bounded'
+}
+if ($helperSource -notmatch 'return \(Adb-Dev-Timeout -Serial \$Serial -AdbArgs \$AdbArgs -Seconds \$Seconds -IncludeStandardError\)') {
+    throw 'Default device-targeted ADB helper is not bounded'
+}
+if ($helperSource -notmatch 'Adb-Timeout -AdbArgs "start-server" -Seconds 10') {
+    throw 'ADB server restart is not bounded'
+}
 
 $matchingResult = '{"result":"PASS","run_id":"run-a"}' | ConvertFrom-Json
 $otherResult = '{"result":"PASS","run_id":"run-b"}' | ConvertFrom-Json

@@ -38,8 +38,7 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
 
-    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
@@ -68,7 +67,7 @@
 
     // ── Phase 3: Navigate nested menus (crash test) ─────────────
 
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     {"action": "log", "message": "=== Phase 3: Navigate menus with patched pilot ==="},
 
