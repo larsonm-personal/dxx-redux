@@ -87,7 +87,7 @@ function Test-EmulatorHealthy {
         $_.ProcessName -match 'qemu-system|emulator' -and (-not $_.Path -or $_.Path -match 'android|emulator')
     }
     if (-not $emuProc) { return $false }
-    $devices = Adb -AdbArgs "devices"
+    $devices = Adb-Timeout -AdbArgs "devices" -Seconds 5
     if ($devices -notmatch 'emulator-\d+\s+device') { return $false }
     $boot = Adb-Timeout -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 10
     if ($null -eq $boot -or $boot -ne "1") { return $false }

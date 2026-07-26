@@ -1439,7 +1439,8 @@ if (-not $state.can_launch) {
 
 Write-Status "Launching game from set '$TEST_SET' with automation..."
 
-# Force stop to ensure clean launch
+# Force stop so cached launcher data, import work, and automation executors
+# cannot leak into the game-launch verification.
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 2
 
@@ -1451,7 +1452,7 @@ Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'*.plr'",
 Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'*.plx'", '-delete') | Out-Null
 Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'descent.cfg'", '-delete') | Out-Null
 
-# Re-launch setup activity
+# Re-launch SetupActivity and verify the clean process before automation.
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
 if (-not (Wait-SetupReady)) {
     Write-Status 'FAIL: SetupActivity not responding before game launch' 'Red'

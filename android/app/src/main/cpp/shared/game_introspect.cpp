@@ -1271,6 +1271,16 @@ extern "C" char *game_introspect_get_state(void)
 	j["difficulty_max"] = Difficulty_level_max_seen;
 	j["current_level_num"] = Current_level_num;
 	j["current_level_name"] = Current_level_name;
+	{
+		int active_wall_transition_count = 0;
+		for (int i = 0; i < Num_walls; i++)
+			if (Walls[i].state == WALL_DOOR_OPENING)
+				active_wall_transition_count++;
+#ifdef DXX_BUILD_DESCENT_II
+		active_wall_transition_count += Num_cloaking_walls;
+#endif
+		j["active_wall_transition_count"] = active_wall_transition_count;
+	}
 #ifdef DXX_BUILD_DESCENT_II
 	j["level_metadata_route"] = serialize_level_metadata_route();
 #endif

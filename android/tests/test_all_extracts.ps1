@@ -201,7 +201,7 @@ foreach ($specPath in $specs) {
             }
         } catch {
             Write-Host "  Emulator not recoverable. Stopping" -ForegroundColor Red
-            $results += [PSCustomObject]@{ Source = $sourceName; Status = 'FAIL'; Time = '00:00'; ExitCode = 98 }
+            $results += [PSCustomObject]@{ Source = $sourceName; Status = 'FAIL'; Time = '00:00'; ExitCode = 98; Attempts = 0 }
             $failures++
             break
         }
@@ -217,12 +217,25 @@ foreach ($specPath in $specs) {
     if ($SkipLaunch) { $testArgs += "-SkipLaunch" }
 
     $exitCode = 0
-    try {
-        pwsh @testArgs
-        $exitCode = $LASTEXITCODE
-    } catch {
-        Write-Host "  EXCEPTION: $_" -ForegroundColor Red
-        $exitCode = 99
+    $attempt = 0
+    while ($true) {
+        $attempt++
+        try {
+            pwsh @testArgs
+            $exitCode = $LASTEXITCODE
+        } catch {
+            Write-Host "  EXCEPTION: $_" -ForegroundColor Red
+            $exitCode = 99
+        }
+        if ($exitCode -ne 98 -or $attempt -gt 1) {
+            break
+        }
+
+        Write-Host "  Extraction infrastructure failed. Recovering the launcher and rerunning the complete spec once" -ForegroundColor Yellow
+        if (-not (Ensure-LauncherTestDeviceReady)) {
+            Write-Host "  Launcher recovery failed" -ForegroundColor Red
+            break
+        }
     }
 
     # Force-stop after each test regardless of outcome
@@ -255,6 +268,7 @@ foreach ($specPath in $specs) {
         Prior    = if ($priorStatus) { $priorStatus } else { '-' }
         Saved    = if ($newStatus) { $newStatus } else { '-' }
         Changed  = if ($changed -and $priorStatus) { '*' } else { '' }
+        Attempts = $attempt
     }
 
     if ($status -eq 'FAIL') {
@@ -289,7 +303,7 @@ Write-Host "  Total time: $( '{0:hh\:mm\:ss}' -f $totalElapsed )" -ForegroundCol
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
 
-$results | Format-Table Source, Status, Prior, Saved, Changed, Time, ExitCode -AutoSize
+$results | Format-Table Source, Status, Prior, Saved, Changed, Attempts, Time, ExitCode -AutoSize
 
 # Final cleanup: ensure app is stopped
 Adb -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null

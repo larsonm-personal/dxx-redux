@@ -4,6 +4,11 @@ $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
+$helperSource = Get-Content "$PSScriptRoot\..\helpers\test_helpers.ps1" -Raw
+if ($helperSource -notmatch '\$devices\s*=\s*Adb-Timeout\s+-AdbArgs\s+"devices"\s+-Seconds\s+5') {
+    throw 'Emulator health device-list probe is not bounded'
+}
+
 $matchingResult = '{"result":"PASS","run_id":"run-a"}' | ConvertFrom-Json
 $otherResult = '{"result":"PASS","run_id":"run-b"}' | ConvertFrom-Json
 $legacyResult = '{"result":"PASS"}' | ConvertFrom-Json

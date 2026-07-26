@@ -5,6 +5,8 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $tempRoot = Join-Path $repoRoot 'android\temp\test_extract_regression_workflow'
 $helperPath = Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1'
 $validatorPath = Join-Path $PSScriptRoot 'validate_extract_regression_specs.ps1'
+$extractPath = Join-Path $PSScriptRoot 'test_extract.ps1'
+$allExtractsPath = Join-Path $PSScriptRoot 'test_all_extracts.ps1'
 . $helperPath
 
 if (Test-Path -LiteralPath $tempRoot) {
@@ -13,6 +15,15 @@ if (Test-Path -LiteralPath $tempRoot) {
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
 try {
+    $extractSource = [System.IO.File]::ReadAllText($extractPath)
+    $allExtractsSource = [System.IO.File]::ReadAllText($allExtractsPath)
+    if ($extractSource -notmatch "(?s)Launching game from set.*?am', 'force-stop'.*?Wait-SetupReady.*?Invoke-GameAutomationScript") {
+        throw 'Extraction launch no longer enforces a clean SetupActivity process boundary'
+    }
+    if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Ensure-LauncherTestDeviceReady') {
+        throw 'Extraction suite no longer bounds infrastructure recovery to one complete-spec retry'
+    }
+
     $stablePath = Join-Path $tempRoot 'stable.json5'
     $spec = [ordered]@{
         source_type = 'cd'

@@ -122,12 +122,13 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "6", "post_delay_ms": 200},
     {"action": "set_debug", "field": "fire_trigger", "value": "5", "post_delay_ms": 200},
     {"action": "set_debug", "field": "fire_trigger", "value": "8", "post_delay_ms": 200},
+    // Automap pauses the game simulation, so let trigger 8's cloaking wall
+    // finish opening before entering it.
+    {"action": "wait_for", "field": "active_wall_transition_count", "value": "0", "timeout_ms": 10000},
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
     {"action": "introspect"},
-    // Trigger 8 starts an opening-wall transition. Wait for the route snapshot
-    // to observe that completed state instead of sampling during the transition.
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+    {"action": "assert", "expect": {
         "automap.objective_overlay_mode_name": "remaining",
         "automap.objective_visible_step_count": "2",
         "automap.objective_label_candidate_count": "2",
