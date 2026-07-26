@@ -101,6 +101,10 @@ if(NOT ANDROID)
         ${PHYSFS_INCLUDE_DIR}
         ${SDL_INCLUDE_DIR})
 
+    add_executable(test_multi_save_transfer_policy
+        ../../android/tests/test_multi_save_transfer_policy.c)
+    target_include_directories(test_multi_save_transfer_policy PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_rng_mode
         ../../android/tests/test_input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)
@@ -216,6 +220,7 @@ if(NOT ANDROID)
             test_android_slowdown_detector
             test_coop_host_migration_policy
             test_coop_player_session
+            test_multi_save_transfer_policy
             test_input_demo_rng_mode
             test_android_axis_mailbox
             test_level_metadata_scan

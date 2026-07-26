@@ -1,0 +1,17 @@
+#ifndef MULTI_SAVE_TRANSFER_POLICY_H
+#define MULTI_SAVE_TRANSFER_POLICY_H
+
+typedef enum multi_save_transfer_host_action {
+	MULTI_SAVE_TRANSFER_HOST_APPLY_NOW = 0,
+	MULTI_SAVE_TRANSFER_HOST_WAIT_FOR_CLIENTS = 1
+} multi_save_transfer_host_action;
+
+static inline multi_save_transfer_host_action
+multi_save_transfer_host_action_for_rewind(int has_connected_clients)
+{
+	return has_connected_clients
+	           ? MULTI_SAVE_TRANSFER_HOST_WAIT_FOR_CLIENTS
+	           : MULTI_SAVE_TRANSFER_HOST_APPLY_NOW;
+}
+
+#endif

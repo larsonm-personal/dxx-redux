@@ -14,6 +14,7 @@
 #include "game.h"
 #include "hudmsg.h"
 #include "multi.h"
+#include "multi_save_transfer_policy.h"
 #include "physfsx.h"
 #include "player.h"
 #include "pstypes.h"
@@ -283,7 +284,11 @@ static void multi_rewind_apply_received_transfer(void)
 	    Rewind_save_transfer.has_collision_delay_last_play_time;
 	restore.collision_delay_last_play_time =
 	    Rewind_save_transfer.collision_delay_last_play_time;
+	multi_save_transfer_begin_restore();
+	multi_rewind_send_ready(MULTI_SAVE_TRANSFER_READY_APPLY);
+	multi_prepare_restore_sync();
 	status = android_rewind_restore_authoritative(&restore);
+	multi_save_transfer_finish_restore();
 	if (status == ANDROID_REWIND_STATUS_RESTORED)
 		HUD_init_message(HM_DEFAULT, "Host rewound %d seconds",
 		                 Rewind_save_transfer.rewound_seconds);
@@ -504,12 +509,44 @@ void multi_save_transfer_frame(void)
 	}
 
 	if (!Save_send_transfer.coop_restore_pending &&
-	    !Save_send_transfer.level_restart_pending) {
+	    !Save_send_transfer.level_restart_pending &&
+	    Save_send_transfer.transfer_kind != MULTI_SAVE_TRANSFER_KIND_REWIND) {
 		multi_save_send_reset();
 		return;
 	}
 	if (!multi_save_transfer_all_players_applying())
 		return;
+
+	if (Save_send_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_REWIND) {
+		android_rewind_authoritative_restore restore;
+		int status;
+
+		memset(&restore, 0, sizeof(restore));
+		restore.buffer.data = Save_send_transfer.data;
+		restore.buffer.size = Save_send_transfer.total_size;
+		restore.buffer.capacity = Save_send_transfer.total_size;
+		restore.snapshot_index = -1;
+		restore.rewound_seconds = Save_send_transfer.rewound_seconds;
+		restore.game_time64 = Save_send_transfer.game_time64;
+		restore.has_collision_delay_last_play_time =
+		    Save_send_transfer.has_collision_delay_last_play_time;
+		restore.collision_delay_last_play_time =
+		    Save_send_transfer.collision_delay_last_play_time;
+		Save_send_transfer.data = NULL;
+		multi_save_send_reset();
+		multi_save_transfer_begin_restore();
+		multi_prepare_restore_sync();
+		status = android_rewind_restore_authoritative(&restore);
+		multi_save_transfer_finish_restore();
+		d_free(restore.buffer.data);
+		HUD_init_message_literal(
+		    HM_DEFAULT, status == ANDROID_REWIND_STATUS_RESTORED
+		                    ? "Rewind complete"
+		                    : "Rewind failed");
+		COOPLOG("rewind transfer host apply: status=%d bytes=%u",
+		        status, (uint) restore.buffer.size);
+		return;
+	}
 
 	if (Save_send_transfer.level_restart_pending) {
 		int restored;
@@ -713,10 +750,17 @@ int multi_perform_rewind_request(int requester, int *rewound_seconds)
 		return ANDROID_REWIND_STATUS_FAILED;
 	}
 
-	status = android_rewind_restore_authoritative(&restore);
-	if (status == ANDROID_REWIND_STATUS_RESTORED && has_clients &&
-	    !multi_send_rewind_save_transfer(&restore, requester))
-		COOPLOG("rewind transfer send failed after host restore");
+	if (multi_save_transfer_host_action_for_rewind(has_clients) ==
+	    MULTI_SAVE_TRANSFER_HOST_WAIT_FOR_CLIENTS) {
+		if (!multi_send_rewind_save_transfer(&restore, requester)) {
+			COOPLOG("rewind transfer queue failed before host restore");
+			status = ANDROID_REWIND_STATUS_FAILED;
+		}
+	} else {
+		multi_save_transfer_begin_restore();
+		status = android_rewind_restore_authoritative(&restore);
+		multi_save_transfer_finish_restore();
+	}
 	if (rewound_seconds)
 		*rewound_seconds = restore.rewound_seconds;
 	return status;
