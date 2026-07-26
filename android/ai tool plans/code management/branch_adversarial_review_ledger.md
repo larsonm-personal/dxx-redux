@@ -122,7 +122,7 @@ Only one call may edit either adversarial review ledger at a time. Replace queue
 | R1-CHUNK-0071 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | BR-0018, BR-0020, BR-0157, BR-0176, BR-0177 |
 | R1-CHUNK-0072 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L601-L780 | BR-0043, BR-0049, BR-0169, BR-0170, BR-0174, BR-0179, BR-0180 |
 | R1-CHUNK-0073 | [x] DONE | source | critical | test-source | `2 related paths` | 515 review lines under android/app/src/main/cpp | BR-0158, BR-0181 |
-| R1-CHUNK-0074 | [ ] TODO | source | critical | test-source | `2 related paths` | 73 review lines under android/app/src/main/cpp | - |
+| R1-CHUNK-0074 | [x] DONE | source | critical | test-source | `2 related paths` | 73 review lines under android/app/src/main/cpp | BR-0024, BR-0158 |
 | R1-CHUNK-0075 | [ ] TODO | source | critical | test-source | `4 related paths` | 596 review lines under android/app/src/main/cpp | - |
 | R1-CHUNK-0076 | [ ] TODO | source | critical | test-source | `5 related paths` | 90 review lines under android/app/src/main/cpp | - |
 | R1-CHUNK-0077 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1-L600 | - |
@@ -4804,6 +4804,17 @@ Append one completion note for every finished queue item using the process templ
 - Worktree note: This review edited only the canonical active ledger. Concurrent or pre-existing extraction-regression helper, specification, plan, fixture, and batch-script changes were preserved without inspection. The live `test_gog_fd.c` differs substantially from the frozen snapshot and was not used as review evidence. No product source, test source, fixture, build output, archive, generated metadata, or temporary file was changed by this review.
 - No-finding areas: both frozen test files compile into registered CTest targets; the fingerprint test invokes all six named cases and returns nonzero after an assertion failure; its success paths release PCM, Chromaprint, and wrapper allocations; the current 10-second reference contains 59 values and the available suite passes; the GOG test checks exact game-file counts plus required D1 and D2 basenames when fixtures exist; `inno_open_fd` duplicates the caller descriptor as documented, and both caller and archive copies are closed on the ordinary path. Unauthenticated Chromaprint source and fixture acquisition remains BR-0157, green missing-fixture execution remains BR-0158, and incomplete fpcalc comparison is BR-0181 rather than being duplicated.
 
+### R1-CHUNK-0074 completion
+
+- Completed: 2026-07-26
+- Model: sol-5.6-medium
+- Result: BR-0024, BR-0158
+- Assigned scope checked: `android/app/src/main/cpp/extract/test_hfs.c` L601-L650 and `android/app/src/main/cpp/extract/test_sow_direct.c` L1-L23
+- Context checked: both frozen additions and their complete histories; the full HFS test helpers, public reader interface, catalog listing and extraction implementation, CUE media loader, SOW public interface and extraction implementation, JNI SOW caller, CMake targets and CTest registration, standard native extraction runner, and related HFS, SOW, optional-fixture, false-pass, extraction-integrity, and test-registration findings in both ledgers
+- Commands or validation: `git cat-file -e` for the frozen target, base, and head; `git diff`, `git show`, `git log`, `git grep`, and `rg`; line-numbered test-to-production, caller, and CTest traces; and active plus archived duplicate-finding and used-ID searches
+- Worktree note: This review edited only the canonical active ledger. The pre-existing untracked `android/ai tool plans/code management/adversarial_review_worker_orchestration.md` orchestration planning document was preserved without inspection or modification. No product source, test source, build output, fixture, media, generated file, done ledger, or temporary file was changed by this review.
+- No-finding areas: the synthetic negative HFS case closes its temporary file, records failure in the process result, and exercises both detection APIs; each available real-media helper propagates probe, listing, extraction, metadata, and content failures to a nonzero process exit; the test summary distinguishes its internal skipped count; and the SOW CLI passes append mode and extraction failure through its exit status. HFS real-media absence still lets registered `hfs_tests` pass and is added to BR-0158; the unregistered assertion-free SOW smoke CLI is the exact archived BR-0024 root cause rather than a new finding. Production HFS parsing, bounds, path handling, extraction publication, and SOW parser and output behavior remain covered by their existing findings.
+
 ## Findings
 
 This file contains open findings only. Finalized findings and their disposition
@@ -7259,7 +7270,7 @@ Append findings here in numeric order using the exact template in the process do
 - Type: defect
 - Confidence: high
 - Category: test-gap/false-pass
-- Found by: R1-CHUNK-0062, R1-CHUNK-0073
+- Found by: R1-CHUNK-0062, R1-CHUNK-0073, R1-CHUNK-0074
 - Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/CMakeLists.txt:L122-L169` in CTest registration
 - Related: `android/app/src/main/cpp/extract/test_gog_fd.c:L35-L82`, `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake:L1-L91`, ignored `game_data/gog installers/*.exe` and `game_data/demo installers/*.sit`, `android/tests/test_cue_iso.ps1`, and BR-0024
 - Evidence: CTest always registers `gog_fd_tests` against two ignored proprietary installers. `check_installer` prints `skip missing fixture` but returns success for each absent path, so a clean checkout executes zero GOG assertions and reports the test passed. The StuffIt demo-oracle test similarly returns success when its tracked oracle is absent, when CMake is older than 3.19 despite the project's 3.16 minimum, or when every ignored demo archive is absent; CTest has no skip return code or property and counts each case as passed. Focused executions with two nonexistent GOG paths and a nonexistent StuffIt fixture directory both exited zero after checking no fixture, while the standard runner labels all seven registered tests passed. Separately, BR-0024 records that the built SOW test is not registered at all.
@@ -7268,6 +7279,9 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Required coverage fails when its fixture is unavailable, optional media is reported distinctly as skipped and never counted as passing coverage, and a fixture-independent committed suite exercises every parser's critical success and failure contracts
 - Suggested fix: Define an explicit fixture profile. In required or release validation, fail configuration or the test when named media is absent. In ordinary clean CI, either omit optional tests with a visible configure summary or return a dedicated code configured through `SKIP_RETURN_CODE`, while keeping skipped counts separate from passes. Require each test to assert at least one fixture and record its identity or digest, register the SOW suite from BR-0024, and add small distributable synthetic GOG and StuffIt fixtures for mandatory parser behavior.
 - Validation: Run clean, partial-fixture, complete-fixture, CMake 3.16 to 3.19 boundary, and required-profile configurations; assert exact pass, skip, and fail counts, at least one assertion per passing test, failure for an explicitly requested missing fixture, and nonzero results after corrupting every expected file or oracle digest
+- Additional location (R1-CHUNK-0074): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/test_hfs.c:L524-L649` in optional-media helpers and process status, and `android/app/src/main/cpp/extract/CMakeLists.txt:L126-L127` in HFS CTest registration
+- Additional evidence (R1-CHUNK-0074): Each absent Mac CUE takes a helper's `SKIP` branch and returns success. With neither ignored CD image available, all four real partition, catalog, and extraction cases increment only the program's private skipped counter, the two synthetic checks leave `ok` true, and `main` exits zero after printing `2/6 tests passed (4 skipped)`. CTest registers the whole executable without `SKIP_RETURN_CODE`, so it reports `hfs_tests` passed rather than exposing that every real-media assertion was unavailable.
+- Additional validation (R1-CHUNK-0074): Run CTest with neither, either, and both Mac CUE fixtures; require exact suite-level pass and skip accounting, a nonzero required-media profile when either named oracle is absent, and nonzero failure after changing each expected partition size, catalog entry, volume value, or extracted magic independently.
 - Resolution: Pending
 
 ### BR-0159: P2 - Publish 7-Zip only after an atomic verified install
