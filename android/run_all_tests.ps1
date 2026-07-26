@@ -686,11 +686,13 @@ $executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExt
 
 $historicalRuntimeByName = @{}
 $historicalReportPath = ""
+$historicalReportCount = 0
 try {
     $runtimeReader = Join-Path $helpersDir "get-test-report-runtimes.ps1"
     foreach ($record in @(& $runtimeReader -ReportDir $ReportDir -ExcludeReportPath $reportFile)) {
         $historicalRuntimeByName[$record.Name] = [Math]::Max(1, [int]$record.Seconds)
         $historicalReportPath = $record.ReportPath
+        $historicalReportCount = $record.SourceReportCount
     }
 } catch {
     Write-Host "WARN: Could not read historical test runtimes: $_" -ForegroundColor Yellow
@@ -727,12 +729,6 @@ for ($index = 0; $index -lt $executionTests.Count; $index++) {
     $test["EstimatedRuntime"] = $estimatedRuntime
     $totalEstimatedRuntime += $estimatedRuntime
 }
-$remainingEstimatedRuntime = $totalEstimatedRuntime
-foreach ($test in $executionTests) {
-    $test["RemainingEstimatedRuntime"] = $remainingEstimatedRuntime
-    $remainingEstimatedRuntime -= $test["EstimatedRuntime"]
-}
-
 $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
 $selectedRegressionDemoSections = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoSection } | Where-Object { $_ } | Sort-Object -Unique)
 $regressionDemoCounts = Get-RegressionDemoGameCounts
@@ -1292,7 +1288,7 @@ Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
 $historicalTimingCount = @($executionTests | Where-Object { $historicalRuntimeByName.ContainsKey($_.Name) }).Count
 if ($historicalReportPath) {
-    Write-Host "  Historical timings:    $historicalTimingCount/$($executionTests.Count) from $(Split-Path $historicalReportPath -Leaf)"
+    Write-Host "  Historical timings:    $historicalTimingCount/$($executionTests.Count) from $historicalReportCount recent report(s), newest $(Split-Path $historicalReportPath -Leaf)"
 } else {
     Write-Host "  Historical timings:      unavailable; using equal test weights"
 }
@@ -1366,15 +1362,16 @@ function Invoke-SingleTest {
     $testTimeout = $TestTimeoutSeconds
     if ($Test.TimeoutSeconds) { $testTimeout = $Test.TimeoutSeconds }
 
+    $remainingEstimatedRuntime = [Math]::Max(0, $totalEstimatedRuntime - $totalSw.Elapsed.TotalSeconds)
     $remainingPercent = if ($totalEstimatedRuntime -gt 0) {
         [int][Math]::Round(
-            100 * $Test.RemainingEstimatedRuntime / $totalEstimatedRuntime,
+            100 * $remainingEstimatedRuntime / $totalEstimatedRuntime,
             [MidpointRounding]::AwayFromZero
         )
     } else {
         0
     }
-    $remainingMinutesTotal = [int][Math]::Ceiling($Test.RemainingEstimatedRuntime / 60.0)
+    $remainingMinutesTotal = [int][Math]::Ceiling($remainingEstimatedRuntime / 60.0)
     $remainingEstimate = "{0:00}:{1:00}" -f [Math]::Floor($remainingMinutesTotal / 60), ($remainingMinutesTotal % 60)
     $suiteElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
     Write-Host "  Test $($Test.ProgressIndex)/$($executionTests.Count), $suiteElapsed elapsed, estimated $remainingEstimate remaining ($remainingPercent%)" -ForegroundColor Cyan
