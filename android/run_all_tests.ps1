@@ -74,6 +74,7 @@ $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 
 . "$helpersDir\test_helpers.ps1"
+. "$helpersDir\test_suite_progress.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
@@ -379,6 +380,7 @@ $noInfraTests = @(
     "test_input_demo_rng_trace_compare",
     "test_test_report_runtimes",
     "test_test_helpers_process_wait",
+    "test_test_suite_progress",
     "test_validate_extract_regression_specs",
     "test_validate_automation_catalog"
 )
@@ -717,7 +719,6 @@ if ($knownSelectedRuntimes.Count -gt 0) {
     }
 }
 
-$totalEstimatedRuntime = 0
 for ($index = 0; $index -lt $executionTests.Count; $index++) {
     $test = $executionTests[$index]
     $estimatedRuntime = if ($historicalRuntimeByName.ContainsKey($test.Name)) {
@@ -727,7 +728,6 @@ for ($index = 0; $index -lt $executionTests.Count; $index++) {
     }
     $test["ProgressIndex"] = $index + 1
     $test["EstimatedRuntime"] = $estimatedRuntime
-    $totalEstimatedRuntime += $estimatedRuntime
 }
 $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
 $selectedRegressionDemoSections = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoSection } | Where-Object { $_ } | Sort-Object -Unique)
@@ -1362,15 +1362,11 @@ function Invoke-SingleTest {
     $testTimeout = $TestTimeoutSeconds
     if ($Test.TimeoutSeconds) { $testTimeout = $Test.TimeoutSeconds }
 
-    $remainingEstimatedRuntime = [Math]::Max(0, $totalEstimatedRuntime - $totalSw.Elapsed.TotalSeconds)
-    $remainingPercent = if ($totalEstimatedRuntime -gt 0) {
-        [int][Math]::Round(
-            100 * $remainingEstimatedRuntime / $totalEstimatedRuntime,
-            [MidpointRounding]::AwayFromZero
-        )
-    } else {
-        0
-    }
+    $remaining = Get-TestSuiteRemainingEstimate `
+        -Tests $executionTests `
+        -CurrentProgressIndex $Test.ProgressIndex
+    $remainingEstimatedRuntime = $remaining.Seconds
+    $remainingPercent = $remaining.Percent
     $remainingMinutesTotal = [int][Math]::Ceiling($remainingEstimatedRuntime / 60.0)
     $remainingEstimate = "{0:00}:{1:00}" -f [Math]::Floor($remainingMinutesTotal / 60), ($remainingMinutesTotal % 60)
     $suiteElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
