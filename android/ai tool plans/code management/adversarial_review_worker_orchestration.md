@@ -17,12 +17,36 @@ including its one-queue-item-per-review-call rule and single-ledger-writer rule.
 - [x] Define the two-to-three-chunk worker lifecycle
 - [x] Define a minimal delegation packet and result contract
 - [x] Complete the first delegated chunk using this protocol
-- [ ] Reuse the same worker for one or two additional chunks
+- [x] Complete the 30-chunk orchestrated batch from `R1-CHUNK-0075`
+  through `R1-CHUNK-0104`
+- [x] Reuse each worker for two or three chunks, then rotate it
+- [x] Audit all 30 completion records and the next eligible queue item
 
 First trial: `R1-CHUNK-0074` completed on 2026-07-26 using a fresh
 `gpt-5.6-sol` worker at medium reasoning effort. The worker changed only the
 active ledger, recorded `BR-0024` and `BR-0158`, and identified
 `R1-CHUNK-0075` as the next eligible item.
+
+Current batch: the root orchestrator is assigned 30 consecutive calls beginning
+with `R1-CHUNK-0075`. If no item is blocked, the inclusive target range is
+`R1-CHUNK-0075` through `R1-CHUNK-0104`. Progress remains canonical in the
+active ledger; this plan is updated at the 10, 20, and 30 item checkpoints.
+
+Checkpoint 1: 10 of 30 calls completed through `R1-CHUNK-0084` on 2026-07-26.
+Four medium-effort sol worker lifecycles were used, with no concurrent ledger
+writers and no product changes made by review workers. The next item is
+`R1-CHUNK-0085`.
+
+Checkpoint 2: 20 of 30 calls completed through `R1-CHUNK-0094` on 2026-07-26.
+Seven medium-effort sol worker lifecycles were used. Every call completed one
+item, all per-call diff checks passed, and concurrent test-runner work remained
+outside the review workers' scope. The next item is `R1-CHUNK-0095`.
+
+Checkpoint 3: all 30 calls completed through `R1-CHUNK-0104` on 2026-07-26.
+Eleven medium-effort sol worker lifecycles were used across the batch. The audit
+found exactly 30 `DONE` rows and 30 completion notes, no `ACTIVE` or `BLOCKED`
+queue row, no duplicate finding heading, and no review-worker product edit. The
+next item is `R1-CHUNK-0105`.
 
 ## Roles
 
