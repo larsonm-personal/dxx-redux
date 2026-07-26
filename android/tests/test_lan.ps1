@@ -1085,6 +1085,21 @@ try {
             exit 1
         }
         Write-Status "Host wlan0 IP: $($script:DirectHostIp)" "Green"
+
+        # Prove the emulator shared-Wi-Fi path is usable before attributing a
+        # later timeout to the game protocol. This also waits out the brief
+        # neighbor-discovery window seen after managed emulator startup.
+        $directLanReachable = Wait-ForCondition -Description "Direct LAN reachability" -TimeoutSec 15 -PollMs 1000 -Condition {
+            $pingResult = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
+                "shell", "ping", "-c", "1", "-W", "2", $script:DirectHostIp
+            ) -Seconds 5
+            return ($pingResult -and $pingResult -match '1 (?:packets )?received')
+        }
+        if (-not $directLanReachable) {
+            Write-Status "FAIL: $EMU2 cannot reach host $($script:DirectHostIp) over shared Wi-Fi" "Red"
+            exit 1
+        }
+        Write-Status "Direct LAN reachability verified from $EMU2" "Green"
     }
 
     # -- Step 3: Launch game on both emulators via lan_launch --
@@ -1133,6 +1148,25 @@ try {
         Write-Status "FAIL: Host game process did not start" "Red"
         exit 1
     }
+
+    # A process PID only proves that Android created the game process. Wait
+    # until the engine has actually entered its one-player network lobby before
+    # starting the joiner's finite game-info request sequence.
+    $script:hostReadyIntro = $null
+    $hostNetworkReady = Wait-ForCondition -Description "Host network lobby" -TimeoutSec 30 -PollMs 1000 -Condition {
+        $script:hostReadyIntro = Get-GameIntrospection -Serial $EMU1
+        $connected = Get-IntroNumConnected -Intro $script:hostReadyIntro
+        return (
+            $script:hostReadyIntro -and
+            [bool]$script:hostReadyIntro.is_network -and
+            $connected -eq 1
+        )
+    }
+    if (-not $hostNetworkReady) {
+        Write-Status "FAIL: Host process started but did not enter the network lobby" "Red"
+        exit 1
+    }
+    Write-Status "Host network lobby ready" "Green"
 
     # Joiner (EMU2)
     Write-Status "Sending lan_launch join to $EMU2..."
