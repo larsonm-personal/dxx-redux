@@ -85,6 +85,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cue_iso.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c)
 target_include_directories(test_cue_iso PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_cue_iso PRIVATE ISO9660_READER_TESTING)
 
 # ── extract_cd ───────────────────────────────────────────────────────
 add_executable(extract_cd ${CMAKE_CURRENT_SOURCE_DIR}/extract_cd.c ${EXTRACT_SOURCES})

@@ -5785,23 +5785,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add empty and ordinary callbacks, quoted unrelated functions, missing and extra arguments, escaped quotes, overlong values, and genuine single- and multipart Galaxy metadata; assert only exact valid Galaxy records take inner zlib and every other file retains its original path and bytes
 - Resolution: Pending
 
-### BR-0063: P2 - Assemble ISO multi-extent files before extraction
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/api-data-format
-- Found by: R1-CHUNK-0025, R1-CHUNK-0026
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/iso9660_reader.c:L285-L300,L329-L358,L433-L503` in `walk_directory` and `iso_extract_files_from_source`
-- Related: `android/app/src/main/cpp/extract/iso9660_reader.h:L1-L37,L73-L110`, `android/app/src/main/cpp/extract/test_cue_iso.c:L92-L145,L961-L1090`, and ECMA-119 file-flag and multi-extent rules at `https://www.ecma-international.org/wp-content/uploads/ECMA-119_3rd_edition_december_2017.pdf`
-- Evidence: The parser reads the file-flags byte but tests only the directory bit and does not preserve bit 7. ECMA-119 defines bit 7 as indicating that the directory record is not the final extent of the file. This reader instead lists each section as an independent file with the same cleaned path; extraction opens every listed entry with `O_TRUNC`, so later sections overwrite earlier ones and the final output contains only the last extent while the return count reports success
-- Trigger: List and extract a valid ISO 9660 file such as `descent.hog` represented by two or more consecutive multi-extent directory records
-- Impact: Valid disc content is silently truncated or replaced and can be reported as multiple successfully extracted files, producing unusable game data without identifying the unsupported layout
-- Expected: Consecutive records for one multi-extent file are validated and exposed as one logical file whose sections are copied in order, or the image is rejected explicitly before any output
-- Suggested fix: Preserve the multi-extent flag and a bounded list of file sections, validate consecutive identifiers, ordering, sizes, and final termination, sum the logical size with checked arithmetic, and stream all sections into one staged destination. If multi-extent support is intentionally out of scope, detect bit 7 and return a documented unsupported-format error
-- Validation: Add valid two- and three-section files plus mismatched-name, missing-final, reordered, overflowing-total, and out-of-range-section fixtures; assert exact concatenated output or explicit rejection with no partial file, and retain single-extent raw and standalone tests
-- Resolution: Pending
-
 ### BR-0064: P2 - Extract every CUE data track on Android
 
 - [ ] OPEN

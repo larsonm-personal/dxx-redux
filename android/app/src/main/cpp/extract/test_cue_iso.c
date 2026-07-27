@@ -718,6 +718,162 @@ static unsigned char *build_iso_depth_fixture(int child_levels,
 	return image;
 }
 
+enum {
+	ISO_MULTI_VALID,
+	ISO_MULTI_MISMATCHED_NAME,
+	ISO_MULTI_MISSING_FINAL,
+	ISO_MULTI_INTERRUPTED,
+	ISO_MULTI_DIRECTORY_CONTINUATION,
+	ISO_MULTI_MISALIGNED_SECTION,
+	ISO_MULTI_OVERFLOWING_TOTAL,
+	ISO_MULTI_OVERLAPPING_SECTION,
+	ISO_MULTI_OUT_OF_RANGE
+};
+
+static unsigned char *build_iso_multi_extent_fixture(int section_count,
+                                                     int mutation,
+                                                     int standalone,
+                                                     int *out_sectors)
+{
+	int total = 20 + section_count;
+	int base_sectors;
+	unsigned char *base = build_minimal_iso(
+	    "BASE.HOG", (const unsigned char *) "x", 1, &base_sectors);
+	unsigned char *raw =
+	    (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
+	unsigned char user[USER_DATA_SIZE];
+	int m, s, f;
+	int pos = 0;
+
+	memcpy(raw, base, (size_t) 18 * SECTOR_SIZE);
+	free(base);
+	memset(user, 0, sizeof(user));
+	pos = append_iso_dir_record(
+	    user, pos, NULL, 0x00, 1, 18, USER_DATA_SIZE, 1);
+	pos = append_iso_dir_record(
+	    user, pos, NULL, 0x01, 1, 18, USER_DATA_SIZE, 1);
+	for (int i = 0; i < section_count; i++) {
+		const char *name =
+		    mutation == ISO_MULTI_MISMATCHED_NAME && i == 1
+		        ? "OTHER.HOG"
+		        : "CHAIN.HOG;1";
+		unsigned int lba = (unsigned int) (19 + i);
+		unsigned int size =
+		    i + 1 < section_count ? USER_DATA_SIZE : 3;
+		unsigned char flags =
+		    i + 1 < section_count ? 0x80 : 0;
+		if (mutation == ISO_MULTI_MISSING_FINAL &&
+		    i + 1 == section_count)
+			flags = 0x80;
+		if (mutation == ISO_MULTI_DIRECTORY_CONTINUATION && i == 1)
+			flags = 0x02;
+		if (mutation == ISO_MULTI_MISALIGNED_SECTION && i == 0)
+			size = USER_DATA_SIZE - 1;
+		if (mutation == ISO_MULTI_OVERFLOWING_TOTAL) {
+			size = i == 0 ? UINT_MAX - (USER_DATA_SIZE - 1)
+			              : USER_DATA_SIZE;
+			flags = i == 0 ? 0x80 : 0;
+		}
+		if (mutation == ISO_MULTI_OVERLAPPING_SECTION && i == 1)
+			lba = 19;
+		if (mutation == ISO_MULTI_OUT_OF_RANGE && i == 1)
+			lba = (unsigned int) total + 10;
+		int record_pos = pos;
+		pos = append_iso_dir_record(
+		    user, pos, name, 0, 0, lba, size, 0);
+		user[record_pos + 25] = flags;
+		if (mutation == ISO_MULTI_INTERRUPTED && i == 0) {
+			pos = append_iso_dir_record(
+			    user, pos, "OTHER.BIN", 0, 0, (unsigned int) (19 + section_count),
+			    1, 0);
+		}
+	}
+	lba_to_msf(18, &m, &s, &f);
+	build_mode1_sector(raw + (size_t) 18 * SECTOR_SIZE, m, s, f, user);
+
+	for (int i = 0; i < section_count; i++) {
+		memset(user, 'A' + i, sizeof(user));
+		if (i + 1 == section_count)
+			memcpy(user, "end", 3);
+		lba_to_msf(19 + i, &m, &s, &f);
+		build_mode1_sector(
+		    raw + (size_t) (19 + i) * SECTOR_SIZE, m, s, f, user);
+	}
+	*out_sectors = total;
+	if (!standalone)
+		return raw;
+	unsigned char *image = convert_raw_iso(raw, total);
+	free(raw);
+	return image;
+}
+
+static unsigned char *build_iso_extent_count_fixture(int extent_count,
+                                                     int standalone,
+                                                     int *out_sectors)
+{
+	const int directory_sectors = 12;
+	const int data_lba = 18 + directory_sectors;
+	const int total = data_lba + extent_count;
+	int base_sectors;
+	unsigned char *base = build_minimal_iso(
+	    "BASE.HOG", (const unsigned char *) "x", 1, &base_sectors);
+	unsigned char *raw =
+	    (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
+	unsigned char user[USER_DATA_SIZE];
+	unsigned int directory_size =
+	    (unsigned int) directory_sectors * USER_DATA_SIZE;
+	int extent_index = 0;
+	int m, s, f;
+
+	memcpy(raw, base, (size_t) 18 * SECTOR_SIZE);
+	free(base);
+	set_iso_record_u32(
+	    raw + (size_t) 16 * SECTOR_SIZE + 16 + 156, 10,
+	    directory_size);
+	for (int sector_index = 0; sector_index < directory_sectors;
+	     sector_index++) {
+		int pos = 0;
+		memset(user, 0, sizeof(user));
+		if (sector_index == 0) {
+			pos = append_iso_dir_record(
+			    user, pos, NULL, 0x00, 1, 18, directory_size, 1);
+			pos = append_iso_dir_record(
+			    user, pos, NULL, 0x01, 1, 18, directory_size, 1);
+		}
+		while (extent_index < extent_count) {
+			const char *name = "LARGE.HOG;1";
+			int record_len = 33 + (int) strlen(name);
+			if (record_len & 1) record_len++;
+			if (pos + record_len > USER_DATA_SIZE)
+				break;
+			int record_pos = pos;
+			unsigned int size =
+			    extent_index + 1 < extent_count ? USER_DATA_SIZE : 1;
+			pos = append_iso_dir_record(
+			    user, pos, name, 0, 0,
+			    (unsigned int) (data_lba + extent_index), size, 0);
+			if (extent_index + 1 < extent_count)
+				user[record_pos + 25] = 0x80;
+			extent_index++;
+		}
+		lba_to_msf(18 + sector_index, &m, &s, &f);
+		build_mode1_sector(
+		    raw + (size_t) (18 + sector_index) * SECTOR_SIZE, m, s, f, user);
+	}
+	for (int i = 0; i < extent_count; i++) {
+		memset(user, 'a' + i % 26, sizeof(user));
+		lba_to_msf(data_lba + i, &m, &s, &f);
+		build_mode1_sector(
+		    raw + (size_t) (data_lba + i) * SECTOR_SIZE, m, s, f, user);
+	}
+	*out_sectors = total;
+	if (!standalone)
+		return raw;
+	unsigned char *image = convert_raw_iso(raw, total);
+	free(raw);
+	return image;
+}
+
 /* Build sectors of raw audio (just filled with a pattern) */
 static unsigned char *build_audio_sectors(int num_sectors)
 {
@@ -1660,6 +1816,171 @@ static void test_iso_cycle_safe_traversal(void)
 		free(image);
 		if (result != -1 || list.num_files != 0) {
 			FAIL("over-depth ISO directory graph published a partial list");
+			return;
+		}
+	}
+	PASS();
+}
+
+static void test_iso_multi_extent_files(void)
+{
+	TEST(iso_multi_extent_valid_raw_and_standalone);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		for (int section_count = 2; section_count <= 3; section_count++) {
+			int sectors;
+			unsigned char *image = build_iso_multi_extent_fixture(
+			    section_count, ISO_MULTI_VALID, standalone, &sectors);
+			size_t stride = standalone ? USER_DATA_SIZE : SECTOR_SIZE;
+			char source_path[512];
+			char output_dir[512];
+			char output_path[512];
+			snprintf(source_path, sizeof(source_path), "%s/multi_%d_%d.%s",
+			         TEST_DIR, standalone, section_count,
+			         standalone ? "iso" : "bin");
+			snprintf(output_dir, sizeof(output_dir), "%s/multi_out_%d_%d",
+			         TEST_DIR, standalone, section_count);
+			snprintf(output_path, sizeof(output_path), "%s/chain.hog",
+			         output_dir);
+			remove(output_path);
+			mkdir_p(output_dir);
+			FILE *file = fopen(source_path, "wb");
+			if (!file) {
+				free(image);
+				FAIL("cannot create multi-extent source");
+				return;
+			}
+			int write_failed =
+			    fwrite(image, stride, (size_t) sectors, file) !=
+			    (size_t) sectors;
+			free(image);
+			if (fclose(file) != 0) write_failed = 1;
+			if (write_failed) {
+				FAIL("cannot write multi-extent source");
+				return;
+			}
+			int fd = open_bin(source_path);
+			iso_file_list_t list;
+			int listed = standalone
+			                 ? iso_list_image_files(fd, &list)
+			                 : iso_list_files(fd, 0, sectors, &list);
+			unsigned int expected_size =
+			    (unsigned int) (section_count - 1) * USER_DATA_SIZE + 3;
+			if (listed != 1 || list.num_files != 1 ||
+			    list.num_extents != section_count ||
+			    list.files[0].extent_count != (unsigned int) section_count ||
+			    list.files[0].size != expected_size ||
+			    strcmp(list.files[0].path, "chain.hog") != 0) {
+				close_fd(fd);
+				FAIL("valid multi-extent catalog was not assembled");
+				return;
+			}
+			static const char *extensions[] = { "hog", NULL };
+			int extracted =
+			    standalone
+			        ? iso_extract_image_files(
+			              fd, &list, output_dir, extensions, NULL, NULL)
+			        : iso_extract_files(
+			              fd, 0, sectors, &list, output_dir, extensions,
+			              NULL, NULL);
+			close_fd(fd);
+			file = fopen(output_path, "rb");
+			if (extracted != 1 || !file ||
+			    fseek(file, 0, SEEK_END) != 0 ||
+			    ftell(file) != (long) expected_size) {
+				if (file) fclose(file);
+				FAIL("multi-extent output size mismatch");
+				return;
+			}
+			for (int i = 0; i + 1 < section_count; i++) {
+				unsigned char edge[2];
+				if (fseek(file, (long) i * USER_DATA_SIZE, SEEK_SET) != 0 ||
+				    fread(edge, 1, 1, file) != 1 ||
+				    fseek(file, (long) (i + 1) * USER_DATA_SIZE - 1,
+				          SEEK_SET) != 0 ||
+				    fread(edge + 1, 1, 1, file) != 1 ||
+				    edge[0] != (unsigned char) ('A' + i) ||
+				    edge[1] != (unsigned char) ('A' + i)) {
+					fclose(file);
+					FAIL("multi-extent section order mismatch");
+					return;
+				}
+			}
+			char final_bytes[3];
+			if (fseek(file, (long) expected_size - 3, SEEK_SET) != 0 ||
+			    fread(final_bytes, 1, sizeof(final_bytes), file) !=
+			        sizeof(final_bytes) ||
+			    memcmp(final_bytes, "end", 3) != 0) {
+				fclose(file);
+				FAIL("multi-extent final section mismatch");
+				return;
+			}
+			fclose(file);
+		}
+	}
+	PASS();
+
+	TEST(iso_multi_extent_malformed_chains_fail_closed);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		for (int mutation = ISO_MULTI_MISMATCHED_NAME;
+		     mutation <= ISO_MULTI_OUT_OF_RANGE; mutation++) {
+			int sectors;
+			unsigned char *image = build_iso_multi_extent_fixture(
+			    2, mutation, standalone, &sectors);
+			iso_file_list_t list;
+			memset(&list, 0x5a, sizeof(list));
+			int result =
+			    list_iso_record_test_image(image, sectors, standalone, &list);
+			free(image);
+			if (result != -1 || list.num_files != 0 ||
+			    list.num_extents != 0) {
+				FAIL("malformed multi-extent chain published a catalog");
+				return;
+			}
+		}
+	}
+	PASS();
+
+	TEST(iso_multi_extent_total_size_boundary);
+	{
+		unsigned int first_size = UINT_MAX - (USER_DATA_SIZE - 1u);
+		if (iso_test_append_extent_sizes(
+		        first_size, USER_DATA_SIZE - 1u) != 0) {
+			FAIL("exact multi-extent logical-size boundary rejected");
+			return;
+		}
+		if (iso_test_append_extent_sizes(first_size, USER_DATA_SIZE) != -1) {
+			FAIL("overflowing multi-extent logical size accepted");
+			return;
+		}
+	}
+	PASS();
+
+	TEST(iso_multi_extent_pool_exact_and_over);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		int sectors;
+		unsigned char *image = build_iso_extent_count_fixture(
+		    ISO_MAX_EXTENTS, standalone, &sectors);
+		iso_file_list_t list;
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		unsigned int expected_size =
+		    (ISO_MAX_EXTENTS - 1u) * USER_DATA_SIZE + 1u;
+		if (result != 1 || list.num_extents != ISO_MAX_EXTENTS ||
+		    list.files[0].extent_count != ISO_MAX_EXTENTS ||
+		    list.files[0].size != expected_size) {
+			FAIL("exact multi-extent pool capacity rejected");
+			return;
+		}
+		image = build_iso_extent_count_fixture(
+		    ISO_MAX_EXTENTS + 1, standalone, &sectors);
+		memset(&list, 0x5a, sizeof(list));
+		result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1 || list.num_files != 0 ||
+		    list.num_extents != 0) {
+			FAIL("over-capacity multi-extent chain was truncated");
 			return;
 		}
 	}
@@ -2731,6 +3052,7 @@ int main(int argc, char *argv[])
 	test_iso_directory_record_bounds();
 	test_iso_name_containment();
 	test_iso_cycle_safe_traversal();
+	test_iso_multi_extent_files();
 	test_iso_extraction();
 	test_iso_name_cleaning();
 	test_iso_invalid_pvd();

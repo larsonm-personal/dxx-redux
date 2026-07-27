@@ -19,21 +19,33 @@ extern "C" {
 /* Maximum number of files we can list from an ISO */
 #define ISO_MAX_FILES 512
 
+/* Maximum total file sections across one ISO catalog */
+#define ISO_MAX_EXTENTS 512
+
 /* Maximum path length for an extracted file */
 #define ISO_PATH_LEN 256
+
+typedef struct {
+	unsigned int lba;
+	unsigned int size;
+} iso_file_extent_t;
 
 /* One file entry found in the ISO filesystem */
 typedef struct {
 	char path[ISO_PATH_LEN]; /* relative path, e.g. "MISSIONS/D2X.HOG" */
-	unsigned int lba;        /* logical block address within the data track */
-	unsigned int size;       /* file size in bytes */
+	unsigned int lba;        /* first logical block address */
+	unsigned int size;       /* complete logical file size in bytes */
 	int is_dir;              /* 1 = directory, 0 = file */
+	unsigned int first_extent;
+	unsigned int extent_count;
 } iso_file_entry_t;
 
 /* Result of scanning an ISO data track */
 typedef struct {
 	iso_file_entry_t files[ISO_MAX_FILES];
+	iso_file_extent_t extents[ISO_MAX_EXTENTS];
 	int num_files;
+	int num_extents;
 } iso_file_list_t;
 
 /* Progress callback for extraction.
@@ -108,6 +120,11 @@ int iso_extract_image_files(int iso_fd,
                             const char *output_dir,
                             const char **extensions,
                             iso_progress_fn progress, void *user_data);
+
+#ifdef ISO9660_READER_TESTING
+int iso_test_append_extent_sizes(unsigned int first_size,
+                                 unsigned int second_size);
+#endif
 
 #ifdef __cplusplus
 }

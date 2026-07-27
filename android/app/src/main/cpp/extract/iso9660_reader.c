@@ -67,7 +67,8 @@
 #define VD_TERMINATOR 255
 
 /* Directory record flag bits */
-#define DR_FLAG_DIRECTORY 0x02
+#define DR_FLAG_DIRECTORY    0x02
+#define DR_FLAG_MULTI_EXTENT 0x80
 
 typedef struct {
 	int fd;
@@ -418,6 +419,92 @@ static int begin_directory(const iso_reader_source_t *src,
 	return 0;
 }
 
+static int file_extent_is_valid(const iso_reader_source_t *src,
+                                unsigned int lba, unsigned int size,
+                                uint64_t *end_lba)
+{
+	uint64_t sector_count;
+	uint64_t end;
+
+	if (!src || src->num_logical_sectors <= 0 ||
+	    lba >= (unsigned int) src->num_logical_sectors)
+		return 0;
+	sector_count = (uint64_t) size / USER_DATA_SIZE +
+	               (size % USER_DATA_SIZE != 0);
+	end = (uint64_t) lba + sector_count;
+	if (end > (uint64_t) src->num_logical_sectors ||
+	    end > (uint64_t) INT_MAX + 1)
+		return 0;
+	if (end_lba)
+		*end_lba = end;
+	return 1;
+}
+
+static int append_file_extent(const iso_reader_source_t *src,
+                              iso_file_list_t *out, iso_file_entry_t *entry,
+                              unsigned int lba, unsigned int size,
+                              int has_more)
+{
+	uint64_t total_size;
+	uint64_t end_lba;
+	unsigned int i;
+
+	if (!src || !out || !entry || out->num_extents < 0 ||
+	    out->num_extents >= ISO_MAX_EXTENTS ||
+	    (has_more && (size == 0 || size % USER_DATA_SIZE != 0)) ||
+	    !file_extent_is_valid(src, lba, size, &end_lba))
+		return -1;
+	total_size = (uint64_t) entry->size + size;
+	if (total_size > UINT_MAX)
+		return -1;
+	for (i = 0; i < entry->extent_count; i++) {
+		const iso_file_extent_t *previous =
+		    &out->extents[entry->first_extent + i];
+		uint64_t previous_end;
+		if (!file_extent_is_valid(src, previous->lba, previous->size,
+		                          &previous_end))
+			return -1;
+		if ((uint64_t) lba < previous_end &&
+		    (uint64_t) previous->lba < end_lba)
+			return -1;
+	}
+	if (entry->extent_count == 0) {
+		entry->first_extent = (unsigned int) out->num_extents;
+		entry->lba = lba;
+	} else if (entry->first_extent + entry->extent_count !=
+	           (unsigned int) out->num_extents) {
+		return -1;
+	}
+	out->extents[out->num_extents].lba = lba;
+	out->extents[out->num_extents].size = size;
+	out->num_extents++;
+	entry->extent_count++;
+	entry->size = (unsigned int) total_size;
+	return 0;
+}
+
+#ifdef ISO9660_READER_TESTING
+int iso_test_append_extent_sizes(unsigned int first_size,
+                                 unsigned int second_size)
+{
+	iso_reader_source_t src;
+	iso_file_list_t list;
+	iso_file_entry_t entry;
+	unsigned int second_lba =
+	    1u + first_size / USER_DATA_SIZE +
+	    (first_size % USER_DATA_SIZE != 0);
+
+	memset(&src, 0, sizeof(src));
+	memset(&list, 0, sizeof(list));
+	memset(&entry, 0, sizeof(entry));
+	src.num_logical_sectors = INT_MAX;
+	if (append_file_extent(&src, &list, &entry, 1, first_size, 1) < 0)
+		return -1;
+	return append_file_extent(
+	    &src, &list, &entry, second_lba, second_size, 0);
+}
+#endif
+
 /* Recursively walk an ISO 9660 directory, appending entries to file_list.
  * dir_lba : LBA of the directory extent
  * dir_size: size of the directory extent in bytes
@@ -434,6 +521,9 @@ static int walk_directory(const iso_reader_source_t *src,
 	unsigned int bytes_read = 0;
 	unsigned int sector_idx = 0;
 	unsigned int sectors_needed;
+	int pending_file_index = -1;
+	unsigned char pending_name[256];
+	unsigned char pending_name_len = 0;
 
 	if (depth >= MAX_DIR_DEPTH) {
 		ISO_LOG("Maximum directory depth %d exceeded", MAX_DIR_DEPTH);
@@ -479,6 +569,8 @@ static int walk_directory(const iso_reader_source_t *src,
 			/* Skip . and .. entries */
 			if (record.name_len == 1 &&
 			    (record.name[0] == 0x00 || record.name[0] == 0x01)) {
+				if (pending_file_index >= 0)
+					return -1;
 				pos += record.record_len;
 				bytes_read += record.record_len;
 				continue;
@@ -497,6 +589,9 @@ static int walk_directory(const iso_reader_source_t *src,
 			}
 
 			if (record.flags & DR_FLAG_DIRECTORY) {
+				if (pending_file_index >= 0 ||
+				    (record.flags & DR_FLAG_MULTI_EXTENT))
+					return -1;
 				if (should_skip_iso_directory(clean_name)) {
 					ISO_LOG("Skipping installer cruft directory %s", full_path);
 					pos += record.record_len;
@@ -520,20 +615,48 @@ static int walk_directory(const iso_reader_source_t *src,
 				                   context) < 0)
 					return -1;
 			} else {
-				/* Regular file */
-				if (out->num_files >= ISO_MAX_FILES) {
-					ISO_LOG("ISO catalog exceeds %d entries", ISO_MAX_FILES);
-					return -1;
+				int has_more =
+				    (record.flags & DR_FLAG_MULTI_EXTENT) != 0;
+				iso_file_entry_t *e;
+
+				if (pending_file_index >= 0) {
+					if (pending_file_index >= out->num_files ||
+					    pending_name_len != record.name_len ||
+					    memcmp(pending_name, record.name,
+					           record.name_len) != 0)
+						return -1;
+					e = &out->files[pending_file_index];
+					if (strcmp(e->path, full_path) != 0)
+						return -1;
+				} else {
+					if (out->num_files >= ISO_MAX_FILES) {
+						ISO_LOG("ISO catalog exceeds %d entries",
+						        ISO_MAX_FILES);
+						return -1;
+					}
+					e = &out->files[out->num_files];
+					memset(e, 0, sizeof(*e));
+					strncpy(e->path, full_path, ISO_PATH_LEN - 1);
+					e->path[ISO_PATH_LEN - 1] = '\0';
+					e->is_dir = 0;
 				}
-				iso_file_entry_t *e = &out->files[out->num_files];
-				strncpy(e->path, full_path, ISO_PATH_LEN - 1);
-				e->path[ISO_PATH_LEN - 1] = '\0';
-				e->lba = record.extent_lba;
-				e->size = record.data_size;
-				e->is_dir = 0;
-				out->num_files++;
+				if (append_file_extent(src, out, e, record.extent_lba,
+				                       record.data_size, has_more) < 0)
+					return -1;
+				if (pending_file_index < 0) {
+					int file_index = out->num_files++;
+					if (has_more) {
+						pending_file_index = file_index;
+						pending_name_len = record.name_len;
+						memcpy(pending_name, record.name,
+						       record.name_len);
+					}
+				} else if (!has_more) {
+					pending_file_index = -1;
+					pending_name_len = 0;
+				}
 				ISO_LOG("  File: %s  LBA=%u  size=%u", full_path,
-				        record.extent_lba, record.data_size);
+				        record.extent_lba, e->size);
 			}
 
 			pos += record.record_len;
@@ -543,7 +666,7 @@ static int walk_directory(const iso_reader_source_t *src,
 		sector_idx++;
 	}
 
-	return 0;
+	return pending_file_index < 0 ? 0 : -1;
 }
 
 /* ── Public API ──────────────────────────────────────────────────────── */
@@ -581,6 +704,7 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
 	if (parse_directory_record(pvd + 156, sizeof(pvd) - 156,
 	                           &root_record) < 0 ||
 	    !(root_record.flags & DR_FLAG_DIRECTORY) ||
+	    (root_record.flags & DR_FLAG_MULTI_EXTENT) ||
 	    root_record.name_len != 1 || root_record.name[0] != 0)
 		return -1;
 
@@ -598,6 +722,48 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
 	return out->num_files;
 }
 
+static int file_entry_is_valid(const iso_reader_source_t *src,
+                               const iso_file_list_t *file_list,
+                               const iso_file_entry_t *entry)
+{
+	uint64_t total_size = 0;
+	unsigned int i;
+
+	if (!src || !file_list || !entry)
+		return 0;
+	if (entry->is_dir)
+		return entry->extent_count == 0;
+	if (entry->extent_count == 0 ||
+	    entry->first_extent >= (unsigned int) file_list->num_extents ||
+	    entry->extent_count >
+	        (unsigned int) file_list->num_extents - entry->first_extent)
+		return 0;
+	for (i = 0; i < entry->extent_count; i++) {
+		const iso_file_extent_t *extent =
+		    &file_list->extents[entry->first_extent + i];
+		uint64_t extent_end;
+		unsigned int j;
+		if (!file_extent_is_valid(src, extent->lba, extent->size,
+		                          &extent_end) ||
+		    (i + 1 < entry->extent_count &&
+		     (extent->size == 0 || extent->size % USER_DATA_SIZE != 0)) ||
+		    dxx_extract_add_bytes(&total_size, extent->size, UINT_MAX) < 0)
+			return 0;
+		for (j = 0; j < i; j++) {
+			const iso_file_extent_t *previous =
+			    &file_list->extents[entry->first_extent + j];
+			uint64_t previous_end;
+			if (!file_extent_is_valid(src, previous->lba,
+			                          previous->size, &previous_end) ||
+			    ((uint64_t) extent->lba < previous_end &&
+			     (uint64_t) previous->lba < extent_end))
+				return 0;
+		}
+	}
+	return entry->lba == file_list->extents[entry->first_extent].lba &&
+	       entry->size == total_size;
+}
+
 static int iso_extract_files_from_source(const iso_reader_source_t *src,
                                          const iso_file_list_t *file_list,
                                          const char *output_dir,
@@ -611,12 +777,15 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 	unsigned char sector[USER_DATA_SIZE];
 
 	if (!src || src->fd < 0 || !file_list || !output_dir ||
-	    file_list->num_files < 0 || file_list->num_files > ISO_MAX_FILES)
+	    file_list->num_files < 0 || file_list->num_files > ISO_MAX_FILES ||
+	    file_list->num_extents < 0 ||
+	    file_list->num_extents > ISO_MAX_EXTENTS)
 		return -1;
 
 	/* Calculate total bytes for progress */
 	for (i = 0; i < file_list->num_files; i++) {
-		if (!iso_relative_path_is_safe(file_list->files[i].path))
+		if (!iso_relative_path_is_safe(file_list->files[i].path) ||
+		    !file_entry_is_valid(src, file_list, &file_list->files[i]))
 			return -1;
 		if (file_list->files[i].is_dir ||
 		    !ext_matches(file_list->files[i].path, extensions))
@@ -669,21 +838,30 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 
 		ISO_LOG("Extracting %s (%u bytes)", entry->path, entry->size);
 
-		/* Read file data sector by sector */
-		{
-			unsigned int remaining = entry->size;
-			unsigned int lba = entry->lba;
+		/* Read each file extent in directory-record order */
+		for (unsigned int extent_index = 0;
+		     extent_index < entry->extent_count; extent_index++) {
+			const iso_file_extent_t *extent =
+			    &file_list->extents[entry->first_extent + extent_index];
+			unsigned int remaining = extent->size;
+			unsigned int lba = extent->lba;
 
 			while (remaining > 0) {
-				int to_write = (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE : (int) remaining;
+				int to_write =
+				    (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE
+				                                 : (int) remaining;
 
 				if (read_user_sector(src, (int) lba, sector) < 0) {
-					ISO_LOG("Read error at LBA %u for %s", lba, entry->path);
+					ISO_LOG("Read error at LBA %u for %s", lba,
+					        entry->path);
+					remaining = 0;
 					break;
 				}
 
 				if (write(out_fd, sector, to_write) != to_write) {
-					ISO_LOG("Write error for %s: %s", entry->path, strerror(errno));
+					ISO_LOG("Write error for %s: %s", entry->path,
+					        strerror(errno));
+					remaining = 0;
 					break;
 				}
 
@@ -693,7 +871,8 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 
 				/* Progress callback */
 				if (progress) {
-					if (progress(entry->path, done_bytes, total_bytes, user_data) != 0) {
+					if (progress(entry->path, done_bytes, total_bytes,
+					             user_data) != 0) {
 						close(out_fd);
 						ISO_LOG("Extraction cancelled by user");
 						return extracted;
