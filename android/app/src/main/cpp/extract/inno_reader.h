@@ -92,6 +92,7 @@ typedef struct {
 	uint8_t checksum[20];
 	inno_checksum_type_t checksum_type;
 	uint8_t chunk_compressed;           /* ChunkCompressed flag            */
+	uint8_t chunk_encrypted;            /* unsupported ChunkEncrypted flag */
 	uint8_t call_instruction_optimized; /* filter flag               */
 } inno_data_entry_t;
 

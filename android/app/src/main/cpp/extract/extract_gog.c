@@ -126,9 +126,10 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 
 		printf("  {\"index\": %u, \"dest\": ", i);
 		json_write_string(stdout, dest);
-		printf(", \"size\": %llu, \"game\": %s}%s\n",
+		printf(", \"size\": %llu, \"game\": %s, \"encrypted\": %s}%s\n",
 		       (unsigned long long) size,
 		       is_game ? "true" : "false",
+		       data && data->chunk_encrypted ? "true" : "false",
 		       (i < arc.file_count - 1) ? "," : "");
 	}
 	printf("]\n");

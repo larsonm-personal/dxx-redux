@@ -5785,23 +5785,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add empty and ordinary callbacks, quoted unrelated functions, missing and extra arguments, escaped quotes, overlong values, and genuine single- and multipart Galaxy metadata; assert only exact valid Galaxy records take inner zlib and every other file retains its original path and bytes
 - Resolution: Pending
 
-### BR-0058: P2 - Reject encrypted Inno chunks before decoding
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/parser-validation
-- Found by: R1-CHUNK-0023, R1-CHUNK-0024
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1026-L1067` in `parse_data_entries`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L1074-L1110,L2057-L2188`, `android/app/src/main/cpp/extract/inno_reader.h:L72-L83`, and `android/ai tool plans/CD, installer parsing/INNOSETUP_FORMAT_SPEC.md:L448-L499`
-- Evidence: The data flag layout comment identifies bit 6 as `ChunkEncrypted`, but the parser stores only bits 4 and 7 and the public entry structure has no encryption field. Extraction therefore never issues the documented unsupported-encryption error. Compressed ciphertext is sent to a decoder, while an encrypted stored chunk is returned as ordinary bytes; if its declared file range fits, missing checksum enforcement in BR-0034 allows ciphertext to be written and reported as a successful file
-- Trigger: Analyze or extract a supported Inno entry with `ChunkEncrypted` set, especially an uncompressed entry whose ciphertext span is at least the declared file size
-- Impact: Unsupported valid installers fail later with misleading decoder errors or can publish encrypted garbage as successfully imported game data instead of rejecting the capability before output
-- Expected: Encryption state is preserved during parsing and every unsupported encrypted entry is rejected deterministically before allocation, decompression, or output creation
-- Suggested fix: Add an explicit `chunk_encrypted` field, parse bit 6 for applicable versions, expose the unsupported capability during analysis, and fail selected encrypted entries before reading payload data. If decryption is later implemented, keep password derivation and authenticated checksum validation in a separate reviewed path
-- Validation: Add stored and each compressed-method fixture with encryption on and off, including ranges that fit ciphertext; assert encrypted entries produce one explicit unsupported status and no output, while unencrypted real installers remain unchanged
-- Resolution: Pending
-
 ### BR-0059: P2 - Propagate buffered Inno decoder failures
 
 - [ ] OPEN

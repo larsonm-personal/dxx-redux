@@ -1550,10 +1550,14 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		 * 10: SignOnce
 		 */
 		de->call_instruction_optimized = 0;
+		de->chunk_encrypted = 0;
 		de->chunk_compressed = 0;
 
 		if (v >= INNO_VER(4, 1, 8)) {
 			de->call_instruction_optimized = (buf[pos + 0] >> 4) & 1; /* bit 4 */
+		}
+		if (v >= INNO_VER(4, 2, 2)) {
+			de->chunk_encrypted = (buf[pos + 0] >> 6) & 1; /* bit 6 */
 		}
 		if (v >= INNO_VER(4, 2, 5)) {
 			de->chunk_compressed = (buf[pos + 0] >> 7) & 1; /* bit 7 */
@@ -2848,6 +2852,10 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	if (!de) {
 		INNO_LOG("file %d: location %u out of range (%u entries)",
 		         file_index, fe->location, arc->data_entry_count);
+		return -1;
+	}
+	if (de->chunk_encrypted) {
+		INNO_LOG("encrypted chunks not supported (file %s)", fe->destination);
 		return -1;
 	}
 

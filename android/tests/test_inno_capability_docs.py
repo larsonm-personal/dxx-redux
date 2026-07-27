@@ -38,8 +38,9 @@ class InnoCapabilityDocumentationTests(unittest.TestCase):
         self.assertIn("BZip2 decompression not implemented", self.source)
 
     def test_encryption_and_callback_limitations_remain_explicit(self):
-        self.assertNotIn("chunk_encrypted", self.header)
-        self.assertIn("BR-0058", self.docs)
+        self.assertIn("chunk_encrypted", self.header)
+        self.assertIn("de->chunk_encrypted", self.source)
+        self.assertIn("Encrypted chunks | Unsupported and rejected", self.docs)
         self.assertIn("informational and cannot cancel extraction", self.docs)
         self.assertIsNone(re.search(r"if\s*\(\s*(?:writer->)?progress\s*\(", self.source))
 

@@ -30,7 +30,7 @@ cover its version-dependent layouts.
 | GOG Galaxy inner zlib stream | Implemented | Used only for entries identified by the current Galaxy heuristic |
 | File integrity checksums | Implemented | MD5 before 5.3.9 and SHA-1 from 5.3.9 onward; checked before output publication |
 | Executable call-instruction filter | Unsupported and rejected | `inno_extract_file` rejects `call_instruction_optimized` entries before output |
-| Encrypted chunks | Unsupported, not reliably rejected | The encrypted flag is currently discarded, so stored ciphertext can be treated as ordinary data and compressed ciphertext can fail later. See BR-0058 |
+| Encrypted chunks | Unsupported and rejected | Encryption metadata is preserved for analysis, and `inno_extract_file` rejects encrypted entries before payload access or output creation |
 
 ## API semantics
 

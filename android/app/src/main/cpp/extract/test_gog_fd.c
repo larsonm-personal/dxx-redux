@@ -316,7 +316,7 @@ static size_t append_data_fixture(uint8_t *buffer, size_t position,
 	for (size_t i = 0; i < digest_size; i++)
 		buffer[position++] = (uint8_t) (0x20 + index * 0x20 + i);
 	position += 16;
-	buffer[position++] = index == 0 ? 0x80 : 0x10;
+	buffer[position++] = index == 0 ? 0xc0 : 0x10;
 	buffer[position++] = 0;
 	return position;
 }
@@ -382,6 +382,7 @@ static int check_checksum_layout_transition(void)
 			    entries[entry].file_offset != (uint64_t) (200 + entry) ||
 			    entries[entry].chunk_compressed_size != (uint64_t) (400 + entry) ||
 			    entries[entry].chunk_compressed != (entry == 0) ||
+			    entries[entry].chunk_encrypted != (entry == 0) ||
 			    entries[entry].call_instruction_optimized != (entry == 1)) {
 				fprintf(stderr, "5.3.%d data entry %d is misaligned\n",
 				        versions[version_index].patch, entry);
@@ -593,6 +594,85 @@ static int expect_range_failure(inno_archive_t *arc, const char *output_path,
 	return 0;
 }
 
+static int count_progress(const char *current_file, long long bytes_done,
+                          long long bytes_total, void *user_data)
+{
+	int *calls = (int *) user_data;
+	(void) current_file;
+	(void) bytes_done;
+	(void) bytes_total;
+	(*calls)++;
+	return 0;
+}
+
+static int check_encrypted_chunk_rejection(void)
+{
+	static const uint8_t payload_sha1[20] = {
+		0xe5, 0xe9, 0xfa, 0x1b, 0xa3, 0x1e, 0xcd, 0x1a, 0xe8, 0x4f,
+		0x75, 0xca, 0xaa, 0x47, 0x4f, 0x3a, 0x66, 0x3f, 0x05, 0xf4
+	};
+	static const inno_compress_method_t methods[] = {
+		INNO_COMPRESS_STORED,
+		INNO_COMPRESS_ZLIB,
+		INNO_COMPRESS_LZMA1,
+		INNO_COMPRESS_LZMA2
+	};
+	const uint8_t magic[4] = { 'z', 'l', 'b', 0x1a };
+	const char *source_path = "test_gog_fd_encrypted_source.tmp";
+	const char *output_path = "test_gog_fd_encrypted_output.tmp";
+	remove(source_path);
+	remove(output_path);
+	FILE *source = fopen(source_path, "wb");
+	if (!source) return 1;
+	int write_failed = fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+	                   fwrite("secret", 1, 6, source) != 6;
+	if (fclose(source) != 0) write_failed = 1;
+	int fd = write_failed ? -1 : OPEN_RB(source_path);
+	if (fd < 0) {
+		remove(source_path);
+		return 1;
+	}
+
+	inno_archive_t arc;
+	inno_file_entry_t entry;
+	inno_data_entry_t data;
+	init_range_archive(&arc, &entry, &data, fd, sizeof(magic) + 6);
+	data.chunk_compressed_size = 6;
+	data.file_size = 6;
+	data.chunk_encrypted = 1;
+	memcpy(data.checksum, payload_sha1, sizeof(payload_sha1));
+
+	int failures = 0;
+	for (size_t i = 0; i < sizeof(methods) / sizeof(methods[0]); i++) {
+		int progress_calls = 0;
+		arc.compression = methods[i];
+		data.chunk_compressed = methods[i] != INNO_COMPRESS_STORED;
+		remove(output_path);
+		if (inno_extract_file(&arc, 0, output_path, count_progress,
+		                      &progress_calls) == 0 ||
+		    progress_calls != 0 || file_exists(output_path) ||
+		    arc.extracted_files != 0 || arc.extracted_bytes != 0) {
+			fprintf(stderr,
+			        "encrypted method %d reached payload handling or output\n",
+			        methods[i]);
+			failures++;
+		}
+	}
+
+	data.chunk_encrypted = 0;
+	data.chunk_compressed = 0;
+	arc.compression = INNO_COMPRESS_STORED;
+	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
+	    !file_equals(output_path, "secret", 6)) {
+		fprintf(stderr, "unencrypted stored compatibility failed\n");
+		failures++;
+	}
+	CLOSE_FD(fd);
+	remove(source_path);
+	remove(output_path);
+	return failures ? 1 : 0;
+}
+
 static int check_chunk_range_boundaries(void)
 {
 	static const uint8_t exact_sha1[20] = {
@@ -785,6 +865,7 @@ int main(int argc, char **argv)
 	failures += check_complete_file_catalog();
 	failures += check_unsigned_entry_bounds();
 	failures += check_checksum_layout_transition();
+	failures += check_encrypted_chunk_rejection();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();
 	failures += check_installer(argv[1], d1_expected, 2, 7, 7, "d1");
