@@ -7,6 +7,8 @@
 
 #include <zlib.h>
 
+#define INNO_TEST_VERSION_ID_SIZE 64
+
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -77,6 +79,113 @@ static void put_u64(uint8_t *buffer, size_t *position, uint64_t value)
 		buffer[(*position)++] = (uint8_t) (value >> (i * 8));
 }
 
+static int expect_version_id(const char *id, int major, int minor, int patch,
+                             int unicode)
+{
+	uint8_t field[INNO_TEST_VERSION_ID_SIZE] = { 0 };
+	inno_version_t version;
+	size_t len = strlen(id);
+
+	if (len >= sizeof(field))
+		return 1;
+	memcpy(field, id, len);
+	if (inno_test_parse_version_id(field, &version) < 0 ||
+	    version.major != major || version.minor != minor ||
+	    version.patch != patch || version.unicode != unicode) {
+		fprintf(stderr, "valid version ID rejected: %s\n", id);
+		return 1;
+	}
+	return 0;
+}
+
+static int expect_invalid_version_id(const char *id)
+{
+	uint8_t field[INNO_TEST_VERSION_ID_SIZE] = { 0 };
+	inno_version_t version;
+	size_t len = strlen(id);
+
+	if (len >= sizeof(field))
+		return 1;
+	memcpy(field, id, len);
+	if (inno_test_parse_version_id(field, &version) == 0) {
+		fprintf(stderr, "invalid version ID accepted: %s\n", id);
+		return 1;
+	}
+	return 0;
+}
+
+static int check_version_id_bounds(void)
+{
+	static const char *invalid_ids[] = {
+		"",
+		"Inno Setup Setup Data ()",
+		"Inno Setup Setup Data (.3.0)",
+		"Inno Setup Setup Data (5..0)",
+		"Inno Setup Setup Data (5.3.)",
+		"Inno Setup Setup Data (5.3)",
+		"Inno Setup Setup Data (2147483648.3.0)",
+		"Inno Setup Setup Data (5.2147483648.0)",
+		"Inno Setup Setup Data (5.3.2147483648)",
+		"Inno Setup Setup Data (5.3.0) garbage",
+		"Inno Setup Setup Data (5.3.0)(u)",
+		"Inno Setup Setup Data (5.3.0) (x)",
+		"Inno Setup Setup Data (5.3.0) (u) garbage"
+	};
+	uint8_t field[INNO_TEST_VERSION_ID_SIZE];
+	inno_version_t version;
+	int failures = 0;
+
+	failures += expect_version_id("Inno Setup Setup Data (5.3.0)", 5, 3, 0, 0);
+	failures += expect_version_id("Inno Setup Setup Data (5.5.0) (u)", 5, 5, 0, 1);
+	failures += expect_version_id("Inno Setup Setup Data (5.5.6) (u)", 5, 5, 6, 1);
+	failures += expect_version_id("Inno Setup Setup Data (5.5.7) (u)", 5, 5, 7, 1);
+	failures += expect_version_id("Inno Setup Setup Data (5.5.7) (U)", 5, 5, 7, 1);
+	failures += expect_version_id("Inno Setup Setup Data (5.5.8) (u)", 5, 5, 7, 1);
+	failures += expect_version_id("Inno Setup Setup Data (5.6.0) (u)", 5, 6, 0, 1);
+	failures += expect_version_id("Inno Setup Setup Data (5.6.2) (u)", 5, 6, 2, 1);
+	for (size_t i = 0; i < sizeof(invalid_ids) / sizeof(invalid_ids[0]); i++)
+		failures += expect_invalid_version_id(invalid_ids[i]);
+
+	memset(field, '7', sizeof(field));
+	memcpy(field, "Inno Setup Setup Data (", 23);
+	if (inno_test_parse_version_id(field, &version) == 0) {
+		fprintf(stderr, "unterminated digit field accepted\n");
+		failures++;
+	}
+
+	for (size_t closing = 59; closing <= 62; closing++) {
+		size_t tail_start = closing - 9;
+		memset(field, 0, sizeof(field));
+		memcpy(field, "Inno Setup Setup Data (", 23);
+		memset(field + 23, '0', tail_start - 23);
+		memcpy(field + tail_start, "5.6.2) (u)", 10);
+		if (inno_test_parse_version_id(field, &version) < 0 ||
+		    version.major != 5 || version.minor != 6 ||
+		    version.patch != 2 || !version.unicode) {
+			fprintf(stderr, "version ID ending at byte %zu rejected\n", closing);
+			failures++;
+		}
+	}
+	memset(field, 0, sizeof(field));
+	memcpy(field, "Inno Setup Setup Data (", 23);
+	memset(field + 23, '0', 31);
+	memcpy(field + 54, "5.6.2) (u)", 10);
+	if (inno_test_parse_version_id(field, &version) == 0) {
+		fprintf(stderr, "unterminated version ID ending at byte 63 accepted\n");
+		failures++;
+	}
+
+	memset(field, 0, sizeof(field));
+	memcpy(field, "Inno Setup Setup Data (5.6.2) (u)", 33);
+	field[34] = 'X';
+	if (inno_test_parse_version_id(field, &version) == 0) {
+		fprintf(stderr, "nonzero version ID padding accepted\n");
+		failures++;
+	}
+
+	return failures ? 1 : 0;
+}
+
 static size_t build_header_fixture(uint8_t *buffer, const inno_version_t *version,
                                    size_t digest_size,
                                    inno_compress_method_t compression)
@@ -93,6 +202,105 @@ static size_t build_header_fixture(uint8_t *buffer, const inno_version_t *versio
 	if (version->patch >= 6) position += 4;
 	position += 5;
 	return position;
+}
+
+static void append_empty_string(uint8_t *buffer, size_t *position)
+{
+	put_u32(buffer, position, 0);
+}
+
+static void append_utf16_string(uint8_t *buffer, size_t *position,
+                                const char *text)
+{
+	size_t len = strlen(text);
+
+	put_u32(buffer, position, (uint32_t) (len * 2));
+	for (size_t i = 0; i < len; i++) {
+		buffer[(*position)++] = (uint8_t) text[i];
+		buffer[(*position)++] = 0;
+	}
+}
+
+static uint8_t *build_file_catalog_fixture(uint32_t file_count,
+                                           size_t *fixture_size)
+{
+	static const inno_version_t version = { 5, 3, 0, 1 };
+	size_t capacity = 512 + (size_t) file_count * 128;
+	uint8_t *buffer = (uint8_t *) calloc(capacity, 1);
+	size_t count_position = 28 * 4 + 7 * 4;
+	size_t position;
+
+	if (!buffer)
+		return NULL;
+	position = build_header_fixture(buffer, &version, 16,
+	                                INNO_COMPRESS_LZMA1);
+	put_u32(buffer, &count_position, file_count);
+	for (uint32_t i = 0; i < file_count; i++) {
+		append_empty_string(buffer, &position);
+		if (i + 1 == file_count)
+			append_utf16_string(buffer, &position, "late.hog");
+		else
+			append_empty_string(buffer, &position);
+		for (int string_index = 0; string_index < 8; string_index++)
+			append_empty_string(buffer, &position);
+		position += 20 + 4 + 4 + 8 + 2 + 4 + 1;
+		if (position > capacity) {
+			free(buffer);
+			return NULL;
+		}
+	}
+	*fixture_size = position;
+	return buffer;
+}
+
+static int check_complete_file_catalog(void)
+{
+	static const inno_version_t version = { 5, 3, 0, 1 };
+	static const uint32_t valid_counts[] = { 512, 513, 1024, 4096 };
+	char last_destination[INNO_PATH_LEN];
+	int parsed_count;
+	int failures = 0;
+
+	for (size_t i = 0; i < sizeof(valid_counts) / sizeof(valid_counts[0]); i++) {
+		size_t fixture_size;
+		uint8_t *fixture =
+		    build_file_catalog_fixture(valid_counts[i], &fixture_size);
+		if (!fixture ||
+		    inno_test_parse_file_catalog(fixture, fixture_size, &version,
+		                                 &parsed_count, last_destination,
+		                                 sizeof(last_destination)) < 0 ||
+		    parsed_count != (int) valid_counts[i] ||
+		    strcmp(last_destination, "late.hog") != 0) {
+			fprintf(stderr, "%u-entry file catalog was incomplete\n",
+			        valid_counts[i]);
+			failures++;
+		}
+		free(fixture);
+	}
+
+	size_t fixture_size;
+	uint8_t *fixture = build_file_catalog_fixture(1, &fixture_size);
+	inno_test_set_allocation_fail_after(0);
+	if (!fixture ||
+	    inno_test_parse_file_catalog(fixture, fixture_size, &version,
+	                                 &parsed_count, last_destination,
+	                                 sizeof(last_destination)) == 0) {
+		fprintf(stderr, "file catalog allocation failure was accepted\n");
+		failures++;
+	}
+	inno_test_set_allocation_fail_after(-1);
+	free(fixture);
+
+	fixture = build_file_catalog_fixture(4097, &fixture_size);
+	if (!fixture ||
+	    inno_test_parse_file_catalog(fixture, fixture_size, &version,
+	                                 &parsed_count, last_destination,
+	                                 sizeof(last_destination)) == 0) {
+		fprintf(stderr, "over-budget file catalog was accepted\n");
+		failures++;
+	}
+	free(fixture);
+	return failures ? 1 : 0;
 }
 
 static size_t append_data_fixture(uint8_t *buffer, size_t position,
@@ -259,8 +467,10 @@ static int check_galaxy_checksum_order(void)
 
 	inno_archive_t arc;
 	inno_data_entry_t data;
+	inno_file_entry_t entry;
 	memset(&arc, 0, sizeof(arc));
 	memset(&data, 0, sizeof(data));
+	memset(&entry, 0, sizeof(entry));
 	arc.fd = OPEN_RB(source_path);
 	if (arc.fd < 0) {
 		remove(source_path);
@@ -269,6 +479,7 @@ static int check_galaxy_checksum_order(void)
 	arc.compression = INNO_COMPRESS_STORED;
 	arc.source_size = sizeof(magic) + sizeof(inner_zlib);
 	arc.file_count = 1;
+	arc.files = &entry;
 	arc.data_entry_count = 1;
 	arc.data_entries = &data;
 	strcpy(arc.files[0].destination, "galaxy.bin");
@@ -312,15 +523,18 @@ static int check_galaxy_checksum_order(void)
 	return failures ? 1 : 0;
 }
 
-static void init_range_archive(inno_archive_t *arc, inno_data_entry_t *data,
-                               int fd, uint64_t source_size)
+static void init_range_archive(inno_archive_t *arc, inno_file_entry_t *entry,
+                               inno_data_entry_t *data, int fd,
+                               uint64_t source_size)
 {
 	memset(arc, 0, sizeof(*arc));
+	memset(entry, 0, sizeof(*entry));
 	memset(data, 0, sizeof(*data));
 	arc->fd = fd;
 	arc->source_size = source_size;
 	arc->compression = INNO_COMPRESS_STORED;
 	arc->file_count = 1;
+	arc->files = entry;
 	arc->data_entry_count = 1;
 	arc->data_entries = data;
 	strcpy(arc->files[0].destination, "range.bin");
@@ -372,8 +586,10 @@ static int check_chunk_range_boundaries(void)
 		return 1;
 	}
 	inno_archive_t arc;
+	inno_file_entry_t entry;
 	inno_data_entry_t data;
-	init_range_archive(&arc, &data, fd, sizeof(magic) + sizeof(stored_payload));
+	init_range_archive(&arc, &entry, &data, fd,
+	                   sizeof(magic) + sizeof(stored_payload));
 	data.chunk_compressed_size = 4;
 	data.file_offset = 1;
 	data.file_size = 3;
@@ -437,7 +653,7 @@ static int check_chunk_range_boundaries(void)
 		remove(source_path);
 		return 1;
 	}
-	init_range_archive(&arc, &data, fd, 4 + compressed_size + 1);
+	init_range_archive(&arc, &entry, &data, fd, 4 + compressed_size + 1);
 	arc.compression = INNO_COMPRESS_ZLIB;
 	data.chunk_compressed = 1;
 	data.chunk_compressed_size = compressed_size;
@@ -513,6 +729,8 @@ int main(int argc, char **argv)
 	};
 
 	int failures = 0;
+	failures += check_version_id_bounds();
+	failures += check_complete_file_catalog();
 	failures += check_checksum_layout_transition();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();

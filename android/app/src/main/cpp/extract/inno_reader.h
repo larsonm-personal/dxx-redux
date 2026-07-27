@@ -50,8 +50,7 @@ extern "C" {
 #endif
 
 /* -- Limits -------------------------------------------------------- */
-#define INNO_MAX_FILES 512
-#define INNO_PATH_LEN  512
+#define INNO_PATH_LEN 512
 
 /* -- Compression method enum (full, from InnoSetup source) ------- */
 typedef enum {
@@ -108,7 +107,7 @@ typedef struct {
 	uint64_t source_size;   /* complete installer size      */
 
 	/* entries */
-	inno_file_entry_t files[INNO_MAX_FILES];
+	inno_file_entry_t *files; /* heap-allocated */
 	int file_count;
 	inno_data_entry_t *data_entries; /* heap-allocated */
 	int data_entry_count;
@@ -163,12 +162,20 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 void inno_close(inno_archive_t *arc);
 
 #ifdef INNO_READER_TESTING
+void inno_test_set_allocation_fail_after(int allocations);
+int inno_test_parse_version_id(const uint8_t id[64],
+                               inno_version_t *version);
 int inno_test_checksum_layout(const inno_version_t *version,
                               inno_checksum_type_t *type_out,
                               size_t *digest_size_out);
 int inno_test_parse_header_stream(const uint8_t *buffer, size_t buffer_size,
                                   const inno_version_t *version,
                                   inno_compress_method_t *compression_out);
+int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
+                                 const inno_version_t *version,
+                                 int *file_count_out,
+                                 char *last_destination,
+                                 size_t last_destination_size);
 int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
                                  inno_data_entry_t *entries, int entry_count);

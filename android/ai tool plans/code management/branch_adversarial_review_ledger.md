@@ -5751,23 +5751,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add PE32 and PE32+ fixtures with valid resources, a resource section after entry 16, zero through 23-byte resource blobs, entry counts whose arrays end exactly at and one byte beyond the section, nested and data RVAs at every boundary, arithmetic-wrap values, and oversized resource declarations; assert clean bounded rejection or correct discovery under AddressSanitizer and a memory-limit harness
 - Resolution: Pending
 
-### BR-0053: P1 - Parse the Inno version ID within its fixed field
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/parser-validation
-- Found by: R1-CHUNK-0022
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L522-L547` in `parse_version_string`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L1380-L1405` in `inno_open_owned_fd` and `android/ai tool plans/CD, installer parsing/INNOSETUP_FORMAT_SPEC.md:L72-L95`
-- Evidence: `inno_open_owned_fd` reads exactly 64 attacker-controlled bytes into a stack array without appending a terminator. `parse_version_string` treats that array as a C string: `strtol` scans numeric components without an end bound, direct dereferences follow its returned pointer, and two `strstr` calls search for the Unicode suffix. A field containing the valid prefix followed by digits through byte 63, or a closing parenthesis without any later NUL, makes these library calls read beyond the array into adjacent stack storage
-- Trigger: Open an installer with a valid offset table whose 64-byte setup version field begins with the expected prefix but contains no NUL terminator, using a long numeric component or a closing parenthesis followed by nonzero padding
-- Impact: A user-selected malformed installer invokes undefined native stack reads and can crash the launcher before version rejection; adjacent bytes can also influence Unicode detection and make later header parsing use the wrong layout
-- Expected: The fixed field is parsed only inside its 64-byte extent, has a required terminator or exact bounded grammar, and rejects missing digits, overflow, trailing garbage, and unsupported suffixes before any pointer dereference
-- Suggested fix: Locate the first NUL with a bounded search, reject an unterminated field, and parse a bounded slice with explicit digit and checked-integer helpers rather than unbounded C string functions. Accept only documented complete identifiers and keep unofficial aliases in a table with their normalized layout versions
-- Validation: Add 64-byte cases for no terminator, digits ending at byte 63, a closing parenthesis at each final position, missing and overflowing components, trailing garbage, ANSI and Unicode suffixes, and every supported real identifier; run the malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
-- Resolution: Pending
-
 ### BR-0054: P2 - Preserve distinct Unicode Inno destination paths
 
 - [ ] OPEN
@@ -5783,23 +5766,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Unicode strings are validated and converted losslessly to one documented internal encoding, distinct archive paths remain distinct, and unrepresentable or overlong destinations fail explicitly before selection or output creation
 - Suggested fix: Add one checked UTF-16LE-to-UTF-8 decoder with surrogate handling, reject odd lengths, embedded NUL path components, malformed pairs, and truncation, and carry explicit destination lengths or dynamically sized strings through listing. Before extraction, detect flattened-basename collisions and use platform-correct path opening
 - Validation: Add Unicode fixtures with accented, CJK, and supplementary-plane names, two names that the current code collapses together, malformed and odd UTF-16, embedded NUL, exact-capacity and one-over paths, and Windows-invalid converted names; assert exact UTF-8 listing, unique outputs or explicit collision failure, no overwrite, and unchanged extraction of both real GOG installers
-- Resolution: Pending
-
-### BR-0055: P2 - Do not silently truncate Inno file catalogs
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/api-data-format
-- Found by: R1-CHUNK-0023, R1-CHUNK-0024
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L864-L970` in `parse_header_stream1`
-- Related: `android/app/src/main/cpp/extract/inno_reader.h:L45-L47,L64-L103`, `android/app/src/main/cpp/extract/jni_gog_import.c:L84-L106,L235-L298`, and `android/app/src/main/cpp/extract/extract_gog.c:L98-L154`
-- Evidence: The archive declares a 32-bit `file_count`, but the public archive object embeds exactly 512 entries. When the count is higher, the parser logs, replaces the count with 512, parses only those entries, ignores the rest of stream 1, and returns success. JNI and CLI selection iterate only the truncated successful list and have no declared-count or incomplete-catalog signal
-- Trigger: Open a valid or crafted supported Inno installer with more than 512 file entries and place an extension-matching required game file after entry 512
-- Impact: Required files disappear from analysis and extraction while the import can report success and enable completion with an incomplete game-data set
-- Expected: Successful listing is complete; valid catalogs use checked dynamic storage, while a configured capacity or allocation failure is an explicit archive-open error rather than truncation
-- Suggested fix: Replace the embedded array with a heap-backed count-sized list after validating the count against the decompressed stream and an import metadata budget. If a hard cap remains, reject the archive before publishing any entries and report the declared count and supported limit to the caller
-- Validation: Add exact-512, 513, and larger valid catalogs with selected files before and after the boundary, plus allocation-failure injection; assert either every entry is listed and extractable exactly once or archive open fails explicitly with no successful partial list
 - Resolution: Pending
 
 ### BR-0056: P1 - Keep Inno entry counts and indices unsigned during validation

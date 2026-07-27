@@ -45,6 +45,7 @@
 
 #include "extract_limits.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -93,6 +94,24 @@
 /* ── LZMA SDK allocator ──────────────────────────────────────────── */
 static const uint64_t INNO_STREAM_DIRECT_THRESHOLD = 64ULL * 1024ULL * 1024ULL;
 #define INNO_STREAM_BUFFER_SIZE 65536
+#define INNO_VERSION_ID_SIZE    64
+/* Ten empty length-prefixed strings plus 43 fixed bytes in supported versions */
+#define INNO_MIN_FILE_ENTRY_SIZE 83
+
+#ifdef INNO_READER_TESTING
+static int inno_test_allocations_before_failure = -1;
+#endif
+
+static void *inno_calloc(size_t count, size_t size)
+{
+#ifdef INNO_READER_TESTING
+	if (inno_test_allocations_before_failure == 0)
+		return NULL;
+	if (inno_test_allocations_before_failure > 0)
+		inno_test_allocations_before_failure--;
+#endif
+	return calloc(count, size);
+}
 
 static void *lzma_alloc(ISzAllocPtr p, size_t size)
 {
@@ -880,30 +899,79 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 
 /* ── Version string parser ───────────────────────────────────────── */
 
-static int parse_version_string(const uint8_t id[64], inno_version_t *ver)
+static int parse_version_component(const uint8_t *id, size_t id_len,
+                                   size_t *position, int *component)
 {
-	memset(ver, 0, sizeof(*ver));
+	unsigned int value = 0;
+	size_t pos;
 
-	/* Expected: "Inno Setup Setup Data (X.Y.Z) (u)" */
-	const char *s = (const char *) id;
-	const char *prefix = "Inno Setup Setup Data (";
-	if (strncmp(s, prefix, strlen(prefix)) != 0) {
-		INNO_LOG("invalid version ID: %.64s", s);
+	if (!id || !position || !component || *position >= id_len ||
+	    id[*position] < '0' || id[*position] > '9')
+		return -1;
+	pos = *position;
+	while (pos < id_len && id[pos] >= '0' && id[pos] <= '9') {
+		unsigned int digit = id[pos] - '0';
+		if (value > ((unsigned int) INT_MAX - digit) / 10)
+			return -1;
+		value = value * 10 + digit;
+		pos++;
+	}
+	*position = pos;
+	*component = (int) value;
+	return 0;
+}
+
+static int parse_version_string(const uint8_t id[INNO_VERSION_ID_SIZE],
+                                inno_version_t *ver)
+{
+	static const uint8_t prefix[] = "Inno Setup Setup Data (";
+	const uint8_t *terminator;
+	size_t id_len;
+	size_t pos = sizeof(prefix) - 1;
+
+	if (!id || !ver)
+		return -1;
+	memset(ver, 0, sizeof(*ver));
+	terminator = (const uint8_t *) memchr(id, '\0', INNO_VERSION_ID_SIZE);
+	if (!terminator) {
+		INNO_LOG("unterminated version ID");
 		return -1;
 	}
-	s += strlen(prefix);
-	ver->major = (int) strtol(s, (char **) &s, 10);
-	if (*s++ != '.') return -1;
-	ver->minor = (int) strtol(s, (char **) &s, 10);
-	if (*s == '.') {
-		s++;
-		ver->patch = (int) strtol(s, (char **) &s, 10);
+	id_len = (size_t) (terminator - id);
+	for (size_t i = id_len + 1; i < INNO_VERSION_ID_SIZE; i++) {
+		if (id[i] != 0) {
+			INNO_LOG("nonzero version ID padding");
+			return -1;
+		}
 	}
-	if (*s++ != ')') return -1;
-	/* Look for (u) or (U) suffix */
-	const char *u = strstr(s, "(u)");
-	const char *U = strstr(s, "(U)");
-	ver->unicode = (u || U) ? 1 : 0;
+	if (id_len < sizeof(prefix) - 1 ||
+	    memcmp(id, prefix, sizeof(prefix) - 1) != 0 ||
+	    parse_version_component(id, id_len, &pos, &ver->major) < 0 ||
+	    pos >= id_len || id[pos++] != '.' ||
+	    parse_version_component(id, id_len, &pos, &ver->minor) < 0 ||
+	    pos >= id_len || id[pos++] != '.' ||
+	    parse_version_component(id, id_len, &pos, &ver->patch) < 0 ||
+	    pos >= id_len || id[pos++] != ')') {
+		INNO_LOG("invalid version ID: %.*s", (int) id_len, (const char *) id);
+		return -1;
+	}
+
+	if (pos == id_len) {
+		ver->unicode = 0;
+	} else if (id_len - pos == 4 && id[pos] == ' ' &&
+	           id[pos + 1] == '(' &&
+	           (id[pos + 2] == 'u' || id[pos + 2] == 'U') &&
+	           id[pos + 3] == ')') {
+		ver->unicode = 1;
+	} else {
+		INNO_LOG("unsupported version ID suffix: %.*s",
+		         (int) id_len, (const char *) id);
+		return -1;
+	}
+
+	/* innoextract identifies this unofficial string as the 5.5.7 layout */
+	if (ver->unicode && ver->major == 5 && ver->minor == 5 && ver->patch == 8)
+		ver->patch = 7;
 
 	return 0;
 }
@@ -1248,9 +1316,22 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		if (skip_flags(buf, buf_len, &pos, dir_flags) < 0) return -1;
 	}
 	/* ── Parse file entries (the ones we care about!) ── */
-	if (file_count > INNO_MAX_FILES) {
-		INNO_LOG("too many files: %u (max %d)", file_count, INNO_MAX_FILES);
+	if (file_count > DXX_EXTRACT_MAX_ENTRIES) {
+		INNO_LOG("too many files: %u (max %u)",
+		         file_count, DXX_EXTRACT_MAX_ENTRIES);
 		return -1;
+	}
+	if (file_count > (buf_len - pos) / INNO_MIN_FILE_ENTRY_SIZE) {
+		INNO_LOG("file catalog cannot contain %u complete entries", file_count);
+		return -1;
+	}
+	if (file_count > 0) {
+		arc->files =
+		    (inno_file_entry_t *) inno_calloc(file_count, sizeof(*arc->files));
+		if (!arc->files) {
+			INNO_LOG("cannot allocate %u file entries", file_count);
+			return -1;
+		}
 	}
 	arc->file_count = (int) file_count;
 
@@ -1460,6 +1541,17 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 }
 
 #ifdef INNO_READER_TESTING
+void inno_test_set_allocation_fail_after(int allocations)
+{
+	inno_test_allocations_before_failure = allocations;
+}
+
+int inno_test_parse_version_id(const uint8_t id[INNO_VERSION_ID_SIZE],
+                               inno_version_t *version)
+{
+	return parse_version_string(id, version);
+}
+
 int inno_test_checksum_layout(const inno_version_t *version,
                               inno_checksum_type_t *type_out,
                               size_t *digest_size_out)
@@ -1479,10 +1571,43 @@ int inno_test_parse_header_stream(const uint8_t *buffer, size_t buffer_size,
 	inno_archive_t archive;
 	inno_version_t mutable_version = *version;
 	memset(&archive, 0, sizeof(archive));
-	if (parse_header_stream1(buffer, buffer_size, &mutable_version, &archive) < 0)
+	if (parse_header_stream1(buffer, buffer_size, &mutable_version, &archive) < 0) {
+		free(archive.files);
 		return -1;
+	}
 	*compression_out = archive.compression;
+	free(archive.files);
 	return 0;
+}
+
+int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
+                                 const inno_version_t *version,
+                                 int *file_count_out,
+                                 char *last_destination,
+                                 size_t last_destination_size)
+{
+	inno_archive_t archive;
+	inno_version_t mutable_version;
+	int result;
+
+	if (!buffer || !version || !file_count_out ||
+	    !last_destination || last_destination_size == 0)
+		return -1;
+	memset(&archive, 0, sizeof(archive));
+	mutable_version = *version;
+	result = parse_header_stream1(buffer, buffer_size,
+	                              &mutable_version, &archive);
+	if (result == 0) {
+		*file_count_out = archive.file_count;
+		if (archive.file_count > 0) {
+			snprintf(last_destination, last_destination_size, "%s",
+			         archive.files[archive.file_count - 1].destination);
+		} else {
+			last_destination[0] = '\0';
+		}
+	}
+	free(archive.files);
+	return result;
 }
 
 int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
@@ -1892,8 +2017,8 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	arc->data_offset = data_offset;
 
 	/* ── Read version ID (64 bytes at header_offset) ── */
-	uint8_t version_id[64];
-	if (read_at(fd, header_offset, version_id, 64) < 0) {
+	uint8_t version_id[INNO_VERSION_ID_SIZE];
+	if (read_at(fd, header_offset, version_id, sizeof(version_id)) < 0) {
 		INNO_LOG("cannot read version ID at 0x%llx", (unsigned long long) header_offset);
 		CLOSE_FD(fd);
 		arc->fd = -1;
@@ -1920,7 +2045,7 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 
 	/* ── Decompress block stream 1 (main header + file entries) ── */
 	size_t stream1_len = 0, stream1_consumed = 0;
-	uint8_t *stream1 = decompress_block_stream(fd, header_offset + 64,
+	uint8_t *stream1 = decompress_block_stream(fd, header_offset + INNO_VERSION_ID_SIZE,
 	                                           &stream1_len, &stream1_consumed);
 	if (!stream1) {
 		INNO_LOG("failed to decompress header block stream 1");
@@ -1933,39 +2058,33 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	if (parse_header_stream1(stream1, stream1_len, &arc->version, arc) < 0) {
 		INNO_LOG("failed to parse header");
 		free(stream1);
-		CLOSE_FD(fd);
-		arc->fd = -1;
+		inno_close(arc);
 		return -1;
 	}
 	free(stream1);
 
 	/* ── Decompress block stream 2 (data entries) ── */
-	arc->data_entries = (inno_data_entry_t *) calloc(arc->data_entry_count, sizeof(inno_data_entry_t));
+	arc->data_entries = (inno_data_entry_t *) inno_calloc(
+	    arc->data_entry_count, sizeof(inno_data_entry_t));
 	if (!arc->data_entries && arc->data_entry_count > 0) {
-		CLOSE_FD(fd);
-		arc->fd = -1;
+		inno_close(arc);
 		return -1;
 	}
 
 	size_t stream2_len = 0, stream2_consumed = 0;
-	uint8_t *stream2 = decompress_block_stream(fd, header_offset + 64 + stream1_consumed,
-	                                           &stream2_len, &stream2_consumed);
+	uint8_t *stream2 = decompress_block_stream(
+	    fd, header_offset + INNO_VERSION_ID_SIZE + stream1_consumed,
+	    &stream2_len, &stream2_consumed);
 	if (!stream2) {
 		INNO_LOG("failed to decompress header block stream 2");
-		free(arc->data_entries);
-		arc->data_entries = NULL;
-		CLOSE_FD(fd);
-		arc->fd = -1;
+		inno_close(arc);
 		return -1;
 	}
 
 	if (parse_data_entries(stream2, stream2_len, &arc->version, arc) < 0) {
 		INNO_LOG("failed to parse data entries");
 		free(stream2);
-		free(arc->data_entries);
-		arc->data_entries = NULL;
-		CLOSE_FD(fd);
-		arc->fd = -1;
+		inno_close(arc);
 		return -1;
 	}
 	free(stream2);
@@ -2843,6 +2962,8 @@ void inno_close(inno_archive_t *arc)
 	}
 	free(arc->data_entries);
 	arc->data_entries = NULL;
+	free(arc->files);
+	arc->files = NULL;
 	arc->file_count = 0;
 	arc->data_entry_count = 0;
 }
