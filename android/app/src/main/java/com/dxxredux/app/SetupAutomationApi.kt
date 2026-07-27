@@ -115,6 +115,12 @@ private fun textBelongsToClickable(
     return clickBounds.contains(textBounds) || clickBounds.contains(centerX, centerY)
 }
 
+internal fun largestScrollNodeIds(scrollNodes: List<Pair<Int, Int>>): List<Int> {
+    val largestArea = scrollNodes.maxOfOrNull { it.second } ?: return emptyList()
+    if (largestArea <= 0) return emptyList()
+    return scrollNodes.filter { it.second == largestArea }.map { it.first }
+}
+
 private fun findComposeView(view: View): View? {
     if (view.accessibilityNodeProvider != null &&
         view.javaClass.simpleName.contains("Compose")
@@ -300,8 +306,7 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
                 } else {
                     16383
                 }
-            var bestScrollNodeId: Int? = null
-            var bestScrollArea = 0
+            val scrollNodes = mutableListOf<Pair<Int, Int>>()
             val semanticAction =
                 if (forward) {
                     AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
@@ -324,27 +329,35 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
                 val bounds = Rect()
                 info.getBoundsInScreen(bounds)
                 val area = bounds.width() * bounds.height()
-                if (area > bestScrollArea) {
-                    bestScrollArea = area
-                    bestScrollNodeId = id
-                }
+                scrollNodes.add(id to area)
             }
-            if (bestScrollNodeId != null) {
-                val scrolled =
+            val largestScrollNodeIds = largestScrollNodeIds(scrollNodes)
+            var scrolled = false
+            for (scrollNodeId in largestScrollNodeIds) {
+                scrolled =
                     provider.performAction(
-                        bestScrollNodeId,
+                        scrollNodeId,
                         legacyAction,
                         null,
                     ) ||
-                        provider.performAction(
-                            bestScrollNodeId,
-                            semanticAction,
-                            null,
-                        )
-                if (scrolled) {
-                    delay(250)
-                    return@withContext true
-                }
+                    provider.performAction(
+                        scrollNodeId,
+                        semanticAction,
+                        null,
+                    ) ||
+                    scrolled
+            }
+            if (largestScrollNodeIds.isNotEmpty()) {
+                Log.i(
+                    "DXX-Buttons",
+                    "Scroll ${if (forward) "down" else "up"} nodes=${largestScrollNodeIds.joinToString(
+                        ",",
+                    )} scrolled=$scrolled",
+                )
+            }
+            if (scrolled) {
+                delay(250)
+                return@withContext true
             }
         }
 
