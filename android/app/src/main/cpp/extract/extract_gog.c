@@ -105,7 +105,7 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 		return 1;
 	}
 
-	fprintf(stderr, "InnoSetup %d.%d.%d%s — %d files, %d data entries\n",
+	fprintf(stderr, "InnoSetup %d.%d.%d%s — %u files, %u data entries\n",
 	        arc.version.major, arc.version.minor, arc.version.patch,
 	        arc.version.unicode ? " (unicode)" : "",
 	        arc.file_count, arc.data_entry_count);
@@ -116,14 +116,15 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 
 	/* List all files */
 	printf("[\n");
-	for (int i = 0; i < arc.file_count; i++) {
+	for (uint32_t i = 0; i < arc.file_count; i++) {
 		const char *dest = arc.files[i].destination;
 		int is_game = has_game_extension(dest);
 		uint64_t size = 0;
-		if (arc.files[i].location < (uint32_t) arc.data_entry_count)
-			size = arc.data_entries[arc.files[i].location].file_size;
+		const inno_data_entry_t *data = inno_file_data_entry(&arc, i);
+		if (data)
+			size = data->file_size;
 
-		printf("  {\"index\": %d, \"dest\": ", i);
+		printf("  {\"index\": %u, \"dest\": ", i);
 		json_write_string(stdout, dest);
 		printf(", \"size\": %llu, \"game\": %s}%s\n",
 		       (unsigned long long) size,
@@ -136,7 +137,7 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 	mkdir_p(out_dir);
 	int extracted = 0, errors = 0;
 
-	for (int i = 0; i < arc.file_count; i++) {
+	for (uint32_t i = 0; i < arc.file_count; i++) {
 		const char *dest = arc.files[i].destination;
 		if (!has_game_extension(dest)) continue;
 
@@ -144,7 +145,7 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 		char out_path[1024];
 		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
 
-		if (inno_extract_file(&arc, i, out_path, progress_cb, NULL) == 0) {
+		if (inno_extract_file(&arc, (int) i, out_path, progress_cb, NULL) == 0) {
 			extracted++;
 		} else {
 			fprintf(stderr, "ERROR: Failed to extract %s\n", dest);

@@ -84,19 +84,20 @@ static void launcher_logf(JNIEnv *env, const char *fmt, ...)
 static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
                                          jclass strClass)
 {
-	int game_count = 0;
-	for (int i = 0; i < arc->file_count; i++) {
+	jsize game_count = 0;
+	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (has_game_extension(arc->files[i].destination)) game_count++;
 	}
 
 	jobjectArray result = (*env)->NewObjectArray(env, game_count, strClass, NULL);
-	int idx = 0;
-	for (int i = 0; i < arc->file_count; i++) {
+	jsize idx = 0;
+	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (!has_game_extension(arc->files[i].destination)) continue;
 		const char *fname = basename_only(arc->files[i].destination);
 		uint64_t size = 0;
-		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
-			size = arc->data_entries[arc->files[i].location].file_size;
+		const inno_data_entry_t *data = inno_file_data_entry(arc, i);
+		if (data)
+			size = data->file_size;
 		char buf[INNO_PATH_LEN + 32];
 		snprintf(buf, sizeof(buf), "%s|%llu", fname, (unsigned long long) size);
 		jstring s = (*env)->NewStringUTF(env, buf);
@@ -245,17 +246,18 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 	}
 
 	long long total = 0;
-	for (int i = 0; i < arc->file_count; i++) {
+	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (!has_game_extension(arc->files[i].destination)) continue;
 		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
-		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
-			total += (long long) arc->data_entries[arc->files[i].location].chunk_compressed_size;
+		const inno_data_entry_t *data = inno_file_data_entry(arc, i);
+		if (data)
+			total += (long long) data->chunk_compressed_size;
 	}
 	ctx.total_bytes = total;
 
 	int extracted = 0;
 	int errors = 0;
-	for (int i = 0; i < arc->file_count; i++) {
+	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (!has_game_extension(arc->files[i].destination)) continue;
 		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
 		const char *fname = basename_only(arc->files[i].destination);
@@ -263,8 +265,9 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 		char out_path[1024];
 		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
 		long long file_comp_size = 0;
-		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
-			file_comp_size = (long long) arc->data_entries[arc->files[i].location].chunk_compressed_size;
+		const inno_data_entry_t *data = inno_file_data_entry(arc, i);
+		if (data)
+			file_comp_size = (long long) data->chunk_compressed_size;
 		if (is_audio) {
 			launcher_logf(env,
 			              "launcher-gog-native-start file=%s comp_bytes=%lld gog_galaxy=%d",
@@ -272,7 +275,7 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 			              file_comp_size,
 			              arc->files[i].gog_galaxy ? 1 : 0);
 		}
-		if (inno_extract_file(arc, i, out_path,
+		if (inno_extract_file(arc, (int) i, out_path,
 		                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
 			extracted++;
 			if (is_audio) {

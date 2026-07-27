@@ -108,9 +108,9 @@ typedef struct {
 
 	/* entries */
 	inno_file_entry_t *files; /* heap-allocated */
-	int file_count;
+	uint32_t file_count;
 	inno_data_entry_t *data_entries; /* heap-allocated */
-	int data_entry_count;
+	uint32_t data_entry_count;
 	uint64_t extracted_bytes;
 	uint32_t extracted_files;
 
@@ -143,6 +143,10 @@ int inno_open(const char *exe_path, inno_archive_t *arc);
  */
 int inno_open_fd(int source_fd, inno_archive_t *arc);
 
+/* Returns the file's validated data entry, or NULL for no-data/invalid indices */
+const inno_data_entry_t *inno_file_data_entry(const inno_archive_t *arc,
+                                              uint32_t file_index);
+
 /*
  * Extract a single file by index (0 .. arc->file_count-1).
  *
@@ -173,12 +177,17 @@ int inno_test_parse_header_stream(const uint8_t *buffer, size_t buffer_size,
                                   inno_compress_method_t *compression_out);
 int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
-                                 int *file_count_out,
+                                 uint32_t *file_count_out,
                                  char *last_destination,
                                  size_t last_destination_size);
 int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
-                                 inno_data_entry_t *entries, int entry_count);
+                                 inno_data_entry_t *entries,
+                                 uint32_t entry_count);
+int inno_test_entry_count_allowed(uint32_t entry_count);
+int inno_test_data_location_valid(uint32_t data_entry_count,
+                                  int has_backing_array,
+                                  uint32_t location);
 #endif
 
 #ifdef __cplusplus

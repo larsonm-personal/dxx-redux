@@ -995,6 +995,40 @@ static inno_checksum_layout_t checksum_layout_for_version(const inno_version_t *
 	return layout;
 }
 
+static int entry_count_allowed(uint32_t entry_count)
+{
+	return entry_count <= DXX_EXTRACT_MAX_ENTRIES;
+}
+
+static int data_location_valid(const inno_archive_t *arc, uint32_t location)
+{
+	return arc && arc->data_entries && location != UINT32_MAX &&
+	       location < arc->data_entry_count;
+}
+
+static size_t data_flag_bytes_for_version(int version)
+{
+	int flag_count;
+
+	if (version >= INNO_VER(5, 5, 7)) flag_count = 11;
+	else if (version >= INNO_VER(5, 1, 13)) flag_count = 9;
+	else if (version >= INNO_VER(4, 2, 5)) flag_count = 8;
+	else if (version >= INNO_VER(4, 2, 2)) flag_count = 7;
+	else if (version >= INNO_VER(4, 2, 0)) flag_count = 6;
+	else if (version >= INNO_VER(4, 1, 8)) flag_count = 5;
+	else if (version >= INNO_VER(4, 1, 0)) flag_count = 4;
+	else if (version >= INNO_VER(4, 0, 10)) flag_count = 3;
+	else flag_count = 2;
+	size_t bytes = (size_t) ((flag_count + 7) / 8);
+	return bytes == 3 ? 4 : bytes;
+}
+
+static size_t data_entry_size_for_version(const inno_version_t *ver)
+{
+	return 52 + checksum_layout_for_version(ver).digest_size +
+	       data_flag_bytes_for_version(INNO_VER(ver->major, ver->minor, ver->patch));
+}
+
 /* ── Header stream parser ────────────────────────────────────────── */
 
 /* Read a length-prefixed string from a buffer.
@@ -1131,11 +1165,11 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	uint32_t uninstall_run_entry_count = get_u32(buf + pos);
 	pos += 4;
 
-	if (data_entry_count > DXX_EXTRACT_MAX_ENTRIES) {
+	if (!entry_count_allowed(data_entry_count)) {
 		INNO_LOG("too many data entries: %u", data_entry_count);
 		return -1;
 	}
-	arc->data_entry_count = (int) data_entry_count;
+	arc->data_entry_count = data_entry_count;
 
 	/* ── Windows version range (20 bytes) ── */
 	if (skip_bytes(buf, buf_len, &pos, 20) < 0) return -1;
@@ -1316,7 +1350,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		if (skip_flags(buf, buf_len, &pos, dir_flags) < 0) return -1;
 	}
 	/* ── Parse file entries (the ones we care about!) ── */
-	if (file_count > DXX_EXTRACT_MAX_ENTRIES) {
+	if (!entry_count_allowed(file_count)) {
 		INNO_LOG("too many files: %u (max %u)",
 		         file_count, DXX_EXTRACT_MAX_ENTRIES);
 		return -1;
@@ -1325,6 +1359,8 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		INNO_LOG("file catalog cannot contain %u complete entries", file_count);
 		return -1;
 	}
+	if (file_count > 0 && sizeof(*arc->files) > SIZE_MAX / file_count)
+		return -1;
 	if (file_count > 0) {
 		arc->files =
 		    (inno_file_entry_t *) inno_calloc(file_count, sizeof(*arc->files));
@@ -1333,7 +1369,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 			return -1;
 		}
 	}
-	arc->file_count = (int) file_count;
+	arc->file_count = file_count;
 
 	for (uint32_t i = 0; i < file_count; i++) {
 		inno_file_entry_t *fe = &arc->files[i];
@@ -1449,7 +1485,7 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 	int v = INNO_VER(ver->major, ver->minor, ver->patch);
 	inno_checksum_layout_t checksum_layout = checksum_layout_for_version(ver);
 
-	for (int i = 0; i < arc->data_entry_count; i++) {
+	for (uint32_t i = 0; i < arc->data_entry_count; i++) {
 		inno_data_entry_t *de = &arc->data_entries[i];
 
 		/* first_slice, last_slice */
@@ -1495,20 +1531,8 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
 
 		/* data flags */
-		int num_data_flags;
-		if (v >= INNO_VER(5, 5, 7)) num_data_flags = 11;
-		else if (v >= INNO_VER(5, 1, 13)) num_data_flags = 9;
-		else if (v >= INNO_VER(4, 2, 5)) num_data_flags = 8;
-		else if (v >= INNO_VER(4, 2, 2)) num_data_flags = 7;
-		else if (v >= INNO_VER(4, 2, 0)) num_data_flags = 6;
-		else if (v >= INNO_VER(4, 1, 8)) num_data_flags = 5;
-		else if (v >= INNO_VER(4, 1, 0)) num_data_flags = 4;
-		else if (v >= INNO_VER(4, 0, 10)) num_data_flags = 3;
-		else num_data_flags = 2;
-
 		/* Read the raw flag bytes */
-		int flag_bytes = (num_data_flags + 7) / 8;
-		if (flag_bytes == 3) flag_bytes = 4;
+		size_t flag_bytes = data_flag_bytes_for_version(v);
 		if (pos + flag_bytes > buf_len) return -1;
 
 		/* Parse relevant flags by bit position */
@@ -1528,10 +1552,10 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		de->call_instruction_optimized = 0;
 		de->chunk_compressed = 0;
 
-		if (num_data_flags > 4) {
+		if (v >= INNO_VER(4, 1, 8)) {
 			de->call_instruction_optimized = (buf[pos + 0] >> 4) & 1; /* bit 4 */
 		}
-		if (num_data_flags > 7) {
+		if (v >= INNO_VER(4, 2, 5)) {
 			de->chunk_compressed = (buf[pos + 0] >> 7) & 1; /* bit 7 */
 		}
 
@@ -1582,7 +1606,7 @@ int inno_test_parse_header_stream(const uint8_t *buffer, size_t buffer_size,
 
 int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
-                                 int *file_count_out,
+                                 uint32_t *file_count_out,
                                  char *last_destination,
                                  size_t last_destination_size)
 {
@@ -1612,9 +1636,12 @@ int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
 
 int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
-                                 inno_data_entry_t *entries, int entry_count)
+                                 inno_data_entry_t *entries,
+                                 uint32_t entry_count)
 {
-	if (!buffer || !version || !entries || entry_count < 0) return -1;
+	if (!buffer || !version || !entries ||
+	    !entry_count_allowed(entry_count))
+		return -1;
 	inno_archive_t archive;
 	inno_version_t mutable_version = *version;
 	memset(&archive, 0, sizeof(archive));
@@ -1622,6 +1649,24 @@ int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
 	archive.data_entries = entries;
 	archive.data_entry_count = entry_count;
 	return parse_data_entries(buffer, buffer_size, &mutable_version, &archive);
+}
+
+int inno_test_entry_count_allowed(uint32_t entry_count)
+{
+	return entry_count_allowed(entry_count);
+}
+
+int inno_test_data_location_valid(uint32_t data_entry_count,
+                                  int has_backing_array,
+                                  uint32_t location)
+{
+	inno_archive_t archive;
+	inno_data_entry_t entry;
+
+	memset(&archive, 0, sizeof(archive));
+	archive.data_entry_count = data_entry_count;
+	archive.data_entries = has_backing_array ? &entry : NULL;
+	return data_location_valid(&archive, location);
 }
 #endif
 
@@ -2064,13 +2109,6 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	free(stream1);
 
 	/* ── Decompress block stream 2 (data entries) ── */
-	arc->data_entries = (inno_data_entry_t *) inno_calloc(
-	    arc->data_entry_count, sizeof(inno_data_entry_t));
-	if (!arc->data_entries && arc->data_entry_count > 0) {
-		inno_close(arc);
-		return -1;
-	}
-
 	size_t stream2_len = 0, stream2_consumed = 0;
 	uint8_t *stream2 = decompress_block_stream(
 	    fd, header_offset + INNO_VERSION_ID_SIZE + stream1_consumed,
@@ -2079,6 +2117,25 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 		INNO_LOG("failed to decompress header block stream 2");
 		inno_close(arc);
 		return -1;
+	}
+	size_t data_entry_size = data_entry_size_for_version(&arc->version);
+	if (arc->data_entry_count > stream2_len / data_entry_size ||
+	    (arc->data_entry_count > 0 &&
+	     sizeof(*arc->data_entries) > SIZE_MAX / arc->data_entry_count)) {
+		INNO_LOG("data stream cannot contain %u complete entries",
+		         arc->data_entry_count);
+		free(stream2);
+		inno_close(arc);
+		return -1;
+	}
+	if (arc->data_entry_count > 0) {
+		arc->data_entries = (inno_data_entry_t *) inno_calloc(
+		    arc->data_entry_count, sizeof(*arc->data_entries));
+		if (!arc->data_entries) {
+			free(stream2);
+			inno_close(arc);
+			return -1;
+		}
 	}
 
 	if (parse_data_entries(stream2, stream2_len, &arc->version, arc) < 0) {
@@ -2089,7 +2146,7 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	}
 	free(stream2);
 
-	return arc->file_count;
+	return (int) arc->file_count;
 }
 
 int inno_open(const char *exe_path, inno_archive_t *arc)
@@ -2759,11 +2816,26 @@ static int measure_gog_galaxy_file_streamed(inno_archive_t *arc,
 	return inno_checksum_matches(&writer.checksum, de, fe->destination);
 }
 
+const inno_data_entry_t *inno_file_data_entry(const inno_archive_t *arc,
+                                              uint32_t file_index)
+{
+	const inno_file_entry_t *file;
+
+	if (!arc || !arc->files || file_index >= arc->file_count)
+		return NULL;
+	file = &arc->files[file_index];
+	if (!data_location_valid(arc, file->location))
+		return NULL;
+	return &arc->data_entries[file->location];
+}
+
 int inno_extract_file(inno_archive_t *arc, int file_index,
                       const char *output_path,
                       inno_progress_fn progress, void *user_data)
 {
-	if (!arc || file_index < 0 || file_index >= arc->file_count) return -1;
+	if (!arc || !arc->files || file_index < 0 ||
+	    (uint32_t) file_index >= arc->file_count)
+		return -1;
 	if (!output_path) return -1;
 
 	inno_file_entry_t *fe = &arc->files[file_index];
@@ -2771,13 +2843,14 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		INNO_LOG("file %d has no data (location=0xFFFFFFFF)", file_index);
 		return -1;
 	}
-	if ((int) fe->location >= arc->data_entry_count) {
-		INNO_LOG("file %d: location %u out of range (%d entries)",
+	const inno_data_entry_t *de =
+	    inno_file_data_entry(arc, (uint32_t) file_index);
+	if (!de) {
+		INNO_LOG("file %d: location %u out of range (%u entries)",
 		         file_index, fe->location, arc->data_entry_count);
 		return -1;
 	}
 
-	inno_data_entry_t *de = &arc->data_entries[fe->location];
 	uint64_t output_size;
 	uint64_t compressed_size;
 	uint64_t extracted_after = arc->extracted_bytes;

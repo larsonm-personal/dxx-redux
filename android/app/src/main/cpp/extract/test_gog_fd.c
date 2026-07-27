@@ -1,6 +1,7 @@
 #include "inno_reader.h"
 #include "game_file_extensions.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +41,7 @@ static const char *basename_only(const char *path)
 
 static int contains_file(inno_archive_t *arc, const char *expected)
 {
-	for (int i = 0; i < arc->file_count; i++) {
+	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (!has_game_extension(arc->files[i].destination)) continue;
 		if (ci_cmp(basename_only(arc->files[i].destination), expected) == 0)
 			return 1;
@@ -258,7 +259,7 @@ static int check_complete_file_catalog(void)
 	static const inno_version_t version = { 5, 3, 0, 1 };
 	static const uint32_t valid_counts[] = { 512, 513, 1024, 4096 };
 	char last_destination[INNO_PATH_LEN];
-	int parsed_count;
+	uint32_t parsed_count;
 	int failures = 0;
 
 	for (size_t i = 0; i < sizeof(valid_counts) / sizeof(valid_counts[0]); i++) {
@@ -269,7 +270,7 @@ static int check_complete_file_catalog(void)
 		    inno_test_parse_file_catalog(fixture, fixture_size, &version,
 		                                 &parsed_count, last_destination,
 		                                 sizeof(last_destination)) < 0 ||
-		    parsed_count != (int) valid_counts[i] ||
+		    parsed_count != valid_counts[i] ||
 		    strcmp(last_destination, "late.hog") != 0) {
 			fprintf(stderr, "%u-entry file catalog was incomplete\n",
 			        valid_counts[i]);
@@ -391,24 +392,61 @@ static int check_checksum_layout_transition(void)
 	return failures ? 1 : 0;
 }
 
+static int check_unsigned_entry_bounds(void)
+{
+	static const uint32_t rejected_counts[] = {
+		INT_MAX,
+		(uint32_t) INT_MAX + 1u,
+		UINT32_MAX - 1u,
+		UINT32_MAX
+	};
+	int failures = 0;
+
+	if (!inno_test_entry_count_allowed(0) ||
+	    !inno_test_entry_count_allowed(4096)) {
+		fprintf(stderr, "valid entry count rejected\n");
+		failures++;
+	}
+	for (size_t i = 0;
+	     i < sizeof(rejected_counts) / sizeof(rejected_counts[0]); i++) {
+		if (inno_test_entry_count_allowed(rejected_counts[i])) {
+			fprintf(stderr, "oversized entry count %u accepted\n",
+			        rejected_counts[i]);
+			failures++;
+		}
+	}
+	if (inno_test_data_location_valid(0, 1, 0) ||
+	    inno_test_data_location_valid(1, 0, 0) ||
+	    !inno_test_data_location_valid(4096, 1, 0) ||
+	    !inno_test_data_location_valid(4096, 1, 4095) ||
+	    inno_test_data_location_valid(4096, 1, 4096) ||
+	    inno_test_data_location_valid(4096, 1, INT_MAX) ||
+	    inno_test_data_location_valid(4096, 1, (uint32_t) INT_MAX + 1u) ||
+	    inno_test_data_location_valid(4096, 1, UINT32_MAX - 1u) ||
+	    inno_test_data_location_valid(4096, 1, UINT32_MAX)) {
+		fprintf(stderr, "data location validation mismatch\n");
+		failures++;
+	}
+	return failures ? 1 : 0;
+}
+
 static int check_checksum_extraction(inno_archive_t *arc, const char *label,
                                      int gog_galaxy)
 {
 	int selected = -1;
 	uint64_t selected_size = UINT64_MAX;
-	for (int i = 0; i < arc->file_count; i++) {
+	for (uint32_t i = 0; i < arc->file_count; i++) {
 		inno_file_entry_t *file = &arc->files[i];
+		const inno_data_entry_t *data = inno_file_data_entry(arc, i);
 		if (!has_game_extension(file->destination) ||
 		    file->gog_galaxy != gog_galaxy ||
-		    file->location == 0xFFFFFFFF ||
-		    file->location >= (uint32_t) arc->data_entry_count)
+		    !data)
 			continue;
-		inno_data_entry_t *data = &arc->data_entries[file->location];
 		uint64_t output_size = gog_galaxy && file->external_size > 0
 		                           ? file->external_size
 		                           : data->file_size;
 		if (data->checksum_type == INNO_CHECKSUM_SHA1 && output_size < selected_size) {
-			selected = i;
+			selected = (int) i;
 			selected_size = output_size;
 		}
 	}
@@ -427,7 +465,8 @@ static int check_checksum_extraction(inno_archive_t *arc, const char *label,
 	}
 	remove(output_path);
 
-	inno_data_entry_t *data = &arc->data_entries[arc->files[selected].location];
+	inno_data_entry_t *data =
+	    &arc->data_entries[arc->files[selected].location];
 	data->checksum[0] ^= 0x01;
 	int result = inno_extract_file(arc, selected, output_path, NULL, NULL);
 	data->checksum[0] ^= 0x01;
@@ -590,11 +629,24 @@ static int check_chunk_range_boundaries(void)
 	inno_data_entry_t data;
 	init_range_archive(&arc, &entry, &data, fd,
 	                   sizeof(magic) + sizeof(stored_payload));
+	entry.location = (uint32_t) INT_MAX + 1u;
+	int failures =
+	    expect_range_failure(&arc, output_path, "high-bit data location");
+	entry.location = UINT32_MAX - 1u;
+	failures +=
+	    expect_range_failure(&arc, output_path, "maximum data location");
+	entry.location = UINT32_MAX;
+	failures +=
+	    expect_range_failure(&arc, output_path, "no-data location");
+	entry.location = 0;
+	arc.data_entry_count = 0;
+	failures +=
+	    expect_range_failure(&arc, output_path, "zero data-entry count");
+	arc.data_entry_count = 1;
 	data.chunk_compressed_size = 4;
 	data.file_offset = 1;
 	data.file_size = 3;
 	memcpy(data.checksum, exact_sha1, sizeof(exact_sha1));
-	int failures = 0;
 	if (inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
 	    !file_equals(output_path, "bcd", 3)) {
 		fprintf(stderr, "exact stored chunk boundary failed\n");
@@ -687,7 +739,7 @@ static int check_installer(const char *path, const char **expected, int expected
 	int game_count = 0;
 	int galaxy_game_count = 0;
 	int failures = 0;
-	for (int i = 0; i < arc.file_count; i++) {
+	for (uint32_t i = 0; i < arc.file_count; i++) {
 		if (!has_game_extension(arc.files[i].destination)) continue;
 		game_count++;
 		if (arc.files[i].gog_galaxy) galaxy_game_count++;
@@ -731,6 +783,7 @@ int main(int argc, char **argv)
 	int failures = 0;
 	failures += check_version_id_bounds();
 	failures += check_complete_file_catalog();
+	failures += check_unsigned_entry_bounds();
 	failures += check_checksum_layout_transition();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();

@@ -5768,23 +5768,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add Unicode fixtures with accented, CJK, and supplementary-plane names, two names that the current code collapses together, malformed and odd UTF-16, embedded NUL, exact-capacity and one-over paths, and Windows-invalid converted names; assert exact UTF-8 listing, unique outputs or explicit collision failure, no overwrite, and unchanged extraction of both real GOG installers
 - Resolution: Pending
 
-### BR-0056: P1 - Keep Inno entry counts and indices unsigned during validation
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0023, R1-CHUNK-0024
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L643-L685,L930-L933` in `parse_header_stream1` and `L2061-L2075` in `inno_extract_file`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L975-L1069,L1428-L1459`, `android/app/src/main/cpp/extract/inno_reader.h:L64-L103`, `android/app/src/main/cpp/extract/jni_gog_import.c:L84-L106`, and `android/app/src/main/cpp/extract/extract_gog.c:L116-L129`
-- Evidence: The 32-bit archive `data_entry_count` is narrowed to signed `int`. A value above `INT_MAX` becomes negative on supported two's-complement targets: failed `calloc` is then treated as acceptable, the signed parse loop processes no records, and archive open returns success. JNI and CLI listing cast the negative count back to unsigned, so a small file location passes and dereferences the null data array. With an ordinary positive count, extraction instead casts the 32-bit file location to signed `int`; a location from `0x80000000` through `0xfffffffe` becomes negative, bypasses the upper-bound test, and indexes far beyond the allocated array
-- Trigger: Open a crafted installer with `data_entry_count` above `INT_MAX` and a selected file at location zero, or a normal small data-entry table whose selected file location has the high bit set
-- Impact: Analysis or extraction performs a null or out-of-bounds native heap access and can crash the launcher; a huge count can also request an extreme allocation before the malformed archive is rejected
-- Expected: Counts and indices retain one compatible unsigned or `size_t` representation, are budgeted before allocation, and are compared without narrowing before any array access
-- Suggested fix: Store validated counts as `size_t` or bounded `uint32_t`, reject counts that exceed the decompressed record capacity, configured metadata budget, or `SIZE_MAX / sizeof(entry)`, and compare `location >= count` in that same type. Reserve `0xffffffff` as no-data before conversion and never index when the backing pointer is null
-- Validation: Add counts and locations at zero, the real maxima, `INT_MAX`, `INT_MAX + 1`, `UINT32_MAX - 1`, and `UINT32_MAX`; exercise CLI analysis, JNI listing, and extraction under AddressSanitizer and allocation-failure injection, asserting prompt rejection without large allocation or pointer access
-- Resolution: Pending
-
 ### BR-0057: P2 - Recognize GOG Galaxy metadata only after full pattern validation
 
 - [ ] OPEN
