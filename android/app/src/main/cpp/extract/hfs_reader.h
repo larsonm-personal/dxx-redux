@@ -90,6 +90,17 @@ int hfs_test_dynamic_catalog_growth(int entry_count);
 void hfs_test_set_allocation_fail_after(int allocations);
 void hfs_test_reset_scan_count(void);
 int hfs_test_get_scan_count(void);
+int hfs_test_validate_extent_bounds(unsigned int partition_block_count,
+                                    unsigned int physical_block_size,
+                                    unsigned int first_allocation_block,
+                                    unsigned int allocation_block_size,
+                                    unsigned int allocation_block_count,
+                                    unsigned int extent_start_block,
+                                    unsigned int extent_block_count);
+int hfs_test_validate_partition_read(unsigned int partition_block_count,
+                                     unsigned int physical_block_size,
+                                     long long partition_relative_offset,
+                                     long long len);
 int hfs_test_scan_catalog_node(const unsigned char *node, int node_size);
 int hfs_test_scan_catalog_tree(const unsigned char *nodes, int node_count,
                                char *first_name, int first_name_size);

@@ -373,8 +373,9 @@ static int build_synthetic_hfs_probe(void)
 	write_track_bytes(raw, sizeof(raw), 512, apm, sizeof(apm));
 
 	put_be16(mdb + 0, be16(0x42, 0x44));
+	put_be16(mdb + 18, 1);
 	put_be32(mdb + 20, 4096);
-	put_be16(mdb + 28, 3);
+	put_be16(mdb + 28, 4);
 	mdb[36] = 7;
 	memcpy(mdb + 37, "Descent", 7);
 	write_track_bytes(raw, sizeof(raw), 3 * 512 + 1024, mdb, sizeof(mdb));
@@ -408,6 +409,97 @@ static int build_synthetic_hfs_probe(void)
 	       info.partition_block_count == 12 &&
 	       strcmp(info.partition_type, "Apple_HFS") == 0 &&
 	       strcmp(info.volume_name, "Descent") == 0;
+}
+
+static int synthetic_hfs_bounds_case(unsigned int partition_start,
+                                     unsigned int partition_blocks,
+                                     unsigned int allocation_blocks,
+                                     unsigned int first_allocation_block,
+                                     unsigned int catalog_size,
+                                     unsigned int catalog_extent_start,
+                                     unsigned int catalog_extent_blocks)
+{
+	unsigned char raw[RAW_SECTOR_SIZE * 4];
+	unsigned char ddr[512];
+	unsigned char apm[512];
+	unsigned char mdb[512];
+	FILE *tmp;
+	int fd;
+	int result;
+
+	memset(raw, 0, sizeof(raw));
+	memset(ddr, 0, sizeof(ddr));
+	memset(apm, 0, sizeof(apm));
+	memset(mdb, 0, sizeof(mdb));
+	put_be16(ddr, be16(0x45, 0x52));
+	put_be16(ddr + 2, 512);
+	put_be32(ddr + 4, 16);
+	write_track_bytes(raw, sizeof(raw), 0, ddr, sizeof(ddr));
+
+	put_be16(apm, be16(0x50, 0x4d));
+	put_be32(apm + 4, 1);
+	put_be32(apm + 8, partition_start);
+	put_be32(apm + 12, partition_blocks);
+	memcpy(apm + 48, "Apple_HFS", 9);
+	write_track_bytes(raw, sizeof(raw), 512, apm, sizeof(apm));
+
+	put_be16(mdb, be16(0x42, 0x44));
+	put_be16(mdb + 18, allocation_blocks);
+	put_be32(mdb + 20, 4096);
+	put_be16(mdb + 28, first_allocation_block);
+	put_be32(mdb + 146, catalog_size);
+	put_be16(mdb + 150, catalog_extent_start);
+	put_be16(mdb + 152, catalog_extent_blocks);
+	if (partition_start <= 16)
+		write_track_bytes(raw, sizeof(raw), (int) partition_start * 512 + 1024,
+		                  mdb, sizeof(mdb));
+
+	tmp = tmpfile();
+	if (!tmp)
+		return -1;
+	if (fwrite(raw, 1, sizeof(raw), tmp) != sizeof(raw)) {
+		fclose(tmp);
+		return -1;
+	}
+	fflush(tmp);
+	fd = fd_from_file(tmp);
+#ifdef _WIN32
+	_setmode(fd, _O_BINARY);
+#endif
+	result = hfs_find_partition(fd, 0, 4, NULL);
+	fclose(tmp);
+	return result;
+}
+
+static int hfs_partition_and_extent_bounds_tests(void)
+{
+	if (synthetic_hfs_bounds_case(3, 12, 1, 4, 512, 0, 1) < 0)
+		return 0;
+	if (synthetic_hfs_bounds_case(0xfffffffeu, 4, 1, 4, 0, 0, 0) == 0)
+		return 0;
+	if (synthetic_hfs_bounds_case(3, 2, 1, 0, 0, 0, 0) == 0)
+		return 0;
+	if (synthetic_hfs_bounds_case(3, 12, 2, 4, 0, 0, 0) == 0)
+		return 0;
+	if (synthetic_hfs_bounds_case(3, 12, 1, 4, 512, 1, 1) == 0)
+		return 0;
+	if (hfs_test_validate_partition_read(1, 512, 511, 1) < 0)
+		return 0;
+	if (hfs_test_validate_partition_read(1, 512, 511, 2) == 0)
+		return 0;
+	if (hfs_test_validate_extent_bounds(12, 512, 4, 4096,
+	                                    1, 0, 1) < 0)
+		return 0;
+	if (hfs_test_validate_extent_bounds(6, 1024, 4, 4096,
+	                                    1, 0, 1) < 0)
+		return 0;
+	if (hfs_test_validate_extent_bounds(20, 512, 4, 4096,
+	                                    2, 1, 2) == 0)
+		return 0;
+	if (hfs_test_validate_extent_bounds(65535, 512, 0, 512,
+	                                    65535, 65535, 1) == 0)
+		return 0;
+	return 1;
 }
 
 static int catalog_name_safety_tests(void)
@@ -502,6 +594,18 @@ static int catalog_record_bounds_tests(void)
 			return 0;
 	}
 	if (scan_single_catalog_test_record(2, 98) != 1)
+		return 0;
+
+	memset(node, 0, sizeof(node));
+	node[8] = 0xff;
+	put_be16(node + 10, 1);
+	end = build_catalog_test_record(node, 14, 2, 98);
+	put_be32(node + 22 + 26, 1);
+	put_be16(node + 22 + 74, 65535);
+	put_be16(node + 22 + 76, 1);
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, end);
+	if (hfs_test_scan_catalog_node(node, sizeof(node)) >= 0)
 		return 0;
 
 	memset(node, 0, sizeof(node));
@@ -928,6 +1032,14 @@ int main(void)
 		PASS();
 	else {
 		FAIL("synthetic probe mismatch");
+		ok = 0;
+	}
+
+	TEST("hfs_partition_and_extent_bounds");
+	if (hfs_partition_and_extent_bounds_tests())
+		PASS();
+	else {
+		FAIL("out-of-partition HFS range accepted");
 		ok = 0;
 	}
 

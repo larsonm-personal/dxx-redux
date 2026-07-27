@@ -5734,23 +5734,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0072): Use a mission containing one valid audio member and one member that makes the native decoder fail; assert nonzero batch status, no final sidecar or database update, and successful complete publication after the bad member is repaired.
 - Resolution: Pending
 
-### BR-0051: P2 - Bound HFS metadata and extents to the declared partition
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/parser-validation
-- Found by: R1-CHUNK-0021
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/hfs_reader.c:L224-L262` in `read_fork_bytes` and `L454-L487` in `load_volume`
-- Related: `android/app/src/main/cpp/extract/hfs_reader.c:L99-L145` in `read_track_bytes` and `android/tests/test_hfs_reader.c`
-- Evidence: The Apple Partition Map span is checked with an overflow-prone unsigned addition and only against the containing CD track. The subsequent MDB read, allocation-area calculation, catalog extents, and file extents are likewise bounded only by the whole track. The parser never requires the MDB and allocation area to remain inside the declared HFS partition and ignores the MDB allocation-block count, so an extent start and count can address any bytes elsewhere in the same track
-- Trigger: Supply a crafted track whose Apple_HFS entry declares a small or wrapping partition but places a valid-looking MDB, catalog, or file payload beyond that partition, or whose inline extent crosses the partition or MDB allocation-block limit while remaining inside the track
-- Impact: The parser accepts inconsistent partition metadata and can list or extract unintended bytes from another partition or unallocated region of the same image, undermining the image-format trust boundary and producing misleading results instead of rejecting corruption
-- Expected: Checked wide arithmetic establishes one immutable HFS partition interval; the MDB, allocation area, declared allocation-block range, catalog fork, and every file extent must fit wholly inside it as well as the source track
-- Suggested fix: Compute partition start and end with checked 64-bit arithmetic, require the MDB and allocation area inside that interval, parse and validate `drNmAlBlks`, and validate every `start_block + block_count` and byte conversion against both the allocation-block count and partition end before reading
-- Validation: Add synthetic cases for exact partition boundaries, one-byte and one-block crossings, partition-block-count overflow, MDB and first-allocation-block positions outside the partition, and catalog and data extents that cross the partition or allocation-block count; assert clean rejection and retain known-media compatibility tests
-- Resolution: Pending
-
 ### BR-0052: P1 - Use bounded views when traversing PE resources
 
 - [ ] OPEN

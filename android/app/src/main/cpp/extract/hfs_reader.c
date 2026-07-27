@@ -6,6 +6,7 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,7 @@
 
 #define HFS_MAX_BLOCK_SIZE       8192
 #define HFS_MAX_MAP_ENTRIES      128
+#define HFS_LOGICAL_BLOCK_SIZE   512
 #define HFS_NODE_SIZE            512
 #define HFS_NODE_DESCRIPTOR_SIZE 14
 #define HFS_ROOT_PARENT_ID       1u
@@ -75,10 +77,12 @@ typedef struct {
 	unsigned int partition_start_block;
 	unsigned int partition_block_count;
 	unsigned int allocation_block_size;
+	unsigned int allocation_block_count;
 	unsigned int first_allocation_block;
 	unsigned int catalog_file_size;
 	hfs_extent_t catalog_extents[HFS_MAX_EXTENTS];
 	long long partition_offset;
+	long long partition_end_offset;
 	long long allocation_area_offset;
 	char partition_name[HFS_PARTITION_TEXT_LEN];
 	char partition_type[HFS_PARTITION_TEXT_LEN];
@@ -162,7 +166,8 @@ static int read_track_bytes(int fd, int track_start_sector, int track_num_sector
 		return -1;
 
 	track_bytes = (long long) track_num_sectors * USER_DATA_SIZE;
-	if (track_offset < 0 || track_offset + len > track_bytes)
+	if (track_offset < 0 || track_offset > track_bytes ||
+	    (long long) len > track_bytes - track_offset)
 		return -1;
 
 	while (len > 0) {
@@ -268,11 +273,92 @@ static void parse_extent_record(const unsigned char *p, hfs_extent_t extents[HFS
 	}
 }
 
+static int volume_allocation_bounds_valid(const hfs_volume_t *vol)
+{
+	long long partition_bytes;
+	long long allocation_area_relative;
+	long long allocation_bytes;
+
+	if (!vol || vol->physical_block_size == 0 ||
+	    vol->partition_block_count == 0 ||
+	    vol->allocation_block_size == 0 ||
+	    vol->allocation_block_count == 0)
+		return -1;
+
+	partition_bytes = (long long) vol->partition_block_count *
+	                  vol->physical_block_size;
+	if (vol->partition_offset < 0 ||
+	    partition_bytes > LLONG_MAX - vol->partition_offset ||
+	    vol->partition_end_offset != vol->partition_offset + partition_bytes)
+		return -1;
+
+	allocation_area_relative = (long long) vol->first_allocation_block *
+	                           HFS_LOGICAL_BLOCK_SIZE;
+	if (allocation_area_relative > partition_bytes ||
+	    vol->allocation_area_offset !=
+	        vol->partition_offset + allocation_area_relative)
+		return -1;
+
+	allocation_bytes = (long long) vol->allocation_block_count *
+	                   vol->allocation_block_size;
+	if (allocation_bytes > partition_bytes - allocation_area_relative)
+		return -1;
+
+	return 0;
+}
+
+static int partition_range_valid(const hfs_volume_t *vol,
+                                 long long track_offset, long long len)
+{
+	if (!vol || track_offset < vol->partition_offset || len < 0 ||
+	    track_offset > vol->partition_end_offset ||
+	    len > vol->partition_end_offset - track_offset)
+		return -1;
+	return 0;
+}
+
+static int validate_extent_record(const hfs_volume_t *vol,
+                                  const hfs_extent_t extents[HFS_MAX_EXTENTS])
+{
+	int i;
+
+	if (volume_allocation_bounds_valid(vol) < 0 || !extents)
+		return -1;
+
+	for (i = 0; i < HFS_MAX_EXTENTS; i++) {
+		unsigned int start_block = extents[i].start_block;
+		unsigned int block_count = extents[i].block_count;
+		long long extent_relative;
+		long long extent_bytes;
+		long long extent_offset;
+
+		if (block_count == 0)
+			continue;
+		if (start_block > vol->allocation_block_count ||
+		    block_count > vol->allocation_block_count - start_block)
+			return -1;
+
+		extent_relative = (long long) start_block * vol->allocation_block_size;
+		extent_bytes = (long long) block_count * vol->allocation_block_size;
+		if (extent_relative >
+		    vol->partition_end_offset - vol->allocation_area_offset)
+			return -1;
+		extent_offset = vol->allocation_area_offset + extent_relative;
+		if (extent_bytes > vol->partition_end_offset - extent_offset)
+			return -1;
+	}
+
+	return 0;
+}
+
 static long long extent_record_capacity(const hfs_volume_t *vol,
                                         const hfs_extent_t extents[HFS_MAX_EXTENTS])
 {
 	long long total = 0;
 	int i;
+
+	if (validate_extent_record(vol, extents) < 0)
+		return -1;
 
 	for (i = 0; i < HFS_MAX_EXTENTS; i++)
 		total += (long long) extents[i].block_count * vol->allocation_block_size;
@@ -287,6 +373,8 @@ static int read_fork_bytes(int fd, const hfs_volume_t *vol,
 	int i;
 
 	if (!vol || !buf || len < 0 || logical_offset < 0)
+		return -1;
+	if (validate_extent_record(vol, extents) < 0)
 		return -1;
 
 	for (i = 0; i < HFS_MAX_EXTENTS && len > 0; i++) {
@@ -309,6 +397,8 @@ static int read_fork_bytes(int fd, const hfs_volume_t *vol,
 		track_offset = vol->allocation_area_offset +
 		               (long long) extents[i].start_block * vol->allocation_block_size +
 		               chunk_offset;
+		if (partition_range_valid(vol, track_offset, chunk) < 0)
+			return -1;
 		if (read_track_bytes(fd, vol->track_start_sector, vol->track_num_sectors,
 		                     track_offset, buf, chunk) < 0)
 			return -1;
@@ -474,7 +564,7 @@ static int load_volume(int bin_fd, int track_start_sector, int track_num_sectors
 	unsigned int block_size;
 	unsigned int total_blocks;
 	unsigned int map_entries;
-	unsigned int max_blocks_in_track;
+	unsigned long long max_blocks_in_track;
 	unsigned int i;
 
 	if (vol)
@@ -495,7 +585,8 @@ static int load_volume(int bin_fd, int track_start_sector, int track_num_sectors
 	if (block_size < 512 || block_size > HFS_MAX_BLOCK_SIZE || (block_size % 512) != 0)
 		return -1;
 
-	max_blocks_in_track = (unsigned int) (((long long) track_num_sectors * USER_DATA_SIZE) / block_size);
+	max_blocks_in_track =
+	    (unsigned long long) track_num_sectors * USER_DATA_SIZE / block_size;
 	if (max_blocks_in_track < 2 || total_blocks == 0)
 		return -1;
 
@@ -517,6 +608,7 @@ static int load_volume(int bin_fd, int track_start_sector, int track_num_sectors
 		unsigned int partition_start_block;
 		unsigned int partition_block_count;
 		long long partition_offset;
+		long long partition_bytes;
 		char partition_name[HFS_PARTITION_TEXT_LEN];
 		char partition_type[HFS_PARTITION_TEXT_LEN];
 
@@ -535,10 +627,14 @@ static int load_volume(int bin_fd, int track_start_sector, int track_num_sectors
 			continue;
 		if (partition_start_block >= max_blocks_in_track ||
 		    partition_block_count == 0 ||
-		    partition_start_block + partition_block_count > max_blocks_in_track)
+		    partition_block_count >
+		        max_blocks_in_track - partition_start_block)
 			goto fail;
 
 		partition_offset = (long long) partition_start_block * block_size;
+		partition_bytes = (long long) partition_block_count * block_size;
+		if (partition_bytes < 1024 + (long long) sizeof(mdb))
+			goto fail;
 		if (read_track_bytes(bin_fd, track_start_sector, track_num_sectors,
 		                     partition_offset + 1024, mdb, sizeof(mdb)) < 0)
 			goto fail;
@@ -551,15 +647,24 @@ static int load_volume(int bin_fd, int track_start_sector, int track_num_sectors
 		vol->partition_start_block = partition_start_block;
 		vol->partition_block_count = partition_block_count;
 		vol->allocation_block_size = be32(mdb + 20);
+		vol->allocation_block_count = be16(mdb + 18);
 		vol->first_allocation_block = be16(mdb + 28);
 		vol->catalog_file_size = be32(mdb + 146);
 		vol->partition_offset = partition_offset;
+		vol->partition_end_offset = partition_offset + partition_bytes;
 		vol->allocation_area_offset = partition_offset +
-		                              (long long) vol->first_allocation_block * block_size;
+		                              (long long) vol->first_allocation_block *
+		                                  HFS_LOGICAL_BLOCK_SIZE;
 		copy_pstring(mdb + 36, 28, vol->volume_name, sizeof(vol->volume_name));
 		memcpy(vol->partition_name, partition_name, sizeof(vol->partition_name));
 		memcpy(vol->partition_type, partition_type, sizeof(vol->partition_type));
 		parse_extent_record(mdb + 150, vol->catalog_extents);
+
+		if (vol->allocation_block_size % 512 != 0 ||
+		    volume_allocation_bounds_valid(vol) < 0 ||
+		    extent_record_capacity(vol, vol->catalog_extents) <
+		        vol->catalog_file_size)
+			goto fail;
 
 		if (info_out) {
 			info_out->physical_block_size = block_size;
@@ -576,8 +681,7 @@ static int load_volume(int bin_fd, int track_start_sector, int track_num_sectors
 		}
 
 		if (require_catalog &&
-		    (vol->allocation_block_size == 0 ||
-		     vol->catalog_file_size == 0 ||
+		    (vol->catalog_file_size == 0 ||
 		     vol->catalog_extents[0].block_count == 0))
 			goto fail;
 
@@ -680,11 +784,21 @@ static int scan_catalog_node(hfs_catalog_t *catalog, const unsigned char *node)
 			entry.id = be32(node + data_off + 6u);
 			entry.is_dir = 1;
 		} else {
+			long long data_capacity;
+			long long resource_capacity;
+
 			entry.id = be32(node + data_off + 20u);
 			entry.data_size = be32(node + data_off + 26u);
 			entry.resource_size = be32(node + data_off + 36u);
 			parse_extent_record(node + data_off + 74u, entry.data_extents);
 			parse_extent_record(node + data_off + 86u, entry.resource_extents);
+			data_capacity =
+			    extent_record_capacity(&catalog->volume, entry.data_extents);
+			resource_capacity =
+			    extent_record_capacity(&catalog->volume, entry.resource_extents);
+			if (data_capacity < entry.data_size ||
+			    resource_capacity < entry.resource_size)
+				return -1;
 		}
 		if (entry.id != 0 && add_catalog_entry(catalog, &entry) < 0)
 			return -1;
@@ -1172,6 +1286,62 @@ int hfs_test_get_scan_count(void)
 	return hfs_test_scan_count;
 }
 
+static void init_test_volume(hfs_volume_t *vol)
+{
+	memset(vol, 0, sizeof(*vol));
+	vol->physical_block_size = 512;
+	vol->partition_block_count = 65535;
+	vol->allocation_block_size = 512;
+	vol->allocation_block_count = 65535;
+	vol->partition_end_offset =
+	    (long long) vol->partition_block_count * vol->physical_block_size;
+}
+
+int hfs_test_validate_extent_bounds(unsigned int partition_block_count,
+                                    unsigned int physical_block_size,
+                                    unsigned int first_allocation_block,
+                                    unsigned int allocation_block_size,
+                                    unsigned int allocation_block_count,
+                                    unsigned int extent_start_block,
+                                    unsigned int extent_block_count)
+{
+	hfs_volume_t vol;
+	hfs_extent_t extents[HFS_MAX_EXTENTS];
+
+	memset(&vol, 0, sizeof(vol));
+	memset(extents, 0, sizeof(extents));
+	vol.physical_block_size = physical_block_size;
+	vol.partition_block_count = partition_block_count;
+	vol.allocation_block_size = allocation_block_size;
+	vol.allocation_block_count = allocation_block_count;
+	vol.first_allocation_block = first_allocation_block;
+	vol.partition_end_offset =
+	    (long long) partition_block_count * physical_block_size;
+	vol.allocation_area_offset =
+	    (long long) first_allocation_block * HFS_LOGICAL_BLOCK_SIZE;
+	extents[0].start_block = extent_start_block;
+	extents[0].block_count = extent_block_count;
+	return validate_extent_record(&vol, extents);
+}
+
+int hfs_test_validate_partition_read(unsigned int partition_block_count,
+                                     unsigned int physical_block_size,
+                                     long long partition_relative_offset,
+                                     long long len)
+{
+	hfs_volume_t vol;
+
+	memset(&vol, 0, sizeof(vol));
+	vol.physical_block_size = physical_block_size;
+	vol.partition_block_count = partition_block_count;
+	vol.partition_offset = 4096;
+	vol.partition_end_offset =
+	    vol.partition_offset +
+	    (long long) partition_block_count * physical_block_size;
+	return partition_range_valid(
+	    &vol, vol.partition_offset + partition_relative_offset, len);
+}
+
 int hfs_test_scan_catalog_node(const unsigned char *node, int node_size)
 {
 	hfs_catalog_t catalog;
@@ -1180,6 +1350,7 @@ int hfs_test_scan_catalog_node(const unsigned char *node, int node_size)
 	if (!node || node_size != HFS_NODE_SIZE)
 		return -1;
 	memset(&catalog, 0, sizeof(catalog));
+	init_test_volume(&catalog.volume);
 	result = scan_catalog_node(&catalog, node);
 	if (result == 0)
 		result = catalog.entry_count;
@@ -1215,6 +1386,7 @@ int hfs_test_scan_catalog_tree(const unsigned char *nodes, int node_count,
 	if (!nodes || node_count <= 0 || !first_name || first_name_size <= 0)
 		return -1;
 	memset(&catalog, 0, sizeof(catalog));
+	init_test_volume(&catalog.volume);
 	tree.nodes = nodes;
 	tree.node_count = (unsigned int) node_count;
 	first_name[0] = '\0';
