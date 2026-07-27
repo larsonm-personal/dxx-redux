@@ -1693,6 +1693,14 @@ static int grow_decompressed_buffer(uint8_t **buffer, size_t *capacity,
 	return 0;
 }
 
+static int lzma_buffered_decode_finished(SRes result, ELzmaStatus status,
+                                         size_t consumed, size_t input_size)
+{
+	return result == SZ_OK && consumed == input_size &&
+	       (status == LZMA_STATUS_FINISHED_WITH_MARK ||
+	        status == LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK);
+}
+
 static int validate_chunk_file_range(const inno_archive_t *arc,
                                      const inno_data_entry_t *de,
                                      inno_compress_method_t method,
@@ -1798,10 +1806,14 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 		zs.next_out = decomp;
 		zs.avail_out = (uInt) (decomp_cap < DECOMP_STEP ? decomp_cap : DECOMP_STEP);
 
-		int zret;
+		int zret = Z_OK;
+		int decode_finished = 0;
 		size_t total_out = 0;
 		size_t last_progress_out = 0;
-		while ((zret = inflate(&zs, Z_NO_FLUSH)) == Z_OK || zret == Z_BUF_ERROR) {
+		for (;;) {
+			unsigned long previous_in = zs.total_in;
+			unsigned long previous_out = zs.total_out;
+			zret = inflate(&zs, Z_NO_FLUSH);
 			total_out = zs.total_out;
 			if (progress && progress_name &&
 			    total_out - last_progress_out >= 1048576) {
@@ -1823,13 +1835,20 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 				size_t remain = decomp_cap - total_out;
 				zs.avail_out = (uInt) (remain < DECOMP_STEP ? remain : DECOMP_STEP);
 			}
-			if (zs.avail_in == 0) break;
+			if (zret == Z_STREAM_END) {
+				decode_finished = zs.total_in == comp_size;
+				break;
+			}
+			if (zret != Z_OK ||
+			    (zs.total_in == previous_in && zs.total_out == previous_out) ||
+			    zs.avail_in == 0)
+				break;
 		}
-		if (zret == Z_STREAM_END) total_out = zs.total_out;
 		inflateEnd(&zs);
 		free(comp_data);
 
-		if (!dxx_extract_ratio_allowed(total_out, comp_size)) {
+		if (!decode_finished ||
+		    !dxx_extract_ratio_allowed(total_out, comp_size)) {
 			free(decomp);
 			return NULL;
 		}
@@ -1869,6 +1888,7 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 		size_t src_pos = 5;
 		size_t decomp_len = 0;
 		size_t last_progress_pos = 0;
+		int decode_finished = 0;
 		while (src_pos < comp_size) {
 			if (progress && progress_name &&
 			    src_pos - last_progress_pos >= 1048576) {
@@ -1894,6 +1914,10 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 			                               LZMA_FINISH_ANY, &status);
 			decomp_len += dest_len;
 			src_pos += src_len;
+			if (lzma_buffered_decode_finished(res, status, src_pos, comp_size)) {
+				decode_finished = 1;
+				break;
+			}
 			if (res != SZ_OK) break;
 			if (status == LZMA_STATUS_FINISHED_WITH_MARK ||
 			    status == LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK) break;
@@ -1902,7 +1926,8 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 
 		LzmaDec_Free(&dec, &g_lzma_alloc);
 		free(comp_data);
-		if (!dxx_extract_ratio_allowed(decomp_len, comp_size)) {
+		if (!decode_finished ||
+		    !dxx_extract_ratio_allowed(decomp_len, comp_size)) {
 			free(decomp);
 			return NULL;
 		}
@@ -1941,6 +1966,7 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 		size_t src_pos = 1;
 		size_t decomp_len = 0;
 		size_t last_progress_pos2 = 0;
+		int decode_finished = 0;
 		while (src_pos < comp_size) {
 			if (progress && progress_name &&
 			    src_pos - last_progress_pos2 >= 1048576) {
@@ -1966,6 +1992,10 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 			                                LZMA_FINISH_ANY, &status);
 			decomp_len += dest_len;
 			src_pos += src_len;
+			if (lzma_buffered_decode_finished(res, status, src_pos, comp_size)) {
+				decode_finished = 1;
+				break;
+			}
 			if (res != SZ_OK) break;
 			if (status == LZMA_STATUS_FINISHED_WITH_MARK ||
 			    status == LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK) break;
@@ -1974,7 +2004,8 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 
 		Lzma2Dec_Free(&dec, &g_lzma_alloc);
 		free(comp_data);
-		if (!dxx_extract_ratio_allowed(decomp_len, comp_size)) {
+		if (!decode_finished ||
+		    !dxx_extract_ratio_allowed(decomp_len, comp_size)) {
 			free(decomp);
 			return NULL;
 		}

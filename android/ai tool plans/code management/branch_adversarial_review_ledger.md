@@ -5785,23 +5785,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add empty and ordinary callbacks, quoted unrelated functions, missing and extra arguments, escaped quotes, overlong values, and genuine single- and multipart Galaxy metadata; assert only exact valid Galaxy records take inner zlib and every other file retains its original path and bytes
 - Resolution: Pending
 
-### BR-0059: P2 - Propagate buffered Inno decoder failures
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0023, R1-CHUNK-0024
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L1110-L1167` and `L1170-L1300` in `decompress_chunk`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L2119-L2188`, BR-0034, and the streaming decoders in `android/app/src/main/cpp/extract/inno_reader.c:L1607-L1748`
-- Evidence: The zlib branch returns its allocation for every loop exit, even `Z_DATA_ERROR`, `Z_NEED_DICT`, truncated input ending without `Z_STREAM_END`, or a no-progress `Z_BUF_ERROR`. LZMA1 and LZMA2 update produced length, break on any SDK error, unfinished input, or no progress, then likewise return the partial buffer. The caller checks only whether the selected file range fits that produced prefix; in a solid chunk, or after a decoder has emitted enough corrupted bytes, an error can therefore still become a successful output
-- Trigger: Corrupt or truncate buffered zlib, LZMA1, or LZMA2 input after enough output has been produced to cover the selected file range, or induce a dictionary, terminal-marker, or no-progress failure
-- Impact: Structurally invalid or corrupted compressed data can be written and reported as a successful game file, deferring failure or nondeterminism until the game consumes it
-- Expected: A buffered decoder returns data only after its documented successful terminal state; every error, exhaustion-before-completion, or no-progress state frees the partial buffer and propagates failure
-- Suggested fix: Track an explicit success flag for each decoder, require `Z_STREAM_END` for zlib and an accepted finished status with no SDK error for LZMA, reject unexpected trailing or exhausted states according to the format, and share terminal-state helpers with the streaming implementations. Keep BR-0034 checksum verification as a separate final integrity gate
-- Validation: For zlib, LZMA1, and LZMA2, corrupt and truncate before, inside, and after a selected range in solid and nonsolid chunks; inject dictionary and no-progress states; assert no partial output or success, then retain exact hashes for both real installers
-- Resolution: Pending
-
 ### BR-0060: P1 - Validate complete ISO directory records before field access
 
 - [ ] OPEN

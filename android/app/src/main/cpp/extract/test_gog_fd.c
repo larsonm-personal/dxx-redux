@@ -673,6 +673,181 @@ static int check_encrypted_chunk_rejection(void)
 	return failures ? 1 : 0;
 }
 
+static int run_buffered_decoder_case(inno_compress_method_t method,
+                                     const uint8_t *compressed,
+                                     size_t compressed_size,
+                                     uint64_t file_offset,
+                                     const uint8_t checksum[20],
+                                     const char *expected,
+                                     int should_succeed,
+                                     const char *case_name)
+{
+	const uint8_t magic[4] = { 'z', 'l', 'b', 0x1a };
+	const char *source_path = "test_gog_fd_decoder_source.tmp";
+	const char *output_path = "test_gog_fd_decoder_output.tmp";
+	remove(source_path);
+	remove(output_path);
+	FILE *source = fopen(source_path, "wb");
+	if (!source) return 1;
+	int write_failed = fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+	                   fwrite(compressed, 1, compressed_size, source) != compressed_size;
+	if (fclose(source) != 0) write_failed = 1;
+	int fd = write_failed ? -1 : OPEN_RB(source_path);
+	if (fd < 0) {
+		remove(source_path);
+		return 1;
+	}
+
+	inno_archive_t arc;
+	inno_file_entry_t entry;
+	inno_data_entry_t data;
+	init_range_archive(&arc, &entry, &data, fd,
+	                   sizeof(magic) + compressed_size);
+	arc.compression = method;
+	data.chunk_compressed = 1;
+	data.chunk_compressed_size = compressed_size;
+	data.file_offset = file_offset;
+	data.file_size = 4;
+	memcpy(data.checksum, checksum, 20);
+
+	int result = inno_extract_file(&arc, 0, output_path, NULL, NULL);
+	int failed = should_succeed
+	                 ? result < 0 || !file_equals(output_path, expected, 4)
+	                 : result == 0 || file_exists(output_path);
+	if (failed)
+		fprintf(stderr, "buffered decoder case failed: %s\n", case_name);
+	CLOSE_FD(fd);
+	remove(source_path);
+	remove(output_path);
+	return failed;
+}
+
+static int check_buffered_decoder_failures(void)
+{
+	static const uint8_t abcd_sha1[20] = {
+		0x81, 0xfe, 0x8b, 0xfe, 0x87, 0x57, 0x6c, 0x3e, 0xcb, 0x22,
+		0x42, 0x6f, 0x8e, 0x57, 0x84, 0x73, 0x82, 0x91, 0x7a, 0xcf
+	};
+	static const uint8_t zzzz_sha1[20] = {
+		0x98, 0x65, 0xd4, 0x83, 0xbc, 0x5a, 0x94, 0xf2, 0xe3, 0x00,
+		0x56, 0xfc, 0x25, 0x6e, 0xd3, 0x06, 0x6a, 0xf5, 0x4d, 0x04
+	};
+	static const uint8_t lzma1[] = {
+		0x5d, 0x00, 0x10, 0x00, 0x00,
+		0x00, 0x30, 0x98, 0x88, 0x98, 0x3e, 0x1e, 0x93, 0xb7, 0x8d,
+		0xfc, 0x3e, 0x6c, 0x5f, 0xa0, 0x89, 0xb3, 0x6b, 0xe2, 0x92,
+		0x70, 0xfb, 0x3c, 0x61, 0x2c, 0xad, 0x24, 0x94, 0xd8, 0xda,
+		0x06, 0xff, 0xfe, 0x01, 0x50, 0x00
+	};
+	static const uint8_t lzma2[] = {
+		0x00,
+		0xe0, 0x0f, 0xff, 0x00, 0x1e, 0x5d, 0x00, 0x30, 0x98, 0x88,
+		0x98, 0x3e, 0x1e, 0x93, 0xb7, 0x8d, 0xfc, 0x3e, 0x6c, 0x5f,
+		0xa0, 0x89, 0xb3, 0x6b, 0xe2, 0x92, 0x70, 0xfb, 0x3c, 0x61,
+		0x2c, 0xad, 0x24, 0x8f, 0xba, 0xaf, 0x13, 0x00
+	};
+	uint8_t plain[4096];
+	memcpy(plain, "abcd", 4);
+	memset(plain + 4, 'Z', sizeof(plain) - 4);
+	uint8_t zlib_data[128];
+	uLongf zlib_size = sizeof(zlib_data);
+	if (compress2(zlib_data, &zlib_size, plain, sizeof(plain),
+	              Z_BEST_SPEED) != Z_OK)
+		return 1;
+
+	int failures = 0;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_ZLIB, zlib_data, zlib_size, 0, abcd_sha1,
+	    "abcd", 1, "valid zlib");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA1, lzma1, sizeof(lzma1), 0, abcd_sha1,
+	    "abcd", 1, "valid LZMA1");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA2, lzma2, sizeof(lzma2), 0, abcd_sha1,
+	    "abcd", 1, "valid LZMA2");
+
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_ZLIB, zlib_data, zlib_size - 1, 0, abcd_sha1,
+	    "abcd", 0, "truncated zlib after selected range");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA1, lzma1, sizeof(lzma1) - 1, 0, abcd_sha1,
+	    "abcd", 0, "truncated LZMA1 after selected range");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA2, lzma2, sizeof(lzma2) - 1, 0, abcd_sha1,
+	    "abcd", 0, "truncated LZMA2 after selected range");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_ZLIB, zlib_data, zlib_size - 1, 2048, zzzz_sha1,
+	    "ZZZZ", 0, "truncated solid zlib");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA1, lzma1, sizeof(lzma1) - 1, 2048, zzzz_sha1,
+	    "ZZZZ", 0, "truncated solid LZMA1");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA2, lzma2, sizeof(lzma2) - 1, 2048, zzzz_sha1,
+	    "ZZZZ", 0, "truncated solid LZMA2");
+
+	uint8_t trailing[sizeof(zlib_data) + 1];
+	memcpy(trailing, lzma1, sizeof(lzma1));
+	trailing[sizeof(lzma1)] = 0;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA1, trailing, sizeof(trailing), 0, abcd_sha1,
+	    "abcd", 0, "LZMA1 trailing data");
+	memcpy(trailing, lzma2, sizeof(lzma2));
+	trailing[sizeof(lzma2)] = 0;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA2, trailing, sizeof(lzma2) + 1, 0, abcd_sha1,
+	    "abcd", 0, "LZMA2 trailing data");
+	memcpy(trailing, zlib_data, zlib_size);
+	trailing[zlib_size] = 0;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_ZLIB, trailing, zlib_size + 1, 0, abcd_sha1,
+	    "abcd", 0, "zlib trailing data");
+
+	uint8_t malformed[sizeof(lzma1)];
+	memcpy(malformed, lzma1, sizeof(lzma1));
+	malformed[0] = 0xff;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA1, malformed, sizeof(malformed), 0, abcd_sha1,
+	    "abcd", 0, "invalid LZMA1 properties");
+	memcpy(malformed, lzma2, sizeof(lzma2));
+	malformed[0] = 0xff;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA2, malformed, sizeof(lzma2), 0, abcd_sha1,
+	    "abcd", 0, "invalid LZMA2 properties");
+	zlib_data[0] ^= 0xff;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_ZLIB, zlib_data, zlib_size, 0, abcd_sha1,
+	    "abcd", 0, "malformed zlib header");
+
+	z_stream dict_stream;
+	uint8_t dictionary_zlib[128];
+	memset(&dict_stream, 0, sizeof(dict_stream));
+	if (deflateInit(&dict_stream, Z_BEST_SPEED) != Z_OK)
+		return 1;
+	if (deflateSetDictionary(&dict_stream, (const Bytef *) "dictionary", 10) != Z_OK) {
+		deflateEnd(&dict_stream);
+		return 1;
+	}
+	dict_stream.next_in = plain;
+	dict_stream.avail_in = sizeof(plain);
+	dict_stream.next_out = dictionary_zlib;
+	dict_stream.avail_out = sizeof(dictionary_zlib);
+	int dict_result = deflate(&dict_stream, Z_FINISH);
+	size_t dictionary_zlib_size = sizeof(dictionary_zlib) - dict_stream.avail_out;
+	deflateEnd(&dict_stream);
+	if (dict_result != Z_STREAM_END)
+		return 1;
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_ZLIB, dictionary_zlib, dictionary_zlib_size,
+	    0, abcd_sha1, "abcd", 0, "zlib dictionary request");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA1, lzma1, 5, 0, abcd_sha1,
+	    "abcd", 0, "LZMA1 no-progress input");
+	failures += run_buffered_decoder_case(
+	    INNO_COMPRESS_LZMA2, lzma2, 1, 0, abcd_sha1,
+	    "abcd", 0, "LZMA2 no-progress input");
+	return failures ? 1 : 0;
+}
+
 static int check_chunk_range_boundaries(void)
 {
 	static const uint8_t exact_sha1[20] = {
@@ -866,6 +1041,7 @@ int main(int argc, char **argv)
 	failures += check_unsigned_entry_bounds();
 	failures += check_checksum_layout_transition();
 	failures += check_encrypted_chunk_rejection();
+	failures += check_buffered_decoder_failures();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();
 	failures += check_installer(argv[1], d1_expected, 2, 7, 7, "d1");
