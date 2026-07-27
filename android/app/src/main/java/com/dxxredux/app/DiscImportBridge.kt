@@ -12,15 +12,17 @@ import java.io.File
 object DiscImportBridge {
     private const val TAG = "DXX-DiscImport"
 
-    private fun parseIsoEntries(raw: Array<String>): List<IsoFile> =
-        raw.mapNotNull { entry ->
-            val parts = entry.split("|", limit = 2)
-            if (parts.size == 2) {
-                IsoFile(parts[0], parts[1].toLongOrNull() ?: 0L)
-            } else {
-                null
-            }
+    private fun parseIsoEntries(raw: Array<String>): List<IsoFile>? {
+        val parsed = ArrayList<IsoFile>(raw.size)
+        for (entry in raw) {
+            val separator = entry.indexOf('|')
+            if (separator <= 0 || separator != entry.lastIndexOf('|')) return null
+            val size = entry.substring(separator + 1).toLongOrNull() ?: return null
+            if (size < 0L) return null
+            parsed += IsoFile(entry.substring(0, separator), size)
         }
+        return parsed
+    }
 
     init {
         System.loadLibrary("dxx-redux-d2")

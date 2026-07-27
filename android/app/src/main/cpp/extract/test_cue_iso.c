@@ -63,6 +63,8 @@ static int tests_passed = 0;
 #define SECTOR_SIZE    2352
 #define USER_DATA_SIZE 2048
 
+static const char *TEST_DIR = "test_fixtures";
+
 /* Build a raw Mode 1 sector with sync, header, user data (no real ECC). */
 static void build_mode1_sector(unsigned char *out,
                                int minute, int second, int frame,
@@ -334,13 +336,56 @@ static unsigned char *build_minimal_iso_image(const char *file_name,
 	return img;
 }
 
-static unsigned char *build_iso_with_zero_subdir(const char *root_file_name,
-                                                 const unsigned char *root_file_data,
-                                                 int root_file_len,
-                                                 const char *hidden_file_name,
-                                                 const unsigned char *hidden_file_data,
-                                                 int hidden_file_len,
-                                                 int *out_sectors)
+static unsigned char *build_iso_record_test_image(int standalone,
+                                                  int *out_sectors)
+{
+	if (standalone)
+		return build_minimal_iso_image(
+		    "VALID.HOG", (const unsigned char *) "x", 1, out_sectors);
+	return build_minimal_iso(
+	    "VALID.HOG", (const unsigned char *) "x", 1, out_sectors);
+}
+
+static unsigned char *iso_test_sector(unsigned char *image, int standalone,
+                                      int lba)
+{
+	size_t stride = standalone ? USER_DATA_SIZE : SECTOR_SIZE;
+	size_t user_offset = standalone ? 0 : 16;
+	return image + (size_t) lba * stride + user_offset;
+}
+
+static int list_iso_record_test_image(const unsigned char *image, int sectors,
+                                      int standalone, iso_file_list_t *list)
+{
+	char path[512];
+	snprintf(path, sizeof(path), "%s/record_bounds.%s", TEST_DIR,
+	         standalone ? "iso" : "bin");
+	FILE *file = fopen(path, "wb");
+	if (!file)
+		return -1;
+	size_t stride = standalone ? USER_DATA_SIZE : SECTOR_SIZE;
+	int write_failed =
+	    fwrite(image, stride, (size_t) sectors, file) != (size_t) sectors;
+	if (fclose(file) != 0) write_failed = 1;
+	if (write_failed)
+		return -1;
+	int fd = open_bin(path);
+	if (fd < 0)
+		return -1;
+	int result = standalone ? iso_list_image_files(fd, list)
+	                        : iso_list_files(fd, 0, sectors, list);
+	close_fd(fd);
+	return result;
+}
+
+static unsigned char *build_iso_with_subdir(const char *directory_name,
+                                            const char *root_file_name,
+                                            const unsigned char *root_file_data,
+                                            int root_file_len,
+                                            const char *hidden_file_name,
+                                            const unsigned char *hidden_file_data,
+                                            int hidden_file_len,
+                                            int *out_sectors)
 {
 	int total = 22;
 	unsigned char *img = (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
@@ -382,7 +427,8 @@ static unsigned char *build_iso_with_zero_subdir(const char *root_file_name,
 	pos = append_iso_dir_record(user, pos, NULL, 0x00, 1, 18, USER_DATA_SIZE, 1);
 	pos = append_iso_dir_record(user, pos, NULL, 0x01, 1, 18, USER_DATA_SIZE, 1);
 	pos = append_iso_dir_record(user, pos, root_file_name, 0, 0, 19, (unsigned int) root_file_len, 0);
-	pos = append_iso_dir_record(user, pos, "ZERO", 0, 0, 20, USER_DATA_SIZE, 1);
+	pos = append_iso_dir_record(user, pos, directory_name, 0, 0, 20,
+	                            USER_DATA_SIZE, 1);
 	(void) pos;
 	lba_to_msf(18, &m, &s, &f);
 	build_mode1_sector(img + 18 * SECTOR_SIZE, m, s, f, user);
@@ -412,6 +458,83 @@ static unsigned char *build_iso_with_zero_subdir(const char *root_file_name,
 	return img;
 }
 
+static unsigned char *build_iso_with_file_count(int file_count, int standalone,
+                                                int *out_sectors)
+{
+	const int directory_sectors = 11;
+	const int data_lba = 18 + directory_sectors;
+	const int total = data_lba + 1;
+	int base_sectors;
+	unsigned char *base = build_minimal_iso(
+	    "BASE.HOG", (const unsigned char *) "x", 1, &base_sectors);
+	unsigned char *raw =
+	    (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
+	unsigned char user[USER_DATA_SIZE];
+	int m, s, f;
+	int file_index = 0;
+	unsigned int directory_size =
+	    (unsigned int) directory_sectors * USER_DATA_SIZE;
+
+	memcpy(raw, base, (size_t) 18 * SECTOR_SIZE);
+	free(base);
+	unsigned char *root_record =
+	    raw + (size_t) 16 * SECTOR_SIZE + 16 + 156;
+	root_record[10] = (unsigned char) directory_size;
+	root_record[11] = (unsigned char) (directory_size >> 8);
+	root_record[12] = (unsigned char) (directory_size >> 16);
+	root_record[13] = (unsigned char) (directory_size >> 24);
+	root_record[14] = (unsigned char) (directory_size >> 24);
+	root_record[15] = (unsigned char) (directory_size >> 16);
+	root_record[16] = (unsigned char) (directory_size >> 8);
+	root_record[17] = (unsigned char) directory_size;
+
+	for (int sector_index = 0; sector_index < directory_sectors;
+	     sector_index++) {
+		int pos = 0;
+		memset(user, 0, sizeof(user));
+		if (sector_index == 0) {
+			pos = append_iso_dir_record(
+			    user, pos, NULL, 0x00, 1, 18, directory_size, 1);
+			pos = append_iso_dir_record(
+			    user, pos, NULL, 0x01, 1, 18, directory_size, 1);
+		}
+		while (file_index < file_count) {
+			char name[16];
+			snprintf(name, sizeof(name), "F%03d.HOG", file_index);
+			int record_len = 33 + (int) strlen(name);
+			if (record_len & 1) record_len++;
+			if (pos + record_len > USER_DATA_SIZE)
+				break;
+			pos = append_iso_dir_record(
+			    user, pos, name, 0, 0, (unsigned int) data_lba, 1, 0);
+			file_index++;
+		}
+		lba_to_msf(18 + sector_index, &m, &s, &f);
+		build_mode1_sector(
+		    raw + (size_t) (18 + sector_index) * SECTOR_SIZE, m, s, f, user);
+	}
+	memset(user, 0, sizeof(user));
+	user[0] = 'x';
+	lba_to_msf(data_lba, &m, &s, &f);
+	build_mode1_sector(
+	    raw + (size_t) data_lba * SECTOR_SIZE, m, s, f, user);
+	if (file_index != file_count) {
+		free(raw);
+		return NULL;
+	}
+	*out_sectors = total;
+	if (!standalone)
+		return raw;
+
+	unsigned char *image =
+	    (unsigned char *) malloc((size_t) total * USER_DATA_SIZE);
+	for (int i = 0; i < total; i++)
+		memcpy(image + (size_t) i * USER_DATA_SIZE,
+		       raw + (size_t) i * SECTOR_SIZE + 16, USER_DATA_SIZE);
+	free(raw);
+	return image;
+}
+
 /* Build sectors of raw audio (just filled with a pattern) */
 static unsigned char *build_audio_sectors(int num_sectors)
 {
@@ -428,8 +551,6 @@ static unsigned char *build_audio_sectors(int num_sectors)
  * num_audio_tracks: number of audio tracks
  *
  * Returns path to the written file. Caller must free. */
-static const char *TEST_DIR = "test_fixtures";
-
 static void write_test_bin(const char *filename,
                            const unsigned char *data_img, int data_sectors,
                            int audio_sectors_per_track, int num_audio_tracks)
@@ -956,6 +1077,340 @@ static void test_iso_reader(void)
 		}
 		PASS();
 	}
+}
+
+static void test_iso_directory_record_bounds(void)
+{
+	TEST(iso_directory_record_bounds);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		for (int record_len = 1; record_len <= 33; record_len++) {
+			int sectors;
+			unsigned char *image =
+			    build_iso_record_test_image(standalone, &sectors);
+			unsigned char *directory = iso_test_sector(image, standalone, 18);
+			directory[68] = (unsigned char) record_len;
+			iso_file_list_t list;
+			int result =
+			    list_iso_record_test_image(image, sectors, standalone, &list);
+			free(image);
+			if (result != -1) {
+				FAIL("short directory record accepted");
+				return;
+			}
+		}
+
+		int sectors;
+		unsigned char *image =
+		    build_iso_record_test_image(standalone, &sectors);
+		unsigned char *directory = iso_test_sector(image, standalone, 18);
+		memset(directory + 68, 0, USER_DATA_SIZE - 68);
+		append_iso_dir_record(directory, 68, "A", 0, 0, 19, 1, 0);
+		iso_file_list_t list;
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		if (result < 0 || list.num_files != 1 ||
+		    strcmp(list.files[0].path, "a") != 0) {
+			free(image);
+			FAIL("exact identifier boundary rejected");
+			return;
+		}
+		directory[68] = 34;
+		directory[68 + 32] = 2;
+		result = list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1) {
+			FAIL("identifier beyond record accepted");
+			return;
+		}
+
+		image = build_iso_record_test_image(standalone, &sectors);
+		directory = iso_test_sector(image, standalone, 18);
+		memset(directory + 68, 0, USER_DATA_SIZE - 68);
+		append_iso_dir_record(directory, 68, "AB", 0, 0, 19, 1, 0);
+		directory[68 + 35] = 1;
+		result = list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1) {
+			FAIL("nonzero identifier padding accepted");
+			return;
+		}
+
+		image = build_iso_record_test_image(standalone, &sectors);
+		directory = iso_test_sector(image, standalone, 18);
+		memset(directory + 68, 0, USER_DATA_SIZE - 68);
+		char long_name[222];
+		memset(long_name, 'A', sizeof(long_name) - 1);
+		long_name[sizeof(long_name) - 1] = '\0';
+		int pos = 68;
+		for (int i = 0; i < 7; i++)
+			pos = append_iso_dir_record(
+			    directory, pos, long_name, 0, 0, 19, 1, 0);
+		long_name[167] = '\0';
+		pos = append_iso_dir_record(
+		    directory, pos, long_name, 0, 0, 19, 1, 0);
+		if (pos != USER_DATA_SIZE - 2) {
+			free(image);
+			FAIL("near-sector record fixture misaligned");
+			return;
+		}
+		directory[pos] = 34;
+		result = list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1) {
+			FAIL("record crossing sector boundary accepted");
+			return;
+		}
+
+		image = build_iso_record_test_image(standalone, &sectors);
+		unsigned char *pvd = iso_test_sector(image, standalone, 16);
+		pvd[156] = 33;
+		result = list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1) {
+			FAIL("short PVD root record accepted");
+			return;
+		}
+
+		image = build_iso_record_test_image(standalone, &sectors);
+		pvd = iso_test_sector(image, standalone, 16);
+		pvd[166] = 69;
+		pvd[167] = pvd[168] = pvd[169] = 0;
+		pvd[170] = pvd[171] = pvd[172] = 0;
+		pvd[173] = 69;
+		result = list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1) {
+			FAIL("record beyond declared directory size accepted");
+			return;
+		}
+	}
+	PASS();
+}
+
+static void test_iso_name_containment(void)
+{
+	static const char control_name[] = {
+		'C', 'T', 'R', 'L', 1, '.', 'H', 'O', 'G', ';', '1', '\0'
+	};
+	static const char high_byte_name[] = {
+		'H', 'I', (char) 0x80, '.', 'H', 'O', 'G', ';', '1', '\0'
+	};
+	static const char *unsafe_names[] = {
+		"../ESCAPE.HOG;1",
+		"..\\ESCAPE.HOG;1",
+		"/ABSOLUTE.HOG;1",
+		"\\ABSOLUTE.HOG;1",
+		"C:DRIVE.HOG;1",
+		"A/B.HOG;1",
+		"A\\B.HOG;1",
+		".",
+		"..",
+		";1",
+		"PIPE|0.HOG;1",
+		"TRAILING .HOG ",
+		control_name,
+		high_byte_name,
+		NULL
+	};
+
+	TEST(iso_unsafe_names_rejected_raw_and_standalone);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		for (int i = 0; unsafe_names[i]; i++) {
+			int sectors;
+			unsigned char *image =
+			    standalone
+			        ? build_minimal_iso_image(
+			              unsafe_names[i], (const unsigned char *) "x", 1,
+			              &sectors)
+			        : build_minimal_iso(
+			              unsafe_names[i], (const unsigned char *) "x", 1,
+			              &sectors);
+			iso_file_list_t list;
+			int result =
+			    list_iso_record_test_image(image, sectors, standalone, &list);
+			free(image);
+			if (result != -1) {
+				FAIL("unsafe ISO identifier accepted");
+				return;
+			}
+		}
+	}
+	PASS();
+
+	TEST(iso_catalog_capacity_is_not_silently_truncated);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		int sectors;
+		unsigned char *image =
+		    build_iso_with_file_count(ISO_MAX_FILES, standalone, &sectors);
+		iso_file_list_t list;
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != ISO_MAX_FILES || list.num_files != ISO_MAX_FILES) {
+			FAIL("exact ISO catalog capacity rejected");
+			return;
+		}
+		image =
+		    build_iso_with_file_count(ISO_MAX_FILES + 1, standalone, &sectors);
+		result = list_iso_record_test_image(
+		    image, sectors, standalone, &list);
+		free(image);
+		if (result != -1) {
+			FAIL("over-capacity ISO catalog was truncated");
+			return;
+		}
+	}
+	PASS();
+
+	TEST(iso_extraction_revalidates_public_file_list);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		int sectors;
+		unsigned char *image =
+		    standalone
+		        ? build_minimal_iso_image(
+		              "VALID.HOG", (const unsigned char *) "x", 1, &sectors)
+		        : build_minimal_iso(
+		              "VALID.HOG", (const unsigned char *) "x", 1, &sectors);
+		char source_path[512];
+		char output_dir[512];
+		char outside_path[512];
+		snprintf(source_path, sizeof(source_path), "%s/contain_source.%s",
+		         TEST_DIR, standalone ? "iso" : "bin");
+		snprintf(output_dir, sizeof(output_dir), "%s/contain_root_%d",
+		         TEST_DIR, standalone);
+		snprintf(outside_path, sizeof(outside_path), "%s/escape.hog", TEST_DIR);
+		remove(outside_path);
+		mkdir_p(output_dir);
+		FILE *file = fopen(source_path, "wb");
+		if (!file) {
+			free(image);
+			FAIL("cannot create containment source");
+			return;
+		}
+		size_t stride = standalone ? USER_DATA_SIZE : SECTOR_SIZE;
+		int write_failed =
+		    fwrite(image, stride, (size_t) sectors, file) != (size_t) sectors;
+		free(image);
+		if (fclose(file) != 0) write_failed = 1;
+		if (write_failed) {
+			FAIL("cannot write containment source");
+			return;
+		}
+		int fd = open_bin(source_path);
+		iso_file_list_t list;
+		memset(&list, 0, sizeof(list));
+		list.num_files = 1;
+		strcpy(list.files[0].path, "../escape.hog");
+		list.files[0].lba = 19;
+		list.files[0].size = 1;
+		static const char *extensions[] = { "hog", NULL };
+		int result =
+		    standalone
+		        ? iso_extract_image_files(
+		              fd, &list, output_dir, extensions, NULL, NULL)
+		        : iso_extract_files(
+		              fd, 0, sectors, &list, output_dir, extensions, NULL, NULL);
+		close_fd(fd);
+		file = fopen(outside_path, "rb");
+		if (file) {
+			fclose(file);
+			FAIL("unsafe public list escaped extraction root");
+			return;
+		}
+		if (result != -1) {
+			FAIL("unsafe public list was not rejected");
+			return;
+		}
+	}
+	PASS();
+
+	TEST(iso_valid_nested_names_round_trip);
+	{
+		int sectors;
+		const char *nested_content = "nested payload";
+		unsigned char *raw = build_iso_with_subdir(
+		    "MISSIONS", "VISIBLE.HOG", (const unsigned char *) "root", 4,
+		    "NESTED.HOG;1", (const unsigned char *) nested_content,
+		    (int) strlen(nested_content), &sectors);
+		for (int standalone = 0; standalone <= 1; standalone++) {
+			size_t stride = standalone ? USER_DATA_SIZE : SECTOR_SIZE;
+			unsigned char *image = raw;
+			if (standalone) {
+				image = (unsigned char *) malloc((size_t) sectors * stride);
+				for (int i = 0; i < sectors; i++)
+					memcpy(image + (size_t) i * stride,
+					       raw + (size_t) i * SECTOR_SIZE + 16, stride);
+			}
+			char source_path[512];
+			char output_dir[512];
+			char nested_path[512];
+			snprintf(source_path, sizeof(source_path), "%s/nested_source.%s",
+			         TEST_DIR, standalone ? "iso" : "bin");
+			snprintf(output_dir, sizeof(output_dir), "%s/nested_root_%d",
+			         TEST_DIR, standalone);
+			snprintf(nested_path, sizeof(nested_path),
+			         "%s/missions/nested.hog", output_dir);
+			remove(nested_path);
+			mkdir_p(output_dir);
+			FILE *file = fopen(source_path, "wb");
+			if (!file) {
+				if (standalone) free(image);
+				free(raw);
+				FAIL("cannot create nested source");
+				return;
+			}
+			int write_failed =
+			    fwrite(image, stride, (size_t) sectors, file) !=
+			    (size_t) sectors;
+			if (standalone) free(image);
+			if (fclose(file) != 0) write_failed = 1;
+			if (write_failed) {
+				free(raw);
+				FAIL("cannot write nested source");
+				return;
+			}
+			int fd = open_bin(source_path);
+			iso_file_list_t list;
+			int listed = standalone
+			                 ? iso_list_image_files(fd, &list)
+			                 : iso_list_files(fd, 0, sectors, &list);
+			int found = 0;
+			for (int i = 0; listed >= 0 && i < list.num_files; i++)
+				if (!list.files[i].is_dir &&
+				    strcmp(list.files[i].path,
+				           "missions/nested.hog") == 0 &&
+				    list.files[i].size ==
+				        (unsigned int) strlen(nested_content))
+					found = 1;
+			static const char *extensions[] = { "hog", NULL };
+			int extracted =
+			    standalone
+			        ? iso_extract_image_files(
+			              fd, &list, output_dir, extensions, NULL, NULL)
+			        : iso_extract_files(
+			              fd, 0, sectors, &list, output_dir, extensions,
+			              NULL, NULL);
+			close_fd(fd);
+			file = fopen(nested_path, "rb");
+			if (listed < 0 || !found || extracted != 2 || !file) {
+				if (file) fclose(file);
+				free(raw);
+				FAIL("valid nested ISO path did not round-trip");
+				return;
+			}
+			char content[32] = { 0 };
+			size_t read_len = fread(content, 1, sizeof(content), file);
+			fclose(file);
+			if (read_len != strlen(nested_content) ||
+			    memcmp(content, nested_content, read_len) != 0) {
+				free(raw);
+				FAIL("nested ISO payload mismatch");
+				return;
+			}
+		}
+		free(raw);
+	}
+	PASS();
 }
 
 /* ── Test: ISO extraction ────────────────────────────────────────────── */
@@ -1756,7 +2211,8 @@ static void test_iso_zero_dir_filter(void)
 		int sectors;
 		const char *visible_content = "visible payload";
 		const char *hidden_content = "hidden payload";
-		unsigned char *img = build_iso_with_zero_subdir(
+		unsigned char *img = build_iso_with_subdir(
+		    "ZERO",
 		    "VISIBLE.HOG",
 		    (const unsigned char *) visible_content,
 		    (int) strlen(visible_content),
@@ -2019,6 +2475,8 @@ int main(int argc, char *argv[])
 
 	printf("\n--- ISO 9660 Reader Tests ---\n");
 	test_iso_reader();
+	test_iso_directory_record_bounds();
+	test_iso_name_containment();
 	test_iso_extraction();
 	test_iso_name_cleaning();
 	test_iso_invalid_pvd();

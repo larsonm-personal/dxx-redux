@@ -161,14 +161,60 @@ static unsigned int le32(const unsigned char *p)
 	return (unsigned int) p[0] | ((unsigned int) p[1] << 8) | ((unsigned int) p[2] << 16) | ((unsigned int) p[3] << 24);
 }
 
+typedef struct {
+	unsigned int extent_lba;
+	unsigned int data_size;
+	unsigned char flags;
+	const unsigned char *name;
+	unsigned char name_len;
+	unsigned char record_len;
+} iso_directory_record_t;
+
+static int parse_directory_record(const unsigned char *record,
+                                  size_t available,
+                                  iso_directory_record_t *out)
+{
+	size_t record_len;
+	size_t name_len;
+	size_t required_len;
+
+	if (!record || !out || available == 0)
+		return -1;
+	record_len = record[0];
+	if (record_len < 34 || record_len > available)
+		return -1;
+	name_len = record[32];
+	if (name_len == 0 || name_len > record_len - 33)
+		return -1;
+	required_len = 33 + name_len;
+	if ((name_len & 1u) == 0) {
+		if (required_len >= record_len || record[required_len] != 0)
+			return -1;
+		required_len++;
+	}
+	if (required_len > record_len)
+		return -1;
+
+	out->extent_lba = le32(record + 2);
+	out->data_size = le32(record + 10);
+	out->flags = record[25];
+	out->name = record + 33;
+	out->name_len = (unsigned char) name_len;
+	out->record_len = (unsigned char) record_len;
+	return 0;
+}
+
 /* Ensure a directory exists, creating parents as needed */
 static int mkdirs(const char *path)
 {
-	char tmp[ISO_PATH_LEN];
+	char tmp[ISO_PATH_LEN * 2];
 	char *p;
 	size_t len;
 
-	snprintf(tmp, sizeof(tmp), "%s", path);
+	len = strlen(path);
+	if (len >= sizeof(tmp))
+		return -1;
+	memcpy(tmp, path, len + 1);
 	len = strlen(tmp);
 	if (len > 0 && tmp[len - 1] == '/') tmp[len - 1] = '\0';
 
@@ -182,20 +228,99 @@ static int mkdirs(const char *path)
 	return mkdir(tmp, 0755);
 }
 
-/* Clean an ISO 9660 filename: remove version suffix (;1), trailing dots,
- * and convert to lowercase.  Writes into dst (max dst_len). */
-static void clean_iso_name(const char *src, int src_len,
-                           char *dst, int dst_len)
+static int iso_name_byte_is_reserved(unsigned char c)
 {
-	int i, o = 0;
-	for (i = 0; i < src_len && o < dst_len - 1; i++) {
-		char c = src[i];
-		if (c == ';') break; /* version separator — stop */
-		dst[o++] = (char) tolower((unsigned char) c);
+	return c < 0x20 || c > 0x7e || c == '/' || c == '\\' ||
+	       c == ':' || c == '"' || c == '<' || c == '>' || c == '|' ||
+	       c == '?' || c == '*';
+}
+
+/* Decode one ISO identifier into one platform-neutral path component.
+ * The pipe is reserved by the JNI listing protocol. */
+static int clean_iso_name(const unsigned char *src, size_t src_len,
+                          char *dst, size_t dst_len)
+{
+	size_t i;
+	size_t output_len = 0;
+	int in_version = 0;
+
+	if (!src || !dst || dst_len == 0 || src_len == 0)
+		return -1;
+	for (i = 0; i < src_len; i++) {
+		unsigned char c = src[i];
+		if (iso_name_byte_is_reserved(c))
+			return -1;
+		if (c == ';') {
+			in_version = 1;
+			continue;
+		}
+		if (in_version)
+			continue;
+		if (output_len + 1 >= dst_len)
+			return -1;
+		dst[output_len++] = (char) tolower(c);
 	}
-	/* Trim trailing dots */
-	while (o > 0 && dst[o - 1] == '.') o--;
-	dst[o] = '\0';
+	while (output_len > 0 && dst[output_len - 1] == '.')
+		output_len--;
+	if (output_len == 0 || dst[output_len - 1] == ' ')
+		return -1;
+	dst[output_len] = '\0';
+	if ((output_len == 1 && dst[0] == '.') ||
+	    (output_len == 2 && dst[0] == '.' && dst[1] == '.'))
+		return -1;
+	return 0;
+}
+
+static int iso_relative_path_is_safe(const char *path)
+{
+	const char *component;
+	const char *p;
+
+	if (!path || !memchr(path, '\0', ISO_PATH_LEN) || path[0] == '\0' ||
+	    path[0] == '/' || path[0] == '\\')
+		return 0;
+	component = path;
+	for (p = path;; p++) {
+		unsigned char c = (unsigned char) *p;
+		if (c == '/' || c == '\0') {
+			size_t component_len = (size_t) (p - component);
+			if (component_len == 0 ||
+			    (component_len == 1 && component[0] == '.') ||
+			    (component_len == 2 && component[0] == '.' &&
+			     component[1] == '.') ||
+			    component[component_len - 1] == ' ')
+				return 0;
+			if (c == '\0')
+				return 1;
+			component = p + 1;
+		} else if (iso_name_byte_is_reserved(c)) {
+			return 0;
+		}
+	}
+}
+
+static int join_output_path(char *out, size_t out_size,
+                            const char *output_dir, const char *relative_path)
+{
+	size_t root_len;
+	size_t relative_len;
+	int needs_separator;
+
+	if (!out || !output_dir || output_dir[0] == '\0' ||
+	    !iso_relative_path_is_safe(relative_path))
+		return -1;
+	root_len = strlen(output_dir);
+	relative_len = strlen(relative_path);
+	needs_separator =
+	    output_dir[root_len - 1] != '/' && output_dir[root_len - 1] != '\\';
+	if (root_len >= out_size ||
+	    relative_len >= out_size - root_len - (size_t) needs_separator)
+		return -1;
+	memcpy(out, output_dir, root_len);
+	if (needs_separator)
+		out[root_len++] = '/';
+	memcpy(out + root_len, relative_path, relative_len + 1);
+	return 0;
 }
 
 /* Check if a filename extension matches one in a filter list.
@@ -271,98 +396,95 @@ static int walk_directory(const iso_reader_source_t *src,
 		return -1;
 	}
 
-	sectors_needed = (dir_size + USER_DATA_SIZE - 1) / USER_DATA_SIZE;
+	sectors_needed = dir_size / USER_DATA_SIZE +
+	                 (dir_size % USER_DATA_SIZE != 0);
 
 	while (sector_idx < sectors_needed && bytes_read < dir_size) {
 		unsigned int pos = 0;
+		unsigned int sector_limit = dir_size - bytes_read;
+		if (sector_limit > USER_DATA_SIZE)
+			sector_limit = USER_DATA_SIZE;
 
 		if (read_user_sector(src, (int) (dir_lba + sector_idx), sector) < 0) {
 			ISO_LOG("Failed to read directory sector at LBA %u", dir_lba + sector_idx);
 			return -1;
 		}
 
-		while (pos < USER_DATA_SIZE && bytes_read < dir_size) {
+		while (pos < sector_limit && bytes_read < dir_size) {
 			unsigned char rec_len = sector[pos];
-			int name_len;
-			unsigned int extent_lba, data_size;
-			unsigned char flags;
-			char raw_name[256], clean_name[256], full_path[ISO_PATH_LEN];
+			iso_directory_record_t record;
+			char clean_name[256], full_path[ISO_PATH_LEN];
 
 			if (rec_len == 0) {
 				/* Padding to sector boundary — advance to next sector */
-				bytes_read += USER_DATA_SIZE - pos;
+				bytes_read += sector_limit - pos;
 				break;
 			}
 
-			if (pos + rec_len > USER_DATA_SIZE) break;
-
-			name_len = sector[pos + 32];
-			extent_lba = le32(&sector[pos + 2]);
-			data_size = le32(&sector[pos + 10]);
-			flags = sector[pos + 25];
-
-			/* Extract raw name */
-			if (name_len > 0 && name_len < (int) sizeof(raw_name) &&
-			    pos + 33 + name_len <= USER_DATA_SIZE) {
-				memcpy(raw_name, &sector[pos + 33], name_len);
-				raw_name[name_len] = '\0';
-			} else {
-				raw_name[0] = '\0';
-			}
-
+			if (parse_directory_record(sector + pos, sector_limit - pos,
+			                           &record) < 0)
+				return -1;
 			/* Skip . and .. entries */
-			if (name_len == 1 && (raw_name[0] == 0x00 || raw_name[0] == 0x01)) {
-				pos += rec_len;
-				bytes_read += rec_len;
+			if (record.name_len == 1 &&
+			    (record.name[0] == 0x00 || record.name[0] == 0x01)) {
+				pos += record.record_len;
+				bytes_read += record.record_len;
 				continue;
 			}
 
-			clean_iso_name(raw_name, name_len, clean_name, sizeof(clean_name));
+			if (clean_iso_name(record.name, record.name_len, clean_name,
+			                   sizeof(clean_name)) < 0) {
+				ISO_LOG("Unsafe ISO identifier rejected");
+				return -1;
+			}
 
 			/* Build full path */
 			if (join_iso_path(full_path, sizeof(full_path), prefix, clean_name) < 0) {
-				ISO_LOG("Skipping overlong ISO path prefix=%s name=%s", prefix,
-				        clean_name);
-				pos += rec_len;
-				bytes_read += rec_len;
-				continue;
+				ISO_LOG("Overlong ISO path rejected");
+				return -1;
 			}
 
-			if (flags & DR_FLAG_DIRECTORY) {
+			if (record.flags & DR_FLAG_DIRECTORY) {
 				if (should_skip_iso_directory(clean_name)) {
 					ISO_LOG("Skipping installer cruft directory %s", full_path);
-					pos += rec_len;
-					bytes_read += rec_len;
+					pos += record.record_len;
+					bytes_read += record.record_len;
 					continue;
 				}
-				/* Recurse into subdirectory */
-				if (out->num_files < ISO_MAX_FILES) {
-					iso_file_entry_t *e = &out->files[out->num_files];
-					strncpy(e->path, full_path, ISO_PATH_LEN - 1);
-					e->path[ISO_PATH_LEN - 1] = '\0';
-					e->lba = extent_lba;
-					e->size = data_size;
-					e->is_dir = 1;
-					out->num_files++;
+				if (out->num_files >= ISO_MAX_FILES) {
+					ISO_LOG("ISO catalog exceeds %d entries", ISO_MAX_FILES);
+					return -1;
 				}
-				walk_directory(src, extent_lba, data_size,
-				               full_path, out, depth + 1);
+				/* Recurse into subdirectory */
+				iso_file_entry_t *e = &out->files[out->num_files];
+				strncpy(e->path, full_path, ISO_PATH_LEN - 1);
+				e->path[ISO_PATH_LEN - 1] = '\0';
+				e->lba = record.extent_lba;
+				e->size = record.data_size;
+				e->is_dir = 1;
+				out->num_files++;
+				if (walk_directory(src, record.extent_lba, record.data_size,
+				                   full_path, out, depth + 1) < 0)
+					return -1;
 			} else {
 				/* Regular file */
-				if (out->num_files < ISO_MAX_FILES) {
-					iso_file_entry_t *e = &out->files[out->num_files];
-					strncpy(e->path, full_path, ISO_PATH_LEN - 1);
-					e->path[ISO_PATH_LEN - 1] = '\0';
-					e->lba = extent_lba;
-					e->size = data_size;
-					e->is_dir = 0;
-					out->num_files++;
-					ISO_LOG("  File: %s  LBA=%u  size=%u", full_path, extent_lba, data_size);
+				if (out->num_files >= ISO_MAX_FILES) {
+					ISO_LOG("ISO catalog exceeds %d entries", ISO_MAX_FILES);
+					return -1;
 				}
+				iso_file_entry_t *e = &out->files[out->num_files];
+				strncpy(e->path, full_path, ISO_PATH_LEN - 1);
+				e->path[ISO_PATH_LEN - 1] = '\0';
+				e->lba = record.extent_lba;
+				e->size = record.data_size;
+				e->is_dir = 0;
+				out->num_files++;
+				ISO_LOG("  File: %s  LBA=%u  size=%u", full_path,
+				        record.extent_lba, record.data_size);
 			}
 
-			pos += rec_len;
-			bytes_read += rec_len;
+			pos += record.record_len;
+			bytes_read += record.record_len;
 		}
 
 		sector_idx++;
@@ -377,7 +499,7 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
                                       iso_file_list_t *out)
 {
 	unsigned char pvd[USER_DATA_SIZE];
-	unsigned int root_lba, root_size;
+	iso_directory_record_t root_record;
 
 	if (!src || src->fd < 0 || !out) return -1;
 
@@ -398,14 +520,19 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
 
 	ISO_LOG("Found ISO 9660 Primary Volume Descriptor");
 
-	/* Root directory record is at PVD offset 156, 34 bytes */
-	root_lba = le32(&pvd[156 + 2]);   /* extent location */
-	root_size = le32(&pvd[156 + 10]); /* data length */
+	/* Root directory record is embedded at PVD offset 156 */
+	if (parse_directory_record(pvd + 156, sizeof(pvd) - 156,
+	                           &root_record) < 0 ||
+	    !(root_record.flags & DR_FLAG_DIRECTORY) ||
+	    root_record.name_len != 1 || root_record.name[0] != 0)
+		return -1;
 
-	ISO_LOG("Root directory: LBA=%u  size=%u", root_lba, root_size);
+	ISO_LOG("Root directory: LBA=%u  size=%u",
+	        root_record.extent_lba, root_record.data_size);
 
 	/* Walk the directory tree */
-	if (walk_directory(src, root_lba, root_size, "", out, 0) < 0)
+	if (walk_directory(src, root_record.extent_lba, root_record.data_size,
+	                   "", out, 0) < 0)
 		return -1;
 
 	ISO_LOG("Listed %d entries total", out->num_files);
@@ -424,10 +551,14 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 	long long total_bytes = 0, done_bytes = 0;
 	unsigned char sector[USER_DATA_SIZE];
 
-	if (!src || src->fd < 0 || !file_list || !output_dir) return -1;
+	if (!src || src->fd < 0 || !file_list || !output_dir ||
+	    file_list->num_files < 0 || file_list->num_files > ISO_MAX_FILES)
+		return -1;
 
 	/* Calculate total bytes for progress */
 	for (i = 0; i < file_list->num_files; i++) {
+		if (!iso_relative_path_is_safe(file_list->files[i].path))
+			return -1;
 		if (file_list->files[i].is_dir ||
 		    !ext_matches(file_list->files[i].path, extensions))
 			continue;
@@ -452,8 +583,10 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 		/* Filter by extension */
 		if (!ext_matches(entry->path, extensions)) continue;
 
-		/* Build output path */
-		snprintf(out_path, sizeof(out_path), "%s/%s", output_dir, entry->path);
+		/* Build a destination whose suffix is a validated relative path. */
+		if (join_output_path(out_path, sizeof(out_path), output_dir,
+		                     entry->path) < 0)
+			return -1;
 
 		/* Ensure parent directory exists */
 		{
