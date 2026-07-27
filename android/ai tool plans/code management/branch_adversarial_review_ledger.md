@@ -5751,23 +5751,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add empty and ordinary callbacks, quoted unrelated functions, missing and extra arguments, escaped quotes, overlong values, and genuine single- and multipart Galaxy metadata; assert only exact valid Galaxy records take inner zlib and every other file retains its original path and bytes
 - Resolution: Pending
 
-### BR-0064: P2 - Extract every CUE data track on Android
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/correctness
-- Found by: R1-CHUNK-0026
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupDiscImport.kt:L563-L610` in `importDiscImageFromPath` and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L1212-L1293` in `DiscImportDialog`
-- Related: `android/app/src/main/cpp/extract/iso9660_reader.h:L1-L10,L49-L91`, `android/app/src/main/cpp/extract/extract_cd.c:L509-L550`, `android/app/src/main/cpp/extract/jni_disc_import.c:L311-L392`, and `android/app/src/main/cpp/extract/test_cue_iso.c:L1091-L1450,L1847-L1950`
-- Evidence: The public ISO reader documentation explicitly says that later data tracks overlay earlier ones, and the CLI realizes that behavior by iterating every parsed data track in CUE order and extracting each into the same output directory. Both Android import entry points instead select `firstOrNull { it.isData }` or `first { it.isData }`, open only that track's source image, and never visit another data track even though parsing and UI status retain the complete track list and count. No located Kotlin or native test constructs two data tracks
-- Trigger: Import a valid CUE set with two data tracks where the second contains a required game file, an updated copy of a file from the first track, or resides in a different referenced BIN file
-- Impact: Android silently omits later-track files and fails to apply the documented later-wins overlay, so a supported disc set can appear successfully imported with missing or stale game data while the host CLI extracts it correctly
-- Expected: Every data track is processed in CUE order using its own `fileIndex`, start, and length, with later successful files replacing earlier names and one aggregate success, progress, cancellation, storage, and rollback decision
-- Suggested fix: Centralize CUE data-track extraction in one helper shared by interactive and command-driven imports, iterate all data tracks in order, open the source selected by each track's `fileIndex`, and accumulate explicit per-track results. Run HFS fallback only for the appropriate failed track and defer SOW post-processing and final publication until the complete set succeeds
-- Validation: Add same-image and multi-image CUE fixtures with two data tracks, a unique required file on the second, and a same-path collision with distinct bytes; assert Android and CLI extract the complete set, the later bytes win, progress and storage totals cover both tracks, cancellation stops before the next track, and a later failure cannot publish partial success
-- Resolution: Pending
-
 ### BR-0065: P1 - Convert Java and native strings correctly at JNI boundaries
 
 - [ ] OPEN

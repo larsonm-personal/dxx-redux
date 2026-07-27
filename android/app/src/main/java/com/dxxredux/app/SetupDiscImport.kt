@@ -564,6 +564,194 @@ internal suspend fun stageMergedSafDiscAudioSource(
     return StagedMergedSafDiscAudioSource(destCue, destBin, mergedCueTracks)
 }
 
+internal data class CueDataTrackAttempt(
+    val isoExtracted: Int,
+    val macExtracted: Int,
+)
+
+internal data class CueDataTrackExtractionResult(
+    val isoExtracted: Int = 0,
+    val macExtracted: Int = 0,
+    val sowExtracted: Int = 0,
+    val processedTracks: Int = 0,
+    val totalTracks: Int = 0,
+    val failedTrackNumber: Int? = null,
+    val cancelled: Boolean = false,
+) {
+    val succeeded: Boolean get() = failedTrackNumber == null && !cancelled
+    val primaryExtracted: Int get() = isoExtracted + macExtracted
+    val totalExtracted: Int get() = primaryExtracted + sowExtracted
+}
+
+internal fun cueDataTrackStorageBytes(tracks: List<DiscImportBridge.CueTrack>): Long =
+    tracks
+        .asSequence()
+        .filter { it.isData }
+        .fold(0L) { total, track ->
+            require(track.numSectors > 0) { "Invalid data track length" }
+            Math.addExact(total, Math.multiplyExact(track.numSectors.toLong(), 2352L))
+        }
+
+private class CueDataTrackProgress(
+    private val tracks: List<DiscImportBridge.CueTrack>,
+    private val delegate: DiscImportBridge.ExtractProgress?,
+) {
+    private val trackBytes = tracks.map { Math.multiplyExact(it.numSectors.toLong(), 2352L) }
+    private val offsets =
+        trackBytes.runningFold(0L) { total, bytes -> Math.addExact(total, bytes) }
+    val totalBytes: Long = offsets.last()
+    var cancelled = false
+        private set
+
+    fun forTrack(index: Int): DiscImportBridge.ExtractProgress? {
+        val callback = delegate ?: return null
+        return object : DiscImportBridge.ExtractProgress {
+            override fun onProgress(
+                currentFile: String,
+                bytesDone: Long,
+                bytesTotal: Long,
+            ): Int {
+                val localBytes = trackBytes[index]
+                val scaled =
+                    if (bytesTotal > 0L) {
+                        (bytesDone.coerceIn(0L, bytesTotal).toDouble() / bytesTotal.toDouble() * localBytes)
+                            .toLong()
+                    } else {
+                        0L
+                    }
+                val result = callback.onProgress(currentFile, offsets[index] + scaled, totalBytes)
+                if (result != 0) cancelled = true
+                return result
+            }
+        }
+    }
+}
+
+private fun publishStagedDiscFiles(
+    stagingDir: File,
+    setDir: File,
+) {
+    stagingDir
+        .walkTopDown()
+        .filter { it != stagingDir }
+        .forEach { source ->
+            val destination = File(setDir, source.relativeTo(stagingDir).path)
+            if (source.isDirectory) {
+                check(destination.isDirectory || destination.mkdirs()) {
+                    "Could not create ${destination.absolutePath}"
+                }
+            } else {
+                destination.parentFile?.let { parent ->
+                    check(parent.isDirectory || parent.mkdirs()) {
+                        "Could not create ${parent.absolutePath}"
+                    }
+                }
+                source.copyTo(destination, overwrite = true)
+            }
+        }
+}
+
+internal fun extractCueDataTracks(
+    setDir: File,
+    tracks: List<DiscImportBridge.CueTrack>,
+    imageCount: Int,
+    progress: DiscImportBridge.ExtractProgress? = null,
+    extractTrack: (
+        track: DiscImportBridge.CueTrack,
+        outputDir: File,
+        progress: DiscImportBridge.ExtractProgress?,
+    ) -> CueDataTrackAttempt,
+    postProcess: (File, DiscImportBridge.ExtractProgress?) -> Int = ::postProcessImportedDiscFiles,
+): CueDataTrackExtractionResult {
+    val dataTracks = tracks.filter { it.isData }
+    if (dataTracks.isEmpty()) {
+        return CueDataTrackExtractionResult(totalTracks = 0, failedTrackNumber = 0)
+    }
+    val invalidTrack =
+        dataTracks.firstOrNull {
+            it.fileIndex !in 0 until imageCount ||
+                it.startSector < 0 ||
+                it.numSectors <= 0
+        }
+    if (invalidTrack != null) {
+        return CueDataTrackExtractionResult(
+            totalTracks = dataTracks.size,
+            failedTrackNumber = invalidTrack.trackNum,
+        )
+    }
+
+    val parent =
+        setDir.parentFile
+            ?: return CueDataTrackExtractionResult(
+                totalTracks = dataTracks.size,
+                failedTrackNumber = dataTracks.first().trackNum,
+            )
+    val stagingDir = File(parent, ".disc-import-${System.nanoTime()}")
+    if (!stagingDir.mkdirs()) {
+        return CueDataTrackExtractionResult(
+            totalTracks = dataTracks.size,
+            failedTrackNumber = dataTracks.first().trackNum,
+        )
+    }
+
+    val aggregateProgress = CueDataTrackProgress(dataTracks, progress)
+    var isoExtracted = 0
+    var macExtracted = 0
+    var processed = 0
+    try {
+        for ((index, track) in dataTracks.withIndex()) {
+            val attempt = extractTrack(track, stagingDir, aggregateProgress.forTrack(index))
+            if (aggregateProgress.cancelled) {
+                return CueDataTrackExtractionResult(
+                    isoExtracted = isoExtracted,
+                    macExtracted = macExtracted,
+                    processedTracks = processed,
+                    totalTracks = dataTracks.size,
+                    failedTrackNumber = track.trackNum,
+                    cancelled = true,
+                )
+            }
+            if (attempt.isoExtracted < 0 && attempt.macExtracted < 0) {
+                return CueDataTrackExtractionResult(
+                    isoExtracted = isoExtracted,
+                    macExtracted = macExtracted,
+                    processedTracks = processed,
+                    totalTracks = dataTracks.size,
+                    failedTrackNumber = track.trackNum,
+                )
+            }
+            isoExtracted += attempt.isoExtracted.coerceAtLeast(0)
+            macExtracted += attempt.macExtracted.coerceAtLeast(0)
+            processed++
+        }
+
+        val primaryExtracted = isoExtracted + macExtracted
+        val sowExtracted = if (primaryExtracted > 0) postProcess(stagingDir, progress) else 0
+        if (primaryExtracted > 0 || sowExtracted > 0) {
+            if (!setDir.isDirectory && !setDir.mkdirs()) {
+                return CueDataTrackExtractionResult(
+                    isoExtracted = isoExtracted,
+                    macExtracted = macExtracted,
+                    sowExtracted = sowExtracted,
+                    processedTracks = processed,
+                    totalTracks = dataTracks.size,
+                    failedTrackNumber = dataTracks.last().trackNum,
+                )
+            }
+            publishStagedDiscFiles(stagingDir, setDir)
+        }
+        return CueDataTrackExtractionResult(
+            isoExtracted = isoExtracted,
+            macExtracted = macExtracted,
+            sowExtracted = sowExtracted,
+            processedTracks = processed,
+            totalTracks = dataTracks.size,
+        )
+    } finally {
+        stagingDir.deleteRecursively()
+    }
+}
+
 internal fun importDiscImageFromPath(
     filesDir: File,
     setDir: File,
@@ -607,49 +795,56 @@ internal fun importDiscImageFromPath(
         return -1
     }
 
-    val dataTrack = tracks.firstOrNull { it.isData }
-    if (dataTrack == null) {
+    val dataTracks = tracks.filter { it.isData }
+    if (dataTracks.isEmpty()) {
         Log.w("DXX-DiscImport", "importDiscImageFromPath: no data track for $cuePath")
         return -1
     }
 
-    val dataImageFile = orderedImageFiles.getOrNull(dataTrack.fileIndex)
-    if (dataImageFile == null) {
+    ImportStorageGuard.requireFreeSpace(
+        setDir,
+        cueDataTrackStorageBytes(dataTracks),
+        "extract disc game files",
+    )
+    val result =
+        extractCueDataTracks(
+            setDir = setDir,
+            tracks = tracks,
+            imageCount = orderedImageFiles.size,
+            extractTrack = { track, outputDir, progress ->
+                val image = orderedImageFiles[track.fileIndex]
+                val iso =
+                    DiscImportBridge.extractIsoFiles(
+                        image.absolutePath,
+                        track.startSector,
+                        track.numSectors,
+                        outputDir.absolutePath,
+                        progress,
+                    )
+                val mac =
+                    if (iso > 0) {
+                        0
+                    } else {
+                        DiscImportBridge.extractMacFiles(
+                            image.absolutePath,
+                            track.startSector,
+                            track.numSectors,
+                            outputDir.absolutePath,
+                            progress,
+                        )
+                    }
+                CueDataTrackAttempt(iso, mac)
+            },
+        )
+    if (!result.succeeded) {
         Log.w(
             "DXX-DiscImport",
-            "importDiscImageFromPath: missing data image for $cuePath (fileIndex=${dataTrack.fileIndex})",
+            "importDiscImageFromPath: data track ${result.failedTrackNumber} failed for $cuePath",
         )
         return -1
     }
 
-    val isoExtracted =
-        DiscImportBridge.extractIsoFiles(
-            dataImageFile.absolutePath,
-            dataTrack.startSector,
-            dataTrack.numSectors,
-            setDir.absolutePath,
-            null,
-        )
-    val macExtracted =
-        if (isoExtracted > 0) {
-            0
-        } else {
-            DiscImportBridge.extractMacFiles(
-                dataImageFile.absolutePath,
-                dataTrack.startSector,
-                dataTrack.numSectors,
-                setDir.absolutePath,
-                null,
-            )
-        }
-
-    var sowExtracted = 0
-    if (isoExtracted > 0 || macExtracted > 0) {
-        sowExtracted = postProcessImportedDiscFiles(setDir)
-    }
-
-    val extracted = if (isoExtracted > 0) isoExtracted else macExtracted.coerceAtLeast(0)
-    if (includeAudio && extracted > 0 && tracks.any { it.isAudio }) {
+    if (includeAudio && result.primaryExtracted > 0 && tracks.any { it.isAudio }) {
         registerDiscAudioSourceFromPath(
             srcManager = AudioSourceManager(filesDir),
             filesDir = filesDir,
@@ -663,9 +858,9 @@ internal fun importDiscImageFromPath(
 
     Log.i(
         "DXX-DiscImport",
-        "importDiscImageFromPath: cue=$cuePath images=${orderedImageFiles.size} iso=$isoExtracted mac=$macExtracted sow=$sowExtracted audio=$includeAudio",
+        "importDiscImageFromPath: cue=$cuePath images=${orderedImageFiles.size} data_tracks=${result.processedTracks} iso=${result.isoExtracted} mac=${result.macExtracted} sow=${result.sowExtracted} audio=$includeAudio",
     )
-    return extracted + sowExtracted
+    return result.totalExtracted
 }
 
 internal fun importIsoImageFromPath(

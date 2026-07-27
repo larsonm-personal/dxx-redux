@@ -1216,10 +1216,9 @@ internal fun DiscImportDialog(
                                 onClick = {
                                     scope.launch {
                                         try {
-                                            val dataTrack = tracks!!.first { it.isData }
                                             ImportStorageGuard.requireFreeSpace(
                                                 setDir,
-                                                dataTrack.numSectors.toLong() * 2352L,
+                                                cueDataTrackStorageBytes(tracks!!),
                                                 "extract disc game files",
                                             )
                                         } catch (e: InsufficientStorageException) {
@@ -1233,98 +1232,98 @@ internal fun DiscImportDialog(
                                         progressTotal = 0L
                                         withContext(Dispatchers.IO) {
                                             try {
-                                                val dataTrack = tracks!!.first { it.isData }
-                                                val binUri = orderedBinUris[dataTrack.fileIndex].second
-                                                val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
-                                                if (pfd != null) {
-                                                    val progress =
-                                                        object : DiscImportBridge.ExtractProgress {
-                                                            override fun onProgress(
-                                                                currentFile: String,
-                                                                bytesDone: Long,
-                                                                bytesTotal: Long,
-                                                            ): Int {
-                                                                val pct =
-                                                                    if (bytesTotal > 0L) {
-                                                                        ((bytesDone * 100L) / bytesTotal).toInt()
-                                                                    } else {
-                                                                        0
-                                                                    }
-                                                                mainHandler.post {
-                                                                    status = "Extracting $currentFile ($pct%)"
-                                                                    progressBytes = bytesDone
-                                                                    progressTotal = bytesTotal
+                                                val parsedTracks = tracks!!
+                                                val progress =
+                                                    object : DiscImportBridge.ExtractProgress {
+                                                        override fun onProgress(
+                                                            currentFile: String,
+                                                            bytesDone: Long,
+                                                            bytesTotal: Long,
+                                                        ): Int {
+                                                            val pct =
+                                                                if (bytesTotal > 0L) {
+                                                                    ((bytesDone * 100L) / bytesTotal).toInt()
+                                                                } else {
+                                                                    0
                                                                 }
-                                                                return 0
+                                                            mainHandler.post {
+                                                                status = "Extracting $currentFile ($pct%)"
+                                                                progressBytes = bytesDone
+                                                                progressTotal = bytesTotal
                                                             }
+                                                            return 0
                                                         }
-                                                    val isoExtracted: Int
-                                                    var macExtracted = 0
-                                                    val extracted =
-                                                        pfd.use {
-                                                            isoExtracted =
-                                                                DiscImportBridge.extractIsoFiles(
-                                                                    it.fd,
-                                                                    dataTrack.startSector,
-                                                                    dataTrack.numSectors,
-                                                                    setDir.absolutePath,
-                                                                    progress,
-                                                                )
-                                                            if (isoExtracted > 0) {
-                                                                isoExtracted
+                                                    }
+                                                val result =
+                                                    extractCueDataTracks(
+                                                        setDir = setDir,
+                                                        tracks = parsedTracks,
+                                                        imageCount = orderedBinUris.size,
+                                                        progress = progress,
+                                                        extractTrack = { track, outputDir, trackProgress ->
+                                                            val image = orderedBinUris.getOrNull(track.fileIndex)
+                                                            if (image == null) {
+                                                                CueDataTrackAttempt(-1, -1)
                                                             } else {
                                                                 mainHandler.post {
                                                                     status =
-                                                                        "Trying Mac HFS installer..."
+                                                                        "Extracting data track ${track.trackNum}..."
                                                                 }
-                                                                macExtracted =
-                                                                    DiscImportBridge.extractMacFiles(
-                                                                        it.fd,
-                                                                        dataTrack.startSector,
-                                                                        dataTrack.numSectors,
-                                                                        setDir.absolutePath,
-                                                                        progress,
-                                                                    )
-                                                                macExtracted
+                                                                context.contentResolver
+                                                                    .openFileDescriptor(image.second, "r")
+                                                                    ?.use {
+                                                                        val iso =
+                                                                            DiscImportBridge.extractIsoFiles(
+                                                                                it.fd,
+                                                                                track.startSector,
+                                                                                track.numSectors,
+                                                                                outputDir.absolutePath,
+                                                                                trackProgress,
+                                                                            )
+                                                                        val mac =
+                                                                            if (iso > 0) {
+                                                                                0
+                                                                            } else {
+                                                                                mainHandler.post {
+                                                                                    status =
+                                                                                        "Trying Mac HFS track ${track.trackNum}..."
+                                                                                }
+                                                                                DiscImportBridge.extractMacFiles(
+                                                                                    it.fd,
+                                                                                    track.startSector,
+                                                                                    track.numSectors,
+                                                                                    outputDir.absolutePath,
+                                                                                    trackProgress,
+                                                                                )
+                                                                            }
+                                                                        CueDataTrackAttempt(iso, mac)
+                                                                    } ?: CueDataTrackAttempt(-1, -1)
+                                                            }
+                                                        },
+                                                    )
+                                                withContext(Dispatchers.Main) {
+                                                    dataExtracted =
+                                                        if (result.succeeded) result.totalExtracted else 0
+                                                    status =
+                                                        when {
+                                                            !result.succeeded -> {
+                                                                "Data track ${result.failedTrackNumber} failed; no files imported"
+                                                            }
+
+                                                            result.primaryExtracted > 0 -> {
+                                                                buildDiscExtractSummary(
+                                                                    result.primaryExtracted,
+                                                                    "disc file(s) from ${result.processedTracks} data track(s)",
+                                                                    result.sowExtracted,
+                                                                )
+                                                            }
+
+                                                            else -> {
+                                                                "No supported game files found on data tracks"
                                                             }
                                                         }
-                                                    var sowExtracted = 0
-                                                    if (isoExtracted > 0 || macExtracted > 0) {
-                                                        sowExtracted = postProcessImportedDiscFiles(setDir, progress)
-                                                    }
-                                                    withContext(Dispatchers.Main) {
-                                                        val primaryExtracted = extracted.coerceAtLeast(0)
-                                                        dataExtracted =
-                                                            primaryExtracted + sowExtracted
-                                                        status =
-                                                            when {
-                                                                isoExtracted > 0 -> {
-                                                                    buildDiscExtractSummary(
-                                                                        isoExtracted,
-                                                                        "disc file(s)",
-                                                                        sowExtracted,
-                                                                    )
-                                                                }
-
-                                                                macExtracted > 0 -> {
-                                                                    buildDiscExtractSummary(
-                                                                        macExtracted,
-                                                                        "file(s) from Mac HFS installer",
-                                                                        sowExtracted,
-                                                                    )
-                                                                }
-
-                                                                else -> {
-                                                                    "No supported game files found on data track"
-                                                                }
-                                                            }
-                                                        if (dataExtracted > 0) {
-                                                            onChanged()
-                                                        }
-                                                    }
-                                                } else {
-                                                    withContext(Dispatchers.Main) {
-                                                        status = "Could not open disc image file"
+                                                    if (dataExtracted > 0) {
+                                                        onChanged()
                                                     }
                                                 }
                                             } catch (e: Exception) {
