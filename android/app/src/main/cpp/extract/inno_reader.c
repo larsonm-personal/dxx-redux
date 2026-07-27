@@ -489,120 +489,230 @@ static uint64_t get_u64(const uint8_t *p)
 
 /* ── PE Resource reader (find RT_RCDATA / name 11111) ────────────── */
 
-static int find_pe_resource_11111(int fd, uint64_t *out_offset)
+#define INNO_PE_MAX_SECTIONS        96u
+#define INNO_PE_MAX_OPTIONAL_HEADER 4096u
+
+typedef struct {
+	int fd;
+	uint64_t source_size;
+	uint64_t file_offset;
+	uint32_t size;
+} inno_pe_resource_view_t;
+
+static int read_file_span(int fd, uint64_t source_size, uint64_t offset,
+                          void *buffer, size_t size)
 {
-	uint8_t hdr[4096];
-	if (read_at(fd, 0, hdr, sizeof(hdr)) < 0) return -1;
-
-	/* Check MZ signature */
-	if (hdr[0] != 'M' || hdr[1] != 'Z') return -1;
-	uint32_t pe_off = get_u32(hdr + 0x3C);
-	if (pe_off + 24 > sizeof(hdr)) return -1;
-
-	uint8_t pe_hdr[512];
-	if (read_at(fd, pe_off, pe_hdr, sizeof(pe_hdr)) < 0) return -1;
-	if (pe_hdr[0] != 'P' || pe_hdr[1] != 'E' || pe_hdr[2] != 0 || pe_hdr[3] != 0) return -1;
-
-	uint16_t num_sections = get_u16(pe_hdr + 6);
-	uint16_t opt_hdr_size = get_u16(pe_hdr + 20);
-
-	/* Optional header: find resource directory RVA */
-	uint8_t *opt = pe_hdr + 24;
-	uint16_t opt_magic = get_u16(opt);
-	int rva_entries_offset;
-	if (opt_magic == 0x10b) rva_entries_offset = 96;       /* PE32 */
-	else if (opt_magic == 0x20b) rva_entries_offset = 112; /* PE32+ */
-	else return -1;
-
-	if ((int) opt_hdr_size < rva_entries_offset + 24) return -1;
-	uint32_t num_rva = get_u32(opt + rva_entries_offset - 4);
-	if (num_rva < 3) return -1;
-	/* Resource directory is entry index 2 */
-	uint32_t rsrc_rva = get_u32(opt + rva_entries_offset + 8 * 2);
-	uint32_t rsrc_size = get_u32(opt + rva_entries_offset + 8 * 2 + 4);
-	if (rsrc_rva == 0 || rsrc_size == 0) return -1;
-
-	/* Find the .rsrc section to map RVA -> file offset */
-	uint32_t rsrc_file_offset = 0;
-	for (int i = 0; i < num_sections && i < 16; i++) {
-		/* Read section header from file if needed */
-		uint8_t sec[40];
-		uint64_t sec_pos = pe_off + 24 + opt_hdr_size + (uint64_t) i * 40;
-		if (read_at(fd, sec_pos, sec, 40) < 0) continue;
-		uint32_t sec_rva = get_u32(sec + 12);
-		uint32_t sec_vsize = get_u32(sec + 8);
-		uint32_t sec_rawoff = get_u32(sec + 20);
-		if (rsrc_rva >= sec_rva && rsrc_rva < sec_rva + sec_vsize) {
-			rsrc_file_offset = sec_rawoff + (rsrc_rva - sec_rva);
-			break;
-		}
-	}
-	if (rsrc_file_offset == 0) return -1;
-
-	/* Read the resource directory tree (3 levels: type → name → language) */
-	uint8_t *rsrc = (uint8_t *) malloc(rsrc_size);
-	if (!rsrc) return -1;
-	if (read_at(fd, rsrc_file_offset, rsrc, rsrc_size) < 0) {
-		free(rsrc);
+	if (offset > source_size || size > source_size - offset)
 		return -1;
+	return read_at(fd, offset, buffer, size);
+}
+
+static int read_resource_span(const inno_pe_resource_view_t *view,
+                              uint32_t offset, void *buffer, size_t size)
+{
+	if (!view || offset > view->size || size > view->size - offset)
+		return -1;
+	return read_file_span(view->fd, view->source_size,
+	                      view->file_offset + offset, buffer, size);
+}
+
+static int validate_resource_name(const inno_pe_resource_view_t *view,
+                                  uint32_t name)
+{
+	if ((name & 0x80000000U) == 0)
+		return 0;
+	uint32_t offset = name & 0x7FFFFFFFU;
+	uint8_t length_bytes[2];
+	if (read_resource_span(view, offset, length_bytes,
+	                       sizeof(length_bytes)) < 0)
+		return -1;
+	uint32_t byte_count = (uint32_t) get_u16(length_bytes) * 2u;
+	return offset + 2u <= view->size &&
+	               byte_count <= view->size - (offset + 2u)
+	           ? 0
+	           : -1;
+}
+
+static int read_resource_directory(const inno_pe_resource_view_t *view,
+                                   uint32_t offset, uint32_t *entry_offset,
+                                   uint32_t *entry_count)
+{
+	uint8_t header[16];
+	if (read_resource_span(view, offset, header, sizeof(header)) < 0)
+		return -1;
+	uint32_t count = (uint32_t) get_u16(header + 12) +
+	                 (uint32_t) get_u16(header + 14);
+	if (offset > view->size - sizeof(header))
+		return -1;
+	uint32_t entries = offset + (uint32_t) sizeof(header);
+	if (count > (view->size - entries) / 8u)
+		return -1;
+	*entry_offset = entries;
+	*entry_count = count;
+	return 0;
+}
+
+static int read_resource_entry(const inno_pe_resource_view_t *view,
+                               uint32_t entries, uint32_t index,
+                               uint32_t *name, uint32_t *target)
+{
+	uint8_t entry[8];
+	uint64_t offset = (uint64_t) entries + (uint64_t) index * sizeof(entry);
+	if (offset > UINT32_MAX ||
+	    read_resource_span(view, (uint32_t) offset, entry, sizeof(entry)) < 0)
+		return -1;
+	*name = get_u32(entry);
+	*target = get_u32(entry + 4);
+	return validate_resource_name(view, *name);
+}
+
+static int map_pe_rva(int fd, uint64_t source_size, uint64_t section_table,
+                      uint16_t section_count, uint32_t rva, uint32_t size,
+                      uint64_t *file_offset)
+{
+	for (uint16_t i = 0; i < section_count; i++) {
+		uint8_t section[40];
+		uint64_t position = section_table + (uint64_t) i * sizeof(section);
+		if (read_file_span(fd, source_size, position, section,
+		                   sizeof(section)) < 0)
+			return -1;
+		uint32_t virtual_size = get_u32(section + 8);
+		uint32_t section_rva = get_u32(section + 12);
+		uint32_t raw_size = get_u32(section + 16);
+		uint32_t raw_offset = get_u32(section + 20);
+		if (rva < section_rva)
+			continue;
+		uint32_t delta = rva - section_rva;
+		if (delta > raw_size || size > raw_size - delta)
+			continue;
+		if (virtual_size != 0 &&
+		    (delta > virtual_size || size > virtual_size - delta))
+			continue;
+		if ((uint64_t) raw_offset > source_size ||
+		    raw_size > source_size - (uint64_t) raw_offset)
+			return -1;
+		*file_offset = (uint64_t) raw_offset + delta;
+		return 0;
 	}
+	return -1;
+}
 
-	/* Level 1: find RT_RCDATA (type 10) */
-	uint16_t num_named = get_u16(rsrc + 12);
-	uint16_t num_id = get_u16(rsrc + 14);
-	for (int i = 0; i < num_named + num_id; i++) {
-		uint8_t *entry = rsrc + 16 + i * 8;
-		uint32_t name_or_id = get_u32(entry);
-		uint32_t offset_or_dir = get_u32(entry + 4);
-		if (name_or_id == 10 && (offset_or_dir & 0x80000000)) {
-			/* RT_RCDATA directory found */
-			uint32_t dir2_off = offset_or_dir & 0x7FFFFFFF;
-			if (dir2_off + 16 > rsrc_size) {
-				free(rsrc);
+static int find_pe_resource_11111(int fd, uint64_t source_size,
+                                  uint64_t *out_offset)
+{
+	uint8_t dos_header[64];
+	uint8_t pe_header[24];
+	uint8_t value[8];
+	if (!out_offset ||
+	    read_file_span(fd, source_size, 0, dos_header,
+	                   sizeof(dos_header)) < 0 ||
+	    dos_header[0] != 'M' || dos_header[1] != 'Z')
+		return -1;
+	uint64_t pe_offset = get_u32(dos_header + 0x3C);
+	if (read_file_span(fd, source_size, pe_offset, pe_header,
+	                   sizeof(pe_header)) < 0 ||
+	    pe_header[0] != 'P' || pe_header[1] != 'E' ||
+	    pe_header[2] != 0 || pe_header[3] != 0)
+		return -1;
+
+	uint16_t section_count = get_u16(pe_header + 6);
+	uint16_t optional_size = get_u16(pe_header + 20);
+	if (section_count == 0 || section_count > INNO_PE_MAX_SECTIONS ||
+	    optional_size > INNO_PE_MAX_OPTIONAL_HEADER)
+		return -1;
+	uint64_t optional_offset = pe_offset + sizeof(pe_header);
+	if (optional_offset < pe_offset ||
+	    optional_offset > source_size ||
+	    optional_size > source_size - optional_offset ||
+	    read_file_span(fd, source_size, optional_offset, value, 2) < 0)
+		return -1;
+
+	uint32_t directory_offset;
+	if (get_u16(value) == 0x10b)
+		directory_offset = 96u;
+	else if (get_u16(value) == 0x20b)
+		directory_offset = 112u;
+	else
+		return -1;
+	if (optional_size < directory_offset + 24u ||
+	    read_file_span(fd, source_size,
+	                   optional_offset + directory_offset - 4u,
+	                   value, 4) < 0 ||
+	    get_u32(value) < 3u ||
+	    read_file_span(fd, source_size,
+	                   optional_offset + directory_offset + 16u,
+	                   value, sizeof(value)) < 0)
+		return -1;
+	uint32_t resource_rva = get_u32(value);
+	uint32_t resource_size = get_u32(value + 4);
+	if (resource_rva == 0 || resource_size == 0 ||
+	    resource_size > DXX_EXTRACT_MAX_METADATA_BYTES)
+		return -1;
+
+	uint64_t section_table = optional_offset + optional_size;
+	uint64_t section_bytes = (uint64_t) section_count * 40u;
+	if (section_table < optional_offset ||
+	    section_table > source_size ||
+	    section_bytes > source_size - section_table)
+		return -1;
+	inno_pe_resource_view_t view = { fd, source_size, 0, resource_size };
+	if (map_pe_rva(fd, source_size, section_table, section_count,
+	               resource_rva, resource_size, &view.file_offset) < 0)
+		return -1;
+
+	uint32_t root_entries;
+	uint32_t root_count;
+	if (read_resource_directory(&view, 0, &root_entries, &root_count) < 0)
+		return -1;
+	for (uint32_t i = 0; i < root_count; i++) {
+		uint32_t type;
+		uint32_t type_target;
+		if (read_resource_entry(&view, root_entries, i,
+		                        &type, &type_target) < 0)
+			return -1;
+		if (type != 10u || (type_target & 0x80000000U) == 0)
+			continue;
+		uint32_t name_entries;
+		uint32_t name_count;
+		if (read_resource_directory(&view, type_target & 0x7FFFFFFFU,
+		                            &name_entries, &name_count) < 0)
+			return -1;
+		for (uint32_t j = 0; j < name_count; j++) {
+			uint32_t name;
+			uint32_t name_target;
+			if (read_resource_entry(&view, name_entries, j,
+			                        &name, &name_target) < 0)
 				return -1;
-			}
-
-			/* Level 2: find name 11111 (0x2B67) */
-			uint16_t n2_named = get_u16(rsrc + dir2_off + 12);
-			uint16_t n2_id = get_u16(rsrc + dir2_off + 14);
-			for (int j = 0; j < n2_named + n2_id; j++) {
-				uint8_t *e2 = rsrc + dir2_off + 16 + j * 8;
-				uint32_t nid2 = get_u32(e2);
-				uint32_t off2 = get_u32(e2 + 4);
-				if (nid2 == 11111 && (off2 & 0x80000000)) {
-					/* Level 3: take first language entry */
-					uint32_t dir3_off = off2 & 0x7FFFFFFF;
-					if (dir3_off + 20 > rsrc_size) {
-						free(rsrc);
-						return -1;
-					}
-					uint16_t n3_named = get_u16(rsrc + dir3_off + 12);
-					uint16_t n3_id = get_u16(rsrc + dir3_off + 14);
-					if (n3_named + n3_id < 1) {
-						free(rsrc);
-						return -1;
-					}
-					uint8_t *e3 = rsrc + dir3_off + 16;
-					uint32_t off3 = get_u32(e3 + 4);
-					if (off3 & 0x80000000) {
-						free(rsrc);
-						return -1;
-					} /* expect leaf */
-					/* Leaf: 4 bytes RVA of data, 4 bytes size */
-					if (off3 + 8 > rsrc_size) {
-						free(rsrc);
-						return -1;
-					}
-					uint32_t data_rva = get_u32(rsrc + off3);
-					/* Convert RVA to file offset */
-					*out_offset = rsrc_file_offset + (data_rva - rsrc_rva);
-					free(rsrc);
-					return 0;
-				}
-			}
+			if (name != 11111u ||
+			    (name_target & 0x80000000U) == 0)
+				continue;
+			uint32_t language_entries;
+			uint32_t language_count;
+			if (read_resource_directory(
+			        &view, name_target & 0x7FFFFFFFU,
+			        &language_entries, &language_count) < 0 ||
+			    language_count == 0)
+				return -1;
+			uint32_t language;
+			uint32_t data_target;
+			if (read_resource_entry(&view, language_entries, 0,
+			                        &language, &data_target) < 0 ||
+			    (data_target & 0x80000000U) != 0)
+				return -1;
+			uint8_t data_entry[16];
+			if (read_resource_span(&view, data_target, data_entry,
+			                       sizeof(data_entry)) < 0)
+				return -1;
+			uint32_t data_rva = get_u32(data_entry);
+			uint32_t data_size = get_u32(data_entry + 4);
+			if (data_size == 0 ||
+			    map_pe_rva(fd, source_size, section_table,
+			               section_count, data_rva, data_size,
+			               out_offset) < 0)
+				return -1;
+			return 0;
 		}
 	}
-	free(rsrc);
 	return -1;
 }
 
@@ -1574,6 +1684,12 @@ void inno_test_set_allocation_fail_after(int allocations)
 	inno_test_allocations_before_failure = allocations;
 }
 
+int inno_test_find_pe_resource_11111(int fd, uint64_t source_size,
+                                     uint64_t *offset_out)
+{
+	return find_pe_resource_11111(fd, source_size, offset_out);
+}
+
 int inno_test_parse_version_id(const uint8_t id[INNO_VERSION_ID_SIZE],
                                inno_version_t *version)
 {
@@ -2045,7 +2161,7 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	int found = 0;
 
 	/* Method 1: PE resource 11111 */
-	if (find_pe_resource_11111(fd, &table_offset) == 0) {
+	if (find_pe_resource_11111(fd, arc->source_size, &table_offset) == 0) {
 		found = 1;
 	}
 

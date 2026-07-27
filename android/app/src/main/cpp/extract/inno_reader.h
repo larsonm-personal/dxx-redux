@@ -168,6 +168,8 @@ void inno_close(inno_archive_t *arc);
 
 #ifdef INNO_READER_TESTING
 void inno_test_set_allocation_fail_after(int allocations);
+int inno_test_find_pe_resource_11111(int fd, uint64_t source_size,
+                                     uint64_t *offset_out);
 int inno_test_parse_version_id(const uint8_t id[64],
                                inno_version_t *version);
 int inno_test_checksum_layout(const inno_version_t *version,

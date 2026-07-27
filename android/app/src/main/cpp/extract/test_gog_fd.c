@@ -68,6 +68,18 @@ static int file_equals(const char *path, const void *expected, size_t expected_s
 	return size == expected_size && memcmp(actual, expected, expected_size) == 0;
 }
 
+static void set_u16(uint8_t *buffer, size_t offset, uint16_t value)
+{
+	buffer[offset] = (uint8_t) value;
+	buffer[offset + 1] = (uint8_t) (value >> 8);
+}
+
+static void set_u32(uint8_t *buffer, size_t offset, uint32_t value)
+{
+	for (int i = 0; i < 4; i++)
+		buffer[offset + (size_t) i] = (uint8_t) (value >> (i * 8));
+}
+
 static void put_u32(uint8_t *buffer, size_t *position, uint32_t value)
 {
 	for (int i = 0; i < 4; i++)
@@ -973,6 +985,185 @@ static int check_chunk_range_boundaries(void)
 	return failures ? 1 : 0;
 }
 
+enum {
+	PE_FIXTURE_CAPACITY = 4096,
+	PE_FIXTURE_OFFSET = 0x80,
+	PE_FIXTURE_RAW_OFFSET = 0x800,
+	PE_FIXTURE_RVA = 0x1000,
+	PE_FIXTURE_RESOURCE_SIZE = 100,
+	PE_FIXTURE_DATA_OFFSET = 88,
+	PE_FIXTURE_DATA_SIZE = 12
+};
+
+static size_t build_pe_resource_fixture(uint8_t *buffer, int pe32_plus,
+                                        uint16_t resource_section)
+{
+	uint16_t section_count = (uint16_t) (resource_section + 1u);
+	uint16_t optional_size = pe32_plus ? 240u : 224u;
+	uint32_t directory_offset = pe32_plus ? 112u : 96u;
+	size_t optional = PE_FIXTURE_OFFSET + 24u;
+	size_t section_table = optional + optional_size;
+	size_t section = section_table + (size_t) resource_section * 40u;
+	size_t resource = PE_FIXTURE_RAW_OFFSET;
+
+	memset(buffer, 0, PE_FIXTURE_CAPACITY);
+	buffer[0] = 'M';
+	buffer[1] = 'Z';
+	set_u32(buffer, 0x3C, PE_FIXTURE_OFFSET);
+	memcpy(buffer + PE_FIXTURE_OFFSET, "PE\0\0", 4);
+	set_u16(buffer, PE_FIXTURE_OFFSET + 6u, section_count);
+	set_u16(buffer, PE_FIXTURE_OFFSET + 20u, optional_size);
+	set_u16(buffer, optional, pe32_plus ? 0x20bu : 0x10bu);
+	set_u32(buffer, optional + directory_offset - 4u, 3);
+	set_u32(buffer, optional + directory_offset + 16u, PE_FIXTURE_RVA);
+	set_u32(buffer, optional + directory_offset + 20u,
+	        PE_FIXTURE_RESOURCE_SIZE);
+	set_u32(buffer, section + 8u, PE_FIXTURE_RESOURCE_SIZE);
+	set_u32(buffer, section + 12u, PE_FIXTURE_RVA);
+	set_u32(buffer, section + 16u, PE_FIXTURE_RESOURCE_SIZE);
+	set_u32(buffer, section + 20u, PE_FIXTURE_RAW_OFFSET);
+
+	set_u16(buffer, resource + 14u, 1);
+	set_u32(buffer, resource + 16u, 10);
+	set_u32(buffer, resource + 20u, 0x80000018u);
+	set_u16(buffer, resource + 24u + 14u, 1);
+	set_u32(buffer, resource + 40u, 11111);
+	set_u32(buffer, resource + 44u, 0x80000030u);
+	set_u16(buffer, resource + 48u + 14u, 1);
+	set_u32(buffer, resource + 64u, 1033);
+	set_u32(buffer, resource + 68u, 72);
+	set_u32(buffer, resource + 72u,
+	        PE_FIXTURE_RVA + PE_FIXTURE_DATA_OFFSET);
+	set_u32(buffer, resource + 76u, PE_FIXTURE_DATA_SIZE);
+	memcpy(buffer + resource + PE_FIXTURE_DATA_OFFSET,
+	       "resource111", PE_FIXTURE_DATA_SIZE);
+	return PE_FIXTURE_RAW_OFFSET + PE_FIXTURE_RESOURCE_SIZE;
+}
+
+static int check_pe_fixture(const uint8_t *buffer, size_t size,
+                            int expect_success, const char *label)
+{
+	const char *path = "test_gog_fd_pe_resource.tmp";
+	FILE *file = fopen(path, "wb");
+	if (!file)
+		return 1;
+	int failed = fwrite(buffer, 1, size, file) != size;
+	if (fclose(file) != 0)
+		failed = 1;
+	int fd = failed ? -1 : OPEN_RB(path);
+	if (fd < 0) {
+		remove(path);
+		return 1;
+	}
+	uint64_t offset = UINT64_MAX;
+	int result = inno_test_find_pe_resource_11111(fd, size, &offset);
+	CLOSE_FD(fd);
+	remove(path);
+	if ((result == 0) != expect_success ||
+	    (expect_success &&
+	     offset != PE_FIXTURE_RAW_OFFSET + PE_FIXTURE_DATA_OFFSET)) {
+		fprintf(stderr, "PE resource boundary case failed: %s\n", label);
+		return 1;
+	}
+	return 0;
+}
+
+static int check_pe_resource_bounds(void)
+{
+	uint8_t fixture[PE_FIXTURE_CAPACITY];
+	size_t size = build_pe_resource_fixture(fixture, 0, 0);
+	int failures = check_pe_fixture(fixture, size, 1, "valid PE32");
+
+	size = build_pe_resource_fixture(fixture, 1, 0);
+	failures += check_pe_fixture(fixture, size, 1, "valid PE32+");
+	size = build_pe_resource_fixture(fixture, 0, 16);
+	failures += check_pe_fixture(fixture, size, 1,
+	                             "resource section after entry 16");
+
+	for (uint32_t resource_size = 0; resource_size < 24; resource_size++) {
+		size = build_pe_resource_fixture(fixture, 0, 0);
+		set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 96u + 20u,
+		        resource_size);
+		set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 224u + 8u,
+		        resource_size);
+		set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 224u + 16u,
+		        resource_size);
+		failures += check_pe_fixture(
+		    fixture, PE_FIXTURE_RAW_OFFSET + resource_size, 0,
+		    "zero through 23 byte resource");
+	}
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u16(fixture, PE_FIXTURE_RAW_OFFSET + 12u, UINT16_MAX);
+	set_u16(fixture, PE_FIXTURE_RAW_OFFSET + 14u, UINT16_MAX);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "overflowing root entry count");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_RAW_OFFSET + 16u, 0x80000063u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "out of range resource name");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_RAW_OFFSET + 20u, 0x80000055u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "truncated nested directory");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_RAW_OFFSET + 68u, 0x80000000u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "cyclic language directory");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_RAW_OFFSET + 68u, 85);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "truncated data entry");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 96u + 20u, 88);
+	failures += check_pe_fixture(fixture, size, 1,
+	                             "data entry at directory boundary");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 96u + 20u,
+	        PE_FIXTURE_RESOURCE_SIZE + 1u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "resource crosses raw section");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 96u + 20u,
+	        64u * 1024u * 1024u + 1u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "oversized resource declaration");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_RAW_OFFSET + 76u,
+	        PE_FIXTURE_DATA_SIZE + 1u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "data one byte beyond section");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 224u + 12u,
+	        UINT32_MAX - 7u);
+	set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 96u + 16u,
+	        UINT32_MAX - 3u);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "wrapping virtual range");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u32(fixture, PE_FIXTURE_OFFSET + 24u + 224u + 20u,
+	        UINT32_MAX);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "out of range raw section");
+
+	size = build_pe_resource_fixture(fixture, 0, 0);
+	set_u16(fixture, PE_FIXTURE_OFFSET + 6u, 97);
+	failures += check_pe_fixture(fixture, size, 0,
+	                             "unreasonable section count");
+
+	return failures ? 1 : 0;
+}
+
 static int check_installer(const char *path, const char **expected, int expected_count,
                            int expected_game_count, int expected_galaxy_game_count,
                            const char *label)
@@ -1037,6 +1228,7 @@ int main(int argc, char **argv)
 
 	int failures = 0;
 	failures += check_version_id_bounds();
+	failures += check_pe_resource_bounds();
 	failures += check_complete_file_catalog();
 	failures += check_unsigned_entry_bounds();
 	failures += check_checksum_layout_transition();

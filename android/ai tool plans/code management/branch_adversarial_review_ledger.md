@@ -5734,23 +5734,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0072): Use a mission containing one valid audio member and one member that makes the native decoder fail; assert nonzero batch status, no final sidecar or database update, and successful complete publication after the bad member is repaired.
 - Resolution: Pending
 
-### BR-0052: P1 - Use bounded views when traversing PE resources
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/parser-validation
-- Found by: R1-CHUNK-0022
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L135-L249` in `find_pe_resource_11111`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L1316-L1375` in `inno_open_owned_fd` and `android/ai tool plans/CD, installer parsing/INNOSETUP_FORMAT_SPEC.md:L25-L69`
-- Evidence: The PE data directory controls `rsrc_size`, which is allocated and read without proving it fits the resource section's raw span or any import budget. The code then reads the root header at offsets 12 and 14 without requiring even 16 bytes, and iterates root and second-level entry counts without checking that `16 + count * 8` fits the allocation before each `get_u32`. A 16-byte resource blob whose count is one makes the first entry read start exactly one past the allocation. Nested offsets receive only partial header checks, and the final data RVA is converted with unchecked unsigned subtraction. Independently, section lookup stops after 16 entries even when the PE header declares more, so a valid resource section later in the table is silently missed
-- Trigger: Open a crafted installer with a short resource directory and nonzero entry count, oversized or section-crossing resource size, out-of-range nested entry or data RVA, or a valid wrapped PE whose resource section appears after section 16
-- Impact: Malformed input can cause out-of-bounds native heap reads or memory exhaustion before the safer fixed-offset fallback runs, crashing the launcher; valid installers with later resource sections can be rejected despite containing the supported loader resource
-- Expected: Every PE and resource-directory access is a checked subspan of the physical file and containing section, allocation is bounded, arithmetic cannot wrap, and every declared section is handled under a documented reasonable limit
-- Suggested fix: Replace pointer arithmetic over one attacker-sized copy with a small bounded PE/resource view or a vetted lightweight parser. Validate optional-header and section-table spans, section raw and virtual ranges, each directory header and complete entry array, nested offsets, data-entry size, and RVA-to-file mapping with checked 64-bit arithmetic before reading; reject unreasonable sizes before allocation
-- Validation: Add PE32 and PE32+ fixtures with valid resources, a resource section after entry 16, zero through 23-byte resource blobs, entry counts whose arrays end exactly at and one byte beyond the section, nested and data RVAs at every boundary, arithmetic-wrap values, and oversized resource declarations; assert clean bounded rejection or correct discovery under AddressSanitizer and a memory-limit harness
-- Resolution: Pending
-
 ### BR-0054: P2 - Preserve distinct Unicode Inno destination paths
 
 - [ ] OPEN
