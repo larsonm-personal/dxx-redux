@@ -5489,24 +5489,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add Inno, PKG, SOW, ISO, StuffIt, and HFS tests whose callbacks cancel at the initial, mid-file where supported, and between-file notifications, including a nested Mac STi2 cancellation with a valid loose HFS candidate, plus CheckJNI tests whose Java callback throws; assert bounded additional work, no fallback, later callbacks, JNI calls, or files, a distinct canceled status where no exception occurred, preservation of the original exception, removal of partial output, and clean descriptor and archive closure
 - Resolution: Pending
 
-### BR-0026: P1 - Validate HFS catalog record bounds before decoding
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0012
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/hfs_reader.c:L546-L592` in `scan_catalog`
-- Related: `android/app/src/main/cpp/extract/hfs_reader.c:L624-L720`, `android/app/src/main/cpp/extract/test_hfs.c:L361-L425,L529-L580`, and `android/app/src/main/cpp/extract/jni_disc_import.c:L509-L546`
-- Evidence: The leaf node's untrusted 16-bit record count directly indexes `node + 512 - 2 * (rec_index + 1)` without proving the footer offset table fits the 512-byte node. At record index 256 the unsigned subtraction wraps and `be16` reads far outside the stack buffer. After locating a record, the only payload check is `data_off + 2 <= 512`, but a directory record reads through `data_off + 9` and a file record reads fixed fields and extents through `data_off + 97`. A type 1 or type 2 byte near the node end therefore causes additional out-of-bounds stack reads even with a small record count
-- Trigger: Import a crafted HFS track containing a catalog leaf with at least 257 declared records, or a record whose aligned data offset is near byte 512 and whose first payload byte selects directory or file parsing
-- Impact: A user-selected disc image can make native catalog listing read outside its stack node, crashing the launcher process or consuming adjacent stack data as file IDs, sizes, and extents before extraction begins
-- Expected: The node descriptor, complete offset table, each record interval, key, and type-specific payload all fit within the node and do not overlap the offset table before any field is decoded
-- Suggested fix: Parse catalog nodes with checked subtractive bounds, cap the record count by the space available after the node descriptor including the terminal offset, derive each record's start and end from the validated offset table, and require the complete directory or file payload size before calling `be32` or `parse_extent_record`. Reject the node on structural inconsistency instead of continuing with partially trusted records
-- Validation: Add synthetic leaf nodes at the maximum valid record count and one above it, records ending before every fixed directory and file field, overlapping or nonmonotonic offsets, and valid boundary records; assert clean rejection and run the HFS suite plus a malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer
-- Remediation status: Code-complete on 2026-07-22, but this P1 remains open pending the independent verification call required by `branch_adversarial_review_process.md`. The live parser now validates the complete footer offset table, strictly increasing record intervals, key bounds, aligned payload start, and all directory and file fields before decoding. The focused HFS suite passes 9/9 against both known Mac discs, the complete native extraction suite passes 13/13, the malformed-node corpus passes combined AddressSanitizer and UndefinedBehaviorSanitizer on an x86_64 Android emulator, scoped code quality passes, and all three Android debug ABIs build
-- Resolution: Pending independent P1 verification
-
 ### BR-0028: P1 - Serialize MIDI seek with rendering
 
 - [ ] OPEN
@@ -6107,23 +6089,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: The success log reports the count actually returned to Java, while close-state mutation remains an internal lifecycle detail
 - Suggested fix: Log the saved `n` value or capture `file_count` before `pkg_close`; keep close responsible for invalidating the handle, and use the same saved result pattern for every archive branch
 - Validation: Add or extend a JNI or host integration test that lists a nonempty PKG, captures the native diagnostic, and asserts its count equals the returned array length; also verify an empty valid package logs zero and close still resets the handle for misuse detection
-- Resolution: Pending
-
-### BR-0071: P2 - Validate the complete ARJ basic header before parsing fields
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/input-validation
-- Found by: R1-CHUNK-0031
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/sow_extract.c:L542-L623` in `arj_read_entry`
-- Related: `android/app/src/main/cpp/extract/sow_extract.c:L195-L209,L647-L750`, `android/app/src/main/cpp/extract/sow_extract.h:L44-L68`, BR-0020, and BR-0023
-- Evidence: The reader bounds `header_size` only above 2,600, reads that many header bytes plus four CRC bytes, and then trusts `hdr[0]` as `first_hdr_size` when it is at least 30. It never requires `header_size` itself to contain those 30 fixed bytes or even to reach the fields read at offsets 5, 6, 12 through 19. A one-byte basic header whose first byte is 30 therefore passes the only minimum check and makes method, type, compressed size, and original size come from uninitialized bytes in the 2,604-byte stack array. The reader also skips every extended header without checking `fseek`, records `ftell` without requiring a nonnegative in-file result, and never proves that `data_offset + comp_size` fits the physical archive. Its callers then use these values for further seeks and collapse malformed-entry errors into ordinary end of input
-- Trigger: Import a crafted SOW with `basic_header_size` from 1 through 29 and an in-range `first_hdr_size`, a truncated extended header, a failed seek, or a compressed span extending beyond the file
-- Impact: Malformed input can make parsing depend on uninitialized stack contents, seek to data-dependent offsets, silently omit later entries, and return an empty or partial result instead of a deterministic archive error; downstream callers can still report the overall disc or import as successful
-- Expected: Every fixed field and variable string is read only from a fully present basic header, every extended and compressed span is checked against the regular-file size, and malformed input remains distinguishable from a valid end marker
-- Suggested fix: Parse through a bounded header view; require the format minimum and `first_hdr_size <= header_size` before any fixed-field read; validate strings within the header; check every seek and `ftell`; prove extended-header and compressed-data spans with checked subtractive arithmetic; and propagate a distinct malformed result. Coordinate CRC validation with BR-0023 and transactional failure with BR-0020
-- Validation: Add basic-header sizes 1 through 30, first-header sizes below the minimum and beyond the basic header, truncated strings and CRCs, extended-header spans at and beyond EOF, negative or failed positions, and compressed spans at the exact file end and one byte beyond; run under MemorySanitizer, AddressSanitizer, and UndefinedBehaviorSanitizer and assert deterministic failure with no output or partial-success status
 - Resolution: Pending
 
 ### BR-0072: P2 - Return a complete deterministic SOW scan manifest

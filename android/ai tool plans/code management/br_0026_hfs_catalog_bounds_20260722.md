@@ -13,7 +13,7 @@ type-specific record field outside its validated record interval
 - [x] Add checked node, offset-table, record-interval, key, and payload validation
 - [x] Add valid-boundary and malformed catalog-node regression tests
 - [x] Run scoped code quality, focused and complete native tests, sanitizer-equivalent checks where available, and Android ABI builds
-- [ ] Complete the required independent P1 verification and finalize the finding disposition
+- [x] Complete the required independent P1 verification and finalize the finding disposition
 
 ## Validation
 
@@ -22,3 +22,7 @@ type-specific record field outside its validated record interval
 - The complete native extraction suite passed 13/13
 - Android debug native builds passed for arm64-v8a, armeabi-v7a, and x86_64
 - Scoped code quality passed for the parser, header, tests, plan, and ledger
+- Independent verification on 2026-07-26 confirmed the frozen vulnerability and
+  every live footer, interval, key, alignment, and payload guard
+- The independent focused HFS run passed 9/9 and the complete rebuilt native
+  extraction suite passed 13/13

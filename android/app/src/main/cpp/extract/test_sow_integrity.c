@@ -131,6 +131,23 @@ static fixture_t make_fixture(int method, const unsigned char *payload,
 	return fixture;
 }
 
+static void refresh_basic_header_crc(fixture_t *fixture)
+{
+	unsigned int header_size = fixture->data[2] |
+	                           ((unsigned int) fixture->data[3] << 8);
+	put_u32(fixture->data + fixture->basic_header_offset + header_size,
+	        crc32_bytes(fixture->data + fixture->basic_header_offset,
+	                    header_size));
+}
+
+static void resize_basic_header(fixture_t *fixture, unsigned int header_size)
+{
+	put_u16(fixture->data + 2, header_size);
+	refresh_basic_header_crc(fixture);
+	put_u16(fixture->data + fixture->basic_header_offset + header_size + 4u, 0);
+	fixture->size = fixture->basic_header_offset + header_size + 6u;
+}
+
 static int write_fixture(const char *path, const fixture_t *fixture)
 {
 	FILE *fp = fopen(path, "wb");
@@ -208,6 +225,34 @@ static int run_case(const char *name, const fixture_t *fixture,
 	return 0;
 }
 
+static int run_malformed_case(const char *name, const fixture_t *fixture)
+{
+	static const char *extensions[] = { "hog", NULL };
+	char archive_path[SOW_PATH_LEN];
+	char output_path[SOW_PATH_LEN];
+	int result;
+
+	snprintf(archive_path, sizeof(archive_path), "sow_integrity_temp%c%s.sow",
+	         PATH_SEP_CHAR, name);
+	snprintf(output_path, sizeof(output_path),
+	         "sow_integrity_temp%coutput%ccrc_test.hog",
+	         PATH_SEP_CHAR, PATH_SEP_CHAR);
+	remove(output_path);
+	if (write_fixture(archive_path, fixture) < 0) {
+		fprintf(stderr, "failed to write %s fixture\n", name);
+		return 1;
+	}
+	result = sow_extract(archive_path, "sow_integrity_temp/output",
+	                     extensions, NULL, NULL);
+	remove(archive_path);
+	if (result >= 0 || file_exists(output_path)) {
+		fprintf(stderr, "%s malformed header was not reported as an error\n", name);
+		remove(output_path);
+		return 1;
+	}
+	return 0;
+}
+
 int main(void)
 {
 	static const unsigned char stored[] = "stored payload";
@@ -249,11 +294,108 @@ int main(void)
 	failures += run_case("bad_basic_header", &fixture, stored,
 	                     sizeof(stored) - 1u, 0);
 
+	for (unsigned int header_size = 1; header_size < 30; header_size++) {
+		char name[32];
+		fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+		                       stored, sizeof(stored) - 1u, 0);
+		put_u16(fixture.data + 2, header_size);
+		snprintf(name, sizeof(name), "basic_size_%u", header_size);
+		failures += run_malformed_case(name, &fixture);
+	}
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.size = 3;
+	failures += run_malformed_case("truncated_basic_size", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	resize_basic_header(&fixture, 30);
+	failures += run_malformed_case("basic_size_30_no_strings", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.data[fixture.basic_header_offset] = 29;
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("first_header_too_small", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.data[fixture.basic_header_offset] =
+	    (unsigned char) (fixture.data[2] + 1u);
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("first_header_beyond_basic", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	memset(fixture.data + fixture.basic_header_offset + 30u, 'A',
+	       fixture.data[2] - 30u);
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("unterminated_filename", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.data[fixture.basic_header_offset + 30u] = 'A';
+	fixture.data[fixture.basic_header_offset + 31u] = 0;
+	memset(fixture.data + fixture.basic_header_offset + 32u, 'B',
+	       fixture.data[2] - 32u);
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("unterminated_comment", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	resize_basic_header(&fixture, 292);
+	memset(fixture.data + fixture.basic_header_offset + 30u, 'A', 260);
+	fixture.data[fixture.basic_header_offset + 290u] = 0;
+	fixture.data[fixture.basic_header_offset + 291u] = 0;
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("overlong_filename", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	resize_basic_header(&fixture, 292);
+	fixture.data[fixture.basic_header_offset + 30u] = 0;
+	memset(fixture.data + fixture.basic_header_offset + 31u, 'B', 260);
+	fixture.data[fixture.basic_header_offset + 291u] = 0;
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("overlong_comment_name", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.size = fixture.basic_header_offset + fixture.data[2] + 3u;
+	failures += run_malformed_case("truncated_basic_crc", &fixture);
+
 	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
 	                       stored, sizeof(stored) - 1u, 1);
 	fixture.data[fixture.extended_header_offset] ^= 1u;
 	failures += run_case("bad_extended_header", &fixture, stored,
 	                     sizeof(stored) - 1u, 0);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 1);
+	fixture.size = fixture.extended_header_offset + 3u;
+	failures += run_malformed_case("truncated_extended_span", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 1);
+	fixture.size = fixture.extended_header_offset + 3u + 4u;
+	failures += run_malformed_case("missing_extended_terminator", &fixture);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.size = fixture.payload_offset + sizeof(stored) - 1u;
+	failures += run_case("payload_exact_file_end", &fixture, stored,
+	                     sizeof(stored) - 1u, 1);
+
+	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
+	                       stored, sizeof(stored) - 1u, 0);
+	fixture.size = fixture.payload_offset + sizeof(stored) - 1u;
+	put_u32(fixture.data + fixture.basic_header_offset + 12u,
+	        sizeof(stored));
+	put_u32(fixture.data + fixture.basic_header_offset + 16u,
+	        sizeof(stored));
+	refresh_basic_header_crc(&fixture);
+	failures += run_malformed_case("payload_one_beyond_file", &fixture);
 
 	fixture = make_fixture(0, stored, sizeof(stored) - 1u,
 	                       stored, sizeof(stored) - 1u, 0);

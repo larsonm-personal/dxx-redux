@@ -755,7 +755,8 @@ int multi_perform_rewind_request(int requester, int *rewound_seconds)
 		if (!multi_send_rewind_save_transfer(&restore, requester)) {
 			COOPLOG("rewind transfer queue failed before host restore");
 			status = ANDROID_REWIND_STATUS_FAILED;
-		}
+		} else
+			HUD_init_message_literal(HM_DEFAULT, "Waiting to rewind");
 	} else {
 		multi_save_transfer_begin_restore();
 		status = android_rewind_restore_authoritative(&restore);

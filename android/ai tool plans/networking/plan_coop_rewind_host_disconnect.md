@@ -43,3 +43,9 @@ Diagnose and fix the coop rewind regression where restoring a rewind removes the
 - D2 native CTest suite passed: 28 of 28
 - New transfer policy test is registered in both D1 and D2 CTest suites
 - `git diff --check` passed
+
+## Follow-up: rewind waiting status
+
+- [x] Confirm the existing client-facing rewind transfer message
+- [x] Show `Waiting to rewind` to the host after the rewind transfer is queued
+- [x] Re-run scoped code quality and the Android debug build

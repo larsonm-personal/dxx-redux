@@ -625,27 +625,32 @@ typedef struct {
 static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 {
 	unsigned char magic[2];
+
+	if (!fp || !entry || file_size < 0) return -1;
+	memset(entry, 0, sizeof(*entry));
+
 	/* Scan forward for next 0x60 0xEA marker */
 	for (;;) {
 		long pos = ftell(fp);
-		if (pos < 0 || pos >= file_size - 4) return 0;
-		if (fread(magic, 1, 2, fp) != 2) return 0;
+		if (pos < 0 || pos > file_size) return -1;
+		if ((uint64_t) (file_size - pos) < sizeof(magic)) return 0;
+		if (fread(magic, 1, 2, fp) != 2) return -1;
 		if (magic[0] == ARJ_MAGIC_0 && magic[1] == ARJ_MAGIC_1)
 			break;
 		/* Rewind 1 byte (we consumed 2, want to advance by 1) */
-		fseek(fp, -1, SEEK_CUR);
+		if (fseek(fp, -1, SEEK_CUR) != 0) return -1;
 	}
 
 	/* Read basic_header_size */
 	unsigned char hsbuf[2];
-	if (fread(hsbuf, 1, 2, fp) != 2) return 0;
+	if (fread(hsbuf, 1, 2, fp) != 2) return -1;
 	unsigned int header_size = read_u16(hsbuf);
 
 	if (header_size == 0) {
 		/* End-of-archive marker */
 		return 0;
 	}
-	if (header_size > ARJ_MAX_HEADER) return -1;
+	if (header_size < 30 || header_size > ARJ_MAX_HEADER) return -1;
 
 	/* Read header data + CRC */
 	unsigned char hdr[ARJ_MAX_HEADER + 4];
@@ -654,7 +659,7 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 	if (arj_crc32(hdr, header_size) != read_u32(hdr + header_size)) return -1;
 
 	unsigned int first_hdr_size = read_u8(hdr);
-	if (header_size < 30 || first_hdr_size < 30 || first_hdr_size > header_size)
+	if (first_hdr_size < 30 || first_hdr_size > header_size)
 		return -1;
 
 	entry->method = read_u8(hdr + 5);
@@ -672,35 +677,45 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 		entry->original_crc = read_u32(hdr + 20);
 	}
 
-	/* Extract filename — first null-terminated string after fixed header */
+	/* Extract the required null-terminated filename and comment strings */
 	const unsigned char *name_start = hdr + first_hdr_size;
 	const unsigned char *hdr_end = hdr + header_size;
-	size_t name_len = 0;
-	while (name_start + name_len < hdr_end && name_start[name_len] != 0)
-		name_len++;
+	const unsigned char *name_end =
+	    (const unsigned char *) memchr(name_start, 0, (size_t) (hdr_end - name_start));
+	const unsigned char *comment;
+	const unsigned char *comment_end;
+	size_t name_len;
 
-	if (name_len == 0 && name_start + 1 < hdr_end) {
+	if (!name_end || name_end + 1 >= hdr_end) return -1;
+	comment = name_end + 1;
+	comment_end = (const unsigned char *) memchr(
+	    comment, 0, (size_t) (hdr_end - comment));
+	if (!comment_end) return -1;
+	name_len = (size_t) (name_end - name_start);
+
+	if (name_len == 0) {
 		/* Empty filename — Interplay .sow quirk: actual name is in comment */
-		const unsigned char *comment = name_start + 1;
-		name_len = 0;
-		while (comment + name_len < hdr_end && comment[name_len] != 0)
-			name_len++;
-		if (name_len > 0 && name_len < 260) {
+		name_len = (size_t) (comment_end - comment);
+		if (name_len >= sizeof(entry->filename)) return -1;
+		if (name_len > 0) {
 			memcpy(entry->filename, comment, name_len);
 			entry->filename[name_len] = '\0';
 		} else {
 			entry->filename[0] = '\0';
 		}
-	} else if (name_len > 0 && name_len < 260) {
+	} else {
+		if (name_len >= sizeof(entry->filename)) return -1;
 		memcpy(entry->filename, name_start, name_len);
 		entry->filename[name_len] = '\0';
-	} else {
-		entry->filename[0] = '\0';
 	}
 
 	/* Skip extended headers */
 	for (;;) {
 		unsigned char ehbuf[2];
+		long size_offset = ftell(fp);
+		if (size_offset < 0 || size_offset > file_size ||
+		    2u > (uint64_t) file_size - (uint64_t) size_offset)
+			return -1;
 		if (fread(ehbuf, 1, 2, fp) != 2) return -1;
 		unsigned int ext_size = read_u16(ehbuf);
 		if (ext_size == 0) break;
@@ -725,6 +740,10 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 	}
 
 	entry->data_offset = ftell(fp);
+	if (entry->data_offset < 0 || entry->data_offset > file_size ||
+	    entry->comp_size >
+	        (uint64_t) file_size - (uint64_t) entry->data_offset)
+		return -1;
 	return 1;
 }
 
@@ -743,9 +762,15 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		return -1;
 	}
 
-	fseek(fp, 0, SEEK_END);
+	if (fseek(fp, 0, SEEK_END) != 0) {
+		fclose(fp);
+		return -1;
+	}
 	long file_size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+	if (file_size < 0 || fseek(fp, 0, SEEK_SET) != 0) {
+		fclose(fp);
+		return -1;
+	}
 
 	mkdirs(output_dir);
 
@@ -753,9 +778,8 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 	uint64_t total_bytes = 0;
 	{
 		arj_entry_t e;
-		long saved_pos;
 		unsigned int entry_count = 0;
-		while ((saved_pos = ftell(fp)) >= 0) {
+		while (1) {
 			int r = arj_read_entry(fp, &e, file_size);
 			uint64_t output_size;
 
@@ -790,7 +814,10 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 				return -1;
 			}
 		}
-		fseek(fp, 0, SEEK_SET);
+		if (fseek(fp, 0, SEEK_SET) != 0) {
+			fclose(fp);
+			return -1;
+		}
 	}
 	if (!dxx_extract_has_free_space(output_dir, total_bytes)) {
 		fclose(fp);
@@ -804,11 +831,18 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 
 	while (1) {
 		int r = arj_read_entry(fp, &e, file_size);
-		if (r <= 0) break;
+		if (r < 0) {
+			fclose(fp);
+			return -1;
+		}
+		if (r == 0) break;
 
 		/* Skip archive headers and unnamed entries */
 		if (e.file_type != ARJ_TYPE_BINARY || e.filename[0] == '\0') {
-			fseek(fp, e.data_offset + e.comp_size, SEEK_SET);
+			if (fseek(fp, e.data_offset + e.comp_size, SEEK_SET) != 0) {
+				fclose(fp);
+				return -1;
+			}
 			continue;
 		}
 
@@ -817,7 +851,10 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		/* Extension filter */
 		if (!ext_matches(filename, extensions)) {
 			bytes_done += e.orig_size;
-			fseek(fp, e.data_offset + e.comp_size, SEEK_SET);
+			if (fseek(fp, e.data_offset + e.comp_size, SEEK_SET) != 0) {
+				fclose(fp);
+				return -1;
+			}
 			continue;
 		}
 
@@ -834,10 +871,17 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		/* Read compressed data */
 		unsigned char *comp_data = (unsigned char *) malloc(e.comp_size);
 		if (!comp_data) {
-			fseek(fp, e.data_offset + e.comp_size, SEEK_SET);
+			if (fseek(fp, e.data_offset + e.comp_size, SEEK_SET) != 0) {
+				fclose(fp);
+				return -1;
+			}
 			continue;
 		}
-		fseek(fp, e.data_offset, SEEK_SET);
+		if (fseek(fp, e.data_offset, SEEK_SET) != 0) {
+			free(comp_data);
+			fclose(fp);
+			return -1;
+		}
 		if (fread(comp_data, 1, e.comp_size, fp) != e.comp_size) {
 			free(comp_data);
 			continue;
