@@ -5734,23 +5734,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0072): Use a mission containing one valid audio member and one member that makes the native decoder fail; assert nonzero batch status, no final sidecar or database update, and successful complete publication after the bad member is repaired.
 - Resolution: Pending
 
-### BR-0050: P2 - Traverse only allocated HFS catalog B-tree leaves
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/parser-validation
-- Found by: R1-CHUNK-0021
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/hfs_reader.c:L520-L603` in `scan_catalog`
-- Related: `android/app/src/main/cpp/extract/hfs_reader.c:L326-L377` in `add_catalog_entry` and `build_entry_path`, and `android/ai tool plans/on_device_mac_extract.md:L85-L106,L313-L333`
-- Evidence: `scan_catalog` divides the catalog fork into 512-byte blocks, reads every block sequentially, and accepts any block whose node-kind byte is `0xff`. It never parses the B-tree header, follows the active leaf chain, or consults the B-tree allocation map. An unallocated node can retain a deleted leaf record and be treated as live; because catalog entries are deduplicated solely by CNID and the first record wins, an earlier stale node can also suppress the active record for the same file
-- Trigger: List or extract from an HFS image whose catalog B-tree contains an unallocated leaf node with stale records, especially a stale record before a live record with the same CNID, or a crafted catalog that marks attacker-selected leaf-shaped nodes free
-- Impact: Deleted or stale files can be listed and extracted, and stale names, parents, or extents can replace the live record, exposing unintended image content or producing incorrect output from an otherwise recognized volume
-- Expected: Catalog enumeration processes only allocated, structurally reachable leaf nodes and rejects invalid, cyclic, or out-of-range node links and allocation metadata
-- Suggested fix: Parse and validate the B-tree header, node size, total-node count, and allocation map, then traverse the validated leaf chain or otherwise require each scanned node to be allocated and reachable. Reject duplicate live CNIDs or resolve them according to documented catalog ordering instead of silently preserving the first physical node
-- Validation: Build synthetic catalogs with allocated and free leaf nodes, a free node containing a deleted record, a stale duplicate CNID before its live record, and cyclic or out-of-range leaf links; assert only reachable allocated records appear and retain listing and extraction checks for known Mac media
-- Resolution: Pending
-
 ### BR-0051: P2 - Bound HFS metadata and extents to the declared partition
 
 - [ ] OPEN

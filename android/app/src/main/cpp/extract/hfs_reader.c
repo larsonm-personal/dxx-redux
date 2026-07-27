@@ -394,7 +394,7 @@ static int add_catalog_entry(hfs_catalog_t *catalog,
 
 	existing = find_catalog_entry_by_id(catalog->entries, catalog->entry_count, entry->id);
 	if (existing >= 0)
-		return existing;
+		return -1;
 	if ((unsigned int) catalog->entry_count >= DXX_EXTRACT_MAX_ENTRIES)
 		return -1;
 	if (catalog->entry_count == catalog->entry_capacity) {
@@ -598,17 +598,16 @@ static unsigned int catalog_node_record_offset(const unsigned char *node,
 	return be16(node + HFS_NODE_SIZE - 2u * (index + 1u));
 }
 
-static int scan_catalog_node(hfs_catalog_t *catalog, const unsigned char *node)
+static int validate_catalog_node_offsets(const unsigned char *node,
+                                         unsigned int *record_count)
 {
 	unsigned int offset_table_start;
 	unsigned int previous_offset = 0;
 	unsigned int rec_count;
 	unsigned int rec_index;
 
-	if (!catalog || !node)
+	if (!node || !record_count)
 		return -1;
-	if (node[8] != 0xff)
-		return 0;
 
 	rec_count = be16(node + 10);
 	if (rec_count > (HFS_NODE_SIZE - HFS_NODE_DESCRIPTOR_SIZE) / 2u - 1u)
@@ -622,6 +621,21 @@ static int scan_catalog_node(hfs_catalog_t *catalog, const unsigned char *node)
 			return -1;
 		previous_offset = offset;
 	}
+	*record_count = rec_count;
+	return 0;
+}
+
+static int scan_catalog_node(hfs_catalog_t *catalog, const unsigned char *node)
+{
+	unsigned int rec_count;
+	unsigned int rec_index;
+
+	if (!catalog || !node)
+		return -1;
+	if (node[8] != 0xff)
+		return 0;
+	if (validate_catalog_node_offsets(node, &rec_count) < 0)
+		return -1;
 
 	for (rec_index = 0; rec_index < rec_count; rec_index++) {
 		unsigned int rec_off = catalog_node_record_offset(node, rec_index);
@@ -679,33 +693,211 @@ static int scan_catalog_node(hfs_catalog_t *catalog, const unsigned char *node)
 	return 0;
 }
 
-static int scan_catalog(hfs_catalog_t *catalog)
+typedef int (*catalog_node_reader_fn)(void *context, unsigned int node_index,
+                                      unsigned char node[HFS_NODE_SIZE]);
+
+static int catalog_map_bit(const unsigned char *map, unsigned int node_index)
+{
+	return (map[node_index / 8u] & (0x80u >> (node_index % 8u))) != 0;
+}
+
+static void set_catalog_map_bit(unsigned char *map, unsigned int node_index)
+{
+	map[node_index / 8u] |= (unsigned char) (0x80u >> (node_index % 8u));
+}
+
+static int copy_catalog_map_record(const unsigned char *node,
+                                   unsigned int record_index,
+                                   unsigned char *allocation_map,
+                                   unsigned int allocation_map_size,
+                                   unsigned int *bytes_copied)
+{
+	unsigned int record_start;
+	unsigned int record_end;
+	unsigned int record_size;
+	unsigned int remaining;
+
+	if (!node || !allocation_map || !bytes_copied ||
+	    *bytes_copied > allocation_map_size)
+		return -1;
+	record_start = catalog_node_record_offset(node, record_index);
+	record_end = catalog_node_record_offset(node, record_index + 1u);
+	record_size = record_end - record_start;
+	remaining = allocation_map_size - *bytes_copied;
+	if (record_size > remaining)
+		record_size = remaining;
+	memcpy(allocation_map + *bytes_copied, node + record_start, record_size);
+	*bytes_copied += record_size;
+	return 0;
+}
+
+static int scan_catalog_tree(hfs_catalog_t *catalog, unsigned int node_count,
+                             catalog_node_reader_fn read_node, void *context)
 {
 	unsigned char node[HFS_NODE_SIZE];
-	unsigned int node_count;
+	unsigned char *allocation_map = NULL;
+	unsigned char *visited_nodes = NULL;
+	unsigned int allocation_map_size;
+	unsigned int allocated_nodes = 0;
+	unsigned int bytes_copied = 0;
+	unsigned int first_leaf;
+	unsigned int free_nodes;
+	unsigned int last_leaf;
+	unsigned int leaf_records;
+	unsigned int map_node;
 	unsigned int node_index;
+	unsigned int previous_node;
+	unsigned int records_seen = 0;
+	unsigned int root_node;
+	unsigned int total_nodes;
+	unsigned int tree_depth;
+	unsigned int rec_count;
+	int result = -1;
 
-	if (!catalog)
+	if (!catalog || !read_node || node_count == 0)
 		return -1;
-
 	catalog->entry_count = 0;
-	node_count = catalog->volume.catalog_file_size / HFS_NODE_SIZE;
-	if (node_count == 0)
-		return -1;
 #ifdef HFS_READER_TESTING
 	hfs_test_scan_count++;
 #endif
 
-	for (node_index = 0; node_index < node_count; node_index++) {
-		if (read_fork_bytes(catalog->bin_fd, &catalog->volume,
-		                    catalog->volume.catalog_extents,
-		                    (long long) node_index * HFS_NODE_SIZE,
-		                    node, sizeof(node)) < 0 ||
-		    scan_catalog_node(catalog, node) < 0)
-			return -1;
-	}
+	if (read_node(context, 0, node) < 0 ||
+	    node[8] != 1u || node[9] != 0u ||
+	    be32(node + 4) != 0u ||
+	    validate_catalog_node_offsets(node, &rec_count) < 0 ||
+	    rec_count != 3u)
+		return -1;
+	if (catalog_node_record_offset(node, 1) -
+	        catalog_node_record_offset(node, 0) <
+	    30u)
+		return -1;
 
-	return 0;
+	node_index = catalog_node_record_offset(node, 0);
+	tree_depth = be16(node + node_index);
+	root_node = be32(node + node_index + 2u);
+	leaf_records = be32(node + node_index + 6u);
+	first_leaf = be32(node + node_index + 10u);
+	last_leaf = be32(node + node_index + 14u);
+	if (be16(node + node_index + 18u) != HFS_NODE_SIZE)
+		return -1;
+	total_nodes = be32(node + node_index + 22u);
+	free_nodes = be32(node + node_index + 26u);
+	if (total_nodes != node_count || free_nodes > total_nodes)
+		return -1;
+
+	allocation_map_size = (total_nodes + 7u) / 8u;
+	allocation_map = (unsigned char *) hfs_catalog_calloc(allocation_map_size, 1);
+	visited_nodes = (unsigned char *) hfs_catalog_calloc(allocation_map_size, 1);
+	if (!allocation_map || !visited_nodes)
+		goto cleanup;
+	if (copy_catalog_map_record(node, 2, allocation_map,
+	                            allocation_map_size, &bytes_copied) < 0)
+		goto cleanup;
+
+	map_node = be32(node);
+	previous_node = 0;
+	while (bytes_copied < allocation_map_size) {
+		unsigned int next_node;
+
+		if (map_node == 0 || map_node >= total_nodes ||
+		    catalog_map_bit(visited_nodes, map_node))
+			goto cleanup;
+		set_catalog_map_bit(visited_nodes, map_node);
+		if (read_node(context, map_node, node) < 0 ||
+		    node[8] != 2u || node[9] != 0u ||
+		    be32(node + 4) != previous_node ||
+		    validate_catalog_node_offsets(node, &rec_count) < 0 ||
+		    rec_count != 1u ||
+		    copy_catalog_map_record(node, 0, allocation_map,
+		                            allocation_map_size, &bytes_copied) < 0)
+			goto cleanup;
+		next_node = be32(node);
+		previous_node = map_node;
+		map_node = next_node;
+	}
+	if (map_node != 0)
+		goto cleanup;
+
+	for (node_index = 0; node_index < total_nodes; node_index++) {
+		if (catalog_map_bit(allocation_map, node_index))
+			allocated_nodes++;
+		if (catalog_map_bit(visited_nodes, node_index) &&
+		    !catalog_map_bit(allocation_map, node_index))
+			goto cleanup;
+	}
+	if (!catalog_map_bit(allocation_map, 0) ||
+	    free_nodes != total_nodes - allocated_nodes)
+		goto cleanup;
+	if (leaf_records == 0) {
+		if (tree_depth != 0 || root_node != 0 ||
+		    first_leaf != 0 || last_leaf != 0)
+			goto cleanup;
+		result = 0;
+		goto cleanup;
+	}
+	if (tree_depth == 0 || root_node == 0 || root_node >= total_nodes ||
+	    first_leaf == 0 || first_leaf >= total_nodes ||
+	    last_leaf == 0 || last_leaf >= total_nodes ||
+	    !catalog_map_bit(allocation_map, root_node) ||
+	    !catalog_map_bit(allocation_map, first_leaf) ||
+	    !catalog_map_bit(allocation_map, last_leaf))
+		goto cleanup;
+
+	memset(visited_nodes, 0, allocation_map_size);
+	node_index = first_leaf;
+	previous_node = 0;
+	while (node_index != 0) {
+		unsigned int next_node;
+
+		if (node_index >= total_nodes ||
+		    !catalog_map_bit(allocation_map, node_index) ||
+		    catalog_map_bit(visited_nodes, node_index))
+			goto cleanup;
+		set_catalog_map_bit(visited_nodes, node_index);
+		if (read_node(context, node_index, node) < 0 ||
+		    node[8] != 0xff || node[9] != 1u ||
+		    be32(node + 4) != previous_node ||
+		    validate_catalog_node_offsets(node, &rec_count) < 0 ||
+		    rec_count > leaf_records - records_seen ||
+		    scan_catalog_node(catalog, node) < 0)
+			goto cleanup;
+		records_seen += rec_count;
+		next_node = be32(node);
+		if ((node_index == last_leaf) != (next_node == 0))
+			goto cleanup;
+		previous_node = node_index;
+		node_index = next_node;
+	}
+	if (previous_node != last_leaf || records_seen != leaf_records)
+		goto cleanup;
+	result = 0;
+
+cleanup:
+	free(visited_nodes);
+	free(allocation_map);
+	return result;
+}
+
+static int read_catalog_fork_node(void *context, unsigned int node_index,
+                                  unsigned char node[HFS_NODE_SIZE])
+{
+	hfs_catalog_t *catalog = (hfs_catalog_t *) context;
+
+	return read_fork_bytes(catalog->bin_fd, &catalog->volume,
+	                       catalog->volume.catalog_extents,
+	                       (long long) node_index * HFS_NODE_SIZE,
+	                       node, HFS_NODE_SIZE);
+}
+
+static int scan_catalog(hfs_catalog_t *catalog)
+{
+	unsigned int node_count;
+
+	if (!catalog || catalog->volume.catalog_file_size % HFS_NODE_SIZE != 0)
+		return -1;
+	node_count = catalog->volume.catalog_file_size / HFS_NODE_SIZE;
+	return scan_catalog_tree(catalog, node_count, read_catalog_fork_node,
+	                         catalog);
 }
 
 static int append_public_entry(hfs_catalog_t *catalog,
@@ -991,6 +1183,49 @@ int hfs_test_scan_catalog_node(const unsigned char *node, int node_size)
 	result = scan_catalog_node(&catalog, node);
 	if (result == 0)
 		result = catalog.entry_count;
+	free(catalog.entries);
+	return result;
+}
+
+typedef struct {
+	const unsigned char *nodes;
+	unsigned int node_count;
+} hfs_test_catalog_tree_t;
+
+static int read_test_catalog_node(void *context, unsigned int node_index,
+                                  unsigned char node[HFS_NODE_SIZE])
+{
+	const hfs_test_catalog_tree_t *tree =
+	    (const hfs_test_catalog_tree_t *) context;
+
+	if (!tree || node_index >= tree->node_count)
+		return -1;
+	memcpy(node, tree->nodes + (size_t) node_index * HFS_NODE_SIZE,
+	       HFS_NODE_SIZE);
+	return 0;
+}
+
+int hfs_test_scan_catalog_tree(const unsigned char *nodes, int node_count,
+                               char *first_name, int first_name_size)
+{
+	hfs_test_catalog_tree_t tree;
+	hfs_catalog_t catalog;
+	int result;
+
+	if (!nodes || node_count <= 0 || !first_name || first_name_size <= 0)
+		return -1;
+	memset(&catalog, 0, sizeof(catalog));
+	tree.nodes = nodes;
+	tree.node_count = (unsigned int) node_count;
+	first_name[0] = '\0';
+	result = scan_catalog_tree(&catalog, tree.node_count,
+	                           read_test_catalog_node, &tree);
+	if (result == 0) {
+		result = catalog.entry_count;
+		if (catalog.entry_count > 0)
+			snprintf(first_name, (size_t) first_name_size, "%s",
+			         catalog.entries[0].name);
+	}
 	free(catalog.entries);
 	return result;
 }

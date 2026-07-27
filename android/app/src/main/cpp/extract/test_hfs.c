@@ -568,6 +568,160 @@ static int catalog_record_bounds_tests(void)
 	return hfs_test_scan_catalog_node(node, sizeof(node)) < 0;
 }
 
+static void set_catalog_tree_allocated(unsigned char *header,
+                                       unsigned int node_index)
+{
+	header[248u + node_index / 8u] |=
+	    (unsigned char) (0x80u >> (node_index % 8u));
+}
+
+static void build_catalog_tree_header(unsigned char *nodes,
+                                      unsigned int node_count,
+                                      unsigned int allocated_mask,
+                                      unsigned int first_leaf,
+                                      unsigned int last_leaf,
+                                      unsigned int leaf_records)
+{
+	unsigned char *header = nodes;
+	unsigned int allocated_count = 0;
+	unsigned int i;
+
+	header[8] = 1;
+	put_be16(header + 10, 3);
+	put_be16(header + 14, first_leaf ? 1 : 0);
+	put_be32(header + 16, first_leaf);
+	put_be32(header + 20, leaf_records);
+	put_be32(header + 24, first_leaf);
+	put_be32(header + 28, last_leaf);
+	put_be16(header + 32, HFS_TEST_NODE_SIZE);
+	put_be16(header + 34, 37);
+	put_be32(header + 36, node_count);
+	for (i = 0; i < node_count; i++) {
+		if (i < 32u && (allocated_mask & (1u << i))) {
+			set_catalog_tree_allocated(header, i);
+			allocated_count++;
+		}
+	}
+	put_be32(header + 40, node_count - allocated_count);
+	put_catalog_node_offset(header, 0, 14);
+	put_catalog_node_offset(header, 1, 120);
+	put_catalog_node_offset(header, 2, 248);
+	put_catalog_node_offset(header, 3, 504);
+}
+
+static void build_catalog_tree_leaf(unsigned char *node,
+                                    unsigned int forward_link,
+                                    unsigned int backward_link,
+                                    unsigned int id, const char *name)
+{
+	unsigned int data_offset;
+	unsigned int end;
+	unsigned int name_len = (unsigned int) strlen(name);
+
+	put_be32(node, forward_link);
+	put_be32(node + 4, backward_link);
+	node[8] = 0xff;
+	node[9] = 1;
+	put_be16(node + 10, 1);
+	node[14] = (unsigned char) (6u + name_len);
+	put_be32(node + 16, 1);
+	node[20] = (unsigned char) name_len;
+	memcpy(node + 21, name, name_len);
+	data_offset = 15u + node[14];
+	if (data_offset & 1u)
+		data_offset++;
+	node[data_offset] = 1;
+	put_be32(node + data_offset + 6u, id);
+	end = data_offset + 10u;
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, end);
+}
+
+static void build_catalog_tree_map_node(unsigned char *node,
+                                        unsigned int forward_link,
+                                        unsigned int backward_link,
+                                        unsigned char map_byte)
+{
+	put_be32(node, forward_link);
+	put_be32(node + 4, backward_link);
+	node[8] = 2;
+	put_be16(node + 10, 1);
+	node[14] = map_byte;
+	put_catalog_node_offset(node, 0, 14);
+	put_catalog_node_offset(node, 1, 15);
+}
+
+static int catalog_leaf_chain_tests(void)
+{
+	enum { TEST_NODE_COUNT = 6 };
+	unsigned char nodes[TEST_NODE_COUNT * HFS_TEST_NODE_SIZE];
+	unsigned char *large_nodes;
+	char first_name[HFS_NAME_LEN];
+	int result;
+
+	memset(nodes, 0, sizeof(nodes));
+	build_catalog_tree_header(nodes, TEST_NODE_COUNT, 0x07u, 1, 2, 2);
+	build_catalog_tree_leaf(nodes + HFS_TEST_NODE_SIZE, 2, 0, 3, "A");
+	build_catalog_tree_leaf(nodes + 2 * HFS_TEST_NODE_SIZE, 0, 1, 4, "B");
+	if (hfs_test_scan_catalog_tree(nodes, TEST_NODE_COUNT,
+	                               first_name, sizeof(first_name)) != 2 ||
+	    strcmp(first_name, "A") != 0)
+		return 0;
+
+	memset(nodes, 0, sizeof(nodes));
+	build_catalog_tree_header(nodes, TEST_NODE_COUNT, 0x05u, 2, 2, 1);
+	build_catalog_tree_leaf(nodes + HFS_TEST_NODE_SIZE, 0, 0, 3, "Stale");
+	build_catalog_tree_leaf(nodes + 2 * HFS_TEST_NODE_SIZE, 0, 0, 3, "Live");
+	if (hfs_test_scan_catalog_tree(nodes, TEST_NODE_COUNT,
+	                               first_name, sizeof(first_name)) != 1 ||
+	    strcmp(first_name, "Live") != 0)
+		return 0;
+
+	memset(nodes, 0, sizeof(nodes));
+	build_catalog_tree_header(nodes, TEST_NODE_COUNT, 0x01u, 1, 1, 1);
+	build_catalog_tree_leaf(nodes + HFS_TEST_NODE_SIZE, 0, 0, 3, "Free");
+	if (hfs_test_scan_catalog_tree(nodes, TEST_NODE_COUNT,
+	                               first_name, sizeof(first_name)) >= 0)
+		return 0;
+
+	memset(nodes, 0, sizeof(nodes));
+	build_catalog_tree_header(nodes, TEST_NODE_COUNT, 0x07u, 1, 2, 2);
+	build_catalog_tree_leaf(nodes + HFS_TEST_NODE_SIZE, 2, 0, 3, "A");
+	build_catalog_tree_leaf(nodes + 2 * HFS_TEST_NODE_SIZE, 1, 1, 4, "B");
+	if (hfs_test_scan_catalog_tree(nodes, TEST_NODE_COUNT,
+	                               first_name, sizeof(first_name)) >= 0)
+		return 0;
+
+	memset(nodes, 0, sizeof(nodes));
+	build_catalog_tree_header(nodes, TEST_NODE_COUNT, 0x07u, 1, 2, 2);
+	build_catalog_tree_leaf(nodes + HFS_TEST_NODE_SIZE, TEST_NODE_COUNT,
+	                        0, 3, "A");
+	build_catalog_tree_leaf(nodes + 2 * HFS_TEST_NODE_SIZE, 0, 1, 4, "B");
+	if (hfs_test_scan_catalog_tree(nodes, TEST_NODE_COUNT,
+	                               first_name, sizeof(first_name)) >= 0)
+		return 0;
+
+	memset(nodes, 0, sizeof(nodes));
+	build_catalog_tree_header(nodes, TEST_NODE_COUNT, 0x07u, 1, 2, 2);
+	build_catalog_tree_leaf(nodes + HFS_TEST_NODE_SIZE, 2, 0, 3, "A");
+	build_catalog_tree_leaf(nodes + 2 * HFS_TEST_NODE_SIZE, 0, 1, 3, "B");
+	if (hfs_test_scan_catalog_tree(nodes, TEST_NODE_COUNT,
+	                               first_name, sizeof(first_name)) >= 0)
+		return 0;
+
+	large_nodes = (unsigned char *) calloc(2050u, HFS_TEST_NODE_SIZE);
+	if (!large_nodes)
+		return 0;
+	build_catalog_tree_header(large_nodes, 2050, 0x0bu, 1, 1, 1);
+	put_be32(large_nodes, 3);
+	build_catalog_tree_leaf(large_nodes + HFS_TEST_NODE_SIZE, 0, 0, 3, "A");
+	build_catalog_tree_map_node(large_nodes + 3 * HFS_TEST_NODE_SIZE, 0, 0, 0);
+	result = hfs_test_scan_catalog_tree(large_nodes, 2050,
+	                                    first_name, sizeof(first_name));
+	free(large_nodes);
+	return result == 1 && strcmp(first_name, "A") == 0;
+}
+
 static int probe_cue(const char *cue_path, hfs_partition_info_t *out)
 {
 	char cue_dir[1024];
@@ -790,6 +944,14 @@ int main(void)
 		PASS();
 	else {
 		FAIL("malformed catalog record accepted");
+		ok = 0;
+	}
+
+	TEST("catalog_allocated_leaf_chain");
+	if (catalog_leaf_chain_tests())
+		PASS();
+	else {
+		FAIL("invalid or free catalog leaf accepted");
 		ok = 0;
 	}
 
