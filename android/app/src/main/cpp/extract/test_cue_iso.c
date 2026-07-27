@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -144,6 +145,31 @@ static int append_iso_dir_record(unsigned char *buf, int pos,
 		memcpy(rec + 33, name, (size_t) name_len);
 
 	return pos + rec_len;
+}
+
+static void set_iso_record_u32(unsigned char *record, int offset,
+                               unsigned int value)
+{
+	record[offset] = (unsigned char) value;
+	record[offset + 1] = (unsigned char) (value >> 8);
+	record[offset + 2] = (unsigned char) (value >> 16);
+	record[offset + 3] = (unsigned char) (value >> 24);
+	record[offset + 4] = (unsigned char) (value >> 24);
+	record[offset + 5] = (unsigned char) (value >> 16);
+	record[offset + 6] = (unsigned char) (value >> 8);
+	record[offset + 7] = (unsigned char) value;
+}
+
+static unsigned char *iso_directory_record_at(unsigned char *sector,
+                                              int record_index)
+{
+	int pos = 0;
+	for (int i = 0; i < record_index; i++) {
+		if (sector[pos] == 0)
+			return NULL;
+		pos += sector[pos];
+	}
+	return sector[pos] ? sector + pos : NULL;
 }
 
 /* ── Minimal ISO 9660 image builder ──────────────────────────────────── */
@@ -531,6 +557,163 @@ static unsigned char *build_iso_with_file_count(int file_count, int standalone,
 	for (int i = 0; i < total; i++)
 		memcpy(image + (size_t) i * USER_DATA_SIZE,
 		       raw + (size_t) i * SECTOR_SIZE + 16, USER_DATA_SIZE);
+	free(raw);
+	return image;
+}
+
+enum {
+	ISO_GRAPH_SELF_CYCLE,
+	ISO_GRAPH_ANCESTOR_CYCLE,
+	ISO_GRAPH_REPEATED_EXTENT,
+	ISO_GRAPH_OVERLAPPING_EXTENT,
+	ISO_GRAPH_UNREADABLE_CHILD,
+	ISO_GRAPH_HUGE_CHILD,
+	ISO_GRAPH_WRAPPED_CHILD
+};
+
+static unsigned char *convert_raw_iso(const unsigned char *raw, int sectors)
+{
+	unsigned char *image =
+	    (unsigned char *) malloc((size_t) sectors * USER_DATA_SIZE);
+	for (int i = 0; i < sectors; i++)
+		memcpy(image + (size_t) i * USER_DATA_SIZE,
+		       raw + (size_t) i * SECTOR_SIZE + 16, USER_DATA_SIZE);
+	return image;
+}
+
+static unsigned char *build_iso_graph_fixture(int mutation, int standalone,
+                                              int *out_sectors)
+{
+	int sectors;
+	unsigned char *raw = build_iso_with_subdir(
+	    "CHILD", "VISIBLE.HOG", (const unsigned char *) "r", 1,
+	    "NESTED.HOG", (const unsigned char *) "n", 1, &sectors);
+	unsigned char *root = raw + (size_t) 18 * SECTOR_SIZE + 16;
+	unsigned char *pvd_root =
+	    raw + (size_t) 16 * SECTOR_SIZE + 16 + 156;
+	unsigned char *child = raw + (size_t) 20 * SECTOR_SIZE + 16;
+	unsigned char *child_record = iso_directory_record_at(root, 3);
+
+	switch (mutation) {
+		case ISO_GRAPH_SELF_CYCLE:
+			set_iso_record_u32(child_record, 2, 18);
+			break;
+		case ISO_GRAPH_ANCESTOR_CYCLE: {
+			unsigned char *last = iso_directory_record_at(child, 2);
+			int pos = (int) (last - child) + last[0];
+			append_iso_dir_record(
+			    child, pos, "BACK", 0, 0, 18, USER_DATA_SIZE, 1);
+			break;
+		}
+		case ISO_GRAPH_REPEATED_EXTENT: {
+			int pos = (int) (child_record - root) + child_record[0];
+			append_iso_dir_record(
+			    root, pos, "ALIAS", 0, 0, 20, USER_DATA_SIZE, 1);
+			break;
+		}
+		case ISO_GRAPH_OVERLAPPING_EXTENT:
+			set_iso_record_u32(pvd_root, 10, USER_DATA_SIZE * 2);
+			set_iso_record_u32(child_record, 2, 19);
+			break;
+		case ISO_GRAPH_UNREADABLE_CHILD:
+			set_iso_record_u32(child_record, 2, (unsigned int) sectors + 10);
+			break;
+		case ISO_GRAPH_HUGE_CHILD:
+			set_iso_record_u32(child_record, 10, UINT_MAX);
+			break;
+		case ISO_GRAPH_WRAPPED_CHILD:
+			set_iso_record_u32(child_record, 2, UINT_MAX - 1);
+			set_iso_record_u32(child_record, 10, USER_DATA_SIZE * 2);
+			break;
+	}
+
+	*out_sectors = sectors;
+	if (!standalone)
+		return raw;
+	unsigned char *image = convert_raw_iso(raw, sectors);
+	free(raw);
+	return image;
+}
+
+static unsigned char *build_iso_sector_budget_fixture(int standalone,
+                                                      int *out_sectors)
+{
+	const int directory_sectors = ISO_MAX_FILES * 8 + 1;
+	const int total = 18 + directory_sectors;
+	int base_sectors;
+	unsigned char *base = build_minimal_iso(
+	    "BASE.HOG", (const unsigned char *) "x", 1, &base_sectors);
+	unsigned char *raw =
+	    (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
+	unsigned char *root_record;
+
+	memcpy(raw, base, (size_t) 18 * SECTOR_SIZE);
+	free(base);
+	root_record = raw + (size_t) 16 * SECTOR_SIZE + 16 + 156;
+	set_iso_record_u32(
+	    root_record, 10,
+	    (unsigned int) directory_sectors * USER_DATA_SIZE);
+	*out_sectors = total;
+	if (!standalone)
+		return raw;
+	unsigned char *image = convert_raw_iso(raw, total);
+	free(raw);
+	return image;
+}
+
+static unsigned char *build_iso_depth_fixture(int child_levels,
+                                              int standalone,
+                                              int *out_sectors)
+{
+	int directory_count = child_levels + 1;
+	int data_lba = 18 + directory_count;
+	int total = data_lba + 1;
+	int base_sectors;
+	unsigned char *base = build_minimal_iso(
+	    "BASE.HOG", (const unsigned char *) "x", 1, &base_sectors);
+	unsigned char *raw =
+	    (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
+	unsigned char user[USER_DATA_SIZE];
+	int m, s, f;
+
+	memcpy(raw, base, (size_t) 18 * SECTOR_SIZE);
+	free(base);
+	for (int level = 0; level < directory_count; level++) {
+		int lba = 18 + level;
+		int parent_lba = level == 0 ? 18 : lba - 1;
+		int pos = 0;
+		memset(user, 0, sizeof(user));
+		pos = append_iso_dir_record(
+		    user, pos, NULL, 0x00, 1, (unsigned int) lba,
+		    USER_DATA_SIZE, 1);
+		pos = append_iso_dir_record(
+		    user, pos, NULL, 0x01, 1, (unsigned int) parent_lba,
+		    USER_DATA_SIZE, 1);
+		if (level < child_levels) {
+			char name[16];
+			snprintf(name, sizeof(name), "D%02d", level + 1);
+			append_iso_dir_record(
+			    user, pos, name, 0, 0, (unsigned int) (lba + 1),
+			    USER_DATA_SIZE, 1);
+		} else {
+			append_iso_dir_record(
+			    user, pos, "LEAF.HOG", 0, 0, (unsigned int) data_lba,
+			    1, 0);
+		}
+		lba_to_msf(lba, &m, &s, &f);
+		build_mode1_sector(
+		    raw + (size_t) lba * SECTOR_SIZE, m, s, f, user);
+	}
+	memset(user, 0, sizeof(user));
+	user[0] = 'x';
+	lba_to_msf(data_lba, &m, &s, &f);
+	build_mode1_sector(
+	    raw + (size_t) data_lba * SECTOR_SIZE, m, s, f, user);
+
+	*out_sectors = total;
+	if (!standalone)
+		return raw;
+	unsigned char *image = convert_raw_iso(raw, total);
 	free(raw);
 	return image;
 }
@@ -1409,6 +1592,76 @@ static void test_iso_name_containment(void)
 			}
 		}
 		free(raw);
+	}
+	PASS();
+}
+
+static void test_iso_cycle_safe_traversal(void)
+{
+	TEST(iso_directory_cycles_and_invalid_spans_fail_closed);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		for (int mutation = ISO_GRAPH_SELF_CYCLE;
+		     mutation <= ISO_GRAPH_WRAPPED_CHILD; mutation++) {
+			int sectors;
+			unsigned char *image =
+			    build_iso_graph_fixture(mutation, standalone, &sectors);
+			iso_file_list_t list;
+			memset(&list, 0x5a, sizeof(list));
+			int result =
+			    list_iso_record_test_image(image, sectors, standalone, &list);
+			free(image);
+			if (result != -1 || list.num_files != 0) {
+				FAIL("invalid ISO directory graph published a partial list");
+				return;
+			}
+		}
+	}
+	PASS();
+
+	TEST(iso_directory_traversal_sector_budget);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		int sectors;
+		unsigned char *image =
+		    build_iso_sector_budget_fixture(standalone, &sectors);
+		iso_file_list_t list;
+		memset(&list, 0x5a, sizeof(list));
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1 || list.num_files != 0) {
+			FAIL("oversized ISO directory traversal was not bounded");
+			return;
+		}
+	}
+	PASS();
+
+	TEST(iso_directory_depth_exact_boundary);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		int sectors;
+		unsigned char *image =
+		    build_iso_depth_fixture(15, standalone, &sectors);
+		iso_file_list_t list;
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != 16 || list.num_files != 16 ||
+		    list.files[15].is_dir ||
+		    strcmp(list.files[15].path,
+		           "d01/d02/d03/d04/d05/d06/d07/d08/d09/d10/d11/d12/d13/"
+		           "d14/d15/leaf.hog") != 0) {
+			FAIL("exact maximum ISO directory depth rejected");
+			return;
+		}
+
+		image = build_iso_depth_fixture(16, standalone, &sectors);
+		memset(&list, 0x5a, sizeof(list));
+		result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != -1 || list.num_files != 0) {
+			FAIL("over-depth ISO directory graph published a partial list");
+			return;
+		}
 	}
 	PASS();
 }
@@ -2477,6 +2730,7 @@ int main(int argc, char *argv[])
 	test_iso_reader();
 	test_iso_directory_record_bounds();
 	test_iso_name_containment();
+	test_iso_cycle_safe_traversal();
 	test_iso_extraction();
 	test_iso_name_cleaning();
 	test_iso_invalid_pvd();

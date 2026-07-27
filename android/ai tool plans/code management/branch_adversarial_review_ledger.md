@@ -5785,23 +5785,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add empty and ordinary callbacks, quoted unrelated functions, missing and extra arguments, escaped quotes, overlong values, and genuine single- and multipart Galaxy metadata; assert only exact valid Galaxy records take inner zlib and every other file retains its original path and bytes
 - Resolution: Pending
 
-### BR-0062: P1 - Make ISO directory traversal cycle-safe and fail closed
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/resource-exhaustion
-- Found by: R1-CHUNK-0025, R1-CHUNK-0026
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/iso9660_reader.c:L249-L369` in `walk_directory`
-- Related: `android/app/src/main/cpp/extract/iso9660_reader.c:L374-L410`, `android/app/src/main/cpp/extract/iso9660_reader.h:L19-L37`, `android/app/src/main/cpp/extract/jni_disc_import.c:L219-L271,L321-L392`, and `android/app/src/main/cpp/extract/test_cue_iso.c:L337-L442,L1752-L1845`
-- Evidence: Every nonspecial directory record is followed recursively without tracking active or visited extents, and the recursive return value is discarded. The depth check therefore does not make malformed traversal fail; a record can point back to an ancestor under an ordinary name, and several such records per sector produce an exponentially expanding walk through depth 16. Traversal continues even after the fixed 512-entry output is full. The same ignored return converts an unreadable child or depth failure into a successful partial catalog, while entries beyond 512 are silently omitted. The rounded sector-count calculation can also wrap for a near-`UINT32_MAX` directory size and return an empty successful subtree
-- Trigger: List an ISO directory containing two or more ordinary-named child records that point to the current or an ancestor extent, a child with an unreadable extent, more than 512 reachable entries, or a directory size whose rounded sector count overflows
-- Impact: A small crafted image can occupy an import worker with an enormous number of repeated sector reads and recursive calls, or can publish an incomplete successful catalog that omits required game files and later reports a completed import
-- Expected: Directory traversal terminates in work proportional to validated reachable metadata, detects cycles or repeated directory extents according to format rules, and propagates every malformed subtree, capacity, arithmetic, or read failure
-- Suggested fix: Carry an explicit traversal context with an active or visited extent set and a checked record and sector budget, use checked rounding and LBA arithmetic, stop immediately on capacity exhaustion, and propagate recursive errors. Prefer a dynamically sized catalog within the shared import budget when valid discs may exceed the current capacity
-- Validation: Add self-cycle, ancestor-cycle, branching-cycle, repeated-extent, unreadable-child, exact-depth, depth-plus-one, 512-entry, 513-entry, and near-`UINT32_MAX` directory-size fixtures; assert prompt bounded failure, no partial successful list, and unchanged traversal of valid nested discs
-- Resolution: Pending
-
 ### BR-0063: P2 - Assemble ISO multi-extent files before extraction
 
 - [ ] OPEN

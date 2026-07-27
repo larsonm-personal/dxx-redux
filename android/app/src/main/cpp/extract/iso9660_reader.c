@@ -16,6 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -373,7 +374,49 @@ static int join_iso_path(char *out, size_t out_size, const char *prefix,
 
 /* ── Directory tree walker ───────────────────────────────────────────── */
 
-#define MAX_DIR_DEPTH 16
+#define MAX_DIR_DEPTH             16
+#define ISO_MAX_TRAVERSAL_SECTORS (ISO_MAX_FILES * 8)
+#define ISO_MAX_TRAVERSAL_RECORDS (ISO_MAX_FILES * 16)
+
+typedef struct {
+	unsigned int visited_lbas[ISO_MAX_FILES + 1];
+	uint64_t visited_end_lbas[ISO_MAX_FILES + 1];
+	int num_visited;
+	unsigned int sectors_remaining;
+	unsigned int records_remaining;
+} iso_traversal_context_t;
+
+static int begin_directory(const iso_reader_source_t *src,
+                           unsigned int dir_lba, unsigned int dir_size,
+                           iso_traversal_context_t *context,
+                           unsigned int *sectors_needed)
+{
+	uint64_t sector_count;
+	uint64_t end_lba;
+	int i;
+
+	if (!src || !context || !sectors_needed || dir_size == 0 ||
+	    src->num_logical_sectors <= 0)
+		return -1;
+	sector_count = (uint64_t) dir_size / USER_DATA_SIZE +
+	               (dir_size % USER_DATA_SIZE != 0);
+	end_lba = (uint64_t) dir_lba + sector_count;
+	if (sector_count == 0 || sector_count > context->sectors_remaining ||
+	    end_lba > (uint64_t) src->num_logical_sectors ||
+	    end_lba > (uint64_t) INT_MAX + 1)
+		return -1;
+	for (i = 0; i < context->num_visited; i++)
+		if ((uint64_t) dir_lba < context->visited_end_lbas[i] &&
+		    (uint64_t) context->visited_lbas[i] < end_lba)
+			return -1;
+	if (context->num_visited >= ISO_MAX_FILES + 1)
+		return -1;
+	context->visited_lbas[context->num_visited] = dir_lba;
+	context->visited_end_lbas[context->num_visited++] = end_lba;
+	context->sectors_remaining -= (unsigned int) sector_count;
+	*sectors_needed = (unsigned int) sector_count;
+	return 0;
+}
 
 /* Recursively walk an ISO 9660 directory, appending entries to file_list.
  * dir_lba : LBA of the directory extent
@@ -384,7 +427,8 @@ static int walk_directory(const iso_reader_source_t *src,
                           unsigned int dir_lba, unsigned int dir_size,
                           const char *prefix,
                           iso_file_list_t *out,
-                          int depth)
+                          int depth,
+                          iso_traversal_context_t *context)
 {
 	unsigned char sector[USER_DATA_SIZE];
 	unsigned int bytes_read = 0;
@@ -396,8 +440,12 @@ static int walk_directory(const iso_reader_source_t *src,
 		return -1;
 	}
 
-	sectors_needed = dir_size / USER_DATA_SIZE +
-	                 (dir_size % USER_DATA_SIZE != 0);
+	if (begin_directory(src, dir_lba, dir_size, context,
+	                    &sectors_needed) < 0) {
+		ISO_LOG("Invalid or repeated ISO directory extent LBA=%u size=%u",
+		        dir_lba, dir_size);
+		return -1;
+	}
 
 	while (sector_idx < sectors_needed && bytes_read < dir_size) {
 		unsigned int pos = 0;
@@ -405,8 +453,9 @@ static int walk_directory(const iso_reader_source_t *src,
 		if (sector_limit > USER_DATA_SIZE)
 			sector_limit = USER_DATA_SIZE;
 
-		if (read_user_sector(src, (int) (dir_lba + sector_idx), sector) < 0) {
-			ISO_LOG("Failed to read directory sector at LBA %u", dir_lba + sector_idx);
+		unsigned int sector_lba = dir_lba + sector_idx;
+		if (read_user_sector(src, (int) sector_lba, sector) < 0) {
+			ISO_LOG("Failed to read directory sector at LBA %u", sector_lba);
 			return -1;
 		}
 
@@ -421,6 +470,9 @@ static int walk_directory(const iso_reader_source_t *src,
 				break;
 			}
 
+			if (context->records_remaining == 0)
+				return -1;
+			context->records_remaining--;
 			if (parse_directory_record(sector + pos, sector_limit - pos,
 			                           &record) < 0)
 				return -1;
@@ -464,7 +516,8 @@ static int walk_directory(const iso_reader_source_t *src,
 				e->is_dir = 1;
 				out->num_files++;
 				if (walk_directory(src, record.extent_lba, record.data_size,
-				                   full_path, out, depth + 1) < 0)
+				                   full_path, out, depth + 1,
+				                   context) < 0)
 					return -1;
 			} else {
 				/* Regular file */
@@ -500,10 +553,14 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
 {
 	unsigned char pvd[USER_DATA_SIZE];
 	iso_directory_record_t root_record;
+	iso_traversal_context_t context;
 
 	if (!src || src->fd < 0 || !out) return -1;
 
 	memset(out, 0, sizeof(*out));
+	memset(&context, 0, sizeof(context));
+	context.sectors_remaining = ISO_MAX_TRAVERSAL_SECTORS;
+	context.records_remaining = ISO_MAX_TRAVERSAL_RECORDS;
 
 	/* Read Primary Volume Descriptor at logical sector 16 */
 	if (read_user_sector(src, PVD_SECTOR, pvd) < 0) {
@@ -532,8 +589,10 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
 
 	/* Walk the directory tree */
 	if (walk_directory(src, root_record.extent_lba, root_record.data_size,
-	                   "", out, 0) < 0)
+	                   "", out, 0, &context) < 0) {
+		memset(out, 0, sizeof(*out));
 		return -1;
+	}
 
 	ISO_LOG("Listed %d entries total", out->num_files);
 	return out->num_files;
