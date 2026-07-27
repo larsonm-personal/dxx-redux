@@ -786,6 +786,6 @@ int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
                 unsigned char **out_midi, int *out_len)
 {
 	return hmp_android_convert_mem(hmp_data, hmp_len, out_midi, out_len,
-	                               hmptrk2mid, tempo, sizeof(tempo));
+	                               tempo, sizeof(tempo));
 }
 #endif

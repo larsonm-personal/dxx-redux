@@ -8144,23 +8144,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Load RGB and RGBA xmodel textures at power-of-two and non-power-of-two sizes on Android, check `glGetError` after upload, inspect all required mip levels or render a minified sampling fixture, and verify custom D1 and D2 models retain correct textures across context recreation.
 - Resolution: Pending
 
-### BR-0198: P1 - Bound every HMP track event read before MIDI conversion
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0102
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/hmp_android_shared.c:L18-L67,L112-L126` in memory HMP parsing and converter dispatch
-- Related: `d1/misc/hmp.c:L634-L722,L784-L790`, `d2/misc/hmp.c:L633-L721,L783-L789`, `android/app/src/main/cpp/shared/midi_preview.c:L531-L575`, `android/app/src/main/cpp/shared/midi_enumeration.c:L104-L119`, and archived BR-0018
-- Evidence: The shared memory parser checks that each declared track payload fits the outer buffer, but then hands only a pointer and integer size to the inherited D1 or D2 event converter. Those converters bound only the outer loop. A one-byte track whose delta byte has its high bit set advances `data` to the end and immediately dereferences `*data`, `data[1]`, and `data[2]`; a low-bit delta scans `data[n1]` until it happens to find a high bit without checking the end; channel events copy one or two payload bytes without remaining-length checks; and meta events trust `data[2]` and copy `3 + data[2]` bytes. The shared wrapper also ignores a zero converter return and reports overall success with a partial zero-length MIDI track. Separately, it performs signed `data -= 12` and `offset + 12 + data` arithmetic on an attacker-controlled 32-bit length, allowing undefined overflow before its bounds check. Preview and enumeration feed HMP bytes selected from imported files and HOG entries into this path.
-- Trigger: Preview or enumerate a structurally valid HMP with at least two tracks whose later declared track contains a truncated delta, event, or meta event, such as a one-byte high-bit delta payload, or whose 32-bit track length reaches signed arithmetic boundaries
-- Impact: A selected mission or music file can make native conversion read beyond its heap track buffer, copy adjacent bytes into the generated MIDI, crash in the converter or MIDI parser, or behave differently across builds due to signed overflow. Some malformed conversions are also returned as successful partial MIDI.
-- Expected: HMP structural and event parsing uses checked cursor arithmetic, rejects every truncated or overflowing field before reading or allocating, and publishes MIDI only when every track converts completely.
-- Suggested fix: Decode HMP integers into fixed-width unsigned values with checked subtraction and range conversion, validate every track span using remaining-length comparisons, and replace the callback contract with a bounded reader that returns explicit success plus produced length. Check delta width, status-specific payload length, meta length encoding, output growth, and allocation results; on any failure free the partial HMP and MIDI state and leave outputs null and zero.
-- Validation: Add paired D1 and D2 memory-conversion tests for empty and one-byte tracks, unterminated deltas, each channel event truncated at every byte, truncated and oversized meta events, missing end-of-track, zero and maximum track counts, 32-bit length boundaries, allocation failure, and valid retail HMP hashes. Run the malformed corpus under AddressSanitizer and UndefinedBehaviorSanitizer and assert every failure returns zero with null output.
-- Resolution: Pending
-
 ### BR-0199: P2 - Apply launcher graphics changes before rewriting config
 
 - [ ] OPEN

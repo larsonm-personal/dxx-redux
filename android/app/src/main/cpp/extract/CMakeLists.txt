@@ -374,4 +374,15 @@ add_executable(test_gles3_shim_array_sources
 target_include_directories(test_gles3_shim_array_sources
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME gles3_shim_array_source_tests COMMAND test_gles3_shim_array_sources)
+add_executable(test_hmp_android_shared ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_android_shared.c
+                                       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/hmp_android_shared.c)
+target_include_directories(
+    test_hmp_android_shared PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_stubs
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+if(MSVC)
+    target_compile_options(test_hmp_android_shared PRIVATE /W4)
+else()
+    target_compile_options(test_hmp_android_shared PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME hmp_android_shared_tests COMMAND test_hmp_android_shared)
 set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
