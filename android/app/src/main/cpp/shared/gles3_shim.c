@@ -8,6 +8,7 @@
  */
 
 #include "gles3_shim.h"
+#include "gles3_shim_array_sources.h"
 
 /* We need the real glDrawArrays/glEnable/glDisable, not our macro redirects */
 #undef glDrawArrays
@@ -200,21 +201,25 @@ static GLint va_size;
 static GLenum va_type;
 static GLsizei va_stride;
 static const void *va_ptr;
+static GLuint va_buffer;
 
 static GLint ca_size;
 static GLenum ca_type;
 static GLsizei ca_stride;
 static const void *ca_ptr;
+static GLuint ca_buffer;
 
 static GLint ta_size;
 static GLenum ta_type;
 static GLsizei ta_stride;
 static const void *ta_ptr;
+static GLuint ta_buffer;
 
 static GLint ta2_size;
 static GLenum ta2_type;
 static GLsizei ta2_stride;
 static const void *ta2_ptr;
+static GLuint ta2_buffer;
 
 static int state_dirty = 1;
 static GLuint external_prog;
@@ -276,10 +281,14 @@ void gles3_shim_init(void)
 	vertex_array_enabled = 0;
 	color_array_enabled = 0;
 	texcoord_array_enabled = 0;
+	va_buffer = 0;
+	ca_buffer = 0;
+	ta_buffer = 0;
 	ta2_size = 0;
 	ta2_type = GL_FLOAT;
 	ta2_stride = 0;
 	ta2_ptr = NULL;
+	ta2_buffer = 0;
 
 	GLuint vs = compile_shader(GL_VERTEX_SHADER, vs_src);
 	GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fs_src);
@@ -521,34 +530,46 @@ void gles3_shim_disable_client_state(GLenum cap)
 
 void gles3_shim_vertex_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr)
 {
+	GLint binding;
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &binding);
 	va_size = size;
 	va_type = type;
 	va_stride = stride;
 	va_ptr = ptr;
+	va_buffer = (GLuint) binding;
 }
 
 void gles3_shim_color_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr)
 {
+	GLint binding;
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &binding);
 	ca_size = size;
 	ca_type = type;
 	ca_stride = stride;
 	ca_ptr = ptr;
+	ca_buffer = (GLuint) binding;
 }
 
 void gles3_shim_texcoord_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr)
 {
+	GLint binding;
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &binding);
 	ta_size = size;
 	ta_type = type;
 	ta_stride = stride;
 	ta_ptr = ptr;
+	ta_buffer = (GLuint) binding;
 }
 
 void gles3_shim_external_texcoord2_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr)
 {
+	GLint binding;
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &binding);
 	ta2_size = size;
 	ta2_type = type;
 	ta2_stride = stride;
 	ta2_ptr = ptr;
+	ta2_buffer = (GLuint) binding;
 }
 
 /* ------------------------------------------------------------------ */
@@ -651,6 +672,7 @@ void gles3_shim_use_external(GLuint prog)
 		ta2_size = 0;
 		ta2_stride = 0;
 		ta2_type = GL_FLOAT;
+		ta2_buffer = 0;
 		state_dirty = 1;
 	}
 }
@@ -667,14 +689,227 @@ GLuint gles3_shim_get_stream_vbo(void)
 	return shim_vbo;
 }
 
+int gles3_shim_probe_vbo_arrays(void)
+{
+	static const float vertices[][5] = {
+		{ -0.5f, -0.5f, 0.0f, 0.0f, 0.0f },
+		{ 0.5f, -0.5f, 0.0f, 1.0f, 0.0f },
+		{ 0.0f, 0.5f, 0.0f, 0.5f, 1.0f },
+		{ -0.4f, -0.4f, 0.0f, 0.0f, 0.0f },
+		{ 0.4f, -0.4f, 0.0f, 1.0f, 0.0f },
+		{ 0.0f, 0.4f, 0.0f, 0.5f, 1.0f }
+	};
+	struct {
+		GLint size;
+		GLenum type;
+		GLsizei stride;
+		const void *ptr;
+		GLuint buffer;
+	} saved_va = { va_size, va_type, va_stride, va_ptr, va_buffer },
+	  saved_ca = { ca_size, ca_type, ca_stride, ca_ptr, ca_buffer },
+	  saved_ta = { ta_size, ta_type, ta_stride, ta_ptr, ta_buffer };
+	GLint previous_buffer;
+	GLint previous_framebuffer;
+	GLint previous_texture;
+	GLint previous_viewport[4];
+	GLuint previous_program = current_prog;
+	GLuint probe_vbo = 0;
+	GLuint probe_texture = 0;
+	GLuint probe_framebuffer = 0;
+	GLenum error;
+	GLfloat previous_clear_color[4];
+	GLboolean previous_blend;
+	GLboolean previous_cull;
+	GLboolean previous_depth;
+	GLboolean previous_scissor;
+	unsigned char center_pixel[4] = { 0, 0, 0, 0 };
+	mat_stack saved_mv_stack = mv_stack;
+	mat_stack saved_proj_stack = proj_stack;
+	mat_stack *saved_cur_stack = cur_stack;
+	float saved_mvp[16];
+	float saved_flat_color[4];
+	int saved_mvp_dirty = mvp_dirty;
+	int saved_tex2d_enabled = tex2d_enabled;
+	int saved_alpha_test_enabled = alpha_test_enabled;
+	int saved_vertex_enabled = vertex_array_enabled;
+	int saved_color_enabled = color_array_enabled;
+	int saved_texcoord_enabled = texcoord_array_enabled;
+	int saved_state_dirty = state_dirty;
+	int passed;
+
+	if (external_prog)
+		return 0;
+	memcpy(saved_mvp, mvp, sizeof(saved_mvp));
+	memcpy(saved_flat_color, flat_color, sizeof(saved_flat_color));
+	while (glGetError() != GL_NO_ERROR);
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previous_buffer);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous_framebuffer);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_texture);
+	glGetIntegerv(GL_VIEWPORT, previous_viewport);
+	glGetFloatv(GL_COLOR_CLEAR_VALUE, previous_clear_color);
+	previous_blend = glIsEnabled(GL_BLEND);
+	previous_cull = glIsEnabled(GL_CULL_FACE);
+	previous_depth = glIsEnabled(GL_DEPTH_TEST);
+	previous_scissor = glIsEnabled(GL_SCISSOR_TEST);
+
+	glGenTextures(1, &probe_texture);
+	glBindTexture(GL_TEXTURE_2D, probe_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8, 8, 0, GL_RGBA,
+	             GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glGenFramebuffers(1, &probe_framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, probe_framebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+	                       probe_texture, 0);
+	error = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
+	            ? GL_NO_ERROR
+	            : GL_INVALID_FRAMEBUFFER_OPERATION;
+	glViewport(0, 0, 8, 8);
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_SCISSOR_TEST);
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	mv_stack.top = 0;
+	proj_stack.top = 0;
+	mat4_identity(mv_stack.m[0]);
+	mat4_identity(proj_stack.m[0]);
+	cur_stack = &mv_stack;
+	mvp_dirty = 1;
+	tex2d_enabled = 0;
+	alpha_test_enabled = 0;
+	flat_color[0] = flat_color[1] = flat_color[2] = flat_color[3] = 1.0f;
+	state_dirty = 1;
+	glGenBuffers(1, &probe_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, probe_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	gles3_shim_vertex_pointer(3, GL_FLOAT, sizeof(vertices[0]), (const void *) 0);
+	gles3_shim_texcoord_pointer(2, GL_FLOAT, sizeof(vertices[0]),
+	                            (const void *) (3 * sizeof(float)));
+	gles3_shim_enable_client_state(GL_VERTEX_ARRAY);
+	gles3_shim_enable_client_state(GL_TEXTURE_COORD_ARRAY);
+	gles3_shim_disable_client_state(GL_COLOR_ARRAY);
+	gles3_shim_draw_arrays(GL_TRIANGLES, 0, 3);
+	gles3_shim_draw_arrays(GL_TRIANGLES, 3, 3);
+	glReadPixels(4, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, center_pixel);
+	if (error == GL_NO_ERROR)
+		error = glGetError();
+	passed = error == GL_NO_ERROR &&
+	         center_pixel[0] == 255 && center_pixel[1] == 255 &&
+	         center_pixel[2] == 255 && center_pixel[3] == 255;
+
+	va_size = saved_va.size;
+	va_type = saved_va.type;
+	va_stride = saved_va.stride;
+	va_ptr = saved_va.ptr;
+	va_buffer = saved_va.buffer;
+	ca_size = saved_ca.size;
+	ca_type = saved_ca.type;
+	ca_stride = saved_ca.stride;
+	ca_ptr = saved_ca.ptr;
+	ca_buffer = saved_ca.buffer;
+	ta_size = saved_ta.size;
+	ta_type = saved_ta.type;
+	ta_stride = saved_ta.stride;
+	ta_ptr = saved_ta.ptr;
+	ta_buffer = saved_ta.buffer;
+	vertex_array_enabled = saved_vertex_enabled;
+	color_array_enabled = saved_color_enabled;
+	texcoord_array_enabled = saved_texcoord_enabled;
+	mv_stack = saved_mv_stack;
+	proj_stack = saved_proj_stack;
+	cur_stack = saved_cur_stack;
+	memcpy(mvp, saved_mvp, sizeof(mvp));
+	mvp_dirty = saved_mvp_dirty;
+	tex2d_enabled = saved_tex2d_enabled;
+	alpha_test_enabled = saved_alpha_test_enabled;
+	memcpy(flat_color, saved_flat_color, sizeof(flat_color));
+	state_dirty = saved_state_dirty;
+	glBindBuffer(GL_ARRAY_BUFFER, (GLuint) previous_buffer);
+	glDeleteBuffers(1, &probe_vbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) previous_framebuffer);
+	glDeleteFramebuffers(1, &probe_framebuffer);
+	glBindTexture(GL_TEXTURE_2D, (GLuint) previous_texture);
+	glDeleteTextures(1, &probe_texture);
+	glViewport(previous_viewport[0], previous_viewport[1],
+	           previous_viewport[2], previous_viewport[3]);
+	glClearColor(previous_clear_color[0], previous_clear_color[1],
+	             previous_clear_color[2], previous_clear_color[3]);
+	if (previous_blend) glEnable(GL_BLEND);
+	if (previous_cull) glEnable(GL_CULL_FACE);
+	if (previous_depth) glEnable(GL_DEPTH_TEST);
+	if (previous_scissor) glEnable(GL_SCISSOR_TEST);
+	gles3_shim_bind_program(previous_program);
+	return passed;
+}
+
 /* ------------------------------------------------------------------ */
 /* Draw wrapper                                                        */
 /* ------------------------------------------------------------------ */
 
 void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 {
+	GLint previous_buffer;
+	GLuint draw_buffer = 0;
+	int va_active = external_prog ? (va_ptr != NULL || va_buffer != 0) : vertex_array_enabled && (va_ptr != NULL || va_buffer != 0);
+	int ca_active = external_prog ? (ca_ptr != NULL || ca_buffer != 0) : color_array_enabled && (ca_ptr != NULL || ca_buffer != 0);
+	int ta_active = external_prog ? (ta_ptr != NULL || ta_buffer != 0) : texcoord_array_enabled && (ta_ptr != NULL || ta_buffer != 0);
+	int ta2_active = external_prog && (ta2_ptr != NULL || ta2_buffer != 0);
+	const struct gles3_shim_array_source sources[] = {
+		{ va_active, va_buffer },
+		{ ca_active, ca_buffer },
+		{ ta_active, ta_buffer },
+		{ ta2_active, ta2_buffer }
+	};
+	int source_kind = gles3_shim_choose_array_source(sources, 4, &draw_buffer);
+
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previous_buffer);
+
+	if (source_kind == GLES3_SHIM_ARRAY_SOURCE_REJECT) {
+		LOGE("Rejected draw with mixed client arrays or array-buffer bindings");
+		return;
+	}
+
 	if (!external_prog)
 		gles3_shim_flush_state();
+
+	if (source_kind == GLES3_SHIM_ARRAY_SOURCE_BUFFER) {
+		glBindBuffer(GL_ARRAY_BUFFER, draw_buffer);
+		if (va_active) {
+			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE, va_stride, va_ptr);
+			glEnableVertexAttribArray(ATTR_POS);
+		} else {
+			glDisableVertexAttribArray(ATTR_POS);
+		}
+		if (ca_active) {
+			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE, ca_stride, ca_ptr);
+			glEnableVertexAttribArray(ATTR_COLOR);
+		} else {
+			glDisableVertexAttribArray(ATTR_COLOR);
+		}
+		if (ta_active) {
+			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE, ta_stride, ta_ptr);
+			glEnableVertexAttribArray(ATTR_TEXCOORD);
+		} else {
+			glDisableVertexAttribArray(ATTR_TEXCOORD);
+		}
+		if (external_prog) {
+			if (ta2_active) {
+				glVertexAttribPointer(3, ta2_size, ta2_type, GL_FALSE, ta2_stride, ta2_ptr);
+				glEnableVertexAttribArray(3);
+			} else {
+				glDisableVertexAttribArray(3);
+			}
+		}
+		glDrawArrays(mode, first, count);
+		glBindBuffer(GL_ARRAY_BUFFER, (GLuint) previous_buffer);
+		if (external_prog)
+			glDisableVertexAttribArray(3);
+		return;
+	}
 
 	if (!external_prog) {
 		/* GLES 3.0 requires vertex data in buffer objects -- no client-side
@@ -784,7 +1019,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 
 	glDrawArrays(mode, first, count);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, (GLuint) previous_buffer);
 	if (external_prog)
 		glDisableVertexAttribArray(3);
 }

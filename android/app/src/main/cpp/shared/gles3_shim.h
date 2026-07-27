@@ -70,6 +70,7 @@ const float *gles3_shim_get_mvp(void);
  * shim's streaming VBO / VAO path instead of maintaining a second upload path. */
 void gles3_shim_external_texcoord2_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr);
 GLuint gles3_shim_get_stream_vbo(void);
+int gles3_shim_probe_vbo_arrays(void);
 
 /* ---------- redirect macros ---------- */
 

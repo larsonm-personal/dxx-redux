@@ -368,4 +368,10 @@ endif()
 # Chromaprint test data lives in the fetched source tree
 set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
 add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
+
+add_executable(test_gles3_shim_array_sources
+               ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_gles3_shim_array_sources.c)
+target_include_directories(test_gles3_shim_array_sources
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+add_test(NAME gles3_shim_array_source_tests COMMAND test_gles3_shim_array_sources)
 set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

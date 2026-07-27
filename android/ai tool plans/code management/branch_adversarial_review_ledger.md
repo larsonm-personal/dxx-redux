@@ -8127,23 +8127,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add paired D1 and D2 protocol tests with separate host, sender, victim, and observer identities; cover valid host restoration, non-host forgery, mismatched peer-status identity, forged outer and inner slots, host relay, direct and reliable delivery, stale restoration outside rejoin, and boundary plus invalid record fields. Assert rejected packets are not forwarded and leave all player, object, and cooperative-stat state byte-for-byte unchanged.
 - Resolution: Pending
 
-### BR-0196: P1 - Preserve VBO-backed arrays through the GLES compatibility shim
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: graphics/memory-safety
-- Found by: R1-CHUNK-0102
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/gles3_shim.c:L657-L707,L766-L770` in the ordinary streaming draw path
-- Related: `android/app/src/main/cpp/shared/gles3_shim.h:L37-L42,L89-L97`, `d1/xmodel/xmodel.cpp:L24-L37,L78-L82,L180-L217`, `d2/xmodel/xmodel.cpp:L24-L37,L78-L82,L180-L217`, `d1/include/ogl_init.h:L27-L31`, `d2/include/ogl_init.h:L27-L31`, and `android/app/src/main/cpp/CMakeLists.txt:L493-L504,L618-L628,L768-L780`
-- Evidence: Android globally macro-redirects `glVertexPointer`, `glTexCoordPointer`, and `glDrawArrays` through the shim, including the linked D1 and D2 xmodel targets. Xmodel uploads interleaved vertices into `rm.vbo`, binds that VBO, and supplies OpenGL buffer offsets: zero for position and `offsetof(vert, tex)` for texture coordinates. The shim does not preserve or distinguish the caller's array-buffer binding. At draw time it binds `shim_vbo` and treats every stored pointer as a CPU source for `glBufferSubData`. The valid zero position offset is considered a null pointer, so `va_bytes` becomes zero and attribute 0 is disabled. The nonzero texture offset becomes a small host address and is passed as the source pointer for an upload, allowing the GL implementation to read invalid process memory. Thus the first rendered enhanced model can either fail inside the driver or draw without positions rather than using the VBO that xmodel populated.
-- Trigger: Place any supported D1 or D2 xmodel asset where `xmodel_load_all` finds it, start a level containing the replaced model, and let `xmodel_show` issue its first VBO-backed draw on Android
-- Impact: The optional custom-model feature can crash the game in native graphics code or render enhanced ships, robots, or other models missing or corrupted. The same shim contract is unsafe for any future caller that uses legal GLES buffer offsets instead of client memory.
-- Expected: The compatibility layer distinguishes client arrays from buffer-backed attribute offsets, preserves the caller's buffer binding for the latter, and never submits an OpenGL offset as a CPU read address.
-- Suggested fix: Track or query the `GL_ARRAY_BUFFER_BINDING` when each pointer is defined and store the binding with its attribute state. For a buffer-backed draw, bind that buffer, configure the offsets directly, and call real `glDrawArrays` without streaming them as host memory. Keep the existing checked streaming path only for true client arrays, reject mixed bindings unless explicitly supported, and restore the prior binding after the draw.
-- Validation: Add a small GLES integration fixture with interleaved position and texture data in a non-shim VBO, using offsets zero and `offsetof`; draw with `first` zero and nonzero through both D1 and D2 macro paths, require no GL error, verify the expected vertex output, and run under Android memory instrumentation. Retain ordinary client-array and external four-attribute merged-wall draws.
-- Resolution: Pending
-
 ### BR-0197: P2 - Generate mipmaps for Android xmodel textures
 
 - [ ] OPEN

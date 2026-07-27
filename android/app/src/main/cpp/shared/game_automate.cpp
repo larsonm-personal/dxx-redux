@@ -81,6 +81,7 @@ extern "C" {
 extern "C" void android_test_inject_touch_tap(void);
 extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
+extern "C" int gles3_shim_probe_vbo_arrays(void);
 extern "C" int do_game_pause(void);
 extern "C" android_axis_generation android_joystick_axis_publish(
     int axis, int raw_value, int touch_source);
@@ -346,6 +347,7 @@ enum step_type {
 	STEP_POSE_ROUTE_GUIDANCE,        /* move player to the active route pose and aim point */
 	STEP_PROBE_CROSSHAIR,            /* request merged-wall crosshair probe and wait */
 	STEP_ASSERT_PROBE_MATCH,         /* compare two stored probe results */
+	STEP_PROBE_GLES_VBO,             /* exercise zero and nonzero VBO array offsets */
 	STEP_ENTER_LAUNCHER,             /* yield back to launcher, write LAUNCHER_CONTINUE */
 	STEP_ENTER_GAME,                 /* launcher-only: no-op in game engine (skip) */
 	STEP_SETUP_COMMAND,              /* launcher-only: no-op in game engine (skip) */
@@ -546,6 +548,7 @@ static const char *step_type_name(step_type t)
 		case STEP_POSE_ROUTE_GUIDANCE: return "pose_route_guidance";
 		case STEP_PROBE_CROSSHAIR: return "probe_crosshair";
 		case STEP_ASSERT_PROBE_MATCH: return "assert_probe_match";
+		case STEP_PROBE_GLES_VBO: return "probe_gles_vbo";
 		case STEP_ENTER_LAUNCHER: return "enter_launcher";
 		case STEP_ENTER_GAME: return "enter_game";
 		case STEP_SETUP_COMMAND: return "setup_command";
@@ -2125,6 +2128,7 @@ static int parse_script(const char *json_text)
 			else if (action == "pose_route_guidance") s.type = STEP_POSE_ROUTE_GUIDANCE;
 			else if (action == "probe_crosshair") s.type = STEP_PROBE_CROSSHAIR;
 			else if (action == "assert_probe_match") s.type = STEP_ASSERT_PROBE_MATCH;
+			else if (action == "probe_gles_vbo") s.type = STEP_PROBE_GLES_VBO;
 			else if (action == "enter_launcher") s.type = STEP_ENTER_LAUNCHER;
 			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
@@ -3375,6 +3379,16 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			break;
 		}
+
+		case STEP_PROBE_GLES_VBO:
+			if (!gles3_shim_probe_vbo_arrays()) {
+				log_append("probe_gles_vbo", "fail", "VBO array probe reported a GL error");
+				stop_script_fail("probe_gles_vbo: VBO array probe reported a GL error");
+				break;
+			}
+			log_append("probe_gles_vbo", "done", "zero and nonzero offsets passed");
+			advance_step();
+			break;
 
 		case STEP_ENTER_LAUNCHER: {
 			/* Yield control back to the launcher (Kotlin).
