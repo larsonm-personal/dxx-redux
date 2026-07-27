@@ -80,6 +80,12 @@ static const char *basename_only(const char *path)
 	return last;
 }
 
+static int select_game_output(const char *path, void *user_data)
+{
+	(void) user_data;
+	return has_game_extension(path);
+}
+
 static int progress_cb(const char *filename, long long done, long long total, void *ud)
 {
 	(void) ud;
@@ -135,6 +141,11 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 	printf("]\n");
 
 	/* Extract game files */
+	if (!inno_output_names_unique(&arc, select_game_output, NULL)) {
+		fprintf(stderr, "ERROR: Colliding Inno output basenames\n");
+		inno_close(&arc);
+		return 1;
+	}
 	mkdir_p(out_dir);
 	int extracted = 0, errors = 0;
 

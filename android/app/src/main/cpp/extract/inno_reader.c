@@ -412,6 +412,39 @@ static int inno_checksum_matches(inno_checksum_ctx_t *ctx,
 	return 0;
 }
 
+#ifdef _WIN32
+static wchar_t *utf8_to_wide_path(const char *path)
+{
+	int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+	                                path, -1, NULL, 0);
+	if (count <= 0 || (size_t) count > SIZE_MAX / sizeof(wchar_t))
+		return NULL;
+	wchar_t *wide = (wchar_t *) malloc((size_t) count * sizeof(*wide));
+	if (!wide)
+		return NULL;
+	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+	                        path, -1, wide, count) != count) {
+		free(wide);
+		return NULL;
+	}
+	return wide;
+}
+#endif
+
+static int remove_output_path(const char *path)
+{
+#ifdef _WIN32
+	wchar_t *wide = utf8_to_wide_path(path);
+	if (!wide)
+		return -1;
+	int result = _wremove(wide);
+	free(wide);
+	return result;
+#else
+	return remove(path);
+#endif
+}
+
 static FILE *open_temporary_output(const char *output_path, char **temporary_path_out)
 {
 	size_t path_len = strlen(output_path);
@@ -420,7 +453,17 @@ static FILE *open_temporary_output(const char *output_path, char **temporary_pat
 	for (unsigned attempt = 0; attempt < 100; attempt++) {
 		snprintf(temporary_path, path_len + 48, "%s.inno.%ld.%u.tmp",
 		         output_path, (long) GET_PID(), attempt);
+#ifdef _WIN32
+		wchar_t *wide = utf8_to_wide_path(temporary_path);
+		if (!wide) {
+			free(temporary_path);
+			return NULL;
+		}
+		FILE *out = _wfopen(wide, L"wbx");
+		free(wide);
+#else
 		FILE *out = fopen(temporary_path, "wbx");
+#endif
 		if (out) {
 			*temporary_path_out = temporary_path;
 			return out;
@@ -435,12 +478,19 @@ static FILE *open_temporary_output(const char *output_path, char **temporary_pat
 static int commit_temporary_output(const char *temporary_path, const char *output_path)
 {
 #ifdef _WIN32
-	if (!MoveFileExA(temporary_path, output_path,
+	wchar_t *wide_temporary = utf8_to_wide_path(temporary_path);
+	wchar_t *wide_output = utf8_to_wide_path(output_path);
+	if (!wide_temporary || !wide_output ||
+	    !MoveFileExW(wide_temporary, wide_output,
 	                 MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
 		INNO_LOG("cannot commit %s: Windows error %lu", output_path,
 		         (unsigned long) GetLastError());
+		free(wide_temporary);
+		free(wide_output);
 		return -1;
 	}
+	free(wide_temporary);
+	free(wide_output);
 #else
 	if (rename(temporary_path, output_path) != 0) {
 		INNO_LOG("cannot commit %s: %s", output_path, strerror(errno));
@@ -1141,36 +1191,114 @@ static size_t data_entry_size_for_version(const inno_version_t *ver)
 
 /* ── Header stream parser ────────────────────────────────────────── */
 
-/* Read a length-prefixed string from a buffer.
- * For Unicode builds, converts UTF-16LE to ASCII (only low bytes).
- * Advances *pos by the consumed bytes. */
+static int append_utf8(char *out, size_t out_size, size_t *out_pos,
+                       uint32_t codepoint)
+{
+	uint8_t encoded[4];
+	size_t count;
+	if (codepoint <= 0x7Fu) {
+		encoded[0] = (uint8_t) codepoint;
+		count = 1;
+	} else if (codepoint <= 0x7FFu) {
+		encoded[0] = (uint8_t) (0xC0u | (codepoint >> 6));
+		encoded[1] = (uint8_t) (0x80u | (codepoint & 0x3Fu));
+		count = 2;
+	} else if (codepoint <= 0xFFFFu) {
+		encoded[0] = (uint8_t) (0xE0u | (codepoint >> 12));
+		encoded[1] = (uint8_t) (0x80u | ((codepoint >> 6) & 0x3Fu));
+		encoded[2] = (uint8_t) (0x80u | (codepoint & 0x3Fu));
+		count = 3;
+	} else {
+		encoded[0] = (uint8_t) (0xF0u | (codepoint >> 18));
+		encoded[1] = (uint8_t) (0x80u | ((codepoint >> 12) & 0x3Fu));
+		encoded[2] = (uint8_t) (0x80u | ((codepoint >> 6) & 0x3Fu));
+		encoded[3] = (uint8_t) (0x80u | (codepoint & 0x3Fu));
+		count = 4;
+	}
+	if (*out_pos >= out_size || count > out_size - 1u - *out_pos)
+		return -1;
+	memcpy(out + *out_pos, encoded, count);
+	*out_pos += count;
+	return 0;
+}
+
+static int utf16le_to_utf8(const uint8_t *input, size_t input_size,
+                           char *out, size_t out_size)
+{
+	if (!input || !out || out_size == 0 || (input_size & 1u) != 0)
+		return -1;
+	size_t out_pos = 0;
+	for (size_t i = 0; i < input_size; i += 2u) {
+		uint32_t codepoint = get_u16(input + i);
+		if (codepoint == 0)
+			return -1;
+		if (codepoint >= 0xD800u && codepoint <= 0xDBFFu) {
+			if (i + 4u > input_size)
+				return -1;
+			uint32_t low = get_u16(input + i + 2u);
+			if (low < 0xDC00u || low > 0xDFFFu)
+				return -1;
+			codepoint = 0x10000u + ((codepoint - 0xD800u) << 10) +
+			            (low - 0xDC00u);
+			i += 2u;
+		} else if (codepoint >= 0xDC00u && codepoint <= 0xDFFFu) {
+			return -1;
+		}
+		if (append_utf8(out, out_size, &out_pos, codepoint) < 0)
+			return -1;
+	}
+	out[out_pos] = '\0';
+	return 0;
+}
+
+/* Read a length-prefixed string and convert Unicode strings to UTF-8.
+ * Advances *pos by the consumed bytes only after validating the complete span. */
 static int read_string(const uint8_t *buf, size_t buf_len, size_t *pos,
                        char *out, size_t out_size, int unicode)
 {
-	if (*pos + 4 > buf_len) return -1;
+	if (!buf || !pos || *pos > buf_len || buf_len - *pos < 4u)
+		return -1;
 	uint32_t len = get_u32(buf + *pos);
 	*pos += 4;
-	if (*pos + len > buf_len) return -1;
+	if (len > buf_len - *pos)
+		return -1;
 
 	if (out && out_size > 0) {
 		if (unicode) {
-			/* UTF-16LE → narrow (take low bytes, skip NUL chars) */
-			size_t chars = len / 2;
-			size_t j = 0;
-			for (size_t i = 0; i < chars && j < out_size - 1; i++) {
-				uint16_t ch = get_u16(buf + *pos + i * 2);
-				if (ch > 0 && ch < 128) out[j++] = (char) ch;
-				else if (ch >= 128) out[j++] = '?';
-			}
-			out[j] = '\0';
+			if (utf16le_to_utf8(buf + *pos, len, out, out_size) < 0)
+				return -1;
 		} else {
-			size_t n = len < out_size - 1 ? len : out_size - 1;
-			memcpy(out, buf + *pos, n);
-			out[n] = '\0';
+			if (len >= out_size || memchr(buf + *pos, 0, len))
+				return -1;
+			memcpy(out, buf + *pos, len);
+			out[len] = '\0';
 		}
 	}
 	*pos += len;
 	return 0;
+}
+
+static int valid_destination_path(const char *path)
+{
+	if (!path || !path[0])
+		return 0;
+	const char *component = path;
+	for (const unsigned char *p = (const unsigned char *) path;; p++) {
+		unsigned char ch = *p;
+		if (ch == '\0' || ch == '/' || ch == '\\') {
+			if ((const char *) p == component ||
+			    p[-1] == ' ' || p[-1] == '.')
+				return 0;
+			if (ch == '\0')
+				return 1;
+			component = (const char *) p + 1;
+			continue;
+		}
+		if (ch < 0x20u || ch == 0x7Fu ||
+		    ch == '<' || ch == '>' || ch == ':' || ch == '"' ||
+		    ch == '|' || ch == '?' || ch == '*')
+			return 0;
+	}
 }
 
 /* Skip a string without storing it */
@@ -1488,7 +1616,8 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		/* destination (encoded_string) */
 		if (read_string(buf, buf_len, &pos, fe->destination,
-		                sizeof(fe->destination), ver->unicode) < 0) return -1;
+		                sizeof(fe->destination), ver->unicode) < 0)
+			return -1;
 		/* install_font_name */
 		if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		/* strong_assembly_name (>= 5.2.5) */
@@ -1529,11 +1658,11 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 					const char *end = strchr(p, '\'');
 					if (end && end > p) {
 						size_t len = (size_t) (end - p);
-						if (len < sizeof(fe->destination)) {
-							gog_galaxy_candidate = 1;
-							memcpy(fe->destination, p, len);
-							fe->destination[len] = '\0';
-						}
+						if (len >= sizeof(fe->destination))
+							return -1;
+						gog_galaxy_candidate = 1;
+						memcpy(fe->destination, p, len);
+						fe->destination[len] = '\0';
 					}
 				}
 			}
@@ -1688,6 +1817,21 @@ int inno_test_find_pe_resource_11111(int fd, uint64_t source_size,
                                      uint64_t *offset_out)
 {
 	return find_pe_resource_11111(fd, source_size, offset_out);
+}
+
+int inno_test_read_string(const uint8_t *buffer, size_t buffer_size,
+                          char *output, size_t output_size, int unicode)
+{
+	size_t position = 0;
+	if (read_string(buffer, buffer_size, &position, output,
+	                output_size, unicode) < 0)
+		return -1;
+	return position == buffer_size ? 0 : -1;
+}
+
+int inno_test_destination_path_valid(const char *path)
+{
+	return valid_destination_path(path);
 }
 
 int inno_test_parse_version_id(const uint8_t id[INNO_VERSION_ID_SIZE],
@@ -2580,7 +2724,7 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 	writer.written = 0;
 	if (inno_checksum_init(&writer.checksum, de->checksum_type) < 0) {
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
@@ -2588,7 +2732,7 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 	                            arc->compression, progress, user_data,
 	                            raw_file_stream_writer_feed, &writer) < 0) {
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
@@ -2598,24 +2742,24 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 		         (unsigned long long) de->file_size,
 		         writer.written);
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (inno_checksum_matches(&writer.checksum, de, fe->destination) < 0) {
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (fclose(out) != 0) {
 		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (commit_temporary_output(temporary_path, output_path) < 0) {
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
@@ -2909,7 +3053,7 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 	}
 	if (gog_galaxy_stream_writer_init(&writer, fe, de, out, progress, user_data) < 0) {
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
@@ -2918,30 +3062,30 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 	                            gog_galaxy_stream_writer_feed, &writer) < 0) {
 		gog_galaxy_stream_writer_finish(&writer, NULL);
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (gog_galaxy_stream_writer_finish(&writer, written_out) < 0) {
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (inno_checksum_matches(&writer.checksum, de, fe->destination) < 0) {
 		fclose(out);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (fclose(out) != 0) {
 		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
 	if (commit_temporary_output(temporary_path, output_path) < 0) {
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}
@@ -2978,6 +3122,54 @@ const inno_data_entry_t *inno_file_data_entry(const inno_archive_t *arc,
 	if (!data_location_valid(arc, file->location))
 		return NULL;
 	return &arc->data_entries[file->location];
+}
+
+static const char *inno_basename(const char *path)
+{
+	const char *last = path;
+	for (const char *p = path; *p; p++) {
+		if (*p == '/' || *p == '\\')
+			last = p + 1;
+	}
+	return last;
+}
+
+static int inno_output_name_equal(const char *first, const char *second)
+{
+	while (*first && *second) {
+		unsigned char a = (unsigned char) *first++;
+		unsigned char b = (unsigned char) *second++;
+		if (a >= 'A' && a <= 'Z') a = (unsigned char) (a + ('a' - 'A'));
+		if (b >= 'A' && b <= 'Z') b = (unsigned char) (b + ('a' - 'A'));
+		if (a != b) return 0;
+	}
+	return *first == *second;
+}
+
+int inno_output_names_unique(const inno_archive_t *arc,
+                             inno_path_select_fn select_path,
+                             void *user_data)
+{
+	if (!arc || (arc->file_count > 0 && !arc->files))
+		return 0;
+	for (uint32_t i = 0; i < arc->file_count; i++) {
+		const char *first = arc->files[i].destination;
+		if (select_path && !select_path(first, user_data))
+			continue;
+		if (!valid_destination_path(first))
+			return 0;
+		for (uint32_t j = i + 1u; j < arc->file_count; j++) {
+			const char *second = arc->files[j].destination;
+			if (select_path && !select_path(second, user_data))
+				continue;
+			if (!valid_destination_path(second))
+				return 0;
+			if (inno_output_name_equal(inno_basename(first),
+			                           inno_basename(second)))
+				return 0;
+		}
+	}
+	return 1;
 }
 
 int inno_extract_file(inno_archive_t *arc, int file_index,
@@ -3080,7 +3272,7 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 			         fe->destination,
 			         (unsigned long long) output_size,
 			         written);
-			remove(output_path);
+			remove_output_path(output_path);
 			return -1;
 		}
 		if (progress) {
@@ -3156,7 +3348,7 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 
 	if (written != file_len || close_failed) {
 		INNO_LOG("write error for %s", output_path);
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		free(chunk);
 		return -1;
@@ -3164,7 +3356,7 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 
 	free(chunk);
 	if (commit_temporary_output(temporary_path, output_path) < 0) {
-		remove(temporary_path);
+		remove_output_path(temporary_path);
 		free(temporary_path);
 		return -1;
 	}

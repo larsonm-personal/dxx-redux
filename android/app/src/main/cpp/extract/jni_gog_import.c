@@ -7,6 +7,7 @@
  */
 
 #include <jni.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +45,82 @@ static const char *basename_only(const char *path)
 	return last;
 }
 
+static jstring new_string_utf8(JNIEnv *env, const char *utf8)
+{
+	if (!env || !utf8) return NULL;
+	size_t byte_count = strlen(utf8);
+	if (byte_count > INT_MAX) return NULL;
+	jchar *utf16 = (jchar *) malloc((byte_count + 1u) * sizeof(*utf16));
+	if (!utf16) return NULL;
+	size_t input = 0;
+	jsize output = 0;
+	while (input < byte_count) {
+		uint32_t codepoint;
+		unsigned char first = (unsigned char) utf8[input++];
+		if (first <= 0x7Fu) {
+			codepoint = first;
+		} else if (first >= 0xC2u && first <= 0xDFu &&
+		           input < byte_count &&
+		           ((unsigned char) utf8[input] & 0xC0u) == 0x80u) {
+			codepoint = ((uint32_t) (first & 0x1Fu) << 6) |
+			            ((unsigned char) utf8[input++] & 0x3Fu);
+		} else if (first >= 0xE0u && first <= 0xEFu &&
+		           input + 1u < byte_count &&
+		           ((unsigned char) utf8[input] & 0xC0u) == 0x80u &&
+		           ((unsigned char) utf8[input + 1u] & 0xC0u) == 0x80u) {
+			unsigned char second = (unsigned char) utf8[input];
+			if ((first == 0xE0u && second < 0xA0u) ||
+			    (first == 0xEDu && second >= 0xA0u))
+				goto invalid;
+			codepoint = ((uint32_t) (first & 0x0Fu) << 12) |
+			            ((uint32_t) (second & 0x3Fu) << 6) |
+			            ((unsigned char) utf8[input + 1u] & 0x3Fu);
+			input += 2u;
+		} else if (first >= 0xF0u && first <= 0xF4u &&
+		           input + 2u < byte_count &&
+		           ((unsigned char) utf8[input] & 0xC0u) == 0x80u &&
+		           ((unsigned char) utf8[input + 1u] & 0xC0u) == 0x80u &&
+		           ((unsigned char) utf8[input + 2u] & 0xC0u) == 0x80u) {
+			unsigned char second = (unsigned char) utf8[input];
+			if ((first == 0xF0u && second < 0x90u) ||
+			    (first == 0xF4u && second >= 0x90u))
+				goto invalid;
+			codepoint = ((uint32_t) (first & 0x07u) << 18) |
+			            ((uint32_t) (second & 0x3Fu) << 12) |
+			            ((uint32_t) ((unsigned char) utf8[input + 1u] & 0x3Fu) << 6) |
+			            ((unsigned char) utf8[input + 2u] & 0x3Fu);
+			input += 3u;
+		} else {
+			goto invalid;
+		}
+		if (codepoint <= 0xFFFFu) {
+			utf16[output++] = (jchar) codepoint;
+		} else {
+			codepoint -= 0x10000u;
+			utf16[output++] = (jchar) (0xD800u + (codepoint >> 10));
+			utf16[output++] = (jchar) (0xDC00u + (codepoint & 0x3FFu));
+		}
+	}
+	jstring result = (*env)->NewString(env, utf16, output);
+	free(utf16);
+	return result;
+
+invalid:
+	free(utf16);
+	return NULL;
+}
+
+typedef struct {
+	int include_audio;
+} inno_selection_t;
+
+static int select_inno_output(const char *path, void *user_data)
+{
+	inno_selection_t *selection = (inno_selection_t *) user_data;
+	return has_game_extension(path) &&
+	       (selection->include_audio || !is_audio_extension(path));
+}
+
 static void launcher_log(JNIEnv *env, const char *message)
 {
 	if (!env || !message || !message[0]) return;
@@ -58,7 +135,7 @@ static void launcher_log(JNIEnv *env, const char *message)
 		(*env)->ExceptionClear(env);
 		return;
 	}
-	jstring jmessage = (*env)->NewStringUTF(env, message);
+	jstring jmessage = new_string_utf8(env, message);
 	if (!jmessage) {
 		(*env)->DeleteLocalRef(env, cls);
 		(*env)->ExceptionClear(env);
@@ -84,6 +161,9 @@ static void launcher_logf(JNIEnv *env, const char *fmt, ...)
 static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
                                          jclass strClass)
 {
+	inno_selection_t selection = { 1 };
+	if (!inno_output_names_unique(arc, select_inno_output, &selection))
+		return NULL;
 	jsize game_count = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (has_game_extension(arc->files[i].destination)) game_count++;
@@ -100,7 +180,11 @@ static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
 			size = data->file_size;
 		char buf[INNO_PATH_LEN + 32];
 		snprintf(buf, sizeof(buf), "%s|%llu", fname, (unsigned long long) size);
-		jstring s = (*env)->NewStringUTF(env, buf);
+		jstring s = new_string_utf8(env, buf);
+		if (!s) {
+			(*env)->DeleteLocalRef(env, result);
+			return NULL;
+		}
 		(*env)->SetObjectArrayElement(env, result, idx++, s);
 		(*env)->DeleteLocalRef(env, s);
 	}
@@ -165,7 +249,12 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 			char buf[PKG_PATH_LEN + 32];
 			snprintf(buf, sizeof(buf), "%s|%llu",
 			         arc.files[i].name, (unsigned long long) arc.files[i].size);
-			jstring s = (*env)->NewStringUTF(env, buf);
+			jstring s = new_string_utf8(env, buf);
+			if (!s) {
+				(*env)->DeleteLocalRef(env, result);
+				pkg_close(&arc);
+				return NULL;
+			}
 			(*env)->SetObjectArrayElement(env, result, i, s);
 			(*env)->DeleteLocalRef(env, s);
 		}
@@ -223,7 +312,8 @@ static int gog_progress_cb(const char *current_file,
 	long long overall_done = ctx->completed_bytes + bytes_done;
 	long long overall_total = ctx->total_bytes > 0 ? ctx->total_bytes : bytes_total;
 
-	jstring jfile = (*ctx->env)->NewStringUTF(ctx->env, current_file);
+	jstring jfile = new_string_utf8(ctx->env, current_file);
+	if (!jfile) return 1;
 	jint cancel = (*ctx->env)->CallIntMethod(ctx->env, ctx->callback,
 	                                         ctx->on_progress,
 	                                         jfile,
@@ -237,6 +327,11 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
                                 const char *out_dir, jobject progress,
                                 jboolean includeAudio)
 {
+	inno_selection_t selection = { includeAudio != 0 };
+	if (!inno_output_names_unique(arc, select_inno_output, &selection)) {
+		LOGE("Colliding Inno output basenames");
+		return -1;
+	}
 	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0 };
 	if (progress) {
 		ctx.callback = progress;

@@ -50,7 +50,7 @@ extern "C" {
 #endif
 
 /* -- Limits -------------------------------------------------------- */
-#define INNO_PATH_LEN 512
+#define INNO_PATH_LEN 512 /* UTF-8 bytes including the terminator */
 
 /* -- Compression method enum (full, from InnoSetup source) ------- */
 typedef enum {
@@ -128,6 +128,7 @@ typedef int (*inno_progress_fn)(const char *current_file,
                                 long long bytes_done,
                                 long long bytes_total,
                                 void *user_data);
+typedef int (*inno_path_select_fn)(const char *path, void *user_data);
 
 /*
  * Open an InnoSetup installer and parse its metadata.
@@ -147,6 +148,14 @@ int inno_open_fd(int source_fd, inno_archive_t *arc);
 /* Returns the file's validated data entry, or NULL for no-data/invalid indices */
 const inno_data_entry_t *inno_file_data_entry(const inno_archive_t *arc,
                                               uint32_t file_index);
+
+/*
+ * Return nonzero when selected files have distinct flattened output basenames.
+ * ASCII case differences collide so the result is safe on Windows and Android.
+ */
+int inno_output_names_unique(const inno_archive_t *arc,
+                             inno_path_select_fn select_path,
+                             void *user_data);
 
 /*
  * Extract a single file by index (0 .. arc->file_count-1).
@@ -170,6 +179,9 @@ void inno_close(inno_archive_t *arc);
 void inno_test_set_allocation_fail_after(int allocations);
 int inno_test_find_pe_resource_11111(int fd, uint64_t source_size,
                                      uint64_t *offset_out);
+int inno_test_read_string(const uint8_t *buffer, size_t buffer_size,
+                          char *output, size_t output_size, int unicode);
+int inno_test_destination_path_valid(const char *path);
 int inno_test_parse_version_id(const uint8_t id[64],
                                inno_version_t *version);
 int inno_test_checksum_layout(const inno_version_t *version,

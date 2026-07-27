@@ -5734,23 +5734,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0072): Use a mission containing one valid audio member and one member that makes the native decoder fail; assert nonzero batch status, no final sidecar or database update, and successful complete publication after the bad member is repaired.
 - Resolution: Pending
 
-### BR-0054: P2 - Preserve distinct Unicode Inno destination paths
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/data-integrity
-- Found by: R1-CHUNK-0022
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/inno_reader.c:L552-L581` in `read_string`
-- Related: `android/app/src/main/cpp/extract/inno_reader.c:L864-L925`, `android/app/src/main/cpp/extract/inno_reader.h:L8-L10,L64-L70`, `android/app/src/main/cpp/extract/jni_gog_import.c:L235-L298`, and `android/app/src/main/cpp/extract/extract_gog.c:L98-L154`
-- Evidence: The public API claims Unicode Inno support, but `read_string` converts each UTF-16 code unit below 128 to one byte, replaces every other nonzero code unit with `?`, drops embedded NULs, ignores an odd trailing byte, and silently truncates at 511 output bytes. JNI and CLI extraction later flatten selected destinations to these converted basenames and write directly to them. Distinct valid names such as accented or CJK basenames therefore collapse to the same ASCII question-mark sequence; `?` is also an invalid ordinary filename character for the Windows CLI
-- Trigger: List or extract a supported Unicode installer containing an extension-matching destination with non-ASCII characters, two selected basenames differing only in those characters, a supplementary character, an odd UTF-16 length, or a path whose UTF-8 representation exceeds the fixed destination buffer
-- Impact: Valid files can fail extraction on Windows, be published under the wrong name, or overwrite one another on Android while the import counts both as successful; malformed encodings and truncation are accepted without an actionable error
-- Expected: Unicode strings are validated and converted losslessly to one documented internal encoding, distinct archive paths remain distinct, and unrepresentable or overlong destinations fail explicitly before selection or output creation
-- Suggested fix: Add one checked UTF-16LE-to-UTF-8 decoder with surrogate handling, reject odd lengths, embedded NUL path components, malformed pairs, and truncation, and carry explicit destination lengths or dynamically sized strings through listing. Before extraction, detect flattened-basename collisions and use platform-correct path opening
-- Validation: Add Unicode fixtures with accented, CJK, and supplementary-plane names, two names that the current code collapses together, malformed and odd UTF-16, embedded NUL, exact-capacity and one-over paths, and Windows-invalid converted names; assert exact UTF-8 listing, unique outputs or explicit collision failure, no overwrite, and unchanged extraction of both real GOG installers
-- Resolution: Pending
-
 ### BR-0057: P2 - Recognize GOG Galaxy metadata only after full pattern validation
 
 - [ ] OPEN

@@ -30,6 +30,12 @@ static int has_game_extension(const char *path)
 	return dxx_has_android_game_file_extension(path);
 }
 
+static int select_game_file(const char *path, void *user_data)
+{
+	(void) user_data;
+	return has_game_extension(path);
+}
+
 static const char *basename_only(const char *path)
 {
 	const char *last = path;
@@ -196,6 +202,114 @@ static int check_version_id_bounds(void)
 		failures++;
 	}
 
+	return failures ? 1 : 0;
+}
+
+static int decode_utf16_fixture(const uint16_t *units, size_t unit_count,
+                                char *output, size_t output_size)
+{
+	uint8_t buffer[4 + INNO_PATH_LEN * 2];
+	if (unit_count > INNO_PATH_LEN)
+		return -1;
+	set_u32(buffer, 0, (uint32_t) (unit_count * 2u));
+	for (size_t i = 0; i < unit_count; i++)
+		set_u16(buffer, 4u + i * 2u, units[i]);
+	return inno_test_read_string(buffer, 4u + unit_count * 2u,
+	                             output, output_size, 1);
+}
+
+static int check_unicode_destination_paths(void)
+{
+	static const uint16_t mixed_units[] = {
+		'A', 0x00E9, 0x6F22, 0xD83D, 0xDE80, '.', 'h', 'o', 'g'
+	};
+	static const char mixed_utf8[] = {
+		'A', (char) 0xC3, (char) 0xA9,
+		(char) 0xE6, (char) 0xBC, (char) 0xA2,
+		(char) 0xF0, (char) 0x9F, (char) 0x9A, (char) 0x80,
+		'.', 'h', 'o', 'g', '\0'
+	};
+	static const uint16_t malformed[][2] = {
+		{ 0xD800, 'A' },
+		{ 0xDC00, 'A' },
+		{ 0xD800, 0xD800 },
+		{ 'A', 0 }
+	};
+	char output[INNO_PATH_LEN];
+	int failures = 0;
+	if (decode_utf16_fixture(mixed_units,
+	                         sizeof(mixed_units) / sizeof(mixed_units[0]),
+	                         output, sizeof(output)) < 0 ||
+	    strcmp(output, mixed_utf8) != 0 ||
+	    !inno_test_destination_path_valid(output)) {
+		fprintf(stderr, "valid UTF-16 destination was not preserved\n");
+		failures++;
+	}
+	for (size_t i = 0; i < sizeof(malformed) / sizeof(malformed[0]); i++) {
+		if (decode_utf16_fixture(malformed[i], 2,
+		                         output, sizeof(output)) == 0) {
+			fprintf(stderr, "malformed UTF-16 destination accepted\n");
+			failures++;
+		}
+	}
+
+	uint8_t odd[] = { 1, 0, 0, 0, 'A' };
+	if (inno_test_read_string(odd, sizeof(odd), output,
+	                          sizeof(output), 1) == 0) {
+		fprintf(stderr, "odd UTF-16 destination accepted\n");
+		failures++;
+	}
+
+	uint16_t capacity_units[INNO_PATH_LEN];
+	for (size_t i = 0; i < INNO_PATH_LEN; i++)
+		capacity_units[i] = 'a';
+	if (decode_utf16_fixture(capacity_units, INNO_PATH_LEN - 1u,
+	                         output, sizeof(output)) < 0 ||
+	    strlen(output) != INNO_PATH_LEN - 1u) {
+		fprintf(stderr, "exact-capacity UTF-8 destination rejected\n");
+		failures++;
+	}
+	if (decode_utf16_fixture(capacity_units, INNO_PATH_LEN,
+	                         output, sizeof(output)) == 0) {
+		fprintf(stderr, "over-capacity UTF-8 destination accepted\n");
+		failures++;
+	}
+
+	static const char invalid_question[] = "bad?name.hog";
+	static const char invalid_pipe[] = "bad|name.hog";
+	static const char invalid_trailing[] = "bad.\\name.hog";
+	if (inno_test_destination_path_valid(invalid_question) ||
+	    inno_test_destination_path_valid(invalid_pipe) ||
+	    inno_test_destination_path_valid(invalid_trailing)) {
+		fprintf(stderr, "Windows-invalid destination accepted\n");
+		failures++;
+	}
+
+	inno_archive_t archive;
+	inno_file_entry_t files[2];
+	memset(&archive, 0, sizeof(archive));
+	memset(files, 0, sizeof(files));
+	archive.files = files;
+	archive.file_count = 2;
+	memcpy(files[0].destination, "one\\", 4);
+	memcpy(files[0].destination + 4, mixed_utf8, sizeof(mixed_utf8));
+	memcpy(files[1].destination, "two\\", 4);
+	memcpy(files[1].destination + 4, mixed_utf8, sizeof(mixed_utf8));
+	if (inno_output_names_unique(&archive, NULL, NULL)) {
+		fprintf(stderr, "flattened Unicode basename collision accepted\n");
+		failures++;
+	}
+	files[1].destination[4] = 'B';
+	if (!inno_output_names_unique(&archive, NULL, NULL)) {
+		fprintf(stderr, "distinct Unicode basenames collided\n");
+		failures++;
+	}
+	strcpy(files[0].destination, "one\\FILE.HOG");
+	strcpy(files[1].destination, "two\\file.hog");
+	if (inno_output_names_unique(&archive, NULL, NULL)) {
+		fprintf(stderr, "ASCII case-only basename collision accepted\n");
+		failures++;
+	}
 	return failures ? 1 : 0;
 }
 
@@ -1185,6 +1299,11 @@ static int check_installer(const char *path, const char **expected, int expected
 	int game_count = 0;
 	int galaxy_game_count = 0;
 	int failures = 0;
+	if (!inno_output_names_unique(&arc, select_game_file, NULL)) {
+		fprintf(stderr, "%s: selected output names collide or are invalid\n",
+		        path);
+		failures++;
+	}
 	for (uint32_t i = 0; i < arc.file_count; i++) {
 		if (!has_game_extension(arc.files[i].destination)) continue;
 		game_count++;
@@ -1228,6 +1347,7 @@ int main(int argc, char **argv)
 
 	int failures = 0;
 	failures += check_version_id_bounds();
+	failures += check_unicode_destination_paths();
 	failures += check_pe_resource_bounds();
 	failures += check_complete_file_catalog();
 	failures += check_unsigned_entry_bounds();
