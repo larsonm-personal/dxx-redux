@@ -5667,23 +5667,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add synthetic odc-in-gzip-in-XAR fixtures with slash, backslash, dot, dot-dot, drive-prefix, absolute, control-byte, and ordinary basenames; extract on Windows and POSIX; assert every unsafe entry fails without creating or changing any path outside a temporary root; and retain exact output for both real GOG packages
 - Resolution: Pending
 
-### BR-0068: P2 - Require a bounded and complete PKG Scripts stream
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0029, R1-CHUNK-0030
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/pkg_reader.c:L100-L165,L178-L244,L277-L314,L348-L375,L427-L441` in `xar_find_scripts`, `gz_open`, `gz_read`, `cpio_read_entry`, `pkg_scan_cpio`, and `pkg_open`
-- Related: `android/app/src/main/cpp/extract/pkg_reader.c:L450-L529`, `android/app/src/main/cpp/extract/pkg_reader.h:L27-L65`, `android/ai tool plans/CD, installer parsing/PKG_PARSER_PLAN.md:L12-L98`, and `android/app/src/main/cpp/extract/test_gog_fd.c:L1-L389`
-- Evidence: The TOC parser uses unscoped substring searches, accepts decimal prefixes from `strtoull` without checking errors or closing tags, does not validate additions for heap and member offsets, ignores `scr_size`, and stores `scripts_length` without ever enforcing it. `gz_open` ignores seek failure and the stream reader continues to physical file EOF instead of the selected XAR member end. At physical EOF it marks the stream finished and returns a short prefix without distinguishing truncation. `cpio_read_entry` then maps zero output to the same success result as `TRAILER!!!`, so a gzip stream truncated cleanly at a CPIO entry boundary or a complete gzip payload with no CPIO trailer is accepted. When a trailer is seen, the caller also stops without explicitly proving gzip `Z_STREAM_END`, footer integrity, declared member consumption, or an allowed trailing-byte policy
-- Trigger: Supply a PKG with overflowing or out-of-file Scripts offsets, a declared Scripts length shorter than its gzip stream, a seek that fails, a gzip or physical file ending exactly after a valid entry, a missing `TRAILER!!!`, or a corrupt or missing gzip footer not consumed before the CPIO trailer return
-- Impact: Analysis and extraction can read beyond the TOC-selected XAR member, accept a truncated or structurally incomplete payload, omit later game files without reporting failure, and present the malformed installer as a valid partial package
-- Expected: The exact `package.pkg/Scripts` file element is selected, every numeric field is parsed completely, its checked physical span bounds all reads, and success requires both one valid CPIO trailer and verified gzip stream completion within that span
-- Suggested fix: Parse the bounded TOC structure with a small real XML reader or a scope-aware parser; validate full decimal fields, checked heap-relative arithmetic, encoding, size, length, and physical file span; give the gzip reader an explicit remaining-member count; distinguish clean stream end from I/O exhaustion and decoder failure; and require exactly one valid CPIO trailer followed by `Z_STREAM_END` and checksum validation under a documented trailing-data policy
-- Validation: Add wrong-scope Scripts elements, malformed and overflowing decimal fields, seek failures, member spans ending before, at, and after gzip boundaries, missing and duplicate CPIO trailers, entry-boundary truncation, bad gzip CRC and ISIZE, concatenated streams, and unexpected trailing bytes; assert deterministic failure with no published list or output and retain exact extraction of the two real packages
-- Resolution: Pending
-
 ### BR-0069: P2 - Keep PKG analysis and extraction catalogs identical
 
 - [ ] OPEN
