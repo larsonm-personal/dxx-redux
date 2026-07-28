@@ -43,6 +43,10 @@ add_compile_options(
 
 set(D1_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d1")
 set(D2_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d2")
+set(DXX_DISC_IMPORT_JNI_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/jni_disc_import.c")
+    message(FATAL_ERROR "DiscImportBridge JNI must have only the canonical extract implementation")
+endif()
 
 # ──────────────────────────────────────────────────────────────
 # 1. SDL 1.2  (no cmake build — we compile it ourselves)
@@ -533,7 +537,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
+            ${DXX_DISC_IMPORT_JNI_SOURCE}
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
@@ -676,7 +680,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
+            ${DXX_DISC_IMPORT_JNI_SOURCE}
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c

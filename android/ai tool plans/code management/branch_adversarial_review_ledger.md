@@ -5388,23 +5388,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Extend the boundary test to assert correct file indices through the supported maximum and prompt failure one past it, add a 51-file consumer fixture when such layouts are supported, and confirm JNI ordering, fingerprinting, preview, and Redbook playback all open the intended image for the last track
 - Resolution: Pending
 
-### BR-0015: P2 - Remove the superseded disc-import JNI implementation
-
-- [ ] OPEN
-- Type: design
-- Confidence: high
-- Category: maintainability/partial-migration
-- Found by: R1-CHUNK-0008
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_disc_import.c:L1-L408`
-- Related: `android/app/src/main/cpp/extract/jni_disc_import.c:L1-L547` and `android/app/src/main/cpp/CMakeLists.txt:L529-L536,L671-L678`
-- Evidence: Both files define the same six `DiscImportBridge` JNI symbols, but both Android targets compile only `extract/jni_disc_import.c`. The root file stopped evolving after the March migration while the built copy received later ISO-image, HFS, StuffIt, append-mode, callback, and shared-extension changes and now exports four additional methods. The stale file still logs `sow` after `ReleaseStringUTFChars` and implements the old three-argument SOW extraction contract, while the built copy moved the log before release and accepts Kotlin's fourth `appendExisting` argument
-- Trigger: Review, debug, or modify the prominently named root implementation instead of the compiled copy, or later add it to a source list without first discovering the duplicate definitions
-- Impact: A plausible fix can compile nowhere and have no runtime effect; copying behavior from the stale file can reintroduce a JNI use-after-release or omit current import features; compiling both files produces duplicate native symbols
-- Expected: Each JNI surface has one clearly built source of truth, and repository search cannot lead maintainers to an obsolete full implementation
-- Suggested fix: Delete the root `jni_disc_import.c`, retain the implementation under `extract/`, and update any historical or operational references that still point to the old path. If a forwarding artifact is required, make it non-compilable documentation rather than a second implementation
-- Validation: Confirm each `DiscImportBridge` native symbol has exactly one source definition, both D1 and D2 CMake targets compile that file, a clean Android build succeeds, and ISO, BIN/CUE, Mac, SOW, and StuffIt import tests still invoke the retained implementation
-- Resolution: Pending
-
 ### BR-0016: P1 - Serialize launcher preview start and stop commands
 
 - [ ] OPEN
