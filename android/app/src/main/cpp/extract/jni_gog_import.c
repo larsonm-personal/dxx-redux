@@ -16,6 +16,7 @@
 #include "inno_reader.h"
 #include "pkg_reader.h"
 #include "game_file_extensions.h"
+#include "jni_string.h"
 
 #define TAG       "DXX-GogImport"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -45,71 +46,6 @@ static const char *basename_only(const char *path)
 	return last;
 }
 
-static jstring new_string_utf8(JNIEnv *env, const char *utf8)
-{
-	if (!env || !utf8) return NULL;
-	size_t byte_count = strlen(utf8);
-	if (byte_count > INT_MAX) return NULL;
-	jchar *utf16 = (jchar *) malloc((byte_count + 1u) * sizeof(*utf16));
-	if (!utf16) return NULL;
-	size_t input = 0;
-	jsize output = 0;
-	while (input < byte_count) {
-		uint32_t codepoint;
-		unsigned char first = (unsigned char) utf8[input++];
-		if (first <= 0x7Fu) {
-			codepoint = first;
-		} else if (first >= 0xC2u && first <= 0xDFu &&
-		           input < byte_count &&
-		           ((unsigned char) utf8[input] & 0xC0u) == 0x80u) {
-			codepoint = ((uint32_t) (first & 0x1Fu) << 6) |
-			            ((unsigned char) utf8[input++] & 0x3Fu);
-		} else if (first >= 0xE0u && first <= 0xEFu &&
-		           input + 1u < byte_count &&
-		           ((unsigned char) utf8[input] & 0xC0u) == 0x80u &&
-		           ((unsigned char) utf8[input + 1u] & 0xC0u) == 0x80u) {
-			unsigned char second = (unsigned char) utf8[input];
-			if ((first == 0xE0u && second < 0xA0u) ||
-			    (first == 0xEDu && second >= 0xA0u))
-				goto invalid;
-			codepoint = ((uint32_t) (first & 0x0Fu) << 12) |
-			            ((uint32_t) (second & 0x3Fu) << 6) |
-			            ((unsigned char) utf8[input + 1u] & 0x3Fu);
-			input += 2u;
-		} else if (first >= 0xF0u && first <= 0xF4u &&
-		           input + 2u < byte_count &&
-		           ((unsigned char) utf8[input] & 0xC0u) == 0x80u &&
-		           ((unsigned char) utf8[input + 1u] & 0xC0u) == 0x80u &&
-		           ((unsigned char) utf8[input + 2u] & 0xC0u) == 0x80u) {
-			unsigned char second = (unsigned char) utf8[input];
-			if ((first == 0xF0u && second < 0x90u) ||
-			    (first == 0xF4u && second >= 0x90u))
-				goto invalid;
-			codepoint = ((uint32_t) (first & 0x07u) << 18) |
-			            ((uint32_t) (second & 0x3Fu) << 12) |
-			            ((uint32_t) ((unsigned char) utf8[input + 1u] & 0x3Fu) << 6) |
-			            ((unsigned char) utf8[input + 2u] & 0x3Fu);
-			input += 3u;
-		} else {
-			goto invalid;
-		}
-		if (codepoint <= 0xFFFFu) {
-			utf16[output++] = (jchar) codepoint;
-		} else {
-			codepoint -= 0x10000u;
-			utf16[output++] = (jchar) (0xD800u + (codepoint >> 10));
-			utf16[output++] = (jchar) (0xDC00u + (codepoint & 0x3FFu));
-		}
-	}
-	jstring result = (*env)->NewString(env, utf16, output);
-	free(utf16);
-	return result;
-
-invalid:
-	free(utf16);
-	return NULL;
-}
-
 typedef struct {
 	int include_audio;
 } inno_selection_t;
@@ -135,7 +71,7 @@ static void launcher_log(JNIEnv *env, const char *message)
 		(*env)->ExceptionClear(env);
 		return;
 	}
-	jstring jmessage = new_string_utf8(env, message);
+	jstring jmessage = dxx_jni_string_from_utf8(env, message);
 	if (!jmessage) {
 		(*env)->DeleteLocalRef(env, cls);
 		(*env)->ExceptionClear(env);
@@ -180,7 +116,7 @@ static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
 			size = data->file_size;
 		char buf[INNO_PATH_LEN + 32];
 		snprintf(buf, sizeof(buf), "%s|%llu", fname, (unsigned long long) size);
-		jstring s = new_string_utf8(env, buf);
+		jstring s = dxx_jni_string_from_utf8(env, buf);
 		if (!s) {
 			(*env)->DeleteLocalRef(env, result);
 			return NULL;
@@ -202,8 +138,9 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_GogImportBridge_nativeDetectFormat(
     JNIEnv *env, jclass clazz, jstring path)
 {
-	const char *p = (*env)->GetStringUTFChars(env, path, NULL);
-	if (!p) return (*env)->NewStringUTF(env, "unknown");
+	char *p;
+	if (!dxx_jni_string_to_utf8(env, path, &p))
+		return NULL;
 
 	const char *dot = strrchr(p, '.');
 	const char *result;
@@ -214,7 +151,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeDetectFormat(
 	else
 		result = "unknown";
 
-	(*env)->ReleaseStringUTFChars(env, path, p);
+	free(p);
 	return (*env)->NewStringUTF(env, result);
 }
 
@@ -229,8 +166,8 @@ JNIEXPORT jobjectArray JNICALL
 Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
     JNIEnv *env, jclass clazz, jstring path)
 {
-	const char *p = (*env)->GetStringUTFChars(env, path, NULL);
-	if (!p) return NULL;
+	char *p;
+	if (!dxx_jni_string_to_utf8(env, path, &p)) return NULL;
 
 	const char *dot = strrchr(p, '.');
 	int is_pkg = dot && ci_cmp(dot, ".pkg") == 0;
@@ -240,7 +177,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 	if (is_pkg) {
 		pkg_archive_t arc;
 		int n = pkg_open(p, &arc);
-		(*env)->ReleaseStringUTFChars(env, path, p);
+		free(p);
 		if (n < 0) return NULL;
 
 		/* All pkg files are already filtered to game files */
@@ -249,7 +186,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 			char buf[PKG_PATH_LEN + 32];
 			snprintf(buf, sizeof(buf), "%s|%llu",
 			         arc.files[i].name, (unsigned long long) arc.files[i].size);
-			jstring s = new_string_utf8(env, buf);
+			jstring s = dxx_jni_string_from_utf8(env, buf);
 			if (!s) {
 				(*env)->DeleteLocalRef(env, result);
 				pkg_close(&arc);
@@ -265,7 +202,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 		/* InnoSetup */
 		inno_archive_t arc;
 		int n = inno_open(p, &arc);
-		(*env)->ReleaseStringUTFChars(env, path, p);
+		free(p);
 		if (n < 0) return NULL;
 
 		jobjectArray result = build_inno_file_list(env, &arc, strClass);
@@ -312,7 +249,7 @@ static int gog_progress_cb(const char *current_file,
 	long long overall_done = ctx->completed_bytes + bytes_done;
 	long long overall_total = ctx->total_bytes > 0 ? ctx->total_bytes : bytes_total;
 
-	jstring jfile = new_string_utf8(ctx->env, current_file);
+	jstring jfile = dxx_jni_string_from_utf8(ctx->env, current_file);
 	if (!jfile) return 1;
 	jint cancel = (*ctx->env)->CallIntMethod(ctx->env, ctx->callback,
 	                                         ctx->on_progress,
@@ -405,12 +342,12 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
     jstring path, jstring outputDir, jobject progress,
     jboolean includeAudio)
 {
-	const char *p = (*env)->GetStringUTFChars(env, path, NULL);
-	if (!p) return -1;
+	char *p;
+	char *out_dir;
+	if (!dxx_jni_string_to_utf8(env, path, &p)) return -1;
 
-	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir) {
-		(*env)->ReleaseStringUTFChars(env, path, p);
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) {
+		free(p);
 		return -1;
 	}
 
@@ -453,8 +390,8 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 		}
 	}
 
-	(*env)->ReleaseStringUTFChars(env, path, p);
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(p);
+	free(out_dir);
 	LOGI("Extracted %d files", extracted);
 	return extracted;
 }
@@ -466,8 +403,8 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFilesFromFd(
     jboolean includeAudio)
 {
 	(void) clazz;
-	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir) return -1;
+	char *out_dir;
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 
 	inno_archive_t arc;
 	int n = inno_open_fd((int) fd, &arc);
@@ -480,7 +417,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFilesFromFd(
 		inno_close(&arc);
 	}
 
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(out_dir);
 	LOGI("Extracted %d files from fd", extracted);
 	return extracted;
 }

@@ -385,4 +385,8 @@ else()
     target_compile_options(test_hmp_android_shared PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME hmp_android_shared_tests COMMAND test_hmp_android_shared)
+add_executable(test_utf8_codec ${CMAKE_CURRENT_SOURCE_DIR}/test_utf8_codec.c
+                               ${CMAKE_CURRENT_SOURCE_DIR}/../shared/utf8_codec.c)
+target_include_directories(test_utf8_codec PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+add_test(NAME utf8_codec_tests COMMAND test_utf8_codec)
 set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

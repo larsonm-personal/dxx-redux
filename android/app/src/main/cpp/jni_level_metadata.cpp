@@ -15,6 +15,7 @@
 
 extern "C" {
 #include "android_crash_handler.h"
+#include "jni_string.h"
 #include "args.h"
 #include "bm.h"
 #include "config.h"
@@ -1119,26 +1120,25 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
                                                                            jobject jcontext,
                                                                            jstring jrequest)
 {
-	const char *request_chars;
+	char *request_chars;
 	json request;
 	json result;
 	std::string dumped;
 
 	if (!jrequest)
 		return NULL;
-	request_chars = env->GetStringUTFChars(jrequest, NULL);
-	if (!request_chars)
+	if (!dxx_jni_string_to_utf8(env, jrequest, &request_chars))
 		return NULL;
 	try {
 		request = json::parse(request_chars);
 	} catch (const std::exception &e) {
 		request = json::object();
 		result = failed_result(request, e.what());
-		env->ReleaseStringUTFChars(jrequest, request_chars);
+		free(request_chars);
 		dumped = dump_metadata_json(result);
-		return env->NewStringUTF(dumped.c_str());
+		return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 	}
-	env->ReleaseStringUTFChars(jrequest, request_chars);
+	free(request_chars);
 	try {
 		breadcrumb_metadata_request(request, "begin");
 		write_checkpoint(request, "begin", request.value("source_name", "").c_str());
@@ -1149,5 +1149,5 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 		result = failed_result(request, e.what());
 	}
 	dumped = dump_metadata_json(result);
-	return env->NewStringUTF(dumped.c_str());
+	return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 }

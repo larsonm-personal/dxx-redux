@@ -521,6 +521,8 @@ endif()
 target_sources(
     dxx-redux-d1
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
             ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
             ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
@@ -664,6 +666,8 @@ endif()
 target_sources(
     dxx-redux-d2
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
             ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
             ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c

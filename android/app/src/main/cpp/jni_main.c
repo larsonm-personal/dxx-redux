@@ -28,6 +28,7 @@
 #include "android_rewind.h"
 #include "android_crash_handler.h"
 #include "android_level_preview.h"
+#include "jni_string.h"
 
 #define LOG_TAG   "DXX-Redux"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -52,7 +53,6 @@ static char *android_consume_activity_string(JNIEnv *env, jobject activity, cons
 	jclass activity_class;
 	jmethodID method;
 	jstring value;
-	const char *value_chars;
 	char *copied;
 
 	activity_class = (*env)->GetObjectClass(env, activity);
@@ -64,19 +64,30 @@ static char *android_consume_activity_string(JNIEnv *env, jobject activity, cons
 	value = (jstring) (*env)->CallObjectMethod(env, activity, method);
 	if (!value)
 		return NULL;
-	value_chars = (*env)->GetStringUTFChars(env, value, NULL);
-	if (!value_chars) {
+	if (!dxx_jni_string_to_utf8(env, value, &copied)) {
 		(*env)->DeleteLocalRef(env, value);
 		return NULL;
 	}
-	copied = strdup(value_chars);
-	(*env)->ReleaseStringUTFChars(env, value, value_chars);
 	(*env)->DeleteLocalRef(env, value);
 	if (!copied || !copied[0]) {
 		free(copied);
 		return NULL;
 	}
 	return copied;
+}
+
+static void copy_utf8_bounded(char *destination, size_t destination_size, const char *source)
+{
+	size_t count;
+	if (!destination_size) return;
+	count = strlen(source);
+	if (count >= destination_size) {
+		count = destination_size - 1u;
+		while (count && ((unsigned char) source[count] & 0xC0u) == 0x80u)
+			count--;
+	}
+	memcpy(destination, source, count);
+	destination[count] = '\0';
 }
 
 static const char *android_log_value(const char *value)
@@ -302,8 +313,8 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
     JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
 {
-	const char *request_path = NULL;
-	const char *data_dir = NULL;
+	char *request_path = NULL;
+	char *data_dir = NULL;
 	PHYSFS_AndroidInit android_init;
 	char *argv_preview[7];
 	int result;
@@ -313,14 +324,12 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 		return;
 	g_game_running = 1;
 	g_activity = (*env)->NewGlobalRef(env, thiz);
-	request_path = (*env)->GetStringUTFChars(env, jrequest_path, NULL);
+	dxx_jni_string_to_utf8(env, jrequest_path, &request_path);
 	if (request_path)
-		data_dir = (*env)->GetStringUTFChars(env, jdata_dir, NULL);
+		dxx_jni_string_to_utf8(env, jdata_dir, &data_dir);
 	if (!request_path || !data_dir) {
-		if (request_path)
-			(*env)->ReleaseStringUTFChars(env, jrequest_path, request_path);
-		if (data_dir)
-			(*env)->ReleaseStringUTFChars(env, jdata_dir, data_dir);
+		free(request_path);
+		free(data_dir);
 		if (g_activity) {
 			(*env)->DeleteGlobalRef(env, g_activity);
 			g_activity = NULL;
@@ -348,13 +357,14 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 		jclass cls = (*env)->GetObjectClass(env, thiz);
 		jmethodID finished = (*env)->GetMethodID(
 		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
-		jstring jerror = (*env)->NewStringUTF(env, error ? error : "");
+		jstring jerror = dxx_jni_string_from_utf8(env, error ? error : "");
 		if (finished)
 			(*env)->CallVoidMethod(env, thiz, finished, jerror);
-		(*env)->DeleteLocalRef(env, jerror);
+		if (jerror)
+			(*env)->DeleteLocalRef(env, jerror);
 	}
-	(*env)->ReleaseStringUTFChars(env, jrequest_path, request_path);
-	(*env)->ReleaseStringUTFChars(env, jdata_dir, data_dir);
+	free(request_path);
+	free(data_dir);
 	unsetenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR");
 	g_game_running = 0;
 	if (g_activity) {
@@ -565,7 +575,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetGameState(JNIEnv *env, jobject thiz)
 	if (!json) {
 		return (*env)->NewStringUTF(env, "{\"error\": \"introspection not enabled\"}");
 	}
-	jstring result = (*env)->NewStringUTF(env, json);
+	jstring result = dxx_jni_string_from_utf8(env, json);
 	free(json);
 	return result;
 }
@@ -581,9 +591,11 @@ Java_com_dxxredux_app_MainActivity_nativeRequestIntrospect(JNIEnv *env, jobject 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetIntrospectPath(JNIEnv *env, jobject thiz, jstring jpath)
 {
-	const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
-	game_introspect_set_path(path);
-	(*env)->ReleaseStringUTFChars(env, jpath, path);
+	char *path;
+	if (dxx_jni_string_to_utf8(env, jpath, &path)) {
+		game_introspect_set_path(path);
+		free(path);
+	}
 }
 
 JNIEXPORT void JNICALL
@@ -606,14 +618,13 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_LevelPreviewActivity_nativeSetIntrospectPath(
     JNIEnv *env, jobject thiz, jstring jpath)
 {
-	const char *path;
+	char *path;
 	(void) thiz;
 	if (!jpath)
 		return;
-	path = (*env)->GetStringUTFChars(env, jpath, NULL);
-	if (path) {
+	if (dxx_jni_string_to_utf8(env, jpath, &path)) {
 		game_introspect_set_path(path);
-		(*env)->ReleaseStringUTFChars(env, jpath, path);
+		free(path);
 	}
 }
 
@@ -642,19 +653,23 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeLoadAutomationScript(JNIEnv *env, jobject thiz, jstring jpath,
                                                               jint start_step, jstring jrun_id)
 {
-	const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
-	const char *run_id = (*env)->GetStringUTFChars(env, jrun_id, NULL);
-	game_automate_load_script(path, (int) start_step, run_id);
-	(*env)->ReleaseStringUTFChars(env, jrun_id, run_id);
-	(*env)->ReleaseStringUTFChars(env, jpath, path);
+	char *path = NULL;
+	char *run_id = NULL;
+	if (dxx_jni_string_to_utf8(env, jpath, &path) &&
+	    dxx_jni_string_to_utf8(env, jrun_id, &run_id))
+		game_automate_load_script(path, (int) start_step, run_id);
+	free(run_id);
+	free(path);
 }
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetAutomationPath(JNIEnv *env, jobject thiz, jstring jpath)
 {
-	const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
-	game_automate_set_path(path);
-	(*env)->ReleaseStringUTFChars(env, jpath, path);
+	char *path;
+	if (dxx_jni_string_to_utf8(env, jpath, &path)) {
+		game_automate_set_path(path);
+		free(path);
+	}
 }
 
 /* ── Audio tuning: adjust TSF global gain in dB ──────────────────── */
@@ -681,7 +696,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject th
 	if (!json) {
 		return (*env)->NewStringUTF(env, "{\"next_seq\":0,\"lines\":[]}");
 	}
-	jstring result = (*env)->NewStringUTF(env, json);
+	jstring result = dxx_jni_string_from_utf8(env, json);
 	free(json);
 	return result;
 }
@@ -705,7 +720,8 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
                                                       jstring jname, jint value)
 {
-	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
+	char *name;
+	if (!dxx_jni_string_to_utf8(env, jname, &name)) return;
 	if (strcmp(name, "tex_overlay") == 0)
 		g_debug_tex_overlay_active = (int) value;
 	else if (strcmp(name, "merged_wall_mode") == 0) {
@@ -746,7 +762,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		g_msaa_pending_apply = 1;
 	} else
 		LOGE("nativeSetDebugFlag: unknown flag '%s'", name);
-	(*env)->ReleaseStringUTFChars(env, jname, name);
+	free(name);
 }
 #endif /* INTROSPECT_ON */
 
@@ -759,14 +775,15 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject thiz,
                                                            jstring jname, jint value)
 {
-	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
+	char *name;
+	if (!dxx_jni_string_to_utf8(env, jname, &name)) return;
 	int persist = strcmp(name, "alpha_effects") &&
 	              strcmp(name, "dynlight_color") &&
 	              strcmp(name, "main_view_fov_locked");
 	LOGI("graphics option: %s=%d", name, (int) value);
 	if (!android_graphics_set_option(name, (int) value, persist))
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
-	(*env)->ReleaseStringUTFChars(env, jname, name);
+	free(name);
 }
 
 JNIEXPORT void JNICALL
@@ -853,10 +870,10 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetCallsign(JNIEnv *env, jobject thiz,
                                                      jstring jCallsign)
 {
-	const char *cs = (*env)->GetStringUTFChars(env, jCallsign, NULL);
-	strncpy(auto_net_callsign, cs, 9);
-	auto_net_callsign[9] = '\0';
-	(*env)->ReleaseStringUTFChars(env, jCallsign, cs);
+	char *cs;
+	if (!dxx_jni_string_to_utf8(env, jCallsign, &cs)) return;
+	copy_utf8_bounded(auto_net_callsign, 10, cs);
+	free(cs);
 	LOGI("nativeSetCallsign: %s", auto_net_callsign);
 }
 
@@ -864,10 +881,10 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetClientId(JNIEnv *env, jobject thiz,
                                                      jstring jClientId)
 {
-	const char *cid = (*env)->GetStringUTFChars(env, jClientId, NULL);
-	strncpy(auto_net_client_id, cid, 36);
-	auto_net_client_id[36] = '\0';
-	(*env)->ReleaseStringUTFChars(env, jClientId, cid);
+	char *cid;
+	if (!dxx_jni_string_to_utf8(env, jClientId, &cid)) return;
+	copy_utf8_bounded(auto_net_client_id, 37, cid);
+	free(cid);
 	LOGI("nativeSetClientId: %s", auto_net_client_id);
 }
 
@@ -875,10 +892,10 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetAutoJoin(JNIEnv *env, jobject thiz,
                                                      jstring jHostAddr, jint hostPort, jint myPort)
 {
-	const char *addr = (*env)->GetStringUTFChars(env, jHostAddr, NULL);
-	strncpy(auto_join_host_addr, addr, 127);
-	auto_join_host_addr[127] = '\0';
-	(*env)->ReleaseStringUTFChars(env, jHostAddr, addr);
+	char *addr;
+	if (!dxx_jni_string_to_utf8(env, jHostAddr, &addr)) return;
+	copy_utf8_bounded(auto_join_host_addr, 128, addr);
+	free(addr);
 
 	auto_join_host_port = (int) hostPort;
 	auto_join_my_port = (int) myPort;
@@ -898,10 +915,10 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
                                                      jboolean clientsCanRequestRewind,
                                                      jboolean hostObserver)
 {
-	const char *mission = (*env)->GetStringUTFChars(env, jMission, NULL);
-	strncpy(auto_host_mission, mission, 63);
-	auto_host_mission[63] = '\0';
-	(*env)->ReleaseStringUTFChars(env, jMission, mission);
+	char *mission;
+	if (!dxx_jni_string_to_utf8(env, jMission, &mission)) return;
+	copy_utf8_bounded(auto_host_mission, 64, mission);
+	free(mission);
 
 	auto_host_my_port = (int) myPort;
 	auto_host_mode = (int) mode;
@@ -1314,7 +1331,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpTargetName(JNIEnv *env, jobj
 	coop_warp_get_status(&st);
 
 	if (st.available)
-		return (*env)->NewStringUTF(env, st.target_callsign);
+		return dxx_jni_string_from_utf8(env, st.target_callsign);
 	return (*env)->NewStringUTF(env, "");
 }
 
@@ -1410,7 +1427,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetEscortOwnerCallsign(JNIEnv *env, job
 	extern int Game_mode;
 	if ((Game_mode & GM_MULTI_COOP) &&
 	    Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS)
-		return (*env)->NewStringUTF(env, Players[Escort_owner_player].callsign);
+		return dxx_jni_string_from_utf8(env, Players[Escort_owner_player].callsign);
 #endif
 	return (*env)->NewStringUTF(env, "");
 }

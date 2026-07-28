@@ -23,6 +23,7 @@
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "android_music_control.h"
+#include "jni_string.h"
 
 #define TAG       "DXX-MusicCtrl"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -189,7 +190,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetTrackName(
     JNIEnv *env, jobject thiz, jint track)
 {
 	const char *name = RBAGetTrackName(track);
-	return (*env)->NewStringUTF(env, name ? name : "");
+	return dxx_jni_string_from_utf8(env, name ? name : "");
 }
 
 JNIEXPORT jint JNICALL
@@ -238,7 +239,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetCurrentTrackInfo(
 	} else {
 		buf[0] = '\0';
 	}
-	return (*env)->NewStringUTF(env, buf);
+	return dxx_jni_string_from_utf8(env, buf);
 }
 
 /* Returns GameCfg.MusicType (0=none, 1=builtin, 2=redbook, 3=custom). */
@@ -292,7 +293,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
 	         total,
 	         escaped_name,
 	         tracks);
-	result = (*env)->NewStringUTF(env, buf);
+	result = dxx_jni_string_from_utf8(env, buf);
 	free(tracks);
 	free(buf);
 	return result;
@@ -319,14 +320,13 @@ JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
     JNIEnv *env, jobject thiz, jstring source)
 {
-	const char *src;
+	char *src;
 	char src_copy[16];
 	int new_type;
 	int prefer_mission;
 	(void) thiz;
 
-	src = source ? (*env)->GetStringUTFChars(env, source, NULL) : NULL;
-	if (!src)
+	if (!source || !dxx_jni_string_to_utf8(env, source, &src))
 		return JNI_FALSE;
 
 	new_type = GameCfg.MusicType;
@@ -341,11 +341,11 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
 	} else if (!strcmp(src, "files")) {
 		new_type = MUSIC_TYPE_CUSTOM;
 	} else {
-		(*env)->ReleaseStringUTFChars(env, source, src);
+		free(src);
 		return JNI_FALSE;
 	}
 	snprintf(src_copy, sizeof(src_copy), "%s", src);
-	(*env)->ReleaseStringUTFChars(env, source, src);
+	free(src);
 
 	g_music_source_type = new_type;
 	g_music_source_prefer_mission = prefer_mission;
@@ -409,7 +409,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetTrackList(
 	if (!buf)
 		return (*env)->NewStringUTF(env, "[]");
 	songs_get_track_list(buf, 32768);
-	result = (*env)->NewStringUTF(env, buf);
+	result = dxx_jni_string_from_utf8(env, buf);
 	free(buf);
 	return result;
 }

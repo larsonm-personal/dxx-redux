@@ -20,6 +20,7 @@
 #include "sow_extract.h"
 #include "stuffit_extract.h"
 #include "game_file_extensions.h"
+#include "jni_string.h"
 
 #define TAG       "DXX-DiscImport"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -43,8 +44,13 @@ static jobjectArray build_iso_listing_array(JNIEnv *env, const iso_file_list_t *
 
 		if (list->files[i].is_dir) continue;
 		snprintf(buf, sizeof(buf), "%s|%u", list->files[i].path, list->files[i].size);
-		s = (*env)->NewStringUTF(env, buf);
+		s = dxx_jni_string_from_utf8(env, buf);
+		if (!s) return NULL;
 		(*env)->SetObjectArrayElement(env, result, idx++, s);
+		if ((*env)->ExceptionCheck(env)) {
+			(*env)->DeleteLocalRef(env, s);
+			return NULL;
+		}
 		(*env)->DeleteLocalRef(env, s);
 	}
 
@@ -68,12 +74,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeParseCue(
     JNIEnv *env, jclass clazz,
     jstring cuePath, jlongArray binSizes)
 {
-	const char *cue_text_path = (*env)->GetStringUTFChars(env, cuePath, NULL);
-	if (!cue_text_path) return NULL;
+	char *cue_text_path;
+	if (!dxx_jni_string_to_utf8(env, cuePath, &cue_text_path)) return NULL;
 
 	/* Read CUE file contents */
 	FILE *f = fopen(cue_text_path, "r");
-	(*env)->ReleaseStringUTFChars(env, cuePath, cue_text_path);
+	free(cue_text_path);
 	if (!f) {
 		LOGE("Cannot open CUE file");
 		return NULL;
@@ -151,11 +157,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeGetCueTitles(
     JNIEnv *env, jclass clazz,
     jstring cuePath, jlongArray binSizes)
 {
-	const char *path = (*env)->GetStringUTFChars(env, cuePath, NULL);
-	if (!path) return NULL;
+	char *path;
+	if (!dxx_jni_string_to_utf8(env, cuePath, &path)) return NULL;
 
 	FILE *f = fopen(path, "r");
-	(*env)->ReleaseStringUTFChars(env, cuePath, path);
+	free(path);
 	if (!f) return NULL;
 
 	fseek(f, 0, SEEK_END);
@@ -201,8 +207,13 @@ Java_com_dxxredux_app_DiscImportBridge_nativeGetCueTitles(
 	jclass strClass = (*env)->FindClass(env, "java/lang/String");
 	jobjectArray titles = (*env)->NewObjectArray(env, n, strClass, NULL);
 	for (int i = 0; i < n; i++) {
-		jstring t = (*env)->NewStringUTF(env, disc.tracks[i].title);
+		jstring t = dxx_jni_string_from_utf8(env, disc.tracks[i].title);
+		if (!t) return NULL;
 		(*env)->SetObjectArrayElement(env, titles, i, t);
+		if ((*env)->ExceptionCheck(env)) {
+			(*env)->DeleteLocalRef(env, t);
+			return NULL;
+		}
 		(*env)->DeleteLocalRef(env, t);
 	}
 	return titles;
@@ -297,7 +308,8 @@ static int extract_progress_cb(const char *current_file,
 	extract_ctx_t *ctx = (extract_ctx_t *) user_data;
 	if (!ctx->callback) return 0;
 
-	jstring jfile = (*ctx->env)->NewStringUTF(ctx->env, current_file);
+	jstring jfile = dxx_jni_string_from_utf8(ctx->env, current_file);
+	if (!jfile) return 1;
 	jint cancel = (*ctx->env)->CallIntMethod(ctx->env, ctx->callback,
 	                                         ctx->on_progress,
 	                                         jfile,
@@ -329,15 +341,15 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 		return -1;
 	}
 
-	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir) return -1;
+	char *out_dir;
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 
 	/* List files first */
 	iso_file_list_t list;
 	memset(&list, 0, sizeof(list));
 	int n = iso_list_files(binFd, trackStart, trackSectors, &list);
 	if (n < 0) {
-		(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+		free(out_dir);
 		return -1;
 	}
 
@@ -350,7 +362,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	                                  progress ? extract_progress_cb : NULL,
 	                                  &ctx);
 
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(out_dir);
 	LOGI("Extracted %d files", extracted);
 	return extracted;
 }
@@ -361,7 +373,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
     jint isoFd,
     jstring outputDir, jobject progress)
 {
-	const char *out_dir;
+	char *out_dir;
 	iso_file_list_t list;
 	int n;
 	extract_ctx_t ctx;
@@ -372,13 +384,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 		return -1;
 	}
 
-	out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir) return -1;
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 
 	memset(&list, 0, sizeof(list));
 	n = iso_list_image_files(isoFd, &list);
 	if (n < 0) {
-		(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+		free(out_dir);
 		return -1;
 	}
 
@@ -387,7 +398,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 	                                    progress ? extract_progress_cb : NULL,
 	                                    &ctx);
 
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(out_dir);
 	LOGI("Extracted %d files from ISO image", extracted);
 	return extracted;
 }
@@ -406,12 +417,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeScanSowFiles(
     JNIEnv *env, jclass clazz,
     jstring dirPath)
 {
-	const char *dir = (*env)->GetStringUTFChars(env, dirPath, NULL);
-	if (!dir) return NULL;
+	char *dir;
+	if (!dxx_jni_string_to_utf8(env, dirPath, &dir)) return NULL;
 
 	sow_file_list_t list;
 	int n = sow_scan_dir(dir, &list);
-	(*env)->ReleaseStringUTFChars(env, dirPath, dir);
+	free(dir);
 
 	if (n < 0) {
 		LOGE("sow_scan_dir failed");
@@ -427,8 +438,13 @@ Java_com_dxxredux_app_DiscImportBridge_nativeScanSowFiles(
 	jclass strClass = (*env)->FindClass(env, "java/lang/String");
 	jobjectArray result = (*env)->NewObjectArray(env, list.count, strClass, NULL);
 	for (int i = 0; i < list.count; i++) {
-		jstring s = (*env)->NewStringUTF(env, list.paths[i]);
+		jstring s = dxx_jni_string_from_utf8(env, list.paths[i]);
+		if (!s) return NULL;
 		(*env)->SetObjectArrayElement(env, result, i, s);
+		if ((*env)->ExceptionCheck(env)) {
+			(*env)->DeleteLocalRef(env, s);
+			return NULL;
+		}
 		(*env)->DeleteLocalRef(env, s);
 	}
 
@@ -453,12 +469,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
     jstring sowPath, jstring outputDir, jobject progress,
     jboolean appendExisting)
 {
-	const char *sow = (*env)->GetStringUTFChars(env, sowPath, NULL);
-	if (!sow) return -1;
+	char *sow;
+	char *out_dir;
+	if (!dxx_jni_string_to_utf8(env, sowPath, &sow)) return -1;
 
-	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir) {
-		(*env)->ReleaseStringUTFChars(env, sowPath, sow);
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) {
+		free(sow);
 		return -1;
 	}
 
@@ -472,8 +488,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 	LOGI("SOW extracted %d files from %s (append=%s)", extracted, sow,
 	     appendExisting == JNI_TRUE ? "true" : "false");
 
-	(*env)->ReleaseStringUTFChars(env, sowPath, sow);
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(sow);
+	free(out_dir);
 	return extracted;
 }
 
@@ -482,12 +498,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractStuffitFiles(
     JNIEnv *env, jclass clazz,
     jstring sitPath, jstring outputDir, jobject progress)
 {
-	const char *sit = (*env)->GetStringUTFChars(env, sitPath, NULL);
-	if (!sit) return -1;
+	char *sit;
+	char *out_dir;
+	if (!dxx_jni_string_to_utf8(env, sitPath, &sit)) return -1;
 
-	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir) {
-		(*env)->ReleaseStringUTFChars(env, sitPath, sit);
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) {
+		free(sit);
 		return -1;
 	}
 
@@ -499,8 +515,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractStuffitFiles(
 	                                progress ? extract_progress_cb : NULL, &ctx);
 	LOGI("StuffIt extracted %d files from %s", extracted, sit);
 
-	(*env)->ReleaseStringUTFChars(env, sitPath, sit);
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(sit);
+	free(out_dir);
 	return extracted;
 }
 
@@ -514,7 +530,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 {
 	extract_ctx_t ctx;
 	hfs_partition_info_t hfs_info;
-	const char *out_dir;
+	char *out_dir;
 	int extracted;
 
 	if (binFd < 0) {
@@ -522,13 +538,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 		return -1;
 	}
 
-	out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
-	if (!out_dir)
+	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir))
 		return -1;
 	init_extract_ctx(env, progress, &ctx);
 
 	if (hfs_find_partition(binFd, trackStart, trackSectors, &hfs_info) < 0) {
-		(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+		free(out_dir);
 		return -1;
 	}
 
@@ -542,6 +557,6 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 	LOGI("Mac import extracted %d files from HFS volume '%s'", extracted,
 	     hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name);
 
-	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	free(out_dir);
 	return extracted;
 }

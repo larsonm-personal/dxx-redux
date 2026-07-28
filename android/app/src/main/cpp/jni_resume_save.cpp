@@ -16,6 +16,7 @@
 
 extern "C" {
 #include "android_save_meta.h"
+#include "jni_string.h"
 }
 
 using nlohmann::json;
@@ -748,33 +749,32 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindNewestSave(JNIEnv *env,
                                                             jstring jfilesDir)
 {
 	android_save_meta_candidate candidate;
-	const char *files_dir;
+	char *files_dir;
 	json out;
 	std::vector<std::string> paths;
 
 	if (!jfilesDir)
 		return NULL;
-	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
-	if (!files_dir)
+	if (!dxx_jni_string_to_utf8(env, jfilesDir, &files_dir))
 		return NULL;
 
 	collect_save_paths(files_dir, "d1x-redux", &paths);
 	collect_save_paths(files_dir, "d2x-redux", &paths);
 	if (paths.empty()) {
-		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+		free(files_dir);
 		return NULL;
 	}
 
 	if (!select_newest_resume_save(paths, &candidate)) {
-		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+		free(files_dir);
 		return NULL;
 	}
 
 	out = resume_candidate_json(files_dir, candidate);
-	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	free(files_dir);
 
 	std::string dumped = out.dump();
-	return env->NewStringUTF(dumped.c_str());
+	return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -783,21 +783,20 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindSaveOptions(JNIEnv *env,
                                                              jstring jfilesDir)
 {
 	android_save_meta_candidate candidate;
-	const char *files_dir;
+	char *files_dir;
 	json out;
 	std::vector<std::string> paths;
 	bool found = false;
 
 	if (!jfilesDir)
 		return NULL;
-	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
-	if (!files_dir)
+	if (!dxx_jni_string_to_utf8(env, jfilesDir, &files_dir))
 		return NULL;
 
 	collect_save_paths(files_dir, "d1x-redux", &paths);
 	collect_save_paths(files_dir, "d2x-redux", &paths);
 	if (paths.empty()) {
-		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+		free(files_dir);
 		return NULL;
 	}
 
@@ -821,12 +820,12 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindSaveOptions(JNIEnv *env,
 		out["last_minimize"] = resume_candidate_json(files_dir, candidate);
 		found = true;
 	}
-	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	free(files_dir);
 	if (!found)
 		return NULL;
 
 	std::string dumped = out.dump();
-	return env->NewStringUTF(dumped.c_str());
+	return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -834,19 +833,18 @@ Java_com_dxxredux_app_SaveExplorerBridge_nativeListSaveSlots(JNIEnv *env,
                                                              jobject /* thiz */,
                                                              jstring jfilesDir)
 {
-	const char *files_dir;
+	char *files_dir;
 	json out;
 
 	if (!jfilesDir)
 		return NULL;
-	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
-	if (!files_dir)
+	if (!dxx_jni_string_to_utf8(env, jfilesDir, &files_dir))
 		return NULL;
 	out = list_save_explorer_slots(files_dir);
-	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	free(files_dir);
 
 	std::string dumped = out.dump();
-	return env->NewStringUTF(dumped.c_str());
+	return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -858,8 +856,8 @@ Java_com_dxxredux_app_SaveExplorerBridge_nativeDeleteSaveSlot(JNIEnv *env,
                                                               jint expectedSlot)
 {
 	android_save_meta_disk meta;
-	const char *files_dir;
-	const char *path;
+	char *files_dir;
+	char *path;
 	uint64_t current_time;
 	int current_slot;
 	bool meta_valid;
@@ -869,14 +867,12 @@ Java_com_dxxredux_app_SaveExplorerBridge_nativeDeleteSaveSlot(JNIEnv *env,
 		out["deleted"] = false;
 		out["reason"] = "missing_path";
 		std::string dumped = out.dump();
-		return env->NewStringUTF(dumped.c_str());
+		return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 	}
-	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
-	if (!files_dir)
+	if (!dxx_jni_string_to_utf8(env, jfilesDir, &files_dir))
 		return NULL;
-	path = env->GetStringUTFChars(jpath, NULL);
-	if (!path) {
-		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	if (!dxx_jni_string_to_utf8(env, jpath, &path)) {
+		free(files_dir);
 		return NULL;
 	}
 
@@ -912,10 +908,10 @@ Java_com_dxxredux_app_SaveExplorerBridge_nativeDeleteSaveSlot(JNIEnv *env,
 	out["reason"] = "";
 
 done:
-	env->ReleaseStringUTFChars(jpath, path);
-	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	free(path);
+	free(files_dir);
 	std::string dumped = out.dump();
-	return env->NewStringUTF(dumped.c_str());
+	return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 }
 
 extern "C" JNIEXPORT jbyteArray JNICALL
@@ -924,19 +920,18 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeReadThumbnailRgb6(JNIEnv *env,
                                                                jstring jpath)
 {
 	android_save_meta_disk meta;
-	const char *path;
+	char *path;
 	jbyteArray out;
 
 	if (!jpath)
 		return NULL;
-	path = env->GetStringUTFChars(jpath, NULL);
-	if (!path)
+	if (!dxx_jni_string_to_utf8(env, jpath, &path))
 		return NULL;
 	if (!android_save_meta_read_path(path, &meta)) {
-		env->ReleaseStringUTFChars(jpath, path);
+		free(path);
 		return NULL;
 	}
-	env->ReleaseStringUTFChars(jpath, path);
+	free(path);
 	if (meta.thumbnail_format != ANDROID_SAVE_META_THUMB_RGB6 ||
 	    meta.thumbnail_width != ANDROID_SAVE_META_THUMB_W ||
 	    meta.thumbnail_height != ANDROID_SAVE_META_THUMB_H)
