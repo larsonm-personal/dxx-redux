@@ -1,6 +1,8 @@
 #ifndef DXX_ANDROID_SHARED_NET_UDP_ANDROID_H
 #define DXX_ANDROID_SHARED_NET_UDP_ANDROID_H
 
+#include <stdint.h>
+
 #include "net_udp.h"
 
 struct player;
@@ -12,6 +14,7 @@ typedef void (*android_net_udp_log_connection_status_fn)(int pnum, int old_type)
 #define ANDROID_NET_UDP_WELCOME_SLOT_CLOSED            -1
 #define ANDROID_NET_UDP_WELCOME_SLOT_FULL              -2
 #define ANDROID_NET_UDP_WELCOME_SLOT_ALREADY_CONNECTED -3
+#define ANDROID_NET_UDP_AUTH_INVALID                   -2
 
 #ifdef __ANDROID__
 void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int len);
@@ -19,6 +22,37 @@ void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int le
 
 int android_net_udp_sockaddr_equal(const struct _sockaddr *a,
                                    const struct _sockaddr *b);
+#ifdef __ANDROID__
+uint64_t android_net_udp_read_u64_le(const unsigned char *source);
+void android_net_udp_write_u64_le(unsigned char *destination,
+                                  uint64_t value);
+void android_net_udp_auth_reset(int local_player_num);
+int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
+                                         unsigned int game_token);
+int android_net_udp_auth_validate_request(
+    const UDP_sequence_packet *request, unsigned int game_token,
+    int player_count);
+void android_net_udp_auth_store_player(
+    int player_num, const UDP_sequence_packet *request);
+void android_net_udp_auth_move_player(int destination_player_num,
+                                      int source_player_num);
+void android_net_udp_auth_remove_player(int player_num, int player_count);
+int android_net_udp_auth_write_player(unsigned char *destination,
+                                      int player_num);
+int android_net_udp_auth_read_player(const unsigned char *source,
+                                     int player_num);
+int android_net_udp_auth_begin_challenge(
+    int player_num, const UDP_sequence_packet *request,
+    unsigned int game_token, const struct _sockaddr *route_addr,
+    int is_proxy, fix64 now, unsigned char *packet, int packet_size);
+int android_net_udp_auth_answer_challenge(
+    const unsigned char *data, int data_len, unsigned int game_token,
+    int local_player_num, unsigned char *packet, int packet_size);
+int android_net_udp_auth_finish_challenge(
+    const unsigned char *data, int data_len, unsigned int game_token,
+    const struct _sockaddr *route_addr, int is_proxy, fix64 now,
+    UDP_sequence_packet *request, int *player_num);
+#endif
 int android_net_udp_find_player_by_identity(const char *callsign,
                                             struct _sockaddr *addr, int player_count, const struct player *players,
                                             const struct netgame_info *netgame);
@@ -39,6 +73,8 @@ void android_net_udp_prepare_observer_join(UDP_sequence_packet *sync_player,
                                            struct netgame_info *netgame);
 void android_net_udp_prepare_reconnect_player(int player_num,
                                               const struct _sockaddr *new_addr,
+                                              int is_proxy,
+                                              int proxy_through,
                                               int i_am_master,
                                               struct connection_status *statuses,
                                               android_net_udp_update_address_fn update_address);

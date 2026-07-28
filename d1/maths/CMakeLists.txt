@@ -89,6 +89,12 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/android_slowdown_detector.c)
     target_include_directories(test_android_slowdown_detector PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_net_udp_reconnect_auth
+        ../../android/tests/test_net_udp_reconnect_auth.c
+        ../../android/app/src/main/cpp/shared/net/net_udp_reconnect_auth.c)
+    target_include_directories(test_net_udp_reconnect_auth PRIVATE
+        ../../android/app/src/main/cpp/shared/net)
+
     add_executable(test_coop_host_migration_policy
         ../../android/tests/test_coop_host_migration_policy.c
         ../../android/app/src/main/cpp/shared/coop/coop_host_migration_policy.c)
@@ -218,6 +224,7 @@ if(NOT ANDROID)
             test_kconfig_android_shared
             test_android_rewind_policy
             test_android_slowdown_detector
+            test_net_udp_reconnect_auth
             test_coop_host_migration_policy
             test_coop_player_session
             test_multi_save_transfer_policy

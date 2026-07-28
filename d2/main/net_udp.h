@@ -8,6 +8,9 @@
  */
 
 #include "multi.h"
+#ifdef __ANDROID__
+#include "net/net_udp_reconnect_auth.h"
+#endif
 
 // Exported functions
 int net_udp_setup_game(void);
@@ -64,7 +67,13 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_GAME_INFO_REQ_SIZE			 13
 #define UPID_GAME_INFO_LITE_REQ_SIZE		 11
 #define UPID_GAME_INFO				  3 // Packet containing all info about a netgame.
-#define UPID_GAME_INFO_SIZE			(6 + 4*2 + 370 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+37)) + 20*12)
+#ifdef __ANDROID__
+#define UPID_GAME_INFO_RECONNECT_AUTH_SIZE \
+	((MAX_PLAYERS + 4) * ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE)
+#else
+#define UPID_GAME_INFO_RECONNECT_AUTH_SIZE 0
+#endif
+#define UPID_GAME_INFO_SIZE			(6 + 4*2 + 370 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+37)) + 20*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE)
 #define UPID_GAME_INFO_LITE_REQ			  4 // Requesting lite info about a netgame. Used for discovering games.
 #define UPID_GAME_INFO_LITE			  5 // Packet containing lite netgame info.
 #define UPID_GAME_INFO_LITE_SIZE		 (31 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1))
@@ -73,7 +82,11 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_ADDPLAYER				  7 // Packet from Host containing info about a new player.
 #define UPID_REQUEST				  8 // New player says: "I want to be inside of you!" (haha, sorry I could not resist) / Packet containing request to join the game actually.
 #define UPID_QUIT_JOINING			  9 // Packet from a player who suddenly quits joining.
+#ifdef __ANDROID__
+#define UPID_SEQUENCE_SIZE			 (3 + 4 + (CALLSIGN_LEN+1) + sizeof(struct _sockaddr) + 2 + 1 + ANDROID_NET_UDP_RECONNECT_SEQUENCE_AUTH_SIZE)
+#else
 #define UPID_SEQUENCE_SIZE			 (3 + 4 + (CALLSIGN_LEN+1) + sizeof(struct _sockaddr) + 2 + 1)
+#endif
 #define UPID_SYNC				 10 // Packet from host containing full netgame info to sync players up.
 #define UPID_OBJECT_DATA			 11 // Packet from host containing object buffer.
 #define UPID_PING				 12 // Packet from host containing his GameTime and the Ping list. Client returns this time to host as UPID_PONG and adapts the ping list.
@@ -107,6 +120,10 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_OBSDATA 29
 #define UPID_OBSQUIT 30
 #define UPID_OBSQUIT_SIZE (1 + 4 + 4)
+#ifdef __ANDROID__
+#define UPID_RECONNECT_CHALLENGE 31
+#define UPID_RECONNECT_PROOF     32
+#endif
 
 // Structure keeping lite game infos (for netlist, etc.)
 typedef struct UDP_netgame_info_lite
@@ -132,6 +149,9 @@ typedef struct UDP_sequence_packet
 	ubyte           		type;
 	int                     token; 
 	netplayer_info  		player;
+#ifdef __ANDROID__
+	android_net_udp_reconnect_identity reconnect_identity;
+#endif
 } __pack__ UDP_sequence_packet;
 
 // player position packet structure

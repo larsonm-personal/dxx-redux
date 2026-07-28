@@ -194,6 +194,7 @@ if(UDP)
     target_sources(dxx-redux-d2 PRIVATE
         net_udp.c
         ../../android/app/src/main/cpp/shared/net/net_udp_android.c
+        ../../android/app/src/main/cpp/shared/net/net_udp_reconnect_auth.c
 		../../android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c)
     if(ANDROID)
 		target_include_directories(dxx-redux-d2 PRIVATE ../../android/app/src/main/cpp/shared/net)
@@ -329,6 +330,7 @@ if(NOT ANDROID)
         target_sources(dxx-redux-d2-headless PRIVATE
             net_udp.c
             ../../android/app/src/main/cpp/shared/net/net_udp_android.c
+            ../../android/app/src/main/cpp/shared/net/net_udp_reconnect_auth.c
 			../../android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c)
     endif()
     if(WIN32)
@@ -387,6 +389,7 @@ if(NOT ANDROID)
         target_sources(dxx-redux-d2-headless-metadata PRIVATE
             net_udp.c
             ../../android/app/src/main/cpp/shared/net/net_udp_android.c
+            ../../android/app/src/main/cpp/shared/net/net_udp_reconnect_auth.c
             ../../android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c)
     endif()
     if(WIN32)

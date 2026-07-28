@@ -140,7 +140,9 @@ void net_udp_send_objects(void);
 void net_udp_send_rejoin_sync(int player_num);
 void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte send_to_observers, uint player_token);
 void net_udp_send_netgame_update();
-void net_udp_do_refuse_stuff (UDP_sequence_packet *their);
+void net_udp_do_refuse_stuff (UDP_sequence_packet *their,
+                              int authenticated_player_num,
+                              int is_proxy);
 int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr );
 void net_udp_read_object_packet( ubyte *data, int data_len );
 void net_udp_ping_frame(fix64 time);
@@ -174,6 +176,13 @@ void net_udp_send_p2p_pong(int to_player, fix64 time, int initiating_connection)
 void net_udp_send_to_player(ubyte* data, int len, int to_player);
 void net_udp_send_to_player_direct(ubyte* data, int len, int to_player);
 void net_udp_send_to_player_proxy(ubyte* data, int len, int to_player, int through_player);
+static void net_udp_send_sync_payload(ubyte *data, int len,
+                                      struct _sockaddr address,
+                                      int player_num);
+static void net_udp_send_game_info_to_player(
+    int player_num, struct _sockaddr address, ubyte info_upid,
+    ubyte send_to_observers, uint player_token);
+static int net_udp_sync_target_player = -1;
 void reattemptDirect(int pnum); 
 void resetProxy(int pnum); 
 void update_address_for_player(int pnum, struct _sockaddr new_addr); 
@@ -236,17 +245,24 @@ int iTrackerVerified = 0;
 #endif
 extern obj_position Player_init[MAX_PLAYERS];
 
-/* Find a player slot by callsign + IP.  On Android, after host migration the
- * old host's stored address is 127.0.0.1 (proxy loopback) while the rejoining
- * player arrives from a real network IP, so the IP check fails.  Fall back to
- * callsign-only for disconnected players to avoid filling the score list
- * with stale entries each rejoin.  Callsign-only is safe because the
- * android launcher assigns unique random callsigns. */
+#ifndef __ANDROID__
 static int find_player_by_identity(const char *callsign, struct _sockaddr *addr)
 {
 	return android_net_udp_find_player_by_identity(callsign, addr, N_players,
 		Players, &Netgame);
 }
+#else
+static int find_player_by_address(struct _sockaddr addr)
+{
+	int i;
+
+	for (i = 0; i < N_players; i++)
+		if (android_net_udp_sockaddr_equal(
+		        &addr, &Netgame.players[i].protocol.udp.addr))
+			return i;
+	return -1;
+}
+#endif
 
 uint netgame_token = 0; 
 uint my_player_token = 0; 
@@ -295,6 +311,12 @@ char* msg_name(int type)
 			return "UPID_ADDPLAYER";
 		case UPID_REQUEST:
 			return "UPID_REQUEST";
+#ifdef __ANDROID__
+		case UPID_RECONNECT_CHALLENGE:
+			return "UPID_RECONNECT_CHALLENGE";
+		case UPID_RECONNECT_PROOF:
+			return "UPID_RECONNECT_PROOF";
+#endif
 		case UPID_QUIT_JOINING:
 		    return "UPID_QUIT_JOINING";
 		case UPID_SYNC:
@@ -963,6 +985,9 @@ int valid_sender(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		case UPID_PING: 
 		case UPID_ENDLEVEL_H: 
 		case UPID_REATTEMPT_DIRECT: 
+#ifdef __ANDROID__
+		case UPID_RECONNECT_CHALLENGE:
+#endif
 			if(multi_i_am_master()) {
 				drop_rx_packet(data, "received by game master"); 
 				return 0; 
@@ -976,6 +1001,9 @@ int valid_sender(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		case UPID_QUIT_JOINING: 
 		case UPID_PONG: 
 		case UPID_ENDLEVEL_C: 
+#ifdef __ANDROID__
+		case UPID_RECONNECT_PROOF:
+#endif
 			if(! multi_i_am_master()) {
 				drop_rx_packet(data, "received by non-game master"); 
 				return 0; 				
@@ -1002,6 +1030,9 @@ int valid_ip(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		case UPID_PING: 
 		case UPID_ENDLEVEL_H: 
 		case UPID_REATTEMPT_DIRECT: 
+#ifdef __ANDROID__
+		case UPID_RECONNECT_CHALLENGE:
+#endif
 			if(! is_master_ip(sender_addr)) {
 				drop_rx_packet(data, "sent from ip not belonging to game master"); 
 				return 0; 
@@ -1031,6 +1062,10 @@ int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		case UPID_P2P_PING: 			if(data_len != UPID_P2P_PING_SIZE          )  { rv = 0; }  break;
 		case UPID_P2P_PONG: 			if(data_len != UPID_P2P_PONG_SIZE          )  { rv = 0; }  break;
 		case UPID_REATTEMPT_DIRECT: 	if(data_len != UPID_REATTEMPT_DIRECT_SIZE  )  { rv = 0; }  break;
+#ifdef __ANDROID__
+		case UPID_RECONNECT_CHALLENGE: if(data_len != ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE) { rv = 0; } break;
+		case UPID_RECONNECT_PROOF: if(data_len != ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE) { rv = 0; } break;
+#endif
 
 		// Special cases
 		case UPID_GAME_INFO:     		rv = 1; break; // Don't check, it varies
@@ -1067,6 +1102,10 @@ int valid_token(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		case UPID_P2P_PONG: 
 		case UPID_PROXY:
 		case UPID_REATTEMPT_DIRECT:		
+#ifdef __ANDROID__
+		case UPID_RECONNECT_CHALLENGE:
+		case UPID_RECONNECT_PROOF:
+#endif
 		// case UPID_SYNC: // Special case is handled in sync processing
 			rv = GET_INTEL_INT(data + 1) == netgame_token; 
 
@@ -1725,6 +1764,14 @@ void net_udp_send_sequence_packet(UDP_sequence_packet seq, struct _sockaddr recv
 	int len = 0;
 	ubyte buf[UPID_SEQUENCE_SIZE];
 
+	seq.player.observer = is_observer() ? 1 : 0;
+#ifdef __ANDROID__
+	if (seq.type == UPID_REQUEST &&
+	    !android_net_udp_auth_prepare_request(&seq, netgame_token)) {
+		MPDIAG("send_sequence: reconnect request signing failed\n");
+		return;
+	}
+#endif
 	len = 0;
 	memset(buf, 0, sizeof(buf));
 	buf[0] = seq.type;						len++;
@@ -1734,8 +1781,21 @@ void net_udp_send_sequence_packet(UDP_sequence_packet seq, struct _sockaddr recv
 	buf[len] = seq.player.rank;					len++;
 	buf[len] = seq.player.color;				len++;
 	buf[len] = seq.player.missilecolor;				len++;
-	buf[len] = is_observer() ? 1 : 0;     len++; 
+	buf[len] = seq.player.observer;     len++;
 	memcpy(buf + len, &seq.player.protocol.udp.addr, sizeof(struct _sockaddr));  len += sizeof(struct _sockaddr); 
+#ifdef __ANDROID__
+	buf[len++] = seq.reconnect_identity.public_key_len;
+	memcpy(buf + len, seq.reconnect_identity.public_key,
+	       sizeof(seq.reconnect_identity.public_key));
+	len += sizeof(seq.reconnect_identity.public_key);
+	android_net_udp_write_u64_le(buf + len,
+	                             seq.reconnect_identity.request_counter);
+	len += 8;
+	buf[len++] = seq.reconnect_identity.request_signature_len;
+	memcpy(buf + len, seq.reconnect_identity.request_signature,
+	       sizeof(seq.reconnect_identity.request_signature));
+	len += sizeof(seq.reconnect_identity.request_signature);
+#endif
 	
 	dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&recv_addr, sizeof(struct _sockaddr));
 }
@@ -1752,6 +1812,22 @@ void net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, stru
 	seq->player.color = data[len]; len++; 
 	seq->player.missilecolor = data[len]; len++; 
 	seq->player.observer = data[len]; len++;  
+#ifdef __ANDROID__
+	len += sizeof(struct _sockaddr);
+	seq->reconnect_identity.public_key_len = data[len++];
+	memcpy(seq->reconnect_identity.public_key, data + len,
+	       sizeof(seq->reconnect_identity.public_key));
+	len += sizeof(seq->reconnect_identity.public_key);
+	seq->reconnect_identity.request_counter =
+	    android_net_udp_read_u64_le(data + len);
+	len += 8;
+	seq->reconnect_identity.request_signature_len = data[len++];
+	memcpy(seq->reconnect_identity.request_signature, data + len,
+	       sizeof(seq->reconnect_identity.request_signature));
+	len += sizeof(seq->reconnect_identity.request_signature);
+	len -= ANDROID_NET_UDP_RECONNECT_SEQUENCE_AUTH_SIZE +
+	       sizeof(struct _sockaddr);
+#endif
 
 	if(seq->type == UPID_ADDPLAYER ) {
 		memcpy(&(seq->player.protocol.udp.addr), data + len, sizeof(struct _sockaddr)); len += sizeof(struct _sockaddr);
@@ -1807,6 +1883,9 @@ void net_udp_init()
 
 	multi_new_game();
 	net_udp_reset_connection_statuses();
+#ifdef __ANDROID__
+	android_net_udp_auth_reset(Player_num);
+#endif
 	net_udp_flush();
 	
 	UDP_Seq.token = netgame_token;
@@ -1985,6 +2064,9 @@ net_udp_new_player(UDP_sequence_packet *their)
 
 	memcpy(Players[pnum].callsign, their->player.callsign, CALLSIGN_LEN+1);
 	memcpy(Netgame.players[pnum].callsign, their->player.callsign, CALLSIGN_LEN+1);
+#ifdef __ANDROID__
+	android_net_udp_auth_store_player(pnum, their);
+#endif
 	if(Netgame.AllowPreferredColors) { 
 		Netgame.players[pnum].color = their->player.color; 
 		if(their->player.color > 7) { Netgame.players[pnum].color = pnum; }
@@ -2042,11 +2124,20 @@ net_udp_new_player(UDP_sequence_packet *their)
 	net_udp_noloss_clear_mdata_got(pnum);
 }
 
-void net_udp_welcome_player(UDP_sequence_packet *their)
+void net_udp_welcome_player(UDP_sequence_packet *their,
+                            int authenticated_player_num,
+                            int reconnect_proven, int is_proxy)
 {
 	// Add a player to a game already in progress
 	int existing_player_num;
 	int player_num;
+#ifdef __ANDROID__
+	int i;
+#else
+	(void) authenticated_player_num;
+	(void) reconnect_proven;
+	(void) is_proxy;
+#endif
 
 	// Don't accept new players if we're ending this level.  Its safe to
 	// ignore since they'll request again later
@@ -2107,8 +2198,25 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 		return;
 	}
 
-	existing_player_num = find_player_by_identity(their->player.callsign,
-	                                             (struct _sockaddr *)&their->player.protocol.udp.addr);
+#ifdef __ANDROID__
+	existing_player_num = authenticated_player_num;
+	if (existing_player_num == -1) {
+		for (i = 0; i < N_players; i++) {
+			if (!d_stricmp(their->player.callsign,
+			               Netgame.players[i].callsign)) {
+				if (!is_proxy)
+					net_udp_dump_player(
+					    their->player.protocol.udp.addr,
+					    their->token, DUMP_DUPNAME);
+				return;
+			}
+		}
+	}
+#else
+	existing_player_num = find_player_by_identity(
+	    their->player.callsign,
+	    (struct _sockaddr *)&their->player.protocol.udp.addr);
+#endif
 	player_num = android_net_udp_select_welcome_player_slot(existing_player_num,
 	                                                        N_players,
 	                                                        Netgame.max_numplayers,
@@ -2136,6 +2244,35 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 		return;
 	}
 
+#ifdef __ANDROID__
+	if (existing_player_num != -1 && !reconnect_proven) {
+		ubyte challenge[ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE];
+		int challenge_len;
+		int through_player = -1;
+
+		challenge_len = android_net_udp_auth_begin_challenge(
+		    player_num, their, netgame_token,
+		    &their->player.protocol.udp.addr, is_proxy, timer_query(),
+		    challenge, sizeof(challenge));
+		if (!challenge_len)
+			return;
+		if (is_proxy)
+			through_player =
+			    find_player_by_address(their->player.protocol.udp.addr);
+		if (is_proxy && through_player < 0)
+			return;
+		if (is_proxy)
+			net_udp_send_to_player_proxy(
+			    challenge, challenge_len, player_num, through_player);
+		else
+			dxx_sendto(
+			    UDP_Socket[0], challenge, challenge_len, 0,
+			    (struct sockaddr *)&their->player.protocol.udp.addr,
+			    sizeof(struct _sockaddr));
+		return;
+	}
+#endif
+
 	if (existing_player_num == -1)
 	{
 		// Player is new to this game
@@ -2158,11 +2295,20 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 
 		net_udp_noloss_clear_mdata_got(player_num);
 
-		android_net_udp_prepare_reconnect_player(player_num,
-		                                        &their->player.protocol.udp.addr,
-		                                        multi_i_am_master(),
-		                                        connection_statuses,
-		                                        update_address_for_player);
+#ifdef __ANDROID__
+		android_net_udp_prepare_reconnect_player(
+		    player_num, &their->player.protocol.udp.addr, is_proxy,
+		    is_proxy ? find_player_by_address(
+		                   their->player.protocol.udp.addr)
+		             : -1,
+		    multi_i_am_master(), connection_statuses,
+		    update_address_for_player);
+#else
+		android_net_udp_prepare_reconnect_player(
+		    player_num, &their->player.protocol.udp.addr, 0, -1,
+		    multi_i_am_master(), connection_statuses,
+		    update_address_for_player);
+#endif
 	}
 
 	Players[player_num].KillGoalCount=0;
@@ -2310,6 +2456,35 @@ void net_udp_stop_resync(UDP_sequence_packet *their)
 
 ubyte object_buffer[UPID_MAX_SIZE];
 
+static void net_udp_send_sync_payload(ubyte *data, int len,
+                                      struct _sockaddr address,
+                                      int player_num)
+{
+#ifdef __ANDROID__
+	if (player_num >= 0 && player_num < MAX_PLAYERS &&
+	    connection_statuses[player_num].type == CONNT_PROXY) {
+		net_udp_send_to_player_proxy(
+		    data, len, player_num,
+		    connection_statuses[player_num].proxy_through);
+		return;
+	}
+#else
+	(void) player_num;
+#endif
+	dxx_sendto(UDP_Socket[0], data, len, 0,
+	           (struct sockaddr *)&address, sizeof(struct _sockaddr));
+}
+
+static void net_udp_send_game_info_to_player(
+    int player_num, struct _sockaddr address, ubyte info_upid,
+    ubyte send_to_observers, uint player_token)
+{
+	net_udp_sync_target_player = player_num;
+	net_udp_send_game_info(address, info_upid, send_to_observers,
+	                       player_token);
+	net_udp_sync_target_player = -1;
+}
+
 void net_udp_send_objects(void)
 {
 	sbyte owner, player_num = UDP_sync_player.player.connected;
@@ -2400,7 +2575,9 @@ void net_udp_send_objects(void)
 		crash_breadcrumb_v("send_objects: TX loc=%d nobj=%d", loc, obj_count_frame);
 		mpdiag_pkt_dump("TX", object_buffer, loc);
 #endif
-		dxx_sendto (UDP_Socket[0], object_buffer, loc, 0, (struct sockaddr *)&UDP_sync_player.player.protocol.udp.addr, sizeof(struct _sockaddr));
+		net_udp_send_sync_payload(
+		    object_buffer, loc, UDP_sync_player.player.protocol.udp.addr,
+		    player_num);
 	}
 
 	if (i > Highest_object_index)
@@ -2420,7 +2597,9 @@ void net_udp_send_objects(void)
 			PUT_INTEL_INT(object_buffer+9, -2);
 			object_buffer[13] = player_num;
 			PUT_INTEL_INT(object_buffer+14, obj_count);
-			dxx_sendto (UDP_Socket[0], object_buffer, 18, 0, (struct sockaddr *)&UDP_sync_player.player.protocol.udp.addr, sizeof(struct _sockaddr));
+			net_udp_send_sync_payload(
+			    object_buffer, 18,
+			    UDP_sync_player.player.protocol.udp.addr, player_num);
 
 			// Send sync packet which tells the player who he is and to start!
 			net_udp_send_rejoin_sync(player_num);
@@ -2657,7 +2836,9 @@ void net_udp_send_rejoin_sync(int player_num)
 	Netgame.level_time = Players[Player_num].time_level;
 	Netgame.monitor_vector = net_udp_create_monitor_vector();
 
-	net_udp_send_game_info(UDP_sync_player.player.protocol.udp.addr, UPID_SYNC, 1, UDP_sync_player.token);
+	net_udp_send_game_info_to_player(
+	    player_num, UDP_sync_player.player.protocol.udp.addr, UPID_SYNC, 1,
+	    UDP_sync_player.token);
 	net_udp_send_door_updates();
 
 	return;
@@ -2685,7 +2866,10 @@ void net_udp_resend_sync_due_to_packet_loss()
 	Netgame.level_time = Players[Player_num].time_level;
 	Netgame.monitor_vector = net_udp_create_monitor_vector();
 
-	net_udp_send_game_info(UDP_sync_player.player.protocol.udp.addr, UPID_SYNC, 0, UDP_sync_player.token);
+	net_udp_send_game_info_to_player(
+	    UDP_sync_player.player.connected,
+	    UDP_sync_player.player.protocol.udp.addr, UPID_SYNC, 0,
+	    UDP_sync_player.token);
 }
 
 char * net_udp_get_player_name( int objnum )
@@ -2699,13 +2883,26 @@ char * net_udp_get_player_name( int objnum )
 }
 
 
-void net_udp_add_player(UDP_sequence_packet *p)
+void net_udp_add_player(UDP_sequence_packet *p, int authenticated_player_num)
 {
 	int i;
 
 	if (p->player.observer) {
 		return;
 	}
+
+#ifdef __ANDROID__
+	if (authenticated_player_num >= 0 &&
+	    authenticated_player_num < N_players) {
+		Netgame.players[authenticated_player_num].LastPacketTime =
+		    timer_query();
+		update_address_for_player(authenticated_player_num,
+		                          p->player.protocol.udp.addr);
+		return;
+	}
+#else
+	(void) authenticated_player_num;
+#endif
 
 	for (i=0; i<N_players; i++ )
 	{
@@ -2784,6 +2981,9 @@ void net_udp_add_player(UDP_sequence_packet *p)
 	Players[N_players].connected = CONNECT_PLAYING;
 	Netgame.players[N_players].LastPacketTime = timer_query();
 	player_tokens[N_players] = p->token;
+#ifdef __ANDROID__
+	android_net_udp_auth_store_player(N_players, p);
+#endif
 
 	N_players++;
 	Netgame.numplayers = N_players;
@@ -2828,6 +3028,9 @@ void net_udp_remove_player(UDP_sequence_packet *p)
 		ClipRank (&Netgame.players[i].rank);
 	}
 		
+#ifdef __ANDROID__
+	android_net_udp_auth_remove_player(pn, N_players);
+#endif
 	N_players--;
 	Netgame.numplayers = N_players;
 
@@ -3090,6 +3293,9 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 			buf[len] = Netgame.players[i].color;				len++; 
 			buf[len] = Netgame.players[i].missilecolor;				len++;
 			memcpy(&buf[len], Netgame.players[i].client_id, 37);		len += 37;
+#ifdef __ANDROID__
+			len += android_net_udp_auth_write_player(buf + len, i);
+#endif
 			if (!memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr))) {
 				buf[len] = 1; len++; 
 			} else {
@@ -3215,7 +3421,10 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		Assert(len <= sizeof(buf));
 
 		if (send_to_observers != 2)
-			dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&sender_addr, sizeof(struct _sockaddr));
+			net_udp_send_sync_payload(
+			    buf, len, sender_addr,
+			    info_upid == UPID_SYNC ? net_udp_sync_target_player
+			                           : -1);
 
 		if (send_to_observers != 0)
 			forward_to_observers(buf, len, 0);
@@ -3374,6 +3583,9 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			Netgame.players[i].color = data[len];					len++;
 			Netgame.players[i].missilecolor = data[len];					len++;
 			memcpy(Netgame.players[i].client_id, &data[len], 37);			len += 37;
+#ifdef __ANDROID__
+			len += android_net_udp_auth_read_player(data + len, i);
+#endif
 			Netgame.players[i].protocol.udp.isyou = data[len];			len++;
 
 			if(is_sync && Netgame.RetroProtocol) {
@@ -3563,11 +3775,21 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 	}
 }
 
-void net_udp_process_request(UDP_sequence_packet *their)
+void net_udp_process_request(UDP_sequence_packet *their,
+                             int authenticated_player_num)
 {
 	if(their->player.observer) { return; }
 
 	// Player is ready to receieve a sync packet
+#ifdef __ANDROID__
+	if (authenticated_player_num >= 0 &&
+	    authenticated_player_num < N_players) {
+		Players[authenticated_player_num].connected = CONNECT_PLAYING;
+		Netgame.players[authenticated_player_num].LastPacketTime =
+		    timer_query();
+	}
+	return;
+#else
 	int i;
 	int found = 0;
 
@@ -3582,6 +3804,7 @@ void net_udp_process_request(UDP_sequence_packet *their)
 		}
 	if (!found)
 		MPDIAG("process_request: NO MATCH for '%s' (N_players=%d)\n", their->player.callsign, N_players);
+#endif
 }
 
 
@@ -3637,6 +3860,9 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
     }
 
 	int result;
+#ifdef __ANDROID__
+	int authenticated_player_num = -1;
+#endif
 	switch (data[0])
 	{
 		case UPID_VERSION_DENY:
@@ -3681,25 +3907,110 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		
 		case UPID_REQUEST:
 			net_udp_receive_sequence_packet(data, &their, sender_addr);
+#ifdef __ANDROID__
+			authenticated_player_num =
+			    android_net_udp_auth_validate_request(
+			        &their, netgame_token, N_players);
+			if (authenticated_player_num ==
+			    ANDROID_NET_UDP_AUTH_INVALID) {
+				drop_rx_packet(data,
+				               "invalid reconnect authentication");
+				break;
+			}
+#endif
 			if (Network_status == NETSTAT_STARTING) 
 			{
 				// Someone wants to join our game!
-				net_udp_add_player(&their);
+				net_udp_add_player(
+				    &their,
+#ifdef __ANDROID__
+				    authenticated_player_num
+#else
+				    -1
+#endif
+				);
 			}
 			else if (Network_status == NETSTAT_WAITING)
 			{
 				// Someone is ready to recieve a sync packet
-				net_udp_process_request(&their);
+				net_udp_process_request(
+				    &their,
+#ifdef __ANDROID__
+				    authenticated_player_num
+#else
+				    -1
+#endif
+				);
 			}
 			else if (Network_status == NETSTAT_PLAYING)
 			{
 				// Someone wants to join a game in progress!
 				if (Netgame.RefusePlayers)
-					net_udp_do_refuse_stuff (&their);
+					net_udp_do_refuse_stuff(
+					    &their,
+#ifdef __ANDROID__
+					    authenticated_player_num,
+#else
+					    -1,
+#endif
+					    is_proxy);
 				else
-					net_udp_welcome_player(&their);
+					net_udp_welcome_player(
+					    &their,
+#ifdef __ANDROID__
+					    authenticated_player_num,
+#else
+					    -1,
+#endif
+					    0, is_proxy);
 			}
 			break;
+
+#ifdef __ANDROID__
+		case UPID_RECONNECT_CHALLENGE:
+		{
+			ubyte proof[ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE];
+			int proof_len;
+			int through_player = -1;
+
+			proof_len = android_net_udp_auth_answer_challenge(
+			    data, length, netgame_token, Player_num, proof,
+			    sizeof(proof));
+			if (!proof_len)
+				break;
+			if (is_proxy)
+				through_player = find_player_by_address(sender_addr);
+			if (is_proxy && through_player < 0)
+				break;
+			if (is_proxy)
+				net_udp_send_to_player_proxy(
+				    proof, proof_len, multi_who_is_master(),
+				    through_player);
+			else
+				dxx_sendto(
+				    UDP_Socket[0], proof, proof_len, 0,
+				    (struct sockaddr *)&sender_addr,
+				    sizeof(struct _sockaddr));
+			break;
+		}
+
+		case UPID_RECONNECT_PROOF:
+		{
+			UDP_sequence_packet reconnect_request;
+			int reconnect_player_num;
+
+			memset(&reconnect_request, 0,
+			       sizeof(reconnect_request));
+			if (android_net_udp_auth_finish_challenge(
+			        data, length, netgame_token, &sender_addr,
+			        is_proxy, timer_query(), &reconnect_request,
+			        &reconnect_player_num))
+				net_udp_welcome_player(
+				    &reconnect_request, reconnect_player_num, 1,
+				    is_proxy);
+			break;
+		}
+#endif
 
 		case UPID_QUIT_JOINING:
 			net_udp_receive_sequence_packet(data, &their, sender_addr);
@@ -5226,15 +5537,21 @@ int net_udp_send_sync(void)
 	Netgame.game_status = NETSTAT_PLAYING;
 	Netgame.segments_checksum = my_segments_checksum;
 	if (multi_i_am_master())
-		net_udp_send_game_info(Netgame.players[Player_num].protocol.udp.addr, UPID_SYNC, 2, player_tokens[Player_num]);
+		net_udp_send_game_info_to_player(
+		    Player_num, Netgame.players[Player_num].protocol.udp.addr,
+		    UPID_SYNC, 2, player_tokens[Player_num]);
 
 	for (i=0; i<N_players; i++ )
 	{
 		if ((!Players[i].connected) || (i == Player_num))
 			continue;
 
-		net_udp_send_game_info(Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0, player_tokens[i]);
+		net_udp_send_game_info_to_player(
+		    i, Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0,
+		    player_tokens[i]);
+#ifndef __ANDROID__
 		connection_statuses[i].type = CONNT_DIRECT; 
+#endif
 	}
 
 	if (!net_udp_read_sync_packet(NULL, 0, Netgame.players[Player_num].protocol.udp.addr) ||
@@ -5411,7 +5728,14 @@ net_udp_select_players(void)
 	char title[50];
 	int save_nplayers;
 
-	net_udp_add_player( &UDP_Seq );
+#ifdef __ANDROID__
+	if (!android_net_udp_auth_prepare_request(&UDP_Seq,
+	                                          netgame_token)) {
+		MPDIAG("select_players: local reconnect identity failed\n");
+		return -1;
+	}
+#endif
+	net_udp_add_player(&UDP_Seq, -1);
 		
 	for (i=0; i< MAX_PLAYERS; i++ )	{
 		sprintf( text[i], "%d.  %-20s", i+1, "" );
@@ -5561,6 +5885,9 @@ abort:
 				Netgame.players[N_players].rank=Netgame.players[i].rank;
 				ClipRank (&Netgame.players[N_players].rank);
 				player_tokens[N_players] = player_tokens[i];
+#ifdef __ANDROID__
+				android_net_udp_auth_move_player(N_players, i);
+#endif
 			}
 			Players[N_players].connected = CONNECT_PLAYING;
 			N_players++;
@@ -7677,11 +8004,24 @@ void net_udp_process_pong(ubyte *data, int data_len, struct _sockaddr sender_add
 		Netgame.players[data[1]].ping = 9999;
 }
 
-void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
+void net_udp_do_refuse_stuff(UDP_sequence_packet *their,
+                             int authenticated_player_num,
+                             int is_proxy)
 {
 	int i,new_player_num;
+	int identity_match;
 
 	ClipRank (&their->player.rank);
+
+#ifdef __ANDROID__
+	identity_match = authenticated_player_num;
+#else
+	identity_match = find_player_by_identity(
+	    their->player.callsign,
+	    (struct _sockaddr *)&their->player.protocol.udp.addr);
+	(void) authenticated_player_num;
+	(void) is_proxy;
+#endif
 
 	if (!WaitForRefuseAnswer)
 	{
@@ -7692,9 +8032,10 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 
 		if(activeplayers < Netgame.max_numplayers) {
 
-			if (find_player_by_identity(their->player.callsign, (struct _sockaddr *)&their->player.protocol.udp.addr) >= 0)
+			if (identity_match >= 0)
 			{
-				net_udp_welcome_player(their);
+				net_udp_welcome_player(
+				    their, identity_match, 0, is_proxy);
 				return;
 			}
 		
@@ -7731,9 +8072,10 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 	}
 	else
 	{
-		if (find_player_by_identity(their->player.callsign, (struct _sockaddr *)&their->player.protocol.udp.addr) >= 0)
+		if (identity_match >= 0)
 		{
-			net_udp_welcome_player(their);
+			net_udp_welcome_player(
+			    their, identity_match, 0, is_proxy);
 			return;
 		}
 	
@@ -7757,12 +8099,12 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 					Netgame.team_vector &=(~(1<<new_player_num));
 				else
 					Netgame.team_vector |=(1<<new_player_num);
-				net_udp_welcome_player(their);
+				net_udp_welcome_player(their, -1, 0, is_proxy);
 				net_udp_send_netgame_update();
 			}
 			else
 			{
-				net_udp_welcome_player(their);
+				net_udp_welcome_player(their, -1, 0, is_proxy);
 			}
 			return;
 		}

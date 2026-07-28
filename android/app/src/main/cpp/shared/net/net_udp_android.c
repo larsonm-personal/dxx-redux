@@ -7,11 +7,371 @@
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
 #include "android_log.h"
+#include "net_udp_reconnect_auth.h"
+#include "net_udp_reconnect_jni.h"
 #endif
 
 #include "strutil.h"
 #include "multi.h"
 #include "player.h"
+
+#ifdef __ANDROID__
+#define ANDROID_NET_UDP_RECONNECT_PENDING_SECONDS 10
+
+typedef struct android_net_udp_pending_reconnect {
+	int active;
+	int is_proxy;
+	fix64 expires;
+	struct _sockaddr route_addr;
+	UDP_sequence_packet request;
+	ubyte challenge[ANDROID_NET_UDP_RECONNECT_CHALLENGE_SIZE];
+} android_net_udp_pending_reconnect;
+
+static android_net_udp_reconnect_identity
+    android_net_udp_player_identities[MAX_PLAYERS + 4];
+static android_net_udp_reconnect_identity android_net_udp_local_identity;
+static android_net_udp_pending_reconnect
+    android_net_udp_pending_reconnects[MAX_PLAYERS];
+
+static size_t android_net_udp_auth_build_request_message(
+    const UDP_sequence_packet *request, unsigned int game_token,
+    ubyte *message, size_t message_size)
+{
+	ubyte payload[CALLSIGN_LEN + 1 + 5];
+	size_t offset = 0;
+
+	if (!request)
+		return 0;
+	memcpy(payload + offset, request->player.callsign, CALLSIGN_LEN + 1);
+	offset += CALLSIGN_LEN + 1;
+	payload[offset++] = request->player.connected;
+	payload[offset++] = request->player.rank;
+	payload[offset++] = request->player.color;
+	payload[offset++] = request->player.missilecolor;
+	payload[offset++] = request->player.observer;
+	return android_net_udp_reconnect_build_request_message(
+	    game_token, &request->reconnect_identity, payload, offset,
+	    message, message_size);
+}
+
+uint64_t android_net_udp_read_u64_le(const ubyte *source)
+{
+	uint64_t value = 0;
+	int i;
+
+	for (i = 0; i < 8; i++)
+		value |= (uint64_t) source[i] << (i * 8);
+	return value;
+}
+
+void android_net_udp_write_u64_le(ubyte *destination,
+                                  uint64_t value)
+{
+	int i;
+
+	for (i = 0; i < 8; i++)
+		destination[i] = (ubyte) (value >> (i * 8));
+}
+
+void android_net_udp_auth_reset(int local_player_num)
+{
+	ubyte random_counter[8];
+	int key_len;
+
+	memset(android_net_udp_player_identities, 0,
+	       sizeof(android_net_udp_player_identities));
+	memset(android_net_udp_pending_reconnects, 0,
+	       sizeof(android_net_udp_pending_reconnects));
+	memset(&android_net_udp_local_identity, 0,
+	       sizeof(android_net_udp_local_identity));
+
+	key_len = android_net_udp_reconnect_get_public_key(
+	    android_net_udp_local_identity.public_key,
+	    sizeof(android_net_udp_local_identity.public_key));
+	if (key_len <= 0 ||
+	    key_len > ANDROID_NET_UDP_RECONNECT_PUBLIC_KEY_MAX)
+		return;
+	android_net_udp_local_identity.public_key_len = (ubyte) key_len;
+
+	if (android_net_udp_reconnect_random(random_counter,
+	                                     sizeof(random_counter))) {
+		random_counter[sizeof(random_counter) - 1] &= 0x7f;
+		android_net_udp_local_identity.request_counter =
+		    android_net_udp_read_u64_le(random_counter);
+	}
+	if (!android_net_udp_local_identity.request_counter)
+		android_net_udp_local_identity.request_counter = 1;
+
+	if (local_player_num >= 0 && local_player_num < MAX_PLAYERS)
+		android_net_udp_player_identities[local_player_num] =
+		    android_net_udp_local_identity;
+}
+
+int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
+                                         unsigned int game_token)
+{
+	ubyte message[160];
+	size_t message_len;
+	int signature_len;
+
+	if (!request || !android_net_udp_local_identity.public_key_len)
+		return 0;
+	if (android_net_udp_local_identity.request_counter == UINT64_MAX)
+		return 0;
+
+	android_net_udp_local_identity.request_counter++;
+	request->reconnect_identity = android_net_udp_local_identity;
+	request->reconnect_identity.request_signature_len = 0;
+	memset(request->reconnect_identity.request_signature, 0,
+	       sizeof(request->reconnect_identity.request_signature));
+	message_len = android_net_udp_auth_build_request_message(
+	    request, game_token, message, sizeof(message));
+	if (!message_len)
+		return 0;
+	signature_len = android_net_udp_reconnect_sign(
+	    message, message_len,
+	    request->reconnect_identity.request_signature,
+	    sizeof(request->reconnect_identity.request_signature));
+	if (signature_len <= 0 ||
+	    signature_len > ANDROID_NET_UDP_RECONNECT_SIGNATURE_MAX)
+		return 0;
+	request->reconnect_identity.request_signature_len =
+	    (ubyte) signature_len;
+	android_net_udp_local_identity.request_counter =
+	    request->reconnect_identity.request_counter;
+	return 1;
+}
+
+int android_net_udp_auth_validate_request(
+    const UDP_sequence_packet *request, unsigned int game_token,
+    int player_count)
+{
+	ubyte message[160];
+	size_t message_len;
+	int i;
+
+	if (!request || request->token != game_token ||
+	    !android_net_udp_reconnect_identity_valid(
+	        &request->reconnect_identity))
+		return ANDROID_NET_UDP_AUTH_INVALID;
+	message_len = android_net_udp_auth_build_request_message(
+	    request, game_token, message, sizeof(message));
+	if (!message_len ||
+	    !android_net_udp_reconnect_verify(
+	        request->reconnect_identity.public_key,
+	        request->reconnect_identity.public_key_len,
+	        message, message_len,
+	        request->reconnect_identity.request_signature,
+	        request->reconnect_identity.request_signature_len))
+		return ANDROID_NET_UDP_AUTH_INVALID;
+
+	if (player_count > MAX_PLAYERS)
+		player_count = MAX_PLAYERS;
+	i = android_net_udp_reconnect_find_public_key(
+	    android_net_udp_player_identities, (size_t) player_count,
+	    &request->reconnect_identity);
+	if (i >= 0) {
+		if (!android_net_udp_reconnect_counter_is_newer(
+		        request->reconnect_identity.request_counter,
+		        android_net_udp_player_identities[i].request_counter))
+			return ANDROID_NET_UDP_AUTH_INVALID;
+		android_net_udp_player_identities[i].request_counter =
+		    request->reconnect_identity.request_counter;
+		return i;
+	}
+	return -1;
+}
+
+void android_net_udp_auth_store_player(
+    int player_num, const UDP_sequence_packet *request)
+{
+	if (!request || player_num < 0 || player_num >= MAX_PLAYERS + 4)
+		return;
+	android_net_udp_player_identities[player_num] =
+	    request->reconnect_identity;
+	android_net_udp_player_identities[player_num].request_signature_len = 0;
+	memset(android_net_udp_player_identities[player_num].request_signature,
+	       0,
+	       sizeof(android_net_udp_player_identities[player_num]
+	                  .request_signature));
+}
+
+void android_net_udp_auth_move_player(int destination_player_num,
+                                      int source_player_num)
+{
+	if (destination_player_num < 0 ||
+	    destination_player_num >= MAX_PLAYERS + 4 ||
+	    source_player_num < 0 ||
+	    source_player_num >= MAX_PLAYERS + 4 ||
+	    destination_player_num == source_player_num)
+		return;
+	android_net_udp_player_identities[destination_player_num] =
+	    android_net_udp_player_identities[source_player_num];
+	memset(&android_net_udp_player_identities[source_player_num], 0,
+	       sizeof(android_net_udp_player_identities[0]));
+}
+
+void android_net_udp_auth_remove_player(int player_num, int player_count)
+{
+	int i;
+
+	if (player_num < 0 || player_num >= player_count ||
+	    player_count > MAX_PLAYERS + 4)
+		return;
+	for (i = player_num; i < player_count - 1; i++)
+		android_net_udp_player_identities[i] =
+		    android_net_udp_player_identities[i + 1];
+	memset(&android_net_udp_player_identities[player_count - 1], 0,
+	       sizeof(android_net_udp_player_identities[0]));
+}
+
+int android_net_udp_auth_write_player(unsigned char *destination,
+                                      int player_num)
+{
+	const android_net_udp_reconnect_identity *identity;
+
+	if (!destination || player_num < 0 || player_num >= MAX_PLAYERS + 4)
+		return 0;
+	identity = &android_net_udp_player_identities[player_num];
+	destination[0] = identity->public_key_len;
+	memcpy(destination + 1, identity->public_key,
+	       sizeof(identity->public_key));
+	return ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE;
+}
+
+int android_net_udp_auth_read_player(const unsigned char *source,
+                                     int player_num)
+{
+	android_net_udp_reconnect_identity *identity;
+
+	if (!source || player_num < 0 || player_num >= MAX_PLAYERS + 4)
+		return 0;
+	identity = &android_net_udp_player_identities[player_num];
+	memset(identity, 0, sizeof(*identity));
+	identity->public_key_len = source[0];
+	if (identity->public_key_len >
+	    ANDROID_NET_UDP_RECONNECT_PUBLIC_KEY_MAX) {
+		identity->public_key_len = 0;
+		return ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE;
+	}
+	memcpy(identity->public_key, source + 1,
+	       sizeof(identity->public_key));
+	return ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE;
+}
+
+int android_net_udp_auth_begin_challenge(
+    int player_num, const UDP_sequence_packet *request,
+    unsigned int game_token, const struct _sockaddr *route_addr,
+    int is_proxy, fix64 now, unsigned char *packet, int packet_size)
+{
+	android_net_udp_pending_reconnect *pending;
+
+	if (!request || !route_addr || !packet ||
+	    player_num < 0 || player_num >= MAX_PLAYERS ||
+	    packet_size < ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE)
+		return 0;
+	pending = &android_net_udp_pending_reconnects[player_num];
+	if (!android_net_udp_reconnect_random(
+	        pending->challenge, sizeof(pending->challenge)))
+		return 0;
+	pending->active = 1;
+	pending->is_proxy = is_proxy;
+	pending->expires =
+	    now + F1_0 * ANDROID_NET_UDP_RECONNECT_PENDING_SECONDS;
+	pending->route_addr = *route_addr;
+	pending->request = *request;
+
+	memset(packet, 0,
+	       ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE);
+	packet[0] = UPID_RECONNECT_CHALLENGE;
+	PUT_INTEL_INT(packet + 1, game_token);
+	packet[5] = (ubyte) player_num;
+	memcpy(packet + 6, pending->challenge,
+	       sizeof(pending->challenge));
+	return ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE;
+}
+
+int android_net_udp_auth_answer_challenge(
+    const unsigned char *data, int data_len, unsigned int game_token,
+    int local_player_num, unsigned char *packet, int packet_size)
+{
+	ubyte message[80];
+	size_t message_len;
+	int signature_len;
+
+	if (!data || !packet ||
+	    data_len != ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE ||
+	    packet_size < ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE ||
+	    GET_INTEL_INT(data + 1) != game_token ||
+	    data[5] != local_player_num)
+		return 0;
+	message_len = android_net_udp_reconnect_build_challenge_message(
+	    game_token, data[5], data + 6, message, sizeof(message));
+	if (!message_len)
+		return 0;
+
+	memset(packet, 0, ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE);
+	packet[0] = UPID_RECONNECT_PROOF;
+	PUT_INTEL_INT(packet + 1, game_token);
+	packet[5] = data[5];
+	memcpy(packet + 6, data + 6,
+	       ANDROID_NET_UDP_RECONNECT_CHALLENGE_SIZE);
+	signature_len = android_net_udp_reconnect_sign(
+	    message, message_len, packet + 39,
+	    ANDROID_NET_UDP_RECONNECT_SIGNATURE_MAX);
+	if (signature_len <= 0 ||
+	    signature_len > ANDROID_NET_UDP_RECONNECT_SIGNATURE_MAX)
+		return 0;
+	packet[38] = (ubyte) signature_len;
+	return ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE;
+}
+
+int android_net_udp_auth_finish_challenge(
+    const unsigned char *data, int data_len, unsigned int game_token,
+    const struct _sockaddr *route_addr, int is_proxy, fix64 now,
+    UDP_sequence_packet *request, int *player_num)
+{
+	android_net_udp_pending_reconnect *pending;
+	ubyte message[80];
+	size_t message_len;
+	int slot;
+	int signature_len;
+
+	if (!data || !route_addr || !request || !player_num ||
+	    data_len != ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE ||
+	    GET_INTEL_INT(data + 1) != game_token)
+		return 0;
+	slot = data[5];
+	if (slot < 0 || slot >= MAX_PLAYERS)
+		return 0;
+	pending = &android_net_udp_pending_reconnects[slot];
+	signature_len = data[38];
+	if (!pending->active || now > pending->expires ||
+	    pending->is_proxy != is_proxy ||
+	    !android_net_udp_sockaddr_equal(&pending->route_addr,
+	                                    route_addr) ||
+	    signature_len <= 0 ||
+	    signature_len > ANDROID_NET_UDP_RECONNECT_SIGNATURE_MAX ||
+	    !android_net_udp_reconnect_bytes_equal(
+	        pending->challenge, data + 6,
+	        ANDROID_NET_UDP_RECONNECT_CHALLENGE_SIZE))
+		return 0;
+	message_len = android_net_udp_reconnect_build_challenge_message(
+	    game_token, (ubyte) slot, pending->challenge,
+	    message, sizeof(message));
+	if (!message_len ||
+	    !android_net_udp_reconnect_verify(
+	        android_net_udp_player_identities[slot].public_key,
+	        android_net_udp_player_identities[slot].public_key_len,
+	        message, message_len, data + 39, signature_len))
+		return 0;
+
+	*request = pending->request;
+	*player_num = slot;
+	memset(pending, 0, sizeof(*pending));
+	return 1;
+}
+#endif
 
 #ifdef __ANDROID__
 void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
@@ -29,16 +389,6 @@ void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int le
 	crash_breadcrumb("pktdump: done");
 }
 #endif
-
-static int android_net_udp_sockaddr_ip_equal(const struct _sockaddr *a,
-                                             const struct _sockaddr *b)
-{
-#ifdef IPv6
-	return memcmp(&a->sin6_addr, &b->sin6_addr, sizeof(a->sin6_addr)) == 0;
-#else
-	return a->sin_addr.s_addr == b->sin_addr.s_addr;
-#endif
-}
 
 int android_net_udp_sockaddr_equal(const struct _sockaddr *a,
                                    const struct _sockaddr *b)
@@ -58,17 +408,11 @@ int android_net_udp_find_player_by_identity(const char *callsign,
 
 	for (i = 0; i < player_count; i++) {
 		if (!d_stricmp(players[i].callsign, callsign) &&
-		    android_net_udp_sockaddr_ip_equal(addr,
-		                                      (struct _sockaddr *) &netgame->players[i].protocol.udp.addr))
+		    android_net_udp_sockaddr_equal(
+		        addr,
+		        (struct _sockaddr *) &netgame->players[i].protocol.udp.addr))
 			return i;
 	}
-#ifdef __ANDROID__
-	for (i = 0; i < player_count; i++) {
-		if (!players[i].connected &&
-		    !d_stricmp(players[i].callsign, callsign))
-			return i;
-	}
-#endif
 	return -1;
 }
 
@@ -160,17 +504,27 @@ void android_net_udp_prepare_observer_join(UDP_sequence_packet *sync_player,
 
 void android_net_udp_prepare_reconnect_player(int player_num,
                                               const struct _sockaddr *new_addr,
+                                              int is_proxy,
+                                              int proxy_through,
                                               int i_am_master,
                                               struct connection_status *statuses,
                                               android_net_udp_update_address_fn update_address)
 {
-	if (new_addr && update_address)
+#ifdef __ANDROID__
+	if (!is_proxy && new_addr && update_address)
 		update_address(player_num, *new_addr);
 
-#ifdef __ANDROID__
-	if (statuses && i_am_master)
-		statuses[player_num].type = CONNT_DIRECT;
+	if (statuses && i_am_master) {
+		statuses[player_num].type =
+		    is_proxy ? CONNT_PROXY : CONNT_DIRECT;
+		if (is_proxy)
+			statuses[player_num].proxy_through = proxy_through;
+	}
 #else
+	if (new_addr && update_address)
+		update_address(player_num, *new_addr);
+	(void) is_proxy;
+	(void) proxy_through;
 	(void) i_am_master;
 	(void) statuses;
 #endif
@@ -186,6 +540,10 @@ void android_net_udp_begin_welcome_sync(UDP_sequence_packet *sync_player,
 {
 	if (sync_player)
 		sync_player->player.connected = player_num;
+#ifdef __ANDROID__
+	if (sync_player)
+		android_net_udp_auth_store_player(player_num, sync_player);
+#endif
 	if (player_tokens)
 		player_tokens[player_num] = sync_player->token;
 	if (network_send_objects)
