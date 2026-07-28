@@ -222,6 +222,14 @@ object GameFileFormats {
     val gameImportExtensions: Set<String> = formats.filterValues { it.gameImport }.keys
     val discExtractExtensions: Set<String> = formats.filterValues { it.discExtract }.keys
     val setGameDataExtensions: Set<String> = formats.filterValues { it.setGameData }.keys
+    val gogAudioExtensions: Set<String> = formats.filterValues { it.gogAudio }.keys
+
+    /*
+     * Mac HFS/STI media needs auxiliary config, text, and palette files and
+     * intentionally does not use the generic ISO data-track allowlist.
+     */
+    val macDiscExtractExtensions: Set<String> =
+        setOf("hog", "ham", "pig", "s11", "s22", "mn2", "mvl", "sow", "dxa", "cfg", "txt", "256", "msn", "dem")
 
     private val savedGameExtensions =
         buildSet {

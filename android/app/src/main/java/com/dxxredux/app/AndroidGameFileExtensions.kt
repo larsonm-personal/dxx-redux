@@ -2,10 +2,8 @@ package com.dxxredux.app
 
 /*
  * Compatibility wrapper for Android game import checks.
- * Kotlin-side game file format knowledge lives in GameFileFormats.
- *
- * Keep GameFileFormats aligned with extract/game_file_extensions.c, which
- * serves the same role for the native extractor code.
+ * GameFileFormats owns extension policy. Native extractor tables mirror its
+ * roles and AndroidGameFileExtensionsTest enforces exact parity.
  */
 object AndroidGameFileExtensions {
     val gameExtensions: Set<String> = GameFileFormats.gameImportExtensions

@@ -5457,23 +5457,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add below, exact, and above-boundary duration pairs in both orders with identical fingerprints, assert identical decisions, and run the same vectors through `fingerprint_match` and `chromaprint_db_match`
 - Resolution: Pending
 
-### BR-0041: P3 - Establish one owner for native and Kotlin extension policy
-
-- [ ] OPEN
-- Type: maintainability
-- Confidence: high
-- Category: maintainability
-- Found by: R1-CHUNK-0016
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/game_file_extensions.h:L8-L17`
-- Related: `android/app/src/main/cpp/extract/game_file_extensions.c:L13-L47`, `android/app/src/main/java/com/dxxredux/app/AndroidGameFileExtensions.kt:L3-L16`, `android/app/src/main/java/com/dxxredux/app/GameFileFormats.kt:L41-L224,L310-L316`, and `android/app/src/test/java/com/dxxredux/app/AndroidGameFileExtensionsTest.kt:L7-L21`
-- Evidence: The C header calls its tables the single source of truth and says to align them with Kotlin, while the Kotlin wrapper says format knowledge lives in `GameFileFormats` and must be aligned with C. Both sides therefore claim ownership while duplicating game-import, disc-extract, and GOG-audio policy in different representations, and the Mac native list adds a third specialized set. The shared game and generic disc values currently agree, but the only focused test asserts Kotlin behavior and cannot detect native drift. History already shows the native disc table being removed, specialized, and re-added independently as import support changed
-- Trigger: Add or reclassify a game format in `GameFileFormats` or one native table while following that file's source-of-truth comment, without discovering and updating every mirror
-- Impact: Kotlin can classify and offer a file that native GOG, PKG, ISO, HFS, or StuffIt extraction silently omits, or native code can extract a format that launcher validation does not recognize; contradictory ownership makes the omission likely to survive review
-- Expected: One artifact owns extension roles, every language consumes generated or mechanically verified values, and platform-specific exceptions are explicit rather than implicit list drift
-- Suggested fix: Define the role flags in one neutral manifest and generate the compact C tables and Kotlin map, or designate one side as authoritative and add a cross-language parity test that parses the other. Rewrite both comments to state the actual ownership and document why the Mac set differs
-- Validation: Add a test that compares every shared role and case-insensitive lookup across native and Kotlin representations, deliberately change one side to prove the test fails, and retain focused cases for GOG audio, generic disc extraction, and Mac-only exceptions
-- Resolution: Pending
-
 ### BR-0043: P2 - Fail audio fingerprinting when directory enumeration is incomplete
 
 - [ ] OPEN

@@ -6,9 +6,10 @@ extern "C" {
 #endif
 
 /*
- * Single C source of truth for Android-side import/extract extension filters.
- * Keep this aligned with AndroidGameFileExtensions.kt, which serves the same
- * role for launcher-side Kotlin code.
+ * Native mirrors of the extension roles owned by GameFileFormats.kt.
+ * AndroidGameFileExtensionsTest mechanically compares every table with that
+ * authoritative policy. The Mac table is a documented media-specific role,
+ * not a second copy of the generic disc policy.
  */
 
 extern const char *dxx_android_game_file_extensions[];

@@ -40,7 +40,11 @@ const char *dxx_android_gog_audio_extensions[] = {
 	NULL
 };
 
-/* Mac HFS/STI archives still use extension filtering during extraction */
+/*
+ * Mac HFS/STI archives need auxiliary config, text, and palette files and do
+ * not use the generic ISO data-track allowlist. GameFileFormats.kt owns this
+ * explicit media-specific role.
+ */
 const char *dxx_android_mac_disc_extract_extensions[] = {
 	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl", "sow",
 	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
