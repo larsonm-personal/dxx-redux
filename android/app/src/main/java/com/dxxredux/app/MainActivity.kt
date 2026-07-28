@@ -41,7 +41,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.dxxredux.app.multiplayer.MatchmakingService
+import com.dxxredux.app.multiplayer.RuntimeGameStateBridge
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
@@ -704,8 +704,6 @@ class MainActivity :
         } else {
             DebugLog.init(this)
         }
-        MatchmakingService.setActivity(this)
-
         // Load the correct game library based on the launcher's selection
         val game = intent.getStringExtra("game") ?: "d2"
         gameVariantId = game
@@ -789,6 +787,9 @@ class MainActivity :
         if (mpMode != null) {
             com.dxxredux.app.multiplayer.MultiplayerForegroundService
                 .start(this)
+            RuntimeGameStateBridge.connect(this, mpMode == "host") {
+                nativeGetNetgameState()
+            }
         }
 
         loadMetaBindings()
@@ -1460,11 +1461,10 @@ class MainActivity :
                     }
                 }
                 proxyStatsProvider = {
-                    com.dxxredux.app.multiplayer.MatchmakingService
-                        .getProxyStats()
+                    RuntimeGameStateBridge.getProxyStats()
                 }
                 connectionInfoProvider = {
-                    com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value.connectionInfo
+                    RuntimeGameStateBridge.getConnectionInfo()
                 }
                 localIp = resolveLocalIp()
             }
@@ -2446,6 +2446,7 @@ class MainActivity :
     override fun onDestroy() {
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()
+        RuntimeGameStateBridge.disconnect()
         com.dxxredux.app.multiplayer.MultiplayerForegroundService
             .stop(this)
         if (BuildConfig.DEBUG) {

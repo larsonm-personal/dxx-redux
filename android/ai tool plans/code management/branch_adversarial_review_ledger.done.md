@@ -41,6 +41,23 @@ so campaign closure must still obtain that independent verification
 
 ## Finalized findings
 
+### BR-0004: P1 - Bridge runtime game state out of the separate game process
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness
+- Found by: R1-PREFLIGHT-002
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt:L453` in `startGameStateUpdates` and `pollAndSendGameState`
+- Related: `android/app/src/main/AndroidManifest.xml:L52`, `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L1717`, `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L702`, `server/src/ws_handler.rs:L1379`, `server/src/lobby.rs:L165`, and `server/src/stats.rs:L125`
+- Evidence: `MainActivity` runs in `:game`, while the WebSocket-owning `MatchmakingService` singleton and its `activityRef` remain in the default process with `SetupActivity`. The host starts the update job at `MatchmakingService.kt:L1109`, but every poll returns at L478-L480 because that process's activity is not `MainActivity`. The separate game-process singleton receives `MainActivity` at L702 but has no WebSocket and never starts the job. On the server, only `UPDATE_GAME_STATE` transitions `Starting` to `InGame`, populates the current level, and refreshes `last_state_update`; absent an update, the lobby is not late-joinable and stale cleanup removes it five minutes after creation. The same process split also makes the in-game proxy and connection-info providers at `MainActivity.kt:L1437-L1443` read empty game-process singletons
+- Trigger: Start an online matchmaking game as host and remain in the native game process for the first three-second state poll and subsequent 30-second polls
+- Impact: The lobby remains `Starting`, mid-game joining never becomes available, live level and player counts are never published, in-game network diagnostics omit proxy and connection data, and the server eventually expires the active lobby with `LOBBY_EXPIRED`
+- Expected: The default-process matchmaking owner receives authoritative runtime state from `:game` and keeps the server lobby and diagnostic snapshot current for the lifetime of the multiplayer game
+- Suggested fix: Define one explicit same-UID IPC boundary. Prefer a bound service or narrowly scoped non-exported messages that let `:game` publish native state and request snapshots from the default-process matchmaking and proxy owner. Keep the WebSocket and UDP proxy under one owner, remove process-local reads that pretend the singleton is shared, and make service restart or process death produce an explicit disconnected state
+- Validation: Run an instrumented two-process host session for longer than five minutes and assert that the server observes `Starting -> InGame`, fresh updates at the configured interval, correct current level and player count, a late join succeeds, proxy diagnostics are non-empty when proxying, and stopping either process cleans up without a stale lobby
+- Resolution: Fixed on 2026-07-27. The existing non-exported default-process foreground service now exposes a same-UID Messenger boundary. The `:game` process reads native host state on its main thread after three seconds and every 30 seconds, publishes complete network state to the default-process `MatchmakingService`, and asynchronously requests current proxy and connection diagnostic snapshots for its overlays. The WebSocket, matchmaking state, and UDP proxy remain under one default-process owner; `MainActivity` no longer reads a process-local matchmaking singleton. Session gating accepts state only from a registered host, malformed diagnostic snapshots fail to empty state, owner disconnect clears cached diagnostics, and clean unbind or game-process death sends `END_GAME` once for an online hosted lobby, including death before periodic updates are enabled. Focused state, diagnostic, and lifecycle tests and the complete Android JVM suite passed. An emulator confirmed distinct default and `:game` processes, the live cross-process binding, binding removal after killing only `:game`, and service removal after final stop. Scoped quality, all 17 native extraction tests, both Windows game builds, and JDK 21 debug APK builds for arm64-v8a, armeabi-v7a, and x86_64 passed. A live five-minute online match and late join were not available in the local smoke environment; independent P1 verification remains a campaign closure action.
+
 ### BR-0020: P2 - Fail import when any requested archive file fails extraction
 
 - [x] FIXED
@@ -910,6 +927,8 @@ so campaign closure must still obtain that independent verification
 - Resolution: Fixed on 2026-07-27. `Expand-BoundedZipArchive` now preflights the complete central directory before creating output; rejects rooted, drive-qualified, UNC, backslash or mixed-separator, empty, dot, parent, Windows alias, control, and device names; and rejects canonical prefix escapes, normalized duplicate destinations, and file/child conflicts. Existing roots must be empty regular non-reparse directories, component creation rejects reparse or non-directory nodes, file creation cannot overwrite, and every failure removes the uniquely owned destination. The DOS demo workflow verifies each package digest, uses a GUID workspace, and guarantees process shutdown and workspace cleanup. The hostile corpus passed with no residue or outside changes, all four verified packages extracted, scoped quality and all 17 native extraction tests passed, both Windows game builds passed, and JDK 21 debug builds for arm64-v8a, armeabi-v7a, and x86_64 passed. Independent P1 verification remains a campaign closure action.
 
 ## Disposition log
+
+- 2026-07-27: BR-0004 fixed with a same-UID Binder bridge between `:game` and the default-process matchmaking owner. Runtime host state now reaches the WebSocket, diagnostic snapshots return to the game overlay, and game-process death ends an online hosted session once. Focused and full JVM tests, emulator process and Binder-death checks, scoped quality, native tests, Windows builds, and all three Android ABIs passed
 
 - 2026-07-27: BR-0172 fixed with complete archive preflight, strict canonical staging containment, collision and reparse defenses, create-new writes, GUID-owned cleanup, and package digest verification. The hostile corpus, all four verified packages, scoped quality, all extraction tests, both Windows builds, and all three Android ABIs passed
 

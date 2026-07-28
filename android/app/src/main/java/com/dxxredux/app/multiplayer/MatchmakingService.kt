@@ -156,9 +156,10 @@ object MatchmakingService {
     @Volatile
     private var connectivityCheckJob: Job? = null
 
-    // Periodic game state update coroutine (host-only, active during InGame)
+    // Host updates are published by MainActivity through the foreground-service
+    // Binder because the native engine runs in the separate :game process.
     @Volatile
-    private var gameStateUpdateJob: Job? = null
+    private var gameStateUpdatesEnabled = false
 
     @Volatile
     private var upnpMapping: UpnpMapping? = null
@@ -444,56 +445,34 @@ object MatchmakingService {
     }
 
     // -- In-game state updates (host only) --
-    // Shared constants with C engine (multi.h):
-    // NETSTAT_MENU=0, NETSTAT_PLAYING=1, GM_NETWORK=4
-    private const val NETSTAT_PLAYING = 1
-    private const val GM_NETWORK = 4
-    private const val GAME_STATE_UPDATE_INTERVAL_MS = 30_000L
 
-    /** Start periodic game state updates to the matchmaking server (host only). */
+    /** Accept runtime game state from the bound host game process. */
     fun startGameStateUpdates() {
-        gameStateUpdateJob?.cancel()
-        gameStateUpdateJob =
-            scope.launch {
-                delay(3000) // initial delay to let the game settle
-                while (true) {
-                    try {
-                        pollAndSendGameState()
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Game state update failed", e)
-                    }
-                    delay(GAME_STATE_UPDATE_INTERVAL_MS)
-                }
-            }
-        NetLog.log("GAME", "Started game state update loop")
+        gameStateUpdatesEnabled = true
+        NetLog.log("GAME", "Ready for game-process state updates")
     }
 
-    /** Stop periodic game state updates. */
+    /** Stop accepting runtime state from the game process. */
     fun stopGameStateUpdates() {
-        gameStateUpdateJob?.cancel()
-        gameStateUpdateJob = null
+        gameStateUpdatesEnabled = false
     }
 
-    private fun pollAndSendGameState() {
-        val activity = activityRef?.get() ?: return
-        if (activity !is com.dxxredux.app.MainActivity) return
-        val arr = activity.nativeGetNetgameState()
-        if (arr.size < 5) return
-        val gameStatus = arr[0]
-        val numConnected = arr[1]
-        val maxPlayers = arr[2]
-        val levelNum = arr[3]
-        val gameMode = arr[4]
-        // Only send updates when in a network game
-        if (gameMode and GM_NETWORK == 0) return
-        // Build and send the update message
-        val msg = org.json.JSONObject()
-        msg.put("type", "UPDATE_GAME_STATE")
-        msg.put("player_count", numConnected)
-        msg.put("max_players", maxPlayers)
-        msg.put("current_level", levelNum)
-        msg.put("game_status", gameStatus)
-        send(msg.toString())
+    fun publishRuntimeGameState(arr: IntArray) {
+        if (!gameStateUpdatesEnabled) return
+        RuntimeGameStateCodec.encode(arr)?.let(::send)
+    }
+
+    fun runtimeGameProcessDisconnected(wasHost: Boolean) {
+        if (shouldEndHostedGame(
+                wasHost,
+                gameStateUpdatesEnabled,
+                state.state.value.currentLobby
+                    ?.isHost == true,
+            )
+        ) {
+            NetLog.log("GAME", "Host game process disconnected")
+            endGame()
+        }
     }
 
     fun sendMessage(
