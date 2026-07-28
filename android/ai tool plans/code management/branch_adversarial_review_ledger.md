@@ -5457,26 +5457,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add below, exact, and above-boundary duration pairs in both orders with identical fingerprints, assert identical decisions, and run the same vectors through `fingerprint_match` and `chromaprint_db_match`
 - Resolution: Pending
 
-### BR-0043: P2 - Fail audio fingerprinting when directory enumeration is incomplete
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/test-tool
-- Found by: R1-CHUNK-0017, R1-CHUNK-0072
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/fingerprint_audio.c:L79-L118` in `collect_audio_files`
-- Related: `android/app/src/main/cpp/extract/fingerprint_audio.c:L30-L36,L132-L187`, `game_data/fingerprint_music_packs.ps1:L308-L329`, `game_data/fingerprint_mission_zip_music.ps1:L700-L742`, and `android/tests/test_fpcalc_and_acoustid.ps1:L121-L155`
-- Evidence: Both `FindFirstFileA` and `opendir` failure return the same zero count as an empty directory, and `main` prints `[]` and exits zero. Direct execution against a nonexistent directory confirmed that behavior. Enumeration also stops silently at `MAX_FILES` and does not distinguish `FindNextFileA` or `readdir` errors from end-of-directory. The fingerprint generators accept a successful nonempty subset without comparing it to the extracted or directory audio count, so capacity or mid-scan omissions are publishable; the ANSI Windows API additionally makes unrepresentable paths another fail-open enumeration case
-- Trigger: Pass a missing, unreadable, or non-ANSI Windows directory, inject a directory-read error, or fingerprint a directory containing more than 4,096 matching files
-- Impact: The tool can report successful empty or partial analysis, causing music packs or mission archives to lose track fingerprints and later database matches without identifying which source files were never examined
-- Expected: Success proves complete enumeration of the requested directory and every eligible file is either represented in output or causes a nonzero result with an explicit failure record
-- Suggested fix: Return distinct empty, error, and capacity-exceeded states; use checked dynamic storage or reject on the first excess file; inspect terminal enumeration errors; use wide-character Windows enumeration with UTF-8 conversion; and have callers compare enumerated, fingerprinted, and expected counts before publishing metadata
-- Validation: Test empty, nonexistent, unreadable, non-ASCII, exact-limit, one-over, and injected mid-enumeration-error directories on Windows and POSIX; assert only a genuinely empty readable directory succeeds with `[]` and every valid audio filename appears exactly once
-- Additional location (R1-CHUNK-0072): `game_data/fingerprint_mission_zip_music.ps1:L711-L742` in native result validation
-- Additional evidence (R1-CHUNK-0072): The mission batch knows how many audio files `Extract-MissionArchiveAudio` published, but after invoking `fingerprint_audio` it never compares that count or the exact `SourceMap` filename set with the returned JSON objects. A successful nonempty subset produced after silent capacity or enumeration truncation is therefore accepted, named, and written as the complete mission sidecar.
-- Additional validation (R1-CHUNK-0072): Extract a known set of audio members, then force capacity truncation, a mid-enumeration failure, a missing result, a duplicate result, and an unexpected result; require exact set equality before sidecar publication or database update.
-- Resolution: Pending
-
 ### BR-0044: P1 - Make repeated overlay JNI callbacks resource- and exception-safe
 
 - [ ] OPEN

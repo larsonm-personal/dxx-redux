@@ -24,6 +24,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 
 # Resolve cmake and other tool paths
 . "$repoRoot\android\helpers\test_env.ps1"
+. "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
 
@@ -287,6 +288,11 @@ foreach ($archive in $archives) {
     }
 
     Write-Host "  Running fingerprint_audio.exe..."
+    $expectedAudioNames = @(
+        Get-ChildItem -LiteralPath $albumDir -File |
+            Where-Object { $_.Extension -in @('.mp3', '.ogg', '.flac') } |
+            ForEach-Object { $_.Name }
+    )
     $fpStdout = Join-Path $albumDir "_fp_stdout.json"
     $fpStderr = Join-Path $albumDir "_fp_stderr.txt"
     $proc = Start-Process -FilePath $fpExe -ArgumentList "`"$albumDir`"" `
@@ -296,12 +302,13 @@ foreach ($archive in $archives) {
         Get-Content $fpStderr | ForEach-Object { Write-Host "  $_" }
         Remove-Item $fpStderr -ErrorAction SilentlyContinue
     }
-    if ($proc.ExitCode -ne 0 -or -not (Test-Path $fpStdout)) {
+    if ($proc.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $fpStdout -PathType Leaf)) {
         Write-Warning "  fingerprint_audio.exe failed"
         continue
     }
-    $fpData = Get-Content $fpStdout -Raw | ConvertFrom-Json
+    $fpData = @(Get-Content -LiteralPath $fpStdout -Raw | ConvertFrom-Json)
     Remove-Item $fpStdout -ErrorAction SilentlyContinue
+    Assert-DxxFingerprintAudioResults -ExpectedNames $expectedAudioNames -Results $fpData
 
     if ($fpData.Count -eq 0) {
         Write-Warning "  No audio files fingerprinted"

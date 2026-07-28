@@ -21,6 +21,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\test_env.ps1"
 . "$repoRoot\android\helpers\bounded_extraction.ps1"
+. "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -790,6 +791,10 @@ foreach ($zipFile in $zipFiles) {
             continue
         }
         Write-Host "  Extracted $count audio file(s)"
+        if ($count -ne $sourceMap.Count) {
+            throw "Extracted audio count $count does not match source map count $($sourceMap.Count)"
+        }
+        $expectedAudioNames = @($sourceMap.Keys | ForEach-Object { [string]$_ })
 
         $fpStdout = Join-Path $workDir "_fp_stdout.json"
         $fpStderr = Join-Path $workDir "_fp_stderr.txt"
@@ -805,15 +810,10 @@ foreach ($zipFile in $zipFiles) {
         }
         $fpData = @(Get-Content $fpStdout -Raw | ConvertFrom-Json)
         Remove-Item $fpStdout -ErrorAction SilentlyContinue
-        if ($proc.ExitCode -ne 0 -and $fpData.Count -eq 0) {
+        if ($proc.ExitCode -ne 0) {
             throw "fingerprint_audio.exe failed with exit code $($proc.ExitCode)"
         }
-        if ($fpData.Count -eq 0) {
-            throw "fingerprint_audio.exe found no usable audio"
-        }
-        if ($proc.ExitCode -ne 0) {
-            Write-Warning "  fingerprint_audio.exe reported failures, keeping $($fpData.Count) successful track(s)"
-        }
+        Assert-DxxFingerprintAudioResults -ExpectedNames $expectedAudioNames -Results $fpData
         Write-Host "  Fingerprinted $($fpData.Count) file(s)"
 
         $tracks = @()

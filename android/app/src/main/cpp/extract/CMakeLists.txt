@@ -350,11 +350,11 @@ else()
 endif()
 
 # ── fingerprint_audio (loose MP3/OGG/FLAC files) ────────────────────
-add_executable(
-    fingerprint_audio
+set(FINGERPRINT_AUDIO_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_audio.c ${SHARED_DIR}/pcm_decoders.c
     ${SHARED_DIR}/fingerprint_gen.c ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
     ${_DECODERS_DIR}/stb_vorbis.c)
+add_executable(fingerprint_audio ${FINGERPRINT_AUDIO_SOURCES})
 target_include_directories(fingerprint_audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
                                                      ${_DECODERS_DIR})
 target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL)
@@ -363,6 +363,18 @@ if(MSVC)
     target_compile_options(fingerprint_audio PRIVATE /W3)
 else()
     target_compile_options(fingerprint_audio PRIVATE -Wall)
+endif()
+
+add_executable(test_fingerprint_audio_enumeration ${FINGERPRINT_AUDIO_SOURCES})
+target_include_directories(test_fingerprint_audio_enumeration
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR} ${_DECODERS_DIR})
+target_compile_definitions(test_fingerprint_audio_enumeration PRIVATE CHROMAPRINT_NODLL
+                                                                      FINGERPRINT_AUDIO_TESTING)
+target_link_libraries(test_fingerprint_audio_enumeration PRIVATE chromaprint)
+if(MSVC)
+    target_compile_options(test_fingerprint_audio_enumeration PRIVATE /W3)
+else()
+    target_compile_options(test_fingerprint_audio_enumeration PRIVATE -Wall)
 endif()
 
 # ── fingerprint_match (find duplicate fingerprints in a JSON DB) ─────
