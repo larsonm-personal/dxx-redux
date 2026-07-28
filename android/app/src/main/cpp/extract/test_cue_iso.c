@@ -1119,6 +1119,60 @@ static void test_malformed_cue(void)
 		PASS();
 	}
 
+	TEST(cue_track_capacity_boundary);
+	{
+		struct {
+			unsigned int before;
+			cue_disc_t disc;
+			unsigned int after;
+		} guarded;
+		char cue[8192];
+		int i, pos = 0;
+
+		guarded.before = 0x12345678U;
+		guarded.after = 0x87654321U;
+		pos += snprintf(cue + pos, sizeof(cue) - pos,
+		                "FILE \"tracks.bin\" BINARY\n");
+		for (i = 0; i < CUE_MAX_TRACKS; i++)
+			pos += snprintf(cue + pos, sizeof(cue) - pos,
+			                "TRACK %02d AUDIO\n", i + 1);
+		if (cue_parse(cue, NULL, 0, &guarded.disc) != CUE_MAX_TRACKS ||
+		    guarded.disc.num_tracks != CUE_MAX_TRACKS ||
+		    guarded.disc.tracks[CUE_MAX_TRACKS - 1].track_num != CUE_MAX_TRACKS ||
+		    guarded.before != 0x12345678U || guarded.after != 0x87654321U) {
+			FAIL("exact track capacity was rejected or wrote out of bounds");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(cue_track_capacity_exceeded);
+	{
+		struct {
+			unsigned int before;
+			cue_disc_t disc;
+			unsigned int after;
+		} guarded;
+		char cue[8192];
+		int i, pos = 0;
+
+		guarded.before = 0x12345678U;
+		guarded.after = 0x87654321U;
+		pos += snprintf(cue + pos, sizeof(cue) - pos,
+		                "FILE \"tracks.bin\" BINARY\n");
+		for (i = 0; i <= CUE_MAX_TRACKS; i++)
+			pos += snprintf(cue + pos, sizeof(cue) - pos,
+			                "TRACK %02d AUDIO\n",
+			                i < CUE_MAX_TRACKS ? i + 1 : 1);
+		if (cue_parse(cue, NULL, 0, &guarded.disc) != 0 ||
+		    guarded.disc.num_tracks != 0 || guarded.disc.num_files != 0 ||
+		    guarded.before != 0x12345678U || guarded.after != 0x87654321U) {
+			FAIL("excess track was accepted, partially returned, or wrote out of bounds");
+			return;
+		}
+		PASS();
+	}
+
 	TEST(malformed_cue_null_output);
 	{
 		int n = cue_parse("FILE \"x\" BINARY\n", NULL, 0, NULL);

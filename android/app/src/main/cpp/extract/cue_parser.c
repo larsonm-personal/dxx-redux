@@ -100,6 +100,10 @@ int cue_parse(const char *cue_text,
 			char ttype[32];
 			if (sscanf(trimmed + 5, " %d %31s", &tnum, ttype) == 2) {
 				if (tnum >= 1 && tnum <= CUE_MAX_TRACKS && cur_file >= 0) {
+					if (out->num_tracks >= CUE_MAX_TRACKS) {
+						memset(out, 0, sizeof(*out));
+						return 0;
+					}
 					int idx = out->num_tracks;
 					cur_track = tnum;
 					out->tracks[idx].track_num = tnum;
@@ -107,8 +111,7 @@ int cue_parse(const char *cue_text,
 					out->tracks[idx].type =
 					    (strncasecmp(ttype, "AUDIO", 5) == 0) ? CUE_TRACK_AUDIO : CUE_TRACK_DATA;
 					out->tracks[idx].title[0] = '\0';
-					if (out->num_tracks < CUE_MAX_TRACKS)
-						out->num_tracks++;
+					out->num_tracks++;
 				}
 				continue;
 			}

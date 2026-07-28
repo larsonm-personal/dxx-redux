@@ -5371,23 +5371,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add decision tests with matching, mismatching, and absent observed classifications; require only the exact match to record true, and run the preview spec to confirm its skip result no longer claims classification coverage unless the importer reported `d2_demo`
 - Resolution: Pending
 
-### BR-0013: P1 - Check track capacity before writing the parsed record
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0007
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/cue_parser.c:L102-L111` in `cue_parse`
-- Related: `android/app/src/main/cpp/extract/cue_parser.h:L45-L51`, `android/app/src/main/cpp/extract/jni_disc_import.c:L121-L137`, `android/app/src/main/cpp/shared/rbaudio_bin.c:L537-L582`, and `android/app/src/main/cpp/extract/test_cue_iso.c:L1447-L1563`
-- Evidence: For every accepted `TRACK`, the parser sets `idx = out->num_tracks` and writes `out->tracks[idx]` at L105-L109 before checking the count at L110. After 100 accepted directives, `idx` is 100 although the declared array has indices 0 through 99. The first write overlaps the following `num_tracks` field and the remaining writes continue beyond `cue_disc_t`. Track numbers need not be unique, so repeating an in-range directive reaches this state. The parser is production-linked into both Android game libraries and directly processes user-selected CUE content in the launcher, preview, extraction, fingerprint, and playback paths
-- Trigger: Select or load a CUE file containing one `FILE` directive followed by 101 syntactically accepted directives such as repeated `TRACK 01 AUDIO` entries
-- Impact: Parsing writes outside the native result object and can corrupt stack state or crash the launcher or game process before any caller can reject the result
-- Expected: The parser checks record capacity before deriving an index or writing any track field and rejects over-capacity input without returning a partial, corrupted structure
-- Suggested fix: Test `out->num_tracks >= CUE_MAX_TRACKS` before all writes, return an explicit parse failure for excess tracks, and validate that track numbers are unique and ordered if that is required by downstream identity and playback logic
-- Validation: Add exact-boundary tests showing 100 records remain in bounds and the 101st is rejected, run them with AddressSanitizer or equivalent bounds instrumentation, and exercise both JNI parsing and runtime CUE loading with the oversized fixture
-- Resolution: Pending
-
 ### BR-0014: P2 - Reject excess FILE directives instead of reusing the previous file
 
 - [ ] OPEN
