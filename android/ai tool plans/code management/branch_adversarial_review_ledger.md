@@ -5423,24 +5423,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add Inno, PKG, SOW, ISO, StuffIt, and HFS tests whose callbacks cancel at the initial, mid-file where supported, and between-file notifications, including a nested Mac STi2 cancellation with a valid loose HFS candidate, plus CheckJNI tests whose Java callback throws; assert bounded additional work, no fallback, later callbacks, JNI calls, or files, a distinct canceled status where no exception occurred, preservation of the original exception, removal of partial output, and clean descriptor and archive closure
 - Resolution: Pending
 
-### BR-0028: P1 - Serialize MIDI seek with rendering
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: concurrency/resource-lifetime
-- Found by: R1-CHUNK-0013
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_midi_preview.c:L63-L78` in `nativeSeek` and `nativeGetState`
-- Related: `android/app/src/main/cpp/shared/midi_preview.c:L287-L379,L636-L694` and `android/app/src/main/java/com/dxxredux/app/MidiBytesPreviewDialog.kt:L63-L75,L155-L168`
-- Evidence: The Compose slider calls `nativeSeek` on the main thread while the MIDI render thread continuously runs `render_midi_frames`. Seek resets and reconfigures the non-thread-safe TinySoundFont instance, rewinds and advances the shared linked-list cursor, rewrites the shared playback double, and resets ring positions while rendering simultaneously mutates the same synth, cursor, time, and ring. No mutex, command queue, pause handshake, or atomic ownership protects these operations. The 100 ms state poll also reads the concurrently written `double s_playback_msec` and related plain integers without synchronization
-- Trigger: Start a MIDI or HMP preview and release the position slider while playback is active, especially while the render thread is dispatching notes; repeated slider releases widen the race window
-- Impact: Concurrent synth and cursor mutation is undefined native behavior that can corrupt preview state or heap internals, crash the launcher, return torn or nonsensical positions, and produce stale or corrupted audio
-- Expected: The render thread has exclusive ownership of synth, message cursor, playback time, and ring reset; UI controls submit ordered commands and state queries consume a synchronized snapshot
-- Suggested fix: Route seek, pause, resume, and stop through a render-thread command queue or guard all shared playback state with one lifecycle mutex and stop rendering during seek. Publish position, duration, and state through atomics or a locked snapshot, and define callback ordering during ring reset
-- Validation: Add a preview test that performs rapid seeks while playing and while paused, verifies bounded monotonic state after each completed seek, and stress it under ThreadSanitizer where available plus AddressSanitizer on an Android or host OpenSL test shim
-- Remediation status: Code-complete on 2026-07-21, but this P1 remains open pending the independent verification call required by `branch_adversarial_review_process.md`. The live implementation now serializes JNI lifecycle and control calls, guards synth, MIDI cursor, playback time, and state snapshots with one playback mutex shared by rendering and seek, serializes ring reset against the OpenSL reader with a dedicated non-blocking callback guard, and publishes callback enablement atomically. Stop releases the playback lock before joining the render thread. Seven focused synchronization contract tests, scoped code quality, all three Android debug ABIs, and all 10 native suites pass. ThreadSanitizer and a maintained on-device rapid-seek stress run were not available in this tranche
-- Resolution: Pending independent P1 verification
-
 ### BR-0029: P1 - Marshal overlay game-state access through the engine thread
 
 - [ ] OPEN
@@ -5456,23 +5438,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Only the engine thread traverses or mutates engine-owned state. UI commands are queued into the game event loop, and overlays read immutable snapshots published at a defined frame boundary
 - Suggested fix: Add one synchronized Android game-command queue for warp, cycle, settings, debug, and every music mutation, process it from the engine loop, and publish compact video, warp, escort, weapon, marker, multiplayer, cooperative, renderer-diagnostic, and music snapshots with explicit synchronization. Represent each music request as one atomic record with sequence and completion state so a later source choice cannot be cleared by an earlier apply. Compute the D2 bomb choice without mutation when publishing the snapshot or move any selection repair onto the engine thread. Add debug assertions that world, renderer, song, config, and player-file mutation runs on the engine thread
 - Validation: Add an integration test that polls every assigned overlay while repeatedly loading levels, changing mine ammo, placing markers, updating network statistics, changing settings and music sources, and disconnecting players; rapidly queue ordered source and track commands during active frames; and verify engine-thread assertions, every final requested source, unchanged query-only weapon preferences, valid object segment links, packet contents, coherent renderer and music settings, uncorrupted config and player files, and stable UI snapshots under ThreadSanitizer or race instrumentation
-- Resolution: Pending
-
-### BR-0030: P1 - Check MIDI audio initialization results before use
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: resource-lifetime
-- Found by: R1-CHUNK-0013
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_midi_preview.c:L29-L39` in `nativeStart`
-- Related: `android/app/src/main/cpp/shared/midi_preview.c:L382-L399,L419-L497,L531-L602`
-- Evidence: The JNI bridge reports the native start result, but `osl_init` checks only object-creation calls. It ignores every `Realize`, `GetInterface`, callback registration, play-state, and initial `Enqueue` result, then dereferences the returned engine, play, and buffer-queue interfaces unconditionally. If realization or interface acquisition fails, the next function-table call can use a null or unusable interface. `render_thread_start` also returns no status: a failed `pthread_create` is logged while `midi_preview_start` still returns success with OpenSL running and no producer
-- Trigger: Start a preview while OpenSL cannot realize an engine or player, cannot provide the required buffer-queue interface, rejects a queue operation, or the process cannot create another native thread because audio or thread resources are exhausted
-- Impact: A recoverable audio initialization failure can become a native null-interface crash; thread-creation failure is falsely reported as playing and leaves an initialized silent player until a later stop
-- Expected: Every fallible OpenSL and pthread step is checked before its result is used, partial objects are destroyed in reverse order, and start returns false with the preview fully stopped
-- Suggested fix: Make `osl_init` and `render_thread_start` use a single checked cleanup path, verify each required interface and operation, set global objects only after successful initialization, and propagate a distinct failure to JNI. Keep stop idempotent for every partial state
-- Validation: Wrap OpenSL and pthread entry points in a testable adapter, inject failure at every initialization step, and assert no null call, success result, live thread, queued buffer, or retained engine, mix, player, MIDI, or ring state remains; retain a real-device successful playback test
 - Resolution: Pending
 
 ### BR-0038: P2 - Use the canonical fingerprint threshold in the duplicate matcher

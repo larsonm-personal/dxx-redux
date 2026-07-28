@@ -146,6 +146,120 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
         self.assertFalse(seek_thread.is_alive())
         self.assertTrue(seek_completed.is_set())
 
+    def test_opensl_init_checks_every_required_result_before_use(self) -> None:
+        body = function_body(self.source, "osl_init")
+        require_order(
+            self,
+            body,
+            "r = slCreateEngine(&engine_obj",
+            "if (r != SL_RESULT_SUCCESS || !engine_obj)",
+            "(*engine_obj)->Realize",
+            "if (r != SL_RESULT_SUCCESS)",
+            "(*engine_obj)->GetInterface",
+            "if (r != SL_RESULT_SUCCESS || !engine)",
+            "(*engine)->CreateOutputMix",
+            "if (r != SL_RESULT_SUCCESS || !outmix_obj)",
+            "(*outmix_obj)->Realize",
+            "if (r != SL_RESULT_SUCCESS)",
+            "(*engine)->CreateAudioPlayer",
+            "if (r != SL_RESULT_SUCCESS || !player_obj)",
+            "(*player_obj)->Realize",
+            "if (r != SL_RESULT_SUCCESS)",
+            "SL_IID_PLAY",
+            "if (r != SL_RESULT_SUCCESS || !player_play)",
+            "SL_IID_BUFFERQUEUE",
+            "if (r != SL_RESULT_SUCCESS || !player_bq)",
+            "(*player_bq)->RegisterCallback",
+            "if (r != SL_RESULT_SUCCESS)",
+        )
+
+    def test_opensl_init_publishes_only_a_complete_local_graph(self) -> None:
+        body = function_body(self.source, "osl_init")
+        publication = body.index("s_engine_obj = engine_obj")
+        prefix = body[:publication]
+        for global_handle in (
+            "s_engine_obj",
+            "s_engine",
+            "s_outmix_obj",
+            "s_player_obj",
+            "s_player_play",
+            "s_player_bq",
+        ):
+            self.assertNotIn(global_handle, prefix)
+        require_order(
+            self,
+            body[publication:],
+            "s_engine_obj = engine_obj",
+            "s_engine = engine",
+            "s_outmix_obj = outmix_obj",
+            "s_player_obj = player_obj",
+            "s_player_play = player_play",
+            "s_player_bq = player_bq",
+            "return 1",
+        )
+
+    def test_opensl_failure_destroys_partial_objects_in_reverse_order(self) -> None:
+        body = function_body(self.source, "osl_init")
+        failure = body[body.index("fail:") :]
+        require_order(
+            self,
+            failure,
+            "if (player_obj)",
+            "(*player_obj)->Destroy(player_obj)",
+            "if (outmix_obj)",
+            "(*outmix_obj)->Destroy(outmix_obj)",
+            "if (engine_obj)",
+            "(*engine_obj)->Destroy(engine_obj)",
+            "return 0",
+        )
+
+    def test_initial_buffers_are_checked_before_playback_starts(self) -> None:
+        body = function_body(self.source, "osl_init")
+        require_order(
+            self,
+            body,
+            "for (i = 0; i < NUM_BUFFERS; i++)",
+            "r = (*player_bq)->Enqueue",
+            "if (r != SL_RESULT_SUCCESS)",
+            "goto fail",
+            "(*player_play)->SetPlayState",
+            "if (r != SL_RESULT_SUCCESS)",
+            "goto fail",
+            "s_engine_obj = engine_obj",
+        )
+
+    def test_thread_creation_failure_is_propagated_and_fully_stopped(self) -> None:
+        thread_start = function_body(self.source, "render_thread_start")
+        require_order(
+            self,
+            thread_start,
+            "pthread_create",
+            "__atomic_store_n(&s_render_running, 0",
+            "return 0",
+        )
+
+        start = function_body(self.source, "midi_preview_start")
+        require_order(
+            self,
+            start,
+            "if (!osl_init(sample_rate))",
+            "midi_preview_stop_internal()",
+            "return 0",
+            "if (!render_thread_start())",
+            "midi_preview_stop_internal()",
+            "return 0",
+            "return 1",
+        )
+
+        stop = function_body(self.source, "midi_preview_stop_internal")
+        require_order(
+            self,
+            stop,
+            "if (s_midi_buf)",
+            "d_free(s_midi_buf)",
+            "s_midi_buf = NULL",
+            "s_midi_buf_len = 0",
+        )
 
 if __name__ == "__main__":
     unittest.main()
