@@ -395,6 +395,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicPaused(
 		songs_pause();
 	else
 		songs_resume();
+	if (GameCfg.MusicType == MUSIC_TYPE_BUILTIN ||
+	    GameCfg.MusicType == MUSIC_TYPE_CUSTOM)
+		return JNI_TRUE;
 	return music_is_paused() == (paused ? 1 : 0) ? JNI_TRUE : JNI_FALSE;
 }
 

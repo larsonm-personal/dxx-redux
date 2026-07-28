@@ -17,11 +17,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <physfs.h>
 
 #ifdef ANDROID
 #include <android/log.h>
 #include <android/asset_manager.h>
+#include <pthread.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include "android_crash_handler.h"
@@ -55,6 +57,7 @@ static unsigned char *g_midi_buf = NULL; /* raw MIDI bytes from hmp2mid    */
 static double g_playback_msec = 0.0; /* current playback time (ms)     */
 static int g_playing = 0;            /* 1 = music is actively playing  */
 static int g_paused = 0;             /* 1 = playback is paused         */
+static int g_requested_paused = 0;   /* latest requested pause state   */
 static int g_loop = 0;               /* 1 = loop when reaching the end */
 static int g_song_finished = 0;      /* set by audio thread at end     */
 static int g_bg_paused = 0;          /* 1 = paused due to app background */
@@ -75,6 +78,35 @@ static int g_pcm_rate;     /* source sample rate (e.g. 44100)     */
 /* ── Configurable gain (dB) ──────────────────────────────────────────────── */
 static float g_gain_db = -10.0f; /* TSF global gain in dB      */
 static int g_max_voices = 48;    /* voice limit (runtime-tunable) */
+
+#ifdef ANDROID
+static int tsf_atomic_load_int(const int *value)
+{
+	return __atomic_load_n(value, __ATOMIC_ACQUIRE);
+}
+
+static void tsf_atomic_store_int(int *value, int new_value)
+{
+	__atomic_store_n(value, new_value, __ATOMIC_RELEASE);
+}
+
+static float tsf_atomic_load_float(const float *value)
+{
+	float result;
+	__atomic_load(value, &result, __ATOMIC_ACQUIRE);
+	return result;
+}
+
+static void tsf_atomic_store_float(float *value, float new_value)
+{
+	__atomic_store(value, &new_value, __ATOMIC_RELEASE);
+}
+#else
+#define tsf_atomic_load_int(value)               (*(value))
+#define tsf_atomic_store_int(value, new_value)   (*(value) = (new_value))
+#define tsf_atomic_load_float(value)             (*(value))
+#define tsf_atomic_store_float(value, new_value) (*(value) = (new_value))
+#endif
 
 /* ── Audio diagnostics ──────────────────────────────────────────────────── */
 #ifdef ANDROID
@@ -157,10 +189,13 @@ static int tsf_music_load_soundfont(void)
 #endif
 
 	/* Configure output: stereo interleaved, match SDL mixer rate */
-	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
-	tsf_set_max_voices(g_tsf, g_max_voices);
+	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+	               tsf_atomic_load_float(&g_gain_db));
+	tsf_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
 
-	TSFMUSIC_LOG("TSF configured: rate=%d, max_voices=%d, gain=%.1fdB", g_output_rate, g_max_voices, g_gain_db);
+	TSFMUSIC_LOG("TSF configured: rate=%d, max_voices=%d, gain=%.1fdB",
+	             g_output_rate, tsf_atomic_load_int(&g_max_voices),
+	             tsf_atomic_load_float(&g_gain_db));
 
 	return 1;
 }
@@ -185,7 +220,8 @@ static int render_frames(short *out, int frames)
 	while (frames > 0 && g_midi_cur) {
 		int block = (frames > BLOCK) ? BLOCK : frames;
 #ifdef ANDROID
-		unsigned int pass = ++g_render_pass_count;
+		unsigned int pass = __atomic_add_fetch(&g_render_pass_count, 1u,
+		                                       __ATOMIC_RELAXED);
 		int trace = tsf_music_should_trace(pass);
 		if (trace)
 			crash_breadcrumb_v("tsf_render #%u enter tid=%ld cur=%p ms=%ld",
@@ -246,9 +282,11 @@ static int render_frames(short *out, int frames)
 			int i, n = block * 2;
 			for (i = 0; i < n; i++) {
 				int abs_val = out[i] < 0 ? -out[i] : out[i];
-				if (abs_val > g_peak_sample) g_peak_sample = abs_val;
-				if (out[i] == 32767 || out[i] == -32768) g_clip_count++;
-				g_sample_count_total++;
+				if (abs_val > tsf_atomic_load_int(&g_peak_sample))
+					tsf_atomic_store_int(&g_peak_sample, abs_val);
+				if (out[i] == 32767 || out[i] == -32768)
+					__atomic_add_fetch(&g_clip_count, 1, __ATOMIC_RELAXED);
+				__atomic_add_fetch(&g_sample_count_total, 1, __ATOMIC_RELAXED);
 			}
 		}
 #endif
@@ -264,12 +302,14 @@ static int render_frames(short *out, int frames)
 			g_midi_cur = g_midi;
 			g_playback_msec = 0.0;
 			tsf_reset(g_tsf);
-			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
+			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+			               tsf_atomic_load_float(&g_gain_db));
 		} else {
-			g_playing = 0;
-			g_song_finished = 1;
+			tsf_atomic_store_int(&g_playing, 0);
+			tsf_atomic_store_int(&g_song_finished, 1);
 			tsf_reset(g_tsf);
-			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
+			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+			               tsf_atomic_load_float(&g_gain_db));
 		}
 	}
 
@@ -292,8 +332,8 @@ static int pcm_render_frames(short *out, int frames)
 				g_pcm_pos = 0.0;
 				idx = 0;
 			} else {
-				g_playing = 0;
-				g_song_finished = 1;
+				tsf_atomic_store_int(&g_playing, 0);
+				tsf_atomic_store_int(&g_song_finished, 1);
 				break;
 			}
 		}
@@ -344,6 +384,131 @@ static volatile int g_rb_wpos; /* monotonic write position       */
 static volatile int g_rb_rpos; /* monotonic read position        */
 static SDL_Thread *g_render_thread = NULL;
 static volatile int g_render_running;
+
+enum tsf_tuning_command_type {
+	TSF_TUNING_GAIN,
+	TSF_TUNING_VOICES,
+	TSF_TUNING_VOLUME,
+	TSF_TUNING_PAUSED
+};
+
+struct tsf_tuning_command {
+	enum tsf_tuning_command_type type;
+	union {
+		float real_value;
+		int int_value;
+	} value;
+};
+
+#define TSF_TUNING_QUEUE_CAPACITY 64
+static struct tsf_tuning_command g_tuning_queue[TSF_TUNING_QUEUE_CAPACITY];
+static unsigned int g_tuning_head;
+static unsigned int g_tuning_count;
+static pthread_mutex_t g_tuning_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int g_render_accepting_commands;
+
+static void tsf_reset_render_diagnostics(void)
+{
+	tsf_atomic_store_int(&g_clip_count, 0);
+	tsf_atomic_store_int(&g_sample_count_total, 0);
+	tsf_atomic_store_int(&g_peak_sample, 0);
+	tsf_atomic_store_int(&g_active_voices_max, 0);
+}
+
+static void tsf_apply_tuning_command(const struct tsf_tuning_command *command,
+                                     int mutate_synth)
+{
+	switch (command->type) {
+		case TSF_TUNING_GAIN:
+			tsf_atomic_store_float(&g_gain_db, command->value.real_value);
+			if (mutate_synth && g_tsf)
+				tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+				               command->value.real_value);
+			tsf_reset_render_diagnostics();
+			break;
+		case TSF_TUNING_VOICES:
+			tsf_atomic_store_int(&g_max_voices, command->value.int_value);
+			if (mutate_synth && g_tsf)
+				tsf_set_max_voices(g_tsf, command->value.int_value);
+			tsf_atomic_store_int(&g_active_voices_max, 0);
+			break;
+		case TSF_TUNING_VOLUME:
+			tsf_atomic_store_float(&g_volume, command->value.real_value);
+			break;
+		case TSF_TUNING_PAUSED:
+			tsf_atomic_store_int(&g_paused, command->value.int_value);
+			break;
+	}
+}
+
+static void tsf_drain_pending_tuning(int mutate_synth)
+{
+	struct tsf_tuning_command commands[TSF_TUNING_QUEUE_CAPACITY];
+	unsigned int count;
+	unsigned int i;
+
+	pthread_mutex_lock(&g_tuning_mutex);
+	count = g_tuning_count;
+	for (i = 0; i < count; ++i)
+		commands[i] = g_tuning_queue[(g_tuning_head + i) % TSF_TUNING_QUEUE_CAPACITY];
+	g_tuning_head = (g_tuning_head + count) % TSF_TUNING_QUEUE_CAPACITY;
+	g_tuning_count = 0;
+	pthread_mutex_unlock(&g_tuning_mutex);
+
+	for (i = 0; i < count; ++i)
+		tsf_apply_tuning_command(&commands[i], mutate_synth);
+}
+
+static void tsf_apply_pending_tuning(void)
+{
+	tsf_drain_pending_tuning(1);
+}
+
+static void tsf_submit_tuning_command(struct tsf_tuning_command command)
+{
+	for (;;) {
+		unsigned int tail;
+
+		pthread_mutex_lock(&g_tuning_mutex);
+		if (!g_render_accepting_commands) {
+			if (command.type == TSF_TUNING_PAUSED)
+				tsf_atomic_store_int(&g_requested_paused,
+				                     command.value.int_value);
+			tsf_apply_tuning_command(&command, 0);
+			pthread_mutex_unlock(&g_tuning_mutex);
+			return;
+		}
+		if (g_tuning_count < TSF_TUNING_QUEUE_CAPACITY) {
+			if (command.type == TSF_TUNING_PAUSED)
+				tsf_atomic_store_int(&g_requested_paused,
+				                     command.value.int_value);
+			tail = (g_tuning_head + g_tuning_count) % TSF_TUNING_QUEUE_CAPACITY;
+			g_tuning_queue[tail] = command;
+			++g_tuning_count;
+			pthread_mutex_unlock(&g_tuning_mutex);
+			return;
+		}
+		pthread_mutex_unlock(&g_tuning_mutex);
+		SDL_Delay(1);
+	}
+}
+
+static void tsf_finish_tuning_ownership(void)
+{
+	unsigned int i;
+
+	pthread_mutex_lock(&g_tuning_mutex);
+	for (i = 0; i < g_tuning_count; ++i) {
+		unsigned int index =
+		    (g_tuning_head + i) % TSF_TUNING_QUEUE_CAPACITY;
+		tsf_apply_tuning_command(&g_tuning_queue[index], 1);
+	}
+	g_tuning_head =
+	    (g_tuning_head + g_tuning_count) % TSF_TUNING_QUEUE_CAPACITY;
+	g_tuning_count = 0;
+	g_render_accepting_commands = 0;
+	pthread_mutex_unlock(&g_tuning_mutex);
+}
 
 /* ── Ring buffer helpers ────────────────────────────────────────────── */
 
@@ -400,9 +565,21 @@ static int render_thread_func(void *data)
 	TSFMUSIC_LOG("Render thread started");
 	crash_breadcrumb_v("tsf_thread start tid=%ld", tsf_music_gettid());
 
-	while (__atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST)) {
+	if (g_tsf) {
+		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+		               tsf_atomic_load_float(&g_gain_db));
+		tsf_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
+	}
+
+	for (;;) {
+		tsf_apply_pending_tuning();
+		if (!__atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST))
+			break;
+
 		/* Pause: don't produce data */
-		if (!g_playing || g_paused || g_bg_paused) {
+		if (!tsf_atomic_load_int(&g_playing) ||
+		    tsf_atomic_load_int(&g_paused) ||
+		    tsf_atomic_load_int(&g_bg_paused)) {
 			SDL_Delay(20);
 			continue;
 		}
@@ -422,18 +599,15 @@ static int render_thread_func(void *data)
 		/* Track peak active voices (MIDI only) */
 		if (!g_is_pcm && g_tsf) {
 			int active = tsf_active_voice_count(g_tsf);
-			if (active > g_active_voices_max)
-				g_active_voices_max = active;
+			if (active > tsf_atomic_load_int(&g_active_voices_max))
+				tsf_atomic_store_int(&g_active_voices_max, active);
 		}
 
 		if (got > 0)
 			rb_write(buf, got * 2);
-
-		/* Song ended without loop — stop producing */
-		if (!g_playing)
-			break;
 	}
 
+	tsf_finish_tuning_ownership();
 	TSFMUSIC_LOG("Render thread exiting");
 	crash_breadcrumb_v("tsf_thread exit tid=%ld", tsf_music_gettid());
 	return 0;
@@ -443,8 +617,26 @@ static void render_thread_start(void)
 {
 	if (g_render_thread) return; /* already running */
 	rb_reset();
+	pthread_mutex_lock(&g_tuning_mutex);
+	g_render_accepting_commands = 1;
 	__atomic_store_n(&g_render_running, 1, __ATOMIC_SEQ_CST);
+	pthread_mutex_unlock(&g_tuning_mutex);
 	g_render_thread = SDL_CreateThread(render_thread_func, NULL);
+	if (!g_render_thread) {
+		unsigned int i;
+		pthread_mutex_lock(&g_tuning_mutex);
+		for (i = 0; i < g_tuning_count; ++i) {
+			unsigned int index =
+			    (g_tuning_head + i) % TSF_TUNING_QUEUE_CAPACITY;
+			tsf_apply_tuning_command(&g_tuning_queue[index], 0);
+		}
+		g_tuning_head =
+		    (g_tuning_head + g_tuning_count) % TSF_TUNING_QUEUE_CAPACITY;
+		g_tuning_count = 0;
+		g_render_accepting_commands = 0;
+		__atomic_store_n(&g_render_running, 0, __ATOMIC_SEQ_CST);
+		pthread_mutex_unlock(&g_tuning_mutex);
+	}
 }
 
 static void render_thread_stop(void)
@@ -462,15 +654,19 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	(void) udata;
 	int needed = len / (int) sizeof(short); /* total samples (stereo) */
 	short *out = (short *) stream;
-	unsigned int cb = ++g_callback_trace_count;
+	unsigned int cb = __atomic_add_fetch(&g_callback_trace_count, 1u,
+	                                     __ATOMIC_RELAXED);
 	int trace = tsf_music_should_trace(cb);
+	float volume;
 
-	g_rb_cb_count++;
+	__atomic_add_fetch(&g_rb_cb_count, 1, __ATOMIC_RELAXED);
 	if (trace)
 		crash_breadcrumb_v("tsf_cb #%u enter tid=%ld need=%d fill=%u", cb,
 		                   tsf_music_gettid(), needed, rb_available());
 
-	if (!g_playing || g_paused || g_bg_paused) {
+	if (!tsf_atomic_load_int(&g_playing) ||
+	    tsf_atomic_load_int(&g_paused) ||
+	    tsf_atomic_load_int(&g_bg_paused)) {
 		memset(stream, 0, len);
 		return;
 	}
@@ -482,19 +678,21 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	/* Zero-fill if ring buffer had less data than needed (underrun) */
 	if (got < needed) {
 		memset(out + got, 0, (needed - got) * (int) sizeof(short));
-		if (g_playing) {
-			g_rb_underruns++;
-			if (g_rb_underruns <= 10 || (g_rb_underruns % 50) == 0)
+		if (tsf_atomic_load_int(&g_playing)) {
+			int underruns = __atomic_add_fetch(&g_rb_underruns, 1,
+			                                   __ATOMIC_RELAXED);
+			if (underruns <= 10 || (underruns % 50) == 0)
 				TSFMUSIC_LOG("MIDI underrun #%d: got=%d needed=%d rb_fill=%u",
-				             g_rb_underruns, got, needed, rb_available());
+				             underruns, got, needed, rb_available());
 		}
 	}
 
 	/* Apply volume scaling (cheap — just multiply) */
-	if (g_volume < 0.99f) {
+	volume = tsf_atomic_load_float(&g_volume);
+	if (volume < 0.99f) {
 		int i;
 		for (i = 0; i < got; i++)
-			out[i] = (short) (out[i] * g_volume);
+			out[i] = (short) (out[i] * volume);
 	}
 }
 
@@ -503,8 +701,11 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 {
 	(void) udata;
+	float volume;
 
-	if (!g_playing || g_paused || g_bg_paused) {
+	if (!tsf_atomic_load_int(&g_playing) ||
+	    tsf_atomic_load_int(&g_paused) ||
+	    tsf_atomic_load_int(&g_bg_paused)) {
 		memset(stream, 0, len);
 		return;
 	}
@@ -525,10 +726,11 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 		memset(out + got * 2, 0, (frames - got) * 2 * sizeof(short));
 
 	/* Apply volume scaling */
-	if (g_volume < 0.99f) {
+	volume = tsf_atomic_load_float(&g_volume);
+	if (volume < 0.99f) {
 		int i, n = got * 2;
 		for (i = 0; i < n; i++)
-			out[i] = (short) (out[i] * g_volume);
+			out[i] = (short) (out[i] * volume);
 	}
 }
 
@@ -538,8 +740,8 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 /* Dispatch the finished-song callback on the game thread (safe context). */
 static void tsf_dispatch_finished(void)
 {
-	if (g_song_finished) {
-		g_song_finished = 0;
+	if (tsf_atomic_load_int(&g_song_finished)) {
+		tsf_atomic_store_int(&g_song_finished, 0);
 		if (g_finished_hook) {
 			void (*hook)(void) = g_finished_hook;
 			g_finished_hook = NULL;
@@ -632,15 +834,16 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		             filename, g_pcm_total, g_pcm_rate, g_pcm_channels, loop);
 
 		g_loop = loop;
-		g_paused = 0;
-		g_playing = 1;
+		tsf_atomic_store_int(&g_requested_paused, 0);
+		tsf_atomic_store_int(&g_paused, 0);
+		tsf_atomic_store_int(&g_playing, 1);
 		g_finished_hook = hook_finished_track ? hook_finished_track : mix_free_music;
 
 #ifdef ANDROID
-		g_rb_underruns = 0;
-		g_rb_cb_count = 0;
-		g_render_pass_count = 0;
-		g_callback_trace_count = 0;
+		tsf_atomic_store_int(&g_rb_underruns, 0);
+		tsf_atomic_store_int(&g_rb_cb_count, 0);
+		__atomic_store_n(&g_render_pass_count, 0u, __ATOMIC_RELEASE);
+		__atomic_store_n(&g_callback_trace_count, 0u, __ATOMIC_RELEASE);
 		render_thread_start();
 #endif
 		Mix_HookMusic(tsf_music_callback, NULL);
@@ -699,26 +902,25 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 	/* Reset synth state for new song */
 	tsf_reset(g_tsf);
-	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
+	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+	               tsf_atomic_load_float(&g_gain_db));
 
 #ifdef ANDROID
 	/* Reset diagnostics for the new song */
-	g_clip_count = 0;
-	g_sample_count_total = 0;
-	g_peak_sample = 0;
-	g_active_voices_max = 0;
-	g_rb_underruns = 0;
-	g_rb_cb_count = 0;
-	g_render_pass_count = 0;
-	g_callback_trace_count = 0;
+	tsf_reset_render_diagnostics();
+	tsf_atomic_store_int(&g_rb_underruns, 0);
+	tsf_atomic_store_int(&g_rb_cb_count, 0);
+	__atomic_store_n(&g_render_pass_count, 0u, __ATOMIC_RELEASE);
+	__atomic_store_n(&g_callback_trace_count, 0u, __ATOMIC_RELEASE);
 #endif
 
 	/* Start playback */
 	g_midi_cur = g_midi;
 	g_playback_msec = 0.0;
 	g_loop = loop;
-	g_paused = 0;
-	g_playing = 1;
+	tsf_atomic_store_int(&g_requested_paused, 0);
+	tsf_atomic_store_int(&g_paused, 0);
+	tsf_atomic_store_int(&g_playing, 1);
 	g_finished_hook = hook_finished_track ? hook_finished_track : mix_free_music;
 
 #ifdef ANDROID
@@ -735,7 +937,8 @@ void mix_free_music(void)
 {
 #ifdef ANDROID
 	crash_breadcrumb_v("mix_free enter tid=%ld playing=%d render=%p midi=%p cur=%p buf=%p",
-	                   tsf_music_gettid(), g_playing, (void *) g_render_thread,
+	                   tsf_music_gettid(), tsf_atomic_load_int(&g_playing),
+	                   (void *) g_render_thread,
 	                   (void *) g_midi, (void *) g_midi_cur,
 	                   (void *) g_midi_buf);
 
@@ -746,9 +949,10 @@ void mix_free_music(void)
 #endif
 	Mix_HookMusic(NULL, NULL);
 	crash_breadcrumb("mix_free: hook_cleared");
-	g_playing = 0;
-	g_paused = 0;
-	g_song_finished = 0;
+	tsf_atomic_store_int(&g_playing, 0);
+	tsf_atomic_store_int(&g_requested_paused, 0);
+	tsf_atomic_store_int(&g_paused, 0);
+	tsf_atomic_store_int(&g_song_finished, 0);
 
 	/* Clean up PCM state */
 	if (g_pcm_buf) {
@@ -778,14 +982,21 @@ void mix_free_music(void)
 	/* Stop all voices but keep the synth loaded */
 	if (g_tsf) {
 		tsf_reset(g_tsf);
-		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
+		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+		               tsf_atomic_load_float(&g_gain_db));
 	}
 }
 
 void mix_set_music_volume(int vol)
 {
 	/* vol is 0..8 from the game.  Map to 0.0 – 1.0. */
-	g_volume = (vol > 0) ? (vol / 8.0f) : 0.0f;
+#ifdef ANDROID
+	struct tsf_tuning_command command = { TSF_TUNING_VOLUME };
+	command.value.real_value = (vol > 0) ? (vol / 8.0f) : 0.0f;
+	tsf_submit_tuning_command(command);
+#else
+	tsf_atomic_store_float(&g_volume, (vol > 0) ? (vol / 8.0f) : 0.0f);
+#endif
 }
 
 void mix_stop_music(void)
@@ -795,29 +1006,48 @@ void mix_stop_music(void)
 
 void mix_pause_music(void)
 {
-	g_paused = 1;
+#ifdef ANDROID
+	struct tsf_tuning_command command = { TSF_TUNING_PAUSED };
+	command.value.int_value = 1;
+	tsf_submit_tuning_command(command);
+#else
+	tsf_atomic_store_int(&g_paused, 1);
+#endif
 }
 
 void mix_resume_music(void)
 {
-	g_paused = 0;
+#ifdef ANDROID
+	struct tsf_tuning_command command = { TSF_TUNING_PAUSED };
+	command.value.int_value = 0;
+	tsf_submit_tuning_command(command);
+#else
+	tsf_atomic_store_int(&g_paused, 0);
+#endif
 }
 
 void mix_pause_resume_music(void)
 {
-	g_paused = !g_paused;
+#ifdef ANDROID
+	if (tsf_atomic_load_int(&g_requested_paused))
+#else
+	if (tsf_atomic_load_int(&g_paused))
+#endif
+		mix_resume_music();
+	else
+		mix_pause_music();
 }
 
 /* ── Background pause (called from JNI on lifecycle transitions) ────── */
 
 void mix_background_pause(void)
 {
-	g_bg_paused = 1;
+	tsf_atomic_store_int(&g_bg_paused, 1);
 }
 
 void mix_background_resume(void)
 {
-	g_bg_paused = 0;
+	tsf_atomic_store_int(&g_bg_paused, 0);
 }
 
 /* ── Diagnostic accessors (called from game_introspect.cpp) ──────────── */
@@ -828,16 +1058,16 @@ int tsf_music_get_output_rate(void)
 }
 int tsf_music_get_playing(void)
 {
-	return g_playing;
+	return tsf_atomic_load_int(&g_playing);
 }
 int tsf_music_get_paused(void)
 {
-	return g_paused;
+	return tsf_atomic_load_int(&g_paused);
 }
 #ifdef ANDROID
 int tsf_music_get_cb_count(void)
 {
-	return g_rb_cb_count;
+	return tsf_atomic_load_int(&g_rb_cb_count);
 }
 long tsf_music_get_cb_max_ns(void)
 {
@@ -849,27 +1079,27 @@ long tsf_music_get_cb_total_ns(void)
 }
 int tsf_music_get_cb_overrun_count(void)
 {
-	return g_rb_underruns;
+	return tsf_atomic_load_int(&g_rb_underruns);
 }
 int tsf_music_get_clip_count(void)
 {
-	return g_clip_count;
+	return tsf_atomic_load_int(&g_clip_count);
 }
 int tsf_music_get_sample_count(void)
 {
-	return g_sample_count_total;
+	return tsf_atomic_load_int(&g_sample_count_total);
 }
 int tsf_music_get_peak_sample(void)
 {
-	return g_peak_sample;
+	return tsf_atomic_load_int(&g_peak_sample);
 }
 int tsf_music_get_active_voices_max(void)
 {
-	return g_active_voices_max;
+	return tsf_atomic_load_int(&g_active_voices_max);
 }
 int tsf_music_get_max_voices(void)
 {
-	return g_max_voices;
+	return tsf_atomic_load_int(&g_max_voices);
 }
 int tsf_music_get_rb_fill(void)
 {
@@ -881,27 +1111,22 @@ int tsf_music_get_rb_capacity(void)
 }
 float tsf_music_get_gain_db(void)
 {
-	return g_gain_db;
+	return tsf_atomic_load_float(&g_gain_db);
 }
 void tsf_music_set_gain_db(float db)
 {
-	g_gain_db = db;
-	if (g_tsf) {
-		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
-	}
-	g_clip_count = 0;
-	g_sample_count_total = 0;
-	g_peak_sample = 0;
-	g_active_voices_max = 0;
+	struct tsf_tuning_command command = { TSF_TUNING_GAIN };
+	if (!isfinite(db))
+		return;
+	command.value.real_value = db;
+	tsf_submit_tuning_command(command);
 }
 void tsf_music_set_max_voices(int n)
 {
+	struct tsf_tuning_command command = { TSF_TUNING_VOICES };
 	if (n < 8) n = 8;
 	if (n > 256) n = 256;
-	g_max_voices = n;
-	if (g_tsf) {
-		tsf_set_max_voices(g_tsf, g_max_voices);
-	}
-	g_active_voices_max = 0;
+	command.value.int_value = n;
+	tsf_submit_tuning_command(command);
 }
 #endif

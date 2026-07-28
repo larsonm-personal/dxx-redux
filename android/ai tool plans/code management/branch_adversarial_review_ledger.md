@@ -5826,23 +5826,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add a native or Android instrumentation barrier that releases two `startGame` calls and two same-game preview calls simultaneously and proves exactly one `main()` invocation and one stable Activity owner. Extend the emulator regression to race a relaunch against normal return and fatal cleanup, repeat each schedule many times, assert rejected Activities finish with an explicit result, and verify no duplicate engine log, changed process owner, stale callback, dangling global reference, crash, or hang under ThreadSanitizer where available and CheckJNI on Android
 - Resolution: Pending
 
-### BR-0079: P1 - Route live TinySoundFont tuning through the render-thread owner
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: concurrency/memory-safety
-- Found by: R1-CHUNK-0039, R1-CHUNK-0040
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_main.c:L659-L673` in `nativeSetMusicGain` and `nativeSetMusicVoices`; `android/app/src/main/cpp/jni_music_control.c:L106-L113,L374-L401` in music state, volume, and pause access
-- Related: `android/app/src/main/cpp/shared/digi_tsf_music.c:L180-L269,L337-L455,L716-L729,L785-L821,L823-L905` and `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L2352-L2381,L2390-L2420`, `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt:L127-L155,L780-L795`
-- Evidence: Main-looper callers mutate the live game synth while music is active. The debug gain setter calls `tsf_set_output` on the process-global synth and the voice setter calls `tsf_set_max_voices`; both also rewrite diagnostic globals. The normal music panel adds UI-thread volume and pause setters that write `g_volume` and `g_paused`, and its state refresh reads the pause flag. At the same time, a dedicated SDL render thread dispatches MIDI events through `tsf_channel_*`, renders samples with `tsf_render_short`, reads volume and pause state, counts active voices, and updates the same diagnostics. The code provides atomic operations only for the ring-buffer indices and render-running flag; there is no lock, command queue, stop handshake, or single-thread ownership around the synth, playback flags, volume, or diagnostics. TinySoundFont's mutable synth operations do not provide an independent cross-thread synchronization contract, and volatile is not used consistently and would not make the remaining accesses race-free in any case
-- Trigger: Play MIDI, HMP, or custom game music and drag the in-game volume control, toggle pause and refresh state, or, in a debug build, send repeated exported `com.dxxredux.GAME_COMMAND` broadcasts for `gain` or `voices`, especially while notes are starting or ending
-- Impact: Concurrent structural mutation and rendering of the native synth is undefined behavior that can corrupt synth or voice state, crash the process, produce audio corruption, lose or tear volume and pause changes, and return inconsistent diagnostics; normal touch controls expose the flag races in release behavior, while the exported debug receiver makes structural races repeatable without in-game interaction
-- Expected: The render thread exclusively owns `g_tsf` and render diagnostics, and external tuning requests are applied at a defined render boundary with validated values and coherent published statistics
-- Suggested fix: Submit gain, voice-limit, volume, and pause changes through a render-thread command queue or stop and join rendering before applying structural changes under one lifecycle lock. Keep synth creation, mutation, rendering, and destruction under the same ownership rule; publish pause, volume, and diagnostics through atomics or a synchronized snapshot, and reject non-finite gain values before enqueueing
-- Validation: Add instrumentation that plays a dense MIDI fixture while rapidly dragging volume, toggling pause, refreshing state, and alternating debug gain and voice-limit broadcasts; verify every accepted command takes effect at a render boundary and playback remains valid, and run under ThreadSanitizer where supported plus AddressSanitizer on Android; include non-finite gain and exact-limit voice cases
-- Resolution: Pending
-
 ### BR-0080: P1 - Validate ship-status player and weapon indices before caching or display
 
 - [ ] OPEN
