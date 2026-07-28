@@ -5,14 +5,16 @@
  * format used by chromaprint_db_load), loads them, and reports all pairs that
  * exceed the match threshold using proper XOR-popcount similarity.
  *
- * Usage: fingerprint_match <db.json> [threshold]
+ * Usage: fingerprint_match <db.json> <threshold>
  *
  * Output: one JSON line per duplicate pair:
  *   {"a_disc":"...","a_track":N,"b_disc":"...","b_track":N,"score":0.XX}
  *
- * The threshold defaults to 0.4 and can be overridden on the command line.
+ * The caller must pass the validated value from fingerprint_config.json5.
  */
 
+#include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -284,18 +286,18 @@ static void print_escaped(FILE *f, const char *s)
 
 int main(int argc, char **argv)
 {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: fingerprint_match <db.json> [threshold]\n");
+	if (argc != 3) {
+		fprintf(stderr, "Usage: fingerprint_match <db.json> <threshold>\n");
 		return 1;
 	}
 
-	float threshold = 0.4f;
-	if (argc >= 3) {
-		threshold = (float) atof(argv[2]);
-		if (threshold <= 0.0f || threshold > 1.0f) {
-			fprintf(stderr, "Invalid threshold: %s\n", argv[2]);
-			return 1;
-		}
+	errno = 0;
+	char *threshold_end = NULL;
+	float threshold = strtof(argv[2], &threshold_end);
+	if (threshold_end == argv[2] || *threshold_end != '\0' || errno == ERANGE ||
+	    !isfinite(threshold) || threshold <= 0.0f || threshold > 1.0f) {
+		fprintf(stderr, "Invalid threshold: %s\n", argv[2]);
+		return 1;
 	}
 
 	FILE *f = fopen(argv[1], "rb");

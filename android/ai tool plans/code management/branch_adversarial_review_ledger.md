@@ -5423,23 +5423,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add an integration test that polls every assigned overlay while repeatedly loading levels, changing mine ammo, placing markers, updating network statistics, changing settings and music sources, and disconnecting players; rapidly queue ordered source and track commands during active frames; and verify engine-thread assertions, every final requested source, unchanged query-only weapon preferences, valid object segment links, packet contents, coherent renderer and music settings, uncorrupted config and player files, and stable UI snapshots under ThreadSanitizer or race instrumentation
 - Resolution: Pending
 
-### BR-0038: P2 - Use the canonical fingerprint threshold in the duplicate matcher
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness
-- Found by: R1-CHUNK-0016, R1-CHUNK-0035
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/fingerprint_match.c:L288-L301` in `main` and `android/app/src/main/cpp/jni_fingerprint.c:L27-L48`
-- Related: `android/app/src/main/assets/fingerprint_config.json5:L1-L15`, `game_data/update_known_discs_albums.ps1:L24-L35,L158-L174`, `android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt:L52-L59,L84-L103`, and `android/app/src/main/cpp/shared/chromaprint_db.c:L24-L52`
-- Evidence: The command documents its threshold argument as optional and hardcodes 0.40 when it is omitted. The repository's declared single source of truth sets 0.65 and explains that random-noise comparisons peak near 0.50, so the tool's default lies in the false-match region. The merger normally passes the configured value, but it also falls back to 0.40 when configuration loading fails. On the locally available 761-entry merged input, the matcher reported 51,571 pairs at 0.40 versus 1,577 at 0.65. Command-line parsing uses `atof`, so a value such as `nan` also passes both range comparisons and silently makes every `score >= threshold` test false. Android repeats the unsafe fallback: the runtime matcher is compiled with 0.40, `loadFingerprintConfig` catches missing or malformed canonical configuration and continues without setting 0.65, and the JNI/native setter silently ignores invalid or non-finite values while Kotlin logs them as configured
-- Trigger: Invoke the documented command without a threshold, let either the merger or Android config loader fall back after missing or malformed configuration, or pass a non-finite or partially numeric threshold
-- Impact: Database regeneration can classify tens of thousands of unrelated tracks as duplicates or, for NaN, classify none, producing incorrect exclusions and unstable album-to-disc mappings while the command exits successfully; Android can likewise accept false runtime identities under the unsafe compiled fallback while logging only a configuration warning
-- Expected: Every matching surface consumes one validated finite threshold from the canonical configuration, and invalid or unavailable configuration fails instead of selecting a known-unsafe fallback
-- Suggested fix: Require the caller to pass the canonical value or add an explicit config-file argument, remove the independent 0.40 defaults, and parse with `strtof` plus complete-consumption, range, and `isfinite` checks. Keep runtime, scripts, and the audit tool on one loaded configuration contract
-- Validation: Add host and Android matcher integration cases at 0.40, 0.65, omitted, missing, malformed, trailing-junk, infinity, and NaN inputs; assert invalid configuration fails closed and every workflow uses exactly the configured threshold
-- Resolution: Pending
-
 ### BR-0039: P2 - Fail duplicate analysis when any fingerprint entry is not loaded
 
 - [ ] OPEN

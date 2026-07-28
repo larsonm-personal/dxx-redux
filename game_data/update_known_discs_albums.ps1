@@ -20,20 +20,13 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $musicDir = Join-Path $PSScriptRoot "music"
 $dbPath = "$repoRoot/android/app/src/main/assets/known_discs.json5"
 $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.json5"
+. "$repoRoot/android/helpers/fingerprint_config.ps1"
 
 # Load match threshold from fingerprint_config.json5
 
-$matchThreshold = 0.4
-if (Test-Path $configPath) {
-    $raw = Get-Content $configPath -Raw
-    $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
-    try {
-        $cfg = $stripped | ConvertFrom-Json
-        if ($cfg.match_threshold) { $matchThreshold = $cfg.match_threshold }
-    } catch {
-        Write-Warning "Failed to parse fingerprint_config.json5, using default threshold $matchThreshold"
-    }
-}
+$fingerprintConfig = Get-DxxFingerprintMatchingConfig -Path $configPath
+$matchThreshold = $fingerprintConfig.MatchThreshold
+$matchThresholdArgument = $matchThreshold.ToString('R', [Globalization.CultureInfo]::InvariantCulture)
 Write-Host "Match threshold: $matchThreshold"
 
 # Ensure fingerprint_match.exe is available
@@ -160,7 +153,7 @@ Write-Host "Wrote $($flatEntries.Count) entries to temp JSON for matching"
 Write-Host "Running fingerprint_match.exe (threshold $matchThreshold)..."
 $matchStderrFile = Join-Path $repoRoot "temp/dedup_match_stderr.txt"
 $matchStdoutFile = Join-Path $repoRoot "temp/dedup_match_stdout.json"
-$proc = Start-Process -FilePath $matchExe -ArgumentList $tempJson, $matchThreshold `
+$proc = Start-Process -FilePath $matchExe -ArgumentList $tempJson, $matchThresholdArgument `
     -RedirectStandardOutput $matchStdoutFile -RedirectStandardError $matchStderrFile `
     -NoNewWindow -Wait -PassThru
 if (Test-Path $matchStderrFile) {

@@ -11,6 +11,7 @@
 
 #include "chromaprint_db.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <android/log.h>
@@ -21,10 +22,8 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-/* Defaults -- overridden at runtime via chromaprint_db_set_threshold()
- * and chromaprint_db_set_duration_tolerance().  Single source of truth
- * is fingerprint_config.json5 (loaded by Kotlin / PC scripts). */
-#define DEFAULT_MATCH_THRESHOLD    0.4f
+/* Single source of truth for the match threshold is fingerprint_config.json5.
+ * Database loading fails until Kotlin supplies its validated value. */
 #define DEFAULT_DURATION_TOLERANCE 0.10f
 
 /* Max offset alignment shift (in fingerprint frames) */
@@ -33,16 +32,23 @@
 /* Max entries in the database */
 #define MAX_DB_ENTRIES 1024
 
-static float s_match_threshold = DEFAULT_MATCH_THRESHOLD;
+static float s_match_threshold = 0.0f;
+static int s_match_threshold_configured = 0;
 static float s_duration_tolerance = DEFAULT_DURATION_TOLERANCE;
 
 static chromaprint_db_entry_t s_entries[MAX_DB_ENTRIES];
 static int s_entry_count = 0;
 
-void chromaprint_db_set_threshold(float threshold)
+int chromaprint_db_set_threshold(float threshold)
 {
-	if (threshold > 0.0f && threshold <= 1.0f)
-		s_match_threshold = threshold;
+	if (!isfinite(threshold) || threshold <= 0.0f || threshold > 1.0f) {
+		s_match_threshold = 0.0f;
+		s_match_threshold_configured = 0;
+		return 0;
+	}
+	s_match_threshold = threshold;
+	s_match_threshold_configured = 1;
+	return 1;
 }
 
 void chromaprint_db_set_duration_tolerance(float tolerance)
@@ -157,6 +163,10 @@ static const char *skip_json_value(const char *p, const char *end)
 
 int chromaprint_db_load(const char *json_data, int json_len)
 {
+	if (!s_match_threshold_configured) {
+		LOGE("Fingerprint match threshold is not configured");
+		return -1;
+	}
 	if (!json_data || json_len <= 0) return -1;
 
 	/* Free any previous data */

@@ -28,12 +28,16 @@
  * Set match confidence threshold (0.0-1.0).
  * Called before loading DB, from fingerprint_config.json5 values.
  */
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeSetMatchThreshold(
     JNIEnv *env, jclass clazz, jfloat threshold)
 {
-	chromaprint_db_set_threshold(threshold);
+	if (!chromaprint_db_set_threshold(threshold)) {
+		LOGE("Rejected invalid match threshold");
+		return JNI_FALSE;
+	}
 	LOGI("Match threshold set to %.3f", (double) threshold);
+	return JNI_TRUE;
 }
 
 /*

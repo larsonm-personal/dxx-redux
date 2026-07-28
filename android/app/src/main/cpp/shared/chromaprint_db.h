@@ -42,9 +42,10 @@ int chromaprint_db_load(const char *json_data, int json_len);
 int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
                          chromaprint_db_match_t *out_match);
 
-/* Set match confidence threshold (0.0-1.0). Default 0.4.
- * Loaded from fingerprint_config.json5 at startup. */
-void chromaprint_db_set_threshold(float threshold);
+/* Set match confidence threshold (0.0-1.0).
+ * Loaded from fingerprint_config.json5 at startup.
+ * Returns 1 when accepted, or 0 and leaves the DB unconfigured on failure. */
+int chromaprint_db_set_threshold(float threshold);
 
 /* Set duration pre-filter tolerance (0.0-1.0 fraction). Default 0.10. */
 void chromaprint_db_set_duration_tolerance(float tolerance);

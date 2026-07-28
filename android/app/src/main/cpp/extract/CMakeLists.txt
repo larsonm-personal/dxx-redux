@@ -391,6 +391,19 @@ endif()
 set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
 add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
 
+add_executable(test_chromaprint_db_config ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_config.c
+                                          ${SHARED_DIR}/chromaprint_db.c)
+target_include_directories(test_chromaprint_db_config
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
+target_compile_definitions(test_chromaprint_db_config PRIVATE CHROMAPRINT_NODLL)
+target_link_libraries(test_chromaprint_db_config PRIVATE chromaprint)
+if(MSVC)
+    target_compile_options(test_chromaprint_db_config PRIVATE /W4)
+else()
+    target_compile_options(test_chromaprint_db_config PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME chromaprint_db_config_tests COMMAND test_chromaprint_db_config)
+
 add_executable(test_gles3_shim_array_sources
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_gles3_shim_array_sources.c)
 target_include_directories(test_gles3_shim_array_sources

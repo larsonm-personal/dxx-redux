@@ -7,11 +7,41 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
+import org.json.JSONTokener
 import java.io.File
 import java.security.MessageDigest
 
 // Filter AcoustID placeholder names where both artist and title are unknown
 private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
+
+internal data class FingerprintMatchingConfig(
+    val matchThreshold: Float,
+    val durationTolerance: Float,
+)
+
+internal fun parseFingerprintMatchingConfig(raw: String): FingerprintMatchingConfig {
+    val tokener = JSONTokener(Json5.strip(raw))
+    val config = tokener.nextValue()
+    require(config is JSONObject && tokener.nextClean().code == 0) {
+        "Fingerprint configuration must contain exactly one object"
+    }
+
+    fun requiredFraction(name: String): Float {
+        require(config.has(name)) { "Missing $name" }
+        val value = config.get(name)
+        require(value is Number) { "$name must be numeric" }
+        val number = value.toDouble()
+        require(number.isFinite() && number > 0.0 && number <= 1.0) {
+            "$name must be finite and in (0, 1]"
+        }
+        return number.toFloat()
+    }
+
+    return FingerprintMatchingConfig(
+        matchThreshold = requiredFraction("match_threshold"),
+        durationTolerance = requiredFraction("duration_tolerance"),
+    )
+}
 
 /**
  * JNI bridge for Chromaprint audio fingerprinting.
@@ -86,21 +116,20 @@ object FingerprintBridge {
      * and push them to the native DB matcher.
      */
     private fun loadFingerprintConfig(context: Context) {
-        try {
-            val raw =
-                context.assets
-                    .open("fingerprint_config.json5")
-                    .bufferedReader()
-                    .readText()
-            val cfg = JSONObject(Json5.strip(raw))
-            val threshold = cfg.optDouble("match_threshold", 0.4).toFloat()
-            val tolerance = cfg.optDouble("duration_tolerance", 0.10).toFloat()
-            nativeSetMatchThreshold(threshold)
-            nativeSetDurationTolerance(tolerance)
-            Log.i(TAG, "Config: threshold=$threshold tolerance=$tolerance")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to load fingerprint_config.json5, using defaults", e)
+        val raw =
+            context.assets
+                .open("fingerprint_config.json5")
+                .bufferedReader()
+                .use { it.readText() }
+        val config = parseFingerprintMatchingConfig(raw)
+        check(nativeSetMatchThreshold(config.matchThreshold)) {
+            "Native matcher rejected match_threshold"
         }
+        nativeSetDurationTolerance(config.durationTolerance)
+        Log.i(
+            TAG,
+            "Config: threshold=${config.matchThreshold} tolerance=${config.durationTolerance}",
+        )
     }
 
     /**
@@ -441,7 +470,7 @@ object FingerprintBridge {
 
     // ── JNI declarations ──────────────────────────────────────────
 
-    private external fun nativeSetMatchThreshold(threshold: Float)
+    private external fun nativeSetMatchThreshold(threshold: Float): Boolean
 
     private external fun nativeSetDurationTolerance(tolerance: Float)
 
