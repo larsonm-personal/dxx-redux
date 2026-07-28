@@ -5667,23 +5667,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add synthetic odc-in-gzip-in-XAR fixtures with slash, backslash, dot, dot-dot, drive-prefix, absolute, control-byte, and ordinary basenames; extract on Windows and POSIX; assert every unsafe entry fails without creating or changing any path outside a temporary root; and retain exact output for both real GOG packages
 - Resolution: Pending
 
-### BR-0067: P1 - Bound XAR TOC lengths before allocation and decompression
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0029, R1-CHUNK-0030
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/pkg_reader.c:L75-L95,L399-L424` in `xar_parse_header` and `pkg_open`
-- Related: `android/app/src/main/cpp/extract/pkg_reader.h:L27-L48`, `android/app/src/main/cpp/extract/jni_gog_import.c:L147-L176,L307-L355`, and `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L680-L820`
-- Evidence: The XAR header controls two 64-bit TOC lengths, but validation requires only a nonzero compressed length. The reader narrows the compressed value to `size_t`, `int`, and zlib `uLong` independently, and converts the uncompressed value to `uLongf` before allocating `(size_t) toc_len + 1` without a checked addition. On a 32-bit Android ABI, an advertised uncompressed length of `UINT32_MAX` makes that allocation wrap to zero while zlib still receives a destination capacity of `UINT32_MAX`; on a 64-bit Android ABI, `UINT64_MAX` has the same shape. If the allocator returns its ordinary nonnull zero-size token, `uncompress` writes the attacker-supplied XML beyond that allocation. Large nonwrapping values also cause unbounded allocation, and neither length is checked against the package file span
-- Trigger: Analyze a small XAR-looking PKG containing a valid compressed TOC but advertising `toc_uncompressed` as the platform `uLongf` maximum, or advertising compressed and uncompressed sizes beyond supported conversion and memory limits
-- Impact: A user-selected installer can cause native heap overwrite and process termination during analysis before any game entry is shown; less extreme headers can force multi-gigabyte allocation attempts and memory-pressure denial of service
-- Expected: Header lengths are representable in every allocator, read, and zlib type, fit the actual file, satisfy checked addition, and remain below a documented small TOC limit before allocation or decompression
-- Suggested fix: Determine the regular-file size first; validate header size, supported version, compressed span, nonzero uncompressed size, checked `+1`, all type conversions, and a conservative TOC ceiling; read exactly with a loop; and inflate into a strictly bounded buffer while requiring the declared output length and terminal status. Keep broader archive budgets coordinated with BR-0018
-- Validation: Add compressed and uncompressed lengths at zero, exact valid size, configured maximum, maximum plus one, `INT_MAX`, `UINT32_MAX`, `SIZE_MAX`, and `UINT64_MAX`, plus truncated physical spans and decompression-length mismatches; run on 32-bit and 64-bit Android under AddressSanitizer or equivalent and assert rejection before oversized allocation or any out-of-bounds write while both real packages still list correctly
-- Resolution: Pending
-
 ### BR-0068: P2 - Require a bounded and complete PKG Scripts stream
 
 - [ ] OPEN

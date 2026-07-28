@@ -13,14 +13,16 @@
 #ifndef PKG_READER_H
 #define PKG_READER_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define PKG_MAX_FILES 128
-#define PKG_PATH_LEN  512
+#define PKG_MAX_FILES     128
+#define PKG_PATH_LEN      512
+#define PKG_MAX_TOC_BYTES (16ULL * 1024ULL * 1024ULL)
 
 /* -- File entry from the cpio archive ------------------------------ */
 typedef struct {
@@ -71,6 +73,14 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
  * Close archive and free resources.
  */
 void pkg_close(pkg_archive_t *arc);
+
+#ifdef PKG_READER_TESTING
+int pkg_test_validate_xar_toc(uint16_t header_size, uint16_t version,
+                              uint64_t compressed, uint64_t uncompressed,
+                              uint64_t file_size);
+int pkg_test_decompress_toc(const uint8_t *compressed, size_t compressed_size,
+                            uint8_t *output, size_t expected_size);
+#endif
 
 #ifdef __cplusplus
 }

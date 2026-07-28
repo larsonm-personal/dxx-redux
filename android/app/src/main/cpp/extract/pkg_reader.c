@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -74,11 +75,45 @@ typedef struct {
 	uint64_t toc_uncompressed;
 } xar_header_t;
 
-static int xar_parse_header(int fd, xar_header_t *hdr)
+static int read_exact(int fd, void *buffer, size_t size)
+{
+	uint8_t *output = (uint8_t *) buffer;
+	size_t done = 0;
+	while (done < size) {
+		size_t remaining = size - done;
+		unsigned int chunk = remaining > INT_MAX ? INT_MAX : (unsigned int) remaining;
+		int count = READ_FD(fd, output + done, chunk);
+		if (count < 0 && errno == EINTR) continue;
+		if (count <= 0) return -1;
+		done += (size_t) count;
+	}
+	return 0;
+}
+
+static int xar_toc_bounds_valid(const xar_header_t *hdr, uint64_t file_size)
+{
+	if (hdr->header_size < 28 || hdr->version != 1 ||
+	    hdr->toc_compressed == 0 || hdr->toc_uncompressed == 0 ||
+	    hdr->toc_compressed > PKG_MAX_TOC_BYTES ||
+	    hdr->toc_uncompressed > PKG_MAX_TOC_BYTES ||
+	    hdr->toc_compressed > (uint64_t) ULONG_MAX ||
+	    hdr->toc_uncompressed > (uint64_t) ULONG_MAX ||
+	    hdr->toc_compressed > (uint64_t) SIZE_MAX ||
+	    hdr->toc_uncompressed >= (uint64_t) SIZE_MAX ||
+	    (uint64_t) hdr->header_size > file_size ||
+	    hdr->toc_compressed > file_size - hdr->header_size ||
+	    !dxx_extract_memory_allowed(hdr->toc_compressed, hdr->toc_uncompressed) ||
+	    !dxx_extract_ratio_allowed(hdr->toc_uncompressed, hdr->toc_compressed)) {
+		LOG_E("pkg: invalid XAR TOC bounds\n");
+		return 0;
+	}
+	return 1;
+}
+
+static int xar_parse_header(int fd, uint64_t file_size, xar_header_t *hdr)
 {
 	uint8_t buf[28];
-	LSEEK(fd, 0, SEEK_SET);
-	if (READ_FD(fd, buf, 28) != 28) {
+	if (LSEEK(fd, 0, SEEK_SET) < 0 || read_exact(fd, buf, sizeof(buf)) < 0) {
 		LOG_E("pkg: failed to read XAR header\n");
 		return -1;
 	}
@@ -90,12 +125,47 @@ static int xar_parse_header(int fd, xar_header_t *hdr)
 	hdr->version = read_be16(buf + 6);
 	hdr->toc_compressed = read_be64(buf + 8);
 	hdr->toc_uncompressed = read_be64(buf + 16);
-	if (hdr->header_size < 28 || hdr->toc_compressed == 0) {
-		LOG_E("pkg: invalid XAR header values\n");
-		return -1;
-	}
-	return 0;
+	return xar_toc_bounds_valid(hdr, file_size) ? 0 : -1;
 }
+
+static int xar_decompress_toc(const uint8_t *compressed, size_t compressed_size,
+                              uint8_t *output, size_t expected_size)
+{
+	z_stream stream;
+	int status;
+	if (!compressed || !output || compressed_size > UINT_MAX ||
+	    expected_size > UINT_MAX)
+		return -1;
+	memset(&stream, 0, sizeof(stream));
+	stream.next_in = (Bytef *) compressed;
+	stream.avail_in = (uInt) compressed_size;
+	stream.next_out = output;
+	stream.avail_out = (uInt) expected_size;
+	if (inflateInit(&stream) != Z_OK) return -1;
+	status = inflate(&stream, Z_FINISH);
+	inflateEnd(&stream);
+	return status == Z_STREAM_END &&
+	               stream.total_in == compressed_size &&
+	               stream.total_out == expected_size
+	           ? 0
+	           : -1;
+}
+
+#ifdef PKG_READER_TESTING
+int pkg_test_validate_xar_toc(uint16_t header_size, uint16_t version,
+                              uint64_t compressed, uint64_t uncompressed,
+                              uint64_t file_size)
+{
+	xar_header_t header = { header_size, version, compressed, uncompressed };
+	return xar_toc_bounds_valid(&header, file_size);
+}
+
+int pkg_test_decompress_toc(const uint8_t *compressed, size_t compressed_size,
+                            uint8_t *output, size_t expected_size)
+{
+	return xar_decompress_toc(compressed, compressed_size, output, expected_size);
+}
+#endif
 
 /* ── XAR TOC XML parsing ────────────────────────────────────────── */
 
@@ -417,36 +487,35 @@ int pkg_open(const char *pkg_path, pkg_archive_t *arc)
 		return -1;
 	}
 	arc->fd = fd;
+	int64_t file_size = (int64_t) LSEEK(fd, 0, SEEK_END);
+	if (file_size < 0)
+		goto fail;
 
 	/* Parse XAR header */
 	xar_header_t xhdr;
-	if (xar_parse_header(fd, &xhdr) < 0)
+	if (xar_parse_header(fd, (uint64_t) file_size, &xhdr) < 0)
 		goto fail;
 
 	/* Read and decompress TOC */
-	if (!dxx_extract_memory_allowed(xhdr.toc_compressed, xhdr.toc_uncompressed) ||
-	    xhdr.toc_uncompressed > DXX_EXTRACT_MAX_METADATA_BYTES ||
-	    !dxx_extract_ratio_allowed(xhdr.toc_uncompressed, xhdr.toc_compressed))
-		goto fail;
 	uint8_t *toc_comp = (uint8_t *) malloc((size_t) xhdr.toc_compressed);
 	if (!toc_comp) goto fail;
 
-	LSEEK(fd, xhdr.header_size, SEEK_SET);
-	if (READ_FD(fd, toc_comp, (int) xhdr.toc_compressed) != (int) xhdr.toc_compressed) {
+	if (LSEEK(fd, xhdr.header_size, SEEK_SET) < 0 ||
+	    read_exact(fd, toc_comp, (size_t) xhdr.toc_compressed) < 0) {
 		LOG_E("pkg: failed to read TOC\n");
 		free(toc_comp);
 		goto fail;
 	}
 
-	uLongf toc_len = (uLongf) xhdr.toc_uncompressed;
-	char *toc_xml = (char *) malloc((size_t) toc_len + 1);
+	size_t toc_len = (size_t) xhdr.toc_uncompressed;
+	char *toc_xml = (char *) malloc(toc_len + 1u);
 	if (!toc_xml) {
 		free(toc_comp);
 		goto fail;
 	}
 
-	if (uncompress((Bytef *) toc_xml, &toc_len, toc_comp,
-	               (uLong) xhdr.toc_compressed) != Z_OK) {
+	if (xar_decompress_toc(toc_comp, (size_t) xhdr.toc_compressed,
+	                       (uint8_t *) toc_xml, toc_len) < 0) {
 		LOG_E("pkg: TOC decompression failed\n");
 		free(toc_xml);
 		free(toc_comp);

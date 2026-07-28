@@ -208,6 +208,14 @@ target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
 target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
 
+add_executable(
+    test_pkg_toc_bounds
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_pkg_toc_bounds.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c)
+target_include_directories(test_pkg_toc_bounds PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_pkg_toc_bounds PRIVATE ZLIB::ZLIB)
+target_compile_definitions(test_pkg_toc_bounds PRIVATE PKG_READER_TESTING=1)
+
 set(GOG_D1_INSTALLER
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_1.4a_(16596).exe"
 )
@@ -215,6 +223,7 @@ set(GOG_D2_INSTALLER
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_2_1.1_(16596).exe"
 )
 add_test(NAME gog_fd_tests COMMAND test_gog_fd "${GOG_D1_INSTALLER}" "${GOG_D2_INSTALLER}")
+add_test(NAME pkg_toc_bound_tests COMMAND test_pkg_toc_bounds)
 
 # ── Chromaprint (audio fingerprinting, uses bundled KissFFT) ─────────
 FetchContent_Declare(chromaprint
