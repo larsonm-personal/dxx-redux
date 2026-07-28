@@ -50,6 +50,22 @@ try {
         $rejected = $_.Exception.Message -match 'expansion ratio'
     }
     if (-not $rejected) { throw 'high-ratio fingerprint ZIP was not rejected' }
+
+    foreach ($tailLength in @(1, 12, 13, 16)) {
+        $hogPath = Join-Path $testRoot "truncated_$tailLength.hog"
+        $hogBytes = New-Object byte[] (3 + $tailLength)
+        [Text.Encoding]::ASCII.GetBytes('DHF').CopyTo($hogBytes, 0)
+        [IO.File]::WriteAllBytes($hogPath, $hogBytes)
+        $script:ArchiveBudget = @{ Entries = 0; DeclaredBytes = 0L; ActualBytes = 0L; Started = [DateTime]::UtcNow }
+        $rejected = $false
+        try {
+            $null = Extract-HogAudio -HogPath $hogPath -OutputDir $outputRoot `
+                -SourcePrefix "truncated_$tailLength.hog" -SourceMap @{}
+        } catch {
+            $rejected = $_.Exception.Message -match 'Truncated HOG member'
+        }
+        if (-not $rejected) { throw "truncated HOG header length $tailLength was accepted" }
+    }
     Write-Host 'fingerprint mission ZIP budget tests passed'
 } finally {
     $resolved = [IO.Path]::GetFullPath($testRoot)

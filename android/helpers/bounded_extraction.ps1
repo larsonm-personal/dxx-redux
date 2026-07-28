@@ -43,6 +43,71 @@ function Invoke-BoundedExtractor {
     [pscustomobject]@{ Output = @($output); ExitCode = $exitCode }
 }
 
+function Publish-ExtractionDirectory {
+    param(
+        [Parameter(Mandatory = $true)][string]$StagingDirectory,
+        [Parameter(Mandatory = $true)][string]$DestinationDirectory
+    )
+
+    $staging = [IO.Path]::GetFullPath($StagingDirectory)
+    $destination = [IO.Path]::GetFullPath($DestinationDirectory)
+    $parent = [IO.Path]::GetDirectoryName($destination)
+    if (-not (Test-Path -LiteralPath $staging -PathType Container) -or
+        [IO.Path]::GetDirectoryName($staging) -ne $parent) {
+        throw 'Extraction staging and destination directories must be existing siblings'
+    }
+
+    $backup = "$destination.rollback-$([Guid]::NewGuid().ToString('N'))"
+    $hadDestination = Test-Path -LiteralPath $destination
+    try {
+        if ($hadDestination) {
+            Move-Item -LiteralPath $destination -Destination $backup
+        }
+        Move-Item -LiteralPath $staging -Destination $destination
+    } catch {
+        if (Test-Path -LiteralPath $destination) {
+            Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $backup) {
+            Move-Item -LiteralPath $backup -Destination $destination
+        }
+        throw
+    }
+    if (Test-Path -LiteralPath $backup) {
+        Remove-Item -LiteralPath $backup -Recurse -Force
+    }
+}
+
+function Test-ExtractionCompletionManifest {
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    $manifestPath = Join-Path $Directory '.extraction-complete.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { return $false }
+    try {
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+        $expected = @{}
+        foreach ($file in @($manifest.files)) {
+            $name = ([string]$file.name).Replace('\', '/').ToLowerInvariant()
+            if (-not $name -or $expected.ContainsKey($name)) { return $false }
+            $expected[$name] = $file
+        }
+        $actual = @(Get-ChildItem -LiteralPath $Directory -File -Recurse |
+                Where-Object { $_.FullName -ne $manifestPath })
+        if ($actual.Count -ne $expected.Count) { return $false }
+        foreach ($file in $actual) {
+            $name = $file.FullName.Substring($Directory.Length).TrimStart('\', '/').Replace('\', '/').ToLowerInvariant()
+            if (-not $expected.ContainsKey($name) -or
+                $file.Length -ne [long]$expected[$name].size -or
+                (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne [string]$expected[$name].sha256) {
+                return $false
+            }
+        }
+        return $true
+    } catch {
+        return $false
+    }
+}
+
 function Expand-BoundedZipArchive {
     param(
         [Parameter(Mandatory = $true)][string]$ArchivePath,

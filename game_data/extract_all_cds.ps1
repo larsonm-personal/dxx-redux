@@ -85,15 +85,10 @@ foreach ($folder in $folders) {
     $hashFile = Join-Path $folder.FullName "track_hashes.json"
 
     # Skip if already processed
-    if ((Test-Path $dataTracksDir) -and (Test-Path $hashFile) -and -not $Force) {
+    if ((Test-ExtractionCompletionManifest -Directory $dataTracksDir) -and
+        (Test-Path -LiteralPath $hashFile -PathType Leaf) -and -not $Force) {
         $skipped += $name
         continue
-    }
-
-    # Clean re-extract when -Force
-    if ($Force) {
-        if (Test-Path $dataTracksDir) { Remove-Item -Recurse -Force -Confirm:$false $dataTracksDir }
-        if (Test-Path $hashFile) { Remove-Item -Force -Confirm:$false $hashFile }
     }
 
     # Find .cue or .iso source file
@@ -118,8 +113,9 @@ foreach ($folder in $folders) {
     Write-Host "  ${sourceLabel}: $sourceName"
 
     # Run extract_cd.exe
-    $outDir = $dataTracksDir
+    $outDir = Join-Path $folder.FullName ".data_tracks-$([Guid]::NewGuid().ToString('N'))"
     try {
+        New-Item -ItemType Directory -Path $outDir | Out-Null
         $bounded = Invoke-BoundedExtractor -OutputDirectory $outDir -FilePath $ExePath `
             -ArgumentList @($sourceFile, $outDir)
         $output = $bounded.Output
@@ -138,20 +134,39 @@ foreach ($folder in $folders) {
             }
         }
 
-        # Save track hashes
-        if ($jsonLines.Count -gt 0) {
-            $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
-            "[`n  " + ($jsonLines -join ",`n  ") + "`n]" | Set-Content -NoNewline $hashFile -Encoding UTF8
-            Write-Host "  Saved $($jsonLines.Count) track hashes to track_hashes.json"
-        }
-
-        if ($exitCode -ne 0) {
+        $stagedFiles = @(Get-ChildItem -LiteralPath $outDir -File -Recurse)
+        if ($exitCode -ne 0 -or $jsonLines.Count -eq 0 -or $stagedFiles.Count -eq 0) {
             $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
         } else {
+            $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
+            [PSCustomObject]@{
+                source = $sourceName
+                files = @($stagedFiles | Sort-Object FullName | ForEach-Object {
+                        [PSCustomObject]@{
+                            name = $_.FullName.Substring($outDir.Length + 1)
+                            size = $_.Length
+                            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                        }
+                    })
+            } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $outDir ".extraction-complete.json") -NoNewline
+            Publish-ExtractionDirectory -StagingDirectory $outDir -DestinationDirectory $dataTracksDir
+            $hashTemp = Join-Path $folder.FullName ".track_hashes-$([Guid]::NewGuid().ToString('N')).json"
+            try {
+                "[`n  " + ($jsonLines -join ",`n  ") + "`n]" |
+                    Set-Content -NoNewline -LiteralPath $hashTemp -Encoding UTF8
+                Move-Item -LiteralPath $hashTemp -Destination $hashFile -Force
+            } finally {
+                Remove-Item -LiteralPath $hashTemp -Force -ErrorAction SilentlyContinue
+            }
+            Write-Host "  Saved $($jsonLines.Count) track hashes to track_hashes.json"
             $successes += $name
         }
     } catch {
         $failures += @{ Name = $name; Error = $_.Exception.Message }
+    } finally {
+        if (Test-Path -LiteralPath $outDir) {
+            Remove-Item -LiteralPath $outDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 

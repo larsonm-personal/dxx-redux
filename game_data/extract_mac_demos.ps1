@@ -16,6 +16,9 @@ $RepoRoot = Split-Path $ScriptDir
 $DemoDir = Join-Path $ScriptDir "demo installers"
 $OracleFile = Join-Path $DemoDir "mac_stuffit_oracles.json"
 $OracleArchives = @()
+$OracleFailures = @()
+$failures = 0
+. (Join-Path $RepoRoot 'android\helpers\bounded_extraction.ps1')
 
 function Get-ToolConfigValue {
     param(
@@ -114,15 +117,13 @@ foreach ($inst in $Installers) {
 
     if (-not (Test-Path -LiteralPath $archivePath)) {
         Write-Warning "Archive not found, skipping: $archivePath"
+        if ($WriteOracle -and $inst.Oracle) { $OracleFailures += $archiveName }
         continue
     }
 
-    if ((Test-Path -LiteralPath $outputDir) -and -not $Force -and -not $WriteOracle) {
-        $existing = Get-GameFiles -RootPath $outputDir
-        if ($existing.Count -gt 0) {
-            Write-Host ("$baseName already extracted, {0} game files. Use -Force to redo" -f $existing.Count)
-            continue
-        }
+    if ((Test-ExtractionCompletionManifest -Directory $outputDir) -and -not $Force -and -not $WriteOracle) {
+        Write-Host "$baseName already extracted. Use -Force to redo"
+        continue
     }
 
     Write-Host "`n=== $baseName ===" -ForegroundColor Cyan
@@ -145,6 +146,8 @@ foreach ($inst in $Installers) {
             Select-Object -First 1
         if (-not $nestedInstaller) {
             Write-Warning "  Nested installer not found: $($inst.NestedInstaller)"
+            $failures++
+            if ($WriteOracle -and $inst.Oracle) { $OracleFailures += $archiveName }
             Remove-Item -LiteralPath $tempBase -Recurse -Force -ErrorAction SilentlyContinue
             continue
         }
@@ -156,15 +159,29 @@ foreach ($inst in $Installers) {
     $found = Get-GameFiles -RootPath $scanDir
     if ($found.Count -eq 0) {
         Write-Warning "  No game files found"
+        $failures++
+        if ($WriteOracle -and $inst.Oracle) { $OracleFailures += $archiveName }
     } else {
         $foundNames = @{}
-        foreach ($f in $found) { $foundNames[$f.Name.ToLowerInvariant()] = $true }
-        $missing = @($inst.ExpectFiles | Where-Object { -not $foundNames.ContainsKey($_.ToLowerInvariant()) })
-        if ($missing.Count -gt 0) { Write-Warning "  Missing expected files: $($missing -join ', ')" }
-        New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-        $oracleFiles = @()
+        $collision = $false
         foreach ($f in $found) {
-            Copy-Item -LiteralPath $f.FullName -Destination (Join-Path $outputDir $f.Name) -Force
+            $key = $f.Name.ToLowerInvariant()
+            if ($foundNames.ContainsKey($key)) { $collision = $true }
+            $foundNames[$key] = $f
+        }
+        $missing = @($inst.ExpectFiles | Where-Object { -not $foundNames.ContainsKey($_.ToLowerInvariant()) })
+        if ($missing.Count -gt 0 -or $collision) {
+            Write-Warning "  Missing expected files or colliding basenames: $($missing -join ', ')"
+            $failures++
+            if ($WriteOracle -and $inst.Oracle) { $OracleFailures += $archiveName }
+            Remove-Item -LiteralPath $tempBase -Recurse -Force -ErrorAction SilentlyContinue
+            continue
+        }
+        $stagingDir = Join-Path $DemoDir ".${baseName}_extracted-$([Guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $stagingDir | Out-Null
+        $oracleFiles = @()
+        foreach ($f in $foundNames.Values) {
+            Copy-Item -LiteralPath $f.FullName -Destination (Join-Path $stagingDir $f.Name)
             $sha256 = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             $oracleFiles += [PSCustomObject]@{ file = $f.Name; sha256 = $sha256; size = $f.Length }
             $sizeKB = [math]::Round($f.Length / 1024)
@@ -178,6 +195,17 @@ foreach ($inst in $Installers) {
                 files         = @($oracleFiles)
             }
         }
+        [PSCustomObject]@{
+            source = $archiveName
+            files = @(Get-ChildItem -LiteralPath $stagingDir -File | Sort-Object Name | ForEach-Object {
+                    [PSCustomObject]@{
+                        name = $_.Name
+                        size = $_.Length
+                        sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }
+                })
+        } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $stagingDir ".extraction-complete.json") -NoNewline
+        Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $outputDir
         Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
     }
 
@@ -185,7 +213,7 @@ foreach ($inst in $Installers) {
 }
 
 if ($WriteOracle) {
-    if ($OracleArchives.Count -eq 0) {
+    if ($OracleArchives.Count -eq 0 -or $OracleFailures.Count -gt 0) {
         Write-Warning "No oracle archives were extracted, leaving $OracleFile unchanged"
     } else {
         $oracle = [PSCustomObject]@{ archives = @($OracleArchives) }
@@ -196,3 +224,4 @@ if ($WriteOracle) {
 
 Write-Host ""
 Write-Host "Done" -ForegroundColor Cyan
+if ($failures -gt 0) { exit 1 }

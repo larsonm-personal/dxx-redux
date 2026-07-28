@@ -534,11 +534,8 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		FILE *fp = fopen(out_path, "wb");
 		if (!fp) {
 			LOG_E("pkg: cannot create %s: %s\n", out_path, strerror(errno));
-			if (gz_skip(&gs, entry.filesize) < 0) {
-				ret = -1;
-				break;
-			}
-			continue;
+			ret = -1;
+			break;
 		}
 
 		/* Stream data to output file */
@@ -562,10 +559,12 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 				progress(basename, (long long) (entry.filesize - remaining),
 				         (long long) entry.filesize, user_data);
 		}
-		fclose(fp);
+		if (fclose(fp) != 0)
+			ok = 0;
 
 		if (!ok) {
 			LOG_E("pkg: failed to extract %s\n", basename);
+			remove(out_path);
 			ret = -1;
 			break;
 		}

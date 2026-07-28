@@ -804,6 +804,7 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 		const iso_file_entry_t *entry = &file_list->files[i];
 		char out_path[ISO_PATH_LEN * 2];
 		int out_fd;
+		int file_ok = 1;
 
 		/* Skip directories stored in the listing (created on demand) */
 		if (entry->is_dir) continue;
@@ -833,7 +834,7 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 		out_fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
 		if (out_fd < 0) {
 			ISO_LOG("Failed to create %s: %s", out_path, strerror(errno));
-			continue;
+			return -1;
 		}
 
 		ISO_LOG("Extracting %s (%u bytes)", entry->path, entry->size);
@@ -854,14 +855,14 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 				if (read_user_sector(src, (int) lba, sector) < 0) {
 					ISO_LOG("Read error at LBA %u for %s", lba,
 					        entry->path);
-					remaining = 0;
+					file_ok = 0;
 					break;
 				}
 
 				if (write(out_fd, sector, to_write) != to_write) {
 					ISO_LOG("Write error for %s: %s", entry->path,
 					        strerror(errno));
-					remaining = 0;
+					file_ok = 0;
 					break;
 				}
 
@@ -874,14 +875,22 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 					if (progress(entry->path, done_bytes, total_bytes,
 					             user_data) != 0) {
 						close(out_fd);
+						remove(out_path);
 						ISO_LOG("Extraction cancelled by user");
-						return extracted;
+						return -1;
 					}
 				}
 			}
+			if (!file_ok)
+				break;
 		}
 
-		close(out_fd);
+		if (close(out_fd) < 0)
+			file_ok = 0;
+		if (!file_ok) {
+			remove(out_path);
+			return -1;
+		}
 		extracted++;
 	}
 

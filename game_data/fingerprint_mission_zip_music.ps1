@@ -262,9 +262,13 @@ function Extract-HogAudio {
         }
         while ($stream.Position -lt $stream.Length) {
             $nameBytes = Read-ExactBytes -Stream $stream -Count 13
-            if ($null -eq $nameBytes) { break }
+            if ($null -eq $nameBytes) {
+                throw "Truncated HOG member name in $HogPath"
+            }
             $lenBytes = Read-ExactBytes -Stream $stream -Count 4
-            if ($null -eq $lenBytes) { break }
+            if ($null -eq $lenBytes) {
+                throw "Truncated HOG member length in $HogPath"
+            }
             $entryName = Get-HogEntryName $nameBytes
             $length = [Int64][BitConverter]::ToUInt32($lenBytes, 0)
             Register-ArchiveEntry -Length $length -CompressedLength $length -Name $entryName
@@ -741,6 +745,7 @@ foreach ($zipFile in $zipFiles) {
     $infoFile = Join-Path $albumDir "chromaprint_info.json5"
     $sourceSha1 = Get-Sha1File $zipFile.FullName
     $tracklistLookup = @{}
+    $workDir = $null
 
     Write-Host "`n=== $($zipFile.Name) ==="
     try {
@@ -768,36 +773,31 @@ foreach ($zipFile in $zipFiles) {
             }
         }
 
-        if (-not (Test-Path $albumDir)) {
-            New-Item -ItemType Directory -Path $albumDir -Force | Out-Null
-        }
-        Get-ChildItem $albumDir -File | Where-Object {
-            $_.Extension -match '^\.(mp3|ogg|flac)$'
-        } | Remove-Item -Force
-
-        $tempRoot = Join-Path $albumDir "_mission_zip_extract_temp"
-        if (Test-Path $tempRoot) { Remove-Item $tempRoot -Recurse -Force }
-        New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+        $workDir = Join-Path $OutputRoot ".$albumName-$([Guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $workDir | Out-Null
+        $workInfoFile = Join-Path $workDir "chromaprint_info.json5"
+        $tempRoot = Join-Path $workDir "_mission_zip_extract_temp"
+        New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
         $sourceMap = @{}
         $script:ArchiveBudget = @{ Entries = 0; DeclaredBytes = 0L; ActualBytes = 0L; Started = [DateTime]::UtcNow }
         try {
-            $count = Extract-MissionArchiveAudio -ArchivePath $zipFile.FullName -OutputDir $albumDir -SourcePrefix $zipFile.Name -SourceMap $sourceMap -TempRoot $tempRoot
+            $count = Extract-MissionArchiveAudio -ArchivePath $zipFile.FullName -OutputDir $workDir -SourcePrefix $zipFile.Name -SourceMap $sourceMap -TempRoot $tempRoot
         } finally {
             Remove-Item $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         if ($count -eq 0) {
             Write-Host "  No OGG/MP3/FLAC tracks found"
-            Remove-Item $albumDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue
             $processed++
             continue
         }
         Write-Host "  Extracted $count audio file(s)"
 
-        $fpStdout = Join-Path $albumDir "_fp_stdout.json"
-        $fpStderr = Join-Path $albumDir "_fp_stderr.txt"
-        $proc = Start-Process -FilePath $fpExe -ArgumentList "`"$albumDir`"" `
+        $fpStdout = Join-Path $workDir "_fp_stdout.json"
+        $fpStderr = Join-Path $workDir "_fp_stderr.txt"
+        $proc = Start-Process -FilePath $fpExe -ArgumentList "`"$workDir`"" `
             -RedirectStandardOutput $fpStdout -RedirectStandardError $fpStderr `
             -NoNewWindow -Wait -PassThru
         if (Test-Path $fpStderr) {
@@ -833,11 +833,15 @@ foreach ($zipFile in $zipFiles) {
             $tracks += [PSCustomObject]$track
         }
         $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks @{} -TracklistLookup $tracklistLookup
-        Write-ChromaprintInfo -Path $infoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
+        Write-ChromaprintInfo -Path $workInfoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
+        Publish-ExtractionDirectory -StagingDirectory $workDir -DestinationDirectory $albumDir
         Write-Host "  Wrote $infoFile"
         $processed++
         $withAudio++
     } catch {
+        if ($workDir -and (Test-Path -LiteralPath $workDir)) {
+            Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
         $failed += "$($zipFile.Name): $($_.Exception.Message)"
         Write-Warning "  Failed: $($_.Exception.Message)"
     }
@@ -846,6 +850,10 @@ foreach ($zipFile in $zipFiles) {
 Write-Host "`nSummary: $processed processed, $withAudio with audio, $($failed.Count) failed"
 foreach ($failure in $failed) {
     Write-Host "  $failure"
+}
+
+if ($failed.Count -gt 0) {
+    exit 1
 }
 
 if ($UpdateDatabase) {

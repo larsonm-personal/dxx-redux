@@ -1207,13 +1207,17 @@ int hfs_catalog_extract_entry(hfs_catalog_t *catalog,
 		remaining -= chunk;
 	}
 
-	close_fd(out_fd);
+	if (close_fd(out_fd) < 0) {
+		out_fd = -1;
+		goto fail;
+	}
 	free(buffer);
 	return entry->data_size;
 
 fail:
 	if (out_fd >= 0)
 		close_fd(out_fd);
+	remove(output_path);
 	free(buffer);
 	return -1;
 }

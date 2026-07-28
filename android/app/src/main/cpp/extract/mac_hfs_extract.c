@@ -204,7 +204,7 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
 	}
 	if (!entry) {
 		fprintf(stderr, "mac_hfs_extract: Descent installer was not found in HFS catalog\n");
-		return -1;
+		return -2;
 	}
 	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
 	if (hfs_catalog_extract_entry(catalog, entry, archive_path) < 0) {
@@ -298,14 +298,18 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
 
 	extracted = extract_sti2_from_hfs(catalog, output_dir, sti2_extensions,
 	                                  progress, user_data);
-	fallback_extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
-	                                                progress, user_data);
-	if (fallback_extracted < 0)
-		extracted = -1;
-	else if (extracted <= 0)
-		extracted = fallback_extracted;
-	else
-		extracted += fallback_extracted;
+	if (extracted == -2) {
+		extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
+		                                       progress, user_data);
+	} else if (extracted > 0) {
+		fallback_extracted =
+		    extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
+		                               progress, user_data);
+		if (fallback_extracted < 0)
+			extracted = -1;
+		else
+			extracted += fallback_extracted;
+	}
 	hfs_catalog_close(catalog);
 
 	return extracted;

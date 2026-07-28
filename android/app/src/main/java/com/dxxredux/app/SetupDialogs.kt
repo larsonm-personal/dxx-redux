@@ -282,6 +282,52 @@ internal suspend fun setupDownloadFile(
 
 // -- GOG installer import dialog -------------------------------------------
 
+internal fun publishStagedArchiveFiles(
+    stagingDir: File,
+    setDir: File,
+) {
+    check(setDir.isDirectory || setDir.mkdirs()) { "Could not create ${setDir.absolutePath}" }
+    val backupDir = File(setDir.parentFile, ".archive-backup-${System.nanoTime()}")
+    val published = mutableListOf<File>()
+    val backups = mutableListOf<Pair<File, File>>()
+    var preserveBackup = false
+    try {
+        stagingDir
+            .walkTopDown()
+            .filter { it.isFile }
+            .forEach { source ->
+                val destination = File(setDir, source.relativeTo(stagingDir).path)
+                destination.parentFile?.let { parent ->
+                    check(parent.isDirectory || parent.mkdirs()) { "Could not create ${parent.absolutePath}" }
+                }
+                if (destination.exists()) {
+                    val backup = File(backupDir, destination.relativeTo(setDir).path)
+                    val backupParent = checkNotNull(backup.parentFile)
+                    check((backupParent.isDirectory || backupParent.mkdirs()) && destination.renameTo(backup)) {
+                        "Could not stage existing ${destination.absolutePath}"
+                    }
+                    backups += backup to destination
+                }
+                source.copyTo(destination, overwrite = true)
+                published += destination
+            }
+    } catch (error: Exception) {
+        published.forEach { it.delete() }
+        val restored =
+            backups.asReversed().all { (backup, destination) ->
+                destination.parentFile?.mkdirs()
+                backup.renameTo(destination)
+            }
+        if (!restored) {
+            preserveBackup = true
+            throw IllegalStateException("Archive publication rollback remains in ${backupDir.absolutePath}", error)
+        }
+        throw error
+    } finally {
+        if (!preserveBackup) backupDir.deleteRecursively()
+    }
+}
+
 /**
  * Dialog for importing a GOG installer (.exe InnoSetup or .pkg Mac).
  *
@@ -599,6 +645,11 @@ internal fun GogImportDialog(
                                         setDir.list()?.toSet() ?: emptySet()
                                     }
                                 withContext(Dispatchers.IO) {
+                                    val stagingDir =
+                                        File(
+                                            setDir.parentFile ?: filesDir,
+                                            ".gog-import-${System.nanoTime()}",
+                                        )
                                     val sourceKind = if (tempPath != null) "staged" else "fd"
                                     val analyzedAudioEntries =
                                         fileList!!
@@ -609,10 +660,13 @@ internal fun GogImportDialog(
                                     val analyzedAudioSummary = summarizeGogAudioFiles(analyzedAudioNames)
                                     val analyzedAudioSizes = summarizeGogAudioEntrySizes(analyzedAudioEntries)
                                     val analyzedPairState = describeGogPairState(analyzedAudioNames)
-                                    val freeBeforeBytes = setDir.usableSpace
+                                    val freeBeforeBytes = stagingDir.usableSpace
                                     val audioOutputBuckets = mutableMapOf<String, Long>()
                                     val audioProgressStarts = mutableSetOf<String>()
                                     try {
+                                        check(stagingDir.mkdirs()) {
+                                            "Could not create extraction staging directory"
+                                        }
                                         val progress =
                                             object : GogImportBridge.ExtractProgress {
                                                 override fun onProgress(
@@ -622,7 +676,7 @@ internal fun GogImportDialog(
                                                 ): Int {
                                                     val currentName = discLeafName(currentFile)
                                                     if (includeAudio && GogImportBridge.isAudioFile(currentName)) {
-                                                        val outputFile = File(setDir, currentName)
+                                                        val outputFile = File(stagingDir, currentName)
                                                         val outputBytes =
                                                             if (outputFile.exists()) {
                                                                 outputFile.length()
@@ -648,7 +702,7 @@ internal fun GogImportDialog(
                                                                     "source=$sourceKind file=$currentName " +
                                                                     "done=$bytesDone total=$bytesTotal " +
                                                                     "exists=${outputFile.exists()} " +
-                                                                    "out_bytes=$outputBytes free_bytes=${setDir.usableSpace}",
+                                                                    "out_bytes=$outputBytes free_bytes=${stagingDir.usableSpace}",
                                                             )
                                                         }
                                                     }
@@ -673,7 +727,7 @@ internal fun GogImportDialog(
                                         LauncherDebugLog.log(
                                             "launcher-gog-extract-start-path " +
                                                 "installer=$installerName source=$sourceKind " +
-                                                "set_dir=${setDir.absolutePath} free_before_bytes=$freeBeforeBytes",
+                                                "set_dir=${stagingDir.absolutePath} free_before_bytes=$freeBeforeBytes",
                                         )
                                         LauncherDebugLog.log(
                                             "launcher-gog-extract-start-audio " +
@@ -681,11 +735,11 @@ internal fun GogImportDialog(
                                                 "audio_names=$analyzedAudioSummary audio_sizes=$analyzedAudioSizes " +
                                                 "audio_pair_state=$analyzedPairState",
                                         )
-                                        val count =
+                                        var count =
                                             if (tempPath != null) {
                                                 GogImportBridge.extractFiles(
                                                     tempPath!!,
-                                                    setDir.absolutePath,
+                                                    stagingDir.absolutePath,
                                                     progress,
                                                     includeAudio = includeAudio,
                                                 )
@@ -695,12 +749,25 @@ internal fun GogImportDialog(
                                                     ?.use { pfd ->
                                                         GogImportBridge.extractFilesFromFd(
                                                             pfd.fd,
-                                                            setDir.absolutePath,
+                                                            stagingDir.absolutePath,
                                                             progress,
                                                             includeAudio = includeAudio,
                                                         )
                                                     } ?: -1
                                             }
+                                        val requestedCount =
+                                            fileList!!.count {
+                                                includeAudio || !GogImportBridge.isAudioFile(it.name)
+                                            }
+                                        if (count != requestedCount) {
+                                            LauncherDebugLog.log(
+                                                "launcher-gog-extract-incomplete " +
+                                                    "installer=$installerName requested=$requestedCount extracted=$count",
+                                            )
+                                            count = -1
+                                        } else if (count > 0) {
+                                            publishStagedArchiveFiles(stagingDir, setDir)
+                                        }
                                         val srcManager = AudioSourceManager(filesDir)
                                         val hasGog =
                                             if (includeAudio && count > 0) {
@@ -740,7 +807,7 @@ internal fun GogImportDialog(
                                         val expectedAudioState =
                                             describeNamedFileStates(setDir, analyzedAudioNames)
                                         val setPairState = describeGogPairState(setAudioNames)
-                                        val freeAfterBytes = setDir.usableSpace
+                                        val freeAfterBytes = stagingDir.usableSpace
                                         LauncherDebugLog.log(
                                             "launcher-gog-extract-result " +
                                                 "installer=$installerName source=$sourceKind " +
@@ -793,6 +860,8 @@ internal fun GogImportDialog(
                                             status = "Extract error: ${e.message}"
                                             errorMsg = e.message
                                         }
+                                    } finally {
+                                        stagingDir.deleteRecursively()
                                     }
                                 }
                                 processing = false
@@ -960,7 +1029,15 @@ internal fun SowImportDialog(
                                 extractProgressBytes = 0L
                                 extractProgressTotal = 0L
                                 withContext(Dispatchers.IO) {
+                                    val stagingDir =
+                                        File(
+                                            setDir.parentFile ?: filesDir,
+                                            ".sow-import-${System.nanoTime()}",
+                                        )
                                     try {
+                                        check(stagingDir.mkdirs()) {
+                                            "Could not create extraction staging directory"
+                                        }
                                         val progress =
                                             object : DiscImportBridge.ExtractProgress {
                                                 override fun onProgress(
@@ -985,14 +1062,19 @@ internal fun SowImportDialog(
                                         val count =
                                             DiscImportBridge.extractSowFiles(
                                                 tempPath!!,
-                                                setDir.absolutePath,
+                                                stagingDir.absolutePath,
                                                 progress,
                                             )
+                                        if (count > 0) {
+                                            publishStagedArchiveFiles(stagingDir, setDir)
+                                        }
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count.coerceAtLeast(0)
                                             status =
                                                 if (count > 0) {
                                                     "Extracted $count game file(s)"
+                                                } else if (count < 0) {
+                                                    "Archive extraction failed"
                                                 } else {
                                                     "No game files found in archive"
                                                 }
@@ -1008,6 +1090,8 @@ internal fun SowImportDialog(
                                         withContext(Dispatchers.Main) {
                                             status = "Extract error: ${e.message}"
                                         }
+                                    } finally {
+                                        stagingDir.deleteRecursively()
                                     }
                                 }
                                 processing = false

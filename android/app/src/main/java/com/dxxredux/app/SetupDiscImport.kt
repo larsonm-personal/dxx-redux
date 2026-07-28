@@ -235,7 +235,9 @@ internal fun extractSowArchives(
     var sowExtracted = 0
     for (sow in sowFiles) {
         val outputDir = File(sow).parentFile?.absolutePath ?: setDir.absolutePath
-        sowExtracted += DiscImportBridge.extractSowFiles(sow, outputDir, progress).coerceAtLeast(0)
+        val extracted = DiscImportBridge.extractSowFiles(sow, outputDir, progress)
+        if (extracted < 0) return -1
+        sowExtracted += extracted
     }
     return sowExtracted
 }
@@ -727,6 +729,16 @@ internal fun extractCueDataTracks(
 
         val primaryExtracted = isoExtracted + macExtracted
         val sowExtracted = if (primaryExtracted > 0) postProcess(stagingDir, progress) else 0
+        if (sowExtracted < 0) {
+            return CueDataTrackExtractionResult(
+                isoExtracted = isoExtracted,
+                macExtracted = macExtracted,
+                sowExtracted = sowExtracted,
+                processedTracks = processed,
+                totalTracks = dataTracks.size,
+                failedTrackNumber = dataTracks.last().trackNum,
+            )
+        }
         if (primaryExtracted > 0 || sowExtracted > 0) {
             if (!setDir.isDirectory && !setDir.mkdirs()) {
                 return CueDataTrackExtractionResult(

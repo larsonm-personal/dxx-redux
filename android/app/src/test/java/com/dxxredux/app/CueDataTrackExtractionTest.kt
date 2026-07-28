@@ -3,6 +3,7 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -83,6 +84,60 @@ class CueDataTrackExtractionTest {
             assertEquals(2, result.failedTrackNumber)
             assertEquals("original", File(setDir, "existing.hog").readText())
             assertFalse(File(setDir, "new.hog").exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun nestedArchiveFailureDoesNotPublishPrimaryFiles() {
+        val root = createTempDirectory("cue-sow-failure").toFile()
+        try {
+            val setDir = File(root, "set")
+            val result =
+                extractCueDataTracks(
+                    setDir = setDir,
+                    tracks = listOf(track(1, 0, 0, 10)),
+                    imageCount = 1,
+                    extractTrack = { _, outputDir, _ ->
+                        File(outputDir, "primary.hog").writeText("complete")
+                        CueDataTrackAttempt(1, 0)
+                    },
+                    postProcess = { outputDir, _ ->
+                        File(outputDir, "partial.pig").writeText("partial")
+                        -1
+                    },
+                )
+
+            assertFalse(result.succeeded)
+            assertFalse(File(setDir, "primary.hog").exists())
+            assertFalse(File(setDir, "partial.pig").exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun archivePublicationRollsBackEarlierReplacement() {
+        val root = createTempDirectory("archive-publish-failure").toFile()
+        try {
+            val setDir = File(root, "set").apply { mkdirs() }
+            val stagingDir = File(root, "staging").apply { mkdirs() }
+            File(setDir, "first.hog").writeText("original")
+            File(setDir, "blocked").writeText("not a directory")
+            File(stagingDir, "first.hog").writeText("replacement")
+            File(stagingDir, "blocked/second.hog").apply {
+                parentFile?.mkdirs()
+                writeText("second")
+            }
+
+            try {
+                publishStagedArchiveFiles(stagingDir, setDir)
+                fail("publication should fail when a destination parent is a file")
+            } catch (_: IllegalStateException) {
+                assertEquals("original", File(setDir, "first.hog").readText())
+                assertFalse(File(setDir, "blocked/second.hog").exists())
+            }
         } finally {
             root.deleteRecursively()
         }

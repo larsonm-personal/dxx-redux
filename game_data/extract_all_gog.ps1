@@ -124,38 +124,53 @@ foreach ($installer in $installers) {
     $extractDir = Join-Path $installer.DirectoryName "$($installer.BaseName)\extracted"
 
     # Skip if already processed
-    if ((Test-Path $extractDir) -and -not $Force) {
+    if ((Test-ExtractionCompletionManifest -Directory $extractDir) -and -not $Force) {
         Write-Host "`n=== $name === (SKIPPED - use -Force to re-extract)" -ForegroundColor Yellow
         # Still hash and report existing files
     } else {
-        # Clean re-extract when -Force
-        if ($Force -and (Test-Path $extractDir)) {
-            Remove-Item -Recurse -Force -Confirm:$false $extractDir
-        }
-
         Write-Host "`n=== $name ===" -ForegroundColor Cyan
 
-        # Pre-create output directory (extract_gog only does one level)
-        New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+        $extractParent = Split-Path $extractDir -Parent
+        New-Item -ItemType Directory -Path $extractParent -Force | Out-Null
+        $stagingDir = Join-Path $extractParent ".extracted-$([Guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $stagingDir | Out-Null
 
-        # Bound child time, combined diagnostics, and materialized output.
-        $bounded = Invoke-BoundedExtractor -OutputDirectory $extractDir -FilePath $ExePath `
-            -ArgumentList @($installer.FullName, $extractDir)
-        $output = $bounded.Output
-        $exitCode = $bounded.ExitCode
+        try {
+            # Bound child time, combined diagnostics, and materialized output.
+            $bounded = Invoke-BoundedExtractor -OutputDirectory $stagingDir -FilePath $ExePath `
+                -ArgumentList @($installer.FullName, $stagingDir)
+            $output = $bounded.Output
+            $exitCode = $bounded.ExitCode
 
-        # Show stderr (progress)
-        foreach ($line in $output) {
-            $s = "$line"
-            if (-not $s.StartsWith("[") -and -not $s.StartsWith("  {") -and -not $s.StartsWith("]")) {
-                Write-Host "  $s" -ForegroundColor DarkGray
+            # Show stderr (progress)
+            foreach ($line in $output) {
+                $s = "$line"
+                if (-not $s.StartsWith("[") -and -not $s.StartsWith("  {") -and -not $s.StartsWith("]")) {
+                    Write-Host "  $s" -ForegroundColor DarkGray
+                }
             }
-        }
 
-        if ($exitCode -ne 0) {
-            Write-Host "  FAILED (exit code $exitCode)" -ForegroundColor Red
-            $totalErrors++
-            continue
+            $stagedFiles = @(Get-ChildItem -LiteralPath $stagingDir -File)
+            if ($exitCode -ne 0 -or $stagedFiles.Count -eq 0) {
+                Write-Host "  FAILED (exit code $exitCode)" -ForegroundColor Red
+                $totalErrors++
+                continue
+            }
+            [PSCustomObject]@{
+                source = $installer.Name
+                files = @($stagedFiles | Sort-Object Name | ForEach-Object {
+                        [PSCustomObject]@{
+                            name = $_.Name
+                            size = $_.Length
+                            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                        }
+                    })
+            } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $stagingDir ".extraction-complete.json") -NoNewline
+            Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $extractDir
+        } finally {
+            if (Test-Path -LiteralPath $stagingDir) {
+                Remove-Item -LiteralPath $stagingDir -Recurse -Force -ErrorAction SilentlyContinue
+            }
         }
     }
 
@@ -166,7 +181,9 @@ foreach ($installer in $installers) {
         continue
     }
 
-    $files = Get-ChildItem -Path $extractDir -File | Sort-Object Name
+    $files = Get-ChildItem -Path $extractDir -File |
+        Where-Object { $_.Name -ne ".extraction-complete.json" } |
+        Sort-Object Name
     Write-Host "  Extracted $($files.Count) files:" -ForegroundColor Green
 
     foreach ($f in $files) {

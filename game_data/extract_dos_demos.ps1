@@ -78,19 +78,20 @@ $Installers = @(
         # for remaining prompts including post-install sound card detection/config
         StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
         (1..50 | ForEach-Object { [char]13; [char]10 })
-        ExpectFiles = @("D2DEMO.HOG", "D2DEMO.PIG", "D2DEMO.HAM")
+        ExpectFiles = @("D2DEMO.HOG", "D2DEMO.PIG", "D2DEMO.HAM", "D2DEMO.DEM")
     },
     @{
         Zip       = "d2demo10.zip"
         Exe       = "INSTALL.EXE"
         StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
         (1..50 | ForEach-Object { [char]13; [char]10 })
-        ExpectFiles = @("D2DEMO.HOG", "D2DEMO.PIG", "D2DEMO.HAM")
+        ExpectFiles = @("D2DEMO.HOG", "D2DEMO.PIG", "D2DEMO.HAM", "D2DEMO.DEM")
     }
 )
 
 $TimeoutSec = 120
 $PollIntervalMs = 2000
+$failures = 0
 
 function Expand-ZipCompatibleArchive {
     param(
@@ -113,13 +114,9 @@ foreach ($inst in $Installers) {
     }
 
     # Skip if already extracted (unless -Force)
-    if ((Test-Path $outputDir) -and -not $Force) {
-        $existing = Get-ChildItem $outputDir -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Extension -match '\.(hog|pig|ham|mvl)$' }
-        if ($existing.Count -gt 0) {
-            Write-Host ("$baseName already extracted, {0} game files. Use -Force to redo" -f $existing.Count)
-            continue
-        }
+    if ((Test-ExtractionCompletionManifest -Directory $outputDir) -and -not $Force) {
+        Write-Host "$baseName already extracted. Use -Force to redo"
+        continue
     }
 
     Write-Host "`n=== $baseName ===" -ForegroundColor Cyan
@@ -143,6 +140,7 @@ foreach ($inst in $Installers) {
     $installerExe = Get-ChildItem $sourceDir -Recurse -Filter $inst.Exe -File | Select-Object -First 1
     if (-not $installerExe) {
         Write-Warning "  $($inst.Exe) not found in $zipName. Skipping"
+        $failures++
         Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
         continue
     }
@@ -248,13 +246,41 @@ foreach ($inst in $Installers) {
             $rel = $_.FullName.Substring($targetDir.Length)
             Write-Host "    $rel"
         }
+        $failures++
     } else {
-        New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+        $foundByName = @{}
+        $collision = $false
         foreach ($f in $found) {
-            Copy-Item $f.FullName (Join-Path $outputDir $f.Name) -Force
+            $key = $f.Name.ToLowerInvariant()
+            if ($foundByName.ContainsKey($key)) { $collision = $true }
+            $foundByName[$key] = $f
+        }
+        $missing = @($inst.ExpectFiles | Where-Object { -not $foundByName.ContainsKey($_.ToLowerInvariant()) })
+        $installerCompleted = $filesFound -or ($proc.HasExited -and $proc.ExitCode -eq 0)
+        if (-not $installerCompleted -or $missing.Count -gt 0 -or $collision) {
+            Write-Warning "  Extraction incomplete or contains colliding basenames"
+            $failures++
+            Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
+            continue
+        }
+        $stagingDir = Join-Path $DemoDir ".${baseName}_extracted-$([Guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $stagingDir | Out-Null
+        foreach ($f in $foundByName.Values) {
+            Copy-Item $f.FullName (Join-Path $stagingDir $f.Name)
             $sizeKB = [math]::Round($f.Length / 1024)
             Write-Host ("    {0} [{1} KB]" -f $f.Name, $sizeKB)
         }
+        [PSCustomObject]@{
+            source = $zipName
+            files = @(Get-ChildItem -LiteralPath $stagingDir -File | Sort-Object Name | ForEach-Object {
+                    [PSCustomObject]@{
+                        name = $_.Name
+                        size = $_.Length
+                        sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }
+                })
+        } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $stagingDir ".extraction-complete.json") -NoNewline
+        Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $outputDir
         Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
     }
 
@@ -264,3 +290,4 @@ foreach ($inst in $Installers) {
 
 Write-Host ""
 Write-Host "Done" -ForegroundColor Cyan
+if ($failures -gt 0) { exit 1 }

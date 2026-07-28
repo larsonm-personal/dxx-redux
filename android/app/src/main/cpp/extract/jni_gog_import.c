@@ -351,7 +351,6 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 	ctx.total_bytes = total;
 
 	int extracted = 0;
-	int errors = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (!has_game_extension(arc->files[i].destination)) continue;
 		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
@@ -388,11 +387,10 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 			              is_audio,
 			              file_comp_size,
 			              arc->files[i].gog_galaxy ? 1 : 0);
-			errors++;
+			return -1;
 		}
 		ctx.completed_bytes += file_comp_size;
 	}
-	if (errors > 0 && extracted == 0) return -1;
 	return extracted;
 }
 

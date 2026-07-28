@@ -40,6 +40,7 @@ $MaxDiagnosticBytes = 1MB
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
 $DepBase = (Get-Content (Join-Path $RepoRoot "dependency_base.txt") -Raw).Trim()
+. (Join-Path $RepoRoot 'android\helpers\bounded_extraction.ps1')
 
 # --- Locate tools ---
 
@@ -76,14 +77,12 @@ if (-not (Test-Path $CdFolder)) {
 $CdFolder = (Resolve-Path $CdFolder).Path
 $OutputDir = Join-Path $CdFolder "data_tracks"
 
-if ((Test-Path $OutputDir) -and -not $Force) {
+if ((Test-ExtractionCompletionManifest -Directory $OutputDir) -and -not $Force) {
     Write-Host "data_tracks/ already exists. Use -Force to re-extract"
     exit 0
 }
 
-if ($Force -and (Test-Path $OutputDir)) {
-    Remove-Item -Recurse -Force $OutputDir
-}
+$PublishDir = Join-Path $CdFolder ".data_tracks-$([Guid]::NewGuid().ToString('N'))"
 
 # Find the .cue and .bin files
 $CueFile = Get-ChildItem -Path $CdFolder -Filter "*.cue" -File | Select-Object -First 1
@@ -189,7 +188,7 @@ if ($sectorSize -eq 2352) {
         $rawOff = [long]($startSector + $s) * 2352
         $f.Seek($rawOff, 'Begin') | Out-Null
         $n = $f.Read($buf, 0, 2352)
-        if ($n -ne 2352) { Write-Warning "Short read at sector $($startSector + $s)"; break }
+        if ($n -ne 2352) { throw "Short read at sector $($startSector + $s)" }
         $out.Write($buf, 16, 2048)
         $written++
         if ($written % 20000 -eq 0) { Write-Host "  $written / $numSectors sectors..." }
@@ -209,7 +208,7 @@ if ($sectorSize -eq 2352) {
     while ($remaining -gt 0) {
         $toRead = [Math]::Min($remaining, $buf.Length)
         $n = $f.Read($buf, 0, $toRead)
-        if ($n -le 0) { break }
+        if ($n -le 0) { throw "Short read with $remaining data-track bytes remaining" }
         $out.Write($buf, 0, $n)
         $remaining -= $n
     }
@@ -299,7 +298,7 @@ $remaining = $hfsPartSize
 while ($remaining -gt 0) {
     $toRead = [Math]::Min($remaining, $copyBuf.Length)
     $n = $srcStream.Read($copyBuf, 0, $toRead)
-    if ($n -le 0) { break }
+    if ($n -le 0) { throw "Short read with $remaining HFS partition bytes remaining" }
     $dstStream.Write($copyBuf, 0, $n)
     $remaining -= $n
 }
@@ -386,11 +385,13 @@ if (-not $StuffitFile) {
 
 Write-Host "`n--- Stage 7: Collect game data files ---" -ForegroundColor Yellow
 
-New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+New-Item -ItemType Directory -Path $PublishDir | Out-Null
 
 # Game file extensions we care about
 $gameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".msn", ".dem")
 $copied = 0
+$publishedNames = @{}
+$unarNames = @{}
 
 # Collect from unar output first (StuffIt archive contents)
 $unarFiles = @()
@@ -400,8 +401,12 @@ if (Test-Path $UnarOutDir) {
 foreach ($f in $unarFiles) {
     $ext = $f.Extension.ToLower()
     if ($ext -in $gameExtensions) {
-        $destPath = Join-Path $OutputDir $f.Name
-        Copy-Item $f.FullName $destPath -Force
+        $key = $f.Name.ToLowerInvariant()
+        if ($publishedNames.ContainsKey($key)) { throw "Colliding output basename $($f.Name)" }
+        $publishedNames[$key] = $true
+        $unarNames[$key] = $true
+        $destPath = Join-Path $PublishDir $f.Name
+        Copy-Item $f.FullName $destPath
         Write-Host "  $($f.Name) ($($f.Length) bytes)"
         $copied++
     }
@@ -413,12 +418,15 @@ $hfsFiles = Get-ChildItem $HfsExtractDir -Recurse -File
 foreach ($f in $hfsFiles) {
     $ext = $f.Extension.ToLower()
     if ($ext -in $gameExtensions) {
-        $destPath = Join-Path $OutputDir $f.Name
+        $destPath = Join-Path $PublishDir $f.Name
         # Only copy if not already present from unar (unar files take priority)
         if (-not (Test-Path $destPath)) {
-            Copy-Item $f.FullName $destPath -Force
+            Copy-Item $f.FullName $destPath
+            $publishedNames[$f.Name.ToLowerInvariant()] = $true
             Write-Host "  $($f.Name) ($($f.Length) bytes) [from HFS volume]"
             $copied++
+        } elseif (-not $unarNames.ContainsKey($f.Name.ToLowerInvariant())) {
+            throw "Colliding output basename $($f.Name)"
         }
     }
 }
@@ -430,12 +438,26 @@ $allCandidates = @($unarFiles) + @($hfsFiles)
 foreach ($exeName in $gameExeNames) {
     $gameExe = $allCandidates | Where-Object { $_.Name -eq $exeName -and -not $_.Extension } | Select-Object -First 1
     if ($gameExe) {
-        Copy-Item $gameExe.FullName (Join-Path $OutputDir $exeName) -Force
+        if ($publishedNames.ContainsKey($exeName.ToLowerInvariant())) { throw "Colliding output basename $exeName" }
+        Copy-Item $gameExe.FullName (Join-Path $PublishDir $exeName)
+        $publishedNames[$exeName.ToLowerInvariant()] = $true
         Write-Host "  $exeName (executable, $($gameExe.Length) bytes)"
         $copied++
     }
 }
 
+if ($copied -eq 0) { throw "No requested game files were extracted" }
+[PSCustomObject]@{
+    source = $CueFile.Name
+    files = @(Get-ChildItem -LiteralPath $PublishDir -File | Sort-Object Name | ForEach-Object {
+            [PSCustomObject]@{
+                name = $_.Name
+                size = $_.Length
+                sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+        })
+} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $PublishDir ".extraction-complete.json") -NoNewline
+Publish-ExtractionDirectory -StagingDirectory $PublishDir -DestinationDirectory $OutputDir
 Write-Host "`n  Copied $copied game files to $OutputDir"
 
 } finally {
@@ -444,6 +466,9 @@ Write-Host "`n  Copied $copied game files to $OutputDir"
         Write-Host "`n--- Cleanup ---" -ForegroundColor Yellow
         Remove-Item -Recurse -Force $TempDir
         Write-Host "  Removed temp directory"
+    }
+    if (Test-Path -LiteralPath $PublishDir) {
+        Remove-Item -LiteralPath $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 

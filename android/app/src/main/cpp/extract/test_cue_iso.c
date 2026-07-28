@@ -2169,6 +2169,60 @@ static void test_iso_extraction(void)
 		}
 		PASS();
 	}
+
+	TEST(iso_mixed_success_destination_failure_is_error);
+	{
+		int iso_sectors;
+		unsigned char *iso_img = build_iso_with_subdir(
+		    "MISSIONS", "FIRST.HOG", (const unsigned char *) "first", 5,
+		    "SECOND.HOG", (const unsigned char *) "second", 6, &iso_sectors);
+		unsigned char *standalone = convert_raw_iso(iso_img, iso_sectors);
+		char iso_path[512];
+		char out_dir[512];
+		char missions_dir[512];
+		char blocked_path[512];
+		char first_path[512];
+		int image_ok;
+		free(iso_img);
+		snprintf(iso_path, sizeof(iso_path), "%s/test_partial.iso", TEST_DIR);
+		f = fopen(iso_path, "wb");
+		image_ok =
+		    f && fwrite(standalone, USER_DATA_SIZE, iso_sectors, f) ==
+		             (size_t) iso_sectors;
+		if (f && fclose(f) != 0)
+			image_ok = 0;
+		if (!image_ok) {
+			free(standalone);
+			FAIL("cannot create partial-failure ISO image");
+			return;
+		}
+		free(standalone);
+		snprintf(out_dir, sizeof(out_dir), "%s/partial_iso_output", TEST_DIR);
+		snprintf(missions_dir, sizeof(missions_dir),
+		         "%s/partial_iso_output/missions", TEST_DIR);
+		snprintf(blocked_path, sizeof(blocked_path),
+		         "%s/partial_iso_output/missions/second.hog", TEST_DIR);
+		snprintf(first_path, sizeof(first_path),
+		         "%s/partial_iso_output/first.hog", TEST_DIR);
+		mkdir_p(out_dir);
+		mkdir_p(missions_dir);
+		mkdir_p(blocked_path);
+		int fd = open_bin(iso_path);
+		iso_file_list_t list;
+		int listed = iso_list_image_files(fd, &list);
+		static const char *exts[] = { "hog", NULL };
+		int extracted = iso_extract_image_files(
+		    fd, &list, out_dir, exts, NULL, NULL);
+		close_fd(fd);
+		FILE *first = fopen(first_path, "rb");
+		if (listed < 2 || extracted >= 0 || !first) {
+			if (first) fclose(first);
+			FAIL("mixed-success ISO extraction did not fail closed");
+			return;
+		}
+		fclose(first);
+		PASS();
+	}
 }
 
 /* ── Test: File-based CUE parsing (test/data/*.cue) ──────────────────── */

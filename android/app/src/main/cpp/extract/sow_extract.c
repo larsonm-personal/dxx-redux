@@ -860,7 +860,10 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 
 		/* Progress callback */
 		if (progress) {
-			if (progress(filename, bytes_done, (long long) total_bytes, user_data)) break;
+			if (progress(filename, bytes_done, (long long) total_bytes, user_data)) {
+				fclose(fp);
+				return -1;
+			}
 		}
 
 		/* Build output path — flatten to just filename */
@@ -871,11 +874,8 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		/* Read compressed data */
 		unsigned char *comp_data = (unsigned char *) malloc(e.comp_size);
 		if (!comp_data) {
-			if (fseek(fp, e.data_offset + e.comp_size, SEEK_SET) != 0) {
-				fclose(fp);
-				return -1;
-			}
-			continue;
+			fclose(fp);
+			return -1;
 		}
 		if (fseek(fp, e.data_offset, SEEK_SET) != 0) {
 			free(comp_data);
@@ -884,7 +884,8 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		}
 		if (fread(comp_data, 1, e.comp_size, fp) != e.comp_size) {
 			free(comp_data);
-			continue;
+			fclose(fp);
+			return -1;
 		}
 
 		unsigned char *out_data = NULL;
@@ -903,30 +904,42 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			fprintf(stderr, "sow_extract: unsupported method %d for '%s'\n",
 			        e.method, filename);
 			free(comp_data);
-			continue;
+			fclose(fp);
+			return -1;
 		}
 
 		if (!out_data) {
 			fprintf(stderr, "sow_extract: decompression failed for '%s'\n",
 			        filename);
-			continue;
+			fclose(fp);
+			return -1;
 		}
 		if (arj_crc32(out_data, out_size) != e.original_crc) {
 			fprintf(stderr, "sow_extract: payload CRC mismatch for '%s'\n",
 			        filename);
 			free(out_data);
-			continue;
+			fclose(fp);
+			return -1;
 		}
 
 		/* Write output file */
 		FILE *outf = fopen(out_path, append_existing ? "ab" : "wb");
 		if (outf) {
-			fwrite(out_data, 1, out_size, outf);
-			fclose(outf);
+			int write_ok = fwrite(out_data, 1, out_size, outf) == out_size;
+			int close_ok = fclose(outf) == 0;
+			if (!write_ok || !close_ok) {
+				remove(out_path);
+				free(out_data);
+				fclose(fp);
+				return -1;
+			}
 			extracted++;
 			bytes_done += out_size;
 		} else {
 			fprintf(stderr, "sow_extract: cannot create '%s'\n", out_path);
+			free(out_data);
+			fclose(fp);
+			return -1;
 		}
 		free(out_data);
 	}

@@ -78,16 +78,18 @@ static size_t make_compressed_literal(unsigned char *data, unsigned char literal
 	return (bitpos + 7u) / 8u;
 }
 
-static fixture_t make_fixture(int method, const unsigned char *payload,
-                              size_t payload_size,
-                              const unsigned char *expected,
-                              size_t expected_size, int with_extended_header)
+static fixture_t make_named_fixture(const char *filename, int method,
+                                    const unsigned char *payload,
+                                    size_t payload_size,
+                                    const unsigned char *expected,
+                                    size_t expected_size,
+                                    int with_extended_header)
 {
-	static const char filename[] = "crc_test.hog";
 	static const unsigned char extended[] = { 0x12, 0x34, 0x56 };
 	fixture_t fixture;
 	unsigned char header[64];
-	size_t header_size = 30u + sizeof(filename) + 1u;
+	size_t filename_size = strlen(filename) + 1u;
+	size_t header_size = 30u + filename_size + 1u;
 	size_t pos = 0;
 
 	memset(&fixture, 0, sizeof(fixture));
@@ -98,7 +100,7 @@ static fixture_t make_fixture(int method, const unsigned char *payload,
 	put_u32(header + 12, (unsigned int) payload_size);
 	put_u32(header + 16, (unsigned int) expected_size);
 	put_u32(header + 20, crc32_bytes(expected, expected_size));
-	memcpy(header + 30, filename, sizeof(filename));
+	memcpy(header + 30, filename, filename_size);
 
 	fixture.data[pos++] = 0x60;
 	fixture.data[pos++] = 0xea;
@@ -129,6 +131,25 @@ static fixture_t make_fixture(int method, const unsigned char *payload,
 	pos += 2;
 	fixture.size = pos;
 	return fixture;
+}
+
+static fixture_t make_fixture(int method, const unsigned char *payload,
+                              size_t payload_size,
+                              const unsigned char *expected,
+                              size_t expected_size, int with_extended_header)
+{
+	return make_named_fixture("crc_test.hog", method, payload, payload_size,
+	                          expected, expected_size, with_extended_header);
+}
+
+static fixture_t join_fixtures(const fixture_t *first, const fixture_t *second)
+{
+	fixture_t joined = *first;
+	size_t first_without_end = first->size - 4u;
+
+	memcpy(joined.data + first_without_end, second->data, second->size);
+	joined.size = first_without_end + second->size;
+	return joined;
 }
 
 static void refresh_basic_header_crc(fixture_t *fixture)
@@ -290,6 +311,37 @@ int main(void)
 		}
 	}
 	failures += run_case("valid_stored", &fixture, stored, sizeof(stored) - 1u, 1);
+	{
+		char first_path[SOW_PATH_LEN];
+		char second_path[SOW_PATH_LEN];
+		fixture_t first =
+		    make_named_fixture("first.hog", 0, stored, sizeof(stored) - 1u,
+		                       stored, sizeof(stored) - 1u, 0);
+		fixture_t second =
+		    make_named_fixture("second.hog", 0, stored, sizeof(stored) - 1u,
+		                       stored, sizeof(stored) - 1u, 0);
+		second.data[second.payload_offset] ^= 1u;
+		fixture_t joined = join_fixtures(&first, &second);
+		snprintf(first_path, sizeof(first_path),
+		         "sow_integrity_temp%coutput%cfirst.hog",
+		         PATH_SEP_CHAR, PATH_SEP_CHAR);
+		snprintf(second_path, sizeof(second_path),
+		         "sow_integrity_temp%coutput%csecond.hog",
+		         PATH_SEP_CHAR, PATH_SEP_CHAR);
+		remove(first_path);
+		remove(second_path);
+		if (write_fixture("sow_integrity_temp/partial.sow", &joined) < 0 ||
+		    sow_extract("sow_integrity_temp/partial.sow",
+		                "sow_integrity_temp/output", NULL, NULL, NULL) >= 0 ||
+		    !file_matches(first_path, stored, sizeof(stored) - 1u) ||
+		    file_exists(second_path)) {
+			fprintf(stderr, "mixed-success SOW extraction did not fail closed\n");
+			failures++;
+		}
+		remove("sow_integrity_temp/partial.sow");
+		remove(first_path);
+		remove(second_path);
+	}
 	fixture.data[fixture.basic_header_offset + 8u] ^= 1u;
 	failures += run_case("bad_basic_header", &fixture, stored,
 	                     sizeof(stored) - 1u, 0);
@@ -428,7 +480,7 @@ int main(void)
 		int callbacks = 0;
 		remove("sow_integrity_temp/output/crc_test.hog");
 		if (sow_extract("sow_integrity_temp/cancel.sow", "sow_integrity_temp/output",
-		                extensions, cancel_progress, &callbacks) != 0 ||
+		                extensions, cancel_progress, &callbacks) >= 0 ||
 		    callbacks != 1 ||
 		    file_exists("sow_integrity_temp/output/crc_test.hog")) {
 			fprintf(stderr, "SOW cancellation did not stop before output\n");
