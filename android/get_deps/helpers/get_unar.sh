@@ -8,29 +8,27 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
+source "$SCRIPT_DIR/verify_sha256.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
 DEST="$INSTALL_DIR/$UNAR_DIR_NAME"
 
 if [ "$(get_host_os)" = "linux" ]; then
-    if command -v unar >/dev/null 2>&1 && command -v lsar >/dev/null 2>&1; then
-        echo "Using host unar from PATH"
-        exit 0
-    fi
-
-    echo "ERROR: unar is not installed on this Linux host" >&2
-    echo "Install it with: sudo apt install unar" >&2
+    echo "ERROR: The repository-pinned unar package is currently available only for Windows" >&2
     exit 1
 fi
 
 if [ -f "$DEST/unar.exe" ]; then
-    echo "unar already installed at $DEST"
+    verify_sha256 "$DEST/unar.exe" "$UNAR_EXE_SHA256" "cached unar.exe"
+    verify_sha256 "$DEST/lsar.exe" "$LSAR_EXE_SHA256" "cached lsar.exe"
+    echo "Verified unar already installed at $DEST"
     exit 0
 fi
 
 echo "Downloading unar from $UNAR_URL..."
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" unar-XXXXXX.zip)"
 download_file "$TMPFILE" "$UNAR_URL"
+verify_sha256 "$TMPFILE" "$UNAR_ARCHIVE_SHA256" "unar Windows package"
 
 # Helper: convert a POSIX path to a Windows path for powershell.exe
 to_win_path() {
@@ -56,12 +54,9 @@ rm -f "$TMPFILE"
 # Clean up macOS metadata if present
 rm -rf "$DEST/__MACOSX"
 
-if [ -f "$DEST/unar.exe" ]; then
-    echo "unar installed at $DEST"
-else
-    echo "ERROR: unar.exe not found after extraction"
-    exit 1
-fi
+verify_sha256 "$DEST/unar.exe" "$UNAR_EXE_SHA256" "installed unar.exe"
+verify_sha256 "$DEST/lsar.exe" "$LSAR_EXE_SHA256" "installed lsar.exe"
+echo "unar installed and verified at $DEST"
 
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""

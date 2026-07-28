@@ -26,33 +26,14 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\test_env.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
-$depBase = (Get-Content "$repoRoot/dependency_base.txt" -Raw).Trim()
-
-# ── Parse tool_versions.conf ────────────────────────────────────────
-
-$conf = @{}
-Get-Content "$repoRoot/android/get_deps/tool_versions.conf" | ForEach-Object {
-    if ($_ -match '^([A-Z_]+)=(.+)$') {
-        $conf[$Matches[1]] = $Matches[2]
-    }
-}
 
 # ── Ensure 7z is available ──────────────────────────────────────────
 
 function Get-7zaPath {
-    $dirName = $conf["SEVENZIP_DIR_NAME"]
-    if ($dirName) {
-        $candidate = Join-Path $depBase "$dirName/7za.exe"
-        if (Test-Path $candidate) { return $candidate }
-    }
-    $onPath = Get-Command 7za -ErrorAction SilentlyContinue
-    if ($onPath) { return $onPath.Source }
-    $onPath = Get-Command 7z -ErrorAction SilentlyContinue
-    if ($onPath) { return $onPath.Source }
-    # Try to download
     $result = & "$repoRoot/android/get_deps/helpers/get_7zip.ps1"
-    if ($result -and (Test-Path $result)) { return $result }
-    Write-Error "7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1 or install 7-Zip"
+    $candidate = @($result | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Last 1)
+    if ($candidate) { return $candidate[0] }
+    Write-Error "Verified 7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1"
 }
 
 $7za = Get-7zaPath

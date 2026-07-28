@@ -1,10 +1,12 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "archive_name": "testfile.stuffit7_dlx.mac9.sit",
   "tool_name": "unar",
   "tool_version": "v1.8.1",
   "tool_package_url": "https://cdn.theunarchiver.com/downloads/unarWindows.zip",
   "tool_package_sha256": "61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd",
+  "unar_exe_sha256": "c4900a02c15904590bb611750382a7da37e2f6843c025862c142e2300414ab8d",
+  "lsar_exe_sha256": "30ffdaaca434e3adf652aacfe02f921e332154a4e86674f2765ed4de0678e21a",
   "entries": [
     {"path":"Test Image","kind":"resource","size":9134,"sha256":"509d9f821b8ee991b8c1fbe29c6c0fc132668b98a16e857fea7ffa953e06e091","method":15,"archive_data_offset":222,"archive_data_length":189},
     {"path":"Test Text","kind":"resource","size":332,"sha256":"96450ad1572f29580f5c96bf6baaad3b3550b52da1042d26b8bc0455f9a6d3ed","method":15,"archive_data_offset":518,"archive_data_length":62},

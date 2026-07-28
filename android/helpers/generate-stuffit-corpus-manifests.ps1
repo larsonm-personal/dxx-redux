@@ -10,9 +10,13 @@ $ErrorActionPreference = 'Stop'
 
 $AndroidRoot = Split-Path $PSScriptRoot -Parent
 $RepoRoot = Split-Path $AndroidRoot -Parent
-$ManifestSchemaVersion = 2
-$UnarPackageUrl = 'https://cdn.theunarchiver.com/downloads/unarWindows.zip'
-$UnarPackageSha256 = '61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd'
+. (Join-Path $PSScriptRoot 'verified_dependencies.ps1')
+$DependencyConfig = Read-DxxDependencyConfig -RepoRoot $RepoRoot
+$ManifestSchemaVersion = 3
+$UnarPackageUrl = $DependencyConfig['UNAR_URL']
+$UnarPackageSha256 = $DependencyConfig['UNAR_ARCHIVE_SHA256']
+$UnarExeSha256 = $DependencyConfig['UNAR_EXE_SHA256']
+$LsarExeSha256 = $DependencyConfig['LSAR_EXE_SHA256']
 $SelectedArchives = @(
     'testfile.stuffit45_dlx.mac9.sit',
     'testfile.stuffit7.win.sit',
@@ -94,16 +98,16 @@ function Resolve-ToolPaths {
         $resolved = (Resolve-Path $CandidateToolDir).Path
         $unarExe = Join-Path $resolved 'unar.exe'
         $lsarExe = Join-Path $resolved 'lsar.exe'
-        if ((Test-Path $unarExe) -and (Test-Path $lsarExe)) {
-            return [pscustomobject]@{
-                UnarExe = $unarExe
-                LsarExe = $lsarExe
-                PackageUrl = $UnarPackageUrl
-                PackageSha256 = $UnarPackageSha256
-            }
+        Assert-DxxFileSha256 -Path $unarExe -ExpectedSha256 $UnarExeSha256 -Label 'ToolDir unar.exe' | Out-Null
+        Assert-DxxFileSha256 -Path $lsarExe -ExpectedSha256 $LsarExeSha256 -Label 'ToolDir lsar.exe' | Out-Null
+        return [pscustomobject]@{
+            UnarExe = $unarExe
+            LsarExe = $lsarExe
+            UnarExeSha256 = $UnarExeSha256
+            LsarExeSha256 = $LsarExeSha256
+            PackageUrl = $UnarPackageUrl
+            PackageSha256 = $UnarPackageSha256
         }
-
-        throw "ToolDir '$CandidateToolDir' does not contain unar.exe and lsar.exe"
     }
 
     $toolRoot = Join-Path $RepoRoot 'temp\stuffit_manifest_tools'
@@ -129,10 +133,14 @@ function Resolve-ToolPaths {
         }
         Expand-Archive -Path $zipPath -DestinationPath $extractDir
     }
+    Assert-DxxFileSha256 -Path $unarExe -ExpectedSha256 $UnarExeSha256 -Label 'cached unar.exe' | Out-Null
+    Assert-DxxFileSha256 -Path $lsarExe -ExpectedSha256 $LsarExeSha256 -Label 'cached lsar.exe' | Out-Null
 
     return [pscustomobject]@{
         UnarExe = $unarExe
         LsarExe = $lsarExe
+        UnarExeSha256 = $UnarExeSha256
+        LsarExeSha256 = $LsarExeSha256
         PackageUrl = $UnarPackageUrl
         PackageSha256 = $UnarPackageSha256
     }
@@ -239,6 +247,8 @@ function Write-ManifestFile {
         [string]$ToolVersion,
         [string]$PackageUrl,
         [string]$PackageSha256,
+        [string]$UnarSha256,
+        [string]$LsarSha256,
         [object[]]$Entries
     )
 
@@ -250,6 +260,8 @@ function Write-ManifestFile {
         ('  "tool_version": {0},' -f (To-JsonString $ToolVersion)),
         ('  "tool_package_url": {0},' -f (To-JsonString $PackageUrl)),
         ('  "tool_package_sha256": {0},' -f (To-JsonString $PackageSha256)),
+        ('  "unar_exe_sha256": {0},' -f (To-JsonString $UnarSha256)),
+        ('  "lsar_exe_sha256": {0},' -f (To-JsonString $LsarSha256)),
         '  "entries": ['
     )
 
@@ -333,6 +345,8 @@ foreach ($archiveName in $SelectedArchives) {
         -ToolVersion $toolVersion `
         -PackageUrl $tools.PackageUrl `
         -PackageSha256 $tools.PackageSha256 `
+        -UnarSha256 $tools.UnarExeSha256 `
+        -LsarSha256 $tools.LsarExeSha256 `
         -Entries $entries
     Write-Status "Wrote $manifestPath" Green
 }

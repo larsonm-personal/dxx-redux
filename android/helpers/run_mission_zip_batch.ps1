@@ -25,14 +25,10 @@ $androidRoot = Split-Path -Parent $helpersDir
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-7zaPath {
-    $onPath = Get-Command 7za -ErrorAction SilentlyContinue
-    if ($onPath) { return $onPath.Source }
-    $onPath = Get-Command 7z -ErrorAction SilentlyContinue
-    if ($onPath) { return $onPath.Source }
     $result = & "$androidRoot\get_deps\helpers\get_7zip.ps1"
     $candidate = @($result | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Last 1)
     if ($candidate) { return $candidate[0] }
-    throw "7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1 or install 7-Zip"
+    throw "Verified 7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1"
 }
 
 if (-not $OutDir) {

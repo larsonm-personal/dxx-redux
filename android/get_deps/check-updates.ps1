@@ -1327,28 +1327,36 @@ $deps = @(
 
     @{ Name = "Chromaprint"; ConfKey = "CHROMAPRINT_VERSION";
         Current = $conf["CHROMAPRINT_VERSION"];
-        Latest = if ($latestChromaprint) { $latestChromaprint["Tag"] } else { $null }
+        Latest = if ($latestChromaprint) { $latestChromaprint["Tag"] } else { $null };
+        SuppressTargetUpdate = $true;
+        ManualTargetUpdateHint = "Update CHROMAPRINT_URL and CHROMAPRINT_SHA256 together after reviewing the release"
     },
 
     @{ Name = "minimp3"; ConfKey = "MINIMP3_COMMIT";
         Current = $conf["MINIMP3_COMMIT"];
         CurrentDisplay = Get-ShortCommit $conf["MINIMP3_COMMIT"];
         Latest = $latestMinimp3Commit;
-        LatestDisplay = Get-ShortCommit $latestMinimp3Commit
+        LatestDisplay = Get-ShortCommit $latestMinimp3Commit;
+        SuppressTargetUpdate = $true;
+        ManualTargetUpdateHint = "Update MINIMP3_COMMIT, both URLs, and both SHA-256 values together"
     },
 
     @{ Name = "stb_vorbis"; ConfKey = "STB_VORBIS_COMMIT";
         Current = $conf["STB_VORBIS_COMMIT"];
         CurrentDisplay = Get-ShortCommit $conf["STB_VORBIS_COMMIT"];
         Latest = $latestStbVorbisCommit;
-        LatestDisplay = Get-ShortCommit $latestStbVorbisCommit
+        LatestDisplay = Get-ShortCommit $latestStbVorbisCommit;
+        SuppressTargetUpdate = $true;
+        ManualTargetUpdateHint = "Update STB_VORBIS_COMMIT, URL, and SHA-256 together"
     },
 
     @{ Name = "dr_flac"; ConfKey = "DR_FLAC_COMMIT";
         Current = $conf["DR_FLAC_COMMIT"];
         CurrentDisplay = Get-ShortCommit $conf["DR_FLAC_COMMIT"];
         Latest = $latestDrFlacCommit;
-        LatestDisplay = Get-ShortCommit $latestDrFlacCommit
+        LatestDisplay = Get-ShortCommit $latestDrFlacCommit;
+        SuppressTargetUpdate = $true;
+        ManualTargetUpdateHint = "Update DR_FLAC_COMMIT, URL, and SHA-256 together"
     },
 
     @{ Name = "ImageMagick"; ConfKey = "IMAGEMAGICK_VERSION";
@@ -1363,7 +1371,8 @@ $deps = @(
     @{ Name = "7-Zip"; ConfKey = "SEVENZIP_VERSION";
         Current = $conf["SEVENZIP_VERSION"];
         Latest = Get-LatestSevenZipVersion;
-        SuppressTargetUpdate = $script:hostPlatform -eq "Linux";
+        SuppressTargetUpdate = $true;
+        ManualTargetUpdateHint = "Update the 7-Zip URLs and reviewed archive, bootstrap, and executable SHA-256 values together";
         LinuxManualOnly = $script:hostPlatform -eq "Linux";
         DriftLabel = "manual-linux";
         ManualInstallHint = "Install a host 7z binary such as p7zip-full or 7zip"
@@ -1409,6 +1418,7 @@ $deps = @($deps | Sort-Object { [string]$_["Name"] })
 $targetUpgradeable = @()
 $installOutOfSync = @()
 $manualInstallDrift = @()
+$manualTargetReviews = @()
 $targetIndex = 1
 $installIndex = 1
 
@@ -1471,6 +1481,9 @@ foreach ($dep in $deps) {
         $statusParts += "T[$targetIndex]"
         $targetUpgradeable += @{ Index = $targetIndex; Dep = $dep }
         $targetIndex++
+    } elseif ($targetNeedsUpdate -and $dep.ContainsKey("ManualTargetUpdateHint")) {
+        $statusParts += "review-hash"
+        $manualTargetReviews += $dep
     }
 
     $installNeedsSync = $false
@@ -1505,24 +1518,37 @@ foreach ($dep in $deps) {
     Write-Host ("{0,-25} {1,-18} {2,-18} {3,-18} {4}" -f $dep.Name, $installedDisplay, $currentDisplay, $latestDisplay, $status)
 }
 
-if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and $manualInstallDrift.Count -eq 0) {
+if ($manualTargetReviews.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Manual target review needed for:"
+    foreach ($dep in $manualTargetReviews) {
+        Write-Host ("  - {0}: {1}" -f $dep.Name, $dep.ManualTargetUpdateHint)
+    }
+}
+
+if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and
+    $manualInstallDrift.Count -eq 0 -and $manualTargetReviews.Count -eq 0) {
     Write-Host ""
     Write-Host "Everything is up to date and installed tools match the configured targets"
     Write-RunNote "finished" @("result=everything_up_to_date")
     return
 }
 
-if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and $manualInstallDrift.Count -gt 0) {
+if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and
+    ($manualInstallDrift.Count -gt 0 -or $manualTargetReviews.Count -gt 0)) {
     Write-Host ""
     Write-Host "No target updates or scripted install sync actions remain"
-    Write-Host "Manual tool alignment still needed for:"
-    foreach ($dep in $manualInstallDrift) {
-        $hint = if ($dep.ContainsKey("ManualInstallHint") -and $dep.ManualInstallHint) { $dep.ManualInstallHint } else { "Update the installed tool manually to match the configured target" }
-        Write-Host ("  - {0}: {1}" -f $dep.Name, $hint)
+    if ($manualInstallDrift.Count -gt 0) {
+        Write-Host "Manual tool alignment still needed for:"
+        foreach ($dep in $manualInstallDrift) {
+            $hint = if ($dep.ContainsKey("ManualInstallHint") -and $dep.ManualInstallHint) { $dep.ManualInstallHint } else { "Update the installed tool manually to match the configured target" }
+            Write-Host ("  - {0}: {1}" -f $dep.Name, $hint)
+        }
     }
     Write-RunNote "finished" @(
-        "result=manual_alignment_needed",
-        "manual_drift_count=$($manualInstallDrift.Count)"
+        "result=manual_review_needed",
+        "manual_drift_count=$($manualInstallDrift.Count)",
+        "manual_target_review_count=$($manualTargetReviews.Count)"
     )
     return
 }

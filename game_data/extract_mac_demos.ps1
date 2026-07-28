@@ -19,33 +19,11 @@ $OracleArchives = @()
 $OracleFailures = @()
 $failures = 0
 . (Join-Path $RepoRoot 'android\helpers\bounded_extraction.ps1')
+. (Join-Path $RepoRoot 'android\helpers\verified_dependencies.ps1')
 
-function Get-ToolConfigValue {
-    param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$Name
-    )
-
-    foreach ($line in Get-Content -LiteralPath $Path) {
-        if ($line -match "^$Name=(.+)$") { return $Matches[1] }
-    }
-    throw "$Name not found in $Path"
-}
-
-$confFile = Join-Path (Join-Path (Join-Path $RepoRoot "android") "get_deps") "tool_versions.conf"
-$unarDirName = Get-ToolConfigValue -Path $confFile -Name "UNAR_DIR_NAME"
-
-$_depBaseFile = Join-Path $RepoRoot "dependency_base.txt"
-if (-not (Test-Path -LiteralPath $_depBaseFile)) {
-    Write-Error "dependency_base.txt not found at $_depBaseFile"
-    exit 1
-}
-$DEP_BASE = (Get-Content -LiteralPath $_depBaseFile -First 1).Trim()
-$UnarExe = Join-Path (Join-Path $DEP_BASE $unarDirName) "unar.exe"
-if (-not (Test-Path -LiteralPath $UnarExe)) {
-    Write-Error "unar not found at $UnarExe`nRun: bash android/get_deps/helpers/get_unar.sh"
-    exit 1
-}
+$UnarExe = Resolve-DxxVerifiedDependencyExecutable -RepoRoot $RepoRoot `
+    -DirectoryKey 'UNAR_DIR_NAME' -RelativePath 'unar.exe' `
+    -Sha256Key 'UNAR_EXE_SHA256' -Label 'unar'
 
 $GameExtensions = @("*.hog", "*.pig", "*.ham", "*.s11", "*.s22", "*.dem", "*.mvl", "*.mn2", "*.msn")
 

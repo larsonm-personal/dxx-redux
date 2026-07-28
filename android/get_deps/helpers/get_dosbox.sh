@@ -8,35 +8,24 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
+source "$SCRIPT_DIR/verify_sha256.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$DOSBOX_DIR_NAME"
 
 if [ -d "$DEST" ] && [ -f "$DEST/dosbox-x.exe" ]; then
-    echo "DOSBox-X $DOSBOX_VERSION already installed at $DEST"
+    verify_sha256 "$DEST/dosbox-x.exe" "$DOSBOX_EXE_SHA256" "cached dosbox-x.exe"
+    echo "Verified DOSBox-X $DOSBOX_VERSION already installed at $DEST"
     exit 0
 fi
 
-# Query GitHub API for the win64 MinGW zip asset URL
-TAG="dosbox-x-v${DOSBOX_VERSION}"
-echo "Finding DOSBox-X $DOSBOX_VERSION download URL (tag: $TAG)..."
-RELEASE_JSON=$(download_text "https://api.github.com/repos/joncampbell123/dosbox-x/releases/tags/$TAG" "Accept: application/vnd.github+json" "User-Agent: dxx-redux-get-dosbox")
-
-ASSET_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": *"[^"]*mingw-win64[^"]*\.zip"' | head -1 | sed 's/"browser_download_url": *"//;s/"$//')
-
-if [ -z "$ASSET_URL" ]; then
-    echo "ERROR: Could not find DOSBox-X $DOSBOX_VERSION win64 download URL"
-    echo "Check https://github.com/joncampbell123/dosbox-x/releases for valid versions"
-    echo "and update DOSBOX_VERSION in tool_versions.conf"
-    exit 1
-fi
-
-echo "Download URL: $ASSET_URL"
+echo "Download URL: $DOSBOX_URL"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" dosbox-XXXXXX.zip)"
 
 echo "Downloading DOSBox-X $DOSBOX_VERSION..."
-download_file "$TMPFILE" "$ASSET_URL"
+download_file "$TMPFILE" "$DOSBOX_URL"
+verify_sha256 "$TMPFILE" "$DOSBOX_ARCHIVE_SHA256" "DOSBox-X package"
 
 # Helper: convert a POSIX path to a Windows path for powershell.exe
 to_win_path() {
@@ -58,15 +47,16 @@ else
     powershell.exe -NoProfile -Command "Expand-Archive -Path '$(to_win_path "$TMPFILE")' -DestinationPath '$(to_win_path "$TMPDIR2")' -Force"
 fi
 
-# Find dosbox-x.exe in the extracted contents
-DOSBOX_EXE=$(find "$TMPDIR2" -name "dosbox-x.exe" -type f | head -1)
-if [ -z "$DOSBOX_EXE" ]; then
-    echo "ERROR: Could not find dosbox-x.exe in extracted archive"
+# Select the repository-pinned build inside the archive
+DOSBOX_EXE="$TMPDIR2/$DOSBOX_EXE_RELATIVE_PATH"
+if [ ! -f "$DOSBOX_EXE" ]; then
+    echo "ERROR: Could not find pinned $DOSBOX_EXE_RELATIVE_PATH in extracted archive"
     echo "Contents:"
     find "$TMPDIR2" -maxdepth 3 -type f | head -20
     rm -rf "$TMPDIR2" "$TMPFILE"
     exit 1
 fi
+verify_sha256 "$DOSBOX_EXE" "$DOSBOX_EXE_SHA256" "staged dosbox-x.exe"
 
 # Move the directory containing dosbox-x.exe to the destination
 DOSBOX_DIR=$(dirname "$DOSBOX_EXE")
@@ -76,7 +66,8 @@ cp -r "$DOSBOX_DIR"/* "$DEST"/
 rm -rf "$TMPDIR2" "$TMPFILE"
 
 if [ -f "$DEST/dosbox-x.exe" ]; then
-    echo "DOSBox-X $DOSBOX_VERSION installed at $DEST"
+    verify_sha256 "$DEST/dosbox-x.exe" "$DOSBOX_EXE_SHA256" "installed dosbox-x.exe"
+    echo "DOSBox-X $DOSBOX_VERSION installed and verified at $DEST"
 else
     echo "ERROR: installation failed - dosbox-x.exe not found at $DEST"
     exit 1

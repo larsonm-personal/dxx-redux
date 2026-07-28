@@ -12,6 +12,17 @@ project(dxx-extract-tests C CXX)
 include(FetchContent)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+set(DXX_DEPENDENCY_MANIFEST
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../get_deps/tool_versions.conf")
+function(dxx_dependency_value key output)
+    file(STRINGS "${DXX_DEPENDENCY_MANIFEST}" value REGEX "^${key}=" LIMIT_COUNT 1)
+    if(NOT value)
+        message(FATAL_ERROR "${key} is missing from ${DXX_DEPENDENCY_MANIFEST}")
+    endif()
+    string(REGEX REPLACE "^[^=]+=" "" value "${value}")
+    set(${output} "${value}" PARENT_SCOPE)
+endfunction()
+
 # On MSVC, prevent windows.h min/max macros and enable M_PI
 if(MSVC)
     add_compile_definitions(NOMINMAX _USE_MATH_DEFINES)
@@ -35,8 +46,8 @@ target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
 target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST) # single-threaded
 
 # ── zlib (for InnoSetup decompression) ────────────────────────────────
-FetchContent_Declare(zlib_dep GIT_REPOSITORY https://github.com/madler/zlib.git GIT_TAG v1.3.1
-                     GIT_SHALLOW TRUE)
+FetchContent_Declare(zlib_dep GIT_REPOSITORY https://github.com/madler/zlib.git
+                     GIT_TAG 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf)
 set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(zlib_dep)
 
@@ -50,7 +61,7 @@ endif()
 # ── nlohmann/json (header-only for manifest-driven desktop tests) ─────
 if(NOT TARGET nlohmann_json::nlohmann_json)
     FetchContent_Declare(nlohmann_json GIT_REPOSITORY https://github.com/nlohmann/json.git
-                         GIT_TAG v3.11.3 GIT_SHALLOW TRUE)
+                         GIT_TAG 9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03)
     set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
     set(JSON_Install OFF CACHE BOOL "" FORCE)
     set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
@@ -226,8 +237,14 @@ add_test(NAME gog_fd_tests COMMAND test_gog_fd "${GOG_D1_INSTALLER}" "${GOG_D2_I
 add_test(NAME pkg_toc_bound_tests COMMAND test_pkg_toc_bounds)
 
 # ── Chromaprint (audio fingerprinting, uses bundled KissFFT) ─────────
-FetchContent_Declare(chromaprint
-                     URL https://github.com/acoustid/chromaprint/archive/refs/tags/v1.5.1.tar.gz)
+dxx_dependency_value(CHROMAPRINT_URL CHROMAPRINT_URL)
+dxx_dependency_value(CHROMAPRINT_SHA256 CHROMAPRINT_SHA256)
+FetchContent_Declare(
+    chromaprint
+    URL "${CHROMAPRINT_URL}"
+    URL_HASH "SHA256=${CHROMAPRINT_SHA256}"
+    TLS_VERIFY ON
+    TIMEOUT 60)
 FetchContent_GetProperties(chromaprint)
 if(NOT chromaprint_POPULATED)
     FetchContent_Populate(chromaprint)
@@ -255,11 +272,11 @@ add_library(
     ${_CP_SRC}/spectrum.cpp
     ${_CP_SRC}/utils/base64.cpp
     ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fft.c
-    ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools/kiss_fftr.c
+    ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fftr.c
     ${chromaprint_SOURCE_DIR}/src/avresample/resample2.c)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config/config.h"
      "#ifndef CHROMAPRINT_CONFIG_H\n" "#define CHROMAPRINT_CONFIG_H\n" "#define HAVE_ROUND 1\n"
-     "#define USE_KISSFFT 1\n" "#endif\n")
+     "#define USE_KISSFFT 1\n" "#define USE_INTERNAL_AVRESAMPLE 1\n" "#endif\n")
 target_include_directories(
     chromaprint
     PUBLIC ${chromaprint_SOURCE_DIR}/src
@@ -277,42 +294,38 @@ endif()
 set(_DECODERS_DIR "${CMAKE_CURRENT_BINARY_DIR}/pcm_decoders")
 file(MAKE_DIRECTORY "${_DECODERS_DIR}")
 
-if(NOT EXISTS "${_DECODERS_DIR}/minimp3.h")
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/lieff/minimp3/afb604c06bc8beb145fecd42c0ceb5bda8795144/minimp3.h"
-        "${_DECODERS_DIR}/minimp3.h")
-endif()
-if(NOT EXISTS "${_DECODERS_DIR}/minimp3_ex.h")
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/lieff/minimp3/afb604c06bc8beb145fecd42c0ceb5bda8795144/minimp3_ex.h"
-        "${_DECODERS_DIR}/minimp3_ex.h")
-endif()
-set(_stb_vorbis_need_dl TRUE)
-if(EXISTS "${_DECODERS_DIR}/stb_vorbis.c")
-    file(SIZE "${_DECODERS_DIR}/stb_vorbis.c" _stb_vorbis_size)
-    if(_stb_vorbis_size GREATER 0)
-        set(_stb_vorbis_need_dl FALSE)
+function(dxx_download_verified_source filename url sha256)
+    set(destination "${_DECODERS_DIR}/${filename}")
+    if(EXISTS "${destination}")
+        file(SHA256 "${destination}" actual_sha256)
+        if(NOT actual_sha256 STREQUAL sha256)
+            message(
+                FATAL_ERROR
+                    "Cached ${filename} SHA-256 mismatch: expected ${sha256}, got ${actual_sha256}")
+        endif()
+        return()
     endif()
-endif()
-if(_stb_vorbis_need_dl)
     file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/nothings/stb/1ee679ca2ef753a528db5ba6801e1067b40481b8/stb_vorbis.c"
-        "${_DECODERS_DIR}/stb_vorbis.c"
-        STATUS _stb_dl_status)
-    list(GET _stb_dl_status 0 _stb_dl_code)
-    if(NOT _stb_dl_code EQUAL 0)
-        message(FATAL_ERROR "Failed to download stb_vorbis.c: ${_stb_dl_status}")
+        DOWNLOAD "${url}" "${destination}"
+        EXPECTED_HASH "SHA256=${sha256}"
+        TLS_VERIFY ON
+        TIMEOUT 60
+        STATUS download_status)
+    list(GET download_status 0 download_code)
+    if(NOT download_code EQUAL 0)
+        file(REMOVE "${destination}")
+        message(FATAL_ERROR "Failed to download ${filename}: ${download_status}")
     endif()
-endif()
-if(NOT EXISTS "${_DECODERS_DIR}/dr_flac.h")
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/mackron/dr_libs/da35f9d6c7374a95353fd1df1d394d44ab66cf01/dr_flac.h"
-        "${_DECODERS_DIR}/dr_flac.h")
-endif()
+endfunction()
+
+foreach(dependency MINIMP3 MINIMP3_EX STB_VORBIS DR_FLAC)
+    dxx_dependency_value(${dependency}_URL ${dependency}_URL)
+    dxx_dependency_value(${dependency}_SHA256 ${dependency}_SHA256)
+endforeach()
+dxx_download_verified_source(minimp3.h "${MINIMP3_URL}" "${MINIMP3_SHA256}")
+dxx_download_verified_source(minimp3_ex.h "${MINIMP3_EX_URL}" "${MINIMP3_EX_SHA256}")
+dxx_download_verified_source(stb_vorbis.c "${STB_VORBIS_URL}" "${STB_VORBIS_SHA256}")
+dxx_download_verified_source(dr_flac.h "${DR_FLAC_URL}" "${DR_FLAC_SHA256}")
 
 set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
 

@@ -10,79 +10,86 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 . (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
+. (Join-Path $repoRoot "android\helpers\verified_dependencies.ps1")
 $depBase = Get-DependencyBase -RepoRoot $repoRoot -CreateIfMissing
 
-# Parse version info from tool_versions.conf
-$conf = @{}
-Get-Content "$PSScriptRoot/../tool_versions.conf" | ForEach-Object {
-    if ($_ -match '^([A-Z_]+)=(.+)$') {
-        $conf[$Matches[1]] = $Matches[2]
-    }
-}
+$conf = Read-DxxDependencyConfig -RepoRoot $repoRoot
 
 $version = $conf["SEVENZIP_VERSION"]
 $url = $conf["SEVENZIP_URL"]
+$archiveSha256 = $conf["SEVENZIP_ARCHIVE_SHA256"]
+$bootstrapUrl = $conf["SEVENZIP_BOOTSTRAP_URL"]
+$bootstrapSha256 = $conf["SEVENZIP_BOOTSTRAP_SHA256"]
+$exeSha256 = $conf["SEVENZIP_EXE_SHA256"]
 $dirName = $conf["SEVENZIP_DIR_NAME"]
 $installDir = Join-Path $depBase $dirName
 $sevenZa = Join-Path $installDir "7za.exe"
 $hostPlatform = Get-HostPlatform
 
 if ($hostPlatform -ne "Windows") {
-    foreach ($commandName in @("7zz", "7z", "7za")) {
-        $existing = Get-Command $commandName -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($existing) {
-            Write-Host "Using host ${commandName}: $($existing.Source)"
-            return $existing.Source
-        }
-    }
-
-    Write-Error "No host 7z binary found on PATH. Install p7zip-full or 7zip and re-run"
+    Write-Error "The repository-pinned 7-Zip package is currently available only for Windows"
 }
 
 if ((Test-Path $sevenZa) -and -not $Force) {
-    Write-Host "7za.exe already present: $sevenZa"
-    return $sevenZa
+    $verified = Assert-DxxFileSha256 -Path $sevenZa -ExpectedSha256 $exeSha256 -Label "cached 7za.exe"
+    Write-Host "Using verified 7za.exe: $verified"
+    return $verified
 }
 
 Write-Host "Downloading 7-Zip $version from $url"
 
-if (-not (Test-Path $installDir)) {
-    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
-}
-
-# Find an existing extractor: 7z or 7za on PATH, or download 7zr.exe bootstrap
-$extractor = $null
-$existing = Get-Command 7z -ErrorAction SilentlyContinue
-if ($existing) { $extractor = $existing.Source }
-if (-not $extractor) {
-    $existing = Get-Command 7za -ErrorAction SilentlyContinue
-    if ($existing) { $extractor = $existing.Source }
-}
-if (-not $extractor) {
-    # Download 7zr.exe -- a standalone single-file 7z extractor from 7-zip.org
-    $sevenZrUrl = $conf["SEVENZIP_BOOTSTRAP_URL"]
-    $sevenZr = Join-Path $installDir "7zr.exe"
-    if (-not (Test-Path $sevenZr)) {
-        Write-Host "Downloading bootstrap 7zr.exe..."
-        Invoke-WebRequest -Uri $sevenZrUrl -OutFile $sevenZr -UseBasicParsing
-    }
-    $extractor = $sevenZr
-}
-
-$tmpFile = Join-Path $installDir "7z-download.7z"
+$operationId = [Guid]::NewGuid().ToString('N')
+$archivePath = Join-Path $depBase "7z-$operationId.7z"
+$bootstrapPath = Join-Path $depBase "7zr-$operationId.exe"
+$stagingDir = Join-Path $depBase ".${dirName}-$operationId"
+$backupDir = Join-Path $depBase ".${dirName}-backup-$operationId"
+$lockPath = Join-Path $depBase ".${dirName}.install.lock"
+$lock = $null
 try {
-    Invoke-WebRequest -Uri $url -OutFile $tmpFile -UseBasicParsing
-    & $extractor x "-o$installDir" -y $tmpFile 2>&1 | Out-Null
+    $lock = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    if ((Test-Path -LiteralPath $sevenZa -PathType Leaf) -and -not $Force) {
+        return Assert-DxxFileSha256 -Path $sevenZa -ExpectedSha256 $exeSha256 -Label "cached 7za.exe"
+    }
+
+    Invoke-WebRequest -Uri $bootstrapUrl -OutFile $bootstrapPath -UseBasicParsing
+    $extractor = Assert-DxxFileSha256 -Path $bootstrapPath -ExpectedSha256 $bootstrapSha256 -Label "7-Zip bootstrap"
+    Invoke-WebRequest -Uri $url -OutFile $archivePath -UseBasicParsing
+    Assert-DxxFileSha256 -Path $archivePath -ExpectedSha256 $archiveSha256 -Label "7-Zip package" | Out-Null
+
+    New-Item -ItemType Directory -Path $stagingDir | Out-Null
+    & $extractor x "-o$stagingDir" -y $archivePath 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "7-Zip bootstrap extraction failed with exit code $LASTEXITCODE"
+    }
+    $stagedSevenZa = Join-Path $stagingDir "7za.exe"
+    Assert-DxxFileSha256 -Path $stagedSevenZa -ExpectedSha256 $exeSha256 -Label "staged 7za.exe" | Out-Null
+
+    if (Test-Path -LiteralPath $installDir) {
+        Move-Item -LiteralPath $installDir -Destination $backupDir
+    }
+    try {
+        Move-Item -LiteralPath $stagingDir -Destination $installDir
+    } catch {
+        if (Test-Path -LiteralPath $backupDir) {
+            Move-Item -LiteralPath $backupDir -Destination $installDir
+        }
+        throw
+    }
+    if (Test-Path -LiteralPath $backupDir) {
+        Remove-Item -LiteralPath $backupDir -Recurse -Force
+    }
 } finally {
-    Remove-Item $tmpFile -ErrorAction SilentlyContinue
+    if ($lock) { $lock.Dispose() }
+    Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $bootstrapPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $stagingDir -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
 }
 
-if (-not (Test-Path $sevenZa)) {
-    Write-Error "7za.exe not found after extraction at: $sevenZa"
-}
-
-Write-Host "7za.exe installed: $sevenZa"
-return $sevenZa
+$verifiedSevenZa = Assert-DxxFileSha256 -Path $sevenZa -ExpectedSha256 $exeSha256 -Label "installed 7za.exe"
+Write-Host "7za.exe installed and verified: $verifiedSevenZa"
+return $verifiedSevenZa

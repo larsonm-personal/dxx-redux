@@ -20,29 +20,11 @@ $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
 $DemoDir = Join-Path $ScriptDir "demo installers"
 . (Join-Path $RepoRoot 'android\helpers\bounded_extraction.ps1')
+. (Join-Path $RepoRoot 'android\helpers\verified_dependencies.ps1')
 
-# --- Load DOSBox path from tool_versions.conf ---
-$confFile = Join-Path (Join-Path (Join-Path $RepoRoot "android") "get_deps") "tool_versions.conf"
-$dosboxDirName = $null
-foreach ($line in Get-Content $confFile) {
-    if ($line -match '^DOSBOX_DIR_NAME=(.+)$') { $dosboxDirName = $Matches[1] }
-}
-if (-not $dosboxDirName) {
-    Write-Error "DOSBOX_DIR_NAME not found in $confFile"
-    exit 1
-}
-
-$_depBaseFile = Join-Path $RepoRoot "dependency_base.txt"
-if (-not (Test-Path $_depBaseFile)) {
-    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
-    exit 1
-}
-$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$DosboxExe = "$DEP_BASE\$dosboxDirName\dosbox-x.exe"
-if (-not (Test-Path $DosboxExe)) {
-    Write-Error "DOSBox-X not found at $DosboxExe`nRun:  bash android/get_deps/helpers/get_dosbox.sh"
-    exit 1
-}
+$DosboxExe = Resolve-DxxVerifiedDependencyExecutable -RepoRoot $RepoRoot `
+    -DirectoryKey 'DOSBOX_DIR_NAME' -RelativePath 'dosbox-x.exe' `
+    -Sha256Key 'DOSBOX_EXE_SHA256' -Label 'DOSBox-X'
 $DosboxDir = Split-Path $DosboxExe
 
 # --- Game file extensions to extract ---
@@ -57,6 +39,7 @@ $GameExtensions = @("*.hog", "*.pig", "*.ham", "*.mvl", "*.s11", "*.s22",
 $Installers = @(
     @{
         Zip       = "desc14sw.exe"
+        Sha256    = "3dadb7fbc01efce2904d0908c55d9a9cf1f402e83bf771970552efaca15efcb0"
         Exe       = "INSTALL.EXE"
         StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
         (1..50 | ForEach-Object { [char]13; [char]10 })
@@ -64,6 +47,7 @@ $Installers = @(
     },
     @{
         Zip       = "descent 1 demo 1-4.zip"
+        Sha256    = "64741386ad88d7a60a9529383affb4d2415e11d907ea6dbab8a8a66e1c20b745"
         Exe       = "INSTALL.EXE"
         # Stdin sequence: Enter (welcome), C (drive letter), Enter, then many Enters
         # for remaining prompts including post-install sound card config
@@ -73,6 +57,7 @@ $Installers = @(
     },
     @{
         Zip       = "descent 2 demo 1-0.zip"
+        Sha256    = "a7c31eae6dfd22e1f6a4c0b9fb2dfb2e25197831bc43c3e9d65734c7fa446c4d"
         Exe       = "INSTALL.EXE"
         # Stdin sequence: Enter (welcome), C (drive letter), Enter, then many Enters
         # for remaining prompts including post-install sound card detection/config
@@ -82,6 +67,7 @@ $Installers = @(
     },
     @{
         Zip       = "d2demo10.zip"
+        Sha256    = "f8d005670fe5cd17e07ca9bf4022f1045aed436639c37f1e83dd647e14fcec1f"
         Exe       = "INSTALL.EXE"
         StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
         (1..50 | ForEach-Object { [char]13; [char]10 })
@@ -112,6 +98,8 @@ foreach ($inst in $Installers) {
         Write-Warning "Zip not found, skipping: $zipPath"
         continue
     }
+    Assert-DxxFileSha256 -Path $zipPath -ExpectedSha256 $inst.Sha256 `
+        -Label "$zipName demo package" | Out-Null
 
     # Skip if already extracted (unless -Force)
     if ((Test-ExtractionCompletionManifest -Directory $outputDir) -and -not $Force) {
@@ -123,15 +111,16 @@ foreach ($inst in $Installers) {
 
     # Create temp dirs (no spaces in path for DOSBox compatibility)
     $safeName = $baseName -replace '[^a-zA-Z0-9_-]', '_'
-    $tempBase = Join-Path $env:TEMP "dxx_dosbox_$safeName"
+    $tempBase = Join-Path $env:TEMP "dxx_dosbox_${safeName}_$([Guid]::NewGuid().ToString('N'))"
     $sourceDir = Join-Path $tempBase "src"    # extracted zip (DOSBox D:)
     $targetDir = Join-Path $tempBase "dst"    # DOSBox C: -- installer writes here
 
-    # Clean and create
-    if (Test-Path $tempBase) { Remove-Item $tempBase -Recurse -Force }
+    # Create one uniquely owned workspace for this installer
     New-Item -ItemType Directory -Force -Path $sourceDir | Out-Null
     New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
 
+    $proc = $null
+    try {
     # Extract zip
     Write-Host "  Extracting $zipName"
     Expand-ZipCompatibleArchive -ArchivePath $zipPath -DestinationPath $sourceDir
@@ -141,7 +130,6 @@ foreach ($inst in $Installers) {
     if (-not $installerExe) {
         Write-Warning "  $($inst.Exe) not found in $zipName. Skipping"
         $failures++
-        Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
         continue
     }
     $installerDir = $installerExe.DirectoryName
@@ -260,7 +248,6 @@ foreach ($inst in $Installers) {
         if (-not $installerCompleted -or $missing.Count -gt 0 -or $collision) {
             Write-Warning "  Extraction incomplete or contains colliding basenames"
             $failures++
-            Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
             continue
         }
         $stagingDir = Join-Path $DemoDir ".${baseName}_extracted-$([Guid]::NewGuid().ToString('N'))"
@@ -284,8 +271,14 @@ foreach ($inst in $Installers) {
         Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
     }
 
-    # Cleanup temp
-    Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
+    } finally {
+        if ($proc -and -not $proc.HasExited) {
+            $proc.Kill()
+            $proc.WaitForExit()
+        }
+        if ($proc) { $proc.Dispose() }
+        Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Write-Host ""

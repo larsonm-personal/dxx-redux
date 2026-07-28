@@ -51,6 +51,18 @@ using json = nlohmann::json;
 #define STUFFIT_SHA256_HEX_LEN       64
 #define STUFFIT_MANIFEST_MAX_ENTRIES 32
 #define STUFFIT_ARCHIVE_NAME_LEN     128
+#define STUFFIT_MANIFEST_SCHEMA      3
+
+static const char stuffit_tool_name[] = "unar";
+static const char stuffit_tool_version[] = "v1.8.1";
+static const char stuffit_tool_package_url[] =
+    "https://cdn.theunarchiver.com/downloads/unarWindows.zip";
+static const char stuffit_tool_package_sha256[] =
+    "61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd";
+static const char stuffit_unar_sha256[] =
+    "c4900a02c15904590bb611750382a7da37e2f6843c025862c142e2300414ab8d";
+static const char stuffit_lsar_sha256[] =
+    "30ffdaaca434e3adf652aacfe02f921e332154a4e86674f2765ed4de0678e21a";
 
 static const char *stuffit_archives[] = {
 	"testfile.stuffit7.win.sit",
@@ -436,6 +448,14 @@ static int manifest_load(const char *path, stuffit_manifest_t *out)
 		json::const_iterator entry_it;
 
 		if (!document.is_object())
+			return -1;
+		if (document.value("schema_version", 0) != STUFFIT_MANIFEST_SCHEMA ||
+		    document.value("tool_name", std::string()) != stuffit_tool_name ||
+		    document.value("tool_version", std::string()) != stuffit_tool_version ||
+		    document.value("tool_package_url", std::string()) != stuffit_tool_package_url ||
+		    document.value("tool_package_sha256", std::string()) != stuffit_tool_package_sha256 ||
+		    document.value("unar_exe_sha256", std::string()) != stuffit_unar_sha256 ||
+		    document.value("lsar_exe_sha256", std::string()) != stuffit_lsar_sha256)
 			return -1;
 		archive_name_it = document.find("archive_name");
 		entries_it = document.find("entries");

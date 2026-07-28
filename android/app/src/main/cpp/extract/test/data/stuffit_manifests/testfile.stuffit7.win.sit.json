@@ -1,10 +1,12 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "archive_name": "testfile.stuffit7.win.sit",
   "tool_name": "unar",
   "tool_version": "v1.8.1",
   "tool_package_url": "https://cdn.theunarchiver.com/downloads/unarWindows.zip",
   "tool_package_sha256": "61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd",
+  "unar_exe_sha256": "c4900a02c15904590bb611750382a7da37e2f6843c025862c142e2300414ab8d",
+  "lsar_exe_sha256": "30ffdaaca434e3adf652aacfe02f921e332154a4e86674f2765ed4de0678e21a",
   "entries": [
     {"path":"sources","kind":"directory","size":0,"sha256":null,"method":null,"archive_data_offset":null,"archive_data_length":null},
     {"path":"sources/testfile.jpg","kind":"file","size":220,"sha256":"e514232511df1a4f4221a75c27523518c3c62a2fe6470fa56e430364428eecd1","method":15,"archive_data_offset":279,"archive_data_length":177},

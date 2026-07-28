@@ -13,8 +13,7 @@
 # legacy oracle generation when the external-tool reference path is needed.
 #
 # Prerequisites:
-#   - Python 3 with 'machfs' package: pip install machfs
-#   - unar: android/get_deps/helpers/get_unar.sh (or manually install)
+#   - Repository-pinned Python, machfs, and unar packages in dependency_base.txt
 #
 # Usage:
 #   .\extract_mac_cd.ps1 -CdFolder "game_data\CD images\Descent - Mac macplay"
@@ -39,33 +38,27 @@ $MaxDiagnosticBytes = 1MB
 
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
-$DepBase = (Get-Content (Join-Path $RepoRoot "dependency_base.txt") -Raw).Trim()
 . (Join-Path $RepoRoot 'android\helpers\bounded_extraction.ps1')
+. (Join-Path $RepoRoot 'android\helpers\verified_dependencies.ps1')
 
 # --- Locate tools ---
 
-# unar
-$UnarExe = Join-Path $DepBase "unar\unar.exe"
-if (-not (Test-Path $UnarExe)) {
-    # Try cargo-installed stuffit path, or system PATH
-    $UnarExe = (Get-Command unar.exe -ErrorAction SilentlyContinue).Source
-    if (-not $UnarExe) {
-        Write-Error "unar.exe not found. Run android/get_deps/helpers/get_unar.sh first"
-        exit 1
-    }
-}
+$UnarExe = Resolve-DxxVerifiedDependencyExecutable -RepoRoot $RepoRoot `
+    -DirectoryKey 'UNAR_DIR_NAME' -RelativePath 'unar.exe' `
+    -Sha256Key 'UNAR_EXE_SHA256' -Label 'unar'
 Write-Host "unar: $UnarExe"
 
-# Python
-$Python = (Get-Command python -ErrorAction SilentlyContinue).Source
-if (-not $Python) {
-    $Python = (Get-Command python3 -ErrorAction SilentlyContinue).Source
+$oracleToolOutput = & (Join-Path $RepoRoot 'android\get_deps\helpers\get_mac_oracle_tools.ps1')
+$OracleToolRoot = @($oracleToolOutput | Where-Object {
+        $_ -and (Test-Path -LiteralPath $_ -PathType Container)
+    } | Select-Object -Last 1)
+if (-not $OracleToolRoot) {
+    throw 'Verified Mac oracle toolchain was not installed'
 }
-if (-not $Python) {
-    Write-Error "Python not found. Install Python 3 and 'pip install machfs'."
-    exit 1
-}
-Write-Host "python: $Python"
+$Python = Join-Path $OracleToolRoot[0] 'python\python.exe'
+$MachfsDir = Join-Path $OracleToolRoot[0] 'machfs'
+$PythonRunner = Join-Path $RepoRoot 'android\helpers\run_verified_python.py'
+Write-Host "verified python: $Python"
 
 # --- Validate input ---
 
@@ -315,7 +308,7 @@ Write-Host "`n--- Stage 5: Extract files from HFS volume ---" -ForegroundColor Y
 $HfsExtractDir = Join-Path $TempDir "hfs_files"
 
 $pyFile = Join-Path $RepoRoot "android/helpers/extract_hfs_machfs.py"
-& $Python $pyFile $HfsImgPath $HfsExtractDir `
+& $Python -I $PythonRunner $MachfsDir $pyFile $HfsImgPath $HfsExtractDir `
     $MaxCdImageBytes $MaxEntries $MaxEntryBytes $MaxTotalBytes $FreeHeadroom
 if ($LASTEXITCODE -ne 0) {
     Write-Error "HFS extraction failed"
@@ -366,7 +359,7 @@ if (-not $StuffitFile) {
         [long]$stuffitSize * $MaxExpansionRatio
     }
     $boundedExtractor = Join-Path $RepoRoot "android/helpers/run_bounded_extractor.py"
-    & $Python $boundedExtractor `
+    & $Python -I $PythonRunner $MachfsDir $boundedExtractor `
         --output-dir $UnarOutDir `
         --timeout-seconds $ExtractorTimeoutSeconds `
         --max-files $MaxEntries `
