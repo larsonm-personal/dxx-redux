@@ -45,18 +45,7 @@ void PHYSFSX_init(int argc, char *argv[])
 
 #ifdef ANDROID
 	physfsx_android_init_search_paths("d2x-redux");
-	/* Android has no real argv (argv[0] is a PhysFS struct, not a string),
-	 * and the full ReadCmdArgs() path changes several GameArg defaults in
-	 * ways that aren't yet fully compatible with the Android build.
-	 * Preserve raw argv entries for targeted startup hooks, then set the
-	 * critical defaults that must be non-zero manually.
-	 * TODO: eventually call InitArgs(0,NULL) once all GameArg interactions
-	 * are verified on Android. */
 	InitArgsAndroid(argc, argv);
-	GameArg.SndDigiSampleRate = 22050; /* SAMPLE_RATE_22K, avoid digi.h include */
-	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
-	GameArg.GfxMovieHires = 1; /* match desktop default unless -lowresmovies is set */
-	GameArg.DbgAltTexMerge = 1; /* prefer GPU tmap2 overlay path; Android OGL may internally premerge transparent overlays */
 	return;
 #endif
 

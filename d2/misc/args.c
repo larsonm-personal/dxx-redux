@@ -121,15 +121,53 @@ char *get_str_arg(char *arg_name, char *default_value) {
 	return ((t = FindArg(arg_name)) ? Args[t+1] : default_value);
 }
 
-// All FindArg calls should be here to keep the code clean
-void ReadCmdArgs(void)
+static void InitArgDefaults(int android_mode)
 {
+	memset(&GameArg, 0, sizeof(GameArg));
+
+	GameArg.SysUseNiceFPS = 1;
+	GameArg.SysMaxFPS = MAXIMUM_FPS;
+	GameArg.SysUsePlayersDir = android_mode;
+#ifndef USE_SDLMIXER
+	GameArg.SndDisableSdlMixer = 1;
+#endif
+	GameArg.SndDigiSampleRate = SAMPLE_RATE_22K;
+	GameArg.GfxMovieHires = 1;
+	GameArg.GfxHiresGFXAvailable = 1;
+	GameArg.GfxHiresFNTAvailable = 1;
+#ifdef USE_UDP
+	GameArg.MplUdpHostAddr = UDP_MANUAL_ADDR_DEFAULT;
+#ifdef USE_TRACKER
+	GameArg.MplTrackerAddr = TRACKER_ADDR_DEFAULT;
+	GameArg.MplTrackerPort = TRACKER_PORT_DEFAULT;
+#endif
+#endif
+	GameArg.DbgUseDoubleBuffer = 1;
+	GameArg.DbgBigPig = 1;
+	GameArg.DbgBpp = 32;
+#ifdef OGL
+	GameArg.DbgAltTexMerge = 1;
+	GameArg.DbgGlIntensity4Ok = 1;
+	GameArg.DbgGlLuminance4Alpha4Ok = 1;
+	GameArg.DbgGlRGBA2Ok = 1;
+	GameArg.DbgGlReadPixelsOk = 1;
+	GameArg.DbgGlGetTexLevelParamOk = 1;
+#endif
+	GameArg.LogNetTraffic = android_mode;
+}
+
+// All FindArg calls should be here to keep the code clean
+static void ReadCmdArgsForMode(int android_mode)
+{
+	InitArgDefaults(android_mode);
+
 	// System Options
 
 	GameArg.SysShowCmdHelp 		= (FindArg( "-help" ) || FindArg( "-h" ) || FindArg( "-?" ) || FindArg( "?" ));
-	GameArg.SysUseNiceFPS 		= !FindArg("-nonicefps");
+	if (FindArg("-nonicefps"))
+		GameArg.SysUseNiceFPS = 0;
 
-	GameArg.SysMaxFPS = get_int_arg("-maxfps", MAXIMUM_FPS);
+	GameArg.SysMaxFPS = get_int_arg("-maxfps", GameArg.SysMaxFPS);
 	if (GameArg.SysMaxFPS <= 0 || GameArg.SysMaxFPS > MAXIMUM_FPS)
 		GameArg.SysMaxFPS = MAXIMUM_FPS;
 
@@ -137,7 +175,8 @@ void ReadCmdArgs(void)
 	if (GameArg.SysHogDir == NULL)
 		GameArg.SysNoHogDir = FindArg("-nohogdir");
 
-	GameArg.SysUsePlayersDir 	= FindArg("-use_players_dir");
+	if (FindArg("-use_players_dir"))
+		GameArg.SysUsePlayersDir = 1;
 	GameArg.SysLowMem 		= FindArg("-lowmem");
 	GameArg.SysPilot 		= get_str_arg("-pilot", NULL);
 	GameArg.SysWindow 		= FindArg("-window");
@@ -165,16 +204,17 @@ void ReadCmdArgs(void)
 
 #ifdef USE_SDLMIXER
 	GameArg.SndDisableSdlMixer 	= FindArg("-nosdlmixer");
-#else
-	GameArg.SndDisableSdlMixer	= 1;
 #endif
 
 
 	// Graphics Options
 
-	GameArg.GfxHiresGFXAvailable	= !FindArg("-lowresgraphics");
-	GameArg.GfxHiresFNTAvailable	= !FindArg("-lowresfont");
-	GameArg.GfxMovieHires 		= !FindArg( "-lowresmovies" );
+	if (FindArg("-lowresgraphics"))
+		GameArg.GfxHiresGFXAvailable = 0;
+	if (FindArg("-lowresfont"))
+		GameArg.GfxHiresFNTAvailable = 0;
+	if (FindArg("-lowresmovies"))
+		GameArg.GfxMovieHires = 0;
 
 #ifdef OGL
 	// OpenGL Options
@@ -185,12 +225,12 @@ void ReadCmdArgs(void)
 	// Multiplayer Options
 
 #ifdef USE_UDP
-	GameArg.MplUdpHostAddr		= get_str_arg("-udp_hostaddr", UDP_MANUAL_ADDR_DEFAULT);
+	GameArg.MplUdpHostAddr		= get_str_arg("-udp_hostaddr", (char *) GameArg.MplUdpHostAddr);
 	GameArg.MplUdpHostPort		= get_int_arg("-udp_hostport", 0);
 	GameArg.MplUdpMyPort		= get_int_arg("-udp_myport", 0);
 #ifdef USE_TRACKER
-	GameArg.MplTrackerAddr		= get_str_arg("-tracker_hostaddr", TRACKER_ADDR_DEFAULT);
-	GameArg.MplTrackerPort		= get_int_arg("-tracker_hostport", TRACKER_PORT_DEFAULT);
+	GameArg.MplTrackerAddr		= get_str_arg("-tracker_hostaddr", (char *) GameArg.MplTrackerAddr);
+	GameArg.MplTrackerPort		= get_int_arg("-tracker_hostport", GameArg.MplTrackerPort);
 #endif
 #endif
 
@@ -214,30 +254,46 @@ void ReadCmdArgs(void)
 	GameArg.DbgAltTex 		= get_str_arg("-text", NULL);
 	GameArg.DbgTexMap 		= get_str_arg("-tmap", NULL);
 	GameArg.DbgShowMemInfo 		= FindArg("-showmeminfo");
-	GameArg.DbgUseDoubleBuffer 	= !FindArg("-nodoublebuffer");
-	GameArg.DbgBigPig 		= !FindArg("-bigpig");
-	GameArg.DbgBpp 			= (FindArg("-16bpp") ? 16 : 32);
+	if (FindArg("-nodoublebuffer"))
+		GameArg.DbgUseDoubleBuffer = 0;
+	if (FindArg("-bigpig"))
+		GameArg.DbgBigPig = 0;
+	if (FindArg("-16bpp"))
+		GameArg.DbgBpp = 16;
 
 #ifdef OGL
-	GameArg.DbgAltTexMerge 		= !FindArg("-gl_oldtexmerge");
-	GameArg.DbgGlIntensity4Ok 	= get_int_arg("-gl_intensity4_ok", 1);
-	GameArg.DbgGlLuminance4Alpha4Ok = get_int_arg("-gl_luminance4_alpha4_ok", 1);
-	GameArg.DbgGlRGBA2Ok 		= get_int_arg("-gl_rgba2_ok", 1);
-	GameArg.DbgGlReadPixelsOk 	= get_int_arg("-gl_readpixels_ok", 1);
-	GameArg.DbgGlGetTexLevelParamOk = get_int_arg("-gl_gettexlevelparam_ok", 1);
+	if (FindArg("-gl_oldtexmerge"))
+		GameArg.DbgAltTexMerge = 0;
+	GameArg.DbgGlIntensity4Ok 	= get_int_arg("-gl_intensity4_ok", GameArg.DbgGlIntensity4Ok);
+	GameArg.DbgGlLuminance4Alpha4Ok = get_int_arg("-gl_luminance4_alpha4_ok", GameArg.DbgGlLuminance4Alpha4Ok);
+	GameArg.DbgGlRGBA2Ok 		= get_int_arg("-gl_rgba2_ok", GameArg.DbgGlRGBA2Ok);
+	GameArg.DbgGlReadPixelsOk 	= get_int_arg("-gl_readpixels_ok", GameArg.DbgGlReadPixelsOk);
+	GameArg.DbgGlGetTexLevelParamOk = get_int_arg("-gl_gettexlevelparam_ok", GameArg.DbgGlGetTexLevelParamOk);
 #else
 	GameArg.DbgSdlHWSurface = FindArg("-hwsurface");
 	GameArg.DbgSdlASyncBlit = FindArg("-asyncblit");
 #endif
 
-#ifdef __ANDROID__
-	GameArg.LogNetTraffic		= 1;
-#else
-	GameArg.LogNetTraffic 		= FindArg("-netlog");
-#endif
+	if (!android_mode)
+		GameArg.LogNetTraffic = FindArg("-netlog");
 
 	GameArg.GameLogTimeStamp	= FindArg("-gamelog_timestamp");
 	GameArg.GameLogSplit		= FindArg("-gamelog_split");
+	if (android_mode)
+		GameArg.SndDigiSampleRate = SAMPLE_RATE_22K;
+#ifdef OGL
+	if (android_mode)
+		GameArg.DbgAltTexMerge = 1;
+#endif
+}
+
+void ReadCmdArgs(void)
+{
+#ifdef __ANDROID__
+	ReadCmdArgsForMode(1);
+#else
+	ReadCmdArgsForMode(0);
+#endif
 }
 
 void args_exit(void)
@@ -247,7 +303,7 @@ void args_exit(void)
 		d_free(Args[i]);
 }
 
-static void init_args_common(int argc, char **argv, int android_mode, int read_cmd_args)
+static void init_args_common(int argc, char **argv, int android_mode)
 {
 	int i;
 
@@ -264,19 +320,17 @@ static void init_args_common(int argc, char **argv, int android_mode, int read_c
 			d_strlwr( Args[i]  );  // Convert all args to lowercase
 	}
 
-	if (!read_cmd_args)
-		return;
-
-	AppendIniArgs();
-	ReadCmdArgs();
+	if (!android_mode)
+		AppendIniArgs();
+	ReadCmdArgsForMode(android_mode);
 }
 
 void InitArgs( int argc,char **argv )
 {
-	init_args_common(argc, argv, 0, 1);
+	init_args_common(argc, argv, 0);
 }
 
 void InitArgsAndroid(int argc, char **argv)
 {
-	init_args_common(argc, argv, 1, 0);
+	init_args_common(argc, argv, 1);
 }
