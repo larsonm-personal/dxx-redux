@@ -121,6 +121,9 @@ internal fun largestScrollNodeIds(scrollNodes: List<Pair<Int, Int>>): List<Int> 
     return scrollNodes.filter { it.second == largestArea }.map { it.first }
 }
 
+internal fun scrollGestureXFractions(isLandscape: Boolean): List<Float> =
+    if (isLandscape) listOf(0.25f, 0.75f) else listOf(0.5f)
+
 private fun findComposeView(view: View): View? {
     if (view.accessibilityNodeProvider != null &&
         view.javaClass.simpleName.contains("Compose")
@@ -295,6 +298,9 @@ internal suspend fun SetupActivity.scrollToTop() {
 
 private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean =
     withContext(Dispatchers.Main) {
+        val isLandscape =
+            resources.configuration.orientation ==
+                android.content.res.Configuration.ORIENTATION_LANDSCAPE
         val root = window.decorView
         val composeView = findComposeView(root)
         val provider = composeView?.accessibilityNodeProvider
@@ -357,74 +363,38 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
             }
             if (scrolled) {
                 delay(250)
-                return@withContext true
+                if (!isLandscape) return@withContext true
             }
         }
 
         val decorView = window.decorView
-        val centerX = decorView.width / 2f
         val startY = decorView.height * (if (forward) 0.62f else 0.44f)
         val endY = decorView.height * (if (forward) 0.44f else 0.62f)
-        val downTime = SystemClock.uptimeMillis()
-        val down =
-            MotionEvent.obtain(
-                downTime,
-                downTime,
-                MotionEvent.ACTION_DOWN,
-                centerX,
-                startY,
-                0,
-            )
-        decorView.dispatchTouchEvent(down)
-        down.recycle()
-        delay(50)
-        val mid1 =
-            MotionEvent.obtain(
-                downTime,
-                SystemClock.uptimeMillis(),
-                MotionEvent.ACTION_MOVE,
-                centerX,
-                startY + ((endY - startY) * 0.33f),
-                0,
-            )
-        decorView.dispatchTouchEvent(mid1)
-        mid1.recycle()
-        delay(50)
-        val mid2 =
-            MotionEvent.obtain(
-                downTime,
-                SystemClock.uptimeMillis(),
-                MotionEvent.ACTION_MOVE,
-                centerX,
-                startY + ((endY - startY) * 0.66f),
-                0,
-            )
-        decorView.dispatchTouchEvent(mid2)
-        mid2.recycle()
-        delay(50)
-        val end =
-            MotionEvent.obtain(
-                downTime,
-                SystemClock.uptimeMillis(),
-                MotionEvent.ACTION_MOVE,
-                centerX,
-                endY,
-                0,
-            )
-        decorView.dispatchTouchEvent(end)
-        end.recycle()
-        delay(50)
-        val up =
-            MotionEvent.obtain(
-                downTime,
-                SystemClock.uptimeMillis(),
-                MotionEvent.ACTION_UP,
-                centerX,
-                endY,
-                0,
-            )
-        decorView.dispatchTouchEvent(up)
-        up.recycle()
+        for (xFraction in scrollGestureXFractions(isLandscape)) {
+            val centerX = decorView.width * xFraction
+            val downTime = SystemClock.uptimeMillis()
+            val yFractions = listOf(0f, 0.33f, 0.66f, 1f)
+            for ((index, yFraction) in yFractions.withIndex()) {
+                val action =
+                    when (index) {
+                        0 -> MotionEvent.ACTION_DOWN
+                        yFractions.lastIndex -> MotionEvent.ACTION_UP
+                        else -> MotionEvent.ACTION_MOVE
+                    }
+                val event =
+                    MotionEvent.obtain(
+                        downTime,
+                        SystemClock.uptimeMillis(),
+                        action,
+                        centerX,
+                        startY + ((endY - startY) * yFraction),
+                        0,
+                    )
+                decorView.dispatchTouchEvent(event)
+                event.recycle()
+                delay(50)
+            }
+        }
         true
     }
 

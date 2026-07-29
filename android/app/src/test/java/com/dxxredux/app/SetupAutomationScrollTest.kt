@@ -23,4 +23,10 @@ class SetupAutomationScrollTest {
     fun largestScrollNodeIdsRejectsZeroAreaNodes() {
         assertEquals(emptyList<Int>(), largestScrollNodeIds(listOf(11 to 0, 27 to 0)))
     }
+
+    @Test
+    fun landscapeGesturesCoverBothLauncherPanes() {
+        assertEquals(listOf(0.25f, 0.75f), scrollGestureXFractions(isLandscape = true))
+        assertEquals(listOf(0.5f), scrollGestureXFractions(isLandscape = false))
+    }
 }

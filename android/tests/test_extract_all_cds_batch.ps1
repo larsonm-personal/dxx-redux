@@ -48,10 +48,16 @@ Set-StrictMode -Version Latest
 function Invoke-BoundedExtractor {
     param([string]$OutputDirectory, [string]$FilePath, [string[]]$ArgumentList)
     New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
+    [IO.File]::WriteAllText((Join-Path $OutputDirectory 'fixture.bin'), 'fixture')
     return [pscustomobject]@{
         Output = @('{"track":1}', 'Done: 1 data tracks extracted, 1 total files, 0 errors')
         ExitCode = 0
     }
+}
+function Test-ExtractionCompletionManifest { return $false }
+function Publish-ExtractionDirectory {
+    param([string]$StagingDirectory, [string]$DestinationDirectory)
+    Move-Item -LiteralPath $StagingDirectory -Destination $DestinationDirectory
 }
 '@
     [System.IO.File]::WriteAllText(
