@@ -70,7 +70,7 @@ private fun updateConfigPaths(
             val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
             text =
                 if (regex.containsMatchIn(text)) {
-                    regex.replace(text, "$key=$value")
+                    regex.replace(text) { "$key=$value" }
                 } else {
                     text.trimEnd() + "\n$key=$value\n"
                 }

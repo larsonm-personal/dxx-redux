@@ -47,6 +47,20 @@ class GraphicsConfigHelpersTest {
     }
 
     @Test
+    fun updateAllConfigFiles_writesReplacementMetacharactersLiterally() {
+        val filesDir = filesDirWithConfigs()
+        val values = listOf("\$9", "\$0", "\${name}", "\\", "foo\\bar", "\\\\")
+
+        for (value in values) {
+            updateAllConfigFiles(filesDir, listOf("TexFilt" to value))
+
+            for (relative in listOf("descent.cfg", "d1x-redux/descent.cfg", "d2x-redux/descent.cfg")) {
+                assertEquals("TexFilt=$value\n", cfgText(filesDir, relative))
+            }
+        }
+    }
+
+    @Test
     fun cornerTextInset_writesRootAndBothGameConfigs() {
         val filesDir = filesDirWithConfigs()
 

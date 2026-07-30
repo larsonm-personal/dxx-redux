@@ -17,22 +17,69 @@ object ConfigImportExport {
     private const val MIME_JSON = "application/json"
     private const val COMBINED_CONFIG_VERSION = 3
 
-    // SharedPreferences keys that should be included in config export.
+    internal enum class ExportedPreferenceType(
+        val displayName: String,
+    ) {
+        BOOLEAN("Boolean"),
+        STRING("String"),
+        ;
+
+        fun accepts(value: Any?): Boolean =
+            when (this) {
+                BOOLEAN -> value is Boolean
+                STRING -> value is String
+            }
+    }
+
+    internal data class ExportedPreference(
+        val key: String,
+        val type: ExportedPreferenceType,
+    )
+
+    // SharedPreferences included in config export with their declared runtime type.
     // Excludes debug/session/device-specific keys like selected_game, host_*, debug_log_*.
-    private val EXPORTED_PREF_KEYS =
+    internal val EXPORTED_PREFERENCES =
         listOf(
-            "render_resolution",
-            "game_orientation",
-            "music_mode",
-            "touch_overlay_enabled",
-            PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE,
-            PREF_ALLOW_ACOUSTID_WEB_LOOKUPS,
-            PREF_SHOW_RESUME_OFFER,
-            PREF_SHOW_DEMO_INSTALLER_OFFER,
-            PREF_GUIDEBOT_HELPER_LINE,
-            PREF_NEAREST_PLAYER_LINE,
-            PREF_HEADLIGHT_OFF_BY_DEFAULT,
+            ExportedPreference("render_resolution", ExportedPreferenceType.STRING),
+            ExportedPreference("game_orientation", ExportedPreferenceType.STRING),
+            ExportedPreference("music_mode", ExportedPreferenceType.STRING),
+            ExportedPreference("touch_overlay_enabled", ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_SHOW_DEMO_INSTALLER_OFFER, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_GUIDEBOT_HELPER_LINE, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_NEAREST_PLAYER_LINE, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_HEADLIGHT_OFF_BY_DEFAULT, ExportedPreferenceType.BOOLEAN),
         )
+
+    internal data class DecodedPreferences(
+        val values: Map<ExportedPreference, Any> = emptyMap(),
+        val error: String? = null,
+    )
+
+    internal fun exportPreferenceValues(allPrefs: Map<String, *>): JSONObject {
+        val json = JSONObject()
+        for (pref in EXPORTED_PREFERENCES) {
+            if (!allPrefs.containsKey(pref.key)) continue
+            val value = allPrefs[pref.key]
+            if (pref.type.accepts(value)) json.put(pref.key, value)
+        }
+        return json
+    }
+
+    internal fun decodePreferenceValues(json: JSONObject): DecodedPreferences {
+        val decoded = linkedMapOf<ExportedPreference, Any>()
+        for (pref in EXPORTED_PREFERENCES) {
+            if (!json.has(pref.key)) continue
+            val value = json.get(pref.key)
+            if (!pref.type.accepts(value)) {
+                return DecodedPreferences(error = "'${pref.key}' must be ${pref.type.displayName}")
+            }
+            decoded[pref] = value
+        }
+        return DecodedPreferences(values = decoded)
+    }
 
     // descent.cfg keys managed through the launcher UI
     private val EXPORTED_CFG_KEYS =
@@ -95,19 +142,8 @@ object ConfigImportExport {
         }
 
         // App settings: SharedPreferences + descent.cfg graphics keys
-        val appSettings = JSONObject()
         val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-        val allPrefs = prefs.all
-        for (key in EXPORTED_PREF_KEYS) {
-            if (allPrefs.containsKey(key)) {
-                when (val v = allPrefs[key]) {
-                    is Boolean -> appSettings.put(key, v)
-                    is Int -> appSettings.put(key, v)
-                    is Float -> appSettings.put(key, v.toDouble())
-                    is String -> appSettings.put(key, v)
-                }
-            }
-        }
+        val appSettings = exportPreferenceValues(prefs.all)
         val cfgObj = JSONObject()
         for (key in EXPORTED_CFG_KEYS) {
             val v = readConfigValue(context.filesDir, key)
@@ -283,24 +319,15 @@ object ConfigImportExport {
         context: Context,
         json: JSONObject,
     ): String {
+        val decoded = decodePreferenceValues(json)
+        if (decoded.error != null) return "App settings import failed: ${decoded.error}"
+
         var count = 0
         val editor = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE).edit()
-        for (key in EXPORTED_PREF_KEYS) {
-            if (!json.has(key)) continue
-            when (key) {
-                "touch_overlay_enabled",
-                PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE,
-                PREF_SHOW_RESUME_OFFER,
-                PREF_SHOW_DEMO_INSTALLER_OFFER,
-                PREF_GUIDEBOT_HELPER_LINE,
-                PREF_NEAREST_PLAYER_LINE,
-                -> {
-                    editor.putBoolean(key, json.getBoolean(key))
-                }
-
-                else -> {
-                    editor.putString(key, json.getString(key))
-                }
+        for ((pref, value) in decoded.values) {
+            when (pref.type) {
+                ExportedPreferenceType.BOOLEAN -> editor.putBoolean(pref.key, value as Boolean)
+                ExportedPreferenceType.STRING -> editor.putString(pref.key, value as String)
             }
             count++
         }
