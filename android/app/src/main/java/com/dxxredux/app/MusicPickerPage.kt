@@ -35,6 +35,8 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
@@ -1594,6 +1596,54 @@ private fun isAudioFile(name: String): Boolean = name.substringAfterLast('.').lo
 
 private fun isArchiveFile(name: String): Boolean = name.substringAfterLast('.').lowercase() in ARCHIVE_EXTENSIONS
 
+internal fun createCopiedAudioImportAttemptDir(destDir: File): File {
+    val parent = destDir.parentFile ?: throw IOException("Audio set directory has no parent")
+    if (!parent.exists() && !parent.mkdirs()) {
+        throw IOException("Could not create custom audio directory")
+    }
+    val attemptDir = File(parent, ".${destDir.name}.import-${UUID.randomUUID()}")
+    if (!attemptDir.mkdirs()) {
+        throw IOException("Could not create custom audio import directory")
+    }
+    return attemptDir
+}
+
+internal fun findCopiedAudioImportCollision(
+    destDir: File,
+    retainedNames: Collection<String>,
+    imported: Collection<String>,
+): String? {
+    val reserved =
+        buildSet {
+            retainedNames.forEach { add(it.lowercase(Locale.ROOT)) }
+            destDir.listFiles()?.forEach { add(it.name.lowercase(Locale.ROOT)) }
+        }
+    val attemptNames = mutableSetOf<String>()
+    for (filename in imported) {
+        val normalized = filename.lowercase(Locale.ROOT)
+        if (normalized in reserved || !attemptNames.add(normalized)) return filename
+    }
+    return null
+}
+
+internal fun publishCopiedAudioImport(
+    attemptDir: File,
+    destDir: File,
+    imported: List<String>,
+) {
+    if (!destDir.exists() && attemptDir.renameTo(destDir)) return
+    if (!destDir.exists() && !destDir.mkdirs()) {
+        throw IOException("Could not create custom audio set directory")
+    }
+    for (filename in imported.distinct()) {
+        val staged = File(attemptDir, filename)
+        if (!staged.isFile) {
+            throw IOException("Missing staged custom audio file: $filename")
+        }
+        staged.copyTo(File(destDir, filename), overwrite = false)
+    }
+}
+
 internal suspend fun importAudioFiles(
     ctx: Context,
     filesDir: File,
@@ -1608,113 +1658,141 @@ internal suspend fun importAudioFiles(
     val destDir = customMgr.setDir(setId)
 
     withContext(Dispatchers.IO) {
-        if (copyToStorage) destDir.mkdirs()
+        val importDir = if (copyToStorage) createCopiedAudioImportAttemptDir(destDir) else destDir
         val imported = mutableListOf<String>()
         val referencedUris = mutableMapOf<String, String>()
-        for (uri in uris) {
-            try {
-                val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
-                if (isArchiveFile(fileName)) {
-                    if (copyToStorage) {
-                        val extracted = extractAudioFromArchive(ctx, uri, destDir, fileName, onProgress)
-                        imported.addAll(extracted)
+        try {
+            for (uri in uris) {
+                try {
+                    val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
+                    if (isArchiveFile(fileName)) {
+                        if (copyToStorage) {
+                            val extracted = extractAudioFromArchive(ctx, uri, importDir, fileName, onProgress)
+                            imported.addAll(extracted)
+                        }
+                        // Archives are always extracted (copied). Can't reference archive contents
+                    } else if (isAudioFile(fileName)) {
+                        if (copyToStorage) {
+                            val dest = File(importDir, fileName)
+                            LauncherFileCopy.copyUriToFile(ctx, uri, dest, fileName) { progress ->
+                                onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
+                            }
+                        } else {
+                            // Take persistable URI permission so we can read later
+                            if (!persistReadPermissionForUri(ctx, uri)) {
+                                Log.w(TAG, "Could not persist URI permission for $fileName")
+                            }
+                            referencedUris[fileName] = uri.toString()
+                        }
+                        imported.add(fileName)
                     }
-                    // Archives are always extracted (copied). Can't reference archive contents
-                } else if (isAudioFile(fileName)) {
+                } catch (e: InsufficientStorageException) {
+                    Log.e(TAG, "Audio import stopped for storage: $uri", e)
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to import: $uri", e)
+                }
+            }
+            if (imported.isNotEmpty()) {
+                val retainedNames =
+                    targetSetId
+                        ?.let { id -> customMgr.getSets().firstOrNull { it.id == id }?.files }
+                        .orEmpty()
+                val collision =
                     if (copyToStorage) {
-                        val dest = File(destDir, fileName)
-                        LauncherFileCopy.copyUriToFile(ctx, uri, dest, fileName) { progress ->
-                            onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
+                        findCopiedAudioImportCollision(destDir, retainedNames, imported)
+                    } else {
+                        null
+                    }
+                if (collision != null) {
+                    Log.w(TAG, "Audio import filename already exists: $collision")
+                    withContext(Dispatchers.Main) {
+                        Toast
+                            .makeText(
+                                ctx,
+                                "Audio file already exists in this set: $collision",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                    }
+                    return@withContext
+                }
+                // Run chromaprint matching on imported files
+                val trackNames = mutableMapOf<String, String>()
+                val trackConfidences = mutableMapOf<String, Float>()
+                val trackNumbers = mutableMapOf<String, Int>()
+
+                fun recordMatch(
+                    f: String,
+                    match: FingerprintBridge.MatchResult,
+                ) {
+                    trackNames[f] = match.name
+                    trackConfidences[f] = match.confidence
+                    trackNumbers[f] = match.trackNum
+                }
+                try {
+                    FingerprintBridge.ensureDbLoaded(ctx)
+                    if (copyToStorage) {
+                        for (f in imported) {
+                            val path = File(importDir, f).absolutePath
+                            val match = FingerprintBridge.fingerprintAndMatch(path)
+                            if (match != null) {
+                                recordMatch(f, match)
+                                Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
+                            }
                         }
                     } else {
-                        // Take persistable URI permission so we can read later
-                        if (!persistReadPermissionForUri(ctx, uri)) {
-                            Log.w(TAG, "Could not persist URI permission for $fileName")
+                        // Fingerprint SAF-referenced files via content URI
+                        for (f in imported) {
+                            val uriStr = referencedUris[f] ?: continue
+                            val uri = android.net.Uri.parse(uriStr)
+                            val match = FingerprintBridge.fingerprintAndMatch(ctx.contentResolver, uri)
+                            if (match != null) {
+                                recordMatch(f, match)
+                                Log.i(TAG, "Matched ref '$f' -> '${match.name}' (${match.confidence})")
+                            }
                         }
-                        referencedUris[fileName] = uri.toString()
                     }
-                    imported.add(fileName)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
                 }
-            } catch (e: InsufficientStorageException) {
-                Log.e(TAG, "Audio import stopped for storage: $uri", e)
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to import: $uri", e)
-            }
-        }
-        if (imported.isNotEmpty()) {
-            // Run chromaprint matching on imported files
-            val trackNames = mutableMapOf<String, String>()
-            val trackConfidences = mutableMapOf<String, Float>()
-            val trackNumbers = mutableMapOf<String, Int>()
 
-            fun recordMatch(
-                f: String,
-                match: FingerprintBridge.MatchResult,
-            ) {
-                trackNames[f] = match.name
-                trackConfidences[f] = match.confidence
-                trackNumbers[f] = match.trackNum
-            }
-            try {
-                FingerprintBridge.ensureDbLoaded(ctx)
                 if (copyToStorage) {
-                    for (f in imported) {
-                        val path = File(destDir, f).absolutePath
-                        val match = FingerprintBridge.fingerprintAndMatch(path)
-                        if (match != null) {
-                            recordMatch(f, match)
-                            Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
-                        }
-                    }
-                } else {
-                    // Fingerprint SAF-referenced files via content URI
-                    for (f in imported) {
-                        val uriStr = referencedUris[f] ?: continue
-                        val uri = android.net.Uri.parse(uriStr)
-                        val match = FingerprintBridge.fingerprintAndMatch(ctx.contentResolver, uri)
-                        if (match != null) {
-                            recordMatch(f, match)
-                            Log.i(TAG, "Matched ref '$f' -> '${match.name}' (${match.confidence})")
-                        }
-                    }
+                    publishCopiedAudioImport(importDir, destDir, imported)
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
-            }
-
-            if (targetSetId != null) {
-                // Append to existing set
-                customMgr.addFilesToSet(
-                    targetSetId,
-                    imported,
-                    referencedUris,
-                    trackNames,
-                    trackConfidences,
-                    trackNumbers,
-                )
-                Log.i(TAG, "Added ${imported.size} files to existing set '$targetSetId'")
+                if (targetSetId != null) {
+                    // Append to existing set
+                    customMgr.addFilesToSet(
+                        targetSetId,
+                        imported,
+                        referencedUris,
+                        trackNames,
+                        trackConfidences,
+                        trackNumbers,
+                    )
+                    Log.i(TAG, "Added ${imported.size} files to existing set '$targetSetId'")
+                } else {
+                    customMgr.addSet(
+                        CustomAudioSetManager.AudioSet(
+                            id = setId,
+                            label = setName,
+                            files = imported,
+                            enabled = true,
+                            order = customMgr.getSets().size,
+                            trackNames = trackNames,
+                            trackConfidences = trackConfidences,
+                            trackNumbers = trackNumbers,
+                            referencedUris = referencedUris,
+                        ),
+                    )
+                    Log.i(TAG, "Imported ${imported.size} files as set '$setName' (${trackNames.size} matched)")
+                }
             } else {
-                customMgr.addSet(
-                    CustomAudioSetManager.AudioSet(
-                        id = setId,
-                        label = setName,
-                        files = imported,
-                        enabled = true,
-                        order = customMgr.getSets().size,
-                        trackNames = trackNames,
-                        trackConfidences = trackConfidences,
-                        trackNumbers = trackNumbers,
-                        referencedUris = referencedUris,
-                    ),
-                )
-                Log.i(TAG, "Imported ${imported.size} files as set '$setName' (${trackNames.size} matched)")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, "No audio files found in import", Toast.LENGTH_SHORT).show()
+                }
             }
-        } else {
-            if (copyToStorage) destDir.deleteRecursively()
-            withContext(Dispatchers.Main) {
-                Toast.makeText(ctx, "No audio files found in import", Toast.LENGTH_SHORT).show()
-            }
+        } finally {
+            if (copyToStorage) importDir.deleteRecursively()
         }
     }
 }
