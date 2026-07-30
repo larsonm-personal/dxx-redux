@@ -30,6 +30,8 @@ class MissionZipAudioFingerprintCache(
         val acoustIdLookupStatus: String?,
         val acoustIdLookupAt: Long?,
         val lookupAt: Long,
+        val acoustIdScore: Double? = null,
+        val acoustIdRecordingId: String? = null,
     ) {
         val hasLocalMatch: Boolean get() = !localMatchName.isNullOrBlank()
         val hasAcoustIdLookup: Boolean get() = !acoustIdLookupStatus.isNullOrBlank()
@@ -84,6 +86,8 @@ class MissionZipAudioFingerprintCache(
                 localMatchTrack = match?.trackNum,
                 localMatchDbIdentity = localMatchDbIdentity,
                 acoustIdName = null,
+                acoustIdScore = null,
+                acoustIdRecordingId = null,
                 acoustIdLookupStatus = null,
                 acoustIdLookupAt = null,
                 lookupAt = System.currentTimeMillis(),
@@ -142,10 +146,14 @@ class MissionZipAudioFingerprintCache(
         entry: Entry,
         name: String?,
         status: String,
+        score: Double? = null,
+        recordingId: String? = null,
     ): Entry {
         val updated =
             entry.copy(
                 acoustIdName = name,
+                acoustIdScore = score,
+                acoustIdRecordingId = recordingId,
                 acoustIdLookupStatus = status,
                 acoustIdLookupAt = System.currentTimeMillis(),
             )
@@ -211,6 +219,8 @@ class MissionZipAudioFingerprintCache(
                 localMatchTrack?.let { put("local_match_track", it) }
                 localMatchDbIdentity?.let { put("local_match_db_identity", it) }
                 acoustIdName?.let { put("acoustid_name", it) }
+                acoustIdScore?.let { put("acoustid_score", it) }
+                acoustIdRecordingId?.let { put("acoustid_recording_id", it) }
                 acoustIdLookupStatus?.let { put("acoustid_lookup_status", it) }
                 acoustIdLookupAt?.let { put("acoustid_lookup_at", it) }
             }
@@ -239,6 +249,8 @@ class MissionZipAudioFingerprintCache(
                 localMatchTrack = if (has("local_match_track")) getInt("local_match_track") else null,
                 localMatchDbIdentity = optString("local_match_db_identity").takeIf { it.isNotBlank() },
                 acoustIdName = optString("acoustid_name").takeIf { it.isNotBlank() },
+                acoustIdScore = if (has("acoustid_score")) getDouble("acoustid_score") else null,
+                acoustIdRecordingId = optString("acoustid_recording_id").takeIf { it.isNotBlank() },
                 acoustIdLookupStatus = optString("acoustid_lookup_status").takeIf { it.isNotBlank() },
                 acoustIdLookupAt = if (has("acoustid_lookup_at")) getLong("acoustid_lookup_at") else null,
                 lookupAt = optLong("lookup_at", 0L),

@@ -166,44 +166,49 @@ object ConfigImportExport {
      * Import a config from a content:// URI. Returns a human-readable summary
      * of what was imported, or an error message.
      */
-    fun importFromUri(
+    internal suspend fun prepareFromUri(
         context: Context,
         uri: Uri,
-    ): String {
-        val text =
+    ): ConfigImportPreparation =
+        onConfigImportWorker {
+            val size = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri)
+            if (size != null && size > MAX_CONFIG_IMPORT_BYTES) {
+                return@onConfigImportWorker ConfigImportPreparation.Error(
+                    "Error: configuration file exceeds $MAX_CONFIG_IMPORT_BYTES bytes",
+                )
+            }
             try {
                 context.contentResolver
                     .openInputStream(uri)
-                    ?.bufferedReader()
-                    ?.use { it.readText() }
-                    ?: return "Error: could not open file"
+                    ?.use(::prepareConfigImport)
+                    ?: ConfigImportPreparation.Error("Error: could not open file")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to read import file", e)
-                return "Error: ${e.message}"
+                ConfigImportPreparation.Error("Error: ${e.message}")
             }
-        return importFromText(context, text)
-    }
-
-    /** Import a config from raw JSON text. Returns a summary or error message. */
-    fun importFromText(
-        context: Context,
-        text: String,
-    ): String {
-        val json =
-            try {
-                JSONObject(text)
-            } catch (e: Exception) {
-                return "Error: invalid JSON - ${e.message}"
-            }
-
-        val type = HumanReadableConfig.detectConfigType(json)
-        return when (type) {
-            "touch_layout" -> importTouchLayout(context, json)
-            "controller_config" -> importControllerConfig(context, json)
-            "combined_config" -> importCombined(context, json)
-            else -> "Error: unrecognized config type"
         }
-    }
+
+    suspend fun importFromUri(
+        context: Context,
+        uri: Uri,
+    ): String =
+        when (val preparation = prepareFromUri(context, uri)) {
+            is ConfigImportPreparation.Error -> preparation.message
+            is ConfigImportPreparation.Ready -> importPrepared(context, preparation.config)
+        }
+
+    internal suspend fun importPrepared(
+        context: Context,
+        prepared: PreparedConfigImport,
+    ): String =
+        onConfigImportWorker {
+            when (prepared.type) {
+                "touch_layout" -> importTouchLayout(context, prepared.json)
+                "controller_config" -> importControllerConfig(context, prepared.json)
+                "combined_config" -> importCombined(context, prepared.json)
+                else -> "Error: unrecognized config type"
+            }
+        }
 
     private fun importTouchLayout(
         context: Context,

@@ -113,11 +113,15 @@ class MissionZipAudioFingerprintCacheTest {
                 local,
                 "Web Track",
                 MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK,
+                0.93,
+                "recording-123",
             )
         val reloaded = cache.cachedEntries(testCatalog(archive, track))[track.id]
 
         assertEquals("Known Track", updated.localMatchName)
         assertEquals("Web Track", reloaded!!.acoustIdName)
+        assertEquals(0.93, reloaded.acoustIdScore)
+        assertEquals("recording-123", reloaded.acoustIdRecordingId)
         assertEquals(MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK, reloaded.acoustIdLookupStatus)
         assertTrue(File(filesDir, "mission_zip_audio_fingerprints.json").readText().contains("\"acoustid_name\""))
     }

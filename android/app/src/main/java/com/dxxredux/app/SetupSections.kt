@@ -836,10 +836,8 @@ private fun MissionZipMusicDialog(
         remember(context) {
             prefs.getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false)
         }
-    val acoustIdAvailable =
-        remember(context, allowAcoustIdLookups) {
-            allowAcoustIdLookups && AcoustIdClient.configure(context)
-        }
+    val acoustIdConfiguration = remember(context) { AcoustIdClient.configure(context) }
+    val acoustIdAvailable = allowAcoustIdLookups && acoustIdConfiguration.isAvailable
     var cachedFingerprints by remember(catalog.archivePath) {
         mutableStateOf(fingerprintCache.cachedEntries(catalog))
     }
@@ -883,19 +881,22 @@ private fun MissionZipMusicDialog(
                 if (cached.hasAcoustIdLookup) {
                     cached
                 } else {
-                    val webName =
+                    val webMatch =
                         AcoustIdClient.lookupFingerprint(
                             cached.chromaprint,
                             maxOf(1, cached.durationMs / 1000),
+                            track.displayName,
                         )
                     fingerprintCache.recordAcoustIdResult(
                         cached,
-                        webName,
-                        if (webName.isNullOrBlank()) {
+                        webMatch?.name,
+                        if (webMatch == null) {
                             MissionZipAudioFingerprintCache.ACOUSTID_STATUS_NO_MATCH
                         } else {
                             MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK
                         },
+                        webMatch?.score,
+                        webMatch?.recordingId,
                     )
                 }
             } catch (_: Exception) {
@@ -1027,6 +1028,14 @@ private fun MissionZipMusicDialog(
                     } else {
                         LinearProgressIndicator(modifier = Modifier.padding(bottom = 6.dp).fillMaxWidth().height(4.dp))
                     }
+                }
+                if (allowAcoustIdLookups && !acoustIdConfiguration.isAvailable) {
+                    Text(
+                        acoustIdConfiguration.message,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
                 }
                 if (acoustIdAvailable && fingerprintableTracks.isNotEmpty()) {
                     Row(

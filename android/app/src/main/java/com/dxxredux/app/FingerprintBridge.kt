@@ -156,10 +156,17 @@ object FingerprintBridge {
                 val tracks = disc.getJSONArray("tracks")
                 for (j in 0 until tracks.length()) {
                     val t = tracks.getJSONObject(j)
-                    val acoustidName = t.optString("acoustid_name").takeIf { it.isNotEmpty() }
+                    val maintainedName = t.optString("name").takeIf { it.isNotEmpty() }
+                    val acoustidName =
+                        maintainedName?.let { sourceName ->
+                            t
+                                .optString("acoustid_name")
+                                .takeIf { it.isNotEmpty() }
+                                ?.takeIf { AcoustIdLabelPolicy.labelsAgree(sourceName, it) }
+                        }
                     val name =
                         acoustidName
-                            ?: t.optString("name").takeIf { it.isNotEmpty() }
+                            ?: maintainedName
                             ?: continue
                     if (!isPlaceholderName(name)) {
                         names[t.getInt("track")] = name
@@ -448,10 +455,15 @@ object FingerprintBridge {
                     val durationMs = t.optInt("duration_ms", 0)
                     if (durationMs <= 0) continue
                     val entry = JSONObject()
-                    val acoustidName = t.optString("acoustid_name").takeIf { it.isNotEmpty() }
+                    val maintainedName = t.optString("name", "Track ${t.getInt("track")}")
+                    val acoustidName =
+                        t
+                            .optString("acoustid_name")
+                            .takeIf { it.isNotEmpty() }
+                            ?.takeIf { AcoustIdLabelPolicy.labelsAgree(maintainedName, it) }
                     val rawName =
                         acoustidName
-                            ?: t.optString("name", "Track ${t.getInt("track")}")
+                            ?: maintainedName
                     val trackName =
                         if (isPlaceholderName(rawName)) "Track ${t.getInt("track")}" else rawName
                     entry.put("name", trackName)

@@ -33,6 +33,53 @@ if (authConfigFile.exists()) {
     logger.lifecycle("auth_config.json5 not found — GPGS sign-in will be disabled (dev token fallback)")
 }
 
+// The ignored root file is also consumed by repository maintenance scripts.
+// Generate a build-only asset so Android uses that same reviewed configuration.
+def acoustIdConfigFile = project.findProperty('acoustIdConfigFile') ?
+    file(project.property('acoustIdConfigFile')) :
+    rootProject.file("acoustid_config.json5")
+def generatedAcoustIdAssetsDir = file("$buildDir/generated/acoustid-assets/main")
+
+tasks.register('generateAcoustIdConfigAsset') {
+    description = 'Validate the optional root AcoustID configuration and generate its Android asset'
+    inputs.property('configurationPresent', acoustIdConfigFile.exists())
+    if (acoustIdConfigFile.exists()) {
+        inputs.file(acoustIdConfigFile)
+    }
+    outputs.dir(generatedAcoustIdAssetsDir)
+
+    doLast {
+        def outputDir = generatedAcoustIdAssetsDir
+        project.delete(outputDir)
+        outputDir.mkdirs()
+        if (!acoustIdConfigFile.exists()) {
+            logger.lifecycle("acoustid_config.json5 not found; AcoustID web lookups will be unavailable")
+            return
+        }
+
+        def jsonText = acoustIdConfigFile.text
+            .replaceAll('(?m)//.*$', '')
+            .replaceAll(',\\s*([}\\]])', '$1')
+        def parsed
+        try {
+            parsed = new groovy.json.JsonSlurper().parseText(jsonText)
+        } catch (Exception e) {
+            throw new GradleException("Invalid acoustid_config.json5: ${e.message}", e)
+        }
+        def apiKey = parsed.api_key
+        if (!(apiKey instanceof String) || !(apiKey ==~ /[A-Za-z0-9]{8,64}/) ||
+            apiKey == 'YOUR_ACOUSTID_API_KEY_HERE') {
+            throw new GradleException(
+                'Invalid acoustid_config.json5: api_key must be an 8-64 character alphanumeric key, not a placeholder'
+            )
+        }
+
+        new File(outputDir, 'acoustid_config.json5').text =
+            groovy.json.JsonOutput.toJson([api_key: apiKey]) + System.lineSeparator()
+        logger.lifecycle("Generated configured AcoustID Android asset")
+    }
+}
+
 // Derive versionCode from git commit count * 10 (rev 0).
 // Build scripts may override via -PversionCodeOverride=N for rev>0.
 def gitVersionCode = {
@@ -174,6 +221,7 @@ tasks.configureEach { task ->
     }
     if (task.name == 'preBuild') {
         task.dependsOn('generateLauncherArt')
+        task.dependsOn('generateAcoustIdConfigAsset')
     }
     if (task.name.startsWith('compile') && task.name.contains('Kotlin')) {
         task.dependsOn('generateBuildInfo')
@@ -352,6 +400,7 @@ android {
     sourceSets {
         main {
             res.srcDir(generatedLauncherResDir)
+            assets.srcDir(generatedAcoustIdAssetsDir)
         }
     }
 

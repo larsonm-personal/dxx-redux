@@ -2548,7 +2548,7 @@ private fun SetupScreen(
     val dxaImportUris = remember { mutableListOf<Pair<String, Uri>>() }
 
     // -- Config JSON import state ------------------------
-    var configImportUri by remember { mutableStateOf<Uri?>(null) }
+    var preparedConfigImport by remember { mutableStateOf<PreparedConfigImport?>(null) }
     var configImportName by remember { mutableStateOf<String?>(null) }
 
     val androidTvDevice = remember(context) { context.isAndroidTv() }
@@ -2571,8 +2571,9 @@ private fun SetupScreen(
             var gogDiscUri: Pair<String, Uri>? = null // .gog BIN file
             var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
             val unhandledFiles = mutableListOf<String>()
+            val warnings = mutableListOf<String>()
             val audioFileUris = mutableListOf<Uri>()
-            var jsonConfigUri: Pair<String, Uri>? = null
+            var jsonConfig: Pair<String, PreparedConfigImport>? = null
             for (uri in uris) {
                 val name = getDisplayName(context, uri)
                 if (name != null) {
@@ -2650,25 +2651,14 @@ private fun SetupScreen(
 
                         ext == "json" -> {
                             if (uris.size == 1) {
-                                try {
-                                    val text =
-                                        context.contentResolver
-                                            .openInputStream(uri)
-                                            ?.bufferedReader()
-                                            ?.use { it.readText() }
-                                    if (text != null) {
-                                        val json = org.json.JSONObject(text)
-                                        val cfgType = HumanReadableConfig.detectConfigType(json)
-                                        if (cfgType != "unknown") {
-                                            jsonConfigUri = name to uri
-                                        } else {
-                                            unhandledFiles.add(name)
-                                        }
-                                    } else {
-                                        unhandledFiles.add(name)
+                                when (val preparation = ConfigImportExport.prepareFromUri(context, uri)) {
+                                    is ConfigImportPreparation.Ready -> {
+                                        jsonConfig = name to preparation.config
                                     }
-                                } catch (_: Exception) {
-                                    unhandledFiles.add(name)
+
+                                    is ConfigImportPreparation.Error -> {
+                                        warnings.add("$name: ${preparation.message}")
+                                    }
                                 }
                             } else {
                                 unhandledFiles.add(name)
@@ -2681,7 +2671,6 @@ private fun SetupScreen(
                     }
                 }
             }
-            val warnings = mutableListOf<String>()
             if (gogDiscUri != null && instDiscUri != null) {
                 Log.i(
                     "DXX-Setup",
@@ -2735,9 +2724,9 @@ private fun SetupScreen(
                     sowImportName = it.first
                     sowImportUri = it.second
                 }
-                jsonConfigUri?.let {
+                jsonConfig?.let {
                     configImportName = it.first
-                    configImportUri = it.second
+                    preparedConfigImport = it.second
                 }
                 scanning = false
             }
@@ -3399,14 +3388,14 @@ private fun SetupScreen(
                 }
 
                 // -- Config JSON import dialog --
-                if (configImportUri != null) {
+                if (preparedConfigImport != null) {
                     val configImportFocus = remember { FocusRequester() }
-                    LaunchedEffect(configImportUri) {
-                        if (configImportUri != null) configImportFocus.requestFocus()
+                    LaunchedEffect(preparedConfigImport) {
+                        if (preparedConfigImport != null) configImportFocus.requestFocus()
                     }
                     AlertDialog(
                         onDismissRequest = {
-                            configImportUri = null
+                            preparedConfigImport = null
                             configImportName = null
                         },
                         title = { Text("Import Game Config?") },
@@ -3418,18 +3407,20 @@ private fun SetupScreen(
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    val uri = configImportUri!!
-                                    configImportUri = null
+                                    val prepared = preparedConfigImport!!
+                                    preparedConfigImport = null
                                     configImportName = null
-                                    val result = ConfigImportExport.importFromUri(context, uri)
-                                    Toast.makeText(context, result, Toast.LENGTH_LONG).show()
+                                    scope.launch {
+                                        val result = ConfigImportExport.importPrepared(context, prepared)
+                                        Toast.makeText(context, result, Toast.LENGTH_LONG).show()
+                                    }
                                 },
                                 modifier = Modifier.focusRequester(configImportFocus),
                             ) { Text("Import") }
                         },
                         dismissButton = {
                             TextButton(onClick = {
-                                configImportUri = null
+                                preparedConfigImport = null
                                 configImportName = null
                             }) { Text("Cancel") }
                         },

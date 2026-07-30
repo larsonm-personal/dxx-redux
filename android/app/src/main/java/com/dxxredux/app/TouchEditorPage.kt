@@ -317,6 +317,7 @@ fun TouchEditorPage(
     var showGlobalSettings by remember { mutableStateOf(false) }
     var showGyroSettings by remember { mutableStateOf(false) }
     var longPressPos by remember { mutableStateOf(Offset.Zero) } // where to place new control
+    val configImportScope = rememberCoroutineScope()
 
     // SAF file picker for importing touch layouts
     val importPickerLauncher =
@@ -326,12 +327,14 @@ fun TouchEditorPage(
                     .OpenDocument(),
         ) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
-            val msg = ConfigImportExport.importFromUri(context, uri)
-            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-            // Reload after import
-            touchSlots = TouchLayoutSlotRepository.load(context)
-            layout = touchSlots.activeSlot.value
-            dirty = false
+            configImportScope.launch {
+                val msg = ConfigImportExport.importFromUri(context, uri)
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                // Reload after import
+                touchSlots = TouchLayoutSlotRepository.load(context)
+                layout = touchSlots.activeSlot.value
+                dirty = false
+            }
         }
 
     // Save helper

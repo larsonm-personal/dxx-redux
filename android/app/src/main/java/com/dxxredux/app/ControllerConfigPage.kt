@@ -274,10 +274,12 @@ fun ControllerConfigPage(
                     .OpenDocument(),
         ) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
-            val msg = ConfigImportExport.importFromUri(context, uri)
-            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-            controllerSlots = ControllerConfigSlotRepository.load(context)
-            loadControllerConfigState(controllerSlots.activeSlot.value)
+            coroutineScope.launch {
+                val msg = ConfigImportExport.importFromUri(context, uri)
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                controllerSlots = ControllerConfigSlotRepository.load(context)
+                loadControllerConfigState(controllerSlots.activeSlot.value)
+            }
         }
 
     // Touch/dialog state

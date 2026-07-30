@@ -1,6 +1,7 @@
 // acoustid_config.json5 -- AcoustID API configuration for audio fingerprint lookups
 // Copy this file to acoustid_config.json5 and fill in your values.
 // DO NOT commit acoustid_config.json5 to version control.
+// Android builds validate this file and package its key as a generated asset.
 //
 // How to obtain an API key:
 //   1. Register at https://acoustid.org/

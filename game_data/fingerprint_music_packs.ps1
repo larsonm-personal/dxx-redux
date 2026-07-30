@@ -86,10 +86,55 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $minDelayMs = 350  # 3 req/s limit with safety margin
 
+function ConvertTo-AcoustIdTitleKey {
+    param(
+        [string]$Value,
+        [switch]$ExternalLabel
+    )
+    # Keep this normalization contract and the 0.8 threshold aligned with AcoustIdLabelPolicy.kt.
+    if ([string]::IsNullOrWhiteSpace($Value)) { return "" }
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($Value)
+    if ($ExternalLabel -and $baseName -match ' - ') { $baseName = ($baseName -split ' - ', 2)[1] }
+    return (($baseName.ToLowerInvariant() -replace '[^\p{L}\p{Nd}]+', ' ').Trim() -replace '^\d+\s+', '')
+}
+
+function Select-AcoustIdLabel {
+    param(
+        [object]$Response,
+        [string]$MaintainedLabel
+    )
+    $sourceKey = ConvertTo-AcoustIdTitleKey $MaintainedLabel
+    $candidates = @()
+    foreach ($result in @($Response.results)) {
+        if ([double]$result.score -lt 0.8) { continue }
+        foreach ($recording in @($result.recordings)) {
+            if (-not $recording.id -or -not $recording.title) { continue }
+            if ((ConvertTo-AcoustIdTitleKey $recording.title) -ne $sourceKey) { continue }
+            $artists = @($recording.artists | ForEach-Object { $_.name } | Where-Object { $_ }) -join ', '
+            $name = if ($artists) { "$artists - $($recording.title)" } else { $recording.title }
+            $album = @($recording.releases | ForEach-Object { $_.title } | Where-Object { $_ } | Sort-Object)[0]
+            $candidates += [PSCustomObject]@{
+                name = $name
+                album = $album
+                score = [double]$result.score
+                recording_id = [string]$recording.id
+            }
+        }
+    }
+    if ($candidates.Count -eq 0) { return $null }
+    $bestScore = ($candidates | Measure-Object -Property score -Maximum).Maximum
+    $best = @($candidates | Where-Object { $_.score -eq $bestScore })
+    if (@($best | ForEach-Object { $_.name.ToLowerInvariant() } | Select-Object -Unique).Count -ne 1) {
+        return $null
+    }
+    return $best | Sort-Object recording_id | Select-Object -First 1
+}
+
 function Invoke-AcoustIdLookup {
     param(
         [string]$Fingerprint,
-        [int]$DurationSec
+        [int]$DurationSec,
+        [string]$MaintainedLabel
     )
 
     # Rate limit: wait at least 350ms since last request
@@ -115,25 +160,7 @@ function Invoke-AcoustIdLookup {
             $responseStr = [System.Text.Encoding]::UTF8.GetString($responseBytes)
             $json = $responseStr | ConvertFrom-Json
             if ($json.status -eq "ok" -and $json.results) {
-                foreach ($result in $json.results) {
-                    if ($result.recordings) {
-                        foreach ($rec in $result.recordings) {
-                            $title = $rec.title
-                            if ($title) {
-                                $artists = ""
-                                if ($rec.artists) {
-                                    $artists = ($rec.artists | ForEach-Object { $_.name }) -join ", "
-                                }
-                                $trackName = if ($artists) { "$artists - $title" } else { $title }
-                                $albumTitle = $null
-                                if ($rec.releases) {
-                                    $albumTitle = $rec.releases[0].title
-                                }
-                                return @{ name = $trackName; album = $albumTitle }
-                            }
-                        }
-                    }
-                }
+                return Select-AcoustIdLabel -Response $json -MaintainedLabel $MaintainedLabel
             }
             if ($json.status -eq "error" -and $json.error -and
                 $json.error.message -match "rate|limit|too fast") {
@@ -331,17 +358,30 @@ foreach ($archive in $archives) {
 
         # Check if we already have AcoustID result
         $existingEntry = $existingTracks[$fname]
-        if ($existingEntry -and $existingEntry.acoustid_name -and -not $Force) {
+        if ($existingEntry -and $existingEntry.acoustid_name -and
+            [double]$existingEntry.acoustid_score -ge 0.8 -and
+            $existingEntry.acoustid_recording_id -and
+            (ConvertTo-AcoustIdTitleKey $existingEntry.acoustid_name -ExternalLabel) -eq
+            (ConvertTo-AcoustIdTitleKey $fname) -and -not $Force) {
             $track["acoustid_name"] = $existingEntry.acoustid_name
             if ($existingEntry.acoustid_album) {
                 $track["acoustid_album"] = $existingEntry.acoustid_album
             }
+            if ($existingEntry.acoustid_score) {
+                $track["acoustid_score"] = $existingEntry.acoustid_score
+            }
+            if ($existingEntry.acoustid_recording_id) {
+                $track["acoustid_recording_id"] = $existingEntry.acoustid_recording_id
+            }
             Write-Host "  $fname -> cached: $($existingEntry.acoustid_name)"
         } elseif (-not $SkipAcoustId -and $chromaprint -and $durationMs -gt 0) {
             $durationSec = [math]::Round($durationMs / 1000)
-            $result = Invoke-AcoustIdLookup -Fingerprint $chromaprint -DurationSec $durationSec
+            $result = Invoke-AcoustIdLookup -Fingerprint $chromaprint -DurationSec $durationSec `
+                -MaintainedLabel $fname
             if ($result) {
                 $track["acoustid_name"] = $result.name
+                $track["acoustid_score"] = $result.score
+                $track["acoustid_recording_id"] = $result.recording_id
                 if ($result.album) {
                     $track["acoustid_album"] = $result.album
                 }
@@ -381,6 +421,13 @@ foreach ($archive in $archives) {
         if ($t.acoustid_album) {
             $aalbum = $t.acoustid_album -replace '"', '\"'
             $extraFields += ", `"acoustid_album`": `"$aalbum`""
+        }
+        if ($t.acoustid_score) {
+            $extraFields += ", `"acoustid_score`": $($t.acoustid_score)"
+        }
+        if ($t.acoustid_recording_id) {
+            $recordingId = $t.acoustid_recording_id -replace '"', '\"'
+            $extraFields += ", `"acoustid_recording_id`": `"$recordingId`""
         }
         $lines += "    {`"filename`": `"$fname`", `"chromaprint`": `"$cp`", `"duration_ms`": $dur${extraFields}}$trailing"
     }

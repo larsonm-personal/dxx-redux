@@ -103,6 +103,17 @@ foreach ($cd in $cdFingerprints) {
 }
 
 # Load album tracks and collect them for the flat JSON + later output
+function ConvertTo-AcoustIdTitleKey {
+    param(
+        [string]$Value,
+        [switch]$ExternalLabel
+    )
+    if ([string]::IsNullOrWhiteSpace($Value)) { return "" }
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($Value)
+    if ($ExternalLabel -and $baseName -match ' - ') { $baseName = ($baseName -split ' - ', 2)[1] }
+    return (($baseName.ToLowerInvariant() -replace '[^\p{L}\p{Nd}]+', ' ').Trim() -replace '^\d+\s+', '')
+}
+
 $albumInfos = @()
 foreach ($file in $albumFiles) {
     $raw = Get-Content $file.FullName -Raw
@@ -115,6 +126,10 @@ foreach ($file in $albumFiles) {
     $tracksList = @()
     foreach ($t in $info.tracks) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($t.filename)
+        $hasReviewedAcoustId = $t.acoustid_name -and $t.acoustid_recording_id -and
+            [double]$t.acoustid_score -ge 0.8 -and
+            (ConvertTo-AcoustIdTitleKey $t.acoustid_name -ExternalLabel) -eq
+            (ConvertTo-AcoustIdTitleKey $t.filename)
         $flatEntries += [ordered]@{
             name        = $baseName
             disc_id     = $albumId
@@ -128,8 +143,10 @@ foreach ($file in $albumFiles) {
             BaseName     = $baseName
             Chromaprint  = $t.chromaprint
             DurationMs   = $t.duration_ms
-            AcoustidName = $t.acoustid_name
-            AcoustidAlbum = $t.acoustid_album
+            AcoustidName = if ($hasReviewedAcoustId) { $t.acoustid_name } else { $null }
+            AcoustidAlbum = if ($hasReviewedAcoustId) { $t.acoustid_album } else { $null }
+            AcoustidScore = if ($hasReviewedAcoustId) { $t.acoustid_score } else { $null }
+            AcoustidRecordingId = if ($hasReviewedAcoustId) { $t.acoustid_recording_id } else { $null }
             TracklistName = $t.tracklist_name
             NameSource   = $t.name_source
         }
@@ -263,6 +280,12 @@ foreach ($albumInfo in $albumInfos) {
         }
         if ($t.AcoustidAlbum) {
             $trackEntry["acoustid_album"] = $t.AcoustidAlbum
+        }
+        if ($t.AcoustidScore) {
+            $trackEntry["acoustid_score"] = $t.AcoustidScore
+        }
+        if ($t.AcoustidRecordingId) {
+            $trackEntry["acoustid_recording_id"] = $t.AcoustidRecordingId
         }
         if ($t.TracklistName) {
             $trackEntry["tracklist_name"] = $t.TracklistName
@@ -453,6 +476,13 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
         if ($e.acoustid_album) {
             $albumEscaped = $e.acoustid_album -replace '"', '\"'
             $line += ", `"acoustid_album`": `"$albumEscaped`""
+        }
+        if ($e.acoustid_score) {
+            $line += ", `"acoustid_score`": $($e.acoustid_score)"
+        }
+        if ($e.acoustid_recording_id) {
+            $recordingIdEscaped = $e.acoustid_recording_id -replace '"', '\"'
+            $line += ", `"acoustid_recording_id`": `"$recordingIdEscaped`""
         }
         if ($e.tracklist_name) {
             $tracklistEscaped = $e.tracklist_name -replace '"', '\"'

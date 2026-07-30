@@ -7,6 +7,7 @@ import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.io.FileNotFoundException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -34,20 +35,25 @@ object AcoustIdClient {
             .readTimeout(15, TimeUnit.SECONDS)
             .build()
 
-    /** Load API key from acoustid_config.json5 asset. Returns true if key found. */
-    fun configure(context: Context): Boolean {
-        if (apiKey != null) return true
+    /** Load the generated acoustid_config.json5 asset and report why it is unavailable. */
+    internal fun configure(context: Context): AcoustIdConfigurationStatus {
+        if (apiKey != null) return AcoustIdConfigurationStatus.AVAILABLE
         return try {
             val raw =
                 context.assets
                     .open("acoustid_config.json5")
                     .bufferedReader()
-                    .readText()
-            val cfg = JSONObject(Json5.strip(raw))
-            apiKey = cfg.optString("api_key").takeIf { it.isNotEmpty() }
-            apiKey != null
+                    .use { it.readText() }
+            apiKey = AcoustIdConfiguration.parseApiKey(raw)
+            if (apiKey == null) {
+                AcoustIdConfigurationStatus.INVALID
+            } else {
+                AcoustIdConfigurationStatus.AVAILABLE
+            }
+        } catch (_: FileNotFoundException) {
+            AcoustIdConfigurationStatus.NOT_PACKAGED
         } catch (_: Exception) {
-            false
+            AcoustIdConfigurationStatus.INVALID
         }
     }
 
@@ -56,15 +62,16 @@ object AcoustIdClient {
 
     /**
      * Look up a fingerprint on AcoustID.
-     * Returns "Artist - Title" or just "Title", or null if no match.
+     * Returns a source-validated label with AcoustID evidence, or null if no match.
      *
      * Suspends to enforce rate limiting (350ms between calls).
      * Retries with exponential backoff on 429/5xx errors.
      */
-    suspend fun lookupFingerprint(
+    internal suspend fun lookupFingerprint(
         fingerprint: String,
         durationSec: Int,
-    ): String? {
+        maintainedLabel: String,
+    ): AcoustIdLabelMatch? {
         val key = apiKey ?: return null
 
         // Rate limit
@@ -83,7 +90,7 @@ object AcoustIdClient {
                     FormBody
                         .Builder()
                         .add("client", key)
-                        .add("meta", "recordings")
+                        .add("meta", "recordings releases")
                         .add("duration", durationSec.toString())
                         .add("fingerprint", fingerprint)
                         .build()
@@ -119,27 +126,7 @@ object AcoustIdClient {
                     return null
                 }
 
-                val results = json.optJSONArray("results") ?: return null
-                for (i in 0 until results.length()) {
-                    val result = results.getJSONObject(i)
-                    val recordings = result.optJSONArray("recordings") ?: continue
-                    for (j in 0 until recordings.length()) {
-                        val rec = recordings.getJSONObject(j)
-                        val title = rec.optString("title").takeIf { it.isNotEmpty() } ?: continue
-                        val artists = rec.optJSONArray("artists")
-                        val artistName =
-                            if (artists != null && artists.length() > 0) {
-                                (0 until artists.length())
-                                    .map { artists.getJSONObject(it).optString("name") }
-                                    .filter { it.isNotEmpty() }
-                                    .joinToString(", ")
-                            } else {
-                                ""
-                            }
-                        return if (artistName.isNotEmpty()) "$artistName - $title" else title
-                    }
-                }
-                return null
+                return AcoustIdLabelPolicy.select(json, maintainedLabel)
             } catch (e: Exception) {
                 Log.w(TAG, "Lookup failed (attempt $attempt): ${e.message}")
                 if (attempt < MAX_RETRIES) {

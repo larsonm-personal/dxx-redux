@@ -227,6 +227,7 @@ fun AdvancedSettingsPage(
 
     val ctx = LocalContext.current
     val scrollState = rememberScrollState()
+    val configImportScope = rememberCoroutineScope()
     val initialFocus = remember { FocusRequester() }
     var initialLists by remember(filesDir) { mutableStateOf<AdvancedPageInitialLists?>(null) }
     var loadProgress by remember(filesDir) {
@@ -333,8 +334,10 @@ fun AdvancedSettingsPage(
                                         .OpenDocument(),
                             ) { uri ->
                                 if (uri == null) return@rememberLauncherForActivityResult
-                                val msg = ConfigImportExport.importFromUri(ctx, uri)
-                                Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                                configImportScope.launch {
+                                    val msg = ConfigImportExport.importFromUri(ctx, uri)
+                                    Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                                }
                             }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
@@ -611,6 +614,7 @@ private fun AdvancedPageOpenProgress(progress: AdvancedPageLoadProgress) {
 private fun OnlineMetadataSection() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE) }
+    val acoustIdConfiguration = remember(ctx) { AcoustIdClient.configure(ctx) }
     var allowAcoustId by remember {
         mutableStateOf(prefs.getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false))
     }
@@ -624,13 +628,23 @@ private fun OnlineMetadataSection() {
         Column(modifier = Modifier.weight(1f)) {
             Text("Allow AcoustID web lookups", fontSize = 12.sp, fontWeight = FontWeight.Medium)
             Text(
-                "Enable manual music-track lookup buttons that send fingerprints to AcoustID",
+                if (acoustIdConfiguration.isAvailable) {
+                    "Enable manual music-track lookup buttons that send fingerprints to AcoustID"
+                } else {
+                    acoustIdConfiguration.message
+                },
                 fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color =
+                    if (acoustIdConfiguration.isAvailable) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
             )
         }
         Switch(
             checked = allowAcoustId,
+            enabled = acoustIdConfiguration.isAvailable,
             onCheckedChange = { newValue ->
                 allowAcoustId = newValue
                 prefs.edit().putBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, newValue).apply()
