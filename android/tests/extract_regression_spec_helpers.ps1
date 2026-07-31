@@ -1,12 +1,4 @@
-function Read-Json5File($path) {
-    $rawText = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
-    if ($rawText.Length -gt 0 -and $rawText[0] -eq [char]0xFEFF) {
-        $rawText = $rawText.Substring(1)
-    }
-    $rawText = [regex]::Replace($rawText, '(?m)//.*$', '')
-    $rawText = [regex]::Replace($rawText, ',\s*([}\]])', '$1')
-    return $rawText | ConvertFrom-Json
-}
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\json5.ps1')
 
 function Test-JsonProperty($value, $name) {
     if ($null -eq $value) {

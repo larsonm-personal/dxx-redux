@@ -23,6 +23,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\bounded_extraction.ps1"
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
+. "$repoRoot\android\helpers\json5.ps1"
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -483,13 +484,6 @@ function Extract-MissionArchiveAudio {
     return Extract-ZipAudio -ArchivePath $ArchivePath -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
 }
 
-function Read-Json5File {
-    param([string]$Path)
-    $raw = Get-Content $Path -Raw
-    $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
-    return $stripped | ConvertFrom-Json
-}
-
 function Get-OptionalPropertyValue {
     param(
         [AllowNull()][object]$InputObject,
@@ -538,7 +532,7 @@ function Read-MissionTracklist {
     param([System.IO.FileInfo]$ZipFile)
     $path = Get-MissionTracklistPath -ZipFile $ZipFile
     if (-not $path) { return @{} }
-    $doc = Read-Json5File $path
+    $doc = Read-StrictJsonFile $path
     if ([string]$doc.schema -ne "dxx-mission-tracklist-v1") {
         throw "Unsupported tracklist schema in ${path}: $($doc.schema)"
     }

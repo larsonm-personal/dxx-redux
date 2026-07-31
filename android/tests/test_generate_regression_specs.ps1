@@ -23,8 +23,9 @@ try {
     $testFlightDir = Join-Path $gameDataDir 'CD images\test-flight'
     $combinedDir = Join-Path $gameDataDir 'combined launches\d2-plus-vertigo'
     $testsDir = Join-Path $tempRoot 'android\tests'
+    $helpersDir = Join-Path $tempRoot 'android\helpers'
     $assetsDir = Join-Path $tempRoot 'android\app\src\main\assets'
-    New-Item -ItemType Directory -Path $discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $combinedDir, $testsDir, $assetsDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $combinedDir, $testsDir, $helpersDir, $assetsDir -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $vertigoDir 'data_tracks'), `
     (Join-Path $baseD2Dir 'data_tracks'), `
     (Join-Path $testFlightDir 'data_tracks') | Out-Null
@@ -33,6 +34,8 @@ try {
         -Destination (Join-Path $gameDataDir 'generate_regression_specs.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\tests\extract_regression_spec_helpers.ps1') `
         -Destination (Join-Path $testsDir 'extract_regression_spec_helpers.ps1')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\json5.ps1') `
+        -Destination (Join-Path $helpersDir 'json5.ps1')
     [System.IO.File]::WriteAllText(
         (Join-Path $assetsDir 'known_discs.json5'),
         '{"discs":[{"id":"descent-test-flight","game":"d1","tracks":' +

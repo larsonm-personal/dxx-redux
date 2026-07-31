@@ -11096,26 +11096,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Create ZIP, nested ZIP, 7z, RAR, and HOG fixtures with `Song.ogg` and `song.ogg`, separator and punctuation aliases, long names, trailing dots and spaces, and every Windows device basename; enumerate members in reversed orders and run on Windows and Linux. Assert byte-identical filenames and sidecars, one exact provenance record per fingerprint, stable tracklist names and track numbers, and no host-only failure.
 - Resolution: Pending
 
-### BR-0177: P2 - Parse tracklist strings without regex comment removal
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/api-data-format
-- Found by: R1-CHUNK-0071
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/fingerprint_mission_zip_music.ps1:L383-L387` in `Read-Json5File`
-- Related: `game_data/fingerprint_mission_zip_music.ps1:L390-L441,L629-L638` and `game_data/mission_files/*.tracklist.json`
-- Evidence: The helper removes `//...` and `/*...*/` with regular expressions before JSON parsing, without recognizing quoted strings. A focused in-memory probe using the supported tracklist schema and title `https://example.invalid/song` was truncated after `https:` and failed `ConvertFrom-Json`. The same corruption applies to literal comment markers in titles, filenames, source paths, and the AcoustID configuration. Current tracklists contain no such strings, so ordinary corpus validation cannot detect it.
-- Trigger: Add a valid tracklist or configuration string containing a URL, a double-slash archive path, or literal `/*` and `*/` text, then fingerprint its mission
-- Impact: The complete mission is reported as failed before extraction or naming, preventing reproducible soundtrack metadata generation for values that are legal in JSON and in the declared sidecar fields
-- Expected: Comment syntax is recognized only outside quoted strings, or strict `.json` sidecars are parsed directly without a lossy preprocessing pass
-- Suggested fix: Use one maintained JSON5 parser shared by repository tooling, or keep `.tracklist.json` strict and pass it directly to `ConvertFrom-Json`; parse the separate JSON5 configuration with a string-aware implementation. Add schema validation after parsing instead of transforming string contents.
-- Validation: Parse sidecars containing escaped quotes, backslashes, `https://`, double-slash paths, literal block-comment markers, real line and block comments where supported, and malformed unterminated comments; assert valid string bytes survive exactly, malformed input fails clearly, and all current tracklists retain their names.
-- Additional location (R1-CHUNK-0094): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/tests/extract_regression_spec_helpers.ps1:L1-L8` in the shared regression-spec `Read-Json5File`
-- Additional evidence (R1-CHUNK-0094): The regression helper independently applies the same line-comment regex without recognizing strings and also removes comma-before-brace patterns without recognizing strings. It parses every extraction spec and `known_discs.json5`, and its canonical writer preserves arbitrary extra fields, so a legal URL, double-slash path, or literal comma-plus-closing-delimiter value in a name, provenance field, or future extension can be truncated or rewritten before validation, test execution, result persistence, or regeneration. An in-memory probe with `{"url":"https://example.invalid/a","literal":"x,}"}` was reduced to an unterminated `{"url":"https:` document. The current disc and extraction corpus contains no such string, so happy-path parsing does not cover the boundary.
-- Additional validation (R1-CHUNK-0094): Exercise the shared parser and canonical round trip with extraction specs and known-disc records containing escaped quotes and backslashes, URLs, double-slash paths, comma-plus-brace and comma-plus-bracket strings, literal comment markers, and real supported comments. Require exact string preservation, deterministic canonical output, and clear rejection of malformed input.
-- Resolution: Pending
-
 ### BR-0179: P2 - Give each mission archive a distinct fingerprint output identity
 
 - [ ] OPEN
