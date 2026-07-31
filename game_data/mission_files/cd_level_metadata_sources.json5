@@ -1,0 +1,61 @@
+{
+  "sources": [
+    {
+      "id": "descent-levels-of-the-world-usa",
+      "source_dir": "game_data/CD images/Descent - Levels of the World (USA)/data_tracks",
+      "discover": true,
+      "exclude_descriptors": [
+        // Missing or malformed packaged level references.
+        "_dlow.msn",
+        "agitatio.msn",
+        "surprise.msn",
+        // The mission loader rejects these descriptors or their payloads.
+        "bdrome10.msn",
+        "deepfrst.msn",
+        "harmless.msn",
+        "hd.msn",
+        "interim.msn",
+        "spank.msn",
+        // The bounded headless analysis does not terminate.
+        "icesewer.msn",
+        "venus2.msn"
+      ],
+      "output": "CD - Descent - Levels of the World (USA).json"
+    },
+    {
+      "id": "descent-anniversary-usa-extras",
+      "source_dir": "game_data/CD images/Descent - Anniversary Edition (USA)/data_tracks",
+      "discover": true,
+      "exclude_descriptors": [
+        // The bounded headless analysis does not terminate.
+        "x1.msn"
+      ],
+      "output": "CD - Descent - Anniversary Edition (USA) extras.json"
+    },
+    {
+      "id": "dimensions-for-descent-usa",
+      "source_dir": "game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels",
+      "discover": true,
+      "exclude_descriptors": [
+        // The bounded headless analysis does not terminate.
+        "death.msn",
+        "dimen.msn",
+        // References a level file that is absent from the disc.
+        "sprial.msn"
+      ],
+      "output": "CD - Dimensions for Descent (USA).json"
+    },
+    {
+      "id": "descent-destination-saturn-usa",
+      "source_dir": "game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent",
+      "discover": true,
+      "output": "CD - Descent - Destination Saturn (USA).json"
+    },
+    {
+      "id": "descent-ii-vertigo-usa",
+      "source_dir": "game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks",
+      "discover": true,
+      "output": "CD - Descent II - The Vertigo Series (USA).json"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+// Auto-generated regression spec for: Descent II plus Vertigo (USA)
+// Generated: 2026-07-30 14:11:45
+{
+  "source_type": "combined",
+  "source_specs": [
+    "../../CD images/Descent II (USA) (v1.1)/extract_regression.json5",
+    "../../CD images/Descent II - The Vertigo Series (USA)/extract_regression.json5"
+  ],
+  "game": "d2",
+  "classification": "d2_vertigo_combined",
+  "expected_mission": "Descent 2: Vertigo",
+  "expected_level1": "deep kraeg tunnel system",
+  "mission_selection_required": true,
+  "mission_files": [
+    "d2x.hog",
+    "d2x.mn2"
+  ],
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "descent2.s11",
+    "descent2.s22",
+    "groupa.pig",
+    "missions/d2x.hog",
+    "missions/d2x.mn2"
+  ],
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": "",
+    "level_reached": "deep kraeg tunnel system",
+    "files_verified": 7,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
+}

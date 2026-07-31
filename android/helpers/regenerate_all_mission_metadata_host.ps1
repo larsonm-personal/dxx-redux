@@ -1,6 +1,9 @@
 #!/usr/bin/env pwsh
 
-param([switch]$NoRegressionCopy)
+param(
+    [switch]$NoRegressionCopy,
+    [switch]$CdSourcesOnly
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -8,7 +11,9 @@ $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "standard_game_data.ps1")
+. (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
+$cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.json5"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = Join-Path $androidRoot "temp\mission_zip_host_metadata\$stamp"
 $metadataDir = Join-Path $outDir "metadata"
@@ -400,6 +405,55 @@ function Copy-RawMissionFileSet {
     }
 }
 
+function Copy-CdMissionFileSet {
+    param(
+        [Parameter(Mandatory = $true)]$Source,
+        [Parameter(Mandatory = $true)][string]$StageDir
+    )
+
+    $stageFull = [IO.Path]::GetFullPath($StageDir)
+    $stagesFull = [IO.Path]::GetFullPath($stagesDir)
+    if (-not $stageFull.StartsWith($stagesFull, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Stage directory is outside host metadata temp root: $StageDir"
+    }
+    if (Test-Path -LiteralPath $StageDir) {
+        Remove-Item -LiteralPath $StageDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path $StageDir | Out-Null
+
+    $sourceFiles = if ($Source.Discover) {
+        @(
+            Get-ChildItem -LiteralPath $Source.SourceDir -Recurse -File |
+                Where-Object { $_.Extension.ToLowerInvariant() -in @(".msn", ".mn2", ".hog", ".rdl", ".rl2") } |
+                Sort-Object FullName
+        )
+    } else {
+        @($Source.Files)
+    }
+    $used = @{}
+    foreach ($file in $sourceFiles) {
+        $key = $file.Name.ToLowerInvariant()
+        if ($used.ContainsKey($key)) {
+            continue
+        }
+        $used[$key] = $true
+        $target = Join-Path $StageDir $file.Name
+        if ($file.Extension.ToLowerInvariant() -in @(".msn", ".mn2")) {
+            $descriptorText = [IO.File]::ReadAllText($file.FullName).Replace(([char]0x1a).ToString(), "")
+            [IO.File]::WriteAllText($target, $descriptorText, [Text.UTF8Encoding]::new($false))
+        } else {
+            Copy-Item -LiteralPath $file.FullName -Destination $target -Force
+        }
+        $lower = $file.Name.ToLowerInvariant()
+        $upper = $file.Name.ToUpperInvariant()
+        Copy-StageAlias -Source $target -Target (Join-Path $StageDir $lower)
+        Copy-StageAlias -Source $target -Target (Join-Path $StageDir $upper)
+        Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $file.Name)
+        Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $lower)
+        Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $upper)
+    }
+}
+
 function Get-HeadlessFailureSummary {
     param(
         [Parameter(Mandatory = $true)][string]$Mission,
@@ -474,7 +528,8 @@ function Get-MissionDescriptorInfo {
     param([Parameter(Mandatory = $true)][System.IO.FileInfo]$Descriptor)
 
     $values = @{}
-    foreach ($line in Get-Content -LiteralPath $Descriptor.FullName) {
+    $descriptorText = [IO.File]::ReadAllText($Descriptor.FullName)
+    foreach ($line in [regex]::Split($descriptorText, "`r`n|`n|`r")) {
         $trimmed = $line.Trim()
         if (-not $trimmed -or $trimmed.StartsWith(";") -or $trimmed.StartsWith("#")) {
             continue
@@ -499,6 +554,45 @@ function Get-MissionDescriptorInfo {
     return [pscustomobject]@{
         DisplayName = $displayName
         Filename = $Descriptor.Name
+        Type = if ($values.ContainsKey("type")) { $values["type"].ToLowerInvariant() } else { "normal" }
+    }
+}
+
+function Invoke-HeadlessMetadataProcess {
+    param(
+        [Parameter(Mandatory = $true)][string]$Executable,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [int]$TimeoutSeconds = 120
+    )
+
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $Executable
+    foreach ($argument in $Arguments) {
+        [void]$startInfo.ArgumentList.Add($argument)
+    }
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $process = [Diagnostics.Process]::Start($startInfo)
+    try {
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+            try { $process.Kill($true) } catch { try { $process.Kill() } catch {} }
+            $process.WaitForExit()
+            $stdout = $stdoutTask.GetAwaiter().GetResult()
+            $stderr = $stderrTask.GetAwaiter().GetResult()
+            Write-Utf8NoBomText -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
+            throw "headless metadata timed out after $TimeoutSeconds seconds; log=$LogPath"
+        }
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        Write-Utf8NoBomText -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
+        return $process.ExitCode
+    } finally {
+        $process.Dispose()
     }
 }
 
@@ -509,15 +603,21 @@ function Invoke-HeadlessScan {
         [Parameter(Mandatory = $true)][hashtable]$Executables,
         [Parameter(Mandatory = $true)][hashtable]$DataDirs,
         [Parameter(Mandatory = $true)][string]$RawOutputPath,
-        [Parameter(Mandatory = $true)][string]$LogPath
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [int]$TimeoutSeconds = 120
     )
 
     $game = if ($Descriptor.Extension.Equals(".msn", [StringComparison]::OrdinalIgnoreCase)) { "d1" } else { "d2" }
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
     $exe = $Executables[$game]
     $dataDir = $DataDirs[$game]
-    & $exe -hogdir $dataDir -extra-dir $StageDir -mission $mission -secretarea-json-out $RawOutputPath > $LogPath 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $exitCode = Invoke-HeadlessMetadataProcess -Executable $exe -Arguments @(
+        "-hogdir", $dataDir,
+        "-extra-dir", $StageDir,
+        "-mission", $mission,
+        "-secretarea-json-out", $RawOutputPath
+    ) -LogPath $LogPath -TimeoutSeconds $TimeoutSeconds
+    if ($exitCode -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $mission -LogPath $LogPath)
     }
     return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
@@ -532,8 +632,11 @@ function Invoke-BuiltinHeadlessScan {
         [Parameter(Mandatory = $true)][string]$LogPath
     )
 
-    & $Executables[$Game] -hogdir $DataDirs[$Game] -secretarea-json-out $RawOutputPath > $LogPath 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $exitCode = Invoke-HeadlessMetadataProcess -Executable $Executables[$Game] -Arguments @(
+        "-hogdir", $DataDirs[$Game],
+        "-secretarea-json-out", $RawOutputPath
+    ) -LogPath $LogPath
+    if ($exitCode -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $Game -LogPath $LogPath)
     }
     return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
@@ -570,86 +673,69 @@ Write-Status "D1 hashes: $(($dataSelections.d1.Hashes.GetEnumerator() | ForEach-
 Write-Status "D2 data: $($dataDirs.d2)"
 Write-Status "D2 hashes: $(($dataSelections.d2.Hashes.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
 
-$counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
-$counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
-$counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"
-$counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
-Write-Status "Host metadata: built-in Counterstrike"
-$counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
-$counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
-Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
-if (-not $NoRegressionCopy) {
-    Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
-}
-Write-Status "PASSED: built-in Counterstrike" "Green"
-
-$archives = @(
-    Get-ChildItem -LiteralPath $zipDir -File |
-        Where-Object { $_.Extension.ToLowerInvariant() -in @(".zip", ".7z") } |
-        Sort-Object Name
-)
-if ($archives.Count -eq 0) {
-    throw "No mission archives found in $zipDir"
-}
-
 $results = @()
 $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-$index = 0
-foreach ($archive in $archives) {
-    $index++
-    $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $label = Get-SafeLabel -Name $archive.Name
-    $metadataPath = Join-Path $metadataDir "$($archive.BaseName).json"
-    $regressionPath = Join-Path $zipDir "$($archive.BaseName).json"
-    $rawArchiveDir = Join-Path $rawDir $label
-    $stageDir = Join-Path $stagesDir $label
-    $counts = @{
-        passed = @($results | Where-Object { $_.status -eq "passed" }).Count
-        skipped = @($results | Where-Object { $_.status -like "skipped*" }).Count
-        failed = @($results | Where-Object { $_.status -eq "failed" }).Count
-    }
-    Write-Progress -Activity "Host mission metadata batch" -Status "Running ${index}/$($archives.Count): $($archive.Name)" -PercentComplete ([int](($index - 1) * 100 / $archives.Count))
-    Write-Status ("[{0}/{1}] Host metadata: {2} ({3} MB, elapsed {4:n1}s, passed {5}, skipped {6}, failed {7})" -f
-        $index, $archives.Count, $archive.Name, [Math]::Round($archive.Length / 1MB, 1),
-        $batchStopwatch.Elapsed.TotalSeconds, $counts.passed, $counts.skipped, $counts.failed)
+$seenCdDescriptorHashes = @{}
 
+$cdSources = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)
+foreach ($source in $cdSources) {
+    $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $label = "cd_$($source.Id)"
+    $metadataPath = Join-Path $metadataDir ([IO.Path]::GetFileName($source.OutputPath))
+    $stageDir = Join-Path $stagesDir $label
     $record = [ordered]@{
-        zip = $archive.FullName
-        name = $archive.Name
-        size_bytes = $archive.Length
+        source = $source.SourceDir
+        name = $source.Id
         status = "pending"
         metadata_json = $metadataPath
-        regression_json = $regressionPath
+        regression_json = $source.OutputPath
     }
+    Write-Status "Host CD metadata: $($source.Id)"
     try {
-        if ($archive.Length -gt $largeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $archive.Name)) {
-            $record["status"] = "skipped_large"
-            $record["reason"] = "archive is larger than the configured host metadata limit"
-            Write-FailureJson -Path $metadataPath -Reason $record["reason"]
-            continue
-        }
-        Expand-MissionArchive -Archive $archive -RawArchiveDir $rawArchiveDir
-        Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir
-        $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
-        if ($descriptors.Count -eq 0) {
-            $record["status"] = "skipped_no_descriptor"
-            $record["reason"] = "archive contains no .msn or .mn2 mission descriptor"
-            Write-FailureJson -Path $metadataPath -Reason $record["reason"]
-            continue
+        Copy-CdMissionFileSet -Source $source -StageDir $stageDir
+        $descriptors = if ($source.Discover) {
+            @(Get-MissionDescriptor -StageDir $stageDir)
+        } else {
+            @(Get-Item -LiteralPath (Join-Path $stageDir $source.Descriptor.Name))
         }
         $missions = @()
-        $targetIndex = 0
+        $descriptorFailures = @()
         foreach ($descriptor in $descriptors) {
+            $descriptorHash = (Get-FileHash -LiteralPath $descriptor.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($seenCdDescriptorHashes.ContainsKey($descriptorHash)) {
+                continue
+            }
+            $seenCdDescriptorHashes[$descriptorHash] = $true
+            if ($descriptor.Name.ToLowerInvariant() -in $source.ExcludeDescriptors) {
+                Write-Status "  EXCLUDED $($descriptor.Name)" "DarkGray"
+                continue
+            }
+            $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
+            if ($descriptorInfo.Type -eq "anarchy") {
+                continue
+            }
             $rawOutputPath = Join-Path $rawDir "$label.$($descriptor.BaseName).metadata.json"
             $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
-            $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
-            $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath
-            $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
-            $targetIndex++
+            try {
+                $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds 30
+            } catch {
+                $reason = $_.Exception.Message
+                $descriptorFailures += [pscustomobject]@{ Name = $descriptor.Name; Reason = $reason }
+                Write-Status "  UNANALYZABLE $($descriptor.Name): $reason" "Yellow"
+                continue
+            }
+            $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $missions.Count -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
+        }
+        if ($missions.Count -eq 0) {
+            throw "CD metadata source has no new non-anarchy mission descriptors"
         }
         Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
+        if ($descriptorFailures.Count -gt 0) {
+            $failureNames = @($descriptorFailures | ForEach-Object { $_.Name }) -join ", "
+            throw "$($descriptorFailures.Count) CD mission descriptors were unanalyzable: $failureNames"
+        }
         if (-not $NoRegressionCopy) {
-            Copy-Item -LiteralPath $metadataPath -Destination $regressionPath -Force
+            Copy-Item -LiteralPath $metadataPath -Destination $source.OutputPath -Force
         }
         $record["status"] = "passed"
         $record["mission_count"] = $missions.Count
@@ -663,10 +749,111 @@ foreach ($archive in $archives) {
         $record["elapsed_ms"] = $runStopwatch.ElapsedMilliseconds
         $results += [pscustomobject]$record
         Write-SummaryRecord -Record $record
-        $color = if ($record["status"] -eq "passed") { "Green" } elseif ($record["status"] -like "skipped*") { "Yellow" } else { "Red" }
-        Write-Status ("[{0}/{1}] {2}: {3} in {4:n1}s" -f $index, $archives.Count, $record["status"].ToUpperInvariant(), $archive.Name, $runStopwatch.Elapsed.TotalSeconds) $color
+        $color = if ($record["status"] -eq "passed") { "Green" } else { "Red" }
+        Write-Status "$($record["status"].ToUpperInvariant()): $($source.Id) in $([Math]::Round($runStopwatch.Elapsed.TotalSeconds, 1))s" $color
         if ($record.Contains("reason") -and $record["reason"]) {
             Write-Status "  reason: $($record["reason"])" $color
+        }
+    }
+}
+
+if (-not $CdSourcesOnly) {
+    $counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
+    $counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
+    $counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"
+    $counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
+    Write-Status "Host metadata: built-in Counterstrike"
+    $counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
+    $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
+    Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
+    if (-not $NoRegressionCopy) {
+        Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
+    }
+    Write-Status "PASSED: built-in Counterstrike" "Green"
+
+    $archives = @(
+        Get-ChildItem -LiteralPath $zipDir -File |
+            Where-Object { $_.Extension.ToLowerInvariant() -in @(".zip", ".7z") } |
+            Sort-Object Name
+    )
+    if ($archives.Count -eq 0) {
+        throw "No mission archives found in $zipDir"
+    }
+
+    $index = 0
+    foreach ($archive in $archives) {
+        $index++
+        $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $label = Get-SafeLabel -Name $archive.Name
+        $metadataPath = Join-Path $metadataDir "$($archive.BaseName).json"
+        $regressionPath = Join-Path $zipDir "$($archive.BaseName).json"
+        $rawArchiveDir = Join-Path $rawDir $label
+        $stageDir = Join-Path $stagesDir $label
+        $counts = @{
+            passed = @($results | Where-Object { $_.status -eq "passed" }).Count
+            skipped = @($results | Where-Object { $_.status -like "skipped*" }).Count
+            failed = @($results | Where-Object { $_.status -eq "failed" }).Count
+        }
+        Write-Progress -Activity "Host mission metadata batch" -Status "Running ${index}/$($archives.Count): $($archive.Name)" -PercentComplete ([int](($index - 1) * 100 / $archives.Count))
+        Write-Status ("[{0}/{1}] Host metadata: {2} ({3} MB, elapsed {4:n1}s, passed {5}, skipped {6}, failed {7})" -f
+            $index, $archives.Count, $archive.Name, [Math]::Round($archive.Length / 1MB, 1),
+            $batchStopwatch.Elapsed.TotalSeconds, $counts.passed, $counts.skipped, $counts.failed)
+
+        $record = [ordered]@{
+            zip = $archive.FullName
+            name = $archive.Name
+            size_bytes = $archive.Length
+            status = "pending"
+            metadata_json = $metadataPath
+            regression_json = $regressionPath
+        }
+        try {
+            if ($archive.Length -gt $largeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $archive.Name)) {
+                $record["status"] = "skipped_large"
+                $record["reason"] = "archive is larger than the configured host metadata limit"
+                Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+                continue
+            }
+            Expand-MissionArchive -Archive $archive -RawArchiveDir $rawArchiveDir
+            Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir
+            $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
+            if ($descriptors.Count -eq 0) {
+                $record["status"] = "skipped_no_descriptor"
+                $record["reason"] = "archive contains no .msn or .mn2 mission descriptor"
+                Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+                continue
+            }
+            $missions = @()
+            $targetIndex = 0
+            foreach ($descriptor in $descriptors) {
+                $rawOutputPath = Join-Path $rawDir "$label.$($descriptor.BaseName).metadata.json"
+                $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
+                $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
+                $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath
+                $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
+                $targetIndex++
+            }
+            Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
+            if (-not $NoRegressionCopy) {
+                Copy-Item -LiteralPath $metadataPath -Destination $regressionPath -Force
+            }
+            $record["status"] = "passed"
+            $record["mission_count"] = $missions.Count
+            $record["level_count"] = @($missions | ForEach-Object { $_.level_count } | Measure-Object -Sum).Sum
+        } catch {
+            $record["status"] = "failed"
+            $record["reason"] = $_.Exception.Message
+            Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+        } finally {
+            $runStopwatch.Stop()
+            $record["elapsed_ms"] = $runStopwatch.ElapsedMilliseconds
+            $results += [pscustomobject]$record
+            Write-SummaryRecord -Record $record
+            $color = if ($record["status"] -eq "passed") { "Green" } elseif ($record["status"] -like "skipped*") { "Yellow" } else { "Red" }
+            Write-Status ("[{0}/{1}] {2}: {3} in {4:n1}s" -f $index, $archives.Count, $record["status"].ToUpperInvariant(), $archive.Name, $runStopwatch.Elapsed.TotalSeconds) $color
+            if ($record.Contains("reason") -and $record["reason"]) {
+                Write-Status "  reason: $($record["reason"])" $color
+            }
         }
     }
 }

@@ -344,6 +344,87 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     Write-Host "  $status $($dir.Name) -> $($classification.type)" -ForegroundColor $(if ($status -eq 'OK') { 'Green' } elseif ($status -eq 'NO-LAUNCH') { 'DarkYellow' } else { 'Red' })
 }
 
+# --- Process combined launch fixtures ---
+$combinedLaunchDir = Join-Path $gameDataDir 'combined launches'
+if (Test-Path -LiteralPath $combinedLaunchDir) {
+    Write-Host ""
+    Write-Host "=== Combined launches ===" -ForegroundColor Cyan
+
+    foreach ($helperFile in (Get-ChildItem -LiteralPath $combinedLaunchDir -Recurse -Filter 'combined_launch.json5' -File | Sort-Object FullName)) {
+        $dir = $helperFile.Directory
+        $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+        if ((Test-Path -LiteralPath $specPath) -and -not $Force) {
+            $skipped++
+            continue
+        }
+
+        $helper = Read-Json5File $helperFile.FullName
+        $sourceSpecs = @($helper.source_specs | Where-Object { $_ })
+        $missionFiles = @($helper.mission_files | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() })
+        if ($sourceSpecs.Count -lt 2) {
+            throw "$($helperFile.FullName): source_specs must name at least two regression specs"
+        }
+        if (-not $helper.game -or -not $helper.classification -or
+            -not $helper.expected_mission -or -not $helper.expected_level1) {
+            throw "$($helperFile.FullName): game, classification, expected_mission, and expected_level1 are required"
+        }
+
+        $expectedFiles = @()
+        foreach ($relativeSourceSpec in $sourceSpecs) {
+            $sourceSpecPath = [System.IO.Path]::GetFullPath((Join-Path $dir.FullName $relativeSourceSpec))
+            if (-not (Test-Path -LiteralPath $sourceSpecPath -PathType Leaf)) {
+                throw "$($helperFile.FullName): source spec not found: $relativeSourceSpec"
+            }
+            $sourceSpec = Read-Json5File $sourceSpecPath
+            if ($sourceSpec.game -ne $helper.game) {
+                throw "$($helperFile.FullName): source spec game '$($sourceSpec.game)' does not match '$($helper.game)': $relativeSourceSpec"
+            }
+            $dataTracksDir = Join-Path (Split-Path $sourceSpecPath -Parent) 'data_tracks'
+            if (-not (Test-Path -LiteralPath $dataTracksDir -PathType Container)) {
+                throw "$($helperFile.FullName): source data_tracks directory not found: $relativeSourceSpec"
+            }
+            $expectedFiles += @($sourceSpec.expected_files | Where-Object { $_ })
+        }
+        $expectedFileSet = @{}
+        foreach ($expectedFile in $expectedFiles) {
+            $expectedFileSet[$expectedFile.ToLowerInvariant()] = $true
+        }
+        foreach ($missionFile in $missionFiles) {
+            if (-not $expectedFileSet.ContainsKey($missionFile)) {
+                throw "$($helperFile.FullName): mission file is not in a component expected_files oracle: $missionFile"
+            }
+        }
+        $combinedExpectedFiles = @($expectedFiles | ForEach-Object {
+                $name = $_.ToLowerInvariant()
+                if ($missionFiles -contains $name) { "missions/$name" } else { $name }
+            } | Sort-Object -Unique)
+
+        $lastTestResult = Get-ExistingLastTestResult $specPath
+        $spec = [ordered]@{
+            source_type = 'combined'
+            source_specs = $sourceSpecs
+            game = $helper.game
+            classification = $helper.classification
+            expected_mission = $helper.expected_mission
+            expected_level1 = $helper.expected_level1
+            mission_selection_required = $true
+            mission_files = $missionFiles
+            expected_files = $combinedExpectedFiles
+        }
+        if ($null -ne $lastTestResult) {
+            $spec.last_test_result = $lastTestResult
+        }
+
+        Write-CanonicalRegressionSpec `
+            -path $specPath `
+            -spec $spec `
+            -sourceName $dir.Name `
+            -generated (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+        $specCount++
+        Write-Host "  OK $($dir.Name) -> $($helper.classification)" -ForegroundColor Green
+    }
+}
+
 # --- Process GOG installers ---
 Write-Host ""
 Write-Host "=== GOG installers ===" -ForegroundColor Cyan

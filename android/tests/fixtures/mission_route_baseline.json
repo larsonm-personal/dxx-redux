@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "record_count": 1274,
+  "record_count": 1509,
   "status_counts": {
-    "failed": 68,
-    "ok": 1145,
-    "partial": 61
+    "failed": 73,
+    "ok": 1373,
+    "partial": 63
   },
   "records": [
     {
@@ -676,6 +676,1416 @@
     {
       "key": "castaway_redux.json|0|9|bioform.rl2",
       "hash": "e721013d88dead78c6795cdcb7dbae2b8592af29324dc1e8b0f8bdcc09b78aed",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|0|1|SECHRIST.RDL",
+      "hash": "3261c5e596297f545d8fc5fe42979b0d89bbef1ec29feb2c3404c41d32b3496d",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|1|1|CORR11.RDL",
+      "hash": "4ba455295daab300d56373130a7a18873848963b449a321c16f7aa46d54ba754",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|10|1|newest.RDL",
+      "hash": "1c0d45c45387ac39ff874ec13f47e9cc5e045cfb650d35757cf2bab9235315ba",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|11|1|obsrv13.rdl",
+      "hash": "79bab65f4d9ebfce059d5c49971ebd17de2aca18a26f9412069720a47f389cd3",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|12|1|retrib10.rdl",
+      "hash": "cb8a89cd63930e3668a6cf15e0a67bf29f6601fc544766821255dbf3885d498f",
+      "status": "failed",
+      "step_count": 1
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|13|1|retrib11.rdl",
+      "hash": "540152f3a0dd4de7cf10164446d13b192be2557df404752835f037b8c6119f4d",
+      "status": "failed",
+      "step_count": 1
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|14|1|serenity.rdl",
+      "hash": "72b3cd0d16250a044b88901f877e40570f45e11a347ac6529867a5f042b819b3",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|15|1|super_s.rdl",
+      "hash": "6061e545851fe808d03377ecb907987e49c0c0e57be9ef5707a2a378b313f2f0",
+      "status": "partial",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|16|1|terminus.rdl",
+      "hash": "bc434c2f9d64dace8e4f3f26a52c35917b0d6a95051d2ec5d1aa1743dc182830",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|17|1|tranquil.rdl",
+      "hash": "d132ebe57a260be3e72003e37290ef39a93f95bf853a90b18a983cf70d911038",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|2|1|demonbrg.rdl",
+      "hash": "a8c669f58a166e51ae01259ad8eb9dc9ad89d23b260656ba10264bf4bc3158ff",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|3|1|dethpost.rdl",
+      "hash": "bf2f06fa0cd4858298c859bd121de0f3960438e27320661b48a2161ce5e68b58",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|4|1|level01.rdl",
+      "hash": "4fac5a1965fef46d1efac2f0b21c232660b9f4fef3010a9ac7b09e82ed54c14b",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|5|1|fbomega.rdl",
+      "hash": "343ac953cc5be65bcc2efce92f8bb1cdf4fd873bfc5dda24f648abdc67a72ff0",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|6|1|humility.rdl",
+      "hash": "b343073415e0885664fffd98c550c09399916bc8d0dc2de433776c569b492dbe",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|7|1|LUNAPOST.RDL",
+      "hash": "47821718a51f5aa172ec7ee99d256076ad1c2e09f08f24d3c34c229554d573b8",
+      "status": "ok",
+      "step_count": 11
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|8|1|mad.rdl",
+      "hash": "a58823c851acf341943a7d0727ed7ddeefbfabb4ec640a9d06fe3a607a317fba",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Anniversary Edition (USA) extras.json|9|1|MAG4.rdl",
+      "hash": "fbcf7981f9e3eae0deba3d014d11702ca47aa886d235ca1cab6517aba19b3bf3",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|-1|levels1.rdl",
+      "hash": "6445b91dd7a56ff9e8a32c6cf9c106e6d34cdc9539d22c72b8faf895a924de5a",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|1|level01.rdl",
+      "hash": "0f6d9902a0ac91b0fd5f24b673291e7bf066fc80e536a16553780dc5e14d92bf",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|10|level10.rdl",
+      "hash": "e6a218ea7cd0313f517c0dd8f4b26eddde8b90a5fcd7d6e734dadbfa740136ab",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|11|level11.rdl",
+      "hash": "fc912cb5a850e14555dfaa31c171ea27b4fbd974de507b13806791a23276f5d7",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|12|level12.rdl",
+      "hash": "13b2f9eef83f6a32d0c401e81c1c1e9a5d2f851eec4f5ccdb935b4155a991ed3",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|13|level13.rdl",
+      "hash": "a3f5947579058264174112f874bf883b2fe0a1623eb6824a7e0566ef57275906",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|14|level14.rdl",
+      "hash": "d742880b80b4b6edfbf13450672e1247ecc6edf3ecafa35a0b55fe2551db6de0",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|15|saturn15.rdl",
+      "hash": "664b16330d1d0126b159154e5753c2434ef68ccafcbe0df4d6dbd0d67c0a744c",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|2|level02.rdl",
+      "hash": "b515695bfc0fbb05c476de4036ce3b229191c64856261d4491f118cef77b2380",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|3|level03.rdl",
+      "hash": "b1e9cfe51b0fe14a65a45ea5704d7163d9931945fb055ac49f1ca0ffa691fea0",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|4|level04.rdl",
+      "hash": "dda1145dea9a09a32c3016c5ef72919e128130f9f12cea160b133769fa5db02e",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|5|level05.rdl",
+      "hash": "17bf50e7289062600305a797302f8a9c133a0264a5e9b70bbd58aab47cbbd246",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|6|level06.rdl",
+      "hash": "d7d98940ffb9b44c493d4743525a49a9c30f56da5754db1a514ce51a723d154e",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|7|level07.rdl",
+      "hash": "3f6a26e7a200fd16749b740875b2429231539161e257dc9a7e2a6576ffa84316",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|8|level08.rdl",
+      "hash": "7b6df066294ff2026863bd8f7a4f714adf5d42a6d4718f3f2a834acf89622676",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Destination Saturn (USA).json|0|9|level09.rdl",
+      "hash": "76a96a61c6bab79d3a0b6e09c84cfcebb6a2f9048b90d59b92094d4e1aad44d5",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|0|1|abandn10.rdl",
+      "hash": "d341095485f2ea226f58154e898a6a85a511f1ac83dbf8e973eb471c65dd9e1d",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|1|1|abyss10.rdl",
+      "hash": "e20b46d529d8114c54691d0b803217f3e7713236af9d16818a7fa87a40c89a40",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|10|1|blusnake.rdl",
+      "hash": "ff0e48daeb9c4bac361fdbcebf337870036313d9428d51a63ccd6cad468dd981",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|100|1|venus1.rdl",
+      "hash": "afdec97b43c4e04917a0c63dfd407f924b7e2919db210e8af8db7a162047d8d2",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|101|1|venus3.rdl",
+      "hash": "947f6a20df40cc9c13a0e4fbfe64fd33f6c980c9a6b029180f3bdcb44505bd2e",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|102|1|viper.rdl",
+      "hash": "0ccf06c0205de11345b5bd64f526ce84e6d3bc85db30a30e5f7bc746948a5d3b",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|103|1|viper.rdl",
+      "hash": "3e5e954baf9cfce8c326f428057045ee34b01f3dee7179c0040c11890c14323d",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|104|1|votd.rdl",
+      "hash": "40d0177604b015e19cab8a3186580c379041afa6e687d889253b12a02c4f13d6",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|11|1|Boli.rdl",
+      "hash": "510ea1fb5ecfde6899b4af01a7943f5eb7a3bdb8e8d0337e0a7c367864e62888",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|12|1|brattica.rdl",
+      "hash": "70f060bc11824fb95986257acd54fe75d7cfdabdd45135502c8ad2fb55a94db7",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|13|1|BRBETA.rdl",
+      "hash": "ab4c1b48d4c741966a6c26e4af36a16bcfe777c60683ea586ab97d9018e3afa0",
+      "status": "ok",
+      "step_count": 17
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|14|1|BRDECON.rdl",
+      "hash": "c2f6a763310513ee77e53b7f0d345d99fcca880790172cfc11bbd55b5a1fc33a",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|15|1|BREQUIP.rdl",
+      "hash": "9ba59888d8690018b368b20dbf41fb954224ec268c542f5187585fe3a625f05d",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|16|1|BRINSANE.rdl",
+      "hash": "e1d324af0fe9bcb358c95d2b99b22fe1ed7d7fbf46bf77bcdcf5b7abfa327345",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|17|1|BRSPIRAL.rdl",
+      "hash": "93a1cb9b4d02db99574393e4459b2f454060034555f50b7971d023ae247e4745",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|18|1|brtrade.rdl",
+      "hash": "d766df71f3a65d671fc3f64df95c91fd290c5920ced3af3829ea359cdd552573",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|19|1|Bushwak.RDL",
+      "hash": "4b600159058d07b011ee78c36e7382bc38267c8da5527dbe562a2e5b13e1c338",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|2|1|Advance.rdl",
+      "hash": "5d0b797be23fd7418b89f3b22fb7be1a1de0de7eae932dd38f72992a4cae32f4",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|20|1|cap-rye.rdl",
+      "hash": "c7f694b82ac01704aa3b62da8928d92ece1d84c14941070243b31f930cb5e74c",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|21|1|Catacomb.rdl",
+      "hash": "2e00332cb8deb5c7fee70a440598a3beedb37ee8147a86b620804500b7fc0a70",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|22|1|cavern11.rdl",
+      "hash": "e753f7035091b6f902ea70e33cf51f50e710f2a8b13ea3ef12921825ea0574aa",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|23|1|cd.rdl",
+      "hash": "23e8ebc8da973f95827f6db7dcb58c944d867fc8af97ea534efa106b9b8e9d82",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|24|1|CHAMBERS.RDL",
+      "hash": "ad783c49acd033d8643a83e21d81d0d07b480c8a4b40962dc9f419685e70fa2c",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|25|1|cicero.rdl",
+      "hash": "35efd3e9ff6421715350651470174f1c922702741177635388a5284bb2346a56",
+      "status": "ok",
+      "step_count": 11
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|26|1|cod.rdl",
+      "hash": "1253f2b5d8d904c69785f9c1fed8114fae557d78548e9464d6058cdc70301d9a",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|27|1|comet.rdl",
+      "hash": "f5eb24cbe76767772bc48fc25c31c90beb0b530c7206f0b0394bb0a79d651f49",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|28|1|CORKSCRW.RDL",
+      "hash": "8b82a595fb189106339f69b08f30bd0b5465f1fdc838d3757a772380e7180940",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|29|1|cubik.rdl",
+      "hash": "15aa5f92c683c503bbd5f716ed5cf5255a20e64a8252c7a351d0b90c1c3b077d",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|3|1|ALEXAND.RDL",
+      "hash": "d54208c512ca3cb2574e4899eaeea6cefba8ad3649749a8f370030feb1818182",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|30|1|deathmat.rdl",
+      "hash": "8f98989c66cfeb3c354035548a0298f35ef018ad1baf526e5e8c907969adcfcf",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|31|1|DEEP-PIT.RDL",
+      "hash": "66f3bfaacfa3d0dbb01e8f5cda899c92e9408c3a9883d8cffc8aa14264a89b8d",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|32|1|dethstar.rdl",
+      "hash": "5119352614c0d3b8f487a45641f5e78670b55ce9cb8d70f62ac0655da796f09d",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|33|1|devheart.rdl",
+      "hash": "1621a3b8eb29436b38263aa915fe55dbc7bd7817744de8025c8b173151340567",
+      "status": "ok",
+      "step_count": 11
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|34|1|DIAMOND.RDL",
+      "hash": "cbb56ef158532b5ab6df059d42641763f553669159d5049ee139b92234120303",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|35|1|drkzone2.rdl",
+      "hash": "946140fee42851365b1298283e2f45188ba5fbca8593e35ef5e6ce5984f49fc5",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|36|1|dsntcity.rdl",
+      "hash": "2b9904445b754490009b392cbffefbec6266e77994e340b86772cc9a2e7b2b41",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|37|1|excel.rdl",
+      "hash": "3d36fd502f7ce616e8d12b5bd47bb307f975ba2c813b706e658b310234b769bf",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|38|1|fork.rdl",
+      "hash": "8e4a8ec6380198e233bcf853e082594515dc2f843318d9408c017940d88839bd",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|39|1|gamerelm.rdl",
+      "hash": "4e8a7b19d20ba5f947b9bf6291bb531630ae07cf7bc3a7870220637fbce201c4",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|4|1|ALIEN.RDL",
+      "hash": "e2dd64722753103fb264d09a539dd804ce793bc1b30bfcc82239b9b2e6accca3",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|40|1|ganymed1.rdl",
+      "hash": "08e511cfe90416b7afaaec7f43c3c535f820cdf91ecadeb826a17df40c51c1cf",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|40|2|ganymed2.rdl",
+      "hash": "1a1df2214e82a8d8e9f5e592e6653da1b4fd3bd1b14453d19edbcd518bd45828",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|41|1|GEHENNA.rdl",
+      "hash": "7155b56cd8ee25716e69d7f74c58924fee5605bcb96f52e15a24a2002bab646a",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|42|1|grengyro.rdl",
+      "hash": "ae58985caf9c4f3967ef888de1abe0ae89e62b4815bc9c70fdb2a28b7eed923e",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|43|1|halls10.rdl",
+      "hash": "0505c9fbe5a7596d8c07d877bff745c2b005f805be4dcbc95b76097d8285208c",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|44|1|hypractv.rdl",
+      "hash": "a9b3cb54f29c7f2a4dbd3f1a4eacda86d5faa89c0040de5b202ebe60a72a341e",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|45|1|iceout.rdl",
+      "hash": "033befb34953ad6e066d19cda3131aa7e3db925a73be7b301c651d088f93a72f",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|46|1|INSQOUT.RDL",
+      "hash": "beb541ac33a602d0b88d37d2b0f68c299993eaee85dc16d124fd731d841ca81b",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|47|1|jaxx.rdl",
+      "hash": "5d1a222925c0d359f2db81d26cd18d6822e70c7412a9ed0a15447fb02765df3b",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|48|1|johnsway.rdl",
+      "hash": "3d92ac8d7140311c42924ed6e5425eb95957da38e550a3031a673b2f97880ed0",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|49|1|keep.rdl",
+      "hash": "c1cdb21ee18add3c88ee1b297526da95919656695fdb02a887222e1c18b718c0",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|5|1|ALPHAC.RDL",
+      "hash": "323ec3c7e0183a9ea0e63e7a640aa27cec67143a04640e85f75c3c71957f9764",
+      "status": "ok",
+      "step_count": 11
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|50|1|KICKER.RDL",
+      "hash": "faa64af13a1bc86f950cd72b9ce980b4a744fafe289681ad57e0bb0d082e3462",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|51|1|lava4dtc.rdl",
+      "hash": "240f6b23580dff697d3a50afdb91fff01fb40ec94bb10a82655ca39316bd5b69",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|52|1|lil-dev.rdl",
+      "hash": "b0f8cd7d49bf42cf6cf6db990d39137b76c5640237c8fc4f4e35bd8df91d0c06",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|1|LUPIS1.rdl",
+      "hash": "66a7594b49f9d5ac566dbda477466a4035d318f126ee703eb3a6df1ca7f9e894",
+      "status": "ok",
+      "step_count": 14
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|2|LUPIS2.rdl",
+      "hash": "444ab856399f57f6f8dd113647337191f9ae9be5470f62bd8ef8f3188410b313",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|3|LUPIS3.rdl",
+      "hash": "15e4e0cf517f1b2db994db3869476a245617525faa6186fb866c8f9adf7ac33c",
+      "status": "ok",
+      "step_count": 13
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|4|LUPIS4.rdl",
+      "hash": "f6a855a6b95712aa0c7103534ab8fcb55c1be3f0ce9fd523fb3cd381686c5eaa",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|5|LUPIS5.rdl",
+      "hash": "48295c3afbe0157d2e1d9d34e49b18dadff2eaa4773d39ef0c9f57fee60a592e",
+      "status": "ok",
+      "step_count": 11
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|6|LUPIS6.rdl",
+      "hash": "e02b49e8977ebe31138b219f19a8eee9a6e8beb1b0931cc5ff407a0e713ec0f7",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|53|7|LUPIS7.rdl",
+      "hash": "ac55c1df763200e7a2d44f88c12e670296bc719f1129a1e38e8c779d3273bb4a",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|54|1|LUPIS2.rdl",
+      "hash": "a1694071049b3b9637c505bebafc6bdbc17bcf7bd6e2e7c36011e8867d9f1529",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|55|1|LUPIS3.rdl",
+      "hash": "39ab2a1ac0c3272442bf17493a5e85cd2c1ded4cb28f8c4512c3db5699d283db",
+      "status": "ok",
+      "step_count": 13
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|56|1|LUPIS4.rdl",
+      "hash": "7b41fa143d0e4d9e94bb03cc155baa1321ae0418ae2c0e41c9788ece6d1f6b38",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|57|1|LUPIS5.rdl",
+      "hash": "3526a8dc97c3c062c170bab6891c8774b9b4feac6cd16f327bd1b215c8fb6f36",
+      "status": "ok",
+      "step_count": 11
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|58|1|LUPIS6.rdl",
+      "hash": "e119ee3e25bfe72c476387f13c052dd9c30af60bd4773094ff1cc09badc3a34a",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|59|1|LUPIS7.rdl",
+      "hash": "5ac07e28f6196b354984dcc4ce6e7edc4335e65dd1a1b131c878edf0cc0c4930",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|6|1|arena.rdl",
+      "hash": "79ae71ef1c95664aff56ddc262b154304f2adb8ebb3aa4b731de367e3b7129aa",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|60|1|magicbox.rdl",
+      "hash": "754096d03ebe119725d4092e39d8de01c8b725b9db0ea04ec80a936d9045c0a0",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|61|1|mars.rdl",
+      "hash": "058f3d13bc15b49f525c81768015d068151b78bc707ada3d1e5e12852943fc46",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|62|1|meridian.rdl",
+      "hash": "9d7516be90129452d1dab10df5105e419d97225c19df9d026f8c2cde6e1616d9",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|63|1|M2.RDL",
+      "hash": "df545f55eef57eee4016a28506a2d2a968777dd88f6b646d89f1f636dc5ddbf4",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|64|1|neural-i.rdl",
+      "hash": "7d70d5f5336a95b61df0768f2b4a6592ac3887fc3a0669b1cca5c7e84a80c636",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|65|1|nexus.rdl",
+      "hash": "8012360c10d4ccce0916eddafe327cc46c885994ffae8a50104d55ae9f41510a",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|66|1|panic.rdl",
+      "hash": "8b3c3ffe78462a403a2a137d0854b465445bb73f84de372341544308a5977bac",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|67|1|PARADOX.RDL",
+      "hash": "acef18efc8463f1f1b54b0434651df2d016bb1b7ecb0d12d180917565d98c0ce",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|68|1|Pit.rdl",
+      "hash": "ec0f02238b82be6b1122c1ebb0f701dbaeaff800446e3f1e5b9a8bb1f88fac32",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|69|1|ports10.rdl",
+      "hash": "1b7784ede724faa5b03605141fdf14f2e0f173f2ea4abc338eac28916f08627a",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|7|1|aurora.rdl",
+      "hash": "5f4b56bb32364128eb947ce0c089906c0a68deccb6acf53a8f8bd98341bf7aad",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|70|1|PYRAMID.RDL",
+      "hash": "bd01a68c5b18e2cf76c8a462309aa39106586b3f41106d9543b043eb0470ad6d",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|71|1|ratrace.rdl",
+      "hash": "45a25d888d9cd29a567b6d483a1066b9adb65f6c36310d4e3e3377264960c94a",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|72|1|redrum.rdl",
+      "hash": "33978a8eadaaa17c862438f7ff74b90c04f0794307231634371571b6aaf3dd83",
+      "status": "failed",
+      "step_count": 1
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|73|1|rescue.rdl",
+      "hash": "5f1ed9d76da69c29c21b41e978c6fd5ac807017bb6b4711e816f1f32824ef4ce",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|74|1|resq.rdl",
+      "hash": "eeb3c24e9fc588cf65c6acc2b3e22c661c140af9c4df6badd12cebdc69bb12b7",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|75|1|roundup.rdl",
+      "hash": "7286fb8f6b4a9a6db898d4dad9e49c5dbb0b32bef25250561a24f51d0d2275ea",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|76|1|SATELITE.RDL",
+      "hash": "995e089a4f363d2a8deb1a273319dc5598b25e7accd4e07cf69743b2ba5623a3",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|77|1|saturn15.rdl",
+      "hash": "7d359af8963a75b7ea8962afbdb70d68feb45a7556c1cf484af90124f668e3b4",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|78|1|secrets.rdl",
+      "hash": "247f91cbfbf8e19c2a14b1944434af20ec74affaf92a76d12fb384f0ced87d38",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|79|1|setialph.rdl",
+      "hash": "4c424592adb6110b3798a475ff670eac103fa0e75cdff2ae1e75e18f13434ba2",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|8|1|Barium.rdl",
+      "hash": "b50163d120aee7f83f022b79dd49ad5d95f3b47793e0a37e12fc560aa203f93e",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|80|1|slimod12.rdl",
+      "hash": "e2e6dc1011e941e92805cded8bd589ecb64d3430998ace16c89ac0b536210c0f",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|81|1|spooge.rdl",
+      "hash": "d63a8a2418e67aa2d50eb9c515275fcbd0214bd417290238b3680c7c00943f74",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|82|1|stair.rdl",
+      "hash": "51951d176170be3351e3885b8fbf4c441837d157286e73ee840298b792973690",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|83|1|stick.rdl",
+      "hash": "2cc5a0ea45b1ea104706c1c488e5a596bb03c4c5c9e53c8ea3be9eda6635efd2",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|84|1|NOUV4.RDL",
+      "hash": "470af8c8a7073be09dd40b748c0bc5c0255be835c86f658c05302cd02cd1eb0b",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|85|1|switch.rdl",
+      "hash": "dc8a201637f114e46ab39a329e42d59901f6ba25c0710a410e085a699fcf13ac",
+      "status": "ok",
+      "step_count": 13
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|86|1|TARTARUS.rdl",
+      "hash": "9a6a9082a6cfa8013e930e1e37a8ff0a8356618589b0436990523cb5b3ab0920",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|87|1|tcamp.rdl",
+      "hash": "bf8a0c9ee989d91be4247478c344255a0f923ce927e68597d04984aed77e0de5",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|88|1|TEAMDETH.RDL",
+      "hash": "b65ca1079018cd7ebe95e8a443e45dbd10311131af238e09896ab8ea7ab3edad",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|89|1|techncl.rdl",
+      "hash": "ff0a64b68e555ff96bbd85b6960ace7698c5619fde0f93a1ff6a65f07d7bd40f",
+      "status": "ok",
+      "step_count": 12
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|9|1|BAY32.rdl",
+      "hash": "b7165cd50d14333e7d53b664cebc4a214ebfd789ff5fd5564541a3377c58b60b",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|90|1|temple.rdl",
+      "hash": "ca691555958898ac4c4d38416f612ed50914347af0192aa3e8ea2d868ec49817",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|91|1|titanium.rdl",
+      "hash": "95cf1138c4fa2fae43f19ccb5e1acfe1d3b3ca436d75d0f27870aa62c877b0a5",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|92|1|tolstoy1.rdl",
+      "hash": "f2883564b01b07fd6b44f1a3bde7befd61e66a2c88862a1ba4cc170df8578c25",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|93|1|tolstoy2.rdl",
+      "hash": "6fd226747ee7a9847d339d7aea8a58c2c0d81403ccf458cf75a6630517121ff5",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|94|1|top.rdl",
+      "hash": "1c49e588681a6a518137aa2121391f93d612f0cd6f50fa49ab88f98afe063446",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|95|1|TRIBYSS.RDL",
+      "hash": "0273c0e7832156c869e5074971d0d0d430d7b795f1264c2398ad3cba275523c4",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|96|1|turncoat.RDL",
+      "hash": "52a4a20bef18934f732e0c4848adc7e99185b4a29f86fe10a7b9c6188e9990bd",
+      "status": "partial",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|97|1|twyrm01.rdl",
+      "hash": "e17a487ca439031cb1a4e726cc893ea039692caa476f8e7ee5342f78044ca14d",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|98|1|ufp1771G.rdl",
+      "hash": "6c044c5a94122e8cb1c7a2adc76fcba2bc08b9ff2accce6a60b925ae134da68b",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent - Levels of the World (USA).json|99|1|vanguard.rdl",
+      "hash": "ac61134bad629494e34807bfa532c45bc93c8f2c17ac28695777fc3dedf91111",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|-1|d2xlvls1.rl2",
+      "hash": "8bbb24e08f3f4cf348158127a3abefeb2bd862ced37c59047e30c9d4a0aa5dc8",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|-2|d2xlvls2.rl2",
+      "hash": "732235a8899c5bea71579c86cf88c67115b50ed238bbdc25299a86e91b22f4ff",
+      "status": "failed",
+      "step_count": 1
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|-3|d2xlvls3.rl2",
+      "hash": "30c0a3c3c7ee2b74082468b25165d5757074cc26279b1b4e2a16a426464834ba",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|1|d2xlvl01.rl2",
+      "hash": "71c4a5e3aca992209ce87c29667d60413ea58833c67a43ced36cfbb23cadfeb1",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|10|d2xlvl10.rl2",
+      "hash": "e15ef3b4a5643ea4e2e0844769cc8f87e732f0bd2bf139cf9f10a293ede3a663",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|11|d2xlvl11.rl2",
+      "hash": "882c33b64e708179b842b5096f81f337993229e8488290fa5df849d11d9826b6",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|12|d2xlvl12.rl2",
+      "hash": "e520ab5e08a6588ce1313e6320e2948418d21df9db069e39fd06e320e618e353",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|13|d2xlvl13.rl2",
+      "hash": "e5fcf7c6e3b54aefb520c9755f6439e00ba1a2b6f8fc443492a7e855af56bf23",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|14|d2xlvl14.rl2",
+      "hash": "6c5493e9cbdbc38f2c7a89fda3e22fc0b9fdfa6e3fce6a901e8155598ecbdf93",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|15|d2xlvl15.rl2",
+      "hash": "3187f788f1e96cb62a31a481c5efda99cc175838bba56aef830f09e5b62f797d",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|16|d2xlvl16.rl2",
+      "hash": "67c8197f083323a145ab35df9c3d604908d81631acdd5f1f4224b5447faf474b",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|17|d2xlvl17.rl2",
+      "hash": "0e4c8a9a46f4878d77b1c592061029412384b03f90923c13afa7aa427700fef5",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|18|d2xlvl18.rl2",
+      "hash": "dcb9a0a3369c7385a57d7ab8d50b0e56620fbd96fcbc959c1edb67d1efd6de62",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|19|d2xlvl19.rl2",
+      "hash": "1008f683cd6fe9af95b4ab1c58bb7f1cf90a1f5c6c3fd461051d3c526b31d81d",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|2|d2xlvl02.rl2",
+      "hash": "d9da45aa4d825eb4c8ee240c8a70a2fc24868c6e270478789c72b46474b01138",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|20|d2xlvl20.rl2",
+      "hash": "b9c3d77273478070e2b19d080cbcc5d03c94220243407147d8d6917b26604812",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|3|d2xlvl03.rl2",
+      "hash": "07b24c3f50220adc592aa202fb3494aedd7a7764a57a30e93b80371fc7e1b149",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|4|d2xlvl04.rl2",
+      "hash": "3e9347f1ffb0e2d949fa8d80eea90691c5cb5c7290cfdd307eeefb9975226ff1",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|5|d2xlvl05.rl2",
+      "hash": "58fa405488a44fce2ef1e468d4a1918c706e1f2132d80c117f15120aeb41f475",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|6|d2xlvl06.rl2",
+      "hash": "706b09bf615b655c3533d697edcaf62be5c73d00dae65b801c74fecbba5781fd",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|7|d2xlvl07.rl2",
+      "hash": "6547bff9781db6b4b66c9da31bda7cb80ecc74e63a9d3dd3bafc1fae981d4d48",
+      "status": "ok",
+      "step_count": 10
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|8|d2xlvl08.rl2",
+      "hash": "ba30a2b08940e7a94acbcf3cc7c0ac9f408be0ea059a424f43b7e4d52b9cac93",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|0|9|d2xlvl09.rl2",
+      "hash": "3f65e4995481190e7dbb2217a74411b9b2d27b4fb777ec4e68e4c57c4758c574",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Descent II - The Vertigo Series (USA).json|1|1|tutorial.rl2",
+      "hash": "33a2cce34ca4fec42c6952d9e2fc851ad55bd0a83ee069c0d074d3cacf92a4e4",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|0|1|1sttrial.rdl",
+      "hash": "b164fef9d339f85b3e643c7fd58e9af52d696a7cbec7d0669c3ae01493307fc8",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|1|1|alpha001.rdl",
+      "hash": "e304c123e289f7cbcbbe750f81d2d96189340f796b3925960d73b80ff0e1df7a",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|1|2|alpha002.rdl",
+      "hash": "82ada187e72741d644030034b95624cd0a5ea19706d1373d912ad45fbaddb4c9",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|1|3|alpha003.rdl",
+      "hash": "80b0e7d4d38fc267c46256da192eb88e96d515245f1a4997371c010f221bebf9",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|1|4|alpha004.rdl",
+      "hash": "eb6302e74d2fa15b1f3930f880909a6a1d15e470f47b6b36c04263cc935505aa",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|10|1|cbox_x.rdl",
+      "hash": "05fae7e555f9bbbb02d5576c2b65ea5b71aa763d0df36de2ccb460755bb49a4d",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|11|1|chii-1.rdl",
+      "hash": "66ff0e3381bb3d844484c34f9d8cd0acbb4aa0199d435fb7967916cbf41b9c9c",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|12|1|CLASS1.RDL",
+      "hash": "aa5a0a0cf0422133edcdf7840d41b58aba254e07488f99f48610e3ae5c2fdca5",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|13|1|Cobalt.rdl",
+      "hash": "039c0f41198a15727ffd25b75073a6e6582eab60011964f747103b1c96a8e011",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|14|1|coral1.rdl",
+      "hash": "8ccedd6d21a9d7dbc1cb7d521727936a1fade673a95d9a6947418a2de7e61faa",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|14|2|coral2.rdl",
+      "hash": "c572913cff363056ea3fad2a101c82c811147c8db83e3c7c53618760fe986df2",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|14|3|coral3.rdl",
+      "hash": "87bf82ce3845a3d107f8ca2a6951a1a0ffc33897a7f41c6753ce67b9d68ca4a2",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|14|4|coral4.rdl",
+      "hash": "e223acefc00c7377e6cd59ca453553a7438621f03aa61c106d0e73ad01f01230",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|15|1|dark001.rdl",
+      "hash": "e27e3cdd245909f84f244e71f3aaf355dad660f9b02b1414f8c7a34f26e723fe",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|15|2|dark002.rdl",
+      "hash": "4f25d28d8a8de6aca2cc3976270d8a03a9bed6be18b8f7ff4283bd9b4fce1efc",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|16|1|demo.rdl",
+      "hash": "555423c5132c53f852110c32c974ca2928feb75993f727bd269019b768a700b3",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|16|2|my_demo.rdl",
+      "hash": "477c08d45279b760ac4cf0df89c9a3cf21490f2810e5dcddf57122051938834e",
+      "status": "failed",
+      "step_count": 1
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|17|1|snipe1.rdl",
+      "hash": "1ef2f7fa782c49e9f8dfaeb96b8e938c47a8e681273b3c6430f42092db933aa3",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|17|2|snipe2.rdl",
+      "hash": "69212791d82968c11a9cfaf3de233cd25d58a1079a16ba7ddf2f7a642d08c12d",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|18|1|eye.rdl",
+      "hash": "4911a638955a5ffdcf56667fe61f5e5fff298f42203ed44a1530ff94de6e9e9e",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|18|2|eye002.rdl",
+      "hash": "020146e3cea2243c3fde2bb7e9b88159c67e5d6444e48d1b016175e9b6fce3f8",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|19|1|insane.rdl",
+      "hash": "2d2fb2890feb4b2dbf580bd3c0edb28f57c3d720240721183df202145181405b",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|2|1|BATTLE.RDL",
+      "hash": "feae16be272ab75a9cd384a437073a76547b0b06ff81baeb8bb1c794c0074ed2",
+      "status": "ok",
+      "step_count": 2
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|20|1|josha25.rdl",
+      "hash": "91130a8022a83aa19c6d2564e3f63342b7fb01f356a8831df6ba407a56233d44",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|21|1|joust.rdl",
+      "hash": "329956429b73fdd2742eccc16b965befcb960e2184cb194d58b31520e6e75295",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|22|1|karlmb01.rdl",
+      "hash": "18072d46434f6f243279242a288f813f19cb265261341c18acd2ffc4e2e48419",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|23|1|lava.rdl",
+      "hash": "2992c3b4a53604e5bf4eacfead00bad2b1dedb915b359c35163c01cfd234aa8f",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|24|1|lava4d.rdl",
+      "hash": "75fb21581eb6fe6e4314bf9a792fb0bf6635b27312fcefb981c1d1f5fd0b2955",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|25|1|maze.rdl",
+      "hash": "ed658bec02eda51dad1a68637406e1545e74488865f686c8447dd72736a50969",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|26|1|MEGADETH.RDL",
+      "hash": "109caba5f84a697c9b3a98e8a31646069ebcb4688f03e7e7f81c3659c92f52b7",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|27|1|HOPE.RDL",
+      "hash": "0816384689c90d0609e293a3683ae8d8d6ab2ddab1eb64d0ddb7c89f7cf83e38",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|28|1|BRINSANE.RDL",
+      "hash": "8f6fc067490e53bf176ea22403369c5476795b545cec4fe581b3f5ea3e8e185a",
+      "status": "ok",
+      "step_count": 2
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|28|2|BRSPIRAL.RDL",
+      "hash": "5e07446fd2514ef04fffdaab66394c789af0c6687e4ee7a858bc11fef050029b",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|28|3|BRATTICA.RDL",
+      "hash": "5bd945f867084a1292e06c700ef2d39b5488fdf04c497e65cbba728ed83acbc2",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|28|4|BRTRADE.RDL",
+      "hash": "57c87e44e7ed15f36fa25244603e212c9971ab582fd47aa9f43bf4e521fde109",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|29|1|razor.rdl",
+      "hash": "df366fc33c45aa22ca3e63636a8e4f6c079107194afc4b6dccc1664585f22f45",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|3|1|bdrome10.rdl",
+      "hash": "86c967d569f22a7c92dc4e4d0fd73c12fe482ea1e3bcf1647aebbb33f3de6b9a",
+      "status": "ok",
+      "step_count": 8
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|30|1|realsmal.rdl",
+      "hash": "bd07b9576c4a6bc2e08f8e8f0f7b50e3e983deced105615f7250a3b6b451eb64",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|31|1|rooms.rdl",
+      "hash": "a0d2810c2098e3da3f8512d879cf331a8a488202438f1c8ef429f467fa5c869b",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|32|1|ROUGH.RDL",
+      "hash": "3d2ace9c8d2ee474224a2b6a5343c28ad9d473bbd7819ec5d084a7e9456748c6",
+      "status": "ok",
+      "step_count": 2
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|33|1|level01.rdl",
+      "hash": "b70001fc4d29c20a9fda257cd8a2676a76dcee9a181ab62da6a7655893aa365f",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|34|1|scartrek.rdl",
+      "hash": "20f446e259fe56468a4287e396e240cbaba2de290a252c736b3b4d5a235d8597",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|35|1|sjb_lev1.rdl",
+      "hash": "4802e27888e16e7d5a3f188968083fb7da595d06f9d667d5cfc5882df344e2b1",
+      "status": "ok",
+      "step_count": 9
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|36|1|slayer01.rdl",
+      "hash": "f31a8751a10859e12abf48afabfe26499e96aef5dc78493820300dafd58097d4",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|36|2|slayer02.rdl",
+      "hash": "d8140521e47247760f5800c5925d029c37137d01f4d8830e3e8bcf1257da1d16",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|36|3|slayer03.rdl",
+      "hash": "b4a81f9ef074deb7b6d4250715533251bae251dc6552050bac7d1268fe5fa724",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|37|1|snipe1.rdl",
+      "hash": "e96d89cd28989223f1ee7eeb36a494fc44cc16af3eeac34b267b40807ccb40d6",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|38|1|spiral.rdl",
+      "hash": "5350b51e061ffd448509d0ee75100b2d169faaf9b5d88bbf359a1ba12b32055b",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|39|1|spooge.rdl",
+      "hash": "d63a8a2418e67aa2d50eb9c515275fcbd0214bd417290238b3680c7c00943f74",
+      "status": "ok",
+      "step_count": 7
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|4|1|beta1.rdl",
+      "hash": "9027bcdb96af0072e00795755cde043bb9b7520c4da9d36c186893d68898d40f",
+      "status": "ok",
+      "step_count": 5
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|40|1|SQUEEZER.RDL",
+      "hash": "5239f78bf817e257faba220aa76be1cb53b4a508fe2a28ac89b39caafc89f58a",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|41|1|tcamp.rdl",
+      "hash": "128d5401fe280b34cd75092363cdcfe9507c43fde46cc2cd4606f0ed55761be5",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|42|1|turners.rdl",
+      "hash": "453de4923ea6d031dd689c2f2a1e6ecfb2b9a1afa106d66e14b3772d3dc57377",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|43|1|twisty.rdl",
+      "hash": "bbc635056118caa7e24fa6e48e5ff76f7bc61fe68d7d8f6f6a081b47b06968f8",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|44|1|Viper.rdl",
+      "hash": "e464e03a385c22b06e17ad9224d55077a3b731f3911714b0522db2d1dbc8c9d1",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|45|1|level01x.rdl",
+      "hash": "7775f393de524cee67fcaa3d1528f680f75539a681fe843ad7363fa965f47dca",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|45|2|level07x.rdl",
+      "hash": "a89c4658adb6a9f013ef7cebac8ce19df76f0fc9cf91a10b07e3d09ad073194c",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|45|3|level27x.rdl",
+      "hash": "bbf3ab961df3c52a5934195c2383f674afad51fe0d35d0cce0ae12969403d7b3",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|46|1|ziv4.rdl",
+      "hash": "f2c6c6cf84cd2dd633f56cbb0e3c9626b70869cab7f07ba35db681e303a80f51",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|47|1|zoo5.rdl",
+      "hash": "838f906001869a9973683e86720ab730d5123176a5b57c38db157f3655fa5785",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|5|1|block.rdl",
+      "hash": "cbc325cf3352ba3a69723a106d6f688350a458478f572d0464f1cfb1db489eba",
+      "status": "ok",
+      "step_count": 3
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|6|1|borg47.rdl",
+      "hash": "83f1290b77df52230dd30b8f756e08e049c6e177e3e575359d1a1f6b02e6ea2d",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|7|1|boydsend.rdl",
+      "hash": "5feceedf52cf5ecb25eb8227a3d455744923dc1f23c728d2cf91206a03167136",
+      "status": "ok",
+      "step_count": 4
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|8|1|bri1.rdl",
+      "hash": "5f74d0cccf64149e081c3e684ad7c397ef85a3ae253b6a09e1e2e46d6ab0cbd1",
+      "status": "ok",
+      "step_count": 6
+    },
+    {
+      "key": "CD - Dimensions for Descent (USA).json|9|1|brtrade.rdl",
+      "hash": "d766df71f3a65d671fc3f64df95c91fd290c5920ced3af3829ea359cdd552573",
       "status": "ok",
       "step_count": 8
     },

@@ -274,12 +274,19 @@ function Send-IntroSkipTap {
 }
 
 function Get-ExtractAutomationScriptText {
-    param([string]$MissionName, [string]$LevelName, [string]$Game, [string]$TestSet)
+    param(
+        [string]$MissionName,
+        [string]$LevelName,
+        [string]$Game,
+        [string]$TestSet,
+        [bool]$MissionSelectionRequired = $false
+    )
 
     $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.json5'
     $text = Get-Content -LiteralPath $templatePath -Raw
     $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$MissionName) -Compress))
     $text = $text.Replace('"LEVEL_NAME"', (ConvertTo-Json ([string]$LevelName) -Compress))
+    $text = $text.Replace('MISSION_OPTIONAL', $(if ($MissionSelectionRequired) { 'false' } else { 'true' }))
     $body = ($text -replace "`r`n", "`n").Trim()
     $start = $body.IndexOf('[')
     $end = $body.LastIndexOf(']')
@@ -700,28 +707,12 @@ function Copy-LocalFileToAppPrivate {
 }
 
 function Push-FileToSet {
-    # Push a local file to the active set dir via staging.
+    # Push a local file to the active set dir, creating nested mission paths.
     param([string]$LocalPath, [string]$RemoteName)
-    $stagingPath = "/data/local/tmp/$RemoteName"
-    $dest = "$SETS_ROOT_ABS/$TEST_SET/$RemoteName"
-    Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout 120 | Out-Null
-    Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
-    # Direct ProcessStartInfo call -- the sh -c argument needs single quotes to
-    # protect > from adb shell's outer shell interpretation.
-    $psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = $ADB
-    $psi.Arguments = "shell run-as $PACKAGE sh -c 'cat $stagingPath > $dest'"
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = [System.Diagnostics.Process]::Start($psi)
-    $null = $proc.StandardError.ReadToEndAsync()
-    $null = $proc.StandardOutput.ReadToEnd()
-    $proc.WaitForExit(120000) | Out-Null
-    if (-not $proc.HasExited) { try { $proc.Kill() } catch {} }
-    $proc.Dispose()
-    Adb -CmdArgs @('shell', 'rm', '-f', $stagingPath) | Out-Null
+    Ensure-AppPrivateFile `
+        -LocalPath $LocalPath `
+        -RemoteRelativePath "$SETS_ROOT/$TEST_SET/$RemoteName" `
+        -TimeoutSeconds 120
 }
 
 function Get-RemoteFileSize {
@@ -822,7 +813,7 @@ if (-not $canLaunch) {
 
 # -- Locate extracted files -----------------------------------
 
-$extractedDir = $null
+$extractedDirs = @()
 $filesToPush = @()
 if ($useDirectSetupImport) {
     if ($spec.source_type -ne 'cd') {
@@ -830,21 +821,43 @@ if ($useDirectSetupImport) {
         Exit-Test 1 'fail' 'source_missing'
     }
 } elseif ($spec.source_type -eq 'cd') {
-    $extractedDir = Join-Path $specDir 'data_tracks'
+    $extractedDirs = @(Join-Path $specDir 'data_tracks')
     # Some CDs organize into subdirs (d1data, d2data)
-    if (-not (Test-Path $extractedDir)) {
+    if (-not (Test-Path -LiteralPath $extractedDirs[0] -PathType Container)) {
         Write-Host "FAIL: No data_tracks/ directory found at $specDir. Run extract_all_cds.ps1 first" -ForegroundColor Red
         Exit-Test 1 'fail' 'source_missing'
+    }
+} elseif ($spec.source_type -eq 'combined') {
+    $sourceSpecs = @($spec.source_specs | Where-Object { $_ })
+    if ($sourceSpecs.Count -lt 2) {
+        Write-Host 'FAIL: Combined regression spec requires at least two source_specs' -ForegroundColor Red
+        Exit-Test 1 'fail' 'invalid_spec'
+    }
+    foreach ($relativeSourceSpec in $sourceSpecs) {
+        $sourceSpecPath = [System.IO.Path]::GetFullPath((Join-Path $specDir $relativeSourceSpec))
+        if (-not (Test-Path -LiteralPath $sourceSpecPath -PathType Leaf)) {
+            Write-Host "FAIL: Combined source spec not found: $relativeSourceSpec" -ForegroundColor Red
+            Exit-Test 1 'fail' 'source_missing'
+        }
+        $sourceDataTracks = Join-Path (Split-Path $sourceSpecPath -Parent) 'data_tracks'
+        if (-not (Test-Path -LiteralPath $sourceDataTracks -PathType Container)) {
+            Write-Host "FAIL: Combined source data_tracks directory not found: $relativeSourceSpec" -ForegroundColor Red
+            Exit-Test 1 'fail' 'source_missing'
+        }
+        $extractedDirs += $sourceDataTracks
     }
 } elseif ($spec.source_type -eq 'gog') {
     # GOG extracted dir is named after the installer (without extension)
     $installerName = $spec.source_files[0].name
     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($installerName)
-    $extractedDir = Join-Path $specDir $baseName
-    if (-not (Test-Path $extractedDir)) {
-        Write-Host "FAIL: No extracted directory found at $extractedDir. Run extract_all_gog.ps1 first" -ForegroundColor Red
+    $extractedDirs = @(Join-Path $specDir $baseName)
+    if (-not (Test-Path -LiteralPath $extractedDirs[0] -PathType Container)) {
+        Write-Host "FAIL: No extracted directory found at $($extractedDirs[0]). Run extract_all_gog.ps1 first" -ForegroundColor Red
         Exit-Test 1 'fail' 'source_missing'
     }
+} else {
+    Write-Host "FAIL: Unsupported source_type '$($spec.source_type)'" -ForegroundColor Red
+    Exit-Test 1 'fail' 'invalid_spec'
 }
 
 if (-not $useDirectSetupImport) {
@@ -852,7 +865,7 @@ if (-not $useDirectSetupImport) {
     # Filter out 1-byte stubs (some ISO9660 extractions create case-variant symlinks).
     # Skip large optional files (MVLs, SOWs) to speed up testing.
     # Also deduplicate by lowercase name, preferring the larger file.
-    $allGameFiles = Get-ChildItem $extractedDir -Recurse -File |
+    $allGameFiles = Get-ChildItem -LiteralPath $extractedDirs -Recurse -File |
         Where-Object {
             $ext = $_.Extension.ToLower()
             $GAME_EXTENSIONS -contains $ext -and $_.Length -gt 1 -and
@@ -869,7 +882,7 @@ if (-not $useDirectSetupImport) {
     }
     $filesToPush = $dedup.Values | Sort-Object Name
 
-    Write-Status "Found $($filesToPush.Count) game files to push from $extractedDir"
+    Write-Status "Found $($filesToPush.Count) game files to push from $($extractedDirs.Count) extraction source(s)"
 
     if ($filesToPush.Count -eq 0) {
         Write-Status "FAIL: No game files found to push" 'Red'
@@ -1293,6 +1306,9 @@ if ($useDirectCdImport) {
 
     foreach ($file in $filesToPush) {
         $remoteName = $file.Name.ToLower()
+        if (@($spec.mission_files | Where-Object { $_.ToLowerInvariant() -eq $remoteName }).Count -gt 0) {
+            $remoteName = "missions/$remoteName"
+        }
         $sizeKB = [math]::Round($file.Length / 1024)
         Write-Host "  $($file.Name) -> $remoteName  (${sizeKB} KB)" -ForegroundColor Gray
         try {
@@ -1331,7 +1347,7 @@ if (-not $state) {
     Write-Status "FAIL: Could not get setup introspection (app may not be running)" 'Red'
     Exit-Test 1 'fail' 'files_missing'
 }
-$remoteFiles = @($state.set_files | Where-Object { $_ })
+$remoteFiles = @($state.set_files_recursive | Where-Object { $_ })
 
 # Check expected files present
 $missingFiles = @()
@@ -1472,7 +1488,12 @@ if (-not (Wait-SetupReady)) {
 # Launch through the launcher automation path. It passes the script on the
 # MainActivity launch intent, which avoids races with post-launch broadcasts.
 $launchGame = $gameKey
-$automationScript = Get-ExtractAutomationScriptText -MissionName $spec.expected_mission -LevelName $spec.expected_level1 -Game $launchGame -TestSet $TEST_SET
+$automationScript = Get-ExtractAutomationScriptText `
+    -MissionName $spec.expected_mission `
+    -LevelName $spec.expected_level1 `
+    -Game $launchGame `
+    -TestSet $TEST_SET `
+    -MissionSelectionRequired ([bool]$spec.mission_selection_required)
 $automationResult = Invoke-GameAutomationScript -ScriptText $automationScript -TimeoutSeconds 180
 if (-not $automationResult) {
     if ($script:gameAutomationInfrastructureFailure) {

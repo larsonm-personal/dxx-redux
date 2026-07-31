@@ -11,6 +11,7 @@ $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = Join-Path $androidRoot "temp\mission_zip_batch\regen_all_metadata_only_$stamp"
 $gradle = Join-Path $androidRoot "gradlew.bat"
 $batch = Join-Path $scriptDir "run_mission_zip_batch.ps1"
+$hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"
 
 function Write-Status {
     param([string]$Message, [string]$Color = "Cyan")
@@ -25,6 +26,9 @@ if (-not (Test-Path -LiteralPath $gradle -PathType Leaf)) {
 }
 if (-not (Test-Path -LiteralPath $batch -PathType Leaf)) {
     throw "Mission metadata batch runner not found: $batch"
+}
+if (-not (Test-Path -LiteralPath $hostBatch -PathType Leaf)) {
+    throw "Host mission metadata batch runner not found: $hostBatch"
 }
 
 if (Test-Path -LiteralPath $jdkHome -PathType Container) {
@@ -48,6 +52,14 @@ $batchExit = $LASTEXITCODE
 if ($batchExit -ne 0) {
     Write-Status "Mission metadata regeneration failed with exit code $batchExit" "Red"
     exit $batchExit
+}
+
+Write-Status "Regenerating CD mission metadata JSON"
+& $hostBatch -CdSourcesOnly
+$cdBatchExit = $LASTEXITCODE
+if ($cdBatchExit -ne 0) {
+    Write-Status "CD mission metadata regeneration failed with exit code $cdBatchExit" "Red"
+    exit $cdBatchExit
 }
 
 Write-Status "Mission metadata regeneration complete" "Green"
