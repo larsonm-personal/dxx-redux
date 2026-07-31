@@ -186,7 +186,7 @@ static int parse_directory_record(const unsigned char *record,
 	if (record_len < 34 || record_len > available)
 		return -1;
 	name_len = record[32];
-	if (name_len == 0 || name_len > record_len - 33)
+	if (name_len > record_len - 33)
 		return -1;
 	required_len = 33 + name_len;
 	if ((name_len & 1u) == 0) {
@@ -488,20 +488,27 @@ int iso_test_append_extent_sizes(unsigned int first_size,
                                  unsigned int second_size)
 {
 	iso_reader_source_t src;
-	iso_file_list_t list;
+	iso_file_list_t *list;
 	iso_file_entry_t entry;
+	int result;
 	unsigned int second_lba =
 	    1u + first_size / USER_DATA_SIZE +
 	    (first_size % USER_DATA_SIZE != 0);
 
 	memset(&src, 0, sizeof(src));
-	memset(&list, 0, sizeof(list));
 	memset(&entry, 0, sizeof(entry));
-	src.num_logical_sectors = INT_MAX;
-	if (append_file_extent(&src, &list, &entry, 1, first_size, 1) < 0)
+	list = iso_file_list_create();
+	if (!list)
 		return -1;
-	return append_file_extent(
-	    &src, &list, &entry, second_lba, second_size, 0);
+	src.num_logical_sectors = INT_MAX;
+	if (append_file_extent(&src, list, &entry, 1, first_size, 1) < 0) {
+		iso_file_list_destroy(list);
+		return -1;
+	}
+	result = append_file_extent(
+	    &src, list, &entry, second_lba, second_size, 0);
+	iso_file_list_destroy(list);
+	return result;
 }
 #endif
 
@@ -671,6 +678,16 @@ static int walk_directory(const iso_reader_source_t *src,
 
 /* ── Public API ──────────────────────────────────────────────────────── */
 
+iso_file_list_t *iso_file_list_create(void)
+{
+	return (iso_file_list_t *) calloc(1, sizeof(iso_file_list_t));
+}
+
+void iso_file_list_destroy(iso_file_list_t *list)
+{
+	free(list);
+}
+
 static int iso_list_files_from_source(const iso_reader_source_t *src,
                                       iso_file_list_t *out)
 {
@@ -705,7 +722,8 @@ static int iso_list_files_from_source(const iso_reader_source_t *src,
 	                           &root_record) < 0 ||
 	    !(root_record.flags & DR_FLAG_DIRECTORY) ||
 	    (root_record.flags & DR_FLAG_MULTI_EXTENT) ||
-	    root_record.name_len != 1 || root_record.name[0] != 0)
+	    root_record.name_len > 1 ||
+	    (root_record.name_len == 1 && root_record.name[0] != 0))
 		return -1;
 
 	ISO_LOG("Root directory: LBA=%u  size=%u",

@@ -3683,10 +3683,6 @@ multi_send_reappear()
 
 	multi_send_data(multibuf, 4, 2);
 	PKilledFlags[Player_num]=0;
-#ifdef __ANDROID__
-	/* android port: coop QoL -- shorter warp engagement timeout after respawn */
-	coop_warp_note_respawn();
-#endif
 }
 
 void

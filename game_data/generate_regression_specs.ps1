@@ -100,8 +100,8 @@ function Get-DiscClassification($discId, $game, $extractedFiles) {
     if ($lower -contains 'd2x.hog' -and $lower -notcontains 'groupa.pig') {
         return @{
             type = 'd2_vertigo'
-            mission = 'D2: Vertigo!'
-            level1 = 'Styx Level 1'  # placeholder - needs verification
+            mission = $null
+            level1 = $null
             min_files = @('d2x.hog', 'd2x.mn2', 'descent2.hog', 'descent2.ham')
         }
     }
@@ -154,8 +154,8 @@ function Get-DiscClassification($discId, $game, $extractedFiles) {
     if ($discId -match 'test-flight') {
         return @{
             type = 'd1_demo'
-            mission = 'Descent Demo'
-            level1 = 'Lunar Outpost'  # demo starts at level 1
+            mission = $null
+            level1 = $null
             min_files = @('descent.hog', 'descent.pig')
         }
     }
@@ -203,8 +203,8 @@ function Get-DiscClassification($discId, $game, $extractedFiles) {
         if ($lower -contains 'd2x.hog') {
             return @{
                 type = 'd2_vertigo'
-                mission = 'D2: Vertigo!'
-                level1 = 'Styx Level 1'
+                mission = $null
+                level1 = $null
                 min_files = @('d2x.hog', 'd2x.mn2', 'descent2.hog', 'descent2.ham')
             }
         }
@@ -245,15 +245,16 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     $hashFile = Join-Path $dir.FullName 'track_hashes.json'
     $dataTracksDir = Join-Path $dir.FullName 'data_tracks'
 
-    # Find source .cue or .iso file
-    $cueFiles = Get-ChildItem $dir.FullName -Filter '*.cue' -File | Sort-Object Name
-    $isoFiles = Get-ChildItem $dir.FullName -Filter '*.iso' -File | Sort-Object Name
+    # Prefer a directly readable ISO when a cue exists only to describe disc
+    # layout for fingerprinting.
+    $cueFiles = @(Get-ChildItem $dir.FullName -Filter '*.cue' -File | Sort-Object Name)
+    $isoFiles = @(Get-ChildItem $dir.FullName -Filter '*.iso' -File | Sort-Object Name)
     if (-not $cueFiles -and -not $isoFiles) {
         Write-Host "  SKIP $($dir.Name): no .cue or .iso file" -ForegroundColor Yellow
         continue
     }
 
-    $discImageType = if ($cueFiles) { 'cue_bin' } else { 'iso' }
+    $discImageType = if ($isoFiles.Count -gt 0) { 'iso' } else { 'cue_bin' }
 
     # Get source file hashes
     $sourceFiles = @()

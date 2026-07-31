@@ -21,6 +21,7 @@ $musicDir = Join-Path $PSScriptRoot "music"
 $dbPath = "$repoRoot/android/app/src/main/assets/known_discs.json5"
 $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.json5"
 . "$repoRoot/android/helpers/fingerprint_config.ps1"
+. "$repoRoot/android/helpers/acoustid_title_match.ps1"
 
 # Load match threshold from fingerprint_config.json5
 
@@ -103,17 +104,6 @@ foreach ($cd in $cdFingerprints) {
 }
 
 # Load album tracks and collect them for the flat JSON + later output
-function ConvertTo-AcoustIdTitleKey {
-    param(
-        [string]$Value,
-        [switch]$ExternalLabel
-    )
-    if ([string]::IsNullOrWhiteSpace($Value)) { return "" }
-    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($Value)
-    if ($ExternalLabel -and $baseName -match ' - ') { $baseName = ($baseName -split ' - ', 2)[1] }
-    return (($baseName.ToLowerInvariant() -replace '[^\p{L}\p{Nd}]+', ' ').Trim() -replace '^\d+\s+', '')
-}
-
 $albumInfos = @()
 foreach ($file in $albumFiles) {
     $raw = Get-Content $file.FullName -Raw
@@ -126,10 +116,12 @@ foreach ($file in $albumFiles) {
     $tracksList = @()
     foreach ($t in $info.tracks) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($t.filename)
-        $hasReviewedAcoustId = $t.acoustid_name -and $t.acoustid_recording_id -and
-            [double]$t.acoustid_score -ge 0.8 -and
-            (ConvertTo-AcoustIdTitleKey $t.acoustid_name -ExternalLabel) -eq
-            (ConvertTo-AcoustIdTitleKey $t.filename)
+        # New lookups carry score and recording ID, but older checked-in cache
+        # entries predate those fields. Keep a fingerprint-stable legacy result
+        # when its label still matches the maintained filename.
+        $hasReviewedAcoustId = $t.acoustid_name -and
+            $t.name_source -ne 'tracklist' -and
+            (Test-DxxAcoustIdTitleMatch $t.filename $t.acoustid_name)
         $flatEntries += [ordered]@{
             name        = $baseName
             disc_id     = $albumId

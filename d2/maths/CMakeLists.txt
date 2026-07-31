@@ -42,6 +42,21 @@ if(NOT ANDROID)
     target_link_libraries(test_coop_indicator_lines_math PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_coop_indicator_lines_math PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_coop_warp_policy
+        ../../android/tests/test_coop_warp_policy.c)
+    target_link_libraries(test_coop_warp_policy PRIVATE ${DXX_TARGET_PREFIX}maths)
+    target_include_directories(test_coop_warp_policy PRIVATE ../../android/app/src/main/cpp/shared/coop)
+
+    add_executable(test_coop_powerup_duplication
+        ../../android/tests/test_coop_powerup_duplication.c
+        ../../android/app/src/main/cpp/shared/coop/coop_powerup_duplication.c)
+    target_compile_definitions(test_coop_powerup_duplication PRIVATE DXX_BUILD_DESCENT_II=1)
+    target_link_libraries(test_coop_powerup_duplication PRIVATE ${DXX_TARGET_PREFIX}maths)
+    target_include_directories(test_coop_powerup_duplication PRIVATE
+        ../../android/app/src/main/cpp/shared
+        ../../android/app/src/main/cpp/shared/coop
+        ${PHYSFS_INCLUDE_DIR})
+
     add_executable(test_hud_layout ../../android/tests/test_hud_layout.c)
     target_include_directories(test_hud_layout PRIVATE ../../android/app/src/main/cpp/shared)
 
@@ -232,6 +247,8 @@ if(NOT ANDROID)
             test_rng_seed_resume
             test_deterministic_math
             test_coop_indicator_lines_math
+            test_coop_warp_policy
+            test_coop_powerup_duplication
             test_hud_layout
             test_homing_compat
             test_android_save_meta

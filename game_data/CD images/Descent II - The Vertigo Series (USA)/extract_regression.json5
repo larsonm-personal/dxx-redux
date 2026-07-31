@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent II - The Vertigo Series (USA)
-// Generated: 2026-07-23 21:05:46
+// Generated: 2026-07-30 10:46:33
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -44,8 +44,8 @@
   ],
   "game": "d2",
   "classification": "d2_vertigo",
-  "expected_mission": "D2: Vertigo!",
-  "expected_level1": "Styx Level 1",
+  "expected_mission": null,
+  "expected_level1": null,
   "expected_files": [
     "d2x.hog",
     "d2x.mn2",

@@ -19,7 +19,7 @@ import android.view.View
 class WarpButtonOverlay(
     context: Context,
 ) : View(context) {
-    /** Provides [available, target_pnum, cooldown_secs, engaged]. */
+    /** Provides [available, target_pnum]. */
     var warpStatusProvider: (() -> IntArray?)? = null
 
     /** Returns the target player's callsign. */
@@ -35,8 +35,6 @@ class WarpButtonOverlay(
     private var polling = false
     private var warpAvailable = false
     private var targetName = ""
-    private var cooldownSecs = 0
-    private var engaged = false
 
     private val btnRect = RectF()
     private var pressed = false
@@ -76,10 +74,8 @@ class WarpButtonOverlay(
                 if (!polling) return
                 try {
                     val st = warpStatusProvider?.invoke()
-                    if (st != null && st.size >= 4) {
+                    if (st != null && st.size >= 2) {
                         warpAvailable = st[0] != 0
-                        cooldownSecs = st[2]
-                        engaged = st[3] != 0
                     }
                     if (warpAvailable) {
                         targetName = warpTargetNameProvider?.invoke() ?: ""

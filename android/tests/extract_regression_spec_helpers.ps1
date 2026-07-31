@@ -60,6 +60,10 @@ function Test-ExtractRegressionResultShouldReplace($existing, $candidate) {
     if ($null -eq $existing) {
         return $true
     }
+    if ((Get-JsonPropertyValue $candidate 'status') -eq 'pass' -and
+        (Get-JsonPropertyValue $existing 'status') -eq 'fail') {
+        return $true
+    }
     return (Get-ExtractRegressionEvidenceRank $candidate) -ge
     (Get-ExtractRegressionEvidenceRank $existing)
 }
@@ -196,6 +200,12 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
                 return
             }
         } catch {}
+    }
+    # The header records when the regression oracle was generated. Callers
+    # that update test evidence use the shared writer too, but those updates
+    # must not churn the generation timestamp.
+    if (-not $generated) {
+        $generated = $header.Generated
     }
     if (-not $generated) {
         $generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'

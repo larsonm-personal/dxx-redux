@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -76,6 +77,40 @@ class AcoustIdLabelPolicyTest {
             AcoustIdLabelPolicy.select(
                 response(result(0.99, "wrong-remix", "Artist", "Other - Remix")),
                 "03 Haunted - Remix.flac",
+            ),
+        )
+    }
+
+    @Test
+    fun acceptsMaintainedPlatformAndLevelQualifiersOnly() {
+        assertTrue(
+            AcoustIdLabelPolicy.labelsAgree(
+                "04 Time for the Big Guns (PSX Mix).mp3",
+                "Allister Brimble - Time for the Big Guns",
+            ),
+        )
+        assertTrue(
+            AcoustIdLabelPolicy.labelsAgree(
+                "08 (Level 3) Lunar Military Base.mp3",
+                "Composer - Lunar Military Base",
+            ),
+        )
+        assertTrue(
+            AcoustIdLabelPolicy.labelsAgree(
+                "14 (Level 9) Mars Military Dig.mp3",
+                "Composer - Stage 09 ~ Mars Military Dig MN0101",
+            ),
+        )
+        assertFalse(
+            AcoustIdLabelPolicy.labelsAgree(
+                "05 Ratzez (Short Remix).mp3",
+                "Ogre, Mark Walk - Ratzez (extended remix)",
+            ),
+        )
+        assertFalse(
+            AcoustIdLabelPolicy.labelsAgree(
+                "01 Vampyro Briefing (Remastered).mp3",
+                "Torche - Vampyro",
             ),
         )
     }

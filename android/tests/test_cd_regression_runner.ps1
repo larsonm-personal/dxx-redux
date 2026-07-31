@@ -17,6 +17,8 @@ Assert-True ($defaultStages.Count -eq 3) 'Default workflow should contain three 
 Assert-True ($defaultStages[0].Arguments -contains '-Force') 'Extraction should be forced by default'
 Assert-True ($defaultStages.Name -notcontains 'Refresh regression specs') 'Default workflow must not rewrite its oracle'
 Assert-True ($defaultStages[2].Arguments -contains '-All') 'Regression suite should run all specs'
+Assert-True ($defaultStages[2].Arguments -contains '-BuildAndInstall') 'Regression suite should build and install the current APK'
+Assert-True ($defaultStages[2].Arguments -contains '-RestartDevice') 'Regression suite should start from a clean emulator'
 Assert-True ($defaultStages[2].Arguments -notcontains '-SkipLaunch') 'Regression suite should default to full launch mode'
 
 $fileOnlyStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -SkipLaunch)

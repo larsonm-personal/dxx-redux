@@ -20,8 +20,11 @@ try {
     if ($extractSource -notmatch "(?s)Launching game from set.*?am', 'force-stop'.*?Wait-SetupReady.*?Invoke-GameAutomationScript") {
         throw 'Extraction launch no longer enforces a clean SetupActivity process boundary'
     }
-    if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Ensure-LauncherTestDeviceReady') {
-        throw 'Extraction suite no longer bounds infrastructure recovery to one complete-spec retry'
+    if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
+        throw 'Extraction suite no longer restarts infrastructure before its one complete-spec retry'
+    }
+    if ($extractSource -notmatch '(?s)function Invoke-GameAutomationScript.*?Ensure-AppPrivateFile.*?gameAutomationInfrastructureFailure.*?Exit-Test 98.*?adb_staging_failed') {
+        throw 'Automation staging failures are no longer verified and classified as retryable infrastructure failures'
     }
 
     $stablePath = Join-Path $tempRoot 'stable.json5'
@@ -96,6 +99,19 @@ try {
     if (-not (Set-RegressionSpecLastTestResult $evidencePath $fullFail) -or
         (Read-Json5File $evidencePath).last_test_result.status -ne 'fail') {
         throw 'Equal-strength full evidence did not replace the prior result'
+    }
+    if ((Get-RegressionSpecHeader $evidencePath).Generated -ne '2000-01-01 00:00:00') {
+        throw 'Test-result update unexpectedly changed the spec generation timestamp'
+    }
+    if (-not (Set-RegressionSpecLastTestResult $evidencePath $fileOnlyPass)) {
+        throw 'Successful file-only evidence did not clear a stale full failure'
+    }
+    $recovered = (Read-Json5File $evidencePath).last_test_result
+    if ($recovered.status -ne 'pass' -or $recovered.test_mode -ne 'file_only') {
+        throw 'Successful file-only recovery result was not saved'
+    }
+    if ((Get-RegressionSpecHeader $evidencePath).Generated -ne '2000-01-01 00:00:00') {
+        throw 'Recovery evidence unexpectedly changed the spec generation timestamp'
     }
 
     $emptyRoot = Join-Path $tempRoot 'cds'

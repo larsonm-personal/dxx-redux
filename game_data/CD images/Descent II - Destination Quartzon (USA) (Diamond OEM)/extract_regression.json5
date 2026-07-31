@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent II - Destination Quartzon (USA) (Diamond OEM)
-// Generated: 2026-07-23 21:02:24
+// Generated: 2026-07-29 22:37:34
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -80,9 +80,9 @@
   "last_test_result": {
     "status": "pass",
     "failure_step": "",
-    "level_reached": null,
-    "files_verified": 3,
+    "level_reached": "Ahayweh Gate",
+    "files_verified": 6,
     "classification_confirmed": true,
-    "test_mode": "file_only"
+    "test_mode": "full"
   }
 }

@@ -28,6 +28,11 @@ try {
         'fixture',
         [System.Text.UTF8Encoding]::new($false)
     )
+    [System.IO.File]::WriteAllText(
+        (Join-Path $discDir 'single.cue'),
+        "FILE `"single.iso`" BINARY`n  TRACK 01 MODE1/2048`n    INDEX 01 00:00:00`n",
+        [System.Text.UTF8Encoding]::new($false)
+    )
 
     $testEnvironment = @'
 function Join-RegressionPath {
@@ -48,6 +53,10 @@ Set-StrictMode -Version Latest
 function Invoke-BoundedExtractor {
     param([string]$OutputDirectory, [string]$FilePath, [string[]]$ArgumentList)
     New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
+    [IO.File]::WriteAllText(
+        (Join-Path (Split-Path $OutputDirectory -Parent) 'selected_source.txt'),
+        $ArgumentList[0]
+    )
     [IO.File]::WriteAllText((Join-Path $OutputDirectory 'fixture.bin'), 'fixture')
     return [pscustomobject]@{
         Output = @('{"track":1}', 'Done: 1 data tracks extracted, 1 total files, 0 errors')
@@ -71,6 +80,9 @@ function Publish-ExtractionDirectory {
     $firstOutput = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -SkipBuild 2>&1)
     Assert-True ($LASTEXITCODE -eq 0) "Single-track extraction failed: $($firstOutput -join "`n")"
     Assert-True (($firstOutput -join "`n") -match 'Saved 1 track hashes') 'Single-track result should retain array Count behavior'
+    $selectedSource = Get-Content -LiteralPath (Join-Path $discDir 'selected_source.txt') -Raw
+    Assert-True ($selectedSource.EndsWith('single.iso')) `
+        'CD extraction should prefer a directly readable ISO when a cue is also present'
 
     $missingSourceDir = Join-Path $gameDataDir 'CD images\missing-source'
     New-Item -ItemType Directory -Path $missingSourceDir -Force | Out-Null

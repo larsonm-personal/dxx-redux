@@ -327,6 +327,7 @@ function Invoke-GameAutomationScript {
         [int]$TimeoutSeconds = 120
     )
 
+    $script:gameAutomationInfrastructureFailure = $false
     $repoRoot = Split-Path (Split-Path $PSScriptRoot)
     $tempDir = Join-Path $repoRoot 'temp'
     if (-not (Test-Path $tempDir)) {
@@ -338,26 +339,35 @@ function Invoke-GameAutomationScript {
     [System.IO.File]::WriteAllText($localPath, $ScriptText, [System.Text.UTF8Encoding]::new($false))
 
     try {
-        Adb -CmdArgs @('push', $localPath, "/data/local/tmp/$scriptName") -Timeout 60 | Out-Null
-        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cp', "/data/local/tmp/$scriptName", "files/$scriptName") | Out-Null
-        Adb -CmdArgs @('shell', 'rm', '-f', "/data/local/tmp/$scriptName") | Out-Null
-
-        Adb -CmdArgs @('logcat', '-c') | Out-Null
-        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_result.json') | Out-Null
-        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_log.jsonl') | Out-Null
+        Remove-AppPrivateFile -RemotePath 'files/automation_result.json'
+        Remove-AppPrivateFile -RemotePath 'files/automation_log.jsonl'
+        Ensure-AppPrivateFile -LocalPath $localPath -RemoteRelativePath "files/$scriptName" -TimeoutSeconds 60
+        Invoke-AdbRaw -Arguments @('logcat', '-c') -TimeoutSeconds 30 | Out-Null
 
         Write-Status "Sending setup automation broadcast for: $scriptName" 'Cyan'
-        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_AUTOMATE', '--es', 'script', $scriptName) | Out-Null
+        Invoke-AdbShellArgs -ShellArgs @(
+            'am', 'broadcast', '-a', 'com.dxxredux.SETUP_AUTOMATE',
+            '--es', 'script', $scriptName
+        ) -TimeoutSeconds 30 | Out-Null
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
             Start-Sleep -Milliseconds 1500
-            $resultJson = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/automation_result.json')
+            $resultJson = Invoke-AppPrivateShell -Command (
+                'if [ -f files/automation_result.json ]; then cat files/automation_result.json; fi'
+            ) -TimeoutSeconds 15
             if ($resultJson -and $resultJson -match '^\s*\{') {
                 try { return ($resultJson | ConvertFrom-Json) } catch { }
             }
         }
 
+        if (-not (Get-AppPrivateFileSize -RemoteRelativePath "files/$scriptName")) {
+            throw "Automation script disappeared before completion: files/$scriptName"
+        }
+        return $null
+    } catch {
+        $script:gameAutomationInfrastructureFailure = $true
+        Write-Status "  Automation infrastructure failed: $_" 'Yellow'
         return $null
     } finally {
         try { Remove-Item -LiteralPath $localPath -Force -ErrorAction Ignore } catch { }
@@ -1465,6 +1475,11 @@ $launchGame = $gameKey
 $automationScript = Get-ExtractAutomationScriptText -MissionName $spec.expected_mission -LevelName $spec.expected_level1 -Game $launchGame -TestSet $TEST_SET
 $automationResult = Invoke-GameAutomationScript -ScriptText $automationScript -TimeoutSeconds 180
 if (-not $automationResult) {
+    if ($script:gameAutomationInfrastructureFailure) {
+        Write-Status 'FAIL: Automation infrastructure failed while staging or communicating with the device' 'Red'
+        Write-GameAutomationDiagnostics
+        Exit-Test 98 'fail' 'adb_staging_failed' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
+    }
     Write-Status 'FAIL: Automation timed out before producing automation_result.json' 'Red'
     Write-GameAutomationDiagnostics
     Exit-Test 1 'fail' 'automation_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true

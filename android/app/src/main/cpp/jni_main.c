@@ -1293,8 +1293,6 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
  * nativeGetCoopWarpStatus() returns an int array:
  *   [0] = available       (1 if warp button should show)
  *   [1] = target_pnum     (player index of target)
- *   [2] = cooldown_secs   (seconds left on cooldown, 0 = ready)
- *   [3] = engaged         (1 if recently engaged with robots)
  *
  * nativeCoopWarpExecute() triggers the warp, returns 1 on success
  * nativeCoopWarpCycleTarget() advances to the next eligible target
@@ -1306,7 +1304,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpStatus(JNIEnv *env, jobject thiz)
 {
-	enum { WS_SIZE = 4 };
+	enum { WS_SIZE = 2 };
 	jint buf[WS_SIZE];
 	memset(buf, 0, sizeof(buf));
 
@@ -1315,8 +1313,6 @@ Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpStatus(JNIEnv *env, jobject 
 
 	buf[0] = (jint) st.available;
 	buf[1] = (jint) st.target_pnum;
-	buf[2] = (jint) st.cooldown_secs_left;
-	buf[3] = (jint) st.engaged;
 
 	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
 	if (result)

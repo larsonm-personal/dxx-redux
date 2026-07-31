@@ -19,6 +19,7 @@
 #include "player.h"
 #include "pstypes.h"
 #include "state.h"
+#include "state_android_shared.h"
 
 enum {
 	ANDROID_REWIND_SNAPSHOT_LIMIT = 12,
@@ -403,7 +404,9 @@ int android_rewind_restore_authoritative(const android_rewind_authoritative_rest
 		return ANDROID_REWIND_STATUS_FAILED;
 	android_rewind_record_success_overlay(restore->rewound_seconds);
 	android_rewind_apply_restore_overrides(restore);
-	restore_ok = state_restore_from_memory(&restore->buffer);
+	restore_ok = (Game_mode & GM_MULTI_COOP)
+	                 ? state_restore_coop_from_memory(&restore->buffer)
+	                 : state_restore_from_memory(&restore->buffer);
 	android_rewind_finish_restore();
 	if (!restore_ok) {
 		debug_log(DLOG_GAME,

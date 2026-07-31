@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "android_log.h"
 #include "byteswap.h"
 #include "coop_powerup_duplication.h"
 #include "game.h"
@@ -232,6 +233,7 @@ int coop_powerup_duplication_set_pending(
 int coop_powerup_duplication_apply_pending(void)
 {
 	coop_powerup_collection *validated = NULL;
+	size_t discarded_count = 0;
 	size_t validated_count = 0;
 	size_t i;
 
@@ -260,16 +262,17 @@ int coop_powerup_duplication_apply_pending(void)
 			for (j = 0; j <= Highest_object_index; j++)
 				if (Objects[j].signature == item.object_signature) {
 					if (objnum >= 0) {
-						free(validated);
-						return 0;
+						objnum = -1;
+						break;
 					}
 					objnum = j;
 				}
 		}
 		if (objnum < 0 || Objects[objnum].id != item.powerup_id ||
+		    (Objects[objnum].flags & OF_SHOULD_BE_DEAD) ||
 		    !coop_powerup_duplication_eligible(&Objects[objnum])) {
-			free(validated);
-			return 0;
+			discarded_count++;
+			continue;
 		}
 		item.object_index = (int16_t) objnum;
 		for (j = 0; j < (int) validated_count; j++)
@@ -277,9 +280,11 @@ int coop_powerup_duplication_apply_pending(void)
 			    validated[j].powerup_id == item.powerup_id &&
 			    same_identity(&validated[j], item.client_id,
 			                  item.callsign)) {
-				free(validated);
-				return 0;
+				discarded_count++;
+				break;
 			}
+		if (j < (int) validated_count)
+			continue;
 		validated[validated_count++] = item;
 	}
 	if (!coop_powerup_duplication_replace(validated, validated_count)) {
@@ -290,6 +295,9 @@ int coop_powerup_duplication_apply_pending(void)
 	free(pending_collections);
 	pending_collections = NULL;
 	pending_count = 0;
+	if (discarded_count)
+		COOPLOG("discarded %u stale restored pickup records",
+		        (unsigned int) discarded_count);
 	return 1;
 }
 

@@ -42,7 +42,7 @@ function Get-CdRegressionStages {
     )
 
     $forceArgs = if ($NoForce) { @() } else { @('-Force') }
-    $testArgs = @('-All')
+    $testArgs = @('-All', '-BuildAndInstall', '-RestartDevice')
     if ($SkipLaunch) {
         $testArgs += '-SkipLaunch'
     }

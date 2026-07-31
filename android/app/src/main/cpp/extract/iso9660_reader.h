@@ -16,11 +16,12 @@
 extern "C" {
 #endif
 
-/* Maximum number of files we can list from an ISO */
-#define ISO_MAX_FILES 512
+/* Maximum number of files and directories we can list from an ISO.
+ * Some supported retail discs exceed 512 catalog entries. */
+#define ISO_MAX_FILES 4096
 
 /* Maximum total file sections across one ISO catalog */
-#define ISO_MAX_EXTENTS 512
+#define ISO_MAX_EXTENTS 4096
 
 /* Maximum path length for an extracted file */
 #define ISO_PATH_LEN 256
@@ -47,6 +48,11 @@ typedef struct {
 	int num_files;
 	int num_extents;
 } iso_file_list_t;
+
+/* Catalog storage is intentionally heap allocated because the bounded retail
+ * capacity is too large for Android's native thread stack. */
+iso_file_list_t *iso_file_list_create(void);
+void iso_file_list_destroy(iso_file_list_t *list);
 
 /* Progress callback for extraction.
  * current_file: name of file being extracted

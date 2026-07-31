@@ -240,16 +240,18 @@ Java_com_dxxredux_app_DiscImportBridge_nativeListIsoFiles(
 		return NULL;
 	}
 
-	iso_file_list_t list;
-	memset(&list, 0, sizeof(list));
+	iso_file_list_t *list = iso_file_list_create();
+	if (!list) return NULL;
 
-	int n = iso_list_files(binFd, trackStart, trackSectors, &list);
+	int n = iso_list_files(binFd, trackStart, trackSectors, list);
 	if (n < 0) {
 		LOGE("iso_list_files failed");
+		iso_file_list_destroy(list);
 		return NULL;
 	}
 
-	jobjectArray result = build_iso_listing_array(env, &list);
+	jobjectArray result = build_iso_listing_array(env, list);
+	iso_file_list_destroy(list);
 	LOGI("Listed %d ISO entries from BIN track", n);
 	return result;
 }
@@ -259,23 +261,28 @@ Java_com_dxxredux_app_DiscImportBridge_nativeListIsoImageFiles(
     JNIEnv *env, jclass clazz,
     jint isoFd)
 {
-	iso_file_list_t list;
+	iso_file_list_t *list;
 	int n;
+	jobjectArray result;
 
 	if (isoFd < 0) {
 		LOGE("nativeListIsoImageFiles: invalid isoFd %d", isoFd);
 		return NULL;
 	}
 
-	memset(&list, 0, sizeof(list));
-	n = iso_list_image_files(isoFd, &list);
+	list = iso_file_list_create();
+	if (!list) return NULL;
+	n = iso_list_image_files(isoFd, list);
 	if (n < 0) {
 		LOGE("iso_list_image_files failed");
+		iso_file_list_destroy(list);
 		return NULL;
 	}
 
 	LOGI("Listed %d files from ISO image", n);
-	return build_iso_listing_array(env, &list);
+	result = build_iso_listing_array(env, list);
+	iso_file_list_destroy(list);
+	return result;
 }
 
 /* ── ISO 9660 extraction ─────────────────────────────────────────────── */
@@ -345,10 +352,14 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 
 	/* List files first */
-	iso_file_list_t list;
-	memset(&list, 0, sizeof(list));
-	int n = iso_list_files(binFd, trackStart, trackSectors, &list);
+	iso_file_list_t *list = iso_file_list_create();
+	if (!list) {
+		free(out_dir);
+		return -1;
+	}
+	int n = iso_list_files(binFd, trackStart, trackSectors, list);
 	if (n < 0) {
+		iso_file_list_destroy(list);
 		free(out_dir);
 		return -1;
 	}
@@ -358,10 +369,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	init_extract_ctx(env, progress, &ctx);
 
 	int extracted = iso_extract_files(binFd, trackStart, trackSectors,
-	                                  &list, out_dir, dxx_android_disc_extract_extensions,
+	                                  list, out_dir, dxx_android_disc_extract_extensions,
 	                                  progress ? extract_progress_cb : NULL,
 	                                  &ctx);
 
+	iso_file_list_destroy(list);
 	free(out_dir);
 	LOGI("Extracted %d files", extracted);
 	return extracted;
@@ -374,7 +386,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
     jstring outputDir, jobject progress)
 {
 	char *out_dir;
-	iso_file_list_t list;
+	iso_file_list_t *list;
 	int n;
 	extract_ctx_t ctx;
 	int extracted;
@@ -386,18 +398,24 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 
-	memset(&list, 0, sizeof(list));
-	n = iso_list_image_files(isoFd, &list);
+	list = iso_file_list_create();
+	if (!list) {
+		free(out_dir);
+		return -1;
+	}
+	n = iso_list_image_files(isoFd, list);
 	if (n < 0) {
+		iso_file_list_destroy(list);
 		free(out_dir);
 		return -1;
 	}
 
 	init_extract_ctx(env, progress, &ctx);
-	extracted = iso_extract_image_files(isoFd, &list, out_dir, dxx_android_disc_extract_extensions,
+	extracted = iso_extract_image_files(isoFd, list, out_dir, dxx_android_disc_extract_extensions,
 	                                    progress ? extract_progress_cb : NULL,
 	                                    &ctx);
 
+	iso_file_list_destroy(list);
 	free(out_dir);
 	LOGI("Extracted %d files from ISO image", extracted);
 	return extracted;

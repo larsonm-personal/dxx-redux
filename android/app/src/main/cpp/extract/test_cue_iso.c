@@ -487,7 +487,7 @@ static unsigned char *build_iso_with_subdir(const char *directory_name,
 static unsigned char *build_iso_with_file_count(int file_count, int standalone,
                                                 int *out_sectors)
 {
-	const int directory_sectors = 11;
+	const int directory_sectors = file_count / 40 + 2;
 	const int data_lba = 18 + directory_sectors;
 	const int total = data_lba + 1;
 	int base_sectors;
@@ -811,7 +811,7 @@ static unsigned char *build_iso_extent_count_fixture(int extent_count,
                                                      int standalone,
                                                      int *out_sectors)
 {
-	const int directory_sectors = 12;
+	const int directory_sectors = extent_count / 40 + 2;
 	const int data_lba = 18 + directory_sectors;
 	const int total = data_lba + extent_count;
 	int base_sectors;
@@ -1578,6 +1578,24 @@ static void test_iso_directory_record_bounds(void)
 		}
 	}
 	PASS();
+
+	TEST(iso_zero_length_root_identifier_is_accepted);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		int sectors;
+		unsigned char *image =
+		    build_iso_record_test_image(standalone, &sectors);
+		unsigned char *pvd = iso_test_sector(image, standalone, 16);
+		iso_file_list_t list;
+		pvd[156 + 32] = 0;
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != 1 || list.num_files != 1) {
+			FAIL("retail zero-length root identifier rejected");
+			return;
+		}
+	}
+	PASS();
 }
 
 static void test_iso_name_containment(void)
@@ -1626,6 +1644,25 @@ static void test_iso_name_containment(void)
 				FAIL("unsafe ISO identifier accepted");
 				return;
 			}
+		}
+	}
+	PASS();
+
+	TEST(iso_retail_catalog_over_legacy_capacity_is_accepted);
+	for (int standalone = 0; standalone <= 1; standalone++) {
+		const int retail_catalog_entries = 1025;
+		int sectors;
+		unsigned char *image =
+		    build_iso_with_file_count(retail_catalog_entries, standalone,
+		                              &sectors);
+		iso_file_list_t list;
+		int result =
+		    list_iso_record_test_image(image, sectors, standalone, &list);
+		free(image);
+		if (result != retail_catalog_entries ||
+		    list.num_files != retail_catalog_entries) {
+			FAIL("retail-sized ISO catalog rejected");
+			return;
 		}
 	}
 	PASS();

@@ -5,6 +5,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 SCRIPT_PATH = pathlib.Path(__file__).parents[1] / "helpers" / "run_bounded_extractor.py"
@@ -34,6 +35,26 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root = pathlib.Path(temp)
             code = "import pathlib,sys; pathlib.Path(sys.argv[1],'ok').write_bytes(b'ok')"
             self.assertEqual(self.run_child(code, root), 0)
+
+    def test_measurement_ignores_a_file_removed_after_enumeration(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            stable = root / "stable"
+            transient = root / "transient.tmp.0"
+            stable.write_bytes(b"stable")
+            transient.write_bytes(b"temporary")
+            real_lstat = MODULE.os.lstat
+
+            def racing_lstat(path):
+                if pathlib.Path(path) == transient:
+                    raise FileNotFoundError(path)
+                return real_lstat(path)
+
+            with mock.patch.object(MODULE.os, "lstat", side_effect=racing_lstat):
+                files, total = MODULE.measure_tree(root, 4, 64, 128)
+
+            self.assertEqual(files, 1)
+            self.assertEqual(total, len(b"stable"))
 
     def test_rejects_large_output(self):
         with tempfile.TemporaryDirectory() as temp:

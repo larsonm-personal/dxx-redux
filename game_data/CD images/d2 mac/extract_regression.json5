@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: d2 mac
-// Generated: 2026-07-23 20:49:56
+// Generated: 2026-07-29 22:16:07
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -31,9 +31,9 @@
   "last_test_result": {
     "status": "pass",
     "failure_step": "",
-    "level_reached": null,
+    "level_reached": "Ahayweh Gate",
     "files_verified": 5,
     "classification_confirmed": true,
-    "test_mode": "file_only"
+    "test_mode": "full"
   }
 }

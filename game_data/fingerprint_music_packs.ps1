@@ -25,6 +25,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 # Resolve cmake and other tool paths
 . "$repoRoot\android\helpers\test_env.ps1"
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
+. "$repoRoot\android\helpers\acoustid_title_match.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
 
@@ -86,32 +87,19 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $minDelayMs = 350  # 3 req/s limit with safety margin
 
-function ConvertTo-AcoustIdTitleKey {
-    param(
-        [string]$Value,
-        [switch]$ExternalLabel
-    )
-    # Keep this normalization contract and the 0.8 threshold aligned with AcoustIdLabelPolicy.kt.
-    if ([string]::IsNullOrWhiteSpace($Value)) { return "" }
-    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($Value)
-    if ($ExternalLabel -and $baseName -match ' - ') { $baseName = ($baseName -split ' - ', 2)[1] }
-    return (($baseName.ToLowerInvariant() -replace '[^\p{L}\p{Nd}]+', ' ').Trim() -replace '^\d+\s+', '')
-}
-
 function Select-AcoustIdLabel {
     param(
         [object]$Response,
         [string]$MaintainedLabel
     )
-    $sourceKey = ConvertTo-AcoustIdTitleKey $MaintainedLabel
     $candidates = @()
     foreach ($result in @($Response.results)) {
         if ([double]$result.score -lt 0.8) { continue }
         foreach ($recording in @($result.recordings)) {
             if (-not $recording.id -or -not $recording.title) { continue }
-            if ((ConvertTo-AcoustIdTitleKey $recording.title) -ne $sourceKey) { continue }
             $artists = @($recording.artists | ForEach-Object { $_.name } | Where-Object { $_ }) -join ', '
             $name = if ($artists) { "$artists - $($recording.title)" } else { $recording.title }
+            if (-not (Test-DxxAcoustIdTitleMatch $MaintainedLabel $name)) { continue }
             $album = @($recording.releases | ForEach-Object { $_.title } | Where-Object { $_ } | Sort-Object)[0]
             $candidates += [PSCustomObject]@{
                 name = $name
@@ -299,9 +287,10 @@ foreach ($archive in $archives) {
     }
 
     # ── Fingerprint ─────────────────────────────────────────────
-    # Load existing info to avoid re-fingerprinting
+    # Load existing metadata even during a forced refresh so transient lookup
+    # failures cannot erase a previously reviewed result.
     $existingTracks = @{}
-    if ((Test-Path $infoFile) -and -not $Force) {
+    if (Test-Path $infoFile) {
         $raw = Get-Content $infoFile -Raw
         $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
         try {
@@ -356,24 +345,20 @@ foreach ($archive in $archives) {
             duration_ms = $durationMs
         }
 
-        # Check if we already have AcoustID result
         $existingEntry = $existingTracks[$fname]
-        if ($existingEntry -and $existingEntry.acoustid_name -and
-            [double]$existingEntry.acoustid_score -ge 0.8 -and
-            $existingEntry.acoustid_recording_id -and
-            (ConvertTo-AcoustIdTitleKey $existingEntry.acoustid_name -ExternalLabel) -eq
-            (ConvertTo-AcoustIdTitleKey $fname) -and -not $Force) {
-            $track["acoustid_name"] = $existingEntry.acoustid_name
-            if ($existingEntry.acoustid_album) {
-                $track["acoustid_album"] = $existingEntry.acoustid_album
+        # A refresh still applies the maintained-label policy to every new result.
+        # Preserve older successful metadata on lookup failure when the audio
+        # fingerprint is unchanged, including records created before score and
+        # recording ID fields were stored.
+        $cachedMetadata = Get-DxxReusableAcoustIdMetadata -Existing $existingEntry `
+            -Chromaprint $chromaprint
+        if ($cachedMetadata -and -not $Force) {
+            foreach ($field in @('acoustid_name', 'acoustid_album', 'acoustid_score', 'acoustid_recording_id')) {
+                if ($cachedMetadata.Contains($field)) {
+                    $track[$field] = $cachedMetadata[$field]
+                }
             }
-            if ($existingEntry.acoustid_score) {
-                $track["acoustid_score"] = $existingEntry.acoustid_score
-            }
-            if ($existingEntry.acoustid_recording_id) {
-                $track["acoustid_recording_id"] = $existingEntry.acoustid_recording_id
-            }
-            Write-Host "  $fname -> cached: $($existingEntry.acoustid_name)"
+            Write-Host "  $fname -> cached: $($cachedMetadata.acoustid_name)"
         } elseif (-not $SkipAcoustId -and $chromaprint -and $durationMs -gt 0) {
             $durationSec = [math]::Round($durationMs / 1000)
             $result = Invoke-AcoustIdLookup -Fingerprint $chromaprint -DurationSec $durationSec `
@@ -388,9 +373,23 @@ foreach ($archive in $archives) {
                 $display = $result.name
                 if ($result.album) { $display += " [$($result.album)]" }
                 Write-Host "  $fname -> $display"
+            } elseif ($cachedMetadata) {
+                foreach ($field in @('acoustid_name', 'acoustid_album', 'acoustid_score', 'acoustid_recording_id')) {
+                    if ($cachedMetadata.Contains($field)) {
+                        $track[$field] = $cachedMetadata[$field]
+                    }
+                }
+                Write-Host "  $fname -> lookup returned no usable result; preserved cached metadata"
             } else {
                 Write-Host "  $fname -> no AcoustID match"
             }
+        } elseif ($cachedMetadata) {
+            foreach ($field in @('acoustid_name', 'acoustid_album', 'acoustid_score', 'acoustid_recording_id')) {
+                if ($cachedMetadata.Contains($field)) {
+                    $track[$field] = $cachedMetadata[$field]
+                }
+            }
+            Write-Host "  $fname -> lookup skipped; preserved cached metadata"
         } else {
             Write-Host "  $fname -> fingerprinted (no lookup)"
         }

@@ -97,6 +97,9 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c)
 target_include_directories(test_cue_iso PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_cue_iso PRIVATE ISO9660_READER_TESTING)
+if(MSVC)
+    target_link_options(test_cue_iso PRIVATE /STACK:16777216)
+endif()
 
 # ── extract_cd ───────────────────────────────────────────────────────
 add_executable(extract_cd ${CMAKE_CURRENT_SOURCE_DIR}/extract_cd.c ${EXTRACT_SOURCES})

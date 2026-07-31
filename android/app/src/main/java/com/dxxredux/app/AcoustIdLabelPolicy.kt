@@ -15,12 +15,17 @@ internal object AcoustIdLabelPolicy {
     // Keep this threshold and normalization contract aligned with fingerprint_music_packs.ps1.
     const val MIN_RESULT_SCORE = 0.8
 
-    private fun normalizedWords(value: String): String =
-        value
-            .lowercase(Locale.ROOT)
-            .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
-            .trim()
-            .replace(Regex("^\\d+\\s+"), "")
+    private fun normalizedWords(value: String): String {
+        var key =
+            value
+                .lowercase(Locale.ROOT)
+                .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+                .trim()
+                .replace(Regex("^\\d+\\s+"), "")
+        key = key.replace(Regex("^(level|stage)\\s+0*\\d+\\s+"), "")
+        key = key.replace(Regex("\\s+mn\\d+$"), "")
+        return key.replace(Regex("\\s+(psx|macplay)\\s+(maximum\\s+)?(mix|remix)$"), "")
+    }
 
     private fun sourceTitle(value: String): String {
         val basename = File(value).name.substringBeforeLast('.', File(value).name)

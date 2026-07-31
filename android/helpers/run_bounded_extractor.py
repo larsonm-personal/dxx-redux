@@ -19,7 +19,12 @@ def measure_tree(root, max_files, max_file_bytes, max_total_bytes):
     for dir_path, _, names in os.walk(root, followlinks=False):
         for name in names:
             path = os.path.join(dir_path, name)
-            size = os.lstat(path).st_size
+            try:
+                size = os.lstat(path).st_size
+            except FileNotFoundError:
+                # Extractors may atomically publish or remove temporary files
+                # between os.walk() enumerating a name and this measurement.
+                continue
             files += 1
             total += size
             if files > max_files:

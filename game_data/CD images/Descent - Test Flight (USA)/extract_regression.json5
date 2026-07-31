@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent - Test Flight (USA)
-// Generated: 2026-07-23 20:53:07
+// Generated: 2026-07-30 10:43:22
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -16,8 +16,8 @@
   ],
   "game": "d1",
   "classification": "d1_demo",
-  "expected_mission": "Descent Demo",
-  "expected_level1": "Lunar Outpost",
+  "expected_mission": null,
+  "expected_level1": null,
   "expected_files": [
     "descent.hog",
     "descent.pig"

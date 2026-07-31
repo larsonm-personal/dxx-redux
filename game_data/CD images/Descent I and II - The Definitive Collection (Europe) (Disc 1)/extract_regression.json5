@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent I and II - The Definitive Collection (Europe) (Disc 1)
-// Generated: 2026-05-24 17:34:36
+// Generated: 2026-07-30 09:09:59
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -23,7 +23,7 @@
     "descent.pig"
   ],
   "audio_tracks": 0,
-  "total_extracted": 32,
+  "total_extracted": 231,
   "import_mode": "setup_cd",
   "last_test_result": {
     "status": "pass",

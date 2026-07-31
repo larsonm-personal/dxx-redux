@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: Descent I and II - The Definitive Collection (Europe) (Disc 3)
-// Generated: 2026-07-23 20:57:19
+// Generated: 2026-07-30 10:44:20
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
@@ -44,8 +44,8 @@
   ],
   "game": "d1d2",
   "classification": "d2_vertigo",
-  "expected_mission": "D2: Vertigo!",
-  "expected_level1": "Styx Level 1",
+  "expected_mission": null,
+  "expected_level1": null,
   "expected_files": [
     "d2x.hog",
     "d2x.mn2",

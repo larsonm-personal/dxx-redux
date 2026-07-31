@@ -102,9 +102,6 @@ static vms_vector *d1_in_d2_player_badass_explosion_pos(object *weapon, vms_vect
 #include "collide.h"
 #include "escort.h"
 #include "multibot.h"
-#ifdef __ANDROID__
-#include "coop_warp.h"
-#endif
 
 #define WALL_DAMAGE_SCALE (128) // Was 32 before 8:55 am on Thursday, September 15, changed by MK, walls were hurting me more than robots!
 #define WALL_DAMAGE_THRESHOLD (F1_0/3)
@@ -1548,15 +1545,6 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	newdemo_dump_note_robot_damage(robot, old_shields, damage);
 	input_demo_record_robot_damage_event(robot, damage, old_shields);
 	input_demo_log_replay_robot_damage(robot, damage, old_shields);
-
-#ifdef __ANDROID__
-	/* android port: coop QoL -- track engagement for warp availability */
-	if (killer_objnum >= 0 && killer_objnum <= Highest_object_index &&
-	    Objects[killer_objnum].type == OBJ_PLAYER &&
-	    Objects[killer_objnum].id == Player_num)
-		coop_warp_record_engagement();
-#endif
-
 	//	Do unspeakable hacks to make sure player doesn't die after killing boss.  Or before, sort of.
 	if (Robot_info[robot->id].boss_flag)
 		if (PLAYING_BUILTIN_MISSION && Current_level_num == Last_level)
@@ -2543,11 +2531,6 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 		int killer_id = killer ? killer->id : -1;
 		int killer_sig = killer ? killer->signature : -1;
 		int killer_seg = killer ? killer->segnum : -1;
-#ifdef __ANDROID__
-		/* android port: coop QoL -- track engagement for warp availability */
-		if (killer && killer->type == OBJ_ROBOT)
-			coop_warp_record_engagement();
-#endif
 		Players[Player_num].shields -= damage;
 		{
 			char extra_json[224];

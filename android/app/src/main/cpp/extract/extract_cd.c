@@ -347,7 +347,7 @@ static void extract_iso_image(const char *iso_path,
                               int *errors)
 {
 	char sha_hex[41] = "";
-	iso_file_list_t file_list;
+	iso_file_list_t *file_list;
 	int iso_fd, nf;
 
 	if (hash_file_bytes(iso_path, sha_hex) < 0) {
@@ -365,12 +365,21 @@ static void extract_iso_image(const char *iso_path,
 		return;
 	}
 
-	nf = iso_list_image_files(iso_fd, &file_list);
+	file_list = iso_file_list_create();
+	if (!file_list) {
+		fprintf(stderr, "ERROR: Cannot allocate ISO catalog\n");
+		print_iso_json_line(sha_hex, 0, "cannot allocate ISO catalog");
+		(*errors)++;
+		close_fd(iso_fd);
+		return;
+	}
+
+	nf = iso_list_image_files(iso_fd, file_list);
 	if (nf > 0) {
 		int extracted;
 
 		mkdir_p(out_dir);
-		extracted = iso_extract_image_files(iso_fd, &file_list, out_dir,
+		extracted = iso_extract_image_files(iso_fd, file_list, out_dir,
 		                                    NULL, progress_cb, NULL);
 		if (extracted >= 0) {
 			if (extracted > 0) {
@@ -394,6 +403,7 @@ static void extract_iso_image(const char *iso_path,
 		(*errors)++;
 	}
 
+	iso_file_list_destroy(file_list);
 	close_fd(iso_fd);
 }
 
@@ -521,7 +531,7 @@ int main(int argc, char *argv[])
 
 			/* Extract ISO files from data tracks */
 			if (t->type == CUE_TRACK_DATA) {
-				iso_file_list_t file_list;
+				iso_file_list_t *file_list;
 				int nf;
 
 				/* Reopen for ISO reader (it uses its own seeking) */
@@ -535,12 +545,22 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				nf = iso_list_files(bin_fd, t->start_sector, t->num_sectors, &file_list);
+				file_list = iso_file_list_create();
+				if (!file_list) {
+					fprintf(stderr, "ERROR: Cannot allocate ISO catalog\n");
+					errors++;
+					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"cannot allocate ISO catalog\"}\n",
+					       t->track_num, sha_hex);
+					close_fd(bin_fd);
+					continue;
+				}
+
+				nf = iso_list_files(bin_fd, t->start_sector, t->num_sectors, file_list);
 				if (nf > 0) {
 					int extracted;
 					mkdir_p(out_dir);
 					extracted = iso_extract_files(bin_fd, t->start_sector, t->num_sectors,
-					                              &file_list, out_dir, NULL, progress_cb, NULL);
+					                              file_list, out_dir, NULL, progress_cb, NULL);
 					if (extracted > 0) {
 						data_tracks_extracted++;
 						total_files_extracted += extracted;
@@ -597,6 +617,7 @@ int main(int argc, char *argv[])
 						errors++;
 					}
 				}
+				iso_file_list_destroy(file_list);
 			} else {
 				/* Audio track — just output the hash */
 				printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\"}\n",

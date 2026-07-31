@@ -364,7 +364,7 @@ void init_player_stats_level(int secret_flag)
 	coop_reset_kill_stats();
 	Coop_total_robot_score = coop_compute_total_robot_score();
 	#ifdef __ANDROID__
-	// android port: coop QoL -- reset warp engagement timer
+	// android port: coop QoL -- reset warp target selection
 	coop_warp_reset();
 	#endif
 

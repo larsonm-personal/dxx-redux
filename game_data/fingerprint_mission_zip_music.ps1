@@ -22,6 +22,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\test_env.ps1"
 . "$repoRoot\android\helpers\bounded_extraction.ps1"
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
+. "$repoRoot\android\helpers\acoustid_title_match.ps1"
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -35,7 +36,12 @@ $MaxArchiveSeconds = 300
 $MaxZipPreambleBytes = 16MB
 
 function Register-ArchiveEntry {
-    param([long]$Length, [long]$CompressedLength, [string]$Name)
+    param(
+        [long]$Length,
+        [long]$CompressedLength,
+        [string]$Name,
+        [ref]$ContainerDeclaredBytes
+    )
     $script:ArchiveBudget.Entries++
     if ($script:ArchiveBudget.Entries -gt $MaxArchiveEntries) { throw "Archive exceeds $MaxArchiveEntries entries" }
     if ($Length -gt $MaxArchiveEntryBytes) { throw "$Name exceeds $MaxArchiveEntryBytes bytes" }
@@ -45,8 +51,11 @@ function Register-ArchiveEntry {
             throw "$Name exceeds the ${MaxArchiveRatio}:1 expansion ratio"
         }
     }
-    if ($Length -gt $MaxArchiveTotalBytes - $script:ArchiveBudget.DeclaredBytes) { throw "Archive exceeds $MaxArchiveTotalBytes declared bytes" }
-    $script:ArchiveBudget.DeclaredBytes += $Length
+    $declaredBytes = [long]$ContainerDeclaredBytes.Value
+    if ($Length -gt $MaxArchiveTotalBytes - $declaredBytes) {
+        throw "Archive container exceeds $MaxArchiveTotalBytes declared bytes"
+    }
+    $ContainerDeclaredBytes.Value = $declaredBytes + $Length
 }
 
 function Copy-BoundedStream {
@@ -82,6 +91,17 @@ function Copy-BoundedStream {
         $OutputStream.Write($buffer, 0, $read)
     }
     if ($ExactLength -ge 0 -and $entryBytes -ne $ExactLength) { throw "Unexpected length for $Name" }
+}
+
+function Remove-BudgetedTemporaryFile {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
+    $length = (Get-Item -LiteralPath $Path).Length
+    Remove-Item -LiteralPath $Path -Force
+    $script:ArchiveBudget.ActualBytes = [math]::Max(
+        0L,
+        [long]$script:ArchiveBudget.ActualBytes - $length
+    )
 }
 
 function Get-7zaPath {
@@ -252,6 +272,7 @@ function Extract-HogAudio {
     )
     $count = 0
     $stream = [System.IO.File]::OpenRead($HogPath)
+    $containerDeclaredBytes = 0L
     try {
         $magic = Read-ExactBytes -Stream $stream -Count 3
         if ($null -eq $magic -or [System.Text.Encoding]::ASCII.GetString($magic) -ne "DHF") {
@@ -268,7 +289,8 @@ function Extract-HogAudio {
             }
             $entryName = Get-HogEntryName $nameBytes
             $length = [Int64][BitConverter]::ToUInt32($lenBytes, 0)
-            Register-ArchiveEntry -Length $length -CompressedLength $length -Name $entryName
+            Register-ArchiveEntry -Length $length -CompressedLength $length -Name $entryName `
+                -ContainerDeclaredBytes ([ref]$containerDeclaredBytes)
             if ($length -lt 0 -or $length -gt ($stream.Length - $stream.Position)) {
                 throw "Invalid HOG member length $length for $entryName in $HogPath"
             }
@@ -307,8 +329,10 @@ function Extract-ZipAudio {
             $payloadPath = Get-ZipPayloadPath -ArchivePath $ArchivePath -TempRoot $TempRoot
             $zip = [System.IO.Compression.ZipFile]::OpenRead($payloadPath)
         }
+        $containerDeclaredBytes = 0L
         foreach ($entry in $zip.Entries) {
-            Register-ArchiveEntry -Length $entry.Length -CompressedLength $entry.CompressedLength -Name $entry.FullName
+            Register-ArchiveEntry -Length $entry.Length -CompressedLength $entry.CompressedLength `
+                -Name $entry.FullName -ContainerDeclaredBytes ([ref]$containerDeclaredBytes)
         }
         foreach ($entry in $zip.Entries) {
             if ($entry.FullName.EndsWith("/")) { continue }
@@ -333,21 +357,21 @@ function Extract-ZipAudio {
                 try {
                     $count += Extract-HogAudio -HogPath $hogPath -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap
                 } finally {
-                    Remove-Item $hogPath -Force -ErrorAction SilentlyContinue
+                    Remove-BudgetedTemporaryFile -Path $hogPath
                 }
             } elseif ($ext -eq ".dxa" -or $ext -eq ".zip") {
                 $nestedPath = Copy-EntryToTempFile -Entry $entry -TempRoot $TempRoot -Extension $ext
                 try {
                     $count += Extract-ZipAudio -ArchivePath $nestedPath -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
                 } finally {
-                    Remove-Item $nestedPath -Force -ErrorAction SilentlyContinue
+                    Remove-BudgetedTemporaryFile -Path $nestedPath
                 }
             } elseif ($ext -eq ".rar") {
                 $nestedPath = Copy-EntryToTempFile -Entry $entry -TempRoot $TempRoot -Extension $ext
                 try {
                     $count += Extract-RarAudio -ArchivePath $nestedPath -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
                 } finally {
-                    Remove-Item $nestedPath -Force -ErrorAction SilentlyContinue
+                    Remove-BudgetedTemporaryFile -Path $nestedPath
                 }
             }
         }
@@ -367,8 +391,10 @@ function Extract-DirectoryAudio {
     )
     $count = 0
     $files = Get-ChildItem -LiteralPath $DirectoryPath -File -Recurse
+    $containerDeclaredBytes = 0L
     foreach ($file in $files) {
-        Register-ArchiveEntry -Length $file.Length -CompressedLength 0 -Name $file.FullName
+        Register-ArchiveEntry -Length $file.Length -CompressedLength 0 -Name $file.FullName `
+            -ContainerDeclaredBytes ([ref]$containerDeclaredBytes)
         $relative = [System.IO.Path]::GetRelativePath($DirectoryPath, $file.FullName).Replace('\', '/')
         $sourcePath = if ($SourcePrefix) { "$SourcePrefix!$relative" } else { $relative }
         $ext = $file.Extension.ToLowerInvariant()
@@ -464,6 +490,17 @@ function Read-Json5File {
     return $stripped | ConvertFrom-Json
 }
 
+function Get-OptionalPropertyValue {
+    param(
+        [AllowNull()][object]$InputObject,
+        [string]$Name
+    )
+    if ($null -eq $InputObject) { return $null }
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($property) { return $property.Value }
+    return $null
+}
+
 function Get-MissionTracklistPath {
     param([System.IO.FileInfo]$ZipFile)
     $candidates = @(
@@ -478,7 +515,10 @@ function Get-MissionTracklistPath {
 
 function Get-TrackSlot {
     param($Track)
-    $name = if ($Track.original_name) { [string]$Track.original_name } else { [string]$Track.filename }
+    $originalName = Get-OptionalPropertyValue $Track "original_name"
+    $name = if ($originalName) { [string]$originalName } else {
+        [string](Get-OptionalPropertyValue $Track "filename")
+    }
     $base = [IO.Path]::GetFileNameWithoutExtension($name).ToLowerInvariant()
     if ($base -eq "briefing" -or $base -eq "credits") { return $base }
     if ($base -match '^game0*([1-9][0-9]*)$') { return "level$($Matches[1])" }
@@ -504,14 +544,22 @@ function Read-MissionTracklist {
     }
     $lookup = @{}
     foreach ($entry in @($doc.tracks)) {
-        $name = if ($entry.title) { [string]$entry.title } else { [string]$entry.name }
+        $title = Get-OptionalPropertyValue $entry "title"
+        $name = if ($title) { [string]$title } else {
+            [string](Get-OptionalPropertyValue $entry "name")
+        }
         if (-not $name) { continue }
-        Add-TracklistKey -Lookup $lookup -Prefix "filename" -Value $entry.filename -Name $name
-        Add-TracklistKey -Lookup $lookup -Prefix "source_path" -Value $entry.source_path -Name $name
-        Add-TracklistKey -Lookup $lookup -Prefix "original_name" -Value $entry.original_name -Name $name
-        Add-TracklistKey -Lookup $lookup -Prefix "slot" -Value $entry.slot -Name $name
-        if ($entry.level) {
-            Add-TracklistKey -Lookup $lookup -Prefix "slot" -Value "level$($entry.level)" -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "filename" `
+            -Value (Get-OptionalPropertyValue $entry "filename") -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "source_path" `
+            -Value (Get-OptionalPropertyValue $entry "source_path") -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "original_name" `
+            -Value (Get-OptionalPropertyValue $entry "original_name") -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "slot" `
+            -Value (Get-OptionalPropertyValue $entry "slot") -Name $name
+        $level = Get-OptionalPropertyValue $entry "level"
+        if ($level) {
+            Add-TracklistKey -Lookup $lookup -Prefix "slot" -Value "level$level" -Name $name
         }
     }
     Write-Host "  Using tracklist sidecar $path"
@@ -522,9 +570,9 @@ function Get-TracklistName {
     param($Track, [hashtable]$TracklistLookup)
     if (-not $TracklistLookup -or $TracklistLookup.Count -eq 0) { return "" }
     foreach ($candidate in @(
-            "filename:$([string]$Track.filename)",
-            "source_path:$([string]$Track.source_path)",
-            "original_name:$([string]$Track.original_name)",
+            "filename:$([string](Get-OptionalPropertyValue $Track 'filename'))",
+            "source_path:$([string](Get-OptionalPropertyValue $Track 'source_path'))",
+            "original_name:$([string](Get-OptionalPropertyValue $Track 'original_name'))",
             "slot:$(Get-TrackSlot $Track)"
         )) {
         $key = $candidate.ToLowerInvariant()
@@ -596,27 +644,33 @@ function Invoke-AcoustIdLookup {
 }
 
 function Add-AcoustIdResults {
-    param([array]$Tracks, [hashtable]$ExistingTracks, [hashtable]$TracklistLookup = @{})
+    param(
+        [array]$Tracks,
+        [hashtable]$ExistingTracks,
+        [hashtable]$TracklistLookup = @{},
+        [switch]$RefreshAcoustId
+    )
     $resultTracks = @()
     foreach ($track in $Tracks) {
-        $fname = [string]$track.filename
+        $fname = [string](Get-OptionalPropertyValue $track "filename")
         $out = [ordered]@{
             filename    = $fname
             chromaprint = [string]$track.chromaprint
             duration_ms = [int]$track.duration_ms
         }
-        if ($track.source_path) { $out["source_path"] = [string]$track.source_path }
-        if ($track.original_name) { $out["original_name"] = [string]$track.original_name }
+        $sourcePath = Get-OptionalPropertyValue $track "source_path"
+        $originalName = Get-OptionalPropertyValue $track "original_name"
+        if ($sourcePath) { $out["source_path"] = [string]$sourcePath }
+        if ($originalName) { $out["original_name"] = [string]$originalName }
 
         $existing = $ExistingTracks[$fname]
-        $existingNameSource = if ($existing -and $existing.name_source) { [string]$existing.name_source } else { "" }
-        $canReuseExistingLookup = $existing -and $existing.acoustid_name -and
-            $existing.chromaprint -eq $track.chromaprint -and $existingNameSource -ne "tracklist"
-        if ($canReuseExistingLookup) {
-            $out["acoustid_name"] = [string]$existing.acoustid_name
-            if ($existing.acoustid_album) { $out["acoustid_album"] = [string]$existing.acoustid_album }
-            if ($existing.name_source) { $out["name_source"] = [string]$existing.name_source }
-            Write-Host "  $fname -> cached: $($existing.acoustid_name)"
+        $cachedMetadata = Get-DxxReusableAcoustIdMetadata -Existing $existing `
+            -Chromaprint ([string]$track.chromaprint)
+        if ($cachedMetadata -and -not $RefreshAcoustId) {
+            foreach ($field in @('acoustid_name', 'acoustid_album', 'name_source')) {
+                if ($cachedMetadata.Contains($field)) { $out[$field] = $cachedMetadata[$field] }
+            }
+            Write-Host "  $fname -> cached: $($cachedMetadata.acoustid_name)"
         } elseif (-not $SkipAcoustId -and $track.chromaprint -and $track.duration_ms -gt 0) {
             $durationSec = [math]::Round($track.duration_ms / 1000)
             $lookup = Invoke-AcoustIdLookup -Fingerprint $track.chromaprint -DurationSec $durationSec
@@ -627,6 +681,11 @@ function Add-AcoustIdResults {
                 $display = $lookup.name
                 if ($lookup.album) { $display += " [$($lookup.album)]" }
                 Write-Host "  $fname -> $display"
+            } elseif ($cachedMetadata) {
+                foreach ($field in @('acoustid_name', 'acoustid_album', 'name_source')) {
+                    if ($cachedMetadata.Contains($field)) { $out[$field] = $cachedMetadata[$field] }
+                }
+                Write-Host "  $fname -> lookup returned no usable result; preserved cached metadata"
             } else {
                 $tracklistName = Get-TracklistName -Track $track -TracklistLookup $TracklistLookup
                 if ($tracklistName) {
@@ -638,6 +697,11 @@ function Add-AcoustIdResults {
                     Write-Host "  $fname -> no AcoustID match"
                 }
             }
+        } elseif ($cachedMetadata) {
+            foreach ($field in @('acoustid_name', 'acoustid_album', 'name_source')) {
+                if ($cachedMetadata.Contains($field)) { $out[$field] = $cachedMetadata[$field] }
+            }
+            Write-Host "  $fname -> lookup skipped; preserved cached metadata"
         } else {
             $tracklistName = Get-TracklistName -Track $track -TracklistLookup $TracklistLookup
             if ($tracklistName) {
@@ -674,14 +738,16 @@ function Write-ChromaprintInfo {
         $t = $Tracks[$i]
         $comma = if ($i -lt $Tracks.Count - 1) { "," } else { "" }
         $line = "    {`"filename`": `"$(Escape-JsonString $t.filename)`""
-        if ($t.source_path) { $line += ", `"source_path`": `"$(Escape-JsonString $t.source_path)`"" }
-        if ($t.original_name) { $line += ", `"original_name`": `"$(Escape-JsonString $t.original_name)`"" }
+        $sourcePath = Get-OptionalPropertyValue $t "source_path"
+        $originalName = Get-OptionalPropertyValue $t "original_name"
+        if ($sourcePath) { $line += ", `"source_path`": `"$(Escape-JsonString $sourcePath)`"" }
+        if ($originalName) { $line += ", `"original_name`": `"$(Escape-JsonString $originalName)`"" }
         $line += ", `"chromaprint`": `"$(Escape-JsonString $t.chromaprint)`""
         $line += ", `"duration_ms`": $($t.duration_ms)"
-        if ($t.acoustid_name) { $line += ", `"acoustid_name`": `"$(Escape-JsonString $t.acoustid_name)`"" }
-        if ($t.acoustid_album) { $line += ", `"acoustid_album`": `"$(Escape-JsonString $t.acoustid_album)`"" }
-        if ($t.tracklist_name) { $line += ", `"tracklist_name`": `"$(Escape-JsonString $t.tracklist_name)`"" }
-        if ($t.name_source) { $line += ", `"name_source`": `"$(Escape-JsonString $t.name_source)`"" }
+        foreach ($field in @("acoustid_name", "acoustid_album", "tracklist_name", "name_source")) {
+            $value = Get-OptionalPropertyValue $t $field
+            if ($value) { $line += ", `"$field`": `"$(Escape-JsonString $value)`"" }
+        }
         $line += "}$comma"
         $lines += $line
     }
@@ -724,9 +790,11 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $script:minDelayMs = 350
 
-$zipFiles = Get-ChildItem $MissionDir -File | Where-Object { $_.Extension -match '^\.(zip|7z|rar)$' } | Sort-Object Name
+$zipFiles = @(Get-ChildItem $MissionDir -File |
+        Where-Object { $_.Extension -match '^\.(zip|7z|rar)$' } |
+        Sort-Object Name)
 if ($Zip) {
-    $zipFiles = $zipFiles | Where-Object { $_.Name -eq $Zip -or $_.BaseName -eq $Zip }
+    $zipFiles = @($zipFiles | Where-Object { $_.Name -eq $Zip -or $_.BaseName -eq $Zip })
     if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching: $Zip" }
 }
 
@@ -742,19 +810,24 @@ foreach ($zipFile in $zipFiles) {
     $infoFile = Join-Path $albumDir "chromaprint_info.json5"
     $sourceSha1 = Get-Sha1File $zipFile.FullName
     $tracklistLookup = @{}
+    $existingTracks = @{}
     $workDir = $null
 
     Write-Host "`n=== $($zipFile.Name) ==="
     try {
         $tracklistLookup = Read-MissionTracklist -ZipFile $zipFile
-        if ((Test-Path $infoFile) -and -not $Force) {
+        if (Test-Path $infoFile) {
             $existingInfo = Read-Json5File $infoFile
+            foreach ($t in @($existingInfo.tracks)) {
+                $filename = Get-OptionalPropertyValue $t "filename"
+                if ($filename) { $existingTracks[[string]$filename] = $t }
+            }
+        }
+        if ((Test-Path $infoFile) -and -not $Force) {
             $storedSha1 = [string]$existingInfo.source_sha1
             if ($storedSha1 -and $storedSha1 -ne $sourceSha1) {
                 Write-Host "  Source ZIP changed, reprocessing"
             } else {
-                $existingTracks = @{}
-                foreach ($t in @($existingInfo.tracks)) { $existingTracks[$t.filename] = $t }
                 if ($SkipAcoustId) {
                     Write-Host "  Already fingerprinted, skipping"
                     $processed++
@@ -777,7 +850,7 @@ foreach ($zipFile in $zipFiles) {
         New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
         $sourceMap = @{}
-        $script:ArchiveBudget = @{ Entries = 0; DeclaredBytes = 0L; ActualBytes = 0L; Started = [DateTime]::UtcNow }
+        $script:ArchiveBudget = @{ Entries = 0; ActualBytes = 0L; Started = [DateTime]::UtcNow }
         try {
             $count = Extract-MissionArchiveAudio -ArchivePath $zipFile.FullName -OutputDir $workDir -SourcePrefix $zipFile.Name -SourceMap $sourceMap -TempRoot $tempRoot
         } finally {
@@ -828,7 +901,8 @@ foreach ($zipFile in $zipFiles) {
             }
             $tracks += [PSCustomObject]$track
         }
-        $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks @{} -TracklistLookup $tracklistLookup
+        $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks $existingTracks `
+            -TracklistLookup $tracklistLookup -RefreshAcoustId:$Force
         Write-ChromaprintInfo -Path $workInfoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
         Publish-ExtractionDirectory -StagingDirectory $workDir -DestinationDirectory $albumDir
         Write-Host "  Wrote $infoFile"

@@ -31,6 +31,12 @@
 .PARAMETER SpecPaths
   Explicit list of spec file paths to run (overrides auto-discovery).
 
+.PARAMETER BuildAndInstall
+  Build the current debug APK and reinstall it before device preflight.
+
+.PARAMETER RestartDevice
+  Force a clean emulator restart before device preflight.
+
 .EXAMPLE
   .\test_all_extracts.ps1                          # one random spec
   .\test_all_extracts.ps1 -All                     # all specs
@@ -46,7 +52,9 @@ param(
     [int]$Seed = 0,
     [switch]$RandomOrder,
     [int]$MaxFailures = 0,
-    [string[]]$SpecPaths
+    [string[]]$SpecPaths,
+    [switch]$BuildAndInstall,
+    [switch]$RestartDevice
 )
 
 $ErrorActionPreference = 'Stop'
@@ -163,6 +171,33 @@ function Read-Json5 {
     return Read-Json5File $Path
 }
 
+if ($BuildAndInstall) {
+    $gradle = Join-Path (Join-Path $REPO_ROOT 'android') 'gradlew.bat'
+    Write-Host 'Building current debug APK for extraction regressions...' -ForegroundColor Cyan
+    & $gradle -p (Join-Path $REPO_ROOT 'android') assembleDebug
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FAIL: Debug APK build failed with exit code $LASTEXITCODE" -ForegroundColor Red
+        exit 97
+    }
+
+}
+
+if ($RestartDevice) {
+    if (-not (Invoke-LauncherStartupRecovery -Reason 'Preparing clean extraction regression device')) {
+        Write-Host 'FAIL: Extraction test device restart failed' -ForegroundColor Red
+        exit 98
+    }
+}
+
+if ($BuildAndInstall) {
+    Ensure-EmulatorHealthy | Out-Null
+    Write-Host 'Installing current debug APK for extraction regressions...' -ForegroundColor Cyan
+    if (-not (Install-ApkOnDevice)) {
+        Write-Host 'FAIL: Debug APK install failed' -ForegroundColor Red
+        exit 97
+    }
+}
+
 Write-Host "Preflighting emulator, APK, and SetupActivity..." -ForegroundColor Cyan
 if (-not (Ensure-LauncherTestDeviceReady)) {
     Write-Host "FAIL: Extraction test device could not start SetupActivity" -ForegroundColor Red
@@ -231,7 +266,11 @@ foreach ($specPath in $specs) {
             break
         }
 
-        Write-Host "  Extraction infrastructure failed. Recovering the launcher and rerunning the complete spec once" -ForegroundColor Yellow
+        Write-Host "  Extraction infrastructure failed. Restarting the emulator and rerunning the complete spec once" -ForegroundColor Yellow
+        if (-not (Invoke-LauncherStartupRecovery -Reason 'Extraction infrastructure failure')) {
+            Write-Host "  Emulator restart failed" -ForegroundColor Red
+            break
+        }
         if (-not (Ensure-LauncherTestDeviceReady)) {
             Write-Host "  Launcher recovery failed" -ForegroundColor Red
             break
