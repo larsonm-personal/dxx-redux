@@ -35,6 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -868,6 +871,8 @@ private fun MissionZipMusicDialog(
                     musicProgress = null
                 }
                 null
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 null
             }
@@ -878,32 +883,25 @@ private fun MissionZipMusicDialog(
             if (!acoustIdAvailable) return@withContext null
             val cached = identifyTrack(track) ?: return@withContext null
             try {
-                if (cached.hasAcoustIdLookup) {
+                if (cached.hasAuthoritativeAcoustIdLookup) {
                     cached
                 } else {
-                    val webMatch =
+                    val result =
                         AcoustIdClient.lookupFingerprint(
                             cached.chromaprint,
                             maxOf(1, cached.durationMs / 1000),
                             track.displayName,
                         )
-                    fingerprintCache.recordAcoustIdResult(
-                        cached,
-                        webMatch?.name,
-                        if (webMatch == null) {
-                            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_NO_MATCH
-                        } else {
-                            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK
-                        },
-                        webMatch?.score,
-                        webMatch?.recordingId,
-                    )
+                    currentCoroutineContext().ensureActive()
+                    fingerprintCache.recordAcoustIdResult(cached, result)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 fingerprintCache.recordAcoustIdResult(
                     cached,
                     null,
-                    MissionZipAudioFingerprintCache.ACOUSTID_STATUS_FAILED,
+                    MissionZipAudioFingerprintCache.ACOUSTID_STATUS_RETRYABLE_FAILURE,
                 )
             }
         }
@@ -1266,8 +1264,14 @@ private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCach
                 append(" - AcoustID: no web match")
             }
 
-            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_FAILED -> {
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_FAILED,
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_RETRYABLE_FAILURE,
+            -> {
                 append(" - AcoustID: lookup failed")
+            }
+
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_CONFIGURATION_FAILURE -> {
+                append(" - AcoustID: check configuration")
             }
         }
     }

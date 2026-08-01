@@ -127,6 +127,52 @@ class MissionZipAudioFingerprintCacheTest {
     }
 
     @Test
+    fun onlyAuthoritativeAcoustIdResultsSuppressExplicitRetry() {
+        val filesDir = testDir("acoustid-retry/files")
+        val archive = testArchive("acoustid-retry/mission.zip", byteArrayOf(1, 2, 3))
+        val track = testTrack("game01.ogg")
+        val staged = testArchive("acoustid-retry/staged/game01.ogg", byteArrayOf(9, 8, 7))
+        val cache = MissionZipAudioFingerprintCache(filesDir)
+        val local =
+            cache.record(
+                testCatalog(archive, track),
+                track,
+                staged,
+                FingerprintBridge.FingerprintResult("fp-a", 1234),
+                null,
+            )
+
+        val retryable = cache.recordAcoustIdResult(local, AcoustIdLookupResult.RetryableFailure("offline"))
+        assertEquals(MissionZipAudioFingerprintCache.ACOUSTID_STATUS_RETRYABLE_FAILURE, retryable.acoustIdLookupStatus)
+        assertTrue(!retryable.hasAuthoritativeAcoustIdLookup)
+
+        val configuration = cache.recordAcoustIdResult(local, AcoustIdLookupResult.ConfigurationFailure("bad key"))
+        assertEquals(
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_CONFIGURATION_FAILURE,
+            configuration.acoustIdLookupStatus,
+        )
+        assertTrue(!configuration.hasAuthoritativeAcoustIdLookup)
+
+        val legacyFailure =
+            cache.recordAcoustIdResult(local, null, MissionZipAudioFingerprintCache.ACOUSTID_STATUS_FAILED)
+        assertTrue(!legacyFailure.hasAuthoritativeAcoustIdLookup)
+
+        val noMatch = cache.recordAcoustIdResult(local, AcoustIdLookupResult.NoMatch)
+        assertTrue(noMatch.hasAuthoritativeAcoustIdLookup)
+        assertNotNull(noMatch.acoustIdLookupAt)
+
+        val match =
+            cache.recordAcoustIdResult(
+                local,
+                AcoustIdLookupResult.Match(
+                    AcoustIdLabelMatch("Artist - game01", null, 0.95, "recording-1"),
+                ),
+            )
+        assertTrue(match.hasAuthoritativeAcoustIdLookup)
+        assertEquals("Artist - game01", match.acoustIdName)
+    }
+
+    @Test
     fun localMatchRefreshPreservesWebLookupResult() {
         val filesDir = testDir("local-refresh/files")
         val archive = testArchive("local-refresh/mission.zip", byteArrayOf(1, 2, 3))

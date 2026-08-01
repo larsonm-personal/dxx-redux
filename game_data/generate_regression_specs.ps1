@@ -18,14 +18,7 @@ $androidDir = Join-Path $root 'android'
 $knownDiscsPath = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $androidDir 'app') 'src') 'main') 'assets') 'known_discs.json5'
 $regressionSpecHelpersPath = Join-Path (Join-Path $androidDir 'tests') 'extract_regression_spec_helpers.ps1'
 . $regressionSpecHelpersPath
-
-function Get-CueImageFiles($path) {
-    $files = @()
-    foreach ($filter in @('*.bin', '*.img')) {
-        $files += Get-ChildItem -LiteralPath $path -Filter $filter -File
-    }
-    return $files | Sort-Object Name
-}
+. (Join-Path $androidDir 'helpers\bounded_extraction.ps1')
 
 function Get-ExistingLastTestResult($path) {
     if (-not (Test-Path -LiteralPath $path)) {
@@ -242,36 +235,23 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     }
     $lastTestResult = Get-ExistingLastTestResult $specPath
 
-    $hashFile = Join-Path $dir.FullName 'track_hashes.json'
     $dataTracksDir = Join-Path $dir.FullName 'data_tracks'
+    $hashFile = Join-Path $dataTracksDir '.track_hashes.json'
 
-    # Prefer a directly readable ISO when a cue exists only to describe disc
-    # layout for fingerprinting.
-    $cueFiles = @(Get-ChildItem $dir.FullName -Filter '*.cue' -File | Sort-Object Name)
-    $isoFiles = @(Get-ChildItem $dir.FullName -Filter '*.iso' -File | Sort-Object Name)
-    if (-not $cueFiles -and -not $isoFiles) {
-        Write-Host "  SKIP $($dir.Name): no .cue or .iso file" -ForegroundColor Yellow
-        continue
-    }
-
-    $discImageType = if ($isoFiles.Count -gt 0) { 'iso' } else { 'cue_bin' }
-
-    # Get source file hashes
-    $sourceFiles = @()
-    if ($discImageType -eq 'cue_bin') {
-        foreach ($cue in $cueFiles) {
-            $hash = (Get-FileHash -LiteralPath $cue.FullName -Algorithm SHA256).Hash.ToLower()
-            $sourceFiles += @{ name = $cue.Name; sha256 = $hash }
-        }
-        foreach ($image in (Get-CueImageFiles $dir.FullName)) {
-            $hash = (Get-FileHash -LiteralPath $image.FullName -Algorithm SHA256).Hash.ToLower()
-            $sourceFiles += @{ name = $image.Name; sha256 = $hash }
-        }
-    } else {
-        foreach ($iso in $isoFiles) {
-            $hash = (Get-FileHash -LiteralPath $iso.FullName -Algorithm SHA256).Hash.ToLower()
-            $sourceFiles += @{ name = $iso.Name; sha256 = $hash }
-        }
+    $discSource = Resolve-DiscExtractionSource -Directory $dir.FullName
+    $discImageType = if ($discSource.Primary.Extension -ieq '.iso') { 'iso' } else { 'cue_bin' }
+    $sourceIdentities = @($discSource.Files | ForEach-Object {
+            Get-ExtractionPathIdentity -Path $_.FullName -Name $_.Name
+        })
+    $sourceFiles = @($sourceIdentities | ForEach-Object {
+            @{ name = $_.name; sha256 = $_.sha256 }
+        })
+    $extractScriptIdentity = Get-ExtractionPathIdentity `
+        -Path (Join-Path $gameDataDir 'extract_all_cds.ps1') -Name 'extract_all_cds.ps1'
+    if (-not (Test-ExtractionCompletionSources -Directory $dataTracksDir `
+            -ExpectedPolicy 'extract-all-cds-v1' -ExpectedSources $sourceIdentities `
+            -RequiredTools @($extractScriptIdentity))) {
+        throw "$($dir.FullName): data_tracks cache does not match the current source, extraction policy, or outputs"
     }
 
     # Look up disc in known_discs via track_hashes.json
@@ -286,7 +266,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
                     $disc = $sha1ToDisc[$track.sha1]
                     $discId = $disc.id
                     $game = $disc.game
-                    $audioTracks = ($disc.tracks | Where-Object { $_.type -eq 'audio' }).Count
+                    $audioTracks = @($disc.tracks | Where-Object { $_.type -eq 'audio' }).Count
                 }
             }
         }
@@ -298,9 +278,9 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     # Get extracted files list
     $extractedFiles = @()
     if (Test-Path $dataTracksDir) {
-        $extractedFiles = Get-ChildItem $dataTracksDir -Recurse -File |
+        $extractedFiles = @(Get-ChildItem $dataTracksDir -Recurse -File |
             Where-Object { $_.Extension -match '\.(hog|pig|ham|s11|s22|mvl|dem|msn|mn2|sow|gog|inst)$' } |
-            Select-Object -ExpandProperty Name | Sort-Object -Unique
+            Select-Object -ExpandProperty Name | Sort-Object -Unique)
     }
 
     # Classify
@@ -463,11 +443,21 @@ foreach ($gog in $gogInstallers) {
     $hash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLower()
 
     # Get extracted files from the pre-extracted directory
-    $extractedDir = Join-Path $gogDir ([System.IO.Path]::GetFileNameWithoutExtension($gog.file))
+    $extractedDir = Join-Path (Join-Path $gogDir ([System.IO.Path]::GetFileNameWithoutExtension($gog.file))) 'extracted'
+    $installerIdentity = Get-ExtractionPathIdentity -Path $installerPath -Name $gog.file
+    $extractScriptIdentity = Get-ExtractionPathIdentity `
+        -Path (Join-Path $gameDataDir 'extract_all_gog.ps1') -Name 'extract_all_gog.ps1'
+    if (-not (Test-ExtractionCompletionSources -Directory $extractedDir `
+            -ExpectedPolicy 'extract-all-gog-v1' -ExpectedSources @($installerIdentity) `
+            -RequiredTools @($extractScriptIdentity))) {
+        throw "${installerPath}: extracted cache does not match the current source, extraction policy, or outputs"
+    }
     $extractedFiles = @()
     $extractedCount = 0
     if (Test-Path -LiteralPath $extractedDir) {
-        $extractedFiles = Get-ChildItem $extractedDir -Recurse -File | Select-Object -ExpandProperty Name | Sort-Object
+        $extractedFiles = @(Get-ChildItem $extractedDir -Recurse -File |
+            Where-Object Name -ne '.extraction-complete.json' |
+            Select-Object -ExpandProperty Name | Sort-Object)
         $extractedCount = $extractedFiles.Count
     }
 

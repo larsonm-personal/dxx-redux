@@ -113,6 +113,13 @@ if ($installers.Count -eq 0) {
     Write-Error "No .exe or .pkg files found in $GogDir"
     exit 1
 }
+$basenameCollisions = @($installers | Group-Object { $_.BaseName.ToLowerInvariant() } |
+        Where-Object Count -gt 1)
+if ($basenameCollisions.Count -gt 0) {
+    $names = @($basenameCollisions | ForEach-Object { $_.Group.Name -join ', ' }) -join '; '
+    Write-Error "GOG installers have ambiguous extensionless basenames: $names"
+    exit 1
+}
 
 $totalExtracted = 0
 $totalErrors    = 0
@@ -122,9 +129,15 @@ $allResults     = @()
 foreach ($installer in $installers) {
     $name = $installer.Name
     $extractDir = Join-Path $installer.DirectoryName "$($installer.BaseName)\extracted"
+    $provenance = New-ExtractionProvenance -Policy 'extract-all-gog-v1' -Sources @(
+        (Get-ExtractionPathIdentity -Path $installer.FullName -Name $installer.Name)
+    ) -Tools @(
+        (Get-ExtractionPathIdentity -Path $ExePath -Name 'extract_gog'),
+        (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_all_gog.ps1')
+    )
 
     # Skip if already processed
-    if ((Test-ExtractionCompletionManifest -Directory $extractDir) -and -not $Force) {
+    if ((Test-ExtractionCompletionManifest -Directory $extractDir -ExpectedProvenance $provenance) -and -not $Force) {
         Write-Host "`n=== $name === (SKIPPED - use -Force to re-extract)" -ForegroundColor Yellow
         # Still hash and report existing files
     } else {
@@ -156,16 +169,7 @@ foreach ($installer in $installers) {
                 $totalErrors++
                 continue
             }
-            [PSCustomObject]@{
-                source = $installer.Name
-                files = @($stagedFiles | Sort-Object Name | ForEach-Object {
-                        [PSCustomObject]@{
-                            name = $_.Name
-                            size = $_.Length
-                            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-                        }
-                    })
-            } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $stagingDir ".extraction-complete.json") -NoNewline
+            Write-ExtractionCompletionManifest -Directory $stagingDir -Provenance $provenance
             Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $extractDir
         } finally {
             if (Test-Path -LiteralPath $stagingDir) {

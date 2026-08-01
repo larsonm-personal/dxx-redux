@@ -14,7 +14,9 @@
 param(
     [switch]$Force,
     [switch]$SkipBuild,
-    [switch]$SkipAcoustId
+    [switch]$SkipAcoustId,
+    [string]$CdImageDir,
+    [string]$FingerprintExePath
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,9 +29,90 @@ $RepoRoot  = Split-Path $ScriptDir
 
 $SrcDir    = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir  = Join-Path $RepoRoot "android\tests\build"
-$CdImgDir  = Join-Path $ScriptDir "CD images"
+$CdImgDir  = if ($CdImageDir) { $CdImageDir } else { Join-Path $ScriptDir "CD images" }
 $ExeName   = "fingerprint_cd.exe"
-$ExePath   = Join-Path $BuildDir "Release\$ExeName"
+$ExePath   = if ($FingerprintExePath) { $FingerprintExePath } else { Join-Path $BuildDir "Release\$ExeName" }
+
+function Get-CueTrackDefinitions {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $tracks = @()
+    $seen = [Collections.Generic.HashSet[int]]::new()
+    $text = [IO.File]::ReadAllText($Path)
+    foreach ($match in [regex]::Matches($text, '(?im)^\s*TRACK\s+([0-9]+)\s+([^\s]+)')) {
+        $number = [int]$match.Groups[1].Value
+        if (-not $seen.Add($number)) { throw "Duplicate CUE track number: $number" }
+        $tracks += [PSCustomObject]@{
+            track = $number
+            type = if ($match.Groups[2].Value -ieq 'AUDIO') { 'audio' } else { 'data' }
+        }
+    }
+    if ($tracks.Count -eq 0) { throw "CUE contains no tracks: $Path" }
+    return $tracks
+}
+
+function Assert-DiscFingerprintResults {
+    param(
+        [Parameter(Mandatory)][array]$ExpectedTracks,
+        [Parameter(Mandatory)][array]$Results
+    )
+
+    if ($Results.Count -ne $ExpectedTracks.Count) {
+        throw "Expected $($ExpectedTracks.Count) fingerprint records, got $($Results.Count)"
+    }
+    $expected = @{}
+    foreach ($track in $ExpectedTracks) { $expected[[int]$track.track] = [string]$track.type }
+    $seen = [Collections.Generic.HashSet[int]]::new()
+    foreach ($result in $Results) {
+        $number = [int]$result.track
+        if (-not $expected.ContainsKey($number)) { throw "Unexpected fingerprint track: $number" }
+        if (-not $seen.Add($number)) { throw "Duplicate fingerprint track: $number" }
+        if ([string]$result.type -cne $expected[$number]) {
+            throw "Track $number type mismatch: expected $($expected[$number]), got $($result.type)"
+        }
+        if ($result.PSObject.Properties['error'] -and -not [string]::IsNullOrWhiteSpace([string]$result.error)) {
+            throw "Track $number reported an error: $($result.error)"
+        }
+        if ([string]$result.sha1 -cnotmatch '^[0-9a-f]{40}$') {
+            throw "Track $number has an invalid SHA-1"
+        }
+        if ($expected[$number] -eq 'audio' -and
+            ([string]::IsNullOrWhiteSpace([string]$result.chromaprint) -or [long]$result.duration_ms -le 0)) {
+            throw "Track $number has an incomplete audio fingerprint"
+        }
+    }
+}
+
+function Read-ValidatedDiscFingerprintManifest {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][array]$ExpectedTracks
+    )
+
+    $raw = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    if (-not $raw.TrimStart().StartsWith('[')) {
+        throw 'Fingerprint manifest root must be a JSON array'
+    }
+    $results = @($raw | ConvertFrom-Json)
+    Assert-DiscFingerprintResults -ExpectedTracks $ExpectedTracks -Results $results
+    return $results
+}
+
+function Write-AtomicFingerprintManifest {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][array]$Results
+    )
+
+    $tempPath = Join-Path (Split-Path -Parent $Path) ".$(Split-Path -Leaf $Path).$([Guid]::NewGuid().ToString('N')).tmp"
+    try {
+        $json = (ConvertTo-Json -InputObject @($Results) -Depth 10) -replace "`r`n", "`n"
+        [IO.File]::WriteAllText($tempPath, $json, [Text.UTF8Encoding]::new($false))
+        [IO.File]::Move($tempPath, $Path, $true)
+    } finally {
+        Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+    }
+}
 
 # -- Build ------------------------------------------------------------
 
@@ -157,11 +240,6 @@ foreach ($folder in $folders) {
     $name = $folder.Name
     $fpFile = Join-Path $folder.FullName "track_fingerprints.json"
 
-    if ((Test-Path $fpFile) -and -not $Force) {
-        $skipped += $name
-        continue
-    }
-
     # Find .cue file
     $cueFiles = Get-ChildItem -Path $folder.FullName -Filter "*.cue" -File
     if ($cueFiles.Count -eq 0) {
@@ -169,6 +247,21 @@ foreach ($folder in $folders) {
         continue
     }
     $cueFile = $cueFiles[0].FullName
+    try {
+        $expectedTracks = @(Get-CueTrackDefinitions -Path $cueFile)
+    } catch {
+        $failures += @{ Name = $name; Error = $_.Exception.Message }
+        continue
+    }
+    if ((Test-Path $fpFile) -and -not $Force) {
+        try {
+            $null = Read-ValidatedDiscFingerprintManifest -Path $fpFile -ExpectedTracks $expectedTracks
+            $skipped += $name
+            continue
+        } catch {
+            Write-Warning "  Existing manifest is incomplete, reprocessing: $($_.Exception.Message)"
+        }
+    }
 
     Write-Host "`n=== $name ===" -ForegroundColor Cyan
     Write-Host "  CUE: $($cueFiles[0].Name)"
@@ -190,15 +283,22 @@ foreach ($folder in $folders) {
         }
     }
 
-    if ($jsonLines.Count -gt 0) {
-        $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
-        "[`n  " + ($jsonLines -join ",`n  ") + "`n]" | Set-Content -NoNewline $fpFile -Encoding UTF8
-        Write-Host "  Saved $($jsonLines.Count) track fingerprints" -ForegroundColor Green
-        $successes += $name
-    } elseif ($exitCode -ne 0) {
+    if ($exitCode -ne 0) {
         $failures += @{ Name = $name; Error = "fingerprint_cd failed (exit $exitCode)" }
-    } else {
+        continue
+    }
+    if ($jsonLines.Count -eq 0) {
         $failures += @{ Name = $name; Error = "No JSON output" }
+        continue
+    }
+    try {
+        $results = @($jsonLines | ForEach-Object { ($_ -replace "`r", "") | ConvertFrom-Json })
+        Assert-DiscFingerprintResults -ExpectedTracks $expectedTracks -Results $results
+        Write-AtomicFingerprintManifest -Path $fpFile -Results $results
+        Write-Host "  Saved $($results.Count) track fingerprints" -ForegroundColor Green
+        $successes += $name
+    } catch {
+        $failures += @{ Name = $name; Error = $_.Exception.Message }
     }
 }
 
@@ -211,6 +311,8 @@ Write-Host "  Failed:  $($failures.Count)"
 foreach ($f in $failures) {
     Write-Host "    $($f.Name): $($f.Error)" -ForegroundColor Red
 }
+
+if ($failures.Count -gt 0) { exit 1 }
 
 # -- Phase 2: AcoustID lookup -----------------------------------------
 
@@ -251,7 +353,7 @@ if (-not $SkipAcoustId) {
         }
 
         if ($updated) {
-            ($tracks | ConvertTo-Json -Depth 10) -replace "`r`n", "`n" | Set-Content -NoNewline $fpFile -Encoding UTF8
+            Write-AtomicFingerprintManifest -Path $fpFile -Results @($tracks)
             Write-Host "  Updated $fpFile" -ForegroundColor Yellow
         }
     }

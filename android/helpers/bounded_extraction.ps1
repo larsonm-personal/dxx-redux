@@ -78,13 +78,164 @@ function Publish-ExtractionDirectory {
     }
 }
 
+function Get-ExtractionPathIdentity {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    $item = Get-Item -LiteralPath $Path -Force
+    if (-not $item.PSIsContainer) {
+        return [pscustomobject][ordered]@{
+            name = $Name.Replace('\', '/')
+            kind = 'file'
+            size = $item.Length
+            sha256 = (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+    }
+
+    $root = $item.FullName.TrimEnd('\', '/')
+    $records = @(Get-ChildItem -LiteralPath $root -File -Recurse | Sort-Object FullName | ForEach-Object {
+            $relative = $_.FullName.Substring($root.Length).TrimStart('\', '/').Replace('\', '/')
+            '{0}|{1}|{2}' -f $relative, $_.Length,
+            (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        })
+    $bytes = [Text.Encoding]::UTF8.GetBytes(($records -join "`n"))
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = ([BitConverter]::ToString($hasher.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $hasher.Dispose()
+    }
+    return [pscustomobject][ordered]@{
+        name = $Name.Replace('\', '/')
+        kind = 'directory'
+        files = $records.Count
+        sha256 = $digest
+    }
+}
+
+function New-ExtractionProvenance {
+    param(
+        [Parameter(Mandatory = $true)][string]$Policy,
+        [Parameter(Mandatory = $true)][object[]]$Sources,
+        [Parameter(Mandatory = $true)][object[]]$Tools
+    )
+
+    $helperIdentity = Get-ExtractionPathIdentity `
+        -Path (Join-Path $PSScriptRoot 'bounded_extraction.ps1') -Name 'bounded_extraction.ps1'
+    return [pscustomobject][ordered]@{
+        schema = 1
+        policy = $Policy
+        sources = @($Sources)
+        tools = @($Tools) + @($helperIdentity)
+    }
+}
+
+function Write-ExtractionCompletionManifest {
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][object]$Provenance
+    )
+
+    $manifestPath = Join-Path $Directory '.extraction-complete.json'
+    $files = @(Get-ChildItem -LiteralPath $Directory -File -Recurse |
+            Where-Object { $_.FullName -ne $manifestPath } |
+            Sort-Object FullName | ForEach-Object {
+                [pscustomobject][ordered]@{
+                    name = $_.FullName.Substring($Directory.Length).TrimStart('\', '/').Replace('\', '/')
+                    size = $_.Length
+                    sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                }
+            })
+    [pscustomobject][ordered]@{
+        provenance = $Provenance
+        files = $files
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -NoNewline
+}
+
+function Get-CueReferencedFiles {
+    param(
+        [Parameter(Mandatory = $true)][string]$CuePath
+    )
+
+    $cue = Get-Item -LiteralPath $CuePath
+    $directory = $cue.Directory.FullName
+    $root = $directory.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    $matches = [regex]::Matches(
+        (Get-Content -LiteralPath $cue.FullName -Raw),
+        '(?im)^\s*FILE\s+(?:"([^"]+)"|(\S+))\s+\S+'
+    )
+    if ($matches.Count -eq 0) { throw "CUE has no FILE directives: $($cue.Name)" }
+
+    $files = @($cue)
+    $seen = @{}
+    foreach ($match in $matches) {
+        $name = if ($match.Groups[1].Success) { $match.Groups[1].Value } else { $match.Groups[2].Value }
+        $path = [IO.Path]::GetFullPath((Join-Path $directory $name))
+        if (-not $path.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "CUE FILE escapes its directory: $name"
+        }
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "CUE FILE not found: $name"
+        }
+        $key = $path.ToLowerInvariant()
+        if (-not $seen.ContainsKey($key)) {
+            $seen[$key] = $true
+            $files += Get-Item -LiteralPath $path
+        }
+    }
+    return @($files)
+}
+
+function Resolve-DiscExtractionSource {
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [switch]$CueOnly
+    )
+
+    $cues = @(Get-ChildItem -LiteralPath $Directory -Filter '*.cue' -File | Sort-Object Name)
+    $isos = @(Get-ChildItem -LiteralPath $Directory -Filter '*.iso' -File | Sort-Object Name)
+    if ($CueOnly -and $isos.Count -gt 0) {
+        throw "Legacy Mac extraction accepts one CUE source and no ISO descriptors in $Directory"
+    }
+    if ($cues.Count -eq 1 -and $isos.Count -eq 1) {
+        $cueFiles = @(Get-CueReferencedFiles -CuePath $cues[0].FullName)
+        $payloads = @($cueFiles | Where-Object { $_.FullName -ne $cues[0].FullName })
+        if ($payloads.Count -eq 1 -and $payloads[0].FullName -eq $isos[0].FullName) {
+            return [pscustomobject]@{ Primary = $isos[0]; Files = $cueFiles }
+        }
+        throw "CUE and ISO descriptors identify different source payloads in $Directory"
+    }
+    $descriptors = @($cues) + @($isos)
+    if ($descriptors.Count -ne 1) {
+        $kind = if ($CueOnly) { 'CUE' } else { 'CUE or ISO' }
+        throw "Expected exactly one $kind descriptor in $Directory, found $($descriptors.Count)"
+    }
+    $primary = $descriptors[0]
+    $files = if ($primary.Extension -ieq '.cue') {
+        @(Get-CueReferencedFiles -CuePath $primary.FullName)
+    } else {
+        @($primary)
+    }
+    return [pscustomobject]@{ Primary = $primary; Files = $files }
+}
+
 function Test-ExtractionCompletionManifest {
-    param([Parameter(Mandatory = $true)][string]$Directory)
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][object]$ExpectedProvenance
+    )
 
     $manifestPath = Join-Path $Directory '.extraction-complete.json'
     if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { return $false }
     try {
         $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+        if (-not $manifest.provenance -or
+            ($manifest.provenance | ConvertTo-Json -Depth 8 -Compress) -cne
+            ($ExpectedProvenance | ConvertTo-Json -Depth 8 -Compress)) {
+            return $false
+        }
         $expected = @{}
         foreach ($file in @($manifest.files)) {
             $name = ([string]$file.name).Replace('\', '/').ToLowerInvariant()
@@ -103,6 +254,38 @@ function Test-ExtractionCompletionManifest {
             }
         }
         return $true
+    } catch {
+        return $false
+    }
+}
+
+function Test-ExtractionCompletionSources {
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][string]$ExpectedPolicy,
+        [Parameter(Mandatory = $true)][object[]]$ExpectedSources,
+        [object[]]$RequiredTools = @()
+    )
+
+    $manifestPath = Join-Path $Directory '.extraction-complete.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { return $false }
+    try {
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+        if ($manifest.provenance.policy -cne $ExpectedPolicy -or
+            (@($manifest.provenance.sources) | ConvertTo-Json -Depth 8 -Compress) -cne
+            (@($ExpectedSources) | ConvertTo-Json -Depth 8 -Compress)) {
+            return $false
+        }
+        foreach ($required in $RequiredTools) {
+            $match = @($manifest.provenance.tools | Where-Object { $_.name -ceq $required.name })
+            if ($match.Count -ne 1 -or
+                ($match[0] | ConvertTo-Json -Depth 8 -Compress) -cne
+                ($required | ConvertTo-Json -Depth 8 -Compress)) {
+                return $false
+            }
+        }
+        return Test-ExtractionCompletionManifest -Directory $Directory `
+            -ExpectedProvenance $manifest.provenance
     } catch {
         return $false
     }

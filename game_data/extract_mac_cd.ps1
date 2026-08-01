@@ -58,6 +58,7 @@ if (-not $OracleToolRoot) {
 $Python = Join-Path $OracleToolRoot[0] 'python\python.exe'
 $MachfsDir = Join-Path $OracleToolRoot[0] 'machfs'
 $PythonRunner = Join-Path $RepoRoot 'android\helpers\run_verified_python.py'
+$HfsExtractor = Join-Path $RepoRoot 'android\helpers\extract_hfs_machfs.py'
 Write-Host "verified python: $Python"
 
 # --- Validate input ---
@@ -69,20 +70,27 @@ if (-not (Test-Path $CdFolder)) {
 
 $CdFolder = (Resolve-Path $CdFolder).Path
 $OutputDir = Join-Path $CdFolder "data_tracks"
+$discSource = Resolve-DiscExtractionSource -Directory $CdFolder -CueOnly
+$CueFile = $discSource.Primary
+$provenance = New-ExtractionProvenance -Policy 'extract-mac-cd-v1' -Sources @(
+    $discSource.Files | ForEach-Object {
+        Get-ExtractionPathIdentity -Path $_.FullName -Name $_.Name
+    }
+) -Tools @(
+    (Get-ExtractionPathIdentity -Path $Python -Name 'python'),
+    (Get-ExtractionPathIdentity -Path $MachfsDir -Name 'machfs'),
+    (Get-ExtractionPathIdentity -Path $UnarExe -Name 'unar'),
+    (Get-ExtractionPathIdentity -Path $PythonRunner -Name 'run_verified_python.py'),
+    (Get-ExtractionPathIdentity -Path $HfsExtractor -Name 'extract_hfs_machfs.py'),
+    (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_mac_cd.ps1')
+)
 
-if ((Test-ExtractionCompletionManifest -Directory $OutputDir) -and -not $Force) {
-    Write-Host "data_tracks/ already exists. Use -Force to re-extract"
+if ((Test-ExtractionCompletionManifest -Directory $OutputDir -ExpectedProvenance $provenance) -and -not $Force) {
+    Write-Host "data_tracks/ cache matches current source, tools, and policy. Use -Force to re-extract"
     exit 0
 }
 
 $PublishDir = Join-Path $CdFolder ".data_tracks-$([Guid]::NewGuid().ToString('N'))"
-
-# Find the .cue and .bin files
-$CueFile = Get-ChildItem -Path $CdFolder -Filter "*.cue" -File | Select-Object -First 1
-if (-not $CueFile) {
-    Write-Error "No .cue file found in $CdFolder"
-    exit 1
-}
 
 # Parse the CUE to find the BIN filename
 # Use -LiteralPath to handle filenames with brackets (e.g. "Descent [Mac].CUE")
@@ -307,8 +315,7 @@ Write-Host "`n--- Stage 5: Extract files from HFS volume ---" -ForegroundColor Y
 
 $HfsExtractDir = Join-Path $TempDir "hfs_files"
 
-$pyFile = Join-Path $RepoRoot "android/helpers/extract_hfs_machfs.py"
-& $Python -I $PythonRunner $MachfsDir $pyFile $HfsImgPath $HfsExtractDir `
+& $Python -I $PythonRunner $MachfsDir $HfsExtractor $HfsImgPath $HfsExtractDir `
     $MaxCdImageBytes $MaxEntries $MaxEntryBytes $MaxTotalBytes $FreeHeadroom
 if ($LASTEXITCODE -ne 0) {
     Write-Error "HFS extraction failed"
@@ -440,16 +447,7 @@ foreach ($exeName in $gameExeNames) {
 }
 
 if ($copied -eq 0) { throw "No requested game files were extracted" }
-[PSCustomObject]@{
-    source = $CueFile.Name
-    files = @(Get-ChildItem -LiteralPath $PublishDir -File | Sort-Object Name | ForEach-Object {
-            [PSCustomObject]@{
-                name = $_.Name
-                size = $_.Length
-                sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            }
-        })
-} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $PublishDir ".extraction-complete.json") -NoNewline
+Write-ExtractionCompletionManifest -Directory $PublishDir -Provenance $provenance
 Publish-ExtractionDirectory -StagingDirectory $PublishDir -DestinationDirectory $OutputDir
 Write-Host "`n  Copied $copied game files to $OutputDir"
 

@@ -117,13 +117,16 @@ try {
 
     $outputPath = Join-Path $tempDir "chromaprint_info.json5"
     Write-ChromaprintInfo -Path $outputPath -AlbumName "Test" -SourceZip "sample.zip" `
-        -SourceSha1 "sha1" -Tracks @([PSCustomObject]@{
+        -SourceSha1 ('1' * 40) -SourceSha256 ('2' * 64) -Tracks @([PSCustomObject]@{
             filename = "plain.ogg"
             chromaprint = "fingerprint"
             duration_ms = 1000
         })
     Assert-True (Test-Path -LiteralPath $outputPath) `
         "Tracks without optional label fields should serialize"
+    $written = Read-Json5File $outputPath
+    Assert-True ($written.complete -ceq $true) `
+        "Published mission fingerprint metadata should declare completeness"
 } finally {
     Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
 }

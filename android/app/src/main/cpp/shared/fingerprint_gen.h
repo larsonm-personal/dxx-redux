@@ -8,6 +8,7 @@
 #ifndef FINGERPRINT_GEN_H
 #define FINGERPRINT_GEN_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -25,9 +26,18 @@ typedef struct {
  * Generate a fingerprint from interleaved 16-bit PCM data.
  * Returns 0 on success, -1 on failure.
  */
-int fingerprint_from_pcm(const int16_t *samples, int total_samples,
+int fingerprint_from_pcm(const int16_t *samples, size_t total_frames,
                          int sample_rate, int channels,
                          fingerprint_result_t *out);
+
+/* Calculate the exact fpcalc-compatible 120-second feed size and full duration. */
+int fingerprint_pcm_window(size_t total_frames, int sample_rate, int channels,
+                           int *feed_samples, int *duration_ms);
+
+/* Fingerprint a retained PCM prefix while reporting the full source duration. */
+int fingerprint_from_pcm_prefix(const int16_t *samples, size_t available_frames,
+                                size_t total_frames, int sample_rate, int channels,
+                                fingerprint_result_t *out);
 
 /*
  * Generate a fingerprint from a decoded audio file (mp3/ogg/flac).
@@ -38,11 +48,17 @@ int fingerprint_from_audio_file(const char *path, fingerprint_result_t *out);
 
 /*
  * Generate a fingerprint from raw CD-DA sectors.
- * sector_data: raw 2352-byte sectors, audio_sector_count: number of sectors.
+ * sector_data: a retained prefix of raw 2352-byte sectors.
  * Returns 0 on success, -1 on failure.
  */
-int fingerprint_from_cd_sectors(const uint8_t *sector_data, int audio_sector_count,
+int fingerprint_from_cd_sectors(const uint8_t *sector_data, int prefix_sector_count,
+                                int audio_sector_count,
                                 fingerprint_result_t *out);
+
+#define FINGERPRINT_CD_SECTORS_PER_SECOND 75
+#define FINGERPRINT_MAX_SECONDS           120
+#define FINGERPRINT_MAX_CD_SECTORS \
+	(FINGERPRINT_CD_SECTORS_PER_SECOND * FINGERPRINT_MAX_SECONDS)
 
 /*
  * Free all heap allocations in a fingerprint_result_t.

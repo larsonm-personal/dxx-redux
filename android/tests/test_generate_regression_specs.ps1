@@ -28,7 +28,8 @@ try {
     New-Item -ItemType Directory -Path $discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $combinedDir, $testsDir, $helpersDir, $assetsDir -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $vertigoDir 'data_tracks'), `
     (Join-Path $baseD2Dir 'data_tracks'), `
-    (Join-Path $testFlightDir 'data_tracks') | Out-Null
+    (Join-Path $testFlightDir 'data_tracks'), `
+    (Join-Path $discDir 'data_tracks') | Out-Null
 
     Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data\generate_regression_specs.ps1') `
         -Destination (Join-Path $gameDataDir 'generate_regression_specs.ps1')
@@ -36,6 +37,10 @@ try {
         -Destination (Join-Path $testsDir 'extract_regression_spec_helpers.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\json5.ps1') `
         -Destination (Join-Path $helpersDir 'json5.ps1')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1') `
+        -Destination (Join-Path $helpersDir 'bounded_extraction.ps1')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data\extract_all_cds.ps1') `
+        -Destination (Join-Path $gameDataDir 'extract_all_cds.ps1')
     [System.IO.File]::WriteAllText(
         (Join-Path $assetsDir 'known_discs.json5'),
         '{"discs":[{"id":"descent-test-flight","game":"d1","tracks":' +
@@ -56,6 +61,11 @@ try {
         [System.IO.File]::WriteAllText(
             (Join-Path $fixtureDir 'disc.cue'),
             "FILE `"disc.bin`" BINARY`n  TRACK 01 MODE1/2352`n    INDEX 01 00:00:00`n",
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        [System.IO.File]::WriteAllText(
+            (Join-Path $fixtureDir 'disc.bin'),
+            'disc payload',
             [System.Text.UTF8Encoding]::new($false)
         )
     }
@@ -81,7 +91,12 @@ try {
         )
     }
     [System.IO.File]::WriteAllText(
-        (Join-Path $testFlightDir 'track_hashes.json'),
+        (Join-Path $discDir 'data_tracks\fixture.hog'),
+        'fixture',
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    [System.IO.File]::WriteAllText(
+        (Join-Path $testFlightDir 'data_tracks\.track_hashes.json'),
         '[{"track":1,"type":"data","sha1":"test-flight-sha1"}]',
         [System.Text.UTF8Encoding]::new($false)
     )
@@ -95,6 +110,20 @@ try {
         [System.Text.UTF8Encoding]::new($false)
     )
 
+    . (Join-Path $helpersDir 'bounded_extraction.ps1')
+    $extractScriptIdentity = Get-ExtractionPathIdentity `
+        -Path (Join-Path $gameDataDir 'extract_all_cds.ps1') -Name 'extract_all_cds.ps1'
+    foreach ($fixtureDir in @($discDir, $vertigoDir, $baseD2Dir, $testFlightDir)) {
+        $source = Resolve-DiscExtractionSource -Directory $fixtureDir
+        $sourceIdentities = @($source.Files | ForEach-Object {
+                Get-ExtractionPathIdentity -Path $_.FullName -Name $_.Name
+            })
+        $provenance = New-ExtractionProvenance -Policy 'extract-all-cds-v1' `
+            -Sources $sourceIdentities -Tools @($extractScriptIdentity)
+        Write-ExtractionCompletionManifest -Directory (Join-Path $fixtureDir 'data_tracks') `
+            -Provenance $provenance
+    }
+
     $powerShellPath = (Get-Process -Id $PID).Path
     $scriptPath = Join-Path $gameDataDir 'generate_regression_specs.ps1'
     $output = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -Force 2>&1)
@@ -103,11 +132,13 @@ try {
     . (Join-Path $testsDir 'extract_regression_spec_helpers.ps1')
     $spec = Read-Json5File (Join-Path $discDir 'extract_regression.json5')
     Assert-True ($spec.disc_image_type -eq 'iso') `
-        'Regression spec generation should prefer ISO when a fingerprint cue is also present'
+        'Regression spec generation should use an ISO referenced by its fingerprint CUE'
     Assert-True ($spec.import_mode -eq 'setup_iso') `
-        'An ISO with a fingerprint cue should retain setup_iso import mode'
-    Assert-True ($spec.source_files.name -eq 'disc.iso') `
-        'An ISO with a fingerprint cue should hash only the ISO regression source'
+        'An ISO with a matching fingerprint CUE should retain setup_iso import mode'
+    Assert-True (@($spec.source_files).Count -eq 2 -and
+        @($spec.source_files.name) -contains 'disc.cue' -and
+        @($spec.source_files.name) -contains 'disc.iso') `
+        'An ISO fingerprint CUE source set should bind both descriptor files'
 
     $vertigoSpec = Read-Json5File (Join-Path $vertigoDir 'extract_regression.json5')
     Assert-True ($vertigoSpec.classification -eq 'd2_vertigo' -and

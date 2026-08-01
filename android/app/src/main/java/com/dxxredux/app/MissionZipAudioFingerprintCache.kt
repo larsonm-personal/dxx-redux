@@ -34,7 +34,8 @@ class MissionZipAudioFingerprintCache(
         val acoustIdRecordingId: String? = null,
     ) {
         val hasLocalMatch: Boolean get() = !localMatchName.isNullOrBlank()
-        val hasAcoustIdLookup: Boolean get() = !acoustIdLookupStatus.isNullOrBlank()
+        val hasAuthoritativeAcoustIdLookup: Boolean
+            get() = acoustIdLookupStatus == ACOUSTID_STATUS_OK || acoustIdLookupStatus == ACOUSTID_STATUS_NO_MATCH
     }
 
     private val cacheFile = File(filesDir, CACHE_FILE)
@@ -162,6 +163,34 @@ class MissionZipAudioFingerprintCache(
         return updated
     }
 
+    internal fun recordAcoustIdResult(
+        entry: Entry,
+        result: AcoustIdLookupResult,
+    ): Entry =
+        when (result) {
+            is AcoustIdLookupResult.Match -> {
+                recordAcoustIdResult(
+                    entry,
+                    result.match.name,
+                    ACOUSTID_STATUS_OK,
+                    result.match.score,
+                    result.match.recordingId,
+                )
+            }
+
+            AcoustIdLookupResult.NoMatch -> {
+                recordAcoustIdResult(entry, null, ACOUSTID_STATUS_NO_MATCH)
+            }
+
+            is AcoustIdLookupResult.RetryableFailure -> {
+                recordAcoustIdResult(entry, null, ACOUSTID_STATUS_RETRYABLE_FAILURE)
+            }
+
+            is AcoustIdLookupResult.ConfigurationFailure -> {
+                recordAcoustIdResult(entry, null, ACOUSTID_STATUS_CONFIGURATION_FAILURE)
+            }
+        }
+
     private fun loadEntries(): List<Entry> {
         if (!cacheFile.isFile) return emptyList()
         return runCatching {
@@ -287,6 +316,10 @@ class MissionZipAudioFingerprintCache(
         private const val SCHEMA = "dxx-mission-zip-audio-fingerprints-v1"
         const val ACOUSTID_STATUS_OK = "ok"
         const val ACOUSTID_STATUS_NO_MATCH = "no_match"
+        const val ACOUSTID_STATUS_RETRYABLE_FAILURE = "retryable_failure"
+        const val ACOUSTID_STATUS_CONFIGURATION_FAILURE = "configuration_failure"
+
+        // Retained only to ensure v1 cache entries written before typed outcomes remain retryable.
         const val ACOUSTID_STATUS_FAILED = "failed"
         private val FINGERPRINT_EXTENSIONS = setOf("flac", "mp3", "ogg")
 

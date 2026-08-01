@@ -2,7 +2,7 @@
 # extract_all_cds.ps1 -- Build extract_cd.exe and run it on all CD image folders.
 #
 # For each subfolder in game_data/CD images/:
-#   1. Find the .iso or .cue source file (prefer ISO when both exist)
+#   1. Require one unambiguous .iso or .cue source set and hash all of its files
 #   2. Run extract_cd.exe to extract ISO 9660 or Mac HFS data track files and
 #      compute track SHA-1s
 #   3. Save track hashes to <folder>/track_hashes.json
@@ -83,30 +83,34 @@ foreach ($folder in $folders) {
     $name = $folder.Name
     $dataTracksDir = Join-Path $folder.FullName "data_tracks"
     $hashFile = Join-Path $folder.FullName "track_hashes.json"
+    $boundHashFile = Join-Path $dataTracksDir ".track_hashes.json"
 
-    # Skip if already processed
-    if ((Test-ExtractionCompletionManifest -Directory $dataTracksDir) -and
-        (Test-Path -LiteralPath $hashFile -PathType Leaf) -and -not $Force) {
-        $skipped += $name
+    try {
+        $source = Resolve-DiscExtractionSource -Directory $folder.FullName
+        $sourceFile = $source.Primary.FullName
+        $sourceName = $source.Primary.Name
+        $sourceLabel = $source.Primary.Extension.TrimStart('.').ToUpperInvariant()
+        $sourceIdentities = @($source.Files | ForEach-Object {
+                Get-ExtractionPathIdentity -Path $_.FullName -Name $_.Name
+            })
+        $provenance = New-ExtractionProvenance -Policy 'extract-all-cds-v1' `
+            -Sources $sourceIdentities -Tools @(
+                (Get-ExtractionPathIdentity -Path $ExePath -Name 'extract_cd'),
+                (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_all_cds.ps1')
+            )
+    } catch {
+        $failures += @{ Name = $name; Error = $_.Exception.Message }
         continue
     }
 
-    # Prefer a directly readable ISO when a cue exists only to describe disc
-    # layout for fingerprinting.
-    $cueFiles = @(Get-ChildItem -Path $folder.FullName -Filter "*.cue" -File | Sort-Object Name)
-    $isoFiles = @(Get-ChildItem -Path $folder.FullName -Filter "*.iso" -File | Sort-Object Name)
-    if ($isoFiles.Count -gt 0) {
-        $sourceFile = $isoFiles[0].FullName
-        $sourceLabel = "ISO"
-        $sourceName = $isoFiles[0].Name
-    }
-    elseif ($cueFiles.Count -gt 0) {
-        $sourceFile = $cueFiles[0].FullName
-        $sourceLabel = "CUE"
-        $sourceName = $cueFiles[0].Name
-    }
-    else {
-        $failures += @{ Name = $name; Error = "No .cue or .iso file found" }
+    if ((Test-ExtractionCompletionManifest -Directory $dataTracksDir -ExpectedProvenance $provenance) -and
+        (Test-Path -LiteralPath $boundHashFile -PathType Leaf) -and -not $Force) {
+        if (-not (Test-Path -LiteralPath $hashFile -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $hashFile -Algorithm SHA256).Hash -ne
+            (Get-FileHash -LiteralPath $boundHashFile -Algorithm SHA256).Hash) {
+            Copy-Item -LiteralPath $boundHashFile -Destination $hashFile -Force
+        }
+        $skipped += $name
         continue
     }
 
@@ -140,21 +144,13 @@ foreach ($folder in $folders) {
             $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
         } else {
             $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
-            [PSCustomObject]@{
-                source = $sourceName
-                files = @($stagedFiles | Sort-Object FullName | ForEach-Object {
-                        [PSCustomObject]@{
-                            name = $_.FullName.Substring($outDir.Length + 1)
-                            size = $_.Length
-                            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-                        }
-                    })
-            } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $outDir ".extraction-complete.json") -NoNewline
+            "[`n  " + ($jsonLines -join ",`n  ") + "`n]" |
+                Set-Content -NoNewline -LiteralPath (Join-Path $outDir ".track_hashes.json") -Encoding UTF8
+            Write-ExtractionCompletionManifest -Directory $outDir -Provenance $provenance
             Publish-ExtractionDirectory -StagingDirectory $outDir -DestinationDirectory $dataTracksDir
             $hashTemp = Join-Path $folder.FullName ".track_hashes-$([Guid]::NewGuid().ToString('N')).json"
             try {
-                "[`n  " + ($jsonLines -join ",`n  ") + "`n]" |
-                    Set-Content -NoNewline -LiteralPath $hashTemp -Encoding UTF8
+                Copy-Item -LiteralPath (Join-Path $dataTracksDir ".track_hashes.json") -Destination $hashTemp
                 Move-Item -LiteralPath $hashTemp -Destination $hashFile -Force
             } finally {
                 Remove-Item -LiteralPath $hashTemp -Force -ErrorAction SilentlyContinue

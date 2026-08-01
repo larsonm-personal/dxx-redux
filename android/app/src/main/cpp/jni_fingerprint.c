@@ -126,15 +126,12 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 {
 	if (binFd < 0 || numSectors <= 0) return NULL;
 
-	/* Read audio sectors from the BIN file */
+	/* Read only the bounded prefix Chromaprint consumes. */
 	static const int SECTOR_SIZE = 2352;
-	size_t data_size = (size_t) numSectors * SECTOR_SIZE;
-
-	/* Sanity-check: don't allocate more than ~700MB (a full CD) */
-	if (data_size > 750 * 1024 * 1024) {
-		LOGE("Too many sectors: %d", numSectors);
-		return NULL;
-	}
+	int prefix_sectors = numSectors < FINGERPRINT_MAX_CD_SECTORS
+	                         ? numSectors
+	                         : FINGERPRINT_MAX_CD_SECTORS;
+	size_t data_size = (size_t) prefix_sectors * SECTOR_SIZE;
 
 	uint8_t *sector_data = (uint8_t *) malloc(data_size);
 	if (!sector_data) {
@@ -157,16 +154,13 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 	}
 	if (total_read < data_size) {
 		LOGW("Short read: got %zu of %zu bytes", total_read, data_size);
-		/* Proceed with what we have */
-		numSectors = (int) (total_read / SECTOR_SIZE);
-		if (numSectors <= 0) {
-			free(sector_data);
-			return NULL;
-		}
+		free(sector_data);
+		return NULL;
 	}
 
 	fingerprint_result_t fp = { 0 };
-	int rc = fingerprint_from_cd_sectors(sector_data, numSectors, &fp);
+	int rc = fingerprint_from_cd_sectors(sector_data, prefix_sectors,
+	                                     numSectors, &fp);
 	free(sector_data);
 
 	if (rc != 0 || !fp.encoded) {

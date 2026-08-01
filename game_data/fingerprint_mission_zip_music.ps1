@@ -13,7 +13,8 @@ param(
     [switch]$BudgetTestOnly,
     [string]$Zip,
     [string]$MissionDir = (Join-Path $PSScriptRoot "mission_files"),
-    [string]$OutputRoot = (Join-Path $PSScriptRoot "music")
+    [string]$OutputRoot = (Join-Path $PSScriptRoot "music"),
+    [string]$FingerprintExePath
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,7 +29,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $buildDir = Join-Path $repoRoot "android/tests/build"
-$fpExe = Join-Path $buildDir "Release/fingerprint_audio.exe"
+$fpExe = if ($FingerprintExePath) { $FingerprintExePath } else { Join-Path $buildDir "Release/fingerprint_audio.exe" }
 $MaxArchiveEntries = 4096
 $MaxArchiveEntryBytes = 512MB
 $MaxArchiveTotalBytes = 2GB
@@ -718,6 +719,7 @@ function Write-ChromaprintInfo {
         [string]$AlbumName,
         [string]$SourceZip,
         [string]$SourceSha1,
+        [string]$SourceSha256,
         [array]$Tracks
     )
     $lines = @()
@@ -727,6 +729,8 @@ function Write-ChromaprintInfo {
     $lines += "  `"album`": `"$(Escape-JsonString $AlbumName)`","
     $lines += "  `"source_zip`": `"$(Escape-JsonString $SourceZip)`","
     $lines += "  `"source_sha1`": `"$SourceSha1`","
+    $lines += "  `"source_sha256`": `"$SourceSha256`","
+    $lines += "  `"complete`": true,"
     $lines += "  `"tracks`": ["
     for ($i = 0; $i -lt $Tracks.Count; $i++) {
         $t = $Tracks[$i]
@@ -748,6 +752,23 @@ function Write-ChromaprintInfo {
     $lines += "  ]"
     $lines += "}"
     [System.IO.File]::WriteAllText($Path, ($lines -join "`n"), [System.Text.UTF8Encoding]::new($false))
+}
+
+function Test-MissionFingerprintCacheIdentity {
+    param(
+        [Parameter(Mandatory = $true)][object]$ExistingInfo,
+        [Parameter(Mandatory = $true)][string]$SourceZip,
+        [Parameter(Mandatory = $true)][string]$SourceSha1,
+        [Parameter(Mandatory = $true)][string]$SourceSha256
+    )
+
+    $storedSourceZip = [string]$ExistingInfo.source_zip
+    $storedSha1 = [string]$ExistingInfo.source_sha1
+    $storedSha256 = [string]$ExistingInfo.source_sha256
+    return $ExistingInfo.complete -ceq $true -and
+    $storedSourceZip -ceq $SourceZip -and
+    $storedSha1 -cmatch '^[0-9a-f]{40}$' -and $storedSha1 -ceq $SourceSha1 -and
+    $storedSha256 -cmatch '^[0-9a-f]{64}$' -and $storedSha256 -ceq $SourceSha256
 }
 
 if ($BudgetTestOnly) { return }
@@ -803,6 +824,7 @@ foreach ($zipFile in $zipFiles) {
     $albumDir = Join-Path $OutputRoot $albumName
     $infoFile = Join-Path $albumDir "chromaprint_info.json5"
     $sourceSha1 = Get-Sha1File $zipFile.FullName
+    $sourceSha256 = (Get-FileHash -LiteralPath $zipFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     $tracklistLookup = @{}
     $existingTracks = @{}
     $workDir = $null
@@ -818,9 +840,10 @@ foreach ($zipFile in $zipFiles) {
             }
         }
         if ((Test-Path $infoFile) -and -not $Force) {
-            $storedSha1 = [string]$existingInfo.source_sha1
-            if ($storedSha1 -and $storedSha1 -ne $sourceSha1) {
-                Write-Host "  Source ZIP changed, reprocessing"
+            $cacheMatchesSource = Test-MissionFingerprintCacheIdentity -ExistingInfo $existingInfo `
+                -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -SourceSha256 $sourceSha256
+            if (-not $cacheMatchesSource) {
+                Write-Host "  Source identity is missing or changed, reprocessing"
             } else {
                 if ($SkipAcoustId) {
                     Write-Host "  Already fingerprinted, skipping"
@@ -829,7 +852,8 @@ foreach ($zipFile in $zipFiles) {
                     continue
                 }
                 $tracks = Add-AcoustIdResults -Tracks @($existingInfo.tracks) -ExistingTracks $existingTracks -TracklistLookup $tracklistLookup
-                Write-ChromaprintInfo -Path $infoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
+                Write-ChromaprintInfo -Path $infoFile -AlbumName $albumName -SourceZip $zipFile.Name `
+                    -SourceSha1 $sourceSha1 -SourceSha256 $sourceSha256 -Tracks $tracks
                 Write-Host "  Updated $infoFile"
                 $processed++
                 $withAudio++
@@ -897,7 +921,8 @@ foreach ($zipFile in $zipFiles) {
         }
         $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks $existingTracks `
             -TracklistLookup $tracklistLookup -RefreshAcoustId:$Force
-        Write-ChromaprintInfo -Path $workInfoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
+        Write-ChromaprintInfo -Path $workInfoFile -AlbumName $albumName -SourceZip $zipFile.Name `
+            -SourceSha1 $sourceSha1 -SourceSha256 $sourceSha256 -Tracks $tracks
         Publish-ExtractionDirectory -StagingDirectory $workDir -DestinationDirectory $albumDir
         Write-Host "  Wrote $infoFile"
         $processed++

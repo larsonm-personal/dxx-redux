@@ -11,16 +11,12 @@ try {
     Set-Content -LiteralPath (Join-Path $destination 'old.txt') -Value 'old' -NoNewline
     $newFile = Join-Path $staging 'new.txt'
     Set-Content -LiteralPath $newFile -Value 'new' -NoNewline
-    [PSCustomObject]@{
-        source = 'test'
-        files = @(
-            [PSCustomObject]@{
-                name = 'new.txt'
-                size = 3
-                sha256 = (Get-FileHash -LiteralPath $newFile -Algorithm SHA256).Hash.ToLowerInvariant()
-            }
-        )
-    } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $staging '.extraction-complete.json') -NoNewline
+    $provenance = New-ExtractionProvenance -Policy 'publication-test-v1' -Sources @(
+        (Get-ExtractionPathIdentity -Path $newFile -Name 'source')
+    ) -Tools @(
+        (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'test_extraction_publication.ps1')
+    )
+    Write-ExtractionCompletionManifest -Directory $staging -Provenance $provenance
 
     Publish-ExtractionDirectory -StagingDirectory $staging -DestinationDirectory $destination
 
@@ -30,11 +26,11 @@ try {
     if ((Get-Content -LiteralPath (Join-Path $destination 'new.txt') -Raw) -ne 'new') {
         throw 'staged generation was not published'
     }
-    if (-not (Test-ExtractionCompletionManifest -Directory $destination)) {
+    if (-not (Test-ExtractionCompletionManifest -Directory $destination -ExpectedProvenance $provenance)) {
         throw 'valid completion manifest was not accepted'
     }
     Add-Content -LiteralPath (Join-Path $destination 'new.txt') -Value 'corrupt' -NoNewline
-    if (Test-ExtractionCompletionManifest -Directory $destination) {
+    if (Test-ExtractionCompletionManifest -Directory $destination -ExpectedProvenance $provenance) {
         throw 'corrupt completion generation was accepted'
     }
     if (Get-ChildItem -LiteralPath $testRoot -Directory -Filter '*.rollback-*') {

@@ -24,23 +24,25 @@ try {
     New-Item -ItemType Directory -Path $helpersDir, $buildDir, $discDir -Force | Out-Null
     Copy-Item -LiteralPath $sourceScript -Destination (Join-Path $gameDataDir 'extract_all_cds.ps1')
     [System.IO.File]::WriteAllText(
+        (Join-Path $buildDir 'fixture-extract-cd'),
+        'tool',
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    [System.IO.File]::WriteAllText(
         (Join-Path $discDir 'single.iso'),
         'fixture',
         [System.Text.UTF8Encoding]::new($false)
     )
-    [System.IO.File]::WriteAllText(
-        (Join-Path $discDir 'single.cue'),
-        "FILE `"single.iso`" BINARY`n  TRACK 01 MODE1/2048`n    INDEX 01 00:00:00`n",
-        [System.Text.UTF8Encoding]::new($false)
-    )
-
     $testEnvironment = @'
 function Join-RegressionPath {
     param([Parameter(ValueFromRemainingArguments)][string[]]$Segments)
     return [System.IO.Path]::Combine($Segments)
 }
 function Reset-RegressionCMakeBuildIfMissingTool { return $false }
-function Resolve-RegressionBuildTool { return 'fixture-extract-cd' }
+function Resolve-RegressionBuildTool {
+    param([string]$Directory)
+    return (Join-Path $Directory 'fixture-extract-cd')
+}
 '@
     [System.IO.File]::WriteAllText(
         (Join-Path $helpersDir 'test_env.ps1'),
@@ -63,7 +65,25 @@ function Invoke-BoundedExtractor {
         ExitCode = 0
     }
 }
-function Test-ExtractionCompletionManifest { return $false }
+function Get-ExtractionPathIdentity {
+    param([string]$Path, [string]$Name)
+    return [pscustomobject]@{ name = $Name; sha256 = 'fixture' }
+}
+function New-ExtractionProvenance {
+    param([string]$Policy, [object[]]$Sources, [object[]]$Tools)
+    return [pscustomobject]@{ policy = $Policy; sources = $Sources; tools = $Tools }
+}
+function Resolve-DiscExtractionSource {
+    param([string]$Directory)
+    $sources = @(Get-ChildItem -LiteralPath $Directory -File | Where-Object { $_.Extension -in '.cue', '.iso' })
+    if ($sources.Count -ne 1) { throw "Expected exactly one CUE or ISO descriptor in $Directory, found $($sources.Count)" }
+    return [pscustomobject]@{ Primary = $sources[0]; Files = @($sources[0]) }
+}
+function Test-ExtractionCompletionManifest { param([string]$Directory, [object]$ExpectedProvenance); return $false }
+function Write-ExtractionCompletionManifest {
+    param([string]$Directory, [object]$Provenance)
+    Set-Content -LiteralPath (Join-Path $Directory '.extraction-complete.json') -Value '{}' -NoNewline
+}
 function Publish-ExtractionDirectory {
     param([string]$StagingDirectory, [string]$DestinationDirectory)
     Move-Item -LiteralPath $StagingDirectory -Destination $DestinationDirectory
@@ -81,15 +101,15 @@ function Publish-ExtractionDirectory {
     Assert-True ($LASTEXITCODE -eq 0) "Single-track extraction failed: $($firstOutput -join "`n")"
     Assert-True (($firstOutput -join "`n") -match 'Saved 1 track hashes') 'Single-track result should retain array Count behavior'
     $selectedSource = Get-Content -LiteralPath (Join-Path $discDir 'selected_source.txt') -Raw
-    Assert-True ($selectedSource.EndsWith('single.iso')) `
-        'CD extraction should prefer a directly readable ISO when a cue is also present'
+    Assert-True ($selectedSource.EndsWith('single.iso')) 'CD extraction should use the sole descriptor'
 
     $missingSourceDir = Join-Path $gameDataDir 'CD images\missing-source'
     New-Item -ItemType Directory -Path $missingSourceDir -Force | Out-Null
     $failureOutput = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -SkipBuild -Force 2>&1)
     Assert-True ($LASTEXITCODE -eq 1) 'A missing disc source should make the batch fail'
     $failureText = $failureOutput -join "`n"
-    Assert-True ($failureText -match 'No \.cue or \.iso file found') 'Failure report should retain the original diagnostic'
+    Assert-True ($failureText -match 'Expected exactly one CUE or ISO descriptor') `
+        'Failure report should explain the unambiguous descriptor requirement'
     Assert-True ($failureText -notmatch "property 'Details'") 'Failure report should not require optional Details'
 } finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue

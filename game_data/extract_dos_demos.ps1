@@ -100,9 +100,15 @@ foreach ($inst in $Installers) {
     }
     Assert-DxxFileSha256 -Path $zipPath -ExpectedSha256 $inst.Sha256 `
         -Label "$zipName demo package" | Out-Null
+    $provenance = New-ExtractionProvenance -Policy 'extract-dos-demos-v1' -Sources @(
+        (Get-ExtractionPathIdentity -Path $zipPath -Name $zipName)
+    ) -Tools @(
+        (Get-ExtractionPathIdentity -Path $DosboxExe -Name 'dosbox-x'),
+        (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_dos_demos.ps1')
+    )
 
     # Skip if already extracted (unless -Force)
-    if ((Test-ExtractionCompletionManifest -Directory $outputDir) -and -not $Force) {
+    if ((Test-ExtractionCompletionManifest -Directory $outputDir -ExpectedProvenance $provenance) -and -not $Force) {
         Write-Host "$baseName already extracted. Use -Force to redo"
         continue
     }
@@ -257,16 +263,7 @@ foreach ($inst in $Installers) {
             $sizeKB = [math]::Round($f.Length / 1024)
             Write-Host ("    {0} [{1} KB]" -f $f.Name, $sizeKB)
         }
-        [PSCustomObject]@{
-            source = $zipName
-            files = @(Get-ChildItem -LiteralPath $stagingDir -File | Sort-Object Name | ForEach-Object {
-                    [PSCustomObject]@{
-                        name = $_.Name
-                        size = $_.Length
-                        sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-                    }
-                })
-        } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $stagingDir ".extraction-complete.json") -NoNewline
+        Write-ExtractionCompletionManifest -Directory $stagingDir -Provenance $provenance
         Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $outputDir
         Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
     }

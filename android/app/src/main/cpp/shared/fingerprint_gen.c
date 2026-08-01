@@ -9,6 +9,8 @@
 #include "fingerprint_gen.h"
 #include "pcm_decoders.h"
 
+#include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <chromaprint.h>
@@ -23,15 +25,55 @@
 #define LOGE(...) ((void) 0)
 #endif
 
-/* Chromaprint wants at most ~120s of audio; clamp to avoid excess work.
- * This limit is in total int16 values (frames * channels). */
-#define MAX_FINGERPRINT_SAMPLES (120 * 44100 * 2) /* 120s, stereo, 44100 Hz */
-
-int fingerprint_from_pcm(const int16_t *samples, int total_samples,
-                         int sample_rate, int channels,
-                         fingerprint_result_t *out)
+int fingerprint_pcm_window(size_t total_frames, int sample_rate, int channels,
+                           int *feed_samples, int *duration_ms)
 {
-	if (!samples || total_samples <= 0 || !out) return -1;
+	size_t max_frames;
+	size_t feed_frames;
+	size_t duration_seconds;
+	size_t duration_remainder;
+	size_t duration;
+
+	if (total_frames == 0 || sample_rate <= 0 || channels <= 0 ||
+	    !feed_samples || !duration_ms)
+		return -1;
+	if ((size_t) sample_rate > SIZE_MAX / FINGERPRINT_MAX_SECONDS)
+		return -1;
+	max_frames = (size_t) sample_rate * FINGERPRINT_MAX_SECONDS;
+	feed_frames = total_frames < max_frames ? total_frames : max_frames;
+	if (feed_frames > (size_t) INT_MAX / (size_t) channels)
+		return -1;
+
+	/* Split the duration calculation so total_frames * 1000 cannot overflow. */
+	duration_seconds = total_frames / (size_t) sample_rate;
+	duration_remainder = total_frames % (size_t) sample_rate;
+	if (duration_seconds > (size_t) INT_MAX / 1000)
+		return -1;
+	duration = duration_seconds * 1000 +
+	           duration_remainder * 1000 / (size_t) sample_rate;
+	if (duration > INT_MAX)
+		return -1;
+
+	*feed_samples = (int) (feed_frames * (size_t) channels);
+	*duration_ms = (int) duration;
+	return 0;
+}
+
+int fingerprint_from_pcm_prefix(const int16_t *samples, size_t available_frames,
+                                size_t total_frames, int sample_rate, int channels,
+                                fingerprint_result_t *out)
+{
+	int feed_count;
+	int duration_ms;
+	size_t feed_frames;
+
+	if (!samples || !out ||
+	    fingerprint_pcm_window(total_frames, sample_rate, channels,
+	                           &feed_count, &duration_ms) != 0)
+		return -1;
+	feed_frames = (size_t) feed_count / (size_t) channels;
+	if (available_frames < feed_frames)
+		return -1;
 
 	memset(out, 0, sizeof(*out));
 
@@ -46,12 +88,6 @@ int fingerprint_from_pcm(const int16_t *samples, int total_samples,
 		chromaprint_free(ctx);
 		return -1;
 	}
-
-	/* chromaprint_feed() size parameter is total int16 count (frames * channels),
-	 * matching the official fpcalc: first_part_size * reader.GetChannels() */
-	int feed_count = total_samples * channels;
-	if (feed_count > MAX_FINGERPRINT_SAMPLES)
-		feed_count = MAX_FINGERPRINT_SAMPLES;
 
 	if (!chromaprint_feed(ctx, samples, feed_count)) {
 		LOGE("chromaprint_feed failed");
@@ -92,14 +128,18 @@ int fingerprint_from_pcm(const int16_t *samples, int total_samples,
 		chromaprint_dealloc(encoded);
 	}
 
-	/* Duration: total_samples is per-channel frame count, so no division
-	 * by channels needed. This is the full track duration, even if we
-	 * only fingerprinted the first 120s. */
-	out->duration_ms = (int) ((long long) total_samples * 1000LL /
-	                          (long long) sample_rate);
+	out->duration_ms = duration_ms;
 
 	chromaprint_free(ctx);
 	return 0;
+}
+
+int fingerprint_from_pcm(const int16_t *samples, size_t total_frames,
+                         int sample_rate, int channels,
+                         fingerprint_result_t *out)
+{
+	return fingerprint_from_pcm_prefix(samples, total_frames, total_frames,
+	                                   sample_rate, channels, out);
 }
 
 int fingerprint_from_audio_file(const char *path, fingerprint_result_t *out)
@@ -107,32 +147,40 @@ int fingerprint_from_audio_file(const char *path, fingerprint_result_t *out)
 	if (!path || !out) return -1;
 
 	pcm_decode_result_t pcm = { 0 };
-	if (pcm_decode_file(path, &pcm) != 0) {
+	if (pcm_decode_file_prefix(path, FINGERPRINT_MAX_SECONDS, &pcm) != 0) {
 		LOGE("Failed to decode audio: %s", path);
 		return -1;
 	}
 
-	int rc = fingerprint_from_pcm(pcm.pcm_data, pcm.total_samples,
-	                              pcm.sample_rate, pcm.channels, out);
+	int rc = fingerprint_from_pcm_prefix(pcm.pcm_data, pcm.pcm_samples,
+	                                     pcm.total_samples, pcm.sample_rate,
+	                                     pcm.channels, out);
 	pcm_decode_free(&pcm);
 	return rc;
 }
 
-int fingerprint_from_cd_sectors(const uint8_t *sector_data, int audio_sector_count,
+int fingerprint_from_cd_sectors(const uint8_t *sector_data, int prefix_sector_count,
+                                int audio_sector_count,
                                 fingerprint_result_t *out)
 {
-	if (!sector_data || audio_sector_count <= 0 || !out) return -1;
+	size_t available_frames;
+	size_t total_frames;
+	int required_sectors;
 
-	pcm_decode_result_t pcm = { 0 };
-	if (pcm_decode_cd_sectors_buf(sector_data, audio_sector_count, &pcm) != 0) {
-		LOGE("Failed to decode CD sectors");
+	if (!sector_data || prefix_sector_count <= 0 || audio_sector_count <= 0 || !out)
 		return -1;
-	}
-
-	int rc = fingerprint_from_pcm(pcm.pcm_data, pcm.total_samples,
-	                              pcm.sample_rate, pcm.channels, out);
-	pcm_decode_free(&pcm);
-	return rc;
+	required_sectors = audio_sector_count < FINGERPRINT_MAX_CD_SECTORS
+	                       ? audio_sector_count
+	                       : FINGERPRINT_MAX_CD_SECTORS;
+	if (prefix_sector_count < required_sectors ||
+	    (size_t) prefix_sector_count > SIZE_MAX / 588 ||
+	    (size_t) audio_sector_count > SIZE_MAX / 588)
+		return -1;
+	available_frames = (size_t) prefix_sector_count * 588;
+	total_frames = (size_t) audio_sector_count * 588;
+	return fingerprint_from_pcm_prefix((const int16_t *) sector_data,
+	                                   available_frames, total_frames,
+	                                   44100, 2, out);
 }
 
 void fingerprint_free(fingerprint_result_t *fp)

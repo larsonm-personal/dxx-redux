@@ -30,36 +30,42 @@ $GameExtensions = @("*.hog", "*.pig", "*.ham", "*.s11", "*.s22", "*.dem", "*.mvl
 $Installers = @(
     @{
         Archive = "Descent Shareware.sit"
+        Sha256 = "f45c338df4bc4ceda38e6541f14b8dc93b543fd07d90a2c5d5118d2001c12ad2"
         NestedInstaller = $null
         ExpectFiles = @("descent.hog", "descent.pig")
         Oracle = $true
     },
     @{
         Archive = "Descent_demo.HQX"
+        Sha256 = "e485a1570cb6079d3ec55a52ed9150792f5ef450b653e5db9748a305fed2dfe4"
         NestedInstaller = $null
         ExpectFiles = @("descent.hog", "descent.pig")
         Oracle = $false
     },
     @{
         Archive = "descent_demo.sit_.hqx"
+        Sha256 = "87375e89e71f5d43e342ec5666f71347fe2797f2a80838c00dac71f1ae181ebe"
         NestedInstaller = $null
         ExpectFiles = @("descent.hog", "descent.pig")
         Oracle = $false
     },
     @{
         Archive = "Descent II Preview.sit"
+        Sha256 = "4b5b7739b9da59472bcdca92f23957f90247bedd84ef8bded57d37d5d229f6d6"
         NestedInstaller = "Install Descent II Preview"
         ExpectFiles = @("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham")
         Oracle = $true
     },
     @{
         Archive = "descent2preview.sit"
+        Sha256 = "5b9c359e47e4e458f655ef5a28e6110ea1deee60d79a08f7ebdb2144ec9263fd"
         NestedInstaller = $null
         ExpectFiles = @("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham")
         Oracle = $true
     },
     @{
         Archive = "descent2preview.sit_.hqx"
+        Sha256 = "b7c55f60f11a1d0d72658f8a30fecdebef9251e0e86eeff747888fc4f56fcd19"
         NestedInstaller = $null
         ExpectFiles = @("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham")
         Oracle = $false
@@ -98,8 +104,17 @@ foreach ($inst in $Installers) {
         if ($WriteOracle -and $inst.Oracle) { $OracleFailures += $archiveName }
         continue
     }
+    Assert-DxxFileSha256 -Path $archivePath -ExpectedSha256 $inst.Sha256 `
+        -Label "$archiveName demo package" | Out-Null
+    $provenance = New-ExtractionProvenance -Policy 'extract-mac-demos-v1' -Sources @(
+        (Get-ExtractionPathIdentity -Path $archivePath -Name $archiveName)
+    ) -Tools @(
+        (Get-ExtractionPathIdentity -Path $UnarExe -Name 'unar'),
+        (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_mac_demos.ps1')
+    )
 
-    if ((Test-ExtractionCompletionManifest -Directory $outputDir) -and -not $Force -and -not $WriteOracle) {
+    if ((Test-ExtractionCompletionManifest -Directory $outputDir -ExpectedProvenance $provenance) -and
+        -not $Force -and -not $WriteOracle) {
         Write-Host "$baseName already extracted. Use -Force to redo"
         continue
     }
@@ -168,21 +183,14 @@ foreach ($inst in $Installers) {
         if ($WriteOracle -and $inst.Oracle) {
             $OracleArchives += [PSCustomObject]@{
                 archive       = $archiveName
-                oracle_tool   = "unar"
+                archive_sha256 = $provenance.sources[0].sha256
+                oracle_tool   = $provenance.tools[0]
+                policy        = $provenance.policy
                 oracle_source = "game_data/extract_mac_demos.ps1 -WriteOracle"
                 files         = @($oracleFiles)
             }
         }
-        [PSCustomObject]@{
-            source = $archiveName
-            files = @(Get-ChildItem -LiteralPath $stagingDir -File | Sort-Object Name | ForEach-Object {
-                    [PSCustomObject]@{
-                        name = $_.Name
-                        size = $_.Length
-                        sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-                    }
-                })
-        } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $stagingDir ".extraction-complete.json") -NoNewline
+        Write-ExtractionCompletionManifest -Directory $stagingDir -Provenance $provenance
         Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $outputDir
         Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
     }
