@@ -53,6 +53,10 @@ Remediation calls are separate. They may fix one coherent finding or a tightly c
 
 Only one call may edit either ledger at a time. Sequential calls avoid duplicate IDs and Markdown merge conflicts. A call claims a queue item by changing it to `ACTIVE` before doing substantive work. A remediation call may edit both ledgers as one transaction when it archives a finding
 
+### Select the review model
+
+A blinded eight-scope trial retained `sol-5.6-medium` as the default queue model: Sol recalled all 7 known roots and completed 8 of 8 scopes in about 4.5 minutes median, while Luna max recalled 6 of 7, completed 6 of 8 before a 15-16 minute cap, and took about 13 minutes median when it finished. Use Luna max only as a selective second opinion for one concrete high-risk question, normally 250-400 assigned lines in one subsystem, with a 10-minute consolidation checkpoint and 15-minute hard cap; do not enlarge canonical chunks merely because a stronger model is available
+
 ## Generate the first ledger
 
 From the repository root:
