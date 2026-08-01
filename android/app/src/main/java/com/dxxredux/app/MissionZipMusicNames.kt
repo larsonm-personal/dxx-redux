@@ -10,6 +10,7 @@ internal const val MISSION_ZIP_MUSIC_NAMES_FILE = "mission_music_names.json"
 internal object MissionZipMusicNames {
     private const val CACHE_DIR = ".mission_zip_music_names"
     private const val PLACEHOLDER_NAME = "[unknown] - [untitled]"
+    private const val SOURCE_IDENTITY_KEY = "__dxx_mission_music_source_identity_v1"
 
     fun cacheFile(
         filesDir: File,
@@ -28,12 +29,12 @@ internal object MissionZipMusicNames {
         outputFile: File,
         catalog: MissionZipMusicCatalog,
     ): Boolean =
-        runCatching {
-            outputFile.isFile &&
-                identityFile(outputFile).let {
-                    it.isFile && it.readText(Charsets.US_ASCII) == catalog.sourceIdentity
-                }
-        }.getOrDefault(false)
+        AtomicFilePublication.transaction {
+            runCatching {
+                outputFile.isFile &&
+                    JSONObject(outputFile.readText()).optString(SOURCE_IDENTITY_KEY) == catalog.sourceIdentity
+            }.getOrDefault(false)
+        }
 
     fun identifyLocalAndWrite(
         context: Context,
@@ -68,22 +69,22 @@ internal object MissionZipMusicNames {
         outputFile: File,
         catalog: MissionZipMusicCatalog,
         entries: Map<String, MissionZipAudioFingerprintCache.Entry>,
-    ): Int {
-        val names = nameMap(catalog, entries)
-        if (names.isEmpty()) {
-            outputFile.delete()
+        beforePublish: (File, File) -> Unit = { _, _ -> },
+    ): Int =
+        AtomicFilePublication.transaction {
+            val names = nameMap(catalog, entries)
+            if (names.isEmpty()) {
+                outputFile.delete()
+                identityFile(outputFile).delete()
+                return@transaction 0
+            }
+            val root = JSONObject()
+            root.put(SOURCE_IDENTITY_KEY, catalog.sourceIdentity)
+            names.toSortedMap(String.CASE_INSENSITIVE_ORDER).forEach { (key, value) -> root.put(key, value) }
+            AtomicFilePublication.writeUtf8(outputFile, root.toString(2), beforePublish)
             identityFile(outputFile).delete()
-            return 0
+            names.size
         }
-        outputFile.parentFile?.mkdirs()
-        val identityFile = identityFile(outputFile)
-        identityFile.delete()
-        val root = JSONObject()
-        names.toSortedMap(String.CASE_INSENSITIVE_ORDER).forEach { (key, value) -> root.put(key, value) }
-        outputFile.writeText(root.toString(2), Charsets.UTF_8)
-        identityFile.writeText(catalog.sourceIdentity, Charsets.US_ASCII)
-        return names.size
-    }
 
     private fun nameMap(
         catalog: MissionZipMusicCatalog,

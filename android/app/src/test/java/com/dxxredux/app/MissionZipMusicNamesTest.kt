@@ -6,6 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.io.IOException
 
 class MissionZipMusicNamesTest {
     @Test
@@ -63,24 +64,25 @@ class MissionZipMusicNamesTest {
         val catalog =
             MissionZipMusicCatalog(
                 archivePath = "mission.zip",
-                sources = listOf(
-                    MissionZipMusicSource(
-                        "archive",
-                        "Archive music",
-                        "",
-                        listOf(
-                            MissionZipMusicTrack(
-                                id = "track-a",
-                                displayName = "game01.ogg",
-                                archiveEntryPath = "game01.ogg",
-                                kind = MissionZipMusic.KIND_COMPRESSED_AUDIO,
-                                extension = "ogg",
-                                sizeBytes = 12,
-                                playable = true,
+                sources =
+                    listOf(
+                        MissionZipMusicSource(
+                            "archive",
+                            "Archive music",
+                            "",
+                            listOf(
+                                MissionZipMusicTrack(
+                                    id = "track-a",
+                                    displayName = "game01.ogg",
+                                    archiveEntryPath = "game01.ogg",
+                                    kind = MissionZipMusic.KIND_COMPRESSED_AUDIO,
+                                    extension = "ogg",
+                                    sizeBytes = 12,
+                                    playable = true,
+                                ),
                             ),
                         ),
                     ),
-                ),
                 sourceIdentity = "source-a",
             )
 
@@ -88,6 +90,49 @@ class MissionZipMusicNamesTest {
 
         assertEquals(0, count)
         assertFalse(output.exists())
+    }
+
+    @Test
+    fun publicationFailurePreservesThePreviousCompleteSidecar() {
+        val output = testFile("failure/mission_music_names.json")
+        val track =
+            MissionZipMusicTrack(
+                id = "track-a",
+                displayName = "game01.ogg",
+                archiveEntryPath = "game01.ogg",
+                kind = MissionZipMusic.KIND_COMPRESSED_AUDIO,
+                extension = "ogg",
+                sizeBytes = 12,
+                playable = true,
+            )
+        val catalog =
+            MissionZipMusicCatalog(
+                "mission.zip",
+                listOf(MissionZipMusicSource("archive", "Archive music", "", listOf(track))),
+                "source-a",
+            )
+        MissionZipMusicNames.writeSidecar(output, catalog, mapOf(track.id to entry(track, "First Name")))
+        val original = output.readText()
+
+        val failure =
+            runCatching {
+                MissionZipMusicNames.writeSidecar(
+                    output,
+                    catalog,
+                    mapOf(track.id to entry(track, "Replacement Name")),
+                ) { _, _ -> throw IOException("injected publication failure") }
+            }.exceptionOrNull()
+
+        assertTrue(failure is IOException)
+        assertEquals(original, output.readText())
+        assertTrue(MissionZipMusicNames.isCurrent(output, catalog))
+        assertEquals("First Name", JSONObject(output.readText()).getString("game01.ogg"))
+        assertTrue(
+            output.parentFile!!
+                .listFiles()
+                .orEmpty()
+                .none { it.name.endsWith(".tmp") },
+        )
     }
 
     private fun entry(

@@ -7,90 +7,100 @@ import java.io.InputStream
 import java.security.MessageDigest
 import java.util.Locale
 
-class MissionZipMusicStageManager(
+class MissionZipMusicStageManager private constructor(
     cacheDir: File,
+    private val beforePublish: (File, File) -> Unit,
 ) {
+    constructor(cacheDir: File) : this(cacheDir, { _, _ -> })
+
+    internal constructor(
+        cacheDir: File,
+        beforePublish: (File, File) -> Unit,
+        testOnly: Unit = Unit,
+    ) : this(cacheDir, beforePublish)
+
     private val root = File(cacheDir, "mission_zip_music")
 
     fun stageCompressedAudioTrack(
         catalog: MissionZipMusicCatalog,
         track: MissionZipMusicTrack,
-    ): File? {
-        if (!track.playable || track.kind != MissionZipMusic.KIND_COMPRESSED_AUDIO) return null
-        if (track.sizeBytes > ExtractionLimits.MAX_ENTRY_BYTES) return null
-        val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
-        if (!archive.isFile && !archive.isDirectory) return null
-        val cacheIdentity = stagedIdentity(catalog, track)
-        val output = stagedFile(cacheIdentity, track)
-        val identityFile = identityFile(output)
-        if (output.isFile &&
-            runCatching {
-                identityFile.isFile && identityFile.readText(Charsets.US_ASCII) == cacheIdentity
-            }.getOrDefault(false) &&
-            (
-                (track.sizeBytes > 0L && output.length() == track.sizeBytes) ||
-                    (track.sizeBytes <= 0L && output.length() > 0L)
+    ): File? =
+        AtomicFilePublication.transaction {
+            if (!track.playable || track.kind != MissionZipMusic.KIND_COMPRESSED_AUDIO) return@transaction null
+            if (track.sizeBytes > ExtractionLimits.MAX_ENTRY_BYTES) return@transaction null
+            val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
+            if (!archive.isFile && !archive.isDirectory) return@transaction null
+            val cacheIdentity = stagedIdentity(catalog, track)
+            val output = stagedFile(cacheIdentity, track)
+            if (isCompleteGeneration(output, cacheIdentity, track.sizeBytes)) return@transaction output
+            val targetDirectory = checkNotNull(output.parentFile)
+            root.mkdirs()
+            ImportStorageGuard.requireFreeSpace(
+                root,
+                track.sizeBytes.takeIf { it > 0L } ?: archive.length(),
+                "stage ${track.displayName}",
             )
-        ) {
-            return output
-        }
-        output.parentFile?.mkdirs()
-        ImportStorageGuard.requireFreeSpace(
-            output.parentFile ?: output,
-            track.sizeBytes.takeIf { it > 0L } ?: archive.length(),
-            "stage ${track.displayName}",
-        )
-        val temp = File(output.parentFile, "${output.name}.tmp")
-        temp.delete()
-        val ok =
-            runCatching {
-                if (track.sourceFilePath != null && archive.isFile) {
-                    extractFromSourceFile(archive, track, temp)
-                } else if (archive.isDirectory) {
-                    extractFromDirectory(archive, track, temp)
-                } else {
-                    ArchiveFiles.open(archive).use { archiveFile ->
-                        when {
-                            track.hogEntryName != null && track.nestedEntryPath != null -> {
-                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                    extractFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName, temp)
-                                } ?: false
-                            }
+            val temporaryDirectory = AtomicFilePublication.uniqueSibling(targetDirectory, "tmp")
+            check(temporaryDirectory.mkdir()) { "Could not create temporary music cache generation" }
+            val temporaryOutput = File(temporaryDirectory, output.name)
+            try {
+                val ok =
+                    runCatching {
+                        if (track.sourceFilePath != null && archive.isFile) {
+                            extractFromSourceFile(archive, track, temporaryOutput)
+                        } else if (archive.isDirectory) {
+                            extractFromDirectory(archive, track, temporaryOutput)
+                        } else {
+                            ArchiveFiles.open(archive).use { archiveFile ->
+                                when {
+                                    track.hogEntryName != null && track.nestedEntryPath != null -> {
+                                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                                            extractFromDxaHog(
+                                                dxa,
+                                                track.nestedEntryPath,
+                                                track.hogEntryName,
+                                                temporaryOutput,
+                                            )
+                                        } ?: false
+                                    }
 
-                            track.hogEntryName != null -> {
-                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
-                                    extractFromHog(hog, track.hogEntryName, temp)
-                                } ?: false
-                            }
+                                    track.hogEntryName != null -> {
+                                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
+                                            extractFromHog(hog, track.hogEntryName, temporaryOutput)
+                                        } ?: false
+                                    }
 
-                            track.nestedEntryPath != null -> {
-                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                    extractFromDxa(dxa, track.nestedEntryPath, temp)
-                                } ?: false
-                            }
+                                    track.nestedEntryPath != null -> {
+                                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                                            extractFromDxa(dxa, track.nestedEntryPath, temporaryOutput)
+                                        } ?: false
+                                    }
 
-                            else -> {
-                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
-                                    copyTrack(input, temp, track.sizeBytes, track.archiveEntryPath)
+                                    else -> {
+                                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
+                                            copyTrack(input, temporaryOutput, track.sizeBytes, track.archiveEntryPath)
+                                            true
+                                        } ?: false
+                                    }
                                 }
-                                true
                             }
                         }
-                    }
+                    }.getOrDefault(false)
+                if (!ok || !validSize(temporaryOutput, track.sizeBytes)) return@transaction null
+                FileOutputStream(temporaryOutput, true).use { it.fd.sync() }
+                val marker = identityFile(temporaryOutput)
+                FileOutputStream(marker).use { stream ->
+                    stream.write("$cacheIdentity\n${temporaryOutput.length()}".toByteArray(Charsets.US_ASCII))
+                    stream.fd.sync()
                 }
-            }.getOrDefault(false)
-        if (!ok || !temp.isFile) {
-            temp.delete()
-            return null
+                AtomicFilePublication.publishDirectory(temporaryDirectory, targetDirectory, beforePublish)
+                stagedFile(cacheIdentity, track).takeIf {
+                    isCompleteGeneration(it, cacheIdentity, track.sizeBytes)
+                }
+            } finally {
+                temporaryDirectory.deleteRecursively()
+            }
         }
-        output.delete()
-        if (!temp.renameTo(output)) {
-            temp.copyTo(output, overwrite = true)
-            temp.delete()
-        }
-        identityFile.writeText(cacheIdentity, Charsets.US_ASCII)
-        return output.takeIf { it.isFile }
-    }
 
     fun readMidiTrackBytes(
         catalog: MissionZipMusicCatalog,
@@ -168,6 +178,24 @@ class MissionZipMusicStageManager(
         )
 
     private fun identityFile(output: File): File = File(output.parentFile, "${output.name}.identity")
+
+    private fun isCompleteGeneration(
+        output: File,
+        identity: String,
+        declaredSize: Long,
+    ): Boolean =
+        runCatching {
+            if (!validSize(output, declaredSize)) return@runCatching false
+            val marker = identityFile(output).readLines(Charsets.US_ASCII)
+            marker.size == 2 && marker[0] == identity && marker[1].toLongOrNull() == output.length()
+        }.getOrDefault(false)
+
+    private fun validSize(
+        output: File,
+        declaredSize: Long,
+    ): Boolean =
+        output.isFile &&
+            if (declaredSize > 0L) output.length() == declaredSize else output.length() > 0L
 
     private fun sourceFile(
         rootDir: File,

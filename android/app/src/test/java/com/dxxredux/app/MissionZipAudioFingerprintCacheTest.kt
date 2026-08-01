@@ -7,6 +7,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 class MissionZipAudioFingerprintCacheTest {
     @Test
@@ -231,6 +233,125 @@ class MissionZipAudioFingerprintCacheTest {
         assertEquals("Web Track", reloaded.acoustIdName)
         assertEquals(MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK, reloaded.acoustIdLookupStatus)
         assertEquals(2, reloaded.localMatchTrack)
+    }
+
+    @Test
+    fun staleLocalUpdatePreservesNewerWebFields() {
+        val filesDir = testDir("stale-merge/files")
+        val archive = testArchive("stale-merge/mission.zip", byteArrayOf(1, 2, 3))
+        val track = testTrack("game01.ogg")
+        val staged = testArchive("stale-merge/staged/game01.ogg", byteArrayOf(9, 8, 7))
+        val cache = MissionZipAudioFingerprintCache(filesDir)
+        val original =
+            cache.record(
+                testCatalog(archive, track),
+                track,
+                staged,
+                FingerprintBridge.FingerprintResult("fp-a", 1234),
+                null,
+            )
+        cache.recordAcoustIdResult(original, "Web Track", MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK)
+
+        cache.recordLocalMatchResult(
+            original,
+            FingerprintBridge.MatchResult(0.9f, "Local Track", "disc-a", 1),
+            "db-a",
+        )
+        val reloaded = cache.cachedEntries(testCatalog(archive, track))[track.id]!!
+
+        assertEquals("Web Track", reloaded.acoustIdName)
+        assertEquals(MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK, reloaded.acoustIdLookupStatus)
+        assertEquals("Local Track", reloaded.localMatchName)
+    }
+
+    @Test
+    fun concurrentCacheInstancesDoNotLoseDistinctRecords() {
+        val filesDir = testDir("concurrent/files")
+        val archive = testArchive("concurrent/mission.zip", byteArrayOf(1, 2, 3))
+        val staged = testArchive("concurrent/staged/game.ogg", byteArrayOf(9, 8, 7))
+        val tracks = (1..20).map { testTrack("game%02d.ogg".format(it)) }
+        val pool = Executors.newFixedThreadPool(8)
+        try {
+            pool
+                .invokeAll(
+                    tracks.map { track ->
+                        Callable {
+                            MissionZipAudioFingerprintCache(filesDir).record(
+                                testCatalog(archive, track),
+                                track,
+                                staged,
+                                FingerprintBridge.FingerprintResult("fp-${track.id}", 1234),
+                                null,
+                            )
+                        }
+                    },
+                ).forEach { it.get() }
+        } finally {
+            pool.shutdownNow()
+        }
+
+        val entries = MissionZipAudioFingerprintCache(filesDir).cachedEntries(testCatalog(archive, tracks.first()))
+        assertEquals(tracks.map { it.id }.toSet(), entries.keys)
+    }
+
+    @Test
+    fun publicationFailurePreservesThePreviousFingerprintGeneration() {
+        val filesDir = testDir("publish-failure/files")
+        val archive = testArchive("publish-failure/mission.zip", byteArrayOf(1, 2, 3))
+        val firstTrack = testTrack("game01.ogg")
+        val secondTrack = testTrack("game02.ogg")
+        val staged = testArchive("publish-failure/staged/game.ogg", byteArrayOf(9, 8, 7))
+        val initial = MissionZipAudioFingerprintCache(filesDir)
+        initial.record(
+            testCatalog(archive, firstTrack),
+            firstTrack,
+            staged,
+            FingerprintBridge.FingerprintResult("fp-a", 1234),
+            null,
+        )
+        val original = File(filesDir, "mission_zip_audio_fingerprints.json").readText()
+        val failing =
+            MissionZipAudioFingerprintCache(
+                filesDir,
+                { temporary, _ -> check(temporary.delete()) },
+                Unit,
+            )
+
+        val failure =
+            runCatching {
+                failing.record(
+                    testCatalog(archive, secondTrack),
+                    secondTrack,
+                    staged,
+                    FingerprintBridge.FingerprintResult("fp-b", 1234),
+                    null,
+                )
+            }.exceptionOrNull()
+
+        assertTrue(failure is IllegalStateException)
+        assertEquals(original, File(filesDir, "mission_zip_audio_fingerprints.json").readText())
+        assertEquals(setOf(firstTrack.id), initial.cachedEntries(testCatalog(archive, firstTrack)).keys)
+    }
+
+    @Test
+    fun malformedFingerprintGenerationIsQuarantinedBeforeRewrite() {
+        val filesDir = testDir("corrupt/files")
+        val cacheFile = File(filesDir, "mission_zip_audio_fingerprints.json")
+        cacheFile.writeText("{not-json")
+        val archive = testArchive("corrupt/mission.zip", byteArrayOf(1, 2, 3))
+        val track = testTrack("game01.ogg")
+        val staged = testArchive("corrupt/staged/game01.ogg", byteArrayOf(9, 8, 7))
+
+        MissionZipAudioFingerprintCache(filesDir).record(
+            testCatalog(archive, track),
+            track,
+            staged,
+            FingerprintBridge.FingerprintResult("fp-a", 1234),
+            null,
+        )
+
+        assertTrue(filesDir.listFiles().orEmpty().any { it.name.endsWith(".corrupt") && it.readText() == "{not-json" })
+        assertNotNull(MissionZipAudioFingerprintCache(filesDir).cachedEntries(testCatalog(archive, track))[track.id])
     }
 
     private fun testCatalog(

@@ -4,12 +4,22 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.Locale
 
-class MissionZipAudioFingerprintCache(
+class MissionZipAudioFingerprintCache private constructor(
     private val filesDir: File,
+    private val beforePublish: (File, File) -> Unit,
 ) {
+    constructor(filesDir: File) : this(filesDir, { _, _ -> })
+
+    internal constructor(
+        filesDir: File,
+        beforePublish: (File, File) -> Unit,
+        testOnly: Unit = Unit,
+    ) : this(filesDir, beforePublish)
+
     data class Entry(
         val archiveName: String,
         val archiveSize: Long,
@@ -42,22 +52,26 @@ class MissionZipAudioFingerprintCache(
     private val cacheFile = File(filesDir, CACHE_FILE)
 
     fun cachedEntries(catalog: MissionZipMusicCatalog): Map<String, Entry> =
-        loadEntries()
-            .filter { it.sourceIdentity == catalog.sourceIdentity }
-            .groupBy { it.trackId }
-            .mapValues { (_, entries) -> entries.maxBy { it.lookupAt } }
+        AtomicFilePublication.transaction {
+            loadEntries()
+                .filter { it.sourceIdentity == catalog.sourceIdentity }
+                .groupBy { it.trackId }
+                .mapValues { (_, entries) -> entries.maxBy { it.lookupAt } }
+        }
 
     fun get(
         catalog: MissionZipMusicCatalog,
         track: MissionZipMusicTrack,
         contentSha256: String,
     ): Entry? =
-        loadEntries()
-            .filter {
-                it.sourceIdentity == catalog.sourceIdentity &&
-                    it.matchesTrack(track) &&
-                    it.contentSha256 == contentSha256
-            }.maxByOrNull { it.lookupAt }
+        AtomicFilePublication.transaction {
+            loadEntries()
+                .filter {
+                    it.sourceIdentity == catalog.sourceIdentity &&
+                        it.matchesTrack(track) &&
+                        it.contentSha256 == contentSha256
+                }.maxByOrNull { it.lookupAt }
+        }
 
     fun record(
         catalog: MissionZipMusicCatalog,
@@ -66,44 +80,45 @@ class MissionZipAudioFingerprintCache(
         fingerprint: FingerprintBridge.FingerprintResult,
         match: FingerprintBridge.MatchResult?,
         localMatchDbIdentity: String? = null,
-    ): Entry {
-        val archive = File(catalog.archivePath)
-        val contentSha256 = sha256(stagedAudio)
-        val entry =
-            Entry(
-                archiveName = archive.name,
-                archiveSize = archive.length(),
-                archiveMtime = archive.lastModified(),
-                sourceIdentity = catalog.sourceIdentity,
-                trackId = track.id,
-                entryPath = track.archiveEntryPath,
-                nestedPath = track.nestedEntryPath.orEmpty(),
-                hogEntryName = track.hogEntryName.orEmpty(),
-                contentSha256 = contentSha256,
-                durationMs = fingerprint.durationMs,
-                chromaprint = fingerprint.encoded,
-                localMatchName = match?.name,
-                localMatchConfidence = match?.confidence,
-                localMatchDiscId = match?.discId,
-                localMatchTrack = match?.trackNum,
-                localMatchDbIdentity = localMatchDbIdentity,
-                acoustIdName = null,
-                acoustIdScore = null,
-                acoustIdRecordingId = null,
-                acoustIdLookupStatus = null,
-                acoustIdLookupAt = null,
-                lookupAt = System.currentTimeMillis(),
-            )
-        val entries =
-            loadEntries()
-                .filterNot {
-                    it.sourceIdentity == catalog.sourceIdentity &&
-                        it.matchesTrack(track) &&
-                        it.contentSha256 == contentSha256
-                } + entry
-        saveEntries(entries)
-        return entry
-    }
+    ): Entry =
+        AtomicFilePublication.transaction {
+            val archive = File(catalog.archivePath)
+            val contentSha256 = sha256(stagedAudio)
+            val entry =
+                Entry(
+                    archiveName = archive.name,
+                    archiveSize = archive.length(),
+                    archiveMtime = archive.lastModified(),
+                    sourceIdentity = catalog.sourceIdentity,
+                    trackId = track.id,
+                    entryPath = track.archiveEntryPath,
+                    nestedPath = track.nestedEntryPath.orEmpty(),
+                    hogEntryName = track.hogEntryName.orEmpty(),
+                    contentSha256 = contentSha256,
+                    durationMs = fingerprint.durationMs,
+                    chromaprint = fingerprint.encoded,
+                    localMatchName = match?.name,
+                    localMatchConfidence = match?.confidence,
+                    localMatchDiscId = match?.discId,
+                    localMatchTrack = match?.trackNum,
+                    localMatchDbIdentity = localMatchDbIdentity,
+                    acoustIdName = null,
+                    acoustIdScore = null,
+                    acoustIdRecordingId = null,
+                    acoustIdLookupStatus = null,
+                    acoustIdLookupAt = null,
+                    lookupAt = System.currentTimeMillis(),
+                )
+            val entries =
+                loadEntries()
+                    .filterNot {
+                        it.sourceIdentity == catalog.sourceIdentity &&
+                            it.matchesTrack(track) &&
+                            it.contentSha256 == contentSha256
+                    } + entry
+            saveEntries(entries)
+            entry
+        }
 
     fun identifyLocal(
         context: Context,
@@ -129,20 +144,22 @@ class MissionZipAudioFingerprintCache(
         entry: Entry,
         match: FingerprintBridge.MatchResult?,
         localMatchDbIdentity: String,
-    ): Entry {
-        val updated =
-            entry.copy(
-                localMatchName = match?.name,
-                localMatchConfidence = match?.confidence,
-                localMatchDiscId = match?.discId,
-                localMatchTrack = match?.trackNum,
-                localMatchDbIdentity = localMatchDbIdentity,
-                lookupAt = System.currentTimeMillis(),
-            )
-        val entries = loadEntries().filterNot { it.sameCacheRecord(entry) } + updated
-        saveEntries(entries)
-        return updated
-    }
+    ): Entry =
+        AtomicFilePublication.transaction {
+            val entries = loadEntries()
+            val current = entries.filter { it.sameCacheRecord(entry) }.maxByOrNull { it.lookupAt } ?: entry
+            val updated =
+                current.copy(
+                    localMatchName = match?.name,
+                    localMatchConfidence = match?.confidence,
+                    localMatchDiscId = match?.discId,
+                    localMatchTrack = match?.trackNum,
+                    localMatchDbIdentity = localMatchDbIdentity,
+                    lookupAt = System.currentTimeMillis(),
+                )
+            saveEntries(entries.filterNot { it.sameCacheRecord(entry) } + updated)
+            updated
+        }
 
     fun recordAcoustIdResult(
         entry: Entry,
@@ -150,19 +167,21 @@ class MissionZipAudioFingerprintCache(
         status: String,
         score: Double? = null,
         recordingId: String? = null,
-    ): Entry {
-        val updated =
-            entry.copy(
-                acoustIdName = name,
-                acoustIdScore = score,
-                acoustIdRecordingId = recordingId,
-                acoustIdLookupStatus = status,
-                acoustIdLookupAt = System.currentTimeMillis(),
-            )
-        val entries = loadEntries().filterNot { it.sameCacheRecord(entry) } + updated
-        saveEntries(entries)
-        return updated
-    }
+    ): Entry =
+        AtomicFilePublication.transaction {
+            val entries = loadEntries()
+            val current = entries.filter { it.sameCacheRecord(entry) }.maxByOrNull { it.lookupAt } ?: entry
+            val updated =
+                current.copy(
+                    acoustIdName = name,
+                    acoustIdScore = score,
+                    acoustIdRecordingId = recordingId,
+                    acoustIdLookupStatus = status,
+                    acoustIdLookupAt = System.currentTimeMillis(),
+                )
+            saveEntries(entries.filterNot { it.sameCacheRecord(entry) } + updated)
+            updated
+        }
 
     internal fun recordAcoustIdResult(
         entry: Entry,
@@ -194,14 +213,19 @@ class MissionZipAudioFingerprintCache(
 
     private fun loadEntries(): List<Entry> {
         if (!cacheFile.isFile) return emptyList()
-        return runCatching {
+        return try {
             val root = JSONObject(cacheFile.readText())
-            if (root.optString("schema") != SCHEMA) return@runCatching emptyList()
+            if (root.optString("schema") != SCHEMA) return emptyList()
             val entries = root.optJSONArray("entries") ?: JSONArray()
-            (0 until entries.length()).mapNotNull { index ->
+            (0 until entries.length()).map { index ->
                 entries.optJSONObject(index)?.toEntry()
+                    ?: throw IOException("Invalid fingerprint cache entry $index")
             }
-        }.getOrDefault(emptyList())
+        } catch (failure: Exception) {
+            val quarantine = AtomicFilePublication.uniqueSibling(cacheFile, "corrupt")
+            if (!cacheFile.renameTo(quarantine)) throw failure
+            emptyList()
+        }
     }
 
     private fun saveEntries(entries: List<Entry>) {
@@ -218,7 +242,7 @@ class MissionZipAudioFingerprintCache(
                     .thenBy { it.contentSha256 },
             ).forEach { array.put(it.toJson()) }
         root.put("entries", array)
-        cacheFile.writeText(root.toString(2))
+        AtomicFilePublication.writeUtf8(cacheFile, root.toString(2), beforePublish)
     }
 
     private fun Entry.matchesTrack(track: MissionZipMusicTrack): Boolean =
