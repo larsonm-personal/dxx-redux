@@ -33,17 +33,6 @@ void android_texture_debug_add_joined_labels(const g3s_point *const *pointlist,
 void android_texture_debug_log_render_bind(int *render_log_count,
                                            grs_bitmap *bm);
 
-void android_texture_debug_log_upload_source(const char *bitmapname,
-                                             const char *path, const char *source_name, const unsigned char *data,
-                                             int width, int height, int row_stride, int bm_flags, int real_flags);
-void android_texture_debug_log_upload_expanded(const char *bitmapname,
-                                               const char *path, ogl_texture *tex, const unsigned char *data,
-                                               int bm_flags, int data_format);
-void android_texture_debug_log_mip_upload(const char *bitmapname,
-                                          const char *path, grs_bitmap *bm, int texfilt, int load_texfilt,
-                                          int source_levels, int uploaded_levels, int generated_mips,
-                                          int compressed_upload);
-
 #ifdef __cplusplus
 }
 #endif

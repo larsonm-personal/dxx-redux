@@ -93,8 +93,8 @@ typedef struct secret_area_entry {
 	int entry_side;
 	int lowest_segment;
 	int label_pos[3];
+	int segment_offset;
 	int segment_count;
-	int segments[SECRET_AREA_MAX_SEGMENTS];
 	int entrance_count;
 	secret_area_entrance entrances[SECRET_AREA_MAX_ENTRANCES];
 	int robot_count;
@@ -110,6 +110,7 @@ typedef struct secret_area_state {
 	int final_candidate_count;
 	int found_count;
 	int segment_to_secret[SECRET_AREA_MAX_SEGMENTS];
+	int segments[SECRET_AREA_MAX_SEGMENTS];
 	secret_area_entry secrets[SECRET_AREA_MAX_GENERATED];
 	unsigned char found[SECRET_AREA_MAX_GENERATED];
 } secret_area_state;

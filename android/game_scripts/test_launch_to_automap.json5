@@ -124,21 +124,28 @@
     // Signal the test runner to background and resume the app.
     // The runner detects this marker, presses HOME, waits, then resumes.
     // Meanwhile, the game thread pauses. After resume, wait_for picks up.
-    {"action": "log", "message": "SCRIPT_BACKGROUND: ready"},
+    {"action": "log", "message": "SCRIPT_BACKGROUND: cycle-1"},
 
-    // Wait for EGL surface recreation (happens after resume).
-    // The game thread is paused while backgrounded; this wait_for resumes
-    // when the game thread comes back and the EGL surface is recreated.
-    {"action": "wait_for", "field": "egl_recreate_count", "value": "2", "timeout_ms": 30000},
+    // Synchronize with the EGL rebind rather than a fixed delay. The runner
+    // can observe the marker before Android has delivered the pause callback.
+    {"action": "wait_for", "field": "egl_recreate_count", "value": "1", "timeout_ms": 30000},
 
-    // Allow a moment for rendering to stabilize after resume
-    {"action": "wait_ms", "ms": 1000},
-
-    // Verify the game is still running and rendering after resume
+    // Verify the game is running on a post-resume native-window generation
     {"action": "assert", "expect": {
         "in_game": "true",
         "screen_mode": "game",
-        "egl_recreate_count": {"gte": 2}
+        "egl_window_generation": {"gte": 4}
+    }},
+
+    // Repeat the lifecycle handoff with a distinct runner marker. This catches
+    // stale surface generations and native-window references retained only by
+    // the UI callback
+    {"action": "log", "message": "SCRIPT_BACKGROUND: cycle-2"},
+    {"action": "wait_for", "field": "egl_recreate_count", "value": "2", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "egl_window_generation": {"gte": 6}
     }},
 
     {"action": "log", "message": "=== TEST: Launch + Background/Resume -- COMPLETE ==="},

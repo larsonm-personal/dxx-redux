@@ -1294,7 +1294,9 @@ $deps = @(
 
     @{ Name = "play-services-games-v2"; ConfKey = "PLAY_SERVICES_GAMES_VERSION";
         Current = $conf["PLAY_SERVICES_GAMES_VERSION"];
-        Latest = Get-LatestMavenVersion "com.google.android.gms" "play-services-games-v2"
+        Latest = Get-LatestMavenVersion "com.google.android.gms" "play-services-games-v2";
+        SuppressTargetUpdate = $true;
+        ManualTargetUpdateHint = "22.0.0 requires minSdk 24; retain 21.x while MIN_SDK is 23"
     },
 
     @{ Name = "commons-compress"; ConfKey = "COMMONS_COMPRESS_VERSION";

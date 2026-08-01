@@ -4,6 +4,7 @@
 #include "route_edge.h"
 
 #include <array>
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -115,6 +116,17 @@ struct route_visibility_query {
 	level_metadata_progress_callback progress = nullptr;
 	void *sample_cache = nullptr;
 	unsigned int sample_cache_namespace = 0;
+	struct route_analysis_budget *analysis_budget = nullptr;
+};
+
+struct route_analysis_budget {
+	unsigned long long work_limit = 0;
+	unsigned long long work_used = 0;
+	std::size_t cache_entry_limit = 0;
+	void *cancel_user = nullptr;
+	int (*cancelled)(void *user) = nullptr;
+	bool exhausted = false;
+	bool was_cancelled = false;
 };
 
 struct route_trigger_path_selection {

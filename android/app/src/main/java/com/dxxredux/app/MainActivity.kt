@@ -273,7 +273,12 @@ class MainActivity :
     external fun nativeSetGraphicsOption(
         name: String,
         value: Int,
-    )
+    ): Int
+
+    external fun nativeApplyLauncherGraphicsOption(
+        name: String,
+        value: Int,
+    ): Boolean
 
     external fun nativeSetRoundedCornerTextInsets(
         surfaceWidth: Int,
@@ -1871,32 +1876,22 @@ class MainActivity :
     private fun applyGraphicsSettingsPrefs(prefs: android.content.SharedPreferences) {
         val generation = prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L)
         if (generation == lastAppliedGraphicsSettingsGeneration) return
-        lastAppliedGraphicsSettingsGeneration = generation
         if (!gameStarted) return
 
-        fun cfgInt(key: String): Int? = readConfigValueForGame(filesDir, gameVariantId, key)?.toIntOrNull()
         try {
-            cfgInt("GammaLevel")?.let { nativeSetGraphicsOption("gamma_level", it) }
-            cfgInt("TexFilt")?.let { nativeSetGraphicsOption("tex_filt", it) }
-            cfgInt("MenuTexFilt")?.let { nativeSetGraphicsOption("menu_tex_filt", it) }
-            cfgInt("HudTexFilt")?.let { nativeSetGraphicsOption("hud_tex_filt", it) }
-            cfgInt("MainViewFov")?.let { nativeSetGraphicsOption("main_view_fov", it) }
-            cfgInt("CornerTextInset")?.let { nativeSetGraphicsOption("corner_text_inset", it) }
-            cfgInt("AnisoLevel")?.let { nativeSetGraphicsOption("aniso_level", it) }
-            cfgInt("MsaaLevel")?.let { nativeSetGraphicsOption("msaa_level", it) }
-            cfgInt("ClassicDepth")?.let { nativeSetGraphicsOption("classic_depth", it) }
-            if (gameVariantId == "d2") cfgInt("MovieTexFilt")?.let { nativeSetGraphicsOption("movie_tex_filt", it) }
+            val options = readGraphicsConfigSnapshot(filesDir, gameVariantId).toMutableList()
             if (prefs.contains(PREF_GRAPHICS_ALPHA_EFFECTS)) {
-                nativeSetGraphicsOption(
-                    "alpha_effects",
-                    if (prefs.getBoolean(PREF_GRAPHICS_ALPHA_EFFECTS, false)) 1 else 0,
+                options.add(
+                    "alpha_effects" to if (prefs.getBoolean(PREF_GRAPHICS_ALPHA_EFFECTS, false)) 1 else 0,
                 )
             }
             if (prefs.contains(PREF_GRAPHICS_DYNLIGHT_COLOR)) {
-                nativeSetGraphicsOption(
-                    "dynlight_color",
-                    if (prefs.getBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, false)) 1 else 0,
+                options.add(
+                    "dynlight_color" to if (prefs.getBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, false)) 1 else 0,
                 )
+            }
+            if (applyGraphicsOptionSnapshot(options, ::nativeApplyLauncherGraphicsOption)) {
+                lastAppliedGraphicsSettingsGeneration = generation
             }
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up

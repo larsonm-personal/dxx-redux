@@ -286,6 +286,11 @@ struct test_progress {
 	int total = 0;
 };
 
+int cancel_analysis(void *user)
+{
+	return *static_cast<bool *>(user);
+}
+
 void progress_report(
     void *user, const char *stage, int completed, int total)
 {
@@ -971,6 +976,34 @@ int main()
 	        reachable_visible_sources,
 	        { &rejected_visible, nullptr, wall_shootable });
 	assert(!rejected_visible_firing.found);
+	dxx_route::route_analysis_budget limited_budget;
+	limited_budget.work_limit = 1;
+	dxx_route::route_visibility_query limited_visibility;
+	limited_visibility.user = &rejected_visible;
+	limited_visibility.wall_shootable = wall_shootable;
+	limited_visibility.analysis_budget = &limited_budget;
+	rejected_visible.calls = 0;
+	const auto limited_firing = dxx_route::select_trigger_firing_path(
+	    reachable_visible_snapshot, planner_query, source_progress,
+	    reachable_visible_sources, limited_visibility);
+	assert(!limited_firing.found);
+	assert(limited_budget.exhausted);
+	assert(limited_budget.work_used == 1);
+	assert(rejected_visible.calls == 1);
+	bool cancel_requested = true;
+	dxx_route::route_analysis_budget cancelled_budget;
+	cancelled_budget.work_limit = 100;
+	cancelled_budget.cancel_user = &cancel_requested;
+	cancelled_budget.cancelled = cancel_analysis;
+	limited_visibility.analysis_budget = &cancelled_budget;
+	rejected_visible.calls = 0;
+	const auto cancelled_firing = dxx_route::select_trigger_firing_path(
+	    reachable_visible_snapshot, planner_query, source_progress,
+	    reachable_visible_sources, limited_visibility);
+	assert(!cancelled_firing.found);
+	assert(cancelled_budget.was_cancelled);
+	assert(cancelled_budget.work_used == 0);
+	assert(rejected_visible.calls == 0);
 	auto least_cost_snapshot = reachable_visible_snapshot;
 	least_cost_snapshot.topology.segments[0].vertices[7].valid = true;
 	least_cost_snapshot.topology.segments[0].vertices[7].value = {

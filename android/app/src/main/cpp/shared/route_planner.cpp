@@ -290,6 +290,23 @@ void report_progress(
 		    visibility.progress_user, stage, completed, total);
 }
 
+bool consume_analysis_work(const route_visibility_query &visibility)
+{
+	auto *budget = visibility.analysis_budget;
+	if (!budget)
+		return true;
+	if (budget->cancelled && budget->cancelled(budget->cancel_user)) {
+		budget->was_cancelled = true;
+		return false;
+	}
+	if (budget->work_limit && budget->work_used >= budget->work_limit) {
+		budget->exhausted = true;
+		return false;
+	}
+	budget->work_used++;
+	return true;
+}
+
 bool state_flag(const std::vector<unsigned char> &values, int index)
 {
 	return index >= 0 && index < static_cast<int>(values.size()) &&
@@ -378,13 +395,17 @@ bool source_visible_from_position(
     int segment,
     const route_position &position)
 {
-	if (valid_wall(snapshot, source.source_wall) && visibility.wall_shootable)
+	if (valid_wall(snapshot, source.source_wall) && visibility.wall_shootable) {
+		if (!consume_analysis_work(visibility))
+			return false;
 		return visibility.wall_shootable(
 		    visibility.user, segment, position, source.source_wall);
-	return visibility.target_visible &&
-	       visibility.target_visible(
-	           visibility.user, segment, position, source.source_segment,
-	           source.source_position);
+	}
+	if (!visibility.target_visible || !consume_analysis_work(visibility))
+		return false;
+	return visibility.target_visible(
+	    visibility.user, segment, position, source.source_segment,
+	    source.source_position);
 }
 
 struct visibility_sample_key {
@@ -493,6 +514,10 @@ void store_cached_visibility_sample(
 		return;
 	auto &cache = *static_cast<visibility_sample_cache *>(
 	    visibility.sample_cache);
+	if (visibility.analysis_budget &&
+	    visibility.analysis_budget->cache_entry_limit &&
+	    cache.size() >= visibility.analysis_budget->cache_entry_limit)
+		return;
 	visibility_sample_result result;
 	result.found = found;
 	result.position = position;
@@ -1185,7 +1210,8 @@ route_trigger_path_selection select_trigger_firing_path(
 	}
 	report_progress(visibility, "route_visibility", total, total);
 	if (result.found && visibility.wall_shootable_without_transparency &&
-	    valid_wall(snapshot, result.source.source_wall))
+	    valid_wall(snapshot, result.source.source_wall) &&
+	    consume_analysis_work(visibility))
 		result.uses_transparent_surface =
 		    !visibility.wall_shootable_without_transparency(
 		        visibility.user, result.terminal_segment,
@@ -2967,6 +2993,11 @@ extern "C" int route_planner_plan_view(
 		}
 		view_visibility_context visibility_context = { view };
 		dxx_route::visibility_sample_cache sample_cache;
+		dxx_route::route_analysis_budget analysis_budget;
+		analysis_budget.work_limit = 2000000;
+		analysis_budget.cache_entry_limit = 65536;
+		analysis_budget.cancel_user = view->cancel_user;
+		analysis_budget.cancelled = view->cancelled;
 		dxx_route::route_visibility_query visibility;
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
@@ -2979,6 +3010,7 @@ extern "C" int route_planner_plan_view(
 		visibility.progress_user = view->progress_user;
 		visibility.progress = view->progress;
 		visibility.sample_cache = &sample_cache;
+		visibility.analysis_budget = &analysis_budget;
 		auto result = dxx_route::plan_route(snapshot, query, visibility);
 		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
 		    result.status == dxx_route::route_plan_status::ok &&
@@ -3003,6 +3035,14 @@ extern "C" int route_planner_plan_view(
 					result = strict;
 				}
 			}
+		}
+		if (analysis_budget.was_cancelled || analysis_budget.exhausted) {
+			copy_problem(
+			    problem, problem_capacity,
+			    analysis_budget.was_cancelled
+			        ? "shared route planning cancelled"
+			        : "shared route planning exceeded its work budget");
+			return 0;
 		}
 		if (!project_plan(
 		        result, endpoint_kind, *state, unexplored, *summary,
@@ -3043,6 +3083,11 @@ extern "C" int route_planner_segment_reachable_view(
 		query.target_segment = target_segment;
 		view_visibility_context visibility_context = { view };
 		dxx_route::visibility_sample_cache sample_cache;
+		dxx_route::route_analysis_budget analysis_budget;
+		analysis_budget.work_limit = 2000000;
+		analysis_budget.cache_entry_limit = 65536;
+		analysis_budget.cancel_user = view->cancel_user;
+		analysis_budget.cancelled = view->cancelled;
 		dxx_route::route_visibility_query visibility;
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
@@ -3055,8 +3100,10 @@ extern "C" int route_planner_segment_reachable_view(
 		visibility.progress_user = view->progress_user;
 		visibility.progress = view->progress;
 		visibility.sample_cache = &sample_cache;
-		return dxx_route::plan_route(snapshot, query, visibility).status ==
-		       dxx_route::route_plan_status::ok;
+		visibility.analysis_budget = &analysis_budget;
+		const auto result = dxx_route::plan_route(snapshot, query, visibility);
+		return !analysis_budget.exhausted && !analysis_budget.was_cancelled &&
+		       result.status == dxx_route::route_plan_status::ok;
 	} catch (...) {
 		return 0;
 	}

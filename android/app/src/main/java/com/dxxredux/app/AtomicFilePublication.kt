@@ -32,6 +32,50 @@ internal object AtomicFilePublication {
         }
     }
 
+    fun writeUtf8Batch(
+        updates: List<Pair<File, String>>,
+        beforePublish: (Int, File, File) -> Unit = { _, _, _ -> },
+    ) = transaction {
+        val distinctUpdates = updates.distinctBy { it.first.absolutePath }
+        val staged = mutableListOf<BatchEntry>()
+        var published = 0
+        try {
+            for ((target, text) in distinctUpdates) {
+                target.parentFile?.mkdirs()
+                val temporary = uniqueSibling(target, "tmp")
+                val backup =
+                    if (target.exists()) {
+                        uniqueSibling(target, "old")
+                    } else {
+                        null
+                    }
+                staged.add(BatchEntry(target, temporary, backup))
+                writeSynced(temporary, text.toByteArray(Charsets.UTF_8))
+                if (backup != null) writeSynced(backup, target.readBytes())
+            }
+            for ((index, entry) in staged.withIndex()) {
+                beforePublish(index, entry.temporary, entry.target)
+                replaceLocked(entry.temporary, entry.target)
+                published++
+            }
+        } catch (failure: Throwable) {
+            for (index in published - 1 downTo 0) {
+                val entry = staged[index]
+                if (entry.backup == null) {
+                    entry.target.delete()
+                } else {
+                    replaceLocked(entry.backup, entry.target)
+                }
+            }
+            throw failure
+        } finally {
+            for (entry in staged) {
+                entry.temporary.delete()
+                entry.backup?.delete()
+            }
+        }
+    }
+
     fun publishDirectory(
         temporary: File,
         target: File,
@@ -46,6 +90,23 @@ internal object AtomicFilePublication {
         target: File,
         suffix: String,
     ): File = File(target.parentFile, ".${target.name}.${UUID.randomUUID()}.$suffix")
+
+    private data class BatchEntry(
+        val target: File,
+        val temporary: File,
+        val backup: File?,
+    )
+
+    private fun writeSynced(
+        target: File,
+        data: ByteArray,
+    ) {
+        FileOutputStream(target).use { stream ->
+            stream.write(data)
+            stream.flush()
+            stream.fd.sync()
+        }
+    }
 
     private fun replaceLocked(
         temporary: File,

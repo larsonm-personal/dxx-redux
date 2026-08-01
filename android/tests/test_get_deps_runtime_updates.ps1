@@ -33,6 +33,10 @@ Assert-Matches $jdkUpdater 'mv "\$BACKUP_DIR" "\$DEST"' `
     "a failed replacement restores the previous JDK directory"
 Assert-Matches $jdkUpdater '(?s)recover_matching_incomplete_install.*?cmp -s.*?cp -a -n' `
     "an incomplete JDK is recovered only when surviving files match the staged replacement"
+Assert-Matches $versions '(?m)^PLAY_SERVICES_GAMES_VERSION=21\.0\.0$' `
+    "Play Games remains on the newest release compatible with minSdk 23"
+Assert-Matches $checkUpdates '(?s)Name = "play-services-games-v2".*?SuppressTargetUpdate = \$true.*?requires minSdk 24' `
+    "dependency checks do not automatically select Play Games releases that require minSdk 24"
 Assert-Matches $versions '(?m)^POWERSHELL_INSTALL_CMD=.*update-powershell\.ps1.*-System' `
     "routine PowerShell sync updates the system runtime"
 Assert-Matches $powerShellUpdater 'active PowerShell 7 processes' `

@@ -566,6 +566,84 @@ function Reset-GameState {
     # created/switched to a different set that is now empty.
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/file_sets.json") | Out-Null
+    if (-not (Publish-DefaultActiveFileSet)) {
+        throw "could not publish the default active game-data set"
+    }
+}
+
+function Get-DefaultActiveFileSetPath {
+    $appDataDir = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "pwd") -Seconds 5
+    if (-not $appDataDir) { return $null }
+
+    $appDataDir = $appDataDir.Trim()
+    if ($appDataDir -notmatch '^/data/(?:data|user/\d+)/[A-Za-z0-9._]+$') {
+        Write-Status "FAIL: unexpected app-private data path: $appDataDir" "Red"
+        return $null
+    }
+    return "$appDataDir/$($script:DEFAULT_SET_DIR)"
+}
+
+function Publish-DefaultActiveFileSet {
+    # The engines read these markers directly, independently of file_sets.json.
+    # Publish through a same-directory temporary file so readers never see a
+    # truncated path if a reset is interrupted.
+    $defaultPath = Get-DefaultActiveFileSetPath
+    if (-not $defaultPath) { return $false }
+
+    $hostTemporary = [System.IO.Path]::GetTempFileName()
+    $deviceTemporary = "/data/local/tmp/dxx_active_set_$([guid]::NewGuid().ToString('N'))"
+    try {
+        [System.IO.File]::WriteAllText($hostTemporary, $defaultPath, [System.Text.UTF8Encoding]::new($false))
+        Adb-Timeout -AdbArgs @("push", $hostTemporary, $deviceTemporary) -Seconds 10 -IncludeStandardError | Out-Null
+
+        foreach ($gameDir in @("d1x-redux", "d2x-redux")) {
+            $markerDir = "files/$gameDir"
+            $marker = "$markerDir/.active_set_path"
+            $temporary = "$marker.tmp"
+            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $markerDir) -Seconds 5 -IncludeStandardError | Out-Null
+            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", $deviceTemporary, $temporary) -Seconds 5 -IncludeStandardError | Out-Null
+            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "chmod", "600", $temporary) -Seconds 5 -IncludeStandardError | Out-Null
+            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mv", "-f", $temporary, $marker) -Seconds 5 -IncludeStandardError | Out-Null
+            $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $marker) -Seconds 5
+            if (-not $published -or $published.Trim() -cne $defaultPath) {
+                Write-Status "FAIL: could not activate the default file set for $gameDir" "Red"
+                return $false
+            }
+        }
+    } finally {
+        Adb-Timeout -AdbArgs @("shell", "rm", "-f", $deviceTemporary) -Seconds 5 -IncludeStandardError | Out-Null
+        Remove-Item -LiteralPath $hostTemporary -Force -ErrorAction SilentlyContinue
+    }
+    return $true
+}
+
+function Test-StandardGameDataActive {
+    $defaultPath = Get-DefaultActiveFileSetPath
+    if (-not $defaultPath) { return $false }
+
+    foreach ($gameDir in @("d1x-redux", "d2x-redux")) {
+        $marker = "files/$gameDir/.active_set_path"
+        $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $marker) -Seconds 5
+        if (-not $published -or $published.Trim() -cne $defaultPath) {
+            Write-Status "FAIL: $gameDir active file set is not the provisioned default set" "Red"
+            return $false
+        }
+    }
+
+    foreach ($hog in @("descent.hog", "descent2.hog")) {
+        $size = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "stat", "-c", "%s", "$($script:DEFAULT_SET_DIR)/$hog") -Seconds 5
+        $parsedSize = 0L
+        if (-not [long]::TryParse($size, [ref]$parsedSize) -or $parsedSize -le 0) {
+            Write-Status "FAIL: active standard game data is missing $hog" "Red"
+            return $false
+        }
+    }
+    return $true
+}
+
+function Test-StandardGameDataFailureReason {
+    param([string]$Reason)
+    return $Reason -match 'could not find (?:descent\.hog|descent2\.hog or d2demo\.hog)'
 }
 
 function Reset-DeviceGameState {
@@ -1327,7 +1405,7 @@ function Watch-AutomationResult {
     $lastHealthCheck = 0
     $finished = $false
     $passed = $false
-    $backgroundHandled = $false
+    $backgroundMarkersHandled = [System.Collections.Generic.HashSet[string]]::new()
     $launcherChecked = $false
     $lastLauncherResumeStep = -1
     $cacheActive = $false
@@ -1548,9 +1626,9 @@ function Watch-AutomationResult {
                     Write-Status "FAIL (logcat): $line" "Red"
                     $finished = $true
                     $passed = $false
-                } elseif ($line -match 'SCRIPT_BACKGROUND:' -and -not $backgroundHandled) {
-                    $backgroundHandled = $true
-                    Write-Status "Background marker detected -- cycling app to background" "Yellow"
+                } elseif ($line -match 'SCRIPT_BACKGROUND:\s*([^\s]+)' -and $backgroundMarkersHandled.Add($matches[1])) {
+                    $backgroundMarker = $matches[1]
+                    Write-Status "Background marker $backgroundMarker detected -- cycling app to background" "Yellow"
                     Start-Sleep -Seconds 1
                     # Press HOME to send app to background
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null

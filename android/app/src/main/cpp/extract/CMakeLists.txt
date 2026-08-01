@@ -160,6 +160,15 @@ add_executable(test_game_file_extensions ${CMAKE_CURRENT_SOURCE_DIR}/test_game_f
                                          ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)
 target_include_directories(test_game_file_extensions PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME game_file_extension_tests COMMAND test_game_file_extensions)
+add_executable(
+    test_graphics_config_transaction
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_graphics_config_transaction.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_config_transaction.c)
+target_include_directories(test_graphics_config_transaction
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+target_compile_definitions(test_graphics_config_transaction
+                           PRIVATE GRAPHICS_CONFIG_TRANSACTION_TESTING)
+add_test(NAME graphics_config_transaction_tests COMMAND test_graphics_config_transaction)
 add_test(NAME sow_huffman_tests COMMAND test_sow_huffman)
 add_test(NAME sow_integrity_tests COMMAND test_sow_integrity)
 set(SOW_RETAIL_FIXTURE "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/DESCENT2.SOW")
@@ -445,6 +454,16 @@ add_executable(test_gles3_shim_array_sources
 target_include_directories(test_gles3_shim_array_sources
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME gles3_shim_array_source_tests COMMAND test_gles3_shim_array_sources)
+add_executable(test_rgba8888 ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_rgba8888.c)
+target_include_directories(test_rgba8888 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+add_test(NAME rgba8888_tests COMMAND test_rgba8888)
+add_executable(
+    test_secret_area_scan_budget
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_secret_area_scan_budget.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/secret_area_scan.c)
+target_include_directories(test_secret_area_scan_budget
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+add_test(NAME secret_area_scan_budget_tests COMMAND test_secret_area_scan_budget)
 add_executable(test_hmp_android_shared ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_android_shared.c
                                        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/hmp_android_shared.c)
 target_include_directories(

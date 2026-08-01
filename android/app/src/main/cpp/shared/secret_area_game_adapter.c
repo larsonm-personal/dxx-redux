@@ -90,12 +90,21 @@ static level_metadata_scan_view Level_metadata_scan_view;
 static int Level_metadata_scan_view_initialized;
 static level_metadata_progress_callback Level_metadata_progress_callback;
 static void *Level_metadata_progress_user;
+static level_metadata_cancel_callback Level_metadata_cancel_callback;
+static void *Level_metadata_cancel_user;
 
 void level_metadata_set_progress_callback(
     level_metadata_progress_callback callback, void *user)
 {
 	Level_metadata_progress_callback = callback;
 	Level_metadata_progress_user = callback ? user : NULL;
+}
+
+void level_metadata_set_cancel_callback(
+    level_metadata_cancel_callback callback, void *user)
+{
+	Level_metadata_cancel_callback = callback;
+	Level_metadata_cancel_user = callback ? user : NULL;
 }
 
 static void level_metadata_report_progress(
@@ -107,7 +116,36 @@ static void level_metadata_report_progress(
 }
 
 #define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
+#define LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY     65536
 #define LEVEL_METADATA_FVI_CONFIRM_SPAN                  (64 * F1_0)
+#define LEVEL_METADATA_ANALYSIS_FVI_LIMIT                1000000U
+
+static unsigned int Level_metadata_analysis_fvi_count;
+static int Level_metadata_analysis_budget_exhausted;
+static int Level_metadata_analysis_cancelled;
+
+static void level_metadata_analysis_budget_reset(void)
+{
+	Level_metadata_analysis_fvi_count = 0;
+	Level_metadata_analysis_budget_exhausted = 0;
+	Level_metadata_analysis_cancelled = 0;
+}
+
+static int level_metadata_analysis_consume_fvi(void)
+{
+	if (Level_metadata_cancel_callback &&
+	    Level_metadata_cancel_callback(Level_metadata_cancel_user)) {
+		Level_metadata_analysis_cancelled = 1;
+		return 0;
+	}
+	if (Level_metadata_analysis_fvi_count >=
+	    LEVEL_METADATA_ANALYSIS_FVI_LIMIT) {
+		Level_metadata_analysis_budget_exhausted = 1;
+		return 0;
+	}
+	Level_metadata_analysis_fvi_count++;
+	return 1;
+}
 
 static fix level_metadata_switch_projectile_radius(void)
 {
@@ -230,6 +268,8 @@ static int level_metadata_visibility_cache_resize(int capacity)
 	level_metadata_visibility_entry *entries;
 	int index;
 
+	if (capacity > LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY)
+		return 0;
 	entries = (level_metadata_visibility_entry *) calloc(
 	    (size_t) capacity, sizeof(*entries));
 	if (!entries)
@@ -299,7 +339,8 @@ static void level_metadata_visibility_cache_store(
 		}
 		capacity = Level_metadata_visibility_summary.capacity;
 	} else if ((Level_metadata_visibility_count + 1) * 10 > capacity * 7) {
-		if (level_metadata_visibility_cache_resize(capacity * 2))
+		if (capacity < LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY &&
+		    level_metadata_visibility_cache_resize(capacity * 2))
 			capacity = Level_metadata_visibility_summary.capacity;
 	}
 	hash = level_metadata_visibility_hash_key(key);
@@ -1099,6 +1140,8 @@ static int level_metadata_fvi_segmented_visibility(
 		query.flags =
 		    (target_wall_seg >= 0 ? FQ_TRANSPOINT : FQ_TRANSWALL) |
 		    FQ_GET_SEGLIST;
+		if (!level_metadata_analysis_consume_fvi())
+			return 0;
 		fate = find_vector_intersection(&query, &hit_data);
 		if (fate == HIT_NONE)
 			endpoint_seg = hit_data.hit_seg;
@@ -1168,7 +1211,8 @@ static int secret_area_target_visible_from_position_uncached(
 	query.rad = 0;
 	query.thisobjnum = -1;
 	query.flags = FQ_TRANSPOINT | FQ_GET_SEGLIST;
-	if (find_vector_intersection(&query, &hit_data) != HIT_NONE)
+	if (!level_metadata_analysis_consume_fvi() ||
+	    find_vector_intersection(&query, &hit_data) != HIT_NONE)
 		return 0;
 	return level_metadata_fvi_visibility_credible(
 	    &hit_data, &from, seg, &target, target_seg, -1, -1, 0);
@@ -1327,6 +1371,8 @@ static int level_metadata_wall_shootable_from_position_impl(
 	query.wall_is_passable = level_metadata_route_shot_wall_is_passable;
 	query.wall_is_passable_user = &route_shot_context;
 	Level_metadata_visibility_summary.misses++;
+	if (!level_metadata_analysis_consume_fvi())
+		return 0;
 	fate = find_vector_intersection(&query, &hit_data);
 	hit_target_wall =
 	    fate == HIT_WALL && hit_data.hit_type == HIT_WALL &&
@@ -1850,6 +1896,8 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	view->navigator_radius = secret_area_player_radius();
 	view->progress_user = Level_metadata_progress_user;
 	view->progress = Level_metadata_progress_callback;
+	view->cancel_user = Level_metadata_cancel_user;
+	view->cancelled = Level_metadata_cancel_callback;
 	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
 		int narrow_side_count = 0;
 		int seg;
@@ -2140,6 +2188,7 @@ static void level_metadata_rescan_current_level_internal(
 		Level_metadata_canonical_plan_summary.first_pending_path_terminal_segment = -1;
 		Level_metadata_canonical_plan_summary.partial_frontier_segment = -1;
 		level_metadata_report_progress("route_planning", 0, 1);
+		level_metadata_analysis_budget_reset();
 		Level_metadata_canonical_plan_summary_valid =
 		    level_metadata_analysis_cache_load(
 		        &shared_route, &Level_metadata_canonical_plan_summary);
@@ -2157,6 +2206,15 @@ static void level_metadata_rescan_current_level_internal(
 				level_metadata_analysis_cache_save(
 				    &shared_route,
 				    &Level_metadata_canonical_plan_summary);
+		}
+		if (Level_metadata_analysis_budget_exhausted ||
+		    Level_metadata_analysis_cancelled) {
+			Level_metadata_canonical_plan_summary_valid = 0;
+			snprintf(
+			    problem, sizeof(problem), "%s",
+			    Level_metadata_analysis_cancelled
+			        ? "metadata analysis cancelled"
+			        : "metadata analysis exceeded its collision-work budget");
 		}
 		if (Level_metadata_canonical_plan_summary_valid) {
 			level_metadata_apply_planned_route(
@@ -2192,6 +2250,7 @@ static void level_metadata_rescan_current_level_internal(
 		Level_metadata_live_plan_summary.first_pending_step = -1;
 		Level_metadata_live_plan_summary.first_pending_path_terminal_segment = -1;
 		Level_metadata_live_plan_summary.partial_frontier_segment = -1;
+		level_metadata_analysis_budget_reset();
 		Level_metadata_live_plan_summary_valid =
 		    endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
 		    level_metadata_try_reuse_canonical_route(
@@ -2211,6 +2270,15 @@ static void level_metadata_rescan_current_level_internal(
 			    &Level_metadata_live_plan_summary,
 			    problem,
 			    sizeof(problem));
+		}
+		if (Level_metadata_analysis_budget_exhausted ||
+		    Level_metadata_analysis_cancelled) {
+			Level_metadata_live_plan_summary_valid = 0;
+			snprintf(
+			    problem, sizeof(problem), "%s",
+			    Level_metadata_analysis_cancelled
+			        ? "metadata analysis cancelled"
+			        : "metadata analysis exceeded its collision-work budget");
 		}
 		if (!Level_metadata_live_plan_summary_valid) {
 			Level_metadata_live_route_state.route_status = LEVEL_METADATA_ROUTE_FAILED;

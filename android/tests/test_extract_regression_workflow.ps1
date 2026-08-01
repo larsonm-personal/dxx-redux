@@ -23,6 +23,14 @@ try {
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
         throw 'Extraction suite no longer restarts infrastructure before its one complete-spec retry'
     }
+    if ($extractSource -notmatch 'Get-JsonStringArray \$spec ''mission_files''' -or
+        $extractSource -match '\$spec\.mission_files\s*\|\s*Where-Object') {
+        throw 'Optional mission_files are no longer normalized before push planning'
+    }
+    if ($extractSource -notmatch '(?s)trap \{.*?Unexpected extraction test runner error.*?exit 99' -or
+        $allExtractsSource -notmatch '\$exitCode -in @\(98, 99\)') {
+        throw 'Unexpected runner errors no longer fail fast without being mistaken for emulator failures'
+    }
     if ($extractSource -notmatch '(?s)function Invoke-GameAutomationScript.*?Ensure-AppPrivateFile.*?gameAutomationInfrastructureFailure.*?Exit-Test 98.*?adb_staging_failed') {
         throw 'Automation staging failures are no longer verified and classified as retryable infrastructure failures'
     }
@@ -54,6 +62,16 @@ try {
         -not (Test-ExtractRegressionInfrastructureFailure 'adb_staging_failed') -or
         (Test-ExtractRegressionInfrastructureFailure 'files_missing')) {
         throw 'Infrastructure failure classification is incorrect'
+    }
+
+    $gogSpecWithoutMissionFiles = [PSCustomObject]@{
+        source_type = 'gog'
+        expected_files = @('descent.hog', 'descent.pig')
+    }
+    if (@(Get-JsonStringArray $gogSpecWithoutMissionFiles 'mission_files').Count -ne 0 -or
+        (@(Get-JsonStringArray $gogSpecWithoutMissionFiles 'expected_files') -join ',') -ne
+        'descent.hog,descent.pig') {
+        throw 'Optional JSON string arrays are not normalized safely for GOG specs'
     }
 
     $evidencePath = Join-Path $tempRoot 'evidence.json5'

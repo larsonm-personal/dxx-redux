@@ -1,5 +1,6 @@
 #ifdef ANDROID
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <android/log.h>
@@ -7,16 +8,13 @@
 
 #include "android_crash_handler.h"
 #include "android_egl_surface.h"
+#include "android_surface_lifecycle.h"
 #include "console.h"
 #include "gles3_shim.h"
 #include "ogl_init.h"
 
 #define ANDROID_EGL_INITIAL_CLIENT_VERSION  3
 #define ANDROID_EGL_RECREATE_CLIENT_VERSION 1
-
-extern ANativeWindow *android_surface_get_native_window(void);
-extern int android_surface_is_paused(void);
-extern int android_surface_egl_needs_recreate(void);
 
 static int android_egl_test_error(const char *location)
 {
@@ -29,16 +27,13 @@ static int android_egl_test_error(const char *location)
 	return 1;
 }
 
-static void android_egl_recreate_surface(struct android_egl_surface_state *state)
+static int android_egl_recreate_surface(struct android_egl_surface_state *state,
+                                        const struct android_surface_snapshot *snapshot)
 {
-	ANativeWindow *window = android_surface_get_native_window();
 	EGLint format;
 	EGLint window_attributes[] = {
 		EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_NONE
 	};
-
-	if (!window)
-		return;
 
 	con_printf(CON_DEBUG, "EGL: recreating surface after resume\n");
 
@@ -50,13 +45,13 @@ static void android_egl_recreate_surface(struct android_egl_surface_state *state
 	}
 
 	eglGetConfigAttrib(*state->display, *state->config, EGL_NATIVE_VISUAL_ID, &format);
-	ANativeWindow_setBuffersGeometry(window, state->width, state->height, format);
+	ANativeWindow_setBuffersGeometry(snapshot->window, state->width, state->height, format);
 
 	*state->surface = eglCreateWindowSurface(*state->display, *state->config,
-	                                         (EGLNativeWindowType) window, window_attributes);
+	                                         (EGLNativeWindowType) snapshot->window, window_attributes);
 	if (*state->surface == EGL_NO_SURFACE) {
 		con_printf(CON_URGENT, "EGL: failed to create new surface after resume\n");
-		return;
+		return 0;
 	}
 
 	if (!eglMakeCurrent(*state->display, *state->surface, *state->surface,
@@ -80,13 +75,18 @@ static void android_egl_recreate_surface(struct android_egl_surface_state *state
 	} else {
 		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
 	}
+	state->window_generation = snapshot->generation;
 	state->recreate_count++;
+	__android_log_print(ANDROID_LOG_INFO, "DXX-EGL",
+	                    "window generation=%" PRIu64 " active recreate_count=%d",
+	                    state->window_generation, state->recreate_count);
+	return 1;
 }
 
 void android_egl_surface_initialize(struct android_egl_surface_state *state,
                                     int width, int height, int use_rgba8888, int *out_color_depth)
 {
-	ANativeWindow *window = android_surface_get_native_window();
+	struct android_surface_snapshot snapshot;
 	EGLint version_major, version_minor;
 	EGLint config_attributes[] = {
 		EGL_RED_SIZE, 5,
@@ -108,6 +108,11 @@ void android_egl_surface_initialize(struct android_egl_surface_state *state,
 
 	state->width = width;
 	state->height = height;
+	state->window_generation = 0;
+	android_surface_acquire_snapshot(&snapshot);
+	__android_log_print(ANDROID_LOG_INFO, "DXX-EGL",
+	                    "initialize window generation=%" PRIu64 " window=%d paused=%d",
+	                    snapshot.generation, snapshot.window != NULL, snapshot.paused);
 	if (use_rgba8888) {
 		config_attributes[1] = 8;
 		config_attributes[3] = 8;
@@ -141,15 +146,18 @@ void android_egl_surface_initialize(struct android_egl_surface_state *state,
 		           red, green, blue, *out_color_depth);
 	}
 
-	if (window) {
+	if (snapshot.window) {
 		EGLint format;
 
 		eglGetConfigAttrib(*state->display, *state->config,
 		                   EGL_NATIVE_VISUAL_ID, &format);
-		ANativeWindow_setBuffersGeometry(window, width, height, format);
+		ANativeWindow_setBuffersGeometry(snapshot.window, width, height, format);
 		*state->surface = eglCreateWindowSurface(*state->display, *state->config,
-		                                         (EGLNativeWindowType) window, window_attributes);
+		                                         (EGLNativeWindowType) snapshot.window, window_attributes);
+		if (*state->surface != EGL_NO_SURFACE)
+			state->window_generation = snapshot.generation;
 	}
+	android_surface_release_snapshot(&snapshot);
 
 	if (*state->surface == EGL_NO_SURFACE) {
 		con_printf(CON_URGENT, "EGL: Error creating window surface\n");
@@ -178,30 +186,45 @@ void android_egl_surface_initialize(struct android_egl_surface_state *state,
 
 void android_egl_surface_swap(struct android_egl_surface_state *state)
 {
+	struct android_surface_snapshot snapshot;
 	int trace_swap;
 
 	state->swap_count++;
 	trace_swap = state->swap_count <= 20 || (state->swap_count % 60) == 0;
 	if (trace_swap)
 		crash_breadcrumb_v("ogl_swap_buffers_internal #%d", state->swap_count);
-	if (android_surface_is_paused()) {
+	android_surface_acquire_snapshot(&snapshot);
+	if (snapshot.paused || !snapshot.window) {
 		if (trace_swap)
-			crash_breadcrumb("ogl_swap: paused");
+			crash_breadcrumb(snapshot.paused ? "ogl_swap: paused" : "ogl_swap: no surface");
+		android_surface_release_snapshot(&snapshot);
 		return;
 	}
-	if (android_surface_egl_needs_recreate()) {
+	if (state->window_generation != snapshot.generation) {
+		__android_log_print(ANDROID_LOG_INFO, "DXX-EGL",
+		                    "window generation changed from %" PRIu64 " to %" PRIu64,
+		                    state->window_generation, snapshot.generation);
 		if (trace_swap)
 			crash_breadcrumb("ogl_swap: recreate_egl");
-		android_egl_recreate_surface(state);
+		if (!android_egl_recreate_surface(state, &snapshot)) {
+			android_surface_release_snapshot(&snapshot);
+			return;
+		}
 	}
 	if (trace_swap)
 		crash_breadcrumb("ogl_swap: eglSwapBuffers");
 	eglSwapBuffers(*state->display, *state->surface);
+	android_surface_release_snapshot(&snapshot);
 }
 
 int android_egl_surface_get_recreate_count(const struct android_egl_surface_state *state)
 {
 	return state->recreate_count;
+}
+
+uint64_t android_egl_surface_get_window_generation(const struct android_egl_surface_state *state)
+{
+	return state->window_generation;
 }
 
 void android_egl_surface_log_renderer(void)

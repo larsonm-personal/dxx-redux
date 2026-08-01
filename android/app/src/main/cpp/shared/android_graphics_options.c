@@ -1,6 +1,7 @@
 #ifdef ANDROID
 
 #include <dirent.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -11,6 +12,7 @@
 #include "android_graphics_options.h"
 #include "android_log.h"
 #include "config.h"
+#include "graphics_config_transaction.h"
 #include "palette.h"
 #include "playsave.h"
 #include "render.h"
@@ -62,20 +64,12 @@ static int g_corner_text_top_left_px;
 static int g_corner_text_bottom_left_px;
 static int g_corner_text_top_right_px;
 static int g_corner_text_bottom_right_px;
+static pthread_mutex_t g_config_transaction_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void android_graphics_apply_pilot_defaults(void)
 {
 	PlayerCfg.AlphaEffects = g_android_default_alpha_effects;
 	PlayerCfg.DynLightColor = g_android_default_dynlight_color;
-}
-
-static void append_buf(char *buf, int *len, const char *text)
-{
-	int text_len = (int) strlen(text);
-	if (*len + text_len < 32768) {
-		memcpy(buf + *len, text, text_len);
-		*len += text_len;
-	}
 }
 
 static int android_files_root(char *root, size_t root_size)
@@ -114,67 +108,38 @@ static int ends_with_plx(const char *name)
 	return len > 4 && !strcmp(name + len - 4, ".plx");
 }
 
-static void patch_config_file(const char *path, const char *key, int value)
-{
-	FILE *f = fopen(path, "r");
-	char buf[32768];
-	char line[512];
-	char replacement[128];
-	int len = 0;
-	int found = 0;
-	size_t key_len = strlen(key);
-
-	buf[0] = 0;
-	snprintf(replacement, sizeof(replacement), "%s=%i\n", key, value);
-	if (f) {
-		while (fgets(line, sizeof(line), f)) {
-			if (!strncmp(line, key, key_len) && line[key_len] == '=') {
-				append_buf(buf, &len, replacement);
-				found = 1;
-			} else {
-				append_buf(buf, &len, line);
-			}
-		}
-		fclose(f);
-	}
-	if (!found) {
-		if (len > 0 && buf[len - 1] != '\n')
-			append_buf(buf, &len, "\n");
-		append_buf(buf, &len, replacement);
-	}
-	f = fopen(path, "w");
-	if (!f)
-		return;
-	fwrite(buf, 1, len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-}
-
-static void mirror_config_key(const char *key, int value, int mirror_d1, int mirror_d2)
+static enum graphics_config_transaction_result
+mirror_config_key(const char *key, int value, int mirror_d1, int mirror_d2)
 {
 	char root[1024];
-	char path[1200];
-	char dir[1200];
+	char paths[GRAPHICS_CONFIG_MAX_TARGETS][1200];
+	const char *targets[GRAPHICS_CONFIG_MAX_TARGETS];
+	size_t target_count = 0;
 
 	if (!android_files_root(root, sizeof(root)))
-		return;
-	snprintf(path, sizeof(path), "%s/descent.cfg", root);
-	patch_config_file(path, key, value);
+		return GRAPHICS_CONFIG_TRANSACTION_INVALID;
+	snprintf(paths[target_count], sizeof(paths[target_count]), "%s/descent.cfg", root);
+	targets[target_count] = paths[target_count];
+	target_count++;
 	if (mirror_d1) {
-		snprintf(dir, sizeof(dir), "%s/d1x-redux", root);
-		if (path_is_dir(dir)) {
-			snprintf(path, sizeof(path), "%s/descent.cfg", dir);
-			patch_config_file(path, key, value);
+		snprintf(paths[target_count], sizeof(paths[target_count]), "%s/d1x-redux", root);
+		if (path_is_dir(paths[target_count])) {
+			snprintf(paths[target_count], sizeof(paths[target_count]),
+			         "%s/d1x-redux/descent.cfg", root);
+			targets[target_count] = paths[target_count];
+			target_count++;
 		}
 	}
 	if (mirror_d2) {
-		snprintf(dir, sizeof(dir), "%s/d2x-redux", root);
-		if (path_is_dir(dir)) {
-			snprintf(path, sizeof(path), "%s/descent.cfg", dir);
-			patch_config_file(path, key, value);
+		snprintf(paths[target_count], sizeof(paths[target_count]), "%s/d2x-redux", root);
+		if (path_is_dir(paths[target_count])) {
+			snprintf(paths[target_count], sizeof(paths[target_count]),
+			         "%s/d2x-redux/descent.cfg", root);
+			targets[target_count] = paths[target_count];
+			target_count++;
 		}
 	}
+	return graphics_config_patch_files(targets, target_count, key, value);
 }
 
 static void patch_visual_dir(const char *dir, int alpha_effects, int dynlight_color)
@@ -211,12 +176,21 @@ static void mirror_visual_prefs(void)
 	patch_visual_dir(dir, PlayerCfg.AlphaEffects, PlayerCfg.DynLightColor);
 }
 
-static void persist_config_if_needed(int persist, const char *key, int value, int mirror_d1, int mirror_d2)
+static int persist_config_if_needed(int persist, const char *key, int value,
+                                    int mirror_d1, int mirror_d2)
 {
+	enum graphics_config_transaction_result result;
 	if (!persist)
-		return;
-	WriteConfigFile();
-	mirror_config_key(key, value, mirror_d1, mirror_d2);
+		return ANDROID_GRAPHICS_OPTION_OK;
+	pthread_mutex_lock(&g_config_transaction_mutex);
+	result = mirror_config_key(key, value, mirror_d1, mirror_d2);
+	pthread_mutex_unlock(&g_config_transaction_mutex);
+	if (result != GRAPHICS_CONFIG_TRANSACTION_OK) {
+		debug_log(DLOG_GRAPHICS, "graphics config transaction failed: key=%s result=%s",
+		          key, graphics_config_transaction_result_name(result));
+		return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
+	}
+	return ANDROID_GRAPHICS_OPTION_OK;
 }
 
 static void persist_player_if_needed(int persist)
@@ -227,7 +201,7 @@ static void persist_player_if_needed(int persist)
 	mirror_visual_prefs();
 }
 
-void android_graphics_set_aniso_level(int value, int persist)
+int android_graphics_set_aniso_level(int value, int persist)
 {
 	extern int ogl_aniso_level;
 	extern volatile int g_aniso_pending_apply;
@@ -241,10 +215,10 @@ void android_graphics_set_aniso_level(int value, int persist)
 	ogl_aniso_level = value;
 	__sync_synchronize();
 	g_aniso_pending_apply = 1;
-	persist_config_if_needed(persist, "AnisoLevel", GameCfg.AnisoLevel, 1, 1);
+	return persist_config_if_needed(persist, "AnisoLevel", GameCfg.AnisoLevel, 1, 1);
 }
 
-void android_graphics_set_msaa_level(int value, int persist)
+int android_graphics_set_msaa_level(int value, int persist)
 {
 	extern int ogl_msaa_samples;
 	extern volatile int g_msaa_pending_apply;
@@ -258,10 +232,10 @@ void android_graphics_set_msaa_level(int value, int persist)
 	ogl_msaa_samples = value;
 	__sync_synchronize();
 	g_msaa_pending_apply = 1;
-	persist_config_if_needed(persist, "MsaaLevel", GameCfg.MsaaLevel, 1, 1);
+	return persist_config_if_needed(persist, "MsaaLevel", GameCfg.MsaaLevel, 1, 1);
 }
 
-void android_graphics_set_texfilt(int value, int persist)
+int android_graphics_set_texfilt(int value, int persist)
 {
 	extern int g_texfilt_level;
 	extern volatile int g_texfilt_pending_apply;
@@ -274,81 +248,85 @@ void android_graphics_set_texfilt(int value, int persist)
 	g_texfilt_level = value;
 	__sync_synchronize();
 	g_texfilt_pending_apply = 1;
-	persist_config_if_needed(persist, "TexFilt", GameCfg.TexFilt, 1, 1);
+	return persist_config_if_needed(persist, "TexFilt", GameCfg.TexFilt, 1, 1);
 }
 
-void android_graphics_set_gamma_level(int value, int persist)
+int android_graphics_set_gamma_level(int value, int persist)
 {
 	gr_palette_set_gamma(clamp_gamma(value));
 	GameCfg.GammaLevel = gr_palette_get_gamma();
-	persist_config_if_needed(persist, "GammaLevel", GameCfg.GammaLevel, 1, 1);
+	return persist_config_if_needed(persist, "GammaLevel", GameCfg.GammaLevel, 1, 1);
 }
 
-void android_graphics_set_menu_texfilt(int value, int persist)
+int android_graphics_set_menu_texfilt(int value, int persist)
 {
 	GameCfg.MenuTexFilt = clamp_bool(value);
-	persist_config_if_needed(persist, "MenuTexFilt", GameCfg.MenuTexFilt, 1, 1);
+	return persist_config_if_needed(persist, "MenuTexFilt", GameCfg.MenuTexFilt, 1, 1);
 }
 
-void android_graphics_set_hud_texfilt(int value, int persist)
+int android_graphics_set_hud_texfilt(int value, int persist)
 {
 	GameCfg.HudTexFilt = clamp_bool(value);
-	persist_config_if_needed(persist, "HudTexFilt", GameCfg.HudTexFilt, 1, 1);
+	return persist_config_if_needed(persist, "HudTexFilt", GameCfg.HudTexFilt, 1, 1);
 }
 
-void android_graphics_set_main_view_fov(int value, int persist)
+int android_graphics_set_main_view_fov(int value, int persist)
 {
 	GameCfg.MainViewFov = clamp_main_view_fov(value);
 	android_render_set_main_view_fov(GameCfg.MainViewFov);
 	debug_log(DLOG_GRAPHICS,
 	          "graphics option request: main_view_fov=%d persist=%d",
 	          GameCfg.MainViewFov, persist);
-	persist_config_if_needed(persist, "MainViewFov", GameCfg.MainViewFov, 1, 1);
+	return persist_config_if_needed(persist, "MainViewFov", GameCfg.MainViewFov, 1, 1);
 }
 
-void android_graphics_set_main_view_fov_locked(int value, int persist)
+int android_graphics_set_main_view_fov_locked(int value, int persist)
 {
 	(void) persist;
 	android_render_set_main_view_fov_locked(value);
 	debug_log(DLOG_GRAPHICS,
 	          "graphics option request: main_view_fov_locked=%d",
 	          value ? 1 : 0);
+	return ANDROID_GRAPHICS_OPTION_OK;
 }
 
-void android_graphics_set_corner_text_inset(int value, int persist)
+int android_graphics_set_corner_text_inset(int value, int persist)
 {
 	GameCfg.CornerTextInset = clamp_corner_text_inset(value);
-	persist_config_if_needed(persist, "CornerTextInset", GameCfg.CornerTextInset, 1, 1);
+	return persist_config_if_needed(persist, "CornerTextInset", GameCfg.CornerTextInset, 1, 1);
 }
 
-void android_graphics_set_classic_depth(int value, int persist)
+int android_graphics_set_classic_depth(int value, int persist)
 {
 	GameCfg.ClassicDepth = clamp_bool(value);
-	persist_config_if_needed(persist, "ClassicDepth", GameCfg.ClassicDepth, 1, 1);
+	return persist_config_if_needed(persist, "ClassicDepth", GameCfg.ClassicDepth, 1, 1);
 }
 
-void android_graphics_set_alpha_effects(int value, int persist)
+int android_graphics_set_alpha_effects(int value, int persist)
 {
 	PlayerCfg.AlphaEffects = clamp_bool(value);
 	g_android_default_alpha_effects = PlayerCfg.AlphaEffects;
 	persist_player_if_needed(persist);
+	return ANDROID_GRAPHICS_OPTION_OK;
 }
 
-void android_graphics_set_dynlight_color(int value, int persist)
+int android_graphics_set_dynlight_color(int value, int persist)
 {
 	PlayerCfg.DynLightColor = clamp_bool(value);
 	g_android_default_dynlight_color = PlayerCfg.DynLightColor;
 	persist_player_if_needed(persist);
+	return ANDROID_GRAPHICS_OPTION_OK;
 }
 
-void android_graphics_set_movie_texfilt(int value, int persist)
+int android_graphics_set_movie_texfilt(int value, int persist)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	GameCfg.MovieTexFilt = clamp_bool(value);
-	persist_config_if_needed(persist, "MovieTexFilt", GameCfg.MovieTexFilt, 0, 1);
+	return persist_config_if_needed(persist, "MovieTexFilt", GameCfg.MovieTexFilt, 0, 1);
 #else
 	(void) value;
 	(void) persist;
+	return ANDROID_GRAPHICS_OPTION_OK;
 #endif
 }
 
@@ -471,36 +449,34 @@ int android_graphics_get_corner_text_right_inset(int canvas_width, int canvas_he
 int android_graphics_set_option(const char *name, int value, int persist)
 {
 	if (!name)
-		return 0;
+		return ANDROID_GRAPHICS_OPTION_UNKNOWN;
 	if (!strcmp(name, "aniso_level"))
-		android_graphics_set_aniso_level(value, persist);
+		return android_graphics_set_aniso_level(value, persist);
 	else if (!strcmp(name, "msaa_level"))
-		android_graphics_set_msaa_level(value, persist);
+		return android_graphics_set_msaa_level(value, persist);
 	else if (!strcmp(name, "tex_filt"))
-		android_graphics_set_texfilt(value, persist);
+		return android_graphics_set_texfilt(value, persist);
 	else if (!strcmp(name, "gamma_level"))
-		android_graphics_set_gamma_level(value, persist);
+		return android_graphics_set_gamma_level(value, persist);
 	else if (!strcmp(name, "menu_tex_filt"))
-		android_graphics_set_menu_texfilt(value, persist);
+		return android_graphics_set_menu_texfilt(value, persist);
 	else if (!strcmp(name, "hud_tex_filt"))
-		android_graphics_set_hud_texfilt(value, persist);
+		return android_graphics_set_hud_texfilt(value, persist);
 	else if (!strcmp(name, "main_view_fov"))
-		android_graphics_set_main_view_fov(value, persist);
+		return android_graphics_set_main_view_fov(value, persist);
 	else if (!strcmp(name, "main_view_fov_locked"))
-		android_graphics_set_main_view_fov_locked(value, persist);
+		return android_graphics_set_main_view_fov_locked(value, persist);
 	else if (!strcmp(name, "corner_text_inset"))
-		android_graphics_set_corner_text_inset(value, persist);
+		return android_graphics_set_corner_text_inset(value, persist);
 	else if (!strcmp(name, "classic_depth"))
-		android_graphics_set_classic_depth(value, persist);
+		return android_graphics_set_classic_depth(value, persist);
 	else if (!strcmp(name, "alpha_effects"))
-		android_graphics_set_alpha_effects(value, persist);
+		return android_graphics_set_alpha_effects(value, persist);
 	else if (!strcmp(name, "dynlight_color"))
-		android_graphics_set_dynlight_color(value, persist);
+		return android_graphics_set_dynlight_color(value, persist);
 	else if (!strcmp(name, "movie_tex_filt"))
-		android_graphics_set_movie_texfilt(value, persist);
-	else
-		return 0;
-	return 1;
+		return android_graphics_set_movie_texfilt(value, persist);
+	return ANDROID_GRAPHICS_OPTION_UNKNOWN;
 }
 
 #endif

@@ -317,6 +317,10 @@ function Restore-MissionZipBatchDevice {
     if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
         throw "could not restore base game data after emulator recovery"
     }
+    Reset-GameState
+    if (-not (Test-StandardGameDataActive)) {
+        throw "restored base game data is not active after emulator recovery"
+    }
 }
 
 function Ensure-MissionZipBatchDeviceReady {
@@ -676,8 +680,14 @@ if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
     Write-Status "FAIL: could not provision base game data" "Red"
     exit 1
 }
+Reset-GameState
+if (-not (Test-StandardGameDataActive)) {
+    Write-Status "FAIL: provisioned base game data is not active" "Red"
+    exit 1
+}
 
 $results = @()
+$consecutiveBaseDataFailures = 0
 $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $zipIndex = 0
 foreach ($zip in $zips) {
@@ -720,6 +730,7 @@ foreach ($zip in $zips) {
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
+        $consecutiveBaseDataFailures = 0
         continue
     }
     if ($gameHint.Game -notin @("d1", "d2")) {
@@ -731,6 +742,7 @@ foreach ($zip in $zips) {
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
+        $consecutiveBaseDataFailures = 0
         continue
     }
 
@@ -746,6 +758,9 @@ foreach ($zip in $zips) {
 
         Stop-AppAndWait
         Reset-GameState
+        if (-not (Test-StandardGameDataActive)) {
+            throw "standard D1/D2 base data is not active after game-state reset"
+        }
         Clear-RunArtifacts -Label $label
         Adb -AdbArgs @("logcat", "-c") | Out-Null
         Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
@@ -815,6 +830,16 @@ foreach ($zip in $zips) {
         if ($recoverAfterRun) {
             Restore-MissionZipBatchDevice -Reason "recovering after $($zip.Name)"
         }
+    }
+
+    if ($record["status"] -eq "failed" -and (Test-StandardGameDataFailureReason -Reason $record["reason"])) {
+        $consecutiveBaseDataFailures++
+    } else {
+        $consecutiveBaseDataFailures = 0
+    }
+    if ($consecutiveBaseDataFailures -ge 2) {
+        Write-Status "FAIL: aborting batch after $consecutiveBaseDataFailures consecutive missing-base-data failures" "Red"
+        break
     }
 }
 

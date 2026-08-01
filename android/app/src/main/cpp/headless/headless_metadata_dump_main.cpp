@@ -666,7 +666,8 @@ static nlohmann::ordered_json serialize_item(const secret_area_item &item)
 	return result;
 }
 
-static nlohmann::ordered_json serialize_secret(const secret_area_entry &secret)
+static nlohmann::ordered_json serialize_secret(
+    const secret_area_state &state, const secret_area_entry &secret)
 {
 	char label[16];
 	nlohmann::ordered_json result;
@@ -690,7 +691,8 @@ static nlohmann::ordered_json serialize_secret(const secret_area_entry &secret)
 	for (int index = 0; index < secret.entrance_count; ++index)
 		entrances.push_back(serialize_entrance(secret.entrances[index]));
 	result["entrances"] = entrances;
-	result["segments"] = serialize_int_array(secret.segments, secret.segment_count);
+	result["segments"] = serialize_int_array(
+	    state.segments + secret.segment_offset, secret.segment_count);
 	return result;
 }
 
@@ -861,7 +863,7 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	result["route_steps"] = serialize_route_steps(metadata);
 	for (int index = 0; index < total; ++index)
-		secrets.push_back(serialize_secret(state->secrets[index]));
+		secrets.push_back(serialize_secret(*state, state->secrets[index]));
 	result["secrets"] = secrets;
 	return result;
 }

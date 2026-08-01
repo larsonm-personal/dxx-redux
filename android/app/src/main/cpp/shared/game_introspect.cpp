@@ -87,6 +87,7 @@ extern int r_hires_loaded;
 
 /* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
 extern "C" int ogl_get_egl_recreate_count(void);
+extern "C" unsigned long long ogl_get_egl_window_generation(void);
 
 static int Framebuffer_probe_width;
 static int Framebuffer_probe_height;
@@ -587,7 +588,7 @@ static json serialize_secret_areas()
 			item["items"] = std::move(secret_items);
 			json segments = json::array();
 			for (int s = 0; s < entry->segment_count; s++)
-				segments.push_back(entry->segments[s]);
+				segments.push_back(state->segments[entry->segment_offset + s]);
 			item["segments"] = std::move(segments);
 			json entrances = json::array();
 			for (int e = 0; e < entry->entrance_count; e++) {
@@ -1439,6 +1440,7 @@ extern "C" char *game_introspect_get_state(void)
 	}
 
 	j["egl_recreate_count"] = ogl_get_egl_recreate_count();
+	j["egl_window_generation"] = ogl_get_egl_window_generation();
 
 	/* -- Render and display resolution -------------------------------- */
 	{

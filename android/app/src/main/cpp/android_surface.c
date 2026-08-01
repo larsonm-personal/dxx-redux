@@ -12,9 +12,13 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <android/log.h>
+#include <inttypes.h>
 #include <string.h>
 #include <pthread.h>
 #include <SDL.h>
+
+#include "shared/android_surface_lifecycle.h"
+#include "shared/rgba8888.h"
 
 #define LOG_TAG   "DXX-Surface"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -24,17 +28,16 @@
 static ANativeWindow *g_native_window = NULL;
 static int g_surface_ready = 0;
 static pthread_mutex_t g_surface_mutex = PTHREAD_MUTEX_INITIALIZER;
+static uint64_t g_surface_generation = 0;
 
-/* Current palette in ARGB8888, rebuilt whenever SDL_SetColors is called
+/* Current palette in RGBA8888 byte order, rebuilt whenever SDL_SetColors is called
  * or gr_palette_load runs.  We rebuild it lazily from the canvas palette
  * in android_
  * surface_
  * blit(). */
-static uint32_t g_palette_argb[256];
+static uint8_t g_palette_rgba[256][4];
 static int g_last_geo_w = 0, g_last_geo_h = 0;
-static volatile int g_app_paused = 0;
-static volatile int g_egl_surface_stale = 0;
-static int g_had_surface = 0;
+static int g_app_paused = 0;
 static int g_surface_view_w = 0;
 static int g_surface_view_h = 0;
 
@@ -51,25 +54,21 @@ static void android_set_surface_size(jint width, jint height)
 
 static void android_set_surface(JNIEnv *env, jobject surface)
 {
-	pthread_mutex_lock(&g_surface_mutex);
+	ANativeWindow *new_window = surface ? ANativeWindow_fromSurface(env, surface) : NULL;
+	ANativeWindow *old_window;
 
-	if (g_native_window) {
-		ANativeWindow_release(g_native_window);
-		g_native_window = NULL;
-	}
+	pthread_mutex_lock(&g_surface_mutex);
+	g_surface_generation++;
+	old_window = g_native_window;
+	g_native_window = new_window;
 
 	if (surface) {
-		g_native_window = ANativeWindow_fromSurface(env, surface);
 		if (g_native_window) {
 			g_surface_ready = 1;
 			g_last_geo_w = 0;
 			g_last_geo_h = 0;
-			if (g_had_surface) {
-				g_egl_surface_stale = 1;
-				LOGI("ANativeWindow re-acquired — EGL surface marked stale");
-			}
-			g_had_surface = 1;
-			LOGI("ANativeWindow acquired (%dx%d), view=%dx%d",
+			LOGI("ANativeWindow acquired generation=%" PRIu64 " (%dx%d), view=%dx%d",
+			     g_surface_generation,
 			     ANativeWindow_getWidth(g_native_window),
 			     ANativeWindow_getHeight(g_native_window),
 			     g_surface_view_w, g_surface_view_h);
@@ -79,8 +78,10 @@ static void android_set_surface(JNIEnv *env, jobject surface)
 		}
 	} else {
 		g_surface_ready = 0;
-		LOGI("Surface destroyed");
+		LOGI("Surface destroyed generation=%" PRIu64, g_surface_generation);
 	}
+	if (old_window)
+		ANativeWindow_release(old_window);
 
 	pthread_mutex_unlock(&g_surface_mutex);
 }
@@ -137,7 +138,8 @@ void android_surface_blit(SDL_Surface *canvas)
 	SDL_Palette *pal = canvas->format->palette;
 	if (pal) {
 		for (int i = 0; i < pal->ncolors && i < 256; i++) {
-			g_palette_argb[i] = (0xFFu << 24) | ((uint32_t) pal->colors[i].r << 16) | ((uint32_t) pal->colors[i].g << 8) | ((uint32_t) pal->colors[i].b);
+			rgba8888_store(g_palette_rgba[i], pal->colors[i].r, pal->colors[i].g,
+			               pal->colors[i].b, UINT8_MAX);
 		}
 	}
 
@@ -164,10 +166,16 @@ void android_surface_blit(SDL_Surface *canvas)
 		pthread_mutex_unlock(&g_surface_mutex);
 		return; /* lock failed — surface may be transitioning */
 	}
+	if ((uint32_t) buf.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM) {
+		LOGE("Unexpected native-window format: %d", buf.format);
+		ANativeWindow_unlockAndPost(g_native_window);
+		pthread_mutex_unlock(&g_surface_mutex);
+		return;
+	}
 
-	/* Convert 8-bit paletted → ARGB8888 */
+	/* Convert 8-bit paletted pixels to explicit RGBA8888 bytes */
 	const uint8_t *src = (const uint8_t *) canvas->pixels;
-	uint32_t *dst = (uint32_t *) buf.bits;
+	uint8_t *dst = (uint8_t *) buf.bits;
 	int dst_stride = buf.stride; /* in pixels, not bytes */
 
 	/* Keyboard viewport offset: when the soft keyboard is visible,
@@ -180,16 +188,16 @@ void android_surface_blit(SDL_Surface *canvas)
 
 	/* Blit row by row (canvas pitch may differ from buf stride) */
 	for (int y = 0; y < src_h && y < buf.height; y++) {
-		uint32_t *dst_row = dst + y * dst_stride;
+		uint8_t *dst_row = dst + y * dst_stride * 4;
 		int row_w = (src_w < buf.width) ? src_w : buf.width;
 		int src_y = y + y_offset;
 		if (src_y >= src_h) {
-			memset(dst_row, 0, row_w * sizeof(uint32_t));
+			memset(dst_row, 0, row_w * 4);
 			continue;
 		}
 		const uint8_t *src_row = src + src_y * canvas->pitch;
 		for (int x = 0; x < row_w; x++) {
-			dst_row[x] = g_palette_argb[src_row[x]];
+			memcpy(dst_row + x * 4, g_palette_rgba[src_row[x]], 4);
 		}
 	}
 
@@ -197,9 +205,10 @@ void android_surface_blit(SDL_Surface *canvas)
 
 	g_blit_count++;
 	if (g_blit_count == 1 || (g_blit_count % 300) == 0) {
-		LOGI("blit #%d  canvas=%dx%d  buf=%dx%d  palette[1]=0x%08X",
+		LOGI("blit #%d  canvas=%dx%d  buf=%dx%d  palette[1]=%02X%02X%02X%02X",
 		     g_blit_count, src_w, src_h, buf.width, buf.height,
-		     g_palette_argb[1]);
+		     g_palette_rgba[1][0], g_palette_rgba[1][1],
+		     g_palette_rgba[1][2], g_palette_rgba[1][3]);
 	}
 
 	pthread_mutex_unlock(&g_surface_mutex);
@@ -230,18 +239,23 @@ void android_surface_resume(void)
 
 /* ── Accessors for EGL lifecycle ─────────────────────────────── */
 
-int android_surface_egl_needs_recreate(void)
+void android_surface_acquire_snapshot(struct android_surface_snapshot *snapshot)
 {
-	if (g_egl_surface_stale) {
-		g_egl_surface_stale = 0;
-		return 1;
-	}
-	return 0;
+	pthread_mutex_lock(&g_surface_mutex);
+	snapshot->window = g_native_window;
+	snapshot->generation = g_surface_generation;
+	snapshot->paused = g_app_paused;
+	if (snapshot->window)
+		ANativeWindow_acquire(snapshot->window);
+	pthread_mutex_unlock(&g_surface_mutex);
 }
 
-int android_surface_is_paused(void)
+void android_surface_release_snapshot(struct android_surface_snapshot *snapshot)
 {
-	return g_app_paused;
+	if (snapshot->window) {
+		ANativeWindow_release(snapshot->window);
+		snapshot->window = NULL;
+	}
 }
 
 /* ── Cleanup ────────────────────────────────────────────────── */
@@ -249,6 +263,7 @@ int android_surface_is_paused(void)
 void android_surface_cleanup(void)
 {
 	pthread_mutex_lock(&g_surface_mutex);
+	g_surface_generation++;
 	if (g_native_window) {
 		ANativeWindow_release(g_native_window);
 		g_native_window = NULL;
@@ -257,25 +272,26 @@ void android_surface_cleanup(void)
 	pthread_mutex_unlock(&g_surface_mutex);
 }
 
-/* ── Accessor for OGL EGL init ──────────────────────────────── */
-
-ANativeWindow *android_surface_get_native_window(void)
-{
-	return g_native_window;
-}
-
 int android_surface_get_display_width(void)
 {
-	if (g_surface_view_w > 0)
-		return g_surface_view_w;
-	return g_native_window ? ANativeWindow_getWidth(g_native_window) : 0;
+	int width;
+
+	pthread_mutex_lock(&g_surface_mutex);
+	width = g_surface_view_w > 0 ? g_surface_view_w
+	                             : (g_native_window ? ANativeWindow_getWidth(g_native_window) : 0);
+	pthread_mutex_unlock(&g_surface_mutex);
+	return width;
 }
 
 int android_surface_get_display_height(void)
 {
-	if (g_surface_view_h > 0)
-		return g_surface_view_h;
-	return g_native_window ? ANativeWindow_getHeight(g_native_window) : 0;
+	int height;
+
+	pthread_mutex_lock(&g_surface_mutex);
+	height = g_surface_view_h > 0 ? g_surface_view_h
+	                              : (g_native_window ? ANativeWindow_getHeight(g_native_window) : 0);
+	pthread_mutex_unlock(&g_surface_mutex);
+	return height;
 }
 
 #endif /* ANDROID */

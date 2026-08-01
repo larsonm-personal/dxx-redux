@@ -134,6 +134,11 @@ int ogl_get_egl_recreate_count(void)
 {
 	return android_egl_surface_get_recreate_count(&ogl_android_egl_state);
 }
+
+unsigned long long ogl_get_egl_window_generation(void)
+{
+	return android_egl_surface_get_window_generation(&ogl_android_egl_state);
+}
 #endif /* OGLES && ANDROID */
 
 void ogl_swap_buffers_internal(void)

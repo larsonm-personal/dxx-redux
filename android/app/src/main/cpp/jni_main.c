@@ -771,19 +771,42 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 #include "palette.h"
 #include "shared/android_graphics_options.h"
 #include "shared/coop_indicator_lines.h"
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject thiz,
                                                            jstring jname, jint value)
 {
 	char *name;
-	if (!dxx_jni_string_to_utf8(env, jname, &name)) return;
+	int result;
+	if (!dxx_jni_string_to_utf8(env, jname, &name))
+		return ANDROID_GRAPHICS_OPTION_UNKNOWN;
 	int persist = strcmp(name, "alpha_effects") &&
 	              strcmp(name, "dynlight_color") &&
 	              strcmp(name, "main_view_fov_locked");
 	LOGI("graphics option: %s=%d", name, (int) value);
-	if (!android_graphics_set_option(name, (int) value, persist))
+	result = android_graphics_set_option(name, (int) value, persist);
+	if (result == ANDROID_GRAPHICS_OPTION_UNKNOWN)
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
+	else if (result != ANDROID_GRAPHICS_OPTION_OK)
+		LOGE("nativeSetGraphicsOption: failed to persist '%s'", name);
 	free(name);
+	return (jint) result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeApplyLauncherGraphicsOption(JNIEnv *env, jobject thiz,
+                                                                     jstring jname, jint value)
+{
+	char *name;
+	int applied;
+	(void) thiz;
+	if (!dxx_jni_string_to_utf8(env, jname, &name))
+		return JNI_FALSE;
+	LOGI("launcher graphics option: %s=%d", name, (int) value);
+	applied = android_graphics_set_option(name, (int) value, 0);
+	if (!applied)
+		LOGE("nativeApplyLauncherGraphicsOption: unknown option '%s'", name);
+	free(name);
+	return applied == ANDROID_GRAPHICS_OPTION_OK ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL

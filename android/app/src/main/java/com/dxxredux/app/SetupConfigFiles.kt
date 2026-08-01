@@ -60,23 +60,65 @@ internal fun readConfigValueForGame(
     return null
 }
 
+internal fun readGraphicsConfigSnapshot(
+    filesDir: File,
+    game: String,
+): List<Pair<String, Int>> {
+    val gameSubdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val configTexts =
+        listOf(File(filesDir, "$gameSubdir/descent.cfg"), File(filesDir, "descent.cfg"))
+            .filter(File::exists)
+            .map(File::readText)
+    val options =
+        mutableListOf(
+            "GammaLevel" to "gamma_level",
+            "TexFilt" to "tex_filt",
+            "MenuTexFilt" to "menu_tex_filt",
+            "HudTexFilt" to "hud_tex_filt",
+            "MainViewFov" to "main_view_fov",
+            "CornerTextInset" to "corner_text_inset",
+            "AnisoLevel" to "aniso_level",
+            "MsaaLevel" to "msaa_level",
+            "ClassicDepth" to "classic_depth",
+        )
+    if (game == "d2") options.add("MovieTexFilt" to "movie_tex_filt")
+    return options.mapNotNull { (configKey, nativeName) ->
+        configTexts
+            .firstNotNullOfOrNull { text ->
+                Regex("^$configKey=(.*)$", RegexOption.MULTILINE)
+                    .find(text)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.trim()
+            }?.toIntOrNull()
+            ?.let { nativeName to it }
+    }
+}
+
+internal fun applyGraphicsOptionSnapshot(
+    options: List<Pair<String, Int>>,
+    apply: (String, Int) -> Boolean,
+): Boolean = options.all { (name, value) -> apply(name, value) }
+
 private fun updateConfigPaths(
     cfgPaths: List<File>,
     settings: List<Pair<String, String>>,
 ) {
-    for (cfgFile in cfgPaths.distinctBy { it.absolutePath }) {
-        var text = if (cfgFile.exists()) cfgFile.readText() else ""
-        for ((key, value) in settings) {
-            val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-            text =
-                if (regex.containsMatchIn(text)) {
-                    regex.replace(text) { "$key=$value" }
-                } else {
-                    text.trimEnd() + "\n$key=$value\n"
-                }
+    val updates =
+        cfgPaths.distinctBy { it.absolutePath }.map { cfgFile ->
+            var text = if (cfgFile.exists()) cfgFile.readText() else ""
+            for ((key, value) in settings) {
+                val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
+                text =
+                    if (regex.containsMatchIn(text)) {
+                        regex.replace(text) { "$key=$value" }
+                    } else {
+                        text.trimEnd() + "\n$key=$value\n"
+                    }
+            }
+            cfgFile to text
         }
-        cfgFile.writeText(text)
-    }
+    AtomicFilePublication.writeUtf8Batch(updates)
 }
 
 private fun setupLogInfo(message: String) {

@@ -20,6 +20,13 @@ function Get-JsonPropertyValue($value, $name) {
     return $value.PSObject.Properties[$name].Value
 }
 
+function Get-JsonStringArray($value, $name) {
+    $propertyValue = Get-JsonPropertyValue $value $name
+    return @($propertyValue | Where-Object {
+            $_ -is [string] -and -not [string]::IsNullOrWhiteSpace($_)
+        } | ForEach-Object { [string]$_ })
+}
+
 function Get-JsonProperties($value) {
     if ($null -eq $value) {
         return @()

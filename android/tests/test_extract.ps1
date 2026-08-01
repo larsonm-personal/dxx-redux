@@ -36,6 +36,11 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
 
+trap {
+    Write-Host "FAIL: Unexpected extraction test runner error: $($_.Exception.Message)" -ForegroundColor Red
+    exit 99
+}
+
 # Sentinel output to diagnose empty-log issues when run from run_all_tests
 [Console]::Out.Flush()
 Write-Host "test_extract.ps1 starting (PSScriptRoot=$PSScriptRoot)"
@@ -799,7 +804,8 @@ Write-Host "  Game: $($spec.game)" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
 
-$expectedFiles = @($spec.expected_files | Where-Object { $_ })
+$expectedFiles = @(Get-JsonStringArray $spec 'expected_files')
+$missionFiles = @(Get-JsonStringArray $spec 'mission_files')
 if ($expectedFiles.Count -eq 0) {
     Write-Status 'FAIL: Regression spec has no expected_files extraction oracle' 'Red'
     Exit-Test 1 'fail' 'invalid_spec'
@@ -1306,7 +1312,7 @@ if ($useDirectCdImport) {
 
     foreach ($file in $filesToPush) {
         $remoteName = $file.Name.ToLower()
-        if (@($spec.mission_files | Where-Object { $_.ToLowerInvariant() -eq $remoteName }).Count -gt 0) {
+        if (@($missionFiles | Where-Object { $_.ToLowerInvariant() -eq $remoteName }).Count -gt 0) {
             $remoteName = "missions/$remoteName"
         }
         $sizeKB = [math]::Round($file.Length / 1024)

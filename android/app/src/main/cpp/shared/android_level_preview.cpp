@@ -113,6 +113,12 @@ struct preview_metadata_progress_context {
 	int max_percent;
 };
 
+static int preview_metadata_cancelled(void *user)
+{
+	(void) user;
+	return Level_preview_close_requested.load(std::memory_order_acquire) != 0;
+}
+
 static void preview_metadata_progress(
     void *user, const char *stage, int completed, int total)
 {
@@ -402,7 +408,13 @@ extern "C" int android_level_preview_run(const char *request_path)
 	};
 	level_metadata_set_progress_callback(
 	    preview_metadata_progress, &canonical_progress);
+	level_metadata_set_cancel_callback(preview_metadata_cancelled, NULL);
 	secret_area_rescan_current_level();
+	if (preview_metadata_cancelled(NULL)) {
+		level_metadata_set_cancel_callback(NULL, NULL);
+		level_metadata_set_progress_callback(NULL, NULL);
+		return preview_fail("Preview preparation cancelled");
+	}
 	secret_area_set_reveal_unfound(0);
 	automap_clear_visited();
 	reveal_preview_automap_segments();
@@ -413,7 +425,10 @@ extern "C" int android_level_preview_run(const char *request_path)
 	level_metadata_set_progress_callback(
 	    preview_metadata_progress, &live_progress);
 	level_metadata_rescan_route_from_object(Players[0].objnum);
+	level_metadata_set_cancel_callback(NULL, NULL);
 	level_metadata_set_progress_callback(NULL, NULL);
+	if (preview_metadata_cancelled(NULL))
+		return preview_fail("Preview preparation cancelled");
 	loading_progress.update("Opening automap", 97);
 	set_screen_mode(SCREEN_GAME);
 

@@ -587,6 +587,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
@@ -733,6 +734,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c

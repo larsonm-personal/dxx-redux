@@ -4,6 +4,7 @@
 #ifdef ANDROID
 
 #include <EGL/egl.h>
+#include <stdint.h>
 
 typedef void (*android_egl_resource_callback)(void);
 
@@ -18,12 +19,14 @@ struct android_egl_surface_state {
 	int height;
 	int recreate_count;
 	int swap_count;
+	uint64_t window_generation;
 };
 
 void android_egl_surface_initialize(struct android_egl_surface_state *state,
                                     int width, int height, int use_rgba8888, int *out_color_depth);
 void android_egl_surface_swap(struct android_egl_surface_state *state);
 int android_egl_surface_get_recreate_count(const struct android_egl_surface_state *state);
+uint64_t android_egl_surface_get_window_generation(const struct android_egl_surface_state *state);
 void android_egl_surface_log_renderer(void);
 void android_egl_surface_query_capabilities(float *out_max_anisotropy,
                                             int *out_max_msaa_samples, int *out_gpu_timer_available);

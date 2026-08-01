@@ -1324,11 +1324,11 @@ void reticle_config()
 int opt_gr_texfilt, opt_gr_movietexfilt, opt_gr_brightness, opt_gr_reticlemenu, opt_gr_alphafx, opt_gr_dynlightcolor, opt_gr_vsync, opt_gr_multisample, opt_gr_fpsindi, opt_gr_disablecockpit;
 int opt_gr_classicdepth;
 #ifdef ANDROID
-void android_graphics_set_texfilt(int value, int persist);
-void android_graphics_set_movie_texfilt(int value, int persist);
-void android_graphics_set_alpha_effects(int value, int persist);
-void android_graphics_set_dynlight_color(int value, int persist);
-void android_graphics_set_classic_depth(int value, int persist);
+int android_graphics_set_texfilt(int value, int persist);
+int android_graphics_set_movie_texfilt(int value, int persist);
+int android_graphics_set_alpha_effects(int value, int persist);
+int android_graphics_set_dynlight_color(int value, int persist);
+int android_graphics_set_classic_depth(int value, int persist);
 #endif
 int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 {

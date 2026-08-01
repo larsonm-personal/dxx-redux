@@ -312,8 +312,9 @@ foreach ($specPath in $specs) {
 
     if ($status -eq 'FAIL') {
         $failures++
-        if ($exitCode -eq 98) {
-            Write-Host "Stopping after extraction test infrastructure failure" -ForegroundColor Red
+        if ($exitCode -in @(98, 99)) {
+            $failureKind = if ($exitCode -eq 98) { 'infrastructure failure' } else { 'runner error' }
+            Write-Host "Stopping after extraction test $failureKind" -ForegroundColor Red
             break
         }
         if ($MaxFailures -gt 0 -and $failures -ge $MaxFailures) {
