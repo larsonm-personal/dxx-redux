@@ -13,21 +13,24 @@ function Assert-True {
 }
 
 $defaultStages = @(Get-CdRegressionStages -RepoRoot $repoRoot)
-Assert-True ($defaultStages.Count -eq 3) 'Default workflow should contain three stages'
-Assert-True ($defaultStages[0].Arguments -contains '-Force') 'Extraction should be forced by default'
+Assert-True ($defaultStages.Count -eq 4) 'Default workflow should contain four stages'
+Assert-True ($defaultStages[0].Arguments -contains '-Force') 'CD extraction should be forced by default'
+Assert-True ($defaultStages[1].Script -eq (Join-Path $repoRoot 'game_data\extract_all_gog.ps1')) `
+    'GOG extraction should refresh before validating shared extraction specs'
+Assert-True ($defaultStages[1].Arguments -contains '-Force') 'GOG extraction should be forced by default'
 Assert-True ($defaultStages.Name -notcontains 'Refresh regression specs') 'Default workflow must not rewrite its oracle'
-Assert-True ($defaultStages[2].Arguments -contains '-All') 'Regression suite should run all specs'
-Assert-True ($defaultStages[2].Arguments -contains '-BuildAndInstall') 'Regression suite should build and install the current APK'
-Assert-True ($defaultStages[2].Arguments -contains '-RestartDevice') 'Regression suite should start from a clean emulator'
-Assert-True ($defaultStages[2].Arguments -notcontains '-SkipLaunch') 'Regression suite should default to full launch mode'
+Assert-True ($defaultStages[3].Arguments -contains '-All') 'Regression suite should run all specs'
+Assert-True ($defaultStages[3].Arguments -contains '-BuildAndInstall') 'Regression suite should build and install the current APK'
+Assert-True ($defaultStages[3].Arguments -contains '-RestartDevice') 'Regression suite should start from a clean emulator'
+Assert-True ($defaultStages[3].Arguments -notcontains '-SkipLaunch') 'Regression suite should default to full launch mode'
 
 $fileOnlyStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -SkipLaunch)
-Assert-True ($fileOnlyStages[2].Arguments -contains '-SkipLaunch') 'Explicit file-only mode should skip game launches'
+Assert-True ($fileOnlyStages[3].Arguments -contains '-SkipLaunch') 'Explicit file-only mode should skip game launches'
 
 $refreshStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -RefreshOracle)
-Assert-True ($refreshStages.Count -eq 4) 'Oracle refresh workflow should contain four stages'
-Assert-True ($refreshStages[1].Name -eq 'Refresh regression specs') 'Oracle refresh stage should be explicit'
-Assert-True ($refreshStages[1].Arguments -contains '-Force') 'Explicit oracle refresh should regenerate all specs'
+Assert-True ($refreshStages.Count -eq 5) 'Oracle refresh workflow should contain five stages'
+Assert-True ($refreshStages[2].Name -eq 'Refresh regression specs') 'Oracle refresh stage should be explicit'
+Assert-True ($refreshStages[2].Arguments -contains '-Force') 'Explicit oracle refresh should regenerate all specs'
 
 $tempRoot = Join-Path $repoRoot 'android\temp\cd_regression_runner_test'
 if (Test-Path -LiteralPath $tempRoot) {

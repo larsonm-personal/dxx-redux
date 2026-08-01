@@ -97,7 +97,8 @@ try {
     )
     [System.IO.File]::WriteAllText(
         (Join-Path $testFlightDir 'data_tracks\.track_hashes.json'),
-        '[{"track":1,"type":"data","sha1":"test-flight-sha1"}]',
+        '[{"track":1,"type":"data","sha1":"test-flight-sha1"},' +
+        '{"sow":"descent1.sow","files_extracted":4}]',
         [System.Text.UTF8Encoding]::new($false)
     )
     [System.IO.File]::WriteAllText(

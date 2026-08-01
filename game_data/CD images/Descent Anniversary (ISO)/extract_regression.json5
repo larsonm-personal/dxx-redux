@@ -1,13 +1,19 @@
 // Auto-generated regression spec for: Descent Anniversary (ISO)
-// Generated: 2026-05-24 17:34:36
+// Generated: 2026-07-31 15:19:52
 {
   "source_type": "cd",
   "disc_image_type": "iso",
   "disc_id": "descent-anniversary-iso",
-  "source_files": {
-    "name": "descent_anniversary.iso",
-    "sha256": "cc1d57ca05827821dd1298fa059f5b23e4b4cfb093d0692847cc6391bca951b2"
-  },
+  "source_files": [
+    {
+      "name": "descent_anniversary.cue",
+      "sha256": "40fa2d7e0d3893fcaa9bbaa5f8eaf736366b45196a61b4465a706258f16847f7"
+    },
+    {
+      "name": "descent_anniversary.iso",
+      "sha256": "cc1d57ca05827821dd1298fa059f5b23e4b4cfb093d0692847cc6391bca951b2"
+    }
+  ],
   "game": "d1",
   "classification": "d1_full",
   "expected_mission": "Descent: First Strike",

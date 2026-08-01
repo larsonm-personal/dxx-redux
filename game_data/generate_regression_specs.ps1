@@ -261,9 +261,12 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     if (Test-Path $hashFile) {
         $tracks = Get-Content $hashFile -Raw | ConvertFrom-Json
         foreach ($track in $tracks) {
-            if ($track.type -eq 'data' -and $track.sha1) {
-                if ($sha1ToDisc.ContainsKey($track.sha1)) {
-                    $disc = $sha1ToDisc[$track.sha1]
+            $typeProperty = $track.PSObject.Properties['type']
+            $sha1Property = $track.PSObject.Properties['sha1']
+            if ($typeProperty -and $typeProperty.Value -eq 'data' -and $sha1Property -and $sha1Property.Value) {
+                $dataTrackSha1 = [string]$sha1Property.Value
+                if ($sha1ToDisc.ContainsKey($dataTrackSha1)) {
+                    $disc = $sha1ToDisc[$dataTrackSha1]
                     $discId = $disc.id
                     $game = $disc.game
                     $audioTracks = @($disc.tracks | Where-Object { $_.type -eq 'audio' }).Count

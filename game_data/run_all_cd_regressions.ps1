@@ -52,6 +52,11 @@ function Get-CdRegressionStages {
             Name = 'Extract all CD images'
             Script = Join-Path $RepoRoot 'game_data\extract_all_cds.ps1'
             Arguments = $forceArgs
+        },
+        [pscustomobject]@{
+            Name = 'Extract all GOG installers'
+            Script = Join-Path $RepoRoot 'game_data\extract_all_gog.ps1'
+            Arguments = $forceArgs
         }
     )
     if ($RefreshOracle) {
