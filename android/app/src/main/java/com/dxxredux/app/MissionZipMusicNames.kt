@@ -21,7 +21,17 @@ internal object MissionZipMusicNames {
         ownerFilename: String,
     ) {
         cacheFile(filesDir, ownerFilename).delete()
+        identityFile(cacheFile(filesDir, ownerFilename)).delete()
     }
+
+    fun isCurrent(
+        outputFile: File,
+        catalog: MissionZipMusicCatalog,
+    ): Boolean =
+        outputFile.isFile &&
+            identityFile(outputFile).let {
+                it.isFile && it.readText(Charsets.US_ASCII) == catalog.sourceIdentity
+            }
 
     fun identifyLocalAndWrite(
         context: Context,
@@ -60,12 +70,16 @@ internal object MissionZipMusicNames {
         val names = nameMap(catalog, entries)
         if (names.isEmpty()) {
             outputFile.delete()
+            identityFile(outputFile).delete()
             return 0
         }
         outputFile.parentFile?.mkdirs()
+        val identityFile = identityFile(outputFile)
+        identityFile.delete()
         val root = JSONObject()
         names.toSortedMap(String.CASE_INSENSITIVE_ORDER).forEach { (key, value) -> root.put(key, value) }
         outputFile.writeText(root.toString(2), Charsets.UTF_8)
+        identityFile.writeText(catalog.sourceIdentity, Charsets.US_ASCII)
         return names.size
     }
 
@@ -102,4 +116,6 @@ internal object MissionZipMusicNames {
             .distinctBy { it.lowercase(Locale.US) }
 
     private fun leafName(path: String): String = path.replace('\\', '/').substringAfterLast('/')
+
+    private fun identityFile(outputFile: File): File = File(outputFile.parentFile, "${outputFile.name}.identity")
 }

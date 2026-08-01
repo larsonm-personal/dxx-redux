@@ -42,6 +42,7 @@ class MissionZipMusicAnalysisSkipTest {
             archiveName = "mission.zip",
             archiveSize = 1L,
             archiveMtime = 2L,
+            sourceIdentity = "source-a",
             trackId = track.id,
             entryPath = track.archiveEntryPath,
             nestedPath = track.nestedEntryPath.orEmpty(),

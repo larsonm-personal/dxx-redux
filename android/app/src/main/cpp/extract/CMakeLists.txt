@@ -424,6 +424,22 @@ else()
 endif()
 add_test(NAME chromaprint_db_config_tests COMMAND test_chromaprint_db_config)
 
+find_package(Threads REQUIRED)
+add_executable(
+    test_chromaprint_db_concurrency ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_concurrency.cpp
+                                    ${SHARED_DIR}/chromaprint_db.c)
+target_include_directories(test_chromaprint_db_concurrency
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
+target_compile_definitions(test_chromaprint_db_concurrency PRIVATE CHROMAPRINT_NODLL)
+target_link_libraries(test_chromaprint_db_concurrency
+                      PRIVATE chromaprint nlohmann_json::nlohmann_json Threads::Threads)
+if(MSVC)
+    target_compile_options(test_chromaprint_db_concurrency PRIVATE /W4)
+else()
+    target_compile_options(test_chromaprint_db_concurrency PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME chromaprint_db_concurrency_tests COMMAND test_chromaprint_db_concurrency)
+
 add_executable(test_gles3_shim_array_sources
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_gles3_shim_array_sources.c)
 target_include_directories(test_gles3_shim_array_sources

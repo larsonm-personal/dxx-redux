@@ -701,6 +701,7 @@ class ModManager(
         val stageDir = File(generatedMissionZipDir(game), safeMissionZipDirName(mod.filename))
         try {
             extractZipToRoot(modFile, stageDir, scan)
+            writeMissionZipMusicNames(mod.filename, modFile, null, mod.displayName)
             copyMissionZipMusicNames(mod.filename, stageDir)
         } catch (e: InsufficientStorageException) {
             throw e
@@ -736,7 +737,7 @@ class ModManager(
         val sidecar =
             extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
                 ?: MissionZipMusicNames.cacheFile(filesDir, ownerFilename)
-        if (sidecar.isFile) return
+        if (MissionZipMusicNames.isCurrent(sidecar, catalog)) return
         try {
             val count =
                 MissionZipMusicNames.identifyLocalAndWrite(

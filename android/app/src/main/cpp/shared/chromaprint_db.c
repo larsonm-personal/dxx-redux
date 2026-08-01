@@ -17,6 +17,7 @@
 #include <android/log.h>
 #include <chromaprint.h>
 #include <nlohmann/json.hpp>
+#include <mutex>
 
 #define LOG_TAG   "chromaprint_db"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -39,9 +40,11 @@ static float s_duration_tolerance = DEFAULT_DURATION_TOLERANCE;
 
 static chromaprint_db_entry_t s_entries[MAX_DB_ENTRIES];
 static int s_entry_count = 0;
+static std::mutex s_db_mutex;
 
 int chromaprint_db_set_threshold(float threshold)
 {
+	const std::lock_guard<std::mutex> lock(s_db_mutex);
 	if (!isfinite(threshold) || threshold <= 0.0f || threshold > 1.0f) {
 		s_match_threshold = 0.0f;
 		s_match_threshold_configured = 0;
@@ -54,6 +57,7 @@ int chromaprint_db_set_threshold(float threshold)
 
 void chromaprint_db_set_duration_tolerance(float tolerance)
 {
+	const std::lock_guard<std::mutex> lock(s_db_mutex);
 	if (tolerance > 0.0f && tolerance <= 1.0f)
 		s_duration_tolerance = tolerance;
 }
@@ -64,6 +68,14 @@ static char *copy_string(const std::string &value)
 	if (!copy) return NULL;
 	memcpy(copy, value.data(), value.size());
 	copy[value.size()] = '\0';
+	return copy;
+}
+
+static char *copy_string(const char *value)
+{
+	size_t length = strlen(value);
+	char *copy = (char *) malloc(length + 1);
+	if (copy) memcpy(copy, value, length + 1);
 	return copy;
 }
 
@@ -79,6 +91,7 @@ static void free_entries(chromaprint_db_entry_t *entries, int count)
 
 int chromaprint_db_load(const char *json_data, int json_len)
 {
+	const std::lock_guard<std::mutex> lock(s_db_mutex);
 	if (!s_match_threshold_configured) {
 		LOGE("Fingerprint match threshold is not configured");
 		return -1;
@@ -158,7 +171,7 @@ int chromaprint_db_load(const char *json_data, int json_len)
 		count++;
 	}
 
-	chromaprint_db_free();
+	free_entries(s_entries, s_entry_count);
 	memcpy(s_entries, pending, (size_t) count * sizeof(pending[0]));
 	s_entry_count = count;
 	LOGI("Loaded %d fingerprint entries", count);
@@ -217,8 +230,10 @@ static float fp_similarity(const uint32_t *a, int a_len,
 int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
                          chromaprint_db_match_t *out_match)
 {
+	const std::lock_guard<std::mutex> lock(s_db_mutex);
 	if (!raw_fp || fp_len <= 0 || !out_match || s_entry_count == 0)
 		return 0;
+	*out_match = {};
 
 	float best_score = 0.0f;
 	int best_idx = -1;
@@ -247,8 +262,12 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 
 	if (best_idx >= 0 && best_score >= s_match_threshold) {
 		out_match->confidence = best_score;
-		out_match->name = s_entries[best_idx].name;
-		out_match->disc_id = s_entries[best_idx].disc_id;
+		out_match->name = copy_string(s_entries[best_idx].name);
+		out_match->disc_id = copy_string(s_entries[best_idx].disc_id);
+		if (!out_match->name || !out_match->disc_id) {
+			chromaprint_db_match_free(out_match);
+			return 0;
+		}
 		out_match->track_num = s_entries[best_idx].track_num;
 		return 1;
 	}
@@ -256,18 +275,23 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 	return 0;
 }
 
+void chromaprint_db_match_free(chromaprint_db_match_t *match)
+{
+	if (!match) return;
+	free(match->name);
+	free(match->disc_id);
+	*match = {};
+}
+
 void chromaprint_db_free(void)
 {
-	for (int i = 0; i < s_entry_count; i++) {
-		free(s_entries[i].raw_fp);
-		free(s_entries[i].name);
-		free(s_entries[i].disc_id);
-		s_entries[i] = {};
-	}
+	const std::lock_guard<std::mutex> lock(s_db_mutex);
+	free_entries(s_entries, s_entry_count);
 	s_entry_count = 0;
 }
 
 int chromaprint_db_count(void)
 {
+	const std::lock_guard<std::mutex> lock(s_db_mutex);
 	return s_entry_count;
 }

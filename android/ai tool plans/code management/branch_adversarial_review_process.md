@@ -435,6 +435,8 @@ Change the finding checkbox line rather than adding a second status:
 
 Then replace `Resolution: Pending` with dated evidence and add one entry to the disposition log in `branch_adversarial_review_ledger.done.md`. Move the complete finalized finding block to that file in the same edit, preserving the original frozen evidence and ID. The active ledger keeps queue rows and chunk completion notes that refer to the archived ID, but it must not retain a second copy of the finalized finding
 
+Sometimes a finding will have been addressed and moved to "done" but a new chunk will find the same finding again in a new file. you can move the one in "done" back to the active ledger in that case
+
 A dismissal must explain which premise, path, or impact was false. A fix must name the commit or worktree change and validation. A duplicate must point to the surviving root-cause finding
 
 ## Research basis

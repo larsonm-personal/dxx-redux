@@ -76,6 +76,17 @@ function Invoke-SystemPowerShellUpdate {
         throw "Expected a PowerShell ZIP URL that can be mapped to an MSI URL: $ZipUrl"
     }
 
+    Write-Warning "The system MSI replaces files used by active PowerShell 7 processes"
+    Write-Warning "This PowerShell process and other open PowerShell 7 terminals may exit during installation"
+    Write-Warning "Save work in every PowerShell terminal before continuing"
+    if (-not $Force) {
+        $confirmation = Read-Host "Type INSTALL to continue, or press Enter to cancel"
+        if ($confirmation -cne "INSTALL") {
+            Write-Host "System PowerShell update cancelled"
+            return $false
+        }
+    }
+
     $msiUrl = $ZipUrl -replace '\.zip$', '.msi'
     $downloadDir = Join-Path $repoRoot "temp/powershell-update"
     New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
@@ -107,6 +118,7 @@ function Invoke-SystemPowerShellUpdate {
     } else {
         Write-Host "PowerShell $Version MSI install completed"
     }
+    return $true
 }
 
 $currentProcess = Get-Process -Id $PID
@@ -133,7 +145,10 @@ if ($updatePinned) {
 }
 
 if ($updateSystem) {
-    Invoke-SystemPowerShellUpdate -Version $pinnedVersion -ZipUrl $pinnedUrl
+    $systemUpdateCompleted = Invoke-SystemPowerShellUpdate -Version $pinnedVersion -ZipUrl $pinnedUrl
+    if (-not $systemUpdateCompleted) {
+        return
+    }
 }
 
 $shimPath = Join-Path (Join-Path $depBase "bin") "pwsh.cmd"

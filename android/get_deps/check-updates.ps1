@@ -692,6 +692,9 @@ function Invoke-InstallerScript($path) {
                     throw "bash or sh was not found on PATH"
                 }
                 & $bash $path
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Installer script failed with exit code $LASTEXITCODE`: $path"
+                }
             }
             default {
                 & $path
@@ -1754,11 +1757,14 @@ foreach ($item in $selectedTarget) {
                 Update-Conf "JDK_VERSION" $new
                 $url = Get-JdkUrlForPlatform $dep.JDKMajor
                 Update-Conf "JDK_URL" $url
-                Write-Host "    NOTE: Run helpers/get_jdk.sh to download JDK $($dep.JDKMajor)"
             } else {
                 Update-Conf "JDK_VERSION" $new
                 Update-Conf "JDK_URL" (Get-JdkUrlForPlatform $currentJDKMajor)
-                Write-Host "    NOTE: Run helpers/get_jdk.sh to download the updated JDK"
+            }
+            if ($dep.ContainsKey("InstallCmdKey")) {
+                Invoke-InstallSyncForDependency $dep $new
+            } else {
+                Write-Host "    Run helpers/get_jdk.sh to download the updated JDK"
             }
         }
         "GM Soundfont" {
@@ -1846,7 +1852,7 @@ Write-Host ""
 Write-Host "IMPORTANT NOTES:"
 Write-Host "  - Kotlin and Compose Compiler must be compatible"
 Write-Host "    See https://developer.android.com/jetpack/androidx/releases/compose-kotlin"
-Write-Host "  - For manual NDK/JDK/SDK changes, re-run the get_deps install scripts"
+Write-Host "  - For manual NDK/SDK changes, re-run the get_deps install scripts"
 Write-Host "  - Run a test build:  $(Get-GradleVerificationCommand)"
 Write-Host ""
 Write-RunNote "finished" @(

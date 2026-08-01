@@ -23,8 +23,8 @@ typedef struct {
 
 typedef struct {
 	float confidence; /* 0.0 - 1.0, higher = better match */
-	const char *name;
-	const char *disc_id;
+	char *name;
+	char *disc_id;
 	int track_num;
 } chromaprint_db_match_t;
 
@@ -45,6 +45,9 @@ int chromaprint_db_load(const char *json_data, int json_len);
  * Returns 0 if no match found. */
 int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
                          chromaprint_db_match_t *out_match);
+
+/* Free strings owned by a successful match result. */
+void chromaprint_db_match_free(chromaprint_db_match_t *match);
 
 /* Set match confidence threshold (0.0-1.0).
  * Loaded from fingerprint_config.json5 at startup.

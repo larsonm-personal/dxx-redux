@@ -14,6 +14,7 @@ class MissionZipAudioFingerprintCache(
         val archiveName: String,
         val archiveSize: Long,
         val archiveMtime: Long,
+        val sourceIdentity: String,
         val trackId: String,
         val entryPath: String,
         val nestedPath: String,
@@ -40,24 +41,23 @@ class MissionZipAudioFingerprintCache(
 
     private val cacheFile = File(filesDir, CACHE_FILE)
 
-    fun cachedEntries(catalog: MissionZipMusicCatalog): Map<String, Entry> {
-        val archive = File(catalog.archivePath)
-        return loadEntries()
-            .filter { it.matchesArchive(archive) }
+    fun cachedEntries(catalog: MissionZipMusicCatalog): Map<String, Entry> =
+        loadEntries()
+            .filter { it.sourceIdentity == catalog.sourceIdentity }
             .groupBy { it.trackId }
             .mapValues { (_, entries) -> entries.maxBy { it.lookupAt } }
-    }
 
     fun get(
         catalog: MissionZipMusicCatalog,
         track: MissionZipMusicTrack,
         contentSha256: String,
-    ): Entry? {
-        val archive = File(catalog.archivePath)
-        return loadEntries()
-            .filter { it.matchesArchive(archive) && it.matchesTrack(track) && it.contentSha256 == contentSha256 }
-            .maxByOrNull { it.lookupAt }
-    }
+    ): Entry? =
+        loadEntries()
+            .filter {
+                it.sourceIdentity == catalog.sourceIdentity &&
+                    it.matchesTrack(track) &&
+                    it.contentSha256 == contentSha256
+            }.maxByOrNull { it.lookupAt }
 
     fun record(
         catalog: MissionZipMusicCatalog,
@@ -74,6 +74,7 @@ class MissionZipAudioFingerprintCache(
                 archiveName = archive.name,
                 archiveSize = archive.length(),
                 archiveMtime = archive.lastModified(),
+                sourceIdentity = catalog.sourceIdentity,
                 trackId = track.id,
                 entryPath = track.archiveEntryPath,
                 nestedPath = track.nestedEntryPath.orEmpty(),
@@ -96,7 +97,7 @@ class MissionZipAudioFingerprintCache(
         val entries =
             loadEntries()
                 .filterNot {
-                    it.matchesArchive(archive) &&
+                    it.sourceIdentity == catalog.sourceIdentity &&
                         it.matchesTrack(track) &&
                         it.contentSha256 == contentSha256
                 } + entry
@@ -195,6 +196,7 @@ class MissionZipAudioFingerprintCache(
         if (!cacheFile.isFile) return emptyList()
         return runCatching {
             val root = JSONObject(cacheFile.readText())
+            if (root.optString("schema") != SCHEMA) return@runCatching emptyList()
             val entries = root.optJSONArray("entries") ?: JSONArray()
             (0 until entries.length()).mapNotNull { index ->
                 entries.optJSONObject(index)?.toEntry()
@@ -219,9 +221,6 @@ class MissionZipAudioFingerprintCache(
         cacheFile.writeText(root.toString(2))
     }
 
-    private fun Entry.matchesArchive(archive: File): Boolean =
-        archiveName == archive.name && archiveSize == archive.length() && archiveMtime == archive.lastModified()
-
     private fun Entry.matchesTrack(track: MissionZipMusicTrack): Boolean =
         trackId == track.id &&
             entryPath == track.archiveEntryPath &&
@@ -233,6 +232,7 @@ class MissionZipAudioFingerprintCache(
             .put("archive_name", archiveName)
             .put("archive_size", archiveSize)
             .put("archive_mtime", archiveMtime)
+            .put("source_identity", sourceIdentity)
             .put("track_id", trackId)
             .put("entry_path", entryPath)
             .put("nested_path", nestedPath)
@@ -260,6 +260,7 @@ class MissionZipAudioFingerprintCache(
                 archiveName = getString("archive_name"),
                 archiveSize = getLong("archive_size"),
                 archiveMtime = getLong("archive_mtime"),
+                sourceIdentity = getString("source_identity"),
                 trackId = getString("track_id"),
                 entryPath = getString("entry_path"),
                 nestedPath = optString("nested_path"),
@@ -287,9 +288,7 @@ class MissionZipAudioFingerprintCache(
         }.getOrNull()
 
     private fun Entry.sameCacheRecord(other: Entry): Boolean =
-        archiveName == other.archiveName &&
-            archiveSize == other.archiveSize &&
-            archiveMtime == other.archiveMtime &&
+        sourceIdentity == other.sourceIdentity &&
             trackId == other.trackId &&
             entryPath == other.entryPath &&
             nestedPath == other.nestedPath &&
@@ -313,7 +312,7 @@ class MissionZipAudioFingerprintCache(
 
     companion object {
         private const val CACHE_FILE = "mission_zip_audio_fingerprints.json"
-        private const val SCHEMA = "dxx-mission-zip-audio-fingerprints-v1"
+        private const val SCHEMA = "dxx-mission-zip-audio-fingerprints-v2"
         const val ACOUSTID_STATUS_OK = "ok"
         const val ACOUSTID_STATUS_NO_MATCH = "no_match"
         const val ACOUSTID_STATUS_RETRYABLE_FAILURE = "retryable_failure"

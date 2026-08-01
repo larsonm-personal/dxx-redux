@@ -9515,23 +9515,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Record the reviewed upstream commit and file mapping; inspect the source archive, APK/AAB, and native-library packaging for the approved notices and license; verify recipients can obtain the exact corresponding source and perform the selected replacement or relinking workflow; and obtain maintainer or qualified license-review sign-off before release
 - Resolution: Pending
 
-### BR-0075: P1 - Publish and access the native fingerprint database atomically
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: concurrency/memory-safety
-- Found by: R1-CHUNK-0035
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_fingerprint.c:L25-L68,L187-L273`
-- Related: `android/app/src/main/cpp/shared/chromaprint_db.c:L36-L40,L42-L52,L158-L259,L311-L368`, `android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt:L23-L59,L193-L209,L442-L467`, `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L102-L119`, and `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt:L1597-L1611,L1645-L1678`
-- Evidence: Every JNI database operation directly accesses one process-global mutable entry array, count, thresholds, and owned fingerprint pointers without a lock, immutable snapshot, or thread-affinity assertion. Loading begins by freeing the currently published pointers, writes shared entry slots while parsing, and publishes the count only at the end; matching reads that count and dereferences the same pointers, while free destroys them. Kotlin's `dbLoaded` check and assignment are also unsynchronized. Fingerprint initialization and matching are invoked from independent `Dispatchers.IO` workflows for mission-cache identification, music import, and disc import. Two callers can both observe `dbLoaded == false`; a later loader can free the first loader's newly published entries while its caller is already matching, or the loaders can race while overwriting shared pointers and counts. Those C data races are undefined behavior and include concrete use-after-free, leak, and inconsistent-result schedules
-- Trigger: Start two fingerprint-backed imports or identification jobs during initial database loading, or overlap a future reload/free with any match or count operation
-- Impact: User-driven concurrent background work can crash the Android process in native code, corrupt or leak heap-owned fingerprints, return identities from partially replaced state, or permanently mark an incomplete database as loaded; timing-dependent failures are unlikely to be reproduced by the current single-threaded native tests
-- Expected: Initialization constructs a complete private database and atomically publishes it once; matches retain a stable snapshot for their whole call, and reload or teardown cannot free storage still visible to a reader
-- Suggested fix: Give the database an explicit owner and lifecycle. Serialize Kotlin initialization with a mutex or single deferred result, build native entries off to the side, and publish an immutable snapshot under a native read/write lock or reference-counted handle; keep the old snapshot alive until readers finish. Synchronize threshold state with the same publication and remove or guard the unused free export
-- Validation: Add a JNI stress test that barriers two initial loads and many matches, counts, threshold updates, reloads, and frees at each lifecycle boundary; run it repeatedly under ThreadSanitizer where supported and AddressSanitizer on Android, assert one complete published count and deterministic match results, and verify no race, use-after-free, double free, or leak is reported
-- Resolution: Pending
-
 ### BR-0076: P1 - Scope PhysicsFS mounts to one level-metadata request
 
 - [ ] OPEN

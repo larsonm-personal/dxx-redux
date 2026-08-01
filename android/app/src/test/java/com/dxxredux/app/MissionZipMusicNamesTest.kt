@@ -31,6 +31,7 @@ class MissionZipMusicNamesTest {
             MissionZipMusicCatalog(
                 archivePath = "mission.zip",
                 sources = listOf(MissionZipMusicSource("archive", "Archive music", "", listOf(track, ignored))),
+                sourceIdentity = "source-a",
             )
 
         val count =
@@ -48,6 +49,8 @@ class MissionZipMusicNamesTest {
         assertEquals("Decoded Mission Track", root.getString("music/game01.ogg"))
         assertEquals("Decoded Mission Track", root.getString("game01.ogg"))
         assertFalse(root.has("game02.ogg"))
+        assertTrue(MissionZipMusicNames.isCurrent(output, catalog))
+        assertFalse(MissionZipMusicNames.isCurrent(output, catalog.copy(sourceIdentity = "source-b")))
     }
 
     @Test
@@ -78,6 +81,7 @@ class MissionZipMusicNamesTest {
                         ),
                     ),
                 ),
+                sourceIdentity = "source-a",
             )
 
         val count = MissionZipMusicNames.writeSidecar(output, catalog, emptyMap())
@@ -94,6 +98,7 @@ class MissionZipMusicNamesTest {
             archiveName = "mission.zip",
             archiveSize = 1L,
             archiveMtime = 2L,
+            sourceIdentity = "source-a",
             trackId = track.id,
             entryPath = track.archiveEntryPath,
             nestedPath = track.nestedEntryPath.orEmpty(),

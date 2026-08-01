@@ -47,6 +47,7 @@ class MissionZipMusicDisplayTest {
             archiveName = "mission.zip",
             archiveSize = 1L,
             archiveMtime = 2L,
+            sourceIdentity = "source-a",
             trackId = "track-a",
             entryPath = "game01.ogg",
             nestedPath = "",

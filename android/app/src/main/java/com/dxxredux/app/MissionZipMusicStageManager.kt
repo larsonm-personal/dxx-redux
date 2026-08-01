@@ -20,8 +20,12 @@ class MissionZipMusicStageManager(
         if (track.sizeBytes > ExtractionLimits.MAX_ENTRY_BYTES) return null
         val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
         if (!archive.isFile && !archive.isDirectory) return null
-        val output = stagedFile(archive, track)
+        val cacheIdentity = stagedIdentity(catalog, track)
+        val output = stagedFile(cacheIdentity, track)
+        val identityFile = identityFile(output)
         if (output.isFile &&
+            identityFile.isFile &&
+            identityFile.readText(Charsets.US_ASCII) == cacheIdentity &&
             (
                 (track.sizeBytes > 0L && output.length() == track.sizeBytes) ||
                     (track.sizeBytes <= 0L && output.length() > 0L)
@@ -83,6 +87,7 @@ class MissionZipMusicStageManager(
             temp.copyTo(output, overwrite = true)
             temp.delete()
         }
+        identityFile.writeText(cacheIdentity, Charsets.US_ASCII)
         return output.takeIf { it.isFile }
     }
 
@@ -139,13 +144,29 @@ class MissionZipMusicStageManager(
     }
 
     private fun stagedFile(
-        archive: File,
+        identity: String,
         track: MissionZipMusicTrack,
     ): File {
-        val key = sha256("${archive.name}:${archive.length()}:${archive.lastModified()}:${track.id}")
         val safeName = track.displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_").ifBlank { "track.${track.extension}" }
-        return File(File(root, key.take(16)), safeName)
+        return File(File(root, identity), safeName)
     }
+
+    private fun stagedIdentity(
+        catalog: MissionZipMusicCatalog,
+        track: MissionZipMusicTrack,
+    ): String =
+        sha256(
+            listOf(
+                "dxx-mission-music-stage-v1",
+                catalog.sourceIdentity,
+                track.id,
+                track.archiveEntryPath,
+                track.nestedEntryPath.orEmpty(),
+                track.hogEntryName.orEmpty(),
+            ).joinToString("\u0000"),
+        )
+
+    private fun identityFile(output: File): File = File(output.parentFile, "${output.name}.identity")
 
     private fun sourceFile(
         rootDir: File,

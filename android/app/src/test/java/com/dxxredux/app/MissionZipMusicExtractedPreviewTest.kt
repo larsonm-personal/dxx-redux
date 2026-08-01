@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -55,6 +56,64 @@ class MissionZipMusicExtractedPreviewTest {
         val staged = MissionZipMusicStageManager(File(filesDir, "cache")).stageCompressedAudioTrack(catalog, track)
         assertNotNull(staged)
         assertArrayEquals(trackBytes, staged!!.readBytes())
+    }
+
+    @Test
+    fun sameNamedExtractedDirectoriesWithSameMetadataHaveDistinctContentIdentity() {
+        val filesDir = File("build/test-mission-zip-music-extracted-preview/same-name").absoluteFile
+        filesDir.deleteRecursively()
+        val first = extractedRecord(File(filesDir, "first/Mission.7z"), byteArrayOf(1, 2, 3, 4))
+        val second = extractedRecord(File(filesDir, "second/Mission.7z"), byteArrayOf(4, 3, 2, 1))
+        val fixedMtime = 1_781_012_345_000L
+        first.files.forEach { File(first.rootDir, it.relativePath).setLastModified(fixedMtime) }
+        second.files.forEach { File(second.rootDir, it.relativePath).setLastModified(fixedMtime) }
+
+        val firstCatalog = MissionZipMusic.inspectExtracted(first)!!
+        val secondCatalog = MissionZipMusic.inspectExtracted(second)!!
+
+        assertNotEquals(firstCatalog.sourceIdentity, secondCatalog.sourceIdentity)
+        assertArrayEquals(
+            byteArrayOf(1, 2, 3, 4),
+            MissionZipMusicStageManager(File(filesDir, "cache"))
+                .stageCompressedAudioTrack(firstCatalog, firstCatalog.sources.single().tracks.single())!!
+                .readBytes(),
+        )
+        assertArrayEquals(
+            byteArrayOf(4, 3, 2, 1),
+            MissionZipMusicStageManager(File(filesDir, "cache"))
+                .stageCompressedAudioTrack(secondCatalog, secondCatalog.sources.single().tracks.single())!!
+                .readBytes(),
+        )
+    }
+
+    private fun extractedRecord(
+        root: File,
+        trackBytes: ByteArray,
+    ): MissionZipExtractionRecord {
+        val missionsDir = File(root, "missions").apply { mkdirs() }
+        val dxa = File(missionsDir, "music.dxa")
+        dxa.writeBytes(
+            createZipBytes {
+                it.putNextEntry(ZipEntry("song01.ogg"))
+                it.write(trackBytes)
+                it.closeEntry()
+            },
+        )
+        return MissionZipExtractionRecord(
+            ownerFilename = root.name,
+            ownerSizeBytes = dxa.length(),
+            ownerLastModifiedMs = dxa.lastModified(),
+            rootDir = root,
+            files =
+                listOf(
+                    MissionZipExtractedFile(
+                        entryPath = "music.dxa",
+                        relativePath = "missions/music.dxa",
+                        sizeBytes = dxa.length(),
+                    ),
+                ),
+            archiveFormat = "7z",
+        )
     }
 
     private fun createZipBytes(writeEntries: (ZipOutputStream) -> Unit): ByteArray =

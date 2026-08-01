@@ -79,6 +79,7 @@ object FingerprintBridge {
      * format expected by chromaprint_db_load().
      * Returns number of entries loaded.
      */
+    @Synchronized
     fun ensureDbLoaded(context: Context): Int {
         if (dbLoaded) return nativeGetDbCount()
         loadFingerprintConfig(context)
@@ -486,6 +487,4 @@ object FingerprintBridge {
     private external fun nativeFingerprintAndMatch(filePath: String): MatchResult?
 
     private external fun nativeGetDbCount(): Int
-
-    private external fun nativeFreeDb()
 }

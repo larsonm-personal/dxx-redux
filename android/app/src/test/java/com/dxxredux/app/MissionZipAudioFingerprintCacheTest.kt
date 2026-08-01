@@ -57,6 +57,29 @@ class MissionZipAudioFingerprintCacheTest {
     }
 
     @Test
+    fun cacheInvalidatesWhenArchiveContentChangesWithSameMetadata() {
+        val filesDir = testDir("same-metadata/files")
+        val archive = testArchive("same-metadata/mission.zip", byteArrayOf(1, 2, 3))
+        val fixedMtime = 1_781_012_345_000L
+        archive.setLastModified(fixedMtime)
+        val track = testTrack("game01.ogg")
+        val staged = testArchive("same-metadata/staged/game01.ogg", byteArrayOf(9, 8, 7))
+        val cache = MissionZipAudioFingerprintCache(filesDir)
+        cache.record(
+            testCatalog(archive, track),
+            track,
+            staged,
+            FingerprintBridge.FingerprintResult("fp-a", 1234),
+            null,
+        )
+
+        archive.writeBytes(byteArrayOf(3, 2, 1))
+        archive.setLastModified(fixedMtime)
+
+        assertTrue(cache.cachedEntries(testCatalog(archive, track)).isEmpty())
+    }
+
+    @Test
     fun exactLookupRequiresMatchingContentHash() {
         val filesDir = testDir("content-hash/files")
         val archive = testArchive("content-hash/mission.zip", byteArrayOf(1, 2, 3))
@@ -217,6 +240,7 @@ class MissionZipAudioFingerprintCacheTest {
         MissionZipMusicCatalog(
             archive.absolutePath,
             listOf(MissionZipMusicSource("hog:${archive.name}", "${archive.name} music", archive.name, listOf(track))),
+            sha256(archive),
         )
 
     private fun testTrack(name: String): MissionZipMusicTrack =

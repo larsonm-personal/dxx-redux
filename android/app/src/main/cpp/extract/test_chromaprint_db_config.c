@@ -66,8 +66,11 @@ int main(void)
 	json = make_entry_json(limit_name, "limit", encoded);
 	assert(chromaprint_db_load(json, (int) strlen(json)) == 1);
 	free(json);
+	assert(strcmp(match.name, expected_name) == 0);
+	chromaprint_db_match_free(&match);
 	assert(chromaprint_db_match(raw_fp, 20, 123000, &match) == 1);
 	assert(strlen(match.name) == CHROMAPRINT_DB_MAX_METADATA_BYTES);
+	chromaprint_db_match_free(&match);
 	unsigned char *limit_bytes = (unsigned char *) limit_name;
 	for (int i = 0; i < CHROMAPRINT_DB_MAX_METADATA_BYTES; i += 2) {
 		limit_bytes[i] = 0xc3;
@@ -85,6 +88,8 @@ int main(void)
 	json = make_entry_json(limit_name, "too-long", encoded);
 	assert(chromaprint_db_load(json, (int) strlen(json)) == -1);
 	assert(chromaprint_db_count() == 1);
+	assert(memcmp(match.name, limit_name, CHROMAPRINT_DB_MAX_METADATA_BYTES) == 0);
+	chromaprint_db_match_free(&match);
 	free(json);
 	free(limit_name);
 	chromaprint_dealloc(encoded);

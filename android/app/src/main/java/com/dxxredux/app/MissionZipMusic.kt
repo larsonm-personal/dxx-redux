@@ -4,12 +4,14 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.security.MessageDigest
 import java.util.Locale
 import java.util.zip.ZipInputStream
 
 data class MissionZipMusicCatalog(
     val archivePath: String,
     val sources: List<MissionZipMusicSource>,
+    val sourceIdentity: String,
 ) {
     val hasListableTracks: Boolean get() = sources.any { it.tracks.isNotEmpty() }
 }
@@ -104,7 +106,8 @@ object MissionZipMusic {
                 }
             }.getOrNull()
                 ?: return null
-        return MissionZipMusicCatalog(file.absolutePath, sources).takeIf { it.hasListableTracks }
+        return MissionZipMusicCatalog(file.absolutePath, sources, contentIdentity(file, sources))
+            .takeIf { it.hasListableTracks }
     }
 
     internal fun inspectExtracted(record: MissionZipExtractionRecord): MissionZipMusicCatalog? {
@@ -167,7 +170,69 @@ object MissionZipMusic {
                 }
                 archiveBuilder.build()?.let { add(0, it) }
             }
-        return MissionZipMusicCatalog(record.rootDir.absolutePath, sources).takeIf { it.hasListableTracks }
+        return MissionZipMusicCatalog(record.rootDir.absolutePath, sources, contentIdentity(record.rootDir, sources))
+            .takeIf { it.hasListableTracks }
+    }
+
+    private fun contentIdentity(
+        root: File,
+        sources: List<MissionZipMusicSource>,
+    ): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+
+        fun add(value: String) {
+            val bytes = value.toByteArray(Charsets.UTF_8)
+            digest.update((bytes.size ushr 24).toByte())
+            digest.update((bytes.size ushr 16).toByte())
+            digest.update((bytes.size ushr 8).toByte())
+            digest.update(bytes.size.toByte())
+            digest.update(bytes)
+        }
+
+        fun addFile(file: File) {
+            file.inputStream().use { input ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+        }
+
+        add("dxx-mission-music-source-v1")
+        sources
+            .sortedBy { it.id }
+            .forEach { source ->
+                add(source.id)
+                add(source.containerPath)
+                source.tracks.sortedBy { it.id }.forEach { track ->
+                    add(track.id)
+                    add(track.archiveEntryPath)
+                    add(track.nestedEntryPath.orEmpty())
+                    add(track.hogEntryName.orEmpty())
+                    add(track.kind)
+                    add(track.extension)
+                    add(track.sizeBytes.toString())
+                }
+            }
+        if (root.isFile) {
+            add("archive")
+            addFile(root)
+        } else {
+            sources
+                .flatMap { it.tracks }
+                .mapNotNull { track ->
+                    val file = track.sourceFilePath?.let(::File) ?: return@mapNotNull null
+                    track.archiveEntryPath to file
+                }.distinctBy { it.first.lowercase(Locale.US) }
+                .sortedBy { it.first.lowercase(Locale.US) }
+                .forEach { (path, file) ->
+                    add(normalizePath(path))
+                    addFile(file)
+                }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
     private fun scanDxa(

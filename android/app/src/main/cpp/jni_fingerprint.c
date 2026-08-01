@@ -257,7 +257,9 @@ Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
 
 	if (!found) return NULL;
 
-	return new_match_result(env, &match);
+	jobject result = new_match_result(env, &match);
+	chromaprint_db_match_free(&match);
+	return result;
 }
 
 /*
@@ -286,7 +288,9 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAndMatch(
 
 	if (!found) return NULL;
 
-	return new_match_result(env, &match);
+	jobject result = new_match_result(env, &match);
+	chromaprint_db_match_free(&match);
+	return result;
 }
 
 /* ── DB info ─────────────────────────────────────────────────────────── */
@@ -296,11 +300,4 @@ Java_com_dxxredux_app_FingerprintBridge_nativeGetDbCount(
     JNIEnv *env, jclass clazz)
 {
 	return chromaprint_db_count();
-}
-
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_FingerprintBridge_nativeFreeDb(
-    JNIEnv *env, jclass clazz)
-{
-	chromaprint_db_free();
 }

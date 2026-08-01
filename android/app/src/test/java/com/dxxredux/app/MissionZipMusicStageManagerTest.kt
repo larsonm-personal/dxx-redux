@@ -27,6 +27,26 @@ class MissionZipMusicStageManagerTest {
     }
 
     @Test
+    fun unchangedSourceReusesTheStagedFile() {
+        val payload = byteArrayOf(1, 3, 5, 7)
+        val zip = createZip("stage-reuse") {
+            writeEntry("song01.ogg", payload)
+        }
+        val catalog = MissionZipMusic.inspect(zip)!!
+        val track = catalog.sources.single().tracks.single()
+        val manager = MissionZipMusicStageManager(testCacheDir("stage-reuse"))
+        val first = manager.stageCompressedAudioTrack(catalog, track)!!
+        val fixedMtime = 1_781_012_345_000L
+        first.setLastModified(fixedMtime)
+
+        val second = manager.stageCompressedAudioTrack(MissionZipMusic.inspect(zip)!!, track)!!
+
+        assertEquals(first.absolutePath, second.absolutePath)
+        assertEquals(fixedMtime, second.lastModified())
+        assertArrayEquals(payload, second.readBytes())
+    }
+
+    @Test
     fun stagesNestedDxaAudioTrack() {
         val payload = byteArrayOf(2, 4, 6, 8)
         val zip = createZip("stage-dxa") {
@@ -83,9 +103,55 @@ class MissionZipMusicStageManagerTest {
         assertNotNull(staged)
         assertArrayEquals(payload, staged!!.readBytes())
         val stagedFiles = cacheDir.walkTopDown().filter { it.isFile }.toList()
-        assertEquals(1, stagedFiles.size)
-        assertEquals(payload.size.toLong(), stagedFiles.single().length())
+        assertEquals(2, stagedFiles.size)
+        assertEquals(payload.size.toLong(), stagedFiles.single { it.extension == "ogg" }.length())
         assertTrue(zip.length() < MissionZip.SMALL_IN_MEMORY_LIMIT_BYTES)
+    }
+
+    @Test
+    fun sameNamedArchivesWithSameMetadataStageTheirOwnContent() {
+        val cacheDir = testCacheDir("same-name")
+        val first = createZip("same-name-a") { writeEntry("song01.ogg", byteArrayOf(1, 2, 3, 4)) }
+        val second = File(first.parentFile, "other/${first.name}").also { it.parentFile?.mkdirs() }
+        createZip("same-name-b") { writeEntry("song01.ogg", byteArrayOf(4, 3, 2, 1)) }.copyTo(second)
+        val fixedMtime = 1_781_012_345_000L
+        first.setLastModified(fixedMtime)
+        second.setLastModified(fixedMtime)
+        assertEquals(first.length(), second.length())
+        val firstCatalog = MissionZipMusic.inspect(first)!!
+        val secondCatalog = MissionZipMusic.inspect(second)!!
+        val manager = MissionZipMusicStageManager(cacheDir)
+
+        val firstStaged = manager.stageCompressedAudioTrack(firstCatalog, firstCatalog.sources.single().tracks.single())
+        val secondStaged = manager.stageCompressedAudioTrack(secondCatalog, secondCatalog.sources.single().tracks.single())
+
+        assertArrayEquals(byteArrayOf(1, 2, 3, 4), firstStaged!!.readBytes())
+        assertArrayEquals(byteArrayOf(4, 3, 2, 1), secondStaged!!.readBytes())
+        assertTrue(firstStaged.absolutePath != secondStaged.absolutePath)
+    }
+
+    @Test
+    fun inPlaceSameMetadataReplacementInvalidatesStagedContent() {
+        val cacheDir = testCacheDir("replacement")
+        val zip = createZip("replacement") { writeEntry("song01.ogg", byteArrayOf(1, 2, 3, 4)) }
+        val fixedMtime = 1_781_012_345_000L
+        zip.setLastModified(fixedMtime)
+        val firstCatalog = MissionZipMusic.inspect(zip)!!
+        val firstTrack = firstCatalog.sources.single().tracks.single()
+        val manager = MissionZipMusicStageManager(cacheDir)
+        val firstStaged = manager.stageCompressedAudioTrack(firstCatalog, firstTrack)!!
+        val replacement = createZip("replacement-new") { writeEntry("song01.ogg", byteArrayOf(4, 3, 2, 1)) }
+        assertEquals(zip.length(), replacement.length())
+        replacement.copyTo(zip, overwrite = true)
+        zip.setLastModified(fixedMtime)
+        val secondCatalog = MissionZipMusic.inspect(zip)!!
+
+        val secondStaged =
+            manager.stageCompressedAudioTrack(secondCatalog, secondCatalog.sources.single().tracks.single())!!
+
+        assertArrayEquals(byteArrayOf(1, 2, 3, 4), firstStaged.readBytes())
+        assertArrayEquals(byteArrayOf(4, 3, 2, 1), secondStaged.readBytes())
+        assertTrue(firstStaged.absolutePath != secondStaged.absolutePath)
     }
 
     @Test
