@@ -16,6 +16,7 @@
 #include <string.h>
 #include <android/log.h>
 #include <chromaprint.h>
+#include <nlohmann/json.hpp>
 
 #define LOG_TAG   "chromaprint_db"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -57,108 +58,23 @@ void chromaprint_db_set_duration_tolerance(float tolerance)
 		s_duration_tolerance = tolerance;
 }
 
-/* ---------------------------------------------------------------------- */
-/* Simple JSON parser helpers (avoids pulling in a full JSON library)      */
-/* We parse a flat JSON array of objects with known string/int fields.     */
-/* ---------------------------------------------------------------------- */
-
-static const char *skip_ws(const char *p, const char *end)
+static char *copy_string(const std::string &value)
 {
-	while (p < end && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
-		p++;
-	return p;
+	char *copy = (char *) malloc(value.size() + 1);
+	if (!copy) return NULL;
+	memcpy(copy, value.data(), value.size());
+	copy[value.size()] = '\0';
+	return copy;
 }
 
-/* Parse a JSON string value (between quotes).  Returns pointer past closing quote.
- * Writes at most buf_len-1 chars to buf. */
-static const char *parse_json_string(const char *p, const char *end,
-                                     char *buf, int buf_len)
+static void free_entries(chromaprint_db_entry_t *entries, int count)
 {
-	if (p >= end || *p != '"') return NULL;
-	p++; /* skip opening quote */
-	int i = 0;
-	while (p < end && *p != '"') {
-		if (*p == '\\' && p + 1 < end) {
-			p++; /* skip escape */
-		}
-		if (i < buf_len - 1)
-			buf[i++] = *p;
-		p++;
+	for (int i = 0; i < count; i++) {
+		free(entries[i].raw_fp);
+		free(entries[i].name);
+		free(entries[i].disc_id);
+		entries[i] = {};
 	}
-	buf[i] = '\0';
-	if (p < end) p++; /* skip closing quote */
-	return p;
-}
-
-/* Parse a JSON integer value.  Returns pointer past the number. */
-static const char *parse_json_int(const char *p, const char *end, int *out)
-{
-	int neg = 0, val = 0;
-	if (p < end && *p == '-') {
-		neg = 1;
-		p++;
-	}
-	while (p < end && *p >= '0' && *p <= '9') {
-		val = val * 10 + (*p - '0');
-		p++;
-	}
-	*out = neg ? -val : val;
-	return p;
-}
-
-/* Skip a JSON value (string, number, object, array, bool, null). */
-static const char *skip_json_value(const char *p, const char *end)
-{
-	p = skip_ws(p, end);
-	if (p >= end) return p;
-	if (*p == '"') {
-		p++;
-		while (p < end && *p != '"') {
-			if (*p == '\\' && p + 1 < end) p++;
-			p++;
-		}
-		if (p < end) p++;
-		return p;
-	}
-	if (*p == '{') {
-		int depth = 1;
-		p++;
-		while (p < end && depth > 0) {
-			if (*p == '{') depth++;
-			else if (*p == '}') depth--;
-			else if (*p == '"') {
-				p++;
-				while (p < end && *p != '"') {
-					if (*p == '\\') p++;
-					p++;
-				}
-			}
-			p++;
-		}
-		return p;
-	}
-	if (*p == '[') {
-		int depth = 1;
-		p++;
-		while (p < end && depth > 0) {
-			if (*p == '[') depth++;
-			else if (*p == ']') depth--;
-			else if (*p == '"') {
-				p++;
-				while (p < end && *p != '"') {
-					if (*p == '\\') p++;
-					p++;
-				}
-			}
-			p++;
-		}
-		return p;
-	}
-	/* number, bool, null */
-	while (p < end && *p != ',' && *p != '}' && *p != ']' &&
-	       *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r')
-		p++;
-	return p;
 }
 
 int chromaprint_db_load(const char *json_data, int json_len)
@@ -169,101 +85,81 @@ int chromaprint_db_load(const char *json_data, int json_len)
 	}
 	if (!json_data || json_len <= 0) return -1;
 
-	/* Free any previous data */
-	chromaprint_db_free();
-
-	const char *p = json_data;
-	const char *end = json_data + json_len;
-
-	p = skip_ws(p, end);
-	if (p >= end || *p != '[') {
+	auto root = nlohmann::json::parse(json_data, json_data + json_len, NULL, false);
+	if (!root.is_array() || root.size() > MAX_DB_ENTRIES) {
 		LOGE("Expected JSON array");
 		return -1;
 	}
-	p++; /* skip '[' */
 
+	chromaprint_db_entry_t pending[MAX_DB_ENTRIES] = {};
 	int count = 0;
-	while (count < MAX_DB_ENTRIES) {
-		p = skip_ws(p, end);
-		if (p >= end || *p == ']') break;
-		if (*p == ',') {
-			p++;
-			continue;
+	for (const auto &item : root) {
+		if (!item.is_object() || !item.contains("name") || !item["name"].is_string() ||
+		    !item.contains("disc_id") || !item["disc_id"].is_string() ||
+		    !item.contains("chromaprint") || !item["chromaprint"].is_string() ||
+		    !item.contains("track") || !item["track"].is_number_integer() ||
+		    !item.contains("duration_ms") || !item["duration_ms"].is_number_integer()) {
+			free_entries(pending, count);
+			return -1;
 		}
-		if (*p != '{') {
-			p++;
-			continue;
+		const std::string &name = item["name"].get_ref<const std::string &>();
+		const std::string &disc_id = item["disc_id"].get_ref<const std::string &>();
+		const std::string &fp_b64 = item["chromaprint"].get_ref<const std::string &>();
+		if (name.empty() || name.size() > CHROMAPRINT_DB_MAX_METADATA_BYTES ||
+		    disc_id.size() > CHROMAPRINT_DB_MAX_METADATA_BYTES ||
+		    fp_b64.empty() || fp_b64.size() > CHROMAPRINT_DB_MAX_FINGERPRINT_BYTES ||
+		    name.find('\0') != std::string::npos || disc_id.find('\0') != std::string::npos ||
+		    fp_b64.find('\0') != std::string::npos ||
+		    !item["track"].is_number_integer() || !item["duration_ms"].is_number_integer()) {
+			free_entries(pending, count);
+			return -1;
 		}
-		p++; /* skip '{' */
 
-		/* Parse object fields */
-		char name[CHROMAPRINT_DB_MAX_NAME] = { 0 };
-		char disc_id[CHROMAPRINT_DB_MAX_DISC_ID] = { 0 };
-		char fp_b64[4096] = { 0 };
-		int track = 0, duration_ms = 0;
-
-		while (p < end && *p != '}') {
-			p = skip_ws(p, end);
-			if (p >= end || *p == '}') break;
-			if (*p == ',') {
-				p++;
-				continue;
-			}
-
-			/* Parse key */
-			char key[32] = { 0 };
-			p = parse_json_string(p, end, key, sizeof(key));
-			if (!p) break;
-			p = skip_ws(p, end);
-			if (p >= end || *p != ':') break;
-			p++;
-			p = skip_ws(p, end);
-
-			/* Parse value based on key */
-			if (strcmp(key, "name") == 0) {
-				p = parse_json_string(p, end, name, sizeof(name));
-			} else if (strcmp(key, "disc_id") == 0) {
-				p = parse_json_string(p, end, disc_id, sizeof(disc_id));
-			} else if (strcmp(key, "chromaprint") == 0) {
-				p = parse_json_string(p, end, fp_b64, sizeof(fp_b64));
-			} else if (strcmp(key, "track") == 0) {
-				p = parse_json_int(p, end, &track);
-			} else if (strcmp(key, "duration_ms") == 0) {
-				p = parse_json_int(p, end, &duration_ms);
-			} else {
-				p = skip_json_value(p, end);
-			}
-			if (!p) break;
+		int track;
+		int duration_ms;
+		try {
+			track = item["track"].get<int>();
+			duration_ms = item["duration_ms"].get<int>();
+		} catch (...) {
+			free_entries(pending, count);
+			return -1;
 		}
-		if (p < end && *p == '}') p++;
-
-		/* Validate and decode fingerprint */
-		if (fp_b64[0] && duration_ms > 0 && name[0]) {
-			uint32_t *raw_fp = NULL;
-			int raw_fp_len = 0;
-			int algorithm = 0;
-			if (chromaprint_decode_fingerprint(fp_b64, strlen(fp_b64),
-			                                   (void **) &raw_fp, &raw_fp_len,
-			                                   &algorithm, 1) == 1 &&
-			    raw_fp) {
-				chromaprint_db_entry_t *e = &s_entries[count];
-				/* Copy the raw fingerprint -- chromaprint_dealloc will free
-				 * the original, so we must own our copy */
-				e->raw_fp = (uint32_t *) malloc((size_t) raw_fp_len * sizeof(uint32_t));
-				if (e->raw_fp) {
-					memcpy(e->raw_fp, raw_fp, (size_t) raw_fp_len * sizeof(uint32_t));
-					e->fp_len = raw_fp_len;
-					e->duration_ms = duration_ms;
-					e->track_num = track;
-					strncpy(e->name, name, CHROMAPRINT_DB_MAX_NAME - 1);
-					strncpy(e->disc_id, disc_id, CHROMAPRINT_DB_MAX_DISC_ID - 1);
-					count++;
-				}
-				chromaprint_dealloc(raw_fp);
-			}
+		if (duration_ms <= 0) {
+			free_entries(pending, count);
+			return -1;
 		}
+
+		uint32_t *raw_fp = NULL;
+		int raw_fp_len = 0;
+		int algorithm = 0;
+		if (chromaprint_decode_fingerprint(fp_b64.data(), (int) fp_b64.size(),
+		                                   &raw_fp, &raw_fp_len,
+		                                   &algorithm, 1) != 1 ||
+		    !raw_fp || raw_fp_len <= 0) {
+			if (raw_fp) chromaprint_dealloc(raw_fp);
+			free_entries(pending, count);
+			return -1;
+		}
+
+		chromaprint_db_entry_t *entry = &pending[count];
+		entry->raw_fp = (uint32_t *) malloc((size_t) raw_fp_len * sizeof(uint32_t));
+		entry->name = copy_string(name);
+		entry->disc_id = copy_string(disc_id);
+		if (!entry->raw_fp || !entry->name || !entry->disc_id) {
+			chromaprint_dealloc(raw_fp);
+			free_entries(pending, count + 1);
+			return -1;
+		}
+		memcpy(entry->raw_fp, raw_fp, (size_t) raw_fp_len * sizeof(uint32_t));
+		chromaprint_dealloc(raw_fp);
+		entry->fp_len = raw_fp_len;
+		entry->duration_ms = duration_ms;
+		entry->track_num = track;
+		count++;
 	}
 
+	chromaprint_db_free();
+	memcpy(s_entries, pending, (size_t) count * sizeof(pending[0]));
 	s_entry_count = count;
 	LOGI("Loaded %d fingerprint entries", count);
 	return count;
@@ -351,12 +247,8 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 
 	if (best_idx >= 0 && best_score >= s_match_threshold) {
 		out_match->confidence = best_score;
-		strncpy(out_match->name, s_entries[best_idx].name,
-		        CHROMAPRINT_DB_MAX_NAME - 1);
-		out_match->name[CHROMAPRINT_DB_MAX_NAME - 1] = '\0';
-		strncpy(out_match->disc_id, s_entries[best_idx].disc_id,
-		        CHROMAPRINT_DB_MAX_DISC_ID - 1);
-		out_match->disc_id[CHROMAPRINT_DB_MAX_DISC_ID - 1] = '\0';
+		out_match->name = s_entries[best_idx].name;
+		out_match->disc_id = s_entries[best_idx].disc_id;
 		out_match->track_num = s_entries[best_idx].track_num;
 		return 1;
 	}
@@ -368,7 +260,9 @@ void chromaprint_db_free(void)
 {
 	for (int i = 0; i < s_entry_count; i++) {
 		free(s_entries[i].raw_fp);
-		s_entries[i].raw_fp = NULL;
+		free(s_entries[i].name);
+		free(s_entries[i].disc_id);
+		s_entries[i] = {};
 	}
 	s_entry_count = 0;
 }

@@ -184,12 +184,55 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 
 /* ── Matching ────────────────────────────────────────────────────────── */
 
+static jstring new_utf8_string(JNIEnv *env, const char *value)
+{
+	jsize length = (jsize) strlen(value);
+	jbyteArray bytes = (*env)->NewByteArray(env, length);
+	if (!bytes) return NULL;
+	(*env)->SetByteArrayRegion(env, bytes, 0, length, (const jbyte *) value);
+
+	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	jmethodID constructor = string_class
+	                            ? (*env)->GetMethodID(env, string_class, "<init>",
+	                                                  "([BLjava/lang/String;)V")
+	                            : NULL;
+	jstring charset = constructor ? (*env)->NewStringUTF(env, "UTF-8") : NULL;
+	jstring result = charset
+	                     ? (jstring) (*env)->NewObject(env, string_class, constructor,
+	                                                   bytes, charset)
+	                     : NULL;
+	if (charset) (*env)->DeleteLocalRef(env, charset);
+	if (string_class) (*env)->DeleteLocalRef(env, string_class);
+	(*env)->DeleteLocalRef(env, bytes);
+	return result;
+}
+
+static jobject new_match_result(JNIEnv *env, const chromaprint_db_match_t *match)
+{
+	jclass result_class = (*env)->FindClass(
+	    env, "com/dxxredux/app/FingerprintBridge$MatchResult");
+	if (!result_class) return NULL;
+	jmethodID constructor = (*env)->GetMethodID(
+	    env, result_class, "<init>", "(FLjava/lang/String;Ljava/lang/String;I)V");
+	jstring name = constructor ? new_utf8_string(env, match->name) : NULL;
+	jstring disc_id = name ? new_utf8_string(env, match->disc_id) : NULL;
+	jobject result = disc_id
+	                     ? (*env)->NewObject(env, result_class, constructor,
+	                                         match->confidence, name, disc_id,
+	                                         match->track_num)
+	                     : NULL;
+	if (disc_id) (*env)->DeleteLocalRef(env, disc_id);
+	if (name) (*env)->DeleteLocalRef(env, name);
+	(*env)->DeleteLocalRef(env, result_class);
+	return result;
+}
+
 /*
  * Match a base64-encoded fingerprint against the loaded database.
  *
- * Returns "confidence|name|disc_id|track_num" or null if no match.
+ * Returns a typed MatchResult or null if no match.
  */
-JNIEXPORT jstring JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
     JNIEnv *env, jclass clazz,
     jstring encodedFp, jint durationMs)
@@ -214,18 +257,14 @@ Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
 
 	if (!found) return NULL;
 
-	char buf[256];
-	snprintf(buf, sizeof(buf), "%.4f|%s|%s|%d",
-	         match.confidence, match.name, match.disc_id, match.track_num);
-
-	return (*env)->NewStringUTF(env, buf);
+	return new_match_result(env, &match);
 }
 
 /*
  * Convenience: fingerprint an audio file AND match it in one call.
- * Returns "confidence|name|disc_id|track_num" or null if no match.
+ * Returns a typed MatchResult or null if no match.
  */
-JNIEXPORT jstring JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAndMatch(
     JNIEnv *env, jclass clazz, jstring filePath)
 {
@@ -247,11 +286,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAndMatch(
 
 	if (!found) return NULL;
 
-	char buf[256];
-	snprintf(buf, sizeof(buf), "%.4f|%s|%s|%d",
-	         match.confidence, match.name, match.disc_id, match.track_num);
-
-	return (*env)->NewStringUTF(env, buf);
+	return new_match_result(env, &match);
 }
 
 /* ── DB info ─────────────────────────────────────────────────────────── */

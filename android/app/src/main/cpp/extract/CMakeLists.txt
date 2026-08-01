@@ -412,10 +412,11 @@ add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
 
 add_executable(test_chromaprint_db_config ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_config.c
                                           ${SHARED_DIR}/chromaprint_db.c)
+set_source_files_properties(${SHARED_DIR}/chromaprint_db.c PROPERTIES LANGUAGE CXX)
 target_include_directories(test_chromaprint_db_config
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
 target_compile_definitions(test_chromaprint_db_config PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(test_chromaprint_db_config PRIVATE chromaprint)
+target_link_libraries(test_chromaprint_db_config PRIVATE chromaprint nlohmann_json::nlohmann_json)
 if(MSVC)
     target_compile_options(test_chromaprint_db_config PRIVATE /W4)
 else()

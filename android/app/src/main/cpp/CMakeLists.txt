@@ -432,10 +432,12 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/pcm_decoders.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/chromaprint_db.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/shared/chromaprint_db.c PROPERTIES LANGUAGE
+                                                                                           CXX)
 target_include_directories(dxx_fingerprint PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/shared
                            PRIVATE ${_DECODERS_DIR} ${chromaprint_SOURCE_DIR}/src)
 target_compile_options(dxx_fingerprint PRIVATE -w) # suppress warnings in vendored decoder code
-target_link_libraries(dxx_fingerprint PRIVATE chromaprint log)
+target_link_libraries(dxx_fingerprint PRIVATE chromaprint log nlohmann_json::nlohmann_json)
 
 # ──────────────────────────────────────────────────────────────
 # 1. Pre-set variables so find_package(SDL) / find_package(PhysFS) in the D2 cmake files succeed

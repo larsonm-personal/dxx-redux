@@ -9,22 +9,22 @@
 
 #include <stdint.h>
 
-#define CHROMAPRINT_DB_MAX_NAME    64
-#define CHROMAPRINT_DB_MAX_DISC_ID 64
+#define CHROMAPRINT_DB_MAX_METADATA_BYTES    4096
+#define CHROMAPRINT_DB_MAX_FINGERPRINT_BYTES (1024 * 1024)
 
 typedef struct {
 	uint32_t *raw_fp; /* decoded fingerprint (array of uint32) */
 	int fp_len;       /* number of uint32 elements */
 	int duration_ms;  /* track duration in milliseconds */
-	char name[CHROMAPRINT_DB_MAX_NAME];
-	char disc_id[CHROMAPRINT_DB_MAX_DISC_ID];
+	char *name;
+	char *disc_id;
 	int track_num;
 } chromaprint_db_entry_t;
 
 typedef struct {
 	float confidence; /* 0.0 - 1.0, higher = better match */
-	char name[CHROMAPRINT_DB_MAX_NAME];
-	char disc_id[CHROMAPRINT_DB_MAX_DISC_ID];
+	const char *name;
+	const char *disc_id;
 	int track_num;
 } chromaprint_db_match_t;
 
@@ -32,6 +32,10 @@ typedef struct {
  * Expected format (from known_discs.json5 flattened by Kotlin):
  *   [{"name":"Title","disc_id":"d2-gog","track":2,"duration_ms":187000,"chromaprint":"AQAA..."}]
  * Returns number of entries loaded, or -1 on error. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int chromaprint_db_load(const char *json_data, int json_len);
 
 /* Match a fingerprint against the loaded database.
@@ -55,5 +59,9 @@ void chromaprint_db_free(void);
 
 /* Return current entry count. */
 int chromaprint_db_count(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CHROMAPRINT_DB_H */

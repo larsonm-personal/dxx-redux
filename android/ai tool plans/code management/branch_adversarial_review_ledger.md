@@ -9515,23 +9515,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Record the reviewed upstream commit and file mapping; inspect the source archive, APK/AAB, and native-library packaging for the approved notices and license; verify recipients can obtain the exact corresponding source and perform the selected replacement or relinking workflow; and obtain maintainer or qualified license-review sign-off before release
 - Resolution: Pending
 
-### BR-0074: P2 - Preserve complete fingerprint match metadata across JNI
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: api-data-format
-- Found by: R1-CHUNK-0035
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_fingerprint.c:L189-L223,L226-L256`
-- Related: `android/app/src/main/cpp/shared/chromaprint_db.h:L12-L29`, `android/app/src/main/cpp/shared/chromaprint_db.c:L66-L85,L189-L250,L342-L350`, `android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt:L37-L42,L386-L394,L421-L433`, `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt:L1645-L1678`, and `android/app/src/main/assets/known_discs.json5:L745-L761`
-- Evidence: Kotlin flattens the complete chosen track name into JSON, but the native database parser silently stores only 63 bytes in fixed 64-byte `name` and `disc_id` arrays. Both JNI match exports then serialize those already-truncated fields into a pipe-delimited string, and Kotlin accepts the result as the authoritative match metadata. This is not merely a future limit: several active checked-in fingerprint records at known-discs lines 745 through 761 choose ASCII `acoustid_name` values from 88 through 136 characters, such as the 89-character artist-and-title at line 745, so successful matches return visibly truncated names today. A future valid name or identifier containing `|` also shifts Kotlin's four split fields and makes the match unparsable or misassigned; the JSON parser removes escape markers rather than implementing complete JSON string decoding, so control escapes cannot round-trip exactly either
-- Trigger: Match any current database entry whose chosen name exceeds 63 bytes, or add a valid name or disc identifier containing a pipe, JSON control escape, or multibyte text whose 63-byte cut splits a character
-- Impact: Imported music and disc tracks can be labeled and cached with incomplete or malformed names, distinct long names can collapse to the same displayed prefix, and otherwise successful matches can be discarded solely because metadata cannot cross the bridge's undocumented fixed-width delimiter protocol
-- Expected: Every admitted database entry preserves its exact validated Unicode name and identifier, and JNI returns independently typed fields without delimiter ambiguity or silent byte truncation
-- Suggested fix: Parse the flattened data with a complete JSON implementation into budgeted dynamically sized UTF-8 fields, reject rather than truncate any explicit size limit, and return a Java `MatchResult` object or separate typed JNI fields instead of a formatted string. If a wire encoding is retained, use a length-delimited or standard structured format and validate conversion at both boundaries
-- Validation: Add round-trip match cases for the current longest checked-in names, exact-limit and one-byte-over ASCII, multibyte text at the boundary, quotes, backslashes, controls, and pipes in both name and disc ID; assert every accepted value returns exactly or is rejected during atomic database loading, and verify the music picker and cache persist the complete expected label
-- Resolution: Pending
-
 ### BR-0075: P1 - Publish and access the native fingerprint database atomically
 
 - [ ] OPEN

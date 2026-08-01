@@ -231,18 +231,12 @@ object FingerprintBridge {
     fun matchFingerprint(
         encoded: String,
         durationMs: Int,
-    ): MatchResult? {
-        val raw = nativeMatchFingerprint(encoded, durationMs) ?: return null
-        return parseMatchResult(raw)
-    }
+    ): MatchResult? = nativeMatchFingerprint(encoded, durationMs)
 
     /**
      * Fingerprint an audio file and match in one call.
      */
-    fun fingerprintAndMatch(path: String): MatchResult? {
-        val raw = nativeFingerprintAndMatch(path) ?: return null
-        return parseMatchResult(raw)
-    }
+    fun fingerprintAndMatch(path: String): MatchResult? = nativeFingerprintAndMatch(path)
 
     /**
      * Fingerprint an audio file from a SAF content URI and match.
@@ -255,8 +249,7 @@ object FingerprintBridge {
         val pfd = resolver.openFileDescriptor(uri, "r") ?: return null
         return try {
             val fdPath = "/proc/self/fd/${pfd.fd}"
-            val raw = nativeFingerprintAndMatch(fdPath) ?: return null
-            parseMatchResult(raw)
+            nativeFingerprintAndMatch(fdPath)
         } finally {
             pfd.close()
         }
@@ -419,17 +412,6 @@ object FingerprintBridge {
         return FingerprintResult(parts[0], parts[1].toIntOrNull() ?: return null)
     }
 
-    private fun parseMatchResult(raw: String): MatchResult? {
-        val parts = raw.split("|", limit = 4)
-        if (parts.size != 4) return null
-        return MatchResult(
-            confidence = parts[0].toFloatOrNull() ?: return null,
-            name = parts[1],
-            discId = parts[2],
-            trackNum = parts[3].toIntOrNull() ?: return null,
-        )
-    }
-
     /**
      * Flatten known_discs.json5 audio tracks with chromaprint into a
      * JSON array string for chromaprint_db_load().
@@ -499,9 +481,9 @@ object FingerprintBridge {
     private external fun nativeMatchFingerprint(
         encodedFp: String,
         durationMs: Int,
-    ): String?
+    ): MatchResult?
 
-    private external fun nativeFingerprintAndMatch(filePath: String): String?
+    private external fun nativeFingerprintAndMatch(filePath: String): MatchResult?
 
     private external fun nativeGetDbCount(): Int
 
