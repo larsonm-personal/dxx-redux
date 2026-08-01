@@ -36,6 +36,28 @@ get_installed_jdk_version() {
     sed -n 's/^JAVA_VERSION="\(.*\)"$/\1/p' "$release_file" | tr -d '\r' | head -n1
 }
 
+recover_matching_incomplete_install() {
+    local existing_file relative_path staged_file
+
+    shopt -s globstar nullglob
+    for existing_file in "$DEST"/**/*; do
+        if [ ! -f "$existing_file" ]; then
+            continue
+        fi
+        relative_path="${existing_file#"$DEST"/}"
+        staged_file="$NEW_JDK_DIR/$relative_path"
+        if [ ! -f "$staged_file" ] || ! cmp -s "$existing_file" "$staged_file"; then
+            return 1
+        fi
+    done
+
+    echo "Recovering the incomplete JDK without replacing matching files that are in use..."
+    cp -a -n "$NEW_JDK_DIR"/. "$DEST"/
+    [ "$(get_installed_jdk_version "$DEST" || true)" = "$JDK_VERSION" ] \
+        && { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; }
+}
+
+INSTALLED_VERSION=""
 if [ -d "$DEST" ]; then
     INSTALLED_VERSION="$(get_installed_jdk_version "$DEST" || true)"
     if { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; } && [ "$INSTALLED_VERSION" = "$JDK_VERSION" ]; then
@@ -89,6 +111,12 @@ STAGED_VERSION="$(get_installed_jdk_version "$NEW_JDK_DIR" || true)"
 if { [ ! -x "$NEW_JDK_DIR/bin/java" ] && [ ! -x "$NEW_JDK_DIR/bin/java.exe" ]; } || [ "$STAGED_VERSION" != "$JDK_VERSION" ]; then
     echo "Staged JDK is incomplete or version $STAGED_VERSION, expected $JDK_VERSION" >&2
     exit 1
+fi
+
+if [ -d "$DEST" ] && [ -z "$INSTALLED_VERSION" ] && recover_matching_incomplete_install; then
+    echo "JDK $JDK_MAJOR installed at $DEST"
+    "$DEST/bin/java" -version 2>&1 | head -1
+    exit 0
 fi
 
 if [ -d "$DEST" ]; then

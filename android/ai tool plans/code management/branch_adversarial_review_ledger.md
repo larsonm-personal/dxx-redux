@@ -9722,36 +9722,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add a mount/unmount loop around a valid manifest and compare `/proc/self/fd` plus a tracking allocator before the first mount and after every unmount; repeat through `PHYSFS_deinit`, malformed-manifest failure, mount rejection, and allocation-failure injection, asserting the input I/O is destroyed exactly once on every path and no descriptor count grows
 - Resolution: Pending
 
-### BR-0088: P2 - Use content-backed identity for every mission music cache
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/cache-identity
-- Found by: R1-CHUNK-0044, R1-CHUNK-0045, R1-CHUNK-0048, R1-CHUNK-0084, R1-CHUNK-0085
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MissionZipMusicStageManager.kt:L21-L29,L136-L143` in cache lookup and staged-file naming
-- Related: `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt:L23-L34,L243-L290` and `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L185-L192`
-- Evidence: The staged filename hashes only the source basename, byte length, last-modified time, and track-local ID, then accepts an existing cache entry based only on its output length. It omits the canonical source path and any source or entry content hash. Two archives or extracted roots with equal basenames and metadata can therefore map equal track IDs to the same cache file despite different bytes. An in-place replacement that preserves size and timestamp has the same stale-cache behavior. The fingerprint cache repeats the basename, length, and timestamp identity, so downstream fingerprint reuse does not reliably correct the collision.
-- Trigger: Stage matching track paths from two different same-named mission archives or directories whose source length, timestamp, and track length agree but whose audio differs, or replace an archive while preserving those metadata fields
-- Impact: Preview, AcoustID lookup, fingerprinting, inferred names, and generated sidecars can silently use music from a different mission or a previous version, producing durable incorrect metadata without an error
-- Expected: Cache identity distinguishes distinct source objects and invalidates when the relevant bytes change; a hit is validated against that identity rather than length alone
-- Suggested fix: Define one shared versioned mission-source identity using at least the canonical source path plus stable file identity and entry metadata, or preferably a lazily computed content digest for the archive and selected entry. Store and verify that identity beside staged bytes, and use it consistently for staging and fingerprint caches. Keep the full digest or a collision-resistant filename length rather than truncating it to 64 bits.
-- Validation: Add two same-named archive and directory fixtures with identical lengths and timestamps but different audio, plus an in-place same-metadata replacement; assert each stages and fingerprints its own bytes and unchanged inputs still reuse their cache
-- Additional location (R1-CHUNK-0045): `android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt:L14-L24` and `android/app/src/main/java/com/dxxredux/app/ModManager.kt:L452-L495,L724-L770`
-- Additional evidence (R1-CHUNK-0045): The non-extracted name sidecar is keyed only by the sanitized owner filename, and `writeMissionZipMusicNames` accepts any existing regular file without recording or comparing the source archive's size, timestamp, digest, catalog, or schema. Reimport replaces the mission file and extracted owner state but does not delete this sidecar, so even an obviously different archive imported under the same display filename keeps and later copies the previous mission's decoded names.
-- Additional trigger (R1-CHUNK-0045): Import a ZIP mission with recognized music, then import different ZIP content under the same display filename without first deleting the old mod
-- Additional validation (R1-CHUNK-0045): Reimport same-name missions with changed length, timestamp, track inventory, and same-metadata content; assert the sidecar and every upstream cache are invalidated by one shared identity while unchanged content is reused.
-- Additional location (R1-CHUNK-0048): `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt:L40-L60,L93-L120,L185-L197` and `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L840-L865,L911-L913,L1225-L1229`
-- Additional evidence (R1-CHUNK-0048): The fingerprint cache does have an exact content-hash lookup, but the details dialog first calls `cachedEntries`, which accepts only archive basename, length, and timestamp and returns records without staging or hashing current audio. `missionZipMusicTracksNeedingLocalAnalysis` then treats the presence of a track ID as proof that analysis is complete, so colliding or same-metadata replacement archives never reach `identifyLocal` and its SHA-256 check. The stale cached fingerprint and decoded name are displayed immediately, and automatic local analysis explicitly skips the track.
-- Additional validation (R1-CHUNK-0048): Exercise dialog-open and automatic-analysis selection, not only direct `get`, with same-named archives and in-place replacements that preserve length and timestamp; assert no cached annotation is exposed before content-backed validation and changed audio is restaged and re-fingerprinted.
-- Additional location (R1-CHUNK-0084): `android/app/src/test/java/com/dxxredux/app/MissionZipMusicStageManagerTest.kt:L14-L143` and `MissionZipMusicNamesTest.kt:L12-L82`
-- Additional evidence (R1-CHUNK-0084): Every staging case creates a distinct cache root and stages each source only once, so none can observe a same-key cache hit, two same-named sources with equal metadata, or in-place replacement. The sidecar cases write directly to clean output parents and do not exercise owner-filename cache reuse or same-name mission replacement.
-- Additional validation (R1-CHUNK-0084): Reuse one cache root for same-named, equal-size, equal-mtime archives and directories with different selected bytes, restage after an in-place same-metadata replacement, and exercise sidecar cache reuse through import and launch; require content-correct invalidation while unchanged content still hits.
-- Additional location (R1-CHUNK-0085): `android/app/src/test/java/com/dxxredux/app/MissionZipAudioFingerprintCacheTest.kt:L12-L78` and `MissionZipMusicAnalysisSkipTest.kt:L8-L28`
-- Additional evidence (R1-CHUNK-0085): The relocation test intentionally uses identical archive bytes with equal basename, size, and timestamp, while the invalidation test changes size. Neither uses different source bytes with all accepted metadata preserved. The analysis-skip tests then treat any supplied track-ID record as current without validating archive or content identity.
-- Additional validation (R1-CHUNK-0085): Preserve basename, size, timestamp, and track ID while changing archive and staged bytes, then exercise `cachedEntries` and pending-analysis selection; require invalidation before stale data is displayed or skipped, while byte-identical relocation remains reusable.
-- Resolution: Pending
-
 ### BR-0089: P2 - Publish mission music cache artifacts completely and atomically
 
 - [ ] OPEN

@@ -28,10 +28,12 @@ internal object MissionZipMusicNames {
         outputFile: File,
         catalog: MissionZipMusicCatalog,
     ): Boolean =
-        outputFile.isFile &&
-            identityFile(outputFile).let {
-                it.isFile && it.readText(Charsets.US_ASCII) == catalog.sourceIdentity
-            }
+        runCatching {
+            outputFile.isFile &&
+                identityFile(outputFile).let {
+                    it.isFile && it.readText(Charsets.US_ASCII) == catalog.sourceIdentity
+                }
+        }.getOrDefault(false)
 
     fun identifyLocalAndWrite(
         context: Context,

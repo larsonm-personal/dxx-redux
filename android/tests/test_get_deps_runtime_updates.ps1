@@ -31,6 +31,8 @@ Assert-Matches $jdkUpdater '(?s)STAGED_VERSION=.*?mv "\$DEST" "\$BACKUP_DIR"' `
     "the staged JDK is validated before the current install is moved"
 Assert-Matches $jdkUpdater 'mv "\$BACKUP_DIR" "\$DEST"' `
     "a failed replacement restores the previous JDK directory"
+Assert-Matches $jdkUpdater '(?s)recover_matching_incomplete_install.*?cmp -s.*?cp -a -n' `
+    "an incomplete JDK is recovered only when surviving files match the staged replacement"
 Assert-Matches $versions '(?m)^POWERSHELL_INSTALL_CMD=.*update-powershell\.ps1.*-System' `
     "routine PowerShell sync updates the system runtime"
 Assert-Matches $powerShellUpdater 'active PowerShell 7 processes' `

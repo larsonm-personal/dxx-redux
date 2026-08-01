@@ -24,8 +24,9 @@ class MissionZipMusicStageManager(
         val output = stagedFile(cacheIdentity, track)
         val identityFile = identityFile(output)
         if (output.isFile &&
-            identityFile.isFile &&
-            identityFile.readText(Charsets.US_ASCII) == cacheIdentity &&
+            runCatching {
+                identityFile.isFile && identityFile.readText(Charsets.US_ASCII) == cacheIdentity
+            }.getOrDefault(false) &&
             (
                 (track.sizeBytes > 0L && output.length() == track.sizeBytes) ||
                     (track.sizeBytes <= 0L && output.length() > 0L)
