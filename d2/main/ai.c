@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "key.h"
 #include "powerup.h"
 #include "gauges.h"
+#include "boss_hud.h"
 #include "text.h"
 #include "fuelcen.h"
 #include "controls.h"
@@ -1211,6 +1212,7 @@ _exit_cheat:
 					Laser_create_new_easy( &fire_vec, &fire_pos, obj-Objects, ROBOT_SUPERPROX_ID, 1);
 				else
 					Laser_create_new_easy( &fire_vec, &fire_pos, obj-Objects, PROXIMITY_ID, 1);
+				boss_hud_note_active(obj - Objects);
 
 				ailp->next_fire = (F1_0/2)*(NDL+5 - Difficulty_level);      // Drop a proximity bomb every 5 seconds.
 

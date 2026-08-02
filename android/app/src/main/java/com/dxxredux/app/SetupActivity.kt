@@ -520,6 +520,7 @@ class SetupActivity : ComponentActivity() {
                         val cockpitMode = intent.getIntExtra("cockpit_mode", 0)
                         val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
                         val showRobotHostageCounts = intent.getBooleanExtra("show_robot_hostage_counts", false)
+                        val showBossHealthBar = intent.getBooleanExtra("show_boss_health_bar", true)
                         val headlightActiveDefault = intent.getBooleanExtra("headlight_active_default", false)
                         val engineCount =
                             NativePilotPreferences.writeEnginePrefsToAll(
@@ -527,6 +528,7 @@ class SetupActivity : ComponentActivity() {
                                 cockpitMode,
                                 autoLeveling,
                                 showRobotHostageCounts,
+                                showBossHealthBar,
                                 headlightActiveDefault,
                             )
                         val originalHoming = intent.getBooleanExtra("original_homing", false)
@@ -545,6 +547,7 @@ class SetupActivity : ComponentActivity() {
                             "write_engine_prefs: patched $n file(s) " +
                                 "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
                                 "show_counts=$showRobotHostageCounts " +
+                                "show_boss_health=$showBossHealthBar " +
                                 "headlight_default=$headlightActiveDefault " +
                                 "original_homing=$originalHoming)",
                         )

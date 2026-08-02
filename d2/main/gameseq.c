@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "digi.h"
 #include "gamesave.h"
 #include "scores.h"
+#include "boss_hud.h"
 #include "coop_start_positions.h"
 #include "secretarea.h"
 #include "u_mem.h"
@@ -1274,6 +1275,7 @@ void StartNewLevelSecret(int level_num, int page_in_textures)
 	gameseq_init_network_players(); // Initialize the Players array for this level
 
 	HUD_clear_messages();
+	boss_hud_reset();
 
 	automap_clear_visited();
 
@@ -1845,6 +1847,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 #endif
 
 	HUD_clear_messages();
+	boss_hud_reset();
 
 	automap_clear_visited();
 

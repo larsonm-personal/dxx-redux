@@ -91,6 +91,8 @@ fun EnginePreferencesPage(
     var savedAutoLeveling by remember { mutableStateOf(true) }
     var showRobotHostageCounts by remember { mutableStateOf(false) }
     var savedShowRobotHostageCounts by remember { mutableStateOf(false) }
+    var showBossHealthBar by remember { mutableStateOf(true) }
+    var savedShowBossHealthBar by remember { mutableStateOf(true) }
     var originalHoming by remember { mutableStateOf(false) }
     var savedOriginalHoming by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf("") }
@@ -128,6 +130,7 @@ fun EnginePreferencesPage(
         cockpitMode != savedCockpitMode ||
             autoLeveling != savedAutoLeveling ||
             showRobotHostageCounts != savedShowRobotHostageCounts ||
+            showBossHealthBar != savedShowBossHealthBar ||
             originalHoming != savedOriginalHoming
 
     fun loadPrefs() {
@@ -140,6 +143,8 @@ fun EnginePreferencesPage(
         savedAutoLeveling = data.autoLeveling
         showRobotHostageCounts = data.showRobotHostageCounts
         savedShowRobotHostageCounts = data.showRobotHostageCounts
+        showBossHealthBar = data.showBossHealthBar
+        savedShowBossHealthBar = data.showBossHealthBar
         originalHoming = homingData.enabled
         savedOriginalHoming = homingData.enabled
         if (musicData.hasPilotFile) {
@@ -322,6 +327,27 @@ fun EnginePreferencesPage(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = showBossHealthBar,
+                        onCheckedChange = { showBossHealthBar = it },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Boss health bar", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Shows boss health after the boss engages a player",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     OutlinedButton(
@@ -329,6 +355,7 @@ fun EnginePreferencesPage(
                             cockpitMode = CM_FULL_COCKPIT
                             autoLeveling = true
                             showRobotHostageCounts = false
+                            showBossHealthBar = true
                             originalHoming = false
                         },
                         modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
@@ -343,6 +370,7 @@ fun EnginePreferencesPage(
                                     cockpitMode,
                                     autoLeveling,
                                     showRobotHostageCounts,
+                                    showBossHealthBar,
                                     !headlightOffByDefault,
                                 )
                             val homingCount =
@@ -355,6 +383,7 @@ fun EnginePreferencesPage(
                                 savedCockpitMode = cockpitMode
                                 savedAutoLeveling = autoLeveling
                                 savedShowRobotHostageCounts = showRobotHostageCounts
+                                savedShowBossHealthBar = showBossHealthBar
                                 savedOriginalHoming = originalHoming
                                 hasPilotFile = true
                                 statusMessage = "Saved to $count pilot file(s) across both games"

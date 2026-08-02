@@ -45,6 +45,12 @@ void android_get_default_hud_count_prefs(int *show_counts)
 		*show_counts = 0;
 }
 
+void android_get_default_boss_health_bar_prefs(int *show_boss_health_bar)
+{
+	if (show_boss_health_bar)
+		*show_boss_health_bar = 1;
+}
+
 void android_get_default_music_prefs(int *source, int *prefer_mission, int *play_order, int *volume)
 {
 	if (source)
@@ -208,6 +214,58 @@ int plx_write_robot_hostage_counts(const char *path, int show_counts)
 	         show_counts ? 1 : 0);
 	return playsave_text_update_section(path, playsave_android_options_header(),
 	                                    "[cockpit]", &entry, 1);
+}
+
+int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health_bar)
+{
+	FILE *f = fopen(path, "r");
+	char line[256];
+	int found = 0;
+	int in_cockpit = 0;
+
+	if (show_boss_health_bar)
+		*show_boss_health_bar = 1;
+	if (!f) return 0;
+
+	while (fgets(line, sizeof(line), f)) {
+		if (!in_cockpit) {
+			if (!d_strnicmp(line, "[cockpit]", 9))
+				in_cockpit = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "[end]", 5))
+			break;
+		if (!d_strnicmp(line, "robothostagecounts=", 19)) {
+			if (show_counts)
+				*show_counts = atoi(line + 19) ? 1 : 0;
+			found = 1;
+		} else if (!d_strnicmp(line, "bosshealthbar=", 14)) {
+			if (show_boss_health_bar)
+				*show_boss_health_bar = atoi(line + 14) ? 1 : 0;
+			found = 1;
+		}
+	}
+
+	fclose(f);
+	return found;
+}
+
+int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_bar)
+{
+	char counts_line[64];
+	char boss_line[64];
+	struct playsave_text_entry entries[2];
+
+	snprintf(counts_line, sizeof(counts_line), "robothostagecounts=%i\n",
+	         show_counts ? 1 : 0);
+	snprintf(boss_line, sizeof(boss_line), "bosshealthbar=%i\n",
+	         show_boss_health_bar ? 1 : 0);
+	entries[0].key = "robothostagecounts=";
+	entries[0].line = counts_line;
+	entries[1].key = "bosshealthbar=";
+	entries[1].line = boss_line;
+	return playsave_text_update_section(path, playsave_android_options_header(),
+	                                    "[cockpit]", entries, 2);
 }
 
 int plx_read_original_homing(const char *path, int *original_homing)

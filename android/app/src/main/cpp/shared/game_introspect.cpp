@@ -50,6 +50,7 @@ extern "C" {
 #include "kconfig.h"
 #include "joy.h"
 #include "gr.h"
+#include "boss_hud.h"
 #include "hud_counts_shared.h"
 #include "hudmsg.h"
 #include "multi.h"
@@ -1302,6 +1303,7 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- HUD layout ----------------------------------------------- */
 	{
 		const hud_counts_debug_state *counts = hud_counts_get_debug_state();
+		const boss_hud_debug_state *boss = boss_hud_get_debug_state();
 		json hud;
 		json message_rects = json::array();
 		const int message_rect_count = HUD_get_message_rect_count();
@@ -1324,10 +1326,30 @@ extern "C" char *game_introspect_get_state(void)
 
 		hud["message_rect_count"] = message_rect_count;
 		hud["message_rects"] = std::move(message_rects);
+		hud["boss_health"] = {
+			{ "enabled", boss->enabled != 0 },
+			{ "active", boss->active != 0 },
+			{ "drawn", boss->drawn != 0 },
+			{ "visible_slot", boss->visible_slot },
+			{ "objnum", boss->objnum },
+			{ "signature", boss->signature },
+			{ "shields_raw", boss->shields },
+			{ "maximum_shields_raw", boss->maximum_shields },
+			{ "label_width", boss->label_width },
+			{ "bar_width", boss->bar_width },
+			{ "bar_height", boss->bar_height },
+			{ "green_width", boss->green_width },
+			{ "red_width", boss->red_width },
+			{ "bar_rect", { { "x", boss->bar_x }, { "y", boss->bar_y }, { "w", boss->bar_width }, { "h", boss->bar_height } } },
+			{ "rect", { { "x", boss->row_x }, { "y", boss->row_y }, { "w", boss->row_w }, { "h", boss->row_h } } }
+		};
+		hud["queued_message_capacity"] = boss->queued_message_capacity;
+		hud["queued_message_draw_count"] = boss->queued_message_draw_count;
 		hud["progress"]["robots"] = serialize_count_row(counts->robots);
 		hud["progress"]["hostages"] = serialize_count_row(counts->hostages);
 		hud["progress"]["secrets"] = serialize_count_row(counts->secrets);
 		hud["show_robot_hostage_counts"] = PlayerCfg.ShowRobotHostageCounts != 0;
+		hud["show_boss_health_bar"] = PlayerCfg.ShowBossHealthBar != 0;
 		j["hud_layout"] = std::move(hud);
 	}
 

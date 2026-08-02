@@ -12,6 +12,7 @@ object NativePilotPreferences {
         val cockpitMode: Int,
         val autoLeveling: Boolean,
         val showRobotHostageCounts: Boolean,
+        val showBossHealthBar: Boolean,
         val headlightActiveDefault: Boolean,
     )
 
@@ -48,6 +49,7 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        showBossHealthBar: Boolean,
         headlightActiveDefault: Boolean,
     ): Int
 
@@ -56,6 +58,7 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        showBossHealthBar: Boolean,
         headlightActiveDefault: Boolean,
     ): Int
 
@@ -115,7 +118,8 @@ object NativePilotPreferences {
             cockpitMode = if (raw.size >= 2) raw[1] else 0,
             autoLeveling = raw.size >= 3 && raw[2] != 0,
             showRobotHostageCounts = raw.size >= 4 && raw[3] != 0,
-            headlightActiveDefault = raw.size >= 5 && raw[4] != 0,
+            showBossHealthBar = raw.size < 5 || raw[4] != 0,
+            headlightActiveDefault = raw.size >= 6 && raw[5] != 0,
         )
 
     private fun decodeVisualPrefs(raw: IntArray): VisualPrefs =
@@ -177,6 +181,7 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        showBossHealthBar: Boolean,
         headlightActiveDefault: Boolean = false,
     ): Int =
         if (game == "d1") {
@@ -185,6 +190,7 @@ object NativePilotPreferences {
                 cockpitMode,
                 autoLeveling,
                 showRobotHostageCounts,
+                showBossHealthBar,
                 headlightActiveDefault,
             )
         } else {
@@ -193,6 +199,7 @@ object NativePilotPreferences {
                 cockpitMode,
                 autoLeveling,
                 showRobotHostageCounts,
+                showBossHealthBar,
                 headlightActiveDefault,
             )
         }
@@ -202,6 +209,7 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        showBossHealthBar: Boolean,
         headlightActiveDefault: Boolean = false,
     ): Int =
         nativeWriteEnginePrefsD1(
@@ -209,6 +217,7 @@ object NativePilotPreferences {
             cockpitMode,
             autoLeveling,
             showRobotHostageCounts,
+            showBossHealthBar,
             headlightActiveDefault,
         ) +
             nativeWriteEnginePrefsD2(
@@ -216,6 +225,7 @@ object NativePilotPreferences {
                 cockpitMode,
                 autoLeveling,
                 showRobotHostageCounts,
+                showBossHealthBar,
                 headlightActiveDefault,
             )
 

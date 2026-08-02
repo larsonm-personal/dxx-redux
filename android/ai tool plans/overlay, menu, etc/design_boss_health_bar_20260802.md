@@ -6,6 +6,14 @@ Design an optional center-top boss health display for D1 and D2. The display sho
 
 ## Work Plan
 
+### Android-owned module refactor
+
+- [x] Move boss state, validation, health scaling, layout, debug data, and rendering into `android/app/src/main/cpp/shared/boss_hud.c/.h`
+- [x] Reduce D1 and D2 HUD changes to message-stack integration calls and special-row ordering
+- [x] Point AI, collision, multiplayer, and level-transition hooks at the shared Android-owned header
+- [x] Add the shared module to both D1 and D2 targets while preserving all desktop builds
+- [x] Re-run formatting, native/Windows builds, Android tests/APK assembly, and D1/D2 boss gameplay scenarios
+
 - [x] Trace the general native HUD-message queue, its producers, and its rendering in D1 and D2
 - [x] Trace boss identification, combat activation, damage, death, and multiplayer synchronization
 - [x] Trace the Android Game Preferences data path from Compose through JNI/native runtime state
@@ -13,10 +21,28 @@ Design an optional center-top boss health display for D1 and D2. The display sho
 - [x] Pin the requested boss row to the top and count it inside the four-row visible-message budget
 - [x] Define concrete file-level implementation phases and verification coverage
 - [x] Record the completed design and remaining product decisions in this document
+- [x] Implement pilot storage, launcher UI, import/export, and JNI plumbing
+- [x] Implement D1 and D2 activation, lifecycle, message-stack layout, and solid bar rendering
+- [x] Add structured introspection, focused fill tests, and a maintained D1/D2 gameplay test
+- [x] Verify native host tests, Windows builds, Android tests, APK assembly, and D1/D2 gameplay assertions
 
 ## Scope
 
-This tranche is design-only. No gameplay, UI, preference, packet, or save-format behavior is changed.
+This tranche is implemented in D1, D2, and the Android launcher. It changes native HUD rendering and pilot-backed preferences without changing multiplayer packet formats or binary save formats.
+
+## Implementation Status
+
+- Complete: `bosshealthbar=1` pilot default and read/write behavior in D1 and D2
+- Complete: launcher switch directly below Robot and hostage counts, default on, with save/reset/import/export support
+- Complete: Android-owned `boss_hud.c/.h` centralizes state, health scaling, layout, rendering, and debug data for both games
+- Complete: activation from local shots, replicated shots, proximity drops, melee contact, effective damage, and teleports
+- Complete: persistent signature-validated boss tracking through the death roll and reset at level transitions
+- Complete: `boss ` native text followed by contiguous solid green and red rectangles
+- Complete: boss row pinned at visible slot 0 with timed-message capacity reduced from four to three
+- Complete: D2 guided-missile text and cooperative restore status laid out below the boss row
+- Complete: introspection reports lifecycle, slot, geometry, fill widths, and queue capacity
+- Complete: `test_boss_health_bar.json5` passes on D1 level 27 and D2 level 24
+- Not required for implementation sign-off: a dedicated two-emulator boss encounter was not added; existing replicated fire and damage paths are used without a protocol change
 
 ## Recommended Player Experience
 
@@ -145,14 +171,14 @@ Keeping the zero bar through the existing boss death roll gives the lethal hit v
 
 ### Activation signals
 
-Expose one idempotent native entry point in each game:
+Expose one idempotent shared entry point to each game:
 
 ```c
-void HUD_note_boss_active(int objnum);
-void HUD_reset_boss_health(void);
+void boss_hud_note_active(int objnum);
+void boss_hud_reset(void);
 ```
 
-`HUD_note_boss_active()` validates object range, type, boss flag, signature, and positive maximum health before changing display state. Call it at these existing hostile events:
+`boss_hud_note_active()` validates object range, type, boss flag, signature, and positive maximum health before changing display state. Call it at these existing hostile events:
 
 1. After a boss creates a normal weapon in `ai_fire_laser_at_player()`
 2. When `multi_do_robot_fire()` receives a replicated shot from a boss
@@ -167,20 +193,28 @@ The sight-sound hook improves immediacy in single player. In cooperative play it
 
 ### Maximum health
 
-Do not use health at activation as the denominator because the player may damage a boss before it fires. Calculate the same full-health value used by `copy_defaults_to_robot()`:
+Do not use health after damage as the denominator because the player may damage a boss before it fires. Capture activation before subtracting effective damage and calculate the same full-health value used by each game's `copy_defaults_to_robot()`.
+
+D1 uses robot strength directly:
+
+```text
+maximum = Robot_info[boss->id].strength
+```
+
+D2 applies its existing boss difficulty scaling:
 
 ```text
 maximum = Robot_info[boss->id].strength / (NDL + 3) * (Difficulty_level + 4)
 if Difficulty_level == 0: maximum /= 2
 ```
 
-Preserve the engine's existing operation order so fixed-point truncation matches the live object initialization exactly. If a custom or restored boss currently has shields above the calculated value, raise the captured maximum to the current shield value rather than drawing more than 100 percent.
+Preserve D2's existing operation order so fixed-point truncation matches the live object initialization exactly. In either game, if a custom or restored boss currently has shields above the calculated value, raise the captured maximum to the current shield value rather than drawing more than 100 percent.
 
 On save restore, if no explicit activation state exists but a live boss has less than its calculated maximum, treat it as active. This recovers the useful case without changing the classic save-game format. A full-health boss that was activated, saved, and restored will remain hidden only until its next hostile event. That narrow case is preferable to adding a HUD-only field to the D1 and D2 binary save layouts.
 
 ## Rendering Design
 
-Implement the row within `HUD_prepare_message_frame()` and `HUD_render_message_frame()` in both `d1/main/hud.c` and `d2/main/hud.c`.
+Implement the row in the Android-owned `boss_hud.c/.h` module. Keep `HUD_prepare_message_frame()` and `HUD_render_message_frame()` in both games responsible only for reserving the first row, inserting its collision rectangle, applying the reduced message budget, and calling the shared renderer.
 
 Preparation should:
 
@@ -319,7 +353,7 @@ This permits exact assertions without image analysis.
 - Invalid object number, non-robot, non-boss, and stale-signature validation
 - Missing `.plx` key defaults to on
 - Read and write both cockpit HUD keys without losing unrelated lines or handmade comments
-- Kotlin decoder fallback for older or short JNI arrays defaults boss health to on
+- Kotlin decoder defaults boss health to on for a short JNI result
 - Engine Preferences dirty-state, reset default, export, and import behavior
 - HUD rectangle intersection includes the boss row and temporary rows start one line lower
 - With four live timed messages, an active boss is slot 0 and only the newest three timed messages are marked drawn
@@ -372,8 +406,8 @@ Use the existing two-emulator harness:
 
 ### Phase 2: Boss lifecycle and rendering
 
-- `d1/main/hudmsg.h`, `d2/main/hudmsg.h`
-- `d1/main/hud.c`, `d2/main/hud.c`
+- `android/app/src/main/cpp/shared/boss_hud.c/.h` as the single source of truth for boss state, scaling, geometry, colors, rendering, and debug data
+- Narrow integration calls in `d1/main/hud.c` and `d2/main/hud.c`
 - `d2/main/gamerend.c` to move the guided-missile label into the prepared row ordering
 - `d1/main/ai.c`
 - `d2/main/ai.c`, `d2/main/ai2.c`
@@ -386,7 +420,7 @@ Keep D1 and D2 changes mechanically parallel where their upstream structures mat
 ### Phase 3: Introspection and tests
 
 - `android/app/src/main/cpp/shared/game_introspect.cpp`
-- A small shared bar-math helper under `android/app/src/main/cpp/shared/`, if needed to unit test calculations without linking the game
+- Shared fill math in `android/app/src/main/cpp/shared/boss_hud.h`, exercised by `android/tests/test_hud_layout.c`
 - `android/tests/test_hud_layout.c` or a focused boss HUD test target
 - Relevant Kotlin preference and import/export tests
 - `android/game_scripts/test_boss_health_bar.json5`

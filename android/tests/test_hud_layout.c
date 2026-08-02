@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "boss_hud.h"
 #include "font_control_shared.h"
 #include "hud_layout_shared.h"
 
@@ -82,6 +83,19 @@ static void test_padding_can_turn_a_near_miss_into_overlap(void)
 	assert(hud_layout_rects_intersect(&message, &padded_item));
 }
 
+static void test_boss_health_bar_widths(void)
+{
+	assert(boss_hud_green_width(100, 100, 98) == 98);
+	assert(boss_hud_green_width(99, 100, 98) == 97);
+	assert(boss_hud_green_width(50, 100, 98) == 49);
+	assert(boss_hud_green_width(1, 100, 98) == 1);
+	assert(boss_hud_green_width(0, 100, 98) == 0);
+	assert(boss_hud_green_width(-1, 100, 98) == 0);
+	assert(boss_hud_green_width(101, 100, 98) == 98);
+	assert(boss_hud_green_width(1, 0, 98) == 0);
+	assert(boss_hud_green_width(1, 100, 0) == 0);
+}
+
 int main(void)
 {
 	test_embedded_font_controls_are_not_visible();
@@ -90,5 +104,6 @@ int main(void)
 	test_containment_and_negative_coordinates();
 	test_empty_rectangles_do_not_overlap();
 	test_padding_can_turn_a_near_miss_into_overlap();
+	test_boss_health_bar_widths();
 	return 0;
 }

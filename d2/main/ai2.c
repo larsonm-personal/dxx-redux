@@ -55,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "key.h"
 #include "powerup.h"
 #include "gauges.h"
+#include "boss_hud.h"
 #include "text.h"
 #include "args.h"
 #include "input_demo_hooks.h"
@@ -805,6 +806,7 @@ void do_ai_robot_hit_attack(object *robot, object *playerobj, vms_vector *collis
 		if (ailp->next_fire <= 0) {
 			if (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED))
 				if (dist_to_player < robot->size + playerobj->size + F1_0*2) {
+					boss_hud_note_active(robot - Objects);
 					input_demo_record_claw_contact_event("attack_hit", robot,
 						playerobj, collision_point, ailp->next_fire,
 						dist_to_player, 0);
@@ -1075,6 +1077,7 @@ player_led: ;
 			weapon_type = robptr->weapon_type2;
 
 	Laser_create_new_easy( &fire_vec, fire_point, obj-Objects, weapon_type, 1);
+	boss_hud_note_active(objnum);
 
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI) {
@@ -2069,6 +2072,7 @@ void teleport_boss(object *objp)
 	rand_index = (d_rand() * Num_boss_teleport_segs) >> 15;	
 	rand_segnum = Boss_teleport_segs[rand_index];
 	Assert((rand_segnum >= 0) && (rand_segnum <= Highest_segment_index));
+	boss_hud_note_active(objp - Objects);
 
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI)

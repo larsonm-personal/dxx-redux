@@ -47,7 +47,8 @@ int main(void)
 	const char malformed[] = "[cockpit]\nunknown=keep\n";
 	const struct playsave_text_entry entries[] = {
 		{"mode=", "mode=2\n"},
-		{"robothostagecounts=", "robothostagecounts=1\n"}
+		{"robothostagecounts=", "robothostagecounts=1\n"},
+		{"bosshealthbar=", "bosshealthbar=0\n"}
 	};
 	const size_t filler_size = 65537;
 	unsigned char *fixture = malloc(sizeof(prefix) - 1 + filler_size + sizeof(suffix));
@@ -69,7 +70,7 @@ int main(void)
 	result = read_fixture(path, &result_size);
 	if (!result)
 		goto cleanup;
-	if (!strstr((char *)result, "mode=2\nunknown=keep\nrobothostagecounts=1\n[end]\n") ||
+	if (!strstr((char *)result, "mode=2\nunknown=keep\nrobothostagecounts=1\nbosshealthbar=0\n[end]\n") ||
 	    strstr((char *)result, "mode=1\n") || result_size <= filler_size ||
 	    memcmp(result + result_size - sizeof(suffix) + 1, suffix,
 	           sizeof(suffix) - 1)) {
@@ -85,7 +86,7 @@ int main(void)
 		goto cleanup;
 	result = read_fixture(path, &result_size);
 	if (!result || !strstr((char *)result,
-		"[cockpit]\nmode=2\nrobothostagecounts=1\n[end]\n[end]\n")) {
+		"[cockpit]\nmode=2\nrobothostagecounts=1\nbosshealthbar=0\n[end]\n[end]\n")) {
 		free(result);
 		goto cleanup;
 	}
@@ -98,7 +99,7 @@ int main(void)
 		goto cleanup;
 	result = read_fixture(path, &result_size);
 	if (!result || !strstr((char *)result,
-		"unknown=keep\nmode=2\nrobothostagecounts=1\n[end]\n")) {
+		"unknown=keep\nmode=2\nrobothostagecounts=1\nbosshealthbar=0\n[end]\n")) {
 		free(result);
 		goto cleanup;
 	}

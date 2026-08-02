@@ -32,6 +32,7 @@
 #include "args.h"
 #include "playsave.h"
 #include "hud_layout_shared.h"
+#include "boss_hud.h"
 #ifdef __ANDROID__
 #include "coop_save.h"
 #endif
@@ -50,10 +51,11 @@ static int HUD_color = -1;
 static int HUD_message_start = 0;
 static int HUD_message_y = 0;
 static int HUD_nmessage_rects = 0;
-static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP + 1];
+static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP + 2];
 #ifdef __ANDROID__
 static const char *HUD_restore_status_message;
 static int HUD_restore_status_error;
+static int HUD_restore_status_y = -1;
 #endif
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message);
 
@@ -74,6 +76,8 @@ void HUD_clear_messages()
 void HUD_prepare_message_frame()
 {
 	grs_font *saved_font;
+	int boss_visible;
+	int queued_capacity;
 	int i;
 	int y;
 
@@ -100,24 +104,31 @@ void HUD_prepare_message_frame()
 		i++;
 	}
 
-	HUD_message_start = HUD_nmessages > HUD_MAX_NUM_DISP ? HUD_nmessages - HUD_MAX_NUM_DISP : 0;
-	HUD_message_y = is_observer() ? Observer_message_y_start : FSPACY(1);
+	boss_visible = boss_hud_is_visible();
+	queued_capacity = boss_hud_message_capacity(HUD_MAX_NUM_DISP);
+	HUD_message_start = HUD_nmessages > queued_capacity ? HUD_nmessages - queued_capacity : 0;
+	y = is_observer() ? Observer_message_y_start : FSPACY(1);
 	HUD_nmessage_rects = 0;
 	memset(&HUD_message_rects, 0, sizeof(HUD_message_rects));
 #ifdef __ANDROID__
 	HUD_restore_status_message = coop_restore_status_message(&HUD_restore_status_error);
-	if (HUD_restore_status_message)
-		HUD_message_y += LINE_SPACING;
+	HUD_restore_status_y = -1;
 #endif
-	if (HUD_nmessages < 1
+	saved_font = grd_curcanv->cv_font;
+	gr_set_curfont(GAME_FONT);
+	if (boss_hud_prepare_row(y, queued_capacity, HUD_nmessages - HUD_message_start,
+	                         &HUD_message_rects[HUD_nmessage_rects])) {
+		HUD_nmessage_rects++;
+		y += LINE_SPACING;
+	}
+	if (HUD_nmessages < 1 && !boss_visible
 #ifdef __ANDROID__
 	    && !HUD_restore_status_message
 #endif
-	)
+	) {
+		gr_set_curfont(saved_font);
 		return;
-
-	saved_font = grd_curcanv->cv_font;
-	gr_set_curfont(GAME_FONT);
+	}
 #ifdef __ANDROID__
 	if (HUD_restore_status_message) {
 		const int pad_x = FSPACX(1);
@@ -127,12 +138,14 @@ void HUD_prepare_message_frame()
 
 		gr_get_string_drawn_size(HUD_restore_status_message, &w, &h);
 		rect->x = (grd_curcanv->cv_bitmap.bm_w - w) / 2 - pad_x;
-		rect->y = FSPACY(1) - pad_y;
+		rect->y = y - pad_y;
 		rect->w = w + 2 * pad_x;
 		rect->h = h + 2 * pad_y;
+		HUD_restore_status_y = y;
+		y += LINE_SPACING;
 	}
 #endif
-	y = HUD_message_y;
+	HUD_message_y = y;
 	for (i = HUD_message_start; i < HUD_nmessages; i++) {
 		const int pad_x = FSPACX(1);
 		const int pad_y = FSPACY(1);
@@ -190,7 +203,7 @@ void HUD_render_message_frame()
 	int i;
 	int y = HUD_message_y;
 
-	if (HUD_nmessages < 1
+	if (HUD_nmessages < 1 && !boss_hud_row_is_prepared()
 #ifdef __ANDROID__
 	    && !HUD_restore_status_message
 #endif
@@ -200,10 +213,11 @@ void HUD_render_message_frame()
 		HUD_color = BM_XRGB(0,28,0);
 
 	gr_set_curfont(GAME_FONT);
+	boss_hud_render(HUD_color);
 #ifdef __ANDROID__
 	if (HUD_restore_status_message) {
 		gr_set_fontcolor(HUD_restore_status_error ? BM_XRGB(31,0,0) : BM_XRGB(31,24,0), -1);
-		gr_string(0x8000, FSPACY(1), HUD_restore_status_message);
+		gr_string(0x8000, HUD_restore_status_y, HUD_restore_status_message);
 	}
 #endif
 	gr_set_fontcolor(HUD_color, -1);
@@ -254,6 +268,7 @@ int HUD_init_message_va(int class_flag, const char * format, va_list args)
 
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message)
 {
+	const int display_capacity = boss_hud_message_capacity(HUD_MAX_NUM_DISP);
 	int i, j;
 	// check if message is already in list and bail out if so
 	if (HUD_nmessages > 0)
@@ -264,8 +279,8 @@ static int HUD_init_message_literal_worth_showing(int class_flag, const char *me
 			if (!d_strnicmp(message, HUD_messages[i].message, sizeof(char)*HUD_MESSAGE_LENGTH))
 			{
 				HUD_messages[i].time = F1_0*2; // keep redundant message in list
-				if (i >= HUD_nmessages-HUD_MAX_NUM_DISP) // if redundant message on display, update them all
-					for (i = (HUD_nmessages-HUD_MAX_NUM_DISP<0?0:HUD_nmessages-HUD_MAX_NUM_DISP), j = 1; i < HUD_nmessages; i++, j++)
+				if (i >= HUD_nmessages-display_capacity) // if redundant message on display, update them all
+					for (i = (HUD_nmessages-display_capacity<0?0:HUD_nmessages-display_capacity), j = 1; i < HUD_nmessages; i++, j++)
 						HUD_messages[i].time = F1_0*(j*2);
 				return 0;
 			}
@@ -285,10 +300,10 @@ static int HUD_init_message_literal_worth_showing(int class_flag, const char *me
 		HUD_nmessages++;
 	}
 	snprintf(HUD_messages[HUD_nmessages-1].message, sizeof(char)*HUD_MESSAGE_LENGTH, "%s", message);
-	if (HUD_nmessages-HUD_MAX_NUM_DISP < 0)
+	if (HUD_nmessages-display_capacity < 0)
 		HUD_messages[HUD_nmessages-1].time = F1_0*3; // one message - display 3 secs
 	else
-		for (i = HUD_nmessages-HUD_MAX_NUM_DISP, j = 1; i < HUD_nmessages; i++, j++) // multiple messages - display 2 seconds each
+		for (i = HUD_nmessages-display_capacity, j = 1; i < HUD_nmessages; i++, j++) // multiple messages - display 2 seconds each
 			HUD_messages[i].time = F1_0*(j*2);
 	
 

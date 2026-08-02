@@ -128,10 +128,12 @@ static void read_engine_prefs(const char *files_dir,
                               int *cockpit_mode,
                               int *auto_leveling,
                               int *show_counts,
+                              int *show_boss_health_bar,
                               int *headlight_active_default)
 {
 	android_get_default_pilot_prefs(cockpit_mode, auto_leveling);
 	android_get_default_hud_count_prefs(show_counts);
+	android_get_default_boss_health_bar_prefs(show_boss_health_bar);
 	*headlight_active_default = 0;
 	*has_pilot = 0;
 
@@ -144,7 +146,7 @@ static void read_engine_prefs(const char *files_dir,
 	}
 	if (find_first_pilot(files_dir, "d2x-redux", ".plx", plx_path, sizeof(plx_path))) {
 		*has_pilot = 1;
-		(void) plx_read_robot_hostage_counts(plx_path, show_counts);
+		(void) plx_read_hud_prefs(plx_path, show_counts, show_boss_health_bar);
 	}
 #else
 	char cockpit_path[512] = { 0 };
@@ -165,7 +167,7 @@ static void read_engine_prefs(const char *files_dir,
 	*has_pilot = found_cockpit || found_auto;
 	if (found_cockpit) {
 		(void) plx_read_cockpit_mode(cockpit_path, cockpit_mode);
-		(void) plx_read_robot_hostage_counts(cockpit_path, show_counts);
+		(void) plx_read_hud_prefs(cockpit_path, show_counts, show_boss_health_bar);
 	}
 	if (found_auto)
 		(void) plr_read_autoleveling(auto_path, auto_leveling);
@@ -234,6 +236,7 @@ struct write_ctx {
 	int cockpit_mode;
 	int auto_leveling;
 	int show_counts;
+	int show_boss_health_bar;
 	int headlight_active_default;
 };
 
@@ -281,14 +284,14 @@ static int write_visitor(const char *path, void *ctx)
 static int write_hud_counts_visitor(const char *path, void *ctx)
 {
 	struct write_ctx *wc = (struct write_ctx *) ctx;
-	return plx_write_robot_hostage_counts(path, wc->show_counts);
+	return plx_write_hud_prefs(path, wc->show_counts, wc->show_boss_health_bar);
 }
 #else
 static int write_cockpit_visitor(const char *path, void *ctx)
 {
 	struct write_ctx *wc = (struct write_ctx *) ctx;
 	int cockpit_result = plx_write_cockpit_mode(path, wc->cockpit_mode);
-	int counts_result = plx_write_robot_hostage_counts(path, wc->show_counts);
+	int counts_result = plx_write_hud_prefs(path, wc->show_counts, wc->show_boss_health_bar);
 	return cockpit_result || counts_result;
 }
 
@@ -307,14 +310,15 @@ JNI_FUNC(nativeReadEnginePrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 	int cockpit_mode = 0;
 	int auto_leveling = 1;
 	int show_counts = 0;
+	int show_boss_health_bar = 1;
 	int headlight_active_default = 0;
-	jint raw[5];
+	jint raw[6];
 	jintArray result;
 
-	read_engine_prefs(files_dir, &has_pilot, &cockpit_mode, &auto_leveling, &show_counts,
+	read_engine_prefs(files_dir, &has_pilot, &cockpit_mode, &auto_leveling, &show_counts, &show_boss_health_bar,
 	                  &headlight_active_default);
-	LOGI("nativeReadEnginePrefs: has_pilot=%d cockpit=%d autolevel=%d counts=%d headlight_default=%d",
-	     has_pilot, cockpit_mode, auto_leveling, show_counts, headlight_active_default);
+	LOGI("nativeReadEnginePrefs: has_pilot=%d cockpit=%d autolevel=%d counts=%d boss_health=%d headlight_default=%d",
+	     has_pilot, cockpit_mode, auto_leveling, show_counts, show_boss_health_bar, headlight_active_default);
 
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
@@ -322,9 +326,10 @@ JNI_FUNC(nativeReadEnginePrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 	raw[1] = (jint) cockpit_mode;
 	raw[2] = (jint) (auto_leveling ? 1 : 0);
 	raw[3] = (jint) (show_counts ? 1 : 0);
-	raw[4] = (jint) (headlight_active_default ? 1 : 0);
-	result = env->NewIntArray(5);
-	env->SetIntArrayRegion(result, 0, 5, raw);
+	raw[4] = (jint) (show_boss_health_bar ? 1 : 0);
+	raw[5] = (jint) (headlight_active_default ? 1 : 0);
+	result = env->NewIntArray(6);
+	env->SetIntArrayRegion(result, 0, 6, raw);
 	return result;
 }
 
@@ -335,6 +340,7 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
                                  jint cockpitMode,
                                  jboolean autoLeveling,
                                  jboolean showRobotHostageCounts,
+                                 jboolean showBossHealthBar,
                                  jboolean headlightActiveDefault)
 {
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
@@ -344,6 +350,7 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	wc.cockpit_mode = (int) cockpitMode;
 	wc.auto_leveling = autoLeveling ? 1 : 0;
 	wc.show_counts = showRobotHostageCounts ? 1 : 0;
+	wc.show_boss_health_bar = showBossHealthBar ? 1 : 0;
 	wc.headlight_active_default = headlightActiveDefault ? 1 : 0;
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -360,8 +367,8 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	}
 #endif
 
-	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d counts=%d headlight_default=%d patched=%d",
-	     wc.cockpit_mode, wc.auto_leveling, wc.show_counts, wc.headlight_active_default, total);
+	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d counts=%d boss_health=%d headlight_default=%d patched=%d",
+	     wc.cockpit_mode, wc.auto_leveling, wc.show_counts, wc.show_boss_health_bar, wc.headlight_active_default, total);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
 }

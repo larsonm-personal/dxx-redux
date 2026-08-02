@@ -53,6 +53,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "key.h"
 #include "powerup.h"
 #include "gauges.h"
+#include "boss_hud.h"
 #include "text.h"
 #include "input_demo_hooks.h"
 
@@ -783,8 +784,10 @@ void do_ai_robot_hit_attack(object *robot, object *player, vms_vector *collision
 	if (robptr->attack_type == 1) {
 		if (ailp->next_fire <= 0) {
 			if (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED))
-				if (vm_vec_dist_quick(&ConsoleObject->pos, &robot->pos) < robot->size + ConsoleObject->size + F1_0*2)
+				if (vm_vec_dist_quick(&ConsoleObject->pos, &robot->pos) < robot->size + ConsoleObject->size + F1_0*2) {
+					boss_hud_note_active(robot - Objects);
 					collide_player_and_nasty_robot( player, robot, collision_point );
+				}
 
 			robot->ctype.ai_info.GOAL_STATE = AIS_RECO;
 			set_next_fire_time(ailp, robptr);
@@ -894,6 +897,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
 	}
 
 	Laser_create_new_easy( &fire_vec, fire_point, obj-Objects, robptr->weapon_type, 1);
+	boss_hud_note_active(objnum);
 	input_demo_log_robot_fire_probe(obj, &fire_vec, robptr->weapon_type);
 
 #ifndef SHAREWARE
@@ -1799,6 +1803,7 @@ void teleport_boss(object *objp)
         rand_seg = (d_rand() * Num_boss_teleport_segs) >> 15; 
 	rand_segnum = Boss_teleport_segs[rand_seg];
 	Assert((rand_segnum >= 0) && (rand_segnum <= Highest_segment_index));
+	boss_hud_note_active(objp - Objects);
 
 #ifndef SHAREWARE
 #ifdef NETWORK
@@ -2620,6 +2625,7 @@ void do_ai_frame(object *obj)
 				vm_vec_add(&fire_pos, &obj->pos, &fire_vec);
 
 				Laser_create_new_easy( &fire_vec, &fire_pos, obj-Objects, PROXIMITY_ID, 1);
+				boss_hud_note_active(obj - Objects);
 				ailp->next_fire = F1_0*5;		//	Drop a proximity bomb every 5 seconds.
 				
 #ifdef NETWORK

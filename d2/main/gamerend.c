@@ -886,13 +886,9 @@ void game_render_frame_mono(int flip)
 
 		Viewer = viewer_save;
 
-		gr_set_curfont( GAME_FONT );
-		gr_set_fontcolor( BM_XRGB(27,0,0), -1 );
-
-		gr_printf(0x8000, FSPACY(1), "Guided Missile View");
-
 		show_reticle(RET_TYPE_CROSS_V1, 0);
 
+		HUD_prepare_message_frame();
 		HUD_render_message_frame();
 
 		no_draw_hud=1;

@@ -38,6 +38,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "scores.h"
 #include "gauges.h"
+#include "boss_hud.h"
 #include "fuelcen.h"
 #include "morph.h"
 #include "digi.h"
@@ -750,6 +751,7 @@ multi_do_robot_fire(const ubyte *buf)
 	{
 		return;
 	}
+	boss_hud_note_active(botnum);
 	
 	// Do the firing
 	
@@ -1168,6 +1170,7 @@ multi_do_boss_actions(const ubyte *buf)
 					Int3();  // See Rob
 					return;
 				}
+				boss_hud_note_active(boss_objnum);
 				compute_segment_center(&boss_obj->pos, &Segments[teleport_segnum]);
 				obj_relink(boss_obj-Objects, teleport_segnum);
 				Last_teleport_time = GameTime64;

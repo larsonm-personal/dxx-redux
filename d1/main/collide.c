@@ -51,6 +51,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #include "player.h"
 #include "gauges.h"
+#include "boss_hud.h"
 #include "powerup.h"
 #include "newmenu.h"
 #include "scores.h"
@@ -925,6 +926,8 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	if (Robot_info[robot->id].boss_flag)
 		Boss_been_hit = 1;
 
+	if (damage > 0)
+		boss_hud_note_active(robot - Objects);
 	robot->shields -= damage;
 	if (robot->shields < 0) {
 		Players[Player_num].num_kills_level++;

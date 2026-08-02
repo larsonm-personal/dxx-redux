@@ -378,6 +378,7 @@ object ConfigImportExport {
                         put("cockpit_mode", prefs.cockpitMode)
                         put("auto_leveling", prefs.autoLeveling)
                         put("show_robot_hostage_counts", prefs.showRobotHostageCounts)
+                        put("show_boss_health_bar", prefs.showBossHealthBar)
                         put("headlight_active_default", prefs.headlightActiveDefault)
                         put("original_homing", homingPrefs.enabled)
                     },
@@ -405,6 +406,7 @@ object ConfigImportExport {
                         obj.getInt("cockpit_mode"),
                         obj.getBoolean("auto_leveling"),
                         obj.optBoolean("show_robot_hostage_counts", false),
+                        obj.optBoolean("show_boss_health_bar", true),
                         obj.optBoolean("headlight_active_default", false),
                     )
                 val homingCount =

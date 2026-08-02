@@ -66,6 +66,8 @@ extern "C" {
 #include "gameseq.h"
 #include "object.h"
 #include "collide.h"
+#include "hudmsg.h"
+#include "robot.h"
 #include "coop/coop_save.h"
 #include "secretarea.h"
 #include "switch.h"
@@ -73,7 +75,6 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 #include "cntrlcen.h"
 #include "escort.h"
-#include "robot.h"
 #endif
 }
 
@@ -2019,6 +2020,43 @@ static int complete_route_objective(char *reason, size_t reason_size)
 #endif
 }
 
+static int damage_first_boss(const std::string &amount, char *reason, size_t reason_size)
+{
+	object *boss = NULL;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "damage_boss: game is not running");
+		return 0;
+	}
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		object *candidate = &Objects[objnum];
+		if (candidate->type == OBJ_ROBOT && Robot_info[candidate->id].boss_flag &&
+		    candidate->shields > 0 && !(candidate->flags & OF_SHOULD_BE_DEAD)) {
+			boss = candidate;
+			break;
+		}
+	}
+	if (!boss) {
+		snprintf(reason, reason_size, "damage_boss: no live boss found");
+		return 0;
+	}
+	fix damage;
+	if (amount == "half")
+		damage = boss->shields > 1 ? boss->shields / 2 : 1;
+	else if (amount == "lethal")
+		damage = boss->shields + F1_0;
+	else
+		damage = (fix) (std::stod(amount) * F1_0);
+	if (damage <= 0) {
+		snprintf(reason, reason_size, "damage_boss: damage must be positive");
+		return 0;
+	}
+	apply_damage_to_robot(boss, damage, ConsoleObject - Objects);
+	LOGI("damage_boss: object=%d damage=%d shields=%d",
+	     (int) (boss - Objects), damage, boss->shields);
+	return 1;
+}
+
 /* -- Condition checking ----------------------------------------------- */
 
 extern "C" window *Game_wind;
@@ -3508,6 +3546,28 @@ extern "C" void game_automate_tick(void)
 				     strtol(s.value.c_str(), NULL, 10) != 0)
 				        ? 1
 				        : 0;
+			} else if (s.field == "show_boss_health_bar") {
+				PlayerCfg.ShowBossHealthBar =
+				    (strcasecmp(s.value.c_str(), "true") == 0 ||
+				     strtol(s.value.c_str(), NULL, 10) != 0)
+				        ? 1
+				        : 0;
+			} else if (s.field == "damage_boss") {
+				char reason[128];
+				if (!damage_first_boss(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+			} else if (s.field == "hud_test_message") {
+				HUD_init_message(HM_DEFAULT, "%s", s.value.c_str());
+			} else if (s.field == "hud_test_message_burst") {
+				const long requested = strtol(s.value.c_str(), NULL, 10);
+				const int count = requested < 1 ? 1 : requested > HUD_MAX_NUM_STOR ? HUD_MAX_NUM_STOR
+				                                                                   : (int) requested;
+
+				for (int message_index = 0; message_index < count; ++message_index)
+					HUD_init_message(HM_DEFAULT, "hud test message %d", message_index + 1);
 			} else if (s.field == "clear_robots") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
 					char reason[128];
