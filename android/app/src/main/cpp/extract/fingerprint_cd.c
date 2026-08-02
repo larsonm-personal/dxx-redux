@@ -342,8 +342,7 @@ int main(int argc, char *argv[])
 		unsigned char sha_digest[20];
 		char sha_hex[41];
 		unsigned char sector_buf[CUE_SECTOR_SIZE];
-		unsigned char *audio_prefix = NULL;
-		int prefix_sectors = 0;
+		fingerprint_stream_t *audio_stream = NULL;
 		int s;
 
 		path_join(bin_path, sizeof(bin_path), cue_dir, disc.files[t->file_index].filename);
@@ -358,11 +357,7 @@ int main(int argc, char *argv[])
 
 		/* Hash all raw sectors (redump convention) */
 		if (t->type == CUE_TRACK_AUDIO && t->num_sectors > 0) {
-			prefix_sectors = t->num_sectors < FINGERPRINT_MAX_CD_SECTORS
-			                     ? t->num_sectors
-			                     : FINGERPRINT_MAX_CD_SECTORS;
-			audio_prefix = (unsigned char *) malloc(
-			    (size_t) prefix_sectors * CUE_SECTOR_SIZE);
+			audio_stream = fingerprint_stream_new(44100, 2);
 		}
 		sha1_init(&sha_ctx);
 		lseek_fd(bin_fd, (long long) t->start_sector * CUE_SECTOR_SIZE, SEEK_SET);
@@ -375,19 +370,20 @@ int main(int argc, char *argv[])
 				break;
 			}
 			sha1_update(&sha_ctx, sector_buf, CUE_SECTOR_SIZE);
-			if (audio_prefix && s < prefix_sectors)
-				memcpy(audio_prefix + (size_t) s * CUE_SECTOR_SIZE,
-				       sector_buf, CUE_SECTOR_SIZE);
+			if (audio_stream &&
+			    fingerprint_stream_feed(audio_stream,
+			                            (const int16_t *) sector_buf, 588) != 0)
+				break;
 		}
 		sha1_final(sha_digest, &sha_ctx);
 		sha1_hex(sha_digest, sha_hex);
 
 		if (t->type == CUE_TRACK_AUDIO && t->num_sectors > 0) {
-			if (!audio_prefix) {
-				fprintf(stderr, "ERROR: Out of memory for track %d prefix (%d sectors)\n",
-				        t->track_num, prefix_sectors);
+			if (!audio_stream) {
+				fprintf(stderr, "ERROR: Could not initialize fingerprint for track %d\n",
+				        t->track_num);
 				printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\", "
-				       "\"error\": \"out of memory\"}\n",
+				       "\"error\": \"fingerprint initialization failed\"}\n",
 				       t->track_num, sha_hex);
 				close_fd(bin_fd);
 				errors++;
@@ -397,16 +393,15 @@ int main(int argc, char *argv[])
 				printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\", "
 				       "\"error\": \"short read\"}\n",
 				       t->track_num, sha_hex);
-				free(audio_prefix);
+				fingerprint_stream_free(audio_stream);
 				close_fd(bin_fd);
 				errors++;
 				continue;
 			}
 
 			fingerprint_result_t fp = { 0 };
-			int rc = fingerprint_from_cd_sectors(audio_prefix, prefix_sectors,
-			                                     t->num_sectors, &fp);
-			free(audio_prefix);
+			int rc = fingerprint_stream_finish(audio_stream, &fp);
+			fingerprint_stream_free(audio_stream);
 
 			if (rc == 0 && fp.encoded) {
 				printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\", "

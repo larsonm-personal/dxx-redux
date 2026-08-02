@@ -1696,14 +1696,16 @@
         "mine_volume_text": "",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_time_text": "",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [],
         "route_problem": "level file is missing",
-        "problems": "level file is missing",
+        "problems": [
+          "level file is missing"
+        ],
         "status": "failed"
       },
       {
@@ -1761,7 +1763,9 @@
         ]
       }
     ],
-    "problems": "one or more secret levels are referenced but missing",
+    "problems": [
+      "one or more secret levels are referenced but missing"
+    ],
     "target_index": 0
   }
 ]

@@ -24,18 +24,11 @@ typedef struct {
  * Returns 0 on success, -1 on failure. */
 int pcm_decode_file(const char *path, pcm_decode_result_t *out);
 
-/* Decode no more than max_seconds while retaining the full source duration. */
-int pcm_decode_file_prefix(const char *path, size_t max_seconds,
-                           pcm_decode_result_t *out);
-
 /* Decode audio from an in-memory buffer to 16-bit PCM.
  * ext must include the dot, e.g. ".mp3", ".ogg", ".flac".
  * Returns 0 on success, -1 on failure. */
 int pcm_decode_memory(const void *data, size_t size, const char *ext,
                       pcm_decode_result_t *out);
-int pcm_decode_memory_prefix(const void *data, size_t size, const char *ext,
-                             size_t max_seconds, pcm_decode_result_t *out);
-
 /* Free PCM data allocated by pcm_decode_file() or pcm_decode_memory(). */
 void pcm_decode_free(pcm_decode_result_t *r);
 

@@ -1464,7 +1464,6 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 6",
             "seg": 158,
             "wall": 48,
@@ -1473,6 +1472,7 @@
               "y": -275.8335266113281,
               "z": -184.12619018554688
             },
+            "calculated": false,
             "trigger": 6,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1885,7 +1885,6 @@
             "index": 2,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 6",
             "seg": 37,
             "wall": 128,
@@ -1894,6 +1893,7 @@
               "y": -40.54759216308594,
               "z": 44.341064453125
             },
+            "calculated": false,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

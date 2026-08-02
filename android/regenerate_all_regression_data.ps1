@@ -13,6 +13,9 @@
   .\android\regenerate_all_regression_data.ps1
 #>
 
+[CmdletBinding()]
+param()
+
 $ErrorActionPreference = 'Stop'
 $script:RepoRoot = Split-Path $PSScriptRoot -Parent
 

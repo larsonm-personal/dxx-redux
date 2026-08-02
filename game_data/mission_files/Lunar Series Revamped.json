@@ -11,7 +11,7 @@
       {
         "level_num": 1,
         "secret": false,
-        "level_name": "����",
+        "level_name": "lo",
         "level_file": "lo.rdl",
         "robots": 40,
         "hostages": 2,
@@ -86,7 +86,7 @@
       {
         "level_num": 2,
         "secret": false,
-        "level_name": "����",
+        "level_name": "lsl",
         "level_file": "lsl.rdl",
         "robots": 61,
         "hostages": 2,
@@ -175,7 +175,7 @@
       {
         "level_num": 3,
         "secret": false,
-        "level_name": "����",
+        "level_name": "lmb",
         "level_file": "lmb.rdl",
         "robots": 77,
         "hostages": 3,

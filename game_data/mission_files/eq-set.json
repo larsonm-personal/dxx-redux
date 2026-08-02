@@ -3710,7 +3710,6 @@
             "index": 5,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 5",
             "seg": 207,
             "wall": 135,
@@ -3719,6 +3718,7 @@
               "y": -185.82908630371094,
               "z": 219.89137268066406
             },
+            "calculated": false,
             "trigger": 5,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",

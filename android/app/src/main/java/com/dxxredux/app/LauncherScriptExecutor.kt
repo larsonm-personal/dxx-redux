@@ -348,7 +348,7 @@ class LauncherScriptExecutor(
                         Log.i(TAG, "Analyzing level metadata: ${target.displayName}")
                         results += LevelMetadataAnalyzer.analyze(context, target)
                     }
-                    writeLevelMetadataAutomationResults(label, results)
+                    writeLevelMetadataAutomationResults(label, targets, results)
                     val bad = results.firstOrNull { it.status != expectedStatus }
                     if (bad != null) {
                         fail(
@@ -870,19 +870,26 @@ class LauncherScriptExecutor(
     ) {
         val safeLabel = safeAutomationLabel(label.ifBlank { result.source.ifBlank { "metadata" } })
         val file = File(context.filesDir, "level_metadata_automation_$safeLabel.json")
-        file.writeText(levelMetadataResultJson(result).toString(2) + "\n", Charsets.UTF_8)
+        AtomicFilePublication.writeUtf8(file, levelMetadataResultJson(result).toString(2) + "\n")
     }
 
     private fun writeLevelMetadataAutomationResults(
         label: String,
+        targets: List<LevelMetadataTarget>,
         results: List<LevelMetadataResult>,
     ) {
         val file = File(context.filesDir, "level_metadata_automation_${safeAutomationLabel(label)}.json")
         val array = JSONArray()
         results.forEachIndexed { index, result ->
-            array.put(levelMetadataResultJson(result).put("target_index", index))
+            val missionDisplayName = targets.getOrNull(index)?.missionDisplayName.orEmpty()
+            array.put(
+                levelMetadataResultJson(result)
+                    .apply {
+                        if (missionDisplayName.isNotBlank()) put("mission_name", missionDisplayName)
+                    }.put("target_index", index),
+            )
         }
-        file.writeText(array.toString(2) + "\n", Charsets.UTF_8)
+        AtomicFilePublication.writeUtf8(file, array.toString(2) + "\n")
     }
 
     private fun levelMetadataResultJson(result: LevelMetadataResult): JSONObject {
@@ -964,6 +971,7 @@ class LauncherScriptExecutor(
             }
             if (step.distance > 0.0) item.put("distance", step.distance)
             if (step.key.isNotBlank()) item.put("key", step.key)
+            if (!step.calculated) item.put("calculated", false)
             if (step.canBeBypassed) item.put("can_be_bypassed", true)
             if (step.keyCarrierObjnum >= 0) item.put("key_carrier_objnum", step.keyCarrierObjnum)
             if (step.trigger >= 0) item.put("trigger", step.trigger)

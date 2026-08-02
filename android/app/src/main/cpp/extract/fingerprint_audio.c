@@ -244,11 +244,9 @@ static int fingerprint_audio_file(const wchar_t *dir, const audio_file_t *file,
 	pcm_decode_result_t pcm = { 0 };
 	const char *extension = strrchr(file->name, '.');
 	if (extension &&
-	    pcm_decode_memory_prefix(data, (size_t) length, extension,
-	                             FINGERPRINT_MAX_SECONDS, &pcm) == 0) {
-		result = fingerprint_from_pcm_prefix(pcm.pcm_data, pcm.pcm_samples,
-		                                     pcm.total_samples, pcm.sample_rate,
-		                                     pcm.channels, out);
+	    pcm_decode_memory(data, (size_t) length, extension, &pcm) == 0) {
+		result = fingerprint_from_pcm(pcm.pcm_data, pcm.pcm_samples,
+		                              pcm.sample_rate, pcm.channels, out);
 		pcm_decode_free(&pcm);
 	}
 	free(data);

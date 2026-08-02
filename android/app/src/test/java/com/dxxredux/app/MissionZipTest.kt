@@ -66,6 +66,35 @@ class MissionZipTest {
     }
 
     @Test
+    fun keepsSameNamedMissionAssetsWithinEachVariantDirectory() {
+        val zipFile = File.createTempFile("mission-variants", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (variant in listOf("D2X", "DOS", "Rebirth")) {
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.hog"))
+                zip.write(variant.toByteArray())
+                zip.closeEntry()
+
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.mn2"))
+                zip.write(
+                    "name = Ulterior $variant\ntype = normal\nnum_levels = 1\nLEVEL01.rl2\n".toByteArray(),
+                )
+                zip.closeEntry()
+            }
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+
+        assertEquals(listOf("D2X", "DOS", "Rebirth"), scan.missionSets.map { it.mission.path.substringBefore('/') })
+        assertEquals(
+            listOf("D2X/ULTERIOR.hog", "DOS/ULTERIOR.hog", "Rebirth/ULTERIOR.hog"),
+            scan.missionSets.map { set ->
+                set.constituents.single { it.role == GameFileFormats.MISSION_ZIP_HOG }.path
+            },
+        )
+    }
+
+    @Test
     fun detectsD1MissionFromMsnAndRdl() {
         val zipFile =
             createMissionZip(

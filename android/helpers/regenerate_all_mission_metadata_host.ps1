@@ -178,15 +178,7 @@ function ConvertTo-NormalizedJsonText {
     }
 }
 
-function Write-Utf8NoBomText {
-    param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text
-    )
-
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Path) | Out-Null
-    [System.IO.File]::WriteAllText($Path, $Text, [System.Text.UTF8Encoding]::new($false))
-}
+. (Join-Path $PSScriptRoot 'atomic_text_file.ps1')
 
 function Add-Utf8NoBomText {
     param(
@@ -206,7 +198,7 @@ function Write-JsonValue {
     )
 
     $json = ConvertTo-Json -InputObject $Value -Depth 100
-    Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $json -MissionMetadata:$MissionMetadata)
+    Write-Utf8NoBomTextAtomically -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $json -MissionMetadata:$MissionMetadata)
 }
 
 function Write-FailureJson {
@@ -584,12 +576,12 @@ function Invoke-HeadlessMetadataProcess {
             $process.WaitForExit()
             $stdout = $stdoutTask.GetAwaiter().GetResult()
             $stderr = $stderrTask.GetAwaiter().GetResult()
-            Write-Utf8NoBomText -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
+            Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
             throw "headless metadata timed out after $TimeoutSeconds seconds; log=$LogPath"
         }
         $stdout = $stdoutTask.GetAwaiter().GetResult()
         $stderr = $stderrTask.GetAwaiter().GetResult()
-        Write-Utf8NoBomText -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
+        Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
         return $process.ExitCode
     } finally {
         $process.Dispose()
@@ -735,7 +727,7 @@ foreach ($source in $cdSources) {
             throw "$($descriptorFailures.Count) CD mission descriptors were unanalyzable: $failureNames"
         }
         if (-not $NoRegressionCopy) {
-            Copy-Item -LiteralPath $metadataPath -Destination $source.OutputPath -Force
+            Write-Utf8NoBomTextAtomically -Path $source.OutputPath -Text ([System.IO.File]::ReadAllText($metadataPath))
         }
         $record["status"] = "passed"
         $record["mission_count"] = $missions.Count
@@ -767,7 +759,7 @@ if (-not $CdSourcesOnly) {
     $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
     Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
     if (-not $NoRegressionCopy) {
-        Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
+        Write-Utf8NoBomTextAtomically -Path $counterstrikeRegressionPath -Text ([System.IO.File]::ReadAllText($counterstrikeMetadataPath))
     }
     Write-Status "PASSED: built-in Counterstrike" "Green"
 
@@ -835,7 +827,7 @@ if (-not $CdSourcesOnly) {
             }
             Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
             if (-not $NoRegressionCopy) {
-                Copy-Item -LiteralPath $metadataPath -Destination $regressionPath -Force
+                Write-Utf8NoBomTextAtomically -Path $regressionPath -Text ([System.IO.File]::ReadAllText($metadataPath))
             }
             $record["status"] = "passed"
             $record["mission_count"] = $missions.Count
@@ -865,7 +857,7 @@ $failed = @($results | Where-Object { $_.status -eq "failed" })
 $skipped = @($results | Where-Object { $_.status -like "skipped*" })
 $passed = @($results | Where-Object { $_.status -eq "passed" })
 $failedLines = @($failed | ForEach-Object { "$($_.name)`t$($_.reason)" })
-Write-Utf8NoBomText -Path (Join-Path $outDir "failed_zips.txt") -Text (($failedLines -join "`n") + $(if ($failedLines.Count) { "`n" } else { "" }))
+Write-Utf8NoBomTextAtomically -Path (Join-Path $outDir "failed_zips.txt") -Text (($failedLines -join "`n") + $(if ($failedLines.Count) { "`n" } else { "" }))
 Write-Status "Host mission metadata complete: $($results.Count) total, $($passed.Count) passed, $($skipped.Count) skipped, $($failed.Count) failed in $([Math]::Round($batchStopwatch.Elapsed.TotalSeconds, 1))s"
 Write-Status "Output: $outDir"
 if ($failed.Count -gt 0) {

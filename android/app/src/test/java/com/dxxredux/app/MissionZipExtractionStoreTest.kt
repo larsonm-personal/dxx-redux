@@ -44,6 +44,26 @@ class MissionZipExtractionStoreTest {
     }
 
     @Test
+    fun extractedTargetPreservesParsedMissionDisplayName() {
+        val filesDir = File("build/test-mission-zip-extraction/display-name").absoluteFile
+        filesDir.deleteRecursively()
+        val modsDir = File(filesDir, "mods").apply { mkdirs() }
+        val archive = File(modsDir, "preview.zip")
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            zip.writeEntry("preview.mn2", missionDescriptor("Detailed Preview Title"))
+            zip.writeEntry("preview.hog", "DHF")
+        }
+        val scan = requireNotNull(MissionZip.inspect(archive))
+        val store = MissionZipExtractionStore(filesDir)
+        store.ensureExtracted(archive.name, archive, scan)
+
+        val target = store.extractedTarget(archive.absolutePath, File(filesDir, "set"), scan, scan.missionSets.single())
+
+        assertNotNull(target)
+        assertEquals("Detailed Preview Title", target!!.missionDisplayName)
+    }
+
+    @Test
     fun outputProjectionRejectsPortablePathCollisionsInEitherOrder() {
         val collisions =
             listOf(

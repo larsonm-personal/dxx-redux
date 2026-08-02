@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import sys
+import tempfile
 
 
 MISSION_METADATA_FLOAT_FIELDS = {
@@ -27,7 +29,18 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
     byte-stable across both generation routes.
     """
     if isinstance(value, list):
-        return [canonicalize_mission_metadata(item, parent_key) for item in value]
+        normalized = [canonicalize_mission_metadata(item, parent_key) for item in value]
+        if parent_key == "" and all(
+            isinstance(item, dict) and isinstance(item.get("mission_filename"), str)
+            for item in normalized
+        ):
+            normalized.sort(
+                key=lambda item: (item["mission_filename"].casefold(), item["mission_filename"])
+            )
+            if all("target_index" in item for item in normalized):
+                for index, item in enumerate(normalized):
+                    item["target_index"] = index
+        return normalized
     if not isinstance(value, dict):
         return value
 
@@ -56,8 +69,18 @@ def read_file(path: pathlib.Path) -> str:
 
 
 def write_file(path: pathlib.Path, text: str) -> None:
-    with path.open("w", encoding="utf-8", newline="\n") as out_file:
-        out_file.write(text)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: pathlib.Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", newline="\n", dir=path.parent, delete=False
+        ) as out_file:
+            temporary_path = pathlib.Path(out_file.name)
+            out_file.write(text)
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def normalize_file(path: pathlib.Path, sort_keys: bool, check: bool, mission_metadata: bool) -> int:

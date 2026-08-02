@@ -14,6 +14,7 @@ param(
     [long]$LargeZipBytes = 524288000,
     [int]$MaxZips = 0,
     [int]$TimeoutSeconds = 900,
+    [int]$SetupReadyTimeoutSeconds = 120,
     [int]$MaxEmulatorRecoveries = 5
 )
 
@@ -22,6 +23,7 @@ $helpersDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
 . (Join-Path $helpersDir "bounded_extraction.ps1")
+. (Join-Path $helpersDir "mission_zip_batch_recovery.ps1")
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-7zaPath {
@@ -43,7 +45,7 @@ $resolvedScriptDir = Join-Path $OutDir "resolved_scripts"
 New-Item -ItemType Directory -Force -Path $metadataDir, $importsDir, $artifactsDir, $resolvedScriptDir | Out-Null
 & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $OutDir
 $script:LogFile = Join-Path $OutDir "batch.log"
-$script:MissionZipBatchRecoveryCount = 0
+$script:MissionZipBatchConsecutiveRecoveryCount = 0
 
 function Get-SafeMissionZipLabel {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -117,14 +119,7 @@ function ConvertTo-NormalizedJsonText {
     }
 }
 
-function Write-Utf8NoBomText {
-    param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$Text
-    )
-
-    [System.IO.File]::WriteAllText($Path, $Text, [System.Text.UTF8Encoding]::new($false))
-}
+. (Join-Path $PSScriptRoot 'atomic_text_file.ps1')
 
 function Write-TestJsonText {
     param(
@@ -133,12 +128,7 @@ function Write-TestJsonText {
         [switch]$MissionMetadata
     )
 
-    try {
-        Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $Text -MissionMetadata:$MissionMetadata)
-    } catch {
-        Write-Warning "JSON normalization failed for ${Path}: $($_.Exception.Message)"
-        Write-Utf8NoBomText -Path $Path -Text $Text
-    }
+    Write-Utf8NoBomTextAtomically -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $Text -MissionMetadata:$MissionMetadata)
 }
 
 function Get-ShortMissionZipFailureText {
@@ -299,12 +289,12 @@ function Write-MissionZipBatchResult {
 function Restore-MissionZipBatchDevice {
     param([Parameter(Mandatory = $true)][string]$Reason)
 
-    $script:MissionZipBatchRecoveryCount++
-    if ($script:MissionZipBatchRecoveryCount -gt $MaxEmulatorRecoveries) {
-        throw "emulator recovery limit reached ($MaxEmulatorRecoveries)"
+    $script:MissionZipBatchConsecutiveRecoveryCount++
+    if ($script:MissionZipBatchConsecutiveRecoveryCount -gt $MaxEmulatorRecoveries) {
+        throw "consecutive emulator recovery limit reached ($MaxEmulatorRecoveries)"
     }
 
-    Write-Status "$Reason -- recovering emulator ($script:MissionZipBatchRecoveryCount/$MaxEmulatorRecoveries)" "Yellow"
+    Write-Status "$Reason -- recovering emulator ($script:MissionZipBatchConsecutiveRecoveryCount/$MaxEmulatorRecoveries consecutive)" "Yellow"
     Restart-AdbServer
     Ensure-EmulatorHealthy | Out-Null
 
@@ -330,12 +320,6 @@ function Ensure-MissionZipBatchDeviceReady {
         return
     }
     Restore-MissionZipBatchDevice -Reason $Reason
-}
-
-function Test-MissionZipNeedsEmulatorRecovery {
-    param([string]$Reason)
-
-    return $Reason -match 'SetupActivity did not become ready|adb push failed|run-as copy failed|Emulator crashed|device .*not found|device offline|protocol fault|closed'
 }
 
 function Add-MissionZipGameHints {
@@ -605,7 +589,7 @@ function Save-AppTextFile {
     if ([IO.Path]::GetExtension($LocalPath).Equals(".json", [StringComparison]::OrdinalIgnoreCase)) {
         Write-TestJsonText -Path $LocalPath -Text $text -MissionMetadata:$MissionMetadata
     } else {
-        Write-Utf8NoBomText -Path $LocalPath -Text $text
+        Write-Utf8NoBomTextAtomically -Path $LocalPath -Text $text
     }
     return $true
 }
@@ -753,35 +737,56 @@ foreach ($zip in $zips) {
     $recoverAfterRun = $false
     try {
         Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript -MetadataOnly:$MetadataOnly
-        Push-AppPrivateFile -LocalPath $zip.FullName -DeviceRelativePath "mission_zip_batch_cache/$deviceZipName"
-        Push-AppPrivateFile -LocalPath $resolvedScript -DeviceRelativePath $deviceScriptName
+        for ($automationAttempt = 1; $automationAttempt -le 2; $automationAttempt++) {
+            Invoke-MissionZipPreparationWithRetry -ZipName $zip.Name -Prepare {
+                Push-AppPrivateFile -LocalPath $zip.FullName -DeviceRelativePath "mission_zip_batch_cache/$deviceZipName"
+                Push-AppPrivateFile -LocalPath $resolvedScript -DeviceRelativePath $deviceScriptName
 
-        Stop-AppAndWait
-        Reset-GameState
-        if (-not (Test-StandardGameDataActive)) {
-            throw "standard D1/D2 base data is not active after game-state reset"
-        }
-        Clear-RunArtifacts -Label $label
-        Adb -AdbArgs @("logcat", "-c") | Out-Null
-        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
-        if (-not (Wait-SetupActivityReady)) {
-            throw "SetupActivity did not become ready"
-        }
-        Adb -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE",
-            "--es", "script", $deviceScriptName
-        ) | Out-Null
+                Stop-AppAndWait
+                Reset-GameState
+                if (-not (Test-StandardGameDataActive)) {
+                    throw "standard D1/D2 base data is not active after game-state reset"
+                }
+                Clear-RunArtifacts -Label $label
+                Adb -AdbArgs @("logcat", "-c") | Out-Null
+                Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+                if (-not (Wait-SetupActivityReady -TimeoutSeconds $SetupReadyTimeoutSeconds)) {
+                    throw "SetupActivity did not become ready"
+                }
+            } -Recover {
+                param($Reason)
+                Restore-MissionZipBatchDevice -Reason $Reason
+            }
+            $script:MissionZipBatchConsecutiveRecoveryCount = 0
+            Adb -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE",
+                "--es", "script", $deviceScriptName
+            ) | Out-Null
 
-        $passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds -IsLauncherScript
-        $automationResult = Read-AppAutomationResult
-        $record["automation_result"] = $automationResult
-        $record["status"] = if ($passed) { "passed" } else { "failed" }
-        if (-not $passed -and $automationResult -and $automationResult.reason) {
-            $record["reason"] = $automationResult.reason
-        }
-        if (-not $passed) {
-            $reason = if ($record["reason"]) { $record["reason"] } else { "automation failed" }
+            $passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds -IsLauncherScript
+            $automationResult = Read-AppAutomationResult
+            $record["automation_result"] = $automationResult
+            $record["status"] = if ($passed) { "passed" } else { "failed" }
+            if (-not $passed -and $automationResult -and $automationResult.reason) {
+                $record["reason"] = $automationResult.reason
+            }
+            if ($passed) {
+                break
+            }
+
+            if (-not ($record.Contains("reason") -and $record["reason"]) -and -not (Test-AppMainProcessRunning)) {
+                $record["reason"] = "launcher process exited before automation produced a result"
+            }
+            $reason = if ($record.Contains("reason") -and $record["reason"]) { $record["reason"] } else { "automation failed" }
+            $recoverAfterRun = Test-MissionZipNeedsEmulatorRecovery -Reason $reason
+            if ($recoverAfterRun -and $automationAttempt -lt 2) {
+                Restore-MissionZipBatchDevice -Reason "retrying $($zip.Name) after automation infrastructure failure: $reason"
+                $recoverAfterRun = $false
+                $record.Remove("reason")
+                continue
+            }
             Write-Status "FAIL: $($zip.Name): $reason" "Red"
+            break
         }
     } catch {
         $record["status"] = "failed"
@@ -810,7 +815,7 @@ foreach ($zip in $zips) {
                     Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
                 }
             } elseif (-not $NoRegressionJson) {
-                Copy-Item -Path $metadataPath -Destination $regressionJsonPath -Force
+                Write-Utf8NoBomTextAtomically -Path $regressionJsonPath -Text ([System.IO.File]::ReadAllText($metadataPath))
             }
         } else {
             if (-not $metadataSaved) {

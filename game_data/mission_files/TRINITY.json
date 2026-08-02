@@ -10699,7 +10699,6 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 5",
             "seg": 4,
             "wall": 36,
@@ -10708,6 +10707,7 @@
               "y": 435.85609436035156,
               "z": 75.99858093261719
             },
+            "calculated": false,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

@@ -1631,7 +1631,6 @@
             "index": 7,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 10",
             "seg": 414,
             "wall": 108,
@@ -1640,6 +1639,7 @@
               "y": -252.5,
               "z": -390.0
             },
+            "calculated": false,
             "trigger": 10,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -1984,7 +1984,6 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 13",
             "seg": 344,
             "wall": 77,
@@ -1993,6 +1992,7 @@
               "y": -202.0,
               "z": 0.0
             },
+            "calculated": false,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

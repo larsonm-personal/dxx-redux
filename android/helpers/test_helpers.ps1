@@ -230,6 +230,11 @@ function Stop-AppAndWait {
     Wait-ProcessDead | Out-Null
 }
 
+function Test-AppMainProcessRunning {
+    $processId = Adb-Timeout -AdbArgs @("shell", "pidof", $script:PACKAGE) -Seconds 3
+    return [bool]($processId -and $processId -match '^\d+')
+}
+
 function Wait-SetupCondition {
     # Poll setup_introspect.json until a condition is met. Returns $true if
     # the predicate returns $true, $false on timeout.
@@ -1438,6 +1443,11 @@ function Watch-AutomationResult {
             if (-not (Confirm-EmulatorHealthWithAdbRecovery)) {
                 Write-Status "FAIL: Emulator or ADB transport unavailable during test (after ${elapsed}s)" "Red"
                 Write-DeviceFailureDiagnostics -Reason "emulator health check failed after ADB reset at ${elapsed}s"
+                return $false
+            }
+            if ($IsLauncherScript -and -not (Test-AppMainProcessRunning)) {
+                Write-Status "FAIL: Launcher process exited before automation produced a result (after ${elapsed}s)" "Red"
+                Write-DeviceFailureDiagnostics -Reason "launcher process exited during automation after ${elapsed}s"
                 return $false
             }
             $lastHealthCheck = $elapsed

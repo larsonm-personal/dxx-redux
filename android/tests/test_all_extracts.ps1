@@ -266,10 +266,12 @@ foreach ($specPath in $specs) {
             break
         }
 
-        Write-Host "  Extraction infrastructure failed. Restarting the emulator and rerunning the complete spec once" -ForegroundColor Yellow
-        if (-not (Invoke-LauncherStartupRecovery -Reason 'Extraction infrastructure failure')) {
-            Write-Host "  Emulator restart failed" -ForegroundColor Red
-            break
+        Write-Host "  Extraction infrastructure failed. Recovering ADB/device state and rerunning the complete spec once" -ForegroundColor Yellow
+        if (-not (Confirm-EmulatorHealthWithAdbRecovery)) {
+            if (-not (Invoke-LauncherStartupRecovery -Reason 'Extraction infrastructure failure')) {
+                Write-Host "  Emulator restart failed" -ForegroundColor Red
+                break
+            }
         }
         if (-not (Ensure-LauncherTestDeviceReady)) {
             Write-Host "  Launcher recovery failed" -ForegroundColor Red

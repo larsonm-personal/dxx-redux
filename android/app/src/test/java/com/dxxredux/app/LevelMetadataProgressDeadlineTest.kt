@@ -15,7 +15,7 @@ class LevelMetadataProgressDeadlineTest {
 
     @Test
     fun fixedDeadlineStillExpiresStalledAnalysis() {
-        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000, 5)
+        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000)
 
         deadline.observe(update(0), 1_000)
 
@@ -24,8 +24,8 @@ class LevelMetadataProgressDeadlineTest {
     }
 
     @Test
-    fun fivePercentForwardProgressExtendsDeadline() {
-        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000, 5)
+    fun forwardProgressExtendsDeadline() {
+        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000)
 
         deadline.observe(update(0), 20_000)
         deadline.observe(update(5), 25_000)
@@ -37,28 +37,30 @@ class LevelMetadataProgressDeadlineTest {
     }
 
     @Test
-    fun lessThanFivePercentDoesNotExtendDeadline() {
-        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000, 5)
+    fun smallForwardProgressExtendsDeadline() {
+        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000)
 
         deadline.observe(update(0), 1_000)
         deadline.observe(update(4), 29_000)
 
-        assertTrue(deadline.isExpired(30_000))
+        assertFalse(deadline.isExpired(38_999))
+        assertTrue(deadline.isExpired(39_000))
     }
 
     @Test
-    fun progressThatIsTooSlowDoesNotExtendDeadline() {
-        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000, 5)
+    fun slowForwardProgressStillExtendsDeadline() {
+        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000)
 
         deadline.observe(update(0), 1_000)
         deadline.observe(update(5), 25_000)
 
-        assertTrue(deadline.isExpired(30_000))
+        assertFalse(deadline.isExpired(34_999))
+        assertTrue(deadline.isExpired(35_000))
     }
 
     @Test
     fun completingOneTaskStartsAProgressWindowForTheNext() {
-        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000, 5)
+        val deadline = LevelMetadataProgressDeadline(0, 30_000, 10_000)
 
         deadline.observe(update(100), 25_000)
         deadline.observe(update(0, "route:2"), 34_000)

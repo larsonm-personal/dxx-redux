@@ -346,27 +346,58 @@ object MissionZip {
         constituents: List<Constituent>,
         missions: List<GameFileFormats.MissionDescriptor>,
     ): List<MissionSet> =
-        missions.map { mission ->
-            val stem = leafName(mission.path).substringBeforeLast('.').lowercase(Locale.US)
-            val levelNames =
-                (mission.levelNames + mission.secretLevelNames)
-                    .map { leafName(it).lowercase(Locale.US) }
-                    .toSet()
-            val related =
-                constituents.filter { constituent ->
-                    constituent.path.equals(mission.path, ignoreCase = true) ||
-                        constituent.name.lowercase(Locale.US) in levelNames ||
-                        (
-                            constituent.name.substringBeforeLast('.').lowercase(Locale.US) == stem &&
-                                constituent.role in
-                                setOf(
-                                    GameFileFormats.MISSION_ZIP_HOG,
-                                    GameFileFormats.MISSION_ZIP_MOD_ARCHIVE,
-                                )
-                        )
-                }
-            MissionSet(mission, related.ifEmpty { constituents })
-        }
+        missions
+            .sortedWith(
+                compareBy<GameFileFormats.MissionDescriptor> { it.path.lowercase(Locale.US) }
+                    .thenBy { it.path },
+            ).map { mission ->
+                val stem = leafName(mission.path).substringBeforeLast('.').lowercase(Locale.US)
+                val missionDir = parentPath(mission.path)
+                val levelNames =
+                    (mission.levelNames + mission.secretLevelNames)
+                        .map { leafName(it).lowercase(Locale.US) }
+                        .toSet()
+                val inMissionDirectory =
+                    constituents.filter { constituent ->
+                        constituent.path.equals(mission.path, ignoreCase = true) ||
+                            (
+                                parentPath(constituent.path).equals(missionDir, ignoreCase = true) &&
+                                    isMissionPayload(constituent, stem, levelNames)
+                            )
+                    }
+                val related =
+                    if (inMissionDirectory.any(::isMissionHog)) {
+                        inMissionDirectory
+                    } else {
+                        constituents.filter { constituent ->
+                            constituent.path.equals(mission.path, ignoreCase = true) ||
+                                isMissionPayload(constituent, stem, levelNames)
+                        }
+                    }
+                MissionSet(mission, related.ifEmpty { constituents })
+            }
+
+    private fun isMissionPayload(
+        constituent: Constituent,
+        missionStem: String,
+        levelNames: Set<String>,
+    ): Boolean =
+        constituent.name.lowercase(Locale.US) in levelNames ||
+            (
+                constituent.name.substringBeforeLast('.').lowercase(Locale.US) == missionStem &&
+                    isMissionArchive(constituent)
+            )
+
+    private fun isMissionArchive(constituent: Constituent): Boolean =
+        constituent.role in
+            setOf(
+                GameFileFormats.MISSION_ZIP_HOG,
+                GameFileFormats.MISSION_ZIP_MOD_ARCHIVE,
+            )
+
+    private fun isMissionHog(constituent: Constituent): Boolean = constituent.role == GameFileFormats.MISSION_ZIP_HOG
+
+    private fun parentPath(path: String): String = normalizePath(path).substringBeforeLast('/', "")
 
     private fun sortedConstituents(constituents: List<Constituent>): List<Constituent> =
         constituents.sortedWith(

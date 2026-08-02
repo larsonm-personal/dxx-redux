@@ -167,7 +167,12 @@ private class ZipReadableArchive(
 private class SevenZReadableArchive(
     file: File,
 ) : ReadableArchiveFile {
-    private val sevenZ = SevenZFile.builder().setFile(file).get()
+    private val sevenZ =
+        SevenZFile
+            .builder()
+            .setFile(file)
+            .setMaxMemoryLimitKiB(ExtractionLimits.MAX_SEVEN_Z_DECODER_MEMORY_KIB)
+            .get()
     override val format: String = "7z"
     override val entries: List<ArchiveFileEntry> =
         try {

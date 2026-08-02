@@ -773,15 +773,17 @@ function Test-MissionFingerprintCacheIdentity {
 
 if ($BudgetTestOnly) { return }
 
-if (-not $SkipBuild -and -not (Test-Path $fpExe)) {
+if (-not $SkipBuild -and -not $FingerprintExePath) {
     Write-Host "Building fingerprint_audio.exe..."
     $srcDir = Join-Path $repoRoot "android/app/src/main/cpp/extract"
     if (-not (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
         cmake -S $srcDir -B $buildDir 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "fingerprint_audio CMake configuration failed with exit code $LASTEXITCODE" }
     }
     cmake --build $buildDir --config Release --target fingerprint_audio 2>&1 | ForEach-Object {
         if ($_ -match 'error') { Write-Host $_ }
     }
+    if ($LASTEXITCODE -ne 0) { throw "fingerprint_audio build failed with exit code $LASTEXITCODE" }
     if (-not (Test-Path $fpExe)) { Write-Error "Failed to build fingerprint_audio.exe" }
 }
 if (-not (Test-Path $fpExe)) { Write-Error "fingerprint_audio.exe not found: $fpExe" }

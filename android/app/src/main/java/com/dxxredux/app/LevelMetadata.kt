@@ -18,10 +18,9 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile
 
-private const val LEVEL_METADATA_TIMEOUT_MS = 30_000L
+private const val LEVEL_METADATA_TIMEOUT_MS = 120_000L
 private const val LEVEL_METADATA_POLL_MS = 200L
-private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 10_000L
-private const val LEVEL_METADATA_MIN_PROGRESS_PERCENT = 5
+private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 120_000L
 private const val LEVEL_METADATA_MAX_ZIP_FILES = 240
 private const val LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES = 64L * 1024L * 1024L
@@ -65,12 +64,10 @@ internal class LevelMetadataProgressDeadline(
     startedAtMs: Long,
     private val initialTimeoutMs: Long = LEVEL_METADATA_TIMEOUT_MS,
     private val progressExtensionMs: Long = LEVEL_METADATA_PROGRESS_EXTENSION_MS,
-    private val requiredProgressPercent: Int = LEVEL_METADATA_MIN_PROGRESS_PERCENT,
 ) {
     private var deadlineMs = startedAtMs + initialTimeoutMs
     private var activityId: String? = null
-    private var creditedPercent = 0
-    private var creditedAtMs = startedAtMs
+    private var creditedCompleted = 0
 
     fun observe(
         update: LevelMetadataCheckpointUpdate,
@@ -78,20 +75,15 @@ internal class LevelMetadataProgressDeadline(
     ) {
         val progress = update.progress
         if (progress.total <= 0) return
-        val percent = (progress.completed.coerceIn(0, progress.total) * 100 / progress.total).coerceIn(0, 100)
+        val completed = progress.completed.coerceIn(0, progress.total)
         if (update.activityId != activityId) {
             activityId = update.activityId
-            creditedPercent = percent
-            creditedAtMs = nowMs
+            creditedCompleted = completed
             deadlineMs = maxOf(deadlineMs, nowMs + progressExtensionMs)
             return
         }
-        val threshold = requiredProgressPercent.coerceAtLeast(1)
-        if (percent < creditedPercent + threshold) return
-        val progressSteps = (percent - creditedPercent) / threshold
-        if (nowMs - creditedAtMs > progressSteps * progressExtensionMs) return
-        creditedPercent += progressSteps * threshold
-        creditedAtMs = nowMs
+        if (completed <= creditedCompleted) return
+        creditedCompleted = completed
         deadlineMs = maxOf(deadlineMs, nowMs + progressExtensionMs)
     }
 

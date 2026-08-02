@@ -10,6 +10,7 @@ internal object ExtractionLimits {
     const val MAX_METADATA_BYTES = 64L * 1024L * 1024L
     const val MAX_DESCRIPTOR_BYTES = 1024L * 1024L
     const val MAX_ZIP_PREAMBLE_BYTES = 16L * 1024L * 1024L
+    const val MAX_SEVEN_Z_DECODER_MEMORY_KIB = 256 * 1024
     const val MAX_ENTRIES = 4096
     const val MAX_RATIO = 1000L
 }

@@ -4990,7 +4990,6 @@
     "game": "d2",
     "mission_name": "Descent Max Anarchy (fix)",
     "mission_filename": "maxlnk_f.mn2",
-    "coop_starts": "1",
     "level_count": 6,
     "levels": [
       {

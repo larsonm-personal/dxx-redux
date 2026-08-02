@@ -8,6 +8,7 @@ $validatorPath = Join-Path $PSScriptRoot 'validate_extract_regression_specs.ps1'
 $extractPath = Join-Path $PSScriptRoot 'test_extract.ps1'
 $allExtractsPath = Join-Path $PSScriptRoot 'test_all_extracts.ps1'
 . $helperPath
+. (Join-Path $PSScriptRoot 'extract_regression_recovery.ps1')
 
 if (Test-Path -LiteralPath $tempRoot) {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force
@@ -17,19 +18,42 @@ New-Item -ItemType Directory -Path $tempRoot | Out-Null
 try {
     $extractSource = [System.IO.File]::ReadAllText($extractPath)
     $allExtractsSource = [System.IO.File]::ReadAllText($allExtractsPath)
-    if ($extractSource -notmatch "(?s)Launching game from set.*?am', 'force-stop'.*?Wait-SetupReady.*?Invoke-GameAutomationScript") {
+    if ($extractSource -notmatch "(?s)function Start-ExtractSetupActivity.*?'am', 'start', '-W', '-S'.*?'pidof'.*?Wait-SetupReady" -or
+        $extractSource -notmatch "(?s)Launching game from set.*?am', 'force-stop'.*?Start-ExtractSetupActivity -Context 'pre-game automation handoff'.*?Invoke-GameAutomationScript") {
         throw 'Extraction launch no longer enforces a clean SetupActivity process boundary'
     }
-    if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
-        throw 'Extraction suite no longer restarts infrastructure before its one complete-spec retry'
+    if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
+        throw 'Extraction suite no longer recovers ADB/device infrastructure before its one complete-spec retry'
     }
     if ($extractSource -notmatch 'Get-JsonStringArray \$spec ''mission_files''' -or
         $extractSource -match '\$spec\.mission_files\s*\|\s*Where-Object') {
         throw 'Optional mission_files are no longer normalized before push planning'
     }
-    if ($extractSource -notmatch '(?s)trap \{.*?Unexpected extraction test runner error.*?exit 99' -or
+    if ($extractSource -notmatch '(?s)trap \{.*?Test-ExtractRegressionAdbTransportFailure.*?exit 98.*?Unexpected extraction test runner error.*?exit 99' -or
         $allExtractsSource -notmatch '\$exitCode -in @\(98, 99\)') {
         throw 'Unexpected runner errors no longer fail fast without being mistaken for emulator failures'
+    }
+    foreach ($transportFailure in @(
+            'ADB timeout (30s): shell get-state',
+            'ADB failed (shell get-state): * daemon still not running',
+            'ADB failed (shell get-state): adb.exe: cannot connect to daemon at tcp:5037',
+            'ADB failed (shell get-state): error: device offline',
+            'ADB failed (shell get-state): error: protocol fault (could not read status)'
+        )) {
+        if (-not (Test-ExtractRegressionAdbTransportFailure -Reason $transportFailure)) {
+            throw "Recoverable ADB transport failure was not classified: $transportFailure"
+        }
+    }
+    foreach ($semanticFailure in @(
+            'Expected file descent.hog was missing',
+            'Automation reported FAIL at launch_mission',
+            'run-as: package not debuggable',
+            'ADB failed (shell run-as): permission denied',
+            'HTTP connection closed by peer'
+        )) {
+        if (Test-ExtractRegressionAdbTransportFailure -Reason $semanticFailure) {
+            throw "Semantic extraction failure was misclassified as ADB transport recovery: $semanticFailure"
+        }
     }
     if ($extractSource -notmatch '(?s)function Invoke-GameAutomationScript.*?Ensure-AppPrivateFile.*?gameAutomationInfrastructureFailure.*?Exit-Test 98.*?adb_staging_failed') {
         throw 'Automation staging failures are no longer verified and classified as retryable infrastructure failures'

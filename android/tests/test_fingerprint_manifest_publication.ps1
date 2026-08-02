@@ -6,6 +6,7 @@ $testRoot = Join-Path $repoRoot 'android\temp\fingerprint_manifest_publication_t
 $workflow = Join-Path $repoRoot 'game_data\fingerprint_disc_tracks.ps1'
 $missionWorkflow = Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1'
 . (Join-Path $repoRoot 'android\helpers\json5.ps1')
+. (Join-Path $repoRoot 'android\helpers\atomic_text_file.ps1')
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Assert-True {
@@ -47,6 +48,15 @@ if (Test-Path -LiteralPath $testRoot) {
 }
 
 try {
+    $atomicPath = Join-Path $testRoot 'atomic.txt'
+    Write-Utf8NoBomTextAtomically -Path $atomicPath -Text 'first'
+    Write-Utf8NoBomTextAtomically -Path $atomicPath -Text 'replacement'
+    Assert-True ([IO.File]::ReadAllText($atomicPath) -ceq 'replacement') `
+        'Atomic text publication should replace an existing file'
+    Assert-True (@(Get-ChildItem -LiteralPath $testRoot -File -Force | Where-Object {
+                $_.Name -match '^\.atomic\.txt\..*\.(tmp|bak)$'
+            }).Count -eq 0) 'Atomic text publication should clean temporary and backup files'
+
     $cdRoot = Join-Path $testRoot 'CD images'
     $discDir = Join-Path $cdRoot 'fixture'
     $singleDir = Join-Path $cdRoot 'single'

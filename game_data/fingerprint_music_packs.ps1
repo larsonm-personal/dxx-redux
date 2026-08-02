@@ -26,6 +26,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\test_env.ps1"
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
+. "$repoRoot\android\helpers\atomic_text_file.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
 
@@ -45,20 +46,19 @@ $7za = Get-7zaPath
 $buildDir = "$repoRoot/android/tests/build"
 $fpExe = "$buildDir/Release/fingerprint_audio.exe"
 
-if (-not (Test-Path $fpExe)) {
-    Write-Host "Building fingerprint_audio.exe..."
-    $srcDir = "$repoRoot/android/app/src/main/cpp/extract"
-    if (-not (Test-Path "$buildDir/CMakeCache.txt")) {
-        cmake -S $srcDir -B $buildDir 2>&1 | Out-Null
-    }
-    cmake --build $buildDir --config Release --target fingerprint_audio 2>&1 | ForEach-Object {
-        if ($_ -match 'error') { Write-Host $_ }
-    }
-    if (-not (Test-Path $fpExe)) {
-        Write-Error "Failed to build fingerprint_audio.exe"
-    }
-    Write-Host "Built: $fpExe"
+if (-not (Test-Path "$buildDir/CMakeCache.txt")) {
+    cmake -S "$repoRoot/android/app/src/main/cpp/extract" -B $buildDir 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "fingerprint_audio CMake configuration failed with exit code $LASTEXITCODE" }
 }
+Write-Host "Building fingerprint_audio.exe..."
+cmake --build $buildDir --config Release --target fingerprint_audio 2>&1 | ForEach-Object {
+    if ($_ -match 'error') { Write-Host $_ }
+}
+if ($LASTEXITCODE -ne 0) { throw "fingerprint_audio build failed with exit code $LASTEXITCODE" }
+if (-not (Test-Path $fpExe)) {
+    Write-Error "Failed to build fingerprint_audio.exe"
+}
+Write-Host "Built: $fpExe"
 
 # ── Load AcoustID API key ──────────────────────────────────────────
 
@@ -434,7 +434,7 @@ foreach ($archive in $archives) {
     $lines += "  ]"
     $lines += "}"
 
-    $lines -join "`n" | Set-Content $infoFile -Encoding UTF8 -NoNewline
+    Write-Utf8NoBomTextAtomically -Path $infoFile -Text ($lines -join "`n")
     Write-Host "  Wrote $infoFile"
 }
 

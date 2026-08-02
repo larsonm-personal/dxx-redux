@@ -34,9 +34,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
+. (Join-Path $PSScriptRoot 'extract_regression_recovery.ps1')
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
 
 trap {
+    if (Test-ExtractRegressionAdbTransportFailure -Reason $_.Exception.Message) {
+        Write-Host "FAIL: Recoverable ADB transport failure: $($_.Exception.Message)" -ForegroundColor Yellow
+        exit 98
+    }
     Write-Host "FAIL: Unexpected extraction test runner error: $($_.Exception.Message)" -ForegroundColor Red
     exit 99
 }
@@ -241,6 +246,41 @@ function Wait-SetupReady {
         Start-Sleep -Milliseconds 800
         $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/setup_introspect.json')
         if ($json -and $json -match '"screen"') { return $true }
+    }
+    return $false
+}
+
+function Start-ExtractSetupActivity {
+    param(
+        [Parameter(Mandatory = $true)][string]$Context,
+        [int]$MaxAttempts = 2
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        $startOutput = Adb -CmdArgs @('shell', 'am', 'start', '-W', '-S', '-n', "$PACKAGE/$ACTIVITY")
+        $processId = ''
+        for ($processCheck = 0; $processCheck -lt 10; $processCheck++) {
+            $processId = Adb -CmdArgs @('shell', 'pidof', $PACKAGE) -Timeout 5
+            if ($processId -match '^\d+') { break }
+            Start-Sleep -Milliseconds 500
+        }
+        if ($processId -notmatch '^\d+') {
+            $summary = if ($startOutput) { $startOutput -replace '[\r\n]+', ' | ' } else { 'no am start output' }
+            Write-Status "  SetupActivity launch did not create a process during $Context (attempt $attempt/$MaxAttempts): $summary" 'Yellow'
+            continue
+        }
+        if (Wait-SetupReady) { return $true }
+        Write-Status "  SetupActivity process $processId did not answer introspection during $Context (attempt $attempt/$MaxAttempts)" 'Yellow'
+    }
+
+    $activityState = Adb -CmdArgs @('shell', 'dumpsys', 'activity', 'activities') -Timeout 10
+    $activityLines = @($activityState -split "`r?`n" | Where-Object { $_ -match 'mResumedActivity|com\.dxxredux\.app' } | Select-Object -Last 8)
+    foreach ($line in $activityLines) {
+        Write-Status "  activity: $($line.Trim())" 'Yellow'
+    }
+    $launcherLog = Adb -CmdArgs @('logcat', '-d', '-s', 'ActivityTaskManager:*', 'ActivityManager:*', 'DXX-Setup:*') -Timeout 10
+    foreach ($line in @($launcherLog -split "`r?`n" | Where-Object { $_ } | Select-Object -Last 20)) {
+        Write-Status "  launcher: $line" 'Yellow'
     }
     return $false
 }
@@ -980,8 +1020,7 @@ Adb -CmdArgs @(
 ) | Out-Null
 
 # Launch SetupActivity (needed for broadcasts to work)
-Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-if (-not (Wait-SetupReady)) {
+if (-not (Start-ExtractSetupActivity -Context 'initial sanitization')) {
     Write-Status 'FAIL: SetupActivity not responding' 'Red'
     Exit-Test 98 'fail' 'setup_timeout'
 }
@@ -1047,8 +1086,7 @@ foreach ($setName in ($otherSets -split "`n" | ForEach-Object { $_.Trim() } | Wh
 # Restart the app so the clean state is visible to Java
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
-Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-if (-not (Wait-SetupReady)) {
+if (-not (Start-ExtractSetupActivity -Context 'clean-state canary')) {
     Write-Status 'FAIL: SetupActivity not responding after restart' 'Red'
     Exit-Test 98 'fail' 'setup_timeout'
 }
@@ -1337,8 +1375,7 @@ if ($useDirectCdImport) {
     # adb shell cat redirect.
     Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
     Start-Sleep -Seconds 1
-    Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-    if (-not (Wait-SetupReady)) {
+    if (-not (Start-ExtractSetupActivity -Context 'post-push file verification')) {
         Write-Status 'FAIL: SetupActivity not responding after file push' 'Red'
         Exit-Test 98 'fail' 'setup_timeout'
     }
@@ -1485,8 +1522,7 @@ Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'*.plx'",
 Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'descent.cfg'", '-delete') | Out-Null
 
 # Re-launch SetupActivity and verify the clean process before automation.
-Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-if (-not (Wait-SetupReady)) {
+if (-not (Start-ExtractSetupActivity -Context 'pre-game automation handoff')) {
     Write-Status 'FAIL: SetupActivity not responding before game launch' 'Red'
     Exit-Test 98 'fail' 'setup_timeout'
 }

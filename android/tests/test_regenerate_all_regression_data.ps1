@@ -12,6 +12,14 @@ function Assert-True {
     }
 }
 
+$unknownArgumentRejected = $false
+try {
+    . $runnerPath -Force
+} catch {
+    $unknownArgumentRejected = $_.FullyQualifiedErrorId -like 'NamedParameterNotFound*'
+}
+Assert-True $unknownArgumentRejected 'Master regeneration should reject unsupported arguments before running stages'
+
 $stages = @(Get-RegressionDataStages -RepoRoot $repoRoot)
 Assert-True ($stages.Count -eq 3) 'Master regeneration should contain exactly three wrapper stages'
 Assert-True ($stages[0].Script -eq (Join-Path $repoRoot 'game_data\run_all_cd_regressions.ps1')) `

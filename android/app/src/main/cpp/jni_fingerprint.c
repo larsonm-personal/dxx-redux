@@ -126,16 +126,15 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 {
 	if (binFd < 0 || numSectors <= 0) return NULL;
 
-	/* Read only the bounded prefix Chromaprint consumes. */
 	static const int SECTOR_SIZE = 2352;
-	int prefix_sectors = numSectors < FINGERPRINT_MAX_CD_SECTORS
-	                         ? numSectors
-	                         : FINGERPRINT_MAX_CD_SECTORS;
-	size_t data_size = (size_t) prefix_sectors * SECTOR_SIZE;
-
-	uint8_t *sector_data = (uint8_t *) malloc(data_size);
-	if (!sector_data) {
-		LOGE("Failed to allocate %zu bytes for sectors", data_size);
+	static const int SECTORS_PER_CHUNK = 64;
+	uint8_t *sector_data =
+	    (uint8_t *) malloc((size_t) SECTORS_PER_CHUNK * SECTOR_SIZE);
+	fingerprint_stream_t *stream = fingerprint_stream_new(44100, 2);
+	if (!sector_data || !stream) {
+		LOGE("Failed to initialize complete-track fingerprinting");
+		free(sector_data);
+		fingerprint_stream_free(stream);
 		return NULL;
 	}
 
@@ -143,25 +142,40 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 	if (lseek(binFd, offset, SEEK_SET) != offset) {
 		LOGE("Seek failed to sector %d", startSector);
 		free(sector_data);
+		fingerprint_stream_free(stream);
 		return NULL;
 	}
 
-	size_t total_read = 0;
-	while (total_read < data_size) {
-		ssize_t n = read(binFd, sector_data + total_read, data_size - total_read);
-		if (n <= 0) break;
-		total_read += n;
-	}
-	if (total_read < data_size) {
-		LOGW("Short read: got %zu of %zu bytes", total_read, data_size);
-		free(sector_data);
-		return NULL;
+	int sectors_read = 0;
+	while (sectors_read < numSectors) {
+		int chunk_sectors = numSectors - sectors_read;
+		if (chunk_sectors > SECTORS_PER_CHUNK)
+			chunk_sectors = SECTORS_PER_CHUNK;
+		size_t chunk_bytes = (size_t) chunk_sectors * SECTOR_SIZE;
+		size_t chunk_read = 0;
+		while (chunk_read < chunk_bytes) {
+			ssize_t n = read(binFd, sector_data + chunk_read,
+			                 chunk_bytes - chunk_read);
+			if (n <= 0)
+				break;
+			chunk_read += (size_t) n;
+		}
+		if (chunk_read != chunk_bytes ||
+		    fingerprint_stream_feed(stream, (const int16_t *) sector_data,
+		                            (size_t) chunk_sectors * 588) != 0) {
+			LOGW("Could not fingerprint complete disc track after %d sectors",
+			     sectors_read);
+			free(sector_data);
+			fingerprint_stream_free(stream);
+			return NULL;
+		}
+		sectors_read += chunk_sectors;
 	}
 
 	fingerprint_result_t fp = { 0 };
-	int rc = fingerprint_from_cd_sectors(sector_data, prefix_sectors,
-	                                     numSectors, &fp);
+	int rc = fingerprint_stream_finish(stream, &fp);
 	free(sector_data);
+	fingerprint_stream_free(stream);
 
 	if (rc != 0 || !fp.encoded) {
 		fingerprint_free(&fp);
