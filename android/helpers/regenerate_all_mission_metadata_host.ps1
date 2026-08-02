@@ -533,13 +533,15 @@ function Get-MissionDescriptorInfo {
         $key = $trimmed.Substring(0, $eq).Trim().ToLowerInvariant()
         $values[$key] = Get-CleanMissionDescriptorValue -Value $trimmed.Substring($eq + 1)
     }
-    $displayName = ""
-    foreach ($key in @("name", "xname", "zname", "!name")) {
+    $name = if ($values.ContainsKey("name")) { $values["name"] } else { "" }
+    $enhancedName = ""
+    foreach ($key in @("xname", "zname", "!name")) {
         if ($values.ContainsKey($key) -and $values[$key]) {
-            $displayName = $values[$key]
+            $enhancedName = $values[$key]
             break
         }
     }
+    $displayName = if ($enhancedName -and $name -ieq $Descriptor.BaseName) { $enhancedName } elseif ($name) { $name } else { $enhancedName }
     if (-not $displayName) {
         $displayName = $Descriptor.BaseName
     }

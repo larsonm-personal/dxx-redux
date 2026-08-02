@@ -448,7 +448,7 @@ object GameFileFormats {
         }
         return MissionDescriptor(
             path = normalizePath(path),
-            name = firstMissionValue(values, "name", "xname", "zname", "!name"),
+            name = preferredMissionName(path, values),
             type = values["type"],
             author = values["author"],
             editor = values["editor"],
@@ -479,6 +479,20 @@ object GameFileFormats {
         values: Map<String, String>,
         vararg keys: String,
     ): String? = keys.firstNotNullOfOrNull { values[it]?.takeIf { value -> value.isNotBlank() } }
+
+    private fun preferredMissionName(
+        path: String,
+        values: Map<String, String>,
+    ): String? {
+        val name = firstMissionValue(values, "name")
+        val enhancedName = firstMissionValue(values, "xname", "zname", "!name")
+        val descriptorStem = leafName(path).substringBeforeLast('.')
+        return if (enhancedName != null && name.equals(descriptorStem, ignoreCase = true)) {
+            enhancedName
+        } else {
+            name ?: enhancedName
+        }
+    }
 
     private fun normalizePath(path: String): String = path.replace('\\', '/').trim('/')
 
