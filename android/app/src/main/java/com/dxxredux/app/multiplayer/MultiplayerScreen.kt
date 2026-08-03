@@ -1140,25 +1140,32 @@ internal fun readCoopRestoreSelection(
     }
 }
 
-internal fun initialCoopRestoreEnabled(selection: CoopRestoreSelection?): Boolean =
-    selection?.slot != null || selection?.checkpointId != null
+internal fun initialCoopSaveSelection(coopSaves: List<CoopSaveEntry>): CoopSaveEntry? =
+    coopSaves.filter { it.type == "full_save" }.maxByOrNull { it.timestamp }
+        ?: coopSaves.filter { it.type == "level_start_highest" }.maxByOrNull { it.timestamp }
 
-internal fun shouldAutoEnableCoopRestore(selection: CoopRestoreSelection?): Boolean = selection == null
-
-internal fun initialCoopSaveSelection(
-    coopSaves: List<CoopSaveEntry>,
-    selection: CoopRestoreSelection?,
-): CoopSaveEntry? =
-    if (selection != null) {
-        if (selection.checkpointId != null) {
-            coopSaves.firstOrNull { it.checkpointId == selection.checkpointId }
-        } else {
-            selection.slot?.let { slot -> coopSaves.firstOrNull { it.slot == slot } }
+@Composable
+internal fun CoopRestoreSelectionSummary(
+    game: String,
+    levelNum: Int,
+) {
+    val context = LocalContext.current
+    val selection = remember(game, levelNum) { readCoopRestoreSelection(context.filesDir, game) } ?: return
+    val label =
+        when {
+            selection.slot != null -> "Restore selected: save slot ${selection.slot}, level $levelNum"
+            selection.checkpointId != null -> "Restore selected: level-start checkpoint, level $levelNum"
+            else -> "Start fresh at level $levelNum"
         }
-    } else {
-        coopSaves.firstOrNull { it.type == "full_save" }
-            ?: coopSaves.firstOrNull { it.type == "level_start_highest" }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(8.dp),
+        )
     }
+    Spacer(Modifier.height(4.dp))
+}
 
 internal fun restoreSaveForHostedLevel(
     selectedSave: CoopSaveEntry?,

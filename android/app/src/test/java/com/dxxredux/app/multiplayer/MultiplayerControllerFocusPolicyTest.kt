@@ -59,9 +59,4 @@ class MultiplayerControllerFocusPolicyTest {
         assertFalse(controllerBackShouldExitTextEntry(textEntryActive = false))
     }
 
-    @Test
-    fun coopSaveFocusTracksSelectedControl() {
-        assertEquals(CoopSaveFocusTarget.RESTORE, selectedCoopSaveFocusTarget(useRestore = true))
-        assertEquals(CoopSaveFocusTarget.START_FRESH, selectedCoopSaveFocusTarget(useRestore = false))
-    }
 }

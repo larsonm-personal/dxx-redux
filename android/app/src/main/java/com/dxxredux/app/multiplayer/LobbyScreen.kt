@@ -21,19 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dxxredux.app.VisualReplacementPolicy
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -153,7 +147,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
             Spacer(Modifier.height(8.dp))
             if (mode == "coop") {
                 val game = gi["game"]?.jsonPrimitive?.content ?: "d2"
-                CoopSaveOffer(game = game, mission = mission, lobby = lobby)
+                CoopRestoreSelectionSummary(game, level ?: 1)
             }
             val allReady = lobby.players.all { it.ready }
             val enoughPlayers = lobby.players.size >= 2
@@ -269,167 +263,4 @@ private fun PlayerCard(
             }
         }
     }
-}
-
-/**
- * Auto-offer matching coop saves to the host based on lobby player callsigns.
- * Matches saves from coop_autosave_history.json where the most current lobby
- * players appear in the save's callsign list. Respects the restore slot
- * already written by CreateGameDialog; the host can toggle restore/fresh.
- */
-@Composable
-private fun CoopSaveOffer(
-    game: String,
-    mission: String,
-    lobby: CurrentLobbyState,
-) {
-    val context = LocalContext.current
-    val filesDir = context.filesDir
-
-    val saves =
-        remember(game, mission) {
-            readCoopAutosaveHistory(filesDir, game, mission, context)
-        }
-    if (saves.isEmpty()) return
-
-    val lobbyCallsigns =
-        remember(lobby.players) {
-            lobby.players.map { it.callsign.lowercase() }.toSet()
-        }
-
-    // Score each save: prefer more matching callsigns, then newest
-    val scored =
-        remember(saves, lobbyCallsigns) {
-            saves
-                .mapNotNull { save ->
-                    val matchCount =
-                        save.callsigns.count {
-                            it.lowercase() in lobbyCallsigns
-                        }
-                    if (matchCount > 0) Pair(save, matchCount) else null
-                }.sortedWith(
-                    compareByDescending<Pair<CoopSaveEntry, Int>> {
-                        it.second
-                    }.thenByDescending { it.first.timestamp },
-                )
-        }
-    val bestMatch = scored.firstOrNull()?.first ?: return
-    val bestMatchCount = scored.firstOrNull()?.second ?: 0
-
-    // Initialize from existing restore choice (written by CreateGameDialog)
-    val existingSelection = remember(game) { readCoopRestoreSelection(filesDir, game) }
-    val freshLevel = remember(lobby.lobbyId) { lobby.gameInfo["level_num"]?.jsonPrimitive?.intOrNull ?: 1 }
-    var useRestore by remember { mutableStateOf(initialCoopRestoreEnabled(existingSelection)) }
-    var selectionMade by remember { mutableStateOf(existingSelection != null) }
-    var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
-    val restoreFocus = remember { FocusRequester() }
-    val freshFocus = remember { FocusRequester() }
-
-    // When the best match changes (players join/leave), re-select if no slot was set
-    LaunchedEffect(bestMatch) {
-        if (!selectionMade && shouldAutoEnableCoopRestore(existingSelection)) useRestore = true
-    }
-    LaunchedEffect(useRestore, lastActivatedFocusTarget) {
-        when (lastActivatedFocusTarget ?: return@LaunchedEffect) {
-            CoopSaveFocusTarget.RESTORE -> restoreFocus.requestFocusSafely()
-            CoopSaveFocusTarget.START_FRESH -> freshFocus.requestFocusSafely()
-        }
-    }
-
-    // Write/delete coop_restore_slot.txt based on current selection
-    LaunchedEffect(useRestore, bestMatch, freshLevel) {
-        val targetLevel = if (useRestore) bestMatch.level else freshLevel
-        writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
-        CoopDesyncLog.log(
-            "online lobby restore offer: game=$game mission=$mission target_level=$targetLevel " +
-                "use_restore=$useRestore best_slot=${bestMatch.slot} best_level=${bestMatch.level} " +
-                "fresh_level=$freshLevel match_count=$bestMatchCount",
-        )
-        MultiplayerResumePrefs.saveRestoreSelection(
-            context,
-            game,
-            if (useRestore) bestMatch else null,
-            levelNum = targetLevel,
-        )
-        if (lobby.gameInfo["level_num"]?.jsonPrimitive?.intOrNull != targetLevel) {
-            MatchmakingService.updateGameInfo(
-                JsonObject(lobby.gameInfo + ("level_num" to JsonPrimitive(targetLevel))),
-            )
-        }
-    }
-
-    val mins = bestMatch.levelTimeSeconds / 60
-    val secs = bestMatch.levelTimeSeconds % 60
-    val scoreStr = if (bestMatch.totalScore > 0) ", ${bestMatch.totalScore}pts" else ""
-    val matchStr = "$bestMatchCount/${bestMatch.numPlayers} match"
-    val label =
-        "[Save] $matchStr: L${bestMatch.level}, ${bestMatch.numPlayers}p" +
-            ", $mins:%02d played".format(secs) +
-            "$scoreStr - ${formatTimeAgo(bestMatch.timestamp)}"
-
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(label, style = MaterialTheme.typography.bodySmall)
-            Text(
-                bestMatch.callsigns.joinToString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (useRestore) {
-                    Button(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(restoreFocus),
-                    ) {
-                        Text("Restore", fontSize = 12.sp)
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
-                            useRestore = false
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(freshFocus),
-                    ) { Text("Start fresh", fontSize = 12.sp) }
-                } else {
-                    OutlinedButton(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
-                            useRestore = true
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(restoreFocus),
-                    ) { Text("Restore", fontSize = 12.sp) }
-                    Button(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(freshFocus),
-                    ) {
-                        Text("Start fresh", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(4.dp))
 }

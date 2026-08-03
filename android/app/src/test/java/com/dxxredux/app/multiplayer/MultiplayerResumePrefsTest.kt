@@ -72,20 +72,6 @@ class MultiplayerResumePrefsTest {
         val freshSelection = readCoopRestoreSelection(filesDir, "d2") ?: error("fresh selection missing")
         assertNull(readCoopRestoreSlot(filesDir, "d2"))
         assertNull(freshSelection.slot)
-        assertFalse(initialCoopRestoreEnabled(freshSelection))
-        assertFalse(shouldAutoEnableCoopRestore(freshSelection))
-    }
-
-    @Test
-    fun coopRestoreAutoEnableOnlyWhenNoChoiceWasWritten() {
-        val filesDir = tempFolder.newFolder()
-
-        assertNull(readCoopRestoreSelection(filesDir, "d1"))
-        assertTrue(shouldAutoEnableCoopRestore(readCoopRestoreSelection(filesDir, "d1")))
-
-        writeCoopRestoreSlot(filesDir, "d1", null)
-
-        assertFalse(shouldAutoEnableCoopRestore(readCoopRestoreSelection(filesDir, "d1")))
     }
 
     @Test
@@ -97,8 +83,6 @@ class MultiplayerResumePrefsTest {
         val selection = readCoopRestoreSelection(filesDir, "d2") ?: error("retained selection missing")
         assertNull(selection.slot)
         assertEquals("d2", selection.checkpointId)
-        assertTrue(initialCoopRestoreEnabled(selection))
-        assertFalse(shouldAutoEnableCoopRestore(selection))
     }
 
     @Test
@@ -202,7 +186,7 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
-    fun initialCoopSaveSelectionHonorsExplicitFreshChoice() {
+    fun initialCoopSaveSelectionDefaultsToNewestFullSave() {
         val save5 =
             CoopSaveEntry(
                 slot = 5,
@@ -214,9 +198,7 @@ class MultiplayerResumePrefsTest {
         val save6 = save5.copy(slot = 6, level = 5, timestamp = 200L)
         val saves = listOf(save5, save6)
 
-        assertEquals(save5, initialCoopSaveSelection(saves, null))
-        assertNull(initialCoopSaveSelection(saves, CoopRestoreSelection(null)))
-        assertEquals(save6, initialCoopSaveSelection(saves, CoopRestoreSelection(6)))
+        assertEquals(save6, initialCoopSaveSelection(saves))
     }
 
     @Test
@@ -237,11 +219,8 @@ class MultiplayerResumePrefsTest {
                 checkpointId = "d2",
             )
 
-        assertEquals(retained, initialCoopSaveSelection(listOf(retained), null))
-        assertEquals(
-            retained,
-            initialCoopSaveSelection(listOf(fullSave, retained), CoopRestoreSelection(null, "d2")),
-        )
+        assertEquals(retained, initialCoopSaveSelection(listOf(retained)))
+        assertEquals(fullSave, initialCoopSaveSelection(listOf(fullSave, retained)))
         assertEquals(retained, restoreSaveForHostedLevel(retained, 6))
     }
 

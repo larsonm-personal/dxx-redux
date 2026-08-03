@@ -59,14 +59,6 @@ internal fun lanDiscoveryInitialFocusTarget(permissionGranted: Boolean): LanDisc
 
 internal fun controllerBackShouldExitTextEntry(textEntryActive: Boolean): Boolean = textEntryActive
 
-internal enum class CoopSaveFocusTarget {
-    RESTORE,
-    START_FRESH,
-}
-
-internal fun selectedCoopSaveFocusTarget(useRestore: Boolean): CoopSaveFocusTarget =
-    if (useRestore) CoopSaveFocusTarget.RESTORE else CoopSaveFocusTarget.START_FRESH
-
 @Composable
 internal fun RequestControllerInitialFocus(
     focusRequester: FocusRequester,

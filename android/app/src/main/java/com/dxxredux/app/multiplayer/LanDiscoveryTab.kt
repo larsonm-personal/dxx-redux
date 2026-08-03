@@ -289,7 +289,6 @@ private fun LanDiscoveryView(
     var hostedMission by remember { mutableStateOf(hostDefaults.mission) }
     var hostedDifficulty by remember { mutableStateOf(hostDefaults.difficulty) }
     var hostedLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
-    var hostedFreshLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
     var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
     var hostedDuplicateEnergyShields by remember { mutableStateOf(hostDefaults.duplicateEnergyShields) }
     var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
@@ -355,7 +354,6 @@ private fun LanDiscoveryView(
         hostedMission = record.mission
         hostedDifficulty = record.difficulty
         hostedLevelNum = record.levelNum
-        hostedFreshLevelNum = record.levelNum
         hostedCoopQol = record.coopQol
         hostedDuplicateEnergyShields = record.duplicateEnergyShields
         hostedFullDeathSpew = record.fullDeathSpew
@@ -724,13 +722,7 @@ private fun LanDiscoveryView(
                 }
                 Spacer(Modifier.height(8.dp))
                 if (hostedMode == "coop") {
-                    LanCoopSaveOffer(
-                        game = hostedGame,
-                        mission = hostedMission,
-                        playerCallsigns = hostedPlayers.map { it.callsign },
-                        freshLevelNum = hostedFreshLevelNum,
-                        onLevelSelected = { hostedLevelNum = it ?: hostedFreshLevelNum },
-                    )
+                    CoopRestoreSelectionSummary(hostedGame, hostedLevelNum)
                 }
                 Button(
                     onClick = {
@@ -835,7 +827,6 @@ private fun LanDiscoveryView(
                 hostedMission = mission
                 hostedDifficulty = difficulty
                 hostedLevelNum = levelNum
-                hostedFreshLevelNum = levelNum
                 hostedCoopQol = coopQol
                 hostedDuplicateEnergyShields = duplicateEnergyShields
                 hostedFullDeathSpew = fullDeathSpew
@@ -998,151 +989,6 @@ private fun LanLobbyCard(
             }
         }
     }
-}
-
-/**
- * Coop save auto-offer for LAN lobby host, matching the online lobby's CoopSaveOffer.
- * Shows matching saves based on player callsigns in the lobby.
- */
-@Composable
-private fun LanCoopSaveOffer(
-    game: String,
-    mission: String?,
-    playerCallsigns: List<String>,
-    freshLevelNum: Int,
-    onLevelSelected: (Int?) -> Unit,
-) {
-    val context = LocalContext.current
-    val filesDir = context.filesDir
-
-    val saves =
-        remember(game, mission) {
-            readCoopAutosaveHistory(filesDir, game, mission, context)
-        }
-    if (saves.isEmpty()) return
-
-    val lobbyCallsigns =
-        remember(playerCallsigns) {
-            playerCallsigns.map { it.lowercase() }.toSet()
-        }
-
-    val bestMatch =
-        remember(saves, lobbyCallsigns) {
-            saves
-                .mapNotNull { save ->
-                    val matchCount =
-                        save.callsigns.count { it.lowercase() in lobbyCallsigns }
-                    if (matchCount > 0) Triple(save, matchCount, save.timestamp) else null
-                }.sortedWith(
-                    compareByDescending<Triple<CoopSaveEntry, Int, Long>> {
-                        it.second
-                    }.thenByDescending { it.third },
-                ).firstOrNull()
-                ?.first
-        } ?: return
-
-    val existingSelection = remember(game) { readCoopRestoreSelection(filesDir, game) }
-    var useRestore by remember { mutableStateOf(initialCoopRestoreEnabled(existingSelection)) }
-    var selectionMade by remember { mutableStateOf(existingSelection != null) }
-    var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
-    val restoreFocus = remember { FocusRequester() }
-    val freshFocus = remember { FocusRequester() }
-
-    LaunchedEffect(bestMatch) {
-        if (!selectionMade && shouldAutoEnableCoopRestore(existingSelection)) useRestore = true
-    }
-    LaunchedEffect(useRestore, lastActivatedFocusTarget) {
-        when (lastActivatedFocusTarget ?: return@LaunchedEffect) {
-            CoopSaveFocusTarget.RESTORE -> restoreFocus.requestFocusSafely()
-            CoopSaveFocusTarget.START_FRESH -> freshFocus.requestFocusSafely()
-        }
-    }
-
-    LaunchedEffect(useRestore, bestMatch, freshLevelNum) {
-        val targetLevel = if (useRestore) bestMatch.level else freshLevelNum
-        writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
-        CoopDesyncLog.log(
-            "lan lobby restore offer: game=$game mission=${mission ?: ""} target_level=$targetLevel " +
-                "use_restore=$useRestore best_slot=${bestMatch.slot} best_level=${bestMatch.level} " +
-                "fresh_level=$freshLevelNum",
-        )
-        MultiplayerResumePrefs.saveRestoreSelection(
-            context,
-            game,
-            if (useRestore) bestMatch else null,
-            levelNum = targetLevel,
-        )
-        onLevelSelected(if (useRestore) bestMatch.level else null)
-    }
-
-    val mins = bestMatch.levelTimeSeconds / 60
-    val secs = bestMatch.levelTimeSeconds % 60
-    val label =
-        "${bestMatch.numPlayers}p, level ${bestMatch.level}" +
-            ", $mins:%02d played".format(secs) +
-            " - ${bestMatch.callsigns.joinToString()}" +
-            " - ${formatTimeAgo(bestMatch.timestamp)}"
-
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text("Save found: $label", style = MaterialTheme.typography.bodySmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (useRestore) {
-                    Button(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(restoreFocus),
-                    ) {
-                        Text("Restore", fontSize = 12.sp)
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
-                            useRestore = false
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(freshFocus),
-                    ) { Text("Start fresh", fontSize = 12.sp) }
-                } else {
-                    OutlinedButton(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
-                            useRestore = true
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(restoreFocus),
-                    ) { Text("Restore", fontSize = 12.sp) }
-                    Button(
-                        onClick = {
-                            selectionMade = true
-                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(freshFocus),
-                    ) {
-                        Text("Start fresh", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(4.dp))
 }
 
 @Composable
