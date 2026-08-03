@@ -22,6 +22,7 @@ class AudioSourceManagerPersistenceTest {
                 discId = "unknown",
                 trackCount = 12,
                 audioTrackCount = 11,
+                audioTrackNumbers = (2..12).toList(),
                 legacyDiscId = 0L,
                 binContentUris = listOf("content://disc-a", "content://disc-b"),
                 cueContentUri = "content://disc-cue",
@@ -38,9 +39,12 @@ class AudioSourceManagerPersistenceTest {
         val saved = JSONObject(File(filesDir, "audio_sources.json").readText())
         val savedSource = saved.getJSONArray("sources").getJSONObject(0)
         val savedUris = savedSource.getJSONArray("bin_content_uris")
+        val savedTrackNumbers = savedSource.getJSONArray("audio_track_numbers")
 
         assertEquals(listOf("content://disc-a", "content://disc-b"), (0 until savedUris.length()).map(savedUris::getString))
+        assertEquals((2..12).toList(), (0 until savedTrackNumbers.length()).map(savedTrackNumbers::getInt))
         assertEquals("content://disc-a", savedSource.getString("bin_content_uri"))
         assertEquals("content://disc-cue", savedSource.getString("cue_content_uri"))
+        assertEquals((2..12).toList(), AudioSourceManager(filesDir).getSources().single().audioTrackNumbers)
     }
 }

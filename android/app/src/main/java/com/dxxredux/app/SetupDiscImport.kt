@@ -173,7 +173,7 @@ internal fun buildGogAudioSource(
     val relDir = setDir.toRelativeString(filesDir)
     val relCue = if (relDir.isEmpty()) pair.instFileName else "$relDir${File.separator}${pair.instFileName}"
     val relBin = if (relDir.isEmpty()) pair.gogFileName else "$relDir${File.separator}${pair.gogFileName}"
-    val trackCounts = countCueTracks(File(setDir, pair.instFileName))
+    val trackSummary = summarizeCueTracks(File(setDir, pair.instFileName))
     val sourceId =
         if (isKnownD2GogPair(pair)) {
             D2_GOG_AUDIO_SOURCE_ID
@@ -195,8 +195,9 @@ internal fun buildGogAudioSource(
         binPaths = listOf(relBin),
         discLabel = discLabel,
         discId = sourceId,
-        trackCount = trackCounts.first,
-        audioTrackCount = trackCounts.second,
+        trackCount = trackSummary.trackCount,
+        audioTrackCount = trackSummary.audioTrackNumbers.size,
+        audioTrackNumbers = trackSummary.audioTrackNumbers,
         legacyDiscId = if (sourceId == D2_GOG_AUDIO_SOURCE_ID) D2_GOG_LEGACY_DISC_ID else 0L,
         trackNames = trackNames,
     )
@@ -213,18 +214,25 @@ private fun ensureKnownGogCueFile(setDir: File) {
 
 private fun isKnownD2GogPair(pair: GogAudioPair): Boolean = pair.baseName.equals("DESCENT_II", ignoreCase = true)
 
-private fun countCueTracks(cueFile: File): Pair<Int, Int> {
+private data class CueTrackSummary(
+    val trackCount: Int,
+    val audioTrackNumbers: List<Int>,
+)
+
+private fun summarizeCueTracks(cueFile: File): CueTrackSummary {
     var tracks = 0
-    var audio = 0
-    if (!cueFile.isFile) return 0 to 0
+    val audioTrackNumbers = mutableListOf<Int>()
+    if (!cueFile.isFile) return CueTrackSummary(0, emptyList())
     cueFile.forEachLine { line ->
         val parts = line.trim().split(Regex("\\s+"), limit = 3)
         if (parts.size >= 3 && parts[0].equals("TRACK", ignoreCase = true)) {
             tracks++
-            if (parts[2].equals("AUDIO", ignoreCase = true)) audio++
+            if (parts[2].equals("AUDIO", ignoreCase = true)) {
+                parts[1].toIntOrNull()?.let(audioTrackNumbers::add)
+            }
         }
     }
-    return tracks to audio
+    return CueTrackSummary(tracks, audioTrackNumbers)
 }
 
 internal fun extractSowArchives(
@@ -518,6 +526,7 @@ internal fun registerDiscAudioSourceFromPath(
             discId = discId ?: "unknown",
             trackCount = tracks.size,
             audioTrackCount = tracks.count { it.isAudio },
+            audioTrackNumbers = tracks.filter { it.isAudio }.map { it.trackNum },
             legacyDiscId = legacyDiscId,
             trackNames = trackNames,
             binContentUri = orderedBinFiles.first().absolutePath,

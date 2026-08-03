@@ -7,6 +7,27 @@ import java.io.File
 
 class CdAudioSourceVisibilityTest {
     @Test
+    fun keepsSparseNamesBoundToPhysicalCueTracks() {
+        val source =
+            testSource(
+                id = "sparse-names",
+                trackCount = 6,
+                audioTrackNumbers = listOf(2, 4, 5, 6),
+                trackNames = mapOf(2 to "First", 5 to "Third", 6 to "Fourth"),
+            )
+
+        assertEquals(
+            listOf(
+                CdPreviewTrack("First", 1, 2),
+                CdPreviewTrack("Track 8", 2, 4),
+                CdPreviewTrack("Third", 3, 5),
+                CdPreviewTrack("Fourth", 4, 6),
+            ),
+            buildCdPreviewTracks(source, firstDisplayTrackNumber = 7),
+        )
+    }
+
+    @Test
     fun hidesSourcesWithBrokenSafUris() {
         val localSource = testSource(id = "local")
         val localPathFile = File.createTempFile("disc", ".bin")
@@ -129,6 +150,9 @@ class CdAudioSourceVisibilityTest {
         cueContentUri: String? = null,
         cuePath: String = "disc.cue",
         binPaths: List<String> = listOf("disc.bin"),
+        trackCount: Int = 10,
+        audioTrackNumbers: List<Int> = emptyList(),
+        trackNames: Map<Int, String> = emptyMap(),
     ) =
         AudioSourceManager.AudioSource(
             id = id,
@@ -136,9 +160,11 @@ class CdAudioSourceVisibilityTest {
             binPaths = binPaths,
             discLabel = id,
             discId = "unknown",
-            trackCount = 10,
-            audioTrackCount = 9,
+            trackCount = trackCount,
+            audioTrackCount = if (audioTrackNumbers.isEmpty()) 9 else audioTrackNumbers.size,
+            audioTrackNumbers = audioTrackNumbers,
             legacyDiscId = 0L,
+            trackNames = trackNames,
             binContentUri = binContentUri,
             binContentUris = binContentUris,
             cueContentUri = cueContentUri,

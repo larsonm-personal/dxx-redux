@@ -107,6 +107,26 @@ private fun verticalDpadFocusEscape(): Modifier = Modifier.repeatVerticalDpadFoc
 // Duplicated from FingerprintBridge.kt -- both files need it for filtering
 private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
 
+internal data class CdPreviewTrack(
+    val displayName: String,
+    val audioTrackOrdinal: Int,
+    val physicalTrackNumber: Int?,
+)
+
+internal fun buildCdPreviewTracks(
+    source: AudioSourceManager.AudioSource,
+    firstDisplayTrackNumber: Int,
+): List<CdPreviewTrack> =
+    (0 until source.audioTrackCount).map { index ->
+        val physicalTrackNumber = source.audioTrackNumbers.getOrNull(index)
+        val matchedName = physicalTrackNumber?.let(source.trackNames::get)?.takeUnless(::isPlaceholderName)
+        CdPreviewTrack(
+            displayName = matchedName ?: "Track ${firstDisplayTrackNumber + index}",
+            audioTrackOrdinal = index + 1,
+            physicalTrackNumber = physicalTrackNumber,
+        )
+    }
+
 @Composable
 fun MusicPickerPage(
     filesDir: File,
@@ -1169,16 +1189,11 @@ private fun TrackPreviewDialog(
             } else {
                 var trackNum = 1
                 sources.flatMap { src ->
-                    val namedTracks = src.trackNames.toSortedMap()
-                    (1..src.audioTrackCount).map { i ->
-                        val raw =
-                            namedTracks.values.elementAtOrNull(i - 1)
-                                ?: "Track $trackNum"
-                        val name =
-                            if (raw == "[unknown] - [untitled]") "Track $trackNum" else raw
-                        val info = CdTrackInfo(name, i, src)
-                        trackNum++
-                        TrackRow(name, src.discLabel, null, info)
+                    val sourceTracks = buildCdPreviewTracks(src, trackNum)
+                    trackNum += sourceTracks.size
+                    sourceTracks.map { track ->
+                        val info = CdTrackInfo(track.displayName, track.audioTrackOrdinal, src)
+                        TrackRow(track.displayName, src.discLabel, null, info)
                     }
                 }
             }

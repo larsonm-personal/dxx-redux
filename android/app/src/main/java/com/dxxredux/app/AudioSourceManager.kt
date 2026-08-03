@@ -137,6 +137,8 @@ class AudioSourceManager(
         val trackCount: Int,
         // audio tracks only
         val audioTrackCount: Int,
+        // physical 1-based CUE track numbers in audio playback order
+        val audioTrackNumbers: List<Int> = emptyList(),
         // e.g., 0x7d0ff809 for backward compat
         val legacyDiscId: Long,
         val enabled: Boolean = true,
@@ -522,6 +524,10 @@ class AudioSourceManager(
                             discId = obj.optString("disc_id", "unknown"),
                             trackCount = obj.optInt("track_count", 0),
                             audioTrackCount = obj.optInt("audio_track_count", 0),
+                            audioTrackNumbers =
+                                obj.optJSONArray("audio_track_numbers")?.let { numbers ->
+                                    (0 until numbers.length()).map(numbers::getInt)
+                                } ?: emptyList(),
                             legacyDiscId = obj.optLong("legacy_disc_id", 0),
                             enabled = obj.optBoolean("enabled", true),
                             order = obj.optInt("order", 0),
@@ -555,6 +561,11 @@ class AudioSourceManager(
             obj.put("disc_id", src.discId)
             obj.put("track_count", src.trackCount)
             obj.put("audio_track_count", src.audioTrackCount)
+            if (src.audioTrackNumbers.isNotEmpty()) {
+                val audioTrackNumbers = JSONArray()
+                src.audioTrackNumbers.forEach(audioTrackNumbers::put)
+                obj.put("audio_track_numbers", audioTrackNumbers)
+            }
             obj.put("legacy_disc_id", src.legacyDiscId)
             obj.put("enabled", src.enabled)
             obj.put("order", src.order)

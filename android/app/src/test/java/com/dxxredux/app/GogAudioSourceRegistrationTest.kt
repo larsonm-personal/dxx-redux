@@ -28,6 +28,7 @@ class GogAudioSourceRegistrationTest {
         assertEquals(listOf("sets/default/CUSTOM_DISC.GOG"), source.binPaths.map { it.replace('\\', '/') })
         assertEquals(2, source.trackCount)
         assertEquals(1, source.audioTrackCount)
+        assertEquals(listOf(2), source.audioTrackNumbers)
     }
 
     @Test
@@ -48,5 +49,6 @@ class GogAudioSourceRegistrationTest {
         assertEquals(listOf("sets/default/DESCENT_II.gog"), source.binPaths.map { it.replace('\\', '/') })
         assertEquals(9, source.trackCount)
         assertEquals(8, source.audioTrackCount)
+        assertEquals((2..9).toList(), source.audioTrackNumbers)
     }
 }

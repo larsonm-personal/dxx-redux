@@ -1539,6 +1539,8 @@ internal fun DiscImportDialog(
                                                         discId = discId ?: "unknown",
                                                         trackCount = parsedTracks.size,
                                                         audioTrackCount = audioCount,
+                                                        audioTrackNumbers =
+                                                            parsedTracks.filter { it.isAudio }.map { it.trackNum },
                                                         legacyDiscId = legacyDiscId,
                                                         trackNames = trackNames,
                                                         binContentUri = firstBinUri?.toString(),

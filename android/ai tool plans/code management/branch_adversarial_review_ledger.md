@@ -17699,23 +17699,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Supply fake providers that return immediately, delay, block until canceled, throw, omit the column, return null, and die mid-query. Exercise one item, the item limit, and one over with raw audio first, middle, last, and absent through both callers; measure main-thread stalls, rotate or dismiss during work, and replace the URI list rapidly. Require bounded UI-frame latency, exact query and cancellation counts, an interactive loading and cancel path, deterministic classification or actionable failure, and no ANR.
 - Resolution: Pending
 
-### BR-0505: P2 - Preserve CD track identity when names are missing
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-mapping
-- Found by: R1-CHUNK-0441
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt:L1162-L1180` in CD preview row construction
-- Related: `android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt:L106-L145,L229-L253,L256-L297,L300-L375`, `android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt:L125-L153,L496-L535`, `android/app/src/main/java/com/dxxredux/app/CdPreviewBridge.kt:L35-L71`, and `android/app/src/main/cpp/shared/cd_preview.c:L445-L518`
-- Evidence: `AudioSource.trackNames` is explicitly keyed by the CUE's 1-based physical track number. Both known-disc lookup and all four fingerprint paths omit entries with placeholders or no match, so the map can be sparse. The preview sorts that sparse map, discards its keys, and selects `values.elementAtOrNull(i - 1)` while iterating `1..audioTrackCount`. Native preview interprets the resulting `i` as the 1-based ordinal among audio tracks. If an earlier audio track has no name but a later track matches, compacting the map shifts the later name onto the earlier audio row; each subsequent row remains shifted until names run out. Tapping the mislabeled row passes its row ordinal to native code, which correctly opens that different audio track. The maintained visibility tests cover only source filtering and path resolution, and no test exercises sparse physical-track names or row-to-preview identity.
-- Trigger: Import or register a disc whose fingerprinting leaves any nonfinal audio track unmatched while a later audio track matches, then open Preview Track List and tap a row at or after the gap
-- Impact: The launcher displays later songs under the wrong track numbers and plays audio different from the selected label. Users can misidentify imported music and cannot reliably validate the disc or fingerprint results through the provided preview UI.
-- Expected: Each preview row retains one parsed CUE track identity and derives its optional name by that track's physical number while passing its separate audio ordinal to native preview; a missing name affects only its own row.
-- Suggested fix: Parse or persist the ordered audio-track descriptors alongside each source, then build rows from those descriptors with both physical track number and audio ordinal. Look up `trackNames[physicalTrackNumber]` directly and fall back only for that row. If retaining only summary metadata, persist an explicit audio-ordinal-to-physical-track map rather than compacting sparse values.
-- Validation: Add focused row-builder and preview integration tests with leading and interleaved data tracks, complete names, no names, and gaps at the first, middle, and last audio tracks. Assert every displayed name stays bound to its physical CUE track, fallback labels appear only at gaps, and tapping each row sends the exact corresponding audio ordinal and plays the expected sector range.
-- Resolution: Pending
-
 ### BR-0506: P2 - Contain every launch-preparation write failure
 
 - [ ] OPEN
