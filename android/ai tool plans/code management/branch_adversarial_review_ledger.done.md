@@ -41,6 +41,23 @@ so campaign closure must still obtain that independent verification
 
 ## Finalized findings
 
+### BR-0512: P2 - Bound and de-cycle provider directory traversal
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: security/resource-exhaustion
+- Found by: R1-CHUNK-0452
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L38-L79,L88-L141` in SAF tree breadth-first traversal
+- Related: `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L2909-L2953`, `android/app/src/main/java/com/dxxredux/app/ImportTreeScanner.kt:L7-L50`, and `android/app/src/test/java/com/dxxredux/app/ImportTreeScannerTest.kt:L8-L78`
+- Evidence: Both scanners enqueue every child reported with the directory MIME type but retain no visited or active document-ID set. A DocumentsProvider can return the current parent, an ancestor, or two IDs that reference one another, making the breadth-first loop query and enqueue the same directories forever. Even an acyclic provider can expose arbitrary breadth and depth: every directory row is materialized, every importable URI is retained, counters use wrapping `Int`, and there is no directory, row, result, depth, elapsed-time, provider-query, or cancellation budget. The caller runs this non-suspending traversal on an IO coroutine and shows its large-directory warning only after traversal returns; cancelling the activity scope does not insert a cancellation check into the loop. Focused tests exercise only one batch's classification and the post-scan warning threshold, not traversal identity, budgets, cancellation, or provider behavior.
+- Trigger: Choose a tree from a custom, remote, or malformed DocumentsProvider that reports its parent as a directory child, returns an A-to-B-to-A directory cycle, repeats IDs through multiple parents, stalls individual queries, or exposes an extremely large directory graph
+- Impact: One selected provider tree can keep an IO worker and provider queries active indefinitely, grow the queue, row lists, and retained URI list until memory exhaustion, duplicate later imports, and leave the launcher stuck in scanning state even after navigation or lifecycle cancellation.
+- Expected: Directory traversal visits each stable document identity at most once, obeys explicit depth, directory, row, result, byte-independent work, query-time, and elapsed-time limits, cooperates with coroutine cancellation, and returns a bounded diagnostic failure before any import begins.
+- Suggested fix: Move traversal into a cancellable suspend helper, pass a `CancellationSignal` to provider queries, check coroutine activity between rows and directories, and maintain a visited set keyed by validated provider document identity. Apply conservative shared limits for depth, directories, rows, retained candidates, and elapsed work with checked counters; reject cycles, repeated identities, null or malformed IDs, and limit exhaustion rather than warning only after completion.
+- Validation: Use a controllable DocumentsProvider for self, ancestor, two-node, duplicate-parent, and changing-ID cycles; huge breadth and depth; repeated importable IDs; null and malformed metadata; slow and nonreturning queries; cancellation at every query and row boundary; and counts around every limit. Require bounded time and memory, one visit and candidate per identity, checked counters, prompt cancellation, no import on incomplete scans, and a recoverable user-visible diagnostic while ordinary finite trees retain deterministic order.
+- Resolution: Fixed on 2026-08-02. Folder import now uses one suspendable breadth-first traversal with validated unique document IDs, explicit depth, directory, row, and result limits, coroutine checks between directories and rows, a `CancellationSignal` and deadline for every provider query, and a whole-scan deadline. Any repeat, malformed identity, exhausted limit, or deadline stops before import and produces a recoverable user-visible diagnostic; lifecycle cancellation is propagated. Focused tests cover deterministic finite traversal, a two-node cycle, result, row, depth, and directory boundaries, and cancellation. The focused JVM suite, scoped Kotlin quality checks, Android debug assembly for arm64-v8a, armeabi-v7a, and x86_64, and `git diff --check` passed.
+
 ### BR-0048: P2 - Stream the exact bounded audio window into Chromaprint
 
 - [x] FIXED
@@ -1284,6 +1301,8 @@ so campaign closure must still obtain that independent verification
 - Resolution: Fixed on 2026-08-02. Audio sources now persist the ordered physical CUE track numbers for audio tracks, and local, SAF, and GOG registration populate that identity from parsed CUE data. Preview rows look up optional names by physical track number while retaining a separate 1-based audio ordinal for native playback; an absent identity mapping falls back to unnamed rows instead of compacting sparse names. A focused interleaved-data fixture verifies that a missing middle name does not shift later labels or playback ordinals, persistence round-trips the mapping, and GOG registration records the expected physical tracks. The three focused JVM suites, Android debug assembly for arm64-v8a, armeabi-v7a, and x86_64, scoped Kotlin quality checks, and `git diff --check` passed.
 
 ## Disposition log
+
+- 2026-08-02: BR-0512 fixed with unique validated provider identities, bounded breadth-first traversal, coroutine and provider-query cancellation, per-query and whole-scan deadlines, pre-import failure, and recoverable launcher diagnostics. Focused traversal tests, scoped code quality, all three Android debug ABIs, and `git diff --check` passed
 
 - 2026-08-02: BR-0505 fixed by persisting physical CUE audio-track numbers and separating physical name lookup from native audio ordinals in preview rows. Sparse-name mapping, persistence, GOG registration, scoped code quality, Android debug assembly for all three configured ABIs, and `git diff --check` passed
 

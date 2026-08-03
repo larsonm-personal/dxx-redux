@@ -2,14 +2,23 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.net.Uri
+import android.os.CancellationSignal
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal data class FoundFile(
     val name: String,
@@ -35,49 +44,6 @@ internal data class ZipExtractionResult(
     val error: String? = null,
 )
 
-internal fun scanTreeForGameFiles(
-    context: Context,
-    treeUri: Uri,
-): List<FoundFile> {
-    val results = mutableListOf<FoundFile>()
-    val docId = DocumentsContract.getTreeDocumentId(treeUri)
-    val queue = ArrayDeque<String>()
-    queue.add(docId)
-
-    while (queue.isNotEmpty()) {
-        val parentId = queue.removeFirst()
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
-        val cursor =
-            context.contentResolver.query(
-                childrenUri,
-                arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                    DocumentsContract.Document.COLUMN_MIME_TYPE,
-                ),
-                null,
-                null,
-                null,
-            ) ?: continue
-
-        cursor.use {
-            while (it.moveToNext()) {
-                val childId = it.getString(0)
-                val displayName = it.getString(1) ?: continue
-                val mimeType = it.getString(2) ?: ""
-
-                if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
-                    queue.add(childId)
-                } else if (isDirectGameDataImportName(displayName)) {
-                    val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
-                    results.add(FoundFile(displayName, fileUri))
-                }
-            }
-        }
-    }
-    return results
-}
-
 internal fun isDirectGameDataImportName(
     name: String,
     allGameFileNames: Set<String> = ALL_GAME_FILENAMES,
@@ -85,60 +51,96 @@ internal fun isDirectGameDataImportName(
     AndroidGameFileExtensions.hasGameExtension(name) ||
         name.lowercase() in allGameFileNames
 
-internal fun scanTreeForImportUris(
+internal suspend fun scanTreeForImportUris(
     context: Context,
     treeUri: Uri,
 ): DirectoryImportScanResult {
-    val results = mutableListOf<Uri>()
-    var scannedFileCount = 0
-    var skippedUnknownFileCount = 0
-    val docId = DocumentsContract.getTreeDocumentId(treeUri)
-    val queue = ArrayDeque<String>()
-    queue.add(docId)
-
-    while (queue.isNotEmpty()) {
-        val parentId = queue.removeFirst()
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
-        val cursor =
-            context.contentResolver.query(
-                childrenUri,
-                arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                    DocumentsContract.Document.COLUMN_MIME_TYPE,
-                ),
-                null,
-                null,
-                null,
-            ) ?: continue
-
-        val rows = mutableListOf<ImportTreeRow>()
-        cursor.use {
-            while (it.moveToNext()) {
-                rows.add(
-                    ImportTreeRow(
-                        documentId = it.getString(0),
-                        displayName = it.getString(1),
-                        mimeType = it.getString(2) ?: "",
-                    ),
-                )
+    val rootDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
+    val traversal =
+        withTimeoutOrNull(IMPORT_TREE_SCAN_TIMEOUT_MS) {
+            traverseImportTree(rootDocumentId, ALL_GAME_FILENAMES) { parentId, remainingRowBudget ->
+                queryImportTreeRows(context, treeUri, parentId, remainingRowBudget)
             }
         }
-
-        val classification = classifyImportTreeRows(rows, ALL_GAME_FILENAMES)
-        queue.addAll(classification.childDirectoryIds)
-        scannedFileCount += classification.scannedFileCount
-        skippedUnknownFileCount += classification.skippedUnknownFileCount
-        for (childId in classification.importableDocumentIds) {
-            results.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, childId))
-        }
-    }
+            ?: throw ImportTreeScanException(
+                "selected folder scan exceeded ${IMPORT_TREE_SCAN_TIMEOUT_MS / 1000} seconds",
+            )
     return DirectoryImportScanResult(
-        uris = results,
-        scannedFileCount = scannedFileCount,
-        skippedUnknownFileCount = skippedUnknownFileCount,
+        uris = traversal.importableDocumentIds.map { DocumentsContract.buildDocumentUriUsingTree(treeUri, it) },
+        scannedFileCount = traversal.scannedFileCount,
+        skippedUnknownFileCount = traversal.skippedUnknownFileCount,
     )
 }
+
+private suspend fun queryImportTreeRows(
+    context: Context,
+    treeUri: Uri,
+    parentDocumentId: String,
+    remainingRowBudget: Int,
+): List<ImportTreeRow> =
+    coroutineScope {
+        val cancellationSignal = CancellationSignal()
+        val queryTimedOut = AtomicBoolean(false)
+        val cancellationTask =
+            launch(Dispatchers.Default) {
+                try {
+                    delay(IMPORT_TREE_QUERY_TIMEOUT_MS)
+                    queryTimedOut.set(true)
+                } finally {
+                    cancellationSignal.cancel()
+                }
+            }
+        try {
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId)
+            val cursor =
+                context.contentResolver.query(
+                    childrenUri,
+                    arrayOf(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE,
+                    ),
+                    null,
+                    null,
+                    null,
+                    cancellationSignal,
+                ) ?: return@coroutineScope emptyList()
+            val rows = mutableListOf<ImportTreeRow>()
+            cursor.use {
+                while (it.moveToNext()) {
+                    currentCoroutineContext().ensureActive()
+                    if (rows.size >= remainingRowBudget) {
+                        throw ImportTreeScanException(
+                            "selected folder exceeds the $MAX_IMPORT_TREE_ROWS-row scan limit",
+                        )
+                    }
+                    val documentId =
+                        it.getString(0)
+                            ?: throw ImportTreeScanException("provider returned a null document ID")
+                    rows.add(
+                        ImportTreeRow(
+                            documentId = documentId,
+                            displayName = it.getString(1),
+                            mimeType = it.getString(2) ?: "",
+                        ),
+                    )
+                }
+            }
+            cancellationTask.cancelAndJoin()
+            if (queryTimedOut.get()) {
+                throw ImportTreeScanException("provider query exceeded ${IMPORT_TREE_QUERY_TIMEOUT_MS / 1000} seconds")
+            }
+            rows
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            if (queryTimedOut.get()) {
+                throw ImportTreeScanException("provider query exceeded ${IMPORT_TREE_QUERY_TIMEOUT_MS / 1000} seconds")
+            }
+            throw e
+        } finally {
+            cancellationTask.cancelAndJoin()
+        }
+    }
 
 internal fun importFile(
     context: Context,

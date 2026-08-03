@@ -17804,23 +17804,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0452): Build ZIP, SOW, 7z, and RAR inputs with duplicate leaves across directories, case variants, equal and unequal sizes, identical and distinct bytes, reordered entries, and permuted native output order. Require deterministic rejection before mutation or an explicitly manifest-selected digest, with exactly one immutable source and result record per logical destination.
 - Resolution: Pending
 
-### BR-0512: P2 - Bound and de-cycle provider directory traversal
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/resource-exhaustion
-- Found by: R1-CHUNK-0452
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L38-L79,L88-L141` in SAF tree breadth-first traversal
-- Related: `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L2909-L2953`, `android/app/src/main/java/com/dxxredux/app/ImportTreeScanner.kt:L7-L50`, and `android/app/src/test/java/com/dxxredux/app/ImportTreeScannerTest.kt:L8-L78`
-- Evidence: Both scanners enqueue every child reported with the directory MIME type but retain no visited or active document-ID set. A DocumentsProvider can return the current parent, an ancestor, or two IDs that reference one another, making the breadth-first loop query and enqueue the same directories forever. Even an acyclic provider can expose arbitrary breadth and depth: every directory row is materialized, every importable URI is retained, counters use wrapping `Int`, and there is no directory, row, result, depth, elapsed-time, provider-query, or cancellation budget. The caller runs this non-suspending traversal on an IO coroutine and shows its large-directory warning only after traversal returns; cancelling the activity scope does not insert a cancellation check into the loop. Focused tests exercise only one batch's classification and the post-scan warning threshold, not traversal identity, budgets, cancellation, or provider behavior.
-- Trigger: Choose a tree from a custom, remote, or malformed DocumentsProvider that reports its parent as a directory child, returns an A-to-B-to-A directory cycle, repeats IDs through multiple parents, stalls individual queries, or exposes an extremely large directory graph
-- Impact: One selected provider tree can keep an IO worker and provider queries active indefinitely, grow the queue, row lists, and retained URI list until memory exhaustion, duplicate later imports, and leave the launcher stuck in scanning state even after navigation or lifecycle cancellation.
-- Expected: Directory traversal visits each stable document identity at most once, obeys explicit depth, directory, row, result, byte-independent work, query-time, and elapsed-time limits, cooperates with coroutine cancellation, and returns a bounded diagnostic failure before any import begins.
-- Suggested fix: Move traversal into a cancellable suspend helper, pass a `CancellationSignal` to provider queries, check coroutine activity between rows and directories, and maintain a visited set keyed by validated provider document identity. Apply conservative shared limits for depth, directories, rows, retained candidates, and elapsed work with checked counters; reject cycles, repeated identities, null or malformed IDs, and limit exhaustion rather than warning only after completion.
-- Validation: Use a controllable DocumentsProvider for self, ancestor, two-node, duplicate-parent, and changing-ID cycles; huge breadth and depth; repeated importable IDs; null and malformed metadata; slow and nonreturning queries; cancellation at every query and row boundary; and counts around every limit. Require bounded time and memory, one visit and candidate per identity, checked counters, prompt cancellation, no import on incomplete scans, and a recoverable user-visible diagnostic while ordinary finite trees retain deterministic order.
-- Resolution: Pending
-
 ### BR-0513: P2 - Use canonical save metadata labels in Save Details
 
 - [ ] OPEN

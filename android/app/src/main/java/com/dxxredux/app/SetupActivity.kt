@@ -2937,6 +2937,17 @@ private fun SetupScreen(
                     return@launch
                 }
                 processPickedUris(scanResult.uris)
+            } catch (e: ImportTreeScanException) {
+                Log.w("DXX-Setup", "Directory scan stopped: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    scanning = false
+                    zipExtracting = false
+                    missionArchiveImporting = false
+                    importStatus = "Folder scan stopped: ${e.message}"
+                    Toast.makeText(context, importStatus, Toast.LENGTH_LONG).show()
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("DXX-Setup", "Directory picker processing failed", e)
                 withContext(Dispatchers.Main) {
