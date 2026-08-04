@@ -1,17 +1,16 @@
 #!/usr/bin/env pwsh
 # update_known_discs_albums.ps1 -- Merge per-album chromaprint_info.json5 files
-# into the overall known_discs.json5 database.
+# into the standalone known_albums.json5 fingerprint database.
 #
-# Reads all game_data/music/*/chromaprint_info.json5 files, creates album entries
-# in the discs array with type: "album", deduplicates against existing CD tracks
-# using chromaprint similarity, and appends to known_discs.json5.
+# Reads all game_data/music/*/chromaprint_info.json5 files, creates album entries,
+# and deduplicates against physical CD tracks using chromaprint similarity.
 #
-# CD entries are primary (unchanged). Album entries are appended alphabetically.
+# Physical CD entries are the deduplication authority. Albums are emitted alphabetically.
 # Duplicate tracks are commented out with notes about the CD source.
 
 param(
     [switch]$DryRun,       # Show what would change without writing
-    [switch]$Force          # Regenerate even if album entries already exist
+    [switch]$Force         # Regenerate even if the album database already exists
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,9 +18,15 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $musicDir = Join-Path $PSScriptRoot "music"
 $dbPath = "$repoRoot/android/app/src/main/assets/known_discs.json5"
+$albumDbPath = "$repoRoot/android/app/src/main/assets/known_albums.json5"
 $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.json5"
 . "$repoRoot/android/helpers/fingerprint_config.ps1"
 . "$repoRoot/android/helpers/acoustid_title_match.ps1"
+
+if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
+    Write-Host "Album database already exists at $albumDbPath. Use -Force to regenerate"
+    exit 0
+}
 
 # Load match threshold from fingerprint_config.json5
 
@@ -312,144 +317,28 @@ foreach ($albumInfo in $albumInfos) {
 
 Write-Host "`nSummary: $($albumEntries.Count) albums, $totalTracks tracks, $totalDuplicates duplicates"
 
-# Generate output
-
-# Read the original file and find where to insert album entries.
-# Strategy: find the last closing ']' of the discs array, insert before the
-# final ']}' structure. We need to be careful to preserve existing content.
-
-$lines = Get-Content $dbPath
-
-# Find the line with the closing of the discs array (last "  ]" before "}")
-$lastDiscArrayClose = -1
-$lastBrace = -1
-for ($i = $lines.Count - 1; $i -ge 0; $i--) {
-    if ($lines[$i].Trim() -eq "}" -and $lastBrace -eq -1) {
-        $lastBrace = $i
-    }
-    if ($lines[$i].Trim() -eq "]" -and $lastDiscArrayClose -eq -1 -and $lastBrace -ne -1) {
-        $lastDiscArrayClose = $i
-        break
-    }
-}
-
-if ($lastDiscArrayClose -eq -1) {
-    Write-Error "Could not find discs array closing bracket in known_discs.json5"
-}
-
-# Remove any existing generated album entries while preserving real disc entries
-# that may follow the generated section.
-$albumMarkerLine = -1
-for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -match '// -- Album entries') {
-        $albumMarkerLine = $i
-        break
-    }
-}
-
-if ($albumMarkerLine -ne -1 -and -not $Force) {
-    Write-Host "Album entries already exist (line $albumMarkerLine). Use -Force to regenerate"
-    if (-not $DryRun) { exit 0 }
-}
-
-$suffix = @()
-if ($albumMarkerLine -ne -1) {
-    $prefix = $lines[0..($albumMarkerLine - 1)]
-
-    $albumEndMarkerLine = -1
-    for ($i = $albumMarkerLine + 1; $i -lt $lastDiscArrayClose; $i++) {
-        if ($lines[$i] -match '// -- End album entries') {
-            $albumEndMarkerLine = $i
-            break
-        }
-    }
-
-    if ($albumEndMarkerLine -ne -1) {
-        $generatedEndLine = $albumEndMarkerLine + 1
-    } else {
-        # Legacy generated sections had no end marker. Walk the contiguous
-        # generated album objects and stop at the first non-album disc entry.
-        $generatedEndLine = $lastDiscArrayClose
-        $pendingCommentStart = -1
-        $i = $albumMarkerLine + 1
-        while ($i -lt $lastDiscArrayClose) {
-            $trimmed = $lines[$i].Trim()
-            if ($trimmed -eq "" -or $trimmed.StartsWith("//")) {
-                if ($pendingCommentStart -eq -1) { $pendingCommentStart = $i }
-                $i++
-                continue
-            }
-            if ($trimmed -eq "{") {
-                $objectStart = if ($pendingCommentStart -ne -1) { $pendingCommentStart } else { $i }
-                $depth = 0
-                $objectEnd = $i
-                for ($j = $i; $j -lt $lastDiscArrayClose; $j++) {
-                    $depth += ([regex]::Matches($lines[$j], '\{')).Count
-                    $depth -= ([regex]::Matches($lines[$j], '\}')).Count
-                    if ($depth -eq 0) {
-                        $objectEnd = $j
-                        break
-                    }
-                }
-                $objectText = ($lines[$objectStart..$objectEnd] -join "`n")
-                if ($objectText -notmatch '"type"\s*:\s*"album"') {
-                    $generatedEndLine = $objectStart
-                    break
-                }
-                $pendingCommentStart = -1
-                $i = $objectEnd + 1
-                continue
-            }
-            $generatedEndLine = if ($pendingCommentStart -ne -1) { $pendingCommentStart } else { $i }
-            break
-        }
-    }
-
-    if ($generatedEndLine -lt $lastDiscArrayClose) {
-        $suffix = $lines[$generatedEndLine..($lastDiscArrayClose - 1)]
-    }
-} else {
-    # No existing album section. Take everything up to and including the last
-    # disc entry, then we'll add album entries before the array close.
-    # Find the last '}' that closes a disc entry (indented, before the array close)
-    $lastDiscClose = -1
-    for ($i = $lastDiscArrayClose - 1; $i -ge 0; $i--) {
-        if ($lines[$i].Trim() -match '^}') {
-            $lastDiscClose = $i
-            break
-        }
-    }
-    if ($lastDiscClose -eq -1) {
-        Write-Error "Could not find last disc entry closing brace"
-    }
-    $prefix = $lines[0..$lastDiscClose]
-}
-
-# Ensure the last line of prefix (a disc entry close '}') has a trailing comma
-$lastPrefixLine = $prefix[$prefix.Count - 1]
-if ($lastPrefixLine.Trim() -eq "}") {
-    $prefix[$prefix.Count - 1] = $lastPrefixLine.TrimEnd() + ","
-}
-
-# Build album entry lines
-$albumLines = @()
-$albumLines += "    // -- Album entries (from music packs, generated by update_known_discs_albums.ps1) --"
-$hasSuffixAfterAlbums = $suffix.Count -gt 0
+# Generate the album-only database. Physical-disc records remain maintained in
+# known_discs.json5 and are never rewritten by this generator.
+$output = @(
+    "// Generated fingerprint albums from game_data/music/*/chromaprint_info.json5"
+    "// Physical-disc hashes are maintained separately in known_discs.json5"
+    "{"
+    "  `"albums`": ["
+)
 
 for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
     $album = $albumEntries[$ai]
-    $albumLines += "    // -- $($album.Label)"
+    $output += "    // -- $($album.Label)"
 
     # Note any duplicates in comments
     foreach ($dup in $album.Duplicates) {
-        $albumLines += "    // duplicate: track $($dup.TrackNum) ($($dup.Filename)) matches $($dup.Source)"
+        $output += "    // duplicate: track $($dup.TrackNum) ($($dup.Filename)) matches $($dup.Source)"
     }
 
-    $albumLines += "    {"
-    $albumLines += "      `"id`": `"$($album.Id)`","
-    $albumLines += "      `"label`": `"$($album.Label)`","
-    $albumLines += "      `"type`": `"album`","
-    $albumLines += "      `"tracks`": ["
+    $output += "    {"
+    $output += "      `"id`": `"$($album.Id)`","
+    $output += "      `"label`": `"$($album.Label)`","
+    $output += "      `"tracks`": ["
 
     $activeTracks = @($album.Tracks | Where-Object { -not $_.IsDuplicate })
     for ($ti = 0; $ti -lt $activeTracks.Count; $ti++) {
@@ -485,25 +374,18 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
             $line += ", `"name_source`": `"$sourceEscaped`""
         }
         $line += "}$comma"
-        $albumLines += $line
+        $output += $line
     }
 
-    $albumLines += "      ]"
-    $trailingComma = if ($ai -lt $albumEntries.Count - 1 -or $hasSuffixAfterAlbums) { "," } else { "" }
-    $albumLines += "    }$trailingComma"
+    $output += "      ]"
+    $trailingComma = if ($ai -lt $albumEntries.Count - 1) { "," } else { "" }
+    $output += "    }$trailingComma"
 }
-$albumLines += "    // -- End album entries --"
-
-# Build the full output
-$output = @()
-$output += $prefix
-$output += $albumLines
-$output += $suffix
 $output += "  ]"
 $output += "}"
 
 if ($DryRun) {
-    Write-Host "`n--- DRY RUN: would write $($output.Count) lines to $dbPath ---"
+    Write-Host "`n--- DRY RUN: would write $($output.Count) lines to $albumDbPath ---"
     Write-Host "Albums to add: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
         $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
@@ -511,8 +393,8 @@ if ($DryRun) {
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }
 } else {
-$output -join "`n" | Set-Content $dbPath -Encoding UTF8
-    Write-Host "`nWrote $($output.Count) lines to $dbPath"
+    $output -join "`n" | Set-Content $albumDbPath -Encoding UTF8
+    Write-Host "`nWrote $($output.Count) lines to $albumDbPath"
     Write-Host "Albums added: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
         $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count

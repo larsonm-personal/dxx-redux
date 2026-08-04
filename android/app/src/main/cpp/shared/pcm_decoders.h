@@ -19,14 +19,25 @@ typedef struct {
 	size_t pcm_samples;   /* per-channel sample count retained in pcm_data */
 } pcm_decode_result_t;
 
+enum {
+	PCM_DECODE_OK = 0,
+	PCM_DECODE_ERROR = -1,
+	PCM_DECODE_UNSUPPORTED_CHANNELS = -2
+};
+
+/* Validate the shared PCM ownership and mono/stereo output contract */
+int pcm_decode_result_status(const pcm_decode_result_t *result);
+
 /* Decode an audio file to 16-bit PCM.
  * Supported: .mp3, .ogg, .flac (detected by extension).
- * Returns 0 on success, -1 on failure. */
+ * Returns PCM_DECODE_OK, PCM_DECODE_ERROR, or
+ * PCM_DECODE_UNSUPPORTED_CHANNELS. */
 int pcm_decode_file(const char *path, pcm_decode_result_t *out);
 
 /* Decode audio from an in-memory buffer to 16-bit PCM.
  * ext must include the dot, e.g. ".mp3", ".ogg", ".flac".
- * Returns 0 on success, -1 on failure. */
+ * Returns PCM_DECODE_OK, PCM_DECODE_ERROR, or
+ * PCM_DECODE_UNSUPPORTED_CHANNELS. */
 int pcm_decode_memory(const void *data, size_t size, const char *ext,
                       pcm_decode_result_t *out);
 /* Free PCM data allocated by pcm_decode_file() or pcm_decode_memory(). */

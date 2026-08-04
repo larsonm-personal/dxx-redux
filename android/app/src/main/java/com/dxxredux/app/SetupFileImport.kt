@@ -239,7 +239,7 @@ internal suspend fun extractZipContents(
                                 totalBytes,
                                 "extract $name",
                             )
-                            val tmpFile = File(tmpDir, name)
+                            val tmpFile = AtomicFilePublication.uniqueSibling(File(tmpDir, name), "entry")
                             val digest = java.security.MessageDigest.getInstance("SHA-256")
                             var size = 0L
                             var lastReported = 0L
@@ -247,10 +247,18 @@ internal suspend fun extractZipContents(
                                 val buf = ByteArray(8192)
                                 while (true) {
                                     val n = zis.read(buf)
-                                    if (n <= 0) break
-                                    out.write(buf, 0, n)
-                                    digest.update(buf, 0, n)
-                                    size += n
+                                    if (n < 0) break
+                                    if (n == 0) {
+                                        val byte = zis.read()
+                                        if (byte < 0) break
+                                        out.write(byte)
+                                        digest.update(byte.toByte())
+                                        size++
+                                    } else {
+                                        out.write(buf, 0, n)
+                                        digest.update(buf, 0, n)
+                                        size += n
+                                    }
                                     if (size - lastReported >= 1024L * 1024L || size == totalBytes) {
                                         lastReported = size
                                         kotlinx.coroutines.withContext(Dispatchers.Main) {
@@ -258,6 +266,13 @@ internal suspend fun extractZipContents(
                                         }
                                     }
                                 }
+                                if (totalBytes > 0L && size != totalBytes) {
+                                    throw java.io.IOException(
+                                        "Incomplete archive entry $name: expected $totalBytes bytes, received $size",
+                                    )
+                                }
+                                out.flush()
+                                out.fd.sync()
                             }
                             kotlinx.coroutines.withContext(Dispatchers.Main) {
                                 onProgress(name, size, totalBytes)
@@ -509,7 +524,7 @@ internal suspend fun extract7zContents(
                             totalBytes,
                             "extract $name",
                         )
-                        val tmpFile = File(tmpDir, name)
+                        val tmpFile = AtomicFilePublication.uniqueSibling(File(tmpDir, name), "entry")
                         val digest = java.security.MessageDigest.getInstance("SHA-256")
                         var size = 0L
                         var lastReported = 0L
@@ -517,10 +532,18 @@ internal suspend fun extract7zContents(
                             val buf = ByteArray(8192)
                             while (true) {
                                 val n = szf.read(buf)
-                                if (n <= 0) break
-                                out.write(buf, 0, n)
-                                digest.update(buf, 0, n)
-                                size += n
+                                if (n < 0) break
+                                if (n == 0) {
+                                    val byte = szf.read()
+                                    if (byte < 0) break
+                                    out.write(byte)
+                                    digest.update(byte.toByte())
+                                    size++
+                                } else {
+                                    out.write(buf, 0, n)
+                                    digest.update(buf, 0, n)
+                                    size += n
+                                }
                                 if (size - lastReported >= 1024L * 1024L || size == totalBytes) {
                                     lastReported = size
                                     kotlinx.coroutines.withContext(Dispatchers.Main) {
@@ -528,6 +551,13 @@ internal suspend fun extract7zContents(
                                     }
                                 }
                             }
+                            if (totalBytes > 0L && size != totalBytes) {
+                                throw java.io.IOException(
+                                    "Incomplete archive entry $name: expected $totalBytes bytes, received $size",
+                                )
+                            }
+                            out.flush()
+                            out.fd.sync()
                         }
                         kotlinx.coroutines.withContext(Dispatchers.Main) {
                             onProgress(name, size, totalBytes)
@@ -599,8 +629,8 @@ internal suspend fun extractRarContents(
                 if (lowerName !in ALL_GAME_FILENAMES || file.length() <= 1L) continue
                 val sha256 = AssetManifest.computeSha256(file)
                 if (sha256 != null) {
-                    val staged = File(tmpDir, lowerName)
-                    file.copyTo(staged, overwrite = true)
+                    val staged = AtomicFilePublication.uniqueSibling(File(tmpDir, lowerName), "entry")
+                    LauncherFileCopy.copyFileToFile(file, staged, lowerName)
                     results.add(ExtractedFile(lowerName, staged, sha256, staged.length()))
                     Log.i(
                         "DXX-Setup",
@@ -642,23 +672,44 @@ internal suspend fun copyUriToFileWithProgress(
 ) {
     val totalBytes = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri) ?: 0L
     ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, totalBytes, dest.name)
+    dest.parentFile?.mkdirs()
+    val temporary = AtomicFilePublication.uniqueSibling(dest, "copy")
     var copiedBytes = 0L
     var lastReported = 0L
     onProgress(0L, totalBytes)
-    context.contentResolver.openInputStream(uri)?.use { input ->
-        FileOutputStream(dest).use { output ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val n = input.read(buffer)
-                if (n <= 0) break
-                output.write(buffer, 0, n)
-                copiedBytes += n.toLong()
-                if (copiedBytes - lastReported >= 1024L * 1024L || copiedBytes == totalBytes) {
-                    lastReported = copiedBytes
-                    onProgress(copiedBytes, totalBytes)
+    try {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(temporary).use { output ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val n = input.read(buffer)
+                    if (n < 0) break
+                    if (n == 0) {
+                        val byte = input.read()
+                        if (byte < 0) break
+                        output.write(byte)
+                        copiedBytes++
+                    } else {
+                        output.write(buffer, 0, n)
+                        copiedBytes += n.toLong()
+                    }
+                    if (copiedBytes - lastReported >= 1024L * 1024L || copiedBytes == totalBytes) {
+                        lastReported = copiedBytes
+                        onProgress(copiedBytes, totalBytes)
+                    }
                 }
+                if (totalBytes > 0L && copiedBytes != totalBytes) {
+                    throw java.io.IOException(
+                        "Incomplete copy of ${dest.name}: expected $totalBytes bytes, received $copiedBytes",
+                    )
+                }
+                output.flush()
+                output.fd.sync()
             }
-        }
-    } ?: throw java.io.IOException("Could not open selected file")
-    onProgress(copiedBytes, totalBytes)
+        } ?: throw java.io.IOException("Could not open selected file")
+        AtomicFilePublication.publishFile(temporary, dest)
+        onProgress(copiedBytes, totalBytes)
+    } finally {
+        temporary.delete()
+    }
 }

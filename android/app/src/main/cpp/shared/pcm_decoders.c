@@ -5,6 +5,7 @@
 
 #include "pcm_decoders.h"
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,6 +20,10 @@ typedef int ssize_t;
 #endif
 
 /* minimp3 -- MP3 decoder */
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3.h"
 #include "minimp3_ex.h"
@@ -30,6 +35,9 @@ extern int stb_vorbis_decode_filename(const char *filename, int *channels,
 /* dr_flac -- FLAC decoder */
 #define DR_FLAC_IMPLEMENTATION
 #include "dr_flac.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -51,6 +59,28 @@ static int strcasecmp_ext(const char *a, const char *b)
 	return (unsigned char) *a - (unsigned char) *b;
 }
 
+int pcm_decode_result_status(const pcm_decode_result_t *result)
+{
+	if (!result || !result->pcm_data || result->sample_rate <= 0 ||
+	    result->total_samples == 0 || result->pcm_samples == 0 ||
+	    result->pcm_samples > result->total_samples)
+		return PCM_DECODE_ERROR;
+	if (result->channels != 1 && result->channels != 2)
+		return PCM_DECODE_UNSUPPORTED_CHANNELS;
+	if (result->pcm_samples > SIZE_MAX / (size_t) result->channels)
+		return PCM_DECODE_ERROR;
+	return PCM_DECODE_OK;
+}
+
+static int finish_decode(int status, pcm_decode_result_t *out)
+{
+	if (status == PCM_DECODE_OK)
+		status = pcm_decode_result_status(out);
+	if (status != PCM_DECODE_OK)
+		pcm_decode_free(out);
+	return status;
+}
+
 static int decode_mp3(const char *path, pcm_decode_result_t *out)
 {
 	mp3dec_t mp3d;
@@ -62,7 +92,7 @@ static int decode_mp3(const char *path, pcm_decode_result_t *out)
 		if (info.buffer) free(info.buffer);
 		return -1;
 	}
-	if (!info.buffer || info.samples == 0) {
+	if (!info.buffer || info.samples == 0 || info.hz <= 0 || info.channels <= 0) {
 		if (info.buffer) free(info.buffer);
 		return -1;
 	}
@@ -101,7 +131,7 @@ static int decode_flac(const char *path, pcm_decode_result_t *out)
 	drflac_uint64 total_samples = 0;
 	drflac_int16 *data = drflac_open_file_and_read_pcm_frames_s16(
 	    path, &channels, &sample_rate, &total_samples, NULL);
-	if (!data || total_samples == 0) {
+	if (!data || total_samples == 0 || sample_rate > INT_MAX || total_samples > SIZE_MAX) {
 		if (data) drflac_free(data, NULL);
 		return -1;
 	}
@@ -116,27 +146,31 @@ static int decode_flac(const char *path, pcm_decode_result_t *out)
 
 int pcm_decode_file(const char *path, pcm_decode_result_t *out)
 {
+	int status;
+	const char *ext;
+
 	if (!path || !out) return -1;
 	memset(out, 0, sizeof(*out));
 
-	const char *ext = get_extension(path);
+	ext = get_extension(path);
 
 	if (strcasecmp_ext(ext, ".mp3") == 0)
-		return decode_mp3(path, out);
-	if (strcasecmp_ext(ext, ".ogg") == 0)
-		return decode_ogg(path, out);
-	if (strcasecmp_ext(ext, ".flac") == 0)
-		return decode_flac(path, out);
+		status = decode_mp3(path, out);
+	else if (strcasecmp_ext(ext, ".ogg") == 0)
+		status = decode_ogg(path, out);
+	else if (strcasecmp_ext(ext, ".flac") == 0)
+		status = decode_flac(path, out);
+	else
+		return PCM_DECODE_ERROR; /* unsupported format */
 
-	return -1; /* unsupported format */
+	return finish_decode(status, out);
 }
 
 void pcm_decode_free(pcm_decode_result_t *r)
 {
-	if (r && r->pcm_data) {
-		free(r->pcm_data);
-		r->pcm_data = NULL;
-	}
+	if (!r) return;
+	free(r->pcm_data);
+	memset(r, 0, sizeof(*r));
 }
 
 /* ── Memory-based decoders ──────────────────────────────────────────── */
@@ -156,7 +190,7 @@ static int decode_mp3_mem(const void *data, size_t size, pcm_decode_result_t *ou
 		if (info.buffer) free(info.buffer);
 		return -1;
 	}
-	if (!info.buffer || info.samples == 0) {
+	if (!info.buffer || info.samples == 0 || info.hz <= 0 || info.channels <= 0) {
 		if (info.buffer) free(info.buffer);
 		return -1;
 	}
@@ -172,8 +206,11 @@ static int decode_ogg_mem(const void *data, size_t size, pcm_decode_result_t *ou
 {
 	int channels = 0, sample_rate = 0;
 	short *pcm = NULL;
-	int n = stb_vorbis_decode_memory((const unsigned char *) data, (int) size,
-	                                 &channels, &sample_rate, &pcm);
+	int n;
+	if (size > INT_MAX)
+		return PCM_DECODE_ERROR;
+	n = stb_vorbis_decode_memory((const unsigned char *) data, (int) size,
+	                             &channels, &sample_rate, &pcm);
 	if (n <= 0 || !pcm) {
 		if (pcm) free(pcm);
 		return -1;
@@ -192,7 +229,7 @@ static int decode_flac_mem(const void *data, size_t size, pcm_decode_result_t *o
 	drflac_uint64 total = 0;
 	drflac_int16 *pcm = drflac_open_memory_and_read_pcm_frames_s16(
 	    data, size, &channels, &sample_rate, &total, NULL);
-	if (!pcm || total == 0) {
+	if (!pcm || total == 0 || sample_rate > INT_MAX || total > SIZE_MAX) {
 		if (pcm) drflac_free(pcm, NULL);
 		return -1;
 	}
@@ -207,17 +244,21 @@ static int decode_flac_mem(const void *data, size_t size, pcm_decode_result_t *o
 int pcm_decode_memory(const void *data, size_t size, const char *ext,
                       pcm_decode_result_t *out)
 {
+	int status;
+
 	if (!data || !size || !ext || !out) return -1;
 	memset(out, 0, sizeof(*out));
 
 	if (strcasecmp_ext(ext, ".mp3") == 0)
-		return decode_mp3_mem(data, size, out);
-	if (strcasecmp_ext(ext, ".ogg") == 0)
-		return decode_ogg_mem(data, size, out);
-	if (strcasecmp_ext(ext, ".flac") == 0)
-		return decode_flac_mem(data, size, out);
+		status = decode_mp3_mem(data, size, out);
+	else if (strcasecmp_ext(ext, ".ogg") == 0)
+		status = decode_ogg_mem(data, size, out);
+	else if (strcasecmp_ext(ext, ".flac") == 0)
+		status = decode_flac_mem(data, size, out);
+	else
+		return PCM_DECODE_ERROR;
 
-	return -1;
+	return finish_decode(status, out);
 }
 
 /* CD-DA: 2352 bytes per sector, 588 stereo samples per sector (16-bit LE) */
@@ -229,6 +270,8 @@ int pcm_decode_cd_sectors(int fd, long start_sector, long num_sectors,
 {
 	if (fd < 0 || num_sectors <= 0 || !out) return -1;
 	memset(out, 0, sizeof(*out));
+	if ((unsigned long long) num_sectors > SIZE_MAX / CD_SECTOR_SIZE)
+		return PCM_DECODE_ERROR;
 
 	size_t total_bytes = (size_t) num_sectors * CD_SECTOR_SIZE;
 	size_t total_samples = (size_t) num_sectors * CD_SAMPLES_PER_SECTOR;
@@ -244,7 +287,13 @@ int pcm_decode_cd_sectors(int fd, long start_sector, long num_sectors,
 
 	size_t bytes_read = 0;
 	while (bytes_read < total_bytes) {
-		ssize_t n = read(fd, (char *) buf + bytes_read, total_bytes - bytes_read);
+		size_t remaining = total_bytes - bytes_read;
+#ifdef _WIN32
+		ssize_t n = read(fd, (char *) buf + bytes_read,
+		                 (unsigned int) (remaining > INT_MAX ? INT_MAX : remaining));
+#else
+		ssize_t n = read(fd, (char *) buf + bytes_read, remaining);
+#endif
 		if (n <= 0) break;
 		bytes_read += (size_t) n;
 	}
@@ -259,7 +308,7 @@ int pcm_decode_cd_sectors(int fd, long start_sector, long num_sectors,
 	out->channels = 2;
 	out->total_samples = total_samples;
 	out->pcm_samples = total_samples;
-	return 0;
+	return finish_decode(PCM_DECODE_OK, out);
 }
 
 int pcm_decode_cd_sectors_buf(const uint8_t *sector_data, int num_sectors,
@@ -267,6 +316,8 @@ int pcm_decode_cd_sectors_buf(const uint8_t *sector_data, int num_sectors,
 {
 	if (!sector_data || num_sectors <= 0 || !out) return -1;
 	memset(out, 0, sizeof(*out));
+	if ((unsigned int) num_sectors > SIZE_MAX / CD_SECTOR_SIZE)
+		return PCM_DECODE_ERROR;
 
 	size_t total_bytes = (size_t) num_sectors * CD_SECTOR_SIZE;
 	size_t total_samples = (size_t) num_sectors * CD_SAMPLES_PER_SECTOR;
@@ -280,5 +331,5 @@ int pcm_decode_cd_sectors_buf(const uint8_t *sector_data, int num_sectors,
 	out->channels = 2;
 	out->total_samples = total_samples;
 	out->pcm_samples = total_samples;
-	return 0;
+	return finish_decode(PCM_DECODE_OK, out);
 }

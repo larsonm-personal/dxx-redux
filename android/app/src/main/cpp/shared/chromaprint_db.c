@@ -2,7 +2,7 @@
  * chromaprint_db.c -- Fingerprint database loading and matching.
  *
  * The database is loaded from a JSON array passed from Kotlin (flattened
- * from known_discs.json5).  Matching uses XOR-popcount bit similarity
+ * from the physical-disc and album fingerprint assets).  Matching uses XOR-popcount bit similarity
  * with offset alignment to handle silence/pregap differences.
  *
  * Chromaprint base64 decoding is done by chromaprint_decode_fingerprint()

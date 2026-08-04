@@ -209,7 +209,7 @@ private fun ensureKnownGogCueFile(setDir: File) {
 
     val gogName = files.firstOrNull { it.equals("DESCENT_II.gog", ignoreCase = true) } ?: return
     val cueFile = File(setDir, "${File(gogName).nameWithoutExtension}.inst")
-    cueFile.writeText("FILE \"$gogName\" BINARY\n$D2_GOG_CUE_TEXT")
+    AtomicFilePublication.writeUtf8(cueFile, "FILE \"$gogName\" BINARY\n$D2_GOG_CUE_TEXT")
 }
 
 private fun isKnownD2GogPair(pair: GogAudioPair): Boolean = pair.baseName.equals("DESCENT_II", ignoreCase = true)
@@ -275,9 +275,9 @@ private fun moveImportedGameFileToRoot(
     source: File,
     dest: File,
 ): Boolean {
-    if (source.renameTo(dest)) return true
+    if (!dest.exists() && source.renameTo(dest)) return true
     return try {
-        source.copyTo(dest, overwrite = true)
+        LauncherFileCopy.copyFileToFile(source, dest)
         source.delete()
         true
     } catch (_: Exception) {
@@ -310,7 +310,6 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
             }
 
             val dest = existing ?: File(setDir, file.name)
-            existing?.delete()
             if (moveImportedGameFileToRoot(file, dest)) {
                 rootFiles[lowercaseName] = dest
                 hoisted++
@@ -554,6 +553,8 @@ internal suspend fun stageMergedSafDiscAudioSource(
     val artifactDir = generatedCdAudioArtifactsDir(filesDir)
     val destBin = File(artifactDir, "$sourceFileStem.bin")
     val destCue = File(artifactDir, "$sourceFileStem.cue")
+    val temporaryBin = AtomicFilePublication.uniqueSibling(destBin, "copy")
+    val temporaryCue = AtomicFilePublication.uniqueSibling(destCue, "copy")
 
     ImportStorageGuard.requireFreeSpace(
         artifactDir,
@@ -561,18 +562,25 @@ internal suspend fun stageMergedSafDiscAudioSource(
         "merged CD audio source",
     )
 
-    java.io.FileOutputStream(destBin).use { output ->
-        binUris.forEachIndexed { index, (name, uri) ->
-            onStatus("Copying CD audio file ${index + 1}/${binUris.size}: $name")
-            val totalBytes = binSizes.getOrElse(index) { 0L }
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                LauncherFileCopy.copyStream(input, output, totalBytes, name)
-            } ?: throw java.io.IOException("Could not open selected file: $name")
+    try {
+        java.io.FileOutputStream(temporaryBin).use { output ->
+            binUris.forEachIndexed { index, (name, uri) ->
+                onStatus("Copying CD audio file ${index + 1}/${binUris.size}: $name")
+                val totalBytes = binSizes.getOrElse(index) { 0L }
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    LauncherFileCopy.copyStream(input, output, totalBytes, name)
+                } ?: throw java.io.IOException("Could not open selected file: $name")
+            }
+            output.flush()
+            output.fd.sync()
         }
+        AtomicFilePublication.writeUtf8(temporaryCue, buildMergedCueText(destBin.name, mergedCueTracks))
+        AtomicFilePublication.publishFiles(listOf(temporaryBin to destBin, temporaryCue to destCue))
+        return StagedMergedSafDiscAudioSource(destCue, destBin, mergedCueTracks)
+    } finally {
+        temporaryBin.delete()
+        temporaryCue.delete()
     }
-
-    destCue.writeText(buildMergedCueText(destBin.name, mergedCueTracks))
-    return StagedMergedSafDiscAudioSource(destCue, destBin, mergedCueTracks)
 }
 
 internal data class CueDataTrackAttempt(
@@ -636,30 +644,6 @@ private class CueDataTrackProgress(
             }
         }
     }
-}
-
-private fun publishStagedDiscFiles(
-    stagingDir: File,
-    setDir: File,
-) {
-    stagingDir
-        .walkTopDown()
-        .filter { it != stagingDir }
-        .forEach { source ->
-            val destination = File(setDir, source.relativeTo(stagingDir).path)
-            if (source.isDirectory) {
-                check(destination.isDirectory || destination.mkdirs()) {
-                    "Could not create ${destination.absolutePath}"
-                }
-            } else {
-                destination.parentFile?.let { parent ->
-                    check(parent.isDirectory || parent.mkdirs()) {
-                        "Could not create ${parent.absolutePath}"
-                    }
-                }
-                source.copyTo(destination, overwrite = true)
-            }
-        }
 }
 
 internal fun extractCueDataTracks(
@@ -759,7 +743,7 @@ internal fun extractCueDataTracks(
                     failedTrackNumber = dataTracks.last().trackNum,
                 )
             }
-            publishStagedDiscFiles(stagingDir, setDir)
+            publishStagedArchiveFiles(stagingDir, setDir)
         }
         return CueDataTrackExtractionResult(
             isoExtracted = isoExtracted,

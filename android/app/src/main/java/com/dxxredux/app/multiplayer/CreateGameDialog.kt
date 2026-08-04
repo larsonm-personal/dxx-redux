@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -91,9 +92,12 @@ internal fun CreateGameDialog(
     val createFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
-    val stockVisualNotice =
-        remember(context, game, mode) {
-            VisualReplacementPolicy.noticeText(VisualReplacementPolicy.summaryForPvp(context, game, mode))
+    val stockVisualNotice by
+        produceState<String?>(initialValue = null, context, game, mode) {
+            value =
+                VisualReplacementPolicy.noticeText(
+                    VisualReplacementPolicy.summaryForPvp(context, game, mode),
+                )
         }
 
     RequestControllerInitialFocus(dialogFocus, revealFocusOnRequest = false)

@@ -3,6 +3,9 @@
 #ifndef PHYSFSX_ANDROID_SHARED_H
 #define PHYSFSX_ANDROID_SHARED_H
 
-void physfsx_android_init_search_paths(const char *game_dir);
+#include "physfsx_android_setup.h"
+
+int physfsx_android_init_search_paths(const char *game_dir,
+                                      physfsx_android_setup_result *result);
 
 #endif /* PHYSFSX_ANDROID_SHARED_H */

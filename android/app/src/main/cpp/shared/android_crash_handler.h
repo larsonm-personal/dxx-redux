@@ -29,7 +29,7 @@ void crash_breadcrumb_v(const char *fmt, ...);
 /* Clean fatal exit: finish the Activity via JNI, then _exit(1).
  * Called by Error() instead of raw exit(1) so the Activity doesn't
  * freeze on the last rendered frame. */
-void android_finish_and_exit(void);
+void android_finish_and_exit(const char *message);
 void android_fatal_error_exit(const char *message) __attribute__((noreturn));
 
 /* android port: notify Kotlin layer that this client has become the new host

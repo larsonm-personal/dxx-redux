@@ -344,39 +344,41 @@ private fun LanDiscoveryView(
         }
 
     fun hostResume(record: MultiplayerResumeRecord) {
-        val hostCallsign = record.localCallsign
-        HostGameDefaults.save(context, record.toHostDefaults())
-        writeCoopRestoreChoice(context.filesDir, record.game, record.coopRestoreSelection())
-        CallsignPrefs.save(context, hostCallsign)
-        MatchmakingStateHolder.update { it.copy(callsign = hostCallsign) }
-        hostedGame = record.game
-        hostedMode = record.mode
-        hostedMission = record.mission
-        hostedDifficulty = record.difficulty
-        hostedLevelNum = record.levelNum
-        hostedCoopQol = record.coopQol
-        hostedDuplicateEnergyShields = record.duplicateEnergyShields
-        hostedFullDeathSpew = record.fullDeathSpew
-        hostedPlayerSpewNoExpire = record.playerSpewNoExpire
-        hostedClientsCanRequestRewind = record.clientsCanRequestRewind
-        hostedRestrictNonCoopFovToBase = record.restrictNonCoopFovToBase
-        val visualSummary = VisualReplacementPolicy.summaryForPvp(context, record.game, record.mode)
-        hostedVisualSummary = visualSummary
-        if (!LobbyService.isDiscovering.value) {
-            LobbyService.startDiscovery(context, hostCallsign)
+        coroutineScope.launch {
+            val hostCallsign = record.localCallsign
+            HostGameDefaults.save(context, record.toHostDefaults())
+            writeCoopRestoreChoice(context.filesDir, record.game, record.coopRestoreSelection())
+            CallsignPrefs.save(context, hostCallsign)
+            MatchmakingStateHolder.update { it.copy(callsign = hostCallsign) }
+            hostedGame = record.game
+            hostedMode = record.mode
+            hostedMission = record.mission
+            hostedDifficulty = record.difficulty
+            hostedLevelNum = record.levelNum
+            hostedCoopQol = record.coopQol
+            hostedDuplicateEnergyShields = record.duplicateEnergyShields
+            hostedFullDeathSpew = record.fullDeathSpew
+            hostedPlayerSpewNoExpire = record.playerSpewNoExpire
+            hostedClientsCanRequestRewind = record.clientsCanRequestRewind
+            hostedRestrictNonCoopFovToBase = record.restrictNonCoopFovToBase
+            val visualSummary = VisualReplacementPolicy.summaryForPvp(context, record.game, record.mode)
+            hostedVisualSummary = visualSummary
+            if (!LobbyService.isDiscovering.value) {
+                LobbyService.startDiscovery(context, hostCallsign)
+            }
+            LobbyService.hostLobby(
+                hostCallsign,
+                record.game,
+                record.mission,
+                record.mode,
+                record.maxPlayers,
+                restrictNonCoopFovToBase = record.restrictNonCoopFovToBase,
+                stockVisualsEnforced = visualSummary.hasOmittedVisuals,
+                omittedVisualModCount = visualSummary.omittedModCount,
+                omittedVisualTextureCount = visualSummary.omittedTextureCount,
+                omittedVisualModNames = visualSummary.omittedModNames,
+            )
         }
-        LobbyService.hostLobby(
-            hostCallsign,
-            record.game,
-            record.mission,
-            record.mode,
-            record.maxPlayers,
-            restrictNonCoopFovToBase = record.restrictNonCoopFovToBase,
-            stockVisualsEnforced = visualSummary.hasOmittedVisuals,
-            omittedVisualModCount = visualSummary.omittedModCount,
-            omittedVisualTextureCount = visualSummary.omittedTextureCount,
-            omittedVisualModNames = visualSummary.omittedModNames,
-        )
     }
 
     fun clientResume(record: MultiplayerResumeRecord) {
@@ -833,20 +835,22 @@ private fun LanDiscoveryView(
                 hostedPlayerSpewNoExpire = playerSpewNoExpire
                 hostedClientsCanRequestRewind = clientsCanRequestRewind
                 hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
-                val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
-                hostedVisualSummary = visualSummary
-                LobbyService.hostLobby(
-                    callsign,
-                    game,
-                    mission ?: "",
-                    mode,
-                    maxPlayers,
-                    restrictNonCoopFovToBase = restrictNonCoopFovToBase,
-                    stockVisualsEnforced = visualSummary.hasOmittedVisuals,
-                    omittedVisualModCount = visualSummary.omittedModCount,
-                    omittedVisualTextureCount = visualSummary.omittedTextureCount,
-                    omittedVisualModNames = visualSummary.omittedModNames,
-                )
+                coroutineScope.launch {
+                    val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
+                    hostedVisualSummary = visualSummary
+                    LobbyService.hostLobby(
+                        callsign,
+                        game,
+                        mission ?: "",
+                        mode,
+                        maxPlayers,
+                        restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                        stockVisualsEnforced = visualSummary.hasOmittedVisuals,
+                        omittedVisualModCount = visualSummary.omittedModCount,
+                        omittedVisualTextureCount = visualSummary.omittedTextureCount,
+                        omittedVisualModNames = visualSummary.omittedModNames,
+                    )
+                }
             },
             onDismiss = { showHostDialog = false },
         )

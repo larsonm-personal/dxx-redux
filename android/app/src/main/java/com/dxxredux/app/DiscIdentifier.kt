@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONObject
 import java.io.InputStream
 import java.security.MessageDigest
@@ -64,37 +65,10 @@ class DiscIdentifier(
                     .open("known_discs.json5")
                     .bufferedReader()
                     .readText()
-            val root = JSONObject(Json5.strip(raw))
-            val discsArray = root.getJSONArray("discs")
-            (0 until discsArray.length()).map { i ->
-                val d = discsArray.getJSONObject(i)
-                val tracksArray = d.getJSONArray("tracks")
-                val tracks =
-                    (0 until tracksArray.length()).map { j ->
-                        val t = tracksArray.getJSONObject(j)
-                        KnownTrack(
-                            track = t.getInt("track"),
-                            type = t.getString("type"),
-                            sha1 = t.getString("sha1"),
-                            name = t.optString("name").takeIf { it.isNotEmpty() },
-                        )
-                    }
-                val mapping = mutableMapOf<String, Int>()
-                d.optJSONObject("track_mapping")?.let { tm ->
-                    tm.keys().forEach { key -> mapping[key] = tm.getInt(key) }
-                }
-                KnownDisc(
-                    id = d.getString("id"),
-                    label = d.getString("label"),
-                    game = d.getString("game"),
-                    legacyDiscId = d.optString("legacy_disc_id").takeIf { it.isNotEmpty() },
-                    trackMapping = mapping,
-                    tracks = tracks,
-                )
-            }
+            parseDatabase(raw)
         } catch (e: Exception) {
-            android.util.Log.e("DiscIdentifier", "Failed to load known_discs.json5: ${e.message}")
-            emptyList()
+            Log.e("DiscIdentifier", "Invalid physical-disc database", e)
+            throw IllegalStateException("Could not load physical-disc identities: ${e.message}", e)
         }
 
     /**
@@ -148,6 +122,60 @@ class DiscIdentifier(
     fun allDiscs(): List<KnownDisc> = knownDiscs
 
     companion object {
+        internal fun parseDatabase(raw: String): List<KnownDisc> {
+            val discsArray = JSONObject(Json5.strip(raw)).getJSONArray("discs")
+            return (0 until discsArray.length()).map { index ->
+                try {
+                    val disc = discsArray.getJSONObject(index)
+                    require(disc.optString("type") != "album") {
+                        "album records belong in known_albums.json5"
+                    }
+                    val id = disc.getString("id").also { require(it.isNotBlank()) { "id is blank" } }
+                    val label = disc.getString("label").also { require(it.isNotBlank()) { "label is blank" } }
+                    val game =
+                        disc.getString("game").also {
+                            require(it in setOf("d1", "d2", "d1d2")) { "bad game $it" }
+                        }
+                    val tracksArray = disc.getJSONArray("tracks")
+                    require(tracksArray.length() > 0) { "tracks is empty" }
+                    val tracks =
+                        (0 until tracksArray.length()).map { trackIndex ->
+                            val track = tracksArray.getJSONObject(trackIndex)
+                            val number = track.getInt("track").also { require(it > 0) { "bad track number $it" } }
+                            val type =
+                                track.getString("type").also {
+                                    require(it == "data" || it == "audio") { "bad track type $it" }
+                                }
+                            val sha1 =
+                                track.getString("sha1").also {
+                                    require(it.matches(Regex("[0-9a-fA-F]{40}"))) { "bad SHA1 for track $number" }
+                                }
+                            KnownTrack(
+                                track = number,
+                                type = type,
+                                sha1 = sha1,
+                                name = track.optString("name").takeIf { it.isNotEmpty() },
+                            )
+                        }
+                    require(tracks.map { it.track }.distinct().size == tracks.size) { "duplicate track number" }
+                    val mapping = mutableMapOf<String, Int>()
+                    disc.optJSONObject("track_mapping")?.let { trackMapping ->
+                        trackMapping.keys().forEach { key -> mapping[key] = trackMapping.getInt(key) }
+                    }
+                    KnownDisc(
+                        id = id,
+                        label = label,
+                        game = game,
+                        legacyDiscId = disc.optString("legacy_disc_id").takeIf { it.isNotEmpty() },
+                        trackMapping = mapping,
+                        tracks = tracks,
+                    )
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("Invalid physical disc at discs[$index]: ${e.message}", e)
+                }
+            }
+        }
+
         /**
          * Compute SHA1 hash of a section of raw data from an InputStream.
          * Used to hash individual tracks from BIN files.

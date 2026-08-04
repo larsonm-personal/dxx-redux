@@ -7,7 +7,7 @@
 #   3. Extract + fingerprint music packs   (fingerprint_music_packs.ps1)
 #   4. Extract + fingerprint mission ZIP soundtracks
 #                                           (fingerprint_mission_zip_music.ps1)
-#   5. Merge album entries into DB         (update_known_discs_albums.ps1)
+#   5. Generate the album fingerprint DB   (update_known_discs_albums.ps1)
 #
 # Each step is idempotent and skips work already done unless -Force is passed.
 # Individual steps can be selected with -Step.
@@ -78,12 +78,12 @@ if ($runMissionZips) {
     Run-Step "Step 4/5: Extract + fingerprint mission ZIP soundtracks" "fingerprint_mission_zip_music.ps1" $argsMission
 }
 
-# Step 5: Merge album entries into known_discs.json5
+# Step 5: Generate known_albums.json5 from album sidecars
 if ($runPacks -or $runMissionZips -or $runMerge) {
     $args4 = @{}
     if ($DryRun) { $args4["DryRun"] = $true }
     if ($Force) { $args4["Force"] = $true }
-    Run-Step "Step 5/5: Merge album entries into DB" "update_known_discs_albums.ps1" $args4
+    Run-Step "Step 5/5: Generate album fingerprint DB" "update_known_discs_albums.ps1" $args4
 }
 
 Write-Host "`n=========================================="

@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import com.dxxredux.app.multiplayer.CoopDesyncLog
 import com.dxxredux.app.multiplayer.GameLaunchInfo
 import com.dxxredux.app.multiplayer.MatchmakingService
@@ -95,6 +96,7 @@ class SetupActivity : ComponentActivity() {
     private val refreshTrigger = mutableIntStateOf(0)
     private val focusResumeTrigger = mutableIntStateOf(0)
     private val launcherControllerNavigationActive = mutableStateOf(false)
+    private val launchFailureMessage = mutableStateOf<String?>(null)
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
 
@@ -107,7 +109,15 @@ class SetupActivity : ComponentActivity() {
                 ctx: Context?,
                 intent: Intent?,
             ) {
-                this@SetupActivity.writeIntrospectJson()
+                val pendingResult = goAsync()
+                val buttons = this@SetupActivity.collectAccessibleButtons()
+                this@SetupActivity.lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        this@SetupActivity.writeIntrospectJson(buttons)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
             }
         }
 
@@ -452,6 +462,17 @@ class SetupActivity : ComponentActivity() {
 
     private val commandReceiver =
         object : BroadcastReceiver() {
+            private fun runIo(block: () -> Unit) {
+                val pendingResult = goAsync()
+                this@SetupActivity.lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        block()
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
+
             override fun onReceive(
                 ctx: Context?,
                 intent: Intent?,
@@ -480,40 +501,50 @@ class SetupActivity : ComponentActivity() {
                     }
 
                     "patch_pilots" -> {
-                        val n = this@SetupActivity.patchPilotsFromConfig()
-                        Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
+                        runIo {
+                            val n = this@SetupActivity.patchPilotsFromConfig()
+                            Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
+                        }
                     }
 
                     "reset_controls" -> {
                         val game = intent.getStringExtra("game")
-                        var d1Reset = 0
-                        var d2Reset = 0
-                        if (game == null || game == "d2") {
-                            d2Reset = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
+                        runIo {
+                            var d1Reset = 0
+                            var d2Reset = 0
+                            if (game == null || game == "d2") {
+                                d2Reset = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
+                            }
+                            if (game == null || game == "d1") {
+                                d1Reset = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d1")
+                            }
+                            val n = d1Reset + d2Reset
+                            writeControllerOperationResult("controller_reset_result.json", d1Reset, d2Reset)
+                            Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                         }
-                        if (game == null || game == "d1") {
-                            d1Reset = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d1")
-                        }
-                        val n = d1Reset + d2Reset
-                        writeControllerOperationResult("controller_reset_result.json", d1Reset, d2Reset)
-                        Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                     }
 
                     "controller_introspect" -> {
                         val game = intent.getStringExtra("game")
-                        this@SetupActivity.writeControllerIntrospectJson(game)
-                        Log.i("DXX-Setup", "controller_introspect: written (game=${game ?: "d2"})")
+                        runIo {
+                            this@SetupActivity.writeControllerIntrospectJson(game)
+                            Log.i("DXX-Setup", "controller_introspect: written (game=${game ?: "d2"})")
+                        }
                     }
 
                     "write_default_config" -> {
-                        File(filesDir, "controller_config.json").delete()
-                        writeDefaultControllerConfig()
+                        runIo {
+                            File(filesDir, "controller_config.json").delete()
+                            writeDefaultControllerConfig()
+                        }
                     }
 
                     "write_controller_patch_fixture" -> {
                         val game = intent.getStringExtra("game") ?: "d2"
-                        writeControllerPatchFixture(game)
-                        Log.i("DXX-Setup", "write_controller_patch_fixture: written (game=$game)")
+                        runIo {
+                            writeControllerPatchFixture(game)
+                            Log.i("DXX-Setup", "write_controller_patch_fixture: written (game=$game)")
+                        }
                     }
 
                     "write_engine_prefs" -> {
@@ -522,35 +553,38 @@ class SetupActivity : ComponentActivity() {
                         val showRobotHostageCounts = intent.getBooleanExtra("show_robot_hostage_counts", false)
                         val showBossHealthBar = intent.getBooleanExtra("show_boss_health_bar", true)
                         val headlightActiveDefault = intent.getBooleanExtra("headlight_active_default", false)
-                        val engineCount =
-                            NativePilotPreferences.writeEnginePrefsToAll(
-                                filesDir.absolutePath,
-                                cockpitMode,
-                                autoLeveling,
-                                showRobotHostageCounts,
-                                showBossHealthBar,
-                                headlightActiveDefault,
-                            )
                         val originalHoming = intent.getBooleanExtra("original_homing", false)
-                        val homingCount =
-                            if (intent.hasExtra("original_homing")) {
-                                NativePilotPreferences.writeOriginalHomingPrefsToAll(
+                        val hasOriginalHoming = intent.hasExtra("original_homing")
+                        runIo {
+                            val engineCount =
+                                NativePilotPreferences.writeEnginePrefsToAll(
                                     filesDir.absolutePath,
-                                    originalHoming,
+                                    cockpitMode,
+                                    autoLeveling,
+                                    showRobotHostageCounts,
+                                    showBossHealthBar,
+                                    headlightActiveDefault,
                                 )
-                            } else {
-                                0
-                            }
-                        val n = maxOf(engineCount, homingCount)
-                        Log.i(
-                            "DXX-Setup",
-                            "write_engine_prefs: patched $n file(s) " +
-                                "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
-                                "show_counts=$showRobotHostageCounts " +
-                                "show_boss_health=$showBossHealthBar " +
-                                "headlight_default=$headlightActiveDefault " +
-                                "original_homing=$originalHoming)",
-                        )
+                            val homingCount =
+                                if (hasOriginalHoming) {
+                                    NativePilotPreferences.writeOriginalHomingPrefsToAll(
+                                        filesDir.absolutePath,
+                                        originalHoming,
+                                    )
+                                } else {
+                                    0
+                                }
+                            val n = maxOf(engineCount, homingCount)
+                            Log.i(
+                                "DXX-Setup",
+                                "write_engine_prefs: patched $n file(s) " +
+                                    "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
+                                    "show_counts=$showRobotHostageCounts " +
+                                    "show_boss_health=$showBossHealthBar " +
+                                    "headlight_default=$headlightActiveDefault " +
+                                    "original_homing=$originalHoming)",
+                            )
+                        }
                     }
 
                     "write_music_prefs" -> {
@@ -559,25 +593,27 @@ class SetupActivity : ComponentActivity() {
                             intent.getBooleanExtra("prefer_mission_soundtrack", source == "mission")
                         val playOrder = intent.getIntExtra("play_order", 0)
                         val volume = intent.getIntExtra("volume", 8)
-                        val n =
-                            NativePilotPreferences.writeMusicPrefsToAll(
-                                filesDir.absolutePath,
-                                source,
-                                preferMissionSoundtrack,
-                                playOrder,
-                                volume,
+                        runIo {
+                            val n =
+                                NativePilotPreferences.writeMusicPrefsToAll(
+                                    filesDir.absolutePath,
+                                    source,
+                                    preferMissionSoundtrack,
+                                    playOrder,
+                                    volume,
+                                )
+                            getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                                .edit()
+                                .putString("music_mode", if (source in listOf("files", "midi")) source else "cd")
+                                .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, preferMissionSoundtrack)
+                                .commit()
+                            Log.i(
+                                "DXX-Setup",
+                                "write_music_prefs: patched $n file(s) " +
+                                    "(source=$source prefer_mission=$preferMissionSoundtrack " +
+                                    "play_order=$playOrder volume=$volume)",
                             )
-                        getSharedPreferences("dxx_prefs", MODE_PRIVATE)
-                            .edit()
-                            .putString("music_mode", if (source in listOf("files", "midi")) source else "cd")
-                            .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, preferMissionSoundtrack)
-                            .commit()
-                        Log.i(
-                            "DXX-Setup",
-                            "write_music_prefs: patched $n file(s) " +
-                                "(source=$source prefer_mission=$preferMissionSoundtrack " +
-                                "play_order=$playOrder volume=$volume)",
-                        )
+                        }
                     }
 
                     "write_bool_pref" -> {
@@ -593,22 +629,28 @@ class SetupActivity : ComponentActivity() {
                     }
 
                     "clear_save_files" -> {
-                        val deleted = this@SetupActivity.clearSaveFilesForAutomation()
-                        Log.i("DXX-Setup", "clear_save_files: deleted $deleted file(s)")
-                        requestSetupRefresh()
+                        runIo {
+                            val deleted = this@SetupActivity.clearSaveFilesForAutomation()
+                            Log.i("DXX-Setup", "clear_save_files: deleted $deleted file(s)")
+                            requestSetupRefresh()
+                        }
                     }
 
                     "clear_crash_reports" -> {
-                        val deleted = CrashLog.listCrashFiles(this@SetupActivity).size
-                        CrashLog.deleteAllCrashFiles(this@SetupActivity)
-                        Log.i("DXX-Setup", "clear_crash_reports: deleted $deleted file(s)")
-                        requestSetupRefresh()
+                        runIo {
+                            val deleted = CrashLog.listCrashFiles(this@SetupActivity).size
+                            CrashLog.deleteAllCrashFiles(this@SetupActivity)
+                            Log.i("DXX-Setup", "clear_crash_reports: deleted $deleted file(s)")
+                            requestSetupRefresh()
+                        }
                     }
 
                     "clear_pilot_files" -> {
-                        val deleted = this@SetupActivity.clearPilotFilesForAutomation()
-                        Log.i("DXX-Setup", "clear_pilot_files: deleted $deleted file(s)")
-                        requestSetupRefresh()
+                        runIo {
+                            val deleted = this@SetupActivity.clearPilotFilesForAutomation()
+                            Log.i("DXX-Setup", "clear_pilot_files: deleted $deleted file(s)")
+                            requestSetupRefresh()
+                        }
                     }
 
                     "write_probe_debug_prefs" -> {
@@ -631,32 +673,38 @@ class SetupActivity : ComponentActivity() {
 
                     "create_set" -> {
                         val name = intent.getStringExtra("name") ?: return
-                        val fsm = FileSetManager(filesDir)
-                        try {
-                            val dir = fsm.createSet(name)
-                            Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
-                            requestSetupRefresh()
-                        } catch (e: IllegalArgumentException) {
-                            Log.i("DXX-Setup", "create_set '$name': already exists")
+                        runIo {
+                            val fsm = FileSetManager(filesDir)
+                            try {
+                                val dir = fsm.createSet(name)
+                                Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
+                                requestSetupRefresh()
+                            } catch (e: IllegalArgumentException) {
+                                Log.i("DXX-Setup", "create_set '$name': already exists")
+                            }
                         }
                     }
 
                     "switch_set" -> {
                         val name = intent.getStringExtra("name") ?: return
-                        val fsm = FileSetManager(filesDir)
-                        fsm.setActive(name)
-                        fsm.writeActiveSetPath()
-                        Log.i("DXX-Setup", "switch_set '$name': ok")
-                        requestSetupRefresh()
+                        runIo {
+                            val fsm = FileSetManager(filesDir)
+                            fsm.setActive(name)
+                            fsm.writeActiveSetPath()
+                            Log.i("DXX-Setup", "switch_set '$name': ok")
+                            requestSetupRefresh()
+                        }
                     }
 
                     "clear_set" -> {
                         val name = intent.getStringExtra("name") ?: return
-                        val fsm = FileSetManager(filesDir)
-                        val dir = fsm.getSetDir(name)
-                        val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
-                        Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
-                        requestSetupRefresh()
+                        runIo {
+                            val fsm = FileSetManager(filesDir)
+                            val dir = fsm.getSetDir(name)
+                            val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
+                            Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
+                            requestSetupRefresh()
+                        }
                     }
 
                     "import_gog" -> {
@@ -966,13 +1014,15 @@ class SetupActivity : ComponentActivity() {
                     }
 
                     "clear_audio_sources" -> {
-                        val srcManager = AudioSourceManager(filesDir)
-                        val retainedSafUris =
-                            CustomAudioSetManager(filesDir)
-                                .getSets()
-                                .flatMap { it.referencedUris.values }
-                        srcManager.clearAll(this@SetupActivity, retainedSafUris)
-                        Log.i("DXX-Setup", "clear_audio_sources: cleared all")
+                        runIo {
+                            val srcManager = AudioSourceManager(filesDir)
+                            val retainedSafUris =
+                                CustomAudioSetManager(filesDir)
+                                    .getSets()
+                                    .flatMap { it.referencedUris.values }
+                            srcManager.clearAll(this@SetupActivity, retainedSafUris)
+                            Log.i("DXX-Setup", "clear_audio_sources: cleared all")
+                        }
                     }
 
                     else -> {
@@ -1862,7 +1912,7 @@ class SetupActivity : ComponentActivity() {
         val filesDir = filesDir
 
         setContent {
-            var launchPreflightMessage by remember { mutableStateOf<String?>(null) }
+            var launchPreflightMessage by launchFailureMessage
             launchPreflightMessage?.let { message ->
                 AlertDialog(
                     onDismissRequest = { launchPreflightMessage = null },
@@ -2096,6 +2146,11 @@ class SetupActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        try {
+            NativeFatalErrorStore.consume(filesDir)?.let { launchFailureMessage.value = it }
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "Could not consume native fatal error", e)
+        }
         val returningFromLevelPreview = LevelPreviewReturnRefreshGate.consumeReturn()
         mpGameLaunching = false
         gameRunningFlag = hasReturnableGameActivity()
@@ -2305,6 +2360,7 @@ private fun SetupScreen(
     var hashingFileIndex by remember { mutableIntStateOf(0) }
     var hashingTotalFiles by remember { mutableIntStateOf(0) }
     var hashingProgress by remember { mutableFloatStateOf(0f) }
+    var resultImporting by remember { mutableStateOf(false) }
     val isHashing = hashingFile != null
 
     val d2RequiredOk =
@@ -2441,11 +2497,17 @@ private fun SetupScreen(
                 hashingFile = file.name
                 hashingProgress = 0f
                 val sha256 =
-                    AssetManifest.computeSha256(file) { bytesRead, totalBytes ->
-                        if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
+                    withContext(Dispatchers.IO) {
+                        AssetManifest.computeSha256(file) { bytesRead, totalBytes ->
+                            if (totalBytes > 0) {
+                                mainHandler.post {
+                                    hashingProgress = bytesRead.toFloat() / totalBytes
+                                }
+                            }
+                        }
                     }
                 if (sha256 != null) {
-                    manifest.upsert(file.name, sha256, file.length())
+                    withContext(Dispatchers.IO) { manifest.upsert(file.name, sha256, file.length()) }
                 } else {
                     Log.w("DXX-Setup", "Skipping manifest update for ${file.name}: file disappeared during hashing")
                 }
@@ -2461,6 +2523,18 @@ private fun SetupScreen(
     // Download state: filename -> progress (0..100, -1 = error, -2 = complete)
     val downloadProgress = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
+
+    fun launchResultImport(block: suspend () -> Unit) {
+        if (resultImporting) return
+        resultImporting = true
+        scope.launch {
+            try {
+                block()
+            } finally {
+                resultImporting = false
+            }
+        }
+    }
 
     // -- File detail popup state -----------------------------
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
@@ -2828,21 +2902,22 @@ private fun SetupScreen(
                     zipProgressBytes = 0L
                     zipProgressTotal = 0L
                 }
-                val tmpDir = File(filesDir, "tmp")
+                val tmpDir = OwnedCacheDirectories.create(File(filesDir, "tmp"))
                 val allExtracted = mutableListOf<ExtractedFile>()
                 var anyAudio = false
                 val archiveErrors = mutableListOf<String>()
                 for ((arcName, arcUri) in zipUris) {
+                    val archiveDir = OwnedCacheDirectories.create(tmpDir)
                     val arcLower = arcName.lowercase()
                     val result =
                         if (arcLower.endsWith(".7z")) {
-                            extract7zContents(context, arcUri, tmpDir) { name, copied, total ->
+                            extract7zContents(context, arcUri, archiveDir) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
                             }
                         } else if (arcLower.endsWith(".rar")) {
-                            extractRarContents(context, arcUri, tmpDir) { name, copied, total ->
+                            extractRarContents(context, arcUri, archiveDir) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
@@ -2851,7 +2926,7 @@ private fun SetupScreen(
                             extractStuffitContents(
                                 context,
                                 arcUri,
-                                tmpDir,
+                                archiveDir,
                                 archiveName = arcName,
                             ) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
@@ -2859,7 +2934,12 @@ private fun SetupScreen(
                                 zipProgressTotal = total
                             }
                         } else {
-                            extractZipContents(context, arcUri, tmpDir, archiveName = arcName) { name, copied, total ->
+                            extractZipContents(
+                                context,
+                                arcUri,
+                                archiveDir,
+                                archiveName = arcName,
+                            ) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
@@ -4027,7 +4107,7 @@ private fun SetupScreen(
                                     ) {
                                         Button(
                                             onClick = {
-                                                scope.launch {
+                                                launchResultImport {
                                                     try {
                                                         var imported = 0
                                                         hashingTotalFiles = found.size
@@ -4043,8 +4123,13 @@ private fun SetupScreen(
                                                                     File(setDir, canonicalName)
                                                                 }
                                                             // Determine track: native data-dir vs external
-                                                            val existedBefore = destFile.exists()
-                                                            val existingEntry = manifest.getEntry(canonicalName)
+                                                            val priorState =
+                                                                withContext(Dispatchers.IO) {
+                                                                    destFile.exists() to
+                                                                        manifest.getEntry(canonicalName)
+                                                                }
+                                                            val existedBefore = priorState.first
+                                                            val existingEntry = priorState.second
                                                             val ok =
                                                                 withContext(Dispatchers.IO) {
                                                                     importFile(context, f, setDir) { progress ->
@@ -4056,14 +4141,17 @@ private fun SetupScreen(
                                                             if (ok) {
                                                                 imported++
                                                                 val sha256 =
-                                                                    AssetManifest.computeSha256(
-                                                                        destFile,
-                                                                    ) { bytesRead, totalBytes ->
-                                                                        if (totalBytes >
-                                                                            0
-                                                                        ) {
-                                                                            hashingProgress =
-                                                                                bytesRead.toFloat() / totalBytes
+                                                                    withContext(Dispatchers.IO) {
+                                                                        AssetManifest.computeSha256(
+                                                                            destFile,
+                                                                        ) { bytesRead, totalBytes ->
+                                                                            if (totalBytes > 0) {
+                                                                                mainHandler.post {
+                                                                                    hashingProgress =
+                                                                                        bytesRead.toFloat() /
+                                                                                        totalBytes
+                                                                                }
+                                                                            }
                                                                         }
                                                                     }
                                                                 if (sha256 != null) {
@@ -4079,12 +4167,14 @@ private fun SetupScreen(
                                                                         } else {
                                                                             f.uri.toString()
                                                                         }
-                                                                    manifest.upsert(
-                                                                        destFile.name,
-                                                                        sha256,
-                                                                        destFile.length(),
-                                                                        sourceUri,
-                                                                    )
+                                                                    withContext(Dispatchers.IO) {
+                                                                        manifest.upsert(
+                                                                            destFile.name,
+                                                                            sha256,
+                                                                            destFile.length(),
+                                                                            sourceUri,
+                                                                        )
+                                                                    }
                                                                 } else {
                                                                     Log.w(
                                                                         "DXX-Setup",
@@ -4107,11 +4197,13 @@ private fun SetupScreen(
                                                 }
                                             },
                                             modifier = Modifier.focusRequester(importAllFocus),
+                                            enabled = !resultImporting,
                                         ) {
                                             Text("Import All", fontSize = 13.sp)
                                         }
                                         OutlinedButton(
                                             onClick = { scanResults = null },
+                                            enabled = !resultImporting,
                                         ) {
                                             Text("Dismiss", fontSize = 13.sp)
                                         }
@@ -4343,7 +4435,7 @@ private fun SetupScreen(
                                     ) {
                                         Button(
                                             onClick = {
-                                                scope.launch {
+                                                launchResultImport {
                                                     var imported = 0
                                                     hashingTotalFiles = extracted.size
                                                     for ((i, ef) in extracted.withIndex()) {
@@ -4388,6 +4480,7 @@ private fun SetupScreen(
                                                 }
                                             },
                                             modifier = Modifier.focusRequester(zipImportFocus),
+                                            enabled = !resultImporting,
                                         ) {
                                             Text("Import to Current Set", fontSize = 13.sp)
                                         }
@@ -4397,6 +4490,7 @@ private fun SetupScreen(
                                                 zipPackageName = null
                                                 cleanupTmpDir(filesDir)
                                             },
+                                            enabled = !resultImporting,
                                         ) {
                                             Text("Dismiss", fontSize = 13.sp)
                                         }

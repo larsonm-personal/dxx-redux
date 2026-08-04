@@ -57,13 +57,8 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
     val clickableNodes = mutableListOf<ClickableNode>()
 
     val semanticsIds = collectSemanticsNodeIds(composeView)
-    val maxScanId =
-        if (semanticsIds.isNotEmpty()) {
-            semanticsIds.max() + 500
-        } else {
-            16383
-        }
-    for (id in -1..maxScanId) {
+    val scanIds = if (semanticsIds.isNotEmpty()) listOf(-1) + semanticsIds else (-1..2048).toList()
+    for (id in scanIds.distinct()) {
         val info = provider.createAccessibilityNodeInfo(id) ?: continue
         val bounds = Rect()
         info.getBoundsInScreen(bounds)
@@ -101,7 +96,8 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
         }
     Log.i(
         "DXX-Buttons",
-        "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, ${buttons.size} matched, range=0..$maxScanId (semantics=${semanticsIds.size})",
+        "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, " +
+            "${buttons.size} matched, scanned=${scanIds.size} (semantics=${semanticsIds.size})",
     )
     return buttons
 }
@@ -724,7 +720,7 @@ internal fun SetupActivity.writeMpIntrospectJson() {
     }
 }
 
-internal fun SetupActivity.writeIntrospectJson() {
+internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.ButtonInfo>) {
     try {
         val dir = filesDir
         val fsm = FileSetManager(dir)
@@ -940,7 +936,7 @@ internal fun SetupActivity.writeIntrospectJson() {
         root.put("music_preview", musicPreview)
 
         val buttonsArr = JSONArray()
-        for (btn in collectAccessibleButtons()) {
+        for (btn in buttons) {
             val bo = JSONObject()
             bo.put("text", btn.text)
             bo.put("enabled", btn.enabled)

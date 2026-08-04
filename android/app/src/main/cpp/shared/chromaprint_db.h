@@ -1,6 +1,6 @@
 /*
  * chromaprint_db.h -- In-memory fingerprint database for track identification.
- * Loaded from known_discs.json5 data at app startup via JNI.
+ * Loaded from the physical-disc and album fingerprint assets at app startup via JNI.
  * Matching uses XOR-popcount similarity with offset alignment.
  */
 
@@ -29,7 +29,7 @@ typedef struct {
 } chromaprint_db_match_t;
 
 /* Load fingerprint entries from a JSON array.
- * Expected format (from known_discs.json5 flattened by Kotlin):
+ * Expected format (from the physical-disc and album assets flattened by Kotlin):
  *   [{"name":"Title","disc_id":"d2-gog","track":2,"duration_ms":187000,"chromaprint":"AQAA..."}]
  * Returns number of entries loaded, or -1 on error. */
 #ifdef __cplusplus

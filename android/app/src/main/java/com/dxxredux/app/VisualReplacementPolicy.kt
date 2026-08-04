@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
 import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -18,15 +20,17 @@ object VisualReplacementPolicy {
     const val OMITTED_VISUAL_TEXTURE_COUNT = "omitted_visual_texture_count"
     const val OMITTED_VISUAL_MODS = "omitted_visual_mods"
 
-    fun summaryForPvp(
+    suspend fun summaryForPvp(
         context: Context,
         game: String,
         mode: String,
     ): ModManager.VisualReplacementSummary =
-        if (mode == "coop") {
-            ModManager.VisualReplacementSummary()
-        } else {
-            ModManager(context.filesDir, context).enabledVisualReplacementSummary(game)
+        withContext(Dispatchers.IO) {
+            if (mode == "coop") {
+                ModManager.VisualReplacementSummary()
+            } else {
+                ModManager(context.filesDir, context).enabledVisualReplacementSummary(game)
+            }
         }
 
     fun gameInfoFields(summary: ModManager.VisualReplacementSummary): Map<String, JsonElement> =

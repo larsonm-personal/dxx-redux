@@ -388,7 +388,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
  * This function attaches to the JVM, calls Activity.finish(), then
  * _exit(1) to skip atexit handlers (which can hang in SDL cleanup).
  */
-void android_finish_and_exit(void)
+void android_finish_and_exit(const char *message)
 {
 	LOGE("android_finish_and_exit: fatal error, cleaning up");
 	g_game_running = 0;
@@ -403,6 +403,19 @@ void android_finish_and_exit(void)
 		}
 		if (env) {
 			jclass cls = (*env)->GetObjectClass(env, g_activity);
+			jmethodID report_error = (*env)->GetMethodID(
+			    env, cls, "reportNativeFatalError", "(Ljava/lang/String;)V");
+			if (report_error && message) {
+				jstring java_message = dxx_jni_string_from_utf8(env, message);
+				if (java_message) {
+					(*env)->CallVoidMethod(env, g_activity, report_error, java_message);
+					(*env)->DeleteLocalRef(env, java_message);
+				}
+			}
+			if ((*env)->ExceptionCheck(env)) {
+				(*env)->ExceptionDescribe(env);
+				(*env)->ExceptionClear(env);
+			}
 			jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
 			if (mid)
 				(*env)->CallVoidMethod(env, g_activity, mid);

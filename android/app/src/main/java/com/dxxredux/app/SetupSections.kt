@@ -1423,10 +1423,13 @@ private fun MissionZipTextDialog(
     archivePath: String?,
     onDismiss: () -> Unit,
 ) {
-    val content =
-        remember(archivePath, constituent.path) {
-            readMissionZipTextFile(archivePath, constituent)
-        }
+    var content by remember(archivePath, constituent.path) {
+        mutableStateOf<MissionZip.TextFileContent?>(null)
+    }
+    LaunchedEffect(archivePath, constituent.path) {
+        content = null
+        content = withContext(kotlinx.coroutines.Dispatchers.IO) { readMissionZipTextFile(archivePath, constituent) }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -1451,7 +1454,12 @@ private fun MissionZipTextDialog(
                                 .verticalScroll(scrollState)
                                 .padding(end = 8.dp),
                     ) {
-                        content.problem?.let { problem ->
+                        val loadedContent = content
+                        if (loadedContent == null) {
+                            MetadataLoadProgressView(MetadataLoadProgress("Reading text file", 0, 1))
+                            return@Column
+                        }
+                        loadedContent.problem?.let { problem ->
                             Text(
                                 problem,
                                 fontSize = 12.sp,
@@ -1459,7 +1467,7 @@ private fun MissionZipTextDialog(
                                 modifier = Modifier.padding(bottom = 6.dp),
                             )
                         }
-                        if (content.truncated) {
+                        if (loadedContent.truncated) {
                             Text(
                                 "Showing first ${setupSectionFormatSize(1024L * 1024L)}",
                                 fontSize = 11.sp,
@@ -1468,7 +1476,7 @@ private fun MissionZipTextDialog(
                             )
                         }
                         Text(
-                            content.text.ifEmpty { "(empty text file)" },
+                            loadedContent.text.ifEmpty { "(empty text file)" },
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -1651,6 +1659,11 @@ private fun baseRequirementSha256Lines(requirement: ModManager.ModBaseRequiremen
     return result
 }
 
+private data class ClassicDemoEntry(
+    val file: File,
+    val size: Long,
+)
+
 @Composable
 internal fun DemosSection(
     setDir: File,
@@ -1658,23 +1671,28 @@ internal fun DemosSection(
     onRefresh: () -> Unit,
 ) {
     val demosDir = File(setDir, "demos")
-    var demoFiles by remember { mutableStateOf(emptyList<File>()) }
+    val scope = rememberCoroutineScope()
+    var demoFiles by remember { mutableStateOf(emptyList<ClassicDemoEntry>()) }
     var expanded by remember { mutableStateOf(false) }
     var deleteAllConfirm by remember { mutableStateOf(false) }
     var deleteSingleTarget by remember { mutableStateOf<File?>(null) }
 
     LaunchedEffect(refreshTrigger) {
         demoFiles =
-            (
-                demosDir.listFiles()?.filter {
-                    it.isFile && it.name.lowercase().endsWith(".dem")
-                } ?: emptyList()
-            ).sortedBy { it.name.lowercase() }
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                (
+                    demosDir.listFiles()?.mapNotNull { file ->
+                        file
+                            .takeIf { it.isFile && it.name.lowercase().endsWith(".dem") }
+                            ?.let { ClassicDemoEntry(it, it.length()) }
+                    } ?: emptyList()
+                ).sortedBy { it.file.name.lowercase() }
+            }
     }
 
     if (demoFiles.isEmpty()) return
 
-    val totalSize = demoFiles.sumOf { it.length() }
+    val totalSize = demoFiles.sumOf { it.size }
     val summary = "${demoFiles.size} demos, ${setupSectionFormatSize(totalSize)}"
 
     Spacer(modifier = Modifier.height(16.dp))
@@ -1723,7 +1741,8 @@ internal fun DemosSection(
     )
 
     if (expanded) {
-        demoFiles.forEach { file ->
+        demoFiles.forEach { entry ->
+            val file = entry.file
             Row(
                 modifier =
                     Modifier
@@ -1738,7 +1757,7 @@ internal fun DemosSection(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = setupSectionFormatSize(file.length()),
+                    text = setupSectionFormatSize(entry.size),
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1760,9 +1779,12 @@ internal fun DemosSection(
             text = { Text("Remove all ${demoFiles.size} demo files? This cannot be undone") },
             confirmButton = {
                 TextButton(onClick = {
-                    demoFiles.forEach { it.delete() }
                     deleteAllConfirm = false
-                    onRefresh()
+                    val targets = demoFiles.map { it.file }
+                    scope.launch {
+                        withContext(kotlinx.coroutines.Dispatchers.IO) { targets.forEach { it.delete() } }
+                        onRefresh()
+                    }
                 }) { Text("Delete") }
             },
             dismissButton = {
@@ -1778,9 +1800,11 @@ internal fun DemosSection(
             text = { Text("Remove ${file.name}? This cannot be undone") },
             confirmButton = {
                 TextButton(onClick = {
-                    file.delete()
                     deleteSingleTarget = null
-                    onRefresh()
+                    scope.launch {
+                        withContext(kotlinx.coroutines.Dispatchers.IO) { file.delete() }
+                        onRefresh()
+                    }
                 }) { Text("Delete") }
             },
             dismissButton = {
@@ -1945,13 +1969,26 @@ internal fun MusicInfoSection(
     hasMidiSource: Boolean = false,
     onEditMusic: () -> Unit = {},
 ) {
-    val audioSrcManager = remember(refreshTrigger) { AudioSourceManager(filesDir) }
-    var audioSources by remember(refreshTrigger) { mutableStateOf(audioSrcManager.getSources()) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var audioSrcManager by remember(refreshTrigger) { mutableStateOf<AudioSourceManager?>(null) }
+    var audioSources by remember(refreshTrigger) {
+        mutableStateOf<List<AudioSourceManager.AudioSource>>(emptyList())
+    }
+    var audioMutationActive by remember { mutableStateOf(false) }
+    LaunchedEffect(filesDir.absolutePath, refreshTrigger) {
+        val loaded =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val manager = AudioSourceManager(filesDir)
+                manager to manager.getSources()
+            }
+        audioSrcManager = loaded.first
+        audioSources = loaded.second
+    }
     val hasCdAudio = audioSources.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
 
-    val context = LocalContext.current
     val prefs = context.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val musicMode = prefs.getString("music_mode", "cd") ?: "cd"
     val modeLabel =
@@ -2053,9 +2090,18 @@ internal fun MusicInfoSection(
                 ) {
                     Checkbox(
                         checked = src.enabled,
+                        enabled = !audioMutationActive,
                         onCheckedChange = { checked ->
-                            audioSrcManager.setEnabled(src.id, checked)
-                            audioSources = audioSrcManager.getSources()
+                            val manager = audioSrcManager ?: return@Checkbox
+                            audioMutationActive = true
+                            scope.launch {
+                                audioSources =
+                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        manager.setEnabled(src.id, checked)
+                                        manager.getSources()
+                                    }
+                                audioMutationActive = false
+                            }
                         },
                         modifier = Modifier.size(20.dp).tvFocusBorder(),
                     )
@@ -2073,11 +2119,20 @@ internal fun MusicInfoSection(
                     )
                     if (index > 0) {
                         IconButton(
+                            enabled = !audioMutationActive,
                             onClick = {
+                                val manager = audioSrcManager ?: return@IconButton
                                 val ids = audioSources.map { it.id }.toMutableList()
                                 ids[index] = ids[index - 1].also { ids[index - 1] = ids[index] }
-                                audioSrcManager.reorder(ids)
-                                audioSources = audioSrcManager.getSources()
+                                audioMutationActive = true
+                                scope.launch {
+                                    audioSources =
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            manager.reorder(ids)
+                                            manager.getSources()
+                                        }
+                                    audioMutationActive = false
+                                }
                             },
                             modifier = Modifier.size(24.dp),
                         ) {
@@ -2092,11 +2147,20 @@ internal fun MusicInfoSection(
                     }
                     if (index < audioSources.size - 1) {
                         IconButton(
+                            enabled = !audioMutationActive,
                             onClick = {
+                                val manager = audioSrcManager ?: return@IconButton
                                 val ids = audioSources.map { it.id }.toMutableList()
                                 ids[index] = ids[index + 1].also { ids[index + 1] = ids[index] }
-                                audioSrcManager.reorder(ids)
-                                audioSources = audioSrcManager.getSources()
+                                audioMutationActive = true
+                                scope.launch {
+                                    audioSources =
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            manager.reorder(ids)
+                                            manager.getSources()
+                                        }
+                                    audioMutationActive = false
+                                }
                             },
                             modifier = Modifier.size(24.dp),
                         ) {
@@ -2110,9 +2174,18 @@ internal fun MusicInfoSection(
                         Spacer(modifier = Modifier.size(24.dp))
                     }
                     TextButton(
+                        enabled = !audioMutationActive,
                         onClick = {
-                            audioSrcManager.removeSource(src.id, context)
-                            audioSources = audioSrcManager.getSources()
+                            val manager = audioSrcManager ?: return@TextButton
+                            audioMutationActive = true
+                            scope.launch {
+                                audioSources =
+                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        manager.removeSource(src.id, context)
+                                        manager.getSources()
+                                    }
+                                audioMutationActive = false
+                            }
                         },
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                         modifier = Modifier.height(24.dp),
@@ -2157,9 +2230,28 @@ internal fun missionDescriptorForStatus(
     val file = File(setDir, actualName)
     if (!file.isFile) return null
     return runCatching {
-        GameFileFormats.parseMissionDescriptor(name, file.readText())
+        val maxBytes = 1024 * 1024
+        if (file.length() > maxBytes) return null
+        val bytes =
+            file.inputStream().use { input ->
+                val buffer = ByteArray(maxBytes + 1)
+                var total = 0
+                while (total < buffer.size) {
+                    val read = input.read(buffer, total, buffer.size - total)
+                    if (read <= 0) break
+                    total += read
+                }
+                if (total > maxBytes) return null
+                buffer.copyOf(total)
+            }
+        GameFileFormats.parseMissionDescriptor(name, bytes.toString(Charsets.UTF_8))
     }.getOrNull()
 }
+
+private data class FileDetailSources(
+    val missionDescriptor: GameFileFormats.MissionDescriptor?,
+    val metadataSourceFile: File?,
+)
 
 internal fun gameFileMetadataForStatus(
     status: FileStatus,
@@ -2187,20 +2279,41 @@ internal fun FileDetailDialog(
     val entry = status.manifestEntry
     val name = status.foundName ?: status.info.filename
     val description = descriptionForFile(name)
-    val missionDescriptor =
-        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename, refreshTrigger) {
-            missionDescriptorForStatus(status, setDir)
-        }
-    val metadataSourceFile =
-        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename, refreshTrigger) {
-            val localName = status.foundName ?: status.manifestEntry?.filename
-            val actualName = localName?.let { findFile(setDir, it) ?: it }
-            val file = actualName?.let { File(setDir, it) }
-            file?.takeIf {
-                it.isFile &&
-                    (GameFileFormats.isMetadataInspectable(it.name) || LevelMetadataTargets.canAnalyzeFile(it.name))
+    var detailSources by remember(
+        name,
+        setDir.absolutePath,
+        status.found,
+        status.manifestEntry?.filename,
+        refreshTrigger,
+    ) { mutableStateOf<FileDetailSources?>(null) }
+    LaunchedEffect(
+        name,
+        setDir.absolutePath,
+        status.found,
+        status.manifestEntry?.filename,
+        refreshTrigger,
+    ) {
+        detailSources = null
+        detailSources =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val localName = status.foundName ?: status.manifestEntry?.filename
+                val actualName = localName?.let { findFile(setDir, it) ?: it }
+                val file = actualName?.let { File(setDir, it) }
+                FileDetailSources(
+                    missionDescriptor = missionDescriptorForStatus(status, setDir),
+                    metadataSourceFile =
+                        file?.takeIf {
+                            it.isFile &&
+                                (
+                                    GameFileFormats.isMetadataInspectable(it.name) ||
+                                        LevelMetadataTargets.canAnalyzeFile(it.name)
+                                )
+                        },
+                )
             }
-        }
+    }
+    val missionDescriptor = detailSources?.missionDescriptor
+    val metadataSourceFile = detailSources?.metadataSourceFile
     var fileMetadataResult by remember(metadataSourceFile?.absolutePath, refreshTrigger) {
         mutableStateOf(
             if (metadataSourceFile == null) {

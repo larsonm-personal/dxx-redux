@@ -42,6 +42,14 @@ import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.dxxredux.app.multiplayer.RuntimeGameStateBridge
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
@@ -181,6 +189,9 @@ internal fun shouldRouteControllerBToNativeBack(
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
+    private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var playlistPreparation: Deferred<Unit>? = null
+
     companion object {
         private const val ADMIN_TRAY_CLOSE_GRACE_MS = 400L
 
@@ -543,7 +554,7 @@ class MainActivity :
             // Production mode: SAF content URI
             val uri = Uri.parse(contentUri)
             val pfd = contentResolver.openFileDescriptor(uri, "r") ?: return -1
-            pfd.detachFd() // transfers fd ownership to native
+            SafDescriptorStager.detachSeekable(pfd, cacheDir, uri.lastPathSegment ?: "SAF source")
         } catch (e: Exception) {
             Log.e("MainActivity", "openSafFile failed for $contentUri", e)
             -1
@@ -725,8 +736,10 @@ class MainActivity :
         // Rewrite audio playlist in the game process so SAF fds are valid.
         // SetupActivity runs in the default process; this activity runs in
         // :game.  PFDs opened there have fd numbers that don't exist here.
-        AudioSourceManager(filesDir).writePlaylist(contentResolver)
-
+        playlistPreparation =
+            startupScope.async(Dispatchers.IO) {
+                AudioSourceManager(filesDir).writePlaylist(contentResolver)
+            }
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
         isMultiplayerGame = mpMode != null
@@ -1681,6 +1694,15 @@ class MainActivity :
         }
     }
 
+    @androidx.annotation.Keep
+    fun reportNativeFatalError(message: String) {
+        try {
+            NativeFatalErrorStore.publish(filesDir, message)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Could not publish native fatal error", e)
+        }
+    }
+
     // ── Immersive fullscreen helper ─────────────────────────
     private fun hideSystemBars() {
         val controller = WindowInsetsControllerCompat(window, window.decorView)
@@ -1746,13 +1768,22 @@ class MainActivity :
             // AF/MSAA now persist in descent.cfg and are loaded by
             // ReadConfigFile() -> ogl_aniso_level / ogl_msaa_samples
 
-            Thread {
-                startGame()
-            }.start()
+            startupScope.launch {
+                try {
+                    playlistPreparation?.await()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Audio playlist preparation failed", e)
+                }
+                Thread {
+                    startGame()
+                }.start()
 
-            // android port: coop QoL -- begin polling (auto-shows in coop)
-            coopStatsOverlay?.startPolling()
-            warpButtonOverlay?.startPolling()
+                // android port: coop QoL -- begin polling (auto-shows in coop)
+                coopStatsOverlay?.startPolling()
+                warpButtonOverlay?.startPolling()
+            }
         }
     }
 
@@ -2439,6 +2470,7 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        startupScope.cancel()
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()
         RuntimeGameStateBridge.disconnect()

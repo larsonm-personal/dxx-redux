@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.CancellationSignal
 import android.util.Log
 
 private const val TAG = "DXX-SafPerm"
@@ -56,10 +57,15 @@ internal fun canAccessSafUri(
     context: Context,
     uri: Uri,
     useFileDescriptor: Boolean = false,
+    cancellationSignal: CancellationSignal? = null,
 ): Boolean =
     try {
         if (useFileDescriptor) {
-            context.contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
+            context.contentResolver.openFileDescriptor(uri, "r", cancellationSignal)?.use { true } ?: false
+        } else if (cancellationSignal != null) {
+            context.contentResolver.openAssetFileDescriptor(uri, "r", cancellationSignal)?.use { descriptor ->
+                descriptor.createInputStream().use { true }
+            } ?: false
         } else {
             context.contentResolver.openInputStream(uri)?.use { true } ?: false
         }

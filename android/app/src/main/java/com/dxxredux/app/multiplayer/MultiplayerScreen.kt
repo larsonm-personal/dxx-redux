@@ -26,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.lobby.LobbyService
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -185,6 +187,7 @@ private fun ServerBrowserContent(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val connectFocus = remember { FocusRequester() }
     val cancelFocus = remember { FocusRequester() }
     val refreshFocus = remember { FocusRequester() }
@@ -719,24 +722,26 @@ private fun ServerBrowserContent(
                 restrictNonCoopFovToBase,
                 ->
                 showCreateDialog = false
-                val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
-                val baseGameInfo: Map<String, JsonElement> =
-                    mapOf(
-                        "game" to JsonPrimitive(game),
-                        "mission" to JsonPrimitive(mission ?: ""),
-                        "mode" to JsonPrimitive(mode),
-                        "difficulty" to JsonPrimitive(difficulty),
-                        "level_num" to JsonPrimitive(levelNum),
-                        "coop_qol" to JsonPrimitive(coopQol),
-                        "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
-                        "full_death_spew" to JsonPrimitive(fullDeathSpew),
-                        "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
-                        "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
-                        "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
-                    )
-                val gameInfo =
-                    JsonObject(baseGameInfo + VisualReplacementPolicy.gameInfoFields(visualSummary))
-                MatchmakingService.createLobby(game, maxPlayers, gameInfo)
+                scope.launch {
+                    val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
+                    val baseGameInfo: Map<String, JsonElement> =
+                        mapOf(
+                            "game" to JsonPrimitive(game),
+                            "mission" to JsonPrimitive(mission ?: ""),
+                            "mode" to JsonPrimitive(mode),
+                            "difficulty" to JsonPrimitive(difficulty),
+                            "level_num" to JsonPrimitive(levelNum),
+                            "coop_qol" to JsonPrimitive(coopQol),
+                            "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
+                            "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                            "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
+                            "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
+                            "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
+                        )
+                    val gameInfo =
+                        JsonObject(baseGameInfo + VisualReplacementPolicy.gameInfoFields(visualSummary))
+                    MatchmakingService.createLobby(game, maxPlayers, gameInfo)
+                }
             },
             onDismiss = { showCreateDialog = false },
         )

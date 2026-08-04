@@ -510,7 +510,8 @@ set(DXX_TARGET_PREFIX "d1_")
 add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
 target_sources(
     ${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c)
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_setup.c)
 target_include_directories(${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # ──────────────────────────────────────────────────────────────
@@ -551,6 +552,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_io_contract.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_manifest_parser.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
@@ -657,7 +660,8 @@ set(DXX_TARGET_PREFIX "d2_")
 add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 target_sources(
     ${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c)
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_setup.c)
 target_include_directories(${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # ──────────────────────────────────────────────────────────────
@@ -698,6 +702,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_io_contract.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_manifest_parser.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp

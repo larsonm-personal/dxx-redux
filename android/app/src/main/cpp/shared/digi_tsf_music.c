@@ -805,12 +805,24 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 		/* Decode to raw PCM */
 		pcm_decode_result_t pcm;
-		if (pcm_decode_memory(fbuf, fsize, fptr, &pcm) != 0) {
-			con_printf(CON_CRITICAL, "PCM: decode failed for %s\n", filename);
+		int decode_status = pcm_decode_memory(fbuf, fsize, fptr, &pcm);
+		if (decode_status != PCM_DECODE_OK) {
+			con_printf(CON_CRITICAL,
+			           decode_status == PCM_DECODE_UNSUPPORTED_CHANNELS
+			               ? "PCM: unsupported channel layout for %s; mono or stereo required\n"
+			               : "PCM: decode failed for %s\n",
+			           filename);
 			free(fbuf);
 			return 0;
 		}
 		free(fbuf);
+		if (pcm_decode_result_status(&pcm) != PCM_DECODE_OK ||
+		    pcm.pcm_samples != pcm.total_samples) {
+			con_printf(CON_CRITICAL, "PCM: incomplete or invalid decoded audio for %s\n",
+			           filename);
+			pcm_decode_free(&pcm);
+			return 0;
+		}
 
 		/* Query SDL output rate if not yet known */
 		if (g_output_rate <= 0) {

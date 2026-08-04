@@ -43,6 +43,50 @@ internal fun parseFingerprintMatchingConfig(raw: String): FingerprintMatchingCon
     )
 }
 
+internal fun flattenFingerprintDatabase(
+    discRaw: String,
+    albumRaw: String,
+): String {
+    val physicalDiscs = JSONObject(Json5.strip(discRaw)).getJSONArray("discs")
+    val albums = JSONObject(Json5.strip(albumRaw)).getJSONArray("albums")
+    val flattened = JSONArray()
+
+    fun append(records: JSONArray) {
+        for (i in 0 until records.length()) {
+            val disc = records.getJSONObject(i)
+            val discId = disc.getString("id")
+            val tracks = disc.getJSONArray("tracks")
+            for (j in 0 until tracks.length()) {
+                val track = tracks.getJSONObject(j)
+                if (track.getString("type") != "audio") continue
+                val chromaprint = track.optString("chromaprint").takeIf { it.isNotEmpty() } ?: continue
+                val durationMs = track.optInt("duration_ms", 0)
+                if (durationMs <= 0) continue
+                val entry = JSONObject()
+                val maintainedName = track.optString("name", "Track ${track.getInt("track")}")
+                val acoustidName =
+                    track
+                        .optString("acoustid_name")
+                        .takeIf { it.isNotEmpty() }
+                        ?.takeIf { AcoustIdLabelPolicy.labelsAgree(maintainedName, it) }
+                val rawName = acoustidName ?: maintainedName
+                val trackName =
+                    if (isPlaceholderName(rawName)) "Track ${track.getInt("track")}" else rawName
+                entry.put("name", trackName)
+                entry.put("disc_id", discId)
+                entry.put("track", track.getInt("track"))
+                entry.put("duration_ms", durationMs)
+                entry.put("chromaprint", chromaprint)
+                flattened.put(entry)
+            }
+        }
+    }
+
+    append(physicalDiscs)
+    append(albums)
+    return flattened.toString()
+}
+
 /**
  * JNI bridge for Chromaprint audio fingerprinting.
  *
@@ -74,8 +118,8 @@ object FingerprintBridge {
     // ── Database ──────────────────────────────────────────────────
 
     /**
-     * Load the fingerprint DB from known_discs.json5 bundled in assets.
-     * Flattens all audio tracks with chromaprint data into the JSON array
+     * Load the fingerprint DB from physical discs and fingerprint albums.
+     * Flattens all audio tracks with Chromaprint data into the JSON array
      * format expected by chromaprint_db_load().
      * Returns number of entries loaded.
      */
@@ -94,7 +138,7 @@ object FingerprintBridge {
         MessageDigest
             .getInstance("SHA-256")
             .also { digest ->
-                listOf("known_discs.json5", "fingerprint_config.json5").forEach { assetName ->
+                listOf("known_discs.json5", "known_albums.json5", "fingerprint_config.json5").forEach { assetName ->
                     digest.update(assetName.toByteArray(Charsets.UTF_8))
                     runCatching {
                         context.assets.open(assetName).use { input ->
@@ -414,50 +458,21 @@ object FingerprintBridge {
     }
 
     /**
-     * Flatten known_discs.json5 audio tracks with chromaprint into a
-     * JSON array string for chromaprint_db_load().
+     * Flatten physical-disc and album audio fingerprints into the native DB schema.
      */
     private fun flattenFingerprintDb(context: Context): String? =
         try {
-            val raw =
+            val discRaw =
                 context.assets
                     .open("known_discs.json5")
                     .bufferedReader()
-                    .readText()
-            val root = JSONObject(Json5.strip(raw))
-            val discs = root.getJSONArray("discs")
-            val arr = JSONArray()
-            for (i in 0 until discs.length()) {
-                val disc = discs.getJSONObject(i)
-                val discId = disc.getString("id")
-                val tracks = disc.getJSONArray("tracks")
-                for (j in 0 until tracks.length()) {
-                    val t = tracks.getJSONObject(j)
-                    if (t.getString("type") != "audio") continue
-                    val chromaprint = t.optString("chromaprint").takeIf { it.isNotEmpty() } ?: continue
-                    val durationMs = t.optInt("duration_ms", 0)
-                    if (durationMs <= 0) continue
-                    val entry = JSONObject()
-                    val maintainedName = t.optString("name", "Track ${t.getInt("track")}")
-                    val acoustidName =
-                        t
-                            .optString("acoustid_name")
-                            .takeIf { it.isNotEmpty() }
-                            ?.takeIf { AcoustIdLabelPolicy.labelsAgree(maintainedName, it) }
-                    val rawName =
-                        acoustidName
-                            ?: maintainedName
-                    val trackName =
-                        if (isPlaceholderName(rawName)) "Track ${t.getInt("track")}" else rawName
-                    entry.put("name", trackName)
-                    entry.put("disc_id", discId)
-                    entry.put("track", t.getInt("track"))
-                    entry.put("duration_ms", durationMs)
-                    entry.put("chromaprint", chromaprint)
-                    arr.put(entry)
-                }
-            }
-            arr.toString()
+                    .use { it.readText() }
+            val albumRaw =
+                context.assets
+                    .open("known_albums.json5")
+                    .bufferedReader()
+                    .use { it.readText() }
+            flattenFingerprintDatabase(discRaw, albumRaw)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to flatten fingerprint DB", e)
             null

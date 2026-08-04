@@ -49,6 +49,8 @@ using json = nlohmann::ordered_json;
 
 static unsigned char *levelmeta_screen_pixels = NULL;
 static int levelmeta_runtime_ready = 0;
+static int levelmeta_runtime_poisoned = 0;
+static std::string levelmeta_data_dir;
 static char levelmeta_alloc_file[] = __FILE__;
 static char levelmeta_screen_name[] = "levelmeta_screen";
 static char levelmeta_pixels_name[] = "levelmeta_screen_pixels";
@@ -289,14 +291,24 @@ static std::vector<std::string> build_runtime_args(const std::string &data_dir)
 
 static int init_levelmeta_runtime(JNIEnv *env, jobject context, const json &request, char *error, size_t error_size)
 {
-	std::vector<std::string> arg_storage = build_runtime_args(request.value("data_dir", ""));
+	const std::string requested_data_dir = request.value("data_dir", "");
+	std::vector<std::string> arg_storage = build_runtime_args(requested_data_dir);
 	std::vector<char *> argv;
 #ifdef __ANDROID__
 	PHYSFS_AndroidInit android_init;
 #endif
 
-	if (levelmeta_runtime_ready)
+	if (levelmeta_runtime_ready) {
+		if (levelmeta_runtime_poisoned) {
+			snprintf(error, error_size, "%s", "metadata worker requires restart");
+			return 0;
+		}
+		if (requested_data_dir != levelmeta_data_dir) {
+			snprintf(error, error_size, "%s", "metadata worker data directory changed");
+			return 0;
+		}
 		return 1;
+	}
 #ifdef __ANDROID__
 	android_init.jnienv = (void *) env;
 	android_init.context = (void *) context;
@@ -357,24 +369,102 @@ static int init_levelmeta_runtime(JNIEnv *env, jobject context, const json &requ
 	Players[Player_num].callsign[0] = '\0';
 	GameArg.SysUseNiceFPS = 0;
 	GameArg.SysInputDemoNoRender = 1;
+	levelmeta_data_dir = requested_data_dir;
 	levelmeta_runtime_ready = 1;
 	return 1;
 }
 
-static int mount_request_extra_dir(const json &request, char *error, size_t error_size)
+class LevelMetadataRequestMounts
+{
+	std::vector<std::string> mounted_paths;
+	int mission_loaded = 0;
+	int finished = 0;
+
+	static int search_path_contains(const std::string &wanted)
+	{
+		char **paths = PHYSFS_getSearchPath();
+		int found = 0;
+
+		if (!paths)
+			return -1;
+		for (char **path = paths; *path; ++path)
+			if (wanted == *path) {
+				found = 1;
+				break;
+			}
+		PHYSFS_freeList(paths);
+		return found;
+	}
+
+  public:
+	~LevelMetadataRequestMounts()
+	{
+		finish(NULL, 0);
+	}
+
+	int finish(char *error, size_t error_size)
+	{
+		int cleanup_ok = 1;
+
+		if (finished)
+			return 1;
+		if (mission_loaded && Current_mission)
+			free_mission();
+		Current_mission = NULL;
+		for (std::vector<std::string>::reverse_iterator path = mounted_paths.rbegin();
+		     path != mounted_paths.rend(); ++path)
+			if (!PHYSFS_unmount(path->c_str()) && search_path_contains(*path) != 0)
+				cleanup_ok = 0;
+		mounted_paths.clear();
+		finished = 1;
+		if (!cleanup_ok && error && error_size)
+			snprintf(error, error_size, "%s", "could not release metadata request mounts");
+		return cleanup_ok;
+	}
+
+	int mount(const std::string &path)
+	{
+		mounted_paths.push_back(path);
+		if (!PHYSFS_mount(path.c_str(), NULL, 0)) {
+			mounted_paths.pop_back();
+			return 0;
+		}
+		return 1;
+	}
+
+	void set_mission_loaded(int loaded)
+	{
+		mission_loaded = loaded;
+		if (!loaded)
+			Current_mission = NULL;
+	}
+};
+
+static json finish_levelmeta_request(LevelMetadataRequestMounts &mounts, const json &request,
+                                     json result, char *error, size_t error_size)
+{
+	if (mounts.finish(error, error_size))
+		return result;
+	levelmeta_runtime_poisoned = 1;
+	return failed_result(request, error);
+}
+
+static int mount_request_extra_dir(const json &request, LevelMetadataRequestMounts &mounts,
+                                   char *error, size_t error_size)
 {
 	const std::string extra_data_dir = request.value("extra_data_dir", "");
 
 	if (extra_data_dir.empty())
 		return 1;
 	write_checkpoint(request, "mount", "staged mission files");
-	if (PHYSFS_addToSearchPath(extra_data_dir.c_str(), 0))
+	if (mounts.mount(extra_data_dir))
 		return 1;
 	snprintf(error, error_size, "could not mount staged files: %s", physfs_last_error());
 	return 0;
 }
 
-static int load_requested_mission(const json &request, char *error, size_t error_size)
+static int load_requested_mission(const json &request, LevelMetadataRequestMounts &mounts,
+                                  char *error, size_t error_size)
 {
 	std::string mission = request.value("mission_name", "");
 #ifdef DXX_BUILD_DESCENT_II
@@ -384,8 +474,11 @@ static int load_requested_mission(const json &request, char *error, size_t error
 	write_checkpoint(request, "mission", mission.c_str());
 	std::vector<char> mission_name(mission.begin(), mission.end());
 	mission_name.push_back('\0');
-	if (load_mission_by_name(mission_name.data()))
+	if (load_mission_by_name(mission_name.data())) {
+		mounts.set_mission_loaded(1);
 		return 1;
+	}
+	mounts.set_mission_loaded(0);
 	snprintf(error, error_size, "could not load mission %s", mission.empty() ? "<built-in>" : mission.c_str());
 	return 0;
 }
@@ -405,11 +498,13 @@ static int mission_descriptor_available(const json &request)
 	return PHYSFSX_exists(descriptor.c_str(), 1);
 }
 
-static int load_mission_if_descriptor_available(const json &request, char *error, size_t error_size)
+static int load_mission_if_descriptor_available(const json &request,
+                                                LevelMetadataRequestMounts &mounts,
+                                                char *error, size_t error_size)
 {
 	if (!mission_descriptor_available(request))
 		return 1;
-	return load_requested_mission(request, error, error_size);
+	return load_requested_mission(request, mounts, error, error_size);
 }
 
 static std::vector<std::string> json_string_array(const json &request, const char *name)
@@ -425,7 +520,8 @@ static std::vector<std::string> json_string_array(const json &request, const cha
 	return values;
 }
 
-static int mount_requested_hogs(const json &request, int require_hog, char *error, size_t error_size)
+static int mount_requested_hogs(const json &request, LevelMetadataRequestMounts &mounts,
+                                int require_hog, char *error, size_t error_size)
 {
 	std::vector<std::string> hog_paths = json_string_array(request, "hog_paths");
 
@@ -440,7 +536,7 @@ static int mount_requested_hogs(const json &request, int require_hog, char *erro
 	}
 	for (const std::string &hog_path : hog_paths) {
 		write_checkpoint(request, "mount", hog_path.c_str());
-		if (!PHYSFS_mount(hog_path.c_str(), NULL, 0)) {
+		if (!mounts.mount(hog_path)) {
 			snprintf(error, error_size, "could not mount HOG: %s", physfs_last_error());
 			return 0;
 		}
@@ -1067,21 +1163,22 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 	}
 	if (!init_levelmeta_runtime(env, context, request, error, sizeof(error)))
 		return failed_result(request, error);
-	if (!mount_request_extra_dir(request, error, sizeof(error)))
-		return failed_result(request, error);
+	LevelMetadataRequestMounts mounts;
+	if (!mount_request_extra_dir(request, mounts, error, sizeof(error)))
+		return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
 	if (source_type == "hog") {
-		if (!mount_requested_hogs(request, 1, error, sizeof(error)))
-			return failed_result(request, error);
-		if (!load_mission_if_descriptor_available(request, error, sizeof(error)))
-			return failed_result(request, error);
-		return analyze_hog_entries(request);
+		if (!mount_requested_hogs(request, mounts, 1, error, sizeof(error)))
+			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+		if (!load_mission_if_descriptor_available(request, mounts, error, sizeof(error)))
+			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+		return finish_levelmeta_request(mounts, request, analyze_hog_entries(request), error, sizeof(error));
 	}
 	if (source_type == "mission_files") {
-		if (!mount_requested_hogs(request, 0, error, sizeof(error)))
-			return failed_result(request, error);
-		if (!load_mission_if_descriptor_available(request, error, sizeof(error)))
-			return failed_result(request, error);
-		return analyze_hog_entries(request);
+		if (!mount_requested_hogs(request, mounts, 0, error, sizeof(error)))
+			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+		if (!load_mission_if_descriptor_available(request, mounts, error, sizeof(error)))
+			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+		return finish_levelmeta_request(mounts, request, analyze_hog_entries(request), error, sizeof(error));
 	}
 	if (source_type == "level") {
 		json root;
@@ -1090,7 +1187,8 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		std::string level_file = request.value("level_file", "");
 		int level_num = request.value("level_num", 1);
 		if (level_file.empty())
-			return failed_result(request, "missing level file");
+			return finish_levelmeta_request(
+			    mounts, request, failed_result(request, "missing level file"), error, sizeof(error));
 		{
 			int coop_starts = 0;
 			if (scan_level(request, levels, level_num, level_file.c_str(),
@@ -1107,11 +1205,11 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		set_coop_start_header(root, request, coop_start_range);
 		root["levels"] = levels;
 		root["problems"] = json::array();
-		return root;
+		return finish_levelmeta_request(mounts, request, root, error, sizeof(error));
 	}
-	if (!load_requested_mission(request, error, sizeof(error)))
-		return failed_result(request, error);
-	return analyze_loaded_mission(request);
+	if (!load_requested_mission(request, mounts, error, sizeof(error)))
+		return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+	return finish_levelmeta_request(mounts, request, analyze_loaded_mission(request), error, sizeof(error));
 }
 
 extern "C" JNIEXPORT jstring JNICALL

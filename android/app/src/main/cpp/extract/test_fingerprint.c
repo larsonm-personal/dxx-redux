@@ -210,6 +210,40 @@ _test_cleanup:
 	return;
 }
 
+static void test_pcm_decode_result_contract(void)
+{
+	int16_t samples[16] = { 0 };
+	pcm_decode_result_t pcm = { samples, 44100, 1, 8, 8 };
+	const int unsupported_channels[] = { 0, 3, 6, 8 };
+
+	TEST_BEGIN("pcm_decode_result_contract");
+
+	ASSERT_EQ_INT(PCM_DECODE_OK, pcm_decode_result_status(&pcm),
+	              "mono output accepted");
+	pcm.channels = 2;
+	ASSERT_EQ_INT(PCM_DECODE_OK, pcm_decode_result_status(&pcm),
+	              "stereo output accepted");
+	for (size_t i = 0; i < sizeof(unsupported_channels) / sizeof(unsupported_channels[0]); ++i) {
+		pcm.channels = unsupported_channels[i];
+		ASSERT_EQ_INT(PCM_DECODE_UNSUPPORTED_CHANNELS,
+		              pcm_decode_result_status(&pcm),
+		              "non-mono/stereo output rejected");
+	}
+	pcm.channels = 2;
+	pcm.sample_rate = 0;
+	ASSERT_EQ_INT(PCM_DECODE_ERROR, pcm_decode_result_status(&pcm),
+	              "invalid sample rate rejected");
+	pcm.sample_rate = 44100;
+	pcm.pcm_samples = 9;
+	ASSERT_EQ_INT(PCM_DECODE_ERROR, pcm_decode_result_status(&pcm),
+	              "retained frames cannot exceed total frames");
+
+	TEST_END;
+
+_test_cleanup:
+	return;
+}
+
 /* ── Tests ────────────────────────────────────────────────────────── */
 
 /*
@@ -363,6 +397,9 @@ _test_cleanup:
 static void test_mp3_matches_fpcalc_reference(void)
 {
 	fingerprint_result_t fp = { 0 };
+	pcm_decode_result_t memory_pcm = { 0 };
+	FILE *mp3_file = NULL;
+	unsigned char *mp3_bytes = NULL;
 	uint32_t ref_raw[512];
 
 	TEST_BEGIN("mp3_matches_fpcalc_reference");
@@ -379,6 +416,30 @@ static void test_mp3_matches_fpcalc_reference(void)
 	make_path(mp3_path, sizeof(mp3_path), "test.mp3");
 	int rc = fingerprint_from_audio_file(mp3_path, &fp);
 	ASSERT_TRUE(rc == 0, "fingerprint_from_audio_file");
+	{
+		long mp3_size;
+		mp3_file = fopen(mp3_path, "rb");
+		ASSERT_TRUE(mp3_file != NULL, "open MP3 for memory decode");
+		ASSERT_TRUE(fseek(mp3_file, 0, SEEK_END) == 0, "seek MP3 end");
+		mp3_size = ftell(mp3_file);
+		ASSERT_TRUE(mp3_size > 0, "measure MP3 for memory decode");
+		ASSERT_TRUE(fseek(mp3_file, 0, SEEK_SET) == 0, "seek MP3 start");
+		mp3_bytes = (unsigned char *) malloc((size_t) mp3_size);
+		ASSERT_TRUE(mp3_bytes != NULL, "allocate MP3 memory input");
+		ASSERT_TRUE(fread(mp3_bytes, 1, (size_t) mp3_size, mp3_file) ==
+		                (size_t) mp3_size,
+		            "read MP3 memory input");
+		{
+			int close_status = fclose(mp3_file);
+			mp3_file = NULL;
+			ASSERT_TRUE(close_status == 0, "close MP3 memory input");
+		}
+		ASSERT_EQ_INT(PCM_DECODE_OK,
+		              pcm_decode_memory(mp3_bytes, (size_t) mp3_size, ".mp3", &memory_pcm),
+		              "memory decoder publishes valid mono/stereo PCM");
+		ASSERT_EQ_INT(PCM_DECODE_OK, pcm_decode_result_status(&memory_pcm),
+		              "memory-decoded PCM satisfies shared contract");
+	}
 
 	/* Duration should be close to 10s (= 10000ms, within 500ms tolerance
 	 * because MP3 frames have inherent padding) */
@@ -393,6 +454,9 @@ static void test_mp3_matches_fpcalc_reference(void)
 	TEST_END;
 
 _test_cleanup:
+	if (mp3_file) fclose(mp3_file);
+	free(mp3_bytes);
+	pcm_decode_free(&memory_pcm);
 	fingerprint_free(&fp);
 }
 
@@ -477,6 +541,7 @@ int main(int argc, char *argv[])
 	printf("Test data: %s\n\n", s_data_dir);
 
 	test_stereo_raw_matches_direct_api();
+	test_pcm_decode_result_contract();
 	test_full_track_is_not_truncated();
 	test_mono_raw_matches_direct_api();
 	test_duration_stereo();

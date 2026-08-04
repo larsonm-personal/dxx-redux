@@ -22,10 +22,26 @@
 
 .PARAMETER NoCleanup
     Skip cleanup (leave test files in place for debugging).
+
+.PARAMETER DescriptorOnly
+    Stop after proving the successfully mounted manifest descriptor was released
+
+.PARAMETER RejectIncompleteOnly
+    Stop after proving that native startup rejects a manifest truncated after an entry size
+
+.PARAMETER ProviderPipeOnly
+    Use the debug ContentProvider pipe and stop after proving it was staged and mounted
+
+.PARAMETER ProviderStaleSizeOnly
+    Use a seekable provider with a stale manifest size and require the current descriptor size
 #>
 param(
     [switch]$NoBuild,
-    [switch]$NoCleanup
+    [switch]$NoCleanup,
+    [switch]$DescriptorOnly,
+    [switch]$RejectIncompleteOnly,
+    [switch]$ProviderPipeOnly,
+    [switch]$ProviderStaleSizeOnly
 )
 
 $ErrorActionPreference = "Continue"
@@ -240,6 +256,7 @@ function Invoke-SafCleanup {
     Adb shell "rm -f $restoreTmp" | Out-Null
 
     Adb shell "run-as $PACKAGE rm -f $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
+    Adb shell "run-as $PACKAGE rm -rf files/saf_provider_source cache/saf_descriptor_stage" | Out-Null
     Adb shell "rm -rf $SAF_DIR" | Out-Null
 
     $restored = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE" 2>&1
@@ -278,6 +295,7 @@ if ($installResult -match "Success") {
 } else {
     Write-Host "  $installResult"
     Write-Host "FAIL: APK install failed" -ForegroundColor Red
+    Invoke-SafCleanup
     exit 1
 }
 
@@ -293,6 +311,7 @@ if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
     Write-Host "  $TEST_FILE missing on device, re-pushing..." -ForegroundColor Yellow
     if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
         Write-Host "FAIL: Could not re-push game data deps" -ForegroundColor Red
+        Invoke-SafCleanup
         exit 1
     }
     $sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
@@ -301,6 +320,7 @@ if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
         Write-Host "  Diagnostic: contents of $GAME_DATA_DIR/" -ForegroundColor Yellow
         Adb shell "run-as $PACKAGE ls -la $GAME_DATA_DIR/" | ForEach-Object { Write-Host "    $_" }
         Write-Host "FAIL: $TEST_FILE still not found after re-push" -ForegroundColor Red
+        Invoke-SafCleanup
         exit 1
     }
 }
@@ -325,9 +345,20 @@ $copiedSize = Adb shell "stat -c '%s' $SAF_DIR/$TEST_FILE" 2>&1
 $copiedSize = [long]($copiedSize.ToString().Trim())
 if ($copiedSize -ne $fileSize) {
     Write-Host "FAIL: File copy failed: expected $fileSize bytes, got $copiedSize" -ForegroundColor Red
+    Invoke-SafCleanup
     exit 1
 }
 Write-Host "  Copied to $SAF_DIR/$TEST_FILE ($copiedSize bytes)"
+
+if ($ProviderPipeOnly -or $ProviderStaleSizeOnly) {
+    Adb shell "run-as $PACKAGE mkdir -p files/saf_provider_source" | Out-Null
+    Adb shell "run-as $PACKAGE cp $SAF_DIR/$TEST_FILE files/saf_provider_source/$TEST_FILE" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FAIL: Could not prepare the provider-backed SAF source" -ForegroundColor Red
+        Invoke-SafCleanup
+        exit 1
+    }
+}
 
 # Remove from app's game data dir (force SAF archiver usage)
 Adb shell "run-as $PACKAGE rm $GAME_DATA_DIR/$TEST_FILE" | Out-Null
@@ -344,18 +375,10 @@ Adb shell "am start -n $PACKAGE/.SetupActivity" | Out-Null
 Write-Host "  Waiting for SetupActivity..."
 
 # Poll until SetupActivity's broadcast receiver is alive
-Adb shell "run-as $PACKAGE rm -f files/setup_introspect.json" | Out-Null
-$setupReady = $false
-$sw = [System.Diagnostics.Stopwatch]::StartNew()
-while ($sw.Elapsed.TotalSeconds -lt 30) {
-    Start-Sleep -Seconds 2
-    Adb shell "am broadcast -a com.dxxredux.SETUP_INTROSPECT" | Out-Null
-    Start-Sleep -Seconds 1
-    $probe = (Adb shell "run-as $PACKAGE cat files/setup_introspect.json" 2>&1) -join "`n"
-    if ($probe -match '"screen"') { $setupReady = $true; break }
-}
+$setupReady = Wait-SetupActivityReady -TimeoutSeconds 75
 if (-not $setupReady) {
-    Write-Host "[FAIL] SetupActivity not responding after 30s" -ForegroundColor Red
+    Write-Host "[FAIL] SetupActivity not responding after bounded readiness polling" -ForegroundColor Red
+    Invoke-SafCleanup
     exit 1
 }
 
@@ -366,34 +389,106 @@ Start-Sleep -Seconds 2
 Write-Host ""
 Write-Progress-Flush "Step 6: Creating .saf_manifest.json..." Yellow
 
+$manifestContentUri = "$SAF_DIR/$TEST_FILE"
+if ($ProviderPipeOnly) {
+    $manifestContentUri = "content://com.dxxredux.app.saf-test/pipe/$TEST_FILE"
+} elseif ($ProviderStaleSizeOnly) {
+    $manifestContentUri = "content://com.dxxredux.app.saf-test/seekable/$TEST_FILE"
+}
+$manifestDeclaredSize = if ($ProviderStaleSizeOnly) { $fileSize - 17 } else { $fileSize }
+
 $manifestJson = @"
 {
   "files": [
 {
   "filename": "$($TEST_FILE.ToLower())",
-  "content_uri": "$SAF_DIR/$TEST_FILE",
-  "size_bytes": $fileSize
+  "content_uri": "$manifestContentUri",
+  "size_bytes": $manifestDeclaredSize
 }
   ]
 }
 "@
+if ($RejectIncompleteOnly) {
+    $manifestJson =
+    '{"files":[{"filename":"' + $TEST_FILE.ToLower() +
+    '","content_uri":"' + $SAF_DIR + '/' + $TEST_FILE +
+    '","size_bytes":' + $fileSize
+}
 
-# Write manifest via adb push + run-as cp
+# Stage the complete bytes inside the destination directory, then rename them
+# over the visible generation. This matches the production publication contract.
 $manifestTmp = "/data/local/tmp/.saf_manifest.json"
 $localManifestTmp = Join-Path ([System.IO.Path]::GetTempPath()) "saf_manifest_test.json"
 $manifestJson | Set-Content -Path $localManifestTmp -NoNewline -Encoding UTF8
 Adb push $localManifestTmp $manifestTmp | Out-Null
-Adb shell "run-as $PACKAGE cp $manifestTmp $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
+$manifestStage = "$GAME_DATA_DIR/.saf_manifest.json.$([Guid]::NewGuid().ToString('N')).tmp"
+Adb shell "run-as $PACKAGE cp $manifestTmp $manifestStage" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "FAIL: Could not stage the complete SAF manifest" -ForegroundColor Red
+    Invoke-SafCleanup
+    exit 1
+}
+Adb shell "run-as $PACKAGE mv -f -- $manifestStage $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Adb shell "run-as $PACKAGE rm -f $manifestStage" | Out-Null
+    Write-Host "FAIL: Could not atomically publish the SAF manifest" -ForegroundColor Red
+    Invoke-SafCleanup
+    exit 1
+}
 Adb shell "rm -f $manifestTmp" | Out-Null
 Remove-Item $localManifestTmp -ErrorAction SilentlyContinue
 
-# Verify manifest was created
-$manifestCheck = Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/.saf_manifest.json"
-if ($manifestCheck -match "descent2.ham") {
+# Verify the complete schema and exact entry, not just a filename substring.
+$manifestCheck = (Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/.saf_manifest.json") -join "`n"
+if ($RejectIncompleteOnly) {
+    # Keep local readiness complete so startup reaches the native manifest mount.
+    Adb shell "run-as $PACKAGE cp $SAF_DIR/$TEST_FILE $GAME_DATA_DIR/$TEST_FILE" | Out-Null
+    Adb logcat -c | Out-Null
+    Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
+
+    $nativeRejected = $false
+    for ($attempt = 0; $attempt -lt 30; $attempt++) {
+        Start-Sleep -Seconds 1
+        $nativeLog = (Adb logcat -d -v brief -s DXX-SAF-Archiver:D '*:S') -join "`n"
+        if ($nativeLog -match 'SAF_openArchive: invalid or incomplete manifest') {
+            $nativeRejected = $true
+            break
+        }
+    }
+    if (-not $nativeRejected) {
+        Write-Host "FAIL: Native startup did not reject the incomplete SAF manifest" -ForegroundColor Red
+        Write-Host $nativeLog
+        Invoke-SafCleanup
+        exit 1
+    }
+
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "  RESULT: PASS" -ForegroundColor Green
+    Write-Host "  Native startup rejected the incomplete SAF manifest" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Cyan
+    Invoke-SafCleanup
+    exit 0
+}
+try {
+    $manifestObject = $manifestCheck | ConvertFrom-Json -ErrorAction Stop
+    $manifestFiles = @($manifestObject.files)
+    $manifestValid =
+    $manifestObject.PSObject.Properties.Name.Count -eq 1 -and
+    $manifestFiles.Count -eq 1 -and
+    $manifestFiles[0].PSObject.Properties.Name.Count -eq 3 -and
+    $manifestFiles[0].filename -ceq $TEST_FILE.ToLower() -and
+    $manifestFiles[0].content_uri -ceq $manifestContentUri -and
+    $manifestFiles[0].size_bytes -eq $manifestDeclaredSize
+} catch {
+    $manifestValid = $false
+}
+if ($manifestValid) {
     Write-Host "[OK] Manifest created with $TEST_FILE entry" -ForegroundColor Green
 } else {
     Write-Host "  Manifest content: $manifestCheck"
     Write-Host "FAIL: Manifest creation failed" -ForegroundColor Red
+    Invoke-SafCleanup
     exit 1
 }
 
@@ -401,6 +496,7 @@ if ($manifestCheck -match "descent2.ham") {
 Write-Host ""
 Write-Progress-Flush "Step 7: Launching game..." Yellow
 Adb shell "run-as $PACKAGE rm -f files/introspect.json" | Out-Null
+if ($ProviderPipeOnly -or $ProviderStaleSizeOnly) { Adb logcat -c | Out-Null }
 Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
 
 # Wait for the game process to be up and the native engine to start
@@ -424,6 +520,54 @@ while ($retries -lt 15) {
 
 if (!$gameStarted) {
     Write-Host "[WARN] Game engine not detected via introspection, trying automation anyway..." -ForegroundColor Yellow
+} else {
+    $gamePid = (($procId -split '\s+' | Where-Object { $_ -match '^\d+$' }) | Select-Object -First 1)
+    $fdListing = (Adb shell "run-as $PACKAGE ls -l /proc/$gamePid/fd" 2>&1) -join "`n"
+    if ($fdListing -notmatch ' -> ') {
+        Write-Host "FAIL: Could not inspect game file descriptors after SAF mount" -ForegroundColor Red
+        Write-Host $fdListing
+        Invoke-SafCleanup
+        exit 1
+    }
+    if ($fdListing -match '\.saf_manifest\.json') {
+        Write-Host "FAIL: SAF manifest descriptor remains open after successful mount" -ForegroundColor Red
+        Write-Host $fdListing
+        Invoke-SafCleanup
+        exit 1
+    }
+    Write-Host "[OK] SAF manifest descriptor released after mount" -ForegroundColor Green
+}
+
+if ($ProviderStaleSizeOnly) {
+    $nativeLog = (Adb logcat -d -v brief -s DXX-SAF-Archiver:I '*:S') -join "`n"
+    if ($nativeLog -notmatch "SAF source size changed.*manifest=$manifestDeclaredSize current=$fileSize") {
+        Write-Host "FAIL: Native SAF I/O did not replace stale metadata with the current descriptor size" -ForegroundColor Red
+        Write-Host $nativeLog
+        Invoke-SafCleanup
+        exit 1
+    }
+    $stageLog = (Adb logcat -d -v brief -s DXX-SAF-Stage:I '*:S') -join "`n"
+    if ($stageLog -match 'Staged nonseekable SAF source') {
+        Write-Host "FAIL: Seekable provider source was staged unnecessarily" -ForegroundColor Red
+        Write-Host $stageLog
+        Invoke-SafCleanup
+        exit 1
+    }
+    Write-Host "[OK] Seekable provider used its current descriptor size" -ForegroundColor Green
+}
+
+if ($DescriptorOnly -or $ProviderStaleSizeOnly) {
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "  RESULT: PASS" -ForegroundColor Green
+    if ($ProviderStaleSizeOnly) {
+        Write-Host "  Seekable provider mounted with its current descriptor size" -ForegroundColor Green
+    } else {
+        Write-Host "  SAF manifest descriptor was released after successful mount" -ForegroundColor Green
+    }
+    Write-Host "========================================" -ForegroundColor Cyan
+    Invoke-SafCleanup
+    exit 0
 }
 
 # -- Step 8: Push and run the test automation script --------------------
@@ -437,8 +581,8 @@ Adb push $scriptSource $deviceTmp | Out-Null
 Adb shell "run-as $PACKAGE cp $deviceTmp files/$scriptBasename" | Out-Null
 Adb shell "rm -f $deviceTmp" | Out-Null
 
-# Clear logcat and send automation broadcast
-Adb logcat -c | Out-Null
+# Preserve the provider launch log so the full gameplay result can also prove staging
+if (-not $ProviderPipeOnly) { Adb logcat -c | Out-Null }
 Adb shell "run-as $PACKAGE rm -f files/automation_result.json files/automation_log.jsonl" | Out-Null
 Adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $scriptBasename" | Out-Null
 
@@ -450,6 +594,15 @@ $result = $null
 $failDetail = ""
 
 while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
+    if ($ProviderPipeOnly) {
+        $stageLog = (Adb logcat -d -v brief -s DXX-SAF-Stage:I '*:S') -join "`n"
+        $stepLog = Read-AutomationFile "automation_log.jsonl"
+        if ($stageLog -match 'Staged nonseekable SAF source.*descent2\.ham' -and
+            $stepLog -match '"step":14.*"action":"skip_briefing"') {
+            $result = "PASS"
+            break
+        }
+    }
     $resultJson = Read-AutomationFile "automation_result.json"
     if ($resultJson -and $resultJson -match '"result"') {
         try {
@@ -497,6 +650,16 @@ if ($null -eq $result) {
     $failDetail = "Test did not complete within ${TIMEOUT_SEC}s"
 }
 
+if ($ProviderPipeOnly -and $result -eq "PASS") {
+    $stageLog = (Adb logcat -d -v brief -s DXX-SAF-Stage:I '*:S') -join "`n"
+    if ($stageLog -notmatch 'Staged nonseekable SAF source.*descent2\.ham') {
+        $result = "FAIL"
+        $failDetail = "Gameplay passed without evidence that the provider pipe used seekable staging"
+    } else {
+        Write-Host "[OK] Provider pipe staged before the successful gameplay read" -ForegroundColor Green
+    }
+}
+
 # -- Step 8: Report result ---------------------------------------------
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -504,8 +667,12 @@ Write-Host "========================================" -ForegroundColor Cyan
 switch ($result) {
     "PASS" {
         Write-Host "  RESULT: PASS" -ForegroundColor Green
-        Write-Host "  SAF archiver successfully served $TEST_FILE to the game engine" -ForegroundColor Green
-        Write-Host "  The game loaded to level 1 with HAM data served via PhysFS SAF archiver" -ForegroundColor Green
+        if ($ProviderPipeOnly) {
+            Write-Host "  Provider pipe was staged before level briefing through the production URI path" -ForegroundColor Green
+        } else {
+            Write-Host "  SAF archiver successfully served $TEST_FILE to the game engine" -ForegroundColor Green
+            Write-Host "  The game loaded to level 1 with HAM data served via PhysFS SAF archiver" -ForegroundColor Green
+        }
     }
     "FAIL" {
         Write-Host "  RESULT: FAIL" -ForegroundColor Red
@@ -544,5 +711,6 @@ if ($result -eq "PASS") {
     exit 0
 } else {
     Write-Host "=== SAF ARCHIVER TEST FAILED ===" -ForegroundColor Red
+    Invoke-SafCleanup
     exit 1
 }

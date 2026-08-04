@@ -72,9 +72,11 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 /**
@@ -104,6 +106,7 @@ fun AutoselectEditorPage(
     filesDir: String,
     onBack: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     var activeGame by remember { mutableStateOf(gameVariant) }
 
     // Weapon index -> display name maps, built from paired JNI entries
@@ -119,6 +122,8 @@ fun AutoselectEditorPage(
     var hasMismatchedPilots by remember { mutableStateOf(false) }
     var d1Ordering by remember { mutableStateOf<AutoselectShownOrdering?>(null) }
     var d2Ordering by remember { mutableStateOf<AutoselectShownOrdering?>(null) }
+    var mismatchGeneration by remember { mutableIntStateOf(0) }
+    var saving by remember { mutableStateOf(false) }
 
     fun weaponName(
         index: Int,
@@ -153,13 +158,6 @@ fun AutoselectEditorPage(
                 d2MismatchCount = d2MismatchCount,
             )
         hasMismatchedPilots = hasChanges
-    }
-
-    fun loadWeaponNames(game: String) {
-        val primEntries = NativeAutoselectPatcher.getPrimaryWeaponEntries(game)
-        val secEntries = NativeAutoselectPatcher.getSecondaryWeaponEntries(game)
-        primaryNameMap = NativeAutoselectPatcher.parseWeaponEntries(primEntries)
-        secondaryNameMap = NativeAutoselectPatcher.parseWeaponEntries(secEntries)
     }
 
     fun orderingWithMismatchCount(
@@ -202,11 +200,13 @@ fun AutoselectEditorPage(
     }
 
     fun syncActiveOrderingFromUi(): AutoselectShownOrdering {
+        val previous = orderingFor(activeGame)
         val ordering =
-            orderingWithMismatchCount(
-                activeGame,
-                primaryOrder.toList(),
-                secondaryOrder.toList(),
+            AutoselectShownOrdering(
+                primary = primaryOrder.toList(),
+                secondary = secondaryOrder.toList(),
+                pilotCount = previous?.pilotCount ?: 0,
+                mismatchCount = previous?.mismatchCount ?: 0,
             )
         setOrderingFor(
             activeGame,
@@ -218,31 +218,7 @@ fun AutoselectEditorPage(
             } else {
                 ""
             }
-        if (activeGame == "d1") {
-            updateSaveState(ordering, d2Ordering)
-        } else {
-            updateSaveState(d1Ordering, ordering)
-        }
         return ordering
-    }
-
-    fun applyActiveOrderingToUi() {
-        val ordering =
-            orderingFor(activeGame) ?: loadGameOrdering(activeGame).also {
-                setOrderingFor(activeGame, it)
-            }
-        loadWeaponNames(activeGame)
-        primaryOrder.clear()
-        primaryOrder.addAll(ordering.primary)
-        secondaryOrder.clear()
-        secondaryOrder.addAll(ordering.secondary)
-        statusMessage =
-            if (ordering.pilotCount == 0) {
-                "No pilot files found - showing defaults"
-            } else {
-                ""
-            }
-        updateSaveState()
     }
 
     fun switchGame(game: String) {
@@ -251,70 +227,82 @@ fun AutoselectEditorPage(
         activeGame = game
     }
 
-    fun loadOrdering() {
-        if (d1Ordering == null) {
-            d1Ordering = loadGameOrdering("d1")
-        }
-        if (d2Ordering == null) {
-            d2Ordering = loadGameOrdering("d2")
-        }
-        applyActiveOrderingToUi()
-    }
-
     fun saveMismatchedGames() {
         val activeOrdering = syncActiveOrderingFromUi()
-        var nextD1Ordering = if (activeGame == "d1") activeOrdering else d1Ordering
-        var nextD2Ordering = if (activeGame == "d2") activeOrdering else d2Ordering
-        var savedCount = 0
-        nextD1Ordering?.let { ordering ->
-            if (ordering.mismatchCount > 0) {
-                savedCount +=
-                    NativeAutoselectPatcher.writeAutoselect(
-                        "d1",
-                        filesDir,
-                        ordering.primary.toIntArray(),
-                        ordering.secondary.toIntArray(),
-                    )
-                nextD1Ordering =
-                    orderingWithMismatchCount(
-                        "d1",
-                        ordering.primary,
-                        ordering.secondary,
-                    )
-            }
+        val requestedD1 = if (activeGame == "d1") activeOrdering else d1Ordering
+        val requestedD2 = if (activeGame == "d2") activeOrdering else d2Ordering
+        saving = true
+        scope.launch {
+            val result =
+                withContext(Dispatchers.IO) {
+                    var nextD1 = requestedD1
+                    var nextD2 = requestedD2
+                    var savedCount = 0
+                    requestedD1?.let { ordering ->
+                        if (ordering.mismatchCount > 0) {
+                            savedCount +=
+                                NativeAutoselectPatcher.writeAutoselect(
+                                    "d1",
+                                    filesDir,
+                                    ordering.primary.toIntArray(),
+                                    ordering.secondary.toIntArray(),
+                                )
+                            nextD1 = orderingWithMismatchCount("d1", ordering.primary, ordering.secondary)
+                        }
+                    }
+                    requestedD2?.let { ordering ->
+                        if (ordering.mismatchCount > 0) {
+                            savedCount +=
+                                NativeAutoselectPatcher.writeAutoselect(
+                                    "d2",
+                                    filesDir,
+                                    ordering.primary.toIntArray(),
+                                    ordering.secondary.toIntArray(),
+                                )
+                            nextD2 = orderingWithMismatchCount("d2", ordering.primary, ordering.secondary)
+                        }
+                    }
+                    Triple(nextD1, nextD2, savedCount)
+                }
+            d1Ordering = result.first
+            d2Ordering = result.second
+            saving = false
+            statusMessage =
+                if (result.third > 0) {
+                    "Saved to ${result.third} pilot file(s)"
+                } else if (((if (activeGame == "d1") result.first else result.second)?.pilotCount ?: 0) == 0) {
+                    "No pilot files found - showing defaults"
+                } else {
+                    ""
+                }
+            updateSaveState(result.first, result.second)
         }
-        nextD2Ordering?.let { ordering ->
-            if (ordering.mismatchCount > 0) {
-                savedCount +=
-                    NativeAutoselectPatcher.writeAutoselect(
-                        "d2",
-                        filesDir,
-                        ordering.primary.toIntArray(),
-                        ordering.secondary.toIntArray(),
-                    )
-                nextD2Ordering =
-                    orderingWithMismatchCount(
-                        "d2",
-                        ordering.primary,
-                        ordering.secondary,
-                    )
-            }
-        }
-        d1Ordering = nextD1Ordering
-        d2Ordering = nextD2Ordering
-        statusMessage =
-            if (savedCount > 0) {
-                "Saved to $savedCount pilot file(s)"
-            } else if (((if (activeGame == "d1") nextD1Ordering else nextD2Ordering)?.pilotCount ?: 0) == 0) {
-                "No pilot files found - showing defaults"
-            } else {
-                ""
-            }
-        updateSaveState(nextD1Ordering, nextD2Ordering)
     }
 
     LaunchedEffect(activeGame) {
-        loadOrdering()
+        val game = activeGame
+        val cachedOrdering = orderingFor(game)
+        val loaded =
+            withContext(Dispatchers.IO) {
+                val ordering = cachedOrdering ?: loadGameOrdering(game)
+                val primaryNames =
+                    NativeAutoselectPatcher.parseWeaponEntries(
+                        NativeAutoselectPatcher.getPrimaryWeaponEntries(game),
+                    )
+                val secondaryNames =
+                    NativeAutoselectPatcher.parseWeaponEntries(
+                        NativeAutoselectPatcher.getSecondaryWeaponEntries(game),
+                    )
+                Triple(ordering, primaryNames, secondaryNames)
+            }
+        setOrderingFor(game, loaded.first)
+        primaryNameMap = loaded.second
+        secondaryNameMap = loaded.third
+        primaryOrder.clear()
+        primaryOrder.addAll(loaded.first.primary)
+        secondaryOrder.clear()
+        secondaryOrder.addAll(loaded.first.secondary)
+        updateSaveState()
     }
 
     // Check for changes whenever ordering updates
@@ -323,7 +311,30 @@ fun AutoselectEditorPage(
             updateSaveState()
         } else {
             syncActiveOrderingFromUi()
+            hasChanges = true
+            hasMismatchedPilots = true
+            mismatchGeneration++
         }
+    }
+
+    LaunchedEffect(mismatchGeneration) {
+        if (mismatchGeneration == 0 || primaryOrder.isEmpty() || secondaryOrder.isEmpty()) {
+            return@LaunchedEffect
+        }
+        delay(150)
+        val game = activeGame
+        val primary = primaryOrder.toList()
+        val secondary = secondaryOrder.toList()
+        val checked =
+            withContext(Dispatchers.IO) {
+                orderingWithMismatchCount(game, primary, secondary)
+            }
+        val current = orderingFor(game)
+        if (current?.primary != primary || current.secondary != secondary) {
+            return@LaunchedEffect
+        }
+        setOrderingFor(game, checked)
+        updateSaveState()
     }
 
     val isLandscape =
@@ -516,7 +527,7 @@ fun AutoselectEditorPage(
                         onClick = {
                             saveMismatchedGames()
                         },
-                        enabled = hasChanges,
+                        enabled = hasChanges && !saving,
                         modifier = Modifier.weight(1f).height(28.dp).tvFocusBorder(),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {

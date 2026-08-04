@@ -86,6 +86,59 @@ internal object AtomicFilePublication {
         replaceLocked(temporary, target)
     }
 
+    fun publishFile(
+        temporary: File,
+        target: File,
+        beforePublish: (File, File) -> Unit = { _, _ -> },
+    ) = transaction {
+        check(temporary.isFile) { "Temporary file generation is missing" }
+        target.parentFile?.mkdirs()
+        beforePublish(temporary, target)
+        replaceLocked(temporary, target)
+    }
+
+    fun publishFiles(files: List<Pair<File, File>>) =
+        transaction {
+            val entries =
+                files.distinctBy { it.second.absolutePath }.map { (temporary, target) ->
+                    check(temporary.isFile) { "Temporary file generation is missing" }
+                    target.parentFile?.mkdirs()
+                    BatchEntry(target, temporary, target.takeIf(File::exists)?.let { uniqueSibling(target, "old") })
+                }
+            var published = 0
+            var committed = false
+            try {
+                entries.forEach { entry ->
+                    entry.backup?.let {
+                        check(
+                            entry.target.renameTo(it),
+                        ) { "Could not retain the previous file generation" }
+                    }
+                }
+                entries.forEach { entry ->
+                    check(entry.temporary.renameTo(entry.target)) { "Could not publish file generation" }
+                    published++
+                }
+                committed = true
+            } catch (failure: Throwable) {
+                for (index in published - 1 downTo 0) entries[index].target.delete()
+                entries.forEach { entry ->
+                    entry.backup?.takeIf(File::exists)?.let { backup ->
+                        if (!backup.renameTo(entry.target)) {
+                            failure.addSuppressed(
+                                IllegalStateException("Could not restore the previous file generation"),
+                            )
+                        }
+                    }
+                }
+                throw failure
+            } finally {
+                if (committed) {
+                    entries.forEach { entry -> entry.backup?.delete() }
+                }
+            }
+        }
+
     fun uniqueSibling(
         target: File,
         suffix: String,

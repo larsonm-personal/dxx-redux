@@ -32,10 +32,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,6 +68,196 @@ private data class StorageFileScanResult(
     val entries: List<StorageFileEntry>,
     val totalSize: Long,
 )
+
+private data class SafEntry(
+    val label: String,
+    val uri: String,
+    val accessible: Boolean,
+    val customSetId: String? = null,
+    val customFilename: String? = null,
+    val cdSourceId: String? = null,
+    val isPermissionEntry: Boolean = false,
+) {
+    val key: String
+        get() =
+            when {
+                customSetId != null -> "custom:$customSetId:$customFilename:$uri"
+                cdSourceId != null -> "cd:$cdSourceId:$uri"
+                isPermissionEntry -> "perm:$uri"
+                else -> uri
+            }
+}
+
+private data class SafProbeKey(
+    val uri: String,
+    val useFileDescriptor: Boolean,
+)
+
+private data class SafEntryDraft(
+    val label: String,
+    val uri: String,
+    val probes: List<SafProbeKey>,
+    val customSetId: String? = null,
+    val customFilename: String? = null,
+    val cdSourceId: String? = null,
+)
+
+private data class ImportTreeUsage(
+    val bytes: Long,
+    val complete: Boolean,
+)
+
+private data class ImportLocationSnapshot(
+    val source: File,
+    val usage: ImportTreeUsage,
+    val volumes: List<ImportLocationManager.VolumeOption>,
+    val overrideActive: Boolean,
+)
+
+private const val SAF_PROBE_TIMEOUT_MS = 3_000L
+private const val SAF_PROBE_CONCURRENCY = 3
+private const val IMPORT_USAGE_ENTRY_LIMIT = 100_000
+private const val IMPORT_USAGE_DEPTH_LIMIT = 64
+
+private suspend fun loadSafEntries(
+    context: android.content.Context,
+    filesDir: File,
+): List<SafEntry> =
+    withContext(Dispatchers.IO) {
+        val drafts = mutableListOf<SafEntryDraft>()
+        val trackedSafUris = mutableSetOf<String>()
+        runCatching {
+            for (set in CustomAudioSetManager(filesDir).getSets()) {
+                for ((filename, uri) in set.referencedUris) {
+                    trackedSafUris += uri
+                    drafts +=
+                        SafEntryDraft(
+                            label = "Audio: $filename (${set.label})",
+                            uri = uri,
+                            probes = listOf(SafProbeKey(uri, false)),
+                            customSetId = set.id,
+                            customFilename = filename,
+                        )
+                }
+            }
+        }
+        runCatching {
+            for (source in AudioSourceManager(filesDir).getSources()) {
+                if (!hasSafLinkedCdContent(source)) continue
+                val binUris = source.binContentUriList().filterNot(::isLocalCdContentPath)
+                val cueUri = source.cueContentUri?.takeUnless(::isLocalCdContentPath)
+                (binUris + listOfNotNull(cueUri)).forEach(trackedSafUris::add)
+                val displayUri = cueUri ?: binUris.firstOrNull() ?: continue
+                drafts +=
+                    SafEntryDraft(
+                        label = buildCdSourceSafLabel(source),
+                        uri = displayUri,
+                        probes =
+                            binUris.map { SafProbeKey(it, true) } +
+                                listOfNotNull(cueUri?.let { SafProbeKey(it, false) }),
+                        cdSourceId = source.id,
+                    )
+            }
+        }
+
+        val probeResults =
+            coroutineScope {
+                val semaphore = Semaphore(SAF_PROBE_CONCURRENCY)
+                drafts
+                    .flatMap { it.probes }
+                    .distinct()
+                    .associateWith { probe ->
+                        async {
+                            semaphore.withPermit {
+                                withTimeoutOrNull(SAF_PROBE_TIMEOUT_MS) {
+                                    val cancellationSignal = android.os.CancellationSignal()
+                                    val cancellationHandle =
+                                        kotlin.coroutines.coroutineContext[kotlinx.coroutines.Job]
+                                            ?.invokeOnCompletion { cancellationSignal.cancel() }
+                                    try {
+                                        runInterruptible {
+                                            canAccessSafUri(
+                                                context,
+                                                Uri.parse(probe.uri),
+                                                useFileDescriptor = probe.useFileDescriptor,
+                                                cancellationSignal = cancellationSignal,
+                                            )
+                                        }
+                                    } finally {
+                                        cancellationHandle?.dispose()
+                                    }
+                                } ?: false
+                            }
+                        }
+                    }.mapValues { it.value.await() }
+            }
+
+        buildList {
+            drafts.forEach { draft ->
+                add(
+                    SafEntry(
+                        label = draft.label,
+                        uri = draft.uri,
+                        accessible = draft.probes.all { probeResults[it] == true },
+                        customSetId = draft.customSetId,
+                        customFilename = draft.customFilename,
+                        cdSourceId = draft.cdSourceId,
+                    ),
+                )
+            }
+            context.contentResolver.persistedUriPermissions.forEach { permission ->
+                val uri = permission.uri.toString()
+                if (!isPersistedPermissionCoveredByTrackedUris(uri, trackedSafUris)) {
+                    add(
+                        SafEntry(
+                            label = "Permission",
+                            uri = uri,
+                            accessible = permission.isReadPermission,
+                            isPermissionEntry = true,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+private suspend fun scanImportTreeUsage(root: File): ImportTreeUsage =
+    withContext(Dispatchers.IO) {
+        var bytes = 0L
+        var entries = 0
+        var complete = true
+        val pending = ArrayDeque<Pair<File, Int>>()
+        val visitedDirectories = mutableSetOf<String>()
+        pending.add(root to 0)
+        while (pending.isNotEmpty()) {
+            ensureActive()
+            val (file, depth) = pending.removeLast()
+            entries++
+            if (entries > IMPORT_USAGE_ENTRY_LIMIT) {
+                complete = false
+                break
+            }
+            if (file.isFile) {
+                val length = file.length().coerceAtLeast(0L)
+                bytes = if (Long.MAX_VALUE - bytes < length) Long.MAX_VALUE else bytes + length
+                continue
+            }
+            if (!file.isDirectory) continue
+            if (depth >= IMPORT_USAGE_DEPTH_LIMIT) {
+                complete = false
+                continue
+            }
+            val identity = runCatching { file.canonicalPath }.getOrElse { file.absolutePath }
+            if (!visitedDirectories.add(identity)) continue
+            val children = file.listFiles()
+            if (children == null) {
+                complete = false
+            } else {
+                children.forEach { pending.add(it to depth + 1) }
+            }
+        }
+        ImportTreeUsage(bytes, complete)
+    }
 
 private data class AdvancedPageInitialLists(
     val logFiles: List<File>,
@@ -419,6 +616,7 @@ fun AdvancedSettingsPage(
 
                         // Reset All Controls
                         var showResetDialog by remember { mutableStateOf(false) }
+                        var resettingControls by remember { mutableStateOf(false) }
                         OutlinedButton(
                             onClick = { showResetDialog = true },
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -432,7 +630,7 @@ fun AdvancedSettingsPage(
                         }
                         if (showResetDialog) {
                             AlertDialog(
-                                onDismissRequest = { showResetDialog = false },
+                                onDismissRequest = { if (!resettingControls) showResetDialog = false },
                                 title = { Text("Reset All Controls") },
                                 text = {
                                     Text(
@@ -445,16 +643,30 @@ fun AdvancedSettingsPage(
                                     )
                                 },
                                 confirmButton = {
-                                    TextButton(onClick = {
-                                        File(ctx.filesDir, "controller_config.json").delete()
-                                        File(ctx.filesDir, "touch_layout.json").delete()
-                                        ControllerConfigSlotRepository.clear(ctx)
-                                        TouchLayoutSlotRepository.clear(ctx)
-                                        NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
-                                        NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
-                                        showResetDialog = false
-                                        android.os.Process.killProcess(android.os.Process.myPid())
-                                    }) {
+                                    TextButton(
+                                        enabled = !resettingControls,
+                                        onClick = {
+                                            resettingControls = true
+                                            configImportScope.launch {
+                                                withContext(Dispatchers.IO) {
+                                                    File(ctx.filesDir, "controller_config.json").delete()
+                                                    File(ctx.filesDir, "touch_layout.json").delete()
+                                                    ControllerConfigSlotRepository.clear(ctx)
+                                                    TouchLayoutSlotRepository.clear(ctx)
+                                                    NativePilotPatcher.nativeResetToDefaults(
+                                                        ctx.filesDir.absolutePath,
+                                                        "d2",
+                                                    )
+                                                    NativePilotPatcher.nativeResetToDefaults(
+                                                        ctx.filesDir.absolutePath,
+                                                        "d1",
+                                                    )
+                                                }
+                                                showResetDialog = false
+                                                android.os.Process.killProcess(android.os.Process.myPid())
+                                            }
+                                        },
+                                    ) {
                                         Text("Reset & Restart", color = Color(0xFFF44336))
                                     }
                                 },
@@ -468,6 +680,7 @@ fun AdvancedSettingsPage(
 
                         // Clear All Game Data
                         var showClearGameDataDialog by remember { mutableStateOf(false) }
+                        var clearingGameData by remember { mutableStateOf(false) }
                         OutlinedButton(
                             onClick = { showClearGameDataDialog = true },
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -481,7 +694,7 @@ fun AdvancedSettingsPage(
                         }
                         if (showClearGameDataDialog) {
                             AlertDialog(
-                                onDismissRequest = { showClearGameDataDialog = false },
+                                onDismissRequest = { if (!clearingGameData) showClearGameDataDialog = false },
                                 title = { Text("Clear All Game Data") },
                                 text = {
                                     Text(
@@ -495,33 +708,43 @@ fun AdvancedSettingsPage(
                                     )
                                 },
                                 confirmButton = {
-                                    TextButton(onClick = {
-                                        val retainedSafUris =
-                                            CustomAudioSetManager(ctx.filesDir)
-                                                .getSets()
-                                                .flatMap { it.referencedUris.values }
-                                        val audioSourceManager = AudioSourceManager(ctx.filesDir)
-                                        val audioCleared = audioSourceManager.getSources().size
-                                        val setsCleared =
-                                            fileSetManager.clearAllGameDataPreservingPlayers(
-                                                context = ctx,
-                                                retainedTrackedUris = retainedSafUris,
-                                            )
-                                        audioSourceManager.clearAll(
-                                            context = ctx,
-                                            retainedTrackedUris = retainedSafUris,
-                                        )
-                                        val modsCleared = ModManager(ctx.filesDir).clearAllMods()
-                                        showClearGameDataDialog = false
-                                        Toast
-                                            .makeText(
-                                                ctx,
-                                                "Cleared $setsCleared set(s), removed $modsCleared mod(s), " +
-                                                    "cleared $audioCleared CD source(s)",
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        android.os.Process.killProcess(android.os.Process.myPid())
-                                    }) {
+                                    TextButton(
+                                        enabled = !clearingGameData,
+                                        onClick = {
+                                            clearingGameData = true
+                                            configImportScope.launch {
+                                                val result =
+                                                    withContext(Dispatchers.IO) {
+                                                        val retainedSafUris =
+                                                            CustomAudioSetManager(ctx.filesDir)
+                                                                .getSets()
+                                                                .flatMap { it.referencedUris.values }
+                                                        val audioSourceManager = AudioSourceManager(ctx.filesDir)
+                                                        val audioCleared = audioSourceManager.getSources().size
+                                                        val setsCleared =
+                                                            fileSetManager.clearAllGameDataPreservingPlayers(
+                                                                context = ctx,
+                                                                retainedTrackedUris = retainedSafUris,
+                                                            )
+                                                        audioSourceManager.clearAll(
+                                                            context = ctx,
+                                                            retainedTrackedUris = retainedSafUris,
+                                                        )
+                                                        val modsCleared = ModManager(ctx.filesDir).clearAllMods()
+                                                        Triple(setsCleared, modsCleared, audioCleared)
+                                                    }
+                                                showClearGameDataDialog = false
+                                                Toast
+                                                    .makeText(
+                                                        ctx,
+                                                        "Cleared ${result.first} set(s), removed ${result.second} " +
+                                                            "mod(s), cleared ${result.third} CD source(s)",
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                                android.os.Process.killProcess(android.os.Process.myPid())
+                                            }
+                                        },
+                                    ) {
                                         Text("Clear & Restart", color = Color(0xFFF44336))
                                     }
                                 },
@@ -535,6 +758,7 @@ fun AdvancedSettingsPage(
 
                         // Delete All Player Files
                         var showDeletePilotsDialog by remember { mutableStateOf(false) }
+                        var deletingPilots by remember { mutableStateOf(false) }
                         OutlinedButton(
                             onClick = { showDeletePilotsDialog = true },
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -545,7 +769,7 @@ fun AdvancedSettingsPage(
                         }
                         if (showDeletePilotsDialog) {
                             AlertDialog(
-                                onDismissRequest = { showDeletePilotsDialog = false },
+                                onDismissRequest = { if (!deletingPilots) showDeletePilotsDialog = false },
                                 title = { Text("Delete All Player Files") },
                                 text = {
                                     Text(
@@ -558,12 +782,23 @@ fun AdvancedSettingsPage(
                                     )
                                 },
                                 confirmButton = {
-                                    TextButton(onClick = {
-                                        val deleted = fileSetManager.deleteAllPilotFiles()
-                                        showDeletePilotsDialog = false
-                                        Toast.makeText(ctx, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
-                                        android.os.Process.killProcess(android.os.Process.myPid())
-                                    }) {
+                                    TextButton(
+                                        enabled = !deletingPilots,
+                                        onClick = {
+                                            deletingPilots = true
+                                            configImportScope.launch {
+                                                val deleted =
+                                                    withContext(Dispatchers.IO) {
+                                                        fileSetManager.deleteAllPilotFiles()
+                                                    }
+                                                showDeletePilotsDialog = false
+                                                Toast
+                                                    .makeText(ctx, "Deleted $deleted file(s)", Toast.LENGTH_SHORT)
+                                                    .show()
+                                                android.os.Process.killProcess(android.os.Process.myPid())
+                                            }
+                                        },
+                                    ) {
                                         Text("Delete & Restart", color = Color(0xFFF44336))
                                     }
                                 },
@@ -1054,8 +1289,8 @@ private fun RecordedInputDemosSection(
         )
     }
 
-    fun refresh() {
-        demos = InputDemoManager.listStagedDemos(filesDir)
+    suspend fun refresh() {
+        demos = withContext(Dispatchers.IO) { InputDemoManager.listStagedDemos(filesDir) }
     }
 
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -1307,12 +1542,12 @@ private fun RecordedInputDemosSection(
             text = { Text("Delete ${deleteTarget?.file?.name}? This cannot be undone") },
             confirmButton = {
                 TextButton(onClick = {
-                    val target = deleteTarget
-                    if (target != null) {
-                        InputDemoManager.deleteStagedDemo(target)
+                    val target = deleteTarget ?: return@TextButton
+                    deleteTarget = null
+                    scope.launch {
+                        withContext(Dispatchers.IO) { InputDemoManager.deleteStagedDemo(target) }
                         refresh()
                     }
-                    deleteTarget = null
                 }) {
                     Text("Delete", color = Color(0xFFF44336))
                 }
@@ -1330,10 +1565,15 @@ private fun RecordedInputDemosSection(
             text = { Text("Delete all staged recorded demos? This cannot be undone") },
             confirmButton = {
                 TextButton(onClick = {
-                    val deleted = InputDemoManager.deleteAllStagedDemos(filesDir)
-                    refresh()
                     showDeleteAllDialog = false
-                    Toast.makeText(ctx, "Deleted $deleted recorded demo(s)", Toast.LENGTH_SHORT).show()
+                    scope.launch {
+                        val deleted =
+                            withContext(Dispatchers.IO) {
+                                InputDemoManager.deleteAllStagedDemos(filesDir)
+                            }
+                        refresh()
+                        Toast.makeText(ctx, "Deleted $deleted recorded demo(s)", Toast.LENGTH_SHORT).show()
+                    }
                 }) {
                     Text("Delete", color = Color(0xFFF44336))
                 }
@@ -1457,6 +1697,7 @@ private fun StorageInspectorSection(
     refreshTrigger: Int,
 ) {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showFilesDialog by remember { mutableStateOf(false) }
     var showSafDialog by remember { mutableStateOf(false) }
 
@@ -1756,29 +1997,32 @@ private fun StorageInspectorSection(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            val deleted =
-                                if (linkedOwner == null) {
-                                    entry.file.delete()
-                                } else if (entry.linkedMissionZipSourceExists) {
-                                    ModManager(filesDir).deleteMod(linkedOwner)
-                                    true
-                                } else {
-                                    MissionZipExtractionStore(filesDir).removeOwner(linkedOwner)
-                                }
-                            if (deleted) {
-                                selectedEntry = null
-                                deleteEntry = null
-                                refreshFiles++
-                                val message =
-                                    if (linkedOwner == null) {
-                                        "Deleted ${entry.file.name}"
-                                    } else {
-                                        "Removed linked files for $linkedOwner"
+                            deleteEntry = null
+                            scope.launch {
+                                val deleted =
+                                    withContext(Dispatchers.IO) {
+                                        if (linkedOwner == null) {
+                                            entry.file.delete()
+                                        } else if (entry.linkedMissionZipSourceExists) {
+                                            ModManager(filesDir).deleteMod(linkedOwner)
+                                            true
+                                        } else {
+                                            MissionZipExtractionStore(filesDir).removeOwner(linkedOwner)
+                                        }
                                     }
-                                Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
-                            } else {
-                                deleteEntry = null
-                                Toast.makeText(ctx, "Delete failed", Toast.LENGTH_LONG).show()
+                                if (deleted) {
+                                    selectedEntry = null
+                                    refreshFiles++
+                                    val message =
+                                        if (linkedOwner == null) {
+                                            "Deleted ${entry.file.name}"
+                                        } else {
+                                            "Removed linked files for $linkedOwner"
+                                        }
+                                    Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(ctx, "Delete failed", Toast.LENGTH_LONG).show()
+                                }
                             }
                         },
                     ) { Text(if (linkedOwner == null) "Delete" else "Remove") }
@@ -1792,110 +2036,28 @@ private fun StorageInspectorSection(
 
     if (showSafDialog) {
         var refreshSafEntries by remember { mutableIntStateOf(0) }
-
-        data class SafEntry(
-            val label: String,
-            val uri: String,
-            val accessible: Boolean,
-            val customSetId: String? = null,
-            val customFilename: String? = null,
-            val cdSourceId: String? = null,
-            val isPermissionEntry: Boolean = false,
-        ) {
-            val key: String
-                get() =
-                    when {
-                        customSetId != null -> "custom:$customSetId:$customFilename:$uri"
-                        cdSourceId != null -> "cd:$cdSourceId:$uri"
-                        isPermissionEntry -> "perm:$uri"
-                        else -> uri
-                    }
-        }
-
         var selectedSafEntry by remember { mutableStateOf<SafEntry?>(null) }
         var removeSafEntry by remember { mutableStateOf<SafEntry?>(null) }
-
-        val safEntries =
-            remember(refreshSafEntries, refreshTrigger) {
-                val entries = mutableListOf<SafEntry>()
-                val trackedSafUris = mutableSetOf<String>()
-                // Custom audio referenced URIs
-                try {
-                    val customMgr = CustomAudioSetManager(filesDir)
-                    for (set in customMgr.getSets()) {
-                        for ((filename, uriStr) in set.referencedUris) {
-                            trackedSafUris.add(uriStr)
-                            entries.add(
-                                SafEntry(
-                                    label = "Audio: $filename (${set.label})",
-                                    uri = uriStr,
-                                    accessible = canAccessSafUri(ctx, Uri.parse(uriStr)),
-                                    customSetId = set.id,
-                                    customFilename = filename,
-                                ),
-                            )
-                        }
-                    }
-                } catch (_: Exception) {
-                }
-                // CD audio SAF sources
-                try {
-                    val srcMgr = AudioSourceManager(filesDir)
-                    for (src in srcMgr.getSources()) {
-                        if (!hasSafLinkedCdContent(src)) continue
-                        val safBinUris = src.binContentUriList().filterNot(::isLocalCdContentPath)
-                        val safCueUri = src.cueContentUri?.takeUnless(::isLocalCdContentPath)
-                        (safBinUris + listOfNotNull(safCueUri)).forEach(trackedSafUris::add)
-                        val displayUri = safCueUri ?: safBinUris.firstOrNull() ?: continue
-                        val accessible =
-                            (
-                                safBinUris.map { uriStr ->
-                                    canAccessSafUri(ctx, Uri.parse(uriStr), useFileDescriptor = true)
-                                } +
-                                    listOfNotNull(
-                                        safCueUri?.let { uriStr ->
-                                            canAccessSafUri(ctx, Uri.parse(uriStr))
-                                        },
-                                    )
-                            ).all { it }
-                        entries.add(
-                            SafEntry(
-                                label = buildCdSourceSafLabel(src),
-                                uri = displayUri,
-                                accessible = accessible,
-                                cdSourceId = src.id,
-                            ),
-                        )
-                    }
-                } catch (_: Exception) {
-                }
-                // Persistable URI permissions
-                val persisted = ctx.contentResolver.persistedUriPermissions
-                for (perm in persisted) {
-                    val uriStr = perm.uri.toString()
-                    if (!isPersistedPermissionCoveredByTrackedUris(uriStr, trackedSafUris)) {
-                        entries.add(
-                            SafEntry(
-                                label = "Permission",
-                                uri = uriStr,
-                                accessible = perm.isReadPermission,
-                                isPermissionEntry = true,
-                            ),
-                        )
-                    }
-                }
-                entries.toList()
-            }
+        var safEntries by remember(refreshSafEntries, refreshTrigger) {
+            mutableStateOf<List<SafEntry>?>(null)
+        }
+        LaunchedEffect(refreshSafEntries, refreshTrigger, filesDir.absolutePath) {
+            safEntries = null
+            safEntries = loadSafEntries(ctx.applicationContext, filesDir)
+        }
 
         AlertDialog(
             onDismissRequest = { showSafDialog = false },
-            title = { Text("SAF Links (${safEntries.size})") },
+            title = { Text(safEntries?.let { "SAF Links (${it.size})" } ?: "SAF Links") },
             text = {
-                if (safEntries.isEmpty()) {
+                val entries = safEntries
+                if (entries == null) {
+                    MetadataLoadProgressView(MetadataLoadProgress("Checking SAF links", 0, 1))
+                } else if (entries.isEmpty()) {
                     Text("No SAF links", fontSize = 12.sp)
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                        items(items = safEntries, key = { it.key }) { entry ->
+                        items(items = entries, key = { it.key }) { entry ->
                             Column(
                                 modifier =
                                     Modifier
@@ -2018,36 +2180,50 @@ private fun StorageInspectorSection(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            var removed = false
-                            when {
-                                entry.customSetId != null && entry.customFilename != null -> {
-                                    CustomAudioSetManager(
-                                        filesDir,
-                                    ).removeReferencedFile(entry.customSetId, entry.customFilename)
-                                    Toast.makeText(ctx, "Removed SAF audio link", Toast.LENGTH_SHORT).show()
-                                    removed = true
-                                }
-
-                                entry.cdSourceId != null -> {
-                                    val srcMgr = AudioSourceManager(filesDir)
-                                    val source = srcMgr.getSources().firstOrNull { it.id == entry.cdSourceId }
-                                    if (source != null) {
-                                        srcMgr.removeSource(source.id, ctx)
-                                        Toast.makeText(ctx, "Removed CD audio source", Toast.LENGTH_SHORT).show()
-                                        removed = true
-                                    }
-                                }
-
-                                entry.isPermissionEntry -> {
-                                    releasePersistedReadPermissionExplicitly(ctx, Uri.parse(entry.uri))
-                                    Toast.makeText(ctx, "Removed SAF permission", Toast.LENGTH_SHORT).show()
-                                    removed = true
-                                }
-                            }
                             removeSafEntry = null
                             selectedSafEntry = null
-                            if (removed) {
-                                refreshSafEntries++
+                            scope.launch {
+                                val result =
+                                    withContext(Dispatchers.IO) {
+                                        when {
+                                            entry.customSetId != null && entry.customFilename != null -> {
+                                                CustomAudioSetManager(filesDir)
+                                                    .removeReferencedFile(
+                                                        entry.customSetId,
+                                                        entry.customFilename,
+                                                    )
+                                                "Removed SAF audio link"
+                                            }
+
+                                            entry.cdSourceId != null -> {
+                                                val manager = AudioSourceManager(filesDir)
+                                                val source =
+                                                    manager.getSources().firstOrNull {
+                                                        it.id == entry.cdSourceId
+                                                    }
+                                                source?.let {
+                                                    manager.removeSource(it.id, ctx)
+                                                    "Removed CD audio source"
+                                                }
+                                            }
+
+                                            entry.isPermissionEntry -> {
+                                                releasePersistedReadPermissionExplicitly(
+                                                    ctx,
+                                                    Uri.parse(entry.uri),
+                                                )
+                                                "Removed SAF permission"
+                                            }
+
+                                            else -> {
+                                                null
+                                            }
+                                        }
+                                    }
+                                if (result != null) {
+                                    Toast.makeText(ctx, result, Toast.LENGTH_SHORT).show()
+                                    refreshSafEntries++
+                                }
                             }
                         },
                     ) { Text("Remove") }
@@ -2064,14 +2240,44 @@ private fun StorageInspectorSection(
 private fun ImportLocationSection(filesDir: File) {
     val ctx = LocalContext.current
     val mgr = remember { ImportLocationManager(filesDir) }
+    val scope = rememberCoroutineScope()
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
-    var activePath by remember { mutableStateOf(mgr.getActiveRoot().absolutePath) }
-    var overrideActive by remember { mutableStateOf(mgr.isOverrideActive()) }
+    var activePath by remember { mutableStateOf<String?>(null) }
+    var overrideActive by remember { mutableStateOf(false) }
+    var locationSnapshot by remember { mutableStateOf<ImportLocationSnapshot?>(null) }
     var showPicker by remember { mutableStateOf(false) }
     var pendingTarget by remember { mutableStateOf<File?>(null) }
     var migrating by remember { mutableStateOf(false) }
     var migrateCopied by remember { mutableStateOf(0L) }
     var migrateTotal by remember { mutableStateOf(0L) }
+
+    suspend fun loadLocationSnapshot(): ImportLocationSnapshot {
+        val source = withContext(Dispatchers.IO) { mgr.getActiveRoot() }
+        val usage = scanImportTreeUsage(source)
+        return withContext(Dispatchers.IO) {
+            ImportLocationSnapshot(
+                source = source,
+                usage = usage,
+                volumes = mgr.listCandidateVolumes(ctx.applicationContext),
+                overrideActive = mgr.isOverrideActive(),
+            )
+        }
+    }
+
+    LaunchedEffect(filesDir.absolutePath) {
+        val state =
+            withContext(Dispatchers.IO) {
+                mgr.getActiveRoot().absolutePath to mgr.isOverrideActive()
+            }
+        activePath = state.first
+        overrideActive = state.second
+    }
+
+    LaunchedEffect(showPicker) {
+        if (!showPicker) return@LaunchedEffect
+        locationSnapshot = null
+        locationSnapshot = loadLocationSnapshot()
+    }
 
     Text("Imported Files Location", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
@@ -2084,7 +2290,7 @@ private fun ImportLocationSection(filesDir: File) {
     )
     Spacer(modifier = Modifier.height(8.dp))
     Text(
-        "Current: $activePath" + if (overrideActive) "  (override)" else "  (default)",
+        "Current: ${activePath ?: "Checking..."}" + if (overrideActive) "  (override)" else "  (default)",
         fontSize = 11.sp,
     )
     Spacer(modifier = Modifier.height(8.dp))
@@ -2099,7 +2305,12 @@ private fun ImportLocationSection(filesDir: File) {
         }
         if (overrideActive) {
             OutlinedButton(
-                onClick = { pendingTarget = mgr.getDefaultRoot() },
+                onClick = {
+                    scope.launch {
+                        if (locationSnapshot == null) locationSnapshot = loadLocationSnapshot()
+                        pendingTarget = withContext(Dispatchers.IO) { mgr.getDefaultRoot() }
+                    }
+                },
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 modifier = Modifier.height(32.dp),
                 enabled = !migrating,
@@ -2110,13 +2321,15 @@ private fun ImportLocationSection(filesDir: File) {
     }
 
     if (showPicker) {
-        val volumes = remember { mgr.listCandidateVolumes(ctx) }
+        val snapshot = locationSnapshot
         AlertDialog(
             onDismissRequest = { showPicker = false },
             title = { Text("Choose imported files location") },
             text = {
                 Column {
-                    if (volumes.size <= 1) {
+                    if (snapshot == null) {
+                        MetadataLoadProgressView(MetadataLoadProgress("Checking storage locations", 0, 1))
+                    } else if (snapshot.volumes.size <= 1) {
                         Text(
                             "No additional storage volumes detected on this device. " +
                                 "Plug in an SD card or USB drive and try again.",
@@ -2124,18 +2337,12 @@ private fun ImportLocationSection(filesDir: File) {
                         )
                     }
                     LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
-                        items(volumes) { vol ->
-                            val srcUsage =
-                                try {
-                                    mgr
-                                        .getActiveRoot()
-                                        .walkTopDown()
-                                        .filter { it.isFile }
-                                        .sumOf { it.length() }
-                                } catch (_: Exception) {
-                                    0L
-                                }
-                            val tooSmall = !vol.isCurrent && vol.freeBytes < srcUsage + 64L * 1024L * 1024L
+                        items(snapshot?.volumes ?: emptyList()) { vol ->
+                            val usage = snapshot?.usage
+                            val tooSmall =
+                                usage?.complete == true &&
+                                    !vol.isCurrent &&
+                                    vol.freeBytes < usage.bytes + 64L * 1024L * 1024L
                             val clickable = !vol.isCurrent && !tooSmall
                             Column(
                                 modifier =
@@ -2179,6 +2386,14 @@ private fun ImportLocationSection(filesDir: File) {
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (usage?.complete == false) {
+                                    Text(
+                                        "Imported data is at least ${formatSize(usage.bytes)}; " +
+                                            "free-space validation will run during the move",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }
@@ -2191,80 +2406,76 @@ private fun ImportLocationSection(filesDir: File) {
     }
 
     pendingTarget?.let { target ->
-        val src = remember(target) { mgr.getActiveRoot() }
-        val srcSize =
-            remember(target) {
-                try {
-                    src.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-                } catch (_: Exception) {
-                    0L
-                }
-            }
+        val snapshot = locationSnapshot
         AlertDialog(
             onDismissRequest = { pendingTarget = null },
             title = { Text("Move imported files?") },
             text = {
                 Column {
-                    Text("From:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    Text(src.absolutePath, fontSize = 11.sp)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text("To:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    Text(target.absolutePath, fontSize = 11.sp)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        "About ${formatSize(srcSize)} will be copied. The app will restart " +
-                            "after the move completes.",
-                        fontSize = 11.sp,
-                    )
+                    if (snapshot == null) {
+                        MetadataLoadProgressView(MetadataLoadProgress("Sizing imported files", 0, 1))
+                    } else {
+                        Text("From:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(snapshot.source.absolutePath, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("To:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(target.absolutePath, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "About ${formatSize(snapshot.usage.bytes)} will be copied. The app will restart " +
+                                "after the move completes.",
+                            fontSize = 11.sp,
+                        )
+                    }
                 }
             },
             confirmButton = {
                 TextButton(
+                    enabled = snapshot != null,
                     onClick = {
+                        val current = snapshot ?: return@TextButton
                         val dst = target
                         pendingTarget = null
                         migrating = true
                         migrateCopied = 0
-                        migrateTotal = srcSize
-                        Thread {
+                        migrateTotal = current.usage.bytes
+                        scope.launch {
                             val result =
-                                mgr.migrate(src, dst) { copied, total ->
-                                    mainHandler.post {
-                                        migrateCopied = copied
-                                        migrateTotal = total
-                                    }
-                                }
-                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                migrating = false
-                                when (result) {
-                                    is ImportLocationManager.MigrateResult.Success -> {
+                                withContext(Dispatchers.IO) {
+                                    val outcome =
+                                        mgr.migrate(current.source, dst) { copied, total ->
+                                            mainHandler.post {
+                                                migrateCopied = copied
+                                                migrateTotal = total
+                                            }
+                                        }
+                                    if (outcome is ImportLocationManager.MigrateResult.Success) {
                                         if (dst.absolutePath == mgr.getDefaultRoot().absolutePath) {
                                             mgr.clearOverride()
                                         } else {
                                             mgr.setOverride(dst)
                                         }
-                                        Toast
-                                            .makeText(
-                                                ctx,
-                                                "Move complete; restarting",
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        android.os.Process.killProcess(android.os.Process.myPid())
                                     }
+                                    outcome
+                                }
+                            migrating = false
+                            when (result) {
+                                is ImportLocationManager.MigrateResult.Success -> {
+                                    Toast.makeText(ctx, "Move complete; restarting", Toast.LENGTH_SHORT).show()
+                                    android.os.Process.killProcess(android.os.Process.myPid())
+                                }
 
-                                    is ImportLocationManager.MigrateResult.Failure -> {
-                                        Toast
-                                            .makeText(
-                                                ctx,
-                                                "Move failed: ${result.reason}",
-                                                Toast.LENGTH_LONG,
-                                            ).show()
-                                        activePath = mgr.getActiveRoot().absolutePath
-                                        overrideActive = mgr.isOverrideActive()
-                                    }
+                                is ImportLocationManager.MigrateResult.Failure -> {
+                                    Toast.makeText(ctx, "Move failed: ${result.reason}", Toast.LENGTH_LONG).show()
+                                    val state =
+                                        withContext(Dispatchers.IO) {
+                                            mgr.getActiveRoot().absolutePath to mgr.isOverrideActive()
+                                        }
+                                    activePath = state.first
+                                    overrideActive = state.second
                                 }
                             }
-                        }.start()
+                        }
                     },
                 ) { Text("Move") }
             },

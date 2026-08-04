@@ -71,7 +71,7 @@ void android_fatal_error_exit(const char *message)
 			close(fd);
 		}
 	}
-	android_finish_and_exit();
+	android_finish_and_exit(message);
 	_exit(1);
 }
 

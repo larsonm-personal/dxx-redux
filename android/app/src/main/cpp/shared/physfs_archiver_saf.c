@@ -18,15 +18,19 @@
  */
 
 #include <physfs.h>
+#include <pthread.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h> /* strcasecmp */
+#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
 #include <android/log.h>
 
 #include "android_profile.h"
+#include "saf_io_contract.h"
+#include "saf_manifest_parser.h"
 
 #define LOG_TAG   "DXX-SAF-Archiver"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -35,27 +39,25 @@
 /* ── JNI bridge (jni_saf.c) ───────────────────────────────────────── */
 extern int saf_open_file(const char *content_uri);
 
-/* ── In-memory file table ─────────────────────────────────────────── */
-
-typedef struct {
-	char *filename;
-	char *content_uri;
-	PHYSFS_sint64 size_bytes;
-} SafEntry;
-
-typedef struct {
-	SafEntry *entries;
-	int count;
-} SafArchive;
-
-/* ── Per-handle I/O data (pread-based) ────────────────────────────── */
+typedef SafManifestEntry SafEntry;
 
 typedef struct {
 	int fd;
-	PHYSFS_sint64 pos; /* virtual seek position, independent per handle */
-	PHYSFS_sint64 len; /* cached file length */
-	char *filename;    /* logical filename inside the SAF manifest */
-	char *uri;         /* content URI string (for error messages) */
+	PHYSFS_sint64 len;
+} SafSource;
+
+typedef struct {
+	SafManifestData *manifest;
+	SafSource *sources;
+	pthread_mutex_t source_mutex;
+} SafArchive;
+
+typedef struct {
+	int fd;
+	PHYSFS_sint64 pos;
+	PHYSFS_sint64 len;
+	char *filename;
+	char *uri;
 } SafIoData;
 
 static long long saf_elapsed_us(const struct timespec *start, const struct timespec *end)
@@ -64,246 +66,72 @@ static long long saf_elapsed_us(const struct timespec *start, const struct times
 	       ((long long) end->tv_nsec - (long long) start->tv_nsec) / 1000LL;
 }
 
-/* ────────────────────────────────────────────────────────────────────
- * Minimal JSON parser for .saf_manifest.json
- *
- * We only need to parse a very specific flat structure:
- *   { "files": [ { "filename": "...", "content_uri": "...", "size_bytes": N }, ... ] }
- *
- * This avoids adding a JSON library dependency to the C build.
- * ──────────────────────────────────────────────────────────────────── */
-
-/* Skip whitespace, return pointer to next non-ws char */
-static const char *skip_ws(const char *p)
-{
-	while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
-	return p;
-}
-
-/*
- * Extract a JSON string value.  p should point to the opening '"'.
- * Returns a malloc'd copy of the string contents (unescaped for \" and \\).
- * Advances *pp past the closing '"'.  Returns NULL on error.
- */
-static char *parse_json_string(const char **pp)
-{
-	const char *p = *pp;
-	if (*p != '"') return NULL;
-	p++;
-
-	/* First pass: measure length */
-	const char *start = p;
-	size_t len = 0;
-	while (*p && *p != '"') {
-		if (*p == '\\') {
-			p++;
-			if (!*p) return NULL;
-		}
-		p++;
-		len++;
-	}
-	if (*p != '"') return NULL;
-
-	/* Second pass: copy */
-	char *result = (char *) malloc(len + 1);
-	if (!result) return NULL;
-	p = start;
-	size_t i = 0;
-	while (*p != '"') {
-		if (*p == '\\') {
-			p++;
-			switch (*p) {
-				case '"':
-				case '\\':
-				case '/': result[i++] = *p; break;
-				case 'n': result[i++] = '\n'; break;
-				case 't': result[i++] = '\t'; break;
-				case 'r': result[i++] = '\r'; break;
-				default: result[i++] = *p; break;
-			}
-		} else {
-			result[i++] = *p;
-		}
-		p++;
-	}
-	result[i] = '\0';
-	p++; /* skip closing quote */
-	*pp = p;
-	return result;
-}
-
-/* Parse a JSON integer (possibly negative). Advances *pp. */
-static PHYSFS_sint64 parse_json_int(const char **pp)
-{
-	const char *p = *pp;
-	PHYSFS_sint64 val = 0;
-	int neg = 0;
-	if (*p == '-') {
-		neg = 1;
-		p++;
-	}
-	while (*p >= '0' && *p <= '9') {
-		val = val * 10 + (*p - '0');
-		p++;
-	}
-	*pp = p;
-	return neg ? -val : val;
-}
-
-/*
- * Parse the entire .saf_manifest.json from a memory buffer.
- * Returns a SafArchive with entries, or NULL on failure.
- */
-static SafArchive *parse_manifest(const char *json, size_t json_len)
-{
-	/* Allocate archive */
-	SafArchive *arch = (SafArchive *) calloc(1, sizeof(SafArchive));
-	if (!arch) return NULL;
-
-	/* Capacity management */
-	int capacity = 16;
-	arch->entries = (SafEntry *) calloc(capacity, sizeof(SafEntry));
-	if (!arch->entries) {
-		free(arch);
-		return NULL;
-	}
-
-	/* Find "files" array */
-	const char *p = json;
-	const char *end = json + json_len;
-
-	/* Search for "files" key */
-	const char *files_key = strstr(p, "\"files\"");
-	if (!files_key) {
-		LOGE("parse_manifest: no \"files\" key");
-		goto fail;
-	}
-	p = files_key + 7; /* past "files" */
-	p = skip_ws(p);
-	if (*p == ':') p++;
-	p = skip_ws(p);
-	if (*p != '[') {
-		LOGE("parse_manifest: expected '['");
-		goto fail;
-	}
-	p++; /* past '[' */
-
-	/* Parse array entries */
-	while (p < end) {
-		p = skip_ws(p);
-		if (*p == ']') break;
-		if (*p == ',') {
-			p++;
-			continue;
-		}
-		if (*p != '{') {
-			LOGE("parse_manifest: expected '{'");
-			goto fail;
-		}
-		p++; /* past '{' */
-
-		/* Parse object fields */
-		char *filename = NULL;
-		char *content_uri = NULL;
-		PHYSFS_sint64 size_bytes = -1;
-
-		while (p < end) {
-			p = skip_ws(p);
-			if (*p == '}') {
-				p++;
-				break;
-			}
-			if (*p == ',') {
-				p++;
-				continue;
-			}
-
-			/* Parse key */
-			char *key = parse_json_string(&p);
-			if (!key) {
-				LOGE("parse_manifest: bad key");
-				goto obj_fail;
-			}
-			p = skip_ws(p);
-			if (*p == ':') p++;
-			p = skip_ws(p);
-
-			/* Parse value */
-			if (strcmp(key, "filename") == 0) {
-				filename = parse_json_string(&p);
-			} else if (strcmp(key, "content_uri") == 0) {
-				content_uri = parse_json_string(&p);
-			} else if (strcmp(key, "size_bytes") == 0) {
-				size_bytes = parse_json_int(&p);
-			} else {
-				/* Skip unknown value (string or number) */
-				if (*p == '"') {
-					char *tmp = parse_json_string(&p);
-					free(tmp);
-				} else {
-					/* Skip number or literal */
-					while (p < end && *p != ',' && *p != '}') p++;
-				}
-			}
-			free(key);
-			continue;
-
-		obj_fail:
-			free(filename);
-			free(content_uri);
-			goto fail;
-		}
-
-		/* Validate entry */
-		if (!filename || !content_uri || size_bytes < 0) {
-			LOGE("parse_manifest: incomplete entry");
-			free(filename);
-			free(content_uri);
-			continue; /* skip bad entries */
-		}
-
-		/* Grow array if needed */
-		if (arch->count >= capacity) {
-			capacity *= 2;
-			SafEntry *tmp = (SafEntry *) realloc(arch->entries, capacity * sizeof(SafEntry));
-			if (!tmp) {
-				free(filename);
-				free(content_uri);
-				goto fail;
-			}
-			arch->entries = tmp;
-		}
-
-		arch->entries[arch->count].filename = filename;
-		arch->entries[arch->count].content_uri = content_uri;
-		arch->entries[arch->count].size_bytes = size_bytes;
-		arch->count++;
-	}
-
-	LOGI("parse_manifest: loaded %d entries", arch->count);
-	return arch;
-
-fail:
-	if (arch->entries) {
-		for (int i = 0; i < arch->count; i++) {
-			free(arch->entries[i].filename);
-			free(arch->entries[i].content_uri);
-		}
-		free(arch->entries);
-	}
-	free(arch);
-	return NULL;
-}
-
 /* ── Archive helpers ──────────────────────────────────────────────── */
 
-static SafEntry *find_entry(SafArchive *arch, const char *name)
+static SafEntry *find_entry(SafArchive *arch, const char *name, int *entry_index)
 {
-	for (int i = 0; i < arch->count; i++) {
-		if (strcasecmp(arch->entries[i].filename, name) == 0)
-			return &arch->entries[i];
+	for (int i = 0; i < arch->manifest->count; i++) {
+		if (saf_manifest_name_equals(arch->manifest->entries[i].filename, name)) {
+			if (entry_index) *entry_index = i;
+			return &arch->manifest->entries[i];
+		}
 	}
 	return NULL;
+}
+
+static int verified_fd_length(int fd, PHYSFS_sint64 *length)
+{
+	struct stat stat_buffer;
+	unsigned char probe;
+	if (fstat(fd, &stat_buffer) != 0 || !S_ISREG(stat_buffer.st_mode) || stat_buffer.st_size < 0 ||
+	    lseek(fd, 0, SEEK_CUR) < 0) {
+		return 0;
+	}
+	if ((stat_buffer.st_size > 0 && pread(fd, &probe, 1, stat_buffer.st_size - 1) != 1) ||
+	    pread(fd, &probe, 1, stat_buffer.st_size) != 0) {
+		return 0;
+	}
+	*length = (PHYSFS_sint64) stat_buffer.st_size;
+	return (off_t) *length == stat_buffer.st_size;
+}
+
+static int duplicate_source(SafArchive *arch, int entry_index, int *duplicate_fd,
+                            PHYSFS_sint64 *length)
+{
+	SafSource *source = &arch->sources[entry_index];
+	SafEntry *entry = &arch->manifest->entries[entry_index];
+	int result = 0;
+	pthread_mutex_lock(&arch->source_mutex);
+
+	if (source->fd >= 0) {
+		PHYSFS_sint64 current_length;
+		if (!verified_fd_length(source->fd, &current_length) || current_length != source->len) {
+			close(source->fd);
+			source->fd = -1;
+		}
+	}
+	if (source->fd < 0) {
+		source->fd = saf_open_file(entry->content_uri);
+		if (source->fd < 0 || !verified_fd_length(source->fd, &source->len)) {
+			if (source->fd >= 0) close(source->fd);
+			source->fd = -1;
+			goto done;
+		}
+		if (source->len != entry->size_bytes) {
+			LOGI("SAF source size changed for %s: manifest=%lld current=%lld", entry->filename,
+			     (long long) entry->size_bytes, (long long) source->len);
+		}
+	}
+	*length = source->len;
+	if (duplicate_fd) {
+		*duplicate_fd = dup(source->fd);
+		if (*duplicate_fd < 0) goto done;
+	}
+	result = 1;
+
+done:
+	pthread_mutex_unlock(&arch->source_mutex);
+	return result;
 }
 
 /* ── PHYSFS_Io implementation (pread-based) ───────────────────────── */
@@ -315,6 +143,7 @@ static PHYSFS_sint64 safio_read(PHYSFS_Io *io, void *buf, PHYSFS_uint64 n)
 	const PHYSFS_uint64 read_offset = (PHYSFS_uint64) d->pos;
 	PHYSFS_uint64 remaining = (PHYSFS_uint64) (d->len - d->pos);
 	if (n > remaining) n = remaining;
+	if (n > SIZE_MAX) n = SIZE_MAX;
 	if (n == 0) return 0;
 
 	clock_gettime(CLOCK_MONOTONIC, &read_start);
@@ -342,11 +171,12 @@ static PHYSFS_sint64 safio_write(PHYSFS_Io *io, const void *buf, PHYSFS_uint64 n
 static int safio_seek(PHYSFS_Io *io, PHYSFS_uint64 offset)
 {
 	SafIoData *d = (SafIoData *) io->opaque;
-	if ((PHYSFS_sint64) offset > d->len) {
+	int64_t position;
+	if (!saf_io_resolve_seek(offset, d->len, &position)) {
 		PHYSFS_setErrorCode(PHYSFS_ERR_PAST_EOF);
 		return 0;
 	}
-	d->pos = (PHYSFS_sint64) offset;
+	d->pos = position;
 	return 1;
 }
 
@@ -399,6 +229,12 @@ static PHYSFS_Io *safio_duplicate(PHYSFS_Io *io)
 	if (orig->filename && !data->filename) {
 		close(newfd);
 		free(data->uri);
+		free(data);
+		return NULL;
+	}
+	if (!data->uri) {
+		close(newfd);
+		free(data->filename);
 		free(data);
 		return NULL;
 	}
@@ -500,7 +336,11 @@ static void *SAF_openArchive(PHYSFS_Io *io, const char *name,
 	char *buf = (char *) malloc((size_t) file_len + 1);
 	if (!buf) return NULL;
 
-	io->seek(io, 0);
+	if (!io->seek(io, 0)) {
+		LOGE("SAF_openArchive: could not seek manifest %s", name);
+		free(buf);
+		return NULL;
+	}
 	PHYSFS_sint64 got = io->read(io, buf, (PHYSFS_uint64) file_len);
 	if (got != file_len) {
 		LOGE("SAF_openArchive: short read (%lld of %lld)", (long long) got, (long long) file_len);
@@ -509,15 +349,37 @@ static void *SAF_openArchive(PHYSFS_Io *io, const char *name,
 	}
 	buf[file_len] = '\0';
 
-	SafArchive *arch = parse_manifest(buf, (size_t) file_len);
+	SafManifestData *manifest = saf_manifest_parse(buf, (size_t) file_len);
 	free(buf);
 
+	if (!manifest) {
+		LOGE("SAF_openArchive: invalid or incomplete manifest %s", name);
+		return NULL;
+	}
+	SafArchive *arch = (SafArchive *) calloc(1, sizeof(SafArchive));
 	if (!arch) {
-		LOGE("SAF_openArchive: parse_manifest failed for %s", name);
+		saf_manifest_free(manifest);
+		return NULL;
+	}
+	arch->manifest = manifest;
+	if (manifest->count > 0) {
+		arch->sources = (SafSource *) malloc((size_t) manifest->count * sizeof(SafSource));
+		if (!arch->sources) {
+			saf_manifest_free(manifest);
+			free(arch);
+			return NULL;
+		}
+		for (int i = 0; i < manifest->count; i++) arch->sources[i].fd = -1;
+	}
+	if (pthread_mutex_init(&arch->source_mutex, NULL) != 0) {
+		free(arch->sources);
+		saf_manifest_free(manifest);
+		free(arch);
 		return NULL;
 	}
 
-	LOGI("SAF_openArchive: mounted %s with %d files", name, arch->count);
+	LOGI("SAF_openArchive: mounted %s with %d files", name, manifest->count);
+	io->destroy(io);
 	return arch;
 }
 
@@ -532,9 +394,9 @@ static PHYSFS_EnumerateCallbackResult SAF_enumerate(
 	if (dirname[0] != '\0' && strcmp(dirname, "/") != 0)
 		return PHYSFS_ENUM_OK;
 
-	for (int i = 0; i < arch->count; i++) {
+	for (int i = 0; i < arch->manifest->count; i++) {
 		PHYSFS_EnumerateCallbackResult r =
-		    cb(callbackdata, origdir, arch->entries[i].filename);
+		    cb(callbackdata, origdir, arch->manifest->entries[i].filename);
 		if (r == PHYSFS_ENUM_ERROR) {
 			PHYSFS_setErrorCode(PHYSFS_ERR_APP_CALLBACK);
 			return PHYSFS_ENUM_ERROR;
@@ -548,24 +410,27 @@ static PHYSFS_EnumerateCallbackResult SAF_enumerate(
 static PHYSFS_Io *SAF_openRead(void *opaque, const char *fnm)
 {
 	SafArchive *arch = (SafArchive *) opaque;
-	SafEntry *entry = find_entry(arch, fnm);
+	int entry_index;
+	SafEntry *entry = find_entry(arch, fnm, &entry_index);
 	struct timespec open_start, open_end;
 	if (!entry) {
 		PHYSFS_setErrorCode(PHYSFS_ERR_NOT_FOUND);
 		return NULL;
 	}
 
+	int fd = -1;
+	PHYSFS_sint64 length;
 	clock_gettime(CLOCK_MONOTONIC, &open_start);
-	int fd = saf_open_file(entry->content_uri);
+	int opened = duplicate_source(arch, entry_index, &fd, &length);
 	clock_gettime(CLOCK_MONOTONIC, &open_end);
-	if (fd < 0) {
+	if (!opened) {
 		LOGE("SAF_openRead: saf_open_file failed for %s", fnm);
 		PHYSFS_setErrorCode(PHYSFS_ERR_OS_ERROR);
 		return NULL;
 	}
 	android_profile_storage_op(fnm, "open", 0, 0, saf_elapsed_us(&open_start, &open_end));
 
-	return create_saf_io(fd, entry->size_bytes, fnm, entry->content_uri);
+	return create_saf_io(fd, length, fnm, entry->content_uri);
 }
 
 static PHYSFS_Io *SAF_openWrite(void *opaque, const char *fnm)
@@ -603,13 +468,19 @@ static int SAF_mkdir(void *opaque, const char *fnm)
 static int SAF_stat(void *opaque, const char *fn, PHYSFS_Stat *st)
 {
 	SafArchive *arch = (SafArchive *) opaque;
-	SafEntry *entry = find_entry(arch, fn);
+	int entry_index;
+	SafEntry *entry = find_entry(arch, fn, &entry_index);
 	if (!entry) {
 		PHYSFS_setErrorCode(PHYSFS_ERR_NOT_FOUND);
 		return 0;
 	}
 
-	st->filesize = entry->size_bytes;
+	PHYSFS_sint64 length;
+	if (!duplicate_source(arch, entry_index, NULL, &length)) {
+		PHYSFS_setErrorCode(PHYSFS_ERR_OS_ERROR);
+		return 0;
+	}
+	st->filesize = length;
 	st->modtime = -1;
 	st->createtime = -1;
 	st->accesstime = -1;
@@ -622,12 +493,12 @@ static void SAF_closeArchive(void *opaque)
 {
 	SafArchive *arch = (SafArchive *) opaque;
 	if (!arch) return;
-
-	for (int i = 0; i < arch->count; i++) {
-		free(arch->entries[i].filename);
-		free(arch->entries[i].content_uri);
+	for (int i = 0; i < arch->manifest->count; i++) {
+		if (arch->sources[i].fd >= 0) close(arch->sources[i].fd);
 	}
-	free(arch->entries);
+	pthread_mutex_destroy(&arch->source_mutex);
+	free(arch->sources);
+	saf_manifest_free(arch->manifest);
 	free(arch);
 }
 

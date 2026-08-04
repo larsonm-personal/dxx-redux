@@ -948,7 +948,7 @@ if ($failed.Count -gt 0) {
 }
 
 if ($UpdateDatabase) {
-    Write-Host "`nUpdating known_discs.json5 from album sidecars"
+    Write-Host "`nUpdating known_albums.json5 from album sidecars"
     & "$PSScriptRoot/update_known_discs_albums.ps1" -Force
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
         Write-Error "update_known_discs_albums.ps1 failed with exit code $LASTEXITCODE"

@@ -5,6 +5,7 @@ import android.net.Uri
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -34,13 +35,23 @@ internal object LauncherFileCopy {
         onProgress(LauncherCopyProgress(label, 0L, bytesTotal))
         while (true) {
             val count = input.read(buffer)
-            if (count <= 0) break
-            output.write(buffer, 0, count)
-            bytesDone += count.toLong()
+            if (count < 0) break
+            if (count == 0) {
+                val byte = input.read()
+                if (byte < 0) break
+                output.write(byte)
+                bytesDone++
+            } else {
+                output.write(buffer, 0, count)
+                bytesDone += count.toLong()
+            }
             if (bytesDone - lastReported >= REPORT_STEP_BYTES || bytesDone == bytesTotal) {
                 lastReported = bytesDone
                 onProgress(LauncherCopyProgress(label, bytesDone, bytesTotal))
             }
+        }
+        if (bytesTotal > 0L && bytesDone != bytesTotal) {
+            throw IOException("Incomplete copy of $label: expected $bytesTotal bytes, received $bytesDone")
         }
         onProgress(LauncherCopyProgress(label, bytesDone, bytesTotal))
         return bytesDone
@@ -54,12 +65,9 @@ internal object LauncherFileCopy {
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
         val total = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri) ?: 0L
-        ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, total, label)
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(dest).use { output ->
-                return copyStream(input, output, total, label, onProgress)
-            }
-        } ?: throw java.io.IOException("Could not open selected file")
+        return copyInputToFile(dest, total, label, onProgress) {
+            context.contentResolver.openInputStream(uri) ?: throw IOException("Could not open selected file")
+        }
     }
 
     fun copyFileToFile(
@@ -68,12 +76,8 @@ internal object LauncherFileCopy {
         label: String = source.name,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
-        ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, source.length(), label)
-        FileInputStream(source).use { input ->
-            FileOutputStream(dest).use { output ->
-                return copyStream(input, output, source.length(), label, onProgress)
-            }
-        }
+        val expectedBytes = source.length()
+        return copyInputToFile(dest, expectedBytes, label, onProgress) { FileInputStream(source) }
     }
 
     fun copyFileToUri(
@@ -89,5 +93,32 @@ internal object LauncherFileCopy {
             }
         }
         throw java.io.IOException("Could not open output file")
+    }
+
+    internal fun copyInputToFile(
+        dest: File,
+        expectedBytes: Long,
+        label: String = dest.name,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+        openInput: () -> InputStream,
+    ): Long {
+        ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, expectedBytes, label)
+        dest.parentFile?.mkdirs()
+        val temporary = AtomicFilePublication.uniqueSibling(dest, "copy")
+        try {
+            val copied =
+                openInput().use { input ->
+                    FileOutputStream(temporary).use { output ->
+                        val count = copyStream(input, output, expectedBytes, label, onProgress)
+                        output.flush()
+                        output.fd.sync()
+                        count
+                    }
+                }
+            AtomicFilePublication.publishFile(temporary, dest)
+            return copied
+        } finally {
+            temporary.delete()
+        }
     }
 }

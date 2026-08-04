@@ -46,12 +46,29 @@ internal fun SetManagementDialog(
     onSwitchSet: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     var newSetName by remember { mutableStateOf("") }
     var showNewSetInput by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var sets by remember { mutableStateOf(emptyList<FileSetManager.FileSetInfo>()) }
+    var setUsages by remember { mutableStateOf<Map<String, Long>?>(null) }
+    var mutating by remember { mutableStateOf(false) }
 
-    val sets = remember { fileSetManager.listSets() }
+    suspend fun refreshSets() {
+        val result =
+            withContext(Dispatchers.IO) {
+                val loadedSets = fileSetManager.listSets()
+                loadedSets to loadedSets.associate { it.name to fileSetManager.diskUsage(it.name) }
+            }
+        sets = result.first
+        setUsages = result.second
+    }
+
+    LaunchedEffect(fileSetManager, activeSetName) {
+        setUsages = null
+        refreshSets()
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -67,9 +84,8 @@ internal fun SetManagementDialog(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
-                val usage = fileSetManager.diskUsage(activeSetName)
                 Text(
-                    "Size: ${formatSize(usage)}",
+                    "Size: ${setUsages?.get(activeSetName)?.let(::formatSize) ?: "Checking..."}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -95,7 +111,7 @@ internal fun SetManagementDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Text(
-                                text = formatSize(fileSetManager.diskUsage(set.name)),
+                                text = setUsages?.get(set.name)?.let(::formatSize) ?: "Checking...",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -120,14 +136,25 @@ internal fun SetManagementDialog(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = {
-                            try {
-                                fileSetManager.createSet(newSetName.trim())
-                                onSwitchSet(newSetName.trim())
-                            } catch (e: IllegalArgumentException) {
-                                errorMessage = e.message
-                            }
-                        }) {
+                        Button(
+                            enabled = !mutating,
+                            onClick = {
+                                val name = newSetName.trim()
+                                mutating = true
+                                scope.launch {
+                                    val error =
+                                        withContext(Dispatchers.IO) {
+                                            runCatching { fileSetManager.createSet(name) }.exceptionOrNull()
+                                        }
+                                    mutating = false
+                                    if (error == null) {
+                                        onSwitchSet(name)
+                                    } else {
+                                        errorMessage = error.message
+                                    }
+                                }
+                            },
+                        ) {
                             Text("Create", fontSize = 13.sp)
                         }
                         OutlinedButton(onClick = {
@@ -189,13 +216,19 @@ internal fun SetManagementDialog(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        if (activeSetName == FileSetManager.DEFAULT_SET) {
-                                            fileSetManager.clearSet(activeSetName)
-                                        } else {
-                                            fileSetManager.deleteSet(activeSetName)
+                                    .clickable(enabled = !mutating) {
+                                        mutating = true
+                                        scope.launch {
+                                            withContext(Dispatchers.IO) {
+                                                if (activeSetName == FileSetManager.DEFAULT_SET) {
+                                                    fileSetManager.clearSet(activeSetName)
+                                                } else {
+                                                    fileSetManager.deleteSet(activeSetName)
+                                                }
+                                            }
+                                            mutating = false
+                                            onSwitchSet(FileSetManager.DEFAULT_SET)
                                         }
-                                        onSwitchSet(FileSetManager.DEFAULT_SET)
                                     }.padding(vertical = 8.dp),
                         ) {
                             Text(
@@ -227,45 +260,38 @@ internal suspend fun setupDownloadFile(
     onDone: (Boolean) -> Unit,
 ) {
     withContext(Dispatchers.IO) {
+        var conn: HttpURLConnection? = null
         try {
-            val conn = URL(url).openConnection() as HttpURLConnection
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 30_000
-            conn.connect()
+            val connection = URL(url).openConnection() as HttpURLConnection
+            conn = connection
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 30_000
+            connection.connect()
 
-            if (conn.responseCode != 200) {
-                Log.e("DXX-Setup", "Download failed: HTTP ${conn.responseCode} for $url")
+            if (connection.responseCode != 200) {
+                Log.e("DXX-Setup", "Download failed: HTTP ${connection.responseCode} for $url")
                 withContext(Dispatchers.Main) { onDone(false) }
                 return@withContext
             }
 
-            val totalBytes = conn.contentLength.toLong()
-            val tmpFile = File(destDir, "$filename.tmp")
-            var downloaded = 0L
-
-            if (totalBytes > 0L) {
-                ImportStorageGuard.requireFreeSpace(destDir, totalBytes, "download $filename")
-            }
-
-            conn.inputStream.use { input ->
-                FileOutputStream(tmpFile).use { output ->
-                    val buf = ByteArray(8192)
-                    while (true) {
-                        val n = input.read(buf)
-                        if (n <= 0) break
-                        output.write(buf, 0, n)
-                        downloaded += n
-                        if (totalBytes > 0) {
-                            val pct = (downloaded * 100 / totalBytes).toInt().coerceIn(0, 100)
-                            withContext(Dispatchers.Main) { onProgress(pct) }
-                        }
-                    }
-                }
-            }
-
-            // Rename .tmp -> final
+            val totalBytes = connection.contentLengthLong.coerceAtLeast(0L)
             val destFile = File(destDir, filename)
-            tmpFile.renameTo(destFile)
+            val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+            val downloaded =
+                LauncherFileCopy.copyInputToFile(
+                    dest = destFile,
+                    expectedBytes = totalBytes,
+                    label = "download $filename",
+                    onProgress = { progress ->
+                        if (progress.bytesTotal > 0L) {
+                            val pct =
+                                (progress.bytesDone * 100 / progress.bytesTotal)
+                                    .toInt()
+                                    .coerceIn(0, 100)
+                            mainHandler.post { onProgress(pct) }
+                        }
+                    },
+                ) { connection.inputStream }
             Log.i("DXX-Setup", "Downloaded $filename ($downloaded bytes)")
             withContext(Dispatchers.Main) { onDone(true) }
         } catch (e: InsufficientStorageException) {
@@ -276,6 +302,8 @@ internal suspend fun setupDownloadFile(
             Log.e("DXX-Setup", "Download error for $filename", e)
             ImportStorageGuard.recordFailure(destDir.parentFile ?: destDir, "Download failed for $filename", e)
             withContext(Dispatchers.Main) { onDone(false) }
+        } finally {
+            conn?.disconnect()
         }
     }
 }
@@ -308,7 +336,7 @@ internal fun publishStagedArchiveFiles(
                     }
                     backups += backup to destination
                 }
-                source.copyTo(destination, overwrite = true)
+                LauncherFileCopy.copyFileToFile(source, destination)
                 published += destination
             }
     } catch (error: Exception) {
@@ -489,9 +517,15 @@ internal fun GogImportDialog(
     }
 
     AlertDialog(
-        onDismissRequest = { if (!processing) onDismiss() },
+        onDismissRequest = {
+            if (!processing && !copyingInstaller) {
+                tempPath?.let { File(it).delete() }
+                cleanupTmpDir(filesDir)
+                onDismiss()
+            }
+        },
         confirmButton = {
-            if (!processing) {
+            if (!processing && !copyingInstaller) {
                 TextButton(onClick = {
                     tempPath?.let { File(it).delete() }
                     cleanupTmpDir(filesDir)
@@ -925,6 +959,7 @@ internal fun SowImportDialog(
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var status by remember { mutableStateOf("Preparing\u2026") }
     var processing by remember { mutableStateOf(false) }
+    var copyingArchive by remember { mutableStateOf(true) }
     var extractedCount by remember { mutableIntStateOf(0) }
     var tempPath by remember { mutableStateOf<String?>(null) }
     var copyProgressBytes by remember { mutableLongStateOf(0L) }
@@ -975,6 +1010,8 @@ internal fun SowImportDialog(
             } catch (e: Exception) {
                 Log.e("DXX-SowImport", "Copy failed", e)
                 withContext(Dispatchers.Main) { status = "Error: ${e.message}" }
+            } finally {
+                withContext(Dispatchers.Main) { copyingArchive = false }
             }
         }
     }
@@ -984,9 +1021,15 @@ internal fun SowImportDialog(
     }
 
     AlertDialog(
-        onDismissRequest = { if (!processing) onDismiss() },
+        onDismissRequest = {
+            if (!processing && !copyingArchive) {
+                tempPath?.let { File(it).delete() }
+                cleanupTmpDir(filesDir)
+                onDismiss()
+            }
+        },
         confirmButton = {
-            if (!processing) {
+            if (!processing && !copyingArchive) {
                 TextButton(onClick = {
                     tempPath?.let { File(it).delete() }
                     cleanupTmpDir(filesDir)
@@ -1163,6 +1206,7 @@ internal fun DiscImportDialog(
     var status by remember { mutableStateOf("Ready to process") }
     var tracks by remember { mutableStateOf<List<DiscImportBridge.CueTrack>?>(null) }
     var processing by remember { mutableStateOf(false) }
+    var stagingCue by remember { mutableStateOf(true) }
     var dataExtracted by remember { mutableIntStateOf(0) }
     var progressBytes by remember { mutableLongStateOf(0L) }
     var progressTotal by remember { mutableLongStateOf(0L) }
@@ -1276,6 +1320,8 @@ internal fun DiscImportDialog(
             } catch (e: Exception) {
                 Log.e("DXX-DiscImport", "CUE parse failed", e)
                 withContext(Dispatchers.Main) { status = "Error: ${e.message}" }
+            } finally {
+                withContext(Dispatchers.Main) { stagingCue = false }
             }
         }
     }
@@ -1285,7 +1331,12 @@ internal fun DiscImportDialog(
     }
 
     AlertDialog(
-        onDismissRequest = { if (!processing) onDismiss() },
+        onDismissRequest = {
+            if (!processing && !stagingCue) {
+                tempCuePath?.let { File(it).delete() }
+                onDismiss()
+            }
+        },
         confirmButton = {},
         title = { Text("Import Disc Image Set", fontWeight = FontWeight.Bold) },
         text = {
@@ -1548,12 +1599,12 @@ internal fun DiscImportDialog(
                                                         cueContentUri = cueUri.toString(),
                                                     ),
                                                 )
+                                                enableRedbookInConfig(filesDir, context)
 
                                                 withContext(Dispatchers.Main) {
                                                     audioRegistered = true
                                                     status = "Audio source registered" +
                                                         if (discLabel != null) " ($discLabel)" else ""
-                                                    enableRedbookInConfig(filesDir, context)
                                                     onChanged()
                                                 }
                                             } catch (e: Exception) {
@@ -1576,7 +1627,10 @@ internal fun DiscImportDialog(
                         if (dataExtracted > 0 || audioRegistered) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = onImported,
+                                onClick = {
+                                    tempCuePath?.let { File(it).delete() }
+                                    onImported()
+                                },
                                 modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
                             ) {
                                 Text("Done", fontSize = 13.sp)
