@@ -2039,7 +2039,7 @@ private fun StorageInspectorSection(
                                 }
 
                                 entry.isPermissionEntry -> {
-                                    releaseReadPermissionForUri(ctx, Uri.parse(entry.uri))
+                                    releasePersistedReadPermissionExplicitly(ctx, Uri.parse(entry.uri))
                                     Toast.makeText(ctx, "Removed SAF permission", Toast.LENGTH_SHORT).show()
                                     removed = true
                                 }

@@ -178,13 +178,25 @@ class AudioSourceManager(
     /** Remove an audio source by id */
     fun removeSource(
         id: String,
-        context: Context? = null,
+        context: Context,
+    ) {
+        removeSource(id) { removedTrackedUris, retainedTrackedUris ->
+            revokeUnusedPersistedReadPermissions(context, removedTrackedUris, retainedTrackedUris)
+        }
+    }
+
+    internal fun removeSource(
+        id: String,
+        revokePermissions: (removedTrackedUris: Collection<String>, retainedTrackedUris: Collection<String>) -> Unit,
     ) {
         val source = sources.firstOrNull { it.id == id } ?: return
-        releaseSourceResources(source, context)
+        val removedTrackedUris = source.trackedSafUris()
+        val retainedTrackedUris = sources.filterNot { it.id == id }.flatMap { it.trackedSafUris() }
+        releaseSourceResources(source)
         sources.removeAll { it.id == id }
         pruneOrphanedGeneratedMergedFiles()
         save()
+        revokePermissions(removedTrackedUris, retainedTrackedUris)
     }
 
     fun getManagedInternalArtifactPaths(): Set<String> = getManagedInternalArtifactPaths(filesDir, sources)
@@ -194,12 +206,9 @@ class AudioSourceManager(
         retainedTrackedUris: Collection<String> = emptyList(),
     ) {
         val removedTrackedUris =
-            sources.flatMap { source ->
-                source.binContentUriList().filterNot(::isLocalCdContentPath) +
-                    listOfNotNull(source.cueContentUri?.takeUnless(::isLocalCdContentPath))
-            }
+            sources.flatMap { it.trackedSafUris() }
         closeActivePfds()
-        sources.forEach { source -> releaseSourceResources(source, null) }
+        sources.forEach(::releaseSourceResources)
         sources.clear()
         pruneOrphanedGeneratedMergedFiles()
         File(filesDir, SOURCES_FILE).delete()
@@ -209,18 +218,7 @@ class AudioSourceManager(
         }
     }
 
-    private fun releaseSourceResources(
-        source: AudioSource,
-        context: Context?,
-    ) {
-        if (context != null) {
-            (source.binContentUriList() + listOfNotNull(source.cueContentUri))
-                .filterNot(::isLocalCdContentPath)
-                .forEach { uriStr ->
-                    releaseReadPermissionForUri(context, Uri.parse(uriStr))
-                }
-        }
-
+    private fun releaseSourceResources(source: AudioSource) {
         val managedFiles = managedInternalFilesForSource(source)
         managedFiles.forEach { file ->
             if (file.exists()) {
@@ -229,6 +227,9 @@ class AudioSourceManager(
         }
         cleanupEmptyManagedDirs(managedFiles)
     }
+
+    private fun AudioSource.trackedSafUris(): List<String> =
+        (binContentUriList() + listOfNotNull(cueContentUri)).filterNot(::isLocalCdContentPath)
 
     private fun managedInternalFilesForSource(source: AudioSource): List<File> =
         getManagedInternalArtifactFilesForSource(filesDir, source)

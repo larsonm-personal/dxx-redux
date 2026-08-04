@@ -32,7 +32,7 @@ internal fun persistReadPermissionForUri(
     }
 }
 
-internal fun releaseReadPermissionForUri(
+internal fun releasePersistedReadPermissionExplicitly(
     context: Context,
     uri: Uri,
 ) {

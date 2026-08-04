@@ -2111,7 +2111,7 @@ internal fun MusicInfoSection(
                     }
                     TextButton(
                         onClick = {
-                            audioSrcManager.removeSource(src.id)
+                            audioSrcManager.removeSource(src.id, context)
                             audioSources = audioSrcManager.getSources()
                         },
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
