@@ -189,8 +189,44 @@ class SaveExplorerTest {
         assertEquals("Descent 2 (d2)", rows["Game"])
         assertEquals("Obsidian (obsidian)", rows["Level Set"])
         assertEquals("Auto-save on exit", rows["Save Kind"])
+        assertEquals("CD", rows["Music"])
         assertEquals("2:01", rows["Level Time"])
         assertEquals("1:01:01", rows["Total Time"])
+    }
+
+    @Test
+    fun saveMetadataLabelsCoverEveryNativeValueAndStayConsistent() {
+        assertEquals(
+            listOf("None", "Base game MIDI", "CD", "Files", "Unknown"),
+            (0..4).map(::saveMetadataMusicTypeLabel),
+        )
+        val kindLabels =
+            listOf("manual", "auto_minimize", "auto_exit", "auto_progress", "auto_abort", "auto_periodic", "unknown")
+                .map(::saveMetadataKindLabel)
+        assertEquals(
+            listOf(
+                "Manual save",
+                "Auto-save on minimize",
+                "Auto-save on exit",
+                "Highest progress save",
+                "Abort save",
+                "Periodic auto-save",
+                "Unknown save kind",
+            ),
+            kindLabels,
+        )
+
+        val periodic =
+            slot(
+                path = "/files/d2x-redux/Players/test.sg5",
+                relativePath = "d2x-redux/Players/test.sg5",
+                saveKind = "auto_periodic",
+                saveTimeUnixSeconds = 1_700_000_100L,
+                slot = 5,
+            )
+        val details = saveExplorerDetailRows(periodic).associate { it.label to it.value }
+        assertEquals("Periodic auto-save", details["Save Kind"])
+        assertEquals(true, saveExplorerSecondaryLine(periodic).contains("| Periodic auto-save |"))
     }
 
     @Test

@@ -163,7 +163,7 @@ internal fun enableRedbookInConfig(
     filesDir: File,
     context: Context,
 ) {
-    updateAllConfigFiles(filesDir, listOf("MusicType" to "2", "OrigTrackOrder" to "1"))
+    updateAllConfigFiles(filesDir, listOf("MusicType" to MUSIC_TYPE_REDBOOK.toString(), "OrigTrackOrder" to "1"))
     context
         .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         .edit()
@@ -192,22 +192,22 @@ internal fun resolveMusicLaunchPolicy(
             missionHasSoundtrack
     val musicType =
         when {
-            musicTypeOverride != null -> musicTypeOverride.coerceIn(0, 3).toString()
-            useMissionZipSoundtrack -> "1"
-            mode == "midi" -> "1"
-            mode == "cd" -> "2"
-            mode == "files" -> "3"
-            else -> "2"
+            musicTypeOverride != null -> musicTypeOverride.coerceIn(MUSIC_TYPE_NONE, MUSIC_TYPE_CUSTOM).toString()
+            useMissionZipSoundtrack -> MUSIC_TYPE_BUILTIN.toString()
+            mode == "midi" -> MUSIC_TYPE_BUILTIN.toString()
+            mode == "cd" -> MUSIC_TYPE_REDBOOK.toString()
+            mode == "files" -> MUSIC_TYPE_CUSTOM.toString()
+            else -> MUSIC_TYPE_REDBOOK.toString()
         }
 
     return MusicLaunchPolicy(
         musicType = musicType,
         useMissionZipSoundtrack = useMissionZipSoundtrack,
         useCdTrackOrder =
-            musicTypeOverride == 2 ||
+            musicTypeOverride == MUSIC_TYPE_REDBOOK ||
                 (!useMissionZipSoundtrack && musicTypeOverride == null && mode == "cd"),
         useCustomAudioFiles =
-            musicTypeOverride == 3 ||
+            musicTypeOverride == MUSIC_TYPE_CUSTOM ||
                 (!useMissionZipSoundtrack && musicTypeOverride == null && mode == "files"),
     )
 }

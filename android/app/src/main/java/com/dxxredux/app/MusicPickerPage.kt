@@ -40,8 +40,7 @@ import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
-// Music mode constants -- must match d2/main/digi.h
-// MUSIC_TYPE_NONE=0, MUSIC_TYPE_BUILTIN=1, MUSIC_TYPE_REDBOOK=2, MUSIC_TYPE_CUSTOM=3
+// Native numeric music types are centralized in SaveMetadataLabels.kt
 private const val MUSIC_MODE_MIDI = "midi"
 private const val MUSIC_MODE_CD = "cd"
 private const val MUSIC_MODE_FILES = "files"

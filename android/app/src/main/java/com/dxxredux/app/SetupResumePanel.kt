@@ -70,15 +70,6 @@ internal fun resumeSaveRgb6ChannelToRgb8(channel: Int): Int {
     return (rgb6 shl 2) or (rgb6 shr 4)
 }
 
-internal fun resumeSaveKindLabel(saveKind: String): String =
-    when (saveKind) {
-        "auto_minimize" -> "Auto-save on minimize"
-        "auto_exit" -> "Auto-save on exit"
-        "auto_progress" -> "Highest progress save"
-        "auto_abort" -> "Abort save"
-        else -> "Manual save"
-    }
-
 internal fun formatResumeSaveTime(unixSeconds: Long): String {
     if (unixSeconds <= 0L) return "Unknown"
     val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -431,7 +422,7 @@ private fun resumePanelPrimaryLine(candidate: ResumeSaveBridge.ResumeSaveCandida
 
 private fun resumePanelSecondaryLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String =
     buildString {
-        append(resumeSaveKindLabel(candidate.saveKind))
+        append(saveMetadataKindLabel(candidate.saveKind))
         append(" | ")
         append(("${candidate.levelNum} ${candidate.levelName}").trim())
         append(" | ")

@@ -1078,9 +1078,9 @@ private fun saveExplorerPrimaryLine(slot: SaveExplorerBridge.SaveExplorerSlot): 
     return "Slot ${slot.slot}: $description | $displayGame | $scope | ${slot.pilot.ifBlank { slot.callsign }}"
 }
 
-private fun saveExplorerSecondaryLine(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+internal fun saveExplorerSecondaryLine(slot: SaveExplorerBridge.SaveExplorerSlot): String {
     val level = ("${slot.levelNum} ${slot.levelName}").trim().ifBlank { slot.missionKey.ifBlank { "Unknown level" } }
-    return "$level | ${saveExplorerKindLabel(slot.saveKind)} | ${saveExplorerTime(slot.saveTimeUnixSeconds)} | " +
+    return "$level | ${saveMetadataKindLabel(slot.saveKind)} | ${saveExplorerTime(slot.saveTimeUnixSeconds)} | " +
         saveExplorerSize(slot.sizeBytes)
 }
 
@@ -1096,13 +1096,13 @@ internal fun saveExplorerDetailRows(slot: SaveExplorerBridge.SaveExplorerSlot): 
         add(SaveExplorerDetailRow("Scope", if (slot.scope == "coop") "Coop" else "Single-player"))
         add(SaveExplorerDetailRow("Pilot", slot.pilot.ifBlank { slot.callsign.ifBlank { "Unknown" } }))
         add(SaveExplorerDetailRow("Description", slot.description.ifBlank { "Save" }))
-        add(SaveExplorerDetailRow("Save Kind", resumeSaveKindLabel(slot.saveKind)))
+        add(SaveExplorerDetailRow("Save Kind", saveMetadataKindLabel(slot.saveKind)))
         add(SaveExplorerDetailRow("Saved At", formatResumeSaveTime(slot.saveTimeUnixSeconds)))
         add(SaveExplorerDetailRow("Level", saveExplorerLevelLabel(slot)))
         add(SaveExplorerDetailRow("Level Time", formatResumeDuration(slot.levelSeconds)))
         add(SaveExplorerDetailRow("Total Time", formatResumeDuration(slot.totalSeconds)))
         add(SaveExplorerDetailRow("Difficulty", saveExplorerDifficultyLabel(slot)))
-        add(SaveExplorerDetailRow("Music", saveExplorerMusicTypeLabel(slot.musicType)))
+        add(SaveExplorerDetailRow("Music", saveMetadataMusicTypeLabel(slot.musicType)))
         add(SaveExplorerDetailRow("Slot", slot.slot.takeIf { it >= 0 }?.toString() ?: "Unknown"))
         add(SaveExplorerDetailRow("Size", saveExplorerSize(slot.sizeBytes)))
         add(SaveExplorerDetailRow("Metadata", if (slot.metadataBacked) "Present" else "Missing or incompatible"))
@@ -1159,26 +1159,6 @@ private fun saveExplorerDifficultyName(value: Int): String =
         2 -> "Hotshot"
         3 -> "Ace"
         4 -> "Insane"
-        else -> "Unknown"
-    }
-
-private fun saveExplorerMusicTypeLabel(value: Int): String =
-    when (value) {
-        0 -> "None"
-        1 -> "Built-in"
-        2 -> "MIDI"
-        3 -> "Custom"
-        else -> "Unknown"
-    }
-
-private fun saveExplorerKindLabel(kind: String): String =
-    when (kind) {
-        "auto_minimize" -> "Minimize"
-        "auto_exit" -> "Exit"
-        "auto_progress" -> "Progress"
-        "auto_abort" -> "Abort"
-        "auto_periodic" -> "Periodic"
-        "manual" -> "Manual"
         else -> "Unknown"
     }
 

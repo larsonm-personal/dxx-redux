@@ -158,7 +158,7 @@ object ResumeSaveBridge {
             difficultyChanged = obj.optBoolean("difficulty_changed"),
             difficultyMin = obj.optInt("difficulty_min"),
             difficultyMax = obj.optInt("difficulty_max"),
-            musicType = obj.optInt("music_type", 2).coerceIn(0, 3),
+            musicType = obj.optInt("music_type", MUSIC_TYPE_REDBOOK),
             slot = obj.optInt("slot", -1),
             hasThumbnail = nativeHasThumbnail && thumbnailRgb6 != null,
             thumbnailWidth = obj.optInt("thumbnail_width"),

@@ -41,6 +41,23 @@ so campaign closure must still obtain that independent verification
 
 ## Finalized findings
 
+### BR-0513: P2 - Use canonical save metadata labels in Save Details
+
+- [x] FIXED
+- Type: defect
+- Confidence: high
+- Category: correctness
+- Found by: R1-CHUNK-0454
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupSaveExplorer.kt:L1092-L1105,L1165-L1183` in Save Details music and save-kind labeling
+- Related: `android/app/src/main/java/com/dxxredux/app/SetupResumePanel.kt:L73-L80`, `android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt:L182-L212`, `android/app/src/main/cpp/shared/android_save_meta.h:L24-L31`, `d1/main/digi.h:L102-L105`, `d2/main/digi.h:L104-L107`, `android/app/src/test/java/com/dxxredux/app/SaveExplorerTest.kt:L176-L204`, and `android/app/src/test/java/com/dxxredux/app/MusicLaunchPolicyTest.kt:L8-L105`
+- Evidence: Both engines define music type 1 as built-in, 2 as Redbook, and 3 as custom. The launcher mirrors that contract by mapping MIDI mode to 1, CD mode to 2, Files mode to 3, and treating a resume override of 2 as requiring CD track order. Save Details instead maps type 2 to `MIDI`, so the displayed source contradicts the exact value that Load restores. The same dialog formats save kind through `resumeSaveKindLabel`, whose default is `Manual save` and which omits the valid native `auto_periodic` kind. Its compact row uses a separate helper that correctly labels `auto_periodic` as `Periodic`, so one save is described differently depending on whether its details are open. The focused detail test covers only `auto_exit` and music type 2 without asserting the Music row, while launch-policy tests independently prove that 2 is CD.
+- Trigger: Open Save Details for any D1 or D2 save created with Redbook/CD music selected, or for a periodic autosave
+- Impact: The explorer tells the user that a CD-backed save will restore MIDI even though Load restores CD, and presents an automatic periodic recovery point as a deliberate manual save. This can cause the wrong save to be selected or retained and makes music-source restoration and autosave provenance appear broken when the underlying metadata is correct.
+- Expected: Every valid native music type and save kind has one canonical user-facing label shared by compact rows, details, resume choices, and launch policy, with type 2 identified as CD or Redbook and `auto_periodic` identified as a periodic autosave.
+- Suggested fix: Centralize Kotlin label mappings beside a documented mirror of the native enums, use one save-kind formatter in both compact and detail rows, label music types with current launcher terminology (`Base game MIDI` or built-in for 1, `CD` for 2, and Files or custom for 3), and add a synchronization note or contract test against the paired native constants.
+- Validation: Assert detail and compact labels for every native save kind and music type 0 through 3, including `auto_periodic`; load saves from each music mode and require the detail label, written `MusicType`, CD-order flag, custom-files flag, and paired D1/D2 runtime source to agree. Add unknown-value cases that remain explicitly unknown rather than falling through to a valid provenance label.
+- Resolution: Fixed on 2026-08-03. A shared Kotlin metadata-label contract now documents the paired native music constants and supplies the only music-source and save-kind label mappings. Music types 0 through 3 render as None, Base game MIDI, CD, and Files; unknown values stay Unknown. Manual and all five native autosave kinds share one formatter across compact explorer rows, Save Details, and resume choices, including Periodic auto-save, while unknown kinds no longer fall through to Manual save. Bridge decoding preserves unknown music values for accurate presentation, and config launch policy uses the shared constants for MIDI, CD, and Files behavior. Focused Save Explorer, resume-panel, and music-launch-policy tests, scoped Kotlin quality checks, Android debug assembly for arm64-v8a, armeabi-v7a, and x86_64, and `git diff --check` passed.
+
 ### BR-0512: P2 - Bound and de-cycle provider directory traversal
 
 - [x] FIXED
@@ -1301,6 +1318,8 @@ so campaign closure must still obtain that independent verification
 - Resolution: Fixed on 2026-08-02. Audio sources now persist the ordered physical CUE track numbers for audio tracks, and local, SAF, and GOG registration populate that identity from parsed CUE data. Preview rows look up optional names by physical track number while retaining a separate 1-based audio ordinal for native playback; an absent identity mapping falls back to unnamed rows instead of compacting sparse names. A focused interleaved-data fixture verifies that a missing middle name does not shift later labels or playback ordinals, persistence round-trips the mapping, and GOG registration records the expected physical tracks. The three focused JVM suites, Android debug assembly for arm64-v8a, armeabi-v7a, and x86_64, scoped Kotlin quality checks, and `git diff --check` passed.
 
 ## Disposition log
+
+- 2026-08-03: BR-0513 fixed with one documented native music-value mirror and shared music-source and save-kind labels across Save Details, compact explorer rows, resume choices, bridge decoding, and launch policy. All native values plus unknowns, focused save and music policy suites, scoped code quality, all three Android debug ABIs, and `git diff --check` passed
 
 - 2026-08-02: BR-0512 fixed with unique validated provider identities, bounded breadth-first traversal, coroutine and provider-query cancellation, per-query and whole-scan deadlines, pre-import failure, and recoverable launcher diagnostics. Focused traversal tests, scoped code quality, all three Android debug ABIs, and `git diff --check` passed
 

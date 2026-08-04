@@ -17804,23 +17804,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0452): Build ZIP, SOW, 7z, and RAR inputs with duplicate leaves across directories, case variants, equal and unequal sizes, identical and distinct bytes, reordered entries, and permuted native output order. Require deterministic rejection before mutation or an explicitly manifest-selected digest, with exactly one immutable source and result record per logical destination.
 - Resolution: Pending
 
-### BR-0513: P2 - Use canonical save metadata labels in Save Details
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness
-- Found by: R1-CHUNK-0454
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupSaveExplorer.kt:L1092-L1105,L1165-L1183` in Save Details music and save-kind labeling
-- Related: `android/app/src/main/java/com/dxxredux/app/SetupResumePanel.kt:L73-L80`, `android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt:L182-L212`, `android/app/src/main/cpp/shared/android_save_meta.h:L24-L31`, `d1/main/digi.h:L102-L105`, `d2/main/digi.h:L104-L107`, `android/app/src/test/java/com/dxxredux/app/SaveExplorerTest.kt:L176-L204`, and `android/app/src/test/java/com/dxxredux/app/MusicLaunchPolicyTest.kt:L8-L105`
-- Evidence: Both engines define music type 1 as built-in, 2 as Redbook, and 3 as custom. The launcher mirrors that contract by mapping MIDI mode to 1, CD mode to 2, Files mode to 3, and treating a resume override of 2 as requiring CD track order. Save Details instead maps type 2 to `MIDI`, so the displayed source contradicts the exact value that Load restores. The same dialog formats save kind through `resumeSaveKindLabel`, whose default is `Manual save` and which omits the valid native `auto_periodic` kind. Its compact row uses a separate helper that correctly labels `auto_periodic` as `Periodic`, so one save is described differently depending on whether its details are open. The focused detail test covers only `auto_exit` and music type 2 without asserting the Music row, while launch-policy tests independently prove that 2 is CD.
-- Trigger: Open Save Details for any D1 or D2 save created with Redbook/CD music selected, or for a periodic autosave
-- Impact: The explorer tells the user that a CD-backed save will restore MIDI even though Load restores CD, and presents an automatic periodic recovery point as a deliberate manual save. This can cause the wrong save to be selected or retained and makes music-source restoration and autosave provenance appear broken when the underlying metadata is correct.
-- Expected: Every valid native music type and save kind has one canonical user-facing label shared by compact rows, details, resume choices, and launch policy, with type 2 identified as CD or Redbook and `auto_periodic` identified as a periodic autosave.
-- Suggested fix: Centralize Kotlin label mappings beside a documented mirror of the native enums, use one save-kind formatter in both compact and detail rows, label music types with current launcher terminology (`Base game MIDI` or built-in for 1, `CD` for 2, and Files or custom for 3), and add a synchronization note or contract test against the paired native constants.
-- Validation: Assert detail and compact labels for every native save kind and music type 0 through 3, including `auto_periodic`; load saves from each music mode and require the detail label, written `MusicType`, CD-order flag, custom-files flag, and paired D1/D2 runtime source to agree. Add unknown-value cases that remain explicitly unknown rather than falling through to a valid provenance label.
-- Resolution: Pending
-
 ### BR-0514: P2 - Keep launcher downloads retryable after failure
 
 - [ ] OPEN
