@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
 import java.io.BufferedWriter
 import java.io.File
@@ -31,7 +30,6 @@ object DebugLog {
     private const val PREFS_NAME = "dxx_prefs"
     private const val DIR_NAME = "debuglogs"
     private const val MAX_FILES = 5
-    private const val AUTHORITY = "com.dxxredux.app.fileprovider"
     private const val PREF_ACTIVE_LOG_PATH = "debuglog_active_path"
     private const val PREF_ACTIVE_LOG_BUILD = "debuglog_active_build"
     private const val ACTIVE_LOG_REUSE_WINDOW_MS = 15 * 60 * 1000L
@@ -253,11 +251,7 @@ object DebugLog {
         file: File,
     ): Boolean =
         try {
-            val exportDir = File(context.cacheDir, "debuglog_exports")
-            exportDir.mkdirs()
-            val copy = File(exportDir, file.name)
-            LauncherFileCopy.copyFileToFile(file, copy)
-            val uri = FileProvider.getUriForFile(context, AUTHORITY, copy)
+            val uri = FileProviderGrantStore.copy(context, file, FileProviderGrantStore.DEBUG_LOG_EXPORTS)
             val intent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"

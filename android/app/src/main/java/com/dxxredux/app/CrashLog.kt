@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
 import xcrash.TombstoneManager
 import java.io.File
@@ -23,7 +22,6 @@ import java.io.File
 object CrashLog {
     private const val TAG = "CrashLog"
     private const val TOMBSTONE_DIR_NAME = "tombstones"
-    private const val AUTHORITY = "com.dxxredux.app.fileprovider"
     private const val HEADER_SECTION = "dxx-redux header"
     private const val BREADCRUMBS_SECTION = "dxx-redux breadcrumbs"
     private const val BREADCRUMB_SNAPSHOT_FILE_NAME = "crash_breadcrumbs_latest.txt"
@@ -68,12 +66,7 @@ object CrashLog {
         file: File,
     ): Boolean =
         try {
-            val exportDir = File(context.cacheDir, "crashlog_exports")
-            exportDir.mkdirs()
-            val copy = File(exportDir, file.name)
-            LauncherFileCopy.copyFileToFile(file, copy)
-
-            val uri = FileProvider.getUriForFile(context, AUTHORITY, copy)
+            val uri = FileProviderGrantStore.copy(context, file, FileProviderGrantStore.CRASH_LOG_EXPORTS)
             val intent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"

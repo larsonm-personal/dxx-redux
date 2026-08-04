@@ -1547,10 +1547,6 @@ private fun missionZipViewAction(
         }
     }
 
-private const val FILE_PROVIDER_AUTHORITY = "com.dxxredux.app.fileprovider"
-private const val FILE_VIEW_CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
-private const val FILE_VIEW_CACHE_MAX_BYTES = 64L * 1024L * 1024L
-
 private suspend fun openMissionZipExternalDocument(
     context: Context,
     archivePath: String?,
@@ -1575,73 +1571,33 @@ private fun extractMissionZipConstituentToCache(
     context: Context,
     archive: File,
     constituent: MissionZip.Constituent,
-): Uri {
-    val viewDir = File(context.cacheDir, "file_view")
-    viewDir.mkdirs()
-    cleanupFileViewCache(viewDir)
-
-    val copy = File(viewDir, missionZipCacheFilename(archive, constituent))
-    copy.delete()
-    val extracted =
-        missionZipExtractedStoreForArchivePath(archive.absolutePath)
-            ?.extractedEntryForArchiveEntry(archive.absolutePath, constituent.path)
-            ?.file
-    if (extracted != null) {
-        extracted.copyTo(copy, overwrite = true)
-    } else {
-        ArchiveFiles.open(archive).use { archiveFile ->
-            val entry =
-                archiveFile.findEntry(constituent.path) ?: throw IllegalArgumentException("Document file is missing")
-            if (entry.isDirectory) throw IllegalArgumentException("Document path is a directory")
-            archiveFile.openInputStream(entry).use { input ->
-                FileOutputStream(copy).use { output ->
-                    input.copyTo(output)
+): Uri =
+    FileProviderGrantStore.publish(
+        context,
+        FileProviderGrantStore.FILE_VIEW,
+        constituent.name,
+        constituent.sizeBytes,
+    ) { temporary ->
+        val extracted =
+            missionZipExtractedStoreForArchivePath(archive.absolutePath)
+                ?.extractedEntryForArchiveEntry(archive.absolutePath, constituent.path)
+                ?.file
+        if (extracted != null) {
+            extracted.copyTo(temporary)
+        } else {
+            ArchiveFiles.open(archive).use { archiveFile ->
+                val entry =
+                    archiveFile.findEntry(constituent.path)
+                        ?: throw IllegalArgumentException("Document file is missing")
+                if (entry.isDirectory) throw IllegalArgumentException("Document path is a directory")
+                archiveFile.openInputStream(entry).use { input ->
+                    FileOutputStream(temporary).use { output ->
+                        input.copyTo(output)
+                    }
                 }
             }
         }
     }
-    copy.setLastModified(System.currentTimeMillis())
-    cleanupFileViewCache(viewDir, keepFile = copy)
-    return androidx.core.content.FileProvider
-        .getUriForFile(context, FILE_PROVIDER_AUTHORITY, copy)
-}
-
-private fun cleanupFileViewCache(
-    viewDir: File,
-    keepFile: File? = null,
-) {
-    val files = viewDir.listFiles()?.filter { it.isFile } ?: return
-    val keepPath = keepFile?.absolutePath
-    val cutoff = System.currentTimeMillis() - FILE_VIEW_CACHE_MAX_AGE_MS
-    files
-        .filter { it.absolutePath != keepPath && it.lastModified() < cutoff }
-        .forEach { it.delete() }
-
-    var remaining =
-        viewDir
-            .listFiles()
-            ?.filter { it.isFile }
-            .orEmpty()
-    var totalBytes = remaining.sumOf { it.length().coerceAtLeast(0L) }
-    if (totalBytes <= FILE_VIEW_CACHE_MAX_BYTES) return
-    for (file in remaining.sortedBy { it.lastModified() }) {
-        if (file.absolutePath == keepPath) continue
-        val size = file.length().coerceAtLeast(0L)
-        if (file.delete()) totalBytes -= size
-        if (totalBytes <= FILE_VIEW_CACHE_MAX_BYTES) break
-    }
-}
-
-private fun missionZipCacheFilename(
-    archive: File,
-    constituent: MissionZip.Constituent,
-): String {
-    val key = "${archive.absolutePath}:${constituent.path}"
-    val prefix = Integer.toHexString(key.hashCode())
-    val leaf = GameFileFormats.leafName(constituent.name).ifBlank { "document" }
-    val safeLeaf = leaf.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "document" }
-    return "$prefix-$safeLeaf"
-}
 
 private fun openExternalFile(
     context: Context,

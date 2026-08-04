@@ -760,7 +760,11 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
                                     try {
                                         val uri =
                                             withContext(Dispatchers.IO) {
-                                                copyFileToCache(ctx, file, "file_view") { progress ->
+                                                copyFileToCache(
+                                                    ctx,
+                                                    file,
+                                                    FileProviderGrantStore.FILE_VIEW,
+                                                ) { progress ->
                                                     mainHandler.post { transferProgress = progress }
                                                 }
                                             }
@@ -812,7 +816,11 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
                             try {
                                 val uri =
                                     withContext(Dispatchers.IO) {
-                                        copyFileToCache(ctx, file, "debuglog_exports") { progress ->
+                                        copyFileToCache(
+                                            ctx,
+                                            file,
+                                            FileProviderGrantStore.DEBUG_LOG_EXPORTS,
+                                        ) { progress ->
                                             mainHandler.post { transferProgress = progress }
                                         }
                                     }
@@ -901,7 +909,11 @@ private fun CrashReportsSection(initialCrashFiles: List<File>) {
                                     try {
                                         val uri =
                                             withContext(Dispatchers.IO) {
-                                                copyFileToCache(ctx, file, "file_view") { progress ->
+                                                copyFileToCache(
+                                                    ctx,
+                                                    file,
+                                                    FileProviderGrantStore.FILE_VIEW,
+                                                ) { progress ->
                                                     mainHandler.post { transferProgress = progress }
                                                 }
                                             }
@@ -953,7 +965,11 @@ private fun CrashReportsSection(initialCrashFiles: List<File>) {
                             try {
                                 val uri =
                                     withContext(Dispatchers.IO) {
-                                        copyFileToCache(ctx, file, "crashlog_exports") { progress ->
+                                        copyFileToCache(
+                                            ctx,
+                                            file,
+                                            FileProviderGrantStore.CRASH_LOG_EXPORTS,
+                                        ) { progress ->
                                             mainHandler.post { transferProgress = progress }
                                         }
                                     }
@@ -1203,7 +1219,11 @@ private fun RecordedInputDemosSection(
                                 val uris =
                                     withContext(Dispatchers.IO) {
                                         exportedFiles.map { exportFile ->
-                                            copyFileToCache(ctx, exportFile, "inputdemo_exports") { progress ->
+                                            copyFileToCache(
+                                                ctx,
+                                                exportFile,
+                                                FileProviderGrantStore.INPUT_DEMO_EXPORTS,
+                                            ) { progress ->
                                                 mainHandler.post { transferProgress = progress }
                                             }
                                         }
@@ -2320,8 +2340,6 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
     }
 }
 
-private const val FILE_PROVIDER_AUTHORITY = "com.dxxredux.app.fileprovider"
-
 @Composable
 private fun FileTransferProgress(progress: LauncherCopyProgress?) {
     if (progress == null) return
@@ -2341,14 +2359,7 @@ private fun copyFileToCache(
     file: File,
     dirName: String,
     onProgress: (LauncherCopyProgress) -> Unit = {},
-): Uri {
-    val viewDir = File(context.cacheDir, dirName)
-    viewDir.mkdirs()
-    val copy = File(viewDir, file.name)
-    LauncherFileCopy.copyFileToFile(file, copy, file.name, onProgress)
-    return androidx.core.content.FileProvider
-        .getUriForFile(context, FILE_PROVIDER_AUTHORITY, copy)
-}
+): Uri = FileProviderGrantStore.copy(context, file, dirName, onProgress)
 
 private fun openTextFile(
     context: android.content.Context,

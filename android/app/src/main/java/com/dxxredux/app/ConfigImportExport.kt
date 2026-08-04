@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import androidx.core.content.FileProvider
 import com.dxxredux.app.multiplayer.HostGameDefaults
 import org.json.JSONObject
 import java.io.File
@@ -12,8 +11,6 @@ import java.io.File
 /** Utilities for exporting and importing touch-layout and controller configs. */
 object ConfigImportExport {
     private const val TAG = "ConfigImportExport"
-    private const val AUTHORITY = "com.dxxredux.app.fileprovider"
-    private const val EXPORT_DIR = "config_exports"
     private const val MIME_JSON = "application/json"
     private const val COMBINED_CONFIG_VERSION = 3
 
@@ -531,12 +528,13 @@ object ConfigImportExport {
         chooserTitle: String,
     ): Boolean =
         try {
-            val exportDir = File(context.cacheDir, EXPORT_DIR)
-            exportDir.mkdirs()
-            val file = File(exportDir, filename)
-            file.writeText(json.toString(2))
-
-            val uri = FileProvider.getUriForFile(context, AUTHORITY, file)
+            val uri =
+                FileProviderGrantStore.writeUtf8(
+                    context,
+                    FileProviderGrantStore.CONFIG_EXPORTS,
+                    filename,
+                    json.toString(2),
+                )
             val intent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = MIME_JSON
