@@ -35,4 +35,10 @@ class SetupAutomationScrollTest {
         assertEquals(544, accessibilityScanMaxId(setOf(2, 44)))
         assertEquals(16383, accessibilityScanMaxId(emptySet()))
     }
+
+    @Test
+    fun scrollScanIncludesProviderNodesOutsideTheSemanticsRange() {
+        assertEquals(16383, accessibilityScrollScanMaxId(setOf(2, 44)))
+        assertEquals(20000, accessibilityScrollScanMaxId(setOf(19500)))
+    }
 }

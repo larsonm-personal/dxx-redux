@@ -128,6 +128,9 @@ internal fun scrollGestureXFractions(isLandscape: Boolean): List<Float> =
 
 internal fun accessibilityScanMaxId(semanticsIds: Set<Int>): Int = semanticsIds.maxOrNull()?.plus(500) ?: 16383
 
+internal fun accessibilityScrollScanMaxId(semanticsIds: Set<Int>): Int =
+    maxOf(accessibilityScanMaxId(semanticsIds), 16383)
+
 private fun findComposeView(view: View): View? {
     if (view.accessibilityNodeProvider != null &&
         view.javaClass.simpleName.contains("Compose")
@@ -305,7 +308,7 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
         val provider = composeView?.accessibilityNodeProvider
         if (composeView != null && provider != null) {
             val semanticsIds = collectSemanticsNodeIds(composeView)
-            val maxScanId = accessibilityScanMaxId(semanticsIds)
+            val maxScanId = accessibilityScrollScanMaxId(semanticsIds)
             val scrollNodes = mutableListOf<Pair<Int, Int>>()
             val semanticAction =
                 if (forward) {
@@ -319,21 +322,39 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
                 } else {
                     AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
                 }
+            val oppositeSemanticAction =
+                if (forward) {
+                    AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id
+                } else {
+                    AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                }
+            val oppositeLegacyAction =
+                if (forward) {
+                    AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+                } else {
+                    AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                }
+            val oppositeScrollNodes = mutableListOf<Pair<Int, Int>>()
             for (id in -1..maxScanId) {
                 val info = provider.createAccessibilityNodeInfo(id) ?: continue
-                val canScroll =
-                    info.actionList.any {
-                        it.id == legacyAction || it.id == semanticAction
-                    }
-                if (!canScroll) continue
                 val bounds = Rect()
                 info.getBoundsInScreen(bounds)
                 val area = bounds.width() * bounds.height()
-                scrollNodes.add(id to area)
+                when {
+                    info.actionList.any { it.id == legacyAction || it.id == semanticAction } -> {
+                        scrollNodes.add(id to area)
+                    }
+
+                    info.actionList.any {
+                        it.id == oppositeLegacyAction || it.id == oppositeSemanticAction
+                    } -> {
+                        oppositeScrollNodes.add(id to area)
+                    }
+                }
             }
-            val largestScrollNodeIds = largestScrollNodeIds(scrollNodes)
+            val requestedNodeIds = largestScrollNodeIds(scrollNodes)
             var scrolled = false
-            for (scrollNodeId in largestScrollNodeIds) {
+            for (scrollNodeId in requestedNodeIds) {
                 scrolled =
                     provider.performAction(
                         scrollNodeId,
@@ -347,10 +368,10 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
                     ) ||
                     scrolled
             }
-            if (largestScrollNodeIds.isNotEmpty()) {
+            if (requestedNodeIds.isNotEmpty()) {
                 Log.i(
                     "DXX-Buttons",
-                    "Scroll ${if (forward) "down" else "up"} nodes=${largestScrollNodeIds.joinToString(
+                    "Scroll ${if (forward) "down" else "up"} nodes=${requestedNodeIds.joinToString(
                         ",",
                     )} scrolled=$scrolled",
                 )
@@ -358,6 +379,14 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
             if (scrolled) {
                 delay(250)
                 if (!isLandscape) return@withContext true
+            }
+            val boundaryNodeIds = largestScrollNodeIds(oppositeScrollNodes)
+            if (requestedNodeIds.isEmpty() && boundaryNodeIds.isNotEmpty()) {
+                Log.i(
+                    "DXX-Buttons",
+                    "Scroll ${if (forward) "down" else "up"} boundary nodes=${boundaryNodeIds.joinToString(",")}",
+                )
+                return@withContext false
             }
         }
 
