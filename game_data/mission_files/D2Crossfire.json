@@ -1551,9 +1551,9 @@
         "mine_volume": 31586622.422514357,
         "mine_volume_normalized": 6.907346099656999,
         "mine_volume_text": "6.9x",
-        "travel_distance": 4163.590045699761,
-        "travel_time_seconds": 83,
-        "travel_time_text": "1M:23S",
+        "travel_distance": 7621.531167076247,
+        "travel_time_seconds": 152,
+        "travel_time_text": "2M:32S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1582,28 +1582,17 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 7",
-            "seg": 76,
-            "side": 0,
-            "wall": 42,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 321,
             "label_pos": {
-              "x": 147.50030517578125,
-              "y": -96.00054931640625,
-              "z": 216.5463409423828
+              "x": 574.7350158691406,
+              "y": -65.99697875976562,
+              "z": 819.1197662353516
             },
-            "distance": 757.0278284370158,
-            "trigger": 7,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 105,
-                "side": 2,
-                "wall": 13
-              }
-            ]
+            "distance": 2716.2385329014214,
+            "key": "red"
           },
           {
             "index": 3,
@@ -1616,7 +1605,7 @@
               "y": -305.9994354248047,
               "z": 411.5473937988281
             },
-            "distance": 858.3464880142046
+            "distance": 2357.0769049262854
           },
           {
             "index": 4,
@@ -1663,7 +1652,6 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "red key not necessary",
           "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]

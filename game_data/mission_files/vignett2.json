@@ -1454,9 +1454,9 @@
         "mine_volume": 17190541.094616305,
         "mine_volume_normalized": 3.759218551213469,
         "mine_volume_text": "3.8x",
-        "travel_distance": 3998.1201527794465,
-        "travel_time_seconds": 80,
-        "travel_time_text": "1M:20S",
+        "travel_distance": 3925.026666357102,
+        "travel_time_seconds": 79,
+        "travel_time_text": "1M:19S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1515,40 +1515,15 @@
             "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 9",
-            "seg": 317,
-            "side": 0,
-            "wall": 142,
-            "label_pos": {
-              "x": 14.124710083007812,
-              "y": -61.35548400878906,
-              "z": 319.3169708251953
-            },
-            "distance": 921.4666237006475,
-            "trigger": 9,
-            "trigger_type_id": 7,
-            "trigger_type": "unlock_door",
-            "opens": [
-              {
-                "seg": 264,
-                "side": 4,
-                "wall": 78
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 317,
+            "seg": 297,
             "wall": 143,
             "label_pos": {
               "x": 14.122085571289062,
               "y": -51.35990905761719,
               "z": 319.01971435546875
             },
-            "distance": 16.6882741697932,
+            "distance": 853.50711668136,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1596,7 +1571,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1606,7 +1581,31 @@
               "y": -38.871307373046875,
               "z": 301.64080810546875
             },
-            "distance": 64.65277583443843
+            "distance": 42.64745140781634
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 9",
+            "seg": 295,
+            "wall": 142,
+            "label_pos": {
+              "x": 14.124710083007812,
+              "y": -61.35548400878906,
+              "z": 319.3169708251953
+            },
+            "distance": 16.779836025677195,
+            "trigger": 9,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 264,
+                "side": 4,
+                "wall": 78
+              }
+            ]
           },
           {
             "index": 7,
@@ -1621,7 +1620,7 @@
               "y": -10.136505126953125,
               "z": -21.23980712890625
             },
-            "distance": 386.07399185693487,
+            "distance": 402.8537750246162,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
