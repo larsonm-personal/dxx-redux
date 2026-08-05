@@ -14,6 +14,7 @@ internal object SafDescriptorStager {
     private const val MAX_STAGE_BYTES = 2L * 1024L * 1024L * 1024L
     private const val REQUIRED_FREE_BYTES = 64L * 1024L * 1024L
     private const val MAX_ZERO_READS = 1024
+    private const val PROGRESS_LOG_BYTES = 64L * 1024L * 1024L
     private val lock = Any()
 
     fun detachSeekable(
@@ -64,11 +65,13 @@ internal object SafDescriptorStager {
         if (stageLimit == 0L) throw IOException("Insufficient storage to stage SAF source")
         val temporary = File.createTempFile(".source-", ".tmp", root)
         try {
+            Log.i(TAG, "Staging nonseekable SAF source $label (limit $stageLimit bytes)")
             val copied =
                 ParcelFileDescriptor.AutoCloseInputStream(source).use { input ->
                     FileOutputStream(temporary).use { output ->
                         val buffer = ByteArray(64 * 1024)
                         var total = 0L
+                        var nextProgress = PROGRESS_LOG_BYTES
                         var zeroReads = 0
                         while (true) {
                             val count = input.read(buffer)
@@ -84,6 +87,10 @@ internal object SafDescriptorStager {
                             }
                             output.write(buffer, 0, count)
                             total += count
+                            if (total >= nextProgress) {
+                                Log.i(TAG, "Staging $label: $total bytes copied")
+                                nextProgress = Math.addExact(nextProgress, PROGRESS_LOG_BYTES)
+                            }
                         }
                         output.flush()
                         output.fd.sync()

@@ -129,6 +129,9 @@ try {
     if (-not (Test-Path -LiteralPath $apk -PathType Leaf)) { throw "Debug APK not found: $apk" }
     Adb -AdbArgs @("install", "-r", $apk) -Seconds 120 | Out-Null
 
+    # Earlier mission tests can leave hundreds of MiB of disposable staged music
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-rf", "cache/mission_zip_music") | Out-Null
+
     New-Item -ItemType Directory -Force (Split-Path $tmpCue) | Out-Null
     $cueText = [IO.File]::ReadAllText($CuePath) -replace '(?m)^FILE\s+"[^"]+"\s+BINARY\s*$', 'FILE "macplay.bin" BINARY'
     [IO.File]::WriteAllText($tmpCue, $cueText, [Text.Encoding]::ASCII)
@@ -136,8 +139,17 @@ try {
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $providerDir) | Out-Null
     Adb -AdbArgs @("push", $tmpCue, "/data/local/tmp/macplay.cue") -Seconds 30 | Out-Null
     Adb -AdbArgs @("push", $BinPath, "/data/local/tmp/macplay.bin") -Seconds 120 | Out-Null
+    $sourceBinSize = (Get-Item -LiteralPath $BinPath).Length
+    $stagedBinSize = Adb-Timeout -AdbArgs @("shell", "stat", "-c", "%s", "/data/local/tmp/macplay.bin") -Seconds 5
+    if (-not ($stagedBinSize -match '^\d+$') -or [long]$stagedBinSize -ne $sourceBinSize) {
+        throw "MacPlay BIN push was incomplete: expected $sourceBinSize bytes, got $stagedBinSize"
+    }
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/macplay.cue", $deviceCue) | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/macplay.bin", $deviceBin) -Seconds 120 | Out-Null
+    $providerBinSize = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "stat", "-c", "%s", $deviceBin) -Seconds 5
+    if (-not ($providerBinSize -match '^\d+$') -or [long]$providerBinSize -ne $sourceBinSize) {
+        throw "MacPlay BIN app staging was incomplete: expected $sourceBinSize bytes, got $providerBinSize"
+    }
     Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/macplay.cue", "/data/local/tmp/macplay.bin") | Out-Null
 
     Stop-AppAndWait

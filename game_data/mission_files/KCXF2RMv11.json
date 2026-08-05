@@ -1696,7 +1696,7 @@
         "mine_volume_text": "",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
-        "travel_time_text": "",
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,

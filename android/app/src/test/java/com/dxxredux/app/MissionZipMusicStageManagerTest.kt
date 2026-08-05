@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -260,6 +261,27 @@ class MissionZipMusicStageManagerTest {
         assertArrayEquals(byteArrayOf(1, 2, 3, 4), firstStaged!!.readBytes())
         assertArrayEquals(byteArrayOf(4, 3, 2, 1), secondStaged!!.readBytes())
         assertTrue(firstStaged.absolutePath != secondStaged.absolutePath)
+    }
+
+    @Test
+    fun cleanupEvictsOldestGenerationsToReserveCacheCapacity() {
+        val cacheDir = testCacheDir("capacity-cleanup")
+        val root = File(cacheDir, "mission_zip_music")
+        val old = File(root, "old").also { it.mkdirs() }
+        val recent = File(root, "recent").also { it.mkdirs() }
+        File(old, "track.ogg").writeBytes(ByteArray(6))
+        File(recent, "track.ogg").writeBytes(ByteArray(6))
+        old.setLastModified(1_000L)
+        recent.setLastModified(2_000L)
+
+        MissionZipMusicStageManager(cacheDir).cleanupOldFiles(
+            maxAgeMs = Long.MAX_VALUE,
+            maxBytes = 10L,
+            requiredBytes = 4L,
+        )
+
+        assertFalse(old.exists())
+        assertTrue(recent.exists())
     }
 
     @Test

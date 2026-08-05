@@ -7,9 +7,11 @@ import android.database.MatrixCursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
+import android.util.Log
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
+import java.util.concurrent.atomic.AtomicInteger
 
 class SafTestProvider : ContentProvider() {
     override fun onCreate(): Boolean = true
@@ -30,13 +32,17 @@ class SafTestProvider : ContentProvider() {
 
     private fun openPipe(source: File): ParcelFileDescriptor {
         val pipe = ParcelFileDescriptor.createReliablePipe()
+        val pipeId = nextPipeId.incrementAndGet()
+        Log.i(TAG, "Opening pipe $pipeId for ${source.name} (${source.length()} bytes)")
         Thread(
             {
                 try {
                     FileInputStream(source).use { input ->
                         ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]).use { output -> input.copyTo(output) }
                     }
+                    Log.i(TAG, "Completed pipe $pipeId for ${source.name}")
                 } catch (failure: Exception) {
+                    Log.w(TAG, "Pipe $pipeId failed for ${source.name}", failure)
                     runCatching { pipe[1].closeWithError(failure.message ?: "Provider pipe failed") }
                 }
             },
@@ -97,4 +103,9 @@ class SafTestProvider : ContentProvider() {
         selection: String?,
         selectionArgs: Array<out String>?,
     ): Int = 0
+
+    private companion object {
+        const val TAG = "DXX-SAF-TestProvider"
+        val nextPipeId = AtomicInteger()
+    }
 }

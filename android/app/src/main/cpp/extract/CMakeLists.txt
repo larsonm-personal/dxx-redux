@@ -349,10 +349,13 @@ set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
 # ── fingerprint_cd ───────────────────────────────────────────────────
 add_executable(
     fingerprint_cd
-    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c ${SHARED_DIR}/pcm_decoders.c
-    ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
+    ${SHARED_DIR}/pcm_decoders.c
+    ${SHARED_DIR}/fingerprint_gen.c
+    ${_DECODERS_DIR}/stb_vorbis.c)
 target_include_directories(fingerprint_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
                                                   ${_DECODERS_DIR})
 target_compile_definitions(fingerprint_cd PRIVATE CHROMAPRINT_NODLL)
@@ -529,3 +532,16 @@ else()
 endif()
 add_test(NAME physfsx_android_setup_tests COMMAND test_physfsx_android_setup)
 set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+# These executables use assert for both setup and verification. Keep assertions active when the host
+# suite is configured as Release so test setup is not compiled away before CTest runs.
+get_property(EXTRACT_DIRECTORY_TARGETS DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+foreach(EXTRACT_TARGET IN LISTS EXTRACT_DIRECTORY_TARGETS)
+    if(EXTRACT_TARGET MATCHES "^test_")
+        if(MSVC)
+            target_compile_options(${EXTRACT_TARGET} PRIVATE /UNDEBUG)
+        else()
+            target_compile_options(${EXTRACT_TARGET} PRIVATE -UNDEBUG)
+        endif()
+    endif()
+endforeach()

@@ -2051,6 +2051,7 @@ extern "C" char *game_introspect_get_state(void)
 		scale["render_h"] = menu_scale.render_h;
 		scale["crop_left"] = menu_scale.crop_left;
 		scale["crop_top"] = menu_scale.crop_top;
+		scale["scroll_y"] = menu_scale.src.y - menu_scale.box.y;
 		scale["box"] = { { "x", menu_scale.box.x }, { "y", menu_scale.box.y }, { "w", menu_scale.box.w }, { "h", menu_scale.box.h } };
 		scale["src"] = { { "x", menu_scale.src.x }, { "y", menu_scale.src.y }, { "w", menu_scale.src.w }, { "h", menu_scale.src.h } };
 		scale["dst"] = { { "x", menu_scale.dst.x }, { "y", menu_scale.dst.y }, { "w", menu_scale.dst.w }, { "h", menu_scale.dst.h } };

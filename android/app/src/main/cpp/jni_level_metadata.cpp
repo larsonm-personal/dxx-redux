@@ -966,7 +966,7 @@ static json failed_level_row(int level_num, const char *level_file, const char *
 	row["mine_volume_text"] = "";
 	row["travel_distance"] = 0.0;
 	row["travel_time_seconds"] = 0;
-	row["travel_time_text"] = "";
+	row["travel_time_text"] = format_levelmeta_time(0);
 	row["guidebot_count"] = 0;
 	row["guidebot_placed"] = false;
 	row["guidebot_accessible"] = false;

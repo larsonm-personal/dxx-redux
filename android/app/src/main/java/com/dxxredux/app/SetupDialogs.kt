@@ -1345,133 +1345,77 @@ internal fun DiscImportDialog(
                                 onClick = {
                                     scope.launch {
                                         try {
-                                            val stagedImageBytes =
+                                            val preparedImages =
                                                 withContext(Dispatchers.IO) {
-                                                    maxNonseekableDiscImageBytes(
+                                                    prepareDiscImages(
                                                         context = context,
                                                         tracks = tracks!!,
                                                         imageUris = orderedBinUris,
                                                         imageSizes = binSizes,
                                                     )
                                                 }
-                                            ImportStorageGuard.requireFreeSpace(
-                                                setDir,
-                                                cueDataTrackPeakStorageBytes(tracks!!, stagedImageBytes),
-                                                "extract disc game files",
-                                            )
-                                        } catch (e: InsufficientStorageException) {
-                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
-                                            status = "Not enough free space"
-                                            return@launch
-                                        } catch (e: Exception) {
-                                            Log.e("DXX-DiscImport", "Could not prepare disc image extraction", e)
-                                            status = "Cannot prepare disc image: ${e.message}"
-                                            return@launch
-                                        }
-                                        processing = true
-                                        status = "Extracting game files..."
-                                        progressBytes = 0L
-                                        progressTotal = 0L
-                                        withContext(Dispatchers.IO) {
                                             try {
-                                                val parsedTracks = tracks!!
-                                                val progress =
-                                                    object : DiscImportBridge.ExtractProgress {
-                                                        override fun onProgress(
-                                                            currentFile: String,
-                                                            bytesDone: Long,
-                                                            bytesTotal: Long,
-                                                        ): Int {
-                                                            val pct =
-                                                                if (bytesTotal > 0L) {
-                                                                    ((bytesDone * 100L) / bytesTotal).toInt()
-                                                                } else {
-                                                                    0
-                                                                }
-                                                            mainHandler.post {
-                                                                status = "Extracting $currentFile ($pct%)"
-                                                                progressBytes = bytesDone
-                                                                progressTotal = bytesTotal
-                                                            }
-                                                            return 0
-                                                        }
-                                                    }
-                                                val result =
-                                                    extractCueDataTracks(
+                                                ImportStorageGuard.requireFreeSpace(
+                                                    setDir,
+                                                    cueDataTrackPeakStorageBytes(
+                                                        tracks!!,
+                                                        preparedImages.stagedImageBytes,
+                                                    ),
+                                                    "extract disc game files",
+                                                )
+                                            } catch (failure: Exception) {
+                                                preparedImages.close()
+                                                throw failure
+                                            }
+                                            processing = true
+                                            status = "Extracting game files..."
+                                            progressBytes = 0L
+                                            progressTotal = 0L
+                                            withContext(Dispatchers.IO) {
+                                                preparedImages.use { prepared ->
+                                                    extractPickedCueDataTracks(
+                                                        context = context,
                                                         setDir = setDir,
-                                                        tracks = parsedTracks,
-                                                        imageCount = orderedBinUris.size,
-                                                        progress = progress,
-                                                        extractTrack = { track, outputDir, trackProgress ->
-                                                            val image = orderedBinUris.getOrNull(track.fileIndex)
-                                                            if (image == null) {
-                                                                CueDataTrackAttempt(-1, -1)
-                                                            } else {
-                                                                mainHandler.post {
-                                                                    status =
-                                                                        "Extracting data track ${track.trackNum}..."
-                                                                }
-                                                                openSeekableDiscImage(context, image).use {
-                                                                    val iso =
-                                                                        DiscImportBridge.extractIsoFiles(
-                                                                            it.fd,
-                                                                            track.startSector,
-                                                                            track.numSectors,
-                                                                            outputDir.absolutePath,
-                                                                            trackProgress,
-                                                                        )
-                                                                    val mac =
-                                                                        if (iso > 0) {
-                                                                            0
-                                                                        } else {
-                                                                            mainHandler.post {
-                                                                                status =
-                                                                                    "Trying Mac HFS track ${track.trackNum}..."
-                                                                            }
-                                                                            DiscImportBridge.extractMacFiles(
-                                                                                it.fd,
-                                                                                track.startSector,
-                                                                                track.numSectors,
-                                                                                outputDir.absolutePath,
-                                                                                trackProgress,
-                                                                            )
-                                                                        }
-                                                                    CueDataTrackAttempt(iso, mac)
-                                                                }
-                                                            }
+                                                        tracks = tracks!!,
+                                                        orderedBinUris = orderedBinUris,
+                                                        preparedImages = prepared,
+                                                        postUpdate = { mainHandler.post(it) },
+                                                        onStatus = { status = it },
+                                                        onProgress = { current, total ->
+                                                            progressBytes = current
+                                                            progressTotal = total
                                                         },
                                                     )
-                                                withContext(Dispatchers.Main) {
-                                                    dataExtracted =
-                                                        if (result.succeeded) result.totalExtracted else 0
-                                                    status =
-                                                        when {
-                                                            !result.succeeded -> {
-                                                                "Data track ${result.failedTrackNumber} failed; no files imported"
-                                                            }
-
-                                                            result.primaryExtracted > 0 -> {
-                                                                buildDiscExtractSummary(
-                                                                    result.primaryExtracted,
-                                                                    "disc file(s) from ${result.processedTracks} data track(s)",
-                                                                    result.sowExtracted,
-                                                                )
-                                                            }
-
-                                                            else -> {
-                                                                "No supported game files found on data tracks"
-                                                            }
+                                                }
+                                            }.also { result ->
+                                                dataExtracted = if (result.succeeded) result.totalExtracted else 0
+                                                status =
+                                                    when {
+                                                        !result.succeeded -> {
+                                                            "Data track ${result.failedTrackNumber} failed; no files imported"
                                                         }
-                                                    if (dataExtracted > 0) {
-                                                        onChanged()
+
+                                                        result.primaryExtracted > 0 -> {
+                                                            buildDiscExtractSummary(
+                                                                result.primaryExtracted,
+                                                                "disc file(s) from ${result.processedTracks} data track(s)",
+                                                                result.sowExtracted,
+                                                            )
+                                                        }
+
+                                                        else -> {
+                                                            "No supported game files found on data tracks"
+                                                        }
                                                     }
-                                                }
-                                            } catch (e: Exception) {
-                                                Log.e("DXX-DiscImport", "Extract failed", e)
-                                                withContext(Dispatchers.Main) {
-                                                    status = "Extract error: ${e.message}"
-                                                }
+                                                if (dataExtracted > 0) onChanged()
                                             }
+                                        } catch (e: InsufficientStorageException) {
+                                            Log.w("DXX-DiscImport", "Disc image extraction stopped for storage", e)
+                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                            status = "Not enough free space"
+                                        } catch (e: Exception) {
+                                            Log.e("DXX-DiscImport", "Disc image extraction failed", e)
+                                            status = "Cannot extract disc image: ${e.message}"
                                         }
                                         processing = false
                                     }

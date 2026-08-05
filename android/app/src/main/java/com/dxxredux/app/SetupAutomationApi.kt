@@ -16,7 +16,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.FileWriter
 
 /**
  * Walk the Compose accessibility node provider to discover all interactive
@@ -57,8 +56,8 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
     val clickableNodes = mutableListOf<ClickableNode>()
 
     val semanticsIds = collectSemanticsNodeIds(composeView)
-    val scanIds = if (semanticsIds.isNotEmpty()) listOf(-1) + semanticsIds else (-1..2048).toList()
-    for (id in scanIds.distinct()) {
+    val maxScanId = accessibilityScanMaxId(semanticsIds)
+    for (id in -1..maxScanId) {
         val info = provider.createAccessibilityNodeInfo(id) ?: continue
         val bounds = Rect()
         info.getBoundsInScreen(bounds)
@@ -94,10 +93,17 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
                 height = click.bounds.height().toFloat(),
             )
         }
+    if (buttons.isEmpty() && textNodes.isNotEmpty() && clickableNodes.isNotEmpty()) {
+        Log.w(
+            "DXX-Buttons",
+            "No button labels matched: text=${textNodes.take(5).joinToString { "${it.text}:${it.bounds}" }} " +
+                "clickable=${clickableNodes.take(5).joinToString { it.bounds.toString() }}",
+        )
+    }
     Log.i(
         "DXX-Buttons",
         "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, " +
-            "${buttons.size} matched, scanned=${scanIds.size} (semantics=${semanticsIds.size})",
+            "${buttons.size} matched, range=-1..$maxScanId (semantics=${semanticsIds.size})",
     )
     return buttons
 }
@@ -119,6 +125,8 @@ internal fun largestScrollNodeIds(scrollNodes: List<Pair<Int, Int>>): List<Int> 
 
 internal fun scrollGestureXFractions(isLandscape: Boolean): List<Float> =
     if (isLandscape) listOf(0.25f, 0.75f) else listOf(0.5f)
+
+internal fun accessibilityScanMaxId(semanticsIds: Set<Int>): Int = semanticsIds.maxOrNull()?.plus(500) ?: 16383
 
 private fun findComposeView(view: View): View? {
     if (view.accessibilityNodeProvider != null &&
@@ -239,12 +247,7 @@ internal fun SetupActivity.performAccessibilityClick(buttonText: String): Boolea
     val clickNodes = mutableListOf<ClickNode>()
 
     val semanticsIds = collectSemanticsNodeIds(composeView)
-    val maxScanId =
-        if (semanticsIds.isNotEmpty()) {
-            semanticsIds.max() + 500
-        } else {
-            16383
-        }
+    val maxScanId = accessibilityScanMaxId(semanticsIds)
     for (id in -1..maxScanId) {
         val info = provider.createAccessibilityNodeInfo(id) ?: continue
         val bounds = Rect()
@@ -302,12 +305,7 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
         val provider = composeView?.accessibilityNodeProvider
         if (composeView != null && provider != null) {
             val semanticsIds = collectSemanticsNodeIds(composeView)
-            val maxScanId =
-                if (semanticsIds.isNotEmpty()) {
-                    semanticsIds.max() + 500
-                } else {
-                    16383
-                }
+            val maxScanId = accessibilityScanMaxId(semanticsIds)
             val scrollNodes = mutableListOf<Pair<Int, Int>>()
             val semanticAction =
                 if (forward) {
@@ -644,7 +642,7 @@ internal fun SetupActivity.writeControllerIntrospectJson(game: String? = null) {
         if (json.has("inverts")) root.put("inverts", json.getJSONArray("inverts"))
 
         val outFile = File(filesDir, "controller_introspect.json")
-        FileWriter(outFile).use { it.write(root.toString(2)) }
+        AtomicFilePublication.writeUtf8(outFile, root.toString(2))
         Log.i("DXX-Setup", "Controller introspect written: ${outFile.absolutePath}")
     } catch (e: Exception) {
         Log.e("DXX-Setup", "Failed to write controller introspect JSON", e)
@@ -950,7 +948,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put("buttons", buttonsArr)
 
         val outFile = File(dir, "setup_introspect.json")
-        FileWriter(outFile).use { it.write(root.toString()) }
+        AtomicFilePublication.writeUtf8(outFile, root.toString())
         Log.i("DXX-Setup", "Introspect written: ${outFile.absolutePath}")
     } catch (e: Exception) {
         Log.e("DXX-Setup", "Failed to write introspect JSON", e)

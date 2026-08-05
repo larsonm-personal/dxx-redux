@@ -633,31 +633,59 @@ internal fun cueDataTrackPeakStorageBytes(
     return Math.addExact(extractedBytes, stagedImageBytes)
 }
 
-internal fun maxNonseekableDiscImageBytes(
+internal class PreparedDiscImages(
+    val stagedImageBytes: Long,
+    private val sources: MutableMap<Int, ParcelFileDescriptor>,
+) : AutoCloseable {
+    fun openSeekable(
+        context: Context,
+        imageIndex: Int,
+        image: Pair<String, Uri>,
+    ): ParcelFileDescriptor {
+        val source =
+            sources.remove(imageIndex)
+                ?: context.contentResolver.openFileDescriptor(image.second, "r")
+                ?: throw IOException("Could not open ${image.first}")
+        return SafDescriptorStager.openSeekable(source, context.cacheDir, image.first)
+    }
+
+    override fun close() {
+        sources.values.forEach { runCatching { it.close() } }
+        sources.clear()
+    }
+}
+
+internal fun prepareDiscImages(
     context: Context,
     tracks: List<DiscImportBridge.CueTrack>,
     imageUris: List<Pair<String, Uri>>,
     imageSizes: List<Long>,
-): Long {
+): PreparedDiscImages {
     var maximum = 0L
-    tracks
-        .asSequence()
-        .filter { it.isData }
-        .map { it.fileIndex }
-        .distinct()
-        .forEach { imageIndex ->
-            val image = imageUris.getOrNull(imageIndex) ?: throw IOException("Missing disc image $imageIndex")
-            val size = imageSizes.getOrNull(imageIndex) ?: throw IOException("Missing size for ${image.first}")
-            val source =
-                context.contentResolver.openFileDescriptor(image.second, "r")
-                    ?: throw IOException("Could not open ${image.first}")
-            val needsStaging = source.use(SafDescriptorStager::needsStaging)
-            if (needsStaging) {
-                if (size <= 0L) throw IOException("Could not determine size of ${image.first}")
-                maximum = maxOf(maximum, size)
+    val sources = mutableMapOf<Int, ParcelFileDescriptor>()
+    try {
+        tracks
+            .asSequence()
+            .filter { it.isData }
+            .map { it.fileIndex }
+            .distinct()
+            .forEach { imageIndex ->
+                val image = imageUris.getOrNull(imageIndex) ?: throw IOException("Missing disc image $imageIndex")
+                val size = imageSizes.getOrNull(imageIndex) ?: throw IOException("Missing size for ${image.first}")
+                val source =
+                    context.contentResolver.openFileDescriptor(image.second, "r")
+                        ?: throw IOException("Could not open ${image.first}")
+                sources[imageIndex] = source
+                if (SafDescriptorStager.needsStaging(source)) {
+                    if (size <= 0L) throw IOException("Could not determine size of ${image.first}")
+                    maximum = maxOf(maximum, size)
+                }
             }
-        }
-    return maximum
+        return PreparedDiscImages(maximum, sources)
+    } catch (failure: Exception) {
+        sources.values.forEach { runCatching { it.close() } }
+        throw failure
+    }
 }
 
 internal fun openSeekableDiscImage(
@@ -668,6 +696,71 @@ internal fun openSeekableDiscImage(
         context.contentResolver.openFileDescriptor(image.second, "r")
             ?: throw IOException("Could not open ${image.first}")
     return SafDescriptorStager.openSeekable(source, context.cacheDir, image.first)
+}
+
+internal fun extractPickedCueDataTracks(
+    context: Context,
+    setDir: File,
+    tracks: List<DiscImportBridge.CueTrack>,
+    orderedBinUris: List<Pair<String, Uri>>,
+    preparedImages: PreparedDiscImages,
+    postUpdate: (() -> Unit) -> Unit,
+    onStatus: (String) -> Unit,
+    onProgress: (Long, Long) -> Unit,
+): CueDataTrackExtractionResult {
+    val progress =
+        object : DiscImportBridge.ExtractProgress {
+            override fun onProgress(
+                currentFile: String,
+                bytesDone: Long,
+                bytesTotal: Long,
+            ): Int {
+                val pct = if (bytesTotal > 0L) ((bytesDone * 100L) / bytesTotal).toInt() else 0
+                postUpdate {
+                    onStatus("Extracting $currentFile ($pct%)")
+                    onProgress(bytesDone, bytesTotal)
+                }
+                return 0
+            }
+        }
+    return extractCueDataTracks(
+        setDir = setDir,
+        tracks = tracks,
+        imageCount = orderedBinUris.size,
+        progress = progress,
+        extractTrack = { track, outputDir, trackProgress ->
+            val image = orderedBinUris.getOrNull(track.fileIndex)
+            if (image == null) {
+                CueDataTrackAttempt(-1, -1)
+            } else {
+                postUpdate { onStatus("Extracting data track ${track.trackNum}...") }
+                preparedImages.openSeekable(context, track.fileIndex, image).use {
+                    val iso =
+                        DiscImportBridge.extractIsoFiles(
+                            it.fd,
+                            track.startSector,
+                            track.numSectors,
+                            outputDir.absolutePath,
+                            trackProgress,
+                        )
+                    val mac =
+                        if (iso > 0) {
+                            0
+                        } else {
+                            postUpdate { onStatus("Trying Mac HFS track ${track.trackNum}...") }
+                            DiscImportBridge.extractMacFiles(
+                                it.fd,
+                                track.startSector,
+                                track.numSectors,
+                                outputDir.absolutePath,
+                                trackProgress,
+                            )
+                        }
+                    CueDataTrackAttempt(iso, mac)
+                }
+            }
+        },
+    )
 }
 
 private class CueDataTrackProgress(

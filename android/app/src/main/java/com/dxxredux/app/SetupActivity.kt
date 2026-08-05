@@ -712,7 +712,7 @@ class SetupActivity : ComponentActivity() {
                     "import_gog" -> {
                         val path = intent.getStringExtra("path") ?: return
                         val audio = intent.getBooleanExtra("include_audio", true)
-                        Thread {
+                        runIo {
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
@@ -729,18 +729,18 @@ class SetupActivity : ComponentActivity() {
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
                             requestSetupRefresh()
-                        }.start()
+                        }
                     }
 
                     "import_sow" -> {
                         val path = intent.getStringExtra("path") ?: return
-                        Thread {
+                        runIo {
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)
                             Log.i("DXX-Setup", "import_sow '$path' -> $count file(s) to ${setDir.name}")
                             requestSetupRefresh()
-                        }.start()
+                        }
                     }
 
                     "import_cd" -> {
@@ -754,7 +754,7 @@ class SetupActivity : ComponentActivity() {
                         if (binPaths.isEmpty()) return
                         val audio = intent.getBooleanExtra("include_audio", true)
                         SetupImportTracker.begin("cd")
-                        Thread {
+                        runIo {
                             try {
                                 val fsm = FileSetManager(filesDir)
                                 val setDir = fsm.getSetDir(fsm.getActive())
@@ -778,7 +778,7 @@ class SetupActivity : ComponentActivity() {
                             } finally {
                                 requestSetupRefresh()
                             }
-                        }.start()
+                        }
                     }
 
                     "import_picked_uris" -> {
@@ -796,7 +796,7 @@ class SetupActivity : ComponentActivity() {
                     "import_iso" -> {
                         val path = intent.getStringExtra("iso_path") ?: return
                         SetupImportTracker.begin("iso")
-                        Thread {
+                        runIo {
                             try {
                                 val fsm = FileSetManager(filesDir)
                                 val setDir = fsm.getSetDir(fsm.getActive())
@@ -812,7 +812,7 @@ class SetupActivity : ComponentActivity() {
                             } finally {
                                 requestSetupRefresh()
                             }
-                        }.start()
+                        }
                     }
 
                     "import_files" -> {
@@ -854,7 +854,7 @@ class SetupActivity : ComponentActivity() {
                     "music_midi_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
-                        Thread {
+                        runIo midiPlay@{
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val result = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
@@ -864,7 +864,7 @@ class SetupActivity : ComponentActivity() {
                                     "DXX-Setup",
                                     "music_midi_play: source $srcIdx not found (${result.sources.size} available)",
                                 )
-                                return@Thread
+                                return@midiPlay
                             }
                             val track = src.tracks.getOrNull(trkIdx)
                             if (track == null) {
@@ -872,13 +872,13 @@ class SetupActivity : ComponentActivity() {
                                     "DXX-Setup",
                                     "music_midi_play: track $trkIdx not found in ${src.label} (${src.tracks.size} available)",
                                 )
-                                return@Thread
+                                return@midiPlay
                             }
                             MidiPreviewBridge.init(this@SetupActivity)
                             val data = MidiPreviewBridge.readHogEntry(src.hog, track.filename)
                             if (data == null) {
                                 Log.w("DXX-Setup", "music_midi_play: failed to read ${track.filename} from ${src.hog}")
-                                return@Thread
+                                return@midiPlay
                             }
                             val isHmp = track.filename.lowercase().endsWith(".hmp")
                             val sr = MidiPreviewBridge.getNativeSampleRate(this@SetupActivity)
@@ -890,7 +890,7 @@ class SetupActivity : ComponentActivity() {
                                     "music_midi_play: failed to start ${track.filename} from ${src.label}",
                                 )
                             }
-                        }.start()
+                        }
                     }
 
                     "music_midi_stop" -> {
@@ -901,7 +901,7 @@ class SetupActivity : ComponentActivity() {
                     "music_cd_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
-                        Thread {
+                        runIo cdPlay@{
                             val srcManager = AudioSourceManager(filesDir)
                             val sources = srcManager.getEnabledSources()
                             val src = sources.getOrNull(srcIdx)
@@ -910,7 +910,7 @@ class SetupActivity : ComponentActivity() {
                                     "DXX-Setup",
                                     "music_cd_play: source $srcIdx not found (${sources.size} available)",
                                 )
-                                return@Thread
+                                return@cdPlay
                             }
                             val cuePath = resolveCdAudioSourceFile(filesDir, src.cuePath).absolutePath
                             val localBinPaths = resolveCdPreviewLocalBinPaths(filesDir, src)
@@ -955,7 +955,7 @@ class SetupActivity : ComponentActivity() {
                                     false
                                 }
                             Log.i("DXX-Setup", "music_cd_play: source=${src.discLabel} track=$trkIdx ok=$ok")
-                        }.start()
+                        }
                     }
 
                     "music_cd_stop" -> {

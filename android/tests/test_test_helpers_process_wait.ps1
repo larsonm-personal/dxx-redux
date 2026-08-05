@@ -95,9 +95,18 @@ $script:TimeoutCalls = 0
 $script:GameProcessAlive = $true
 
 function Adb-Timeout {
-    param([string[]]$AdbArgs, [int]$Seconds = 8)
+    param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError)
     $script:TimeoutCalls++
     $name = $AdbArgs[-1]
+    if ($name -eq 'pwd') {
+        return '/data/user/0/com.dxxredux.app'
+    }
+    if ($AdbArgs -contains 'cat' -and $name -eq 'files/d1x-redux/.active_set_path') {
+        return '/data/user/0/com.dxxredux.app/files/imported/sets/default'
+    }
+    if ($AdbArgs -contains 'cat' -and $name -eq 'files/d2x-redux/.active_set_path') {
+        return '/data/user/0/com.dxxredux.app/files/imported/sets/default'
+    }
     if ($name -eq "$($script:PACKAGE):game" -and $script:GameProcessAlive) {
         return '12345'
     }

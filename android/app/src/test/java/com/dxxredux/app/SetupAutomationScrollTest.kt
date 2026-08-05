@@ -29,4 +29,10 @@ class SetupAutomationScrollTest {
         assertEquals(listOf(0.25f, 0.75f), scrollGestureXFractions(isLandscape = true))
         assertEquals(listOf(0.5f), scrollGestureXFractions(isLandscape = false))
     }
+
+    @Test
+    fun accessibilityScanIncludesVirtualChildrenBeyondSemanticsIds() {
+        assertEquals(544, accessibilityScanMaxId(setOf(2, 44)))
+        assertEquals(16383, accessibilityScanMaxId(emptySet()))
+    }
 }

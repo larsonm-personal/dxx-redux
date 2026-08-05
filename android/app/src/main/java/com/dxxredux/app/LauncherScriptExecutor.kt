@@ -1,9 +1,11 @@
 package com.dxxredux.app
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.system.Os
 import android.util.Log
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -541,7 +543,7 @@ class LauncherScriptExecutor(
         running = false
     }
 
-    private fun sendSetupCommand(
+    private suspend fun sendSetupCommand(
         cmd: String,
         args: JSONObject?,
     ) {
@@ -561,7 +563,22 @@ class LauncherScriptExecutor(
                 }
             }
         }
-        context.sendBroadcast(intent)
+        sendOrderedBroadcastAndWait(intent)
+    }
+
+    private suspend fun sendOrderedBroadcastAndWait(intent: Intent) {
+        val completed = CompletableDeferred<Unit>()
+        val resultReceiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(
+                    receiverContext: Context?,
+                    receiverIntent: Intent?,
+                ) {
+                    completed.complete(Unit)
+                }
+            }
+        context.sendOrderedBroadcast(intent, null, resultReceiver, null, 0, null, null)
+        completed.await()
     }
 
     private fun resetGameState() {
@@ -632,8 +649,7 @@ class LauncherScriptExecutor(
         // Trigger fresh introspection
         val intent = Intent("com.dxxredux.SETUP_INTROSPECT")
         intent.setPackage(context.packageName)
-        context.sendBroadcast(intent)
-        delay(500) // Give it time to write
+        sendOrderedBroadcastAndWait(intent)
 
         return withContext(Dispatchers.IO) {
             val f = File(context.filesDir, "setup_introspect.json")
@@ -653,8 +669,7 @@ class LauncherScriptExecutor(
     private suspend fun runSetupAssertions(expect: JSONObject): String? {
         val intent = Intent("com.dxxredux.SETUP_INTROSPECT")
         intent.setPackage(context.packageName)
-        context.sendBroadcast(intent)
-        delay(500)
+        sendOrderedBroadcastAndWait(intent)
 
         return withContext(Dispatchers.IO) {
             val f = File(context.filesDir, "setup_introspect.json")

@@ -3292,6 +3292,8 @@ void escort_note_boss_teleported(int objnum)
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 	escort_route_clear_goal();
 	escort_route_note_replan("boss_teleported");
+	escort_route_refresh_metadata();
+	escort_route_next_goal();
 	Escort_route_boss_move_invalidation_count++;
 #else
 	(void) objnum;

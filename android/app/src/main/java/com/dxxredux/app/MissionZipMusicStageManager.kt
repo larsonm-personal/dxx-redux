@@ -35,6 +35,7 @@ class MissionZipMusicStageManager private constructor(
             if (isCompleteGeneration(output, cacheIdentity, track.sizeBytes)) return@transaction output
             val targetDirectory = checkNotNull(output.parentFile)
             root.mkdirs()
+            cleanupOldFiles(requiredBytes = track.sizeBytes.coerceAtLeast(0L))
             ImportStorageGuard.requireFreeSpace(
                 root,
                 track.sizeBytes.takeIf { it > 0L } ?: archive.length(),
@@ -147,12 +148,29 @@ class MissionZipMusicStageManager private constructor(
         }.getOrNull()
     }
 
-    fun cleanupOldFiles(maxAgeMs: Long = 24L * 60L * 60L * 1000L) {
+    fun cleanupOldFiles(
+        maxAgeMs: Long = 24L * 60L * 60L * 1000L,
+        maxBytes: Long = MAX_CACHE_BYTES,
+        requiredBytes: Long = 0L,
+    ) {
+        require(maxAgeMs >= 0L && maxBytes >= 0L && requiredBytes >= 0L)
         val cutoff = System.currentTimeMillis() - maxAgeMs
-        root.listFiles()?.forEach { child ->
+        val children = root.listFiles().orEmpty()
+        children.forEach { child ->
             if (child.lastModified() < cutoff) child.deleteRecursively()
         }
+        val retained = root.listFiles().orEmpty().sortedWith(compareBy<File> { it.lastModified() }.thenBy { it.name })
+        var total = retained.sumOf(::fileTreeBytes)
+        val target = (maxBytes - requiredBytes.coerceAtMost(maxBytes)).coerceAtLeast(0L)
+        for (child in retained) {
+            if (total <= target) break
+            val bytes = fileTreeBytes(child)
+            if (child.deleteRecursively()) total = (total - bytes).coerceAtLeast(0L)
+        }
     }
+
+    private fun fileTreeBytes(file: File): Long =
+        if (file.isFile) file.length() else file.listFiles().orEmpty().sumOf(::fileTreeBytes)
 
     private fun stagedFile(
         identity: String,
@@ -546,4 +564,8 @@ class MissionZipMusicStageManager private constructor(
             .joinToString("") { "%02x".format(it) }
 
     private fun normalizePath(path: String): String = path.replace('\\', '/').trim('/').lowercase(Locale.US)
+
+    private companion object {
+        const val MAX_CACHE_BYTES = 256L * 1024L * 1024L
+    }
 }
