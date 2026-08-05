@@ -9976,23 +9976,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add native-to-Kotlin explorer fixtures for valid legacy D1 and D2 saves and for empty, truncated, wrong-magic, old-version, missing-mission, cross-game, and random-byte `.sgN` files; assert only valid fixtures become resume candidates and invalid files remain inspectable but not loadable
 - Resolution: Pending
 
-### BR-0066: P1 - Reject Windows separators in PKG output names
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/path-traversal
-- Found by: R1-CHUNK-0029, R1-CHUNK-0030
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/extract/pkg_reader.c:L325-L345,L466-L488` in `is_game_file` and `pkg_extract_all`
-- Related: `android/app/src/main/cpp/extract/pkg_reader.c:L16-L33`, `android/app/src/main/cpp/extract/pkg_reader.h:L22-L29,L58-L66`, `android/app/src/main/cpp/extract/extract_gog.c:L158-L188`, `android/app/src/main/cpp/extract/jni_gog_import.c:L307-L355`, and `game_data/extract_all_gog.ps1:L121-L170`
-- Evidence: After requiring the expected CPIO prefix, `is_game_file` rejects only `/` in the remaining name. It accepts Windows `\`, dot components, and any extension from the game list. Extraction concatenates that untrusted remainder after `output_dir` and opens it with `fopen("wb")`. On Windows both slash forms are separators, so an entry named `./payload/Contents/Resources/game/..\escape.hog` becomes `<output_dir>/..\escape.hog` and resolves in the parent directory. The host extractor and batch workflow are built and run on Windows
-- Trigger: Process a crafted PKG whose odc CPIO payload contains an extension-matching entry such as `./payload/Contents/Resources/game/..\escape.hog`
-- Impact: Extracting a selected installer can create or truncate a game-extension file outside the requested output directory, including a sibling data set or another repository file used by the host generation workflow
-- Expected: Every accepted CPIO destination is exactly one safe platform-neutral basename, and the normalized final path is proven to remain directly beneath the selected output directory
-- Suggested fix: Reject empty, `.`, `..`, slash, backslash, drive-like, absolute, control-byte, and truncated names before extension matching; construct output through the shared checked archive-path helper; and verify canonical containment before opening. Keep basename flattening explicit if nested package paths are intentionally unsupported
-- Validation: Add synthetic odc-in-gzip-in-XAR fixtures with slash, backslash, dot, dot-dot, drive-prefix, absolute, control-byte, and ordinary basenames; extract on Windows and POSIX; assert every unsafe entry fails without creating or changing any path outside a temporary root; and retain exact output for both real GOG packages
-- Resolution: Pending
-
 ### BR-0069: P2 - Keep PKG analysis and extraction catalogs identical
 
 - [ ] OPEN

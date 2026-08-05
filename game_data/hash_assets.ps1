@@ -23,7 +23,7 @@ $CdImgDir = Join-Path $ScriptDir "CD images"
 $DemoDir = Join-Path $ScriptDir "demo installers"
 $GogDir = Join-Path $RepoRoot "game_data_to_copy_to_emulator"
 
-$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".dem", ".gog", ".inst")
+$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".msn", ".dem", ".gog", ".inst")
 $MinFileSize = 2  # Skip 1-byte extraction stubs
 
 # -- Version mapping --------------------------------------------------

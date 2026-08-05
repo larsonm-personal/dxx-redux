@@ -97,6 +97,7 @@ class SetupActivity : ComponentActivity() {
     private val focusResumeTrigger = mutableIntStateOf(0)
     private val launcherControllerNavigationActive = mutableStateOf(false)
     private val launchFailureMessage = mutableStateOf<String?>(null)
+    private val pendingPickedImportUris = mutableStateOf<List<Uri>>(emptyList())
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
 
@@ -131,6 +132,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_cd --es cue_path /sdcard/disc.cue --es bin_path /sdcard/disc.bin
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_cd --es cue_path /sdcard/disc.cue --esa bin_paths /sdcard/track01.bin,/sdcard/track02.img
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_picked_uris --esa uris content://provider/disc.cue,content://provider/disc.bin
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_iso --es iso_path /sdcard/disc.iso
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
@@ -777,6 +779,18 @@ class SetupActivity : ComponentActivity() {
                                 requestSetupRefresh()
                             }
                         }.start()
+                    }
+
+                    "import_picked_uris" -> {
+                        if (!BuildConfig.DEBUG) return
+                        val uris =
+                            intent
+                                .getStringArrayExtra("uris")
+                                ?.filter { it.isNotBlank() }
+                                ?.map(Uri::parse)
+                                .orEmpty()
+                        if (uris.isEmpty()) return
+                        runOnUiThread { pendingPickedImportUris.value = uris }
                     }
 
                     "import_iso" -> {
@@ -1939,6 +1953,8 @@ class SetupActivity : ComponentActivity() {
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
+                pickedImportUris = pendingPickedImportUris.value,
+                onPickedImportConsumed = { pendingPickedImportUris.value = emptyList() },
                 onLaunchGame = launch@{ game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
                     if (pending != null) {
@@ -2318,6 +2334,8 @@ private fun SetupScreen(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
+    pickedImportUris: List<Uri>,
+    onPickedImportConsumed: () -> Unit,
     onLaunchGame: (String, ResumeSaveBridge.ResumeSaveCandidate?) -> Unit,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
@@ -2985,6 +3003,13 @@ private fun SetupScreen(
         missionArchiveImporting = false
         scope.launch(Dispatchers.IO) {
             processPickedUris(uris)
+        }
+    }
+
+    LaunchedEffect(pickedImportUris) {
+        if (pickedImportUris.isNotEmpty()) {
+            startPickedUriImport(pickedImportUris)
+            onPickedImportConsumed()
         }
     }
 

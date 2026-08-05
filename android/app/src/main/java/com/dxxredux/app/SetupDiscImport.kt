@@ -2,8 +2,10 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import java.io.File
+import java.io.IOException
 import java.util.Locale
 
 internal data class SetupImportSnapshot(
@@ -613,13 +615,60 @@ internal data class CueDataTrackExtractionResult(
 }
 
 internal fun cueDataTrackStorageBytes(tracks: List<DiscImportBridge.CueTrack>): Long =
+    cueDataTrackPeakStorageBytes(tracks, 0L)
+
+internal fun cueDataTrackPeakStorageBytes(
+    tracks: List<DiscImportBridge.CueTrack>,
+    stagedImageBytes: Long,
+): Long {
+    require(stagedImageBytes >= 0L) { "Invalid staged image size" }
+    val extractedBytes =
+        tracks
+            .asSequence()
+            .filter { it.isData }
+            .fold(0L) { total, track ->
+                require(track.numSectors > 0) { "Invalid data track length" }
+                Math.addExact(total, Math.multiplyExact(track.numSectors.toLong(), 2352L))
+            }
+    return Math.addExact(extractedBytes, stagedImageBytes)
+}
+
+internal fun maxNonseekableDiscImageBytes(
+    context: Context,
+    tracks: List<DiscImportBridge.CueTrack>,
+    imageUris: List<Pair<String, Uri>>,
+    imageSizes: List<Long>,
+): Long {
+    var maximum = 0L
     tracks
         .asSequence()
         .filter { it.isData }
-        .fold(0L) { total, track ->
-            require(track.numSectors > 0) { "Invalid data track length" }
-            Math.addExact(total, Math.multiplyExact(track.numSectors.toLong(), 2352L))
+        .map { it.fileIndex }
+        .distinct()
+        .forEach { imageIndex ->
+            val image = imageUris.getOrNull(imageIndex) ?: throw IOException("Missing disc image $imageIndex")
+            val size = imageSizes.getOrNull(imageIndex) ?: throw IOException("Missing size for ${image.first}")
+            val source =
+                context.contentResolver.openFileDescriptor(image.second, "r")
+                    ?: throw IOException("Could not open ${image.first}")
+            val needsStaging = source.use(SafDescriptorStager::needsStaging)
+            if (needsStaging) {
+                if (size <= 0L) throw IOException("Could not determine size of ${image.first}")
+                maximum = maxOf(maximum, size)
+            }
         }
+    return maximum
+}
+
+internal fun openSeekableDiscImage(
+    context: Context,
+    image: Pair<String, Uri>,
+): ParcelFileDescriptor {
+    val source =
+        context.contentResolver.openFileDescriptor(image.second, "r")
+            ?: throw IOException("Could not open ${image.first}")
+    return SafDescriptorStager.openSeekable(source, context.cacheDir, image.first)
+}
 
 private class CueDataTrackProgress(
     private val tracks: List<DiscImportBridge.CueTrack>,

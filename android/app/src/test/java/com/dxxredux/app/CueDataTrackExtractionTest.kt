@@ -213,4 +213,27 @@ class CueDataTrackExtractionTest {
             root.deleteRecursively()
         }
     }
+
+    @Test
+    fun peakStorageIncludesOneNonseekableImage() {
+        val tracks = listOf(track(1, 0, 0, 10), track(2, 1, 0, 20))
+
+        assertEquals(723_520L, cueDataTrackPeakStorageBytes(tracks, 700_000L))
+    }
+
+    @Test
+    fun peakStorageRejectsInvalidOrOverflowingStageSize() {
+        val tracks = listOf(track(1, 0, 0, 10))
+
+        try {
+            cueDataTrackPeakStorageBytes(tracks, -1L)
+            fail("negative staging size should fail")
+        } catch (_: IllegalArgumentException) {
+        }
+        try {
+            cueDataTrackPeakStorageBytes(tracks, Long.MAX_VALUE)
+            fail("overflowing staging size should fail")
+        } catch (_: ArithmeticException) {
+        }
+    }
 }

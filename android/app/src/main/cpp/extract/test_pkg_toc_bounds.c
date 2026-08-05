@@ -147,6 +147,21 @@ static int append_cpio_entry(test_buffer_t *cpio, const char *name,
 	           : 0;
 }
 
+static int append_cpio_entry_raw_name(test_buffer_t *cpio, const uint8_t *name,
+                                      size_t name_size)
+{
+	char header[76];
+	memset(header, '0', sizeof(header));
+	memcpy(header, "070707", 6);
+	write_octal(header + 18, 6, 0100644);
+	write_octal(header + 59, 6, name_size);
+	write_octal(header + 65, 11, 0);
+	return buffer_append(cpio, header, sizeof(header)) < 0 ||
+	               buffer_append(cpio, name, name_size) < 0
+	           ? -1
+	           : 0;
+}
+
 static int gzip_buffer(const uint8_t *input, size_t input_size,
                        test_buffer_t *output)
 {
@@ -305,6 +320,86 @@ static void scripts_xml(char *xml, size_t capacity, const char *offset,
 	         "<length>%s</length></data><type>file</type>"
 	         "<name>Scripts</name></file></file></toc></xar>",
 	         encoding, offset, size, length);
+}
+
+static int run_game_name_fixture(const char *relative_name)
+{
+	static const char prefix[] = "./payload/Contents/Resources/game/";
+	static const uint8_t payload[] = { 0x42 };
+	test_buffer_t cpio = { 0 };
+	test_buffer_t gzip = { 0 };
+	char *name;
+	char xml[1024];
+	char size_text[32];
+	int result = -2;
+	size_t name_size = strlen(prefix) + strlen(relative_name) + 1u;
+	name = (char *) malloc(name_size);
+	if (!name) return -2;
+	snprintf(name, name_size, "%s%s", prefix, relative_name);
+	if (append_cpio_entry(&cpio, name, payload, sizeof(payload)) < 0 ||
+	    append_cpio_entry(&cpio, "TRAILER!!!", NULL, 0) < 0 ||
+	    gzip_buffer(cpio.data, cpio.size, &gzip) < 0)
+		goto cleanup;
+	snprintf(size_text, sizeof(size_text), "%llu",
+	         (unsigned long long) gzip.size);
+	scripts_xml(xml, sizeof(xml), "0", size_text, size_text,
+	            "application/octet-stream");
+	result = run_xar_fixture(xml, gzip.data, gzip.size);
+
+cleanup:
+	free(name);
+	free(cpio.data);
+	free(gzip.data);
+	return result;
+}
+
+static void test_game_output_names(void)
+{
+	static const char *unsafe_names[] = {
+		"", ".", "..", "\\escape.hog", "..\\escape.hog",
+		"nested\\escape.hog", "C:escape.hog", "C:\\escape.hog",
+		"bad\037name.hog", "bad?.hog", "bad|name.hog", NULL
+	};
+	static const char *ignored_nested_names[] = {
+		"/escape.hog", "../escape.hog", "nested/escape.hog", NULL
+	};
+	char overlong[PKG_PATH_LEN + 32];
+	uint8_t embedded_nul[128];
+	test_buffer_t cpio = { 0 };
+	test_buffer_t gzip = { 0 };
+	char xml[1024];
+	char size_text[32];
+	size_t prefix_size;
+
+	CHECK(run_game_name_fixture("DESCENT.HOG") == 1);
+	CHECK(run_game_name_fixture("notes.txt") == 0);
+	for (const char **name = unsafe_names; *name; name++)
+		CHECK(run_game_name_fixture(*name) == -1);
+	for (const char **name = ignored_nested_names; *name; name++)
+		CHECK(run_game_name_fixture(*name) == 0);
+
+	memset(overlong, 'a', sizeof(overlong));
+	memcpy(overlong + sizeof(overlong) - 5, ".hog", 5);
+	CHECK(run_game_name_fixture(overlong) == -1);
+
+	prefix_size = strlen("./payload/Contents/Resources/game/");
+	memcpy(embedded_nul, "./payload/Contents/Resources/game/", prefix_size);
+	memcpy(embedded_nul + prefix_size, "safe.hog", 9);
+	embedded_nul[prefix_size + 9] = '\0';
+	memcpy(embedded_nul + prefix_size + 10, "hidden", 6);
+	embedded_nul[prefix_size + 16] = '\0';
+	CHECK(append_cpio_entry_raw_name(&cpio, embedded_nul, prefix_size + 17) == 0);
+	CHECK(append_cpio_entry(&cpio, "TRAILER!!!", NULL, 0) == 0);
+	CHECK(gzip_buffer(cpio.data, cpio.size, &gzip) == 0);
+	if (gzip.data) {
+		snprintf(size_text, sizeof(size_text), "%llu",
+		         (unsigned long long) gzip.size);
+		scripts_xml(xml, sizeof(xml), "0", size_text, size_text,
+		            "application/octet-stream");
+		CHECK(run_xar_fixture(xml, gzip.data, gzip.size) == -1);
+	}
+	free(cpio.data);
+	free(gzip.data);
 }
 
 static void test_scripts_member_completion(void)
@@ -472,6 +567,7 @@ int main(void)
 {
 	test_xar_toc_bounds();
 	test_xar_toc_decompression();
+	test_game_output_names();
 	test_scripts_member_completion();
 	if (failures) {
 		fprintf(stderr, "%d PKG reader test(s) failed\n", failures);

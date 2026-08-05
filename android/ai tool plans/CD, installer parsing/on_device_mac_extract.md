@@ -1,10 +1,11 @@
 # On-Device Mac CD Extraction (Android)
 
-Status: Planning expanded on 2026-04-11. Six implementation tranches are now
-in: HFS/APM detection, HFS catalog plus root-file extraction, STi2 entry
-listing, STi2 method 13 extraction, JNI plus launcher fallback
-integration, and setup-command direct disc-import regression coverage.
-The remaining gaps are the full SAF picker UI path and the secondary-disc pass.
+Status: SAF finalization implemented and validated on 2026-08-04. The native
+reader, launcher integration, current direct-path media matrix, seekable
+content URI, and nonseekable content URI paths all pass. Remaining release
+work is a current host-native real-media suite and a thin Android DocumentsUI
+smoke. Extents-overflow support is deferred compatibility work because none of
+the supported Mac discs requires it.
 
 ## Goal
 
@@ -12,6 +13,137 @@ Enable Android users to import game files directly from a Mac HFS CD image
 on-device, without needing a PC extraction step. The first target is the
 Descent 1 MacPlay CD. The native path should stay generic enough to support
 later Mac HFS discs too.
+
+## 2026-08-04 finalization review
+
+### Current assessment
+
+- The feature is functionally complete for the checked-in Mac media:
+   - `Descent - Mac macplay` passes a full on-device import and reaches
+      `Lunar Outpost`
+   - `d1 mac 2nd bin+cue` passes a full on-device import and reaches
+      `Lunar Outpost`
+   - `d2 mac` passes a full on-device import and reaches `Ahayweh Gate`
+- Both native content routes are covered by real media:
+   - D1 MacPlay exercises root-level `Install Descent` followed by STi2
+   - D2 Mac exercises direct matching-file extraction from HFS and restores
+      the 17-file D2 full-game oracle
+- The production picker route already reaches the native Mac fallback through
+   `ContentResolver.openFileDescriptor()` in `DiscImportDialog`. The missing
+   piece is a regression that enters through picked content URIs and the real
+   dialog instead of the setup command's direct filesystem paths.
+- The HFS catalog code is more complete than the older status below says. It
+   validates the B-tree header and allocation map, then walks the complete
+   linked leaf chain with record-count and link validation. Index-node descent
+   is not needed to enumerate the catalog and is not a release blocker.
+- Extents-overflow B-tree lookup is still absent. The reader rejects a fork
+   whose first three extents do not cover its declared size, and all currently
+   supported D1 and D2 Mac files fit that contract. Do not add overflow support
+   until a real supported input requires it.
+- A SAF provider may return a nonseekable descriptor, while the ISO and HFS
+   readers use random-access reads. The launcher already has
+   `SafDescriptorStager` for this contract, but the disc import dialog does not
+   currently use it. This is the only functional hardening item identified by
+   this review.
+
+### Finalization plan
+
+1. Make picked disc descriptors reliably seekable
+    - [x] Route each selected BIN/IMG descriptor through the existing
+       `SafDescriptorStager` contract before ISO or HFS extraction
+    - [x] Preserve the zero-copy path for ordinary seekable local providers
+    - [x] Close every detached or adopted descriptor on success, failure, and
+       cancellation
+    - [x] Include temporary staging bytes in the peak-storage preflight for a
+       nonseekable provider; a full BIN may be much larger than its data track
+
+2. Add production content-URI regression coverage
+    - [x] Extend the debug SAF provider so `DISPLAY_NAME` and `SIZE` queries
+       behave like a document provider for CUE and BIN fixtures
+    - [x] Add a debug-only picked-URI injection seam that calls the same
+       `startPickedUriImport()` path as the activity-result callback
+    - [x] Drive the real `DiscImportDialog`, verify the parsed track summary,
+       press `Extract Game Files`, and wait on explicit import completion
+    - [x] Run the primary MacPlay case once with a seekable provider and once
+       with the provider's pipe mode to prove the staging fallback
+    - [ ] Verify `descent.hog` and `descent.pig`, D1 full classification, and a
+       launch through `Lunar Outpost`
+    - [ ] Keep one by-hand or UI-automation smoke through Android DocumentsUI
+       as a thin check around the framework picker itself; the durable product
+       regression should use deterministic injected content URIs
+
+3. Run the supported-media matrix on current sources
+    - [ ] Run host `hfs_tests` and `sti2_tests` with real-media cases required,
+       including the D2 direct-HFS oracle; do not count fixture skips as the
+       final validation result
+    - [x] Run the Kotlin unit tests for CUE ordering, multi-track publication,
+       storage failure, cancellation, and picked-URI routing
+    - [x] Build the Android debug APK and native libraries for every configured
+       ABI
+    - [x] Run full `test_extract.ps1` coverage for MacPlay D1, secondary D1,
+       and D2 Mac and require the expected level for each
+    - [x] Run scoped code quality on every touched C, Kotlin, PowerShell, and
+       plan file
+
+4. Close the feature plan
+    - [x] Add `.msn` to `game_data/hash_assets.ps1` or explicitly retire the
+       older metadata TODO, then confirm the Mac `CHAOS.MSN` hash is represented
+       in `known_versions.json5`
+    - [x] Record exact commands and passing results here
+    - [x] Mark SAF finalization complete only after both seekable and pipe
+       content-URI cases pass
+    - [ ] Leave extents-overflow and keyed index lookup in a separate future
+       compatibility section, with a real-media trigger, rather than holding
+       this feature open
+
+### 2026-08-04 SAF finalization results
+
+- `SafDescriptorStager.openSeekable()` now keeps seekable provider descriptors
+  on the zero-copy path and stages pipe-backed descriptors into an unlinked,
+  owned temporary file for the duration of native extraction
+- Disc extraction preflight now budgets the data-track output plus the largest
+  nonseekable image that can be staged at one time. Unknown image sizes and
+  descriptor probe failures stop before extraction starts with a visible error
+- `android/tests/test_mac_extract_saf.ps1` stages the known MacPlay image behind
+  the debug provider, injects the provider URIs through the production picker
+  callback path, drives the real dialog, and validates all seven native outputs
+- Passing seekable run:
+   - parsed 1 data and 13 audio tracks from a 718,912,320-byte image
+   - extracted 7 files from HFS volume `Descent`
+   - published `descent.hog`, `descent.pig`, `CHAOS.HOG`, `CHAOS.MSN`, and the
+     three demos to the isolated launcher set
+   - emitted no descriptor-staging log
+- Passing pipe run:
+   - logged `Staged nonseekable SAF source macplay.bin (718912320 bytes)`
+   - extracted the same 7-file HFS result
+- Exact passing commands:
+   - `cd android; .\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.CueDataTrackExtractionTest :app:assembleDebug`
+   - `.\android\tests\test_mac_extract_saf.ps1 -SkipBuild`
+   - `.\android\run-code-quality.ps1 -Fix -Paths @(<all touched files>)`
+   - `.\game_data\hash_assets.ps1`
+- Build result: Kotlin unit tests passed, and native debug libraries plus the
+  APK built for `arm64-v8a`, `armeabi-v7a`, and `x86_64`
+- Asset metadata result: `.msn` is scanned and MacPlay `chaos.msn` hash
+  `be614df3ab4d35350f1033fc4acd7f18f779883273cdbf1db1d976df4be11d02`
+  is present as `D1 Mac (MacPlay)`
+- Current real-media device matrix passed in 455 seconds:
+   - MacPlay D1 imported 7 files and reached `Lunar Outpost`
+   - secondary D1 imported 8 files and reached `Lunar Outpost`
+   - D2 Mac imported 18 visible set files, satisfied the 5-file core oracle,
+     classified as `d2_full`, and reached `Ahayweh Gate`
+
+### Final acceptance criteria
+
+- A user can select a Mac CUE plus BIN/IMG through the launcher and extract the
+  game without copying it on a PC first
+- Seekable and nonseekable content providers both work, or fail before writing
+  output with a clear storage/capability message
+- Primary D1, secondary D1, and D2 Mac imports reproduce their checked-in
+  expected files and reach their expected first level
+- Failure or cancellation publishes no partial active-set update and leaks no
+  descriptor or staging file
+- No generic HFS work is required unless a maintained source image demonstrates
+  that the current catalog or inline-extent contract is insufficient
 
 ## Planning tranche complete
 
@@ -100,9 +232,9 @@ later Mac HFS discs too.
       direct-HFS proof point on this disc; the MacPlay desktop pipeline's final
       `Descent` file appears downstream of the installer path rather than as the
       first native HFS target to chase here
-- Still not implemented in native code:
-   - extents-overflow lookup for files needing more than the first three extents
-   - JNI and Kotlin integration
+- Still not implemented in native code at the end of this 2026-04-12 tranche:
+    - extents-overflow lookup for files needing more than the first three extents
+    - JNI and Kotlin integration
 
 ## 2026-04-12 STi2 tranche findings
 
@@ -327,8 +459,10 @@ Implementation status after tranche 2:
 - [x] standalone regression coverage in `test_hfs.c`
 - [x] catalog leaf-node scanning for the known catalog layout
 - [x] direct extraction of root-level HFS data-fork files using first extent records
-- [ ] full tree search using header and index nodes instead of the current leaf scan
-- [ ] extents-overflow lookup beyond the first three extents
+- [x] validated catalog header, allocation map, and complete linked leaf-chain walk
+- [ ] keyed index-node lookup, deferred until a caller needs targeted lookup
+- [ ] extents-overflow lookup beyond the first three extents, deferred until a
+   supported disc requires it
 
 Scope:
 - Apple Partition Map detection
@@ -551,13 +685,26 @@ Kotlin or Android UI work. Get desktop-native extraction right first.
          intentionally skips copying the downstream `Descent` executable
       - setup-command direct disc-import regression coverage can now exercise
          the launcher-side BIN/CUE import path from on-device file paths
-      - remaining gap: this still does not cover the full SAF picker UI path
-         from content URIs
+      - remaining gap at that tranche: this did not cover the full SAF picker
+         UI path from content URIs; the current finalization plan above owns
+         that work
 
 9. Secondary-disc compatibility pass
     - rerun the same native code on `d1 mac 2nd bin+cue`
     - fix only if the second disc exposes a real compatibility issue rather than
        unnecessary over-generalization
+   - Status:
+      - done by 2026-06-25
+      - the secondary D1 regression extracts the expected full-game set and
+         reaches `Lunar Outpost`
+
+10. D2 direct-HFS compatibility pass
+    - run the native path on `d2 mac`
+    - validate the loose-file HFS fallback rather than the D1 STi2 route
+    - Status:
+       - done by 2026-07-29
+       - the regression extracts 17 recognized files, classifies as `d2_full`,
+          and reaches `Ahayweh Gate`
 
 ## Planned regression spec details
 

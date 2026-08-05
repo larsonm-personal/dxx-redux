@@ -575,7 +575,8 @@ static int cpio_read_entry(gz_stream_t *gs, cpio_entry_t *entry)
 	}
 
 	n = gz_read(gs, entry->name, namesize);
-	if (n != namesize || entry->name[namesize - 1] != '\0') {
+	if (n != namesize || entry->name[namesize - 1] != '\0' ||
+	    memchr(entry->name, '\0', (size_t) namesize - 1u)) {
 		LOG_E("pkg: truncated cpio filename\n");
 		return -1;
 	}
@@ -594,32 +595,77 @@ static int cpio_read_entry(gz_stream_t *gs, cpio_entry_t *entry)
 /* ── Game file detection ─────────────────────────────────────────── */
 static const char *game_prefix = "./payload/Contents/Resources/game/";
 
+enum {
+	PKG_FILE_INVALID = -1,
+	PKG_FILE_IGNORED = 0,
+	PKG_FILE_GAME = 1
+};
+
 /* Audio extensions — skipped when skip_audio is set */
 static int is_audio_ext(const char *fname)
 {
 	return dxx_is_android_gog_audio_extension(fname);
 }
 
-static int is_game_file(const char *cpio_path, const char **basename_out)
+static int is_safe_output_basename(const char *name)
+{
+	const unsigned char *p = (const unsigned char *) name;
+	size_t length;
+	if (!name || !*name || strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+		return 0;
+	length = strlen(name);
+	if (name[length - 1] == '.' || name[length - 1] == ' ')
+		return 0;
+	for (; *p; p++) {
+		if (*p < 0x20 || *p == 0x7f || strchr("<>:\"/\\|?*", *p))
+			return 0;
+	}
+	return 1;
+}
+
+static int is_game_file(const char *cpio_path, uint32_t mode,
+                        const char **basename_out)
 {
 	/* Must be under the game directory */
 	size_t pfx_len = strlen(game_prefix);
-	if (_stricmp(cpio_path, game_prefix) == 0) return 0; /* the dir itself */
-	if (strncmp(cpio_path, game_prefix, pfx_len) != 0) return 0;
+	if (strncmp(cpio_path, game_prefix, pfx_len) != 0)
+		return PKG_FILE_IGNORED;
+	if ((mode & 0170000u) == 0040000u)
+		return PKG_FILE_IGNORED;
 
 	const char *fname = cpio_path + pfx_len;
-	if (strchr(fname, '/')) return 0; /* skip subdirectories */
+	/* Nested POSIX paths are package content, but are not flattened outputs. */
+	if (strchr(fname, '\\')) {
+		LOG_E("pkg: unsafe Windows separator in game output name\n");
+		return PKG_FILE_INVALID;
+	}
+	if (strchr(fname, '/')) return PKG_FILE_IGNORED;
+	if (!is_safe_output_basename(fname)) {
+		LOG_E("pkg: unsafe game output name\n");
+		return PKG_FILE_INVALID;
+	}
 
 	const char *dot = strrchr(fname, '.');
-	if (!dot) return 0;
+	if (!dot) return PKG_FILE_IGNORED;
 
 	for (const char **ext = dxx_android_game_file_extensions; *ext; ext++) {
 		if (_stricmp(dot, *ext) == 0) {
 			*basename_out = fname;
-			return 1;
+			return PKG_FILE_GAME;
 		}
 	}
-	return 0;
+	return PKG_FILE_IGNORED;
+}
+
+static int build_output_path(char *out, size_t out_size,
+                             const char *output_dir, const char *basename)
+{
+	int length;
+	if (!out || out_size == 0 || !output_dir || !*output_dir ||
+	    !is_safe_output_basename(basename))
+		return -1;
+	length = snprintf(out, out_size, "%s/%s", output_dir, basename);
+	return length >= 0 && (size_t) length < out_size ? 0 : -1;
 }
 
 /* ── Scan pass: enumerate game files without extracting ──────────── */
@@ -639,6 +685,7 @@ static int pkg_scan_cpio(pkg_archive_t *arc)
 
 	while ((ret = cpio_read_entry(&gs, &entry)) == 1) {
 		const char *basename;
+		int game_file;
 		if (++entry_count > DXX_EXTRACT_MAX_ENTRIES ||
 		    entry.filesize > DXX_EXTRACT_MAX_ENTRY_BYTES ||
 		    dxx_extract_add_bytes(&arc->scanned_bytes, entry.filesize,
@@ -646,7 +693,12 @@ static int pkg_scan_cpio(pkg_archive_t *arc)
 			ret = -1;
 			break;
 		}
-		if (is_game_file(entry.name, &basename)) {
+		game_file = is_game_file(entry.name, entry.mode, &basename);
+		if (game_file == PKG_FILE_INVALID) {
+			ret = -1;
+			break;
+		}
+		if (game_file == PKG_FILE_GAME) {
 			if (arc->file_count >= PKG_MAX_FILES ||
 			    dxx_extract_add_bytes(&arc->output_bytes, entry.filesize,
 			                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
@@ -779,7 +831,7 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 
 	while ((ret = cpio_read_entry(&gs, &entry)) == 1) {
 		const char *basename;
-		int is_game = is_game_file(entry.name, &basename);
+		int is_game = is_game_file(entry.name, entry.mode, &basename);
 		if (++entry_count > DXX_EXTRACT_MAX_ENTRIES ||
 		    entry.filesize > DXX_EXTRACT_MAX_ENTRY_BYTES ||
 		    dxx_extract_add_bytes(&scanned_bytes, entry.filesize,
@@ -787,8 +839,12 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 			ret = -1;
 			break;
 		}
+		if (is_game == PKG_FILE_INVALID) {
+			ret = -1;
+			break;
+		}
 
-		if (!is_game || entry.filesize == 0 ||
+		if (is_game != PKG_FILE_GAME || entry.filesize == 0 ||
 		    (skip_audio && is_audio_ext(basename))) {
 			if (entry.filesize > 0 && gz_skip(&gs, entry.filesize) < 0) {
 				ret = -1;
@@ -804,7 +860,11 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 
 		/* Build output path */
 		char out_path[1024];
-		snprintf(out_path, sizeof(out_path), "%s/%s", output_dir, basename);
+		if (build_output_path(out_path, sizeof(out_path), output_dir, basename) < 0) {
+			LOG_E("pkg: invalid or overlong output path\n");
+			ret = -1;
+			break;
+		}
 
 		if (progress)
 			progress(basename, 0, (long long) entry.filesize, user_data);

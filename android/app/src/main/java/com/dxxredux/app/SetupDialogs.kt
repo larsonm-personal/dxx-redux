@@ -1270,14 +1270,8 @@ internal fun DiscImportDialog(
                     selectedBinUris
                         .map { (name, uri) ->
                             val size =
-                                context.contentResolver
-                                    .query(
-                                        uri,
-                                        arrayOf(android.provider.OpenableColumns.SIZE),
-                                        null,
-                                        null,
-                                        null,
-                                    )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
+                                ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri)
+                                    ?: throw java.io.IOException("Could not determine disc image size: $name")
                             Log.i("DXX-DiscImport", "Disc image '$name' size=$size")
                             size
                         }
@@ -1351,14 +1345,27 @@ internal fun DiscImportDialog(
                                 onClick = {
                                     scope.launch {
                                         try {
+                                            val stagedImageBytes =
+                                                withContext(Dispatchers.IO) {
+                                                    maxNonseekableDiscImageBytes(
+                                                        context = context,
+                                                        tracks = tracks!!,
+                                                        imageUris = orderedBinUris,
+                                                        imageSizes = binSizes,
+                                                    )
+                                                }
                                             ImportStorageGuard.requireFreeSpace(
                                                 setDir,
-                                                cueDataTrackStorageBytes(tracks!!),
+                                                cueDataTrackPeakStorageBytes(tracks!!, stagedImageBytes),
                                                 "extract disc game files",
                                             )
                                         } catch (e: InsufficientStorageException) {
                                             storageFailureMessage = ImportStorageGuard.messageForFailure(e)
                                             status = "Not enough free space"
+                                            return@launch
+                                        } catch (e: Exception) {
+                                            Log.e("DXX-DiscImport", "Could not prepare disc image extraction", e)
+                                            status = "Cannot prepare disc image: ${e.message}"
                                             return@launch
                                         }
                                         processing = true
@@ -1404,35 +1411,33 @@ internal fun DiscImportDialog(
                                                                     status =
                                                                         "Extracting data track ${track.trackNum}..."
                                                                 }
-                                                                context.contentResolver
-                                                                    .openFileDescriptor(image.second, "r")
-                                                                    ?.use {
-                                                                        val iso =
-                                                                            DiscImportBridge.extractIsoFiles(
+                                                                openSeekableDiscImage(context, image).use {
+                                                                    val iso =
+                                                                        DiscImportBridge.extractIsoFiles(
+                                                                            it.fd,
+                                                                            track.startSector,
+                                                                            track.numSectors,
+                                                                            outputDir.absolutePath,
+                                                                            trackProgress,
+                                                                        )
+                                                                    val mac =
+                                                                        if (iso > 0) {
+                                                                            0
+                                                                        } else {
+                                                                            mainHandler.post {
+                                                                                status =
+                                                                                    "Trying Mac HFS track ${track.trackNum}..."
+                                                                            }
+                                                                            DiscImportBridge.extractMacFiles(
                                                                                 it.fd,
                                                                                 track.startSector,
                                                                                 track.numSectors,
                                                                                 outputDir.absolutePath,
                                                                                 trackProgress,
                                                                             )
-                                                                        val mac =
-                                                                            if (iso > 0) {
-                                                                                0
-                                                                            } else {
-                                                                                mainHandler.post {
-                                                                                    status =
-                                                                                        "Trying Mac HFS track ${track.trackNum}..."
-                                                                                }
-                                                                                DiscImportBridge.extractMacFiles(
-                                                                                    it.fd,
-                                                                                    track.startSector,
-                                                                                    track.numSectors,
-                                                                                    outputDir.absolutePath,
-                                                                                    trackProgress,
-                                                                                )
-                                                                            }
-                                                                        CueDataTrackAttempt(iso, mac)
-                                                                    } ?: CueDataTrackAttempt(-1, -1)
+                                                                        }
+                                                                    CueDataTrackAttempt(iso, mac)
+                                                                }
                                                             }
                                                         },
                                                     )

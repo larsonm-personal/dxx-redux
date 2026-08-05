@@ -20,12 +20,20 @@ internal object SafDescriptorStager {
         source: ParcelFileDescriptor,
         cacheDir: File,
         label: String,
-    ): Int {
-        if (isSeekableRegular(source)) return source.detachFd()
+    ): Int = openSeekable(source, cacheDir, label).detachFd()
+
+    fun openSeekable(
+        source: ParcelFileDescriptor,
+        cacheDir: File,
+        label: String,
+    ): ParcelFileDescriptor {
+        if (!needsStaging(source)) return source
         return synchronized(lock) {
-            stageAndDetach(source, cacheDir, label)
+            stageAndOpen(source, cacheDir, label)
         }
     }
+
+    fun needsStaging(source: ParcelFileDescriptor): Boolean = !isSeekableRegular(source)
 
     private fun isSeekableRegular(source: ParcelFileDescriptor): Boolean =
         try {
@@ -44,11 +52,11 @@ internal object SafDescriptorStager {
             false
         }
 
-    private fun stageAndDetach(
+    private fun stageAndOpen(
         source: ParcelFileDescriptor,
         cacheDir: File,
         label: String,
-    ): Int {
+    ): ParcelFileDescriptor {
         val root = File(cacheDir, STAGE_DIRECTORY)
         check(root.mkdirs() || root.isDirectory) { "Could not create SAF staging directory" }
         root.listFiles().orEmpty().forEach(File::delete)
@@ -86,9 +94,10 @@ internal object SafDescriptorStager {
             try {
                 check(temporary.delete()) { "Could not unlink SAF staging file" }
                 Log.i(TAG, "Staged nonseekable SAF source $label ($copied bytes)")
-                return staged.detachFd()
-            } finally {
+                return staged
+            } catch (failure: Exception) {
                 runCatching { staged.close() }
+                throw failure
             }
         } finally {
             runCatching { source.close() }
