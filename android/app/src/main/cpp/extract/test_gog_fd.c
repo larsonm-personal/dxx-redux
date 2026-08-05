@@ -349,10 +349,12 @@ static void append_utf16_string(uint8_t *buffer, size_t *position,
 }
 
 static uint8_t *build_file_catalog_fixture(uint32_t file_count,
+                                           const char *before_install,
                                            size_t *fixture_size)
 {
 	static const inno_version_t version = { 5, 3, 0, 1 };
-	size_t capacity = 512 + (size_t) file_count * 128;
+	size_t capacity = 512 + (size_t) file_count * 128 +
+	                  (before_install ? strlen(before_install) * 2u : 0u);
 	uint8_t *buffer = (uint8_t *) calloc(capacity, 1);
 	size_t count_position = 28 * 4 + 7 * 4;
 	size_t position;
@@ -368,8 +370,12 @@ static uint8_t *build_file_catalog_fixture(uint32_t file_count,
 			append_utf16_string(buffer, &position, "late.hog");
 		else
 			append_empty_string(buffer, &position);
-		for (int string_index = 0; string_index < 8; string_index++)
-			append_empty_string(buffer, &position);
+		for (int string_index = 0; string_index < 8; string_index++) {
+			if (i + 1 == file_count && string_index == 7 && before_install)
+				append_utf16_string(buffer, &position, before_install);
+			else
+				append_empty_string(buffer, &position);
+		}
 		position += 20 + 4 + 4 + 8 + 2 + 4 + 1;
 		if (position > capacity) {
 			free(buffer);
@@ -391,11 +397,11 @@ static int check_complete_file_catalog(void)
 	for (size_t i = 0; i < sizeof(valid_counts) / sizeof(valid_counts[0]); i++) {
 		size_t fixture_size;
 		uint8_t *fixture =
-		    build_file_catalog_fixture(valid_counts[i], &fixture_size);
+		    build_file_catalog_fixture(valid_counts[i], NULL, &fixture_size);
 		if (!fixture ||
 		    inno_test_parse_file_catalog(fixture, fixture_size, &version,
 		                                 &parsed_count, last_destination,
-		                                 sizeof(last_destination)) < 0 ||
+		                                 sizeof(last_destination), NULL) < 0 ||
 		    parsed_count != valid_counts[i] ||
 		    strcmp(last_destination, "late.hog") != 0) {
 			fprintf(stderr, "%u-entry file catalog was incomplete\n",
@@ -406,23 +412,23 @@ static int check_complete_file_catalog(void)
 	}
 
 	size_t fixture_size;
-	uint8_t *fixture = build_file_catalog_fixture(1, &fixture_size);
+	uint8_t *fixture = build_file_catalog_fixture(1, NULL, &fixture_size);
 	inno_test_set_allocation_fail_after(0);
 	if (!fixture ||
 	    inno_test_parse_file_catalog(fixture, fixture_size, &version,
 	                                 &parsed_count, last_destination,
-	                                 sizeof(last_destination)) == 0) {
+	                                 sizeof(last_destination), NULL) == 0) {
 		fprintf(stderr, "file catalog allocation failure was accepted\n");
 		failures++;
 	}
 	inno_test_set_allocation_fail_after(-1);
 	free(fixture);
 
-	fixture = build_file_catalog_fixture(4097, &fixture_size);
+	fixture = build_file_catalog_fixture(4097, NULL, &fixture_size);
 	if (!fixture ||
 	    inno_test_parse_file_catalog(fixture, fixture_size, &version,
 	                                 &parsed_count, last_destination,
-	                                 sizeof(last_destination)) == 0) {
+	                                 sizeof(last_destination), NULL) == 0) {
 		fprintf(stderr, "over-budget file catalog was accepted\n");
 		failures++;
 	}
@@ -554,6 +560,104 @@ static int check_unsigned_entry_bounds(void)
 		fprintf(stderr, "data location validation mismatch\n");
 		failures++;
 	}
+	return failures ? 1 : 0;
+}
+
+static int expect_galaxy_metadata(const char *script,
+                                  const char *expected_destination,
+                                  uint32_t expected_parts)
+{
+	char destination[INNO_PATH_LEN] = "original.bin";
+	uint32_t parts = 77;
+	if (!inno_test_parse_gog_galaxy_before_install(
+	        script, destination, sizeof(destination), &parts) ||
+	    strcmp(destination, expected_destination) != 0 ||
+	    parts != expected_parts) {
+		fprintf(stderr, "valid Galaxy metadata rejected: %s\n", script);
+		return 1;
+	}
+	return 0;
+}
+
+static int expect_regular_metadata(const char *script)
+{
+	char destination[INNO_PATH_LEN] = "original.bin";
+	uint32_t parts = 77;
+	if (inno_test_parse_gog_galaxy_before_install(
+	        script, destination, sizeof(destination), &parts) ||
+	    strcmp(destination, "original.bin") != 0 || parts != 77) {
+		fprintf(stderr, "ordinary metadata classified as Galaxy: %s\n", script);
+		return 1;
+	}
+	return 0;
+}
+
+static int check_galaxy_metadata_pattern(void)
+{
+	static const inno_version_t version = { 5, 3, 0, 1 };
+	static const char hash[] = "0123456789abcdef0123456789ABCDEF";
+	static const char *invalid[] = {
+		"",
+		"ordinary_callback",
+		"other_callback('0123456789abcdef0123456789abcdef', 'game.hog', 1)",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog')",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog', 1, 'extra')",
+		"before_install('short', 'game.hog', 1)",
+		"before_install('0123456789abcdef0123456789abcdeg', 'game.hog', 1)",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog', 0)",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog', 4097)",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog', -1)",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog', '1')",
+		"before_install('0123456789abcdef0123456789abcdef', '../game.hog', 1)",
+		"before_install('0123456789abcdef0123456789abcdef', 'game.hog', 1);",
+		"before_install('0123456789abcdef0123456789abcdef', 'unterminated, '1')",
+		"before_install('0123456789abcdef0123456789abcdef0', 'game.hog', 1)"
+	};
+	int failures = 0;
+	char script[INNO_PATH_LEN + 128];
+
+	snprintf(script, sizeof(script), "before_install('%s','game.hog',1)", hash);
+	failures += expect_galaxy_metadata(script, "game.hog", 1);
+	snprintf(script, sizeof(script),
+	         "  BEFORE_INSTALL ( '%s' , '{app}\\data\\part.bin' , 24 )  ", hash);
+	failures += expect_galaxy_metadata(script, "{app}\\data\\part.bin", 24);
+	snprintf(script, sizeof(script),
+	         "before_install('%s', 'pilot''s.hog', 2)", hash);
+	failures += expect_galaxy_metadata(script, "pilot's.hog", 2);
+	for (size_t i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++)
+		failures += expect_regular_metadata(invalid[i]);
+
+	memset(script, 'a', sizeof(script));
+	script[0] = '\0';
+	strcpy(script, "before_install('");
+	memset(script + strlen(script), 'a', 400);
+	script[strlen("before_install('") + 400] = '\0';
+	strcat(script, "', 'game.hog', 1)");
+	failures += expect_regular_metadata(script);
+
+	uint32_t parsed_count = 0;
+	char parsed_destination[INNO_PATH_LEN];
+	int galaxy = -1;
+	size_t fixture_size = 0;
+	uint8_t *fixture = build_file_catalog_fixture(
+	    1, "other_callback('quoted', 'renamed.hog', 1)", &fixture_size);
+	if (!fixture || inno_test_parse_file_catalog(fixture, fixture_size, &version, &parsed_count, parsed_destination, sizeof(parsed_destination), &galaxy) < 0 ||
+	    parsed_count != 1 || galaxy != 0 ||
+	    strcmp(parsed_destination, "late.hog") != 0) {
+		fprintf(stderr, "ordinary BeforeInstall changed the file contract\n");
+		failures++;
+	}
+	free(fixture);
+
+	snprintf(script, sizeof(script), "before_install('%s', 'renamed.hog', 2)", hash);
+	fixture = build_file_catalog_fixture(1, script, &fixture_size);
+	if (!fixture || inno_test_parse_file_catalog(fixture, fixture_size, &version, &parsed_count, parsed_destination, sizeof(parsed_destination), &galaxy) < 0 ||
+	    parsed_count != 1 || galaxy != 1 ||
+	    strcmp(parsed_destination, "renamed.hog") != 0) {
+		fprintf(stderr, "complete Galaxy metadata was not committed atomically\n");
+		failures++;
+	}
+	free(fixture);
 	return failures ? 1 : 0;
 }
 
@@ -1351,6 +1455,7 @@ int main(int argc, char **argv)
 	failures += check_pe_resource_bounds();
 	failures += check_complete_file_catalog();
 	failures += check_unsigned_entry_bounds();
+	failures += check_galaxy_metadata_pattern();
 	failures += check_checksum_layout_transition();
 	failures += check_encrypted_chunk_rejection();
 	failures += check_buffered_decoder_failures();

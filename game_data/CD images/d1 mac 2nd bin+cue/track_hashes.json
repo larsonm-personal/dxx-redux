@@ -1,5 +1,5 @@
 [
-  {"track": 1, "type": "data", "sha1": "527579d7c267f070abeafd1e9d0efc7d945b446d", "error": "ISO listing failed"},
+  {"track": 1, "type": "data", "sha1": "527579d7c267f070abeafd1e9d0efc7d945b446d", "filesystem": "hfs", "files_extracted": 8},
   {"track": 2, "type": "audio", "sha1": "45bffe339a5bcdc63158e036f722173c168ac6d4"},
   {"track": 3, "type": "audio", "sha1": "ba79e69a0190165abc2be510ca1d25c19626b7e4"},
   {"track": 4, "type": "audio", "sha1": "63abca9c22dcbbb1fec04146e4e01b0a7c447a84"},

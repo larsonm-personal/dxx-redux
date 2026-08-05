@@ -60,8 +60,13 @@ function Invoke-BoundedExtractor {
         $ArgumentList[0]
     )
     [IO.File]::WriteAllText((Join-Path $OutputDirectory 'fixture.bin'), 'fixture')
+    $result = if ($env:DXX_TEST_EXTRACT_ERROR) {
+        '{"track":1,"type":"data","sha1":"0123456789abcdef0123456789abcdef01234567","error":"fixture failure"}'
+    } else {
+        '{"track":1,"type":"data","sha1":"0123456789abcdef0123456789abcdef01234567","filesystem":"hfs","files_extracted":1}'
+    }
     return [pscustomobject]@{
-        Output = @('{"track":1}', 'Done: 1 data tracks extracted, 1 total files, 0 errors')
+        Output = @($result, 'Done: 1 data tracks extracted, 1 total files, 0 errors')
         ExitCode = 0
     }
 }
@@ -102,6 +107,13 @@ function Publish-ExtractionDirectory {
     Assert-True (($firstOutput -join "`n") -match 'Saved 1 track hashes') 'Single-track result should retain array Count behavior'
     $selectedSource = Get-Content -LiteralPath (Join-Path $discDir 'selected_source.txt') -Raw
     Assert-True ($selectedSource.EndsWith('single.iso')) 'CD extraction should use the sole descriptor'
+
+    $env:DXX_TEST_EXTRACT_ERROR = '1'
+    $errorOutput = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -SkipBuild -Force 2>&1)
+    Remove-Item Env:DXX_TEST_EXTRACT_ERROR
+    Assert-True ($LASTEXITCODE -eq 1) 'An error-bearing record with a zero tool exit should make the batch fail'
+    Assert-True (($errorOutput -join "`n") -match 'extract_cd reported an error: fixture failure') `
+        'Failure report should preserve the native record error'
 
     $missingSourceDir = Join-Path $gameDataDir 'CD images\missing-source'
     New-Item -ItemType Directory -Path $missingSourceDir -Force | Out-Null

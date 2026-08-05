@@ -610,13 +610,22 @@ GOG installers use **standard InnoSetup format** — there are no GOG-specific m
 
 GOG Galaxy uses InnoSetup's scripting system to split large files into parts:
 
-- **`before_install`** script on the first file entry: `before_install('md5hash', 'filename', 'partcount')`
+- **`before_install`** script on the first file entry: `before_install('md5hash', 'filename', partcount)`
 - **`after_install`** script on each part: `after_install('md5hash', 'compressed_size', 'uncompressed_size')`
 
 The parts are individually zlib-compressed within the InnoSetup data. To reassemble:
 1. Find the `before_install` call to get the output filename and part count
 2. For each part, decompress the chunk data, then apply zlib decompression on the file data
 3. Concatenate all parts in order
+
+The extractor recognizes this convention only after parsing the complete call.
+The function name is case-insensitive, the hash and destination arguments must
+be single-quoted, doubled single quotes are decoded, the hash must contain
+exactly 32 hexadecimal digits, the destination must be a valid bounded relative
+path, and the unquoted part count must be decimal and between 1 and the
+extraction entry limit. Any missing or extra argument, trailing statement,
+invalid value, or oversized script remains ordinary opaque Inno
+`BeforeInstall` metadata.
 
 ### 14.3 GOG Game ID & Password
 

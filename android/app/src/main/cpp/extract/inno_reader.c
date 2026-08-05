@@ -1301,6 +1301,141 @@ static int valid_destination_path(const char *path)
 	}
 }
 
+#define INNO_GALAXY_SCRIPT_LEN 4096
+
+static void skip_script_space(const char **cursor)
+{
+	while (**cursor == ' ' || **cursor == '\t') (*cursor)++;
+}
+
+static int consume_script_token(const char **cursor, const char *token)
+{
+	const char *input = *cursor;
+	while (*token) {
+		unsigned char actual = (unsigned char) *input++;
+		unsigned char expected = (unsigned char) *token++;
+		if (actual >= 'A' && actual <= 'Z') actual = (unsigned char) (actual + ('a' - 'A'));
+		if (actual != expected) return 0;
+	}
+	*cursor = input;
+	return 1;
+}
+
+static int parse_script_string(const char **cursor, char *output, size_t output_size)
+{
+	const char *input = *cursor;
+	size_t length = 0;
+
+	if (*input++ != '\'' || !output || output_size == 0) return 0;
+	for (;;) {
+		unsigned char ch = (unsigned char) *input++;
+		if (ch == '\0') return 0;
+		if (ch == '\'') {
+			if (*input == '\'') {
+				input++;
+				ch = '\'';
+			} else {
+				output[length] = '\0';
+				*cursor = input;
+				return 1;
+			}
+		}
+		if (length + 1 >= output_size) return 0;
+		output[length++] = (char) ch;
+	}
+}
+
+static int parse_script_part_count(const char **cursor, uint32_t *part_count)
+{
+	const char *input = *cursor;
+	uint32_t count = 0;
+
+	if (*input < '0' || *input > '9') return 0;
+	do {
+		uint32_t digit = (uint32_t) (*input++ - '0');
+		if (count > (DXX_EXTRACT_MAX_ENTRIES - digit) / 10u) return 0;
+		count = count * 10u + digit;
+	} while (*input >= '0' && *input <= '9');
+	if (count == 0) return 0;
+	*cursor = input;
+	*part_count = count;
+	return 1;
+}
+
+static int parse_gog_galaxy_before_install(const char *script,
+                                           char *destination,
+                                           size_t destination_size,
+                                           uint32_t *part_count)
+{
+	char hash[33];
+	char parsed_destination[INNO_PATH_LEN];
+	const char *cursor = script;
+	uint32_t count = 0;
+
+	if (!script || !destination || destination_size == 0) return 0;
+	skip_script_space(&cursor);
+	if (!consume_script_token(&cursor, "before_install")) return 0;
+	skip_script_space(&cursor);
+	if (*cursor++ != '(') return 0;
+	skip_script_space(&cursor);
+	if (!parse_script_string(&cursor, hash, sizeof(hash))) return 0;
+	skip_script_space(&cursor);
+	if (*cursor++ != ',') return 0;
+	skip_script_space(&cursor);
+	if (!parse_script_string(&cursor, parsed_destination,
+	                         sizeof(parsed_destination)))
+		return 0;
+	skip_script_space(&cursor);
+	if (*cursor++ != ',') return 0;
+	skip_script_space(&cursor);
+	if (!parse_script_part_count(&cursor, &count)) return 0;
+	skip_script_space(&cursor);
+	if (*cursor++ != ')') return 0;
+	skip_script_space(&cursor);
+	if (*cursor != '\0' || strlen(hash) != 32 ||
+	    !valid_destination_path(parsed_destination))
+		return 0;
+	for (size_t i = 0; hash[i]; i++)
+		if (!((hash[i] >= '0' && hash[i] <= '9') ||
+		      (hash[i] >= 'a' && hash[i] <= 'f') ||
+		      (hash[i] >= 'A' && hash[i] <= 'F')))
+			return 0;
+	if (strlen(parsed_destination) >= destination_size) return 0;
+	memcpy(destination, parsed_destination, strlen(parsed_destination) + 1u);
+	if (part_count) *part_count = count;
+	return 1;
+}
+
+/* BeforeInstall is ordinary opaque Inno script data unless it is small enough
+ * to test against the exact Galaxy convention. */
+static int read_before_install(const uint8_t *buf, size_t buf_len, size_t *pos,
+                               char *output, size_t output_size, int unicode,
+                               int *captured)
+{
+	uint32_t length;
+
+	if (!buf || !pos || *pos > buf_len || buf_len - *pos < 4u ||
+	    !output || output_size == 0 || !captured)
+		return -1;
+	length = get_u32(buf + *pos);
+	*pos += 4u;
+	if (length > buf_len - *pos) return -1;
+	output[0] = '\0';
+	*captured = 0;
+	if (length <= INNO_GALAXY_SCRIPT_LEN) {
+		if (unicode) {
+			if (utf16le_to_utf8(buf + *pos, length, output, output_size) == 0)
+				*captured = 1;
+		} else if (length < output_size && !memchr(buf + *pos, 0, length)) {
+			memcpy(output, buf + *pos, length);
+			output[length] = '\0';
+			*captured = 1;
+		}
+	}
+	*pos += length;
+	return 0;
+}
+
 /* Skip a string without storing it */
 static int skip_string(const uint8_t *buf, size_t buf_len, size_t *pos)
 {
@@ -1611,7 +1746,6 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 
 	for (uint32_t i = 0; i < file_count; i++) {
 		inno_file_entry_t *fe = &arc->files[i];
-		int gog_galaxy_candidate = 0;
 		/* source (encoded_string) */
 		if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		/* destination (encoded_string) */
@@ -1642,29 +1776,20 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		}
 		/* before_install (>= 4.1.0) — GOG Galaxy stores real filename here */
 		if (v >= INNO_VER(4, 1, 0)) {
-			char before_install[512];
-			if (read_string(buf, buf_len, &pos, before_install,
-			                sizeof(before_install), ver->unicode) < 0) return -1;
-			/* GOG indirection pattern: before_install('hash', 'real/path', 'N')
-			 * Extract arg 2 (the real path) to overwrite the hash destination and
-			 * identify the nested Galaxy zlib payload. */
-			if (before_install[0]) {
-				/* Find second argument: skip first 'xxx', then find next 'xxx' */
-				const char *p = strchr(before_install, '\'');
-				if (p) p = strchr(p + 1, '\''); /* end of arg1 */
-				if (p) p = strchr(p + 1, '\''); /* start of arg2 */
-				if (p) {
-					p++; /* skip the opening quote */
-					const char *end = strchr(p, '\'');
-					if (end && end > p) {
-						size_t len = (size_t) (end - p);
-						if (len >= sizeof(fe->destination))
-							return -1;
-						gog_galaxy_candidate = 1;
-						memcpy(fe->destination, p, len);
-						fe->destination[len] = '\0';
-					}
-				}
+			char before_install[INNO_GALAXY_SCRIPT_LEN + 1u];
+			char galaxy_destination[INNO_PATH_LEN];
+			int captured;
+			if (read_before_install(buf, buf_len, &pos, before_install,
+			                        sizeof(before_install), ver->unicode,
+			                        &captured) < 0)
+				return -1;
+			if (captured &&
+			    parse_gog_galaxy_before_install(before_install,
+			                                    galaxy_destination,
+			                                    sizeof(galaxy_destination), NULL)) {
+				memcpy(fe->destination, galaxy_destination,
+				       strlen(galaxy_destination) + 1u);
+				fe->gog_galaxy = 1;
 			}
 		}
 
@@ -1685,8 +1810,6 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 			fe->external_size = get_u64(buf + pos);
 			pos += 8;
 		}
-		fe->gog_galaxy = gog_galaxy_candidate;
-
 		/* permission (int16, >= 4.1.0) */
 		if (v >= INNO_VER(4, 1, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 2) < 0) return -1;
@@ -1834,6 +1957,15 @@ int inno_test_destination_path_valid(const char *path)
 	return valid_destination_path(path);
 }
 
+int inno_test_parse_gog_galaxy_before_install(const char *script,
+                                              char *destination,
+                                              size_t destination_size,
+                                              uint32_t *part_count)
+{
+	return parse_gog_galaxy_before_install(script, destination,
+	                                       destination_size, part_count);
+}
+
 int inno_test_parse_version_id(const uint8_t id[INNO_VERSION_ID_SIZE],
                                inno_version_t *version)
 {
@@ -1872,7 +2004,8 @@ int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
                                  uint32_t *file_count_out,
                                  char *last_destination,
-                                 size_t last_destination_size)
+                                 size_t last_destination_size,
+                                 int *last_gog_galaxy)
 {
 	inno_archive_t archive;
 	inno_version_t mutable_version;
@@ -1890,8 +2023,11 @@ int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
 		if (archive.file_count > 0) {
 			snprintf(last_destination, last_destination_size, "%s",
 			         archive.files[archive.file_count - 1].destination);
+			if (last_gog_galaxy)
+				*last_gog_galaxy = archive.files[archive.file_count - 1].gog_galaxy;
 		} else {
 			last_destination[0] = '\0';
+			if (last_gog_galaxy) *last_gog_galaxy = 0;
 		}
 	}
 	free(archive.files);

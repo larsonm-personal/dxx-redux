@@ -139,9 +139,30 @@ foreach ($folder in $folders) {
             }
         }
 
+        $jsonProblem = $null
+        foreach ($line in $jsonLines) {
+            try {
+                $record = $line | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                $jsonProblem = "extract_cd emitted invalid JSON: $line"
+                break
+            }
+            if ($null -ne $record.PSObject.Properties['error'] -and $record.error) {
+                $jsonProblem = "extract_cd reported an error: $($record.error)"
+                break
+            }
+            $filesystemProperty = $record.PSObject.Properties['filesystem']
+            if ($null -ne $filesystemProperty -and $filesystemProperty.Value -eq 'hfs' -and
+                ($null -eq $record.PSObject.Properties['files_extracted'] -or $record.files_extracted -le 0)) {
+                $jsonProblem = 'extract_cd reported HFS success without a positive extracted-file count'
+                break
+            }
+        }
+
         $stagedFiles = @(Get-ChildItem -LiteralPath $outDir -File -Recurse)
-        if ($exitCode -ne 0 -or $jsonLines.Count -eq 0 -or $stagedFiles.Count -eq 0) {
-            $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
+        if ($exitCode -ne 0 -or $jsonLines.Count -eq 0 -or $stagedFiles.Count -eq 0 -or $jsonProblem) {
+            $errorMessage = if ($jsonProblem) { $jsonProblem } else { "extract_cd returned $exitCode" }
+            $failures += @{ Name = $name; Error = $errorMessage; Details = ($stderrLines -join "`n") }
         } else {
             $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
             "[`n  " + ($jsonLines -join ",`n  ") + "`n]" |

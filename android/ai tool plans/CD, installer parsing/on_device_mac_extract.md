@@ -152,12 +152,12 @@ later Mac HFS discs too.
 
 Verified disc facts:
 - Folder: `game_data/CD images/Descent - Mac macplay/`
-- `track_hashes.json` already exists
+- `track_hashes.json` records a successful HFS extraction with a positive
+  `files_extracted` count and no `error` field
 - Known disc id: `descent-mac-macplay`
 - Data track SHA1: `fd32cb88782068aab7bc98b8920672e36637da80`
 - Track layout: 1 data track (Mode1/2352) + 13 redbook audio tracks
-- Desktop probe already confirmed why the normal ISO path fails:
-   track 1 reports `ISO listing failed`, which is correct for an HFS data track
+- Desktop probe confirmed that track 1 is HFS rather than ISO 9660
 - HFS/APM details already observed by the desktop investigation:
    - DDR block size 512
    - partition map contains `Apple_partition_map` and `Apple_HFS`

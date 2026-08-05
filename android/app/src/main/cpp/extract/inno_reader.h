@@ -182,6 +182,10 @@ int inno_test_find_pe_resource_11111(int fd, uint64_t source_size,
 int inno_test_read_string(const uint8_t *buffer, size_t buffer_size,
                           char *output, size_t output_size, int unicode);
 int inno_test_destination_path_valid(const char *path);
+int inno_test_parse_gog_galaxy_before_install(const char *script,
+                                              char *destination,
+                                              size_t destination_size,
+                                              uint32_t *part_count);
 int inno_test_parse_version_id(const uint8_t id[64],
                                inno_version_t *version);
 int inno_test_checksum_layout(const inno_version_t *version,
@@ -194,7 +198,8 @@ int inno_test_parse_file_catalog(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
                                  uint32_t *file_count_out,
                                  char *last_destination,
-                                 size_t last_destination_size);
+                                 size_t last_destination_size,
+                                 int *last_gog_galaxy);
 int inno_test_parse_data_entries(const uint8_t *buffer, size_t buffer_size,
                                  const inno_version_t *version,
                                  inno_data_entry_t *entries,

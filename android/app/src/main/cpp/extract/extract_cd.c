@@ -610,13 +610,11 @@ int main(int argc, char *argv[])
 							total_files_extracted += extracted;
 							fprintf(stderr, "  Track %d: extracted %d files from HFS to %s\n",
 							        t->track_num, extracted, out_dir);
-							/* Keep the data-track JSON line stable so re-running the native path
-							 * does not churn existing track_hashes.json fixtures */
-							printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
-							       t->track_num, sha_hex);
+							printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"filesystem\": \"hfs\", \"files_extracted\": %d}\n",
+							       t->track_num, sha_hex, extracted);
 						} else {
 							fprintf(stderr, "  Track %d: HFS extraction failed\n", t->track_num);
-							printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"HFS extraction failed\"}\n",
+							printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"filesystem\": \"hfs\", \"error\": \"HFS extraction failed\"}\n",
 							       t->track_num, sha_hex);
 							errors++;
 						}
