@@ -1672,6 +1672,7 @@ class dependency_planner
 	    int segment,
 	    const route_position &position,
 	    bool optimistic,
+	    bool prefer_keyed_progress,
 	    route_key_requirement forbidden_key = route_key_requirement::none)
 	{
 		route_search_options options;
@@ -1679,18 +1680,45 @@ class dependency_planner
 		options.prioritize_progress =
 		    forbidden_key == route_key_requirement::none;
 		options.forbidden_missing_key = forbidden_key;
-		const auto search = search_routes(
-		    snapshot_, query_, state_.progress, options);
-		if (!search.problem.empty())
-			return {};
-		auto path = build_route_path(search, segment);
-		if (!path.reached || !position.valid || !valid_segment(snapshot_, segment) ||
-		    !snapshot_.topology.segments[segment].center.valid)
-			return {};
-		path.distance += point_distance(
-		    snapshot_.topology.segments[segment].center, position);
-		path.terminal_segment = segment;
-		path.terminal_position = position;
+		auto find_path = [&](const route_progress_state &progress,
+		                     const route_search_options &search_options) {
+			const auto search = search_routes(
+			    snapshot_, query_, progress, search_options);
+			if (!search.problem.empty())
+				return route_path_result{};
+			auto result = build_route_path(search, segment);
+			if (!result.reached || !position.valid ||
+			    !valid_segment(snapshot_, segment) ||
+			    !snapshot_.topology.segments[segment].center.valid)
+				return route_path_result{};
+			result.distance += point_distance(
+			    snapshot_.topology.segments[segment].center, position);
+			result.terminal_segment = segment;
+			result.terminal_position = position;
+			return result;
+		};
+		auto path = find_path(state_.progress, options);
+		/* Prefer conventional keyed progression when excluding the selected
+		 * trigger exposes an equally direct keyed-door dependency. Keep very
+		 * large custom levels on the single-pass route to bound analysis cost */
+		static constexpr std::size_t keyed_preference_segment_limit = 2048;
+		if (snapshot_.topology.segments.size() <=
+		        keyed_preference_segment_limit &&
+		    prefer_keyed_progress && optimistic && options.prioritize_progress &&
+		    path.reached &&
+		    path.has_obstruction &&
+		    path.first_obstruction.blocker == route_edge_blocker::trigger &&
+		    valid_trigger(snapshot_, path.first_obstruction.trigger)) {
+			auto preferred_progress = state_.progress;
+			preferred_progress.avoided_triggers[path.first_obstruction.trigger] = 1;
+			auto preferred = find_path(preferred_progress, options);
+			if (preferred.reached &&
+			    preferred.progress_weight <= path.progress_weight &&
+			    preferred.has_obstruction &&
+			    preferred.first_obstruction.blocker ==
+			        route_edge_blocker::missing_key)
+				path = std::move(preferred);
+		}
 		return path;
 	}
 
@@ -2452,7 +2480,7 @@ class dependency_planner
 		int unresolved_trigger = -1;
 		for (int guard = 0; guard < LEVEL_METADATA_MAX_ROUTE_STEPS; ++guard) {
 			const auto direct = path_to_position(
-			    goal_segment, goal_position, false);
+			    goal_segment, goal_position, false, false);
 			if (direct.reached) {
 				int blast_segment = -1;
 				int blast_side = -1;
@@ -2480,7 +2508,7 @@ class dependency_planner
 				return true;
 			}
 			const auto optimistic = path_to_position(
-			    goal_segment, goal_position, true);
+			    goal_segment, goal_position, true, depth == 0);
 			if (!optimistic.reached || !optimistic.has_obstruction) {
 				state_.problem.clear();
 				if (acquire_recovery_key(depth + 1)) {

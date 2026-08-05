@@ -78,19 +78,28 @@ if ($step[0].seg -eq $step[0].opens[0].seg) {
 # unlocked, require no key, and therefore open when hit by a player weapon.
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 2 -Trigger 17 -Segment 65
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 11 -Trigger 10 -Segment 201
-Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 14 -Trigger 5 -Segment 150
 
 # Preferring keys over a transparent shortcut must not replace a calculated
 # objective with the planner's unresolved-trigger fallback
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 3 -Trigger 8 -Segment 297
 
-$bonusKeyLevel = @($metadata.levels | Where-Object { $_.level_num -eq 14 })
-if ($bonusKeyLevel.Count -ne 1 -or
-    'blue key not necessary' -notin @($bonusKeyLevel[0].notes)) {
-    throw 'Counterstrike level 14 does not identify its unused blue key'
+$keyProgressionLevel = @($metadata.levels | Where-Object { $_.level_num -eq 14 })
+if ($keyProgressionLevel.Count -ne 1) {
+    throw "Expected exactly one Counterstrike level 14 record, found $($keyProgressionLevel.Count)"
 }
-if (@($bonusKeyLevel[0].route_steps | Where-Object { $_.kind -eq 'key' -and $_.key -eq 'blue' }).Count -ne 0) {
-    throw 'Counterstrike level 14 blue key unexpectedly appears in the preferred route'
+$level14Keys = @(
+    $keyProgressionLevel[0].route_steps |
+        Where-Object { $_.kind -eq 'key' } |
+        ForEach-Object { $_.key }
+)
+if (($level14Keys -join ',') -ne 'blue,gold,red') {
+    throw "Counterstrike level 14 key route is $($level14Keys -join ','), expected blue,gold,red"
+}
+if ('blue key not necessary' -in @($keyProgressionLevel[0].notes)) {
+    throw 'Counterstrike level 14 still identifies its preferred blue key as unnecessary'
+}
+if (@($keyProgressionLevel[0].route_steps | Where-Object { $_.trigger -eq 5 }).Count -ne 0) {
+    throw 'Counterstrike level 14 still prefers the trigger 5 yellow-key shortcut'
 }
 
 $mixedKeyLevel = @($metadata.levels | Where-Object { $_.level_num -eq 20 })
