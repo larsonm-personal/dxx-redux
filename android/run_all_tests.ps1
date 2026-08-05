@@ -313,6 +313,7 @@ $testTimeouts = @{
     "test_mission_zip_batch"              = 3600
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
+    "test_mac_extract_saf"                = 360
     "test_saf_redbook"                    = 420
     "test_all_extracts"                   = $testAllExtractsTimeout
     "test_native_host_unit_tests"         = 1200
@@ -361,6 +362,7 @@ function Get-RunAllJson5TimeoutSeconds {
 $extractTests = @(
     "test_all_extracts",
     "test_extract",
+    "test_mac_extract_saf",
     "test_gog_installer_d1_unified",
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
@@ -485,6 +487,8 @@ foreach ($t in $ps1Files) {
         } else {
             $entry.Arguments = @("-SampleCount", $ExtractSampleCount.ToString(), "-Seed", $extractSampleSeed.ToString())
         }
+    } elseif ($name -eq "test_mac_extract_saf") {
+        $entry.Arguments = @("-SkipBuild")
     }
     $allTests += $entry
 }

@@ -1734,18 +1734,59 @@ function Get-GameIntrospection {
 }
 
 function Get-TestScriptInfo {
-    # Parse and return the first _info object from a JSON5 automation script.
+    # Parse only the first object so templates may contain unresolved placeholders later
     param([Parameter(Mandatory = $true)][string]$ScriptPath)
     if (-not (Test-Path $ScriptPath)) { return $null }
     $raw = Get-Content $ScriptPath -Raw
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
-    try {
-        $arr = $raw | ConvertFrom-Json
-        if ($arr.Count -gt 0 -and $arr[0]._info) {
-            return $arr[0]._info
+
+    $objectStart = -1
+    $depth = 0
+    $inString = $false
+    $escaped = $false
+    $lineComment = $false
+    $blockComment = $false
+    for ($i = $raw.IndexOf('[') + 1; $i -gt 0 -and $i -lt $raw.Length; $i++) {
+        $current = $raw[$i]
+        $next = if ($i + 1 -lt $raw.Length) { $raw[$i + 1] } else { [char]0 }
+        if ($lineComment) {
+            if ($current -in "`r", "`n") { $lineComment = $false }
+            continue
         }
-    } catch {}
+        if ($blockComment) {
+            if ($current -eq '*' -and $next -eq '/') {
+                $blockComment = $false
+                $i++
+            }
+            continue
+        }
+        if ($inString) {
+            if ($escaped) { $escaped = $false }
+            elseif ($current -eq '\') { $escaped = $true }
+            elseif ($current -eq '"') { $inString = $false }
+            continue
+        }
+        if ($current -eq '/' -and $next -eq '/') {
+            $lineComment = $true
+            $i++
+        } elseif ($current -eq '/' -and $next -eq '*') {
+            $blockComment = $true
+            $i++
+        } elseif ($current -eq '"') {
+            $inString = $true
+        } elseif ($current -eq '{') {
+            if ($objectStart -lt 0) { $objectStart = $i }
+            $depth++
+        } elseif ($current -eq '}' -and $objectStart -ge 0) {
+            $depth--
+            if ($depth -eq 0) {
+                try {
+                    $first = $raw.Substring($objectStart, $i - $objectStart + 1) | ConvertFrom-Json
+                    if ($first._info) { return $first._info }
+                } catch {}
+                return $null
+            }
+        }
+    }
     return $null
 }
 

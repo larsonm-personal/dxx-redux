@@ -14,6 +14,26 @@ on-device, without needing a PC extraction step. The first target is the
 Descent 1 MacPlay CD. The native path should stay generic enough to support
 later Mac HFS discs too.
 
+## 2026-08-04 unattended-suite integration tranche
+
+- [x] Register `test_mac_extract_saf.ps1` in the extract tier of
+  `android/run_all_tests.ps1`
+- [x] Give the large-media SAF test an explicit timeout and reuse the APK
+  already built by the suite
+- [x] Repair first-`_info` catalog parsing so owned templates with unresolved
+  later placeholders do not block every unattended run
+- [x] Run the suite entry by name and confirm both seekable and pipe-backed
+  MacPlay imports appear as passing unattended compatibility coverage
+- [x] Record the suite command and result in this plan
+
+Validation on 2026-08-04:
+
+- `android/tests/test_validate_automation_catalog.ps1`: PASS, with 38
+  standalone JSON tests, 18 support scripts, and 72 PowerShell entries
+- `android/run_all_tests.ps1 -Filter test_mac_extract_saf -StopOnFail`: PASS
+  with exit code 0 in 385 seconds; the suite-owned build ran the seekable and
+  pipe-backed MacPlay SAF import cases
+
 ## 2026-08-04 finalization review
 
 ### Current assessment
