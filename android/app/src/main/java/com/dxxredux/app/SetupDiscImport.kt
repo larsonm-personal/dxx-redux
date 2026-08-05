@@ -473,14 +473,24 @@ internal fun registerDiscAudioSourceFromPath(
                 )
             } else {
                 audioBinFile.inputStream().use { input ->
-                    input.channel.position(trackOffset)
-                    val sha1 = DiscIdentifier.sha1Hash(input, trackBytes)
-                    val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
-                    if (match.matched) {
-                        discLabel = match.label
-                        discId = match.disc?.id
-                        match.disc?.legacyDiscId?.let {
-                            legacyDiscId = java.lang.Long.decode(it)
+                    when (val hash = DiscIdentifier.sha1Hash(input, trackOffset, trackBytes)) {
+                        is DiscIdentifier.Sha1HashResult.Complete -> {
+                            val match = identifier.identify(mapOf(firstAudio.trackNum to hash.sha1))
+                            if (match.matched) {
+                                discLabel = match.label
+                                discId = match.disc?.id
+                                match.disc?.legacyDiscId?.let {
+                                    legacyDiscId = java.lang.Long.decode(it)
+                                }
+                            }
+                        }
+
+                        is DiscIdentifier.Sha1HashResult.Failed -> {
+                            Log.w("DXX-DiscImport", "Disc track hash failed: ${hash.problem}")
+                        }
+
+                        DiscIdentifier.Sha1HashResult.Canceled -> {
+                            Log.w("DXX-DiscImport", "Disc track hash canceled")
                         }
                     }
                 }

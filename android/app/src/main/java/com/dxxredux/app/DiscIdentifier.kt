@@ -17,6 +17,18 @@ import java.security.MessageDigest
 class DiscIdentifier(
     context: Context,
 ) {
+    sealed interface Sha1HashResult {
+        data class Complete(
+            val sha1: String,
+        ) : Sha1HashResult
+
+        data object Canceled : Sha1HashResult
+
+        data class Failed(
+            val problem: String,
+        ) : Sha1HashResult
+    }
+
     data class KnownTrack(
         val track: Int,
         val type: String, // "data" or "audio"
@@ -187,21 +199,60 @@ class DiscIdentifier(
             input: InputStream,
             length: Long,
             progressCallback: ((Long, Long) -> Boolean)? = null,
-        ): String {
+        ): Sha1HashResult {
+            if (length <= 0L) return Sha1HashResult.Failed("hash length must be positive")
             val digest = MessageDigest.getInstance("SHA-1")
             val buf = ByteArray(65536)
             var remaining = length
             var hashed = 0L
-            while (remaining > 0) {
-                val toRead = minOf(buf.size.toLong(), remaining).toInt()
-                val n = input.read(buf, 0, toRead)
-                if (n <= 0) break
-                digest.update(buf, 0, n)
-                remaining -= n
-                hashed += n
-                if (progressCallback?.invoke(hashed, length) == true) break
+            try {
+                while (remaining > 0) {
+                    val toRead = minOf(buf.size.toLong(), remaining).toInt()
+                    val n = input.read(buf, 0, toRead)
+                    if (n <= 0) {
+                        return Sha1HashResult.Failed("stream ended after $hashed of $length bytes")
+                    }
+                    digest.update(buf, 0, n)
+                    remaining -= n
+                    hashed += n
+                    val canceled = progressCallback?.invoke(hashed, length) == true
+                    if (remaining == 0L) break
+                    if (canceled) return Sha1HashResult.Canceled
+                }
+            } catch (e: Exception) {
+                return Sha1HashResult.Failed(e.message ?: e.javaClass.simpleName)
             }
-            return digest.digest().joinToString("") { "%02x".format(it) }
+            return Sha1HashResult.Complete(
+                digest.digest().joinToString("") { "%02x".format(it) },
+            )
+        }
+
+        /** Hash exactly [length] bytes after skipping exactly [offset] bytes. */
+        fun sha1Hash(
+            input: InputStream,
+            offset: Long,
+            length: Long,
+            progressCallback: ((Long, Long) -> Boolean)? = null,
+        ): Sha1HashResult {
+            if (offset < 0L) return Sha1HashResult.Failed("hash offset must not be negative")
+            var remaining = offset
+            try {
+                while (remaining > 0L) {
+                    val skipped = input.skip(remaining)
+                    if (skipped > 0L) {
+                        remaining -= skipped
+                    } else if (input.read() >= 0) {
+                        remaining--
+                    } else {
+                        return Sha1HashResult.Failed(
+                            "stream ended before byte offset $offset",
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                return Sha1HashResult.Failed(e.message ?: e.javaClass.simpleName)
+            }
+            return sha1Hash(input, length, progressCallback)
         }
     }
 }

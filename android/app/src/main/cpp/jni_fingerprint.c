@@ -9,10 +9,13 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <android/log.h>
 
 #include "chromaprint_db.h"
+#include "extract/cd_read_contract.h"
 #include "fingerprint_gen.h"
 #include "pcm_decoders.h"
 #include "chromaprint.h"
@@ -124,7 +127,14 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
     JNIEnv *env, jclass clazz,
     jint binFd, jint startSector, jint numSectors)
 {
-	if (binFd < 0 || numSectors <= 0) return NULL;
+	struct stat file_info;
+	long long byte_offset;
+	if (binFd < 0 || fstat(binFd, &file_info) != 0 || file_info.st_size < 0 ||
+	    !cd_track_span(startSector, numSectors, (long long) file_info.st_size,
+	                   &byte_offset, NULL)) {
+		LOGE("Rejected invalid or incomplete disc track span");
+		return NULL;
+	}
 
 	static const int SECTOR_SIZE = 2352;
 	static const int SECTORS_PER_CHUNK = 64;
@@ -138,7 +148,12 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 		return NULL;
 	}
 
-	off_t offset = (off_t) startSector * SECTOR_SIZE;
+	off_t offset = (off_t) byte_offset;
+	if ((long long) offset != byte_offset) {
+		free(sector_data);
+		fingerprint_stream_free(stream);
+		return NULL;
+	}
 	if (lseek(binFd, offset, SEEK_SET) != offset) {
 		LOGE("Seek failed to sector %d", startSector);
 		free(sector_data);

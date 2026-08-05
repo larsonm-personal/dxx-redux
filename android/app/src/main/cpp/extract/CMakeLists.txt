@@ -80,6 +80,7 @@ file(TO_CMAKE_PATH "${stuffit_test_files_SOURCE_DIR}" STUFFIT_TEST_FILES_DIR)
 
 # ── Library sources (shared by all test executables) ─────────────────
 set(EXTRACT_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
@@ -348,7 +349,8 @@ set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
 # ── fingerprint_cd ───────────────────────────────────────────────────
 add_executable(
     fingerprint_cd
-    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c ${SHARED_DIR}/pcm_decoders.c
     ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
 target_include_directories(fingerprint_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
@@ -480,6 +482,21 @@ add_executable(test_utf8_codec ${CMAKE_CURRENT_SOURCE_DIR}/test_utf8_codec.c
                                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/utf8_codec.c)
 target_include_directories(test_utf8_codec PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME utf8_codec_tests COMMAND test_utf8_codec)
+add_executable(test_cd_read_contract ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_read_contract.c
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c)
+target_include_directories(test_cd_read_contract PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(MSVC)
+    target_compile_options(test_cd_read_contract PRIVATE /W4)
+else()
+    target_compile_options(test_cd_read_contract PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME cd_read_contract_tests COMMAND test_cd_read_contract)
+add_test(
+    NAME cd_incomplete_read_cli_tests
+    COMMAND
+        ${CMAKE_COMMAND} "-DEXTRACT_CD=$<TARGET_FILE:extract_cd>"
+        "-DFINGERPRINT_CD=$<TARGET_FILE:fingerprint_cd>" -P
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_incomplete_read.cmake)
 add_executable(
     test_saf_manifest_parser ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_saf_manifest_parser.c
                              ${CMAKE_CURRENT_SOURCE_DIR}/../shared/saf_manifest_parser.c)

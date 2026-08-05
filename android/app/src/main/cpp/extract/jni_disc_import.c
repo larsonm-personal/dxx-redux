@@ -14,6 +14,7 @@
 #include <android/log.h>
 
 #include "cue_parser.h"
+#include "cd_read_contract.h"
 #include "hfs_reader.h"
 #include "iso9660_reader.h"
 #include "mac_hfs_extract.h"
@@ -59,164 +60,89 @@ static jobjectArray build_iso_listing_array(JNIEnv *env, const iso_file_list_t *
 
 /* ── CUE parsing ─────────────────────────────────────────────────────── */
 
-/*
- * Parse a CUE sheet and return track info as an int array.
- *
- * Each track is encoded as 5 consecutive ints:
- *   [track_num, type, file_index, start_sector, num_sectors]
- *
- * binSizes: array of BIN file sizes (one per FILE directive).
- *
- * Returns null on parse failure.
- */
-JNIEXPORT jintArray JNICALL
-Java_com_dxxredux_app_DiscImportBridge_nativeParseCue(
-    JNIEnv *env, jclass clazz,
-    jstring cuePath, jlongArray binSizes)
-{
-	char *cue_text_path;
-	if (!dxx_jni_string_to_utf8(env, cuePath, &cue_text_path)) return NULL;
-
-	/* Read CUE file contents */
-	FILE *f = fopen(cue_text_path, "r");
-	free(cue_text_path);
-	if (!f) {
-		LOGE("Cannot open CUE file");
-		return NULL;
-	}
-
-	fseek(f, 0, SEEK_END);
-	long len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	if (len <= 0 || len > 1024 * 1024) {
-		fclose(f);
-		LOGE("CUE file too large or empty: %ld", len);
-		return NULL;
-	}
-
-	char *cue_text = (char *) malloc(len + 1);
-	if (!cue_text) {
-		fclose(f);
-		return NULL;
-	}
-	size_t nread = fread(cue_text, 1, len, f);
-	cue_text[nread] = '\0';
-	fclose(f);
-	if ((long) nread != len) {
-		LOGE("CUE file read incomplete: got %zu of %ld", nread, len);
-	}
-
-	/* Get BIN sizes */
-	long long *sizes = NULL;
-	int num_sizes = 0;
-	if (binSizes) {
-		num_sizes = (*env)->GetArrayLength(env, binSizes);
-		jlong *jsizes = (*env)->GetLongArrayElements(env, binSizes, NULL);
-		sizes = (long long *) malloc(num_sizes * sizeof(long long));
-		if (!sizes) {
-			(*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
-			free(cue_text);
-			return NULL;
-		}
-		for (int i = 0; i < num_sizes; i++)
-			sizes[i] = (long long) jsizes[i];
-		(*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
-	}
-
-	/* Parse */
-	cue_disc_t disc;
-	memset(&disc, 0, sizeof(disc));
-	int n = cue_parse(cue_text, sizes, num_sizes, &disc);
-	free(cue_text);
-	free(sizes);
-
-	if (n <= 0) return NULL;
-
-	/* Pack into int array: 5 ints per track */
-	jintArray result = (*env)->NewIntArray(env, n * 5);
-	jint *out = (*env)->GetIntArrayElements(env, result, NULL);
-	for (int i = 0; i < n; i++) {
-		out[i * 5] = disc.tracks[i].track_num;
-		out[i * 5 + 1] = disc.tracks[i].type;
-		out[i * 5 + 2] = disc.tracks[i].file_index;
-		out[i * 5 + 3] = disc.tracks[i].start_sector;
-		out[i * 5 + 4] = disc.tracks[i].num_sectors;
-	}
-	(*env)->ReleaseIntArrayElements(env, result, out, 0);
-
-	LOGI("Parsed CUE: %d tracks, %d files", n, disc.num_files);
-	return result;
-}
-
-/*
- * Get track titles from a parsed CUE sheet.
- * Returns a String array with one entry per track (empty string if no title).
- */
+/* Parse one exact CUE snapshot and return one pipe-delimited row per track. */
 JNIEXPORT jobjectArray JNICALL
-Java_com_dxxredux_app_DiscImportBridge_nativeGetCueTitles(
+Java_com_dxxredux_app_DiscImportBridge_nativeParseCueRows(
     JNIEnv *env, jclass clazz,
     jstring cuePath, jlongArray binSizes)
 {
-	char *path;
-	if (!dxx_jni_string_to_utf8(env, cuePath, &path)) return NULL;
-
-	FILE *f = fopen(path, "r");
-	free(path);
-	if (!f) return NULL;
-
-	fseek(f, 0, SEEK_END);
-	long len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	if (len <= 0 || len > 1024 * 1024) {
-		fclose(f);
-		return NULL;
-	}
-
-	char *cue_text = (char *) malloc(len + 1);
-	if (!cue_text) {
-		fclose(f);
-		return NULL;
-	}
-	size_t nread2 = fread(cue_text, 1, len, f);
-	cue_text[nread2] = '\0';
-	fclose(f);
-
+	char *path = NULL;
+	char *cue_text = NULL;
 	long long *sizes = NULL;
 	int num_sizes = 0;
-	if (binSizes) {
-		num_sizes = (*env)->GetArrayLength(env, binSizes);
-		jlong *jsizes = (*env)->GetLongArrayElements(env, binSizes, NULL);
-		sizes = (long long *) malloc(num_sizes * sizeof(long long));
-		if (!sizes) {
-			(*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
-			free(cue_text);
-			return NULL;
-		}
-		for (int i = 0; i < num_sizes; i++)
-			sizes[i] = (long long) jsizes[i];
-		(*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
-	}
-
+	jlong *jsizes = NULL;
 	cue_disc_t disc;
 	memset(&disc, 0, sizeof(disc));
+
+	if (!dxx_jni_string_to_utf8(env, cuePath, &path)) return NULL;
+	if (!cd_read_file_exact(path, CD_CUE_MAX_BYTES, &cue_text, NULL)) {
+		LOGE("Cannot read complete CUE file");
+		free(path);
+		return NULL;
+	}
+	free(path);
+
+	if (!binSizes || (num_sizes = (*env)->GetArrayLength(env, binSizes)) <= 0) {
+		free(cue_text);
+		return NULL;
+	}
+	jsizes = (*env)->GetLongArrayElements(env, binSizes, NULL);
+	if (!jsizes) {
+		free(cue_text);
+		return NULL;
+	}
+	sizes = (long long *) malloc((size_t) num_sizes * sizeof(*sizes));
+	if (!sizes) {
+		(*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
+		free(cue_text);
+		return NULL;
+	}
+	for (int i = 0; i < num_sizes; i++) sizes[i] = (long long) jsizes[i];
+	(*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
+
 	int n = cue_parse(cue_text, sizes, num_sizes, &disc);
 	free(cue_text);
+	if (n <= 0) {
+		free(sizes);
+		return NULL;
+	}
+	for (int i = 0; i < n; i++) {
+		const cue_track_info_t *track = &disc.tracks[i];
+		if (track->file_index < 0 || track->file_index >= num_sizes ||
+		    !cd_track_span(track->start_sector, track->num_sectors,
+		                   sizes[track->file_index], NULL, NULL)) {
+			LOGE("Invalid or incomplete span for track %d", track->track_num);
+			free(sizes);
+			return NULL;
+		}
+	}
 	free(sizes);
-	if (n <= 0) return NULL;
 
 	jclass strClass = (*env)->FindClass(env, "java/lang/String");
-	jobjectArray titles = (*env)->NewObjectArray(env, n, strClass, NULL);
+	if (!strClass) return NULL;
+	jobjectArray rows = (*env)->NewObjectArray(env, n, strClass, NULL);
+	(*env)->DeleteLocalRef(env, strClass);
+	if (!rows) return NULL;
 	for (int i = 0; i < n; i++) {
-		jstring t = dxx_jni_string_from_utf8(env, disc.tracks[i].title);
-		if (!t) return NULL;
-		(*env)->SetObjectArrayElement(env, titles, i, t);
+		const cue_track_info_t *track = &disc.tracks[i];
+		size_t row_size = strlen(track->title) + 128;
+		char *row = (char *) malloc(row_size);
+		if (!row) return NULL;
+		snprintf(row, row_size, "%d|%d|%d|%d|%d|%s", track->track_num,
+		         track->type, track->file_index, track->start_sector,
+		         track->num_sectors, track->title);
+		jstring value = dxx_jni_string_from_utf8(env, row);
+		free(row);
+		if (!value) return NULL;
+		(*env)->SetObjectArrayElement(env, rows, i, value);
 		if ((*env)->ExceptionCheck(env)) {
-			(*env)->DeleteLocalRef(env, t);
+			(*env)->DeleteLocalRef(env, value);
 			return NULL;
 		}
-		(*env)->DeleteLocalRef(env, t);
+		(*env)->DeleteLocalRef(env, value);
 	}
-	return titles;
+	LOGI("Parsed complete CUE: %d tracks, %d files", n, disc.num_files);
+	return rows;
 }
 
 /* ── ISO 9660 listing ────────────────────────────────────────────────── */

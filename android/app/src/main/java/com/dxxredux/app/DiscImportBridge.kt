@@ -54,17 +54,17 @@ object DiscImportBridge {
         cuePath: String,
         binSizes: LongArray,
     ): List<CueTrack>? {
-        val raw = nativeParseCue(cuePath, binSizes) ?: return null
-        val titles = nativeGetCueTitles(cuePath, binSizes)
-        val numTracks = raw.size / 5
-        return (0 until numTracks).map { i ->
+        val rows = nativeParseCueRows(cuePath, binSizes) ?: return null
+        return rows.map { row ->
+            val fields = row.split('|', limit = 6)
+            if (fields.size != 6) return null
             CueTrack(
-                trackNum = raw[i * 5],
-                type = raw[i * 5 + 1],
-                fileIndex = raw[i * 5 + 2],
-                startSector = raw[i * 5 + 3],
-                numSectors = raw[i * 5 + 4],
-                title = titles?.getOrNull(i) ?: "",
+                trackNum = fields[0].toIntOrNull() ?: return null,
+                type = fields[1].toIntOrNull() ?: return null,
+                fileIndex = fields[2].toIntOrNull() ?: return null,
+                startSector = fields[3].toIntOrNull() ?: return null,
+                numSectors = fields[4].toIntOrNull() ?: return null,
+                title = fields[5],
             )
         }
     }
@@ -298,12 +298,7 @@ object DiscImportBridge {
 
     // ── Native methods ────────────────────────────────────────────
 
-    private external fun nativeParseCue(
-        cuePath: String,
-        binSizes: LongArray,
-    ): IntArray?
-
-    private external fun nativeGetCueTitles(
+    private external fun nativeParseCueRows(
         cuePath: String,
         binSizes: LongArray,
     ): Array<String>?

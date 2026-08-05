@@ -43,6 +43,7 @@
 #endif
 
 #include "cue_parser.h"
+#include "cd_read_contract.h"
 #include "hfs_reader.h"
 #include "iso9660_reader.h"
 #include "mac_hfs_extract.h"
@@ -228,26 +229,6 @@ static void sha1_hex(const unsigned char digest[20], char hex[41])
 }
 
 /* ── File helpers ────────────────────────────────────────────────────── */
-
-static char *read_text_file(const char *path)
-{
-	FILE *f = fopen(path, "r");
-	long len;
-	char *buf;
-	if (!f) return NULL;
-	fseek(f, 0, SEEK_END);
-	len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	buf = (char *) malloc(len + 1);
-	if (!buf) {
-		fclose(f);
-		return NULL;
-	}
-	fread(buf, 1, len, f);
-	buf[len] = '\0';
-	fclose(f);
-	return buf;
-}
 
 static long long file_size(const char *path)
 {
@@ -452,12 +433,12 @@ int main(int argc, char *argv[])
 	} else {
 
 		/* Read CUE sheet */
-		cue_text = read_text_file(argv[1]);
-		if (!cue_text) {
-			fprintf(stderr, "ERROR: Cannot read CUE file: %s\n", argv[1]);
-			return 1;
+		{
+			if (!cd_read_file_exact(argv[1], CD_CUE_MAX_BYTES, &cue_text, NULL)) {
+				fprintf(stderr, "ERROR: Cannot read complete CUE file: %s\n", argv[1]);
+				return 1;
+			}
 		}
-
 		/* First pass: parse without sizes to get file count and filenames */
 		memset(&disc, 0, sizeof(disc));
 		num_tracks = cue_parse(cue_text, NULL, 0, &disc);
@@ -498,7 +479,22 @@ int main(int argc, char *argv[])
 			unsigned char sha_digest[20];
 			char sha_hex[41];
 			unsigned char sector_buf[CUE_SECTOR_SIZE];
+			long long track_offset;
 			int s;
+			const char *track_type = t->type == CUE_TRACK_AUDIO ? "audio" : "data";
+
+			if (t->file_index < 0 || t->file_index >= disc.num_files ||
+			    !cd_track_span(t->start_sector, t->num_sectors,
+			                   t->file_index >= 0 && t->file_index < disc.num_files
+			                       ? bin_sizes[t->file_index]
+			                       : -1,
+			                   &track_offset, NULL)) {
+				fprintf(stderr, "ERROR: Invalid or incomplete span for track %d\n", t->track_num);
+				printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"invalid track span\"}\n",
+				       t->track_num, track_type);
+				errors++;
+				continue;
+			}
 
 			path_join(bin_path, sizeof(bin_path), source_dir, disc.files[t->file_index].filename);
 			bin_fd = open_bin(bin_path);
@@ -514,18 +510,32 @@ int main(int argc, char *argv[])
 			sha1_init(&sha_ctx);
 
 			/* Seek to track start */
-			lseek_fd(bin_fd, (long long) t->start_sector * CUE_SECTOR_SIZE, SEEK_SET);
+			if (lseek_fd(bin_fd, track_offset, SEEK_SET) != track_offset) {
+				fprintf(stderr, "ERROR: Seek failed for track %d\n", t->track_num);
+				printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"seek failed\"}\n",
+				       t->track_num, track_type);
+				close_fd(bin_fd);
+				errors++;
+				continue;
+			}
 
 			for (s = 0; s < t->num_sectors; s++) {
 				int n = read_fd(bin_fd, sector_buf, CUE_SECTOR_SIZE);
 				if (n != CUE_SECTOR_SIZE) {
-					fprintf(stderr, "WARNING: Short read on track %d sector %d (got %d)\n",
+					fprintf(stderr, "ERROR: Short read on track %d sector %d (got %d)\n",
 					        t->track_num, s, n);
 					break;
 				}
 				sha1_update(&sha_ctx, sector_buf, CUE_SECTOR_SIZE);
 			}
 
+			if (s != t->num_sectors) {
+				printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"short read\"}\n",
+				       t->track_num, track_type);
+				close_fd(bin_fd);
+				errors++;
+				continue;
+			}
 			sha1_final(sha_digest, &sha_ctx);
 			sha1_hex(sha_digest, sha_hex);
 
