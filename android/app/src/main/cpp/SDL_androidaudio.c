@@ -53,6 +53,7 @@ static int      g_sfx_last_cb_delta = -1;
 static int      g_sfx_last_queue_delay_ms = -1;
 static int      g_sfx_last_estimated_output_ms = -1;
 static int      g_sfx_probe_count   = 0;
+static SLPlayItf g_player_play;
 
 /* ── Native audio properties (set from JNI before audio init) ─ */
 int g_android_native_sample_rate  = 0;   /* 0 = not yet queried */
@@ -69,7 +70,7 @@ void androidaud_note_sfx_start(int soundnum, int channel)
 {
     g_sfx_soundnum = soundnum;
     g_sfx_channel = channel;
-    g_sfx_start_cb = g_play_count;
+    g_sfx_start_cb = __atomic_load_n(&g_play_count, __ATOMIC_RELAXED);
     g_sfx_start_ms = (int)SDL_GetTicks();
     g_sfx_pending = 1;
 }
@@ -162,6 +163,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     int buf_idx = h->next_buf;
     Uint8 *buf = (Uint8 *)h->playbuf[buf_idx];
     long long callback_start_us = androidaud_now_us();
+    int play_count;
 
     /* Fill with silence */
     SDL_memset(buf, 0, h->playlen);
@@ -179,7 +181,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     if (r != SL_RESULT_SUCCESS) g_enqueue_fail++;
 
     h->next_buf = (buf_idx + 1) % NUM_BUFFERS;
-    g_play_count++;
+    play_count = __atomic_add_fetch(&g_play_count, 1, __ATOMIC_RELAXED);
     {
         int elapsed_us = (int)(androidaud_now_us() - callback_start_us);
         int buffer_us = 0;
@@ -200,7 +202,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
         g_sfx_last_delay_ms = now_ms - g_sfx_start_ms;
         g_sfx_last_soundnum = g_sfx_soundnum;
         g_sfx_last_channel = g_sfx_channel;
-        g_sfx_last_cb_delta = g_play_count - g_sfx_start_cb;
+        g_sfx_last_cb_delta = play_count - g_sfx_start_cb;
         g_sfx_last_queue_delay_ms = androidaud_queue_delay_ms();
         g_sfx_last_estimated_output_ms = g_sfx_last_delay_ms;
         if (g_sfx_last_queue_delay_ms > 0) {
@@ -212,7 +214,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
             LOGI("sfx latency probe: sound=%d channel=%d delay_ms=%d queue_ms=%d est_app_ms=%d callbacks=%d buf_idx=%d play_count=%d",
                  g_sfx_last_soundnum, g_sfx_last_channel, g_sfx_last_delay_ms,
                  g_sfx_last_queue_delay_ms, g_sfx_last_estimated_output_ms,
-                 g_sfx_last_cb_delta, buf_idx, g_play_count);
+                 g_sfx_last_cb_delta, buf_idx, play_count);
         }
     }
 
@@ -220,11 +222,29 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     if (g_audio_buf_frames > 0 && g_audio_freq > 0) {
         int log_interval = (g_audio_freq / g_audio_buf_frames) * 2;
         if (log_interval < 1) log_interval = 1;
-        if (g_play_count % log_interval == 0) {
+        if (play_count % log_interval == 0) {
             LOGI("audio stats: callbacks=%d enq_fail=%d freq=%d buf=%d",
-                 g_play_count, g_enqueue_fail, g_audio_freq,
+                 play_count, g_enqueue_fail, g_audio_freq,
                  g_audio_buf_frames);
         }
+    }
+}
+
+void androidaud_background_pause(void)
+{
+    SLPlayItf player = g_player_play;
+
+    if (player) {
+        (*player)->SetPlayState(player, SL_PLAYSTATE_PAUSED);
+    }
+}
+
+void androidaud_background_resume(void)
+{
+    SLPlayItf player = g_player_play;
+
+    if (player) {
+        (*player)->SetPlayState(player, SL_PLAYSTATE_PLAYING);
     }
 }
 
@@ -264,7 +284,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     g_callback_last_us = 0;
     g_callback_max_us = 0;
     g_callback_overrun_count = 0;
-    g_play_count = 0;
+    __atomic_store_n(&g_play_count, 0, __ATOMIC_RELAXED);
     g_enqueue_fail = 0;
     g_sfx_pending = 0;
     g_sfx_last_delay_ms = -1;
@@ -356,6 +376,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     /* Register callback */
     (*h->playerBufferQueue)->RegisterCallback(h->playerBufferQueue,
                                               bqPlayerCallback, this);
+    g_player_play = h->playerPlay;
 
     /* Start playback */
     (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_PLAYING);
@@ -401,6 +422,7 @@ static void ANDROIDAUD_CloseAudio(_THIS)
 
     /* Destroy OpenSL ES objects in reverse order */
     if (h->playerObject) {
+        g_player_play = NULL;
         (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_STOPPED);
         (*h->playerObject)->Destroy(h->playerObject);
         h->playerObject     = NULL;
@@ -432,7 +454,7 @@ static void ANDROIDAUD_CloseAudio(_THIS)
 
 /* ── Diagnostic accessors (called from game_introspect.cpp) ──────────── */
 
-int androidaud_get_play_count(void)      { return g_play_count; }
+int androidaud_get_play_count(void)      { return __atomic_load_n(&g_play_count, __ATOMIC_RELAXED); }
 int androidaud_get_enqueue_fail(void)    { return g_enqueue_fail; }
 int androidaud_get_audio_freq(void)      { return g_audio_freq; }
 int androidaud_get_audio_buf_frames(void) { return g_audio_buf_frames; }

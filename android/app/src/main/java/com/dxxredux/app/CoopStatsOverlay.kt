@@ -33,6 +33,7 @@ class CoopStatsOverlay(
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
+    private var resumePollingAfterSuspend = false
 
     // Kill stats from last poll
     private var totalKilled = 0
@@ -58,6 +59,7 @@ class CoopStatsOverlay(
         object : Runnable {
             override fun run() {
                 if (!polling) return
+                DormancyDiagnostics.recordIndependentOverlayPoll()
                 try {
                     val rs = robotStatsProvider?.invoke()
                     if (rs != null && rs.size >= 5 + 2 * MAX_PLAYERS) {
@@ -128,6 +130,16 @@ class CoopStatsOverlay(
     fun stopPolling() {
         polling = false
         handler.removeCallbacks(pollRunnable)
+    }
+
+    fun suspendPolling() {
+        resumePollingAfterSuspend = polling
+        stopPolling()
+    }
+
+    fun resumePolling() {
+        if (resumePollingAfterSuspend) startPolling()
+        resumePollingAfterSuspend = false
     }
 
     // Paints

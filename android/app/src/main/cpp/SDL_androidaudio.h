@@ -35,4 +35,7 @@ struct SDL_PrivateAudioData {
     Uint32   playlen;             /* playbuf size in bytes */
 };
 
+void androidaud_background_pause(void);
+void androidaud_background_resume(void);
+
 #endif /* _SDL_androidaudio_h */

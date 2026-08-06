@@ -26,6 +26,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "game_automate.h"
 #include "android_axis_mailbox.h"
+#include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
 #include "window.h"
 #include "newmenu.h"
@@ -89,6 +90,7 @@ extern int r_hires_loaded;
 /* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
 extern "C" int ogl_get_egl_recreate_count(void);
 extern "C" unsigned long long ogl_get_egl_window_generation(void);
+extern "C" int androidaud_get_play_count(void);
 
 static int Framebuffer_probe_width;
 static int Framebuffer_probe_height;
@@ -1463,6 +1465,58 @@ extern "C" char *game_introspect_get_state(void)
 
 	j["egl_recreate_count"] = ogl_get_egl_recreate_count();
 	j["egl_window_generation"] = ogl_get_egl_window_generation();
+
+	/* -- Android lifecycle and dormant-work diagnostics -------- */
+	{
+		android_lifecycle_diagnostic_snapshot snapshot;
+		json lifecycle;
+		json counters;
+
+		android_lifecycle_diagnostics_observe_game_state(
+		    Screen_mode == SCREEN_MENU, Screen_mode == SCREEN_GAME,
+		    Game_wind != nullptr, window_get_front() == Game_wind,
+		    (Game_mode & GM_MULTI) != 0);
+		android_lifecycle_diagnostics_get_snapshot(&snapshot);
+		lifecycle["requested_visibility"] =
+		    android_lifecycle_diagnostics_visibility_name(snapshot.requested_visibility);
+		lifecycle["observed_visibility"] =
+		    android_lifecycle_diagnostics_visibility_name(snapshot.observed_visibility);
+		lifecycle["workload"] = android_lifecycle_diagnostics_workload_name(snapshot.workload);
+		lifecycle["suspend_state"] =
+		    android_lifecycle_diagnostics_suspend_name(snapshot.suspend_state);
+		lifecycle["last_transition_reason"] =
+		    android_lifecycle_diagnostics_reason_name(snapshot.last_transition_reason);
+		lifecycle["request_generation"] = snapshot.request_generation;
+		lifecycle["acknowledgement_generation"] = snapshot.acknowledgement_generation;
+		lifecycle["window_generation"] = snapshot.window_generation;
+		lifecycle["context_generation"] = snapshot.context_generation;
+		lifecycle["checkpoint_state"] =
+		    android_lifecycle_diagnostics_checkpoint_name(snapshot.checkpoint_state);
+		lifecycle["checkpoint_generation"] = snapshot.checkpoint_generation;
+		lifecycle["checkpoint_slot"] = snapshot.checkpoint_slot;
+		lifecycle["park_entry_count"] = snapshot.park_entry_count;
+		lifecycle["wake_count"] = snapshot.wake_count;
+		lifecycle["parked_duration_ms"] = snapshot.parked_duration_ms;
+		lifecycle["last_wake_reason"] =
+		    android_lifecycle_diagnostics_wake_reason_name(snapshot.last_wake_reason);
+		counters["event_loop_iterations"] =
+		    snapshot.counters[ANDROID_LIFECYCLE_COUNTER_EVENT_LOOP];
+		counters["draw_dispatches"] =
+		    snapshot.counters[ANDROID_LIFECYCLE_COUNTER_DRAW_DISPATCH];
+		counters["swap_attempts"] =
+		    snapshot.counters[ANDROID_LIFECYCLE_COUNTER_SWAP_ATTEMPT];
+		counters["swap_presented"] =
+		    snapshot.counters[ANDROID_LIFECYCLE_COUNTER_SWAP_PRESENTED];
+		counters["audio_callbacks"] = androidaud_get_play_count();
+		counters["music_producer_wakeups"] =
+		    snapshot.counters[ANDROID_LIFECYCLE_COUNTER_MUSIC_PRODUCER_WAKE];
+		counters["redbook_producer_wakeups"] =
+		    snapshot.counters[ANDROID_LIFECYCLE_COUNTER_REDBOOK_PRODUCER_WAKE];
+		counters["central_overlay_polls"] = snapshot.central_overlay_polls;
+		counters["independent_overlay_polls"] = snapshot.independent_overlay_polls;
+		lifecycle["work_counters"] = std::move(counters);
+		j["android_lifecycle"] = std::move(lifecycle);
+	}
 
 	/* -- Render and display resolution -------------------------------- */
 	{

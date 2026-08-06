@@ -8,6 +8,7 @@
 
 #include "android_crash_handler.h"
 #include "android_egl_surface.h"
+#include "android_lifecycle_diagnostics.h"
 #include "android_surface_lifecycle.h"
 #include "console.h"
 #include "gles3_shim.h"
@@ -66,8 +67,9 @@ static int android_egl_recreate_surface(struct android_egl_surface_state *state,
 		eglDestroyContext(*state->display, *state->context);
 		*state->context = eglCreateContext(*state->display, *state->config,
 		                                   EGL_NO_CONTEXT, context_attributes);
-		eglMakeCurrent(*state->display, *state->surface, *state->surface,
-		               *state->context);
+		if (eglMakeCurrent(*state->display, *state->surface, *state->surface,
+		                   *state->context) == EGL_TRUE)
+			android_lifecycle_diagnostics_note_context_created();
 		state->smash_textures();
 		state->cache_textures();
 		con_printf(CON_DEBUG,
@@ -76,6 +78,7 @@ static int android_egl_recreate_surface(struct android_egl_surface_state *state,
 		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
 	}
 	state->window_generation = snapshot->generation;
+	android_lifecycle_diagnostics_set_window_generation(snapshot->generation);
 	state->recreate_count++;
 	__android_log_print(ANDROID_LOG_INFO, "DXX-EGL",
 	                    "window generation=%" PRIu64 " active recreate_count=%d",
@@ -171,7 +174,9 @@ void android_egl_surface_initialize(struct android_egl_surface_state *state,
 		con_printf(CON_URGENT, "EGL: Error creating context\n");
 	} else {
 		con_printf(CON_DEBUG, "EGL: Created context\n");
+		android_lifecycle_diagnostics_note_context_created();
 	}
+	android_lifecycle_diagnostics_set_window_generation(state->window_generation);
 
 	eglMakeCurrent(*state->display, *state->surface, *state->surface,
 	               *state->context);
@@ -213,7 +218,9 @@ void android_egl_surface_swap(struct android_egl_surface_state *state)
 	}
 	if (trace_swap)
 		crash_breadcrumb("ogl_swap: eglSwapBuffers");
-	eglSwapBuffers(*state->display, *state->surface);
+	android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_SWAP_ATTEMPT);
+	if (eglSwapBuffers(*state->display, *state->surface) == EGL_TRUE)
+		android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_SWAP_PRESENTED);
 	android_surface_release_snapshot(&snapshot);
 }
 

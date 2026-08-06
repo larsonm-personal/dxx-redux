@@ -33,6 +33,7 @@ class WarpButtonOverlay(
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
+    private var resumePollingAfterSuspend = false
     private var warpAvailable = false
     private var targetName = ""
 
@@ -72,6 +73,7 @@ class WarpButtonOverlay(
         object : Runnable {
             override fun run() {
                 if (!polling) return
+                DormancyDiagnostics.recordIndependentOverlayPoll()
                 try {
                     val st = warpStatusProvider?.invoke()
                     if (st != null && st.size >= 2) {
@@ -175,6 +177,17 @@ class WarpButtonOverlay(
         polling = false
         handler.removeCallbacks(pollRunnable)
         visibility = GONE
+    }
+
+    fun suspendPolling() {
+        resumePollingAfterSuspend = polling
+        polling = false
+        handler.removeCallbacks(pollRunnable)
+    }
+
+    fun resumePolling() {
+        if (resumePollingAfterSuspend) startPolling()
+        resumePollingAfterSuspend = false
     }
 
     companion object {

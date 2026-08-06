@@ -244,6 +244,15 @@ class MainActivity :
 
     external fun nativeRequestIntrospect()
 
+    external fun nativeUpdateDormancyUiPollCounters(
+        central: Long,
+        independent: Long,
+    )
+
+    external fun nativeRequestMultiplayerDormancyTimeout()
+
+    external fun nativeInitializeDormancyDiagnostics()
+
     external fun nativeSetIntrospectPath(path: String)
 
     external fun nativeLoadAutomationScript(
@@ -805,9 +814,12 @@ class MainActivity :
         if (mpMode != null) {
             com.dxxredux.app.multiplayer.MultiplayerForegroundService
                 .start(this)
-            RuntimeGameStateBridge.connect(this, mpMode == "host") {
-                nativeGetNetgameState()
-            }
+            RuntimeGameStateBridge.connect(
+                context = this,
+                host = mpMode == "host",
+                stateProvider = { nativeGetNetgameState() },
+                onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
+            )
         }
 
         loadMetaBindings()
@@ -1741,6 +1753,7 @@ class MainActivity :
         // Start the engine only once, after the surface is ready
         if (!gameStarted) {
             gameStarted = true
+            nativeInitializeDormancyDiagnostics()
             Log.i("DXX-Automate", "Game surface created, gameStarted=true")
             consumeTransientLaunchToken()
 
@@ -1805,6 +1818,7 @@ class MainActivity :
 
     // ── Lifecycle ────────────────────────────────────────────
     private var backgroundPauseApplied = false
+    private var uiWorkSuspended = false
 
     private fun requestMinimizeAutosave() {
         if (gameStarted) {
@@ -1812,8 +1826,48 @@ class MainActivity :
         }
     }
 
+    private fun publishDormancyUiPollCounters() {
+        if (!gameStarted) return
+        val counters = DormancyDiagnostics.snapshot()
+        nativeUpdateDormancyUiPollCounters(counters[0], counters[1])
+    }
+
+    fun onNativeMultiplayerDormancyDisconnected() {
+        runOnUiThread {
+            DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background engine disconnect completed")
+            RuntimeGameStateBridge.disconnect()
+            com.dxxredux.app.multiplayer.MultiplayerForegroundService
+                .stop(this)
+        }
+    }
+
+    private fun suspendUiWork() {
+        if (uiWorkSuspended) return
+        uiWorkSuspended = true
+        overlayPoller.removeCallbacksAndMessages(null)
+        coopStatsOverlay?.suspendPolling()
+        warpButtonOverlay?.suspendPolling()
+        videoInfoOverlay?.suspendPolling()
+        netStatsOverlay?.suspendPolling()
+        netEventsOverlay?.suspendPolling()
+        keyboardPollRunnable?.let { window.decorView.removeCallbacks(it) }
+        keyboardPollRunnable = null
+    }
+
+    private fun resumeUiWork() {
+        if (!uiWorkSuspended) return
+        uiWorkSuspended = false
+        coopStatsOverlay?.resumePolling()
+        warpButtonOverlay?.resumePolling()
+        videoInfoOverlay?.resumePolling()
+        netStatsOverlay?.resumePolling()
+        netEventsOverlay?.resumePolling()
+        startOverlayPolling()
+    }
+
     private fun applyBackgroundPause() {
         if (gameStarted && !backgroundPauseApplied) {
+            publishDormancyUiPollCounters()
             nativeOnPause()
             backgroundPauseApplied = true
         }
@@ -1833,19 +1887,22 @@ class MainActivity :
         super.onStop()
         isActivityResumed = false
         gyroManager?.pause()
-        overlayPoller.removeCallbacksAndMessages(null)
+        suspendUiWork()
         gamepadButtonEdgeTracker.clear()
         if (::inputMixer.isInitialized) inputMixer.releaseAll()
         resetTouchOverlayForSuspend()
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.
         applyBackgroundPause()
+        RuntimeGameStateBridge.noteActivityVisibility(background = true)
     }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (level == TRIM_MEMORY_UI_HIDDEN) {
+            suspendUiWork()
             applyBackgroundPause()
+            RuntimeGameStateBridge.noteActivityVisibility(background = true)
         }
     }
 
@@ -1857,6 +1914,8 @@ class MainActivity :
         gyroManager?.resume()
         // Resume music that was paused when backgrounded
         if (gameStarted) {
+            RuntimeGameStateBridge.noteActivityVisibility(background = false)
+            publishDormancyUiPollCounters()
             nativeOnResume()
         }
         // Re-read preference (user may have toggled in SetupActivity)
@@ -1878,8 +1937,8 @@ class MainActivity :
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
         updateRoundedCornerTextInsets()
-        // Start polling in-game state to show/hide overlay
-        startOverlayPolling()
+        // Restore only work that was active before this Activity stopped
+        resumeUiWork()
     }
 
     private fun syncDebugLogPrefs() {
@@ -2136,6 +2195,7 @@ class MainActivity :
         val pollRunnable =
             object : Runnable {
                 override fun run() {
+                    DormancyDiagnostics.recordCentralOverlayPoll()
                     val pollStartNs = android.os.SystemClock.elapsedRealtimeNanos()
                     var profileInGame = false
                     var profileAutomap = false
@@ -2358,6 +2418,7 @@ class MainActivity :
                 intent: Intent,
             ) {
                 if (!gameStarted) return
+                publishDormancyUiPollCounters()
                 nativeRequestIntrospect()
                 Log.i("DXX-Introspect", "Introspection requested — will dump on next frame")
             }

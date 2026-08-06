@@ -27,6 +27,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include "android_crash_handler.h"
+#include "android_lifecycle_diagnostics.h"
 #define TSFMUSIC_LOG(...) __android_log_print(ANDROID_LOG_INFO, "TSF-Music", __VA_ARGS__)
 #else
 #define TSFMUSIC_LOG(...) ((void) 0)
@@ -61,8 +62,14 @@ static int g_requested_paused = 0;   /* latest requested pause state   */
 static int g_loop = 0;               /* 1 = loop when reaching the end */
 static int g_song_finished = 0;      /* set by audio thread at end     */
 static int g_bg_paused = 0;          /* 1 = paused due to app background */
-static float g_volume = 1.0f;        /* 0.0 – 1.0 volume scale        */
-static int g_output_rate = 48000;    /* actual SDL output sample rate  */
+#ifdef ANDROID
+static pthread_mutex_t g_background_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_background_cond = PTHREAD_COND_INITIALIZER;
+static int g_render_thread_alive;
+static int g_background_waiting;
+#endif
+static float g_volume = 1.0f;     /* 0.0 – 1.0 volume scale        */
+static int g_output_rate = 48000; /* actual SDL output sample rate  */
 
 static void (*g_finished_hook)(void) = NULL; /* callback when song ends  */
 
@@ -572,14 +579,25 @@ static int render_thread_func(void *data)
 	}
 
 	for (;;) {
+		android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_MUSIC_PRODUCER_WAKE);
 		tsf_apply_pending_tuning();
 		if (!__atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST))
 			break;
+		if (tsf_atomic_load_int(&g_bg_paused)) {
+			pthread_mutex_lock(&g_background_mutex);
+			g_background_waiting = 1;
+			pthread_cond_broadcast(&g_background_cond);
+			while (tsf_atomic_load_int(&g_bg_paused) &&
+			       __atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST))
+				pthread_cond_wait(&g_background_cond, &g_background_mutex);
+			g_background_waiting = 0;
+			pthread_mutex_unlock(&g_background_mutex);
+			continue;
+		}
 
 		/* Pause: don't produce data */
 		if (!tsf_atomic_load_int(&g_playing) ||
-		    tsf_atomic_load_int(&g_paused) ||
-		    tsf_atomic_load_int(&g_bg_paused)) {
+		    tsf_atomic_load_int(&g_paused)) {
 			SDL_Delay(20);
 			continue;
 		}
@@ -608,6 +626,11 @@ static int render_thread_func(void *data)
 	}
 
 	tsf_finish_tuning_ownership();
+	pthread_mutex_lock(&g_background_mutex);
+	g_background_waiting = 0;
+	g_render_thread_alive = 0;
+	pthread_cond_broadcast(&g_background_cond);
+	pthread_mutex_unlock(&g_background_mutex);
 	TSFMUSIC_LOG("Render thread exiting");
 	crash_breadcrumb_v("tsf_thread exit tid=%ld", tsf_music_gettid());
 	return 0;
@@ -621,6 +644,9 @@ static void render_thread_start(void)
 	g_render_accepting_commands = 1;
 	__atomic_store_n(&g_render_running, 1, __ATOMIC_SEQ_CST);
 	pthread_mutex_unlock(&g_tuning_mutex);
+	pthread_mutex_lock(&g_background_mutex);
+	g_render_thread_alive = 1;
+	pthread_mutex_unlock(&g_background_mutex);
 	g_render_thread = SDL_CreateThread(render_thread_func, NULL);
 	if (!g_render_thread) {
 		unsigned int i;
@@ -636,6 +662,10 @@ static void render_thread_start(void)
 		g_render_accepting_commands = 0;
 		__atomic_store_n(&g_render_running, 0, __ATOMIC_SEQ_CST);
 		pthread_mutex_unlock(&g_tuning_mutex);
+		pthread_mutex_lock(&g_background_mutex);
+		g_render_thread_alive = 0;
+		pthread_cond_broadcast(&g_background_cond);
+		pthread_mutex_unlock(&g_background_mutex);
 	}
 }
 
@@ -643,6 +673,9 @@ static void render_thread_stop(void)
 {
 	if (!g_render_thread) return;
 	__atomic_store_n(&g_render_running, 0, __ATOMIC_SEQ_CST);
+	pthread_mutex_lock(&g_background_mutex);
+	pthread_cond_broadcast(&g_background_cond);
+	pthread_mutex_unlock(&g_background_mutex);
 	SDL_WaitThread(g_render_thread, NULL);
 	g_render_thread = NULL;
 }
@@ -1055,11 +1088,20 @@ void mix_pause_resume_music(void)
 void mix_background_pause(void)
 {
 	tsf_atomic_store_int(&g_bg_paused, 1);
+	pthread_mutex_lock(&g_background_mutex);
+	while (g_render_thread_alive &&
+	       __atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST) &&
+	       !g_background_waiting)
+		pthread_cond_wait(&g_background_cond, &g_background_mutex);
+	pthread_mutex_unlock(&g_background_mutex);
 }
 
 void mix_background_resume(void)
 {
 	tsf_atomic_store_int(&g_bg_paused, 0);
+	pthread_mutex_lock(&g_background_mutex);
+	pthread_cond_broadcast(&g_background_cond);
+	pthread_mutex_unlock(&g_background_mutex);
 }
 
 /* ── Diagnostic accessors (called from game_introspect.cpp) ──────────── */

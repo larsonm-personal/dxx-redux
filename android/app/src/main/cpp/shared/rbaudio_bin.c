@@ -22,6 +22,7 @@
 #include <stdarg.h>
 
 #ifdef ANDROID
+#include <pthread.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #endif
@@ -43,6 +44,7 @@
 
 #ifdef ANDROID
 #include <android/log.h>
+#include "android_lifecycle_diagnostics.h"
 #include "android_log.h"
 #define RBA_LOG(...)  __android_log_print(ANDROID_LOG_INFO, "RBAudio", __VA_ARGS__)
 #define RBA_DIAG(...) debug_log(DLOG_GAME, "[RBA] " __VA_ARGS__)
@@ -220,6 +222,7 @@ static void rba_set_status(const char *fmt, ...)
 
 static volatile int s_playing = 0;
 static volatile int s_paused = 0;
+static volatile int s_bg_paused = 0;
 static int s_current_track = 0; /* 1-based */
 static int s_play_first = 0;
 static int s_play_last = 0;
@@ -256,6 +259,12 @@ static volatile int s_rb_rpos = 0;
 
 static SDL_Thread *s_render_thread = NULL;
 static volatile int s_render_running = 0;
+#ifdef ANDROID
+static pthread_mutex_t s_background_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t s_background_cond = PTHREAD_COND_INITIALIZER;
+static int s_render_thread_alive;
+static int s_background_waiting;
+#endif
 
 static void rb_reset(void)
 {
@@ -1114,6 +1123,18 @@ static int render_thread_func(void *data)
 	RBA_LOG("CD render thread started");
 
 	while (__atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST)) {
+		android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_REDBOOK_PRODUCER_WAKE);
+		if (__atomic_load_n(&s_bg_paused, __ATOMIC_ACQUIRE)) {
+			pthread_mutex_lock(&s_background_mutex);
+			s_background_waiting = 1;
+			pthread_cond_broadcast(&s_background_cond);
+			while (__atomic_load_n(&s_bg_paused, __ATOMIC_ACQUIRE) &&
+			       __atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST))
+				pthread_cond_wait(&s_background_cond, &s_background_mutex);
+			s_background_waiting = 0;
+			pthread_mutex_unlock(&s_background_mutex);
+			continue;
+		}
 		if (!s_playing || s_paused) {
 			SDL_Delay(20);
 			continue;
@@ -1132,6 +1153,11 @@ static int render_thread_func(void *data)
 		if (!s_playing) break;
 	}
 
+	pthread_mutex_lock(&s_background_mutex);
+	s_background_waiting = 0;
+	s_render_thread_alive = 0;
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
 	RBA_LOG("CD render thread exiting");
 	return 0;
 }
@@ -1141,13 +1167,25 @@ static void render_thread_start(void)
 	if (s_render_thread) return;
 	rb_reset();
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
+	pthread_mutex_lock(&s_background_mutex);
+	s_render_thread_alive = 1;
+	pthread_mutex_unlock(&s_background_mutex);
 	s_render_thread = SDL_CreateThread(render_thread_func, NULL);
+	if (!s_render_thread) {
+		pthread_mutex_lock(&s_background_mutex);
+		s_render_thread_alive = 0;
+		pthread_cond_broadcast(&s_background_cond);
+		pthread_mutex_unlock(&s_background_mutex);
+	}
 }
 
 static void render_thread_stop(void)
 {
 	if (!s_render_thread) return;
 	__atomic_store_n(&s_render_running, 0, __ATOMIC_SEQ_CST);
+	pthread_mutex_lock(&s_background_mutex);
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
 	SDL_WaitThread(s_render_thread, NULL);
 	s_render_thread = NULL;
 }
@@ -1351,6 +1389,25 @@ int RBAResume(void)
 	s_paused = 0;
 	RBA_LOG("Resumed");
 	return 1;
+}
+
+void RBABackgroundPause(void)
+{
+	__atomic_store_n(&s_bg_paused, 1, __ATOMIC_RELEASE);
+	pthread_mutex_lock(&s_background_mutex);
+	while (s_render_thread_alive &&
+	       __atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST) &&
+	       !s_background_waiting)
+		pthread_cond_wait(&s_background_cond, &s_background_mutex);
+	pthread_mutex_unlock(&s_background_mutex);
+}
+
+void RBABackgroundResume(void)
+{
+	__atomic_store_n(&s_bg_paused, 0, __ATOMIC_RELEASE);
+	pthread_mutex_lock(&s_background_mutex);
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
 }
 
 int RBAPauseResume(void)

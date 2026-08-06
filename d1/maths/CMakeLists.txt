@@ -73,6 +73,11 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/android_save_set.c)
     target_include_directories(test_android_save_set PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_android_file_pair_transaction
+        ../../android/tests/test_android_file_pair_transaction.c
+        ../../android/app/src/main/cpp/shared/android_file_pair_transaction.c)
+    target_include_directories(test_android_file_pair_transaction PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_playsave_transaction
         ../../android/tests/test_playsave_transaction.c
         ../../android/app/src/main/cpp/shared/playsave_transaction.c)
@@ -234,6 +239,7 @@ if(NOT ANDROID)
             test_homing_compat
             test_android_save_meta
             test_android_save_set
+            test_android_file_pair_transaction
             test_playsave_transaction
             test_playsave_layout
             test_playsave_text

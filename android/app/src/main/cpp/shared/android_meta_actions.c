@@ -224,10 +224,11 @@ int android_handle_ingame_saveload_request(void)
 		int saved = 0;
 
 		g_android_autosave_request_kind = 0;
-		if (Player_is_dead)
+		if (Player_is_dead) {
 			debug_log(DLOG_GAME, "autosave skipped: " ANDROID_GAME_LABEL " player is dead");
-		else
+		} else {
 			saved = state_android_save_to_slot(slotnum, desc, request_kind);
+		}
 
 		if (saved)
 			debug_log(DLOG_GAME, "autosave saved: " ANDROID_GAME_LABEL " slot %d", slotnum);

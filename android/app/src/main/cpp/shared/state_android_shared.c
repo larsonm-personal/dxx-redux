@@ -20,6 +20,7 @@
 #include "u_mem.h"
 #include "physfsx.h"
 #include "android_resume_pilot.h"
+#include "android_file_pair_transaction.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #include "android_save_set.h"
@@ -259,28 +260,82 @@ static int state_android_autosave_precheck(int slotnum)
 	return 1;
 }
 
-static void state_android_autosave_prepare_slot(int slotnum)
+#ifdef DXX_BUILD_DESCENT_II
+static int state_android_pair_exists(void *context, const char *path)
+{
+	(void) context;
+	return PHYSFSX_exists(path, 0);
+}
+
+static int state_android_pair_rename(void *context, const char *old_path,
+                                     const char *new_path)
+{
+	(void) context;
+	return PHYSFSX_rename(old_path, new_path);
+}
+
+static int state_android_pair_delete(void *context, const char *path)
+{
+	(void) context;
+	return !PHYSFSX_exists(path, 0) || PHYSFS_delete(path);
+}
+#endif
+
+static int state_android_publish_save_slot(const char *temp_filename,
+                                           const char *filename, int slotnum)
 {
 #ifdef DXX_BUILD_DESCENT_II
-	char state_android_temp_fname[PATH_MAX];
+	char main_backup[PATH_MAX];
+	char companion[PATH_MAX];
+	char companion_temp[PATH_MAX];
+	char companion_backup[PATH_MAX];
+	int companion_present;
+	int copy_result;
+	struct android_file_pair_paths paths;
+	struct android_file_pair_ops ops = {
+		NULL, state_android_pair_exists, state_android_pair_rename,
+		state_android_pair_delete
+	};
 
 	if (!state_android_build_secret_filename(
-	        state_android_temp_fname, sizeof(state_android_temp_fname), slotnum))
-		return;
-	if (PHYSFSX_exists(state_android_temp_fname, 0)) {
-		if (!PHYSFS_delete(state_android_temp_fname))
-			Error("Cannot delete file <%s>: %s", state_android_temp_fname,
-			      PHYSFS_getLastError());
+	        companion, sizeof(companion), slotnum) ||
+	    snprintf(main_backup, sizeof(main_backup), "%s.bak", filename) >=
+	        (int) sizeof(main_backup) ||
+	    snprintf(companion_temp, sizeof(companion_temp), "%s.tmp", companion) >=
+	        (int) sizeof(companion_temp) ||
+	    snprintf(companion_backup, sizeof(companion_backup), "%s.bak", companion) >=
+	        (int) sizeof(companion_backup))
+		return 0;
+	PHYSFS_delete(companion_temp);
+	companion_present = PHYSFSX_exists(SECRETC_FILENAME, 0);
+	if (companion_present) {
+		state_android_ensure_parent_dirs_for_path(companion_temp);
+		copy_result = copy_file(SECRETC_FILENAME, companion_temp);
+		if (copy_result) {
+			PHYSFS_delete(companion_temp);
+			debug_log(DLOG_GAME,
+			          "autosave failed: D2 slot %d secret companion stage result=%d",
+			          slotnum, copy_result);
+			return 0;
+		}
 	}
-	if (PHYSFSX_exists(SECRETC_FILENAME, 0)) {
-		int copy_result;
-		state_android_ensure_parent_dirs_for_path(state_android_temp_fname);
-		copy_result = copy_file(SECRETC_FILENAME, state_android_temp_fname);
-		Assert(copy_result == 0);
-		(void) copy_result;
+	paths.primary_temp = temp_filename;
+	paths.primary_path = filename;
+	paths.primary_backup = main_backup;
+	paths.companion_temp = companion_temp;
+	paths.companion_path = companion;
+	paths.companion_backup = companion_backup;
+	paths.companion_present = companion_present;
+	if (!android_file_pair_publish(&paths, &ops)) {
+		debug_log(DLOG_GAME,
+		          "autosave failed: D2 slot %d main/secret pair publish",
+		          slotnum);
+		return 0;
 	}
+	return 1;
 #else
 	(void) slotnum;
+	return PHYSFSX_rename(temp_filename, filename);
 #endif
 }
 
@@ -381,6 +436,24 @@ static int state_android_read_save_meta_for_slot(int slotnum,
 	if (!fp)
 		return 0;
 	result = android_save_meta_read_physfs(fp, PHYSFS_fileLength(fp), meta);
+	PHYSFS_close(fp);
+	return result;
+}
+
+static int state_android_validate_save_path(const char *filename, int save_kind)
+{
+	android_save_meta_disk meta;
+	PHYSFS_file *fp;
+	int result;
+
+	if (!filename)
+		return 0;
+	fp = PHYSFSX_openReadBuffered(filename);
+	if (!fp)
+		return 0;
+	result = android_save_meta_read_physfs(fp, PHYSFS_fileLength(fp), &meta) &&
+	         meta.game_id == state_android_save_meta_game_id() &&
+	         meta.save_kind == save_kind;
 	PHYSFS_close(fp);
 	return result;
 }
@@ -659,11 +732,14 @@ int state_android_save_to_path(const char *filename, const char *desc,
 	return result;
 }
 
-static void state_android_save_highest_progress_if_needed(void)
+static int state_android_save_to_slot_internal(int slotnum, const char *desc,
+                                               int save_kind,
+                                               int blank_thumbnail);
+
+static void state_android_save_highest_progress_if_needed(int blank_thumbnail)
 {
 	android_save_meta_disk old_meta;
 	android_save_meta_disk *old_meta_ptr = NULL;
-	char filename[PATH_MAX];
 	int have_old_meta;
 	int result;
 
@@ -680,13 +756,9 @@ static void state_android_save_highest_progress_if_needed(void)
 		return;
 	}
 
-	stop_time();
-	state_android_build_save_filename(filename, sizeof(filename),
-	                                  ANDROID_SAVE_META_SLOT_AUTO_PROGRESS, 0,
-	                                  1);
-	state_android_autosave_prepare_slot(ANDROID_SAVE_META_SLOT_AUTO_PROGRESS);
-	result = state_android_save_to_path(filename, "AUTO BEST",
-	                                    ANDROID_SAVE_META_KIND_AUTO_PROGRESS, 0);
+	result = state_android_save_to_slot_internal(
+	    ANDROID_SAVE_META_SLOT_AUTO_PROGRESS, "AUTO BEST",
+	    ANDROID_SAVE_META_KIND_AUTO_PROGRESS, blank_thumbnail);
 	if (result)
 		debug_log(DLOG_GAME, "autosave progress saved: %s slot %d",
 		          state_android_game_label(), ANDROID_SAVE_META_SLOT_AUTO_PROGRESS);
@@ -742,11 +814,57 @@ int state_android_coop_callsign_remap_allowed(void)
 	return g_state_android_coop_callsign_remap_allowed;
 }
 
-int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
+static int state_android_save_to_slot_internal(int slotnum, const char *desc,
+                                               int save_kind,
+                                               int blank_thumbnail)
 {
 	int result;
 	char filename[PATH_MAX];
+#ifdef ANDROID
+	char temp_filename[PATH_MAX];
+#endif
 
+	android_repair_player_callsign_for_autosave(state_android_game_label());
+	if (save_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ||
+	    save_kind == ANDROID_SAVE_META_KIND_AUTO_MINIMIZE)
+		state_android_save_highest_progress_if_needed(blank_thumbnail);
+
+	stop_time();
+	memset(filename, 0, sizeof(filename));
+	state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 1);
+#ifdef ANDROID
+	if (snprintf(temp_filename, sizeof(temp_filename), "%s.tmp", filename) >=
+	    (int) sizeof(temp_filename)) {
+		debug_log(DLOG_GAME, "autosave failed: %s slot %d temporary path too long",
+		          state_android_game_label(), slotnum);
+		return 0;
+	}
+	PHYSFS_delete(temp_filename);
+	result = state_android_save_to_path(temp_filename, desc, save_kind,
+	                                    blank_thumbnail);
+	if (result && !state_android_validate_save_path(temp_filename, save_kind)) {
+		debug_log(DLOG_GAME, "autosave failed: %s slot %d temporary save validation",
+		          state_android_game_label(), slotnum);
+		result = 0;
+	}
+	if (result &&
+	    !state_android_publish_save_slot(temp_filename, filename, slotnum)) {
+		result = 0;
+	}
+	if (!result)
+		PHYSFS_delete(temp_filename);
+#else
+	result = state_android_save_to_path(filename, desc, save_kind,
+	                                    blank_thumbnail);
+#endif
+	if (!result)
+		debug_log(DLOG_GAME, "autosave failed: %s slot %d",
+		          state_android_game_label(), slotnum);
+	return result;
+}
+
+int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
+{
 	if (!desc || slotnum < 0 || slotnum >= STATE_ANDROID_NUM_SAVES) {
 		debug_log(DLOG_GAME, "autosave skipped: invalid %s slot request",
 		          state_android_game_label());
@@ -759,20 +877,35 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 		          state_android_game_label());
 		return 0;
 	}
-	android_repair_player_callsign_for_autosave(state_android_game_label());
-	if (save_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ||
-	    save_kind == ANDROID_SAVE_META_KIND_AUTO_MINIMIZE)
-		state_android_save_highest_progress_if_needed();
+	return state_android_save_to_slot_internal(slotnum, desc, save_kind, 0);
+}
 
-	stop_time();
-	memset(filename, 0, sizeof(filename));
-	state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 1);
-	state_android_autosave_prepare_slot(slotnum);
-	result = state_android_save_to_path(filename, desc, save_kind, 0);
-	if (!result)
-		debug_log(DLOG_GAME, "autosave failed: %s slot %d",
-		          state_android_game_label(), slotnum);
-	return result;
+int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,
+                                            int save_kind)
+{
+	if (!desc || slotnum < 0 || slotnum >= STATE_ANDROID_NUM_SAVES) {
+		debug_log(DLOG_GAME,
+		          "lifecycle checkpoint skipped: invalid %s slot request",
+		          state_android_game_label());
+		return 0;
+	}
+	if (Game_mode & GM_MULTI) {
+		debug_log(DLOG_GAME,
+		          "lifecycle checkpoint skipped: %s multiplayer is active",
+		          state_android_game_label());
+		return 0;
+	}
+	if (Current_level_num <= 0 || Player_is_dead) {
+		debug_log(DLOG_GAME,
+		          "lifecycle checkpoint skipped: %s level=%d dead=%d",
+		          state_android_game_label(), Current_level_num, Player_is_dead);
+		return 0;
+	}
+	if (!state_android_autosave_precheck(slotnum))
+		return 0;
+	return state_android_save_to_slot_internal(slotnum, desc, save_kind, 1)
+	           ? 1
+	           : -1;
 }
 
 void state_android_maybe_periodic_autosave(void)

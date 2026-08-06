@@ -1,8 +1,10 @@
 package com.dxxredux.app.multiplayer
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -14,7 +16,10 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
+import android.os.SystemClock
 import android.util.Log
+import com.dxxredux.app.DebugLog
+import com.dxxredux.app.DebugLogCategory
 
 /**
  * Foreground service that keeps the main process alive during multiplayer.
@@ -27,6 +32,10 @@ import android.util.Log
  */
 class MultiplayerForegroundService : Service() {
     private val runtimeSession = RuntimeIpcSession()
+    private val deadline = MultiplayerBackgroundDeadline(BACKGROUND_TIMEOUT_MS)
+    private val deadlineHandler = Handler(Looper.getMainLooper())
+    private val shutdownHandler = Handler(Looper.getMainLooper())
+    private var runtimeClient: Messenger? = null
     private val messenger =
         Messenger(
             Handler(Looper.getMainLooper()) { message ->
@@ -48,6 +57,13 @@ class MultiplayerForegroundService : Service() {
         startId: Int,
     ): Int {
         ensureChannel()
+        if (intent?.action == ACTION_BACKGROUND_DEADLINE) {
+            val token = intent.getLongExtra(EXTRA_DEADLINE_TOKEN, -1)
+            if (deadline.expire(token, SystemClock.elapsedRealtime())) {
+                expireBackgroundSession()
+                return START_NOT_STICKY
+            }
+        }
         val notification =
             Notification
                 .Builder(this, CHANNEL_ID)
@@ -68,6 +84,7 @@ class MultiplayerForegroundService : Service() {
         when (message.what) {
             RUNTIME_IPC_REGISTER -> {
                 runtimeSession.register(message.data.getBoolean(RUNTIME_IPC_KEY_HOST))
+                runtimeClient = message.replyTo
                 sendDiagnostics(message)
             }
 
@@ -86,7 +103,59 @@ class MultiplayerForegroundService : Service() {
             RUNTIME_IPC_GAME_STOPPED -> {
                 disconnectGameProcess()
             }
+
+            RUNTIME_IPC_ACTIVITY_VISIBILITY -> {
+                noteActivityVisibility(message.data.getBoolean(RUNTIME_IPC_KEY_BACKGROUND))
+            }
         }
+    }
+
+    private fun noteActivityVisibility(background: Boolean) {
+        if (!background) {
+            deadline.foreground()
+            deadlineHandler.removeCallbacksAndMessages(null)
+            cancelBackgroundAlarm()
+            DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background deadline reset: foreground")
+            return
+        }
+        if (!runtimeSession.isConnected()) return
+        val scheduled = deadline.background(SystemClock.elapsedRealtime()) ?: return
+        DebugLog.log(
+            DebugLogCategory.DORMANCY,
+            "multiplayer background deadline started: timeout_ms=$BACKGROUND_TIMEOUT_MS",
+        )
+        getSystemService(AlarmManager::class.java)?.setAndAllowWhileIdle(
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            scheduled.second,
+            backgroundAlarm(scheduled.first),
+        )
+        deadlineHandler.postDelayed(
+            {
+                if (deadline.expire(scheduled.first, SystemClock.elapsedRealtime())) expireBackgroundSession()
+            },
+            BACKGROUND_TIMEOUT_MS,
+        )
+    }
+
+    private fun expireBackgroundSession() {
+        deadlineHandler.removeCallbacksAndMessages(null)
+        cancelBackgroundAlarm()
+        DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background deadline expired")
+        runtimeClient?.let { client ->
+            try {
+                client.send(Message.obtain(null, RUNTIME_IPC_BACKGROUND_TIMEOUT))
+            } catch (e: RemoteException) {
+                Log.w(TAG, "Could not notify game process of multiplayer background timeout", e)
+            }
+        }
+        shutdownHandler.postDelayed(::forceBackgroundShutdown, ENGINE_DISCONNECT_GRACE_MS)
+    }
+
+    private fun forceBackgroundShutdown() {
+        DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background service shutdown")
+        disconnectGameProcess()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private fun sendDiagnostics(request: Message) {
@@ -109,6 +178,29 @@ class MultiplayerForegroundService : Service() {
 
     private fun disconnectGameProcess() {
         MatchmakingService.runtimeGameProcessDisconnected(runtimeSession.disconnect())
+        runtimeClient = null
+    }
+
+    override fun onDestroy() {
+        deadline.foreground()
+        cancelBackgroundAlarm()
+        deadlineHandler.removeCallbacksAndMessages(null)
+        shutdownHandler.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    private fun backgroundAlarm(token: Long): PendingIntent =
+        PendingIntent.getService(
+            this,
+            BACKGROUND_ALARM_REQUEST,
+            Intent(this, MultiplayerForegroundService::class.java)
+                .setAction(ACTION_BACKGROUND_DEADLINE)
+                .putExtra(EXTRA_DEADLINE_TOKEN, token),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    private fun cancelBackgroundAlarm() {
+        getSystemService(AlarmManager::class.java)?.cancel(backgroundAlarm(0))
     }
 
     private fun ensureChannel() {
@@ -130,6 +222,11 @@ class MultiplayerForegroundService : Service() {
         private const val TAG = "MultiplayerForeground"
         private const val CHANNEL_ID = "dxx_multiplayer_fg"
         private const val NOTIFICATION_ID = 1001
+        private const val BACKGROUND_TIMEOUT_MS = 20 * 60 * 1000L
+        private const val ENGINE_DISCONNECT_GRACE_MS = 5_000L
+        private const val BACKGROUND_ALARM_REQUEST = 1002
+        private const val ACTION_BACKGROUND_DEADLINE = "com.dxxredux.app.MULTIPLAYER_BACKGROUND_DEADLINE"
+        private const val EXTRA_DEADLINE_TOKEN = "deadline_token"
 
         fun start(context: Context) {
             val intent = Intent(context, MultiplayerForegroundService::class.java)

@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import com.dxxredux.app.DormancyDiagnostics
 
 /**
  * In-game overlay showing network connection events: per-peer connection method,
@@ -24,12 +25,14 @@ class NetworkEventsOverlay(
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
+    private var resumePollingAfterSuspend = false
     private var cachedState: MatchmakingState? = null
 
     private val pollRunnable =
         object : Runnable {
             override fun run() {
                 if (!polling) return
+                DormancyDiagnostics.recordIndependentOverlayPoll()
                 cachedState =
                     try {
                         stateProvider?.invoke()
@@ -53,6 +56,20 @@ class NetworkEventsOverlay(
         visibility = GONE
         polling = false
         handler.removeCallbacks(pollRunnable)
+    }
+
+    fun suspendPolling() {
+        resumePollingAfterSuspend = polling
+        polling = false
+        handler.removeCallbacks(pollRunnable)
+    }
+
+    fun resumePolling() {
+        if (resumePollingAfterSuspend && visibility == VISIBLE) {
+            polling = true
+            handler.post(pollRunnable)
+        }
+        resumePollingAfterSuspend = false
     }
 
     fun toggle() {

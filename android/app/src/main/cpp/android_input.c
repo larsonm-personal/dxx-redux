@@ -18,9 +18,12 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "android_log.h"
+#include "android_lifecycle_actions.h"
+#include "android_lifecycle_diagnostics.h"
 #include "android_rewind.h"
 #include "coop/coop_level_restart.h"
 #include "android_save_meta.h"
+#include "state_android_shared.h"
 #include "android_axis_mailbox.h"
 #ifdef INTROSPECT_ON
 #include "game_automate.h"
@@ -28,6 +31,9 @@
 #include "gr.h"
 #include "input_demo_recorder.h"
 #include "joy.h"
+#ifdef NETWORK
+#include "multi.h"
+#endif
 #include "secretarea.h"
 #include "timer.h"
 #include "window.h"
@@ -835,9 +841,9 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
 extern void mix_background_pause(void);
 extern void mix_background_resume(void);
 
-/* Declared in rbaudio_bin.c / rbaudio.c — pause/resume redbook (CD) audio */
-extern void RBAPause(void);
-extern int RBAResume(void);
+/* Declared in rbaudio_bin.c - suspend redbook production without changing user pause */
+extern void RBABackgroundPause(void);
+extern void RBABackgroundResume(void);
 
 /* Declared in android_surface.c — prevent rendering while backgrounded */
 extern void android_surface_pause(void);
@@ -901,96 +907,213 @@ static jboolean queue_android_saveload_request(int save_request)
 	return JNI_TRUE;
 }
 
-static void queue_android_autosave_request(int save_kind)
-{
-	if (save_kind > g_android_autosave_request_kind)
-		g_android_autosave_request_kind = save_kind;
-}
-
 static void android_log_autosave_gate(const char *event)
 {
 	debug_log(DLOG_GAME, "autosave lifecycle %s: game_wind=%d screen_mode=%d game_mode=%d request_kind=%d",
 	          event, Game_wind ? 1 : 0, Screen_mode, Game_mode, g_android_autosave_request_kind);
 }
 
-static int android_can_queue_minimize_autosave(void)
-{
-	if (!Game_wind || Screen_mode != SCREEN_GAME)
-		return 0;
-	if (Game_mode & GM_MULTI)
-		return 0;
-	return 1;
-}
-
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeQueueMinimizeAutosave(JNIEnv *env, jobject thiz)
 {
-	if (!android_can_queue_minimize_autosave()) {
-		android_log_autosave_gate("queue-minimize-skipped");
-		LOGI("nativeQueueMinimizeAutosave: not in autosaveable gameplay");
-		return;
-	}
-
-	queue_android_autosave_request(ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
-	android_log_autosave_gate("queue-minimize-accepted");
-	LOGI("nativeQueueMinimizeAutosave: autosave queued");
+	(void) env;
+	(void) thiz;
 }
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {
-	LOGI("nativeOnResume — resuming");
+	(void) env;
+	(void) thiz;
+	android_lifecycle_diagnostics_request_visibility(
+	    ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND,
+	    ANDROID_LIFECYCLE_REASON_ACTIVITY_RESUME);
+	LOGI("nativeOnResume - foreground requested");
 	android_surface_resume();
-	mix_background_resume();
-	RBAResume();
 }
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 {
-	if (!Game_wind || Screen_mode != SCREEN_GAME) {
-		android_log_autosave_gate("pause-skipped-not-gameplay");
-		LOGI("nativeOnPause — not in live gameplay, skipping autosave and Escape injection");
-		android_surface_pause();
-		mix_background_pause();
-		RBAPause();
-		return;
-	}
-
-	if (Game_mode & GM_MULTI) {
-		android_log_autosave_gate("pause-skipped-multiplayer");
-		LOGI("nativeOnPause — multiplayer active, skipping autosave and Escape injection");
-		android_surface_pause();
-		mix_background_pause();
-		RBAPause();
-		return;
-	}
-
-	queue_android_autosave_request(ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
-	android_log_autosave_gate("pause-queued");
-
+	(void) env;
+	(void) thiz;
+	android_lifecycle_diagnostics_request_visibility(
+	    ANDROID_LIFECYCLE_VISIBILITY_BACKGROUND,
+	    ANDROID_LIFECYCLE_REASON_ACTIVITY_STOP);
 	/* Stop the rendering thread from touching ANativeWindow before the
 	 * surface is destroyed.  This must happen first so that by the time
 	 * surfaceDestroyed → nativeSetSurface(null) runs, no blit is in
 	 * progress or can start. */
 	android_surface_pause();
+	LOGI("nativeOnPause - background requested");
+}
 
-	/* Pause music immediately */
-	mix_background_pause();
-	RBAPause();
+static int g_android_multiplayer_dormancy_timeout_requested;
+static int g_android_multiplayer_dormancy_disconnect_pending;
 
-	/* If a menu window already covers the game (e.g., the player already
-	 * opened the game menu), the game is already paused — do not inject
-	 * another Escape which would close the menu and unpause. */
-	if (window_get_front() != Game_wind) {
-		android_log_autosave_gate("pause-menu-already-open");
-		LOGI("nativeOnPause — autosave queued, game menu already open");
+extern JavaVM *g_jvm;
+extern jobject g_activity;
+
+static void android_notify_multiplayer_dormancy_disconnected(void)
+{
+	JNIEnv *env = NULL;
+	jclass cls;
+	jmethodID method;
+	int attached = 0;
+
+	if (!g_jvm || !g_activity)
 		return;
+	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK)
+			return;
+		attached = 1;
 	}
+	cls = (*env)->GetObjectClass(env, g_activity);
+	method = cls ? (*env)->GetMethodID(
+	                   env, cls, "onNativeMultiplayerDormancyDisconnected", "()V")
+	             : NULL;
+	if (method)
+		(*env)->CallVoidMethod(env, g_activity, method);
+	if (cls)
+		(*env)->DeleteLocalRef(env, cls);
+	if (attached)
+		(*g_jvm)->DetachCurrentThread(g_jvm);
+}
 
-	android_log_autosave_gate("pause-inject-escape");
-	LOGI("nativeOnPause — autosave queued, injecting Escape key");
-	inject_key_tap(SDLK_ESCAPE);
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeRequestMultiplayerDormancyTimeout(
+    JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	__atomic_store_n(&g_android_multiplayer_dormancy_timeout_requested, 1,
+	                 __ATOMIC_RELEASE);
+}
+
+void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window,
+                                         int game_window_is_front, int multiplayer_active)
+{
+#ifdef NETWORK
+	if (__atomic_exchange_n(&g_android_multiplayer_dormancy_timeout_requested, 0,
+	                        __ATOMIC_ACQ_REL)) {
+		g_android_multiplayer_dormancy_disconnect_pending = 1;
+		if (multiplayer_active) {
+			debug_log(DLOG_DORMANCY,
+			          "multiplayer background timeout: requesting normal engine disconnect");
+			multi_quit_game = 1;
+		}
+	}
+	if (g_android_multiplayer_dormancy_disconnect_pending &&
+	    !multiplayer_active) {
+		g_android_multiplayer_dormancy_disconnect_pending = 0;
+		debug_log(DLOG_DORMANCY,
+		          "multiplayer background timeout: engine disconnected");
+		android_notify_multiplayer_dormancy_disconnected();
+		if (android_lifecycle_diagnostics_requested_visibility() ==
+		    ANDROID_LIFECYCLE_VISIBILITY_BACKGROUND)
+			android_lifecycle_diagnostics_request_visibility(
+			    ANDROID_LIFECYCLE_VISIBILITY_BACKGROUND,
+			    ANDROID_LIFECYCLE_REASON_MULTIPLAYER_TIMEOUT);
+	}
+#endif
+	for (;;) {
+		int visibility;
+		uint64_t generation;
+
+		if (!android_lifecycle_diagnostics_take_pending(&visibility, NULL,
+		                                                &generation))
+			return;
+
+		if (visibility == ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND) {
+			mix_background_resume();
+			RBABackgroundResume();
+			androidaud_background_resume();
+			android_lifecycle_diagnostics_set_suspend_state(
+			    ANDROID_LIFECYCLE_SUSPEND_RUNNING);
+			android_lifecycle_diagnostics_acknowledge(generation, visibility);
+			return;
+		}
+
+		android_lifecycle_diagnostics_set_suspend_state(
+		    ANDROID_LIFECYCLE_SUSPEND_QUIESCING);
+		androidaud_background_pause();
+		mix_background_pause();
+		RBABackgroundPause();
+		if (screen_is_game && has_game_window && !multiplayer_active) {
+			int checkpoint_result;
+
+			android_lifecycle_diagnostics_checkpoint_request(
+			    generation, ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE);
+			android_lifecycle_diagnostics_checkpoint_writing();
+			checkpoint_result = state_android_save_lifecycle_checkpoint(
+			    ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE, "AUTO SAVE",
+			    ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
+			android_lifecycle_diagnostics_checkpoint_finish(
+			    checkpoint_result > 0
+			        ? ANDROID_LIFECYCLE_CHECKPOINT_COMMITTED
+			        : (checkpoint_result == 0
+			               ? ANDROID_LIFECYCLE_CHECKPOINT_SKIPPED
+			               : ANDROID_LIFECYCLE_CHECKPOINT_FAILED));
+			if (game_window_is_front) {
+				android_log_autosave_gate("pause-inject-escape");
+				inject_key_tap(SDLK_ESCAPE);
+			} else {
+				android_log_autosave_gate("pause-window-already-open");
+			}
+		} else if (multiplayer_active) {
+			android_lifecycle_diagnostics_checkpoint_request(generation, -1);
+			android_lifecycle_diagnostics_checkpoint_finish(
+			    ANDROID_LIFECYCLE_CHECKPOINT_SKIPPED);
+			android_log_autosave_gate("pause-skipped-multiplayer");
+		} else {
+			android_lifecycle_diagnostics_checkpoint_request(generation, -1);
+			android_lifecycle_diagnostics_checkpoint_finish(
+			    ANDROID_LIFECYCLE_CHECKPOINT_SKIPPED);
+			android_log_autosave_gate("pause-skipped-not-gameplay");
+		}
+		if (multiplayer_active) {
+			android_lifecycle_diagnostics_set_suspend_state(
+			    ANDROID_LIFECYCLE_SUSPEND_RUNNING);
+			android_lifecycle_diagnostics_acknowledge(generation, visibility);
+			return;
+		}
+
+		stop_time();
+		if (android_lifecycle_diagnostics_park_until_wake(generation) ==
+		    ANDROID_LIFECYCLE_WAKE_EXTERNAL) {
+			start_time();
+			android_lifecycle_diagnostics_set_suspend_state(
+			    ANDROID_LIFECYCLE_SUSPEND_RUNNING);
+			return;
+		}
+		start_time();
+	}
+}
+
+void android_lifecycle_actions_request_wake(void)
+{
+	android_lifecycle_diagnostics_request_external_wake();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeUpdateDormancyUiPollCounters(
+    JNIEnv *env, jobject thiz, jlong central, jlong independent)
+{
+	(void) env;
+	(void) thiz;
+	android_lifecycle_diagnostics_set_ui_poll_counters(
+	    (uint64_t) central, (uint64_t) independent);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeInitializeDormancyDiagnostics(
+    JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	android_lifecycle_diagnostics_request_visibility(
+	    ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND,
+	    ANDROID_LIFECYCLE_REASON_ACTIVITY_RESUME);
 }
 
 JNIEXPORT jboolean JNICALL

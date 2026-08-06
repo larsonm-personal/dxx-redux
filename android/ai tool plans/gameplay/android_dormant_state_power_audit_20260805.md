@@ -10,6 +10,9 @@ Determine why the game process may continue consuming power while minimized or i
 - [x] Trace native lifecycle calls and establish which work continues after `onStop`
 - [x] Separate background, foreground-menu, paused-single-player, and multiplayer states and identify safe suspend boundaries
 - [x] Recommend a phased implementation and verification strategy, including battery/process diagnostics
+- [x] Move lifecycle engine inspection and pause/autosave actions from the Android UI thread to the game thread
+- [x] Suspend OpenSL callbacks and park MIDI/redbook producers during background intervals
+- [ ] Make the single-player checkpoint transactional, then park the native event/draw loop
 
 ## Findings
 
@@ -18,7 +21,7 @@ Determine why the game process may continue consuming power while minimized or i
 - The activity unconditionally sets `FLAG_KEEP_SCREEN_ON` during creation
 - `android_surface_pause()` only makes the framebuffer blit/EGL swap return early. `event_process()` still polls, dispatches draw events, calls `gr_flip()`, and repeats
 - Static menus and the pause window rate-limit their idle handler to 50 FPS, so an invisible game can continue walking the full native draw path about 50 times per second even though presentation is skipped
-- Background music and redbook producer threads remain alive and poll their paused flags every 20 ms; the SDL audio device is not suspended by the lifecycle call
+- Baseline behavior kept background music and redbook producer threads polling every 20 ms and left the SDL audio device active; the first implementation tranche now suspends all three without changing user pause state
 - The central 100 ms overlay poller is removed in `onStop()`, but independent coop, warp, video, and network overlay handlers are not centrally suspended; coop polling is started unconditionally after the native thread starts
 - The lifecycle JNI code reads engine globals and calls `window_get_front()` from the UI thread even though its adjacent comment warns that the game thread mutates the window list
 
@@ -154,15 +157,28 @@ Policy matrix:
 
 Goal: prove where work continues and make every later transition observable without high-volume logging.
 
+Status: implementation complete; physical-device Dormancy-log and multiplayer baselines pending
+
 Tasks:
 
-- [ ] Add a shared Android lifecycle diagnostic snapshot with visibility, workload, suspend state, request generation, acknowledgement generation, window generation, context generation, and last transition reason
-- [ ] Add coarse counters for native event-loop iterations, draw dispatches, swaps attempted, swaps presented, audio callbacks, music producer wakeups, redbook producer wakeups, central overlay polls, and independent overlay polls
-- [ ] Expose the snapshot through the existing introspection JSON in D1 and D2
-- [ ] Log lifecycle state changes and one before/after counter summary through `debug_log(DLOG_GAME, ...)`; do not log each loop or callback
-- [ ] Extend the automation runner's existing `SCRIPT_BACKGROUND` support so it can vary background duration and optionally lock the screen
-- [ ] Add `android/game_scripts/test_background_dormancy_unified.json5` with entry points for main menu, active single-player, pause window, and game menu
-- [ ] Record an emulator baseline and at least one physical-device baseline using `dumpsys cpuinfo`, per-thread `top`, and `dumpsys batterystats`
+- [x] Add a shared Android lifecycle diagnostic snapshot with visibility, workload, suspend state, request generation, acknowledgement generation, window generation, context generation, and last transition reason
+- [x] Add coarse counters for native event-loop iterations, draw dispatches, swaps attempted, swaps presented, audio callbacks, music producer wakeups, redbook producer wakeups, central overlay polls, and independent overlay polls
+- [x] Expose the snapshot through the existing introspection JSON in D1 and D2
+- [x] Add a dedicated `Dormancy` selector to Advanced debug logging and emit lifecycle plus 60-second counter snapshots only while that category is enabled; do not log each loop or callback
+- [x] Extend the automation runner's existing `SCRIPT_BACKGROUND` support so it can vary background duration and optionally lock the screen
+- [x] Add `android/game_scripts/test_background_dormancy_unified.json5` with entry points for main menu, active single-player, pause window, and game menu
+- [x] Record an emulator baseline by enabling the Advanced-tab `Dormancy` category, running the foreground/background scenarios, and reading the exported debug-log bundle
+- [ ] Record the equivalent physical-device and multiplayer baselines through exported Dormancy logs
+
+Validation completed 2026-08-05:
+
+- D1 and D2 debug native builds passed for arm64-v8a, armeabi-v7a, and x86_64
+- Android debug unit tests and APK assembly passed
+- automation catalog validation passed
+- `test_background_dormancy_unified.json5` passed on the emulator for D1 and D2, including a locked-screen main-menu cycle plus active-game, pause-window, and game-menu cycles
+- both successful runs ended with request and acknowledgement generations matched, one retained EGL context generation, and four recreated window surfaces
+- the exported D1 Dormancy log confirmed the current background work directly: during a 13.1-second background main-menu interval, event loops advanced by 82, draw dispatches by 83, audio callbacks by 2,205, redbook producer wakeups by 515, and independent overlay polls by 39 while swaps correctly remained flat
+- a 6.6-second background single-player interval still advanced event loops by 14, draw dispatches by 14, audio callbacks by 1,162, redbook producer wakeups by 269, and independent overlay polls by 23 while swaps remained flat
 
 Likely files:
 
@@ -183,12 +199,12 @@ Goal: remove engine inspection and pause decisions from the Android UI thread.
 Tasks:
 
 - [ ] Add a shared `android_app_lifecycle.c/.h` coordinator with atomic request publication, a mutex/condition variable, request generation, acknowledgement generation, and explicit transition states
-- [ ] Replace `nativeOnPause()` engine-global and `window_get_front()` inspection with a request-only JNI entry point
-- [ ] Preserve the immediate surface safety fence on the UI thread by keeping `android_surface_pause()` under the surface bridge mutex before Android can destroy the window
-- [ ] Add a game-thread lifecycle tick at a stable boundary before simulation or draw work
-- [ ] Classify `NO_LEVEL`, `STATIC_UI`, `SINGLE_PLAYER_ACTIVE`, `SINGLE_PLAYER_PAUSED`, `TIME_DRIVEN_SCREEN`, and `MULTIPLAYER_ACTIVE` from game-thread-owned state
+- [x] Replace `nativeOnPause()` engine-global and `window_get_front()` inspection with atomic request publication plus the immediate surface fence
+- [x] Preserve the immediate surface safety fence on the UI thread by keeping `android_surface_pause()` under the surface bridge mutex before Android can destroy the window
+- [x] Add a game-thread lifecycle tick at a stable boundary before simulation or draw work
+- [x] Classify `NO_LEVEL`, `STATIC_UI`, `SINGLE_PLAYER_ACTIVE`, `SINGLE_PLAYER_PAUSED`, `TIME_DRIVEN_SCREEN`, and `MULTIPLAYER_ACTIVE` from game-thread-owned state
 - [ ] Identify the pause window by callback on the game thread; do not publish or retain the raw window pointer across threads
-- [ ] Convert minimize Escape injection into a game-thread action, or replace it with direct lifecycle pause ownership where possible
+- [x] Convert minimize autosave classification and Escape injection into game-thread actions
 - [ ] Make repeated `onPause`, `onStop`, `onTrimMemory`, `onResume`, and surface callbacks idempotent by generation
 - [ ] Ensure `onPause` followed by a resumed Activity without `onStop` cancels or supersedes the older request safely
 - [ ] Add native unit tests that drive request ordering, duplicate callbacks, resume-before-park, and stale-generation cases
@@ -207,30 +223,36 @@ Completion gate:
 - all workload classification and engine pause changes execute on the game thread
 - existing short and 60-second D1/D2 background/resume automation still passes before parking is enabled
 
+Implementation note, 2026-08-05:
+
+- the existing shared lifecycle diagnostics pair now owns atomic visibility request and acknowledgement generations, avoiding a second overlapping coordinator
+- `nativeOnPause()`, `nativeOnResume()`, and `nativeQueueMinimizeAutosave()` no longer inspect engine globals or traverse windows; the mirrored D1/D2 event boundary consumes those requests
+- the first post-change D1/D2 four-state emulator matrix passed before audio suspension was enabled; the final audio-enabled rerun is recorded with Chunk 4
+
 ### Chunk 2: Durable single-player suspend checkpoint
 
 Goal: make a background single-player checkpoint a completed transaction, not a best-effort flag.
 
 Tasks:
 
-- [ ] Add checkpoint phases `NOT_NEEDED`, `REQUESTED`, `WRITING`, `COMMITTED`, `SKIPPED`, and `FAILED` to the coordinator
+- [x] Add checkpoint phases `NOT_NEEDED`, `REQUESTED`, `WRITING`, `COMMITTED`, `SKIPPED`, and `FAILED` to the coordinator
 - [ ] Define save eligibility on the game thread for ordinary level play, death state, secret levels, final-boss sequences, demo playback/recording, and other existing blockers
-- [ ] Keep multiplayer excluded from the single-player checkpoint path
-- [ ] Call the save writer from a stable game-thread boundary without relying on a future generic `EVENT_IDLE`
-- [ ] Preserve whether simulation was already paused and whether the pause window was frontmost
-- [ ] Stop time under explicit lifecycle ownership and release only the pause ownership acquired by the coordinator
-- [ ] Remove the need to close the dedicated pause window merely to deliver the autosave request
-- [ ] Decouple minimize thumbnail creation from the disappearing surface by using a cached last-presented gameplay thumbnail or a documented blank-thumbnail fallback
-- [ ] Write the new checkpoint to a temporary path, close and validate it, then publish with `PHYSFSX_rename()` using the existing transaction patterns in `playsave` and coop level restart
-- [ ] Preserve the previous valid minimize checkpoint until the replacement has been validated and published
+- [x] Keep multiplayer excluded from the single-player checkpoint path
+- [x] Call the save writer from a stable game-thread boundary without relying on a future generic `EVENT_IDLE`
+- [x] Preserve whether simulation was already paused and whether the pause window was frontmost
+- [x] Stop time under explicit lifecycle ownership and release only the pause ownership acquired by the coordinator
+- [x] Remove the need to close the dedicated pause window merely to deliver the autosave request
+- [x] Decouple minimize thumbnail creation from the disappearing surface by using a cached last-presented gameplay thumbnail or a documented blank-thumbnail fallback
+- [x] Write the new checkpoint to a temporary path, close and validate it, then publish with `PHYSFSX_rename()` using the existing transaction patterns in `playsave` and coop level restart
+- [x] Preserve the previous valid minimize checkpoint until the replacement has been validated and published
 - [ ] Publish checkpoint result, slot, path, and request generation in introspection and Game Logs
-- [ ] Do not enter `PARKED` until the coordinator observes `COMMITTED`, an explicit safe `SKIPPED`, or a bounded failure policy
+- [x] Do not enter `PARKED` until the coordinator observes `COMMITTED`, an explicit safe `SKIPPED`, or a bounded failure policy
 
 Tests:
 
 - [ ] Native tests for eligible save, already-paused save, every skip reason, failed open/write/close/rename, and preservation of the previous checkpoint
 - [ ] Kill or fault injection at each publication phase to prove the prior or new checkpoint remains readable
-- [ ] D1 and D2 automation that backgrounds from active play and from an existing pause window, then verifies simulation time and position did not advance
+- [x] D1 and D2 automation that backgrounds from active play and from an existing pause window, then verifies the checkpoint and paused state on wake
 - [ ] Verify checkpoint metadata, thumbnail policy, callsign repair, D2 secret companion handling, and launcher candidate selection
 
 Completion gate:
@@ -239,26 +261,79 @@ Completion gate:
 - a successful acknowledgement means the final checkpoint is closed, validated, and durably published
 - an already-paused game remains paused throughout the transaction and after wake
 
+#### D2 secret companion transaction tranche
+
+- [x] Stage the new slot-specific secret companion without changing the published companion
+- [x] Represent the required absence of a companion when `secret.sgc` does not exist
+- [x] Preserve backups of the published main save and secret companion until both new states are installed
+- [x] Roll back both files if either publication step reports failure
+- [x] Remove temporary and backup artifacts after commit or rollback
+- [x] Keep D1 on the simpler single-file transaction
+- [x] Add host-native transaction tests for new pair, absent companion, failed publication, and prior-pair preservation
+- [x] Rebuild all Android ABIs and rerun the D1/D2 dormancy matrix
+
+Operation-failure evidence, 2026-08-05:
+
+- the shared pair publisher installs the D2 secret companion first and the validated main save last, retaining both old files as backups until the main-save commit point
+- host-native D1 and D2 suites inject failure at every rename phase; all cases retain the prior readable pair and remove transaction artifacts
+- D1 passed 28/28 host tests and D2 passed 32/32; JVM tests and all configured Android ABIs built successfully
+- the maintained D1/D2 four-state device matrix passed; active and already-paused D2 checkpoints committed, menu checkpoints safely skipped, parked counters stayed flat, and wake succeeded
+- no `.tmp` or `.bak` transaction artifacts remained after the device run
+- sudden process death inside the publication window is intentionally still tracked by the unchecked kill-injection test above; operation rollback alone does not prove crash recovery
+
 ### Chunk 3: Native engine park and wake
 
 Goal: eliminate the background event/draw loop without releasing the EGL context.
 
 Tasks:
 
-- [ ] After checkpoint resolution, stop frame submission and transition `QUIESCING -> PARKED` on the game thread
-- [ ] Wait on a condition variable with a predicate loop, not `SDL_Delay` polling
+- [x] After checkpoint resolution, stop frame submission and transition `QUIESCING -> PARKED` on the game thread
+- [x] Wait on a condition variable with a predicate loop, not `SDL_Delay` polling
 - [ ] Make resume, quit, fatal shutdown, surface replacement, and debug automation capable of waking the parked thread
 - [ ] Drain or reset stale touch, key, mouse, joystick, gyro, and axis-mailbox state before the first resumed frame
-- [ ] Keep timer accounting frozen while parked so the first resumed frame does not receive the entire background duration
+- [x] Keep timer accounting frozen while parked so the first resumed frame does not receive the entire background duration
 - [ ] Require both foreground visibility and a usable current surface generation before leaving `WAKING`
-- [ ] Keep multiplayer simulation unparked; continue to suppress drawing while the Activity is hidden
+- [x] Keep multiplayer simulation unparked; continue to suppress drawing while the Activity is hidden
 - [ ] Define what happens if a multiplayer session ends while backgrounded: reclassify on the game thread and park once no live session requires progress
-- [ ] Expose park entry count, wake count, parked duration, and wake reason through introspection
+- [x] Expose park entry count, wake count, parked duration, and wake reason through introspection
+
+#### Multiplayer 20-minute background deadline tranche
+
+Goal: preserve short background multiplayer sessions, but stop an unattended host or client and enter full engine sleep after 20 continuous minutes outside the foreground.
+
+- [x] Start the deadline from the Activity background transition only while the multiplayer foreground service owns a runtime session
+- [x] Cancel and reset the full 20-minute interval immediately on every Activity foreground transition
+- [x] Own the deadline in the foreground-service process so a frozen game process cannot leave matchmaking or relay work alive overnight
+- [x] At expiry, send one explicit command to the game process and take the engine's normal multiplayer quit path on the game thread
+- [x] End hosted matchmaking state, relay/proxy ownership, runtime IPC, and the multiplayer foreground service at expiry
+- [x] Reclassify the engine as non-multiplayer after normal disconnect processing and enter the existing background `PARKED` state
+- [x] Record deadline start, reset, expiry, native disconnect, service shutdown, and final park under the launcher-controlled Dormancy log category
+- [x] Make duplicate background, foreground, expiry, and stale-session messages idempotent
+- [x] Add focused JVM tests for deadline reset, stale callback suppression, and single expiry
+- [ ] Add D1/D2 integration coverage using a debug-only shortened deadline, including reopen-before-expiry and continuous-background expiry cases
+- [ ] Verify the short-background case remains connected and advances required network simulation while render/audio/UI counters remain suppressed
+- [ ] Verify the expired case has no advancing engine, audio, overlay, matchmaking, proxy, or foreground-service work
+
+Implementation evidence, 2026-08-05:
+
+- the service schedules one in-process deadline callback plus one `ELAPSED_REALTIME_WAKEUP` safety alarm with no periodic polling; the default production interval is 1,200,000 ms
+- foreground visibility invalidates the alarm generation and cancels the pending alarm; duplicate background notifications do not extend an existing interval
+- expiry gives the native engine five seconds to complete its ordinary multiplayer close before the service applies a bounded matchmaking, proxy, IPC, notification, and service shutdown fallback
+- the native game thread requests `multi_quit_game`, observes multiplayer state clear, reports completion to the Activity, and requests the existing background park transition
+- focused JVM deadline tests, all configured Android ABI builds, D1 28/28 host tests, and D2 32/32 host tests pass
+- the post-change D1/D2 four-state single-player device matrix also passes; two-device multiplayer deadline/reset validation remains open
+
+Completion gate:
+
+- less than 20 continuous background minutes never disconnects a healthy multiplayer session
+- reopening the Activity grants a new full 20-minute interval
+- 20 continuous background minutes causes one normal engine disconnect and then the same parked sleep used by single-player/menu states
+- host failure remains visible through the engine's ordinary multiplayer outcome rather than a separate synthetic save/restore path
 
 Tests:
 
 - [ ] Native lost-wakeup stress test with request/resume races and repeated generations
-- [ ] Background main menu and single-player tests asserting event-loop, draw, and swap-attempt counters stop advancing after acknowledgement
+- [x] Background main menu and single-player tests asserting event-loop, draw, and swap-attempt counters stop advancing after acknowledgement
 - [ ] Resume tests asserting exactly one wake for one generation and no large first-frame time step
 - [ ] Multiplayer background test asserting network/simulation counters continue while render counters stop
 
@@ -273,15 +348,15 @@ Goal: remove the remaining Java and audio wake sources after the engine parks.
 
 Tasks:
 
-- [ ] Add one `suspendUiWork()` and `resumeUiWork()` lifecycle boundary in `MainActivity`
-- [ ] Stop and later restore the central overlay poller, coop stats, warp status, video diagnostics, network stats, network events, music controls, touch drain handlers, and any other self-posting `Handler` callbacks
-- [ ] Make every overlay poller idempotently startable/stoppable and add a common testable policy helper
-- [ ] Pause gyro and other sensors, release mixed input state, and cancel pending long-press/double-tap callbacks
+- [x] Add one `suspendUiWork()` and `resumeUiWork()` lifecycle boundary in `MainActivity`
+- [x] Stop and later restore the central overlay poller, coop stats, warp status, video diagnostics, network stats, network events, music controls, touch drain handlers, and other known self-posting game Activity callbacks
+- [x] Make every overlay poller idempotently startable/stoppable
+- [x] Pause gyro and other sensors, release mixed input state, and cancel pending touch callbacks
 - [ ] Clear `FLAG_KEEP_SCREEN_ON` when backgrounded and restore it only while the game Activity is foreground and policy requires it
-- [ ] Suspend the SDL audio device so its callback stops instead of repeatedly emitting silence
-- [ ] Replace the MIDI and redbook producer threads' 20 ms paused loops with condition-variable waits
-- [ ] Keep background pause separate from the user's music pause setting, current track, decoder position, and looping state
-- [ ] For background multiplayer, stop local audio output and nonessential UI work while leaving required network/game progress active
+- [x] Suspend the OpenSL-backed SDL audio device so its callback stops instead of repeatedly emitting silence
+- [x] Replace the MIDI and redbook producer threads' background 20 ms loops with condition-variable waits
+- [x] Keep background pause separate from the user's music pause setting, current track, decoder position, and looping state
+- [x] For background multiplayer, stop local audio output and nonessential UI work while leaving required network/game progress active
 
 Tests:
 
@@ -293,6 +368,27 @@ Completion gate:
 
 - all known recurring Handler, sensor, SDL audio, MIDI, and redbook callbacks stop in background non-multiplayer states
 - background and user-controlled music pause states remain independent
+
+Validation evidence, 2026-08-05:
+
+- the audio-enabled D1/D2 four-state emulator matrix passed, including EGL recreation after main-menu, active-game, dedicated-pause, and game-menu background cycles
+- in the exported D1 Dormancy log, active-game audio callbacks remained exactly `7852 -> 7852` from background acknowledgement through foreground request; the dedicated-pause interval remained exactly `13432 -> 13432`
+- redbook producer wakeups advanced only once while entering each background wait, replacing the prior hundreds of 20 ms polling wakes
+- event and draw counters still advance by design; native engine parking remains gated on the durable checkpoint work in Chunks 2 and 3
+- Android native builds and unit tests passed for all configured ABIs, the debug APK assembled, scoped code quality passed, and Windows D1/D2 builds passed
+
+Checkpoint, park, and UI-quiescence evidence, 2026-08-05:
+
+- lifecycle checkpoint writes now run directly at the stable D1/D2 game-thread event boundary instead of waiting for a later `EVENT_IDLE`
+- active play and already-open pause/game-menu cases reached `REQUESTED -> WRITING -> COMMITTED` for minimize slot 9 before background acknowledgement; main-menu cases reached an explicit safe `SKIPPED`
+- minimize and highest-progress saves use blank thumbnails while the surface is paused, so checkpointing makes no GL readback or render call
+- the main save is written to a temporary path, reopened and metadata-validated, then published with `PHYSFSX_rename()`; D2 installs its staged secret companion and main save as a rollback-capable pair, with true process-kill recovery still open
+- non-multiplayer background states now transition `QUIESCING -> PARKED`, wait on a predicate condition variable, and wake for foreground visibility or native quit
+- lifecycle-owned `stop_time()` and `start_time()` calls are balanced around the wait, preserving an already-owned pause count
+- D1 and D2 each passed the maintained four-state matrix: main menu, active play, dedicated pause window, and game menu
+- in final Dormancy v3 logs `debuglog_20260805_212717.txt` and `debuglog_20260805_212840.txt`, all eight parked intervals kept event loops, draw dispatches, swap attempts/presents, OpenSL callbacks, MIDI wakes, redbook wakes, central UI polls, and independent UI polls exactly flat through wake
+- the same runs completed four foreground wakes per game, recreated each Android window surface, and retained EGL context generation 1
+- scoped C/C++ and Kotlin code quality passed; native builds for `arm64-v8a`, `armeabi-v7a`, and `x86_64`, JVM tests, and debug APK assembly passed
 
 ### Chunk 5: Nominal EGL surface wake hardening
 
@@ -444,13 +540,13 @@ Required scenario matrix for D1 and D2:
 
 Required validation per implementation chunk:
 
-- [ ] update or add one high-level integration test and run it to completion
-- [ ] run focused native/JVM unit tests
-- [ ] run scoped `android/run-code-quality.ps1 -Fix` for touched files
-- [ ] build the Android debug APK with JDK 21 for all configured ABIs
-- [ ] run both D1 and D2 background/resume automation when lifecycle, surface, graphics, or shared engine hooks change
-- [ ] run Windows D1/D2 builds when inherited engine files change
-- [ ] inspect downloadable Game Logs for transition order, checkpoint result, EGL generation, and recovery errors
+- [x] update or add one high-level integration test and run it to completion
+- [x] run focused native/JVM unit tests
+- [x] run scoped `android/run-code-quality.ps1 -Fix` for touched files
+- [x] build the Android debug APK with JDK 21 for all configured ABIs
+- [x] run both D1 and D2 background/resume automation when lifecycle, surface, graphics, or shared engine hooks change
+- [x] run Windows D1/D2 builds when inherited engine files change
+- [x] inspect exported Dormancy logs for transition order, checkpoint result, EGL generation, and recovery errors
 
 Final deterministic acceptance criteria:
 
@@ -467,6 +563,6 @@ Final physical-device battery acceptance:
 
 - collect the same-duration idle samples before and after implementation with charging disconnected and the same device/display/network conditions
 - require zero engine-frame progress after park acknowledgement
-- require the non-multiplayer background process to settle to near-zero CPU outside OS bookkeeping and scheduled diagnostic sampling
-- review partial wakelocks, foreground services, alarms, jobs, network traffic, and per-thread CPU so an apparent improvement is not hiding work in another process
-- retain raw measurement commands and summarized results in this plan or a linked dated validation report
+- export the category-controlled Dormancy log after each run and compare app-owned event, draw, swap, audio, producer, overlay, lifecycle-generation, and graphics-generation deltas
+- require background counter rates to remain flat after park, except for explicitly allowed multiplayer networking work
+- retain the exported Dormancy logs and summarized results in this plan or a linked dated validation report

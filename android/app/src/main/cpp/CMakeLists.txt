@@ -509,9 +509,10 @@ endif() # OPENGL
 set(DXX_TARGET_PREFIX "d1_")
 add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
 target_sources(
-    ${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_setup.c)
+    ${DXX_TARGET_PREFIX}misc
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_setup.c)
 target_include_directories(${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # ──────────────────────────────────────────────────────────────
@@ -565,6 +566,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
@@ -589,6 +591,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c
@@ -660,9 +663,10 @@ endif()
 set(DXX_TARGET_PREFIX "d2_")
 add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 target_sources(
-    ${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_setup.c)
+    ${DXX_TARGET_PREFIX}misc
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_setup.c)
 target_include_directories(${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # ──────────────────────────────────────────────────────────────
@@ -716,6 +720,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
@@ -740,6 +745,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c

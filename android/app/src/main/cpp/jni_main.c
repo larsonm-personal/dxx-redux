@@ -28,6 +28,7 @@
 #include "android_rewind.h"
 #include "android_crash_handler.h"
 #include "android_level_preview.h"
+#include "android_lifecycle_actions.h"
 #include "jni_string.h"
 
 #define LOG_TAG   "DXX-Redux"
@@ -455,6 +456,7 @@ Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
 	SDL_Event ev;
 	ev.type = SDL_QUIT;
 	SDL_PushEvent(&ev);
+	android_lifecycle_actions_request_wake();
 }
 
 /* ── Weapon state query for touch overlay weapon wheels ──────────

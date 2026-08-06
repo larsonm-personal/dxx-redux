@@ -162,6 +162,7 @@ class VideoInfoOverlay(
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
+    private var resumePollingAfterSuspend = false
 
     // Cached stats from last poll
     private var fps = 0
@@ -224,6 +225,7 @@ class VideoInfoOverlay(
         object : Runnable {
             override fun run() {
                 if (!polling) return
+                DormancyDiagnostics.recordIndependentOverlayPoll()
                 try {
                     val stats = statsProvider?.invoke()
                     if (stats != null && stats.size >= 11) {
@@ -304,6 +306,20 @@ class VideoInfoOverlay(
         selectedControllerAction = null
         polling = false
         handler.removeCallbacks(pollRunnable)
+    }
+
+    fun suspendPolling() {
+        resumePollingAfterSuspend = polling
+        polling = false
+        handler.removeCallbacks(pollRunnable)
+    }
+
+    fun resumePolling() {
+        if (resumePollingAfterSuspend && visibility == VISIBLE) {
+            polling = true
+            handler.post(pollRunnable)
+        }
+        resumePollingAfterSuspend = false
     }
 
     fun toggle() {

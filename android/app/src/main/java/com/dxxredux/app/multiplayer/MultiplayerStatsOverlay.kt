@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import com.dxxredux.app.DormancyDiagnostics
 import kotlin.math.exp
 
 /**
@@ -31,6 +32,7 @@ class MultiplayerStatsOverlay(
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
+    private var resumePollingAfterSuspend = false
 
     // Ping history: ring buffer of 30 samples, averaged across all peers
     private val pingHistory = IntArray(GRAPH_SAMPLES)
@@ -103,6 +105,7 @@ class MultiplayerStatsOverlay(
         object : Runnable {
             override fun run() {
                 if (!polling) return
+                DormancyDiagnostics.recordIndependentOverlayPoll()
                 pollStats()
                 invalidate()
                 handler.postDelayed(this, POLL_INTERVAL_MS)
@@ -122,6 +125,20 @@ class MultiplayerStatsOverlay(
         polling = false
         handler.removeCallbacks(pollRunnable)
         clearHistory()
+    }
+
+    fun suspendPolling() {
+        resumePollingAfterSuspend = polling
+        polling = false
+        handler.removeCallbacks(pollRunnable)
+    }
+
+    fun resumePolling() {
+        if (resumePollingAfterSuspend && visibility == VISIBLE) {
+            polling = true
+            handler.post(pollRunnable)
+        }
+        resumePollingAfterSuspend = false
     }
 
     fun toggle() {

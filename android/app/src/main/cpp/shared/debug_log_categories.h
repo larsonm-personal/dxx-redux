@@ -15,6 +15,7 @@
 #define DLOG_LAUNCHER    4
 #define DLOG_PROFILING   5
 #define DLOG_COOP_DESYNC 6
-#define DLOG_COUNT       7
+#define DLOG_DORMANCY    7
+#define DLOG_COUNT       8
 
 #endif /* DEBUG_LOG_CATEGORIES_H */

@@ -20,9 +20,12 @@ internal const val RUNTIME_IPC_GAME_STATE = 2
 internal const val RUNTIME_IPC_GET_DIAGNOSTICS = 3
 internal const val RUNTIME_IPC_DIAGNOSTICS = 4
 internal const val RUNTIME_IPC_GAME_STOPPED = 5
+internal const val RUNTIME_IPC_ACTIVITY_VISIBILITY = 6
+internal const val RUNTIME_IPC_BACKGROUND_TIMEOUT = 7
 internal const val RUNTIME_IPC_KEY_HOST = "host"
 internal const val RUNTIME_IPC_KEY_STATE = "state"
 internal const val RUNTIME_IPC_KEY_DIAGNOSTICS = "diagnostics"
+internal const val RUNTIME_IPC_KEY_BACKGROUND = "background"
 
 internal data class RuntimeDiagnosticsSnapshot(
     val proxyStats: List<PeerProxyStats> = emptyList(),
@@ -60,6 +63,8 @@ internal class RuntimeIpcSession {
     }
 
     fun acceptsGameState(): Boolean = connected && host
+
+    fun isConnected(): Boolean = connected
 
     fun disconnect(): Boolean {
         val wasHost = connected && host
@@ -173,6 +178,9 @@ object RuntimeGameStateBridge {
                             RuntimeDiagnosticsSnapshot()
                         }
                     true
+                } else if (message.what == RUNTIME_IPC_BACKGROUND_TIMEOUT) {
+                    backgroundTimeoutHandler?.invoke()
+                    true
                 } else {
                     false
                 }
@@ -186,6 +194,8 @@ object RuntimeGameStateBridge {
     private var bound = false
     private var isHost = false
     private var nativeStateProvider: (() -> IntArray)? = null
+    private var backgroundTimeoutHandler: (() -> Unit)? = null
+    private var activityBackgrounded = false
     private var lastDiagnosticRequestMs = 0L
 
     private val statePublisher =
@@ -218,6 +228,7 @@ object RuntimeGameStateBridge {
                     Bundle().apply { putBoolean(RUNTIME_IPC_KEY_HOST, isHost) },
                 )
                 requestDiagnostics(force = true)
+                noteActivityVisibility(activityBackgrounded)
             }
 
             override fun onServiceDisconnected(name: ComponentName) {
@@ -239,11 +250,13 @@ object RuntimeGameStateBridge {
         context: Context,
         host: Boolean,
         stateProvider: () -> IntArray,
+        onBackgroundTimeout: () -> Unit,
     ) {
         disconnect()
         appContext = context.applicationContext
         isHost = host
         nativeStateProvider = stateProvider
+        backgroundTimeoutHandler = onBackgroundTimeout
         bound =
             context.bindService(
                 Intent(context, MultiplayerForegroundService::class.java),
@@ -268,8 +281,18 @@ object RuntimeGameStateBridge {
         appContext = null
         isHost = false
         nativeStateProvider = null
+        backgroundTimeoutHandler = null
+        activityBackgrounded = false
         diagnostics = RuntimeDiagnosticsSnapshot()
         lastDiagnosticRequestMs = 0L
+    }
+
+    fun noteActivityVisibility(background: Boolean) {
+        activityBackgrounded = background
+        send(
+            RUNTIME_IPC_ACTIVITY_VISIBILITY,
+            Bundle().apply { putBoolean(RUNTIME_IPC_KEY_BACKGROUND, background) },
+        )
     }
 
     fun getProxyStats(): List<PeerProxyStats> {

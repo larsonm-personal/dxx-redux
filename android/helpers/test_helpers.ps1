@@ -1638,12 +1638,30 @@ function Watch-AutomationResult {
                     $passed = $false
                 } elseif ($line -match 'SCRIPT_BACKGROUND:\s*([^\s]+)' -and $backgroundMarkersHandled.Add($matches[1])) {
                     $backgroundMarker = $matches[1]
+                    $backgroundSeconds = 3
+                    $lockScreen = $false
+                    if ($line -match 'duration_s=(\d+)') {
+                        $backgroundSeconds = [Math]::Min([Math]::Max([int]$matches[1], 1), 300)
+                    }
+                    if ($line -match 'lock_screen=(true|1)') {
+                        $lockScreen = $true
+                    }
                     Write-Status "Background marker $backgroundMarker detected -- cycling app to background" "Yellow"
                     Start-Sleep -Seconds 1
                     # Press HOME to send app to background
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null
-                    Write-Status "HOME pressed -- waiting 3s in background..."
-                    Start-Sleep -Seconds 3
+                    if ($lockScreen) {
+                        Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_SLEEP") | Out-Null
+                        Write-Status "HOME pressed and screen locked -- waiting ${backgroundSeconds}s in background..."
+                    } else {
+                        Write-Status "HOME pressed -- waiting ${backgroundSeconds}s in background..."
+                    }
+                    Start-Sleep -Seconds $backgroundSeconds
+                    if ($lockScreen) {
+                        Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_WAKEUP") | Out-Null
+                        Adb -AdbArgs @("shell", "wm", "dismiss-keyguard") | Out-Null
+                        Start-Sleep -Seconds 1
+                    }
                     # Bring app back to foreground via launcher intent (re-opens
                     # existing task with SetupActivity on top), then press BACK
                     # to get back to the running game's MainActivity, triggering

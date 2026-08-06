@@ -17,6 +17,8 @@
 #include "input_demo_hooks.h"
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
+#include "android_lifecycle_actions.h"
+#include "android_lifecycle_diagnostics.h"
 #endif
 #if defined(ANDROID) && defined(OGL)
 #include "game.h"
@@ -213,6 +215,17 @@ void event_process(void)
 	d_event event;
 	window *wind = window_get_front();
 
+#if defined(ANDROID) && defined(OGL)
+	android_lifecycle_diagnostics_game_tick(Screen_mode == SCREEN_MENU,
+	                                        Screen_mode == SCREEN_GAME,
+	                                        Game_wind != NULL,
+	                                        wind == Game_wind,
+	                                        (Game_mode & GM_MULTI) != 0);
+	android_lifecycle_actions_game_tick(Screen_mode == SCREEN_GAME,
+	                                    Game_wind != NULL,
+	                                    wind == Game_wind,
+	                                    (Game_mode & GM_MULTI) != 0);
+#endif
 	timer_update();
 
 #ifdef INTROSPECT_ON
@@ -232,6 +245,9 @@ void event_process(void)
 	}
 	
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
+#if defined(ANDROID) && defined(OGL)
+	android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_DRAW_DISPATCH);
+#endif
 #if defined(ANDROID) && defined(OGL)
 	if (android_needs_window_backing_clear())
 		ogl_android_clear_window_backing();
