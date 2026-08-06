@@ -223,6 +223,7 @@ typedef struct level_metadata_state {
 	int energy_center_raw_count;
 	int energy_center_count;
 	int energy_center_group_distance;
+	/* Euclidean distance, floored and saturated at INT_MAX */
 	int energy_center_nearest_raw_distance;
 	int matcen_segment_count;
 	int matcen_raw_count;

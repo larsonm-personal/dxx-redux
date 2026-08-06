@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -56,6 +57,7 @@ static int test_object_type[TEST_OBJECTS];
 static int test_object_id[TEST_OBJECTS];
 static int test_object_seg[TEST_OBJECTS];
 static int test_segment_special_values[TEST_SEGMENTS];
+static int test_segment_centers[TEST_SEGMENTS][3];
 static int test_trigger_type[TEST_TRIGGERS];
 static int test_trigger_flags[TEST_TRIGGERS];
 static int test_trigger_link_count[TEST_TRIGGERS];
@@ -105,6 +107,9 @@ static void test_reset(void)
 	{
 		test_segment_special_values[seg] = 0;
 		test_segment_explored[seg] = 0;
+		test_segment_centers[seg][0] = seg * 100 * TEST_FIX;
+		test_segment_centers[seg][1] = 0;
+		test_segment_centers[seg][2] = 0;
 	}
 	for (trigger = 0; trigger < TEST_TRIGGERS; ++trigger) {
 		test_trigger_type[trigger] = TEST_TRIGGER_OPEN_WALL;
@@ -253,9 +258,7 @@ static int test_segment_center(void *user, int seg, int xyz[3])
 	(void) user;
 	if (seg < 0 || seg >= TEST_SEGMENTS || !xyz)
 		return 0;
-	xyz[0] = seg * 100 * TEST_FIX;
-	xyz[1] = 0;
-	xyz[2] = 0;
+	memcpy(xyz, test_segment_centers[seg], sizeof(test_segment_centers[seg]));
 	return 1;
 }
 
@@ -1486,6 +1489,56 @@ static int test_route_prefers_boss_over_reactor_object(void)
 	return failures;
 }
 
+static int check_energy_center_distance(
+    const char *label,
+    const int first[3],
+    const int second[3],
+    int threshold,
+    int expected_groups,
+    int expected_distance)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	view.segment_special_fuelcen = 1;
+	view.energy_center_group_distance = threshold;
+	test_segment_special_values[0] = view.segment_special_fuelcen;
+	test_segment_special_values[3] = view.segment_special_fuelcen;
+	memcpy(test_segment_centers[0], first, sizeof(test_segment_centers[0]));
+	memcpy(test_segment_centers[3], second, sizeof(test_segment_centers[3]));
+	level_metadata_scan_level_summary(&view, &state);
+	failures += expect_int("energy raw components", 2, state.energy_center_raw_count);
+	failures += expect_int("energy grouped components", expected_groups, state.energy_center_count);
+	failures += expect_int("energy nearest distance", expected_distance, state.energy_center_nearest_raw_distance);
+	if (failures)
+		fprintf(stderr, "energy distance case failed: %s\n", label);
+	return failures;
+}
+
+static int test_energy_center_distance_bounds(void)
+{
+	static const int zero[3] = { 0, 0, 0 };
+	static const int ordinary[3] = { 3, 4, 0 };
+	static const int near_limit[3] = { INT_MAX - 1, 0, 0 };
+	static const int at_limit[3] = { INT_MAX, 0, 0 };
+	static const int signed_low[3] = { INT_MIN, 0, 0 };
+	static const int signed_high[3] = { INT_MAX, 0, 0 };
+	static const int two_axes[3] = { INT_MAX, INT_MAX, 0 };
+	static const int three_axes[3] = { INT_MAX, INT_MAX, INT_MAX };
+	int failures = 0;
+
+	failures += check_energy_center_distance("zero", zero, zero, 1, 1, 0);
+	failures += check_energy_center_distance("ordinary", zero, ordinary, 4, 2, 5);
+	failures += check_energy_center_distance("INT_MAX - 1", zero, near_limit, INT_MAX - 1, 1, INT_MAX - 1);
+	failures += check_energy_center_distance("INT_MAX", zero, at_limit, INT_MAX, 1, INT_MAX);
+	failures += check_energy_center_distance("opposite signed extremes", signed_low, signed_high, INT_MAX, 2, INT_MAX);
+	failures += check_energy_center_distance("two-axis overflow", zero, two_axes, INT_MAX, 2, INT_MAX);
+	failures += check_energy_center_distance("three-axis overflow", zero, three_axes, INT_MAX, 2, INT_MAX);
+	return failures;
+}
+
 static int test_guidebot_missing_note(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1592,6 +1645,7 @@ int main(void)
 	failures += test_route_visible_reactor_step();
 	failures += test_route_prefers_boss_over_control_center_segment();
 	failures += test_route_prefers_boss_over_reactor_object();
+	failures += test_energy_center_distance_bounds();
 	failures += test_guidebot_missing_note();
 	failures += test_guidebot_accessible();
 	failures += test_guidebot_unreachable_note();

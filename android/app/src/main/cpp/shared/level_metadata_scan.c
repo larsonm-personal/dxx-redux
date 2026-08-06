@@ -3,6 +3,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -200,26 +201,52 @@ static void energy_union(int a, int b)
 		energy_parent[root_b] = root_a;
 }
 
-static long long distance_sq(const int a[3], const int b[3])
+/*
+ * The serialized nearest-distance field is an int, so keep squared distances
+ * within that declared domain and use one larger value as an out-of-range
+ * sentinel; the sentinel is important when the grouping threshold is
+ * INT_MAX: a genuinely larger distance must not compare as equal after the
+ * reported value is saturated
+ */
+static uint64_t maximum_distance_sq(void)
 {
-	long long dx = (long long) a[0] - b[0];
-	long long dy = (long long) a[1] - b[1];
-	long long dz = (long long) a[2] - b[2];
-
-	return dx * dx + dy * dy + dz * dz;
+	return (uint64_t) INT_MAX * (uint64_t) INT_MAX;
 }
 
-static int sqrt_ll(long long value)
+static uint64_t distance_sq_bounded(const int a[3], const int b[3])
 {
-	int low = 0;
-	int high = INT_MAX;
+	const uint64_t limit = maximum_distance_sq();
+	uint64_t sum = 0;
+	int axis;
+
+	for (axis = 0; axis < 3; ++axis) {
+		int64_t delta = (int64_t) a[axis] - (int64_t) b[axis];
+		uint64_t magnitude = delta < 0 ? (uint64_t) -delta : (uint64_t) delta;
+		uint64_t square;
+
+		if (magnitude > (uint64_t) INT_MAX)
+			return limit + 1;
+		square = magnitude * magnitude;
+		if (square > limit - sum)
+			return limit + 1;
+		sum += square;
+	}
+	return sum;
+}
+
+static int sqrt_distance_sq(uint64_t value)
+{
+	uint64_t low = 0;
+	uint64_t high = INT_MAX;
 	int result = 0;
 
+	if (value >= maximum_distance_sq())
+		return INT_MAX;
 	while (low <= high) {
-		int mid = low + (high - low) / 2;
-		long long square = (long long) mid * mid;
+		uint64_t mid = low + (high - low) / 2;
+		uint64_t square = mid * mid;
 		if (square <= value) {
-			result = mid;
+			result = (int) mid;
 			low = mid + 1;
 		} else {
 			high = mid - 1;
@@ -316,9 +343,10 @@ static void collect_energy_center_stats(const level_metadata_scan_view *view, le
 	int fuel_count = 0;
 	int raw_count = 0;
 	int group_count = 0;
-	long long nearest_raw_distance_sq = LLONG_MAX;
+	const uint64_t out_of_range_distance_sq = maximum_distance_sq() + 1;
+	uint64_t nearest_raw_distance_sq = out_of_range_distance_sq;
 	int threshold;
-	long long threshold_sq;
+	uint64_t threshold_sq;
 	int seg;
 	int i;
 	int j;
@@ -326,7 +354,7 @@ static void collect_energy_center_stats(const level_metadata_scan_view *view, le
 	if (view->segment_special_fuelcen == 0 || !view->segment_center)
 		return;
 	threshold = view->energy_center_group_distance > 0 ? view->energy_center_group_distance : LEVEL_METADATA_DEFAULT_ENERGY_CENTER_GROUP_DISTANCE;
-	threshold_sq = (long long) threshold * threshold;
+	threshold_sq = (uint64_t) threshold * (uint64_t) threshold;
 	state->energy_center_group_distance = threshold;
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		component_id[seg] = -1;
@@ -374,18 +402,18 @@ static void collect_energy_center_stats(const level_metadata_scan_view *view, le
 			int seg_j = energy_segments[j];
 			int component_i = component_id[seg_i];
 			int component_j = component_id[seg_j];
-			long long center_distance_sq;
+			uint64_t center_distance_sq;
 			if (component_i == component_j)
 				continue;
-			center_distance_sq = distance_sq(energy_centers[i], energy_centers[j]);
+			center_distance_sq = distance_sq_bounded(energy_centers[i], energy_centers[j]);
 			if (center_distance_sq < nearest_raw_distance_sq)
 				nearest_raw_distance_sq = center_distance_sq;
 			if (center_distance_sq <= threshold_sq)
 				energy_union(component_i, component_j);
 		}
 	}
-	if (nearest_raw_distance_sq != LLONG_MAX)
-		state->energy_center_nearest_raw_distance = sqrt_ll(nearest_raw_distance_sq);
+	if (raw_count > 1)
+		state->energy_center_nearest_raw_distance = sqrt_distance_sq(nearest_raw_distance_sq);
 	memset(energy_seen, 0, sizeof(energy_seen));
 	for (i = 0; i < raw_count; ++i) {
 		int root = energy_find(i);

@@ -8,18 +8,24 @@ import android.os.IBinder
 import android.os.Process
 import android.os.SystemClock
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.RandomAccessFile
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile
 
 private const val LEVEL_METADATA_TIMEOUT_MS = 120_000L
 private const val LEVEL_METADATA_POLL_MS = 200L
+private const val LEVEL_METADATA_WORKER_START_TIMEOUT_MS = 5_000L
 private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 120_000L
 private const val LEVEL_METADATA_MAX_ZIP_FILES = 240
 private const val LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES = 256L * 1024L * 1024L
@@ -27,6 +33,12 @@ private const val LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES = 64L * 1024L * 1024L
 private const val LEVEL_METADATA_D1_PROCESS_SUFFIX = ":levelmeta_d1"
 private const val LEVEL_METADATA_D2_PROCESS_SUFFIX = ":levelmeta_d2"
 private const val LEVEL_METADATA_CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1_000L
+private const val LEVEL_METADATA_WORKER_FILE = "worker.json"
+private const val LEVEL_METADATA_QUEUED_FILE = "queued.json"
+private const val LEVEL_METADATA_CANCELLATION_FILE = "cancel"
+private const val LEVEL_METADATA_WORKER_OWNER_D1_FILE = "worker-owner-d1.json"
+private const val LEVEL_METADATA_WORKER_OWNER_D2_FILE = "worker-owner-d2.json"
+private const val LEVEL_METADATA_WORKER_IDENTITY_MAX_BYTES = 4_096L
 
 internal data class LevelMetadataTarget(
     val displayName: String,
@@ -89,6 +101,117 @@ internal class LevelMetadataProgressDeadline(
 
     fun isExpired(nowMs: Long): Boolean = nowMs >= deadlineMs
 }
+
+internal data class LevelMetadataWorkerIdentity(
+    val requestId: String,
+    val pid: Int,
+    val processStartTicks: Long,
+) {
+    fun matches(
+        expectedRequestId: String,
+        runningPid: Int,
+        runningStartTicks: Long?,
+    ): Boolean =
+        requestId == expectedRequestId &&
+            pid == runningPid &&
+            runningStartTicks == processStartTicks
+
+    fun toJson(): String =
+        JSONObject()
+            .put("request_id", requestId)
+            .put("pid", pid)
+            .put("process_start_ticks", processStartTicks)
+            .toString(2) + "\n"
+
+    companion object {
+        fun fromJson(text: String): LevelMetadataWorkerIdentity? =
+            runCatching {
+                val json = JSONObject(text)
+                val requestId = json.optString("request_id")
+                val pid = json.optInt("pid", -1)
+                val processStartTicks = json.optLong("process_start_ticks", -1L)
+                if (requestId.isBlank() || pid <= 0 || processStartTicks < 0L) return@runCatching null
+                LevelMetadataWorkerIdentity(requestId, pid, processStartTicks)
+            }.getOrNull()
+    }
+}
+
+internal object LevelMetadataWorkerOwnerStore {
+    @Synchronized
+    fun publish(
+        file: File,
+        identity: LevelMetadataWorkerIdentity,
+    ) {
+        file.parentFile?.mkdirs()
+        RandomAccessFile(file, "rw").use { owner ->
+            owner.channel.lock().use {
+                owner.setLength(0)
+                owner.write(identity.toJson().toByteArray(Charsets.UTF_8))
+                owner.fd.sync()
+            }
+        }
+    }
+
+    @Synchronized
+    fun read(file: File): LevelMetadataWorkerIdentity? {
+        if (!file.isFile) return null
+        return runCatching {
+            RandomAccessFile(file, "rw").use { owner ->
+                owner.channel.lock().use { readLocked(owner) }
+            }
+        }.getOrNull()
+    }
+
+    @Synchronized
+    fun clearIfOwned(
+        file: File,
+        identity: LevelMetadataWorkerIdentity,
+    ) {
+        if (!file.isFile) return
+        runCatching {
+            RandomAccessFile(file, "rw").use { owner ->
+                owner.channel.lock().use {
+                    if (readLocked(owner) == identity) {
+                        owner.setLength(0)
+                        owner.fd.sync()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun readLocked(owner: RandomAccessFile): LevelMetadataWorkerIdentity? {
+        val length = owner.length()
+        if (length <= 0L || length > LEVEL_METADATA_WORKER_IDENTITY_MAX_BYTES) return null
+        val bytes = ByteArray(length.toInt())
+        owner.seek(0)
+        owner.readFully(bytes)
+        return LevelMetadataWorkerIdentity.fromJson(bytes.toString(Charsets.UTF_8))
+    }
+}
+
+internal fun parseProcessStartTicks(stat: String): Long? {
+    val commandEnd = stat.lastIndexOf(')')
+    if (commandEnd < 0 || commandEnd + 1 >= stat.length) return null
+    val fields = stat.substring(commandEnd + 1).trim().split(Regex("\\s+"))
+    return fields.getOrNull(19)?.toLongOrNull()?.takeIf { it >= 0L }
+}
+
+private fun processStartTicks(pid: Int): Long? =
+    runCatching { parseProcessStartTicks(File("/proc/$pid/stat").readText(Charsets.US_ASCII)) }.getOrNull()
+
+private fun workerOwnerFile(
+    cacheRoot: File,
+    game: String,
+): File =
+    File(
+        cacheRoot,
+        if (game == GameFileFormats.GAME_D1) {
+            LEVEL_METADATA_WORKER_OWNER_D1_FILE
+        } else {
+            LEVEL_METADATA_WORKER_OWNER_D2_FILE
+        },
+    )
 
 internal data class LevelMetadataRouteOpenLink(
     val seg: Int = -1,
@@ -809,87 +932,109 @@ internal object LevelMetadataAnalyzer {
             val resultFile = File(workDir, "result.json")
             val checkpointFile = File(workDir, "checkpoint.json")
             val requestFile = File(workDir, "request.json")
+            val workerFile = File(workDir, LEVEL_METADATA_WORKER_FILE)
+            val queuedFile = File(workDir, LEVEL_METADATA_QUEUED_FILE)
+            val cancellationFile = File(workDir, LEVEL_METADATA_CANCELLATION_FILE)
+            val ownerFile = workerOwnerFile(cacheRoot, target.game)
             val startedAt = System.currentTimeMillis()
-            progress("Preparing analysis files", 0)
-            val request =
+            var workerStarted = false
+            try {
+                progress("Preparing analysis files", 0)
+                val request =
+                    try {
+                        buildRequestJson(target, requestId, workDir, resultFile, checkpointFile)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        return@withContext LevelMetadataResult.failed(
+                            target.displayName,
+                            target.game,
+                            e.message ?: e.javaClass.simpleName,
+                        )
+                    }
+
+                progress("Writing analysis request", 1)
                 try {
-                    buildRequestJson(target, requestId, workDir, resultFile, checkpointFile)
+                    OwnedCacheDirectories.writeUtf8Atomically(workDir, requestFile.name, request.toString(2) + "\n")
+                    val intent =
+                        Intent(appContext, serviceClassForGame(target.game))
+                            .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
+                    progress("Starting analysis worker", 2)
+                    appContext.startService(intent)
+                    workerStarted = true
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    OwnedCacheDirectories.delete(cacheRoot, workDir)
                     return@withContext LevelMetadataResult.failed(
                         target.displayName,
                         target.game,
                         e.message ?: e.javaClass.simpleName,
                     )
                 }
-
-            progress("Writing analysis request", 1)
-            try {
-                OwnedCacheDirectories.writeUtf8Atomically(workDir, requestFile.name, request.toString(2) + "\n")
-                val intent =
-                    Intent(appContext, serviceClassForGame(target.game))
-                        .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
-                progress("Starting analysis worker", 2)
-                appContext.startService(intent)
-            } catch (e: Exception) {
-                OwnedCacheDirectories.delete(cacheRoot, workDir)
-                return@withContext LevelMetadataResult.failed(
-                    target.displayName,
-                    target.game,
-                    e.message ?: e.javaClass.simpleName,
-                )
-            }
-            val workerStartedAt = SystemClock.elapsedRealtime()
-            val progressDeadline = LevelMetadataProgressDeadline(workerStartedAt)
-            if (expectedLevelCount > 0) {
-                onProgress(
-                    LevelMetadataAnalysisProgress(
-                        overall = MetadataLoadProgress("Overall analysis", 0, expectedLevelCount),
-                        currentLevel = MetadataLoadProgress("Starting first level", 0, 0),
-                    ),
-                )
-            } else {
-                progress("Scanning levels", 3)
-            }
-            var lastCheckpoint = ""
-
-            while (true) {
-                if (resultFile.isFile) {
-                    completedLevelCount = expectedLevelCount
-                    progress("Reading analysis result", 4)
-                    val parsed = parseResultFile(target, resultFile)
-                    progress("Analysis complete", 5)
-                    OwnedCacheDirectories.delete(cacheRoot, workDir)
-                    return@withContext parsed
+                val workerStartedAt = SystemClock.elapsedRealtime()
+                val progressDeadline = LevelMetadataProgressDeadline(workerStartedAt)
+                if (expectedLevelCount > 0) {
+                    onProgress(
+                        LevelMetadataAnalysisProgress(
+                            overall = MetadataLoadProgress("Overall analysis", 0, expectedLevelCount),
+                            currentLevel = MetadataLoadProgress("Starting first level", 0, 0),
+                        ),
+                    )
+                } else {
+                    progress("Scanning levels", 3)
                 }
-                if (checkpointFile.isFile) {
-                    runCatching { checkpointFile.readText(Charsets.UTF_8) }
-                        .getOrNull()
-                        ?.takeIf { it != lastCheckpoint }
-                        ?.let { checkpoint ->
-                            lastCheckpoint = checkpoint
-                            parseLevelMetadataCheckpointUpdate(checkpoint)?.let { update ->
-                                progressDeadline.observe(update, SystemClock.elapsedRealtime())
-                                completedLevelCount =
-                                    maxOf(completedLevelCount, update.analysisProgress.overall.completed)
-                                onProgress(update.analysisProgress)
+                var lastCheckpoint = ""
+
+                while (true) {
+                    if (resultFile.isFile) {
+                        completedLevelCount = expectedLevelCount
+                        progress("Reading analysis result", 4)
+                        val parsed = parseResultFile(target, resultFile)
+                        progress("Analysis complete", 5)
+                        return@withContext parsed
+                    }
+                    if (checkpointFile.isFile) {
+                        runCatching { checkpointFile.readText(Charsets.UTF_8) }
+                            .getOrNull()
+                            ?.takeIf { it != lastCheckpoint }
+                            ?.let { checkpoint ->
+                                lastCheckpoint = checkpoint
+                                parseLevelMetadataCheckpointUpdate(checkpoint)?.let { update ->
+                                    progressDeadline.observe(update, SystemClock.elapsedRealtime())
+                                    completedLevelCount =
+                                        maxOf(completedLevelCount, update.analysisProgress.overall.completed)
+                                    onProgress(update.analysisProgress)
+                                }
                             }
-                        }
+                    }
+                    if (!isOwnedWorkerProcessRunning(
+                            appContext,
+                            target.game,
+                            requestId,
+                            workerFile,
+                            queuedFile,
+                            ownerFile,
+                        ) &&
+                        SystemClock.elapsedRealtime() - workerStartedAt > LEVEL_METADATA_WORKER_START_TIMEOUT_MS
+                    ) {
+                        break
+                    }
+                    if (progressDeadline.isExpired(SystemClock.elapsedRealtime())) break
+                    delay(LEVEL_METADATA_POLL_MS)
                 }
-                if (!isWorkerProcessRunning(appContext, target.game) &&
-                    SystemClock.elapsedRealtime() - workerStartedAt > 1_000L
-                ) {
-                    break
-                }
-                if (progressDeadline.isExpired(SystemClock.elapsedRealtime())) break
-                delay(LEVEL_METADATA_POLL_MS)
-            }
 
-            killWorkerProcess(appContext, target.game)
-            progress("Collecting diagnostics", 4)
-            val diagnostics = collectDiagnostics(appContext, startedAt, checkpointFile)
-            val status = if (diagnostics.any { it.contains("crash", ignoreCase = true) }) "crashed" else "timeout"
-            val failed =
+                cancelOwnedWorker(
+                    appContext,
+                    target.game,
+                    requestId,
+                    workerFile,
+                    queuedFile,
+                    ownerFile,
+                    cancellationFile,
+                )
+                progress("Collecting diagnostics", 4)
+                val diagnostics = collectDiagnostics(appContext, startedAt, checkpointFile)
+                val status = if (diagnostics.any { it.contains("crash", ignoreCase = true) }) "crashed" else "timeout"
                 LevelMetadataResult.failed(
                     target.displayName,
                     target.game,
@@ -897,8 +1042,22 @@ internal object LevelMetadataAnalyzer {
                     diagnostics,
                     status,
                 )
-            OwnedCacheDirectories.delete(cacheRoot, workDir)
-            failed
+            } finally {
+                withContext(NonCancellable) {
+                    if (workerStarted) {
+                        cancelOwnedWorker(
+                            appContext,
+                            target.game,
+                            requestId,
+                            workerFile,
+                            queuedFile,
+                            ownerFile,
+                            cancellationFile,
+                        )
+                    }
+                    OwnedCacheDirectories.delete(cacheRoot, workDir)
+                }
+            }
         }
 
     internal fun parseLevelMetadataCheckpointProgress(text: String): MetadataLoadProgress? =
@@ -1251,21 +1410,86 @@ internal object LevelMetadataAnalyzer {
                 .forEach { add("Crash report saved: ${it.name}") }
         }
 
-    private fun isWorkerProcessRunning(
-        context: Context,
-        game: String,
-    ): Boolean = levelMetadataWorkerProcess(context, game) != null
-
-    private fun killWorkerProcess(
-        context: Context,
-        game: String,
-    ) {
-        levelMetadataWorkerProcess(context, game)?.let { Process.killProcess(it.pid) }
+    private fun requestWorkerCancellation(cancellationFile: File) {
+        runCatching {
+            if (cancellationFile.parentFile?.isDirectory == true) cancellationFile.createNewFile()
+        }
     }
+
+    private suspend fun cancelOwnedWorker(
+        context: Context,
+        game: String,
+        requestId: String,
+        workerFile: File,
+        queuedFile: File,
+        ownerFile: File,
+        cancellationFile: File,
+    ) {
+        requestWorkerCancellation(cancellationFile)
+        val identityWasPublished = workerFile.isFile
+        if (!identityWasPublished) return
+        repeat(10) {
+            killOwnedWorkerProcess(context, game, requestId, workerFile, ownerFile)
+            delay(LEVEL_METADATA_POLL_MS)
+            if (!isOwnedWorkerProcessRunning(context, game, requestId, workerFile, queuedFile, ownerFile)) return
+        }
+    }
+
+    private fun isOwnedWorkerProcessRunning(
+        context: Context,
+        game: String,
+        requestId: String,
+        workerFile: File,
+        queuedFile: File,
+        ownerFile: File,
+    ): Boolean {
+        readWorkerIdentity(workerFile)?.let { identity ->
+            if (LevelMetadataWorkerOwnerStore.read(ownerFile) != identity) return false
+            return identityMatchesProcess(context, game, requestId, identity)
+        }
+        val queuedIdentity = readWorkerIdentity(queuedFile) ?: return false
+        return identityMatchesProcess(context, game, requestId, queuedIdentity)
+    }
+
+    private fun identityMatchesProcess(
+        context: Context,
+        game: String,
+        requestId: String,
+        identity: LevelMetadataWorkerIdentity,
+    ): Boolean {
+        val process = levelMetadataWorkerProcess(context, game, identity.pid) ?: return false
+        val runningStartTicks = processStartTicks(process.pid)
+        return identity.requestId == requestId &&
+            identity.pid == process.pid &&
+            (runningStartTicks == null || runningStartTicks == identity.processStartTicks)
+    }
+
+    private fun killOwnedWorkerProcess(
+        context: Context,
+        game: String,
+        requestId: String,
+        workerFile: File,
+        ownerFile: File,
+    ) {
+        val identity = readWorkerIdentity(workerFile) ?: return
+        if (LevelMetadataWorkerOwnerStore.read(ownerFile) != identity) return
+        val process = levelMetadataWorkerProcess(context, game, identity.pid) ?: return
+        val runningStartTicks = processStartTicks(process.pid)
+        if (identity.requestId == requestId &&
+            identity.pid == process.pid &&
+            (runningStartTicks == null || runningStartTicks == identity.processStartTicks)
+        ) {
+            Process.killProcess(process.pid)
+        }
+    }
+
+    private fun readWorkerIdentity(workerFile: File): LevelMetadataWorkerIdentity? =
+        runCatching { LevelMetadataWorkerIdentity.fromJson(workerFile.readText(Charsets.UTF_8)) }.getOrNull()
 
     private fun levelMetadataWorkerProcess(
         context: Context,
         game: String,
+        pid: Int,
     ): ActivityManager.RunningAppProcessInfo? {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
         val processName =
@@ -1275,7 +1499,7 @@ internal object LevelMetadataAnalyzer {
                 } else {
                     LEVEL_METADATA_D2_PROCESS_SUFFIX
                 }
-        return activityManager.runningAppProcesses?.firstOrNull { it.processName == processName }
+        return activityManager.runningAppProcesses?.firstOrNull { it.pid == pid && it.processName == processName }
     }
 }
 
@@ -1320,7 +1544,73 @@ internal object LevelMetadataAnalysisSingleFlight {
     }
 }
 
+internal class LevelMetadataServiceLifetime {
+    private var latestStartId = 0
+    private var pendingCommands = 0
+
+    @Synchronized
+    fun started(startId: Int) {
+        require(startId > 0)
+        latestStartId = maxOf(latestStartId, startId)
+        pendingCommands++
+    }
+
+    @Synchronized
+    fun completed(): Int? {
+        check(pendingCommands > 0)
+        pendingCommands--
+        return if (pendingCommands == 0) latestStartId else null
+    }
+}
+
+internal class LevelMetadataServiceCommandQueue(
+    private val onDrained: (Int) -> Unit,
+    private val executor: ExecutorService =
+        Executors.newSingleThreadExecutor { command ->
+            Thread(command, "level-metadata-command")
+        },
+) {
+    private val lifetime = LevelMetadataServiceLifetime()
+
+    fun submit(
+        startId: Int,
+        command: () -> Unit,
+    ) {
+        lifetime.started(startId)
+        try {
+            executor.execute {
+                try {
+                    command()
+                } finally {
+                    completeCommand()
+                }
+            }
+        } catch (e: RuntimeException) {
+            completeCommand()
+            throw e
+        }
+    }
+
+    fun shutdown() {
+        executor.shutdown()
+    }
+
+    private fun completeCommand() {
+        lifetime.completed()?.let(onDrained)
+    }
+}
+
 open class LevelMetadataAnalysisService : Service() {
+    private lateinit var commandQueue: LevelMetadataServiceCommandQueue
+
+    override fun onCreate() {
+        super.onCreate()
+        commandQueue =
+            LevelMetadataServiceCommandQueue(
+                onDrained = { startId -> stopSelfResult(startId) },
+            )
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(
@@ -1330,31 +1620,101 @@ open class LevelMetadataAnalysisService : Service() {
     ): Int {
         val requestPath = intent?.getStringExtra(EXTRA_REQUEST_PATH)
         if (requestPath == null) {
-            stopSelf(startId)
+            commandQueue.submit(startId) {}
             return START_NOT_STICKY
         }
-        Thread {
-            val requestFile = File(requestPath)
-            if (!LevelMetadataAnalysisSingleFlight.tryEnter()) {
-                runCatching { writeBusyResult(requestFile) }
-                    .onFailure { Log.e(TAG, "Level metadata busy result failed", it) }
-                stopSelf(startId)
-                return@Thread
-            }
+        val requestFile = File(requestPath)
+        val queuedFile = File(requestFile.parentFile, LEVEL_METADATA_QUEUED_FILE)
+        runCatching { publishQueuedIdentity(requestFile, queuedFile) }
+            .onFailure { Log.e(TAG, "Level metadata queue publication failed", it) }
+        commandQueue.submit(startId) {
             try {
-                runCatching { runAnalysis(requestFile) }
-                    .onFailure { Log.e(TAG, "Level metadata analysis failed", it) }
+                if (!LevelMetadataAnalysisSingleFlight.tryEnter()) {
+                    runCatching { writeBusyResult(requestFile) }
+                        .onFailure { Log.e(TAG, "Level metadata busy result failed", it) }
+                    return@submit
+                }
+                try {
+                    runCatching { runOwnedAnalysis(requestFile, queuedFile) }
+                        .onFailure { Log.e(TAG, "Level metadata analysis failed", it) }
+                } finally {
+                    LevelMetadataAnalysisSingleFlight.exit()
+                }
             } finally {
-                LevelMetadataAnalysisSingleFlight.exit()
-                stopSelf(startId)
+                queuedFile.delete()
             }
-        }.start()
+        }
         return START_NOT_STICKY
     }
 
-    private fun runAnalysis(requestFile: File) {
+    override fun onDestroy() {
+        commandQueue.shutdown()
+        super.onDestroy()
+    }
+
+    private fun publishQueuedIdentity(
+        requestFile: File,
+        queuedFile: File,
+    ) {
+        val workDir = requestFile.parentFile ?: error("Level metadata request directory is missing")
+        val requestId = workDir.name
+        val pid = Process.myPid()
+        val startTicks = processStartTicks(pid) ?: error("Could not identify level metadata service process")
+        OwnedCacheDirectories.writeUtf8Atomically(
+            workDir,
+            queuedFile.name,
+            LevelMetadataWorkerIdentity(requestId, pid, startTicks).toJson(),
+        )
+    }
+
+    private fun runOwnedAnalysis(
+        requestFile: File,
+        queuedFile: File,
+    ) {
         val requestJson = requestFile.readText(Charsets.UTF_8)
         val request = JSONObject(requestJson)
+        val requestId = request.optString("request_id")
+        val workDir = requestFile.parentFile ?: error("Level metadata request directory is missing")
+        require(requestId.isNotBlank() && requestId == workDir.name) { "Invalid level metadata request identity" }
+        val cancellationFile = File(workDir, LEVEL_METADATA_CANCELLATION_FILE)
+        if (cancellationFile.exists()) return
+        val pid = Process.myPid()
+        val startTicks = processStartTicks(pid) ?: error("Could not identify level metadata worker process")
+        val identity = LevelMetadataWorkerIdentity(requestId, pid, startTicks)
+        val ownerFile =
+            workerOwnerFile(
+                workDir.parentFile ?: error("Level metadata cache root is missing"),
+                request.optString("game"),
+            )
+        LevelMetadataWorkerOwnerStore.publish(ownerFile, identity)
+        try {
+            val workerFile =
+                OwnedCacheDirectories.writeUtf8Atomically(
+                    workDir,
+                    LEVEL_METADATA_WORKER_FILE,
+                    identity.toJson(),
+                )
+            queuedFile.delete()
+            if (cancellationFile.exists()) {
+                workerFile.delete()
+                return
+            }
+            val watchdog = startWatchdog(request, cancellationFile)
+            try {
+                runAnalysis(requestJson, request)
+            } finally {
+                watchdog.interrupt()
+                workerFile.delete()
+            }
+        } finally {
+            LevelMetadataWorkerOwnerStore.clearIfOwned(ownerFile, identity)
+        }
+    }
+
+    private fun runAnalysis(
+        requestJson: String,
+        request: JSONObject,
+    ) {
         val resultPath = request.optString("result_path")
         val resultFile = File(resultPath)
         val result =
@@ -1366,6 +1726,48 @@ open class LevelMetadataAnalysisService : Service() {
             }
         writeResult(resultFile, result)
     }
+
+    private fun startWatchdog(
+        request: JSONObject,
+        cancellationFile: File,
+    ): Thread =
+        Thread {
+            val deadline = LevelMetadataProgressDeadline(SystemClock.elapsedRealtime())
+            val checkpointFile = File(request.optString("checkpoint_path"))
+            var lastCheckpoint = ""
+            while (!Thread.currentThread().isInterrupted) {
+                if (cancellationFile.exists()) {
+                    Log.w(TAG, "Canceling level metadata worker")
+                    Process.killProcess(Process.myPid())
+                    return@Thread
+                }
+                if (checkpointFile.isFile) {
+                    runCatching { checkpointFile.readText(Charsets.UTF_8) }
+                        .getOrNull()
+                        ?.takeIf { it != lastCheckpoint }
+                        ?.let { checkpoint ->
+                            lastCheckpoint = checkpoint
+                            LevelMetadataAnalyzer.parseLevelMetadataCheckpointUpdate(checkpoint)?.let { update ->
+                                deadline.observe(update, SystemClock.elapsedRealtime())
+                            }
+                        }
+                }
+                if (deadline.isExpired(SystemClock.elapsedRealtime())) {
+                    Log.e(TAG, "Level metadata worker deadline expired")
+                    Process.killProcess(Process.myPid())
+                    return@Thread
+                }
+                try {
+                    Thread.sleep(LEVEL_METADATA_POLL_MS)
+                } catch (_: InterruptedException) {
+                    return@Thread
+                }
+            }
+        }.apply {
+            name = "level-metadata-watchdog"
+            isDaemon = true
+            start()
+        }
 
     private fun writeBusyResult(requestFile: File) {
         val requestJson = requestFile.readText(Charsets.UTF_8)
