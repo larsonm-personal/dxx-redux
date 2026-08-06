@@ -229,6 +229,40 @@ static int duplicate_primary_gives_energy(int weapon_index)
 	       ((Game_mode & GM_MULTI_COOP) && all_coop_players_have_primary(weapon_index));
 }
 
+static int duplicate_laser_gives_energy(int laser_level)
+{
+	int i;
+
+	if (!(Game_mode & GM_MULTI))
+		return 1;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return 0;
+
+	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
+		if (Players[i].connected != CONNECT_DISCONNECTED &&
+		    Players[i].laser_level < laser_level)
+			return 0;
+
+	return 1;
+}
+
+static int duplicate_flag_gives_energy(int flag)
+{
+	int i;
+
+	if (!(Game_mode & GM_MULTI))
+		return 1;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return 0;
+
+	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
+		if (Players[i].connected != CONNECT_DISCONNECTED &&
+		    !(Players[i].flags & flag))
+			return 0;
+
+	return 1;
+}
+
 int pick_up_vulcan_ammo(void)
 {
 	int	used=0,max;
@@ -344,7 +378,7 @@ int do_powerup(object *obj)
 				if (Game_mode & GM_MULTI)
 					multi_send_ship_status();
 			}
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_laser_gives_energy(MAX_LASER_LEVEL))
 				used = pick_up_energy();
 			break;
 		case POW_MISSILE_1:
@@ -424,11 +458,13 @@ int do_powerup(object *obj)
 				update_laser_weapon_info();
 				used=1;
 
-				if (Game_mode & GM_MULTI)
+				if (Game_mode & GM_MULTI) {
+					multi_send_flags(Player_num);
 					multi_send_ship_status();
+				}
 			} else
 				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!",TXT_ALREADY_HAVE,TXT_QUAD_LASERS);
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_flag_gives_energy(PLAYER_FLAGS_QUAD_LASERS))
 				used = pick_up_energy();
 			break;
 
@@ -593,19 +629,21 @@ int do_powerup(object *obj)
 		case POW_FULL_MAP:
 			if (Players[Player_num].flags & PLAYER_FLAGS_MAP_ALL) {
 				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!",TXT_ALREADY_HAVE,"the FULL MAP");
-				if (!(Game_mode & GM_MULTI) )
+				if (duplicate_flag_gives_energy(PLAYER_FLAGS_MAP_ALL))
 					used = pick_up_energy();
 			} else {
 				Players[Player_num].flags |= PLAYER_FLAGS_MAP_ALL;
 				powerup_basic(15, 0, 15, 0, "FULL MAP!");
 				used=1;
+				if (Game_mode & GM_MULTI)
+					multi_send_flags(Player_num);
 			}
 			break;
 
 		case POW_CONVERTER:
 			if (Players[Player_num].flags & PLAYER_FLAGS_CONVERTER) {
 				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!",TXT_ALREADY_HAVE,"the Converter");
-				if (!(Game_mode & GM_MULTI) )
+				if (duplicate_flag_gives_energy(PLAYER_FLAGS_CONVERTER))
 					used = pick_up_energy();
 			} else {
 				Players[Player_num].flags |= PLAYER_FLAGS_CONVERTER;
@@ -613,6 +651,8 @@ int do_powerup(object *obj)
 
 
 				used=1;
+				if (Game_mode & GM_MULTI)
+					multi_send_flags(Player_num);
 			}
 			break;
 
@@ -634,14 +674,14 @@ int do_powerup(object *obj)
 			      check_to_use_primary (SUPER_LASER_INDEX);
 				used=1;
 			}
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_laser_gives_energy(MAX_SUPER_LASER_LEVEL))
 				used = pick_up_energy();
 			break;
 
 		case POW_AMMO_RACK:
 			if (Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK) {
 				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!",TXT_ALREADY_HAVE,"the Ammo rack");
-				if (!(Game_mode & GM_MULTI) )
+				if (duplicate_flag_gives_energy(PLAYER_FLAGS_AMMO_RACK))
 					used = pick_up_energy();
 			}
 			else {
@@ -652,13 +692,15 @@ int do_powerup(object *obj)
 				digi_play_sample( Powerup_info[obj->id].hit_sound, F1_0 );
 				powerup_basic(15, 0, 15, 0, "AMMO RACK!");
 				used=1;
+				if (Game_mode & GM_MULTI)
+					multi_send_flags(Player_num);
 			}
 			break;
 
 		case POW_AFTERBURNER:
 			if (Players[Player_num].flags & PLAYER_FLAGS_AFTERBURNER) {
 				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!",TXT_ALREADY_HAVE,"the Afterburner");
-				if (!(Game_mode & GM_MULTI) )
+				if (duplicate_flag_gives_energy(PLAYER_FLAGS_AFTERBURNER))
 					used = pick_up_energy();
 			}
 			else {
@@ -671,8 +713,10 @@ int do_powerup(object *obj)
 				Players[Player_num].afterburner_charge = f1_0;
 				used=1;
 #ifdef NETWORK
-				if (Game_mode & GM_MULTI)
+				if (Game_mode & GM_MULTI) {
+					multi_send_flags(Player_num);
 					multi_send_ship_status();
+				}
 #endif
 			}
 			break;
@@ -680,7 +724,7 @@ int do_powerup(object *obj)
 		case POW_HEADLIGHT:
 			if (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT) {
 				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!",TXT_ALREADY_HAVE,"the Headlight boost");
-				if (!(Game_mode & GM_MULTI) )
+				if (duplicate_flag_gives_energy(PLAYER_FLAGS_HEADLIGHT))
 					used = pick_up_energy();
 			}
 			else {
