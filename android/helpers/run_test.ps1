@@ -71,6 +71,22 @@ function Send-SetupCommand {
     ) | Out-Null
 }
 
+function Resolve-GameDataDepsWithEmulatorRecovery {
+    param([Parameter(Mandatory = $true)][array]$Deps)
+
+    if (Resolve-GameDataDeps -Deps $Deps) {
+        return $true
+    }
+    if (Test-EmulatorHealthy) {
+        return $false
+    }
+
+    Write-Status "Emulator became unhealthy during game data resolution -- recovering before test start" "Yellow"
+    Ensure-EmulatorHealthy | Out-Null
+    Write-Status "Retrying game data resolution after emulator recovery" "Yellow"
+    return (Resolve-GameDataDeps -Deps $Deps)
+}
+
 # -- Preflight script metadata --------------------------------
 
 $scriptPath = Join-RegressionPath $scriptDir "game_scripts" $ScriptName
@@ -92,7 +108,7 @@ if (-not $isStandaloneScript) {
 
 # -- Step 1: Health check -------------------------------------
 
-Ensure-EmulatorHealthy
+Ensure-EmulatorHealthy | Out-Null
 
 # -- Step 2: Install APK if requested ------------------------
 
@@ -226,7 +242,7 @@ foreach ($gameId in $gameList) {
     $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars
     if ($deps) {
         Write-Status "Resolving $($deps.Count) declared game data deps..."
-        if (-not (Resolve-GameDataDeps -Deps $deps)) {
+        if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
             if (-not $isInteractive) {
                 Write-Status "SKIP: deps unavailable in non-interactive mode" "Yellow"
                 Write-Host "RESULT: SKIP (declared game-data dependencies unavailable)"
@@ -293,7 +309,7 @@ foreach ($gameId in $gameList) {
             Install-ApkOnDevice | Out-Null
             if ($deps) {
                 Write-Status "Re-provisioning declared game data deps after launcher recovery"
-                if (-not (Resolve-GameDataDeps -Deps $deps)) {
+                if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
                     $launcherRecoveryFailed = $true
                     break
                 }

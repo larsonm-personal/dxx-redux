@@ -69,7 +69,7 @@
     },
     {
       "key": "-MOON-.json|6|1|-moon07-.rl2",
-      "hash": "052a6d0c4d15ab78b0fce2df83955b834c2cd9f9b1c9e41aed8e3f85adace298",
+      "hash": "71895952ca11fb9beccb66dbabb5628a7efea3a511eabad44b47a388ac88a707",
       "status": "ok",
       "step_count": 12
     },
@@ -87,9 +87,9 @@
     },
     {
       "key": "-MOON-.json|9|1|-moon10-.rl2",
-      "hash": "536be2810b2fe6ceb49cbda3c616464fa6a500e95e72fae2c303d0c28cbe7179",
+      "hash": "965da5941a76e8da00d8aa92a1952879d3b7fb0dfe5fe839d34915c5a203b80e",
       "status": "ok",
-      "step_count": 14
+      "step_count": 12
     },
     {
       "key": "af_d1_beta.json|0|1|sdg22.rdl",
@@ -165,7 +165,7 @@
     },
     {
       "key": "af-d2x.json|0|11|aurabyss.rl2",
-      "hash": "f81610ae15d83cea81b7f1f814034b99707710abc50b021bcf420a312f8c4217",
+      "hash": "f7f7ea653fa1d248adc853b819c8427d159055090ca8f2636fc50a517c6c7a7c",
       "status": "ok",
       "step_count": 10
     },
@@ -231,9 +231,9 @@
     },
     {
       "key": "af-d2x.json|0|8|ganeshd.rl2",
-      "hash": "a73b5d29b43197b3b2e044543a2857ecdd4d80726e126f3b2ccad0a6633f042c",
+      "hash": "2cde44699de7bcda7a31f8e4e4857bbe78a98ab713f0c8d1efa8e18f3dcc9fbc",
       "status": "ok",
-      "step_count": 8
+      "step_count": 7
     },
     {
       "key": "af-d2x.json|0|9|lakshmid.rl2",
@@ -1023,9 +1023,9 @@
     },
     {
       "key": "CD - Descent - Levels of the World (USA).json|25|1|cicero.rdl",
-      "hash": "35efd3e9ff6421715350651470174f1c922702741177635388a5284bb2346a56",
+      "hash": "4a097d0b4a01529d8f62bdc92095e7be82503167a859e3caa8e3b074bc7e9d7f",
       "status": "ok",
-      "step_count": 11
+      "step_count": 9
     },
     {
       "key": "CD - Descent - Levels of the World (USA).json|26|1|cod.rdl",
@@ -1041,7 +1041,7 @@
     },
     {
       "key": "CD - Descent - Levels of the World (USA).json|28|1|CORKSCRW.RDL",
-      "hash": "8b82a595fb189106339f69b08f30bd0b5465f1fdc838d3757a772380e7180940",
+      "hash": "e0f11648a41bf0ea8c15894fc51877db34ba15f6fbfb0e09092ed125ed5c2429",
       "status": "ok",
       "step_count": 10
     },
@@ -1329,7 +1329,7 @@
     },
     {
       "key": "CD - Descent - Levels of the World (USA).json|65|1|nexus.rdl",
-      "hash": "8012360c10d4ccce0916eddafe327cc46c885994ffae8a50104d55ae9f41510a",
+      "hash": "7dbce9c1be9289a3cee7314cd5c8a1ce40cf1e7a81c64618de544b6f8b9d640f",
       "status": "ok",
       "step_count": 5
     },
@@ -1677,9 +1677,9 @@
     },
     {
       "key": "CD - Descent II - The Vertigo Series (USA).json|0|7|d2xlvl07.rl2",
-      "hash": "6547bff9781db6b4b66c9da31bda7cb80ecc74e63a9d3dd3bafc1fae981d4d48",
+      "hash": "d747fb24664e8d74502387d30e65ac048e2866569f26408a3dee57f9dae41a2e",
       "status": "ok",
-      "step_count": 10
+      "step_count": 9
     },
     {
       "key": "CD - Descent II - The Vertigo Series (USA).json|0|8|d2xlvl08.rl2",
@@ -2337,9 +2337,9 @@
     },
     {
       "key": "Counterstrike.json|0|11|d2levc-3.rl2",
-      "hash": "8608c3710946b6a299f2e34853240e4dec1cdcfb10595d542b88c4c5bd88eaa6",
+      "hash": "61f0c859ad8e8b61344f6a3ac778a6ced30392f7bfa2c56b720edb6e7ccc8c70",
       "status": "ok",
-      "step_count": 12
+      "step_count": 11
     },
     {
       "key": "Counterstrike.json|0|12|d2levc-4.rl2",
@@ -2349,13 +2349,13 @@
     },
     {
       "key": "Counterstrike.json|0|13|d2levd-1.rl2",
-      "hash": "543d976b60379d8eaf236c0aa2530f2385b2299d9b9934f5506b3714d4f03fc1",
+      "hash": "11358fa644c1219baf76d7ecf4b203cd977097baf4b40acb99f9221d507ccd01",
       "status": "ok",
-      "step_count": 8
+      "step_count": 6
     },
     {
       "key": "Counterstrike.json|0|14|d2levd-2.rl2",
-      "hash": "2e531938abbdca17bd1ef4b44ba9d99b95de86156f4a545f315626d2ee7d483f",
+      "hash": "93ac8915b296eec19a9b8f13e6c3294eb54a56f8a6ef186c9ce7ba030fb0b73d",
       "status": "ok",
       "step_count": 7
     },
@@ -2373,9 +2373,9 @@
     },
     {
       "key": "Counterstrike.json|0|17|d2leve-1.rl2",
-      "hash": "c89f8eca731e2c0728be31daddb0337c3b12779d09cb438fd130a0e658a50de8",
+      "hash": "0c3b134ddfc9213e728eae57e7350b2052ef2df8396f43aa797461e76c486196",
       "status": "ok",
-      "step_count": 10
+      "step_count": 7
     },
     {
       "key": "Counterstrike.json|0|18|d2leve-2.rl2",
@@ -2409,7 +2409,7 @@
     },
     {
       "key": "Counterstrike.json|0|22|d2levf-2.rl2",
-      "hash": "670076d0469508837204525fa2646ea8160a6c73ee9592f88eaae1615c8437df",
+      "hash": "775ee36e1057fb345c877c9b928ac25a4acbab16c632db242d69992350feb797",
       "status": "ok",
       "step_count": 9
     },
@@ -2445,9 +2445,9 @@
     },
     {
       "key": "Counterstrike.json|0|6|d2levb-2.rl2",
-      "hash": "1066e96893e5a141d06d6f5ebfedd814a22c9206b4aa77b366bbef609ecb25cb",
+      "hash": "0bff5bb55d022b0ab1aedd0ffe00b6c8d7d6941ff511bf5bd8eb5de22c2a6169",
       "status": "ok",
-      "step_count": 7
+      "step_count": 6
     },
     {
       "key": "Counterstrike.json|0|7|d2levb-3.rl2",
@@ -2565,9 +2565,9 @@
     },
     {
       "key": "d1mercen.json|0|1|merc01.rdl",
-      "hash": "bd915a030ca43bdaaf6d2f89ca14feee419b14efec74443264749e94441c5f99",
+      "hash": "69868b69b15c5d2a444f803e0d8f7707574de4298a283c0341d1c0c7a321de2a",
       "status": "ok",
-      "step_count": 7
+      "step_count": 6
     },
     {
       "key": "d1mercen.json|1|1|merc02.rdl",
@@ -2667,7 +2667,7 @@
     },
     {
       "key": "D2Crossfire.json|0|16|nytro.rl2",
-      "hash": "b9ec4916ba96b0444810c22c43d5ba89a36e67b0236c58b55292ea41f9203d88",
+      "hash": "f2dab5a70b370091ecda80d7496425bd9cf222bc24f3937a8711ef5924b2d7c4",
       "status": "ok",
       "step_count": 6
     },
@@ -4725,9 +4725,9 @@
     },
     {
       "key": "freelan.json|0|1|kokcol.rdl",
-      "hash": "d50208ff575cb1983f683a325d8b854991ab58ae1db763d76fd4a826c9d3ef66",
+      "hash": "13c98836bf9b6d621e8da944731b4e4a73284607e28b4f9721960c495d91ee58",
       "status": "ok",
-      "step_count": 4
+      "step_count": 6
     },
     {
       "key": "freelan.json|0|2|koklab.rdl",
@@ -5445,9 +5445,9 @@
     },
     {
       "key": "k_sos.json|0|5|level05.rl2",
-      "hash": "c536afc55a043b43dfbc7ebb238e894e734caabd7756b99f9ae21c3eb9bf40e5",
+      "hash": "58a025b59333770dbf871970c82b15964680013d4ccca81b95d55eed0c1b45ad",
       "status": "ok",
-      "step_count": 8
+      "step_count": 7
     },
     {
       "key": "k_sos.json|0|6|level06.rl2",
@@ -5583,9 +5583,9 @@
     },
     {
       "key": "KKR.json|0|4|kk4.rl2",
-      "hash": "37404186093eb6c578033898c74f18271ac7c381985998a78fbad91cd32c5eb1",
+      "hash": "2d72d67704376347f186dc338004ad458e27c6552c0fad19438413bb4d1ecfe7",
       "status": "ok",
-      "step_count": 13
+      "step_count": 12
     },
     {
       "key": "KKR.json|0|5|kk5.rl2",
@@ -6435,9 +6435,9 @@
     },
     {
       "key": "phenomia.json|0|4|specimen.rl2",
-      "hash": "e87b53ed1fa0aca5d17475d907adf8a09e1c08fe88bfff09059eaa5111396220",
+      "hash": "a96ca9325232a2b116a2407bb8d120bd0ab81fa8994079cbd975ac46fa07c063",
       "status": "ok",
-      "step_count": 13
+      "step_count": 12
     },
     {
       "key": "phenomia.json|0|5|sphasm.rl2",
@@ -6597,7 +6597,7 @@
     },
     {
       "key": "plutonia.json|0|21|map21.rl2",
-      "hash": "e904f494cb431fb31eaddacc22f6e3e9084302720aa9c4eb18988f2d5cfc0084",
+      "hash": "979c0ad7d4cf9403c65a3d2426ff3c42e7f37d26098b60c40ebf00cdde92517b",
       "status": "ok",
       "step_count": 7
     },
@@ -7341,9 +7341,9 @@
     },
     {
       "key": "sanitati2.json|0|2|rubidium.rl2",
-      "hash": "fb1c2eee7cfcadc452c691f9e766b2ae1321ce147c875369424fa85107e8a65b",
+      "hash": "46281d7cb4e7eae6680d2bfc1cf49a02fd536794d561b0cb38dc610f179c51ca",
       "status": "ok",
-      "step_count": 9
+      "step_count": 7
     },
     {
       "key": "sanitati2.json|0|3|verne.rl2",
@@ -7353,9 +7353,9 @@
     },
     {
       "key": "sanitati2.json|0|4|kega.rl2",
-      "hash": "baf5cc79c4a1271b0910746b59522f70778c4db122dbb6208b0578a08129006d",
+      "hash": "405c64c20d7b933ca72acf09b7ae5623eb8f0f5f79210ed86c1e15bdcb8c9737",
       "status": "ok",
-      "step_count": 6
+      "step_count": 5
     },
     {
       "key": "sens9.json|0|-1|hash.rl2",
@@ -8103,9 +8103,9 @@
     },
     {
       "key": "TRINITY.json|0|33|d2levb-2.rl2",
-      "hash": "c7f1dd79f5eba568ebf3b942a492642fd34d54c782106434861db916112a522a",
+      "hash": "36d17b9a2f0619a378ce8f586de895a0a6a3bbd530f909d0290e997818aac0a7",
       "status": "ok",
-      "step_count": 7
+      "step_count": 6
     },
     {
       "key": "TRINITY.json|0|34|d2levb-3.rl2",
@@ -8133,9 +8133,9 @@
     },
     {
       "key": "TRINITY.json|0|38|d2levc-3.rl2",
-      "hash": "61f6212fdd9ed62d298ae52bb3f2010ae6b7d9aa12e80299637d28f76eac2a88",
+      "hash": "dcc4dfba44879b78a7825ebad8d41238424d23a23c70ed3cd2391a0f051af034",
       "status": "ok",
-      "step_count": 12
+      "step_count": 11
     },
     {
       "key": "TRINITY.json|0|39|d2levc-4.rl2",
@@ -8151,13 +8151,13 @@
     },
     {
       "key": "TRINITY.json|0|40|d2levd-1.rl2",
-      "hash": "17102290c81cfe4976ac44189f2979e1ee1b93652390d3ea73ced1634c957439",
+      "hash": "a5a68ffbfca89fe0729fb6356f327d6b9fdebe31bdae3750f185ed58b9634f98",
       "status": "ok",
-      "step_count": 8
+      "step_count": 6
     },
     {
       "key": "TRINITY.json|0|41|d2levd-2.rl2",
-      "hash": "13411363f2ae1281fb127c7994aab18eeb09ba2bc57e41222d063f919d0bf1b2",
+      "hash": "9741df96f0f0a2198f242aa31218982b7b25b49bd9daff3a0f7fe6ab863412fd",
       "status": "ok",
       "step_count": 7
     },
@@ -8175,9 +8175,9 @@
     },
     {
       "key": "TRINITY.json|0|44|d2leve-1.rl2",
-      "hash": "4b586eb916b8364af2500e3e764efaa3b901c9137570c1f361a29abfecc9e366",
+      "hash": "5d20654830260cf2bed73aa688d0dfbcf7fc5622e412c0e2924ca38a80af2d56",
       "status": "ok",
-      "step_count": 10
+      "step_count": 7
     },
     {
       "key": "TRINITY.json|0|45|d2leve-2.rl2",
@@ -8217,7 +8217,7 @@
     },
     {
       "key": "TRINITY.json|0|50|d2levf-2.rl2",
-      "hash": "44c9f0497b61f6cc67b8eb184b9f324d5f32b43fa9e2d1f09bd9479eef910d7a",
+      "hash": "a02ee3d5bc9ea3f54511b27725af94fc01df317d1af15d196374b1aaa8d70905",
       "status": "ok",
       "step_count": 9
     },
@@ -8271,9 +8271,9 @@
     },
     {
       "key": "TRINITY.json|0|59|d2xlvl07.rl2",
-      "hash": "032b442827db03761b265a48bb0496a75db15165162d33a2ddb279563f38010f",
+      "hash": "84bcc940b1b02864d3a21774eb91c9d4e9c20783ce302a358730f33df7854301",
       "status": "ok",
-      "step_count": 10
+      "step_count": 9
     },
     {
       "key": "TRINITY.json|0|6|level06.rl2",
@@ -8937,7 +8937,7 @@
     },
     {
       "key": "Vela1.json|0|2|level02.rl2",
-      "hash": "9abd0b72efdcd222ce05d6bd5470c2a96e8f49a99fe601c91358a11a50ca0a22",
+      "hash": "9a0bf517b457af905826fe43989f9c6c4a5b4ba200f97df773cc600116ec36b4",
       "status": "ok",
       "step_count": 11
     },
@@ -9093,7 +9093,7 @@
     },
     {
       "key": "vignett2.json|0|14|level14.rl2",
-      "hash": "822eed75b814ce64fdd5fa893c62b429a4a8493ba5c03f611cfccdbf99947c25",
+      "hash": "61d272912130a8b005cd05b578b9108036d580851fc413c212600e05f47b787c",
       "status": "ok",
       "step_count": 8
     },

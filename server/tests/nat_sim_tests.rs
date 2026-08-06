@@ -81,7 +81,7 @@ async fn test_stun_server_responds() {
 #[tokio::test]
 async fn test_stun_through_full_cone_nat() {
     let stun = start_stun_server().await;
-    let nat = start_nat(NatType::FullCone, 0).await;
+    let nat = start_nat(NatType::FullCone, 0).await.unwrap();
     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
     let reflexive = stun_query_through_nat(&client, nat.internal_addr, stun.addr)
@@ -107,7 +107,7 @@ async fn test_stun_through_full_cone_nat() {
 async fn test_stun_through_symmetric_nat_different_ports() {
     let stun1 = start_stun_server().await;
     let stun2 = start_stun_server().await;
-    let nat = start_nat(NatType::Symmetric, 0).await;
+    let nat = start_nat(NatType::Symmetric, 0).await.unwrap();
     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
     let reflexive1 = stun_query_through_nat(&client, nat.internal_addr, stun1.addr)
@@ -129,7 +129,7 @@ async fn test_stun_through_symmetric_nat_different_ports() {
 async fn test_stun_through_symmetric_seq_increments() {
     let stun1 = start_stun_server().await;
     let stun2 = start_stun_server().await;
-    let nat = start_nat(NatType::SymmetricSequential, 0).await;
+    let nat = start_nat(NatType::SymmetricSequential, 0).await.unwrap();
     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
     let reflexive1 = stun_query_through_nat(&client, nat.internal_addr, stun1.addr)
@@ -148,8 +148,34 @@ async fn test_stun_through_symmetric_seq_increments() {
 }
 
 #[tokio::test]
+async fn test_symmetric_seq_rejects_occupied_explicit_range() {
+    let occupied = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let port = occupied.local_addr().unwrap().port();
+    let error = match start_nat(NatType::SymmetricSequential, port).await {
+        Ok(nat) => {
+            nat.abort();
+            panic!("occupied sequential range unexpectedly started")
+        }
+        Err(error) => error,
+    };
+    assert_eq!(error.kind(), std::io::ErrorKind::AddrInUse);
+}
+
+#[tokio::test]
+async fn test_symmetric_seq_rejects_wrapping_explicit_range() {
+    let error = match start_nat(NatType::SymmetricSequential, u16::MAX).await {
+        Ok(nat) => {
+            nat.abort();
+            panic!("wrapping sequential range unexpectedly started")
+        }
+        Err(error) => error,
+    };
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
+}
+
+#[tokio::test]
 async fn test_full_cone_allows_any_inbound() {
-    let nat = start_nat(NatType::FullCone, 0).await;
+    let nat = start_nat(NatType::FullCone, 0).await.unwrap();
     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
     // External peer
@@ -190,7 +216,7 @@ async fn test_full_cone_allows_any_inbound() {
 
 #[tokio::test]
 async fn test_port_restricted_blocks_unsolicited() {
-    let nat = start_nat(NatType::PortRestricted, 0).await;
+    let nat = start_nat(NatType::PortRestricted, 0).await.unwrap();
     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
     // External peer
@@ -232,8 +258,8 @@ async fn test_port_restricted_blocks_unsolicited() {
 
 #[tokio::test]
 async fn test_two_full_cone_nats_direct_exchange() {
-    let nat_a = start_nat(NatType::FullCone, 0).await;
-    let nat_b = start_nat(NatType::FullCone, 0).await;
+    let nat_a = start_nat(NatType::FullCone, 0).await.unwrap();
+    let nat_b = start_nat(NatType::FullCone, 0).await.unwrap();
     let stun = start_stun_server().await;
 
     let client_a = UdpSocket::bind("127.0.0.1:0").await.unwrap();
@@ -280,8 +306,8 @@ async fn test_two_full_cone_nats_direct_exchange() {
 
 #[tokio::test]
 async fn test_symmetric_nats_block_direct() {
-    let nat_a = start_nat(NatType::Symmetric, 0).await;
-    let nat_b = start_nat(NatType::Symmetric, 0).await;
+    let nat_a = start_nat(NatType::Symmetric, 0).await.unwrap();
+    let nat_b = start_nat(NatType::Symmetric, 0).await.unwrap();
     let stun = start_stun_server().await;
 
     let client_a = UdpSocket::bind("127.0.0.1:0").await.unwrap();
@@ -327,8 +353,8 @@ async fn test_symmetric_nats_block_direct() {
 #[tokio::test]
 async fn test_full_cone_and_port_restricted_direct() {
     // Mixed NAT types: full cone peer + port restricted peer
-    let nat_cone = start_nat(NatType::FullCone, 0).await;
-    let nat_restricted = start_nat(NatType::PortRestricted, 0).await;
+    let nat_cone = start_nat(NatType::FullCone, 0).await.unwrap();
+    let nat_restricted = start_nat(NatType::PortRestricted, 0).await.unwrap();
     let stun = start_stun_server().await;
 
     let client_cone = UdpSocket::bind("127.0.0.1:0").await.unwrap();
@@ -412,7 +438,7 @@ async fn test_full_cone_and_port_restricted_direct() {
 #[tokio::test]
 async fn test_multiple_internal_clients_isolated() {
     // Verify that two internal clients behind the same NAT get separate mappings
-    let nat = start_nat(NatType::FullCone, 0).await;
+    let nat = start_nat(NatType::FullCone, 0).await.unwrap();
 
     let client_a = UdpSocket::bind("127.0.0.1:0").await.unwrap();
     let client_b = UdpSocket::bind("127.0.0.1:0").await.unwrap();
@@ -452,7 +478,7 @@ async fn test_multiple_internal_clients_isolated() {
 #[tokio::test]
 async fn test_nat_sim_handles_tiny_packets() {
     // Packets shorter than 6 bytes should be silently dropped
-    let nat = start_nat(NatType::FullCone, 0).await;
+    let nat = start_nat(NatType::FullCone, 0).await.unwrap();
     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
     // Send a 3-byte packet (too short for the 6-byte dest header)

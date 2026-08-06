@@ -4,8 +4,9 @@
 //! see distinct source ports for different mappings (critical for
 //! symmetric NAT simulation).
 
-use std::collections::HashMap;
-use std::net::SocketAddr;
+use std::collections::{HashMap, VecDeque};
+use std::io;
+use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 
 use tokio::net::UdpSocket;
@@ -49,8 +50,8 @@ struct NatState {
     mappings: HashMap<String, PortMapping>,
     /// Address of the first internal client seen (set on first outbound).
     internal_client_addr: Option<SocketAddr>,
-    /// Next port to use for SymmetricSequential mappings.
-    next_seq_port: u16,
+    /// Contiguous external sockets reserved for sequential mappings.
+    sequential_sockets: VecDeque<UdpSocket>,
 }
 
 impl NatState {
@@ -86,26 +87,23 @@ impl NatSimHandle {
 
 /// Start a NAT simulator.
 ///
-/// `base_external_port`: for SymmetricSequential, the starting port to
-/// allocate from. Pass 0 to pick one automatically.
-pub async fn start_nat(nat_type: NatType, base_external_port: u16) -> NatSimHandle {
-    let internal_socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
-    let internal_addr = internal_socket.local_addr().unwrap();
+/// `base_external_port`: for SymmetricSequential, the starting port of a
+/// reserved 32-port mapping range. Pass 0 to reserve an automatic range.
+pub async fn start_nat(nat_type: NatType, base_external_port: u16) -> io::Result<NatSimHandle> {
+    let internal_socket = UdpSocket::bind("127.0.0.1:0").await?;
+    let internal_addr = internal_socket.local_addr()?;
 
-    // Pick a base port for SymmetricSequential if not specified
-    let seq_base = if base_external_port != 0 {
-        base_external_port
+    let sequential_sockets = if nat_type == NatType::SymmetricSequential {
+        reserve_sequential_sockets(base_external_port).await?
     } else {
-        // Bind a throwaway socket to get a free port, then use nearby range
-        let tmp = UdpSocket::bind("127.0.0.1:0").await.unwrap();
-        tmp.local_addr().unwrap().port().wrapping_add(200)
+        VecDeque::new()
     };
 
     let state = Arc::new(Mutex::new(NatState {
         nat_type,
         mappings: HashMap::new(),
         internal_client_addr: None,
-        next_seq_port: seq_base,
+        sequential_sockets,
     }));
 
     let tasks: Arc<Mutex<Vec<JoinHandle<()>>>> = Arc::new(Mutex::new(Vec::new()));
@@ -119,11 +117,68 @@ pub async fn start_nat(nat_type: NatType, base_external_port: u16) -> NatSimHand
     ));
     tasks.lock().await.push(main_task);
 
-    NatSimHandle {
+    Ok(NatSimHandle {
         internal_addr,
         external_ip: std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST),
         tasks,
+    })
+}
+
+const SEQUENTIAL_MAPPING_CAPACITY: u16 = 32;
+const SEQUENTIAL_RESERVATION_ATTEMPTS: usize = 128;
+
+async fn reserve_sequential_sockets(base_port: u16) -> io::Result<VecDeque<UdpSocket>> {
+    if base_port != 0 {
+        return reserve_sequential_sockets_at(base_port).await;
     }
+
+    for _ in 0..SEQUENTIAL_RESERVATION_ATTEMPTS {
+        let first = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)).await?;
+        let candidate = first.local_addr()?.port();
+        if candidate
+            .checked_add(SEQUENTIAL_MAPPING_CAPACITY - 1)
+            .is_none()
+        {
+            continue;
+        }
+        let mut sockets = VecDeque::from([first]);
+        let mut complete = true;
+        for offset in 1..SEQUENTIAL_MAPPING_CAPACITY {
+            match UdpSocket::bind((Ipv4Addr::LOCALHOST, candidate + offset)).await {
+                Ok(socket) => sockets.push_back(socket),
+                Err(_) => {
+                    complete = false;
+                    break;
+                }
+            }
+        }
+        if complete {
+            return Ok(sockets);
+        }
+    }
+
+    Err(io::Error::new(
+        io::ErrorKind::AddrNotAvailable,
+        "could not reserve a contiguous sequential NAT port range",
+    ))
+}
+
+async fn reserve_sequential_sockets_at(base_port: u16) -> io::Result<VecDeque<UdpSocket>> {
+    if base_port
+        .checked_add(SEQUENTIAL_MAPPING_CAPACITY - 1)
+        .is_none()
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "sequential NAT port range exceeds 65535",
+        ));
+    }
+
+    let mut sockets = VecDeque::new();
+    for offset in 0..SEQUENTIAL_MAPPING_CAPACITY {
+        sockets.push_back(UdpSocket::bind((Ipv4Addr::LOCALHOST, base_port + offset)).await?);
+    }
+    Ok(sockets)
 }
 
 /// Main loop: reads from internal socket, creates mappings, sends outbound.
@@ -154,14 +209,11 @@ async fn nat_outbound_loop(
         // Create mapping with a new external socket if needed
         if !st.mappings.contains_key(&key) {
             let ext_sock = if st.nat_type == NatType::SymmetricSequential {
-                // Bind to a specific sequential port
-                let port = st.next_seq_port;
-                st.next_seq_port = st.next_seq_port.wrapping_add(1);
-                Arc::new(
-                    UdpSocket::bind(format!("127.0.0.1:{port}"))
-                        .await
-                        .unwrap_or_else(|_| panic!("failed to bind port {port}")),
-                )
+                let Some(socket) = st.sequential_sockets.pop_front() else {
+                    debug!("NAT sim: sequential mapping capacity exhausted");
+                    continue;
+                };
+                Arc::new(socket)
             } else {
                 Arc::new(UdpSocket::bind("127.0.0.1:0").await.unwrap())
             };

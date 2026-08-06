@@ -8,14 +8,14 @@ use dxx_matchmaking::nat_sim::{start_nat, start_stun_server, NatType};
 use std::env;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let nat_type = parse_nat_type(&args);
 
     println!("Starting NAT simulator ({nat_type:?}) and STUN server...");
 
     let stun = start_stun_server().await;
-    let nat = start_nat(nat_type, 0).await;
+    let nat = start_nat(nat_type, 0).await?;
 
     println!("STUN server:    {}", stun.addr);
     println!("NAT internal:   {}", nat.internal_addr);
@@ -26,6 +26,7 @@ async fn main() {
 
     nat.abort();
     stun.abort();
+    Ok(())
 }
 
 fn parse_nat_type(args: &[String]) -> NatType {
