@@ -44,8 +44,8 @@ if [ -x "$LATEST_DIR/bin/sdkmanager" ] || [ -f "$LATEST_DIR/bin/sdkmanager.bat" 
     echo "Refreshing Android SDK command-line tools build ${INSTALLED_BUILD_ID:-unknown} -> $BUILD_ID"
 fi
 
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" sdk-XXXXXX.zip)"
-EXTRACT_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}" sdk-extract-XXXXXX)"
+TMPFILE="$(create_temp_file sdk.zip)"
+EXTRACT_DIR="$(create_temp_dir sdk-extract)"
 cleanup() {
     rm -f "$TMPFILE"
     rm -rf "$EXTRACT_DIR"

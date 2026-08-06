@@ -16,6 +16,18 @@ get_default_dependency_base() {
     esac
 }
 
+create_temp_file() {
+    local prefix="$1"
+    local parent="${2:-${TMPDIR:-/tmp}}"
+    mktemp "$parent/$prefix.XXXXXX"
+}
+
+create_temp_dir() {
+    local prefix="$1"
+    local parent="${2:-${TMPDIR:-/tmp}}"
+    mktemp -d "$parent/$prefix.XXXXXX"
+}
+
 get_sdk_cmdline_tools_os_token() {
     case "$(get_host_os)" in
     windows) echo "win" ;;

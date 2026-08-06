@@ -21,7 +21,7 @@ URL="$NDK_URL"
 if DERIVED_URL="$(get_ndk_download_url "$NDK_VERSION" 2>/dev/null)"; then
     URL="$DERIVED_URL"
 fi
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" ndk-XXXXXX.zip)"
+TMPFILE="$(create_temp_file ndk.zip)"
 
 echo "Downloading Android NDK $NDK_VERSION (~1.1 GB)..."
 download_file "$TMPFILE" "$URL"

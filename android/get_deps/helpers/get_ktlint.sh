@@ -22,7 +22,7 @@ echo "Downloading ktlint $KTLINT_VERSION..."
 echo "  URL: $URL"
 
 mkdir -p "$DEST"
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" ktlint-XXXXXX)"
+TMPFILE="$(create_temp_file ktlint)"
 
 download_file "$TMPFILE" "$URL"
 mv "$TMPFILE" "$DEST/ktlint.jar"

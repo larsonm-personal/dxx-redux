@@ -25,7 +25,7 @@ Assert-Matches $checkUpdates '(?s)"JDK\*"\s*\{.*?Invoke-InstallSyncForDependency
     "a selected JDK target update immediately runs its install helper"
 Assert-Matches $checkUpdates 'Installer script failed with exit code \$LASTEXITCODE' `
     "a failed Bash installer stops check-updates"
-Assert-Matches $jdkUpdater 'mktemp -d .*\.jdk-\$JDK_MAJOR-stage-' `
+Assert-Matches $jdkUpdater 'create_temp_dir "\.jdk-\$JDK_MAJOR-stage" "\$INSTALL_DIR"' `
     "JDK updates extract into a staging directory"
 Assert-Matches $jdkUpdater '(?s)STAGED_VERSION=.*?mv "\$DEST" "\$BACKUP_DIR"' `
     "the staged JDK is validated before the current install is moved"

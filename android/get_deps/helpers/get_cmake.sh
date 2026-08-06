@@ -31,7 +31,7 @@ macos)
     ARCHIVE_KIND="tar.gz"
     ;;
 esac
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" cmake-XXXXXX)"
+TMPFILE="$(create_temp_file cmake)"
 
 echo "Downloading CMake $CMAKE_VERSION..."
 download_file "$TMPFILE" "$URL"

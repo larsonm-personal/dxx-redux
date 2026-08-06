@@ -18372,26 +18372,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Use command-recording Debian and RPM fixtures as root without sudo, non-root with interactive and noninteractive sudo, and non-root without elevation. Exercise stable, preview, existing exact, package, and tarball paths; require the intended commands without a spurious sudo dependency, exact runtime verification, and no host mutation in dry-run fixtures.
 - Resolution: Pending
 
-### BR-0568: P1 - Use macOS-compatible temporary-file templates
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/build-release
-- Found by: R1-CHUNK-0486
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/get_deps/helpers/get_sdk.sh:L16-L24,L47-L59`; `android/get_deps/helpers/get_shellcheck.sh:L40-L48`
-- Related: `android/get_deps/helpers/get_ndk.sh:L18-L30`; `android/get_deps/get_all.sh:L104-L135`; `android/get_deps/helpers/platform.sh:L3-L8,L19-L43`; macOS `mktemp(1)` at `https://keith.github.io/xcode-man-pages/mktemp.1.html`
-- Evidence: The platform helper explicitly recognizes Darwin and derives macOS SDK, NDK, JDK, and formatter assets, and the aggregate bootstrap invokes them on every non-Linux host. However, SDK uses `mktemp ... sdk-XXXXXX.zip`, NDK uses `ndk-XXXXXX.zip`, and the Darwin ShellCheck branch uses `shellcheck-XXXXXX.tar.xz`. macOS `mktemp(1)` requires the replaceable `X` run to be appended to the template; suffix characters after that run are not accepted. Thus the essential SDK step fails while creating its temporary archive, before any download, on a stock macOS host; NDK and ShellCheck retain the same failure if reached. GNU mktemp accepts these templates, which is why Linux validation does not expose the Darwin break.
-- Trigger: Run the one-shot dependency bootstrap or the SDK, NDK, or ShellCheck helper on macOS with the platform's standard `mktemp`.
-- Impact: A required Android dependency bootstrap fails before installing the SDK command-line tools, preventing macOS Android configuration, builds, emulator setup, code quality, and tests despite the branch explicitly selecting macOS assets.
-- Expected: Temporary-file creation uses a template accepted by every declared host, with the unique `X` suffix at the end or an explicitly portable helper; archive tools must not depend on the temporary filename extension.
-- Suggested fix: Centralize temporary file and directory creation and use final `XXXXXX` templates such as `sdk.zip.XXXXXX` or extensionless private names. Apply it to every dependency helper, including related NDK and optional archive installers, and keep cleanup traps independent of filename suffixes.
-- Validation: Run the complete aggregate bootstrap and focused temp-creation tests with stock macOS and GNU mktemp, including custom `TMPDIR` paths with spaces, SDK, NDK, ShellCheck, failed download, and interruption. Require private unique files, correct cleanup, and progression beyond each download/extraction step on Intel and Apple Silicon hosts where the selected asset architecture is supported.
-- Additional location (R1-CHUNK-0487): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/get_deps/helpers/get_cmake_format.sh:L84-L92`
-- Additional evidence (R1-CHUNK-0487): The required cmakelang step uses `mktemp ... virtualenv-XXXXXX.pyz` on the Darwin fallback path. Stock macOS rejects the suffix after the replaceable `X` run, so a macOS host whose Python lacks `venv` and `ensurepip` reaches the fallback specifically designed for that condition and fails before downloading the pinned virtualenv bootstrap.
-- Additional validation (R1-CHUNK-0487): Include a macOS Python fixture without `venv` or `ensurepip` in the aggregate matrix and require the virtualenv fallback to create and clean a portable private temporary file before cmakelang installation completes.
-- Resolution: Pending
-
 ### BR-0569: P2 - Align WSL formatter installation and lookup identities
 
 - [ ] OPEN

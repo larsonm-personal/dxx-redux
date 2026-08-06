@@ -41,7 +41,7 @@ echo "Downloading shfmt $SHFMT_VERSION..."
 echo "  URL: $URL"
 
 mkdir -p "$DEST"
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" shfmt-XXXXXX)"
+TMPFILE="$(create_temp_file shfmt)"
 download_file "$TMPFILE" "$URL"
 mv "$TMPFILE" "$DEST/$DEST_NAME"
 chmod +x "$DEST/$DEST_NAME" 2>/dev/null || true

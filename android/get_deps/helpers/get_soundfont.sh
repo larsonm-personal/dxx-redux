@@ -24,7 +24,7 @@ fi
 
 # --- Download ---
 mkdir -p "$(dirname "$DEST")"
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" sf2-XXXXXX)"
+TMPFILE="$(create_temp_file sf2)"
 
 echo "Downloading TimGM6mb.sf2 (v${SOUNDFONT_VERSION})..."
 download_file "$TMPFILE" "$SOUNDFONT_URL"

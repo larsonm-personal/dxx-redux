@@ -26,7 +26,7 @@ if [ -f "$DEST/unar.exe" ]; then
 fi
 
 echo "Downloading unar from $UNAR_URL..."
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" unar-XXXXXX.zip)"
+TMPFILE="$(create_temp_file unar.zip)"
 download_file "$TMPFILE" "$UNAR_URL"
 verify_sha256 "$TMPFILE" "$UNAR_ARCHIVE_SHA256" "unar Windows package"
 

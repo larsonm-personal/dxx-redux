@@ -21,7 +21,7 @@ if [ -d "$DEST" ] && [ -f "$DEST/dosbox-x.exe" ]; then
 fi
 
 echo "Download URL: $DOSBOX_URL"
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" dosbox-XXXXXX.zip)"
+TMPFILE="$(create_temp_file dosbox.zip)"
 
 echo "Downloading DOSBox-X $DOSBOX_VERSION..."
 download_file "$TMPFILE" "$DOSBOX_URL"
@@ -39,7 +39,7 @@ to_win_path() {
 }
 
 echo "Extracting..."
-TMPDIR2="$(mktemp -d -p "${TMPDIR:-/tmp}" dosbox-extract-XXXXXX)"
+TMPDIR2="$(create_temp_dir dosbox-extract)"
 if command -v unzip >/dev/null 2>&1; then
     unzip -q -o "$TMPFILE" -d "$TMPDIR2"
 else

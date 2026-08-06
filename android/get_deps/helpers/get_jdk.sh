@@ -80,8 +80,8 @@ fi
 case "$(get_host_os)" in
 linux | macos) ARCHIVE_KIND="tar.gz" ;;
 esac
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" jdk-XXXXXX)"
-STAGE_DIR="$(mktemp -d "$INSTALL_DIR/.jdk-$JDK_MAJOR-stage-XXXXXX")"
+TMPFILE="$(create_temp_file jdk)"
+STAGE_DIR="$(create_temp_dir ".jdk-$JDK_MAJOR-stage" "$INSTALL_DIR")"
 
 echo "Downloading OpenJDK $JDK_VERSION..."
 download_file "$TMPFILE" "$URL"

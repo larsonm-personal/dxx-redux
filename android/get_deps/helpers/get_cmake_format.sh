@@ -51,7 +51,7 @@ if _is_windows_target; then
     # --- Windows: download embeddable Python distribution ---
     echo "Downloading Python $PYTHON_EMBED_VERSION embeddable..."
     echo "  URL: $PYTHON_EMBED_URL"
-    PY_ZIP="$(mktemp -p "${TMPDIR:-/tmp}" python-embed-XXXXXX.zip)"
+    PY_ZIP="$(create_temp_file python-embed.zip)"
     download_file "$PY_ZIP" "$PYTHON_EMBED_URL"
     rm -rf "$DEST/python"
     mkdir -p "$DEST/python"
@@ -74,7 +74,7 @@ EOF
     fi
 
     echo "Bootstrapping pip..."
-    GET_PIP="$(mktemp -p "${TMPDIR:-/tmp}" get-pip-XXXXXX.py)"
+    GET_PIP="$(create_temp_file get-pip.py)"
     download_file "$GET_PIP" https://bootstrap.pypa.io/get-pip.py
     "$PY_EXE" "$GET_PIP" --no-warn-script-location --disable-pip-version-check
     rm -f "$GET_PIP"
@@ -89,7 +89,7 @@ else
     if python3 -c 'import venv, ensurepip' >/dev/null 2>&1; then
         python3 -m venv "$DEST/venv"
     else
-        VENV_PYZ="$(mktemp -p "${TMPDIR:-/tmp}" virtualenv-XXXXXX.pyz)"
+        VENV_PYZ="$(create_temp_file virtualenv.pyz)"
         echo "python3 venv support missing, bootstrapping virtualenv $VIRTUALENV_VERSION..."
         download_file "$VENV_PYZ" "$VIRTUALENV_PYZ_URL"
         python3 "$VENV_PYZ" "$DEST/venv"

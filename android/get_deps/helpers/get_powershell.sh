@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/platform.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
-TMPDIR_LOCAL="$(mktemp -d -p "${TMPDIR:-/tmp}" pwsh-bootstrap-XXXXXX)"
+TMPDIR_LOCAL="$(create_temp_dir pwsh-bootstrap)"
 trap 'rm -rf "$TMPDIR_LOCAL"' EXIT
 
 get_powershell_package_name() {
