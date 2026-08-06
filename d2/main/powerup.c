@@ -223,7 +223,7 @@ static int all_coop_players_have_primary(int weapon_index)
 	return 1;
 }
 
-static int duplicate_primary_gives_energy(int weapon_index)
+static int duplicate_primary_uses_single_player_reward(int weapon_index)
 {
 	return !(Game_mode & GM_MULTI) ||
 	       ((Game_mode & GM_MULTI_COOP) && all_coop_players_have_primary(weapon_index));
@@ -471,14 +471,18 @@ int do_powerup(object *obj)
 		case	POW_VULCAN_WEAPON:
 		case	POW_GAUSS_WEAPON: {
 			int ammo = obj->ctype.powerup_info.count;
+			int weapon_index = (obj->id==POW_VULCAN_WEAPON)?VULCAN_INDEX:GAUSS_INDEX;
+			int duplicate_uses_single_player_reward;
 
-			used = pick_up_primary((obj->id==POW_VULCAN_WEAPON)?VULCAN_INDEX:GAUSS_INDEX);
+			used = pick_up_primary(weapon_index);
+			duplicate_uses_single_player_reward = !used &&
+				duplicate_primary_uses_single_player_reward(weapon_index);
 
 			//didn't get the weapon (because we already have it), but
 			//maybe snag some of the ammo.  if single-player, grab all the ammo
 			//and remove the powerup.  If multi-player take ammo in excess of
 			//the amount in a powerup, and leave the rest.
-			if (! used)
+			if (!used && !duplicate_uses_single_player_reward)
 				if ((Game_mode & GM_MULTI) ) {
 					if(Netgame.GaussAmmoStyle == GAUSS_STYLE_DUPLICATING) {
 						ammo -= VULCAN_AMMO_AMOUNT;
@@ -504,29 +508,29 @@ int do_powerup(object *obj)
 
 		case	POW_SPREADFIRE_WEAPON:
 			used = pick_up_primary(SPREADFIRE_INDEX);
-			if (!used && duplicate_primary_gives_energy(SPREADFIRE_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(SPREADFIRE_INDEX))
 				used = pick_up_energy();
 			break;
 		case	POW_PLASMA_WEAPON:
 			used = pick_up_primary(PLASMA_INDEX);
-			if (!used && duplicate_primary_gives_energy(PLASMA_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(PLASMA_INDEX))
 				used = pick_up_energy();
 			break;
 		case	POW_FUSION_WEAPON:
 			used = pick_up_primary(FUSION_INDEX);
-			if (!used && duplicate_primary_gives_energy(FUSION_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(FUSION_INDEX))
 				used = pick_up_energy();
 			break;
 
 		case	POW_HELIX_WEAPON:
 			used = pick_up_primary(HELIX_INDEX);
-			if (!used && duplicate_primary_gives_energy(HELIX_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(HELIX_INDEX))
 				used = pick_up_energy();
 			break;
 
 		case	POW_PHOENIX_WEAPON:
 			used = pick_up_primary(PHOENIX_INDEX);
-			if (!used && duplicate_primary_gives_energy(PHOENIX_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(PHOENIX_INDEX))
 				used = pick_up_energy();
 			break;
 
@@ -534,7 +538,7 @@ int do_powerup(object *obj)
 			used = pick_up_primary(OMEGA_INDEX);
 			if (used)
 				Omega_charge = obj->ctype.powerup_info.count;
-			if (!used && duplicate_primary_gives_energy(OMEGA_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(OMEGA_INDEX))
 				used = pick_up_energy();
 			break;
 

@@ -34,3 +34,21 @@
 - Competitive multiplayer behavior is unchanged
 - Scoped code-quality checks, D1 and D2 Windows builds, Android debug builds for
   all configured ABIs, and Android debug unit tests passed
+
+## Vulcan and Gauss follow-up
+
+- [x] Trace D1 and D2 duplicate Vulcan/Gauss ammo behavior and multiplayer modes
+- [x] Apply the all-connected-players-owned rule without changing competitive modes
+- [x] Verify partial-ammo and full-ammo pickup behavior
+- [x] Run scoped formatting, Windows builds, Android native builds, and tests
+
+### Vulcan and Gauss result
+
+- Duplicate D1 Vulcan pickups grant the normal single-player Vulcan ammo-box
+  amount once every connected cooperative player owns the Vulcan cannon
+- Duplicate D2 Vulcan and Gauss pickups transfer their normal single-player
+  stored ammo once every connected cooperative player owns that specific weapon
+- Competitive multiplayer and cooperative games where a player still lacks the
+  weapon continue to use the configured Gauss/Vulcan ammo-style rules
+- Scoped code-quality checks, D1 and D2 Windows builds, Android debug builds for
+  all configured ABIs, and Android debug unit tests passed

@@ -199,7 +199,7 @@ static int all_coop_players_have_primary(int weapon_index)
 	return 1;
 }
 
-static int duplicate_primary_gives_energy(int weapon_index)
+static int duplicate_primary_uses_single_player_reward(int weapon_index)
 {
 	return !(Game_mode & GM_MULTI) ||
 	       ((Game_mode & GM_MULTI_COOP) && all_coop_players_have_primary(weapon_index));
@@ -267,6 +267,7 @@ int do_powerup(object *obj)
 	int special_used=0;
 	int id=obj->id;
 	int ammo;
+	int duplicate_uses_single_player_reward;
 
 	if ((Player_is_dead) || (ConsoleObject->type == OBJ_GHOST) || (Players[Player_num].shields < 0))
 		return 0;
@@ -423,12 +424,14 @@ int do_powerup(object *obj)
 			ammo = obj->ctype.powerup_info.count;
 
 			used = pick_up_primary(VULCAN_INDEX);
+			duplicate_uses_single_player_reward = !used &&
+				duplicate_primary_uses_single_player_reward(VULCAN_INDEX);
 
 			//didn't get the weapon (because we already have it), but
 			//maybe snag some of the ammo.  if single-player, grab all the ammo
 			//and remove the powerup.  If multi-player take ammo in excess of
 			//the amount in a powerup, and leave the rest.
-			if (! used)
+			if (!used && !duplicate_uses_single_player_reward)
 				if ((Game_mode & GM_MULTI) ) {
 					if(Netgame.GaussAmmoStyle == GAUSS_STYLE_DUPLICATING) {
 						ammo -= VULCAN_AMMO_AMOUNT;
@@ -436,7 +439,8 @@ int do_powerup(object *obj)
 						ammo = 0; // Forgot to tell other players we took ammo, it dups, very bad
 					}
 				}
-			if (used || ((Game_mode & GM_MULTI) && ammo > 0)) {
+			if (used || ((Game_mode & GM_MULTI) && ammo > 0 &&
+			             !duplicate_uses_single_player_reward)) {
 				if (used) {
 					if (ammo < VULCAN_WEAPON_AMMO_AMOUNT)
 						ammo = VULCAN_WEAPON_AMMO_AMOUNT;
@@ -470,23 +474,23 @@ int do_powerup(object *obj)
 //-killed                        }
 //end kill - Victor Rachels
 
-			if (!used && !(Game_mode & GM_MULTI) )
+			if (!used && duplicate_uses_single_player_reward)
 //end addition/edit - Victor Rachels
 				used = pick_up_vulcan_ammo();
 			break;
 		case	POW_SPREADFIRE_WEAPON:
 			used = pick_up_primary(SPREADFIRE_INDEX);
-			if (!used && duplicate_primary_gives_energy(SPREADFIRE_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(SPREADFIRE_INDEX))
 				used = pick_up_energy();
 			break;
 		case	POW_PLASMA_WEAPON:
 			used = pick_up_primary(PLASMA_INDEX);
-			if (!used && duplicate_primary_gives_energy(PLASMA_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(PLASMA_INDEX))
 				used = pick_up_energy();
 			break;
 		case	POW_FUSION_WEAPON:
 			used = pick_up_primary(FUSION_INDEX);
-			if (!used && duplicate_primary_gives_energy(FUSION_INDEX))
+			if (!used && duplicate_primary_uses_single_player_reward(FUSION_INDEX))
 				used = pick_up_energy();
 			break;
 
