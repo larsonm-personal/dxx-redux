@@ -539,10 +539,10 @@ Only one call may edit either adversarial review ledger at a time. Replace queue
 | R1-CHUNK-0488 | [x] DONE | source | medium | build-script | `android/get_deps/check-updates.ps1` | L1-L900 | BR-0159, BR-0551, BR-0562, BR-0564, BR-0575, BR-0576 |
 | R1-CHUNK-0489 | [x] DONE | source | medium | build-script | `android/get_deps/check-updates.ps1` | L901-L1800 | BR-0157, BR-0562, BR-0563, BR-0565, BR-0575, BR-0576, BR-0577, BR-0578, BR-0579, BR-0580, BR-0581 |
 | R1-CHUNK-0490 | [x] DONE | source | medium | build-script | `2 related paths` | 744 review lines under android/helpers | BR-0096, BR-0157, BR-0162, BR-0167, BR-0233, BR-0468, BR-0546, BR-0582 |
-| R1-CHUNK-0491 | [ ] TODO | source | medium | build-script | `3 related paths` | 622 review lines under android/helpers | - |
-| R1-CHUNK-0492 | [ ] TODO | source | medium | build-script | `4 related paths` | 761 review lines under android/helpers | - |
-| R1-CHUNK-0493 | [ ] TODO | source | medium | build-script | `5 related paths` | 725 review lines under android/helpers | - |
-| R1-CHUNK-0494 | [ ] TODO | source | medium | build-script | `7 related paths` | 895 review lines under android/helpers | - |
+| R1-CHUNK-0491 | [x] DONE | source | medium | build-script | `3 related paths` | 622 review lines under android/helpers | BR-0583, BR-0584, BR-0585 |
+| R1-CHUNK-0492 | [x] DONE | source | medium | build-script | `4 related paths` | 761 review lines under android/helpers | BR-0157, BR-0233, BR-0586, BR-0587, BR-0588, BR-0589, BR-0590, BR-0591 |
+| R1-CHUNK-0493 | [x] DONE | source | medium | build-script | `5 related paths` | 725 review lines under android/helpers | BR-0157, BR-0284, BR-0592, BR-0593, BR-0594, BR-0595, BR-0596, BR-0597 |
+| R1-CHUNK-0494 | [-] ACTIVE | source | medium | build-script | `7 related paths` | 895 review lines under android/helpers | - |
 | R1-CHUNK-0495 | [ ] TODO | source | medium | build-script | `7 related paths` | 857 review lines under android/helpers | - |
 | R1-CHUNK-0496 | [ ] TODO | source | medium | build-script | `android/helpers/push_game_data.sh` | L1-L255 | - |
 | R1-CHUNK-0497 | [ ] TODO | source | medium | build-script | `android/regression_demos/.gitignore` | L1-L4 | - |
@@ -9596,6 +9596,40 @@ Append one completion note for every finished queue item using the process templ
 - Finding summary: archived BR-0157 covers the frozen host runner preferring an arbitrary PATH-selected 7-Zip executable without version or digest validation. BR-0096 is extended because recursive archive trees are flattened and later case-insensitive duplicate leaves are silently discarded before descriptor-to-assets scanning. BR-0162 is extended because large and descriptor-less archives are successful skips that leave any prior checked-in regression metadata untouched. BR-0167 is extended because the host runner also uses second-resolution run directories, collision-prone sanitized labels, and extension-blind basenames for artifacts and regression destinations. BR-0233 is extended because normalized metadata and final checked-in copies are published through direct truncating writes/copies without atomic replacement. BR-0468 is extended with the exact frozen host call sites that cannot contain its known infinite scanner execution. BR-0546 is extended because the device wrapper hard-codes one machine-specific JDK directory and otherwise silently accepts an arbitrary current Java environment without checking the repository pin. New BR-0582 records the independent missing wall-clock bound and child-tree cleanup for both frozen headless metadata subprocess paths.
 - No-finding areas: repository and assigned helper paths derive from `PSCommandPath`; missing source, wrapper, and batch paths fail before work; host builds and the device batch propagate ordinary nonzero native exits; standard D1 and D2 data selection validates required hashes; ZIP and 7z extraction errors become per-item failures; current ZIPs contain no duplicate case-insensitive leaf names and current archive basenames are unique across supported extensions; descriptor order is sorted after staging; successful raw JSON must parse and normalize before the regression copy; per-archive exceptions are recorded and later archives continue; explicit failures make the host batch nonzero; and the device wrapper passes a 900-second budget to its separate Android batch. Archive expansion budgets remain archived BR-0018, native direct-output durability remains BR-0233, and the native arithmetic hang remains BR-0468. With the listed roots accounted for, no additional actionable schema conversion, ordinary path containment, exit propagation, cleanup, data selection, or live-delta defect survived tracing in the assigned files.
 
+### R1-CHUNK-0491 completion
+
+- Completed: 2026-08-06
+- Model: sol-5.6-medium
+- Result: BR-0583, BR-0584, BR-0585
+- Assigned scope checked: all 622 frozen lines across `android/helpers/strip_input_demo_frame_state.ps1`, `android/helpers/summarize-profiling-log.ps1`, and `android/helpers/teardown_docker_nat.ps1`
+- Context checked: input-demo JSON-lines format, recorder and replay consumers, regression corpus runners, the strip-helper implementation plan and absent claimed focused test; native profiling sample, bucket, GL, texture, storage, and frame producers, paired D1/D2 frame integration, Kotlin UI producer, profiling plan and existing BR-0270 through BR-0272; Docker NAT setup, compose and proxy behavior, emulator STUN command receiver, direct operator workflow, existing NAT findings, complete file histories, frozen-to-live identity, and both ledgers for duplicate roots and used IDs
+- Commands or validation: `git cat-file`, `git diff`, `git show`, `git log --follow`, `git grep`, `git ls-tree`, `git status`, `Get-Content`, `Get-FileHash`, and `Select-String`; complete line-numbered frozen-source inspection; PowerShell AST parsing of all three assigned files with zero errors; full-ledger structural and duplicate-ID scans; producer-record-to-parser-switch tracing; directory-order-to-write tracing; and a focused child-PowerShell probe confirming that an ignored native exit 7 followed by ordinary output exits zero. No demo, log, emulator, ADB, Docker, network, product test, or product file was mutated because the decisive outcomes follow from frozen control flow and the non-mutating exit-status probe
+- No-finding areas: the demo transformer preserves blank and comment lines, original newline style, trailing-newline presence, property order, and non-frame or state-free records, limits its default scan to the documented immediate directory, uses literal paths, and gates writes with `ShouldProcess`; the profiling helper bounds displayed rows, uses 64-bit duration accumulators, weights UI averages by poll count, and correctly aggregates frame, texture, lookup, storage, and UI records apart from BR-0272's string grammar and BR-0583's ignored native bucket summaries; Docker and SDK paths are rooted from the script rather than the caller, exact emulator serials are used, offline devices are skipped explicitly, and teardown addresses the same compose project and STUN-clear command configured by setup. With BR-0270 through BR-0272, BR-0555, BR-0560, BR-0561, and BR-0583 through BR-0585 accounted for, no additional actionable parsing, bounds, path, formatting, cleanup, portability, or live-delta defect survived tracing in the assigned scope
+
+### R1-CHUNK-0492 completion
+
+- Completed: 2026-08-06
+- Model: sol-5.6-medium
+- Result: BR-0157, BR-0233, BR-0586, BR-0587, BR-0588, BR-0589, BR-0590, BR-0591
+- Assigned scope checked: all 761 frozen lines across `android/helpers/generate-stuffit-corpus-manifests.ps1`, `android/helpers/introspect.sh`, `android/helpers/kill-stale-emulators.ps1`, and `android/helpers/normalize_json.py`
+- Context checked: StuffIt corpus archives, manifest schema, native consumer, generator history, and archived BR-0157; game and setup broadcast receivers, next-frame native introspection publication, automation artifacts, repository agent instructions, and existing stale-result finding BR-0190; managed-emulator startup, single and dual recovery, run-all preflight, stale-state plan, and owned-emulator shutdown behavior; mission metadata generators, normalization callers and focused test, downstream JSON consumers, live deltas, BR-0233, and both ledgers for duplicate roots and used IDs
+- Commands or validation: `git cat-file`, `git diff`, `git show`, `git log --follow`, `git grep`, `git status`, `Get-Content`, `Get-FileHash`, `rg`, and `Select-String`; complete line-numbered frozen-source inspection; PowerShell AST parsing of both assigned PowerShell files with zero errors; Bash syntax validation; Python AST parsing; producer-to-artifact-to-consumer tracing; native process-exit analysis; and read-only probes confirming that the terminal Bash `read` exits 1 on closed stdin and that the Python normalizer accepts and re-emits `NaN` and silently collapses duplicate keys. No manifest, emulator, ADB server, process, JSON file, archive, dependency, network resource, product test, or product source was mutated
+- Worktree note: only this canonical active-review ledger was edited by this call. Live `HEAD` is `54a128a7bf52a0b56288feac6e25512a83c88057`; live fixes archived BR-0157's StuffIt executable identity and BR-0233's per-file normalizer publication, but retains the unchecked native exits and strict-JSON defect. The introspection and stale-emulator helpers are byte-identical to the frozen head. Earlier campaign work in this ledger was preserved. The done ledger remained byte-identical at SHA-256 `25A871A66977116D91FE51482C80223AE63B5BB57138E40C08B301E20CCBB628`
+- Finding summary: archived BR-0157 already covers unverified StuffIt executables and false recorded provenance, while BR-0233 covers the normalizer's frozen direct-final file publication. New BR-0586 records that the manifest generator ignores unar and lsar native exits and can publish a partial listing as regression truth. New BR-0587 records that file-only automation modes still require unrelated live-game introspection and every mode ends in an interactive read that fails unattended use. New BR-0588 records that game and setup snapshots are accepted without freshness or request correlation after a fixed sleep. New BR-0589 records that any stale indicator causes cleanup to terminate every healthy online emulator and every matching process. New BR-0590 records that cleanup suppresses every stop and ADB failure, performs no postcondition check, and always reports exit 2 as cleaned. New BR-0591 records that the JSON normalizer accepts non-finite constants and duplicate members, emitting invalid JSON or silently changing object meaning
+- No-finding areas: ordinary fixed-corpus discovery, archive ordering, entry sorting, path-to-extracted-file checks, hashes, and stable manifest formatting are coherent apart from BR-0157, BR-0233, and BR-0586; introspection formatting and field extraction work for a fresh ordinary snapshot when used interactively; process discovery is constrained to emulator-like Windows processes when CIM command lines are available; and mission-metadata numeric canonicalization converges the maintained Android and host integer/float forms. With the listed roots accounted for, no additional actionable path, schema-field, ordering, parser, cleanup, or live-delta defect survived tracing
+
+### R1-CHUNK-0493 completion
+
+- Completed: 2026-08-06
+- Model: sol-5.6-medium
+- Result: BR-0157, BR-0284, BR-0592, BR-0593, BR-0594, BR-0595, BR-0596, BR-0597
+- Assigned scope checked: all 725 frozen lines across `android/helpers/run_automation.sh`, `android/helpers/run-clang-format.ps1`, `android/helpers/run-cmake-format.ps1`, `android/helpers/run-cmake-lint.ps1`, and `android/helpers/run-ktlint.ps1`
+- Context checked: automation broadcast admission, native pending-load and next-event execution, durable result and log publication, current catalog metadata, placeholders, game and launcher ownership, the maintained `run_test.ps1` path, BR-0284, and historical replacement plans; the aggregate code-quality wrapper, repository quality instructions, formatter and cmakelang plans, pinned dependency and host-resolution helpers, all branch-owned Kotlin, C/C++, and CMake source roots, BR-0537, BR-0569, BR-0574, archived BR-0157, complete assigned histories, frozen-to-live identity, and both ledgers for duplicate roots and used IDs
+- Commands or validation: `git cat-file`, `git diff`, `git show`, `git log --follow`, `git grep`, `git ls-tree`, `git status`, `Get-Content`, `Get-FileHash`, `rg`, and `Select-String`; complete line-numbered frozen-source inspection; Bash syntax validation; PowerShell AST parsing of all four assigned PowerShell files with zero errors; catalog and source-root inventories; caller and producer control-flow tracing; and read-only shell probes confirming Bash post-increment returns status 1 under `set -e`, ordinary command substitution suppresses an inner failure before a final successful `echo`, and ignored native formatter failures followed by ordinary output return process status zero. No ADB command, emulator action, formatter, dependency, product test, source file, catalog script, or generated artifact was run or mutated
+- Worktree note: only this canonical active-review ledger was edited by this call. Live `HEAD` is `54a128a7bf52a0b56288feac6e25512a83c88057`, and all five assigned files are byte-identical to the frozen review head. Earlier campaign work in this ledger was preserved. The done ledger remained byte-identical at SHA-256 `25A871A66977116D91FE51482C80223AE63B5BB57138E40C08B301E20CCBB628`
+- Finding summary: archived BR-0157 already covers unauthenticated formatter and runtime fallback selection, while BR-0284 covers uncorrelated automation PASS logs and replacement identity. New BR-0592 records that the first post-increment counter terminates the Bash runner under `set -e` after either outcome. New BR-0593 records that command-substitution staging suppresses failed ADB push and copy operations and can execute an older same-name device script as a new test. New BR-0594 records that `--all` ignores the catalog's launcher, game, parameter, and owner metadata and sends every script to one already-running game process. New BR-0595 records that the documented `--watch` flag is parsed but never changes behavior. New BR-0596 records that clang-format, cmake-format, and ktlint mutation modes ignore native failures and can report successful formatting after partial or zero work. New BR-0597 records that the fixed formatter scopes omit 91 Kotlin tests, 27 Android C/C++ test and tool files, and one branch-owned CMake module
+- No-finding areas: explicit script arrays and the default path preserve spaces locally before remote staging; `--all` glob order is deterministic; the logcat reader starts after broadcast but still consumes existing buffered records, so no distinct listener-start race was admitted; pass and fail pattern matching is bounded by the per-test timeout; native completion writes a durable result before deactivating; check-only clang, CMake format, CMake lint, and ktlint paths return nonzero for detected tool issues; fixed in-scope file lists are sorted and deduplicated; tool-host mismatch and dependency reproducibility remain BR-0569 and BR-0574. With the listed roots accounted for, no additional actionable argument, timeout, result-pattern, formatter-check, sorting, dependency, or live-delta defect survived tracing
+
 ## Findings
 
 This file contains open findings only. Finalized findings and their disposition
@@ -18608,6 +18642,261 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Every headless scan has a documented finite wall-clock budget, continuously drains diagnostics, terminates the complete owned process tree on timeout or cancellation, records a precise per-source failure, and either continues or aborts under an explicit batch policy.
 - Suggested fix: Use the bounded asynchronous process wrapper added after the frozen head (or a shared equivalent), make the deadline configurable with a safe finite default, kill and wait for the complete child tree in `finally`, preserve stdout and stderr, and apply it to both archive and built-in scans. Keep BR-0468's native arithmetic correction because a wrapper timeout contains rather than repairs that defect.
 - Validation: Run ordinary D1 and D2 scans plus fixtures that exit nonzero, hang before output, hang after partial stdout/stderr, spawn a descendant, ignore graceful termination, and trigger BR-0468. Require completion within the configured bound, no surviving child or descendant, truthful logs and status, later-item behavior matching policy, and unchanged successful metadata output.
+- Resolution: Pending
+
+### BR-0583: P2 - Include named profiling buckets in summaries
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/observability
+- Found by: R1-CHUNK-0491
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/summarize-profiling-log.ps1:L202-L303` in profiling-record dispatch
+- Related: `android/app/src/main/cpp/shared/android_profile.c:L405-L466`; `android/ai tool plans/crash, logging, diagnostics/plan_profiling_log_category_20260521.md:L112-L199,L352-L367`; BR-0270
+- Evidence: Every completed native sample emits one `bucket_avg` record for each named engine wicket and one `gl_avg` record for each GL metric immediately after its `summary` record. The summarizer's exhaustive switch handles only `frame`, `summary`, `texture_burst`, `texture`, `storage`, and `ui_poll`; it has no tables or output sections for `bucket_avg` or `gl_avg`, so those valid records are silently discarded. The plan identifies named top buckets by total and maximum time as the parser's primary output, while raw frame records expose only the few coarse top-level fields.
+- Trigger: Export any completed profiling sample with nonzero named engine buckets such as `render_mine`, `object_move_all`, or `ogl_bindbmtex`, then run `summarize-profiling-log.ps1`
+- Impact: The report cannot identify which instrumented engine function or deep GL boundary dominated sampled time, even though the producer measured and emitted those values. Investigators see only coarse frame totals and can be directed to add instrumentation that is already present or miss the actual hot path.
+- Expected: The maintained summarizer consumes every supported producer record and ranks named engine and GL buckets by total, average, and maximum duration with sample and game identity preserved.
+- Suggested fix: Add explicit `bucket_avg` and `gl_avg` parsing, validate their required fields, aggregate or group them by game and bucket under a documented multi-sample policy, and print bounded ranked sections. Reject or warn on unsupported schema versions and unexpected record types so future producer/parser drift is visible.
+- Validation: Feed synthetic D1 and D2 logs containing multiple samples, duplicate bucket names across games, zero and nonzero durations, reordered records, malformed fields, and known top engine and GL buckets. Assert exact totals, averages, maxima, ranking, game separation, and a failure or warning when a newly supported producer type is omitted.
+- Resolution: Pending
+
+### BR-0584: P2 - Propagate Docker NAT teardown failures
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/tooling
+- Found by: R1-CHUNK-0491
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/teardown_docker_nat.ps1:L29-L44` in emulator and compose cleanup
+- Related: `android/helpers/setup_docker_nat.ps1:L44-L69,L121-L143,L165`; `android/ai tool plans/emulator/plan.DUAL_EMU_DOCKER_NAT.md:L82-L96`; BR-0555, BR-0560, BR-0561
+- Evidence: The script invokes `adb devices`, each online emulator's `adb shell am broadcast`, and `docker compose down` without checking `$LASTEXITCODE`. `$ErrorActionPreference = "Stop"` does not promote native nonzero exits to terminating errors in the frozen PowerShell host. The broadcast path always prints `STUN override cleared`, and after any compose failure the script always prints `Docker NAT testbed torn down`; a focused equivalent native exit-7 pipeline followed by `Write-Host` produced a zero child-process exit.
+- Trigger: Let an emulator remain listed as online but make its broadcast fail, or make Docker unavailable, reject the compose project, or fail while stopping a container, then run the standalone teardown helper
+- Impact: Emulator STUN overrides or NAT proxy containers and published UDP ports can remain active while the operator and any caller receive a green success banner and exit zero. Later multiplayer tests can unknowingly use stale routing, collide with retained ports, or attribute results to the wrong NAT configuration.
+- Expected: Teardown attempts every independently cleanable resource, reports the exact failures, and exits nonzero unless all online emulator overrides are confirmed cleared and the compose project is down.
+- Suggested fix: Capture each native exit immediately, accumulate failures while continuing best-effort cleanup, query final emulator override and compose state where possible, and throw or exit nonzero after the final status summary. Print success only for cleanup steps whose command and postcondition succeeded.
+- Validation: Inject ADB discovery, per-emulator broadcast, Docker-unavailable, partial compose-down, and mixed failures through stub executables. Require every possible cleanup attempt, exact per-resource diagnostics, a nonzero final exit for any failed or retained resource, no false green status, and zero only when both overrides are clear and the project is absent.
+- Resolution: Pending
+
+### BR-0585: P2 - Make demo state stripping transactional
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/transactionality
+- Found by: R1-CHUNK-0491
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/strip_input_demo_frame_state.ps1:L150-L174` in directory transformation and publication
+- Related: `android/helpers/strip_input_demo_frame_state.ps1:L91-L141`; `android/ai tool plans/input demo, replay, determinism/plan_strip_input_demo_frame_state_20260504.md:L18-L23`; input-demo replay and regression consumers under `android/tests`
+- Evidence: The sorted loop parses one demo and immediately rewrites its final pathname with `File.WriteAllText` before examining the next file. A valid `a.dximdemo` is therefore irreversibly changed before a malformed `z.dximdemo` throws; the command exits without its final summary but leaves a partially transformed directory. Each individual write also truncates the sole original before replacement bytes are durably complete. The implementation plan claims a focused `test_strip_input_demo_frame_state.ps1` passed, but no such test exists anywhere in the frozen tree or complete file history, so neither partial-batch nor publication failure is covered.
+- Trigger: Place a valid state-bearing demo before a malformed or missing-type demo in lexical order, or interrupt or fail storage after `WriteAllText` truncates an existing demo
+- Impact: A failed cleanup run can silently remove diagnostic frame state from only some recordings or leave a demo truncated, destroying the evidence the tool is intended to reduce only after deliberate inspection. Subsequent replay and regression runs then operate on a mixed or corrupt corpus whose failed transformation has no complete result record.
+- Expected: The tool validates every selected input before changing any file, and each approved transformation either publishes complete durable bytes with recoverable batch semantics or preserves the original generation.
+- Suggested fix: Parse and build all replacements first, then stage unique same-directory files, flush and close them, and atomically replace only after all inputs validate. Retain backups or a rollback manifest until the complete selected batch commits, clean staging in `finally`, and distinguish changed, previewed, committed, and rolled-back counts.
+- Validation: Add the focused test named by the plan with valid, state-free, nested, malformed-first, malformed-last, missing-type, access-denied, short-write, replacement-failure, interruption, `-WhatIf`, newline, encoding, and multi-file fixtures. At every injected boundary require either byte-identical originals or the complete expected generation, never a partial directory or truncated demo.
+- Resolution: Pending
+
+### BR-0586: P2 - Reject failed StuffIt oracle subprocesses
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: test-gap/false-pass
+- Found by: R1-CHUNK-0492
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/generate-stuffit-corpus-manifests.ps1:L141-L149,L166-L174,L325-L337` in unar version, extraction, and lsar listing execution
+- Related: `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp`; `android/app/src/main/cpp/extract/test/data/stuffit_manifests`; archived BR-0157; BR-0182; BR-0233
+- Evidence: The generator invokes `unar -v`, `unar` extraction, and `lsar -j` without capturing or checking `$LASTEXITCODE`; `$ErrorActionPreference = 'Stop'` does not turn a native nonzero exit into a terminating PowerShell error. Version failure is converted to `unknown`, extraction continues after a nonzero exit, and lsar stdout is parsed regardless of status. If lsar emits a valid partial JSON object before failing, every listed file that unar happened to extract is hashed and the reduced entry set is written as the final regression manifest, followed by the green per-archive and overall success messages. The consumer validates only entries present in the manifest, so omitted entries do not fail the test. Archived BR-0157 covers executable identity, not this failure-admission path.
+- Trigger: Substitute or fault an otherwise authenticated lsar so it emits a valid `lsarContents` prefix and exits nonzero after omitting one or more archive entries, while unar extracts the listed files; version and extraction nonzero paths can be exercised independently
+- Impact: A failed reference extractor can redefine the checked-in oracle as a partial archive and leave the production StuffIt regression green, hiding missing-entry, unsupported-method, or extraction regressions behind a generated success banner
+- Expected: Every reference-tool invocation must exit zero before any stdout or extracted byte is trusted, and a manifest is published only after a complete independently validated archive inventory succeeds
+- Suggested fix: Run unar and lsar through one checked subprocess wrapper that captures bounded stdout and stderr, enforces a finite timeout, and rejects every nonzero exit before parsing. Validate the listing's declared and observed entry counts and identities, stage all six manifests, and atomically publish only the complete validated generation. Retain BR-0157's exact executable verification.
+- Validation: Stub version, unar, and lsar independently to exit 1 and 7 before output, after partial output, and after apparently complete output; include malformed and valid partial JSON, missing and duplicate entries, hangs, and stderr floods. Require nonzero generator status, exact diagnostics, no green success, and byte-identical prior manifests for every failed generation; retain complete-corpus success as the control.
+- Resolution: Pending
+
+### BR-0587: P2 - Keep introspection modes noninteractive and mode-specific
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: reliability/tooling
+- Found by: R1-CHUNK-0492
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/introspect.sh:L36-L52,L85-L145,L146-L148` in global game-dump setup and terminal prompt
+- Related: `.github/copilot-instructions.md:L152-L161,L218`; `android/helpers/introspect.sh:L122-L140`; `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L2301-L2310`
+- Evidence: Every mode except `setup` first broadcasts a game-state request, sleeps, and requires `files/introspect.json` before dispatching the case statement. This includes `autolog` and `autoresult`, whose own comments explicitly say they are file-based and need no introspection. Those diagnostic modes therefore fail before reading their durable artifact when the game is stopped, crashed, or has never produced an introspection file, precisely when post-run results are needed. After every successful mode, including raw output intended for tools, the script prints a prompt and executes `read -r -n1 -s`; under `set -e`, closed stdin makes the otherwise successful command exit 1, while an attached unattended terminal blocks indefinitely. A read-only closed-stdin probe reproduced exit 1.
+- Trigger: Run `introspect.sh autoresult` or `autolog` after automation terminates the game with no `introspect.json`, or invoke any documented mode from CI, an AI tool, a pipeline, redirected stdin, or a terminal without supplying a key
+- Impact: Durable automation evidence can become inaccessible after the failure it should diagnose, and successful machine-readable commands either hang or report failure after already emitting data, breaking scripts and encouraging callers to ignore exit status
+- Expected: Each mode performs only its required request and read, emits only its requested data to stdout, and terminates promptly with zero on success without consuming stdin
+- Suggested fix: Parse and validate the mode first, dispatch file-only automation reads before any introspection request, and remove the unconditional prompt. If a human pause remains desirable, put it behind an explicit `--pause` option that requires a TTY and never changes the data command's status.
+- Validation: Stub ADB and run every mode with closed stdin, a pipe, and a pseudo-terminal; test game absent, setup absent, automation-only artifacts present, and normal live game/setup states. Assert exact command sequences, no unrelated broadcast or file read, bounded completion, clean stdout, and zero only when the requested artifact succeeds.
+- Resolution: Pending
+
+### BR-0588: P2 - Correlate introspection reads with the current request
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/observability
+- Found by: R1-CHUNK-0492
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/introspect.sh:L36-L52,L85-L101` in game and setup snapshot acquisition
+- Related: `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L2301-L2310`; `android/app/src/main/cpp/shared/game_introspect.cpp:L2106-L2149`; `d1/arch/sdl/event.c:L258`; `d2/arch/sdl/event.c:L258`; BR-0190
+- Evidence: Both acquisition paths send a broadcast, sleep exactly one second, and accept whichever final-path JSON already exists. They neither remove or timestamp the prior file nor include a request identifier in the broadcast and result. MainActivity ignores the game request while `gameStarted` is false and otherwise only sets a volatile flag for `game_introspect_check_and_dump` on a later engine event; broadcast success therefore proves neither receiver admission nor publication. A paused, blocked, slow, stopped, or just-starting game can leave the previous file untouched past the fixed sleep, and the helper then presents that stale generation as current. Setup uses the same uncorrelated fixed-delay contract.
+- Trigger: Leave a prior valid introspection file, then request another snapshot while the game is before `gameStarted`, paused, blocked for more than one second, stopped before its next event tick, or while SetupActivity does not service the matching request
+- Impact: Developers and automated agents can diagnose menus, player state, position, setup readiness, or console output from an earlier frame or session while believing it reflects the just-issued request, leading to false test conclusions and incorrect follow-up actions
+- Expected: A successful helper response proves that the requested component admitted this invocation and atomically published a snapshot generated after it, or fails with a bounded precise timeout
+- Suggested fix: Generate a unique request ID, pass it with the broadcast, record it plus a monotonic generation in the atomically written snapshot, and poll until that exact ID appears under a finite deadline. Alternatively remove the old file before a checked broadcast and require a strictly newer file identity, while retaining IDs to avoid races between concurrent callers.
+- Validation: Exercise ordinary, delayed, paused, ignored, stopped, concurrent, and restarted game/setup receivers with prepopulated valid files. Require only the matching new generation to succeed, stale and cross-request files never to satisfy the call, timeout within the bound, and atomic complete JSON at every accepted read.
+- Resolution: Pending
+
+### BR-0589: P2 - Preserve healthy emulators during stale-state cleanup
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/destructive-tooling
+- Found by: R1-CHUNK-0492
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/kill-stale-emulators.ps1:L95-L120,L122-L159` in stale classification and cleanup target selection
+- Related: `android/helpers/test_helpers.ps1:L1894-L1901,L1967-L1998`; `android/run_all_tests.ps1:L771-L785,L798-L827`; `android/ai tool plans/testing/plan_run_all_tests_auto_stale_emulator_cleanup_20260526.md`
+- Evidence: Detection reduces the whole host to one `$isStale` bit: any offline serial, process/device count mismatch, or orphan crash handler activates cleanup. `Stop-StaleEmulatorState` then sends `emu kill` to the union of every online and offline emulator serial and force-kills every discovered emulator, qemu, and crash-handler process; it never maps the triggering stale evidence to a specific serial, AVD, port, or process. Thus one offline emulator beside one healthy online emulator causes the healthy peer to receive `emu kill` and its process to be force-stopped too. The normal run-all cleanup helper is automatic, while the suite's ordinary shutdown code demonstrates narrower ownership by stopping only emulators it started.
+- Trigger: Keep a healthy online emulator with active unsaved or test state while a second emulator serial is offline, or leave an orphan crash handler beside a healthy emulator, then run the helper with `-Kill` directly or through automatic preflight/recovery
+- Impact: Repairing one stale instance destroys unrelated healthy emulator sessions, interrupts parallel test or developer work, loses guest state, and can create secondary failures in other processes without identifying that collateral action
+- Expected: Cleanup terminates only the serials and processes proven stale and owned by the requested recovery scope; healthy or unrelated emulators remain untouched unless the caller explicitly requests and confirms a full recycle
+- Suggested fix: Build per-instance records by correlating serial port, AVD name, PID, parent/child relationships, and command line; classify and stop only stale records. Accept an explicit owned serial/AVD allowlist from test callers, reserve all-instance cleanup for a separately named confirmed option, and report every selected target before mutation.
+- Validation: Use stub ADB/process inventories with one and multiple healthy, offline, process-only, device-only, and crash-handler instances in every combination. Assert only the proven stale owned instance is targeted, a healthy peer receives no command or stop, ambiguous mappings fail closed, and explicit full recycle remains separately testable.
+- Resolution: Pending
+
+### BR-0590: P2 - Verify stale-emulator cleanup before reporting success
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/tooling
+- Found by: R1-CHUNK-0492
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/kill-stale-emulators.ps1:L95-L120,L159-L162` in best-effort termination and final status
+- Related: `android/run_all_tests.ps1:L771-L785`; `android/helpers/test_helpers.ps1:L1894-L1901`; BR-0584
+- Evidence: Every `adb emu kill`, `Stop-Process`, `adb kill-server`, and `adb start-server` failure is ignored through unchecked native exits, `-ErrorAction SilentlyContinue`, or empty catches. The helper never waits for targeted processes to exit, reruns device/process discovery, or verifies that ADB restarted. After any attempted cleanup it unconditionally prints `Stale emulator cleanup requested` and exits 2, whose documented meaning is `stale state detected and cleaned`; run-all converts that exact status into `was cleaned before preflight`. A denied process stop, failed ADB kill, retained offline serial, or failed server restart is therefore reported as completed cleanup.
+- Trigger: Make any selected emulator reject `emu kill`, deny `Stop-Process`, keep a process alive, or make ADB kill-server or start-server exit nonzero, then invoke `-Kill`
+- Impact: Preflight and recovery continue under a false clean-state assumption, so retained emulator processes, offline serials, or a dead ADB server cause later timeouts and misleading failures while the original cleanup error is lost
+- Expected: Exit 2 and the cleaned message are emitted only after every required command succeeds and a bounded postcondition proves the selected stale state is gone and required ADB service is usable; otherwise the helper exits nonzero with exact residual state
+- Suggested fix: Capture every native and PowerShell error, wait with finite deadlines for selected processes and serials to disappear, restart and probe ADB when required, then rediscover state and classify residuals. Reserve exit 2 for a proven transition from stale to clean and return a distinct failure code with per-target diagnostics otherwise.
+- Validation: Stub every cleanup operation to succeed, fail, hang, return nonzero, or claim success while retaining state, including mixed outcomes and ADB restart failure. Require complete independent attempts, bounded termination, exact residual diagnostics, no false green output, and exit 2 only when post-cleanup discovery is clean.
+- Resolution: Pending
+
+### BR-0591: P2 - Reject ambiguous and non-standard JSON during normalization
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/data-integrity
+- Found by: R1-CHUNK-0492
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/normalize_json.py:L47-L51,L88-L107` in parse, serialize, and error handling
+- Related: `android/tests/test_mission_metadata_json_normalization.ps1:L16-L48`; `android/helpers/run_mission_zip_batch.ps1:L64-L99`; `android/helpers/regenerate_all_mission_metadata_host.ps1:L129-L159`; BR-0233
+- Evidence: Python's default `json.loads` accepts the non-standard constants `NaN`, `Infinity`, and `-Infinity`, and its object parser silently keeps only the last occurrence of a duplicate member. Default `json.dumps` also permits and re-emits those non-finite tokens. The normalizer supplies neither `parse_constant` nor `object_pairs_hook`, and catches only `JSONDecodeError`, so both cases return success. Read-only probes produced `{"x": NaN}` with exit 0 from `{"x":NaN}` and `{"x": 2}` with exit 0 from `{"x":1,"x":2}`. The maintained test checks only integer/float convergence and idempotence. Strict downstream JSON parsers can reject the non-finite output, while duplicate collapse silently chooses one of two conflicting schema values.
+- Trigger: Normalize stdin or a file containing a bare non-finite constant or duplicate object name, including a duplicated mission identity, index, path, distance, or position field
+- Impact: A command advertised as JSON normalization can bless and publish bytes that are not interoperable JSON, or silently change an ambiguous generated artifact's meaning, allowing malformed regression metadata to pass formatting gates and fail later or test the wrong value
+- Expected: Normalization accepts one unambiguous interoperable JSON value only: every number is finite and every object member name is unique before canonicalization or publication
+- Suggested fix: Pass a `parse_constant` callback that raises `JSONDecodeError` or a dedicated validation error, use an `object_pairs_hook` that rejects duplicate names at every depth, and serialize with `allow_nan=False`. Report file path and structural location without printing unbounded input, and retain BR-0233's atomic publication.
+- Validation: Add stdin, file, `--check`, and `--mission-metadata` cases for each non-finite spelling, duplicate keys at every nesting level and in both orders, escaped-equivalent names, huge finite boundary values, ordinary finite floats, and valid repeated names in separate objects. Require deterministic nonzero rejection without modification for ambiguous input and byte-stable success for the maintained corpus.
+- Resolution: Pending
+
+### BR-0592: P2 - Count automation results without triggering errexit
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/test-runner
+- Found by: R1-CHUNK-0493
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run_automation.sh:L17,L198-L221` in aggregate result counting
+- Related: `android/helpers/run_automation.sh:L83-L190`; `android/helpers/run_test.ps1`; `android/ai tool plans/testing/fix_test_failures_20260329.md:L30`
+- Evidence: The script enables `set -e` and increments both counters with standalone post-increment arithmetic commands. In Bash, `((passed++))` and `((failed++))` return the truth status of the old value, so the first increment from zero returns status 1. After the first test returns through either branch of the surrounding `if`, errexit terminates the runner on that counter before it appends a failed name, prints the inter-test separator or final summary, or reaches its explicit success/failure exit policy. A read-only Bash probe reproduced exit 1 for `passed=0; ((passed++))` under `set -e`, while pre-increment completed normally.
+- Trigger: Run the documented default single test, any explicit single test, or `--all`, and let the first executed test pass or fail normally
+- Impact: A passing automation test is reported to callers with process exit 1, every multi-test run stops after its first result, and failure summaries omit even the first failed name, making the standalone runner unusable as a trustworthy test entry point
+- Expected: Every completed test updates its counters without affecting shell control flow, all selected tests run unless an explicit stop policy says otherwise, and the final process status reflects the aggregate result
+- Suggested fix: Use assignment or pre-increment forms whose successful update returns zero, such as `passed=$((passed + 1))` and `failed=$((failed + 1))`, and keep the arithmetic inside an explicit non-status-bearing helper. Prefer delegating execution and aggregation to the maintained `run_test.ps1` infrastructure rather than retaining a second runner contract.
+- Validation: Add a shell-level runner test with stubbed `run_single_test` outcomes for one pass, one fail, pass-pass, fail-pass, pass-fail, and all fail. Require every selected case to execute, exact counts and names, complete summaries, zero only for all-pass, and nonzero for any failure under `set -euo pipefail`.
+- Resolution: Pending
+
+### BR-0593: P2 - Fail automation staging before broadcasting
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: test-gap/false-pass
+- Found by: R1-CHUNK-0493
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run_automation.sh:L71-L81,L97-L105` in script staging and launch
+- Related: `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L2320-L2345`; `android/app/src/main/cpp/shared/game_automate.cpp:L2541-L2557,L2614-L2657`; BR-0190; BR-0284
+- Evidence: `push_script` runs ADB push, app-private copy, and temporary cleanup before echoing the basename. Its caller executes the function inside `basename=$(push_script "$script")`. Ordinary Bash command substitution clears errexit in its subshell unless `inherit_errexit` is explicitly enabled, which this runner does not do; the final successful `echo` therefore makes the assignment succeed even when push or copy returned nonzero. A read-only Bash probe with `false; echo stale.json5` inside the same function/substitution shape returned zero and preserved the echoed name. The runner then clears logs and broadcasts that basename. If an older file of the same name remains in app storage, MainActivity resolves and loads it, and its PASS can certify the new local request. Unquoted remote basename interpolation also makes a valid name containing spaces fail the copy while following this same suppressed path.
+- Trigger: Leave a passing device-side script, change the local same-name script to fail, then make `adb push` or `run-as cp` fail through storage, permissions, transport, ambiguity, or a basename containing spaces and rerun it
+- Impact: The runner can report PASS for bytes from an earlier test generation rather than the selected local script, hiding the regression under test; without a stale file it degrades the staging error into a misleading crash or timeout
+- Expected: Every required staging operation succeeds with checked status before broadcast, and the executed device bytes are bound to the selected local generation so stale content cannot satisfy a run
+- Suggested fix: Avoid command substitution around side-effecting staging, or enable and test explicit error propagation; capture the basename separately only after checked push and copy operations. Stage under a unique run-ID name, hash or compare the device bytes, quote remote arguments through a safe argv or shell-escaping helper, pass the same run ID to automation, and consume its correlated durable result under BR-0284.
+- Validation: Stub push, copy, cleanup, and broadcast independently with exits 1 and 7, spaces and shell metacharacters in basenames, stale same-name PASS files, partial transfers, multiple devices, and a successful control. Require immediate staging failure with no broadcast, no stale PASS, exact diagnostics, and execution only of the verified unique staged bytes.
+- Resolution: Pending
+
+### BR-0594: P2 - Make automation all-mode catalog-aware
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/test-runner
+- Found by: R1-CHUNK-0493
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run_automation.sh:L42-L67,L83-L105,L192-L221` in all-script selection and execution
+- Related: `android/helpers/run_test.ps1`; `android/run_all_tests.ps1`; `android/game_scripts`; BR-0552; BR-0553
+- Evidence: `--all` glob-selects every `game_scripts/test_*.json5` and broadcasts each basename to whichever MainActivity is already running. It does not parse catalog metadata, resolve `${...}` parameters, distinguish launcher from game automation, select D1 versus D2, honor custom owner scripts, reset or launch the required state, or install/provision the intended app. The frozen catalog contains 78 matched scripts; 18 explicitly declare `_standalone: false`, 34 contain unresolved placeholders, and the corpus includes D1-specific, D2-specific, launcher, paired-emulator, multiplayer, and owner-driven workflows. The maintained `run_test.ps1` and aggregate runner implement those distinctions, while a historical plan already replaced `run_automation.sh` use because it did not own the required lifecycle.
+- Trigger: Invoke the advertised `run_automation.sh --all` against any ordinary running game, especially with the frozen catalog containing launcher, parameterized, game-specific, multiplayer, or custom-runner scripts
+- Impact: The command cannot execute the selected corpus under its declared preconditions; it produces false failures and timeouts, can run a script against the wrong game or inherited state, and may mutate one live session with steps intended for another workflow while still presenting a nominal aggregate test result
+- Expected: An all-mode selects only independently runnable tests whose metadata it understands, expands required parameters, provisions and launches the correct owner and game for each case, resets isolation state, and classifies unsupported workflows explicitly rather than broadcasting them blindly
+- Suggested fix: Remove this duplicate all-mode and delegate catalog discovery and execution to `run_all_tests.ps1` or a shared typed catalog API. If a lightweight mode remains, require an explicit supported subset, parse the same strict metadata, call `run_test.ps1` per game/case with bounded parameters, and report excluded owner-driven workflows as skips or errors under one documented policy.
+- Validation: Build a catalog fixture containing standalone game tests for D1 and D2, launcher scripts, placeholders, `_standalone: false`, custom owners, multiplayer peers, malformed metadata, and an empty selection. Assert correct owner/game/reset/parameter calls, no direct broadcast for unsupported entries, exact pass/fail/skip accounting, and parity with the maintained aggregate catalog.
+- Resolution: Pending
+
+### BR-0595: P2 - Implement or reject automation watch mode
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/tooling
+- Found by: R1-CHUNK-0493
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run_automation.sh:L5-L10,L42-L54,L109-L189` in watch option parsing and logcat lifetime
+- Related: `android/helpers/introspect.sh`; `android/helpers/run_test.ps1`; `.github/copilot-instructions.md:L213-L218`
+- Evidence: Usage promises `--watch script.json` will run the test and keep tailing logcat, and the parser accepts `--watch` or `-w` by setting `WATCH=true`. The variable is never read afterward; the accompanying shellcheck suppression instead labels it reserved for a future watch-and-rerun mode. Every invocation starts the same filtered background logcat, kills and waits for it immediately after a terminal result or timeout, deletes the temporary capture, prints the ordinary summary, and exits. Thus the advertised diagnostic mode is silently identical to a normal run.
+- Trigger: Invoke either documented watch spelling while reproducing a failure whose relevant logs occur after the automation terminal record or while interactively expecting continued log output
+- Impact: The runner exits and discards its capture instead of retaining the promised diagnostic stream, so post-failure engine, activity, crash, or teardown evidence is missed while the operator believes watch mode was active
+- Expected: A supported watch mode visibly streams the selected bounded logs until explicit interruption and cleans up on exit; an unimplemented mode is rejected with nonzero status rather than accepted as if honored
+- Suggested fix: Prefer removing the option and directing users to maintained durable artifacts and an explicit logcat command. If retained, branch on `WATCH`, stream with a documented tag and device scope after the test, install `EXIT`/signal traps for child and temporary cleanup, preserve the test result separately, and define how the user terminates watching.
+- Validation: Run short pass, fail, crash, and timeout fixtures with and without both watch spellings under a pseudo-terminal and redirected output. Require normal mode to exit promptly, watch mode to remain and display later records until interruption, exact result retention, and no surviving logcat process or temporary file after normal or signal termination.
+- Resolution: Pending
+
+### BR-0596: P2 - Propagate formatter mutation failures
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: correctness/tooling
+- Found by: R1-CHUNK-0493
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run-clang-format.ps1:L135-L140`; `android/helpers/run-cmake-format.ps1:L121-L126`; `android/helpers/run-ktlint.ps1:L124-L128` in in-place formatting
+- Related: `android/run-code-quality.ps1:L374-L400,L449-L460`; `.github/copilot-instructions.md:L59-L66`; archived BR-0157
+- Evidence: All three mutation branches invoke native tools without checking `$LASTEXITCODE` and then unconditionally print `Formatted` or `Done`. `$ErrorActionPreference = 'Stop'` does not promote native nonzero exits in the frozen PowerShell host. A direct child-PowerShell probe with native exit 7 followed by the same ordinary success output returned process status zero. Clang and CMake formatting invoke one child per file, so a failed early file followed by a successful later file also resets the residual native status to zero before the aggregate wrapper inspects it; this can produce a green overall `-Fix` run with only a subset changed. Ktlint's single failed invocation can still return zero when the helper is run directly as documented.
+- Trigger: Make an in-scope file unreadable, supply a formatter that rejects one file or its configuration, exhaust storage during a write, or have ktlint, clang-format, or cmake-format exit nonzero in direct or aggregate fix mode
+- Impact: Developers and automation can be told formatting completed while files remain unformatted or only a prefix/suffix was changed, allowing style drift and partial mechanical rewrites to proceed into later validation or review under a false-success status
+- Expected: Every native formatting invocation has an immediately captured zero exit before its file is counted, any failure makes the helper and aggregate wrapper nonzero, and success text describes only verified completed files
+- Suggested fix: Centralize checked native invocation with per-file path and bounded diagnostics, accumulate failures only if continuing is intentional, and exit nonzero after the final attempt. Do not print success or count a file until its child exits zero; for mutation failures, report which files may already have changed so callers can review or restore them.
+- Validation: Stub each formatter to fail first, middle, last, and every file with exits 1 and 7, emit stderr, partially rewrite, and succeed. Exercise direct helpers and aggregate `-Fix`; require exact failed paths, nonzero final status for any failure, truthful completed counts, no green summary, and zero only when every invocation succeeds.
+- Resolution: Pending
+
+### BR-0597: P2 - Include test and auxiliary sources in quality scopes
+
+- [ ] OPEN
+- Type: defect
+- Confidence: high
+- Category: test-gap/tooling
+- Found by: R1-CHUNK-0493
+- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run-clang-format.ps1:L19-L57,L93-L104`; `android/helpers/run-ktlint.ps1:L19-L57,L101-L104`; `android/helpers/run-cmake-format.ps1:L18-L58,L93-L98`; `android/helpers/run-cmake-lint.ps1:L16-L55,L88-L93` in hard-coded source discovery
+- Related: `android/app/src/test/java`; `android/tests`; `android/tools/etc2tool`; `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake`; `android/ai tool plans/code management/CODE_QUALITY_TOOLING_PLAN.md:L34-L61,L101-L105`; `.github/copilot-instructions.md:L55-L66`; BR-0537
+- Evidence: Ktlint's root is fixed to `app/src/main/java`, excluding all 91 frozen Kotlin tests under `app/src/test/java` despite the plan's verification claim that it scans all `.kt` files. Clang-format is fixed to `app/src/main/cpp`, excluding 27 frozen branch-owned C/C++ files under `android/tests` and `android/tools/etc2tool`. Both helpers filter an explicitly supplied excluded path to an empty set and exit zero with `No files found`, so even scoped quality on a changed test silently skips it. The CMake helpers use a fixed list that covers eight of nine branch-owned CMake files but omits `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake`; passing that exact changed file likewise returns success without formatting or linting. The aggregate wrapper cannot recover files its delegated helpers declare out of scope.
+- Trigger: Change any Kotlin unit test, Android native host test, etc2tool source, or the omitted StuffIt oracle CMake module, then run the repository-prescribed scoped or full code-quality command
+- Impact: Large maintained test and auxiliary code surfaces receive green quality results without their language formatter or linter ever reading them, allowing syntax-style drift and CMake lint errors in the same files relied on to validate production behavior
+- Expected: Every branch-owned source file governed by the repository's formatter configurations is included in full runs, and an explicitly supplied supported file is either checked by its tool or rejected clearly rather than silently converted to success
+- Suggested fix: Define one repository-owned include/exclude manifest by language and share it between the wrapper and helpers. Include Kotlin main and test roots, branch-owned Android C/C++ tests and tools, and all branch-owned CMake modules while retaining explicit upstream d1/d2 and SDL exclusions; fail if an explicit language-matching path falls outside policy unexpectedly.
+- Validation: Enumerate tracked and explicit untracked fixtures across main, test, tool, generated, upstream, excluded SDL, and each CMake directory. Stub tools to record argv and require every intended file exactly once, every documented exclusion absent, omitted/new branch-owned files to fail a coverage assertion, and explicit out-of-policy inputs to return a diagnostic rather than a no-file pass.
 - Resolution: Pending
 
 ## Final disposition archive
