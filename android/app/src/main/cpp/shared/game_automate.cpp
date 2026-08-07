@@ -64,6 +64,8 @@ extern "C" {
 #include "gameseg.h"
 #include "endlevel.h"
 #include "gameseq.h"
+#include "kmatrix.h"
+#include "multi.h"
 #include "object.h"
 #include "collide.h"
 #include "hudmsg.h"
@@ -359,6 +361,7 @@ enum step_type {
 	STEP_ANALYZE_LEVEL_METADATA_ALL, /* launcher-only: no-op in game engine (skip) */
 	STEP_TRIGGER_ENDLEVEL,           /* call start_endlevel_sequence() */
 	STEP_TRIGGER_LEVELCOMPLETE,      /* call PlayerFinishedLevel(0) directly */
+	STEP_TRIGGER_POSTLEVEL,          /* open the multiplayer post-level summary */
 	STEP_MUSIC_CONTROL,              /* invoke shared Android track controls */
 	STEP_WRITE_CONFIG,               /* launcher-only: no-op in game engine (skip) */
 	STEP_TAP_BUTTON,                 /* launcher-only: no-op in game engine (skip) */
@@ -560,6 +563,7 @@ static const char *step_type_name(step_type t)
 		case STEP_ANALYZE_LEVEL_METADATA_ALL: return "analyze_level_metadata_all";
 		case STEP_TRIGGER_ENDLEVEL: return "trigger_endlevel";
 		case STEP_TRIGGER_LEVELCOMPLETE: return "trigger_levelcomplete";
+		case STEP_TRIGGER_POSTLEVEL: return "trigger_postlevel";
 		case STEP_MUSIC_CONTROL: return "music_control";
 		case STEP_WRITE_CONFIG: return "write_config";
 		case STEP_TAP_BUTTON: return "tap_button";
@@ -2177,6 +2181,7 @@ static int parse_script(const char *json_text)
 			else if (action == "analyze_level_metadata_all") s.type = STEP_ANALYZE_LEVEL_METADATA_ALL;
 			else if (action == "trigger_endlevel") s.type = STEP_TRIGGER_ENDLEVEL;
 			else if (action == "trigger_levelcomplete") s.type = STEP_TRIGGER_LEVELCOMPLETE;
+			else if (action == "trigger_postlevel") s.type = STEP_TRIGGER_POSTLEVEL;
 			else if (action == "music_control") s.type = STEP_MUSIC_CONTROL;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
@@ -3490,6 +3495,27 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			PlayerFinishedLevel(0);
 			break;
+
+		case STEP_TRIGGER_POSTLEVEL: {
+			int old_connected;
+			int old_game_mode;
+			int old_screen_mode;
+			if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+				stop_script_fail("trigger_postlevel: game is not running");
+				break;
+			}
+			old_connected = Players[Player_num].connected;
+			old_game_mode = Game_mode;
+			old_screen_mode = Screen_mode;
+			Players[Player_num].connected = CONNECT_END_MENU;
+			Game_mode |= GM_MULTI_COOP;
+			advance_step();
+			kmatrix_view(0);
+			Game_mode = old_game_mode;
+			Players[Player_num].connected = old_connected;
+			set_screen_mode(old_screen_mode);
+			break;
+		}
 
 		case STEP_MUSIC_CONTROL: {
 			int result;

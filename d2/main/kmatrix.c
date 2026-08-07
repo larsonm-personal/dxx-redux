@@ -61,6 +61,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 void kmatrix_phallic ();
 void kmatrix_redraw_coop();
 fix64 StartAbortMenuTime;
+#ifdef __ANDROID__
+volatile int g_postlevel_active = 0;
+#endif
 
 void kmatrix_draw_item( int  i, int *sorted )
 {
@@ -321,6 +324,25 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 					break;
 			}
 			break;
+
+#ifdef __ANDROID__
+		case EVENT_MOUSE_BUTTON_DOWN:
+			if (event_mouse_get_button(event) == MBTN_LEFT && km->end_time != -1)
+			{
+				km->end_time = timer_query();
+				return 1;
+			}
+			break;
+
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+			/* Button 0 is controller A, shared with MainActivity.kt. */
+			if (event_joystick_get_button(event) == 0 && km->end_time != -1)
+			{
+				km->end_time = timer_query();
+				return 1;
+			}
+			break;
+#endif
 			
 		case EVENT_WINDOW_DRAW:
 			timer_delay2(50);
@@ -420,6 +442,12 @@ void kmatrix_view(int network)
 	
 	set_screen_mode( SCREEN_MENU );
 	game_flush_inputs();
+#ifdef __ANDROID__
+	{
+		extern void android_arm_cutscene_tap_suppress(void);
+		android_arm_cutscene_tap_suppress();
+	}
+#endif
 
 	for (i=0;i<MAX_PLAYERS;i++)
 		digi_kill_sound_linked_to_object (Players[i].objnum);
@@ -430,9 +458,15 @@ void kmatrix_view(int network)
 		d_free(km);
 		return;
 	}
+#ifdef __ANDROID__
+	g_postlevel_active = 1;
+#endif
 	
 	while (window_exists(wind))
 		event_process();
+#ifdef __ANDROID__
+	g_postlevel_active = 0;
+#endif
 	gr_free_bitmap_data(&km->background);
 	d_free(km);
 }
