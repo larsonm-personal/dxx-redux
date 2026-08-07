@@ -106,6 +106,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop/coop_powerup_duplication.h"
 #include "track_names.h"
 #include "android_crash_handler.h"
+#include "android_screen_advance.h"
 #include "coop_save.h"
 #include "coop_warp.h"
 #include "android_log.h"
@@ -1127,12 +1128,9 @@ void DoEndLevelScoreGlitz(int network)
 	Assert(c <= N_GLITZITEMS);
 
 #ifdef __ANDROID__
-	extern void android_arm_cutscene_tap_suppress(void);
 	extern void game_flush_inputs(void);
-	extern volatile int g_levelcomplete_active;
-	g_levelcomplete_active = 1;
 	game_flush_inputs();
-	android_arm_cutscene_tap_suppress();
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE, 1);
 #endif
 #ifdef NETWORK
 	if ( network && (Game_mode & GM_NETWORK) )
@@ -1142,7 +1140,7 @@ void DoEndLevelScoreGlitz(int network)
 		// NOTE LINK TO ABOVE!!!
 		newmenu_do2(NULL, title, c, m, NULL, NULL, 0, STARS_BACKGROUND);
 #ifdef __ANDROID__
-	g_levelcomplete_active = 0;
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE);
 #endif
 }
 

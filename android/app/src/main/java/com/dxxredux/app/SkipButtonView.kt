@@ -4,15 +4,13 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
-import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.min
 
 /**
- * Circular "SKIP" button shown in the upper-right corner during movies and briefings.
- * Tapping it injects an ESC key event to skip the current skippable screen.
+ * Upper-right action for transient native screens and Android's launch-intro preference.
  */
 class SkipButtonView(
     context: Context,
@@ -22,6 +20,8 @@ class SkipButtonView(
     }
 
     var keyCallback: ((action: Int, keyCode: Int, unicode: Int) -> Unit)? = null
+    var screenAdvanceCallback: ((generation: Long) -> Unit)? = null
+    var screenAdvanceGeneration: Long? = null
     var skipEveryLaunchCallback: (() -> Unit)? = null
     var label: String = "SKIP"
         set(value) {
@@ -71,7 +71,7 @@ class SkipButtonView(
     private var circleTextSize = 0f
     private var pillTextSize = 0f
     private var pressed = false
-    private var armAtMs = 0L
+    private var pressedScreenAdvanceGeneration: Long? = null
     private val screenLocation = IntArray(2)
 
     private val pressedBgPaint =
@@ -142,9 +142,8 @@ class SkipButtonView(
     ) {
         super.onVisibilityChanged(changedView, visibility)
         if (changedView === this && visibility == VISIBLE) {
-            // Ignore stale touch-up events during state transitions
-            armAtMs = SystemClock.uptimeMillis() + if (bigLabel) 0L else ARM_DELAY_MS
             pressed = false
+            pressedScreenAdvanceGeneration = null
             invalidate()
         }
     }
@@ -201,11 +200,9 @@ class SkipButtonView(
 
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                if (SystemClock.uptimeMillis() < armAtMs) {
-                    return false
-                }
                 if (inside) {
                     pressed = true
+                    pressedScreenAdvanceGeneration = screenAdvanceGeneration
                     invalidate()
                     return true
                 }
@@ -215,14 +212,16 @@ class SkipButtonView(
             MotionEvent.ACTION_UP -> {
                 if (pressed && inside) {
                     performClick()
-                    triggerSkipAction(skipEveryLaunch)
+                    triggerSkipAction(skipEveryLaunch, pressedScreenAdvanceGeneration)
                 }
                 pressed = false
+                pressedScreenAdvanceGeneration = null
                 invalidate()
             }
 
             MotionEvent.ACTION_CANCEL -> {
                 pressed = false
+                pressedScreenAdvanceGeneration = null
                 invalidate()
             }
         }
@@ -263,16 +262,21 @@ class SkipButtonView(
         return Pair(event.rawX - screenLocation[0], event.rawY - screenLocation[1])
     }
 
-    private fun triggerSkipAction(skipEveryLaunch: Boolean) {
+    private fun triggerSkipAction(
+        skipEveryLaunch: Boolean,
+        generation: Long?,
+    ) {
         if (skipEveryLaunch) {
             skipEveryLaunchCallback?.invoke()
+        } else if (generation != null) {
+            screenAdvanceCallback?.invoke(generation)
+            return
         }
         keyCallback?.invoke(0, KeyEvent.KEYCODE_ESCAPE, 0)
         keyCallback?.invoke(1, KeyEvent.KEYCODE_ESCAPE, 0)
     }
 
     companion object {
-        private const val ARM_DELAY_MS = 500L
         private const val INTRO_LABEL = "Skip every launch"
     }
 }

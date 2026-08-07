@@ -84,6 +84,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_meta_actions.h"
 #include "android_music_control.h"
 #include "android_save_meta.h"
+#include "android_screen_advance.h"
 #endif
 #include "scores.h"
 
@@ -331,15 +332,6 @@ int do_game_pause()
 
 int HandleEndlevelKey(int key)
 {
-	#ifdef __ANDROID__
-	/* android port: ignore stale ESC for a short window after endlevel starts */
-	static fix64 endlevel_started_at = 0;
-	if (Endlevel_sequence && !endlevel_started_at)
-		endlevel_started_at = timer_query();
-	if (!Endlevel_sequence)
-		endlevel_started_at = 0;
-	#endif
-
 	switch (key)
 	{
 		case KEY_COMMAND+KEY_P:
@@ -349,7 +341,7 @@ int HandleEndlevelKey(int key)
 
 		case KEY_ESC:
 			#ifdef __ANDROID__
-			if (endlevel_started_at && timer_query() < endlevel_started_at + (F1_0 / 2))
+			if (!android_screen_advance_can_activate(ANDROID_SCREEN_ADVANCE_ENDLEVEL))
 				return 1;
 			#endif
 			stop_endlevel_sequence();
@@ -377,8 +369,15 @@ int HandleDeathInput(d_event *event)
 				Death_sequence_aborted = 1;
 	}
 
+#ifdef __ANDROID__
+	if (Player_exploded &&
+	    (android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_DEATH) ||
+	     android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_DEATH, event)))
+		Death_sequence_aborted = 1;
+#else
 	if (Player_exploded && (event->type == EVENT_JOYSTICK_BUTTON_UP || event->type == EVENT_MOUSE_BUTTON_UP))
 		Death_sequence_aborted = 1;
+#endif
 
 #ifdef NETWORK
 	if((Game_mode & GM_NETWORK) && (Netgame.SpawnStyle == SPAWN_STYLE_PREVIEW)) {
@@ -1441,6 +1440,16 @@ int ReadControls(d_event *event)
 	static ubyte exploding_flag=0;
 
 	Player_fired_laser_this_frame=-1;
+
+#ifdef __ANDROID__
+	if (Endlevel_sequence &&
+	    (android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_ENDLEVEL) ||
+	     android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_ENDLEVEL, event))) {
+		stop_endlevel_sequence();
+		last_drawn_cockpit = -1;
+		return 1;
+	}
+#endif
 
 	if (Player_exploded) {
 		if (exploding_flag==0)  {

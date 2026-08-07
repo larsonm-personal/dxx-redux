@@ -28,6 +28,7 @@ extern "C" {
 #include "android_axis_mailbox.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
+#include "android_screen_advance.h"
 #include "window.h"
 #include "newmenu.h"
 #include "object.h"
@@ -168,8 +169,6 @@ extern "C" void game_introspect_sample_framebuffer(int width, int height)
 /* -- Android intro tracking globals (defined in android_input.c) -- */
 extern "C" volatile int g_intro_active;
 extern "C" volatile int g_intro_skip_applied;
-extern "C" volatile int g_levelcomplete_active;
-extern "C" volatile int g_postlevel_active;
 extern "C" volatile int g_cutscene_tap_suppress_arms;
 extern "C" volatile int g_cutscene_tap_suppress_hits;
 extern "C" int android_cutscene_tap_suppress_active(void);
@@ -1266,11 +1265,29 @@ extern "C" char *game_introspect_get_state(void)
 	j["quitting"] = (bool) Quitting;
 	j["intro_active"] = (bool) g_intro_active;
 	j["intro_skip_applied"] = (bool) g_intro_skip_applied;
-	j["levelcomplete_active"] = (bool) g_levelcomplete_active;
-	j["postlevel_active"] = (bool) g_postlevel_active;
 	j["cutscene_tap_suppress_active"] = (bool) android_cutscene_tap_suppress_active();
 	j["cutscene_tap_suppress_arms"] = (int) g_cutscene_tap_suppress_arms;
 	j["cutscene_tap_suppress_hits"] = (int) g_cutscene_tap_suppress_hits;
+	{
+		const int kind = android_screen_advance_get_kind();
+		j["levelcomplete_active"] = kind == ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE;
+		j["postlevel_active"] = kind == ANDROID_SCREEN_ADVANCE_POSTLEVEL;
+		const char *kind_name = "none";
+		switch (kind) {
+			case ANDROID_SCREEN_ADVANCE_DEATH: kind_name = "death"; break;
+			case ANDROID_SCREEN_ADVANCE_ENDLEVEL: kind_name = "endlevel"; break;
+			case ANDROID_SCREEN_ADVANCE_MOVIE: kind_name = "movie"; break;
+			case ANDROID_SCREEN_ADVANCE_BRIEFING: kind_name = "briefing"; break;
+			case ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE: kind_name = "levelcomplete"; break;
+			case ANDROID_SCREEN_ADVANCE_POSTLEVEL: kind_name = "postlevel"; break;
+			default: break;
+		}
+		j["screen_advance_kind"] = kind_name;
+		j["screen_advance_ready"] = (bool) android_screen_advance_get_ready();
+		j["screen_advance_can_activate"] =
+		    (bool) android_screen_advance_can_activate((android_screen_advance_kind) kind);
+		j["screen_advance_generation"] = android_screen_advance_get_generation();
+	}
 	j["difficulty"] = Difficulty_level;
 	j["difficulty_changed"] = Difficulty_level_changed != 0;
 	j["difficulty_min"] = Difficulty_level_min_seen;

@@ -195,6 +195,12 @@ class MainActivity :
     companion object {
         private const val ADMIN_TRAY_CLOSE_GRACE_MS = 400L
 
+        // Must match android_screen_advance_kind in android_screen_advance.h.
+        private const val SCREEN_ADVANCE_NONE = 0
+        private const val SCREEN_ADVANCE_DEATH = 1
+        private const val SCREEN_ADVANCE_ENDLEVEL = 2
+        private const val SCREEN_ADVANCE_LEVELCOMPLETE = 5
+
         // Library is loaded dynamically in onCreate based on intent extra
 
         /** First virtual joystick button index for D-pad directions (Up=+0, Down=+1, Left=+2, Right=+3).
@@ -348,7 +354,9 @@ class MainActivity :
 
     external fun nativeIsAutomapActive(): Boolean
 
-    external fun nativeIsSkippableScreen(): Boolean
+    external fun nativeGetScreenAdvanceState(): Long
+
+    external fun nativeRequestScreenAdvance(generation: Long): Boolean
 
     external fun nativeIsIntroActive(): Boolean
 
@@ -360,17 +368,11 @@ class MainActivity :
 
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
-    external fun nativeIsPlayerDead(): Boolean
-
-    external fun nativeIsEndlevelSequence(): Boolean
-
     external fun nativeIsHostSelectingPlayers(): Boolean
 
     external fun nativeGetCoopLevelRestartState(): Int
 
     external fun nativeStartSelectedPlayers()
-
-    external fun nativeIsLevelCompleteActive(): Boolean
 
     /** Returns the callsign of a player requesting to join, or "" if none. */
     external fun nativeGetJoinRequest(): String
@@ -1352,6 +1354,12 @@ class MainActivity :
         skipButton =
             SkipButtonView(this).apply {
                 keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
+                screenAdvanceCallback = { generation ->
+                    try {
+                        nativeRequestScreenAdvance(generation)
+                    } catch (_: Exception) {
+                    }
+                }
                 skipEveryLaunchCallback = {
                     persistSkipIntroMoviePreference()
                     nativeSetSkipIntroMovie(true)
@@ -2211,30 +2219,23 @@ class MainActivity :
                                     false
                                 }
                             profileAutomap = automap
-                            val skippable =
+                            val screenAdvanceState =
                                 try {
-                                    nativeIsSkippableScreen()
+                                    nativeGetScreenAdvanceState()
                                 } catch (_: Exception) {
-                                    false
+                                    0L
                                 }
+                            // Keep these kind values synchronized with android_screen_advance.h.
+                            val screenAdvanceKind = (screenAdvanceState and 0xffL).toInt()
+                            val screenAdvanceGeneration = screenAdvanceState ushr 32
                             val introActive =
                                 try {
                                     nativeIsIntroActive()
                                 } catch (_: Exception) {
                                     false
                                 }
-                            val playerDead =
-                                try {
-                                    nativeIsPlayerDead()
-                                } catch (_: Exception) {
-                                    false
-                                }
-                            val endlevel =
-                                try {
-                                    nativeIsEndlevelSequence()
-                                } catch (_: Exception) {
-                                    false
-                                }
+                            val playerDead = screenAdvanceKind == SCREEN_ADVANCE_DEATH
+                            val endlevel = screenAdvanceKind == SCREEN_ADVANCE_ENDLEVEL
                             val saveloadMenu =
                                 try {
                                     nativeIsSaveLoadMenuActive()
@@ -2256,7 +2257,7 @@ class MainActivity :
                                 )
                             val controllerMenuOpen = touchOverlay.isControllerMenuOpen()
                             // During death or endlevel, show skip/continue button instead of controls
-                            val showCutsceneButton = playerDead || endlevel || skippable
+                            val showCutsceneButton = screenAdvanceKind != SCREEN_ADVANCE_NONE
                             // Keep the overlay visible while the settings tray owns, or is still
                             // unwinding, its pause state so standalone overlays do not flicker off.
                             val shouldShow =
@@ -2279,30 +2280,30 @@ class MainActivity :
                                         "menuOpen=$controllerMenuOpen trayVisible=$settingsTrayVisible",
                                 )
                             }
-                            // Show/hide skip button for cutscenes, death, save/load, or level complete
-                            val levelComplete =
-                                try {
-                                    nativeIsLevelCompleteActive()
-                                } catch (_: Exception) {
-                                    false
-                                }
+                            // Show/hide the native transient-screen action, intro preference, or BACK.
+                            val levelComplete = screenAdvanceKind == SCREEN_ADVANCE_LEVELCOMPLETE
                             if (saveloadMenu) {
+                                skipButton.screenAdvanceGeneration = null
                                 skipButton.bigLabel = false
                                 skipButton.label = "BACK"
                                 skipButton.visibility = View.VISIBLE
                             } else if (levelComplete) {
+                                skipButton.screenAdvanceGeneration = screenAdvanceGeneration
                                 skipButton.bigLabel = false
                                 skipButton.label = "NEXT"
                                 skipButton.visibility = View.VISIBLE
                             } else if (introActive) {
+                                skipButton.screenAdvanceGeneration = null
                                 skipButton.bigLabel = true
                                 skipButton.label = "Skip every launch"
                                 skipButton.visibility = View.VISIBLE
                             } else if (showCutsceneButton && !shouldShow) {
+                                skipButton.screenAdvanceGeneration = screenAdvanceGeneration
                                 skipButton.bigLabel = false
                                 skipButton.label = if (playerDead) "CONTINUE" else "SKIP"
                                 skipButton.visibility = View.VISIBLE
                             } else {
+                                skipButton.screenAdvanceGeneration = null
                                 skipButton.bigLabel = false
                                 skipButton.visibility = View.GONE
                             }

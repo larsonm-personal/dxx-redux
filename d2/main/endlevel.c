@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "titles.h"
 #ifdef ANDROID
 #include "android_log.h"
+#include "android_screen_advance.h"
 #endif
 #ifdef OGL
 #include "ogl_init.h"
@@ -102,6 +103,17 @@ typedef struct flythrough_data {
 //#define STATION_ENABLED	1		//if defined, load & use space station model
 
 int Endlevel_sequence = 0;
+
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+static int Android_automation_endlevel_frozen = 0;
+
+void android_automation_start_endlevel_sequence(void)
+{
+	Endlevel_sequence = EL_FLYTHROUGH;
+	Android_automation_endlevel_frozen = 1;
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_ENDLEVEL, 1);
+}
+#endif
 
 extern fix player_speed;
 
@@ -297,7 +309,6 @@ static void android_prepare_endlevel_movie(void)
 {
 	/* android port: ignore stray touch/controller input carried into the movie */
 	game_flush_inputs();
-	android_arm_cutscene_tap_suppress();
 }
 #endif
 
@@ -441,6 +452,9 @@ void start_rendered_endlevel_sequence()
 	songs_play_song( SONG_ENDLEVEL, 0 );
 
 	Endlevel_sequence = EL_FLYTHROUGH;
+#ifdef ANDROID
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_ENDLEVEL, 1);
+#endif
 
 	ConsoleObject->movement_type = MT_NONE;			//movement handled by flythrough
 	ConsoleObject->control_type = CT_NONE;
@@ -539,11 +553,17 @@ int chase_angles(vms_angvec *cur_angles,vms_angvec *desired_angles)
 
 void stop_endlevel_sequence()
 {
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	Android_automation_endlevel_frozen = 0;
+#endif
 	Interpolation_method = 0;
 
 	select_cockpit(PlayerCfg.PreferredCockpitMode);
 
 	Endlevel_sequence = EL_OFF;
+#ifdef ANDROID
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_ENDLEVEL);
+#endif
 
 	PlayerFinishedLevel(0);
 }
@@ -564,6 +584,10 @@ void get_angs_to_object(vms_angvec *av,vms_vector *targ_pos,vms_vector *cur_pos)
 
 void do_endlevel_frame()
 {
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (Android_automation_endlevel_frozen)
+		return;
+#endif
 	static fix timer;
 	static fix bank_rate;
 	vms_vector save_last_pos;

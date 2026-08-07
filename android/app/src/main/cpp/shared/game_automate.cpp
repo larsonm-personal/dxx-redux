@@ -45,6 +45,7 @@ extern "C" {
 #include "overlay_ringbuf.h"
 #include "android_save_meta.h"
 #include "android_axis_mailbox.h"
+#include "android_screen_advance.h"
 #include "android_graphics_options.h"
 #include "android_log.h"
 #include "android_texture_debug.h"
@@ -77,6 +78,9 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 #include "cntrlcen.h"
 #include "escort.h"
+#endif
+#ifdef ANDROID
+void android_automation_start_endlevel_sequence(void);
 #endif
 }
 
@@ -339,6 +343,7 @@ enum step_type {
 	STEP_SEND_TOUCH_TAP,             /* inject a touch tap through android_input.c */
 	STEP_SEND_TOUCH_DOWN,            /* inject a touch down through android_input.c */
 	STEP_SEND_TOUCH_UP,              /* inject a touch up through android_input.c */
+	STEP_REQUEST_SCREEN_ADVANCE,     /* submit the current or previous native generation */
 	STEP_META_ACTION,                /* dispatch a native Android meta action */
 	STEP_SELECT_RADIAL,              /* select a Kotlin radial-menu slice by text */
 	STEP_SKIP_INTRO,                 /* repeatedly dismiss launch intro with touch or button */
@@ -541,6 +546,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SEND_TOUCH_TAP: return "send_touch_tap";
 		case STEP_SEND_TOUCH_DOWN: return "send_touch_down";
 		case STEP_SEND_TOUCH_UP: return "send_touch_up";
+		case STEP_REQUEST_SCREEN_ADVANCE: return "request_screen_advance";
 		case STEP_META_ACTION: return "meta_action";
 		case STEP_SELECT_RADIAL: return "select_radial";
 		case STEP_SKIP_INTRO: return "skip_intro";
@@ -2159,6 +2165,7 @@ static int parse_script(const char *json_text)
 			else if (action == "send_touch_tap") s.type = STEP_SEND_TOUCH_TAP;
 			else if (action == "send_touch_down") s.type = STEP_SEND_TOUCH_DOWN;
 			else if (action == "send_touch_up") s.type = STEP_SEND_TOUCH_UP;
+			else if (action == "request_screen_advance") s.type = STEP_REQUEST_SCREEN_ADVANCE;
 			else if (action == "meta_action") s.type = STEP_META_ACTION;
 			else if (action == "select_radial") s.type = STEP_SELECT_RADIAL;
 			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
@@ -2201,6 +2208,8 @@ static int parse_script(const char *json_text)
 			s.post_delay_ms = step_json.value("post_delay_ms", step_json.value("ms", 300));
 			s.field = step_json.value("field", "");
 			s.value = step_json.value("value", "");
+			if (s.type == STEP_REQUEST_SCREEN_ADVANCE)
+				s.value = step_json.value("generation", "current");
 			s.timeout_ms = step_json.value("timeout_ms", 0);
 			s.message = step_json.value("message", "");
 			s.label = step_json.value("label", "");
@@ -3047,6 +3056,25 @@ extern "C" void game_automate_tick(void)
 #endif
 			break;
 
+		case STEP_REQUEST_SCREEN_ADVANCE:
+#ifdef ANDROID
+		{
+			unsigned int generation = android_screen_advance_get_generation();
+			if (s.value == "previous")
+				generation--;
+			else if (s.value != "current") {
+				stop_script_fail("request_screen_advance: generation must be current or previous");
+				break;
+			}
+			android_screen_advance_request(generation);
+			advance_step();
+			break;
+		}
+#else
+			stop_script_fail("request_screen_advance: Android-only action");
+#endif
+		break;
+
 		case STEP_META_ACTION:
 			if (!s.button_pressed) {
 				meta_action_dispatch(s.meta_action_id, 0);
@@ -3484,7 +3512,11 @@ extern "C" void game_automate_tick(void)
 				break;
 			}
 			advance_step();
+#ifdef ANDROID
+			android_automation_start_endlevel_sequence();
+#else
 			start_endlevel_sequence();
+#endif
 			break;
 
 		case STEP_TRIGGER_LEVELCOMPLETE:

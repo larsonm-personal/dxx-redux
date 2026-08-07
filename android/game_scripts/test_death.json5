@@ -84,11 +84,24 @@
 
     // Drive the normal damage/death path explicitly. Relying only on enemy
     // placement made D2 level 24 flaky on slower/fresh emulator runs.
+    // Hold controller A across the transition to reproduce the historical
+    // release-to-skip failure. The release after the explosion must do nothing.
+    {"action": "send_button", "button": 0, "held": 1, "post_delay_ms": 50},
     {"action": "set_debug", "field": "damage_player", "value": "250", "post_delay_ms": 100},
 
     // Wait for death animation state
     {"action": "wait_for", "field": "player_dead", "value": "true", "timeout_ms": 60000},
-    {"action": "assert", "expect": {"player_dead": "true"}},
+    {"action": "assert", "expect": {"player_dead": "true", "screen_advance_kind": "death"}},
+    {"action": "wait_for", "field": "player_exploded", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"screen_advance_ready": "true"}},
+
+    {"action": "send_button", "button": 0, "pressed": 0, "post_delay_ms": 50},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "assert", "expect": {"player_dead": "true", "screen_advance_kind": "death"}},
+    {"action": "wait_for", "field": "screen_advance_can_activate", "value": "true", "timeout_ms": 2000},
+    {"action": "send_button", "button": 0, "post_delay_ms": 50},
+    {"action": "wait_for", "field": "player_dead", "value": "false", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"screen_advance_kind": "none"}},
     {"action": "introspect"},
 
     {"action": "log", "message": "=== TEST: Death (Insane) -- COMPLETE ==="}

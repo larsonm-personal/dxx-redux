@@ -91,8 +91,27 @@
     {"action": "wait_for", "field": "postlevel_active", "value": "false", "timeout_ms": 2000},
     {"action": "log", "message": "=== TEST: Post-level held controller A and fresh A -- PASS ==="},
 
-    {"action": "log", "message": "=== TEST: Mine Exit path arms touch suppress window ==="},
+    {"action": "log", "message": "=== TEST: Post-level generation-tagged overlay request ==="},
+    {"action": "trigger_postlevel"},
+    {"action": "wait_for", "field": "screen_advance_kind", "value": "postlevel", "timeout_ms": 2000},
+    {"action": "wait_for", "field": "screen_advance_can_activate", "value": "true", "timeout_ms": 2000},
+    {"action": "request_screen_advance", "generation": "previous"},
+    {"action": "wait_ms", "ms": 100},
+    {"action": "assert", "expect": {"screen_advance_kind": "postlevel"}},
+    {"action": "request_screen_advance", "generation": "current"},
+    {"action": "wait_for", "field": "screen_advance_kind", "value": "none", "timeout_ms": 2000},
+    {"action": "log", "message": "=== TEST: Post-level generation-tagged overlay request -- PASS ==="},
+
+    {"action": "log", "message": "=== TEST: End-level held touch and fresh tap ==="},
+    {"action": "send_touch_down"},
     {"action": "trigger_endlevel"},
-    {"action": "assert", "expect": {"cutscene_tap_suppress_arms": {"gte": 1}}},
-    {"action": "log", "message": "=== TEST: Mine Exit path arms touch suppress window -- PASS ==="}
+    {"action": "wait_for", "field": "screen_advance_kind", "value": "endlevel", "timeout_ms": 2000},
+    {"action": "send_touch_up"},
+    {"action": "wait_ms", "ms": 100},
+    {"action": "assert", "expect": {"endlevel_sequence": {"gte": 1}, "screen_advance_kind": "endlevel"}},
+    {"action": "wait_for", "field": "screen_advance_can_activate", "value": "true", "timeout_ms": 2000},
+    {"action": "send_touch_tap"},
+    {"action": "wait_for", "field": "endlevel_sequence", "value": "0", "timeout_ms": 2000},
+    {"action": "assert", "expect": {"screen_advance_kind": "levelcomplete"}},
+    {"action": "log", "message": "=== TEST: End-level held touch and fresh tap -- PASS ==="}
 ]

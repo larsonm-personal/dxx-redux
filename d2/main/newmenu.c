@@ -75,6 +75,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_menu_touch_log.h"
 #include "android_newmenu_text_wrap.h"
 #include "android_pilot_listbox_hold.h"
+#include "android_screen_advance.h"
 #endif
 
 
@@ -2035,9 +2036,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 		int source_y = menu->y;
 		int source_w = menu->x + menu->w - source_x;
 		int source_h = menu->y + menu->h - source_y;
-		extern volatile int g_levelcomplete_active;
-
-		if (g_levelcomplete_active)
+		if (android_screen_advance_get_kind() == ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE)
 			have_menu_scale = 0;
 		else
 			have_menu_scale = android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
@@ -2115,6 +2114,16 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 {
 	if (event->type == EVENT_WINDOW_CLOSED)
 		return 0;
+
+#ifdef ANDROID
+	if (event->type != EVENT_WINDOW_CLOSE &&
+	    android_screen_advance_get_kind() == ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE &&
+	    (android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE) ||
+	     android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE, event))) {
+		window_close(wind);
+		return 1;
+	}
+#endif
 
 	if (menu->subfunction)
 	{

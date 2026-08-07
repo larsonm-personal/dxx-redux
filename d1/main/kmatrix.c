@@ -47,6 +47,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kmatrix.h"
 #include "gauges.h"
 #include "pcx.h"
+#ifdef __ANDROID__
+#include "android_screen_advance.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -57,9 +60,6 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define KMATRIX_VIEW_SEC 7 // Time after reactor explosion until new level - in seconds
 void kmatrix_redraw_coop();
 fix64 StartAbortMenuTime;
-#ifdef __ANDROID__
-volatile int g_postlevel_active = 0;
-#endif
 
 void kmatrix_draw_item( int  i, int *sorted )
 {
@@ -262,6 +262,14 @@ void kmatrix_redraw_coop()
 int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 {
 	int i = 0, k = 0, choice = 0;
+
+#ifdef __ANDROID__
+	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
+	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_POSTLEVEL)) {
+		km->end_time = timer_query();
+		return 1;
+	}
+#endif
 	
 	switch (event->type)
 	{
@@ -300,7 +308,7 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 
 #ifdef __ANDROID__
 		case EVENT_MOUSE_BUTTON_DOWN:
-			if (event_mouse_get_button(event) == MBTN_LEFT && km->end_time != -1)
+			if (android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_POSTLEVEL, event))
 			{
 				km->end_time = timer_query();
 				return 1;
@@ -309,7 +317,7 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 			/* Button 0 is controller A, shared with MainActivity.kt. */
-			if (event_joystick_get_button(event) == 0 && km->end_time != -1)
+			if (android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_POSTLEVEL, event))
 			{
 				km->end_time = timer_query();
 				return 1;
@@ -337,8 +345,12 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 				Countdown_seconds_left = -1;
 			
 			// If Reactor is finished and end_time not inited, set the time when we will exit this loop
-			if (km->end_time == -1 && Countdown_seconds_left < 0 && !km->playing)
+			if (km->end_time == -1 && Countdown_seconds_left < 0 && !km->playing) {
 				km->end_time = timer_query() + (KMATRIX_VIEW_SEC * F1_0);
+#ifdef __ANDROID__
+				android_screen_advance_set_ready(ANDROID_SCREEN_ADVANCE_POSTLEVEL, 1);
+#endif
+			}
 			
 			// Check if end_time has been reached and exit loop
 			if (timer_query() >= km->end_time && km->end_time != -1)
@@ -397,12 +409,6 @@ void kmatrix_view(int network)
 	
 	set_screen_mode( SCREEN_MENU );
 	game_flush_inputs();
-#ifdef __ANDROID__
-	{
-		extern void android_arm_cutscene_tap_suppress(void);
-		android_arm_cutscene_tap_suppress();
-	}
-#endif
 
 	for (i=0;i<MAX_PLAYERS;i++)
 		digi_kill_sound_linked_to_object (Players[i].objnum);
@@ -414,13 +420,12 @@ void kmatrix_view(int network)
 		return;
 	}
 #ifdef __ANDROID__
-	g_postlevel_active = 1;
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_POSTLEVEL, 0);
 #endif
-	
 	while (window_exists(wind))
 		event_process();
 #ifdef __ANDROID__
-	g_postlevel_active = 0;
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_POSTLEVEL);
 #endif
 	gr_free_bitmap_data(&km->background);
 	d_free(km);

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "android_log.h"
+#include "android_screen_advance.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_rewind.h"
@@ -31,6 +32,7 @@
 #include "gr.h"
 #include "input_demo_recorder.h"
 #include "joy.h"
+#include "mouse.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -58,13 +60,6 @@ volatile int g_automap_center = 0;
 volatile int g_automap_set_marker = -1;
 volatile int g_automap_go_marker = -1;
 volatile int g_automap_name_marker = 0;
-
-/* ── Skippable-screen flag (movies, briefings) ──────────────
- * Set to 1 by the game thread while inside a skippable event loop
- * (movie playback, briefing screens).  Read by the Kotlin UI thread
- * to show/hide the Skip overlay button.
- */
-volatile int g_skippable_active = 0;
 
 /* Set to 1 while the launch intro/title sequence is active.
  * Kotlin uses this to swap the Skip overlay to a larger
@@ -102,10 +97,6 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thiz,
                                                         jint button, jint pressed);
 
-/* Set to 1 while the solo end-of-level score screen is showing.
- * Kotlin shows a "NEXT" overlay button (upper-right). */
-volatile int g_levelcomplete_active = 0;
-
 /* Set by JNI on the UI thread when the admin tray requests save/load.
  * The game thread consumes these in d1/d2 gamecntl.c. */
 volatile int g_android_open_save_menu = 0;
@@ -142,6 +133,10 @@ static int g_cutscene_release_gate = 0;
 static volatile fix64 g_cutscene_tap_suppress_until = 0;
 volatile int g_cutscene_tap_suppress_arms = 0;
 volatile int g_cutscene_tap_suppress_hits = 0;
+static volatile int g_screen_advance_kind = ANDROID_SCREEN_ADVANCE_NONE;
+static volatile int g_screen_advance_ready = 0;
+static volatile unsigned int g_screen_advance_generation = 0;
+static volatile unsigned int g_screen_advance_request_generation = 0;
 
 #define CUTSCENE_TAP_SUPPRESS_WINDOW (F1_0 / 2)
 
@@ -157,8 +152,6 @@ static void inject_key_tap(SDLKey sym);
 static int android_cutscene_tap_suppressed(void);
 static int android_any_joy_button_down(void);
 static void android_update_cutscene_release_gate(void);
-
-static int g_levelcomplete_touch_state = 0;
 
 static void android_get_touch_screen_size(int *screen_w, int *screen_h)
 {
@@ -180,54 +173,6 @@ static void android_get_touch_screen_size(int *screen_w, int *screen_h)
 }
 
 void android_automation_joystick_button(int button, int pressed);
-
-static int android_handle_delayed_escape_touch(int action, int active,
-                                               int *touch_state, SDLKey key)
-{
-	if (!touch_state)
-		return 0;
-
-	if (!active) {
-		*touch_state = 0;
-		return 0;
-	}
-
-	switch (action) {
-		case 0: /* ACTION_DOWN */
-			if (android_cutscene_tap_suppressed()) {
-				*touch_state = -1;
-				g_cutscene_tap_suppress_hits++;
-			} else {
-				*touch_state = 1;
-			}
-			return 1;
-
-		case 1: /* ACTION_MOVE */
-			return *touch_state != 0;
-
-		case 2: /* ACTION_UP */
-			if (*touch_state <= 0 && android_cutscene_tap_suppressed()) {
-				*touch_state = 0;
-				g_touch_active = 0;
-				g_touch_down_suppressed = 0;
-				g_cutscene_tap_suppress_hits++;
-				android_update_cutscene_release_gate();
-				return 1;
-			}
-			if (*touch_state > 0)
-				inject_key_tap(key);
-			if (*touch_state != 0) {
-				*touch_state = 0;
-				return 1;
-			}
-			break;
-
-		default:
-			break;
-	}
-
-	return 0;
-}
 
 static int android_intro_skip_touch_inside(jfloat normX, jfloat normY, int screenW, int screenH)
 {
@@ -289,6 +234,103 @@ void android_arm_cutscene_tap_suppress(void)
 int android_cutscene_tap_suppress_active(void)
 {
 	return android_cutscene_tap_suppressed();
+}
+
+void android_screen_advance_begin(android_screen_advance_kind kind, int ready)
+{
+	if (kind == ANDROID_SCREEN_ADVANCE_NONE)
+		return;
+
+	g_screen_advance_ready = 0;
+	g_screen_advance_generation++;
+	if (!g_screen_advance_generation)
+		g_screen_advance_generation++;
+	g_screen_advance_request_generation = 0;
+	android_arm_cutscene_tap_suppress();
+	g_screen_advance_kind = kind;
+	g_screen_advance_ready = ready != 0;
+	debug_log(DLOG_GAME, "[screen-advance] begin kind=%d ready=%d generation=%u\n",
+	          kind, g_screen_advance_ready, g_screen_advance_generation);
+}
+
+void android_screen_advance_set_ready(android_screen_advance_kind kind, int ready)
+{
+	if (g_screen_advance_kind != kind)
+		return;
+	g_screen_advance_ready = ready != 0;
+}
+
+void android_screen_advance_end(android_screen_advance_kind kind)
+{
+	if (g_screen_advance_kind != kind)
+		return;
+	debug_log(DLOG_GAME, "[screen-advance] end kind=%d generation=%u\n",
+	          kind, g_screen_advance_generation);
+	g_screen_advance_ready = 0;
+	g_screen_advance_kind = ANDROID_SCREEN_ADVANCE_NONE;
+	g_screen_advance_request_generation = 0;
+}
+
+int android_screen_advance_can_activate(android_screen_advance_kind kind)
+{
+	return g_screen_advance_kind == kind && g_screen_advance_ready &&
+	       !android_cutscene_tap_suppressed();
+}
+
+int android_screen_advance_accept_event(android_screen_advance_kind kind, d_event *event)
+{
+	if (!event || !android_screen_advance_can_activate(kind))
+		return 0;
+
+	if (event->type == EVENT_MOUSE_BUTTON_DOWN)
+		return event_mouse_get_button(event) == MBTN_LEFT;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN)
+		return event_joystick_get_button(event) == 0;
+	return 0;
+}
+
+int android_screen_advance_request(unsigned int generation)
+{
+	const android_screen_advance_kind kind =
+	    (android_screen_advance_kind) g_screen_advance_kind;
+
+	if (!generation || generation != g_screen_advance_generation ||
+	    !android_screen_advance_can_activate(kind)) {
+		debug_log(DLOG_GAME,
+		          "[screen-advance] request rejected generation=%u current=%u kind=%d\n",
+		          generation, g_screen_advance_generation, kind);
+		return 0;
+	}
+
+	g_screen_advance_request_generation = generation;
+	debug_log(DLOG_GAME, "[screen-advance] request accepted generation=%u kind=%d\n",
+	          generation, kind);
+	return 1;
+}
+
+int android_screen_advance_take_request(android_screen_advance_kind kind)
+{
+	if (g_screen_advance_kind != kind ||
+	    g_screen_advance_request_generation != g_screen_advance_generation)
+		return 0;
+
+	g_screen_advance_request_generation = 0;
+	return 1;
+}
+
+int android_screen_advance_get_kind(void)
+{
+	return g_screen_advance_kind;
+}
+
+int android_screen_advance_get_ready(void)
+{
+	return g_screen_advance_ready;
+}
+
+unsigned int android_screen_advance_get_generation(void)
+{
+	return g_screen_advance_generation;
 }
 
 /*
@@ -546,11 +588,6 @@ void android_test_inject_touch_action(int action)
 {
 	int gameX, gameY;
 
-	if (android_handle_delayed_escape_touch(action, g_levelcomplete_active,
-	                                        &g_levelcomplete_touch_state,
-	                                        SDLK_ESCAPE))
-		return;
-
 	android_test_touch_point(&gameX, &gameY);
 	android_push_touch_action(action, gameX, gameY);
 }
@@ -600,12 +637,6 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 				}
 				break;
 		}
-	}
-
-	if (android_handle_delayed_escape_touch(action, g_levelcomplete_active,
-	                                        &g_levelcomplete_touch_state,
-	                                        SDLK_ESCAPE)) {
-		return;
 	}
 
 	jint gameX = (jint) (normX * screenW);
@@ -1224,16 +1255,33 @@ Java_com_dxxredux_app_MainActivity_nativeIsInGame(JNIEnv *env, jobject thiz)
 	return (Game_wind != NULL && Screen_mode == SCREEN_GAME && Game_wind == window_get_front()) ? JNI_TRUE : JNI_FALSE;
 }
 
-/*
- * Returns true while a skippable screen (movie, briefing) is active.
- * The Kotlin layer uses this to show the circular Skip button.
- */
-extern volatile int g_skippable_active;
+/* Packed transient-screen state shared with MainActivity.kt.
+ * Bits 0..7: kind, bit 8: ready, bit 9: can activate, bits 32..63: generation. */
+JNIEXPORT jlong JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetScreenAdvanceState(JNIEnv *env, jobject thiz)
+{
+	const android_screen_advance_kind kind =
+	    (android_screen_advance_kind) android_screen_advance_get_kind();
+	const unsigned int generation = android_screen_advance_get_generation();
+	jlong state = ((jlong) generation) << 32;
+
+	(void) env;
+	(void) thiz;
+	state |= (jlong) (kind & 0xff);
+	if (android_screen_advance_get_ready())
+		state |= (jlong) 1 << 8;
+	if (android_screen_advance_can_activate(kind))
+		state |= (jlong) 1 << 9;
+	return state;
+}
 
 JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeIsSkippableScreen(JNIEnv *env, jobject thiz)
+Java_com_dxxredux_app_MainActivity_nativeRequestScreenAdvance(JNIEnv *env, jobject thiz,
+                                                              jlong generation)
 {
-	return g_skippable_active ? JNI_TRUE : JNI_FALSE;
+	(void) env;
+	(void) thiz;
+	return android_screen_advance_request((unsigned int) generation) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern volatile int g_intro_active;
@@ -1304,39 +1352,6 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeStartSelectedPlayers(JNIEnv *env, jobject thiz)
 {
 	g_host_start_game_requested = 1;
-}
-
-/*
- * Returns true while the solo end-of-level score screen is displaying.
- */
-extern volatile int g_levelcomplete_active;
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeIsLevelCompleteActive(JNIEnv *env, jobject thiz)
-{
-	return g_levelcomplete_active ? JNI_TRUE : JNI_FALSE;
-}
-
-/*
- * Returns true while the player is dead (death animation / waiting for keypress).
- */
-extern int Player_is_dead;
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeIsPlayerDead(JNIEnv *env, jobject thiz)
-{
-	return Player_is_dead ? JNI_TRUE : JNI_FALSE;
-}
-
-/*
- * Returns true during the end-of-level flythrough/explosion sequence.
- */
-extern int Endlevel_sequence;
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeIsEndlevelSequence(JNIEnv *env, jobject thiz)
-{
-	return Endlevel_sequence ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -1557,31 +1572,39 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxes(
  *   button:  button index 0-9
  *   pressed: 1 = down, 0 = up
  */
+static int android_track_joystick_button(int button, int pressed)
+{
+	if (button < 0 || button >= (int) sizeof(g_joy_buttons_down))
+		return 1;
+
+	if (pressed) {
+		g_joy_buttons_down[button] = 1;
+		if (android_cutscene_tap_suppressed()) {
+			g_suppressed_joy_buttons[button] = 1;
+			g_cutscene_tap_suppress_hits++;
+			return 0;
+		}
+	} else {
+		g_joy_buttons_down[button] = 0;
+		android_update_cutscene_release_gate();
+		if (g_suppressed_joy_buttons[button]) {
+			g_suppressed_joy_buttons[button] = 0;
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thiz,
                                                         jint button, jint pressed)
 {
 	SDL_Event ev;
-	const int button_index = (button >= 0 && button < (jint) sizeof(g_joy_buttons_down)) ? button : -1;
 	memset(&ev, 0, sizeof(ev));
 
-	if (button_index >= 0) {
-		if (pressed) {
-			g_joy_buttons_down[button_index] = 1;
-			if (android_cutscene_tap_suppressed()) {
-				g_suppressed_joy_buttons[button_index] = 1;
-				g_cutscene_tap_suppress_hits++;
-				return;
-			}
-		} else {
-			g_joy_buttons_down[button_index] = 0;
-			android_update_cutscene_release_gate();
-			if (g_suppressed_joy_buttons[button_index]) {
-				g_suppressed_joy_buttons[button_index] = 0;
-				return;
-			}
-		}
-	}
+	if (!android_track_joystick_button((int) button, pressed != 0))
+		return;
 
 	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
 	ev.jbutton.which = 0;
@@ -1596,6 +1619,8 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thi
 void android_automation_joystick_button(int button, int pressed)
 {
 	SDL_JoyButtonEvent ev;
+	if (!android_track_joystick_button(button, pressed != 0))
+		return;
 	memset(&ev, 0, sizeof(ev));
 	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
 	ev.which = 0;

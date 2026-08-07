@@ -54,6 +54,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef ANDROID
 #include "android_crash_handler.h"
+#include "android_screen_advance.h"
 #endif
 
 extern unsigned RobSX,RobSY,RobDX,RobDY; // Robot movie coords
@@ -91,12 +92,24 @@ typedef struct title_screen
 
 int title_handler(window *wind, d_event *event, title_screen *ts)
 {
+#ifdef ANDROID
+	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
+	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_MOVIE)) {
+		window_close(wind);
+		return 1;
+	}
+#endif
 	switch (event->type)
 	{
 		case EVENT_MOUSE_BUTTON_DOWN:
+#ifdef ANDROID
+			if (!android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_MOVIE, event))
+				return 1;
+#else
 			if (event_mouse_get_button(event) != 0)
 				return 0;
-			else if (ts->allow_keys)
+#endif
+			if (ts->allow_keys)
 			{
 				window_close(wind);
 				return 1;
@@ -111,6 +124,11 @@ int title_handler(window *wind, d_event *event, title_screen *ts)
 
 #ifdef ANDROID
 		case EVENT_JOYSTICK_BUTTON_DOWN:
+			if (event_joystick_get_button(event) == 0 &&
+			    !android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_MOVIE, event))
+				return 1;
+			if (!android_screen_advance_can_activate(ANDROID_SCREEN_ADVANCE_MOVIE))
+				return 1;
 			if (ts->allow_keys)
 				window_close(wind);
 			return 1;
@@ -199,13 +217,12 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 	}
 
 #ifdef ANDROID
-	extern volatile int g_skippable_active;
-	g_skippable_active = 1;
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_MOVIE, allow_keys);
 #endif
 	while (window_exists(wind))
 		event_process();
 #ifdef ANDROID
-	g_skippable_active = 0;
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_MOVIE);
 #endif
 
 	return 0;
@@ -1390,6 +1407,13 @@ int new_briefing_screen(briefing *br, int first)
 //-----------------------------------------------------------------------------
 int briefing_handler(window *wind, d_event *event, briefing *br)
 {
+#ifdef ANDROID
+	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
+	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_BRIEFING)) {
+		window_close(wind);
+		return 1;
+	}
+#endif
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
@@ -1400,6 +1424,10 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 		case EVENT_MOUSE_BUTTON_DOWN:
 			if (event_mouse_get_button(event) == 0)
 			{
+#ifdef ANDROID
+				if (!android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_BRIEFING, event))
+					return 1;
+#endif
 				if (br->new_screen)
 				{
 					if (!new_briefing_screen(br, 0))
@@ -1454,6 +1482,11 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 		{
 			int btn = event_joystick_get_button(event);
+			if (btn == 0 &&
+			    !android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_BRIEFING, event))
+				return 1;
+			if (!android_screen_advance_can_activate(ANDROID_SCREEN_ADVANCE_BRIEFING))
+				return 1;
 			if (btn == 1) {
 				window_close(wind);
 				return 1;
@@ -1577,17 +1610,14 @@ void do_briefing_screens(char *filename, int level_num)
 	// Stay where we are in the stack frame until briefing done
 	// Too complicated otherwise
 #ifdef ANDROID
-	extern volatile int g_skippable_active;
-	extern void android_arm_cutscene_tap_suppress(void);
 	extern void game_flush_inputs(void);
 	game_flush_inputs();
-	android_arm_cutscene_tap_suppress();
-	g_skippable_active = 1;
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_BRIEFING, 1);
 #endif
 	while (window_exists(wind))
 		event_process();
 #ifdef ANDROID
-	g_skippable_active = 0;
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_BRIEFING);
 #endif
 }
 

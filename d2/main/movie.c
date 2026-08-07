@@ -34,6 +34,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #include "key.h"
 #include "mouse.h"
+#include "joy.h"
 #include "digi.h"
 #include "songs.h"
 #include "inferno.h"
@@ -54,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef ANDROID
 #include "android_crash_handler.h"
+#include "android_screen_advance.h"
 #endif
 #include "args.h"
 
@@ -309,6 +311,15 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 {
 	int key;
 
+#ifdef ANDROID
+	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
+	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_MOVIE)) {
+		m->result = m->aborted = 1;
+		window_close(wind);
+		return 1;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
@@ -323,6 +334,13 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 #ifdef ANDROID
 		case EVENT_MOUSE_BUTTON_DOWN:
 		case EVENT_JOYSTICK_BUTTON_DOWN:
+			if (event->type == EVENT_MOUSE_BUTTON_DOWN ||
+			    event_joystick_get_button(event) == 0) {
+				if (!android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_MOVIE, event))
+					return 1;
+			}
+			if (!android_screen_advance_can_activate(ANDROID_SCREEN_ADVANCE_MOVIE))
+				return 1;
 			m->result = m->aborted = 1;
 			window_close(wind);
 			return 1;
@@ -478,13 +496,12 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 	MVE_palCallbacks(MovieSetPalette);
 
 #ifdef ANDROID
-	extern volatile int g_skippable_active;
-	g_skippable_active = 1;
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_MOVIE, 1);
 #endif
 	while (window_exists(wind))
 		event_process();
 #ifdef ANDROID
-	g_skippable_active = 0;
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_MOVIE);
 #endif
 
 	Assert(m->aborted || m->result == MVE_ERR_EOF);	 ///movie should be over

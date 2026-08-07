@@ -78,6 +78,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "interp.h"
 #ifdef __ANDROID__
 #include "android_profile.h"
+#include "android_screen_advance.h"
 #include "coop/coop_powerup_duplication.h"
 #include "escort.h"
 #endif
@@ -1708,6 +1709,9 @@ ubyte		Control_type_save, Render_type_save;
 //	------------------------------------------------------------------------------------------------------------------
 void dead_player_end(void)
 {
+#ifdef __ANDROID__
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_DEATH);
+#endif
 	if (!Player_is_dead)
 		return;
 
@@ -1877,6 +1881,9 @@ void dead_player_frame(void)
 				Players[Player_num].hostages_on_board = 0;
 
 				Player_exploded = 1;
+#ifdef __ANDROID__
+				android_screen_advance_set_ready(ANDROID_SCREEN_ADVANCE_DEATH, 1);
+#endif
 #ifdef NETWORK
 				if (Game_mode & GM_NETWORK)
 					multi_powcap_cap_objects();
@@ -1992,6 +1999,9 @@ void start_player_death_sequence(object *player)
 	
 	PaletteRedAdd = 40;
 	Player_is_dead = 1;
+#ifdef __ANDROID__
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_DEATH, 0);
+#endif
 
 	//Players[Player_num].flags &= ~(PLAYER_FLAGS_AFTERBURNER);
 
