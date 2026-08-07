@@ -119,10 +119,16 @@ if (Wait-ProcessDead -TimeoutMs 250) {
 if ($script:TimeoutCalls -lt 2) {
     throw 'Wait-ProcessDead did not query both app processes'
 }
+if (-not (Test-AppAutomationProcessRunning)) {
+    throw 'Launcher automation rejected a live game process after the launcher process exited'
+}
 
 $script:GameProcessAlive = $false
 if (-not (Wait-ProcessDead -TimeoutMs 250)) {
     throw 'Wait-ProcessDead did not return true after both processes were gone'
+}
+if (Test-AppAutomationProcessRunning) {
+    throw 'Launcher automation accepted missing launcher and game processes'
 }
 
 $script:ResetEvents = @()

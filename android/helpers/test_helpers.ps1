@@ -235,6 +235,15 @@ function Test-AppMainProcessRunning {
     return [bool]($processId -and $processId -match '^\d+')
 }
 
+function Test-AppGameProcessRunning {
+    $processId = Adb-Timeout -AdbArgs @("shell", "pidof", "$($script:PACKAGE):game") -Seconds 3
+    return [bool]($processId -and $processId -match '^\d+')
+}
+
+function Test-AppAutomationProcessRunning {
+    return (Test-AppMainProcessRunning) -or (Test-AppGameProcessRunning)
+}
+
 function Wait-SetupCondition {
     # Poll setup_introspect.json until a condition is met. Returns $true if
     # the predicate returns $true, $false on timeout.
@@ -1445,9 +1454,9 @@ function Watch-AutomationResult {
                 Write-DeviceFailureDiagnostics -Reason "emulator health check failed after ADB reset at ${elapsed}s"
                 return $false
             }
-            if ($IsLauncherScript -and -not (Test-AppMainProcessRunning)) {
-                Write-Status "FAIL: Launcher process exited before automation produced a result (after ${elapsed}s)" "Red"
-                Write-DeviceFailureDiagnostics -Reason "launcher process exited during automation after ${elapsed}s"
+            if ($IsLauncherScript -and -not (Test-AppAutomationProcessRunning)) {
+                Write-Status "FAIL: Launcher and game processes exited before automation produced a result (after ${elapsed}s)" "Red"
+                Write-DeviceFailureDiagnostics -Reason "launcher and game processes exited during automation after ${elapsed}s"
                 return $false
             }
             $lastHealthCheck = $elapsed

@@ -3,7 +3,7 @@
 function Test-MissionZipNeedsEmulatorRecovery {
     param([string]$Reason)
 
-    return $Reason -match 'SetupActivity did not become ready|standard D1/D2 base data is not active after game-state reset|launcher process exited before automation produced a result|adb push failed|run-as copy failed|Emulator crashed|device .*not found|device offline|protocol fault|closed'
+    return $Reason -match 'SetupActivity did not become ready|standard D1/D2 base data is not active after game-state reset|(?:launcher and game|launcher) process(?:es)? exited before automation produced a result|adb push failed|run-as copy failed|Emulator crashed|device .*not found|device offline|protocol fault|closed'
 }
 
 function Invoke-MissionZipPreparationWithRetry {

@@ -7,6 +7,7 @@ $helperPath = Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1'
 $validatorPath = Join-Path $PSScriptRoot 'validate_extract_regression_specs.ps1'
 $extractPath = Join-Path $PSScriptRoot 'test_extract.ps1'
 $allExtractsPath = Join-Path $PSScriptRoot 'test_all_extracts.ps1'
+$runAllPath = Join-Path $repoRoot 'android\run_all_tests.ps1'
 . $helperPath
 . (Join-Path $PSScriptRoot 'extract_regression_recovery.ps1')
 
@@ -18,12 +19,20 @@ New-Item -ItemType Directory -Path $tempRoot | Out-Null
 try {
     $extractSource = [System.IO.File]::ReadAllText($extractPath)
     $allExtractsSource = [System.IO.File]::ReadAllText($allExtractsPath)
+    $runAllSource = [System.IO.File]::ReadAllText($runAllPath)
     if ($extractSource -notmatch "(?s)function Start-ExtractSetupActivity.*?'am', 'start', '-W', '-S'.*?'pidof'.*?Wait-SetupReady" -or
         $extractSource -notmatch "(?s)Launching game from set.*?am', 'force-stop'.*?Start-ExtractSetupActivity -Context 'pre-game automation handoff'.*?Invoke-GameAutomationScript") {
         throw 'Extraction launch no longer enforces a clean SetupActivity process boundary'
     }
+    if ($extractSource -notmatch "(?s)function Send-SetupCdImport.*?'am', 'broadcast', '--async'.*?'import_cd'" -or
+        $extractSource -notmatch "(?s)function Send-SetupIsoImport.*?'am', 'broadcast', '--async'.*?'import_iso'") {
+        throw 'Long-running direct imports no longer return host broadcast delivery promptly'
+    }
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
         throw 'Extraction suite no longer recovers ADB/device infrastructure before its one complete-spec retry'
+    }
+    if ($runAllSource -notmatch '"test_extract"\s*=\s*600') {
+        throw 'Standalone extraction no longer has the same per-sample budget as the extraction suite'
     }
     if ($extractSource -notmatch 'Get-JsonStringArray \$spec ''mission_files''' -or
         $extractSource -match '\$spec\.mission_files\s*\|\s*Where-Object') {

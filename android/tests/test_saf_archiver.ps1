@@ -589,11 +589,12 @@ Adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $scriptBasename" | 
 Write-Host "  Monitoring for result (timeout: ${TIMEOUT_SEC}s)..."
 
 # Monitor logcat for SCRIPT_RESULT
-$startTime = Get-Date
+$lastProgressTime = Get-Date
+$lastAutomationSeq = -1
 $result = $null
 $failDetail = ""
 
-while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
+while (((Get-Date) - $lastProgressTime).TotalSeconds -lt $TIMEOUT_SEC) {
     if ($ProviderPipeOnly) {
         $stageLog = (Adb logcat -d -v brief -s DXX-SAF-Stage:I '*:S') -join "`n"
         $stepLog = Read-AutomationFile "automation_log.jsonl"
@@ -622,6 +623,20 @@ while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
         }
     }
 
+    $stepLog = Read-AutomationFile "automation_log.jsonl"
+    $lastStepLine = $stepLog -split "`n" | Where-Object { $_.Trim().StartsWith("{") } | Select-Object -Last 1
+    if ($lastStepLine) {
+        try {
+            $stepObject = $lastStepLine | ConvertFrom-Json
+            if ([int]$stepObject.seq -gt $lastAutomationSeq) {
+                $lastAutomationSeq = [int]$stepObject.seq
+                $lastProgressTime = Get-Date
+            }
+        } catch {
+            # Ignore an incomplete final line while the engine appends it
+        }
+    }
+
     $logLines = (Adb logcat -d -s "DXX-Automate:*" 2>&1) -join "`n"
 
     if ($logLines -match "SCRIPT_RESULT: PASS") {
@@ -647,7 +662,7 @@ while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
 
 if ($null -eq $result) {
     $result = "TIMEOUT"
-    $failDetail = "Test did not complete within ${TIMEOUT_SEC}s"
+    $failDetail = "Test made no automation progress for ${TIMEOUT_SEC}s"
 }
 
 if ($ProviderPipeOnly -and $result -eq "PASS") {

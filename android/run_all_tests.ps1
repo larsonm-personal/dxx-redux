@@ -303,7 +303,9 @@ $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
     "test_engine_prefs_unified"           = 240
-    "test_extract"                        = 240
+    # A sampled extraction is already budgeted at 600s inside test_all_extracts.
+    # The standalone path performs the same clean, stage, import, and launch work.
+    "test_extract"                        = 600
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
     "test_gradle_unit_tests"              = 600

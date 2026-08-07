@@ -450,7 +450,7 @@ function Send-SetupCdImport {
     }
 
     $args_ = @(
-        'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        'am', 'broadcast', '--async', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', 'import_cd',
         '--es', 'cue_path', $CuePath,
         '--ez', 'include_audio', $(if ($IncludeAudio) { 'true' } else { 'false' })
@@ -479,7 +479,7 @@ function Send-SetupIsoImport {
     param([string]$IsoPath)
 
     $args_ = @(
-        'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        'am', 'broadcast', '--async', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', 'import_iso',
         '--es', 'iso_path', $IsoPath
     )

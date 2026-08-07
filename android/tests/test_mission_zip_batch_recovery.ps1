@@ -55,6 +55,9 @@ Assert-Equal 1 $recoveries "persistent base-data failure recovered an unexpected
 if (-not (Test-MissionZipNeedsEmulatorRecovery -Reason "launcher process exited before automation produced a result")) {
     throw "launcher process exit was not classified for emulator recovery"
 }
+if (-not (Test-MissionZipNeedsEmulatorRecovery -Reason "launcher and game processes exited before automation produced a result")) {
+    throw "combined launcher and game process exit was not classified for emulator recovery"
+}
 
 $preparationAttempts = 0
 $recoveries = 0
