@@ -19,6 +19,7 @@ foreach ($file in $allPowerShellFiles) {
 }
 $standaloneJson = @{}
 $ps1ByName = @{}
+$ps1SupportOwners = @{}
 $infoByPath = @{}
 $ownerClosureByName = @{}
 $failures = [System.Collections.Generic.List[string]]::new()
@@ -49,6 +50,10 @@ function Get-PowerShellDependencyClosureText {
 
 foreach ($file in $ps1Files) {
     $ps1ByName[$file.BaseName] = $file
+    $supportOwner = Get-PowerShellTestSupportOwner -ScriptPath $file.FullName
+    if ($supportOwner) {
+        $ps1SupportOwners[$file.BaseName] = $supportOwner
+    }
 }
 foreach ($file in $jsonFiles) {
     $info = Get-TestScriptInfo -ScriptPath $file.FullName
@@ -75,7 +80,29 @@ foreach ($name in $standaloneJson.Keys) {
     }
 }
 
-$supportCount = 0
+$supportCount = $ps1SupportOwners.Count
+foreach ($supportName in $ps1SupportOwners.Keys) {
+    $supportOwner = $ps1SupportOwners[$supportName]
+    if ($supportName -eq $supportOwner) {
+        $failures.Add("$supportName.ps1: support script cannot own itself")
+        continue
+    }
+    if (-not $ps1ByName.ContainsKey($supportOwner)) {
+        $failures.Add("$supportName.ps1: owner '$supportOwner' is not a PowerShell test")
+        continue
+    }
+    if ($ps1SupportOwners.ContainsKey($supportOwner)) {
+        $failures.Add("$supportName.ps1: owner '$supportOwner' is itself a support script")
+        continue
+    }
+    $ownerFile = $ps1ByName[$supportOwner]
+    if (-not $ownerClosureByName.ContainsKey($supportOwner)) {
+        $ownerClosureByName[$supportOwner] = Get-PowerShellDependencyClosureText -RootFile $ownerFile
+    }
+    if ($ownerClosureByName[$supportOwner] -notmatch [regex]::Escape($ps1ByName[$supportName].Name)) {
+        $failures.Add("$supportName.ps1: owner '$supportOwner' does not reference the support script")
+    }
+}
 foreach ($file in $jsonFiles) {
     if (-not $infoByPath.ContainsKey($file.FullName)) { continue }
     $info = $infoByPath[$file.FullName]
@@ -94,7 +121,7 @@ foreach ($file in $jsonFiles) {
         continue
     }
 
-    $ownerFile = if ($ps1ByName.ContainsKey($owner)) { $ps1ByName[$owner] } else { $null }
+    $ownerFile = if ($ps1ByName.ContainsKey($owner) -and -not $ps1SupportOwners.ContainsKey($owner)) { $ps1ByName[$owner] } else { $null }
     if (-not $ownerFile) {
         $failures.Add("$($file.Name): owner '$owner' is not a top-level PowerShell test")
         continue
@@ -116,5 +143,6 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host "Automation catalog valid: $($standaloneJson.Count) standalone JSON tests, $supportCount support scripts, $($ps1ByName.Count) PowerShell entries"
+$standalonePowerShellCount = $ps1ByName.Count - $ps1SupportOwners.Count
+Write-Host "Automation catalog valid: $($standaloneJson.Count) standalone JSON tests, $supportCount support scripts, $standalonePowerShellCount standalone PowerShell tests"
 exit 0

@@ -119,24 +119,7 @@ Write-Status "Using installer variant: $($installer.Label)"
 
 $testExitCode = 1
 try {
-    if (-not $SkipPush) {
-        Write-Status 'Pushing installer to device...'
-        $localSize = (Get-Item $GogInstallerPath).Length
-        $deviceSize = Adb-Timeout -AdbArgs @("shell", "stat -c %s '$($installer.DevicePath)'") -Seconds 5 2>$null
-        if ($deviceSize -and $deviceSize -match '^\d+$' -and [long]$deviceSize -eq $localSize) {
-            Write-Status 'Installer already on device with correct size, skipping push'
-        } else {
-            Adb -AdbArgs @('push', $GogInstallerPath, $installer.DevicePath)
-            Write-Status 'Push complete'
-        }
-    } else {
-        Write-Status 'Skipping push (-SkipPush)'
-    }
-
-    # Verify file is on device
-    $check = Adb-Timeout -AdbArgs @("shell", "ls -la '$($installer.DevicePath)'") -Seconds 5 2>$null
-    if (-not $check) {
-        Write-Status "FAIL: Installer not found on device at $($installer.DevicePath)" 'Red'
+    if (-not (Push-VerifiedDeviceFile -LocalPath $GogInstallerPath -DevicePath $installer.DevicePath -SkipPush:$SkipPush)) {
         exit 1
     }
 

@@ -1,4 +1,4 @@
-// TEST: D2 level-complete and mine-exit paths arm the shared touch-suppress guard.
+// TEST: D2 level-complete, level-2 route, and mine-exit paths.
 //
 // Local emulator data in this workspace does not include the D2 .mve files,
 // and the endlevel movie call is synchronous enough that automation resumes
@@ -66,6 +66,40 @@
     {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // Level 2 is already loaded by the level-complete transition above. Keep
+    // the switch-completion route contract here instead of paying for another
+    // launcher, intro, mission selection, and briefing sequence.
+    {"action": "log", "message": "=== TEST: Counterstrike level 2 switch completion ==="},
+    {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
+    // Fire before requesting Guide-Bot guidance so completion must be recovered
+    // from the unlocked linked doors, without an active-goal trigger event.
+    {"action": "set_debug", "field": "fire_trigger", "value": "17", "post_delay_ms": 500},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 60000, "expect": {
+        "current_level_num": "2",
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_activation_kind_name": "pickup_key",
+        "guidebot.route_goal_label": {"contains": "blue key"},
+        "guidebot.route_goal_objective_trigger": {"ne": 17}
+    }},
+    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_objective_trigger": "21",
+        "guidebot.route_goal_activation_kind_name": "shoot_switch",
+        "guidebot.route_goal_seg": "52",
+        "guidebot.route_goal_objective_seg": "24"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "21", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_activation_kind_name": "pickup_key",
+        "guidebot.route_goal_label": {"contains": "red key"},
+        "guidebot.route_goal_objective_trigger": {"ne": 21}
+    }},
+    {"action": "log", "message": "=== TEST: Counterstrike level 2 switch completion -- PASS ==="},
 
     {"action": "log", "message": "=== TEST: Post-level held touch and fresh tap ==="},
     {"action": "send_touch_down"},

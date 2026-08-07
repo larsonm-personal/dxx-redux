@@ -49,6 +49,11 @@
     forced merged-wall fallback canary. The default profile uses fixed graphics
     canaries while the full demo corpus runs headlessly.
 
+.PARAMETER ExtendedMultiplayer
+    Run the 90-second sustained multiplayer connectivity soak after the normal
+    two-player lobby, launch, and in-game assertions. The default profile keeps
+    the complete multiplayer smoke but omits the soak hold.
+
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
@@ -65,7 +70,8 @@ param(
     [switch]$SkipDocker,
     [switch]$FullExtracts,
     [int]$ExtractSampleCount = 1,
-    [switch]$ExtendedGraphics
+    [switch]$ExtendedGraphics,
+    [switch]$ExtendedMultiplayer
 )
 
 $ErrorActionPreference = "Stop"
@@ -303,9 +309,6 @@ $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
     "test_engine_prefs_unified"           = 240
-    # A sampled extraction is already budgeted at 600s inside test_all_extracts.
-    # The standalone path performs the same clean, stage, import, and launch work.
-    "test_extract"                        = 600
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
     "test_gradle_unit_tests"              = 600
@@ -363,7 +366,6 @@ function Get-RunAllJson5TimeoutSeconds {
 
 $extractTests = @(
     "test_all_extracts",
-    "test_extract",
     "test_mac_extract_saf",
     "test_gog_installer_d1_unified",
     "test_gog_installer_redbook_unified"
@@ -395,8 +397,23 @@ $catalogErrors = @()
 $testsDir = Join-Path $scriptDir "tests"
 $ps1Files = @(Get-ChildItem -Path $testsDir -Filter "test_*.ps1" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 $ps1TestNames = @{}
+$ps1SupportOwners = @{}
 foreach ($ps1File in $ps1Files) {
     $ps1TestNames[$ps1File.BaseName] = $true
+    $supportOwner = Get-PowerShellTestSupportOwner -ScriptPath $ps1File.FullName
+    if ($supportOwner) {
+        $ps1SupportOwners[$ps1File.BaseName] = $supportOwner
+    }
+}
+foreach ($supportName in $ps1SupportOwners.Keys) {
+    $supportOwner = $ps1SupportOwners[$supportName]
+    if ($supportName -eq $supportOwner) {
+        $catalogErrors += "$supportName.ps1: support script cannot own itself"
+    } elseif (-not $ps1TestNames.ContainsKey($supportOwner)) {
+        $catalogErrors += "$supportName.ps1: owner '$supportOwner' is not a PowerShell test"
+    } elseif ($ps1SupportOwners.ContainsKey($supportOwner)) {
+        $catalogErrors += "$supportName.ps1: owner '$supportOwner' is itself a support script"
+    }
 }
 
 # json5 game-automation scripts (run via run_test.ps1)
@@ -451,6 +468,10 @@ if ($catalogErrors.Count -gt 0) {
 # ps1 integration tests
 foreach ($t in $ps1Files) {
     $name = $t.BaseName
+    if ($ps1SupportOwners.ContainsKey($name)) {
+        $supportScripts += @{ Name = $name; Owner = $ps1SupportOwners[$name]; Type = "ps1" }
+        continue
+    }
     if ($name -in @("test_input_demo_regressions", "test_input_demo_regressions_graphics")) {
         continue
     }
@@ -491,6 +512,9 @@ foreach ($t in $ps1Files) {
         }
     } elseif ($name -eq "test_mac_extract_saf") {
         $entry.Arguments = @("-SkipBuild")
+    } elseif ($name -eq "test_mp") {
+        $soakSeconds = if ($ExtendedMultiplayer) { 90 } else { 0 }
+        $entry.Arguments = @("-SoakSeconds", $soakSeconds.ToString())
     }
     $allTests += $entry
 }

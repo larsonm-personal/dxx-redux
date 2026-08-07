@@ -8,7 +8,7 @@
 #   4. Both players ready up
 #   5. Player 1 starts the game
 #   6. Both players launch into the game and verify multiplayer state
-#   7. Sustained connectivity check (90s)
+#   7. Optional sustained connectivity soak
 #
 # Prerequisites:
 #   - Two emulators running (emulator-5554 and emulator-5556)
@@ -20,13 +20,16 @@
 #   .\test_mp.ps1
 #   .\test_mp.ps1 -Game d1
 #   .\test_mp.ps1 -SkipBuild
+#   .\test_mp.ps1 -SoakSeconds 0   # normal-suite smoke profile
 
 param(
     [string]$Game = "d2",
     [string]$Mode = "anarchy",
     [switch]$SkipBuild,
     [switch]$Tls,
-    [int]$TimeoutSeconds = 180
+    [int]$TimeoutSeconds = 180,
+    [ValidateRange(0, 3600)]
+    [int]$SoakSeconds = 90
 )
 
 $ErrorActionPreference = "Stop"
@@ -658,14 +661,14 @@ try {
 
     } # end non-fallback Phase 9 block
 
-    # -- Phase 10: Sustained connectivity check (90s, crosses 3 WS ping intervals) --
-    if ($failures.Count -eq 0 -and -not $script:p8UsedFallback) {
+    # -- Phase 10: Optional sustained connectivity soak --
+    if ($failures.Count -eq 0 -and -not $script:p8UsedFallback -and $SoakSeconds -gt 0) {
         Write-Status ""
-        Write-Status "--- Phase 10: Sustained connectivity check (90s) ---" "White"
+        Write-Status "--- Phase 10: Sustained connectivity check (${SoakSeconds}s) ---" "White"
         $sustainStart = [System.Diagnostics.Stopwatch]::StartNew()
         $sustainFailed = $false
         $prevState = @{}  # track per-player state changes
-        while ($sustainStart.Elapsed.TotalSeconds -lt 90 -and -not $sustainFailed) {
+        while ($sustainStart.Elapsed.TotalSeconds -lt $SoakSeconds -and -not $sustainFailed) {
             Start-Sleep -Seconds 5
             $elapsed = [int]$sustainStart.Elapsed.TotalSeconds
             $sg1 = Get-GameIntrospection -Serial $EMU1
@@ -748,7 +751,7 @@ try {
             }
         }
         if (-not $sustainFailed) {
-            Write-Status "  Connection sustained for 90s" "Green"
+            Write-Status "  Connection sustained for ${SoakSeconds}s" "Green"
 
             # Final assertion: verify no disconnect dialog appeared in the last moments
             foreach ($entry in @(@{Tag = "EMU1"; Serial = $EMU1; Num = 1 }, @{Tag = "EMU2"; Serial = $EMU2; Num = 2 })) {

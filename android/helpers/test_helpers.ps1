@@ -80,6 +80,68 @@ function Adb-Timeout {
     }
 }
 
+function Test-DeviceFileMatches {
+    param(
+        [Parameter(Mandatory = $true)][string]$LocalPath,
+        [Parameter(Mandatory = $true)][string]$DevicePath
+    )
+
+    $localFile = Get-Item -LiteralPath $LocalPath -ErrorAction Stop
+    if (-not $localFile.PSIsContainer -and $localFile.Length -ge 0) {
+        $deviceSize = Adb-Timeout -AdbArgs @('shell', "stat -c %s '$DevicePath'") -Seconds 10
+        if (-not $deviceSize -or $deviceSize -notmatch '^\d+$' -or [long]$deviceSize -ne $localFile.Length) {
+            return $false
+        }
+
+        $hashTimeoutSeconds = [Math]::Max(30, [int][Math]::Ceiling($localFile.Length / (4MB)) + 15)
+        $deviceHashOutput = Adb-Timeout -AdbArgs @('shell', "sha256sum '$DevicePath'") -Seconds $hashTimeoutSeconds
+        if ($deviceHashOutput -notmatch '^([0-9a-fA-F]{64})\s+') {
+            return $false
+        }
+        $localHash = (Get-FileHash -LiteralPath $localFile.FullName -Algorithm SHA256).Hash
+        return $Matches[1].Equals($localHash, [StringComparison]::OrdinalIgnoreCase)
+    }
+    return $false
+}
+
+function Push-VerifiedDeviceFile {
+    param(
+        [Parameter(Mandatory = $true)][string]$LocalPath,
+        [Parameter(Mandatory = $true)][string]$DevicePath,
+        [switch]$SkipPush
+    )
+
+    $localFile = Get-Item -LiteralPath $LocalPath -ErrorAction Stop
+    if ($localFile.PSIsContainer) {
+        Write-Status "FAIL: Cannot push a directory as a verified device file: $LocalPath" 'Red'
+        return $false
+    }
+
+    if (Test-DeviceFileMatches -LocalPath $localFile.FullName -DevicePath $DevicePath) {
+        $message = if ($SkipPush) { 'Skipping push (-SkipPush); device file is verified' } else { 'Device file already matches, skipping push' }
+        Write-Status $message
+        return $true
+    }
+    if ($SkipPush) {
+        Write-Status "FAIL: Device file is missing or does not match: $DevicePath" 'Red'
+        return $false
+    }
+
+    Write-Status "Pushing and verifying $($localFile.Name)..."
+    # Size the command bound from the transfer itself. Large installer images
+    # can legitimately exceed Adb's 30-second convenience default.
+    $pushTimeoutSeconds = [Math]::Max(30, [int][Math]::Ceiling($localFile.Length / (2MB)) + 30)
+    $pushOutput = Adb-Timeout -AdbArgs @('push', $localFile.FullName, $DevicePath) -Seconds $pushTimeoutSeconds -IncludeStandardError
+    if ($pushOutput) { Write-Host $pushOutput }
+
+    if (-not (Test-DeviceFileMatches -LocalPath $localFile.FullName -DevicePath $DevicePath)) {
+        Write-Status "FAIL: Device file did not match after push: $DevicePath" 'Red'
+        return $false
+    }
+    Write-Status 'Push verified'
+    return $true
+}
+
 function Test-EmulatorHealthy {
     # Check if emulator process is running, adb sees it, and shell responds.
     $emuProc = Get-Process -ErrorAction SilentlyContinue | Where-Object {
@@ -1401,6 +1463,18 @@ function Get-TestStatusFromExitCode {
     if ($ExitCode -eq 0) { return "PASS" }
     if ($ExitCode -eq 2 -and $SkipDeclared) { return "SKIP" }
     return "FAIL"
+}
+
+function Get-PowerShellTestSupportOwner {
+    param([Parameter(Mandatory = $true)][string]$ScriptPath)
+
+    $header = Get-Content -LiteralPath $ScriptPath -TotalCount 40 -ErrorAction Stop
+    foreach ($line in $header) {
+        if ($line -match '^\s*#\s*TEST-SUPPORT:\s*owner=([A-Za-z0-9_.-]+)\s*$') {
+            return $matches[1]
+        }
+    }
+    return $null
 }
 
 function Watch-AutomationResult {

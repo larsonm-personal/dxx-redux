@@ -1,13 +1,13 @@
-// TEST: Launch + Background/Resume
-// Verifies normal game launch into a level, then backgrounds and
-// resumes the app to verify EGL surface recreation (black screen fix).
+// TEST: Launch + Background/Resume + Android dormant states
+// Verifies normal game launch, repeated EGL surface recreation, and the
+// distinct main-menu, active-game, pause-window, and game-menu workloads.
 // Parameterized for both D1 ("First Strike") and D2 ("Counterstrike").
 [
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"GAME": "d1", "MISSION": "First Strike", "GAME_NUM": "1", "GAME_DIR": "d1x-redux", "LEVEL": "1"},
-            "d2": {"GAME": "d2", "MISSION": "Counterstrike", "GAME_NUM": "2", "GAME_DIR": "d2x-redux", "LEVEL": "2"}
+            "d1": {"GAME": "d1", "MISSION": "First Strike", "GAME_NUM": "1", "GAME_DIR": "d1x-redux", "LEVEL": "1", "ACTIVE_CYCLE_1": "1", "ACTIVE_CYCLE_2": "2"},
+            "d2": {"GAME": "d2", "MISSION": "Counterstrike", "GAME_NUM": "2", "GAME_DIR": "d2x-redux", "LEVEL": "2", "ACTIVE_CYCLE_1": "2", "ACTIVE_CYCLE_2": "3"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -32,6 +32,8 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "dlog_dormancy_enabled", "value": true}, "post_delay_ms": 250},
     {"action": "enter_game", "game": "${GAME}"},
 
     {"action": "log", "message": "=== TEST: Launch + Background/Resume ==="},
@@ -46,6 +48,29 @@
 
     // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    // The lifecycle machinery is shared by both native engines, while the
+    // active-game path below remains covered in D1 and D2. Exercise the extra
+    // static and paused workload matrix once, in D2.
+    {"action": "introspect", "when": "d2"},
+    {"action": "assert", "when": "d2", "expect": {
+        "android_lifecycle.workload": "static_ui",
+        "android_lifecycle.suspend_state": "running",
+        "android_lifecycle.work_counters.event_loop_iterations": {"gt": 0},
+        "android_lifecycle.work_counters.draw_dispatches": {"gt": 0},
+        "android_lifecycle.work_counters.swap_presented": {"gt": 0}
+    }},
+    {"action": "log", "when": "d2", "message": "SCRIPT_BACKGROUND: dormant-main-menu duration_s=5 lock_screen=true"},
+    {"action": "wait_for", "when": "d2", "field": "egl_recreate_count", "value": "1", "timeout_ms": 30000},
+    {"action": "assert", "when": "d2", "expect": {
+        "android_lifecycle.requested_visibility": "foreground",
+        "android_lifecycle.observed_visibility": "foreground",
+        "android_lifecycle.checkpoint_state": "skipped",
+        "android_lifecycle.park_entry_count": {"gte": 1},
+        "android_lifecycle.wake_count": {"gte": 1},
+        "android_lifecycle.parked_duration_ms": {"gte": 4000},
+        "android_lifecycle.request_generation": {"gte": 2},
+        "android_lifecycle.acknowledgement_generation": {"gte": 2}
+    }},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
@@ -67,6 +92,7 @@
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "${LEVEL}"}},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "when": "d2", "expect": {"android_lifecycle.workload": "single_player_active"}},
     {"action": "assert", "expect": {"physfs.write_dir": {"contains": "${GAME_DIR}"}}},
     {"action": "assert", "expect": {"physfs.search_path": {"contains": "${GAME_DIR}"}}},
     {"action": "assert", "expect": {"physfs.search_path": {"contains": "imported/sets/"}}},
@@ -128,7 +154,7 @@
 
     // Synchronize with the EGL rebind rather than a fixed delay. The runner
     // can observe the marker before Android has delivered the pause callback.
-    {"action": "wait_for", "field": "egl_recreate_count", "value": "1", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "egl_recreate_count", "value": "${ACTIVE_CYCLE_1}", "timeout_ms": 30000},
 
     // Verify the game is running on a post-resume native-window generation
     {"action": "assert", "expect": {
@@ -136,12 +162,22 @@
         "screen_mode": "game",
         "egl_window_generation": {"gte": 4}
     }},
+    {"action": "assert", "when": "d2", "expect": {
+        "android_lifecycle.observed_visibility": "foreground",
+        "android_lifecycle.workload": "single_player_paused",
+        "android_lifecycle.checkpoint_state": "committed",
+        "android_lifecycle.suspend_state": "running",
+        "android_lifecycle.park_entry_count": {"gte": 2},
+        "android_lifecycle.wake_count": {"gte": 2}
+    }},
+    {"action": "key", "when": "d2", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "when": "d2", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
     // Repeat the lifecycle handoff with a distinct runner marker. This catches
     // stale surface generations and native-window references retained only by
     // the UI callback
     {"action": "log", "message": "SCRIPT_BACKGROUND: cycle-2"},
-    {"action": "wait_for", "field": "egl_recreate_count", "value": "2", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "egl_recreate_count", "value": "${ACTIVE_CYCLE_2}", "timeout_ms": 30000},
     {"action": "assert", "expect": {
         "in_game": "true",
         "screen_mode": "game",
@@ -166,5 +202,46 @@
         "hires_textures.hires_count": {"gte": 0}
     }},
     {"action": "log", "message": "=== Hires texture count verified ==="},
+
+    // D2 owns the extra paused-workload matrix. D1 already exercised the same
+    // shared suspend/checkpoint code through both active-game cycles above.
+    {"action": "key", "when": "d2", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "when": "d2", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "set_debug", "when": "d2", "field": "android_game_request", "value": "pause", "post_delay_ms": 300},
+    {"action": "wait_for", "when": "d2", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "assert", "when": "d2", "expect": {"android_lifecycle.workload": "single_player_paused"}},
+    {"action": "log", "when": "d2", "message": "SCRIPT_BACKGROUND: dormant-pause-window duration_s=5"},
+    {"action": "wait_for", "when": "d2", "field": "egl_recreate_count", "value": "4", "timeout_ms": 30000},
+    {"action": "assert", "when": "d2", "expect": {
+        "android_lifecycle.workload": "single_player_paused",
+        "android_lifecycle.checkpoint_state": "committed",
+        "android_lifecycle.suspend_state": "running",
+        "android_lifecycle.park_entry_count": {"gte": 4},
+        "android_lifecycle.wake_count": {"gte": 4}
+    }},
+    {"action": "key", "when": "d2", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "when": "d2", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    {"action": "set_debug", "when": "d2", "field": "android_game_request", "value": "game_menu", "post_delay_ms": 300},
+    {"action": "wait_for", "when": "d2", "field": "menu_subtitle", "value": "Game Menu", "timeout_ms": 5000},
+    {"action": "assert", "when": "d2", "expect": {"android_lifecycle.workload": "single_player_paused"}},
+    {"action": "log", "when": "d2", "message": "SCRIPT_BACKGROUND: dormant-game-menu duration_s=5"},
+    {"action": "wait_for", "when": "d2", "field": "egl_recreate_count", "value": "5", "timeout_ms": 30000},
+    {"action": "assert", "when": "d2", "expect": {
+        "android_lifecycle.observed_visibility": "foreground",
+        "android_lifecycle.workload": "single_player_paused",
+        "android_lifecycle.checkpoint_state": "committed",
+        "android_lifecycle.suspend_state": "running",
+        "android_lifecycle.park_entry_count": {"gte": 5},
+        "android_lifecycle.wake_count": {"gte": 5},
+        "android_lifecycle.last_wake_reason": "foreground",
+        "android_lifecycle.context_generation": {"gte": 1},
+        "android_lifecycle.window_generation": {"gte": 1},
+        "android_lifecycle.work_counters.audio_callbacks": {"gt": 0},
+        "android_lifecycle.work_counters.central_overlay_polls": {"gt": 0}
+    }},
+    {"action": "key", "when": "d2", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "when": "d2", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "log", "when": "d2", "message": "=== Android dormant-state matrix verified ==="},
     {"action": "introspect"}
 ]

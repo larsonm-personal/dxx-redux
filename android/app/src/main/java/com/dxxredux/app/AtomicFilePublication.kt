@@ -165,15 +165,32 @@ internal object AtomicFilePublication {
         temporary: File,
         target: File,
     ) {
-        if (temporary.renameTo(target)) return
+        if (!target.exists()) {
+            check(renameWithRetries(temporary, target)) { "Could not publish cache generation" }
+            return
+        }
         val backup = uniqueSibling(target, "old")
-        check(target.exists() && target.renameTo(backup)) { "Could not retain the previous cache generation" }
+        check(renameWithRetries(target, backup)) { "Could not retain the previous cache generation" }
         try {
-            check(temporary.renameTo(target)) { "Could not publish cache generation" }
+            check(renameWithRetries(temporary, target)) { "Could not publish cache generation" }
         } catch (failure: Throwable) {
-            if (!target.exists()) backup.renameTo(target)
+            if (!target.exists()) renameWithRetries(backup, target)
             throw failure
         }
         if (backup.isDirectory) backup.deleteRecursively() else backup.delete()
     }
+
+    private fun renameWithRetries(
+        source: File,
+        target: File,
+    ): Boolean {
+        repeat(RENAME_ATTEMPTS) { attempt ->
+            if (source.renameTo(target)) return true
+            if (attempt + 1 < RENAME_ATTEMPTS) Thread.sleep(RENAME_RETRY_DELAY_MS)
+        }
+        return false
+    }
+
+    private const val RENAME_ATTEMPTS = 3
+    private const val RENAME_RETRY_DELAY_MS = 10L
 }

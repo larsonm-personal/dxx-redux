@@ -31,8 +31,9 @@ try {
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
         throw 'Extraction suite no longer recovers ADB/device infrastructure before its one complete-spec retry'
     }
-    if ($runAllSource -notmatch '"test_extract"\s*=\s*600') {
-        throw 'Standalone extraction no longer has the same per-sample budget as the extraction suite'
+    if ($extractSource -notmatch '(?m)^# TEST-SUPPORT: owner=test_all_extracts\s*$' -or
+        $runAllSource -notmatch 'Get-PowerShellTestSupportOwner') {
+        throw 'Single-spec extraction is no longer cataloged as support for the sampled extraction suite'
     }
     if ($extractSource -notmatch 'Get-JsonStringArray \$spec ''mission_files''' -or
         $extractSource -match '\$spec\.mission_files\s*\|\s*Where-Object') {

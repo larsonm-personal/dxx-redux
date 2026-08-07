@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_all_extracts
 <#
 .SYNOPSIS
   Single-source extraction regression test. Validates that a CD image or GOG
