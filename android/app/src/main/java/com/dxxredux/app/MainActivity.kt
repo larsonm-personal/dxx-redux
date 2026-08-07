@@ -1826,7 +1826,9 @@ class MainActivity :
 
     // ── Lifecycle ────────────────────────────────────────────
     private var backgroundPauseApplied = false
-    private var uiWorkSuspended = false
+
+    // UI polling has not started until the first onResume call
+    private var uiWorkSuspended = true
 
     private fun requestMinimizeAutosave() {
         if (gameStarted) {
@@ -2204,6 +2206,7 @@ class MainActivity :
             object : Runnable {
                 override fun run() {
                     DormancyDiagnostics.recordCentralOverlayPoll()
+                    publishDormancyUiPollCounters()
                     val pollStartNs = android.os.SystemClock.elapsedRealtimeNanos()
                     var profileInGame = false
                     var profileAutomap = false

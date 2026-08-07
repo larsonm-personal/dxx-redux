@@ -712,6 +712,11 @@ int coop_autosave(void)
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
+	if (!Game_wind || Current_level_num == 0) {
+		COOP_SAVE_LOG(CON_NORMAL,
+		              "coop_save: auto-save skipped without an active level\n");
+		return 0;
+	}
 	if (Endlevel_sequence || Control_center_destroyed)
 		return 0;
 
