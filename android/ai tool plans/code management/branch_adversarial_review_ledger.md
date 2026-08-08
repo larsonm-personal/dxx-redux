@@ -19968,23 +19968,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Barrier-run distinct combined archives and inject interruption, partial write, close, parse, and cleanup failures at every boundary. Require each result to identify and validate only its requested bytes, no cross-run truncation or deletion, deterministic failure for incomplete extraction, and zero retained owned HAM or directory after ordinary success and handled failure.
 - Resolution: Pending
 
-### BR-0633: P1 - Emit the sound format that D1 actually loads
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/compatibility
-- Found by: R1-CHUNK-0508
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/mods/d2x-xl/convert_d2xxl_sounds.ps1:L122-L190,L192-L200,L254-L270` in common D1 and D2 sound conversion and archive naming
-- Related: `d1/main/bmread.c:L269-L305`; `d2/main/bmread.c:L268-L303`; `game_data/mods/d2x-xl/convert_all.ps1:L384-L395`; `android/game_scripts/test_mod_loading.json5:L1-L5,L21-L32,L63-L89`; `android/ai tool plans/asset management/plan_d2x_xl_hires_mods.md`
-- Evidence: The converter unconditionally resamples both games to 22,050 Hz and names every payload `Sounds/<name>.r22`. Frozen D2 selects `.r22` when its configured sample rate is 22 kHz, but frozen D1 has no `.r22` branch: `ds_load` always constructs `Sounds/<name>.raw` and registers external bytes at 11,025 Hz. Frozen-tree search finds no D1 `.r22` consumer or alias. The maintained generated D1 archive corroborates the deterministic script output with 113 `.r22` entries and zero `.raw` entries. The implementation plan nevertheless calls the D1 conversion complete, and the only mod-loading automation is D2-only, asserts texture coverage, and does not assert that even its mounted sound archive replaced a sample.
-- Trigger: Enable the generated `d1-hires-sounds.dxa`, start D1, and play any base sound having a converted replacement
-- Impact: D1 never opens any of the 113 generated replacements and silently falls back to its original PIG sounds. The complete advertised D1 high-resolution sound pack is inert even though conversion and aggregate commands report success and the archive is listed as a finished output.
-- Expected: D1 output uses the exact pathname and sample representation consumed by frozen D1, or paired D1 runtime support deliberately adds and validates a 22-kHz replacement convention; D1 integration proves replacement bytes are selected and played.
-- Suggested fix: For the minimal engine change, parameterize target rate and extension by game, resample D1 to 11,025-Hz unsigned mono, and emit `.raw`; retain 22,050-Hz `.r22` for D2. If 22-kHz D1 playback is desired, implement it in D1 and its mixer under the repository's paired-engine compatibility rules rather than publishing an unrecognized filename. Validate every emitted basename against the admitted game sound table.
-- Validation: Generate both packs from controlled WAV tones, mount each in its game, and instrument the selected PhysFS path, byte count, source rate, and played sample identity. Require D1 to open `.raw` at 11,025 Hz and D2 to open `.r22` at 22,050 Hz, reject wrong extensions and unmatched names, and assert audible/sample-hash replacement rather than only archive mount or unrelated texture state.
-- Resolution: Pending
-
 ### BR-0634: P2 - Isolate and always clean D2X-XL conversion stages
 
 - [ ] OPEN

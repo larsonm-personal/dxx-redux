@@ -19,10 +19,13 @@ include(FetchContent)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-build-metadata.cmake)
 
+get_filename_component(DXX_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
+
 # ──────────────────────────────────────────────────────────────
 # Compiler warnings
 # ──────────────────────────────────────────────────────────────
 add_compile_options(
+    "-fmacro-prefix-map=${DXX_PROJECT_ROOT}/=" # keep __FILE__ paths relative in diagnostics
     -Wall
     -Wextra
     -Wformat=2
