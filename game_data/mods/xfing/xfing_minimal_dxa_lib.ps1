@@ -5,10 +5,123 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -AssemblyName System.Drawing
 
+if (-not ("DxxRedux.XfingValidation" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+
+namespace DxxRedux
+{
+    public static class XfingValidation
+    {
+        private static void ValidateRleRow(byte[] bytes, int offset, int length, int width)
+        {
+            int source = offset;
+            int sourceEnd = checked(offset + length);
+            int decoded = 0;
+            bool terminated = false;
+            while (source < sourceEnd)
+            {
+                byte data = bytes[source++];
+                if ((data & 0xe0) != 0xe0)
+                {
+                    decoded++;
+                }
+                else
+                {
+                    int count = data & 31;
+                    if (count == 0)
+                    {
+                        terminated = true;
+                        break;
+                    }
+                    if (source >= sourceEnd)
+                        throw new InvalidDataException("RLE row ends inside a run");
+                    source++;
+                    decoded = checked(decoded + count);
+                }
+                if (decoded > width)
+                    throw new InvalidDataException("RLE row exceeds its declared width");
+            }
+            if (!terminated || decoded != width || source != sourceEnd)
+                throw new InvalidDataException("RLE row does not consume its declared input and width exactly");
+        }
+
+        public static void ValidateRleBitmap(byte[] bytes, int offset, int length, int width, int height, int rowSizeBytes)
+        {
+            int tableLength = checked(4 + checked(height * rowSizeBytes));
+            if (offset < 0 || length < tableLength || offset > bytes.Length - length)
+                throw new InvalidDataException("RLE header is outside its entry");
+            int declaredLength = BitConverter.ToInt32(bytes, offset);
+            if (declaredLength != length)
+                throw new InvalidDataException("RLE declared length does not match its entry");
+            int source = checked(offset + tableLength);
+            int entryEnd = checked(offset + length);
+            for (int row = 0; row < height; ++row)
+            {
+                int rowOffset = checked(offset + 4 + checked(row * rowSizeBytes));
+                int rowSize = rowSizeBytes == 2 ? BitConverter.ToUInt16(bytes, rowOffset) : bytes[rowOffset];
+                if (rowSize <= 0 || source > entryEnd - rowSize)
+                    throw new InvalidDataException("RLE row is outside its entry");
+                ValidateRleRow(bytes, source, rowSize, width);
+                source += rowSize;
+            }
+            if (source != entryEnd)
+                throw new InvalidDataException("RLE rows do not consume their entry exactly");
+        }
+    }
+}
+'@
+}
+
 $script:XfingBitmapFlagTransparent = 1
 $script:XfingBitmapFlagSuperTransparent = 2
 $script:XfingBitmapFlagRle = 8
 $script:XfingBitmapFlagRleBig = 32
+$script:XfingMaxInputBytes = 268435456
+$script:XfingMaxPigBitmaps = 2620
+$script:XfingMaxPigSounds = 254
+$script:XfingMaxBitmapDimension = 4096
+$script:XfingMaxBitmapPixels = 16777216
+$script:XfingMaxAggregatePixels = 67108864
+
+function Assert-XfingSpan {
+    param(
+        [long]$Offset,
+        [long]$Length,
+        [long]$Limit,
+        [string]$Description
+    )
+
+    if ($Offset -lt 0 -or $Length -lt 0 -or $Offset -gt $Limit -or $Length -gt ($Limit - $Offset)) {
+        throw "$Description is outside its bounded input: offset=$Offset length=$Length limit=$Limit"
+    }
+}
+
+function Assert-XfingCount {
+    param(
+        [long]$Count,
+        [long]$Maximum,
+        [string]$Description
+    )
+
+    if ($Count -lt 0 -or $Count -gt $Maximum) {
+        throw "$Description count $Count is outside 0..$Maximum"
+    }
+}
+
+function Read-XfingBoundedFile {
+    param(
+        [string]$Path,
+        [long]$MaximumBytes = $script:XfingMaxInputBytes
+    )
+
+    $length = (Get-Item -LiteralPath $Path).Length
+    if ($length -gt $MaximumBytes) {
+        throw "Input exceeds the $MaximumBytes byte limit: $Path size=$length"
+    }
+    return , ([System.IO.File]::ReadAllBytes($Path))
+}
 
 function Get-XfingSha256ForBytes {
     param(
@@ -44,6 +157,9 @@ function Read-XfingFixedAscii {
         [int]$Length
     )
 
+    if ($Length -lt 0 -or $Reader.BaseStream.Position -gt $Reader.BaseStream.Length - $Length) {
+        throw "Truncated fixed ASCII field at offset $($Reader.BaseStream.Position), length $Length"
+    }
     $bytes = $Reader.ReadBytes($Length)
     $text = [System.Text.Encoding]::ASCII.GetString($bytes)
     $zeroIndex = $text.IndexOf([char]0)
@@ -77,13 +193,13 @@ function Get-XfingSafeName {
 function Read-XfingPaletteBytes {
     param([string]$Path)
 
-    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $bytes = Read-XfingBoundedFile -Path $Path -MaximumBytes 65536
     if ($bytes.Length -lt 768) {
-        throw "Palette file too small: $Path"
+        throw "Palette file is shorter than 768 bytes: $Path size=$($bytes.Length)"
     }
     $palette = [byte[]]::new(768)
     [Array]::Copy($bytes, 0, $palette, 0, 768)
-    return $palette
+    return , $palette
 }
 
 function Convert-XfingPaletteComponent {
@@ -96,15 +212,19 @@ function Expand-XfingRleRow {
     param(
         [byte[]]$Bytes,
         [int]$SourceOffset,
+        [int]$SourceLength,
         [byte[]]$Destination,
         [int]$DestinationOffset,
         [int]$Width
     )
 
+    Assert-XfingSpan -Offset $SourceOffset -Length $SourceLength -Limit $Bytes.Length -Description "RLE row"
     $source = $SourceOffset
+    $sourceEnd = $SourceOffset + $SourceLength
     $dest = $DestinationOffset
     $destEnd = $DestinationOffset + $Width
-    while ($dest -lt $destEnd) {
+    $terminated = $false
+    while ($source -lt $sourceEnd) {
         $data = $Bytes[$source]
         $source++
         if (($data -band 0xE0) -ne 0xE0) {
@@ -113,17 +233,24 @@ function Expand-XfingRleRow {
         } else {
             $count = $data -band 31
             if ($count -eq 0) {
+                $terminated = $true
                 break
+            }
+            if ($source -ge $sourceEnd) {
+                throw "RLE row ends inside a run"
             }
             $color = $Bytes[$source]
             $source++
-            for ($index = 0; $index -lt $count -and $dest -lt $destEnd; $index++) {
+            if ($count -gt ($destEnd - $dest)) {
+                throw "RLE row run exceeds its declared width $Width"
+            }
+            for ($index = 0; $index -lt $count; $index++) {
                 $Destination[$dest] = $color
                 $dest++
             }
         }
     }
-    if ($dest -ne $destEnd) {
+    if (-not $terminated -or $dest -ne $destEnd -or $source -ne $sourceEnd) {
         throw "RLE row decoded to $($dest - $DestinationOffset) pixels, expected $Width"
     }
 }
@@ -134,11 +261,20 @@ function Expand-XfingBitmapPixels {
         $Entry
     )
 
-    $size = [int]$Entry.Width * [int]$Entry.Height
+    $size = [long]$Entry.Width * [long]$Entry.Height
+    if ($size -le 0 -or $size -gt $script:XfingMaxBitmapPixels) {
+        throw "Bitmap $($Entry.Name) pixel count $size is outside the supported range"
+    }
     $pixels = [byte[]]::new($size)
     if (($Entry.Flags -band $script:XfingBitmapFlagRle) -ne 0) {
         $rowSizeBytes = if (($Entry.Flags -band $script:XfingBitmapFlagRleBig) -ne 0) { 2 } else { 1 }
-        $dataOffset = [int]$Entry.Offset + 4 + ([int]$Entry.Height * $rowSizeBytes)
+        $tableLength = 4 + ([long]$Entry.Height * $rowSizeBytes)
+        Assert-XfingSpan -Offset $Entry.Offset -Length $tableLength -Limit ($Entry.Offset + $Entry.Length) -Description "RLE header for $($Entry.Name)"
+        $declaredLength = [BitConverter]::ToInt32($Pig.Bytes, [int]$Entry.Offset)
+        if ($declaredLength -ne $Entry.Length) {
+            throw "RLE bitmap $($Entry.Name) declares $declaredLength bytes, expected $($Entry.Length)"
+        }
+        $dataOffset = [int]($Entry.Offset + $tableLength)
         $sourceOffset = $dataOffset
         for ($row = 0; $row -lt [int]$Entry.Height; $row++) {
             $rowSizeOffset = [int]$Entry.Offset + 4 + ($row * $rowSizeBytes)
@@ -147,18 +283,61 @@ function Expand-XfingBitmapPixels {
             } else {
                 [int]$Pig.Bytes[$rowSizeOffset]
             }
+            if ($rowSize -le 0) {
+                throw "RLE bitmap $($Entry.Name) row $row has invalid size $rowSize"
+            }
+            Assert-XfingSpan -Offset $sourceOffset -Length $rowSize -Limit ($Entry.Offset + $Entry.Length) -Description "RLE bitmap $($Entry.Name) row $row"
             Expand-XfingRleRow `
                 -Bytes $Pig.Bytes `
                 -SourceOffset $sourceOffset `
+                -SourceLength $rowSize `
                 -Destination $pixels `
                 -DestinationOffset ($row * [int]$Entry.Width) `
                 -Width ([int]$Entry.Width)
             $sourceOffset += $rowSize
         }
+        if ($sourceOffset -ne ($Entry.Offset + $Entry.Length)) {
+            throw "RLE bitmap $($Entry.Name) row sizes do not consume its entry"
+        }
     } else {
+        if ($Entry.Length -ne $size) {
+            throw "Bitmap $($Entry.Name) has $($Entry.Length) bytes, expected $size"
+        }
         [Array]::Copy($Pig.Bytes, [int]$Entry.Offset, $pixels, 0, $size)
     }
-    return $pixels
+    return , $pixels
+}
+
+function Test-XfingBitmapPayload {
+    param(
+        $Pig,
+        $Entry
+    )
+
+    $pixelCount = [long]$Entry.Width * [long]$Entry.Height
+    if ($pixelCount -le 0 -or $pixelCount -gt $script:XfingMaxBitmapPixels) {
+        throw "Bitmap $($Entry.Name) pixel count $pixelCount is outside the supported range"
+    }
+    if (($Entry.Flags -band $script:XfingBitmapFlagRle) -eq 0) {
+        if ($Entry.Length -ne $pixelCount) {
+            throw "Bitmap $($Entry.Name) has $($Entry.Length) bytes, expected $pixelCount"
+        }
+        return
+    }
+
+    $rowSizeBytes = if (($Entry.Flags -band $script:XfingBitmapFlagRleBig) -ne 0) { 2 } else { 1 }
+    try {
+        [DxxRedux.XfingValidation]::ValidateRleBitmap(
+            $Pig.Bytes,
+            [int]$Entry.Offset,
+            [int]$Entry.Length,
+            [int]$Entry.Width,
+            [int]$Entry.Height,
+            $rowSizeBytes)
+    } catch {
+        $reason = if ($_.Exception.InnerException) { $_.Exception.InnerException.Message } else { $_.Exception.Message }
+        throw "RLE bitmap $($Entry.Name) is invalid: $reason"
+    }
 }
 
 function Write-XfingRgbaPng {
@@ -266,25 +445,11 @@ function Export-XfingBitmapEntryPng {
     }
 }
 
-function Get-XfingNextOffset {
-    param(
-        [int[]]$SortedOffsets,
-        [int]$Offset,
-        [int]$FileLength
-    )
-
-    foreach ($candidate in $SortedOffsets) {
-        if ($candidate -gt $Offset) {
-            return $candidate
-        }
-    }
-    return $FileLength
-}
-
 function Read-XfingD1Pig {
     param([string]$Path)
 
-    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $bytes = Read-XfingBoundedFile $Path
+    Assert-XfingSpan -Offset 0 -Length 8 -Limit $bytes.Length -Description "D1 PIG header"
     $stream = [System.IO.MemoryStream]::new($bytes)
     $reader = [System.IO.BinaryReader]::new($stream)
     $fileLength = $bytes.Length
@@ -298,10 +463,15 @@ function Read-XfingD1Pig {
         default { $pigDataStart = $reader.ReadInt32() }
     }
 
+    Assert-XfingSpan -Offset $pigDataStart -Length 8 -Limit $fileLength -Description "D1 PIG data header"
     $stream.Position = $pigDataStart
     $bitmapCount = $reader.ReadInt32()
     $soundCount = $reader.ReadInt32()
-    $bitmapHeaders = @()
+    Assert-XfingCount -Count $bitmapCount -Maximum $script:XfingMaxPigBitmaps -Description "D1 PIG bitmap"
+    Assert-XfingCount -Count $soundCount -Maximum $script:XfingMaxPigSounds -Description "D1 PIG sound"
+    $headerLength = 8L + ([long]$bitmapCount * 17L) + ([long]$soundCount * 20L)
+    Assert-XfingSpan -Offset $pigDataStart -Length $headerLength -Limit $fileLength -Description "D1 PIG tables"
+    $bitmapHeaders = [System.Collections.Generic.List[object]]::new($bitmapCount)
     for ($entryIndex = 0; $entryIndex -lt $bitmapCount; $entryIndex++) {
         $rawName = Read-XfingFixedAscii -Reader $reader -Length 8
         $dflags = $reader.ReadByte()
@@ -310,48 +480,74 @@ function Read-XfingD1Pig {
         $flags = $reader.ReadByte()
         $avgColor = $reader.ReadByte()
         $relativeOffset = $reader.ReadInt32()
-        $bitmapHeaders += [pscustomobject]@{
+        $width = if (($dflags -band 128) -ne 0) { $widthByte + 256 } else { $widthByte }
+        if ($width -le 0 -or $heightByte -le 0) {
+            throw "D1 PIG bitmap $entryIndex has invalid dimensions ${width}x$heightByte"
+        }
+        $bitmapHeaders.Add([pscustomobject]@{
             Index = $entryIndex + 1
             Name = Get-XfingBitmapName -Name $rawName -DFlags $dflags
             RawName = $rawName
             DFlags = $dflags
-            Width = if (($dflags -band 128) -ne 0) { $widthByte + 256 } else { $widthByte }
+            Width = $width
             Height = $heightByte
             Flags = $flags
             AvgColor = $avgColor
             RelativeOffset = $relativeOffset
-        }
+        })
     }
 
-    $soundHeaders = @()
+    $soundHeaders = [System.Collections.Generic.List[object]]::new($soundCount)
     for ($entryIndex = 0; $entryIndex -lt $soundCount; $entryIndex++) {
         $soundName = Read-XfingFixedAscii -Reader $reader -Length 8
         $length = $reader.ReadInt32()
         $dataLength = $reader.ReadInt32()
         $relativeOffset = $reader.ReadInt32()
-        $soundHeaders += [pscustomobject]@{
+        if ($length -lt 0 -or $dataLength -lt 0 -or $relativeOffset -lt 0) {
+            throw "D1 PIG sound $entryIndex has a negative length or offset"
+        }
+        $soundHeaders.Add([pscustomobject]@{
             Name = $soundName
             Length = $length
             DataLength = $dataLength
             RelativeOffset = $relativeOffset
+        })
+    }
+
+    $dataBase = [long]$pigDataStart + $headerLength
+    $allHeaders = @($bitmapHeaders) + @($soundHeaders)
+    $cutpoints = [System.Collections.Generic.List[int]]::new($allHeaders.Count)
+    $previousOffset = -1L
+    foreach ($header in $allHeaders) {
+        $absoluteOffset = $dataBase + [long]$header.RelativeOffset
+        if ($header.RelativeOffset -lt 0 -or $absoluteOffset -le $previousOffset) {
+            throw "D1 PIG entry offsets are negative, duplicate, or unordered"
         }
+        Assert-XfingSpan -Offset $absoluteOffset -Length 1 -Limit $fileLength -Description "D1 PIG entry payload"
+        $cutpoints.Add([int]$absoluteOffset)
+        $previousOffset = $absoluteOffset
+    }
+    $nextByOffset = @{}
+    for ($index = 0; $index -lt $cutpoints.Count; $index++) {
+        $nextByOffset[$cutpoints[$index]] = if ($index + 1 -lt $cutpoints.Count) { $cutpoints[$index + 1] } else { $fileLength }
     }
 
-    $dataBase = $pigDataStart + 8 + ($bitmapCount * 17) + ($soundCount * 20)
-    $cutpoints = New-Object System.Collections.Generic.List[int]
+    $entries = [System.Collections.Generic.List[object]]::new($bitmapCount)
+    $aggregatePixels = 0L
     foreach ($header in $bitmapHeaders) {
-        $cutpoints.Add($dataBase + $header.RelativeOffset)
-    }
-    foreach ($header in $soundHeaders) {
-        $cutpoints.Add($dataBase + $header.RelativeOffset)
-    }
-    $sortedOffsets = $cutpoints.ToArray() | Sort-Object -Unique
-
-    $entries = foreach ($header in $bitmapHeaders) {
         $absoluteOffset = $dataBase + $header.RelativeOffset
-        $nextOffset = Get-XfingNextOffset -SortedOffsets $sortedOffsets -Offset $absoluteOffset -FileLength $fileLength
+        $nextOffset = $nextByOffset[[int]$absoluteOffset]
         $payloadLength = $nextOffset - $absoluteOffset
-        [pscustomobject]@{
+        Assert-XfingSpan -Offset $absoluteOffset -Length $payloadLength -Limit $fileLength -Description "D1 PIG bitmap $($header.Name)"
+        $pixels = [long]$header.Width * [long]$header.Height
+        if ($pixels -le 0 -or $pixels -gt $script:XfingMaxBitmapPixels) {
+            throw "D1 PIG bitmap $($header.Name) has unsupported pixel count $pixels"
+        }
+        $aggregatePixels += $pixels
+        if ($aggregatePixels -gt $script:XfingMaxAggregatePixels) {
+            throw "D1 PIG exceeds the aggregate pixel budget"
+        }
+        $entries.Add([pscustomobject]@{
             Name = $header.Name
             RawName = $header.RawName
             Index = $header.Index
@@ -363,12 +559,20 @@ function Read-XfingD1Pig {
             Offset = $absoluteOffset
             Length = $payloadLength
             Hash = Get-XfingSha256ForBytes -Bytes $bytes -Offset $absoluteOffset -Length $payloadLength
+        })
+    }
+    foreach ($header in $soundHeaders) {
+        $absoluteOffset = $dataBase + $header.RelativeOffset
+        $nextOffset = $nextByOffset[[int]$absoluteOffset]
+        $payloadLength = $nextOffset - $absoluteOffset
+        if ($header.DataLength -gt $payloadLength) {
+            throw "D1 PIG sound $($header.Name) needs $($header.DataLength) bytes, entry has $payloadLength"
         }
     }
 
     $reader.Dispose()
     $stream.Dispose()
-    return [pscustomobject]@{
+    $pig = [pscustomobject]@{
         Path = $Path
         Format = "d1pig"
         PigDataStart = $pigDataStart
@@ -378,12 +582,17 @@ function Read-XfingD1Pig {
         Entries = @($entries)
         Sha256 = Get-XfingSha256ForBytes -Bytes $bytes
     }
+    foreach ($entry in $pig.Entries) {
+        Test-XfingBitmapPayload -Pig $pig -Entry $entry
+    }
+    return $pig
 }
 
 function Read-XfingD2Pig {
     param([string]$Path)
 
-    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $bytes = Read-XfingBoundedFile $Path
+    Assert-XfingSpan -Offset 0 -Length 12 -Limit $bytes.Length -Description "D2 PIG header"
     $stream = [System.IO.MemoryStream]::new($bytes)
     $reader = [System.IO.BinaryReader]::new($stream)
     $magic = $reader.ReadInt32()
@@ -392,7 +601,10 @@ function Read-XfingD2Pig {
         throw "Not a supported D2 PIG: $Path magic=$magic version=$version"
     }
     $bitmapCount = $reader.ReadInt32()
-    $headers = @()
+    Assert-XfingCount -Count $bitmapCount -Maximum $script:XfingMaxPigBitmaps -Description "D2 PIG bitmap"
+    $headerLength = 12L + ([long]$bitmapCount * 18L)
+    Assert-XfingSpan -Offset 0 -Length $headerLength -Limit $bytes.Length -Description "D2 PIG table"
+    $headers = [System.Collections.Generic.List[object]]::new($bitmapCount)
     for ($entryIndex = 0; $entryIndex -lt $bitmapCount; $entryIndex++) {
         $rawName = Read-XfingFixedAscii -Reader $reader -Length 8
         $dflags = $reader.ReadByte()
@@ -402,27 +614,57 @@ function Read-XfingD2Pig {
         $flags = $reader.ReadByte()
         $avgColor = $reader.ReadByte()
         $relativeOffset = $reader.ReadInt32()
-        $headers += [pscustomobject]@{
+        $width = $widthByte + (($whExtra -band 0x0f) -shl 8)
+        $height = $heightByte + (($whExtra -band 0xf0) -shl 4)
+        if ($width -le 0 -or $height -le 0 -or $width -gt $script:XfingMaxBitmapDimension -or $height -gt $script:XfingMaxBitmapDimension) {
+            throw "D2 PIG bitmap $entryIndex has unsupported dimensions ${width}x$height"
+        }
+        $headers.Add([pscustomobject]@{
             Index = $entryIndex + 1
             Name = Get-XfingBitmapName -Name $rawName -DFlags $dflags
             RawName = $rawName
             DFlags = $dflags
-            Width = $widthByte + (($whExtra -band 0x0f) -shl 8)
-            Height = $heightByte + (($whExtra -band 0xf0) -shl 4)
+            Width = $width
+            Height = $height
             Flags = $flags
             AvgColor = $avgColor
             RelativeOffset = $relativeOffset
-        }
+        })
     }
 
-    $dataBase = 12 + ($bitmapCount * 18)
-    $sortedOffsets = ($headers | ForEach-Object { $dataBase + $_.RelativeOffset }) | Sort-Object -Unique
+    $dataBase = $headerLength
     $fileLength = $bytes.Length
-    $entries = foreach ($header in $headers) {
+    $cutpoints = [System.Collections.Generic.List[int]]::new($bitmapCount)
+    $previousOffset = -1L
+    foreach ($header in $headers) {
+        $absoluteOffset = $dataBase + [long]$header.RelativeOffset
+        if ($header.RelativeOffset -lt 0 -or $absoluteOffset -le $previousOffset) {
+            throw "D2 PIG entry offsets are negative, duplicate, or unordered"
+        }
+        Assert-XfingSpan -Offset $absoluteOffset -Length 1 -Limit $fileLength -Description "D2 PIG entry payload"
+        $cutpoints.Add([int]$absoluteOffset)
+        $previousOffset = $absoluteOffset
+    }
+    $nextByOffset = @{}
+    for ($index = 0; $index -lt $cutpoints.Count; $index++) {
+        $nextByOffset[$cutpoints[$index]] = if ($index + 1 -lt $cutpoints.Count) { $cutpoints[$index + 1] } else { $fileLength }
+    }
+    $entries = [System.Collections.Generic.List[object]]::new($bitmapCount)
+    $aggregatePixels = 0L
+    foreach ($header in $headers) {
         $absoluteOffset = $dataBase + $header.RelativeOffset
-        $nextOffset = Get-XfingNextOffset -SortedOffsets $sortedOffsets -Offset $absoluteOffset -FileLength $fileLength
+        $nextOffset = $nextByOffset[[int]$absoluteOffset]
         $payloadLength = $nextOffset - $absoluteOffset
-        [pscustomobject]@{
+        Assert-XfingSpan -Offset $absoluteOffset -Length $payloadLength -Limit $fileLength -Description "D2 PIG bitmap $($header.Name)"
+        $pixels = [long]$header.Width * [long]$header.Height
+        if ($pixels -gt $script:XfingMaxBitmapPixels) {
+            throw "D2 PIG bitmap $($header.Name) has unsupported pixel count $pixels"
+        }
+        $aggregatePixels += $pixels
+        if ($aggregatePixels -gt $script:XfingMaxAggregatePixels) {
+            throw "D2 PIG exceeds the aggregate pixel budget"
+        }
+        $entries.Add([pscustomobject]@{
             Name = $header.Name
             RawName = $header.RawName
             Index = $header.Index
@@ -434,12 +676,12 @@ function Read-XfingD2Pig {
             Offset = $absoluteOffset
             Length = $payloadLength
             Hash = Get-XfingSha256ForBytes -Bytes $bytes -Offset $absoluteOffset -Length $payloadLength
-        }
+        })
     }
 
     $reader.Dispose()
     $stream.Dispose()
-    return [pscustomobject]@{
+    $pig = [pscustomobject]@{
         Path = $Path
         Format = "d2pig"
         Bytes = $bytes
@@ -448,6 +690,10 @@ function Read-XfingD2Pig {
         Entries = @($entries)
         Sha256 = Get-XfingSha256ForBytes -Bytes $bytes
     }
+    foreach ($entry in $pig.Entries) {
+        Test-XfingBitmapPayload -Pig $pig -Entry $entry
+    }
+    return $pig
 }
 
 function Compare-XfingPigEntriesByIndex {
@@ -580,6 +826,7 @@ function New-XfingByteRangeRecord {
 function Read-XfingInt16Value {
     param([byte[]]$Bytes, [ref]$Position)
 
+    Assert-XfingSpan -Offset $Position.Value -Length 2 -Limit $Bytes.Length -Description "16-bit field"
     $value = [BitConverter]::ToInt16($Bytes, $Position.Value)
     $Position.Value += 2
     return $value
@@ -588,6 +835,7 @@ function Read-XfingInt16Value {
 function Read-XfingInt32Value {
     param([byte[]]$Bytes, [ref]$Position)
 
+    Assert-XfingSpan -Offset $Position.Value -Length 4 -Limit $Bytes.Length -Description "32-bit field"
     $value = [BitConverter]::ToInt32($Bytes, $Position.Value)
     $Position.Value += 4
     return $value
@@ -596,6 +844,7 @@ function Read-XfingInt32Value {
 function Read-XfingName13 {
     param([byte[]]$Bytes, [ref]$Position)
 
+    Assert-XfingSpan -Offset $Position.Value -Length 13 -Limit $Bytes.Length -Description "13-byte name"
     $text = [System.Text.Encoding]::ASCII.GetString($Bytes, $Position.Value, 13)
     $Position.Value += 13
     return $text.Trim([char]0).TrimEnd()
@@ -609,9 +858,9 @@ function Read-XfingVClipRecord {
     $frameTime = Read-XfingInt32Value $Bytes $Position
     $flags = Read-XfingInt32Value $Bytes $Position
     $sound = Read-XfingInt16Value $Bytes $Position
-    $frames = @()
+    $frames = [System.Collections.Generic.List[object]]::new(30)
     for ($frameIndex = 0; $frameIndex -lt 30; $frameIndex++) {
-        $frames += Read-XfingInt16Value $Bytes $Position
+        $frames.Add((Read-XfingInt16Value $Bytes $Position))
     }
     $light = Read-XfingInt32Value $Bytes $Position
     return [pscustomobject]@{
@@ -628,7 +877,8 @@ function Read-XfingVClipRecord {
 function Read-XfingHamSections {
     param([string]$Path)
 
-    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $bytes = Read-XfingBoundedFile $Path
+    Assert-XfingSpan -Offset 0 -Length 12 -Limit $bytes.Length -Description "HAM header"
     $position = [ref]0
     $hamId = Read-XfingInt32Value $bytes $position
     $version = Read-XfingInt32Value $bytes $position
@@ -636,14 +886,17 @@ function Read-XfingHamSections {
     if ($hamId -ne 558711112 -or $version -ne 3) {
         throw "Not a supported HAM: $Path id=$hamId version=$version"
     }
+    Assert-XfingCount -Count $textureCount -Maximum 1200 -Description "HAM texture"
+    Assert-XfingSpan -Offset $position.Value -Length ([long]$textureCount * 22L) -Limit $bytes.Length -Description "HAM texture sections"
 
-    $textureIndices = @()
+    $textureIndices = [System.Collections.Generic.List[object]]::new($textureCount)
     for ($textureIndex = 0; $textureIndex -lt $textureCount; $textureIndex++) {
-        $textureIndices += Read-XfingInt16Value $bytes $position
+        $textureIndices.Add((Read-XfingInt16Value $bytes $position))
     }
 
-    $textures = @()
+    $textures = [System.Collections.Generic.List[object]]::new($textureCount)
     for ($textureIndex = 0; $textureIndex -lt $textureCount; $textureIndex++) {
+        Assert-XfingSpan -Offset $position.Value -Length 20 -Limit $bytes.Length -Description "HAM texture $textureIndex"
         $flags = $bytes[$position.Value]
         $pad0 = $bytes[$position.Value + 1]
         $pad1 = $bytes[$position.Value + 2]
@@ -655,7 +908,7 @@ function Read-XfingHamSections {
         $destroyed = Read-XfingInt16Value $bytes $position
         $slideU = Read-XfingInt16Value $bytes $position
         $slideV = Read-XfingInt16Value $bytes $position
-        $textures += [pscustomobject]@{
+        $textures.Add([pscustomobject]@{
             Index = $textureIndex
             Bitmap = $textureIndices[$textureIndex]
             Flags = $flags
@@ -668,22 +921,28 @@ function Read-XfingHamSections {
             Destroyed = $destroyed
             SlideU = $slideU
             SlideV = $slideV
-        }
+        })
     }
 
     $soundCount = Read-XfingInt32Value $bytes $position
-    $position.Value += $soundCount * 2
+    Assert-XfingCount -Count $soundCount -Maximum 254 -Description "HAM sound"
+    Assert-XfingSpan -Offset $position.Value -Length ([long]$soundCount * 2L) -Limit $bytes.Length -Description "HAM sound table"
+    $position.Value += [int]($soundCount * 2)
 
     $vclipCount = Read-XfingInt32Value $bytes $position
-    $vclips = @()
+    Assert-XfingCount -Count $vclipCount -Maximum 110 -Description "HAM vclip"
+    Assert-XfingSpan -Offset $position.Value -Length ([long]$vclipCount * 82L) -Limit $bytes.Length -Description "HAM vclip section"
+    $vclips = [System.Collections.Generic.List[object]]::new($vclipCount)
     for ($sectionIndex = 0; $sectionIndex -lt $vclipCount; $sectionIndex++) {
         $record = Read-XfingVClipRecord $bytes $position
         $record | Add-Member -NotePropertyName Index -NotePropertyValue $sectionIndex
-        $vclips += $record
+        $vclips.Add($record)
     }
 
     $eclipCount = Read-XfingInt32Value $bytes $position
-    $eclips = @()
+    Assert-XfingCount -Count $eclipCount -Maximum 110 -Description "HAM eclip"
+    Assert-XfingSpan -Offset $position.Value -Length ([long]$eclipCount * 130L) -Limit $bytes.Length -Description "HAM eclip section"
+    $eclips = [System.Collections.Generic.List[object]]::new($eclipCount)
     for ($sectionIndex = 0; $sectionIndex -lt $eclipCount; $sectionIndex++) {
         $vclip = Read-XfingVClipRecord $bytes $position
         $timeLeft = Read-XfingInt32Value $bytes $position
@@ -699,7 +958,7 @@ function Read-XfingHamSections {
         $sound = Read-XfingInt32Value $bytes $position
         $seg = Read-XfingInt32Value $bytes $position
         $side = Read-XfingInt32Value $bytes $position
-        $eclips += [pscustomobject]@{
+        $eclips.Add([pscustomobject]@{
             Index = $sectionIndex
             PlayTime = $vclip.PlayTime
             NumFrames = $vclip.NumFrames
@@ -721,17 +980,19 @@ function Read-XfingHamSections {
             Sound = $sound
             Seg = $seg
             Side = $side
-        }
+        })
     }
 
     $wallCount = Read-XfingInt32Value $bytes $position
-    $walls = @()
+    Assert-XfingCount -Count $wallCount -Maximum 60 -Description "HAM wall clip"
+    Assert-XfingSpan -Offset $position.Value -Length ([long]$wallCount * 126L) -Limit $bytes.Length -Description "HAM wall clip section"
+    $walls = [System.Collections.Generic.List[object]]::new($wallCount)
     for ($sectionIndex = 0; $sectionIndex -lt $wallCount; $sectionIndex++) {
         $playTime = Read-XfingInt32Value $bytes $position
         $numFrames = Read-XfingInt16Value $bytes $position
-        $frames = @()
+        $frames = [System.Collections.Generic.List[object]]::new(50)
         for ($frameIndex = 0; $frameIndex -lt 50; $frameIndex++) {
-            $frames += Read-XfingInt16Value $bytes $position
+            $frames.Add((Read-XfingInt16Value $bytes $position))
         }
         $openSound = Read-XfingInt16Value $bytes $position
         $closeSound = Read-XfingInt16Value $bytes $position
@@ -739,7 +1000,8 @@ function Read-XfingHamSections {
         $filename = Read-XfingName13 $bytes $position
         $pad = $bytes[$position.Value]
         $position.Value += 1
-        $walls += [pscustomobject]@{
+        Assert-XfingSpan -Offset $position.Value -Length 1 -Limit $bytes.Length -Description "HAM wall clip padding"
+        $walls.Add([pscustomobject]@{
             Index = $sectionIndex
             PlayTime = $playTime
             NumFrames = $numFrames
@@ -749,7 +1011,7 @@ function Read-XfingHamSections {
             Flags = $flags
             Filename = $filename
             Pad = $pad
-        }
+        })
     }
 
     return [pscustomobject]@{
@@ -922,99 +1184,152 @@ function Export-XfingHogEntry {
     )
 
     $entryUpper = $EntryName.ToUpperInvariant()
+    $hogLength = (Get-Item -LiteralPath $HogPath).Length
+    if ($hogLength -gt $script:XfingMaxInputBytes) {
+        throw "HOG exceeds the $($script:XfingMaxInputBytes) byte limit: $HogPath size=$hogLength"
+    }
     $stream = [System.IO.File]::OpenRead($HogPath)
     $reader = [System.IO.BinaryReader]::new($stream)
+    $selectedBytes = $null
     try {
+        Assert-XfingSpan -Offset 0 -Length 3 -Limit $stream.Length -Description "HOG signature"
         $signature = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(3))
         if ($signature -ne "DHF") {
             throw "Not a supported HOG: $HogPath"
         }
         while ($stream.Position -lt $stream.Length) {
-            $name = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(13)).Trim([char]0).TrimEnd()
+            Assert-XfingSpan -Offset $stream.Position -Length 17 -Limit $stream.Length -Description "HOG member header"
+            $nameBytes = $reader.ReadBytes(13)
+            $name = [System.Text.Encoding]::ASCII.GetString($nameBytes).Trim([char]0).TrimEnd()
             $length = $reader.ReadInt32()
-            if ($name.ToUpperInvariant() -eq $entryUpper) {
-                $bytes = $reader.ReadBytes($length)
-                $parent = Split-Path -Parent $OutputPath
-                if (-not (Test-Path -LiteralPath $parent)) {
-                    New-Item -ItemType Directory -Path $parent | Out-Null
-                }
-                [System.IO.File]::WriteAllBytes($OutputPath, $bytes)
-                return
+            if ($length -le 0 -or $length -gt $script:XfingMaxInputBytes) {
+                throw "HOG member $name has invalid length $length"
             }
-            $stream.Position += $length
+            Assert-XfingSpan -Offset $stream.Position -Length $length -Limit $stream.Length -Description "HOG member $name"
+            if ($name.ToUpperInvariant() -eq $entryUpper) {
+                if ($null -ne $selectedBytes) {
+                    throw "Duplicate $EntryName in $HogPath"
+                }
+                $selectedBytes = $reader.ReadBytes($length)
+            } else {
+                $stream.Position += $length
+            }
         }
     } finally {
         $reader.Dispose()
         $stream.Dispose()
     }
-    throw "Missing $EntryName in $HogPath"
+    if ($null -eq $selectedBytes) {
+        throw "Missing $EntryName in $HogPath"
+    }
+    $parent = Split-Path -Parent $OutputPath
+    if (-not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent | Out-Null
+    }
+    [System.IO.File]::WriteAllBytes($OutputPath, $selectedBytes)
 }
 
 function Read-XfingD1LevelSurfaces {
     param([string]$Path)
 
+    $fileLength = (Get-Item -LiteralPath $Path).Length
+    if ($fileLength -gt 33554432) {
+        throw "D1 level exceeds the 33554432 byte limit: $Path size=$fileLength"
+    }
     $stream = [System.IO.File]::OpenRead($Path)
     $reader = [System.IO.BinaryReader]::new($stream)
     try {
-        $null = $reader.ReadInt32()
+        Assert-XfingSpan -Offset 0 -Length 16 -Limit $stream.Length -Description "D1 level header"
+        $signature = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(4))
+        if ($signature -ne "LVLP") {
+            throw "Not a supported D1 level: $Path signature=$signature"
+        }
         $version = $reader.ReadInt32()
         $mineOffset = $reader.ReadInt32()
-        $null = $reader.ReadInt32()
+        $gameOffset = $reader.ReadInt32()
+        if ($version -lt 1 -or $version -gt 7) {
+            throw "Unsupported D1 level version $version in $Path"
+        }
+        $headerLength = if ($version -lt 5) { 20 } else { 16 }
         if ($version -lt 5) {
+            Assert-XfingSpan -Offset $stream.Position -Length 4 -Limit $stream.Length -Description "D1 level hostage offset"
             $null = $reader.ReadInt32()
         }
+        if ($mineOffset -lt $headerLength -or $mineOffset -ge $stream.Length) {
+            throw "D1 level mine offset $mineOffset is outside the file"
+        }
+        if ($gameOffset -le $mineOffset -or $gameOffset -gt $stream.Length) {
+            throw "D1 level game offset $gameOffset does not follow the compiled mine"
+        }
+        $mineEnd = [long]$gameOffset
+        Assert-XfingSpan -Offset $mineOffset -Length ($mineEnd - $mineOffset) -Limit $stream.Length -Description "D1 compiled mine"
         $stream.Position = $mineOffset
+        Assert-XfingSpan -Offset $stream.Position -Length 5 -Limit $mineEnd -Description "D1 compiled mine header"
         $null = $reader.ReadByte()
         $vertexCount = $reader.ReadInt16()
         $segmentCount = $reader.ReadInt16()
-        $null = $reader.ReadBytes($vertexCount * 12)
-        $rows = @()
+        Assert-XfingCount -Count $vertexCount -Maximum 32767 -Description "D1 level vertex"
+        Assert-XfingCount -Count $segmentCount -Maximum 9000 -Description "D1 level segment"
+        $vertexBytes = [long]$vertexCount * 12L
+        Assert-XfingSpan -Offset $stream.Position -Length $vertexBytes -Limit $mineEnd -Description "D1 level vertices"
+        $stream.Position += $vertexBytes
+        $rows = [System.Collections.Generic.List[object]]::new([Math]::Min(54000, $segmentCount * 6))
         for ($segment = 0; $segment -lt $segmentCount; $segment++) {
+            Assert-XfingSpan -Offset $stream.Position -Length 1 -Limit $mineEnd -Description "D1 segment $segment child mask"
             $childMask = $reader.ReadByte()
-            $children = @()
+            $children = [System.Collections.Generic.List[object]]::new(6)
             for ($side = 0; $side -lt 6; $side++) {
                 if (($childMask -band (1 -shl $side)) -ne 0) {
-                    $children += $reader.ReadInt16()
+                    Assert-XfingSpan -Offset $stream.Position -Length 2 -Limit $mineEnd -Description "D1 segment $segment child"
+                    $children.Add($reader.ReadInt16())
                 } else {
-                    $children += -1
+                    $children.Add(-1)
                 }
             }
+            Assert-XfingSpan -Offset $stream.Position -Length 16 -Limit $mineEnd -Description "D1 segment $segment vertices"
             for ($index = 0; $index -lt 8; $index++) {
                 $null = $reader.ReadInt16()
             }
             if ($version -le 1 -and (($childMask -band (1 -shl 6)) -ne 0)) {
-                $null = $reader.ReadBytes(4)
+                Assert-XfingSpan -Offset $stream.Position -Length 4 -Limit $mineEnd -Description "D1 segment $segment special data"
+                $stream.Position += 4
             }
             if ($version -le 5) {
+                Assert-XfingSpan -Offset $stream.Position -Length 2 -Limit $mineEnd -Description "D1 segment $segment static light"
                 $null = $reader.ReadInt16()
             }
+            Assert-XfingSpan -Offset $stream.Position -Length 1 -Limit $mineEnd -Description "D1 segment $segment wall mask"
             $wallMask = $reader.ReadByte()
-            $walls = @()
+            $walls = [System.Collections.Generic.List[object]]::new(6)
             for ($side = 0; $side -lt 6; $side++) {
                 if (($wallMask -band (1 -shl $side)) -ne 0) {
+                    Assert-XfingSpan -Offset $stream.Position -Length 1 -Limit $mineEnd -Description "D1 segment $segment wall"
                     $wall = $reader.ReadByte()
-                    $walls += if ($wall -eq 255) { -1 } else { $wall }
+                    $walls.Add($(if ($wall -eq 255) { -1 } else { $wall }))
                 } else {
-                    $walls += -1
+                    $walls.Add(-1)
                 }
             }
             for ($side = 0; $side -lt 6; $side++) {
                 if ($children[$side] -eq -1 -or $walls[$side] -ne -1) {
+                    Assert-XfingSpan -Offset $stream.Position -Length 2 -Limit $mineEnd -Description "D1 segment $segment side $side texture"
                     $raw1 = $reader.ReadUInt16()
                     $hasTmap2 = ($raw1 -band 0x8000) -ne 0
                     $raw2 = 0
                     if ($hasTmap2) {
+                        Assert-XfingSpan -Offset $stream.Position -Length 2 -Limit $mineEnd -Description "D1 segment $segment side $side overlay"
                         $raw2 = $reader.ReadUInt16()
                     }
-                    $uvls = @()
+                    Assert-XfingSpan -Offset $stream.Position -Length 24 -Limit $mineEnd -Description "D1 segment $segment side $side UVL data"
+                    $uvls = [System.Collections.Generic.List[object]]::new(4)
                     for ($uvlIndex = 0; $uvlIndex -lt 4; $uvlIndex++) {
-                        $uvls += [pscustomobject]@{
+                        $uvls.Add([pscustomobject]@{
                             u = $reader.ReadInt16()
                             v = $reader.ReadInt16()
                             l = $reader.ReadUInt16()
-                        }
+                        })
                     }
-                    $rows += [pscustomobject]@{
+                    $rows.Add([pscustomobject]@{
                         segment = $segment
                         side = $side
                         child = $children[$side]
@@ -1026,9 +1341,12 @@ function Read-XfingD1LevelSurfaces {
                         tmap2 = $raw2 -band 0x3fff
                         orient = $raw2 -band 0xc000
                         uvls = @($uvls)
-                    }
+                    })
                 }
             }
+        }
+        if ($stream.Position -ne $mineEnd) {
+            throw "D1 compiled mine consumed $($stream.Position - $mineOffset) bytes, expected $($mineEnd - $mineOffset)"
         }
         return [pscustomobject]@{
             path = $Path

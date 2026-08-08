@@ -658,6 +658,53 @@ function New-XfingD2Archive {
     }
 }
 
+function Invoke-XfingStructuralPreflight {
+    $preflightRoot = Join-Path $OutputDir ("preflight-{0}" -f [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $preflightRoot | Out-Null
+    try {
+        if ($Game -eq "d1" -or $Game -eq "both") {
+            $d1Work = Join-Path $preflightRoot "d1"
+            $baseHog = Join-Path $BaselineRoot "DESCENT.HOG"
+            $null = Read-XfingD1Pig (Join-Path $BaselineRoot "DESCENT.PIG")
+            $null = Read-XfingD1Pig (Join-Path $Uud1Root "descent.pig")
+            $null = Get-XfingPaletteFromHog -HogPath $baseHog -EntryName "palette.256" -WorkDir $d1Work
+            $baseLevelDir = Join-Path $d1Work "base_levels"
+            foreach ($levelName in @("level03.rdl", "level17.rdl", "level20.rdl")) {
+                $baseLevelPath = Join-Path $baseLevelDir $levelName
+                Export-XfingHogEntry -HogPath $baseHog -EntryName $levelName -OutputPath $baseLevelPath
+                $null = Read-XfingD1LevelSurfaces $baseLevelPath
+                $null = Read-XfingD1LevelSurfaces (Join-Path $Uud1Root $levelName)
+            }
+        }
+
+        if ($Game -eq "d2" -or $Game -eq "both") {
+            $d2Work = Join-Path $preflightRoot "d2"
+            $baseHog = Join-Path $BaselineRoot "DESCENT2.HOG"
+            foreach ($pigName in @("GROUPA.PIG", "ALIEN1.PIG", "ALIEN2.PIG", "FIRE.PIG", "ICE.PIG", "WATER.PIG")) {
+                $null = Read-XfingD2Pig (Join-Path $BaselineRoot $pigName)
+                $null = Read-XfingD2Pig (Join-Path $Uud2Root $pigName)
+                $paletteName = "$([System.IO.Path]::GetFileNameWithoutExtension($pigName).ToLowerInvariant()).256"
+                $null = Get-XfingPaletteFromHog -HogPath $baseHog -EntryName $paletteName -WorkDir $d2Work
+            }
+            $patchedHamPath = Join-Path $d2Work "DESCENT2.HAM"
+            Export-XfingZipEntry -ZipPath (Join-Path $Uud2Root "uud2tp.dxa") -EntryName "DESCENT2.HAM" -OutputPath $patchedHamPath
+            $null = Read-XfingHamSections (Join-Path $BaselineRoot "DESCENT2.HAM")
+            $null = Read-XfingHamSections $patchedHamPath
+            if ($D2DescentBaselinePig -and (Test-Path -LiteralPath $D2DescentBaselinePig)) {
+                $null = Read-XfingD2Pig $D2DescentBaselinePig
+                $null = Read-XfingD2Pig (Join-Path $Uud2Root "DESCENT.PIG")
+                $null = Read-XfingPaletteBytes (Join-Path $Uud2Root "descent.256")
+            } elseif (Test-Path -LiteralPath (Join-Path $Uud2Root "DESCENT.PIG")) {
+                $null = Read-XfingD2Pig (Join-Path $Uud2Root "DESCENT.PIG")
+            }
+        }
+    } finally {
+        Remove-Item -LiteralPath $preflightRoot -Recurse -Force
+    }
+}
+
+Invoke-XfingStructuralPreflight
+
 $results = @()
 if ($Game -eq "d1" -or $Game -eq "both") {
     $results += New-XfingD1Archive
