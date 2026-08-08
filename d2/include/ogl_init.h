@@ -94,6 +94,8 @@ extern int ogl_aniso_level;
 extern int ogl_msaa_samples;
 extern int ogl_msaa_max_samples;
 extern int g_msaa_fbo_bound;
+struct android_ogl_msaa_diagnostics;
+void ogl_msaa_get_diagnostics(struct android_ogl_msaa_diagnostics *diagnostics);
 extern int ogl_gpu_timer_available;
 extern int g_gpu_time_us;
 extern int ogl_color_depth;

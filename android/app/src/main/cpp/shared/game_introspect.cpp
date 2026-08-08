@@ -59,6 +59,7 @@ extern "C" {
 #include "songs.h"
 #include "songs_android_shared.h"
 #include "ogl_init.h"
+#include "ogl_msaa_android.h"
 #include "piggy.h"
 #include "textures.h"
 #include "wall.h"
@@ -185,6 +186,18 @@ int RBAGetNumAudioTracks(void);
 int RBAGetTrackNum(void);
 int RBAPeekPlayStatus(void);
 const char *RBAGetInitStatus(void);
+void RBAGetPlaybackDiagnostics(unsigned int *generation, int *first_track,
+                               int *source_index,
+                               unsigned long long *source_sectors_read_total,
+                               unsigned long long *mixer_frames_delivered_total,
+                               unsigned long long *generation_source_sectors_read,
+                               unsigned long long *generation_mixer_frames_delivered);
+void RBAGetLastPlaybackProof(unsigned int *generation, int *first_track,
+                             int *source_index,
+                             unsigned long long *source_sectors_read,
+                             unsigned long long *mixer_frames_delivered);
+void RBAGetPlaybackErrorDiagnostics(unsigned long long *source_io_errors_total,
+                                    unsigned long long *generation_source_io_errors);
 extern int g_startup_title_song_requested;
 }
 
@@ -1808,13 +1821,51 @@ extern "C" char *game_introspect_get_state(void)
 		};
 		int enabled = RBAEnabled();
 		if (enabled) {
+			unsigned int generation;
+			int first_track;
+			int source_index;
+			unsigned long long source_sectors_read_total;
+			unsigned long long mixer_frames_delivered_total;
+			unsigned long long generation_source_sectors_read;
+			unsigned long long generation_mixer_frames_delivered;
+			unsigned int proven_generation;
+			int proven_first_track;
+			int proven_source_index;
+			unsigned long long proven_source_sectors_read;
+			unsigned long long proven_mixer_frames_delivered;
+			unsigned long long source_io_errors_total;
+			unsigned long long generation_source_io_errors;
 			rb["enabled"] = true;
 			int status = RBAPeekPlayStatus();
+			RBAGetPlaybackDiagnostics(&generation, &first_track, &source_index,
+			                          &source_sectors_read_total,
+			                          &mixer_frames_delivered_total,
+			                          &generation_source_sectors_read,
+			                          &generation_mixer_frames_delivered);
+			RBAGetLastPlaybackProof(&proven_generation, &proven_first_track,
+			                        &proven_source_index, &proven_source_sectors_read,
+			                        &proven_mixer_frames_delivered);
+			RBAGetPlaybackErrorDiagnostics(&source_io_errors_total,
+			                               &generation_source_io_errors);
 			rb["num_tracks"] = RBAGetNumberOfTracks();
 			rb["num_audio_tracks"] = RBAGetNumAudioTracks();
 			rb["current_track"] = RBAGetTrackNum();
 			rb["play_status"] = (status == 1) ? "playing" : (status == -1) ? "paused"
 			                                                               : "stopped";
+			rb["playback_generation"] = generation;
+			rb["playback_first_track"] = first_track;
+			rb["playback_source_index"] = source_index;
+			rb["source_sectors_read_total"] = source_sectors_read_total;
+			rb["mixer_frames_delivered_total"] = mixer_frames_delivered_total;
+			rb["generation_source_sectors_read"] = generation_source_sectors_read;
+			rb["generation_mixer_frames_delivered"] = generation_mixer_frames_delivered;
+			rb["proven_generation"] = proven_generation;
+			rb["proven_first_track"] = proven_first_track;
+			rb["proven_source_index"] = proven_source_index;
+			rb["proven_source_sectors_read"] = proven_source_sectors_read;
+			rb["proven_mixer_frames_delivered"] = proven_mixer_frames_delivered;
+			rb["source_io_errors_total"] = source_io_errors_total;
+			rb["generation_source_io_errors"] = generation_source_io_errors;
 		}
 		j["redbook"] = std::move(rb);
 	}
@@ -2049,9 +2100,26 @@ extern "C" char *game_introspect_get_state(void)
 #else
 		j["headlight_active_default"] = false;
 #endif
-		j["msaa_samples"] = ogl_msaa_samples;
-		j["msaa_max_samples"] = ogl_msaa_max_samples;
-		j["msaa_fbo_bound"] = (bool) g_msaa_fbo_bound;
+		{
+			android_ogl_msaa_diagnostics msaa = {};
+			json diagnostics;
+
+			ogl_msaa_get_diagnostics(&msaa);
+			j["msaa_samples"] = ogl_msaa_samples;
+			j["msaa_max_samples"] = ogl_msaa_max_samples;
+			j["msaa_fbo_bound"] = (bool) g_msaa_fbo_bound;
+			diagnostics["effective_samples"] = msaa.effective_samples;
+			diagnostics["width"] = msaa.width;
+			diagnostics["height"] = msaa.height;
+			diagnostics["create_complete"] = (bool) msaa.create_complete;
+			diagnostics["last_frame_resolved"] = (bool) msaa.last_frame_resolved;
+			diagnostics["last_create_status"] = msaa.last_create_status;
+			diagnostics["last_gl_error"] = msaa.last_gl_error;
+			diagnostics["generation"] = msaa.generation;
+			diagnostics["bound_frame_count"] = msaa.bound_frame_count;
+			diagnostics["resolve_count"] = msaa.resolve_count;
+			j["msaa"] = std::move(diagnostics);
+		}
 		{
 			auto &rja = j["raw_joy_axis"];
 			for (int a = 0; a < 8; a++)

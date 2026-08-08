@@ -927,6 +927,9 @@ class MainActivity :
         touchOverlay.metaActionCallback = { actionId, pressed ->
             dispatchMetaAction(actionId, pressed)
         }
+        touchOverlay.exactWeaponSelectCallback = { isPrimary, weaponIndex ->
+            NativeMetaActions.nativeSelectWeaponExact(if (isPrimary) 0 else 1, weaponIndex)
+        }
         touchOverlay.keyCallback = { action, keyCode, unicode ->
             nativeKeyEvent(action, keyCode, unicode)
         }

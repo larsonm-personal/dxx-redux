@@ -631,6 +631,11 @@ static void ogl_msaa_destroy_fbo(void)
 	android_ogl_msaa_destroy_fbo(&ogl_msaa_state, &g_msaa_fbo_bound);
 }
 
+void ogl_msaa_get_diagnostics(struct android_ogl_msaa_diagnostics *diagnostics)
+{
+	android_ogl_msaa_get_diagnostics(&ogl_msaa_state, diagnostics);
+}
+
 #endif
 
 //gltexture MUST be bound first

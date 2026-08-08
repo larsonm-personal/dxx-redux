@@ -18,6 +18,8 @@ extern "C" {
 
 const char *input_demo_current_mission_id(void);
 void input_demo_record_death_abort_direct_command(void);
+void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
+	int weapon_index);
 int input_demo_apply_replay_direct_commands(input_demo_direct_command_phase phase);
 void input_demo_record_game_frame(void);
 void input_demo_update_rng_trace_context(void);

@@ -176,6 +176,17 @@ void input_demo_record_direct_command_death_abort(void)
 		input_demo_log_direct_command_record_error("death abort", error);
 }
 
+void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
+	int weapon_index)
+{
+	char error[256] = "";
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_select_weapon_exact(
+	        weapon_class, weapon_index, error, sizeof(error)))
+		input_demo_log_direct_command_record_error("exact weapon selection", error);
+}
+
 static int input_demo_apply_death_abort_direct_command(void *context,
 	int validate_only, char *error, size_t error_size)
 {
@@ -214,6 +225,15 @@ static int input_demo_apply_d2_direct_command(void *context,
 		return 1;
 
 	switch (event->kind) {
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT:
+			if (event->value0 < 0 || event->value0 > 1 ||
+			    event->value1 < 0 || event->value1 >= MAX_PRIMARY_WEAPONS) {
+				if (error && error_size)
+					snprintf(error, error_size, "%s", "exact weapon selection is out of range");
+				return 0;
+			}
+			select_weapon(event->value1, event->value0, 1, 1);
+			return 1;
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
 			input_demo_apply_recorded_guidebot_goal(event->value0,
 				event->value1);

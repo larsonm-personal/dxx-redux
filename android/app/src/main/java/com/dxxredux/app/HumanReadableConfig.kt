@@ -401,6 +401,7 @@ object HumanReadableConfig {
                         binding = binding,
                         iconRes = sj.optString("iconRes", ""),
                         weaponIndex = sj.optInt("wpnIdx", -1),
+                        bindingType = sj.optString("bindingType", "keycode"),
                     ),
                 )
             }
@@ -416,11 +417,23 @@ object HumanReadableConfig {
             xPct = j.getDouble("x").toFloat(),
             yPct = j.getDouble("y").toFloat(),
             sizeMult = j.optDouble("size", 1.0).toFloat(),
+            ringSizeMult = j.optDouble("ringSize", 1.0).toFloat(),
             opacity = j.optDouble("opacity", 0.7).toFloat(),
             segments = segments,
             centerLabel = j.optString("centerLabel", ""),
             centerBinding = centerBinding,
             hapticFeedback = j.optBoolean("haptic", true),
+            presentation =
+                runCatching {
+                    SelectorPresentation.valueOf(j.optString("presentation", SelectorPresentation.WHEEL.name))
+                }.getOrDefault(SelectorPresentation.WHEEL),
+            stripOrientation =
+                runCatching {
+                    SliderOrientation.valueOf(j.optString("stripOrientation", SliderOrientation.HORIZONTAL.name))
+                }.getOrDefault(SliderOrientation.HORIZONTAL),
+            stripDragSpanWidthPct = j.optDouble("stripDragSpanWidthPct", 20.0).toFloat(),
+            stripLabelAngleDeg = j.optDouble("stripLabelAngleDeg", 0.0).toFloat(),
+            stripSelectedScale = j.optDouble("stripSelectedScale", 2.0).toFloat(),
         )
     }
 

@@ -75,10 +75,106 @@ function Assert-Rejected {
     throw "$Name was accepted"
 }
 
+function Read-TestBigEndianInt32 {
+    param([byte[]]$Bytes, [int]$Offset)
+
+    return [System.Net.IPAddress]::NetworkToHostOrder([BitConverter]::ToInt32($Bytes, $Offset))
+}
+
+function Read-TestPngRgba {
+    param([string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $signature = [byte[]](137, 80, 78, 71, 13, 10, 26, 10)
+    if ($bytes.Length -lt 8 -or [BitConverter]::ToString($bytes, 0, 8) -ne [BitConverter]::ToString($signature)) {
+        throw "PNG signature is invalid: $Path"
+    }
+
+    $width = 0
+    $height = 0
+    $compressed = [System.IO.MemoryStream]::new()
+    $offset = 8
+    while ($offset -lt $bytes.Length) {
+        if ($offset -gt $bytes.Length - 12) {
+            throw "PNG chunk header is truncated: $Path"
+        }
+        $length = Read-TestBigEndianInt32 -Bytes $bytes -Offset $offset
+        $type = [System.Text.Encoding]::ASCII.GetString($bytes, $offset + 4, 4)
+        $dataOffset = $offset + 8
+        if ($length -lt 0 -or $dataOffset -gt $bytes.Length - $length - 4) {
+            throw "PNG chunk $type is truncated: $Path"
+        }
+        if ($type -eq "IHDR") {
+            if ($length -ne 13 -or $bytes[$dataOffset + 8] -ne 8 -or $bytes[$dataOffset + 9] -ne 6) {
+                throw "PNG does not use 8-bit RGBA pixels: $Path"
+            }
+            $width = Read-TestBigEndianInt32 -Bytes $bytes -Offset $dataOffset
+            $height = Read-TestBigEndianInt32 -Bytes $bytes -Offset ($dataOffset + 4)
+        } elseif ($type -eq "IDAT") {
+            $compressed.Write($bytes, $dataOffset, $length)
+        } elseif ($type -eq "IEND") {
+            break
+        }
+        $offset = $dataOffset + $length + 4
+    }
+
+    $compressed.Position = 0
+    $decoded = [System.IO.MemoryStream]::new()
+    $zlib = [System.IO.Compression.ZLibStream]::new($compressed, [System.IO.Compression.CompressionMode]::Decompress)
+    try {
+        $zlib.CopyTo($decoded)
+    } finally {
+        $zlib.Dispose()
+        $compressed.Dispose()
+    }
+    $scanlines = $decoded.ToArray()
+    $decoded.Dispose()
+    $stride = $width * 4
+    if ($width -le 0 -or $height -le 0 -or $scanlines.Length -ne (($stride + 1) * $height)) {
+        throw "PNG scanline dimensions are invalid: $Path"
+    }
+    $rgba = [byte[]]::new($stride * $height)
+    for ($row = 0; $row -lt $height; $row++) {
+        $source = $row * ($stride + 1)
+        if ($scanlines[$source] -ne 0) {
+            throw "PNG uses an unexpected scanline filter: $Path"
+        }
+        [Array]::Copy($scanlines, $source + 1, $rgba, $row * $stride, $stride)
+    }
+    return [pscustomobject]@{ Width = $width; Height = $height; Rgba = $rgba }
+}
+
 $d2Path = Write-TestByteFile "valid-d2.pig" (ConvertTo-D2PigFixture)
 $d2 = Read-XfingD2Pig $d2Path
 if ($d2.BitmapCount -ne 1 -or $d2.Entries[0].Length -ne 2) {
     throw "Valid D2 PIG did not preserve its entry"
+}
+
+$pngPigPath = Write-TestByteFile "png-d2.pig" (ConvertTo-D2PigFixture -Payload ([byte[]](1, 255, 254)) -Flags 3 -Width 3)
+$pngPig = Read-XfingD2Pig $pngPigPath
+$palette = [byte[]]::new(768)
+$palette[3] = 10
+$palette[4] = 20
+$palette[5] = 30
+$pngPath = Join-Path $tempRoot "opaque-transparent-supertransparent.png"
+$maskPath = Join-Path $tempRoot "opaque-transparent-supertransparent-mask.png"
+$pngResult = Export-XfingBitmapEntryPng `
+    -Pig $pngPig `
+    -Entry $pngPig.Entries[0] `
+    -Palette $palette `
+    -OutputPath $pngPath `
+    -MaskOutputPath $maskPath
+$decodedPng = Read-TestPngRgba $pngPath
+$expectedRgba = [byte[]](40, 80, 120, 255, 0, 0, 0, 0, 120, 88, 128, 0)
+if ($decodedPng.Width -ne 3 -or $decodedPng.Height -ne 1 -or
+    [BitConverter]::ToString($decodedPng.Rgba) -ne [BitConverter]::ToString($expectedRgba)) {
+    throw "Decoded PNG pixels did not preserve opaque, transparent, and supertransparent RGBA values"
+}
+$decodedMask = Read-TestPngRgba $maskPath
+$expectedMask = [byte[]](255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255)
+if ([BitConverter]::ToString($decodedMask.Rgba) -ne [BitConverter]::ToString($expectedMask) -or
+    -not $pngResult.maskSha256) {
+    throw "Decoded PNG mask did not isolate the supertransparent pixel"
 }
 
 $rlePayload = ConvertTo-TestBinary {

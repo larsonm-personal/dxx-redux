@@ -712,6 +712,21 @@ int input_demo_recorder_stage_direct_command_change_difficulty(int difficulty,
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 
+int input_demo_recorder_stage_direct_command_select_weapon_exact(int weapon_class,
+                                                                 int weapon_index,
+                                                                 char *error,
+                                                                 size_t error_size)
+{
+	ordered_json event;
+	if (weapon_class < 0 || weapon_class > 1 || weapon_index < 0 || weapon_index > 9)
+		return input_demo_recorder_copy_error("exact weapon selection is out of range", error, error_size);
+	event["kind"] = "direct_command";
+	event["command"] = "select_weapon_exact";
+	event["weapon_class"] = weapon_class;
+	event["weapon_index"] = weapon_index;
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size)

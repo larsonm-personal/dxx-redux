@@ -9,6 +9,27 @@ struct android_ogl_msaa_state {
 	unsigned int depth_rbo;
 	int w;
 	int h;
+	int effective_samples;
+	unsigned int last_create_status;
+	unsigned int last_gl_error;
+	unsigned long long generation;
+	unsigned long long bound_frame_count;
+	unsigned long long resolve_count;
+	unsigned long long active_frame_serial;
+	unsigned long long last_resolved_frame_serial;
+};
+
+struct android_ogl_msaa_diagnostics {
+	int effective_samples;
+	int width;
+	int height;
+	int create_complete;
+	int last_frame_resolved;
+	unsigned int last_create_status;
+	unsigned int last_gl_error;
+	unsigned long long generation;
+	unsigned long long bound_frame_count;
+	unsigned long long resolve_count;
 };
 
 typedef void (*android_ogl_msaa_log_message_fn)(const char *message, void *user_data);
@@ -34,6 +55,9 @@ void android_ogl_msaa_bind_window_backing(
     const struct android_ogl_msaa_state *state, int bound);
 void android_ogl_msaa_bind_overlay_target(
     const struct android_ogl_msaa_state *state, int bound);
+void android_ogl_msaa_get_diagnostics(
+    const struct android_ogl_msaa_state *state,
+    struct android_ogl_msaa_diagnostics *diagnostics);
 
 #endif
 

@@ -59,7 +59,7 @@
     }},
 
     // D2 MSAA FBO smoke preamble. Verify the requested level at the main menu
-    // and again after gameplay reaches the 3D render path.
+    // and prove effective FBO creation, binding, and resolve in gameplay
     {"action": "log", "message": "=== TEST: D2 MSAA FBO smoke ===", "when": "d2"},
     {"action": "write_config", "file": "descent.cfg", "content": "MsaaLevel=2\n", "when": "d2"},
     {"action": "write_config", "file": "d2x-redux/descent.cfg", "content": "MsaaLevel=2\n", "when": "d2"},
@@ -90,7 +90,22 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
     {"action": "wait_ms", "ms": 500, "when": "d2"},
     {"action": "assert", "when": "d2",
-     "expect": {"in_game": "true", "screen_mode": "game", "msaa_samples": "2"}},
+     "expect": {
+         "in_game": "true",
+         "screen_mode": "game",
+         "msaa_samples": "2",
+         "msaa_max_samples": {"gt": 1},
+         "msaa.effective_samples": {"gt": 1},
+         "msaa.width": {"gt": 0},
+         "msaa.height": {"gt": 0},
+         "msaa.create_complete": "true",
+         "msaa.last_create_status": "36053",
+         "msaa.last_gl_error": "0",
+         "msaa.generation": {"gt": 0},
+         "msaa.bound_frame_count": {"gt": 0},
+         "msaa.resolve_count": {"gt": 0},
+         "msaa.last_frame_resolved": "true"
+     }},
     {"action": "introspect", "when": "d2"},
     {"action": "log", "message": "=== TEST: D2 MSAA FBO smoke -- PASS ===", "when": "d2"},
 

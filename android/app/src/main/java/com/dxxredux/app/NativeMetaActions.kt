@@ -24,4 +24,11 @@ object NativeMetaActions {
         actionId: Int,
         pressed: Int,
     ): Int
+
+    /** Queue exact full-index weapon selection for the game thread. */
+    @JvmStatic
+    external fun nativeSelectWeaponExact(
+        weaponClass: Int,
+        weaponIndex: Int,
+    ): Int
 }

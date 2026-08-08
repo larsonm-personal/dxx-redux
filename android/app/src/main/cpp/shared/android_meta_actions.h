@@ -100,6 +100,7 @@ extern volatile int android_demo_record_toggle_pending;
  * in gamecntl.c to trigger Android rewind handling. */
 extern volatile int android_rewind_pending;
 extern volatile int android_coop_restart_level_pending;
+extern volatile int android_weapon_select_pending;
 
 /* Requests produced by android_input.c and consumed on the game thread. */
 extern volatile int g_android_open_save_menu;
@@ -111,6 +112,7 @@ extern volatile int g_android_autosave_request_kind;
 /* Consume Android save/load and related game-thread requests. */
 int android_handle_pause_saveload_request(struct window *wind);
 int android_handle_ingame_saveload_request(void);
+int android_weapon_select_apply_pending(void);
 
 /*
  * Dispatch a meta action.  Called from JNI (UI thread).

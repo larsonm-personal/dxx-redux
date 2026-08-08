@@ -182,6 +182,71 @@ internal data class WeaponWheelPresentation(
     val ammoStatus: WeaponAmmoStatus?,
 )
 
+internal data class WeaponStripItem(
+    val weaponIndex: Int,
+    val slotIndex: Int,
+    val presentation: WeaponWheelPresentation,
+)
+
+internal data class WeaponStripRows(
+    val main: List<WeaponStripItem>,
+    val alternate: List<WeaponStripItem>,
+)
+
+private fun weaponStripPresentation(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+    weaponIndex: Int,
+): WeaponWheelPresentation {
+    val names =
+        when {
+            isPrimary && gameVariant == "d1" -> d1PrimaryWheelSelectionNames
+            isPrimary -> d2PrimaryWheelSelectionNames
+            gameVariant == "d1" -> d1SecondaryWheelSelectionNames
+            else -> d2SecondaryWheelSelectionNames
+        }
+    val label =
+        if (isPrimary && weaponIndex == 0) {
+            laserWheelLabel(weaponState)
+        } else {
+            names.getOrElse(weaponIndex) { defaultWeaponWheelSlotLabel(gameVariant, isPrimary, weaponIndex % 5) }
+        }
+    return WeaponWheelPresentation(
+        label,
+        weaponState?.let { weaponAmmoStatus(gameVariant, it, isPrimary, weaponIndex) },
+    )
+}
+
+internal fun weaponStripRows(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+): WeaponStripRows {
+    fun visible(index: Int): Boolean =
+        when {
+            weaponState == null -> true
+            isPrimary -> weaponState.hasPrimary(index)
+            else -> weaponState.hasSecondary(index) && weaponState.secondarySlotHasAmmo(index)
+        }
+
+    fun items(indices: List<Int>) =
+        indices.filter(::visible).map { index ->
+            WeaponStripItem(
+                index,
+                index % WEAPON_WHEEL_SLOT_COUNT,
+                weaponStripPresentation(gameVariant, weaponState, isPrimary, index),
+            )
+        }
+
+    if (gameVariant != "d2") {
+        return WeaponStripRows(items((0 until WEAPON_WHEEL_SLOT_COUNT).toList()), emptyList())
+    }
+    val mainIndices = if (isPrimary) listOf(0, 6, 7, 8, 9) else (5..9).toList()
+    val alternateIndices = if (isPrimary) (1..4).toList() else (0..4).toList()
+    return WeaponStripRows(items(mainIndices), items(alternateIndices))
+}
+
 private fun currentWeaponWheelSlotIndex(
     gameVariant: String,
     currentWeapon: Int,

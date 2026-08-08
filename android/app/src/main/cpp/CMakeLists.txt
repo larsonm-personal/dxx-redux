@@ -20,6 +20,15 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cma
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-build-metadata.cmake)
 
 get_filename_component(DXX_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
+set(DXX_DEPENDENCY_MANIFEST "${DXX_PROJECT_ROOT}/android/get_deps/tool_versions.conf")
+function(dxx_android_dependency_value key output)
+    file(STRINGS "${DXX_DEPENDENCY_MANIFEST}" value REGEX "^${key}=" LIMIT_COUNT 1)
+    if(NOT value)
+        message(FATAL_ERROR "${key} is missing from ${DXX_DEPENDENCY_MANIFEST}")
+    endif()
+    string(REGEX REPLACE "^[^=]+=" "" value "${value}")
+    set(${output} "${value}" PARENT_SCOPE)
+endfunction()
 
 # ──────────────────────────────────────────────────────────────
 # Compiler warnings
@@ -238,13 +247,27 @@ target_compile_options(SDL_mixer PRIVATE -w) # suppress warnings for third-party
 # ──────────────────────────────────────────────────────────────
 set(_TSF_DIR "${CMAKE_CURRENT_BINARY_DIR}/tinysoundfont")
 file(MAKE_DIRECTORY "${_TSF_DIR}")
-if(NOT EXISTS "${_TSF_DIR}/tsf.h")
-    file(DOWNLOAD "https://raw.githubusercontent.com/schellingb/TinySoundFont/main/tsf.h"
-         "${_TSF_DIR}/tsf.h")
+dxx_android_dependency_value(TINYSOUNDFONT_COMMIT TINYSOUNDFONT_COMMIT)
+set(_TSF_VERSION_FILE "${_TSF_DIR}/commit.txt")
+set(_TSF_INSTALLED_COMMIT "")
+if(EXISTS "${_TSF_VERSION_FILE}")
+    file(READ "${_TSF_VERSION_FILE}" _TSF_INSTALLED_COMMIT)
+    string(STRIP "${_TSF_INSTALLED_COMMIT}" _TSF_INSTALLED_COMMIT)
 endif()
-if(NOT EXISTS "${_TSF_DIR}/tml.h")
-    file(DOWNLOAD "https://raw.githubusercontent.com/schellingb/TinySoundFont/main/tml.h"
-         "${_TSF_DIR}/tml.h")
+if(NOT _TSF_INSTALLED_COMMIT STREQUAL TINYSOUNDFONT_COMMIT OR NOT EXISTS "${_TSF_DIR}/tsf.h"
+   OR NOT EXISTS "${_TSF_DIR}/tml.h")
+    foreach(_TSF_HEADER IN ITEMS tsf.h tml.h)
+        file(
+            DOWNLOAD
+            "https://raw.githubusercontent.com/schellingb/TinySoundFont/${TINYSOUNDFONT_COMMIT}/${_TSF_HEADER}"
+            "${_TSF_DIR}/${_TSF_HEADER}"
+            STATUS _TSF_DOWNLOAD_STATUS)
+        list(GET _TSF_DOWNLOAD_STATUS 0 _TSF_DOWNLOAD_CODE)
+        if(NOT _TSF_DOWNLOAD_CODE EQUAL 0)
+            message(FATAL_ERROR "Failed to download pinned ${_TSF_HEADER}: ${_TSF_DOWNLOAD_STATUS}")
+        endif()
+    endforeach()
+    file(WRITE "${_TSF_VERSION_FILE}" "${TINYSOUNDFONT_COMMIT}\n")
 endif()
 
 # ──────────────────────────────────────────────────────────────
@@ -604,6 +627,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile_stb.c)
@@ -758,6 +782,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile_stb.c)

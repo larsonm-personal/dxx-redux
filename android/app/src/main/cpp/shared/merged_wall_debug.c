@@ -27,6 +27,7 @@
 #include "android_log.h"
 #include "android_texture_debug.h"
 #include "merged_wall_debug.h"
+#include "merged_wall_geometry_hit.h"
 #include "timer.h"
 #include "gles3_shim.h"
 
@@ -6651,86 +6652,26 @@ static void merged_wall_probe_track_from_context(
 	                        merge_impl ? merge_impl : "");
 }
 
-static void merged_wall_probe_side_center(int segnum, int sidenum,
-                                          vms_vector *center)
-{
-	segment *segp;
-	int i;
-
-	if (!center)
-		return;
-	vm_vec_zero(center);
-	if (segnum < 0 || segnum > Highest_segment_index ||
-	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
-		return;
-	segp = &Segments[segnum];
-	for (i = 0; i < 4; i++) {
-		const vms_vector *v = &Vertices[segp->verts[(int) Side_to_verts[sidenum][i]]];
-
-		center->x += v->x / 4;
-		center->y += v->y / 4;
-		center->z += v->z / 4;
-	}
-}
-
-static int merged_wall_probe_choose_segment_side(int segnum,
-                                                 const vms_vector *origin,
-                                                 const vms_vector *forward,
-                                                 fix *best_dot_out)
-{
-	segment *segp;
-	int best_side = -1;
-	int best_solid = 0;
-	fix best_dot = 0;
-	int side;
-
-	if (best_dot_out)
-		*best_dot_out = 0;
-	if (segnum < 0 || segnum > Highest_segment_index || !origin || !forward)
-		return -1;
-	segp = &Segments[segnum];
-	for (side = 0; side < MAX_SIDES_PER_SEGMENT; side++) {
-		vms_vector center;
-		vms_vector delta;
-		int wid = WALL_IS_DOORWAY(segp, side);
-		int solid = !(wid & WID_FLY_FLAG);
-		fix dot;
-
-		merged_wall_probe_side_center(segnum, side, &center);
-		vm_vec_sub(&delta, &center, origin);
-		dot = vm_vec_dot(&delta, forward);
-		if (best_side < 0 || (solid && !best_solid) ||
-		    (solid == best_solid && dot > best_dot)) {
-			best_side = side;
-			best_solid = solid;
-			best_dot = dot;
-		}
-	}
-	if (best_dot_out)
-		*best_dot_out = best_dot;
-	return best_side;
-}
-
 static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
                                               float canvas_center_y,
-                                              struct merged_wall_tracked_face *out_track)
+                                              struct merged_wall_tracked_face *out_track,
+                                              const char **out_status)
 {
 	struct merged_wall_tracked_face track;
 	struct android_draw_face_context ctx;
 	vms_vector origin, end, hit_point, uv_point;
 	fvi_query fq;
 	fvi_info hit;
+	enum merged_wall_geometry_outcome outcome;
 	segment *segp = NULL;
 	struct side *sidep = NULL;
 	fix u = 0, v = 0, l = 0;
-	fix forced_dot = 0;
 	int viewer_objnum = -1;
 	int startseg = -1;
 	int eye_startseg = -1;
 	int fate = HIT_NONE;
 	int segnum = -1;
 	int sidenum = -1;
-	int forced = 0;
 	const char *status = "no_hit";
 	const char *route = "geometry_ray";
 	int overlay_tex_num = -1;
@@ -6738,7 +6679,12 @@ static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
 	memset(&track, 0, sizeof(track));
 	if (out_track)
 		memset(out_track, 0, sizeof(*out_track));
+	if (out_status)
+		*out_status = status;
 	if (!Viewer) {
+		status = "no_viewer";
+		if (out_status)
+			*out_status = status;
 		debug_log_force(DLOG_TEXTURE,
 		                "[mwall_tap_probe] kind=geometry_face status=no_viewer frame=%d request_frame=%d canvas_center=%.1f/%.1f",
 		                g_merged_wall_frame_id,
@@ -6768,27 +6714,16 @@ static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
 	fq.ignore_obj_list = NULL;
 	fq.flags = FQ_GET_SEGLIST;
 	fate = find_vector_intersection(&fq, &hit);
-
-	if (fate == HIT_WALL) {
-		segnum = hit.hit_side_seg >= 0 ? hit.hit_side_seg : hit.hit_seg;
-		sidenum = hit.hit_side;
-		hit_point = hit.hit_pnt;
-		status = "hit";
-	} else {
-		segnum = hit.n_segs > 0 ? hit.seglist[hit.n_segs - 1] : fq.startseg;
-		sidenum = merged_wall_probe_choose_segment_side(segnum, &origin,
-		                                                &Viewer->orient.fvec,
-		                                                &forced_dot);
-		merged_wall_probe_side_center(segnum, sidenum, &hit_point);
-		forced = sidenum >= 0;
-		status = forced ? "forced_lastseg" : (fate == HIT_BAD_P0 ? "bad_startseg" : "no_wall");
-		route = forced ? "geometry_forced" : "geometry_ray";
-	}
-
-	if (segnum < 0 || segnum > Highest_segment_index ||
-	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT) {
+	outcome = merged_wall_classify_geometry_hit(fate, HIT_WALL, HIT_BAD_P0,
+	                                            hit.hit_side_seg, hit.hit_seg, hit.hit_side,
+	                                            Highest_segment_index, MAX_SIDES_PER_SEGMENT,
+	                                            &segnum, &sidenum);
+	status = merged_wall_geometry_outcome_status(outcome);
+	if (out_status)
+		*out_status = status;
+	if (outcome != MERGED_WALL_GEOMETRY_WALL_HIT) {
 		debug_log_force(DLOG_TEXTURE,
-		                "[mwall_tap_probe] kind=geometry_face status=%s frame=%d request_frame=%d canvas_center=%.1f/%.1f fate=%d viewer_obj=%d viewer_seg=%d eye_startseg=%d startseg=%d n_segs=%d origin=%d/%d/%d end=%d/%d/%d fvec=%d/%d/%d forced_dot=%d",
+		                "[mwall_tap_probe] kind=geometry_face status=%s frame=%d request_frame=%d canvas_center=%.1f/%.1f fate=%d viewer_obj=%d viewer_seg=%d eye_startseg=%d startseg=%d n_segs=%d hit_seg=%d hit_side_seg=%d hit_side=%d origin=%d/%d/%d end=%d/%d/%d fvec=%d/%d/%d",
 		                status,
 		                g_merged_wall_frame_id,
 		                g_merged_wall_snapshot_request_frame,
@@ -6800,6 +6735,9 @@ static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
 		                eye_startseg,
 		                fq.startseg,
 		                hit.n_segs,
+		                hit.hit_seg,
+		                hit.hit_side_seg,
+		                hit.hit_side,
 		                (int) origin.x,
 		                (int) origin.y,
 		                (int) origin.z,
@@ -6808,10 +6746,10 @@ static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
 		                (int) end.z,
 		                (int) Viewer->orient.fvec.x,
 		                (int) Viewer->orient.fvec.y,
-		                (int) Viewer->orient.fvec.z,
-		                (int) forced_dot);
+		                (int) Viewer->orient.fvec.z);
 		return 0;
 	}
+	hit_point = hit.hit_pnt;
 
 	segp = &Segments[segnum];
 	sidep = &segp->sides[sidenum];
@@ -6827,14 +6765,14 @@ static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
 	ctx.tmap1 = sidep->tmap_num;
 	ctx.tmap2 = sidep->tmap_num2;
 	merged_wall_probe_track_from_context(&track, &ctx, route,
-	                                     forced ? "forced_segment_side" : "fvi_wall");
+	                                     "fvi_wall");
 	if (ctx.tmap2 != 0)
 		overlay_tex_num = merged_wall_overlay_index(ctx.tmap2);
 
 	uv_point = hit_point;
 	find_hitpoint_uv(&u, &v, &l, &uv_point, segp, sidenum, 0);
 	debug_log_force(DLOG_TEXTURE,
-	                "[mwall_tap_probe] kind=geometry_face status=%s frame=%d request_frame=%d level=%d canvas_center=%.1f/%.1f fate=%d viewer_obj=%d viewer_seg=%d eye_startseg=%d startseg=%d n_segs=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d forced=%d forced_dot=%d origin=%d/%d/%d end=%d/%d/%d fvec=%d/%d/%d hit=%d/%d/%d u_fix=%d v_fix=%d l_fix=%d u=%.6f v=%.6f",
+	                "[mwall_tap_probe] kind=geometry_face status=%s frame=%d request_frame=%d level=%d canvas_center=%.1f/%.1f fate=%d viewer_obj=%d viewer_seg=%d eye_startseg=%d startseg=%d n_segs=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d origin=%d/%d/%d end=%d/%d/%d fvec=%d/%d/%d hit=%d/%d/%d u_fix=%d v_fix=%d l_fix=%d u=%.6f v=%.6f",
 	                status,
 	                g_merged_wall_frame_id,
 	                g_merged_wall_snapshot_request_frame,
@@ -6856,8 +6794,6 @@ static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
 	                ctx.tmap1,
 	                ctx.tmap2,
 	                overlay_tex_num,
-	                forced,
-	                (int) forced_dot,
 	                (int) origin.x,
 	                (int) origin.y,
 	                (int) origin.z,
@@ -7065,6 +7001,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 	struct merged_wall_probe_candidate best = { 0 };
 	struct merged_wall_tracked_face geometry_track;
 	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
+	const char *geometry_status = "no_hit";
 	int geometry_hit;
 	int i;
 
@@ -7072,7 +7009,8 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 	                                 canvas_x, canvas_y, canvas_w, canvas_h);
 	geometry_hit = merged_wall_probe_log_geometry_ray(canvas_center_x,
 	                                                  canvas_center_y,
-	                                                  &geometry_track);
+	                                                  &geometry_track,
+	                                                  &geometry_status);
 
 	for (i = 0; i < merged_wall_tracked_face_count; i++) {
 		const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
@@ -7129,7 +7067,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		float fallback_min_sy = 0.0f, fallback_max_sy = 0.0f;
 		float fallback_area = 0.0f;
 		float fallback_dist2 = 0.0f;
-		const char *face_status = geometry_hit ? "geometry_hit" : "no_crosshair_face";
+		const char *face_status = geometry_hit ? "geometry_hit" : geometry_status;
 
 		for (i = 0; i < selected_count; i++) {
 			if (selected[i] >= 0 && selected[i] < merged_wall_tracked_face_count) {
@@ -7241,23 +7179,6 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 			                                                    fallback_min_sx, fallback_max_sx,
 			                                                    fallback_min_sy, fallback_max_sy)
 			                     : 0.0f;
-			if (!geometry_hit) {
-				g_merged_wall_probe_result.hit_kind = MERGED_WALL_PROBE_HIT_NONE;
-				g_merged_wall_probe_result.center_polygon_hit = 0;
-				g_merged_wall_probe_result.center_bbox_hit = center_hit;
-				g_merged_wall_probe_result.seg = track->draw_ctx.valid ? track->draw_ctx.seg : -1;
-				g_merged_wall_probe_result.side = track->draw_ctx.valid ? track->draw_ctx.side : -1;
-				g_merged_wall_probe_result.face = track->draw_ctx.valid ? track->draw_ctx.face : -1;
-				g_merged_wall_probe_result.child = track->draw_ctx.valid ? track->draw_ctx.child : -1;
-				g_merged_wall_probe_result.wid_flags = track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0;
-				g_merged_wall_probe_result.tmap1 = track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1;
-				g_merged_wall_probe_result.tmap2 = track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0;
-				g_merged_wall_probe_result.orient = track->orient;
-				merged_wall_copy_string(g_merged_wall_probe_result.route,
-				                        sizeof(g_merged_wall_probe_result.route), track->route);
-				merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
-				                        sizeof(g_merged_wall_probe_result.merge_impl), track->merge_impl);
-			}
 			debug_log_force(DLOG_TEXTURE,
 			                "[mwall_tap_probe] kind=face_candidate status=%s source=%s rank=%d center_hit=%d dist2=%.1f frame=%d request_frame=%d level=%d name=%s box_kind=%s box=%.1f..%.1f/%.1f..%.1f area=%.1f pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d orient=%d route=%s merge_impl=%s reason=%s",
 			                face_status,

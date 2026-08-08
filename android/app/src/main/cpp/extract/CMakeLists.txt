@@ -463,6 +463,32 @@ add_test(NAME gles3_shim_array_source_tests COMMAND test_gles3_shim_array_source
 add_executable(test_rgba8888 ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_rgba8888.c)
 target_include_directories(test_rgba8888 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME rgba8888_tests COMMAND test_rgba8888)
+add_executable(test_merged_wall_geometry_hit
+               ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_merged_wall_geometry_hit.c)
+target_include_directories(test_merged_wall_geometry_hit
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+add_test(NAME merged_wall_geometry_hit_tests COMMAND test_merged_wall_geometry_hit)
+dxx_dependency_value(TINYSOUNDFONT_COMMIT TINYSOUNDFONT_COMMIT)
+FetchContent_Declare(
+    tinysoundfont_test
+    URL https://github.com/schellingb/TinySoundFont/archive/${TINYSOUNDFONT_COMMIT}.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_GetProperties(tinysoundfont_test)
+if(NOT tinysoundfont_test_POPULATED)
+    FetchContent_Populate(tinysoundfont_test)
+endif()
+add_executable(
+    test_midi_seek_timeline
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_seek_timeline.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/midi_seek_timeline.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tsf_impl.c)
+target_include_directories(test_midi_seek_timeline PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared
+                                                           ${tinysoundfont_test_SOURCE_DIR})
+if(NOT MSVC)
+    target_link_libraries(test_midi_seek_timeline PRIVATE m)
+endif()
+add_test(NAME midi_seek_timeline_tests COMMAND test_midi_seek_timeline
+                                               ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
 add_executable(
     test_secret_area_scan_budget
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_secret_area_scan_budget.c

@@ -48,6 +48,18 @@ void input_demo_record_death_abort_direct_command(void)
 			"Input demo recorder death abort event failed: %s\n", error);
 }
 
+void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
+	int weapon_index)
+{
+	char error[256] = "";
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_select_weapon_exact(
+	        weapon_class, weapon_index, error, sizeof(error)) && error[0])
+		con_printf(CON_NORMAL,
+			"Input demo recorder exact weapon selection failed: %s\n", error);
+}
+
 static int input_demo_apply_death_abort_d1(void *context, int validate_only,
 	char *error, size_t error_size)
 {
@@ -77,14 +89,31 @@ static int input_demo_change_difficulty_d1(void *context, int difficulty,
 	return 0;
 }
 
+static int input_demo_apply_d1_direct_command(void *context,
+	const input_demo_replay_direct_command_event *event,
+	int validate_only, char *error, size_t error_size)
+{
+	(void)context;
+	if (event->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT ||
+	    event->value0 < 0 || event->value0 > 1 ||
+	    event->value1 < 0 || event->value1 >= MAX_PRIMARY_WEAPONS) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "unsupported D1 direct command");
+		return 0;
+	}
+	if (!validate_only)
+		select_weapon(event->value1, event->value0, 1, 1);
+	return 1;
+}
+
 int input_demo_apply_replay_direct_commands(input_demo_direct_command_phase phase)
 {
 	static const input_demo_direct_command_policy policy = {
 		NULL,
-		0,
+		1,
 		input_demo_apply_death_abort_d1,
 		input_demo_change_difficulty_d1,
-		NULL
+		input_demo_apply_d1_direct_command
 	};
 	char error[512] = "";
 

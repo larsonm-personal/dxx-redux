@@ -900,26 +900,28 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
 
         val srcManager = AudioSourceManager(dir)
         val sources = srcManager.getSources()
-        if (sources.isNotEmpty()) {
-            val audioArr = JSONArray()
-            for (src in sources) {
-                val ao = JSONObject()
-                ao.put("id", src.id)
-                ao.put("label", src.discLabel)
-                ao.put("disc_id", src.discId)
-                ao.put("cue_path", src.cuePath)
-                ao.put("track_count", src.trackCount)
-                ao.put("audio_track_count", src.audioTrackCount)
-                if (src.trackNames.isNotEmpty()) {
-                    val tn = JSONObject()
-                    for ((k, v) in src.trackNames) tn.put(k.toString(), v)
-                    ao.put("track_names", tn)
-                }
-                audioArr.put(ao)
+        root.put("audio_source_count", sources.size)
+        root.put("audio_registry_present", File(dir, "audio_sources.json").isFile)
+        root.put("audio_playlist_present", File(dir, "audio_playlist.json").isFile)
+        val audioArr = JSONArray()
+        for (src in sources) {
+            val ao = JSONObject()
+            ao.put("id", src.id)
+            ao.put("label", src.discLabel)
+            ao.put("disc_id", src.discId)
+            ao.put("cue_path", src.cuePath)
+            ao.put("bin_paths", JSONArray(src.binPaths))
+            ao.put("track_count", src.trackCount)
+            ao.put("audio_track_count", src.audioTrackCount)
+            if (src.trackNames.isNotEmpty()) {
+                val tn = JSONObject()
+                for ((k, v) in src.trackNames) tn.put(k.toString(), v)
+                ao.put("track_names", tn)
             }
-            root.put("audio_sources", audioArr)
+            audioArr.put(ao)
         }
-        if (findGogPair(setDir) != null) root.put("has_legacy_gog_audio", true)
+        root.put("audio_sources", audioArr)
+        root.put("has_legacy_gog_audio", findGogPair(setDir) != null)
 
         val musicPreview = JSONObject()
         val midiState = MidiPreviewBridge.getState()

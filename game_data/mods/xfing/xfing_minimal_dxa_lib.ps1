@@ -3,7 +3,6 @@ $ErrorActionPreference = "Stop"
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-Add-Type -AssemblyName System.Drawing
 
 if (-not ("DxxRedux.XfingValidation" -as [type])) {
     Add-Type -TypeDefinition @'
@@ -73,6 +72,109 @@ namespace DxxRedux
 }
 '@
 }
+
+if (-not ("DxxRedux.XfingPngEncoder" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
+
+namespace DxxRedux
+{
+    public static class XfingPngEncoder
+    {
+        private static readonly byte[] Signature = { 137, 80, 78, 71, 13, 10, 26, 10 };
+        private static readonly uint[] CrcTable = CreateCrcTable();
+
+        private static uint[] CreateCrcTable()
+        {
+            uint[] table = new uint[256];
+            for (uint index = 0; index < table.Length; ++index)
+            {
+                uint value = index;
+                for (int bit = 0; bit < 8; ++bit)
+                    value = (value & 1) != 0 ? 0xedb88320U ^ (value >> 1) : value >> 1;
+                table[index] = value;
+            }
+            return table;
+        }
+
+        private static void WriteBigEndian(Stream stream, uint value)
+        {
+            stream.WriteByte((byte)(value >> 24));
+            stream.WriteByte((byte)(value >> 16));
+            stream.WriteByte((byte)(value >> 8));
+            stream.WriteByte((byte)value);
+        }
+
+        private static void WriteChunk(Stream stream, string name, byte[] data)
+        {
+            byte[] nameBytes = Encoding.ASCII.GetBytes(name);
+            WriteBigEndian(stream, checked((uint)data.Length));
+            stream.Write(nameBytes, 0, nameBytes.Length);
+            stream.Write(data, 0, data.Length);
+
+            uint crc = 0xffffffffU;
+            for (int index = 0; index < nameBytes.Length; ++index)
+                crc = CrcTable[(crc ^ nameBytes[index]) & 0xff] ^ (crc >> 8);
+            for (int index = 0; index < data.Length; ++index)
+                crc = CrcTable[(crc ^ data[index]) & 0xff] ^ (crc >> 8);
+            WriteBigEndian(stream, crc ^ 0xffffffffU);
+        }
+
+        public static void Preflight()
+        {
+            using (MemoryStream compressed = new MemoryStream())
+            using (ZLibStream zlib = new ZLibStream(compressed, CompressionLevel.Optimal, true))
+                zlib.WriteByte(0);
+        }
+
+        public static void WriteRgba(string path, int width, int height, byte[] rgba)
+        {
+            if (width <= 0 || height <= 0)
+                throw new ArgumentOutOfRangeException("PNG dimensions must be positive");
+            int stride = checked(width * 4);
+            if (rgba == null || rgba.Length != checked(stride * height))
+                throw new ArgumentException("RGBA input length does not match PNG dimensions", "rgba");
+
+            byte[] header = new byte[13];
+            header[0] = (byte)(width >> 24);
+            header[1] = (byte)(width >> 16);
+            header[2] = (byte)(width >> 8);
+            header[3] = (byte)width;
+            header[4] = (byte)(height >> 24);
+            header[5] = (byte)(height >> 16);
+            header[6] = (byte)(height >> 8);
+            header[7] = (byte)height;
+            header[8] = 8;
+            header[9] = 6;
+
+            using (MemoryStream compressed = new MemoryStream())
+            {
+                using (ZLibStream zlib = new ZLibStream(compressed, CompressionLevel.Optimal, true))
+                {
+                    for (int row = 0; row < height; ++row)
+                    {
+                        zlib.WriteByte(0);
+                        zlib.Write(rgba, checked(row * stride), stride);
+                    }
+                }
+
+                using (FileStream output = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    output.Write(Signature, 0, Signature.Length);
+                    WriteChunk(output, "IHDR", header);
+                    WriteChunk(output, "IDAT", compressed.ToArray());
+                    WriteChunk(output, "IEND", new byte[0]);
+                }
+            }
+        }
+    }
+}
+'@
+}
+[DxxRedux.XfingPngEncoder]::Preflight()
 
 $script:XfingBitmapFlagTransparent = 1
 $script:XfingBitmapFlagSuperTransparent = 2
@@ -353,31 +455,7 @@ function Write-XfingRgbaPng {
         New-Item -ItemType Directory -Path $parent | Out-Null
     }
 
-    $bitmap = [System.Drawing.Bitmap]::new($Width, $Height, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-    try {
-        $rect = [System.Drawing.Rectangle]::new(0, 0, $Width, $Height)
-        $data = $bitmap.LockBits($rect, [System.Drawing.Imaging.ImageLockMode]::WriteOnly, $bitmap.PixelFormat)
-        try {
-            $stride = $data.Stride
-            $bytes = [byte[]]::new($stride * $Height)
-            for ($y = 0; $y -lt $Height; $y++) {
-                for ($x = 0; $x -lt $Width; $x++) {
-                    $src = (($y * $Width) + $x) * 4
-                    $dst = ($y * $stride) + ($x * 4)
-                    $bytes[$dst] = $Rgba[$src + 2]
-                    $bytes[$dst + 1] = $Rgba[$src + 1]
-                    $bytes[$dst + 2] = $Rgba[$src]
-                    $bytes[$dst + 3] = $Rgba[$src + 3]
-                }
-            }
-            [System.Runtime.InteropServices.Marshal]::Copy($bytes, 0, $data.Scan0, $bytes.Length)
-        } finally {
-            $bitmap.UnlockBits($data)
-        }
-        $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
-    } finally {
-        $bitmap.Dispose()
-    }
+    [DxxRedux.XfingPngEncoder]::WriteRgba($Path, $Width, $Height, $Rgba)
 }
 
 function Export-XfingBitmapEntryPng {

@@ -204,6 +204,20 @@ static bool parse_direct_command_event_json(const std::string &json_text,
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY;
 		return true;
 	}
+	if (command == "select_weapon_exact") {
+		it = parsed.find("weapon_class");
+		if (it == parsed.end() || !it->is_number_integer())
+			return fail(error, "exact weapon selection is missing weapon_class");
+		event->value0 = it->get<int32_t>();
+		it = parsed.find("weapon_index");
+		if (it == parsed.end() || !it->is_number_integer())
+			return fail(error, "exact weapon selection is missing weapon_index");
+		event->value1 = it->get<int32_t>();
+		if (event->value0 < 0 || event->value0 > 1 || event->value1 < 0 || event->value1 > 9)
+			return fail(error, "exact weapon selection is out of range");
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT;
+		return true;
+	}
 	return fail(error, std::string("unknown direct command event command: ") + command);
 }
 

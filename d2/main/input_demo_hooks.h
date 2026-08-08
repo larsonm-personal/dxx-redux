@@ -38,6 +38,8 @@ void input_demo_record_direct_command_guidebot_find_secret(void);
 void input_demo_record_direct_command_guidebot_find_unexplored(void);
 void input_demo_record_direct_command_guidebot_warp_to_me(void);
 void input_demo_record_direct_command_death_abort(void);
+void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
+	int weapon_index);
 int input_demo_apply_replay_direct_commands(
 	input_demo_direct_command_phase phase);
 void input_demo_update_rng_trace_context(void);

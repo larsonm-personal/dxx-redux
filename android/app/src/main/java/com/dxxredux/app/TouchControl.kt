@@ -16,6 +16,8 @@ enum class ButtonShape { CIRCLE, ROUNDED_RECT }
 
 enum class SliderOrientation { VERTICAL, HORIZONTAL }
 
+enum class SelectorPresentation { WHEEL, SCROLL_STRIP }
+
 enum class GyroActivation { ALWAYS, TOUCH_STICK, ADS_ONLY }
 
 enum class GyroMode { RATE, ABSOLUTE }
@@ -517,6 +519,11 @@ data class RadialMenuControl(
     val centerLabel: String = "",
     val centerBinding: Int = -1,
     val hapticFeedback: Boolean = true,
+    val presentation: SelectorPresentation = SelectorPresentation.WHEEL,
+    val stripOrientation: SliderOrientation = SliderOrientation.HORIZONTAL,
+    val stripDragSpanWidthPct: Float = 20f,
+    val stripLabelAngleDeg: Float = 0f,
+    val stripSelectedScale: Float = 2f,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -531,6 +538,11 @@ data class RadialMenuControl(
             if (centerLabel.isNotEmpty()) put("centerLabel", centerLabel)
             if (centerBinding >= 0) put("centerBinding", centerBinding)
             put("haptic", hapticFeedback)
+            put("presentation", presentation.name)
+            put("stripOrientation", stripOrientation.name)
+            put("stripDragSpanWidthPct", stripDragSpanWidthPct.toDouble())
+            put("stripLabelAngleDeg", stripLabelAngleDeg.toDouble())
+            put("stripSelectedScale", stripSelectedScale.toDouble())
         }
 
     companion object {
@@ -549,6 +561,17 @@ data class RadialMenuControl(
                 centerLabel = j.optString("centerLabel", ""),
                 centerBinding = j.optInt("centerBinding", -1),
                 hapticFeedback = j.optBoolean("haptic", true),
+                presentation =
+                    runCatching {
+                        SelectorPresentation.valueOf(j.optString("presentation", SelectorPresentation.WHEEL.name))
+                    }.getOrDefault(SelectorPresentation.WHEEL),
+                stripOrientation =
+                    runCatching {
+                        SliderOrientation.valueOf(j.optString("stripOrientation", SliderOrientation.HORIZONTAL.name))
+                    }.getOrDefault(SliderOrientation.HORIZONTAL),
+                stripDragSpanWidthPct = j.optDouble("stripDragSpanWidthPct", 20.0).toFloat(),
+                stripLabelAngleDeg = j.optDouble("stripLabelAngleDeg", 0.0).toFloat(),
+                stripSelectedScale = j.optDouble("stripSelectedScale", 2.0).toFloat(),
             )
     }
 }

@@ -2161,6 +2161,8 @@ int ReadControls(d_event *event)
 
 #ifdef __ANDROID__
 	if (event->type == EVENT_IDLE) {
+		if (android_weapon_select_apply_pending())
+			return 1;
 		if (android_music_control_apply_pending())
 			return 1;
 		if (android_escort_release_pending) {

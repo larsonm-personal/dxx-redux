@@ -11,6 +11,7 @@
 
 #include "midi_preview.h"
 #include "hmp_android_shared.h"
+#include "midi_seek_timeline.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,9 +95,9 @@ static unsigned int rb_available(void)
 
 static tsf *s_tsf = NULL;                /* SoundFont synth (persistent)    */
 static tml_message *s_midi = NULL;       /* parsed MIDI message list        */
-static tml_message *s_midi_cur = NULL;   /* current playback cursor         */
 static unsigned char *s_midi_buf = NULL; /* raw MIDI bytes (owned)         */
 static int s_midi_buf_len = 0;
+static struct midi_seek_timeline s_timeline;
 
 static volatile int s_playing = 0;
 static volatile int s_paused = 0;
@@ -288,63 +289,70 @@ static int compute_midi_duration_ms(const unsigned char *midi_data, int midi_len
 
 /* ── Render function ─────────────────────────────────────────────────── */
 
+static unsigned int midi_event_time_ms(const void *event)
+{
+	return ((const tml_message *) event)->time;
+}
+
+static const void *midi_event_next(const void *event)
+{
+	return ((const tml_message *) event)->next;
+}
+
+static void dispatch_midi_event(void *context, const void *event)
+{
+	tsf *synth = (tsf *) context;
+	const tml_message *m = (const tml_message *) event;
+
+	switch (m->type) {
+		case TML_NOTE_ON:
+			tsf_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f);
+			break;
+		case TML_NOTE_OFF:
+			tsf_channel_note_off(synth, m->channel, m->key);
+			break;
+		case TML_PROGRAM_CHANGE:
+			tsf_channel_set_presetnumber(synth, m->channel, m->program, (m->channel == 9));
+			break;
+		case TML_CONTROL_CHANGE:
+			tsf_channel_midi_control(synth, m->channel, m->control, m->control_value);
+			break;
+		case TML_PITCH_BEND:
+			tsf_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
+			break;
+		default:
+			break;
+	}
+}
+
+static void render_tsf_frames(void *context, short *output, int frames)
+{
+	tsf_render_short((tsf *) context, output, frames, 0);
+}
+
+static void reset_midi_timeline(void)
+{
+	static const struct midi_seek_timeline_ops ops = {
+		midi_event_time_ms,
+		midi_event_next,
+		dispatch_midi_event,
+		render_tsf_frames
+	};
+	midi_seek_timeline_init(&s_timeline, s_midi, s_output_rate, 2, s_tsf, &ops);
+}
+
 static int render_midi_frames(short *out, int frames)
 {
-	double rate = (double) s_output_rate;
-	int rendered = 0;
-	enum { BLOCK = 256 };
+	int i;
+	int rendered = midi_seek_timeline_render(&s_timeline, out, frames);
 
-	while (frames > 0 && s_midi_cur) {
-		int block = (frames > BLOCK) ? BLOCK : frames;
-		double block_ms = block * (1000.0 / rate);
-		s_playback_msec += block_ms;
-
-		/* Dispatch MIDI events up to current time */
-		while (s_midi_cur && s_midi_cur->time <= (unsigned int) s_playback_msec) {
-			tml_message *m = s_midi_cur;
-			switch (m->type) {
-				case TML_NOTE_ON:
-					tsf_channel_note_on(s_tsf, m->channel, m->key,
-					                    m->velocity / 127.0f);
-					break;
-				case TML_NOTE_OFF:
-					tsf_channel_note_off(s_tsf, m->channel, m->key);
-					break;
-				case TML_PROGRAM_CHANGE:
-					tsf_channel_set_presetnumber(s_tsf, m->channel,
-					                             m->program,
-					                             (m->channel == 9));
-					break;
-				case TML_CONTROL_CHANGE:
-					tsf_channel_midi_control(s_tsf, m->channel,
-					                         m->control, m->control_value);
-					break;
-				case TML_PITCH_BEND:
-					tsf_channel_set_pitchwheel(s_tsf, m->channel,
-					                           m->pitch_bend);
-					break;
-				default:
-					break;
-			}
-			s_midi_cur = m->next;
-		}
-
-		tsf_render_short(s_tsf, out, block, 0);
-
-		/* Volume scaling */
-		if (s_volume < 0.99f) {
-			int i, n = block * 2;
-			for (i = 0; i < n; i++)
-				out[i] = (short) (out[i] * s_volume);
-		}
-
-		out += block * 2;
-		frames -= block;
-		rendered += block;
-	}
+	s_playback_msec = midi_seek_timeline_position_ms(&s_timeline);
+	if (s_volume < 0.99f)
+		for (i = 0; i < rendered * 2; i++)
+			out[i] = (short) (out[i] * s_volume);
 
 	/* Song ended */
-	if (!s_midi_cur && rendered < frames + rendered) {
+	if (!s_timeline.event && rendered < frames) {
 		s_playing = 0;
 		__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 	}
@@ -670,7 +678,6 @@ int midi_preview_start(const unsigned char *data, int len,
 	s_midi_buf = midi_data;
 	s_midi_buf_len = midi_len;
 	pthread_mutex_lock(&s_playback_mutex);
-	s_midi_cur = s_midi;
 	s_playback_msec = 0.0;
 	s_output_rate = sample_rate;
 	s_paused = 0;
@@ -681,6 +688,7 @@ int midi_preview_start(const unsigned char *data, int len,
 	tsf_reset(s_tsf);
 	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	tsf_set_max_voices(s_tsf, s_max_voices);
+	reset_midi_timeline();
 	pthread_mutex_unlock(&s_playback_mutex);
 
 	LOGI("Starting MIDI playback (%d bytes, duration=%dms, rate=%d)",
@@ -717,7 +725,7 @@ static void midi_preview_stop_internal(void)
 	if (s_midi) {
 		tml_free(s_midi);
 		s_midi = NULL;
-		s_midi_cur = NULL;
+		s_timeline.event = NULL;
 	}
 	if (s_midi_buf) {
 		d_free(s_midi_buf);
@@ -759,6 +767,10 @@ void midi_preview_resume(void)
 
 int midi_preview_seek(float fraction)
 {
+	enum { SEEK_BLOCK = 2048 };
+	short seek_buffer[SEEK_BLOCK * 2];
+	uint64_t target_frame;
+	int prefill_frames = 0;
 	int result = 0;
 	pthread_mutex_lock(&s_control_mutex);
 	pthread_mutex_lock(&s_playback_mutex);
@@ -774,37 +786,23 @@ int midi_preview_seek(float fraction)
 	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	tsf_set_max_voices(s_tsf, s_max_voices);
 
-	s_midi_cur = s_midi;
+	reset_midi_timeline();
 	s_playback_msec = 0.0;
-
-	/* Fast-forward: process events without rendering audio */
-	while (s_midi_cur && s_midi_cur->time <= (unsigned int) target_ms) {
-		tml_message *m = s_midi_cur;
-		switch (m->type) {
-			case TML_NOTE_ON:
-				tsf_channel_note_on(s_tsf, m->channel, m->key, m->velocity / 127.0f);
-				break;
-			case TML_NOTE_OFF:
-				tsf_channel_note_off(s_tsf, m->channel, m->key);
-				break;
-			case TML_PROGRAM_CHANGE:
-				tsf_channel_set_presetnumber(s_tsf, m->channel, m->program, (m->channel == 9));
-				break;
-			case TML_CONTROL_CHANGE:
-				tsf_channel_midi_control(s_tsf, m->channel, m->control, m->control_value);
-				break;
-			case TML_PITCH_BEND:
-				tsf_channel_set_pitchwheel(s_tsf, m->channel, m->pitch_bend);
-				break;
-			default:
-				break;
-		}
-		s_midi_cur = m->next;
+	target_frame = midi_seek_timeline_frame_for_ms(target_ms, s_output_rate);
+	if (!midi_seek_timeline_reconstruct(&s_timeline, target_frame,
+	                                    seek_buffer, SEEK_BLOCK,
+	                                    &prefill_frames))
+		goto done;
+	if (s_volume < 0.99f) {
+		int i;
+		for (i = 0; i < prefill_frames * 2; i++)
+			seek_buffer[i] = (short) (seek_buffer[i] * s_volume);
 	}
-
 	s_playback_msec = target_ms;
 	pthread_mutex_lock(&s_ring_reset_mutex);
 	rb_reset();
+	if (prefill_frames > 0)
+		rb_write(seek_buffer, prefill_frames * 2);
 	pthread_mutex_unlock(&s_ring_reset_mutex);
 	result = 1;
 

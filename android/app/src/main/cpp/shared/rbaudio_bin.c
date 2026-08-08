@@ -232,6 +232,25 @@ static float s_volume = 1.0f;
 static int s_rb_underruns = 0; /* callback found buffer empty */
 static int s_rb_cb_count = 0;  /* total callbacks */
 
+/* Monotonic playback diagnostics.  The generation baselines let automation
+ * distinguish work performed for the current request from stale activity. */
+static unsigned int s_playback_generation = 0;
+static unsigned long long s_source_sectors_read_total = 0;
+static unsigned long long s_source_io_errors_total = 0;
+static unsigned long long s_mixer_frames_delivered_total = 0;
+static unsigned long long s_generation_source_read_start = 0;
+static unsigned long long s_generation_source_error_start = 0;
+static unsigned long long s_generation_mixer_frame_start = 0;
+static int s_generation_first_track = 0;
+static int s_generation_source_index = -1;
+static unsigned int s_playback_diagnostics_sequence = 0;
+static unsigned int s_proven_playback_generation = 0;
+static unsigned long long s_proven_source_sectors_read = 0;
+static unsigned long long s_proven_mixer_frames_delivered = 0;
+static int s_proven_first_track = 0;
+static int s_proven_source_index = -1;
+static unsigned int s_playback_proof_sequence = 0;
+
 static void (*s_finished_hook)(void) = NULL;
 static volatile int s_song_finished = 0;
 static int s_logged_data_track_decode = 0;
@@ -1042,11 +1061,21 @@ static int refill_pcm(void)
 
 		{
 			bin_handle_t *src = get_track_handle(s_current_track);
-			if (!src || !bh_valid(src)) break;
+			if (!src || !bh_valid(src)) {
+				__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+				break;
+			}
 			offset = (PHYSFS_sint64) s_read_sector * SECTOR_SIZE;
-			if (!bh_seek(src, offset)) break;
-			if (!bh_read(src, raw, SECTOR_SIZE)) break;
+			if (!bh_seek(src, offset)) {
+				__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+				break;
+			}
+			if (!bh_read(src, raw, SECTOR_SIZE)) {
+				__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+				break;
+			}
 		}
+		__atomic_add_fetch(&s_source_sectors_read_total, 1, __ATOMIC_RELAXED);
 
 		/* Decode 16-bit LE stereo PCM */
 		for (i = 0; i < FRAMES_PER_SECTOR; i++) {
@@ -1207,6 +1236,34 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 	}
 
 	got = rb_read(out, needed);
+	if (got > 0) {
+		unsigned int generation;
+		unsigned long long source_total;
+		unsigned long long mixer_total;
+		unsigned long long source_start;
+		unsigned long long mixer_start;
+
+		__atomic_add_fetch(&s_mixer_frames_delivered_total,
+		                   (unsigned long long) got / 2u, __ATOMIC_RELAXED);
+		generation = __atomic_load_n(&s_playback_generation, __ATOMIC_ACQUIRE);
+		source_total = __atomic_load_n(&s_source_sectors_read_total, __ATOMIC_RELAXED);
+		mixer_total = __atomic_load_n(&s_mixer_frames_delivered_total, __ATOMIC_RELAXED);
+		source_start = __atomic_load_n(&s_generation_source_read_start, __ATOMIC_RELAXED);
+		mixer_start = __atomic_load_n(&s_generation_mixer_frame_start, __ATOMIC_RELAXED);
+		if (generation > 0 && source_total > source_start && mixer_total > mixer_start) {
+			__atomic_add_fetch(&s_playback_proof_sequence, 1, __ATOMIC_ACQ_REL);
+			__atomic_store_n(&s_proven_source_sectors_read, source_total - source_start, __ATOMIC_RELAXED);
+			__atomic_store_n(&s_proven_mixer_frames_delivered, mixer_total - mixer_start, __ATOMIC_RELAXED);
+			__atomic_store_n(&s_proven_first_track,
+			                 __atomic_load_n(&s_generation_first_track, __ATOMIC_RELAXED),
+			                 __ATOMIC_RELAXED);
+			__atomic_store_n(&s_proven_source_index,
+			                 __atomic_load_n(&s_generation_source_index, __ATOMIC_RELAXED),
+			                 __ATOMIC_RELAXED);
+			__atomic_store_n(&s_proven_playback_generation, generation, __ATOMIC_RELAXED);
+			__atomic_add_fetch(&s_playback_proof_sequence, 1, __ATOMIC_RELEASE);
+		}
+	}
 	if (got < needed) {
 		memset(out + got, 0, (needed - got) * (int) sizeof(short));
 		if (s_playing) {
@@ -1280,6 +1337,121 @@ int RBAEnabled(void)
 	return s_initialised;
 }
 
+static void playback_diagnostics_begin(int first_track)
+{
+	__atomic_add_fetch(&s_playback_diagnostics_sequence, 1, __ATOMIC_ACQ_REL);
+	__atomic_store_n(&s_generation_source_read_start,
+	                 __atomic_load_n(&s_source_sectors_read_total, __ATOMIC_RELAXED),
+	                 __ATOMIC_RELAXED);
+	__atomic_store_n(&s_generation_source_error_start,
+	                 __atomic_load_n(&s_source_io_errors_total, __ATOMIC_RELAXED),
+	                 __ATOMIC_RELAXED);
+	__atomic_store_n(&s_generation_mixer_frame_start,
+	                 __atomic_load_n(&s_mixer_frames_delivered_total, __ATOMIC_RELAXED),
+	                 __ATOMIC_RELAXED);
+	__atomic_store_n(&s_generation_first_track, first_track, __ATOMIC_RELAXED);
+	__atomic_store_n(&s_generation_source_index,
+	                 s_tracks[first_track - 1].source_index, __ATOMIC_RELAXED);
+	__atomic_add_fetch(&s_playback_generation, 1, __ATOMIC_RELAXED);
+	__atomic_add_fetch(&s_playback_diagnostics_sequence, 1, __ATOMIC_RELEASE);
+}
+
+void RBAGetPlaybackDiagnostics(unsigned int *generation, int *first_track,
+                               int *source_index,
+                               unsigned long long *source_sectors_read_total,
+                               unsigned long long *mixer_frames_delivered_total,
+                               unsigned long long *generation_source_sectors_read,
+                               unsigned long long *generation_mixer_frames_delivered)
+{
+	unsigned int before_sequence;
+	unsigned int after_sequence;
+	unsigned int before;
+	unsigned long long source_total;
+	unsigned long long mixer_total;
+	unsigned long long source_start;
+	unsigned long long mixer_start;
+	int snapshot_first_track;
+	int snapshot_source_index;
+
+	for (;;) {
+		before_sequence = __atomic_load_n(&s_playback_diagnostics_sequence, __ATOMIC_ACQUIRE);
+		if (before_sequence & 1u) continue;
+		before = __atomic_load_n(&s_playback_generation, __ATOMIC_RELAXED);
+		snapshot_first_track = __atomic_load_n(&s_generation_first_track, __ATOMIC_RELAXED);
+		snapshot_source_index = __atomic_load_n(&s_generation_source_index, __ATOMIC_RELAXED);
+		source_start = __atomic_load_n(&s_generation_source_read_start, __ATOMIC_RELAXED);
+		mixer_start = __atomic_load_n(&s_generation_mixer_frame_start, __ATOMIC_RELAXED);
+		source_total = __atomic_load_n(&s_source_sectors_read_total, __ATOMIC_RELAXED);
+		mixer_total = __atomic_load_n(&s_mixer_frames_delivered_total, __ATOMIC_RELAXED);
+		after_sequence = __atomic_load_n(&s_playback_diagnostics_sequence, __ATOMIC_ACQUIRE);
+		if (before_sequence == after_sequence && !(after_sequence & 1u)) break;
+	}
+
+	if (generation) *generation = before;
+	if (first_track) *first_track = snapshot_first_track;
+	if (source_index) *source_index = snapshot_source_index;
+	if (source_sectors_read_total) *source_sectors_read_total = source_total;
+	if (mixer_frames_delivered_total) *mixer_frames_delivered_total = mixer_total;
+	if (generation_source_sectors_read)
+		*generation_source_sectors_read = source_total >= source_start ? source_total - source_start : 0;
+	if (generation_mixer_frames_delivered)
+		*generation_mixer_frames_delivered = mixer_total >= mixer_start ? mixer_total - mixer_start : 0;
+}
+
+void RBAGetPlaybackErrorDiagnostics(unsigned long long *source_io_errors_total,
+                                    unsigned long long *generation_source_io_errors)
+{
+	unsigned int before_sequence;
+	unsigned int after_sequence;
+	unsigned long long error_total;
+	unsigned long long error_start;
+
+	for (;;) {
+		before_sequence = __atomic_load_n(&s_playback_diagnostics_sequence, __ATOMIC_ACQUIRE);
+		if (before_sequence & 1u) continue;
+		error_start = __atomic_load_n(&s_generation_source_error_start, __ATOMIC_RELAXED);
+		error_total = __atomic_load_n(&s_source_io_errors_total, __ATOMIC_RELAXED);
+		after_sequence = __atomic_load_n(&s_playback_diagnostics_sequence, __ATOMIC_ACQUIRE);
+		if (before_sequence == after_sequence && !(after_sequence & 1u)) break;
+	}
+
+	if (source_io_errors_total) *source_io_errors_total = error_total;
+	if (generation_source_io_errors)
+		*generation_source_io_errors = error_total >= error_start ? error_total - error_start : 0;
+}
+
+void RBAGetLastPlaybackProof(unsigned int *generation, int *first_track,
+                             int *source_index,
+                             unsigned long long *source_sectors_read,
+                             unsigned long long *mixer_frames_delivered)
+{
+	unsigned int before_sequence;
+	unsigned int after_sequence;
+	unsigned int before;
+	int snapshot_first_track;
+	int snapshot_source_index;
+	unsigned long long snapshot_source_sectors_read;
+	unsigned long long snapshot_mixer_frames_delivered;
+
+	for (;;) {
+		before_sequence = __atomic_load_n(&s_playback_proof_sequence, __ATOMIC_ACQUIRE);
+		if (before_sequence & 1u) continue;
+		before = __atomic_load_n(&s_proven_playback_generation, __ATOMIC_RELAXED);
+		snapshot_first_track = __atomic_load_n(&s_proven_first_track, __ATOMIC_RELAXED);
+		snapshot_source_index = __atomic_load_n(&s_proven_source_index, __ATOMIC_RELAXED);
+		snapshot_source_sectors_read = __atomic_load_n(&s_proven_source_sectors_read, __ATOMIC_RELAXED);
+		snapshot_mixer_frames_delivered = __atomic_load_n(&s_proven_mixer_frames_delivered, __ATOMIC_RELAXED);
+		after_sequence = __atomic_load_n(&s_playback_proof_sequence, __ATOMIC_ACQUIRE);
+		if (before_sequence == after_sequence && !(after_sequence & 1u)) break;
+	}
+
+	if (generation) *generation = before;
+	if (first_track) *first_track = snapshot_first_track;
+	if (source_index) *source_index = snapshot_source_index;
+	if (source_sectors_read) *source_sectors_read = snapshot_source_sectors_read;
+	if (mixer_frames_delivered) *mixer_frames_delivered = snapshot_mixer_frames_delivered;
+}
+
 /* Start playing a single track (1-based) */
 int RBAPlayTrack(int track)
 {
@@ -1302,6 +1474,7 @@ int RBAPlayTrack(int track)
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
 	s_logged_data_track_decode = 0;
+	playback_diagnostics_begin(track);
 	s_playing = 1;
 
 	render_thread_start();
@@ -1341,6 +1514,7 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
 	s_logged_data_track_decode = 0;
+	playback_diagnostics_begin(first);
 	s_playing = 1;
 
 	render_thread_start();

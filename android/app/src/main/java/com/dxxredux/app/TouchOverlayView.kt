@@ -15,6 +15,7 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -100,6 +101,9 @@ class TouchOverlayView
 
         /** Called with (metaActionId, pressed) for meta action dispatch. */
         var metaActionCallback: ((Int, Boolean) -> Unit)? = null
+
+        /** Called with (isPrimary, fullWeaponIndex) for exact game-thread selection. */
+        var exactWeaponSelectCallback: ((Boolean, Int) -> Unit)? = null
 
         /** Called when the MAP button is tapped (toggles automap). */
         var mapButtonCallback: (() -> Unit)? = null
@@ -259,6 +263,14 @@ class TouchOverlayView
             var longPressRunnable: Runnable? = null
         }
 
+        private data class StripItem(
+            val label: String,
+            val segment: RadialSegment? = null,
+            val ammoStatus: WeaponAmmoStatus? = null,
+            val weaponIndex: Int = -1,
+            val slotIndex: Int = -1,
+        )
+
         private class RadialMenuState(
             val control: RadialMenuControl,
         ) {
@@ -276,6 +288,20 @@ class TouchOverlayView
             var isWeaponWheel = false
             var filteredSegments: List<RadialSegment> = emptyList()
             var weaponState: WeaponState? = null
+
+            // Scroll-strip state
+            var dragHalfSpan = 0f
+            var stripRows: List<List<StripItem>> = emptyList()
+            var stripRowInitialIndices = IntArray(0)
+            var stripRow = 0
+            var stripFractionalIndex = 0f
+            var stripMainDelta = 0f
+            var stripDownX = 0f
+            var stripDownY = 0f
+            var stripCrossProgress = 0f
+            var stripCrossSign = 1f
+            var stripGestureArmed = false
+            var lastStripIndex = 0
         }
 
         private class SliderState(
@@ -661,6 +687,7 @@ class TouchOverlayView
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
             }
+        private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
         private val paintRing =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
@@ -924,6 +951,7 @@ class TouchOverlayView
                 rm.triggerX = wf * rm.control.xPct / 100f
                 rm.triggerY = hf * rm.control.yPct / 100f
                 rm.radius = base * 0.18f * rm.control.ringSizeMult
+                rm.dragHalfSpan = wf * rm.control.stripDragSpanWidthPct / 200f
             }
 
             // Compute slider geometry from layout
@@ -1618,7 +1646,9 @@ class TouchOverlayView
                 }
                 for (rm in radialStates) {
                     if (rm.isOpen) {
-                        if (rm.isWeaponWheel) {
+                        if (rm.control.presentation == SelectorPresentation.SCROLL_STRIP) {
+                            drawScrollStrip(canvas, rm, gAlpha)
+                        } else if (rm.isWeaponWheel) {
                             drawWeaponWheel(canvas, rm, gAlpha)
                         } else {
                             drawRadialMenu(canvas, rm, gAlpha)
@@ -2400,6 +2430,141 @@ class TouchOverlayView
             canvas.drawCircle(cx, cy, centerR, paintRing)
         }
 
+        private fun drawScrollStrip(
+            canvas: Canvas,
+            state: RadialMenuState,
+            gAlpha: Float,
+        ) {
+            val vertical = state.control.stripOrientation == SliderOrientation.VERTICAL
+            val halfSpan = state.dragHalfSpan
+            val cx = state.triggerX
+            val cy = state.triggerY
+            val eff = (gAlpha * state.control.opacity).coerceIn(0f, 1f)
+            paintRing.alpha = (0x88 * eff).toInt()
+            if (vertical) {
+                canvas.drawLine(cx, cy - halfSpan, cx, cy + halfSpan, paintRing)
+            } else {
+                canvas.drawLine(cx - halfSpan, cy, cx + halfSpan, cy, paintRing)
+            }
+            canvas.drawCircle(cx, cy, max(2f, state.triggerRadius * 0.08f), paintThumb)
+
+            val rows = state.stripRows
+            if (rows.isEmpty()) return
+            val rowGap = state.triggerRadius * 2.5f
+            val crossSign = state.stripCrossSign
+            rows.forEachIndexed { rowIndex, items ->
+                if (items.isEmpty()) return@forEachIndexed
+                val rowProgress = if (rowIndex == 0) 1f - state.stripCrossProgress else state.stripCrossProgress
+                if (rowProgress <= 0f) return@forEachIndexed
+                val crossOffset =
+                    when (rowIndex) {
+                        0 -> -state.stripCrossProgress * rowGap * crossSign
+                        else -> (1f - state.stripCrossProgress) * rowGap * crossSign
+                    }
+                val initial = state.stripRowInitialIndices.getOrElse(rowIndex) { 0 }
+                val fractional = scrollStripFractionalIndex(state.stripMainDelta, halfSpan, initial, items.size)
+                drawScrollStripRow(canvas, state, rowIndex, items, fractional, crossOffset, eff * rowProgress, vertical)
+            }
+        }
+
+        private fun drawScrollStripRow(
+            canvas: Canvas,
+            state: RadialMenuState,
+            rowIndex: Int,
+            items: List<StripItem>,
+            fractionalIndex: Float,
+            crossOffset: Float,
+            alpha: Float,
+            vertical: Boolean,
+        ) {
+            val baseTextSize = state.triggerRadius * 0.42f
+            val rotation =
+                if (vertical) {
+                    state.control.stripLabelAngleDeg
+                } else {
+                    90f - state.control.stripLabelAngleDeg
+                }
+            val radians = Math.toRadians(rotation.toDouble())
+            paintBtnLabel.textSize = baseTextSize
+            val baseCards =
+                items.map { item ->
+                    val lines = item.label.split('\n')
+                    val width = lines.maxOfOrNull { paintBtnLabel.measureText(it) } ?: baseTextSize
+                    val height = baseTextSize * 1.2f * lines.size
+                    Pair(width + baseTextSize * 0.7f, height + baseTextSize * 0.45f)
+                }
+            val mainSpan =
+                baseCards.maxOf { (cardW, cardH) ->
+                    if (vertical) {
+                        abs(cardW * sin(radians)).toFloat() + abs(cardH * cos(radians)).toFloat()
+                    } else {
+                        abs(cardW * cos(radians)).toFloat() + abs(cardH * sin(radians)).toFloat()
+                    }
+                }
+            val pitch = mainSpan + state.triggerRadius * 0.22f
+            val nearest = fractionalIndex.roundToInt().coerceIn(items.indices)
+            val centerScale =
+                scrollStripItemScale(nearest, fractionalIndex, state.control.stripSelectedScale)
+            val growthPush = mainSpan * (centerScale - 1f) * 0.5f
+
+            items.forEachIndexed { index, item ->
+                val distance = index - fractionalIndex
+                var mainOffset = distance * pitch
+                if (distance != 0f) mainOffset += sign(distance) * growthPush
+                if (abs(mainOffset) > state.dragHalfSpan + mainSpan) return@forEachIndexed
+                val edgeStart = state.dragHalfSpan * 0.72f
+                val edgeAlpha =
+                    if (abs(mainOffset) <= edgeStart) {
+                        1f
+                    } else {
+                        (1f - (abs(mainOffset) - edgeStart) / (state.dragHalfSpan - edgeStart).coerceAtLeast(1f))
+                            .coerceIn(0f, 1f)
+                    }
+                val scale = scrollStripItemScale(index, fractionalIndex, state.control.stripSelectedScale)
+                val itemX = state.triggerX + if (vertical) crossOffset else mainOffset
+                val itemY = state.triggerY + if (vertical) mainOffset else crossOffset
+                val active = index == nearest && state.stripRow == rowIndex
+                val (cardW, cardH) = baseCards[index]
+                canvas.save()
+                canvas.translate(itemX, itemY)
+                canvas.rotate(rotation)
+                canvas.scale(scale, scale)
+                paintRadialSeg.color = if (active) 0xCC334455.toInt() else 0x99555555.toInt()
+                paintRadialSeg.alpha = (255f * alpha * edgeAlpha).toInt().coerceIn(0, 255)
+                canvas.drawRoundRect(
+                    -cardW / 2f,
+                    -cardH / 2f,
+                    cardW / 2f,
+                    cardH / 2f,
+                    baseTextSize * 0.2f,
+                    baseTextSize * 0.2f,
+                    paintRadialSeg,
+                )
+                paintRing.alpha = (0x88 * alpha * edgeAlpha).toInt().coerceIn(0, 255)
+                canvas.drawRoundRect(
+                    -cardW / 2f,
+                    -cardH / 2f,
+                    cardW / 2f,
+                    cardH / 2f,
+                    baseTextSize * 0.2f,
+                    baseTextSize * 0.2f,
+                    paintRing,
+                )
+                paintBtnLabel.textSize = baseTextSize
+                paintBtnLabel.alpha = (255f * alpha * edgeAlpha).toInt().coerceIn(0, 255)
+                paintBtnLabel.typeface = if (active) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                val count = item.ammoStatus?.countText
+                val label = if (count != null) "${item.label}\n$count" else item.label
+                drawCenteredTextBlock(canvas, label, 0f, 0f, paintBtnLabel)
+                item.ammoStatus?.let { ammo ->
+                    paintRadialSeg.color = ammoStatusColorArgb(ammo.color, paintBtnLabel.alpha)
+                    canvas.drawCircle(cardW * 0.34f, cardH * 0.3f, baseTextSize * 0.12f, paintRadialSeg)
+                }
+                canvas.restore()
+            }
+            paintBtnLabel.typeface = Typeface.DEFAULT
+        }
+
         // -- Touch handling --------------------------------------
         // When the overlay is active we consume ALL touches so that nothing
         // leaks through to the game SurfaceView (where it would be
@@ -2572,6 +2737,9 @@ class TouchOverlayView
                                         } else {
                                             rm.control.segments
                                         }
+                                }
+                                if (rm.control.presentation == SelectorPresentation.SCROLL_STRIP) {
+                                    initializeScrollStrip(rm, px, py)
                                 }
                                 if (rm.control.hapticFeedback) {
                                     performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -2784,7 +2952,13 @@ class TouchOverlayView
                         for (rm in radialStates) {
                             if (rm.pointerId >= 0 && rm.isOpen) {
                                 val i = event.findPointerIndex(rm.pointerId)
-                                if (i >= 0) updateRadialSelection(rm, event.getX(i), event.getY(i))
+                                if (i >= 0) {
+                                    if (rm.control.presentation == SelectorPresentation.SCROLL_STRIP) {
+                                        updateScrollStripSelection(rm, event.getX(i), event.getY(i))
+                                    } else {
+                                        updateRadialSelection(rm, event.getX(i), event.getY(i))
+                                    }
+                                }
                             }
                         }
                     }
@@ -3297,6 +3471,130 @@ class TouchOverlayView
 
         // -- Radial menu helpers ---------------------------------
 
+        private fun initializeScrollStrip(
+            rm: RadialMenuState,
+            px: Float,
+            py: Float,
+        ) {
+            val rows =
+                if (rm.isWeaponWheel) {
+                    val isPrimary = rm.control.id == "PriWpn"
+                    val weaponRows = weaponStripRows(gameVariant, rm.weaponState, isPrimary)
+                    listOf(weaponRows.main, weaponRows.alternate).map { row ->
+                        row.map { weapon ->
+                            StripItem(
+                                label = weapon.presentation.label,
+                                ammoStatus = weapon.presentation.ammoStatus,
+                                weaponIndex = weapon.weaponIndex,
+                                slotIndex = weapon.slotIndex,
+                            )
+                        }
+                    }
+                } else if (isLockedGuideWheel(rm)) {
+                    listOf(
+                        listOf(
+                            StripItem(
+                                label = "Deploy",
+                                segment =
+                                    RadialSegment(
+                                        label = "Deploy",
+                                        binding = TouchBindings.META_GUIDE_SPAWN,
+                                        bindingType = "action",
+                                    ),
+                            ),
+                        ),
+                    )
+                } else {
+                    listOf(visibleRadialSegments(rm).map { StripItem(label = it.label, segment = it) })
+                }
+            rm.stripRows = rows.filterIndexed { index, row -> index == 0 || row.isNotEmpty() }
+            val currentWeapon =
+                if (rm.control.id == "PriWpn") {
+                    rm.weaponState?.currentPrimary
+                } else {
+                    rm.weaponState?.currentSecondary
+                }
+            val currentSlot = currentWeapon?.rem(5)
+            rm.stripRowInitialIndices =
+                IntArray(rm.stripRows.size) { rowIndex ->
+                    val row = rm.stripRows[rowIndex]
+                    when {
+                        row.isEmpty() -> 0
+                        currentSlot != null -> row.indexOfFirst { it.slotIndex == currentSlot }.takeIf { it >= 0 } ?: 0
+                        else -> rm.lastStripIndex.coerceIn(row.indices)
+                    }
+                }
+            rm.stripRow = 0
+            rm.stripFractionalIndex = rm.stripRowInitialIndices.firstOrNull()?.toFloat() ?: 0f
+            rm.stripMainDelta = 0f
+            rm.stripDownX = px
+            rm.stripDownY = py
+            rm.stripCrossProgress = 0f
+            rm.stripCrossSign = 1f
+            rm.stripGestureArmed = false
+            rm.activeSegment = -1
+        }
+
+        private fun updateScrollStripSelection(
+            rm: RadialMenuState,
+            px: Float,
+            py: Float,
+        ) {
+            val vertical = rm.control.stripOrientation == SliderOrientation.VERTICAL
+            val mainDelta = if (vertical) py - rm.stripDownY else px - rm.stripDownX
+            val crossDelta = if (vertical) px - rm.stripDownX else py - rm.stripDownY
+            rm.stripMainDelta = mainDelta
+            if (crossDelta != 0f) rm.stripCrossSign = sign(crossDelta)
+            if (hypot(px - rm.stripDownX, py - rm.stripDownY) >= touchSlop) {
+                rm.stripGestureArmed = true
+            }
+
+            val hasAlternate = rm.stripRows.getOrNull(1)?.isNotEmpty() == true
+            val rowSwitchDistance = max(rm.triggerRadius * 2.5f, rm.dragHalfSpan * 0.25f)
+            rm.stripCrossProgress =
+                if (hasAlternate) {
+                    (abs(crossDelta) / rowSwitchDistance.coerceAtLeast(1f)).coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+            val previousRow = rm.stripRow
+            if (hasAlternate) {
+                if (rm.stripRow == 0 && rm.stripCrossProgress >= 1f) rm.stripRow = 1
+                if (rm.stripRow == 1 && rm.stripCrossProgress < 0.7f) rm.stripRow = 0
+            }
+
+            val row = rm.stripRows.getOrNull(rm.stripRow).orEmpty()
+            val initial = rm.stripRowInitialIndices.getOrElse(rm.stripRow) { 0 }
+            rm.stripFractionalIndex = scrollStripFractionalIndex(mainDelta, rm.dragHalfSpan, initial, row.size)
+            val previousSegment = rm.activeSegment
+            rm.activeSegment =
+                when {
+                    row.isEmpty() || !rm.stripGestureArmed -> -1
+                    isLockedGuideWheel(rm) && abs(mainDelta) < rm.dragHalfSpan * (2f / 3f) -> -1
+                    else -> rm.stripFractionalIndex.roundToInt().coerceIn(row.indices)
+                }
+            if (previousRow != rm.stripRow || previousSegment != rm.activeSegment) {
+                if (rm.control.hapticFeedback && rm.activeSegment >= 0) {
+                    performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                }
+                invalidate()
+            } else {
+                invalidate()
+            }
+        }
+
+        private fun fireScrollStripSelection(rm: RadialMenuState) {
+            if (!rm.stripGestureArmed) return
+            val row = rm.stripRows.getOrNull(rm.stripRow).orEmpty()
+            val item = row.getOrNull(rm.activeSegment) ?: return
+            rm.lastStripIndex = rm.activeSegment
+            if (item.weaponIndex >= 0) {
+                exactWeaponSelectCallback?.invoke(rm.control.id == "PriWpn", item.weaponIndex)
+            } else {
+                dispatchRadialBinding(item.segment, item.segment?.binding ?: -1)
+            }
+        }
+
         private fun updateRadialSelection(
             rm: RadialMenuState,
             px: Float,
@@ -3407,13 +3705,22 @@ class TouchOverlayView
             fired: Boolean,
         ) {
             if (rm.pointerId >= 0) {
-                if (fired) fireRadialSelection(rm)
+                if (fired) {
+                    if (rm.control.presentation == SelectorPresentation.SCROLL_STRIP) {
+                        fireScrollStripSelection(rm)
+                    } else {
+                        fireRadialSelection(rm)
+                    }
+                }
                 rm.pointerId = -1
                 rm.isOpen = false
                 rm.activeSegment = -1
                 rm.isWeaponWheel = false
                 rm.filteredSegments = emptyList()
                 rm.weaponState = null
+                rm.stripRows = emptyList()
+                rm.stripRowInitialIndices = IntArray(0)
+                rm.stripGestureArmed = false
                 invalidate()
             }
         }

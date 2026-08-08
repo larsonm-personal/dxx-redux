@@ -25,12 +25,14 @@
 #include "game.h"
 #include "hudmsg.h"
 #include "inferno.h"
+#include "input_demo_hooks.h"
 #include "key.h"
 #include "multi.h"
 #include "newdemo.h"
 #include "object.h"
 #include "screens.h"
 #include "state.h"
+#include "weapon.h"
 #include "window.h"
 
 volatile int android_force_quit = 0;
@@ -43,6 +45,7 @@ volatile int android_escort_warp_to_me_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
 volatile int android_rewind_pending = 0;
 volatile int android_coop_restart_level_pending = 0;
+volatile int android_weapon_select_pending = 0;
 extern int HandleSystemKey(int key);
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -448,12 +451,50 @@ int meta_action_dispatch(int action_id, int pressed)
 	return 0;
 }
 
+int android_weapon_select_apply_pending(void)
+{
+	int request = android_weapon_select_pending;
+	int secondary_flag;
+	int weapon_index;
+	int weapon_status;
+
+	if (!request)
+		return 0;
+	android_weapon_select_pending = 0;
+	secondary_flag = (request >> 8) & 1;
+	weapon_index = (request & 0xff) - 1;
+	if (!Game_wind || Screen_mode != SCREEN_GAME || Player_is_dead)
+		return 1;
+	if (weapon_index < 0 ||
+	    (!secondary_flag && weapon_index >= MAX_PRIMARY_WEAPONS) ||
+	    (secondary_flag && weapon_index >= MAX_SECONDARY_WEAPONS))
+		return 1;
+	weapon_status = player_has_weapon(Player_num, weapon_index, secondary_flag);
+	if (!(weapon_status & HAS_WEAPON_FLAG) ||
+	    (secondary_flag && !(weapon_status & HAS_AMMO_FLAG)))
+		return 1;
+	input_demo_record_direct_command_select_weapon_exact(secondary_flag,
+	                                                     weapon_index);
+	select_weapon(weapon_index, secondary_flag, 1, 1);
+	return 1;
+}
+
 /* JNI entry point */
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_NativeMetaActions_nativeMetaAction(
     JNIEnv *env, jclass clazz, jint actionId, jint pressed)
 {
 	return meta_action_dispatch(actionId, pressed);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_NativeMetaActions_nativeSelectWeaponExact(
+    JNIEnv *env, jclass clazz, jint weaponClass, jint weaponIndex)
+{
+	if ((weaponClass != 0 && weaponClass != 1) || weaponIndex < 0 || weaponIndex > 9)
+		return -1;
+	android_weapon_select_pending = (weaponClass << 8) | (weaponIndex + 1);
+	return 0;
 }
 
 #endif /* ANDROID */

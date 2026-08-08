@@ -2,6 +2,7 @@
 
 #include <android/log.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #include "ogl_init.h"
@@ -13,6 +14,18 @@ static void android_ogl_msaa_log(android_ogl_msaa_log_message_fn log_message,
 {
 	if (log_message)
 		log_message(message, log_user_data);
+}
+
+static GLenum android_ogl_msaa_take_error(void)
+{
+	GLenum first = GL_NO_ERROR;
+	GLenum error;
+
+	while ((error = glGetError()) != GL_NO_ERROR) {
+		if (first == GL_NO_ERROR)
+			first = error;
+	}
+	return first;
 }
 
 void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state, int *bound)
@@ -33,6 +46,8 @@ void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state, int *bou
 	}
 	state->w = 0;
 	state->h = 0;
+	state->effective_samples = 0;
+	state->active_frame_serial = 0;
 	if (bound)
 		*bound = 0;
 }
@@ -47,12 +62,18 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
                                 void *log_user_data)
 {
 	GLenum color_fmt;
+	GLenum error;
+	GLenum status;
+	GLint color_samples = 0;
+	GLint depth_samples = 0;
 	char logbuf[160];
 
 	if (!state)
 		return 0;
 
 	android_ogl_msaa_destroy_fbo(state, bound);
+	state->last_create_status = 0;
+	state->last_gl_error = GL_NO_ERROR;
 
 	if (max_samples > 0 && samples > max_samples)
 		samples = max_samples;
@@ -81,15 +102,18 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 		                    rb, gb, bb, ab, color_fmt);
 	}
 
+	android_ogl_msaa_take_error();
 	glGenFramebuffers(1, &state->fbo);
 	glGenRenderbuffers(1, &state->color_rbo);
 	glGenRenderbuffers(1, &state->depth_rbo);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, state->color_rbo);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, color_fmt, w, h);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &color_samples);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, state->depth_rbo);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT16, w, h);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &depth_samples);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, state->fbo);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -97,10 +121,21 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 	                          GL_RENDERBUFFER, state->depth_rbo);
 
-	{
-		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
+	status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	error = android_ogl_msaa_take_error();
+	state->last_create_status = status;
+	state->last_gl_error = error;
+	if (error != GL_NO_ERROR || status != GL_FRAMEBUFFER_COMPLETE ||
+	    color_samples < 2 || depth_samples < 2 || color_samples != depth_samples) {
+		if (error != GL_NO_ERROR) {
+			__android_log_print(ANDROID_LOG_ERROR, "DXX",
+			                    "MSAA FBO create error: error=0x%x samples=%d/%d requested=%d",
+			                    error, color_samples, depth_samples, samples);
+			snprintf(logbuf, sizeof(logbuf),
+			         "MSAA FBO create error: error=0x%x samples=%d/%d requested=%d",
+			         error, color_samples, depth_samples, samples);
+			android_ogl_msaa_log(log_message, log_user_data, logbuf);
+		} else if (status != GL_FRAMEBUFFER_COMPLETE) {
 			__android_log_print(ANDROID_LOG_ERROR, "DXX",
 			                    "MSAA FBO incomplete: status=0x%x samples=%d %dx%d fmt=0x%x",
 			                    status, samples, w, h, color_fmt);
@@ -108,15 +143,22 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 			         "MSAA FBO incomplete: status=0x%x samples=%d size=%dx%d fmt=0x%x",
 			         status, samples, w, h, color_fmt);
 			android_ogl_msaa_log(log_message, log_user_data, logbuf);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			android_ogl_msaa_destroy_fbo(state, bound);
-			return 0;
+		} else {
+			snprintf(logbuf, sizeof(logbuf),
+			         "MSAA FBO invalid effective samples: color=%d depth=%d requested=%d",
+			         color_samples, depth_samples, samples);
+			android_ogl_msaa_log(log_message, log_user_data, logbuf);
 		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		android_ogl_msaa_destroy_fbo(state, bound);
+		return 0;
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	state->w = w;
 	state->h = h;
+	state->effective_samples = color_samples;
+	state->generation++;
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	                    "MSAA FBO created: %dx samples, %dx%d fmt=0x%x", samples, w, h, color_fmt);
 	snprintf(logbuf, sizeof(logbuf), "MSAA FBO created: samples=%d size=%dx%d fmt=0x%x",
@@ -147,9 +189,15 @@ int android_ogl_msaa_begin_frame(struct android_ogl_msaa_state *state,
 			                            w, h, log_message, log_user_data);
 		}
 		if (state->fbo) {
-			color_clear = !*bound;
+			android_ogl_msaa_take_error();
 			glBindFramebuffer(GL_FRAMEBUFFER, state->fbo);
-			*bound = 1;
+			state->last_gl_error = android_ogl_msaa_take_error();
+			if (state->last_gl_error == GL_NO_ERROR) {
+				color_clear = !*bound;
+				*bound = 1;
+				state->bound_frame_count++;
+				state->active_frame_serial = state->bound_frame_count;
+			}
 		}
 	}
 	(*frame_depth)++;
@@ -166,29 +214,60 @@ int android_ogl_msaa_resolve(struct android_ogl_msaa_state *state,
                              int *bound, int frame_depth, int w, int h)
 {
 	struct timespec start, end;
+	GLenum error;
 
 	if (!state || !bound)
 		return 0;
 	if (*bound && frame_depth == 0) {
 		clock_gettime(CLOCK_MONOTONIC, &start);
+		android_ogl_msaa_take_error();
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, state->fbo);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
 		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		{
-			GLenum err = glGetError();
-			if (err != GL_NO_ERROR)
-				__android_log_print(ANDROID_LOG_ERROR, "DXX",
-				                    "MSAA resolve error: 0x%x", err);
-		}
+		error = android_ogl_msaa_take_error();
+		if (error != GL_NO_ERROR)
+			__android_log_print(ANDROID_LOG_ERROR, "DXX",
+			                    "MSAA resolve error: 0x%x", error);
 		*bound = 0;
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if (error == GL_NO_ERROR)
+			error = android_ogl_msaa_take_error();
+		state->last_gl_error = error;
+		if (error == GL_NO_ERROR) {
+			state->resolve_count++;
+			state->last_resolved_frame_serial = state->active_frame_serial;
+		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		return (int) ((end.tv_sec - start.tv_sec) * 1000000 +
 		              (end.tv_nsec - start.tv_nsec) / 1000);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return 0;
+}
+
+void android_ogl_msaa_get_diagnostics(
+    const struct android_ogl_msaa_state *state,
+    struct android_ogl_msaa_diagnostics *diagnostics)
+{
+	if (!diagnostics)
+		return;
+	memset(diagnostics, 0, sizeof(*diagnostics));
+	if (!state)
+		return;
+	diagnostics->effective_samples = state->effective_samples;
+	diagnostics->width = state->w;
+	diagnostics->height = state->h;
+	diagnostics->create_complete =
+	    state->last_create_status == GL_FRAMEBUFFER_COMPLETE && state->fbo != 0;
+	diagnostics->last_frame_resolved =
+	    state->active_frame_serial != 0 &&
+	    state->last_resolved_frame_serial == state->active_frame_serial;
+	diagnostics->last_create_status = state->last_create_status;
+	diagnostics->last_gl_error = state->last_gl_error;
+	diagnostics->generation = state->generation;
+	diagnostics->bound_frame_count = state->bound_frame_count;
+	diagnostics->resolve_count = state->resolve_count;
 }
 
 void android_ogl_msaa_bind_window_backing(

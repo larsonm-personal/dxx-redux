@@ -1,12 +1,13 @@
 // TEST: GOG Installer + Redbook Regression (unified launcher + game)
 //
 // Exercises the full GOG import pipeline:
-//   1. (Launcher) Clear game data, import the selected D2 GOG installer with audio
-//   2. (Launcher) Verify setup introspection: can_launch, audio sources, track names
-//   3. (Launcher) MIDI preview playback verification
-//   4. (Launcher) CD audio preview playback verification
-//   5. (Game) Create pilot, start level 1
-//   6. (Game) Verify redbook playback and overlay entries
+//   1. (Launcher) Clear game data and persisted audio state
+//   2. (Launcher) Import the selected D2 GOG installer with audio
+//   3. (Launcher) Verify setup introspection: can_launch, audio source identity, track names
+//   4. (Launcher) MIDI preview playback verification
+//   5. (Launcher) CD audio preview playback verification
+//   6. (Game) Create pilot, start level 1
+//   7. (Game) Verify redbook playback and overlay entries
 //
 // Supported D2 installer variants:
 //   - Windows: game_data\gog installers\setup_descent_2_1.1_(16596).exe
@@ -59,9 +60,24 @@
 
     {"action": "reset_state"},
 
+    // Persisted audio registration and playlist state survive reset_state and
+    // clear_set, so clear them explicitly before removing the set artifacts
+    {"action": "setup_command", "command": "clear_audio_sources", "post_delay_ms": 1000},
+
     // Clear any existing game data set
     {"action": "setup_command", "command": "clear_set",
      "args": {"name": "default"}, "post_delay_ms": 1000},
+
+    // Prove this run cannot inherit a prior registration, playlist, preview,
+    // or same-path GOG pair before importing the current installer
+    {"action": "assert", "expect": {
+        "audio_source_count": "0",
+        "audio_registry_present": "false",
+        "audio_playlist_present": "false",
+        "has_legacy_gog_audio": "false",
+        "music_preview.midi.state": "stopped",
+        "music_preview.cd.state": "stopped"
+    }},
 
     {"action": "log", "message": "Importing ${INSTALLER_LABEL}"},
 
@@ -81,9 +97,18 @@
         "d2.ready": "true"
     }},
 
-    // Verify GOG audio source registered with correct disc_id
+    // A fresh manager reload must see exactly one source registered by this
+    // import, with the known D2 identity, artifacts, and cue-derived counts
     {"action": "assert", "when": "${AUDIO_CHECKS_WHEN}", "expect": {
-        "audio_sources[0].disc_id": "d2-gog-v1.2"
+        "audio_source_count": "1",
+        "audio_registry_present": "true",
+        "has_legacy_gog_audio": "true",
+        "audio_sources[0].id": "d2-gog-v1.2",
+        "audio_sources[0].disc_id": "d2-gog-v1.2",
+        "audio_sources[0].cue_path": "imported/sets/default/DESCENT_II.inst",
+        "audio_sources[0].bin_paths[0]": "imported/sets/default/DESCENT_II.gog",
+        "audio_sources[0].track_count": "9",
+        "audio_sources[0].audio_track_count": "8"
     }},
 
     // Verify track 4 = "Crawl" (first level music track for D2)
@@ -91,7 +116,7 @@
         "audio_sources[0].track_names.4": "Crawl"
     }},
 
-    {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Audio source verified: disc_id + track names"},
+    {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Fresh audio source registration and track names verified"},
     {"action": "log", "when": "${IMPORT_ONLY_NOTE_WHEN}", "message": "Installer variant completed without redbook-specific checks"},
 
     // ── Phase 2: MIDI preview verification ──────────────────────

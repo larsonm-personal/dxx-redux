@@ -563,6 +563,8 @@ fun TouchEditorPage(
                                     RadialPropertiesPanel(
                                         radial = layout.radialMenus[panelIndex],
                                         gameVariant = gameVariant,
+                                        canvasWidth = canvasWidth,
+                                        canvasHeight = canvasHeight,
                                         onUpdate = { updated ->
                                             layout =
                                                 layout.copy(
@@ -781,15 +783,29 @@ fun TouchEditorPage(
                                 },
                             )
                         }.pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
+                            var dragMovesSelectedControl = false
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    val selected = Pair(selTypeRef.value, selIdxRef.value)
+                                    dragMovesSelectedControl =
+                                        hitTestAll(
+                                            layoutRef.value,
+                                            offset,
+                                            canvasWidth,
+                                            canvasHeight,
+                                        ).contains(selected)
+                                },
+                                onDragEnd = { dragMovesSelectedControl = false },
+                                onDragCancel = { dragMovesSelectedControl = false },
+                            ) { change, dragAmount ->
                                 change.consume()
                                 val st = selTypeRef.value
                                 val si = selIdxRef.value
-                                if (st != null && si >= 0) {
+                                if (dragMovesSelectedControl && st != null && si >= 0) {
                                     val lay = layoutRef.value
                                     val dxPct = (dragAmount.x / canvasWidth) * 100f
                                     val dyPct = (dragAmount.y / canvasHeight) * 100f
-                                    layout = moveControl(lay, st, si, dxPct, dyPct)
+                                    layout = moveControl(lay, st, si, dxPct, dyPct, canvasWidth, canvasHeight)
                                     dirty = true
                                 }
                             }
@@ -904,7 +920,7 @@ fun TouchEditorPage(
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
-            onAddRadial = {
+            onAddRadial = { presentation ->
                 layout =
                     layout.copy(
                         radialMenus =
@@ -913,6 +929,7 @@ fun TouchEditorPage(
                                     id = "menu_${layout.radialMenus.size}",
                                     xPct = addX,
                                     yPct = addY,
+                                    presentation = presentation,
                                     segments =
                                         listOf(
                                             RadialSegment(
@@ -1261,50 +1278,107 @@ private fun drawAllControls(
         val selected = selType == "radial" && selIdx == i
         val alpha = layout.globalOpacity * rm.opacity
 
-        // Ghost wheel extent
-        val n = rm.segments.size
-        if (n > 0) {
-            val segAngle = 360f / n
-            for (seg in 0 until n) {
-                val startDeg = -90f + seg * segAngle
-                scope.drawArc(
-                    color = cRadialSeg.copy(alpha = alpha * 0.3f),
-                    startAngle = startDeg,
-                    sweepAngle = segAngle,
-                    useCenter = true,
-                    topLeft = Offset(cx - wheelR, cy - wheelR),
-                    size =
-                        androidx.compose.ui.geometry
-                            .Size(wheelR * 2, wheelR * 2),
-                )
-                scope.drawArc(
-                    color = cStickRing.copy(alpha = alpha * 0.4f),
-                    startAngle = startDeg,
-                    sweepAngle = segAngle,
-                    useCenter = true,
-                    topLeft = Offset(cx - wheelR, cy - wheelR),
-                    size =
-                        androidx.compose.ui.geometry
-                            .Size(wheelR * 2, wheelR * 2),
-                    style = Stroke(width = 1f),
-                )
-                // Segment label
-                val midRad = Math.toRadians((startDeg + segAngle / 2).toDouble())
-                val lx = cx + cos(midRad).toFloat() * wheelR * 0.65f
-                val ly = cy + sin(midRad).toFloat() * wheelR * 0.65f
-                val segLabel =
-                    textMeasurer.measure(
-                        rm.segments[seg].label.take(5),
-                        style = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha * 0.5f)),
-                    )
-                scope.drawText(
-                    segLabel,
-                    topLeft =
+        if (rm.presentation == SelectorPresentation.SCROLL_STRIP) {
+            val halfSpan = w * rm.stripDragSpanWidthPct / 200f
+            val vertical = rm.stripOrientation == SliderOrientation.VERTICAL
+            val start = if (vertical) Offset(cx, cy - halfSpan) else Offset(cx - halfSpan, cy)
+            val end = if (vertical) Offset(cx, cy + halfSpan) else Offset(cx + halfSpan, cy)
+            scope.drawLine(
+                color = cStickRing.copy(alpha = alpha * 0.7f),
+                start = start,
+                end = end,
+                strokeWidth = 2f,
+            )
+            scope.drawLine(
+                color = cStickRing.copy(alpha = alpha * 0.7f),
+                start =
+                    if (vertical) {
+                        Offset(cx - trigR * 0.3f, cy - halfSpan)
+                    } else {
                         Offset(
-                            lx - segLabel.size.width / 2f,
-                            ly - segLabel.size.height / 2f,
-                        ),
-                )
+                            cx - halfSpan,
+                            cy - trigR * 0.3f,
+                        )
+                    },
+                end =
+                    if (vertical) {
+                        Offset(cx + trigR * 0.3f, cy - halfSpan)
+                    } else {
+                        Offset(
+                            cx - halfSpan,
+                            cy + trigR * 0.3f,
+                        )
+                    },
+                strokeWidth = 2f,
+            )
+            scope.drawLine(
+                color = cStickRing.copy(alpha = alpha * 0.7f),
+                start =
+                    if (vertical) {
+                        Offset(cx - trigR * 0.3f, cy + halfSpan)
+                    } else {
+                        Offset(
+                            cx + halfSpan,
+                            cy - trigR * 0.3f,
+                        )
+                    },
+                end =
+                    if (vertical) {
+                        Offset(cx + trigR * 0.3f, cy + halfSpan)
+                    } else {
+                        Offset(
+                            cx + halfSpan,
+                            cy + trigR * 0.3f,
+                        )
+                    },
+                strokeWidth = 2f,
+            )
+        } else {
+            // Ghost wheel extent
+            val n = rm.segments.size
+            if (n > 0) {
+                val segAngle = 360f / n
+                for (seg in 0 until n) {
+                    val startDeg = -90f + seg * segAngle
+                    scope.drawArc(
+                        color = cRadialSeg.copy(alpha = alpha * 0.3f),
+                        startAngle = startDeg,
+                        sweepAngle = segAngle,
+                        useCenter = true,
+                        topLeft = Offset(cx - wheelR, cy - wheelR),
+                        size =
+                            androidx.compose.ui.geometry
+                                .Size(wheelR * 2, wheelR * 2),
+                    )
+                    scope.drawArc(
+                        color = cStickRing.copy(alpha = alpha * 0.4f),
+                        startAngle = startDeg,
+                        sweepAngle = segAngle,
+                        useCenter = true,
+                        topLeft = Offset(cx - wheelR, cy - wheelR),
+                        size =
+                            androidx.compose.ui.geometry
+                                .Size(wheelR * 2, wheelR * 2),
+                        style = Stroke(width = 1f),
+                    )
+                    // Segment label
+                    val midRad = Math.toRadians((startDeg + segAngle / 2).toDouble())
+                    val lx = cx + cos(midRad).toFloat() * wheelR * 0.65f
+                    val ly = cy + sin(midRad).toFloat() * wheelR * 0.65f
+                    val segLabel =
+                        textMeasurer.measure(
+                            rm.segments[seg].label.take(5),
+                            style = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha * 0.5f)),
+                        )
+                    scope.drawText(
+                        segLabel,
+                        topLeft =
+                            Offset(
+                                lx - segLabel.size.width / 2f,
+                                ly - segLabel.size.height / 2f,
+                            ),
+                    )
+                }
             }
         }
 
@@ -1313,7 +1387,7 @@ private fun drawAllControls(
         if (selected) {
             scope.drawCircle(
                 color = cSelected,
-                radius = wheelR + 4f,
+                radius = if (rm.presentation == SelectorPresentation.SCROLL_STRIP) trigR + 4f else wheelR + 4f,
                 center = Offset(cx, cy),
                 style = Stroke(width = 3f),
             )
@@ -1779,7 +1853,12 @@ internal fun hitTestAll(
     layout.radialMenus.forEachIndexed { i, rm ->
         val cx = canvasWidth * rm.xPct / 100f
         val cy = canvasHeight * rm.yPct / 100f
-        val r = baseScale * 0.14f * rm.sizeMult
+        val r =
+            if (rm.presentation == SelectorPresentation.SCROLL_STRIP) {
+                baseScale * 0.04f * rm.sizeMult
+            } else {
+                baseScale * 0.14f * rm.sizeMult
+            }
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
         if (dist <= r) hits.add(Pair("radial", i))
     }
@@ -1844,6 +1923,8 @@ private fun moveControl(
     index: Int,
     dxPct: Float,
     dyPct: Float,
+    canvasWidth: Float,
+    canvasHeight: Float,
 ): TouchLayout =
     when (type) {
         "stick" -> {
@@ -1872,12 +1953,12 @@ private fun moveControl(
 
         "radial" -> {
             val rm = layout.radialMenus[index]
-            val newX = (rm.xPct + dxPct).coerceIn(5f, 95f)
-            val newY = (rm.yPct + dyPct).coerceIn(5f, 95f)
+            val candidate = rm.copy(xPct = rm.xPct + dxPct, yPct = rm.yPct + dyPct)
+            val clamped = clampRadialEditorPosition(candidate, canvasWidth, canvasHeight)
             layout.copy(
                 radialMenus =
                     layout.radialMenus.toMutableList().also {
-                        it[index] = rm.copy(xPct = newX, yPct = newY)
+                        it[index] = clamped
                     },
             )
         }
@@ -1963,6 +2044,42 @@ private fun moveControl(
             layout
         }
     }
+
+private fun clampRadialEditorPosition(
+    radial: RadialMenuControl,
+    canvasWidth: Float,
+    canvasHeight: Float,
+): RadialMenuControl {
+    if (radial.presentation != SelectorPresentation.SCROLL_STRIP) {
+        return radial.copy(xPct = radial.xPct.coerceIn(5f, 95f), yPct = radial.yPct.coerceIn(5f, 95f))
+    }
+    val vertical = radial.stripOrientation == SliderOrientation.VERTICAL
+    return if (vertical) {
+        radial.copy(
+            xPct = radial.xPct.coerceIn(5f, 95f),
+            yPct =
+                clampScrollStripCenterPct(
+                    radial.yPct,
+                    radial.stripDragSpanWidthPct,
+                    canvasWidth,
+                    canvasHeight,
+                    vertical = true,
+                ),
+        )
+    } else {
+        radial.copy(
+            xPct =
+                clampScrollStripCenterPct(
+                    radial.xPct,
+                    radial.stripDragSpanWidthPct,
+                    canvasWidth,
+                    canvasHeight,
+                    vertical = false,
+                ),
+            yPct = radial.yPct.coerceIn(5f, 95f),
+        )
+    }
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Properties panels
@@ -2440,9 +2557,14 @@ private fun ButtonPropertiesPanel(
 private fun RadialPropertiesPanel(
     radial: RadialMenuControl,
     gameVariant: String = "d2",
+    canvasWidth: Float,
+    canvasHeight: Float,
     onUpdate: (RadialMenuControl) -> Unit,
     onDelete: () -> Unit,
 ) {
+    fun updateRadial(updated: RadialMenuControl) {
+        onUpdate(clampRadialEditorPosition(updated, canvasWidth, canvasHeight))
+    }
     val isPreset = radial.id in TouchBindings.RADIAL_PRESET_IDS
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -2452,6 +2574,69 @@ private fun RadialPropertiesPanel(
         Text("Radial: ${radial.id}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
             Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Layout: ", color = Color.Gray, fontSize = 12.sp)
+        SelectorPresentation.entries.forEach { presentation ->
+            TextButton(onClick = { updateRadial(radial.copy(presentation = presentation)) }) {
+                Text(
+                    if (presentation == SelectorPresentation.WHEEL) "wheel" else "scroll strip",
+                    fontSize = 11.sp,
+                    color = if (radial.presentation == presentation) cSelected else Color.Gray,
+                )
+            }
+        }
+    }
+
+    if (radial.presentation == SelectorPresentation.SCROLL_STRIP) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Drag: ", color = Color.Gray, fontSize = 12.sp)
+            SliderOrientation.entries.forEach { orientation ->
+                TextButton(onClick = { updateRadial(radial.copy(stripOrientation = orientation)) }) {
+                    Text(
+                        orientation.name.lowercase(),
+                        fontSize = 11.sp,
+                        color = if (radial.stripOrientation == orientation) cSelected else Color.Gray,
+                    )
+                }
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LabeledSlider(
+                "Drag area %W",
+                radial.stripDragSpanWidthPct,
+                5f,
+                80f,
+                Modifier.weight(1f),
+            ) {
+                updateRadial(radial.copy(stripDragSpanWidthPct = it))
+            }
+            LabeledSlider(
+                "Center zoom",
+                radial.stripSelectedScale,
+                1f,
+                3f,
+                Modifier.weight(1f),
+            ) {
+                updateRadial(radial.copy(stripSelectedScale = it))
+            }
+        }
+        LabeledSlider(
+            "Label angle",
+            radial.stripLabelAngleDeg,
+            -90f,
+            90f,
+            Modifier.fillMaxWidth(),
+        ) {
+            updateRadial(radial.copy(stripLabelAngleDeg = it))
         }
     }
 
@@ -2517,7 +2702,7 @@ private fun RadialPropertiesPanel(
             TouchBindings.MAX_SIZE,
             Modifier.weight(1f),
         ) {
-            onUpdate(radial.copy(sizeMult = it))
+            updateRadial(radial.copy(sizeMult = it))
         }
         LabeledSlider(
             "Ring",
@@ -2526,7 +2711,7 @@ private fun RadialPropertiesPanel(
             TouchBindings.MAX_SIZE,
             Modifier.weight(1f),
         ) {
-            onUpdate(radial.copy(ringSizeMult = it))
+            updateRadial(radial.copy(ringSizeMult = it))
         }
     }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3339,12 +3524,13 @@ private fun AddControlDialog(
     onDismiss: () -> Unit,
     onAddStick: () -> Unit,
     onAddButton: () -> Unit,
-    onAddRadial: () -> Unit,
+    onAddRadial: (SelectorPresentation) -> Unit,
     onAddSlider: () -> Unit,
     onAddDiagnostic: (DiagnosticType) -> Unit,
     onAddAxisRegion: () -> Unit,
 ) {
     var showInfoSubMenu by remember { mutableStateOf(false) }
+    var showSelectorSubMenu by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Control") },
@@ -3358,8 +3544,25 @@ private fun AddControlDialog(
                     TextButton(onClick = onAddButton, modifier = Modifier.fillMaxWidth()) {
                         Text("Button")
                     }
-                    TextButton(onClick = onAddRadial, modifier = Modifier.fillMaxWidth()) {
-                        Text("Radial Menu")
+                    TextButton(
+                        onClick = { showSelectorSubMenu = !showSelectorSubMenu },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Multi-selector")
+                    }
+                    if (showSelectorSubMenu) {
+                        TextButton(
+                            onClick = { onAddRadial(SelectorPresentation.WHEEL) },
+                            modifier = Modifier.fillMaxWidth().padding(start = 24.dp),
+                        ) {
+                            Text("Wheel")
+                        }
+                        TextButton(
+                            onClick = { onAddRadial(SelectorPresentation.SCROLL_STRIP) },
+                            modifier = Modifier.fillMaxWidth().padding(start = 24.dp),
+                        ) {
+                            Text("Scroll strip")
+                        }
                     }
                     TextButton(onClick = onAddSlider, modifier = Modifier.fillMaxWidth()) {
                         Text("Slider")
