@@ -6,9 +6,9 @@
 
 .DESCRIPTION
     Extracts WAV files from the d2x-xl hires-sounds.7z archive, converts
-    them to raw 8-bit unsigned PCM mono at 22050 Hz (.r22 format), and
-    packages them into .dxa files. The engine's ds_load() function looks
-    for Sounds/{name}.r22 via PhysFS.
+    them to the raw 8-bit unsigned mono format loaded by each game, and
+    packages them into .dxa files. D1 loads 11025 Hz Sounds/{name}.raw;
+    D2 loads 22050 Hz Sounds/{name}.r22 in its configured 22 kHz mode.
 
     For D2: uses the 44khz subdirectory (best quality source) and
     downsamples to 22050 Hz.
@@ -119,13 +119,16 @@ function Read-WavData {
     return $fmt
 }
 
-function Convert-ToR22 {
+function Convert-ToUnsignedMonoPcm {
     <#
     .SYNOPSIS
-        Converts WAV sample data to 8-bit unsigned mono at 22050 Hz.
+        Converts WAV sample data to 8-bit unsigned mono at the requested rate.
         Returns byte array of raw PCM data.
     #>
-    param([hashtable]$Wav)
+    param(
+        [hashtable]$Wav,
+        [int]$TargetRate
+    )
 
     $srcRate = $Wav.SampleRate
     $srcBits = $Wav.BitsPerSample
@@ -135,8 +138,6 @@ function Convert-ToR22 {
     $bytesPerSample = $srcBits / 8
     $frameSize = $bytesPerSample * $srcCh
     $numFrames = $data.Length / $frameSize
-
-    $targetRate = 22050
 
     # Convert to float mono first
     $floatSamples = New-Object double[] $numFrames
@@ -166,7 +167,7 @@ function Convert-ToR22 {
     }
 
     # Resample to target rate using linear interpolation
-    $ratio = $srcRate / $targetRate
+    $ratio = $srcRate / $TargetRate
     $outLen = [int][Math]::Floor($numFrames / $ratio)
     $output = New-Object byte[] $outLen
 
@@ -209,11 +210,13 @@ function Convert-GameSounds {
 
     $dxaName = "${GameId}-hires-sounds.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
+    $soundFormat = Get-D2xxlSoundFormat -GameId $GameId
     $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     Write-Host "=== Converting $GameId sounds ==="
     Write-Host "  Archive: $ArchivePath"
     Write-Host "  Output:  $dxaPath"
+    Write-Host "  Format:  $($soundFormat.SampleRate) Hz $($soundFormat.Extension)"
 
     # Extract
     $extractDir = Join-Path $tempDir "extract"
@@ -255,14 +258,13 @@ function Convert-GameSounds {
         $processed++
         Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $wav.Name
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($wav.Name)
-        # Sound files go in Sounds/ subdirectory with .r22 extension
-        $r22Name = "Sounds/$baseName.r22"
+        $entryName = Get-D2xxlSoundEntryPath -GameId $GameId -BaseName $baseName
 
         try {
             $wavData = Read-WavData $wav.FullName
-            $rawPcm = Convert-ToR22 $wavData
+            $rawPcm = Convert-ToUnsignedMonoPcm -Wav $wavData -TargetRate $soundFormat.SampleRate
 
-            $entry = $zip.CreateEntry($r22Name, [System.IO.Compression.CompressionLevel]::Optimal)
+            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
             $stream = $entry.Open()
             $stream.Write($rawPcm, 0, $rawPcm.Length)
             $stream.Close()

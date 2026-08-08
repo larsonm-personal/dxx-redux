@@ -87,6 +87,34 @@ Original sounds from d2x-xl by ${credits}
 "@
 }
 
+function Get-D2xxlSoundFormat {
+    param([string]$GameId)
+
+    if ($GameId -eq "d1") {
+        return [PSCustomObject]@{
+            SampleRate = 11025
+            Extension = ".raw"
+        }
+    }
+    if ($GameId -eq "d2") {
+        return [PSCustomObject]@{
+            SampleRate = 22050
+            Extension = ".r22"
+        }
+    }
+    throw "Unsupported game ID for sound format: $GameId"
+}
+
+function Get-D2xxlSoundEntryPath {
+    param(
+        [string]$GameId,
+        [string]$BaseName
+    )
+
+    $format = Get-D2xxlSoundFormat -GameId $GameId
+    return "Sounds/$BaseName$($format.Extension)"
+}
+
 function Get-D2xxlTextureEntryPath {
     param(
         [string]$GameId,
