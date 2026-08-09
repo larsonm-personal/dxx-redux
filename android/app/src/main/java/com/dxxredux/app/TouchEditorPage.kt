@@ -1481,24 +1481,33 @@ private fun drawAllControls(
         val boxH = baseScale * 0.06f * d.sizeMult
         val selected = selType == "diagnostic" && selIdx == i
         val alpha = layout.globalOpacity * d.opacity
+        val musicGeometry =
+            if (d.type == DiagnosticType.MUSIC) {
+                musicDiagnosticGeometry(cx, cy, min(w, h), d.sizeMult)
+            } else {
+                null
+            }
+        val previewLeft = musicGeometry?.buttonGroupLeft ?: (cx - boxW / 2f)
+        val previewTop = musicGeometry?.buttonGroupTop ?: (cy - boxH / 2f)
+        val previewWidth = musicGeometry?.let { it.buttonGroupRight - it.buttonGroupLeft } ?: boxW
+        val previewHeight = musicGeometry?.let { it.buttonGroupBottom - it.buttonGroupTop } ?: boxH
 
         scope.drawRoundRect(
             color = Color(0x44000000).copy(alpha = alpha * 0.4f),
-            topLeft = Offset(cx - boxW / 2, cy - boxH / 2),
+            topLeft = Offset(previewLeft, previewTop),
             size =
                 androidx.compose.ui.geometry
-                    .Size(boxW, boxH),
+                    .Size(previewWidth, previewHeight),
             cornerRadius = CornerRadius(4f, 4f),
         )
         val lineStyle = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha))
         if (d.type == DiagnosticType.MUSIC) {
             // Music control preview -- match in-game TouchOverlayView formulas
-            val musicBase = min(w, h)
-            val btnR = musicBase * 0.03f * d.sizeMult
-            val diagTs = musicBase * 0.025f
-            val btnY = cy
-            val prevCX = cx + btnR + diagTs * 0.5f
-            val nextCX = prevCX + btnR * 2 + musicBase * 0.02f * d.sizeMult
+            val geometry = checkNotNull(musicGeometry)
+            val btnR = geometry.buttonRadius
+            val btnY = geometry.buttonY
+            val prevCX = geometry.previousButtonX
+            val nextCX = geometry.nextButtonX
             scope.drawCircle(
                 color = cButton.copy(alpha = alpha * 0.5f),
                 radius = btnR,
@@ -1529,8 +1538,7 @@ private fun drawAllControls(
                     ),
             )
             val trackLabel = textMeasurer.measure("\u266B Track Name", style = lineStyle)
-            val labelX = nextCX + btnR + musicBase * 0.02f * d.sizeMult
-            scope.drawText(trackLabel, topLeft = Offset(labelX, btnY - trackLabel.size.height / 2f))
+            scope.drawText(trackLabel, topLeft = Offset(geometry.labelX, btnY - trackLabel.size.height / 2f))
         } else if (d.type == DiagnosticType.SETTINGS) {
             // Settings grid icon: draw a small 3x3 dot grid
             val dotR = baseScale * 0.004f * d.sizeMult
@@ -1558,10 +1566,10 @@ private fun drawAllControls(
         if (selected) {
             scope.drawRoundRect(
                 color = cSelected,
-                topLeft = Offset(cx - boxW / 2 - 2f, cy - boxH / 2 - 2f),
+                topLeft = Offset(previewLeft - 2f, previewTop - 2f),
                 size =
                     androidx.compose.ui.geometry
-                        .Size(boxW + 4f, boxH + 4f),
+                        .Size(previewWidth + 4f, previewHeight + 4f),
                 cornerRadius = CornerRadius(4f, 4f),
                 style = Stroke(width = 3f),
             )
@@ -1799,6 +1807,7 @@ internal fun hitTestAll(
 ): List<Pair<String, Int>> {
     val baseScale = sqrt(canvasWidth * canvasHeight)
     val hits = mutableListOf<Pair<String, Int>>()
+    val regionHits = mutableListOf<Pair<String, Int>>()
     val edgeHitSlopPx = defaultTouchEditorEdgeHitSlopPx(baseScale * 0.04f)
 
     // Check buttons first (smaller targets, should take priority)
@@ -1826,7 +1835,7 @@ internal fun hitTestAll(
     layout.sticks.forEachIndexed { i, stick ->
         if (!stick.floating && !stick.mouseMode) return@forEachIndexed
         addFloatingZoneEdgeHits(
-            hits = hits,
+            hits = regionHits,
             selectionType = SELECTED_TYPE_STICK_ZONE_EDGE,
             controlIndex = i,
             zone = stick.floatingZone,
@@ -1838,7 +1847,7 @@ internal fun hitTestAll(
     }
     layout.axisRegions.forEachIndexed { i, ar ->
         addFloatingZoneEdgeHits(
-            hits = hits,
+            hits = regionHits,
             selectionType = SELECTED_TYPE_AXIS_REGION_EDGE,
             controlIndex = i,
             zone = ar.zone,
@@ -1884,13 +1893,13 @@ internal fun hitTestAll(
             val top = canvasHeight * fz.topPct / 100f
             val right = canvasWidth * fz.rightPct / 100f
             val bottom = canvasHeight * fz.bottomPct / 100f
-            if (offset.x in left..right && offset.y in top..bottom) hits.add(Pair("stick", i))
+            if (offset.x in left..right && offset.y in top..bottom) regionHits.add(Pair("stick", i))
         } else {
             val cx = canvasWidth * stick.xPct / 100f
             val cy = canvasHeight * stick.yPct / 100f
             val r = baseScale * 0.12f * stick.sizeMult
             val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
-            if (dist <= r) hits.add(Pair("stick", i))
+            if (dist <= r) regionHits.add(Pair("stick", i))
         }
     }
 
@@ -1898,9 +1907,17 @@ internal fun hitTestAll(
     layout.diagnostics.forEachIndexed { i, d ->
         val cx = canvasWidth * d.xPct / 100f
         val cy = canvasHeight * d.yPct / 100f
-        val r = baseScale * 0.06f * d.sizeMult
-        val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
-        if (dist <= r) hits.add(Pair("diagnostic", i))
+        val hit =
+            if (d.type == DiagnosticType.MUSIC) {
+                val geometry = musicDiagnosticGeometry(cx, cy, min(canvasWidth, canvasHeight), d.sizeMult)
+                offset.x in geometry.buttonGroupLeft..geometry.buttonGroupRight &&
+                    offset.y in geometry.buttonGroupTop..geometry.buttonGroupBottom
+            } else {
+                val r = baseScale * 0.06f * d.sizeMult
+                val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
+                dist <= r
+            }
+        if (hit) hits.add(Pair("diagnostic", i))
     }
 
     // Check axis regions
@@ -1910,10 +1927,11 @@ internal fun hitTestAll(
         val top = canvasHeight * z.topPct / 100f
         val right = canvasWidth * z.rightPct / 100f
         val bottom = canvasHeight * z.bottomPct / 100f
-        if (offset.x in left..right && offset.y in top..bottom) hits.add(Pair("axisRegion", i))
+        if (offset.x in left..right && offset.y in top..bottom) regionHits.add(Pair("axisRegion", i))
     }
 
-    return hits
+    // Broad stick and drag regions sit behind discrete controls in the editor.
+    return hits.ifEmpty { regionHits }
 }
 
 /** Returns a new layout with the specified control moved by (dxPct, dyPct). */

@@ -110,4 +110,64 @@ class TouchEditorZoneEdgeTest {
 
         assertTrue(hits.contains("moreActions" to 0))
     }
+
+    @Test
+    fun scrollStripTakesPriorityOverOverlappingStickRegion() {
+        val layout =
+            TouchLayout(
+                sticks =
+                    listOf(
+                        AnalogStickControl(
+                            id = "stick0",
+                            xPct = 50f,
+                            yPct = 50f,
+                            axisX = 0,
+                            axisY = 1,
+                            mouseMode = true,
+                            floatingZone = FloatingZone(leftPct = 20f, topPct = 20f, rightPct = 80f, bottomPct = 80f),
+                        ),
+                    ),
+                radialMenus =
+                    listOf(
+                        RadialMenuControl(
+                            id = "guidebot",
+                            xPct = 50f,
+                            yPct = 50f,
+                            segments = listOf(RadialSegment("Guidebot", 0)),
+                            presentation = SelectorPresentation.SCROLL_STRIP,
+                        ),
+                    ),
+            )
+
+        val hits = hitTestAll(layout, Offset(500f, 500f), canvasWidth = 1000f, canvasHeight = 1000f)
+
+        assertEquals(listOf("radial" to 0), hits)
+    }
+
+    @Test
+    fun buttonTakesPriorityOverOverlappingAxisRegion() {
+        val layout =
+            TouchLayout(
+                buttons =
+                    listOf(
+                        ButtonControl(
+                            id = "button0",
+                            xPct = 50f,
+                            yPct = 50f,
+                            binding = TouchBindings.BTN_FIRE_PRIMARY,
+                        ),
+                    ),
+                axisRegions =
+                    listOf(
+                        AxisRegionControl(
+                            id = "region0",
+                            zone = FloatingZone(leftPct = 20f, topPct = 20f, rightPct = 80f, bottomPct = 80f),
+                        ),
+                    ),
+            )
+
+        val hits = hitTestAll(layout, Offset(500f, 500f), canvasWidth = 1000f, canvasHeight = 1000f)
+
+        assertEquals(listOf("button" to 0), hits)
+    }
 }

@@ -975,16 +975,14 @@ class TouchOverlayView
                     }
 
                     DiagnosticType.MUSIC -> {
-                        val r = base * 0.03f * d.control.sizeMult
-                        d.musicBtnR = r
-                        d.musicBtnY = d.centerY
-                        // Left-align: centerX is the left edge of the control
-                        d.musicPrevCX = d.centerX + r + diagTextSize * 0.5f
-                        d.musicNextCX = d.musicPrevCX + r * 2 + base * 0.02f * d.control.sizeMult
-                        d.musicLabelX = d.musicNextCX + r + base * 0.02f * d.control.sizeMult
-                        d.width = (d.musicLabelX - d.centerX) +
-                            paintDiagText.measureText("Track 00/00: xxxxxxxx") + diagTextSize
-                        d.height = r * 3f
+                        val geometry = musicDiagnosticGeometry(d.centerX, d.centerY, base, d.control.sizeMult)
+                        d.musicBtnR = geometry.buttonRadius
+                        d.musicBtnY = geometry.buttonY
+                        d.musicPrevCX = geometry.previousButtonX
+                        d.musicNextCX = geometry.nextButtonX
+                        d.musicLabelX = geometry.labelX
+                        d.width = geometry.buttonGroupRight - geometry.buttonGroupLeft
+                        d.height = geometry.buttonGroupBottom - geometry.buttonGroupTop
                     }
 
                     DiagnosticType.SETTINGS -> {
