@@ -23,6 +23,7 @@ int main(void)
 	uint8_t model[64];
 	uint8_t rle[] = { 13, 0, 0, 0, 3, 4, 0xe3, 7, 0xe0, 1, 2, 3, 0xe0 };
 	uint8_t colormap[256];
+	uint8_t sound_map[] = { 0, 4, 255 };
 	size_t remapped_size;
 
 	CHECK(d1_pig_validate_span(100, 20, 80));
@@ -32,6 +33,12 @@ int main(void)
 	CHECK(d1_pig_validate_arena(132, 100, 32));
 	CHECK(!d1_pig_validate_arena(131, 100, 32));
 	CHECK(!d1_pig_validate_arena(100, -1, 0));
+	CHECK(d1_pig_validate_sound_map(sound_map, sizeof(sound_map), 5));
+	CHECK(!d1_pig_validate_sound_map(sound_map, sizeof(sound_map), 4));
+	CHECK(d1_pig_validate_timed_clip(1, 30, 1, 1));
+	CHECK(!d1_pig_validate_timed_clip(0, 30, 1, 1));
+	CHECK(!d1_pig_validate_timed_clip(31, 30, 1, 1));
+	CHECK(!d1_pig_validate_timed_clip(1, 30, 0, 1));
 	memset(colormap, 0, sizeof(colormap));
 	CHECK(d1_pig_validate_rle(rle, sizeof(rle), 3, 2, 0));
 	CHECK(d1_pig_measure_remapped_rle(rle, sizeof(rle), 3, 2, 0, colormap, &remapped_size));

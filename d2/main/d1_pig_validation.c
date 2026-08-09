@@ -125,6 +125,23 @@ int d1_pig_valid_optional_model_index(int index, int model_count)
 	return index == -1 || d1_pig_valid_model_index(index, model_count);
 }
 
+int d1_pig_validate_sound_map(const uint8_t *map, size_t count, int sound_count)
+{
+	size_t i;
+
+	if (!map || sound_count < 0 || sound_count > 256)
+		return 0;
+	for (i = 0; i < count; i++)
+		if (map[i] != 255 && map[i] >= sound_count)
+			return 0;
+	return 1;
+}
+
+int d1_pig_validate_timed_clip(int frame_count, int frame_capacity, int play_time, int frame_time)
+{
+	return frame_count > 0 && frame_count <= frame_capacity && play_time > 0 && frame_time > 0;
+}
+
 static int d1_model_word_at(const uint8_t *data, size_t size, size_t offset, uint16_t *value)
 {
 	if (!data || !value || offset > size || size - offset < sizeof(*value))

@@ -894,13 +894,16 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	d1_custom_remove();
 	if (EMULATING_D1) {
+		if (!d1_in_d2_validate_assets())
+			Error("Cannot load D1 assets: invalid %s in descent.pig", d1_in_d2_asset_validation_error());
+		if (!d1_in_d2_apply_sounds(1))
+			Error("Cannot load D1 assets: invalid %s", d1_in_d2_sound_validation_error());
 		d1_in_d2_prepare_guidebot_assets();
 		load_d1_bitmap_replacements();
 		d1_in_d2_apply_effects(1);
 		d1_in_d2_apply_powerup_vclips(1);
 		d1_in_d2_apply_wall_anims(1);
 		d1_in_d2_apply_cockpit(1);
-		d1_in_d2_apply_sounds(1);
 		d1_custom_load_data(level_name);
 	} else {
 		d1_in_d2_apply_robot_assets(0);

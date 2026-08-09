@@ -8,6 +8,6 @@
 - [x] Add focused malformed-PIG and aggregate-capacity regression coverage
 - [x] Run scoped formatting, focused tests, Android builds, and paired host validation
 - [x] Move completed findings to the done ledger with resolution evidence
-- [ ] Mark this plan complete
+- [x] Mark this plan complete
 
-BR-0366 is complete. BR-0365 remains open: robot/model structural preflight is implemented and validated on the same PIG handle before live mutation, but sound/effect/vclip validation, typed launch failure propagation, and fully transactional publication still remain.
+BR-0365 and BR-0366 are complete. D1-in-D2 now validates and stages the property, model, robot, weapon, effect, vclip, bitmap-reference, and sound generations before publication, reports the failing asset section at launch, and preserves sparse retail vclip and logical alternate-sound-map semantics.
