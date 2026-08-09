@@ -363,6 +363,9 @@ fun TouchEditorPage(
         )
     val coroutineScope = rememberCoroutineScope()
     val isPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
+    val targetOverlayBounds = activity?.windowManager?.currentWindowMetrics?.bounds
+    val targetOverlayWidth = targetOverlayBounds?.width()?.toFloat()?.takeIf { it > 0f } ?: canvasWidth
+    val targetOverlayHeight = targetOverlayBounds?.height()?.toFloat()?.takeIf { it > 0f } ?: canvasHeight
     val density = LocalDensity.current
     var toolbarHeightPx by remember { mutableIntStateOf(0) }
     val measuredToolbarPeekHeight =
@@ -712,6 +715,8 @@ fun TouchEditorPage(
         val layoutRef = rememberUpdatedState(layout)
         val selTypeRef = rememberUpdatedState(selectedType)
         val selIdxRef = rememberUpdatedState(selectedIndex)
+        val targetOverlayWidthRef = rememberUpdatedState(targetOverlayWidth)
+        val targetOverlayHeightRef = rememberUpdatedState(targetOverlayHeight)
 
         Box(modifier = Modifier.fillMaxSize()) {
             Canvas(
@@ -722,7 +727,15 @@ fun TouchEditorPage(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = { offset ->
-                                    val hits = hitTestAll(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                    val hits =
+                                        hitTestAll(
+                                            layoutRef.value,
+                                            offset,
+                                            canvasWidth,
+                                            canvasHeight,
+                                            targetOverlayWidthRef.value,
+                                            targetOverlayHeightRef.value,
+                                        )
                                     if (hits.isEmpty()) {
                                         selectedType = null
                                         selectedIndex = -1
@@ -769,7 +782,15 @@ fun TouchEditorPage(
                                     }
                                 },
                                 onLongPress = { offset ->
-                                    val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                    val hit =
+                                        hitTest(
+                                            layoutRef.value,
+                                            offset,
+                                            canvasWidth,
+                                            canvasHeight,
+                                            targetOverlayWidthRef.value,
+                                            targetOverlayHeightRef.value,
+                                        )
                                     if (hit != null) {
                                         // Long-press on control → select & expand bottom sheet
                                         selectedType = hit.first
@@ -793,6 +814,8 @@ fun TouchEditorPage(
                                             offset,
                                             canvasWidth,
                                             canvasHeight,
+                                            targetOverlayWidthRef.value,
+                                            targetOverlayHeightRef.value,
                                         ).contains(selected)
                                 },
                                 onDragEnd = { dragMovesSelectedControl = false },
@@ -814,7 +837,18 @@ fun TouchEditorPage(
                 canvasWidth = size.width
                 canvasHeight = size.height
                 drawGrid(this)
-                drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer, gyroYaw, gyroPitch, gyroRoll)
+                drawAllControls(
+                    this,
+                    layout,
+                    selectedType,
+                    selectedIndex,
+                    textMeasurer,
+                    targetOverlayWidth,
+                    targetOverlayHeight,
+                    gyroYaw,
+                    gyroPitch,
+                    gyroRoll,
+                )
             }
         }
     }
@@ -1057,6 +1091,8 @@ private fun drawAllControls(
     selType: String?,
     selIdx: Int,
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    targetSurfaceWidth: Float,
+    targetSurfaceHeight: Float,
     gyroYaw: Float = 0f,
     gyroPitch: Float = 0f,
     gyroRoll: Float = 0f,
@@ -1483,7 +1519,7 @@ private fun drawAllControls(
         val alpha = layout.globalOpacity * d.opacity
         val musicGeometry =
             if (d.type == DiagnosticType.MUSIC) {
-                musicDiagnosticGeometry(cx, cy, min(w, h), d.sizeMult)
+                musicDiagnosticGeometry(cx, cy, targetSurfaceWidth, targetSurfaceHeight, d.sizeMult)
             } else {
                 null
             }
@@ -1518,8 +1554,24 @@ private fun drawAllControls(
                 radius = btnR,
                 center = Offset(nextCX, btnY),
             )
-            val arrowStyle = TextStyle(fontSize = 6.sp, color = cButtonLabel.copy(alpha = alpha))
-            val prevArrow = textMeasurer.measure("\u25C4", style = arrowStyle)
+            scope.drawCircle(
+                color = cButtonLabel.copy(alpha = alpha * 0.4f),
+                radius = btnR,
+                center = Offset(prevCX, btnY),
+                style = Stroke(width = 3f),
+            )
+            scope.drawCircle(
+                color = cButtonLabel.copy(alpha = alpha * 0.4f),
+                radius = btnR,
+                center = Offset(nextCX, btnY),
+                style = Stroke(width = 3f),
+            )
+            val arrowStyle =
+                TextStyle(
+                    fontSize = with(scope) { geometry.arrowTextSize.toSp() },
+                    color = cButtonLabel.copy(alpha = alpha),
+                )
+            val prevArrow = textMeasurer.measure(MUSIC_PREVIOUS_GLYPH, style = arrowStyle)
             scope.drawText(
                 prevArrow,
                 topLeft =
@@ -1528,7 +1580,7 @@ private fun drawAllControls(
                         btnY - prevArrow.size.height / 2f,
                     ),
             )
-            val nextArrow = textMeasurer.measure("\u25BA", style = arrowStyle)
+            val nextArrow = textMeasurer.measure(MUSIC_NEXT_GLYPH, style = arrowStyle)
             scope.drawText(
                 nextArrow,
                 topLeft =
@@ -1537,7 +1589,14 @@ private fun drawAllControls(
                         btnY - nextArrow.size.height / 2f,
                     ),
             )
-            val trackLabel = textMeasurer.measure("\u266B Track Name", style = lineStyle)
+            val trackLabel =
+                textMeasurer.measure(
+                    "\u266B Track Name",
+                    style =
+                        lineStyle.copy(
+                            fontSize = with(scope) { geometry.labelTextSize.toSp() },
+                        ),
+                )
             scope.drawText(trackLabel, topLeft = Offset(geometry.labelX, btnY - trackLabel.size.height / 2f))
         } else if (d.type == DiagnosticType.SETTINGS) {
             // Settings grid icon: draw a small 3x3 dot grid
@@ -1793,8 +1852,10 @@ private fun hitTest(
     offset: Offset,
     canvasWidth: Float,
     canvasHeight: Float,
+    targetSurfaceWidth: Float = canvasWidth,
+    targetSurfaceHeight: Float = canvasHeight,
 ): Pair<String, Int>? {
-    val all = hitTestAll(layout, offset, canvasWidth, canvasHeight)
+    val all = hitTestAll(layout, offset, canvasWidth, canvasHeight, targetSurfaceWidth, targetSurfaceHeight)
     return all.firstOrNull()
 }
 
@@ -1804,6 +1865,8 @@ internal fun hitTestAll(
     offset: Offset,
     canvasWidth: Float,
     canvasHeight: Float,
+    targetSurfaceWidth: Float = canvasWidth,
+    targetSurfaceHeight: Float = canvasHeight,
 ): List<Pair<String, Int>> {
     val baseScale = sqrt(canvasWidth * canvasHeight)
     val hits = mutableListOf<Pair<String, Int>>()
@@ -1909,7 +1972,8 @@ internal fun hitTestAll(
         val cy = canvasHeight * d.yPct / 100f
         val hit =
             if (d.type == DiagnosticType.MUSIC) {
-                val geometry = musicDiagnosticGeometry(cx, cy, min(canvasWidth, canvasHeight), d.sizeMult)
+                val geometry =
+                    musicDiagnosticGeometry(cx, cy, targetSurfaceWidth, targetSurfaceHeight, d.sizeMult)
                 offset.x in geometry.buttonGroupLeft..geometry.buttonGroupRight &&
                     offset.y in geometry.buttonGroupTop..geometry.buttonGroupBottom
             } else {

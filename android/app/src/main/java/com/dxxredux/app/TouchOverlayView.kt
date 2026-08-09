@@ -328,6 +328,8 @@ class TouchOverlayView
             var musicNextCX = 0f
             var musicBtnY = 0f
             var musicBtnR = 0f
+            var musicArrowTextSize = 0f
+            var musicLabelTextSize = 0f
             var musicLabelX = 0f
             var musicPrevPid = -1
             var musicNextPid = -1
@@ -975,8 +977,10 @@ class TouchOverlayView
                     }
 
                     DiagnosticType.MUSIC -> {
-                        val geometry = musicDiagnosticGeometry(d.centerX, d.centerY, base, d.control.sizeMult)
+                        val geometry = musicDiagnosticGeometry(d.centerX, d.centerY, wf, hf, d.control.sizeMult)
                         d.musicBtnR = geometry.buttonRadius
+                        d.musicArrowTextSize = geometry.arrowTextSize
+                        d.musicLabelTextSize = geometry.labelTextSize
                         d.musicBtnY = geometry.buttonY
                         d.musicPrevCX = geometry.previousButtonX
                         d.musicNextCX = geometry.nextButtonX
@@ -2104,13 +2108,13 @@ class TouchOverlayView
 
             // Arrow glyphs
             val savedSize = paintBtnLabel.textSize
-            paintBtnLabel.textSize = r * 0.9f
+            paintBtnLabel.textSize = d.musicArrowTextSize
             paintBtnLabel.alpha = (0xAA * eff).toInt()
-            canvas.drawText("\u25C0", d.musicPrevCX, y + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-            canvas.drawText("\u25B6", d.musicNextCX, y + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            canvas.drawText(MUSIC_PREVIOUS_GLYPH, d.musicPrevCX, y + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            canvas.drawText(MUSIC_NEXT_GLYPH, d.musicNextCX, y + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
 
             // Track label
-            paintBtnLabel.textSize = r * 0.7f
+            paintBtnLabel.textSize = d.musicLabelTextSize
             val labelPaint =
                 Paint(paintBtnLabel).apply {
                     textAlign = Paint.Align.LEFT
