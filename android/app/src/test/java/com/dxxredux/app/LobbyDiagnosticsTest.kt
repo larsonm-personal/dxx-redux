@@ -3,6 +3,7 @@ package com.dxxredux.app
 import com.dxxredux.app.lobby.LAN_BROADCAST_FAILURE_DIAGNOSTIC
 import com.dxxredux.app.lobby.LanPlayer
 import com.dxxredux.app.lobby.lanDiagnosticAfterBroadcastRecovery
+import com.dxxredux.app.lobby.lanLobbyHasClientIdConflict
 import com.dxxredux.app.lobby.lanPlayerMatchesJoinIdentity
 import com.dxxredux.app.lobby.lanPlayerMatchesSender
 import com.dxxredux.app.lobby.refreshLanPlayerLeasesAfterResume
@@ -63,6 +64,19 @@ class LobbyDiagnosticsTest {
         assertFalse(lanPlayerMatchesSender(joiner, "Wing", "wing-id", "192.168.1.21"))
         assertTrue(lanPlayerMatchesJoinIdentity(joiner, "Wing", "wing-id", "192.168.1.21"))
         assertFalse(lanPlayerMatchesSender(joiner, "Host", "host-id", "192.168.1.20"))
+    }
+
+    @Test
+    fun lanLobbyHasClientIdConflict_rejectsCopiedIdentityButAllowsReconnect() {
+        val players =
+            listOf(
+                LanPlayer("Host", "127.0.0.1", "host-id", ready = true),
+                LanPlayer("Wing", "192.168.1.20", "copied-id", ready = true),
+            )
+
+        assertTrue(lanLobbyHasClientIdConflict(players, "Other", "copied-id"))
+        assertFalse(lanLobbyHasClientIdConflict(players, "wing", "copied-id"))
+        assertFalse(lanLobbyHasClientIdConflict(players, "Other", null))
     }
 
     @Test

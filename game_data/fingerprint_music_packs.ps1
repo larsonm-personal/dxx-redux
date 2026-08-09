@@ -27,6 +27,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
 . "$repoRoot\android\helpers\atomic_text_file.ps1"
+. "$repoRoot\android\helpers\fingerprint_source_identity.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
 
@@ -191,6 +192,37 @@ if ($Album) {
     }
 }
 
+$archiveIdentities = @($archives | ForEach-Object {
+    $name = $_.BaseName
+    if ($name -match '^(.+?) - ') { $name = $Matches[1] }
+    [PSCustomObject]@{
+        Archive = $_
+        AlbumName = $name
+        PortableKey = Get-DxxPortableSourceNameKey -Name $name
+        SourceId = ConvertTo-DxxFingerprintSourceId -Name $name
+    }
+})
+$archiveAlbumNames = [Collections.Generic.Dictionary[string,string]]::new(
+    [StringComparer]::Ordinal
+)
+$sourceIdGroups = @{}
+foreach ($portableGroup in @($archiveIdentities | Group-Object PortableKey)) {
+    $canonicalName = [string]$portableGroup.Group[0].AlbumName
+    foreach ($identity in $portableGroup.Group) {
+        if ([StringComparer]::Ordinal.Compare([string]$identity.AlbumName, $canonicalName) -lt 0) {
+            $canonicalName = [string]$identity.AlbumName
+        }
+    }
+    $sourceId = ConvertTo-DxxFingerprintSourceId -Name $canonicalName
+    if ($sourceIdGroups.ContainsKey($sourceId)) {
+        throw "Archive album ID collision '$sourceId' between '$($sourceIdGroups[$sourceId])' and '$canonicalName'"
+    }
+    $sourceIdGroups[$sourceId] = $canonicalName
+    foreach ($identity in $portableGroup.Group) {
+        $archiveAlbumNames.Add([string]$identity.Archive.FullName, $canonicalName)
+    }
+}
+
 Write-Host "Found $($archives.Count) archive(s) to process"
 
 # ── Process each archive ───────────────────────────────────────────
@@ -199,12 +231,7 @@ $cleanedAlbumDirs = @{}
 
 foreach ($archive in $archives) {
     $filename = $archive.Name
-    # Parse album name: text before first " - "
-    if ($filename -match '^(.+?) - ') {
-        $albumName = $Matches[1]
-    } else {
-        $albumName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
-    }
+    $albumName = $archiveAlbumNames[[string]$archive.FullName]
 
     Write-Host "`n=== $albumName ==="
     $albumDir = Join-Path $musicDir $albumName

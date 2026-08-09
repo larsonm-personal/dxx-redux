@@ -53,6 +53,7 @@ void android_profile_remote_robot_live(int objnum, int signature,
 void android_profile_set_scene_object_counts(int active_objects,
                                              int projectile_objects,
                                              int reactor_objects);
+void android_profile_resume(void);
 void android_profile_set_slowdown_capture_enabled(int enabled);
 void android_profile_bucket_begin(int bucket);
 void android_profile_bucket_end(int bucket);
@@ -89,6 +90,7 @@ void android_profile_flush(void);
 #define android_profile_remote_robot_update(objnum, signature)                                                                                  ((void) 0)
 #define android_profile_remote_robot_live(objnum, signature, remote_owned)                                                                      ((void) 0)
 #define android_profile_set_scene_object_counts(active_objects, projectile_objects, reactor_objects)                                            ((void) 0)
+#define android_profile_resume()                                                                                                                ((void) 0)
 #define android_profile_set_slowdown_capture_enabled(enabled)                                                                                   ((void) 0)
 #define android_profile_bucket_begin(bucket)                                                                                                    ((void) 0)
 #define android_profile_bucket_end(bucket)                                                                                                      ((void) 0)

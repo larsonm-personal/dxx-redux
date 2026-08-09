@@ -133,7 +133,7 @@
       "stripOrientation": "HORIZONTAL",
       "stripDragSpanWidthPct": 20.0,
       "stripLabelAngleDeg": 0.0,
-      "stripSelectedScale": 2.0,
+      "stripSelectedScale": 2.6,
       "opacity": 0.7,
       "segments": [
         { "label": "Energy", "binding": "Meta: GB: Find Energy", "iconRes": "" },
@@ -165,7 +165,7 @@
       "stripOrientation": "HORIZONTAL",
       "stripDragSpanWidthPct": 20.0,
       "stripLabelAngleDeg": 0.0,
-      "stripSelectedScale": 2.0,
+      "stripSelectedScale": 2.6,
       "opacity": 0.7,
       "segments": [
         { "label": "Laser", "binding": "Slide Up", "iconRes": "", "wpnIdx": 0 },
@@ -187,7 +187,7 @@
       "stripOrientation": "HORIZONTAL",
       "stripDragSpanWidthPct": 20.0,
       "stripLabelAngleDeg": 0.0,
-      "stripSelectedScale": 2.0,
+      "stripSelectedScale": 2.6,
       "opacity": 0.7,
       "segments": [
         { "label": "Concsn", "binding": "KEYCODE_6", "iconRes": "", "wpnIdx": 0 },

@@ -106,11 +106,14 @@ struct android_slowdown_detector {
 	int32_t slow_windows;
 	int32_t state;
 	int32_t trigger_severe;
+	int32_t suppress_next_frame;
 };
 
 void android_slowdown_detector_init(struct android_slowdown_detector *detector);
 void android_slowdown_detector_set_enabled(struct android_slowdown_detector *detector,
                                            int enabled);
+void android_slowdown_detector_suppress_next_frame(
+    struct android_slowdown_detector *detector);
 int android_slowdown_detector_feed(struct android_slowdown_detector *detector,
                                    const struct android_slowdown_frame *frame);
 int android_slowdown_detector_ring_count(const struct android_slowdown_detector *detector);

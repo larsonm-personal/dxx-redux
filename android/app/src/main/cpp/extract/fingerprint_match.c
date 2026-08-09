@@ -337,10 +337,12 @@ int main(int argc, char **argv)
 				print_escaped(stdout, s_entries[i].disc_id);
 				printf(", \"a_track\": %d, \"a_name\": ", s_entries[i].track_num);
 				print_escaped(stdout, s_entries[i].name);
+				printf(", \"a_duration_ms\": %d", s_entries[i].duration_ms);
 				printf(", \"b_disc\": ");
 				print_escaped(stdout, s_entries[j].disc_id);
 				printf(", \"b_track\": %d, \"b_name\": ", s_entries[j].track_num);
 				print_escaped(stdout, s_entries[j].name);
+				printf(", \"b_duration_ms\": %d", s_entries[j].duration_ms);
 				printf(", \"score\": %.4f}", score);
 				dup_count++;
 			}

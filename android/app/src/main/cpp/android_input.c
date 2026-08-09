@@ -18,6 +18,7 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "android_log.h"
+#include "android_profile.h"
 #include "android_screen_advance.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
@@ -1056,6 +1057,7 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			return;
 
 		if (visibility == ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND) {
+			android_profile_resume();
 			mix_background_resume();
 			RBABackgroundResume();
 			androidaud_background_resume();

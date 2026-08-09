@@ -28,6 +28,12 @@ typedef struct {
 	int track_num;
 } chromaprint_db_match_t;
 
+typedef enum {
+	CHROMAPRINT_DB_MATCH_AMBIGUOUS = -1,
+	CHROMAPRINT_DB_MATCH_NONE = 0,
+	CHROMAPRINT_DB_MATCH_FOUND = 1,
+} chromaprint_db_match_status_t;
+
 /* Load fingerprint entries from a JSON array.
  * Expected format (from the physical-disc and album assets flattened by Kotlin):
  *   [{"name":"Title","disc_id":"d2-gog","track":2,"duration_ms":187000,"chromaprint":"AQAA..."}]
@@ -41,8 +47,9 @@ int chromaprint_db_load(const char *json_data, int json_len);
 /* Match a fingerprint against the loaded database.
  * raw_fp/fp_len: decoded fingerprint from chromaprint_get_raw_fingerprint().
  * duration_ms: track duration.
- * On match (confidence > threshold), fills out_match and returns 1.
- * Returns 0 if no match found. */
+ * On an unambiguous match, fills out_match and returns CHROMAPRINT_DB_MATCH_FOUND.
+ * Returns CHROMAPRINT_DB_MATCH_AMBIGUOUS for equal top evidence across distinct
+ * identities, or CHROMAPRINT_DB_MATCH_NONE if no match clears the threshold. */
 int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
                          chromaprint_db_match_t *out_match);
 

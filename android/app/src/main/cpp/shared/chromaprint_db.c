@@ -237,6 +237,7 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 
 	float best_score = 0.0f;
 	int best_idx = -1;
+	int ambiguous = 0;
 
 	for (int i = 0; i < s_entry_count; i++) {
 		const chromaprint_db_entry_t *e = &s_entries[i];
@@ -250,29 +251,42 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 		}
 
 		/* Try several offset alignments */
+		float entry_score = 0.0f;
 		for (int off = -MAX_OFFSET; off <= MAX_OFFSET; off++) {
 			float score = fp_similarity(raw_fp, fp_len,
 			                            e->raw_fp, e->fp_len, off);
-			if (score > best_score) {
-				best_score = score;
-				best_idx = i;
-			}
+			if (score > entry_score) entry_score = score;
+		}
+
+		if (entry_score > best_score + 1.0e-6f) {
+			best_score = entry_score;
+			best_idx = i;
+			ambiguous = 0;
+		} else if (best_idx >= 0 && fabsf(entry_score - best_score) <= 1.0e-6f &&
+		           (s_entries[best_idx].track_num != e->track_num ||
+		            strcmp(s_entries[best_idx].disc_id, e->disc_id) != 0 ||
+		            strcmp(s_entries[best_idx].name, e->name) != 0)) {
+			ambiguous = 1;
 		}
 	}
 
 	if (best_idx >= 0 && best_score >= s_match_threshold) {
+		if (ambiguous) {
+			LOGW("Ambiguous fingerprint match at confidence %.6f", best_score);
+			return CHROMAPRINT_DB_MATCH_AMBIGUOUS;
+		}
 		out_match->confidence = best_score;
 		out_match->name = copy_string(s_entries[best_idx].name);
 		out_match->disc_id = copy_string(s_entries[best_idx].disc_id);
 		if (!out_match->name || !out_match->disc_id) {
 			chromaprint_db_match_free(out_match);
-			return 0;
+			return CHROMAPRINT_DB_MATCH_NONE;
 		}
 		out_match->track_num = s_entries[best_idx].track_num;
-		return 1;
+		return CHROMAPRINT_DB_MATCH_FOUND;
 	}
 
-	return 0;
+	return CHROMAPRINT_DB_MATCH_NONE;
 }
 
 void chromaprint_db_match_free(chromaprint_db_match_t *match)

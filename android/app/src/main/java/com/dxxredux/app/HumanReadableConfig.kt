@@ -433,7 +433,8 @@ object HumanReadableConfig {
                 }.getOrDefault(SliderOrientation.HORIZONTAL),
             stripDragSpanWidthPct = j.optDouble("stripDragSpanWidthPct", 20.0).toFloat(),
             stripLabelAngleDeg = j.optDouble("stripLabelAngleDeg", 0.0).toFloat(),
-            stripSelectedScale = j.optDouble("stripSelectedScale", 2.0).toFloat(),
+            stripSelectedScale =
+                j.optDouble("stripSelectedScale", DEFAULT_SCROLL_STRIP_SELECTED_SCALE.toDouble()).toFloat(),
         )
     }
 

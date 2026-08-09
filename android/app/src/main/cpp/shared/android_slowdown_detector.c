@@ -167,6 +167,12 @@ void android_slowdown_detector_set_enabled(struct android_slowdown_detector *det
 		detector->state = ANDROID_SLOWDOWN_ARMED;
 }
 
+void android_slowdown_detector_suppress_next_frame(
+    struct android_slowdown_detector *detector)
+{
+	detector->suppress_next_frame = 1;
+}
+
 int android_slowdown_detector_feed(struct android_slowdown_detector *detector,
                                    const struct android_slowdown_frame *frame)
 {
@@ -177,6 +183,15 @@ int android_slowdown_detector_feed(struct android_slowdown_detector *detector,
 
 	if (detector->state == ANDROID_SLOWDOWN_DISABLED)
 		return 0;
+	if (detector->suppress_next_frame) {
+		detector->suppress_next_frame = 0;
+		detector->last_frame_us = frame->end_us;
+		detector->slow_windows = 0;
+		memset(detector->severe_frame_us, 0, sizeof(detector->severe_frame_us));
+		detector->hard_stall_us = 0;
+		reset_window(detector, frame->end_us);
+		return 0;
+	}
 
 	if (detector->last_frame_us && frame->end_us - detector->last_frame_us >= DISCONTINUITY_US) {
 		detector->slow_windows = 0;

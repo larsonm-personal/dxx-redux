@@ -54,6 +54,7 @@ int coop_remap_restored_players(rewind_file *file,
 	coop_save_metadata meta_early;
 	int have_meta = state_android_read_coop_metadata_trailer(file, &meta_early);
 	int got_players = 0;
+	unsigned char claimed_slots[MAX_PLAYERS] = { 0 };
 	int i;
 
 	for (i = 0; i < MAX_PLAYERS; i++) {
@@ -73,13 +74,15 @@ int coop_remap_restored_players(rewind_file *file,
 		}
 
 		if (saved_slot < 0 || saved_slot >= MAX_PLAYERS ||
-		    restore_players[saved_slot].connected != CONNECT_PLAYING) {
+		    restore_players[saved_slot].connected != CONNECT_PLAYING ||
+		    claimed_slots[saved_slot]) {
 			COOPLOG("P%d '%s' not found in save -- spawning fresh", i,
 			        Players[i].callsign);
 			HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
 			                 Players[i].callsign);
 			continue;
 		}
+		claimed_slots[saved_slot] = 1;
 
 		saved_objnum = Players[i].objnum;
 		coop_restore_player_game_state(&Players[i], &restore_players[saved_slot]);
@@ -510,7 +513,8 @@ int coop_read_save_metadata(void *fp, PHYSFS_sint64 trailer_end,
 	REWIND_PHYSFS_FILE(file, (PHYSFS_file *) fp);
 
 	return fp ? coop_read_save_metadata_rewind(
-	                file, trailer_end, meta) : 0;
+	                file, trailer_end, meta)
+	          : 0;
 }
 
 int coop_find_player_in_metadata(const char *callsign,
@@ -632,6 +636,33 @@ const coop_player_record *coop_find_absent_player_with_level(const char *callsig
 	}
 
 	return NULL;
+}
+
+int coop_take_absent_player_with_level(const char *callsign,
+                                       const char *client_id,
+                                       coop_player_record *record,
+                                       int *source_level)
+{
+	const coop_player_record *found;
+	int index;
+
+	if (!record)
+		return 0;
+	found = coop_find_absent_player_with_level(callsign, client_id, source_level);
+	if (!found)
+		return 0;
+	index = (int) (found - coop_absent_list);
+	memcpy(record, found, sizeof(*record));
+	if (index + 1 < coop_num_absent) {
+		memmove(&coop_absent_list[index], &coop_absent_list[index + 1],
+		        sizeof(coop_absent_list[0]) * (coop_num_absent - index - 1));
+		memmove(&coop_absent_source_levels[index], &coop_absent_source_levels[index + 1],
+		        sizeof(coop_absent_source_levels[0]) * (coop_num_absent - index - 1));
+	}
+	coop_num_absent--;
+	memset(&coop_absent_list[coop_num_absent], 0, sizeof(coop_absent_list[0]));
+	coop_absent_source_levels[coop_num_absent] = 0;
+	return 1;
 }
 
 void coop_load_absent_from_metadata(const coop_save_metadata *meta)

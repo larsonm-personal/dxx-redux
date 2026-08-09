@@ -523,7 +523,7 @@ data class RadialMenuControl(
     val stripOrientation: SliderOrientation = SliderOrientation.HORIZONTAL,
     val stripDragSpanWidthPct: Float = 20f,
     val stripLabelAngleDeg: Float = 0f,
-    val stripSelectedScale: Float = 2f,
+    val stripSelectedScale: Float = DEFAULT_SCROLL_STRIP_SELECTED_SCALE,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -571,7 +571,8 @@ data class RadialMenuControl(
                     }.getOrDefault(SliderOrientation.HORIZONTAL),
                 stripDragSpanWidthPct = j.optDouble("stripDragSpanWidthPct", 20.0).toFloat(),
                 stripLabelAngleDeg = j.optDouble("stripLabelAngleDeg", 0.0).toFloat(),
-                stripSelectedScale = j.optDouble("stripSelectedScale", 2.0).toFloat(),
+                stripSelectedScale =
+                    j.optDouble("stripSelectedScale", DEFAULT_SCROLL_STRIP_SELECTED_SCALE.toDouble()).toFloat(),
             )
     }
 }

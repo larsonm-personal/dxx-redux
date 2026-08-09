@@ -22,6 +22,7 @@ $albumDbPath = "$repoRoot/android/app/src/main/assets/known_albums.json5"
 $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.json5"
 . "$repoRoot/android/helpers/fingerprint_config.ps1"
 . "$repoRoot/android/helpers/acoustid_title_match.ps1"
+. "$repoRoot/android/helpers/fingerprint_source_identity.ps1"
 
 if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
     Write-Host "Album database already exists at $albumDbPath. Use -Force to regenerate"
@@ -97,6 +98,19 @@ $albumFiles = $albumFiles | Sort-Object { $_.Directory.Name }
 $cdDiscIds = @{}
 foreach ($cd in $cdFingerprints) { $cdDiscIds[$cd.DiscId] = $true }
 
+$physicalSources = @($db.discs | Where-Object { $_.type -ne 'album' } | ForEach-Object {
+    [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
+})
+$albumSources = @($albumFiles | ForEach-Object {
+    $sourceRaw = Get-Content $_.FullName -Raw
+    $sourceInfo = ($sourceRaw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
+    [PSCustomObject]@{
+        Id = ConvertTo-DxxFingerprintSourceId -Name ([string]$sourceInfo.album)
+        Label = [string]$sourceInfo.album
+    }
+})
+Assert-DxxUniqueFingerprintSourceIds -Sources $albumSources -ReservedSources $physicalSources
+
 $flatEntries = @()
 foreach ($cd in $cdFingerprints) {
     $flatEntries += [ordered]@{
@@ -115,7 +129,7 @@ foreach ($file in $albumFiles) {
     $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
     $info = $stripped | ConvertFrom-Json
     $albumName = $info.album
-    $albumId = ($albumName.ToLower() -replace '[^a-z0-9]+', '-').Trim('-')
+    $albumId = ConvertTo-DxxFingerprintSourceId -Name $albumName
 
     $trackNum = 1
     $tracksList = @()
@@ -180,6 +194,39 @@ $matchStdout = Get-Content $matchStdoutFile -Raw
 
 $allPairs = $matchStdout | ConvertFrom-Json
 
+# Compare encoded fingerprints directly as well. This catches exact collisions
+# even when the diagnostic matcher cannot load an unusually large fixture set.
+$exactFingerprints = @{}
+foreach ($albumInfo in $albumInfos) {
+    foreach ($track in $albumInfo.Tracks) {
+        $candidate = [PSCustomObject]@{
+            Disc = $albumInfo.Id
+            Track = $track.TrackNum
+            Name = $track.BaseName
+            DurationMs = $track.DurationMs
+        }
+        $key = [string]$track.Chromaprint
+        if ($exactFingerprints.ContainsKey($key)) {
+            foreach ($prior in $exactFingerprints[$key]) {
+                $allPairs += [PSCustomObject]@{
+                    a_disc = $prior.Disc
+                    a_track = $prior.Track
+                    a_name = $prior.Name
+                    a_duration_ms = $prior.DurationMs
+                    b_disc = $candidate.Disc
+                    b_track = $candidate.Track
+                    b_name = $candidate.Name
+                    b_duration_ms = $candidate.DurationMs
+                    score = 1.0
+                }
+            }
+            $exactFingerprints[$key] += $candidate
+        } else {
+            $exactFingerprints[$key] = @($candidate)
+        }
+    }
+}
+
 # CD priority hierarchy for stable match selection
 # When an album track matches multiple CDs, pick the highest-priority CD.
 # Tier 0: base game discs, Mac discs, Definitive Collection, Vertigo/Infinite Abyss
@@ -220,11 +267,28 @@ function Compare-DiscMatch($a, $b) {
 # Filter to CD-vs-Album pairs and build lookup: "albumId|trackNum" -> best CD match
 # "Best" = highest-tier CD first, then highest score within that tier.
 $dupLookup = @{}
+$ambiguousLookup = @{}
 foreach ($pair in $allPairs) {
     $aIsCd = $cdDiscIds.ContainsKey($pair.a_disc)
     $bIsCd = $cdDiscIds.ContainsKey($pair.b_disc)
-    # We want exactly one side to be a CD and the other an album
-    if ($aIsCd -eq $bIsCd) { continue }
+    if (-not $aIsCd -and -not $bIsCd) {
+        $sameIdentity = $pair.a_disc -eq $pair.b_disc -and
+            $pair.a_track -eq $pair.b_track -and $pair.a_name -eq $pair.b_name
+        $durationRatio = [double]$pair.a_duration_ms / [double]$pair.b_duration_ms
+        $durationCompatible = $durationRatio -ge (1.0 - $fingerprintConfig.DurationTolerance) -and
+            $durationRatio -le (1.0 + $fingerprintConfig.DurationTolerance)
+        $indistinguishableFingerprint = [double]$pair.score -ge (1.0 - 1.0e-6)
+        if ($sameIdentity -or -not $durationCompatible -or -not $indistinguishableFingerprint) { continue }
+        $aKey = "$($pair.a_disc)|$($pair.a_track)"
+        $bKey = "$($pair.b_disc)|$($pair.b_track)"
+        $aIdentity = "$($pair.a_disc) track $($pair.a_track) ($($pair.a_name))"
+        $bIdentity = "$($pair.b_disc) track $($pair.b_track) ($($pair.b_name))"
+        $ambiguousLookup[$aKey] = "$bIdentity at score $($pair.score)"
+        $ambiguousLookup[$bKey] = "$aIdentity at score $($pair.score)"
+        continue
+    }
+    # Physical-disc pairs are already maintained outside this album generator
+    if ($aIsCd -and $bIsCd) { continue }
     if ($aIsCd) {
         $key = "$($pair.b_disc)|$($pair.b_track)"
         $cdDisc = $pair.a_disc
@@ -247,7 +311,7 @@ foreach ($pair in $allPairs) {
         $dupLookup[$key] = $candidate
     }
 }
-Write-Host "Found $($allPairs.Count) total pairs, $($dupLookup.Count) album tracks matching CD tracks"
+Write-Host "Found $($allPairs.Count) total pairs, $($dupLookup.Count) CD duplicates, $($ambiguousLookup.Count) ambiguous album tracks"
 
 # Build album entries with duplicate info
 
@@ -264,6 +328,8 @@ foreach ($albumInfo in $albumInfos) {
         $key = "$($albumInfo.Id)|$($t.TrackNum)"
         $isDuplicate = $dupLookup.ContainsKey($key)
         $dupSource = if ($isDuplicate) { $dupLookup[$key].Source } else { $null }
+        $isAmbiguous = $ambiguousLookup.ContainsKey($key)
+        $ambiguousSource = if ($isAmbiguous) { $ambiguousLookup[$key] } else { $null }
 
         $trackEntry = [ordered]@{
             track       = $t.TrackNum
@@ -304,6 +370,8 @@ foreach ($albumInfo in $albumInfos) {
             Entry       = $trackEntry
             IsDuplicate = $isDuplicate
             DupSource   = $dupSource
+            IsAmbiguous = $isAmbiguous
+            AmbiguousSource = $ambiguousSource
         }
     }
 
@@ -334,13 +402,16 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
     foreach ($dup in $album.Duplicates) {
         $output += "    // duplicate: track $($dup.TrackNum) ($($dup.Filename)) matches $($dup.Source)"
     }
+    foreach ($track in @($album.Tracks | Where-Object IsAmbiguous)) {
+        $output += "    // ambiguous: track $($track.Entry.track) ($($track.Entry.name)) conflicts with $($track.AmbiguousSource)"
+    }
 
     $output += "    {"
     $output += "      `"id`": `"$($album.Id)`","
     $output += "      `"label`": `"$($album.Label)`","
     $output += "      `"tracks`": ["
 
-    $activeTracks = @($album.Tracks | Where-Object { -not $_.IsDuplicate })
+    $activeTracks = @($album.Tracks | Where-Object { -not $_.IsDuplicate -and -not $_.IsAmbiguous })
     for ($ti = 0; $ti -lt $activeTracks.Count; $ti++) {
         $t = $activeTracks[$ti]
         $e = $t.Entry
@@ -388,7 +459,7 @@ if ($DryRun) {
     Write-Host "`n--- DRY RUN: would write $($output.Count) lines to $albumDbPath ---"
     Write-Host "Albums to add: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
-        $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
+        $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate -and -not $_.IsAmbiguous }).Count
         $dupes = $album.Duplicates.Count
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }
@@ -397,7 +468,7 @@ if ($DryRun) {
     Write-Host "`nWrote $($output.Count) lines to $albumDbPath"
     Write-Host "Albums added: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
-        $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
+        $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate -and -not $_.IsAmbiguous }).Count
         $dupes = $album.Duplicates.Count
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }

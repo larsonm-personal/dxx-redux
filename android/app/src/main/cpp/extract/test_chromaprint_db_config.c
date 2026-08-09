@@ -19,6 +19,22 @@ static char *make_entry_json(const char *name, const char *disc_id, const char *
 	return json;
 }
 
+static char *make_ambiguous_json(const char *encoded, int reverse)
+{
+	const char *first = reverse ? "second" : "first";
+	const char *second = reverse ? "first" : "second";
+	size_t size = strlen(encoded) * 2 + 384;
+	char *json = (char *) malloc(size);
+	assert(json);
+	snprintf(json, size,
+	         "[{\"name\":\"%s\",\"disc_id\":\"disc-%s\",\"track\":1,"
+	         "\"duration_ms\":123000,\"chromaprint\":\"%s\"},"
+	         "{\"name\":\"%s\",\"disc_id\":\"disc-%s\",\"track\":2,"
+	         "\"duration_ms\":124000,\"chromaprint\":\"%s\"}]",
+	         first, first, encoded, second, second, encoded);
+	return json;
+}
+
 int main(void)
 {
 	static const char empty_db[] = "[]";
@@ -82,6 +98,23 @@ int main(void)
 	free(json);
 	assert(chromaprint_db_match(raw_fp, 20, 123000, &match) == 1);
 	assert(memcmp(match.name, limit_name, CHROMAPRINT_DB_MAX_METADATA_BYTES + 1) == 0);
+	chromaprint_db_match_free(&match);
+
+	for (int reverse = 0; reverse <= 1; reverse++) {
+		json = make_ambiguous_json(encoded, reverse);
+		assert(chromaprint_db_load(json, (int) strlen(json)) == 2);
+		free(json);
+		assert(chromaprint_db_match(raw_fp, 20, 123000, &match) ==
+		       CHROMAPRINT_DB_MATCH_AMBIGUOUS);
+		assert(match.name == NULL);
+		assert(match.disc_id == NULL);
+	}
+
+	json = make_entry_json(limit_name, "unicode-limit", encoded);
+	assert(chromaprint_db_load(json, (int) strlen(json)) == 1);
+	free(json);
+	assert(chromaprint_db_match(raw_fp, 20, 123000, &match) ==
+	       CHROMAPRINT_DB_MATCH_FOUND);
 
 	limit_name[CHROMAPRINT_DB_MAX_METADATA_BYTES] = 'x';
 	limit_name[CHROMAPRINT_DB_MAX_METADATA_BYTES + 1] = '\0';

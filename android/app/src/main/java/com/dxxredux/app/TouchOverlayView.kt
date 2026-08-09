@@ -2491,27 +2491,28 @@ class TouchOverlayView
                     val lines = item.label.split('\n')
                     val width = lines.maxOfOrNull { paintBtnLabel.measureText(it) } ?: baseTextSize
                     val height = baseTextSize * 1.2f * lines.size
-                    Pair(width + baseTextSize * 0.7f, height + baseTextSize * 0.45f)
+                    ScrollStripCardSize(width + baseTextSize * 0.7f, height + baseTextSize * 0.45f)
                 }
-            val mainSpan =
-                baseCards.maxOf { (cardW, cardH) ->
+            val scales =
+                FloatArray(items.size) { index ->
+                    scrollStripItemScale(index, fractionalIndex, state.control.stripSelectedScale)
+                }
+            val mainOffsets = scrollStripTouchingOffsets(baseCards, scales, fractionalIndex, rotation, vertical)
+            val maxMainSpan =
+                baseCards.indices.maxOf { index ->
+                    val card = baseCards[index]
+                    val scale = scales[index]
                     if (vertical) {
-                        abs(cardW * sin(radians)).toFloat() + abs(cardH * cos(radians)).toFloat()
+                        (abs(card.width * sin(radians)).toFloat() + abs(card.height * cos(radians)).toFloat()) * scale
                     } else {
-                        abs(cardW * cos(radians)).toFloat() + abs(cardH * sin(radians)).toFloat()
+                        (abs(card.width * cos(radians)).toFloat() + abs(card.height * sin(radians)).toFloat()) * scale
                     }
                 }
-            val pitch = mainSpan + state.triggerRadius * 0.22f
             val nearest = fractionalIndex.roundToInt().coerceIn(items.indices)
-            val centerScale =
-                scrollStripItemScale(nearest, fractionalIndex, state.control.stripSelectedScale)
-            val growthPush = mainSpan * (centerScale - 1f) * 0.5f
 
             items.forEachIndexed { index, item ->
-                val distance = index - fractionalIndex
-                var mainOffset = distance * pitch
-                if (distance != 0f) mainOffset += sign(distance) * growthPush
-                if (abs(mainOffset) > state.dragHalfSpan + mainSpan) return@forEachIndexed
+                val mainOffset = mainOffsets[index]
+                if (abs(mainOffset) > state.dragHalfSpan + maxMainSpan) return@forEachIndexed
                 val edgeStart = state.dragHalfSpan * 0.72f
                 val edgeAlpha =
                     if (abs(mainOffset) <= edgeStart) {
@@ -2520,16 +2521,16 @@ class TouchOverlayView
                         (1f - (abs(mainOffset) - edgeStart) / (state.dragHalfSpan - edgeStart).coerceAtLeast(1f))
                             .coerceIn(0f, 1f)
                     }
-                val scale = scrollStripItemScale(index, fractionalIndex, state.control.stripSelectedScale)
+                val scale = scales[index]
                 val itemX = state.triggerX + if (vertical) crossOffset else mainOffset
                 val itemY = state.triggerY + if (vertical) mainOffset else crossOffset
-                val active = index == nearest && state.stripRow == rowIndex
+                val active = index == state.activeSegment && state.stripRow == rowIndex
                 val (cardW, cardH) = baseCards[index]
                 canvas.save()
                 canvas.translate(itemX, itemY)
                 canvas.rotate(rotation)
                 canvas.scale(scale, scale)
-                paintRadialSeg.color = if (active) 0xCC334455.toInt() else 0x99555555.toInt()
+                paintRadialSeg.color = scrollStripItemFillColor(active)
                 paintRadialSeg.alpha = (255f * alpha * edgeAlpha).toInt().coerceIn(0, 255)
                 canvas.drawRoundRect(
                     -cardW / 2f,

@@ -21,13 +21,16 @@ object ClientIdentity {
     private var cachedId: String? = null
 
     /** Returns the 36-char UUID string, creating one on first call. */
+    @Synchronized
     fun getInstallationId(context: Context): String {
         cachedId?.let { return it }
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         var id = prefs.getString(KEY_INSTALLATION_ID, null)
         if (id == null) {
             id = UUID.randomUUID().toString()
-            prefs.edit().putString(KEY_INSTALLATION_ID, id).apply()
+            check(prefs.edit().putString(KEY_INSTALLATION_ID, id).commit()) {
+                "Failed to persist installation identity"
+            }
         }
         cachedId = id
         return id

@@ -773,11 +773,20 @@ object LobbyService {
             Log.d(TAG, "handleJoin: not hosting, ignoring JOIN from $senderAddr")
             return
         }
+        val lobbyId = json.optString("lobby_id", "")
+        val callsign = json.optString("callsign", "Player")
+        val clientId = json.optString("client_id", "").takeIf { it.isNotBlank() }
+        val current = _hostedLobbyPlayers.value
+        if (lanLobbyHasClientIdConflict(current, callsign, clientId)) {
+            NetLog.log("LAN", "JOIN rejected: duplicate client ID for '$callsign' from $senderAddr")
+            Log.w(TAG, "handleJoin: duplicate client ID for '$callsign' from $senderAddr")
+            sendTo(buildJoinReject(lobbyId, "duplicate client identity"), senderAddr)
+            return
+        }
         if (gameStarted) {
             // Allow mid-game joins: send ACK with in-game info so the
             // joiner's C engine can negotiate via UPID_REQUEST/NETSTAT_PLAYING
             Log.i(TAG, "handleJoin: game in progress, allowing mid-game join from $senderAddr")
-            val callsign = json.optString("callsign", "Player")
             sendTo(
                 buildJoinAck(
                     hostedLobbyId ?: "",
@@ -797,16 +806,12 @@ object LobbyService {
             NetLog.log("LAN", "Mid-game JOIN_ACK sent to $callsign at $senderAddr")
             return
         }
-        val lobbyId = json.optString("lobby_id", "")
         if (lobbyId != hostedLobbyId) {
             Log.w(TAG, "handleJoin: lobby mismatch expected=$hostedLobbyId got=$lobbyId from $senderAddr")
             sendTo(buildJoinReject(lobbyId, "unknown lobby"), senderAddr)
             return
         }
 
-        val callsign = json.optString("callsign", "Player")
-        val clientId = json.optString("client_id", "").takeIf { it.isNotBlank() }
-        val current = _hostedLobbyPlayers.value
         val existing = current.find { lanPlayerMatchesJoinIdentity(it, callsign, clientId, senderAddr) }
         if (existing != null) {
             Log.i(TAG, "handleJoin: $callsign refreshing membership from $senderAddr")

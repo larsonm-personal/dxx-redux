@@ -24,7 +24,8 @@ static std::string make_entry_json(const char *name, const char *encoded)
 static void check_match(const char *expected_name, std::atomic<bool> &failed)
 {
 	chromaprint_db_match_t match = {};
-	if (!chromaprint_db_match(s_raw_fp, kFingerprintLength, 123000, &match)) {
+	if (chromaprint_db_match(s_raw_fp, kFingerprintLength, 123000, &match) !=
+	    CHROMAPRINT_DB_MATCH_FOUND) {
 		failed = true;
 		return;
 	}
@@ -73,7 +74,8 @@ int main()
 			while (!start.load()) std::this_thread::yield();
 			for (int i = 0; i < 2000; i++) {
 				chromaprint_db_match_t match = {};
-				if (chromaprint_db_match(s_raw_fp, kFingerprintLength, 123000, &match)) {
+				if (chromaprint_db_match(s_raw_fp, kFingerprintLength, 123000, &match) ==
+				    CHROMAPRINT_DB_MATCH_FOUND) {
 					if ((strcmp(match.name, "generation-a") != 0 &&
 					     strcmp(match.name, "generation-b") != 0) ||
 					    strcmp(match.disc_id, "disc") != 0 || match.track_num != 7)

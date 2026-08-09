@@ -39,6 +39,16 @@ internal fun lanPlayerMatchesJoinIdentity(
     return player.address == senderAddress && player.callsign.equals(callsign, ignoreCase = true)
 }
 
+internal fun lanLobbyHasClientIdConflict(
+    players: List<LanPlayer>,
+    callsign: String,
+    clientId: String?,
+): Boolean =
+    !clientId.isNullOrBlank() &&
+        players.any { player ->
+            player.clientId == clientId && !player.callsign.equals(callsign, ignoreCase = true)
+        }
+
 internal fun refreshLanPlayerLeasesAfterResume(
     players: List<LanPlayer>,
     nowMs: Long,

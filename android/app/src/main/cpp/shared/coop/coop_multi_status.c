@@ -103,7 +103,7 @@ static int coop_remove_rejoin_spew(int pnum)
 
 void coop_send_restore_inventory(int pnum)
 {
-	const coop_player_record *rec;
+	coop_player_record rec;
 	int source_level = Current_level_num;
 	int same_level;
 	int removed;
@@ -116,10 +116,9 @@ void coop_send_restore_inventory(int pnum)
 	if (!(Netgame.game_flags & NETGAME_FLAG_COOP_QOL))
 		return;
 
-	rec = coop_find_absent_player_with_level(Players[pnum].callsign,
-	                                         Netgame.players[pnum].client_id,
-	                                         &source_level);
-	if (!rec) {
+	if (!coop_take_absent_player_with_level(Players[pnum].callsign,
+	                                        Netgame.players[pnum].client_id,
+	                                        &rec, &source_level)) {
 		con_printf(CON_NORMAL, "coop_restore: no cached inventory for '%s'\n",
 		           Players[pnum].callsign);
 		return;
@@ -129,28 +128,28 @@ void coop_send_restore_inventory(int pnum)
 	removed = same_level ? coop_remove_rejoin_spew(pnum) : 0;
 
 	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (src_level=%d cur_level=%d spew=%d shields=%d energy=%d laser=%d)\n",
-	           pnum, rec->callsign, source_level, Current_level_num, removed,
-	           f2i(rec->shields), f2i(rec->energy), rec->laser_level);
+	           pnum, rec.callsign, source_level, Current_level_num, removed,
+	           f2i(rec.shields), f2i(rec.energy), rec.laser_level);
 
 	multibuf[0] = MULTI_COOP_RESTORE_INV;
 	multibuf[1] = (ubyte) pnum;
-	PUT_INTEL_INT(multibuf + 2, rec->energy);
-	PUT_INTEL_INT(multibuf + 6, rec->shields);
-	PUT_INTEL_INT(multibuf + 10, rec->score);
-	multibuf[14] = rec->laser_level;
-	PUT_INTEL_SHORT(multibuf + 15, rec->primary_weapon_flags);
-	PUT_INTEL_SHORT(multibuf + 17, rec->secondary_weapon_flags);
+	PUT_INTEL_INT(multibuf + 2, rec.energy);
+	PUT_INTEL_INT(multibuf + 6, rec.shields);
+	PUT_INTEL_INT(multibuf + 10, rec.score);
+	multibuf[14] = rec.laser_level;
+	PUT_INTEL_SHORT(multibuf + 15, rec.primary_weapon_flags);
+	PUT_INTEL_SHORT(multibuf + 17, rec.secondary_weapon_flags);
 	for (i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
-		PUT_INTEL_SHORT(multibuf + 19 + i * 2, rec->primary_ammo[i]);
+		PUT_INTEL_SHORT(multibuf + 19 + i * 2, rec.primary_ammo[i]);
 	for (i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
-		PUT_INTEL_SHORT(multibuf + 39 + i * 2, rec->secondary_ammo[i]);
-	PUT_INTEL_INT(multibuf + 59, rec->flags);
-	PUT_INTEL_SHORT(multibuf + 63, rec->net_kills_total);
-	PUT_INTEL_SHORT(multibuf + 65, rec->net_killed_total);
-	PUT_INTEL_SHORT(multibuf + 67, rec->num_kills_total);
-	PUT_INTEL_SHORT(multibuf + 69, rec->hostages_rescued_total);
-	PUT_INTEL_INT(multibuf + 71, rec->time_total);
-	multibuf[75] = (ubyte) rec->hours_total;
+		PUT_INTEL_SHORT(multibuf + 39 + i * 2, rec.secondary_ammo[i]);
+	PUT_INTEL_INT(multibuf + 59, rec.flags);
+	PUT_INTEL_SHORT(multibuf + 63, rec.net_kills_total);
+	PUT_INTEL_SHORT(multibuf + 65, rec.net_killed_total);
+	PUT_INTEL_SHORT(multibuf + 67, rec.num_kills_total);
+	PUT_INTEL_SHORT(multibuf + 69, rec.hostages_rescued_total);
+	PUT_INTEL_INT(multibuf + 71, rec.time_total);
+	multibuf[75] = (ubyte) rec.hours_total;
 	PUT_INTEL_SHORT(multibuf + 76, source_level);
 
 	multi_send_data_direct(multibuf, 78, pnum, 2);

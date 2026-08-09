@@ -28,3 +28,11 @@ weapon rows, and exact game-thread weapon selection.
   zoom from device play feedback.
 - Consider separate visual themes or icon support after the interaction has
   settled; the first demo intentionally uses labels and existing ammo status.
+
+## Active-selection highlight follow-up
+
+- [x] Make the lift-off selection state the sole source of the strip highlight
+- [x] Render an active strip card with a green fill and retain the neutral fill
+  before a locked Guide-Bot Deploy drag is armed
+- [x] Add a focused color/state unit test, run scoped formatting and unit tests,
+  rebuild the APK, and reinstall it on the emulator

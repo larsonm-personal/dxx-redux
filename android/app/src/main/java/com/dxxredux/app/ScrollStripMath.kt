@@ -1,6 +1,22 @@
 package com.dxxredux.app
 
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.min
+import kotlin.math.sin
+
+internal const val DEFAULT_SCROLL_STRIP_SELECTED_SCALE = 2.6f
+internal val SCROLL_STRIP_ACTIVE_FILL_COLOR = 0xCC2E7D32.toInt()
+internal val SCROLL_STRIP_INACTIVE_FILL_COLOR = 0x99555555.toInt()
+
+internal fun scrollStripItemFillColor(activeAtLiftOff: Boolean): Int =
+    if (activeAtLiftOff) SCROLL_STRIP_ACTIVE_FILL_COLOR else SCROLL_STRIP_INACTIVE_FILL_COLOR
+
+internal data class ScrollStripCardSize(
+    val width: Float,
+    val height: Float,
+)
 
 internal fun scrollStripFractionalIndex(
     mainDelta: Float,
@@ -27,6 +43,44 @@ internal fun scrollStripItemScale(
     val proximity = (1f - abs(itemIndex - fractionalIndex) * 2f).coerceIn(0f, 1f)
     val smooth = proximity * proximity * (3f - 2f * proximity)
     return 1f + (selectedScale.coerceAtLeast(1f) - 1f) * smooth
+}
+
+internal fun scrollStripTouchingOffsets(
+    cards: List<ScrollStripCardSize>,
+    scales: FloatArray,
+    fractionalIndex: Float,
+    rotationDegrees: Float,
+    vertical: Boolean,
+): FloatArray {
+    if (cards.isEmpty()) return FloatArray(0)
+    require(scales.size == cards.size)
+
+    val radians = Math.toRadians(rotationDegrees.toDouble())
+    val localWidthPerMain = abs(if (vertical) sin(radians) else cos(radians)).toFloat()
+    val localHeightPerMain = abs(if (vertical) cos(radians) else sin(radians)).toFloat()
+    val centers = FloatArray(cards.size)
+    for (index in 1 until cards.size) {
+        val left = cards[index - 1]
+        val right = cards[index]
+        val widthSum = left.width * scales[index - 1] + right.width * scales[index]
+        val heightSum = left.height * scales[index - 1] + right.height * scales[index]
+        val widthContact =
+            if (localWidthPerMain > 1e-6f) widthSum / (2f * localWidthPerMain) else Float.POSITIVE_INFINITY
+        val heightContact =
+            if (localHeightPerMain > 1e-6f) heightSum / (2f * localHeightPerMain) else Float.POSITIVE_INFINITY
+        centers[index] = centers[index - 1] + min(widthContact, heightContact)
+    }
+
+    val clampedIndex = fractionalIndex.coerceIn(0f, cards.lastIndex.toFloat())
+    val lowerIndex = floor(clampedIndex).toInt()
+    val fraction = clampedIndex - lowerIndex
+    val focus =
+        if (lowerIndex == cards.lastIndex) {
+            centers[lowerIndex]
+        } else {
+            centers[lowerIndex] + (centers[lowerIndex + 1] - centers[lowerIndex]) * fraction
+        }
+    return FloatArray(cards.size) { centers[it] - focus }
 }
 
 internal fun clampScrollStripCenterPct(

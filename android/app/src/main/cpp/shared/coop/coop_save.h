@@ -80,9 +80,9 @@ typedef struct coop_save_metadata {
 	COOP_SAVE_METADATA_EXTRA_FIELDS
 	coop_player_record active_players[8]; /* MAX_PLAYERS */
 	coop_player_record absent_players[COOP_MAX_REMEMBERED_PLAYERS];
-	uint8_t difficulty_changed; /* v4 */
-	uint8_t difficulty_min;     /* v4 */
-	uint8_t difficulty_max;     /* v4 */
+	uint8_t difficulty_changed;       /* v4 */
+	uint8_t difficulty_min;           /* v4 */
+	uint8_t difficulty_max;           /* v4 */
 	uint8_t duplicate_energy_shields; /* v5 */
 } coop_save_metadata;
 
@@ -149,6 +149,10 @@ const coop_player_record *coop_find_absent_player(const char *callsign,
 const coop_player_record *coop_find_absent_player_with_level(const char *callsign,
                                                              const char *client_id,
                                                              int *source_level);
+int coop_take_absent_player_with_level(const char *callsign,
+                                       const char *client_id,
+                                       coop_player_record *record,
+                                       int *source_level);
 
 /* Repopulate the absent player list from save metadata.
  * Called after state_restore_all_sub() loads a coop save. */

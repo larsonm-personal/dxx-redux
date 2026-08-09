@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
 $CdImgDir  = Join-Path $ScriptDir "CD images"
 $Json5Path = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.json5"
+. (Join-Path $ScriptDir "..\android\helpers\fingerprint_source_identity.ps1")
 
 if (-not (Test-Path $Json5Path)) {
     Write-Error "known_discs.json5 not found: $Json5Path"
@@ -37,8 +38,7 @@ Write-Host "Existing disc IDs: $($existingById.Keys -join ', ')"
 # -- Map folder names to game + id ------------------------------------
 
 function Get-DiscMeta($folderName) {
-    $id = $folderName.ToLower() -replace '\s+', '-' -replace '[^a-z0-9\-]', ''
-    $id = $id -replace '-+', '-' -replace '^-|-$', ''
+    $id = ConvertTo-DxxFingerprintSourceId -Name $folderName
 
     $game = "unknown"
     if ($folderName -match "Descent[\s\-]II|Descent 2|D2") { $game = "d2" }
@@ -56,6 +56,21 @@ $skipped = @()
 $replaced = @()
 
 $folders = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
+$folderSources = @($folders | ForEach-Object {
+    $meta = Get-DiscMeta $_.Name
+    [PSCustomObject]@{ Id = $meta.Id; Label = $meta.Label }
+})
+$reservedSources = @($existing.discs | ForEach-Object {
+    [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
+})
+$folderLabelsById = @{}
+foreach ($source in $folderSources) { $folderLabelsById[$source.Id.ToUpperInvariant()] = $source.Label }
+$nonReplacingSources = @($reservedSources | Where-Object {
+    $key = $_.Id.ToUpperInvariant()
+    -not ($folderLabelsById.ContainsKey($key) -and
+        [StringComparer]::Ordinal.Equals([string]$folderLabelsById[$key], [string]$_.Label))
+})
+Assert-DxxUniqueFingerprintSourceIds -Sources $folderSources -ReservedSources $nonReplacingSources
 foreach ($folder in $folders) {
     $hashFile = Join-Path $folder.FullName "track_hashes.json"
     if (-not (Test-Path $hashFile)) {

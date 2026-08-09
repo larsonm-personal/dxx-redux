@@ -284,7 +284,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
 	int found = chromaprint_db_match(raw_fp, raw_len, durationMs, &match);
 	chromaprint_dealloc(raw_fp);
 
-	if (!found) return NULL;
+	if (found != CHROMAPRINT_DB_MATCH_FOUND) return NULL;
 
 	jobject result = new_match_result(env, &match);
 	chromaprint_db_match_free(&match);
@@ -315,7 +315,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAndMatch(
 	int found = chromaprint_db_match(fp.raw_fp, fp.fp_len, fp.duration_ms, &match);
 	fingerprint_free(&fp);
 
-	if (!found) return NULL;
+	if (found != CHROMAPRINT_DB_MATCH_FOUND) return NULL;
 
 	jobject result = new_match_result(env, &match);
 	chromaprint_db_match_free(&match);

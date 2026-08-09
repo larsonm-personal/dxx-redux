@@ -3,6 +3,7 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 class ScrollStripTest {
     @Test
@@ -17,6 +18,49 @@ class ScrollStripTest {
         assertEquals(2f, scrollStripItemScale(2, 2f, 2f), 0.001f)
         assertEquals(1f, scrollStripItemScale(2, 2.5f, 2f), 0.001f)
         assertTrue(scrollStripItemScale(2, 2.25f, 2f) in 1f..2f)
+    }
+
+    @Test
+    fun onlyLiftOffSelectionUsesGreenFill() {
+        assertEquals(SCROLL_STRIP_ACTIVE_FILL_COLOR, scrollStripItemFillColor(activeAtLiftOff = true))
+        assertEquals(SCROLL_STRIP_INACTIVE_FILL_COLOR, scrollStripItemFillColor(activeAtLiftOff = false))
+    }
+
+    @Test
+    fun angledCardsTouchAtTheirRotatedEdges() {
+        val cards = List(3) { ScrollStripCardSize(100f, 50f) }
+        val offsets = scrollStripTouchingOffsets(cards, FloatArray(3) { 1f }, 1f, 45f, vertical = false)
+
+        assertEquals(-70.711f, offsets[0], 0.001f)
+        assertEquals(0f, offsets[1], 0.001f)
+        assertEquals(70.711f, offsets[2], 0.001f)
+    }
+
+    @Test
+    fun enlargedItemPushesTouchingNeighborsEqually() {
+        val cards = List(3) { ScrollStripCardSize(100f, 50f) }
+        val offsets = scrollStripTouchingOffsets(cards, floatArrayOf(1f, 2.6f, 1f), 1f, 45f, vertical = false)
+
+        assertEquals(-127.279f, offsets[0], 0.001f)
+        assertEquals(0f, offsets[1], 0.001f)
+        assertEquals(127.279f, offsets[2], 0.001f)
+    }
+
+    @Test
+    fun packedItemsMoveContinuouslyAcrossCenterline() {
+        val cards = List(3) { ScrollStripCardSize(100f, 50f) }
+        fun offsetsAt(index: Float): FloatArray =
+            scrollStripTouchingOffsets(
+                cards,
+                FloatArray(3) { item -> scrollStripItemScale(item, index, 2.6f) },
+                index,
+                45f,
+                vertical = false,
+            )
+
+        val before = offsetsAt(0.999f)
+        val after = offsetsAt(1.001f)
+        before.indices.forEach { assertTrue(abs(before[it] - after[it]) < 1f) }
     }
 
     @Test

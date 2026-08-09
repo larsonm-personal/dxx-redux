@@ -134,6 +134,7 @@ static struct android_profile_bucket_state g_android_profile_buckets[ANDROID_PRO
 static struct android_profile_texture_burst_state g_android_profile_texture_burst;
 static struct android_slowdown_detector g_android_slowdown_detector;
 static volatile int g_android_slowdown_capture_requested;
+static volatile int g_android_profile_resume_pending;
 static int g_android_profile_max_fps;
 static int g_android_profile_vsync;
 static int g_android_profile_object_detail_active;
@@ -831,12 +832,22 @@ void android_profile_frame_begin(const char *game, unsigned int frame_id)
 	long long now_ms;
 	long long now_us;
 	const int manual_enabled = debug_log_enabled[DLOG_PROFILING] ? 1 : 0;
+	const int resuming = __atomic_exchange_n(&g_android_profile_resume_pending, 0,
+	                                         __ATOMIC_ACQ_REL);
 
 	if (!g_android_slowdown_capture_requested &&
 	    g_android_slowdown_detector.state == ANDROID_SLOWDOWN_CAPTURING)
 		android_flight_flush_batch();
 	android_slowdown_detector_set_enabled(&g_android_slowdown_detector,
 	                                      g_android_slowdown_capture_requested);
+	if (resuming) {
+		g_android_profile_last_frame_begin_us = 0;
+		g_android_profile_last_flip_us = 0;
+		g_android_profile_latest_flip_gap_us = 0;
+		if (g_android_slowdown_detector.state != ANDROID_SLOWDOWN_DISABLED)
+			android_slowdown_detector_suppress_next_frame(
+			    &g_android_slowdown_detector);
+	}
 	if (!manual_enabled &&
 	    g_android_slowdown_detector.state == ANDROID_SLOWDOWN_DISABLED) {
 		g_android_profile_frame_active = 0;
@@ -881,6 +892,11 @@ void android_profile_frame_begin(const char *game, unsigned int frame_id)
 	g_android_profile_object_detail_active =
 	    g_android_profile_sample_active ||
 	    android_slowdown_detector_detail_active(&g_android_slowdown_detector, now_us);
+}
+
+void android_profile_resume(void)
+{
+	__atomic_store_n(&g_android_profile_resume_pending, 1, __ATOMIC_RELEASE);
 }
 
 void android_profile_set_frame_context(int level, int viewer_segment)

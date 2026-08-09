@@ -53,18 +53,45 @@ fun AudioFilePreviewDialog(
     var seeking by remember { mutableStateOf(false) }
     val sliderFocus = remember { FocusRequester() }
     val closeFocus = remember { FocusRequester() }
+    val playerOwner =
+        remember {
+            AudioPreviewResourceOwner<MediaPlayer> { released ->
+                runCatching { released.setOnCompletionListener(null) }
+                runCatching { released.setOnErrorListener(null) }
+                runCatching { released.release() }
+                    .onFailure { Log.e(AUDIO_PREVIEW_TAG, "Failed to release audio preview", it) }
+            }
+        }
 
-    DisposableEffect(Unit) {
+    fun releasePlayer(
+        expected: MediaPlayer? = playerOwner.current,
+        finalPositionMs: Int = 0,
+        retainDuration: Boolean = false,
+    ) {
+        if (!playerOwner.release(expected)) return
+        if (player === expected) player = null
+        playing = false
+        seeking = false
+        positionMs = finalPositionMs
+        if (!retainDuration) durationMs = 0
+    }
+
+    DisposableEffect(playerOwner) {
         onDispose {
-            player?.release()
+            playerOwner.release()
         }
     }
 
     LaunchedEffect(playing) {
         while (playing) {
             val p = player
-            if (p != null && p.isPlaying && !seeking) {
-                positionMs = p.currentPosition
+            if (p != null && !seeking) {
+                try {
+                    if (p.isPlaying) positionMs = p.currentPosition
+                } catch (e: IllegalStateException) {
+                    Log.e(AUDIO_PREVIEW_TAG, "Audio preview polling failed", e)
+                    releasePlayer(p)
+                }
             }
             delay(100)
         }
@@ -75,23 +102,46 @@ fun AudioFilePreviewDialog(
         if (p == null) {
             if (!audioFile.exists()) return
             try {
-                val mp =
-                    MediaPlayer().apply {
-                        setDataSource(audioFile.absolutePath)
-                        prepare()
-                        start()
+                val mp = MediaPlayer()
+                initializeAudioPreviewResource(playerOwner, mp) { starting ->
+                    starting.setOnCompletionListener { completed ->
+                        val finalPosition = runCatching { completed.duration }.getOrDefault(durationMs)
+                        releasePlayer(completed, finalPosition, retainDuration = true)
                     }
-                player = mp
-                durationMs = mp.duration
-                playing = true
+                    starting.setOnErrorListener { failed, what, extra ->
+                        Log.e(AUDIO_PREVIEW_TAG, "Audio preview error what=$what extra=$extra")
+                        releasePlayer(failed)
+                        true
+                    }
+                    starting.setDataSource(audioFile.absolutePath)
+                    starting.prepare()
+                    durationMs = starting.duration
+                    starting.start()
+                }
+                if (playerOwner.current === mp) {
+                    player = mp
+                    positionMs = 0
+                    playing = true
+                }
             } catch (e: Exception) {
-                Log.e(AUDIO_PREVIEW_TAG, "Failed to play ${audioFile.name}: ${e.message}")
+                positionMs = 0
+                durationMs = 0
+                playing = false
+                Log.e(AUDIO_PREVIEW_TAG, "Failed to play ${audioFile.name}", e)
             }
-        } else if (p.isPlaying) {
-            p.pause()
         } else {
-            p.start()
-            playing = true
+            try {
+                if (p.isPlaying) {
+                    p.pause()
+                    playing = false
+                } else {
+                    p.start()
+                    playing = true
+                }
+            } catch (e: Exception) {
+                Log.e(AUDIO_PREVIEW_TAG, "Failed to toggle ${audioFile.name}", e)
+                releasePlayer(p)
+            }
         }
     }
 
@@ -126,7 +176,7 @@ fun AudioFilePreviewDialog(
                             val label =
                                 when {
                                     player == null -> "Play"
-                                    player?.isPlaying == true -> "Pause"
+                                    playing -> "Pause"
                                     else -> "Resume"
                                 }
                             Text(label, fontSize = 13.sp)
@@ -134,12 +184,7 @@ fun AudioFilePreviewDialog(
                         if (player != null) {
                             TextButton(
                                 onClick = {
-                                    player?.stop()
-                                    player?.release()
-                                    player = null
-                                    playing = false
-                                    positionMs = 0
-                                    durationMs = 0
+                                    releasePlayer()
                                 },
                             ) {
                                 Text("Stop", fontSize = 13.sp)

@@ -153,6 +153,25 @@ static void test_single_hard_cadence_stall_triggers(void)
 	            events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
 }
 
+static void test_resume_frame_is_suppressed(void)
+{
+	struct android_slowdown_detector detector;
+	struct android_slowdown_frame frame;
+	int events;
+
+	android_slowdown_detector_init(&detector);
+	android_slowdown_detector_set_enabled(&detector, 1);
+	init_frame(&frame, 25);
+	feed_frames(&detector, &frame, 100, 40000, 1000);
+	android_slowdown_detector_suppress_next_frame(&detector);
+	events = feed_frames(&detector, &frame, 1, 600000000, 1000);
+	expect_false("resume frame", events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
+	expect_true("resume frame suppression consumed",
+	            !detector.suppress_next_frame);
+	events = feed_frames(&detector, &frame, 100, 40000, 1000);
+	expect_false("frames after resume", events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
+}
+
 static void test_network_and_robot_metrics_aggregate(void)
 {
 	struct android_slowdown_detector detector;
@@ -206,6 +225,7 @@ int main(void)
 	test_cap_change_does_not_trigger();
 	test_three_severe_frames_trigger();
 	test_single_hard_cadence_stall_triggers();
+	test_resume_frame_is_suppressed();
 	test_network_and_robot_metrics_aggregate();
 	test_capture_ends_and_cools_down();
 
