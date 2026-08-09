@@ -448,6 +448,58 @@ class TouchOverlayView
             }
         }
 
+        private fun tryPressRadialMenuTrigger(
+            pointerId: Int,
+            px: Float,
+            py: Float,
+        ): Boolean {
+            if (automapActive) return false
+            for (rm in radialStates) {
+                if (rm.pointerId >= 0) continue
+                // D1 has no Guide-Bot. D2 locked Guide opens a deploy ring.
+                if (rm.control.id == "Guide" && gameVariant == "d1") continue
+                if (!selectorTriggerHit(px, py, rm.triggerX, rm.triggerY, rm.triggerRadius)) continue
+
+                rm.pointerId = pointerId
+                rm.isOpen = true
+                rm.activeSegment = -1
+                // Initialize weapon wheel state
+                rm.isWeaponWheel = rm.control.id == "PriWpn" || rm.control.id == "SecWpn"
+                if (rm.isWeaponWheel) {
+                    val ws = weaponStateProvider?.invoke()
+                    rm.weaponState = ws
+                    val isPrimary = rm.control.id == "PriWpn"
+                    rm.filteredSegments =
+                        if (ws != null) {
+                            rm.control.segments.filter { seg ->
+                                val wi = seg.weaponIndex
+                                if (wi < 0) {
+                                    true
+                                } else if (isPrimary) {
+                                    ws.hasPrimary(wi) || ws.hasPrimary(wi + 5)
+                                } else {
+                                    ws.hasSecondary(wi) || ws.hasSecondary(wi + 5)
+                                }
+                            }
+                        } else {
+                            rm.control.segments
+                        }
+                }
+                if (rm.control.presentation == SelectorPresentation.SCROLL_STRIP) {
+                    initializeScrollStrip(rm, px, py)
+                }
+                if (rm.control.hapticFeedback) {
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                }
+                val message = "claimed id=${rm.control.id} presentation=${rm.control.presentation} pointer=$pointerId"
+                DebugLog.log(DebugLogCategory.GAME, "[touch-selector] $message")
+                Log.d("DXX-TouchSelector", message)
+                invalidate()
+                return true
+            }
+            return false
+        }
+
         private fun pointInStickDragZone(
             s: StickState,
             px: Float,
@@ -2602,8 +2654,14 @@ class TouchOverlayView
                         }
                     }
 
+                    // Multi-selector triggers are foreground controls and need the drag pointer.
+                    if (!handled) {
+                        handled = tryPressRadialMenuTrigger(pid, px, py)
+                    }
+
                     // Try axis regions (before sticks, since they can overlap)
                     for (ar in axisRegionStates) {
+                        if (handled) break
                         if (ar.pointerId >= 0) continue
                         if (px in ar.left..ar.right && py in ar.top..ar.bottom) {
                             ar.pointerId = pid
@@ -2701,53 +2759,6 @@ class TouchOverlayView
                             if (b.pointerId >= 0) continue
                             if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
                                 pressLayoutButton(b, pid)
-                                handled = true
-                                break
-                            }
-                        }
-                    }
-
-                    // Try radial menu triggers
-                    if (!automapActive && !handled) {
-                        for (rm in radialStates) {
-                            if (rm.pointerId >= 0) continue
-                            // D1 has no Guide-Bot.  D2 locked Guide opens a deploy ring.
-                            if (rm.control.id == "Guide" && gameVariant == "d1") {
-                                continue
-                            }
-                            if (hypot(px - rm.triggerX, py - rm.triggerY) <= rm.triggerRadius * 1.3f) {
-                                rm.pointerId = pid
-                                rm.isOpen = true
-                                rm.activeSegment = -1
-                                // Initialize weapon wheel state
-                                rm.isWeaponWheel = rm.control.id == "PriWpn" || rm.control.id == "SecWpn"
-                                if (rm.isWeaponWheel) {
-                                    val ws = weaponStateProvider?.invoke()
-                                    rm.weaponState = ws
-                                    val isPrimary = rm.control.id == "PriWpn"
-                                    rm.filteredSegments =
-                                        if (ws != null) {
-                                            rm.control.segments.filter { seg ->
-                                                val wi = seg.weaponIndex
-                                                if (wi < 0) {
-                                                    true
-                                                } else if (isPrimary) {
-                                                    ws.hasPrimary(wi) || ws.hasPrimary(wi + 5)
-                                                } else {
-                                                    ws.hasSecondary(wi) || ws.hasSecondary(wi + 5)
-                                                }
-                                            }
-                                        } else {
-                                            rm.control.segments
-                                        }
-                                }
-                                if (rm.control.presentation == SelectorPresentation.SCROLL_STRIP) {
-                                    initializeScrollStrip(rm, px, py)
-                                }
-                                if (rm.control.hapticFeedback) {
-                                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                }
-                                invalidate()
                                 handled = true
                                 break
                             }

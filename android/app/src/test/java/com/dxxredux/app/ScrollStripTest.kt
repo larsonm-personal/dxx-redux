@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
@@ -24,6 +25,12 @@ class ScrollStripTest {
     fun onlyLiftOffSelectionUsesGreenFill() {
         assertEquals(SCROLL_STRIP_ACTIVE_FILL_COLOR, scrollStripItemFillColor(activeAtLiftOff = true))
         assertEquals(SCROLL_STRIP_INACTIVE_FILL_COLOR, scrollStripItemFillColor(activeAtLiftOff = false))
+    }
+
+    @Test
+    fun selectorTriggerUsesForegroundButtonHitArea() {
+        assertTrue(selectorTriggerHit(113f, 100f, 100f, 100f, 10f))
+        assertFalse(selectorTriggerHit(114f, 100f, 100f, 100f, 10f))
     }
 
     @Test

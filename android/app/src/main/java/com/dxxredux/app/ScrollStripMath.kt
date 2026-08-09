@@ -3,6 +3,7 @@ package com.dxxredux.app
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -12,6 +13,14 @@ internal val SCROLL_STRIP_INACTIVE_FILL_COLOR = 0x99555555.toInt()
 
 internal fun scrollStripItemFillColor(activeAtLiftOff: Boolean): Int =
     if (activeAtLiftOff) SCROLL_STRIP_ACTIVE_FILL_COLOR else SCROLL_STRIP_INACTIVE_FILL_COLOR
+
+internal fun selectorTriggerHit(
+    touchX: Float,
+    touchY: Float,
+    centerX: Float,
+    centerY: Float,
+    radius: Float,
+): Boolean = hypot(touchX - centerX, touchY - centerY) <= radius * 1.3f
 
 internal data class ScrollStripCardSize(
     val width: Float,
