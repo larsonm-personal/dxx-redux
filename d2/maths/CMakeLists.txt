@@ -37,6 +37,11 @@ if(NOT ANDROID)
     target_link_libraries(test_deterministic_math PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_deterministic_math PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_d1_pig_validation
+        ../../android/tests/test_d1_pig_validation.c
+        ../main/d1_pig_validation.c)
+    target_include_directories(test_d1_pig_validation PRIVATE ../main)
+
     add_executable(test_coop_indicator_lines_math
         ../../android/tests/test_coop_indicator_lines_math.c)
     target_link_libraries(test_coop_indicator_lines_math PRIVATE ${DXX_TARGET_PREFIX}maths)
@@ -251,6 +256,7 @@ if(NOT ANDROID)
     foreach(test_target IN ITEMS
             test_rng_seed_resume
             test_deterministic_math
+            test_d1_pig_validation
             test_coop_indicator_lines_math
             test_coop_warp_policy
             test_coop_powerup_duplication

@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "makesig.h"
 #include "console.h"
+#include "d1_pig_validation.h"
 #include "dxa_metadata_patch.h"
 
 #ifdef ANDROID
@@ -610,6 +611,7 @@ extern int compute_average_pixel(grs_bitmap *new);
 
 ubyte *Bitmap_replacement_data = NULL;
 static ubyte *Bitmap_replacement_next = NULL;
+static ubyte *Bitmap_replacement_end = NULL;
 
 //reads in a new pigfile (for new palette)
 //returns the size of all the bitmap data
@@ -1731,6 +1733,7 @@ void free_bitmap_replacements()
 		d_free(Bitmap_replacement_data);
 		Bitmap_replacement_data = NULL;
 		Bitmap_replacement_next = NULL;
+		Bitmap_replacement_end = NULL;
 	}
 }
 
@@ -1824,65 +1827,125 @@ int get_d1_colormap( ubyte *d1_palette, ubyte *colormap )
 	return 0;
 }
 
-#define JUST_IN_CASE 132 /* is enough for d1 pc registered */
-void bitmap_read_d1( grs_bitmap *bitmap, /* read into this bitmap */
+int bitmap_read_d1( grs_bitmap *bitmap, /* read into this bitmap */
                      PHYSFS_file *d1_Piggy_fp, /* read from this file */
                      int bitmap_data_start, /* specific to file */
                      DiskBitmapHeader *bmh, /* header info for bitmap */
                      ubyte **next_bitmap, /* where to write it (if 0, use malloc) */
+		     ubyte *bitmap_end, /* end of caller-owned replacement storage */
 		     ubyte *d1_palette, /* what palette the bitmap has */
                      ubyte *colormap) /* how to translate bitmap's colors */
 {
-	int zsize, pigsize = PHYSFS_fileLength(d1_Piggy_fp);
-	ubyte *data;
-	int width;
+	PHYSFS_sint64 bitmap_offset, pigsize = PHYSFS_fileLength(d1_Piggy_fp);
+	int zsize, new_size, width, height;
+	size_t remapped_size = 0, remap_limit, work_size;
+	ubyte *data, *final_data;
+	ubyte mac_colormap[256];
+	ubyte *remap_colormap = colormap;
+	grs_bitmap staged_bitmap;
 
 	width = bmh->width + ((short) (bmh->wh_extra & 0x0f) << 8);
-	gr_set_bitmap_data(bitmap, NULL);	// free ogl texture
-	gr_init_bitmap(bitmap, 0, 0, 0, width, bmh->height + ((short) (bmh->wh_extra & 0xf0) << 4), width, NULL);
-	bitmap->avg_color = bmh->avg_color;
-	gr_set_bitmap_flags(bitmap, bmh->flags & BM_FLAGS_TO_COPY);
-
-	PHYSFSX_fseek(d1_Piggy_fp, bitmap_data_start + bmh->offset, SEEK_SET);
+	height = bmh->height + ((short) (bmh->wh_extra & 0xf0) << 4);
+	if (bitmap_data_start < 0 || bmh->offset < 0 || width <= 0 || height <= 0)
+		return 0;
+	bitmap_offset = (PHYSFS_sint64)bitmap_data_start + bmh->offset;
+	if (!d1_pig_validate_span(pigsize, bitmap_offset, 0))
+		return 0;
+	if (PHYSFSX_fseek(d1_Piggy_fp, (long)bitmap_offset, SEEK_SET))
+		return 0;
 	if (bmh->flags & BM_FLAG_RLE) {
+		if (pigsize - bitmap_offset < (PHYSFS_sint64)sizeof(int))
+			return 0;
 		zsize = PHYSFSX_readInt(d1_Piggy_fp);
-		PHYSFSX_fseek(d1_Piggy_fp, -4, SEEK_CUR);
-	} else
-		zsize = bitmap->bm_h * bitmap->bm_w;
-
-	if (next_bitmap) {
-		data = *next_bitmap;
-		*next_bitmap += zsize;
+		if (PHYSFSX_fseek(d1_Piggy_fp, -(long)sizeof(int), SEEK_CUR))
+			return 0;
 	} else {
-		data = d_malloc(zsize + JUST_IN_CASE);
+		PHYSFS_sint64 uncompressed_size = (PHYSFS_sint64)width * height;
+		if (uncompressed_size <= 0 || uncompressed_size > 0x7fffffff)
+			return 0;
+		zsize = (int)uncompressed_size;
 	}
-	if (!data) return;
+	if (!d1_pig_validate_span(pigsize, bitmap_offset, zsize))
+		return 0;
+	work_size = zsize;
+	data = d_malloc(work_size);
+	if (!data)
+		return 0;
 
-	PHYSFS_read(d1_Piggy_fp, data, 1, zsize);
-	gr_set_bitmap_data(bitmap, data);
+	if (PHYSFS_read(d1_Piggy_fp, data, 1, zsize) != zsize) {
+		d_free(data);
+		return 0;
+	}
+	gr_init_bitmap(&staged_bitmap, 0, 0, 0, width, height, width, data);
+	staged_bitmap.avg_color = bmh->avg_color;
+	gr_set_bitmap_flags(&staged_bitmap, bmh->flags & BM_FLAGS_TO_COPY);
+	if (bmh->flags & BM_FLAG_RLE) {
+		if (!d1_pig_validate_rle(data, zsize, width, height, bmh->flags & BM_FLAG_RLE_BIG) ||
+		    (size_t)height > (SIZE_MAX - 4 - 30000) / ((size_t)width + 2)) {
+			d_free(data);
+			return 0;
+		}
+		remap_limit = 4 + ((size_t)width + 2) * height + 30000;
+	}
 	switch(pigsize) {
 	case D1_MAC_PIGSIZE:
 	case D1_MAC_SHARE_PIGSIZE:
-		if (bmh->flags & BM_FLAG_RLE)
-			rle_swap_0_255(bitmap);
-		else
-			swap_0_255(bitmap);
+		if (bmh->flags & BM_FLAG_RLE) {
+			memcpy(mac_colormap, colormap, sizeof(mac_colormap));
+			mac_colormap[0] = colormap[255];
+			mac_colormap[255] = colormap[0];
+			remap_colormap = mac_colormap;
+		} else
+			swap_0_255(&staged_bitmap);
 	}
-	if (bmh->flags & BM_FLAG_RLE)
-		rle_remap(bitmap, colormap);
-	else
-		gr_remap_bitmap_good(bitmap, d1_palette, TRANSPARENCY_COLOR, -1);
-	if (bmh->flags & BM_FLAG_RLE) { // size of bitmap could have changed!
-		int new_size;
-		memcpy(&new_size, bitmap->bm_data, 4);
-		if (next_bitmap) {
-			*next_bitmap += new_size - zsize;
-		} else {
-			Assert( zsize + JUST_IN_CASE >= new_size );
-			bitmap->bm_data = d_realloc(bitmap->bm_data, new_size);
-			Assert(bitmap->bm_data);
+	if (bmh->flags & BM_FLAG_RLE) {
+		if (!d1_pig_measure_remapped_rle(data, zsize, width, height,
+		                                   bmh->flags & BM_FLAG_RLE_BIG,
+		                                   remap_colormap, &remapped_size) ||
+		    remapped_size > remap_limit) {
+			d_free(data);
+			return 0;
 		}
+		if (remapped_size > work_size) {
+			ubyte *grown_data = d_realloc(data, remapped_size);
+			if (!grown_data) {
+				d_free(data);
+				return 0;
+			}
+			data = grown_data;
+			staged_bitmap.bm_data = data;
+			work_size = remapped_size;
+		}
+		rle_remap(&staged_bitmap, remap_colormap);
+	} else
+		gr_remap_bitmap_good(&staged_bitmap, d1_palette, TRANSPARENCY_COLOR, -1);
+	if (bmh->flags & BM_FLAG_RLE) { // size of bitmap could have changed!
+		memcpy(&new_size, staged_bitmap.bm_data, sizeof(new_size));
+		if (new_size <= 0 || (size_t)new_size > work_size) {
+			d_free(data);
+			return 0;
+		}
+	} else
+		new_size = zsize;
+	if (next_bitmap) {
+		if (!*next_bitmap || !bitmap_end || *next_bitmap > bitmap_end ||
+		    !d1_pig_validate_arena((size_t)(bitmap_end - *next_bitmap), new_size, 0)) {
+			d_free(data);
+			return 0;
+		}
+		final_data = *next_bitmap;
+		memcpy(final_data, data, new_size);
+		*next_bitmap += new_size;
+		d_free(data);
+	} else {
+		final_data = d_realloc(data, new_size);
+		if (!final_data)
+			final_data = data;
 	}
+	staged_bitmap.bm_data = final_data;
+	gr_set_bitmap_data(bitmap, NULL);	// free ogl texture
+	*bitmap = staged_bitmap;
+	return 1;
 }
 
 #define D1_MAX_TEXTURES 800
@@ -2050,6 +2113,7 @@ void load_d1_bitmap_replacements()
 	DiskBitmapHeader bmh;
 	int pig_data_start, bitmap_header_start, bitmap_data_start;
 	int N_bitmaps;
+	PHYSFS_sint64 header_size;
 	short d1_index, d2_index;
 	ubyte colormap[256];
 	ubyte d1_palette[256*3];
@@ -2101,23 +2165,37 @@ void load_d1_bitmap_replacements()
 		bm_read_d1_tmap_nums(d1_Piggy_fp);	
 	}
 
-	PHYSFSX_fseek( d1_Piggy_fp, pig_data_start, SEEK_SET );
+	if (pig_data_start < 0 || pig_data_start > pigsize - 2 * (int)sizeof(int) ||
+	    PHYSFSX_fseek(d1_Piggy_fp, pig_data_start, SEEK_SET)) {
+		PHYSFS_close(d1_Piggy_fp);
+		Warning(D1_PIG_LOAD_FAILED ": invalid data offset");
+		return;
+	}
 	N_bitmaps = PHYSFSX_readInt(d1_Piggy_fp);
 	{
 		int N_sounds = PHYSFSX_readInt(d1_Piggy_fp);
-		int header_size = N_bitmaps * DISKBITMAPHEADER_D1_SIZE
-			+ N_sounds * sizeof(DiskSoundHeader);
+		header_size = (PHYSFS_sint64)N_bitmaps * DISKBITMAPHEADER_D1_SIZE
+			+ (PHYSFS_sint64)N_sounds * sizeof(DiskSoundHeader);
 		bitmap_header_start = pig_data_start + 2 * sizeof(int);
-		bitmap_data_start = bitmap_header_start + header_size;
+		if (pig_data_start < 0 || N_bitmaps < 0 || N_bitmaps > D1_MAX_TMAP_NUM ||
+		    N_sounds < 0 || header_size < 0 ||
+		    (PHYSFS_sint64)bitmap_header_start + header_size > pigsize) {
+			PHYSFS_close(d1_Piggy_fp);
+			Warning(D1_PIG_LOAD_FAILED ": invalid bitmap table");
+			return;
+		}
+		bitmap_data_start = bitmap_header_start + (int)header_size;
 	}
 
 	MALLOC( Bitmap_replacement_data, ubyte, D1_BITMAPS_SIZE);
 	if (!Bitmap_replacement_data) {
+		PHYSFS_close(d1_Piggy_fp);
 		Warning(D1_PIG_LOAD_FAILED);
 		return;
 	}
 
 	Bitmap_replacement_next = Bitmap_replacement_data;
+	Bitmap_replacement_end = Bitmap_replacement_data + D1_BITMAPS_SIZE;
 
 	for (d1_index = 1; d1_index <= N_bitmaps; d1_index++ ) {
 		d2_index = d2_index_for_d1_index(d1_index);
@@ -2126,9 +2204,13 @@ void load_d1_bitmap_replacements()
 			PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index-1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
 			DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
 
-			bitmap_read_d1( &GameBitmaps[d2_index], d1_Piggy_fp, bitmap_data_start, &bmh, &Bitmap_replacement_next, d1_palette, colormap );
+			if (!bitmap_read_d1(&GameBitmaps[d2_index], d1_Piggy_fp, bitmap_data_start,
+			                    &bmh, &Bitmap_replacement_next, Bitmap_replacement_end,
+			                    d1_palette, colormap)) {
+				Warning("Skipped invalid or over-limit D1 bitmap replacement %d", d1_index);
+				continue;
+			}
 			Last_d1_bitmap_replacement_stats.wall_applied++;
-			Assert(Bitmap_replacement_next - Bitmap_replacement_data < D1_BITMAPS_SIZE);
 			GameBitmapOffset[d2_index] = 0; // don't try to read bitmap from current d2 pigfile
 			GameBitmapFlags[d2_index] = bmh.flags;
 
@@ -2162,9 +2244,10 @@ int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap)
 	ubyte colormap[256];
 	ubyte d1_palette[256*3];
 	int pig_data_start, bitmap_header_start, bitmap_data_start;
-	int N_bitmaps, N_sounds, header_size, pigsize;
+	int N_bitmaps, N_sounds, pigsize;
+	PHYSFS_sint64 header_size;
 
-	if (!Bitmap_replacement_next || d2_bitmap.index >= MAX_BITMAP_FILES)
+	if (!Bitmap_replacement_next || !Bitmap_replacement_end || d2_bitmap.index >= MAX_BITMAP_FILES)
 		return 0;
 
 	d1_Piggy_fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
@@ -2190,7 +2273,11 @@ int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap)
 		break;
 	}
 
-	PHYSFSX_fseek(d1_Piggy_fp, pig_data_start, SEEK_SET);
+	if (pig_data_start < 0 || pig_data_start > pigsize - 2 * (int)sizeof(int) ||
+	    PHYSFSX_fseek(d1_Piggy_fp, pig_data_start, SEEK_SET)) {
+		PHYSFS_close(d1_Piggy_fp);
+		return 0;
+	}
 	N_bitmaps = PHYSFSX_readInt(d1_Piggy_fp);
 	N_sounds = PHYSFSX_readInt(d1_Piggy_fp);
 	if (d1_index <= 0 || d1_index > N_bitmaps) {
@@ -2198,14 +2285,25 @@ int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap)
 		return 0;
 	}
 
-	header_size = N_bitmaps * DISKBITMAPHEADER_D1_SIZE + N_sounds * sizeof(DiskSoundHeader);
+	header_size = (PHYSFS_sint64)N_bitmaps * DISKBITMAPHEADER_D1_SIZE
+		+ (PHYSFS_sint64)N_sounds * sizeof(DiskSoundHeader);
 	bitmap_header_start = pig_data_start + 2 * sizeof(int);
-	bitmap_data_start = bitmap_header_start + header_size;
+	if (pig_data_start < 0 || N_bitmaps < 0 || N_bitmaps > D1_MAX_TMAP_NUM ||
+	    N_sounds < 0 || header_size < 0 ||
+	    (PHYSFS_sint64)bitmap_header_start + header_size > pigsize) {
+		PHYSFS_close(d1_Piggy_fp);
+		return 0;
+	}
+	bitmap_data_start = bitmap_header_start + (int)header_size;
 	PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index - 1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
 	DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
 
-	bitmap_read_d1(&GameBitmaps[d2_bitmap.index], d1_Piggy_fp, bitmap_data_start, &bmh, &Bitmap_replacement_next, d1_palette, colormap);
-	Assert(Bitmap_replacement_next - Bitmap_replacement_data < D1_BITMAPS_SIZE);
+	if (!bitmap_read_d1(&GameBitmaps[d2_bitmap.index], d1_Piggy_fp, bitmap_data_start,
+	                    &bmh, &Bitmap_replacement_next, Bitmap_replacement_end,
+	                    d1_palette, colormap)) {
+		PHYSFS_close(d1_Piggy_fp);
+		return 0;
+	}
 	GameBitmapOffset[d2_bitmap.index] = 0;
 	GameBitmapFlags[d2_bitmap.index] = bmh.flags;
 
@@ -2292,7 +2390,11 @@ bitmap_index read_extra_bitmap_d1_pig(char *name)
 			return bitmap_num;
 		}
 
-		bitmap_read_d1( n, d1_Piggy_fp, bitmap_data_start, &bmh, 0, d1_palette, colormap );
+		if (!bitmap_read_d1(n, d1_Piggy_fp, bitmap_data_start, &bmh, NULL, NULL,
+		                    d1_palette, colormap)) {
+			PHYSFS_close(d1_Piggy_fp);
+			return bitmap_num;
+		}
 
 		PHYSFS_close(d1_Piggy_fp);
 	}

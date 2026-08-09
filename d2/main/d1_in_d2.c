@@ -31,6 +31,7 @@
 #include "vclip.h"
 #include "wall.h"
 #include "d1_in_d2.h"
+#include "d1_pig_validation.h"
 #include "laser.h"
 #include "weapon.h"
 #include "android_log.h"
@@ -61,6 +62,10 @@
 #define D1_DISKBITMAPHEADER_SIZE 17
 #define D1_DISKSOUNDHEADER_SIZE 20
 #define D1_WEAPON_INFO_SIZE 115
+#define D1_ROBOT_INFO_SIZE 486
+#define D1_JOINTPOS_SIZE 8
+#define D1_POLYMODEL_SIZE 734
+#define D1_PLAYER_SHIP_SIZE 132
 #define D1_ROBOT_BITMAP_SLOT_BASE (MAX_BITMAP_FILES - D1_MAX_OBJ_BITMAPS)
 
 #define D1_MODEL_OP_EOF 0
@@ -206,6 +211,181 @@ static void skip_d1_vclips_and_effects(PHYSFS_file *fp)
 	num_effects = PHYSFSX_readInt(fp);
 	(void)num_effects;
 	PHYSFSX_fseek(fp, D1_MAX_EFFECTS * sizeof(eclip), SEEK_CUR);
+}
+
+static int d1_pig_has_bytes(PHYSFS_file *fp, PHYSFS_sint64 pigsize, PHYSFS_sint64 size)
+{
+	PHYSFS_sint64 position = PHYSFS_tell(fp);
+
+	return position >= 0 && size >= 0 && position <= pigsize && size <= pigsize - position;
+}
+
+static int d1_pig_skip(PHYSFS_file *fp, PHYSFS_sint64 pigsize, PHYSFS_sint64 size)
+{
+	if (!d1_pig_has_bytes(fp, pigsize, size) || size > 0x7fffffff)
+		return 0;
+	return PHYSFSX_fseek(fp, (long)size, SEEK_CUR) == 0;
+}
+
+static int validate_d1_robot_assets(PHYSFS_file *fp, int pigsize)
+{
+	robot_info robots[D1_MAX_ROBOT_TYPES];
+	polymodel *models = NULL;
+	ubyte *model_data = NULL;
+	player_ship ship;
+	int dying_models[D1_MAX_POLYGON_MODELS];
+	int dead_models[D1_MAX_POLYGON_MODELS];
+	ushort obj_bitmap_ptrs[D1_MAX_OBJ_BITMAPS];
+	int num_textures, num_vclips, num_effects, num_wall_anims, num_robot_types, num_robot_joints;
+	int num_weapon_types, num_powerups, num_polygon_models, d1_gauge_count;
+	int i, gun, state, valid = 0;
+
+	if (!d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+	num_textures = PHYSFSX_readInt(fp);
+	if (num_textures < 0 || num_textures > D1_MAX_PIG_TEXTURES ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_PIG_TEXTURES * (PHYSFS_sint64)sizeof(bitmap_index)) ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_PIG_TEXTURES * D1_TMAP_INFO_SIZE) ||
+	    !d1_pig_skip(fp, pigsize, 2 * D1_MAX_PIG_SOUNDS) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+	num_vclips = PHYSFSX_readInt(fp);
+	if (num_vclips == 0)
+		num_vclips = D1_VCLIP_MAXNUM;
+	if (num_vclips < 0 || num_vclips > D1_VCLIP_MAXNUM ||
+	    !d1_pig_skip(fp, pigsize, D1_VCLIP_MAXNUM * D1_VCLIP_SIZE) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+	num_effects = PHYSFSX_readInt(fp);
+	if (num_effects < 0 || num_effects > D1_MAX_EFFECTS ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_EFFECTS * (PHYSFS_sint64)sizeof(eclip)) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+
+	num_wall_anims = PHYSFSX_readInt(fp);
+	if (num_wall_anims < 0 || num_wall_anims > D1_MAX_WALL_ANIMS ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_WALL_ANIMS * D1_WCLIP_SIZE) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+
+	num_robot_types = PHYSFSX_readInt(fp);
+	if (num_robot_types < 0 || num_robot_types > D1_MAX_ROBOT_TYPES ||
+	    !d1_pig_has_bytes(fp, pigsize, D1_MAX_ROBOT_TYPES * D1_ROBOT_INFO_SIZE))
+		goto done;
+	for (i = 0; i < D1_MAX_ROBOT_TYPES; i++)
+		read_d1_robot_info(&robots[i], fp);
+	if (!d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+
+	num_robot_joints = PHYSFSX_readInt(fp);
+	if (num_robot_joints < 0 || num_robot_joints > D1_MAX_ROBOT_JOINTS ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_ROBOT_JOINTS * D1_JOINTPOS_SIZE) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+
+	num_weapon_types = PHYSFSX_readInt(fp);
+	if (num_weapon_types < 0 || num_weapon_types > D1_MAX_WEAPON_TYPES ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_WEAPON_TYPES * D1_WEAPON_INFO_SIZE) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+
+	num_powerups = PHYSFSX_readInt(fp);
+	if (num_powerups < 0 || num_powerups > D1_MAX_POWERUP_TYPES ||
+	    !d1_pig_skip(fp, pigsize, D1_MAX_POWERUP_TYPES * (PHYSFS_sint64)sizeof(powerup_type_info)) ||
+	    !d1_pig_has_bytes(fp, pigsize, sizeof(int)))
+		goto done;
+
+	num_polygon_models = PHYSFSX_readInt(fp);
+	if (num_polygon_models <= 0 || num_polygon_models > D1_MAX_POLYGON_MODELS ||
+	    !d1_pig_has_bytes(fp, pigsize, num_polygon_models * D1_POLYMODEL_SIZE))
+		goto done;
+	MALLOC(models, polymodel, num_polygon_models);
+	if (!models)
+		goto done;
+	memset(models, 0, num_polygon_models * sizeof(*models));
+	polymodel_read_n(models, num_polygon_models, fp);
+	for (i = 0; i < num_polygon_models; i++) {
+		int submodel;
+
+		if (models[i].n_models <= 0 || models[i].n_models > MAX_SUBMODELS ||
+		    models[i].model_data_size <= 0 ||
+		    models[i].first_texture + models[i].n_textures > D1_MAX_OBJ_BITMAPS ||
+		    (models[i].simpler_model && models[i].simpler_model > num_polygon_models))
+			goto done;
+		for (submodel = 0; submodel < models[i].n_models; submodel++) {
+			if (models[i].submodel_ptrs[submodel] < 0 ||
+			    models[i].submodel_ptrs[submodel] >= models[i].model_data_size ||
+			    (submodel && models[i].submodel_parents[submodel] >= models[i].n_models))
+				goto done;
+		}
+		if (!d1_pig_has_bytes(fp, pigsize, models[i].model_data_size))
+			goto done;
+		model_data = d_malloc(models[i].model_data_size);
+		if (!model_data || PHYSFS_read(fp, model_data, 1, models[i].model_data_size) != models[i].model_data_size ||
+		    !d1_pig_validate_model_stream(model_data, models[i].model_data_size, 0))
+			goto done;
+		for (submodel = 0; submodel < models[i].n_models; submodel++)
+			if (!d1_pig_validate_model_stream(model_data, models[i].model_data_size,
+			                                     models[i].submodel_ptrs[submodel]))
+				goto done;
+		d_free(model_data);
+		model_data = NULL;
+	}
+
+	d1_gauge_count = (pigsize == D1_MAC_PIGSIZE || pigsize == D1_MAC_SHARE_PIGSIZE)
+		? D1_MAX_GAUGE_BMS_MAC : D1_MAX_GAUGE_BMS_PC;
+	if (!d1_pig_skip(fp, pigsize, d1_gauge_count * (PHYSFS_sint64)sizeof(bitmap_index)) ||
+	    !d1_pig_has_bytes(fp, pigsize, 2 * D1_MAX_POLYGON_MODELS * (PHYSFS_sint64)sizeof(int)))
+		goto done;
+	for (i = 0; i < D1_MAX_POLYGON_MODELS; i++)
+		dying_models[i] = PHYSFSX_readInt(fp);
+	for (i = 0; i < D1_MAX_POLYGON_MODELS; i++)
+		dead_models[i] = PHYSFSX_readInt(fp);
+	if (!d1_pig_skip(fp, pigsize, D1_MAX_OBJ_BITMAPS * (PHYSFS_sint64)sizeof(bitmap_index)) ||
+	    !d1_pig_has_bytes(fp, pigsize, D1_MAX_OBJ_BITMAPS * (PHYSFS_sint64)sizeof(short)))
+		goto done;
+	for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
+		obj_bitmap_ptrs[i] = PHYSFSX_readShort(fp);
+	if (!d1_pig_has_bytes(fp, pigsize, D1_PLAYER_SHIP_SIZE))
+		goto done;
+	player_ship_read(&ship, fp);
+
+	if (!d1_pig_valid_model_index(ship.model_num, num_polygon_models) ||
+	    ship.expl_vclip_num < 0 || ship.expl_vclip_num >= num_vclips)
+		goto done;
+	for (i = 0; i < num_polygon_models; i++)
+		if (!d1_pig_valid_optional_model_index(dying_models[i], num_polygon_models) ||
+		    !d1_pig_valid_optional_model_index(dead_models[i], num_polygon_models))
+			goto done;
+	for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
+		if (obj_bitmap_ptrs[i] >= D1_MAX_OBJ_BITMAPS)
+			goto done;
+	for (i = 0; i < num_robot_types; i++) {
+		robot_info *robot = &robots[i];
+		if (!d1_pig_valid_model_index(robot->model_num, num_polygon_models) ||
+		    robot->n_guns < 0 || robot->n_guns > MAX_GUNS ||
+		    robot->weapon_type < 0 || robot->weapon_type >= num_weapon_types)
+			goto done;
+		for (gun = 0; gun < robot->n_guns; gun++)
+			if (robot->gun_submodels[gun] >= models[robot->model_num].n_models)
+				goto done;
+		for (gun = 0; gun < MAX_GUNS + 1; gun++)
+			for (state = 0; state < N_ANIM_STATES; state++) {
+				jointlist *joints = &robot->anim_states[gun][state];
+				if (joints->n_joints < 0 || joints->offset < 0 ||
+				    joints->offset > num_robot_joints ||
+				    joints->n_joints > num_robot_joints - joints->offset)
+					goto done;
+			}
+	}
+	valid = 1;
+
+done:
+	if (model_data)
+		d_free(model_data);
+	if (models)
+		d_free(models);
+	return valid;
 }
 
 static int seek_d1_final_sound_maps(PHYSFS_file *fp, int pigsize, bitmap_index d1_cockpit[D1_N_COCKPIT_BITMAPS])
@@ -1667,8 +1847,8 @@ void d1_in_d2_apply_robot_assets(int active)
 	int num_powerups, num_polygon_models, d1_gauge_count, pigsize;
 	int free_model_count;
 
-	remove_spawnable_guidebot_assets();
 	if (!active) {
+		remove_spawnable_guidebot_assets();
 		if (D1_robot_assets_active) {
 			release_guidebot_live_bitmap_copies();
 			free_polygon_models();
@@ -1693,14 +1873,6 @@ void d1_in_d2_apply_robot_assets(int active)
 		return;
 	}
 
-	if (!D1_robot_bitmap_slots_registered) {
-		for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
-			D1_robot_bitmap_slots[i].index = D1_ROBOT_BITMAP_SLOT_BASE + i;
-		D1_robot_bitmap_slots_registered = 1;
-	}
-	save_d2_guidebot_assets();
-	save_d2_d1_robot_tuning();
-
 	Last_stats.robot_assets_active = D1_robot_assets_active;
 	Last_stats.robot_pig_present = 0;
 	Last_stats.robot_pig_size = 0;
@@ -1718,6 +1890,25 @@ void d1_in_d2_apply_robot_assets(int active)
 	if (!fp)
 		return;
 	pigsize = (int)PHYSFS_fileLength(fp);
+	if (!validate_d1_robot_assets(fp, pigsize)) {
+		D1_IN_D2_LOG("D1-in-D2 robot assets rejected: invalid D1 PIG tables");
+		PHYSFS_close(fp);
+		return;
+	}
+	if (PHYSFSX_fseek(fp, sizeof(int), SEEK_SET)) {
+		PHYSFS_close(fp);
+		return;
+	}
+
+	remove_spawnable_guidebot_assets();
+	if (!D1_robot_bitmap_slots_registered) {
+		for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
+			D1_robot_bitmap_slots[i].index = D1_ROBOT_BITMAP_SLOT_BASE + i;
+		D1_robot_bitmap_slots_registered = 1;
+	}
+	save_d2_guidebot_assets();
+	save_d2_d1_robot_tuning();
+
 	Last_stats.robot_pig_present = 1;
 	Last_stats.robot_pig_size = pigsize;
 	Last_stats.robot_obj_bitmaps = 0;

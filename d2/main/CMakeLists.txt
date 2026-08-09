@@ -14,6 +14,7 @@ set(D2X_MAIN_SOURCES
     d1_in_d2.c
     d1_in_d2_input_demo.c
     d1_in_d2_semantics.c
+    d1_pig_validation.c
     d1_save_translate.c
     digiobj.c
     dumpmine.c
