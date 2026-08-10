@@ -2492,11 +2492,15 @@ class TouchOverlayView
             val vertical = state.control.stripOrientation == SliderOrientation.VERTICAL
             val halfSpan = state.dragHalfSpan
             val baseCrossOffset =
-                scrollStripRowCrossOffset(
-                    state.triggerRadius,
-                    state.control.stripRowOffset,
-                    state.control.stripCardScale,
-                )
+                if (isLockedGuideWheel(state)) {
+                    lockedGuideDeployCrossOffset(state.triggerRadius, state.control.stripCardScale)
+                } else {
+                    scrollStripRowCrossOffset(
+                        state.triggerRadius,
+                        state.control.stripRowOffset,
+                        state.control.stripCardScale,
+                    )
+                }
             val eff = (gAlpha * state.control.opacity).coerceIn(0f, 1f)
 
             val rows = state.stripRows
@@ -3582,7 +3586,10 @@ class TouchOverlayView
             rm.activeSegment =
                 when {
                     row.isEmpty() || !rm.stripGestureArmed -> -1
-                    isLockedGuideWheel(rm) && abs(mainDelta) < rm.dragHalfSpan * (2f / 3f) -> -1
+
+                    isLockedGuideWheel(rm) &&
+                        !lockedGuideDeploySelected(crossDelta, rm.triggerRadius, rm.control.stripCardScale) -> -1
+
                     else -> rm.stripFractionalIndex.roundToInt().coerceIn(row.indices)
                 }
             if (previousRow != rm.stripRow || previousSegment != rm.activeSegment) {

@@ -24,6 +24,27 @@ class GuidebotLockedWheelTest {
     }
 
     @Test
+    fun lockedGuideDeployStripUsesAnAboveOrLeftTarget() {
+        val radius = 10f
+        val target = lockedGuideDeployCrossOffset(radius, LEGACY_SCROLL_STRIP_CARD_SCALE)
+
+        assertEquals(-25f, target, 0.001f)
+        assertFalse(lockedGuideDeploySelected(0f, radius, LEGACY_SCROLL_STRIP_CARD_SCALE))
+        assertFalse(lockedGuideDeploySelected(-12.49f, radius, LEGACY_SCROLL_STRIP_CARD_SCALE))
+        assertTrue(lockedGuideDeploySelected(-12.5f, radius, LEGACY_SCROLL_STRIP_CARD_SCALE))
+        assertFalse(lockedGuideDeploySelected(25f, radius, LEGACY_SCROLL_STRIP_CARD_SCALE))
+    }
+
+    @Test
+    fun lockedGuideDeployStripTargetTracksCardScale() {
+        assertEquals(
+            -25f / LEGACY_SCROLL_STRIP_CARD_SCALE,
+            lockedGuideDeployCrossOffset(10f, DEFAULT_SCROLL_STRIP_CARD_SCALE),
+            0.001f,
+        )
+    }
+
+    @Test
     fun guidePresetUsesNextAndUnexploredSlicesWithoutReleaseOrCenter() {
         val guideSegments = TouchBindings.RADIAL_PRESET_SEGMENTS.getValue("Guide")
         val bindings = guideSegments.map { it.binding }

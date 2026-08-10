@@ -42,6 +42,20 @@ internal fun scrollStripRowSpacing(
         cardScale.coerceIn(MIN_SCROLL_STRIP_CARD_SCALE, MAX_SCROLL_STRIP_CARD_SCALE) /
         LEGACY_SCROLL_STRIP_CARD_SCALE
 
+internal fun lockedGuideDeployCrossOffset(
+    triggerRadius: Float,
+    cardScale: Float,
+): Float = -scrollStripRowSpacing(triggerRadius, cardScale)
+
+internal fun lockedGuideDeploySelected(
+    crossDelta: Float,
+    triggerRadius: Float,
+    cardScale: Float,
+): Boolean {
+    val targetOffset = lockedGuideDeployCrossOffset(triggerRadius, cardScale)
+    return targetOffset < 0f && crossDelta <= targetOffset / 2f
+}
+
 internal fun scrollStripBaseTextSize(
     triggerRadius: Float,
     cardScale: Float,
