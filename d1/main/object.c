@@ -922,6 +922,40 @@ void object_get_runtime_state(object_runtime_state *state)
 	state->do_homer_frame = doHomerFrame;
 }
 
+int object_validate_runtime_state(const object_runtime_state *state)
+{
+	ubyte free_seen[MAX_OBJECTS];
+	int highest_live = -1;
+	int live_count = 0;
+	int i;
+
+	if (!state || state->num_objects < 0 || state->num_objects > MAX_OBJECTS ||
+	    state->highest_object_index < -1 || state->highest_object_index >= MAX_OBJECTS ||
+	    state->signature_seed < 0 || state->do_homer_frame < 0 || state->do_homer_frame > 1)
+		return 0;
+
+	memset(free_seen, 0, sizeof(free_seen));
+	for (i = 0; i < MAX_OBJECTS; i++) {
+		if (Objects[i].type != OBJ_NONE) {
+			live_count++;
+			highest_live = i;
+		}
+	}
+	if (state->num_objects != live_count || state->highest_object_index != highest_live)
+		return 0;
+	for (i = state->num_objects; i < MAX_OBJECTS; i++) {
+		int objnum = state->free_obj_list[i];
+		if (objnum < 0 || objnum >= MAX_OBJECTS || free_seen[objnum] ||
+		    Objects[objnum].type != OBJ_NONE)
+			return 0;
+		free_seen[objnum] = 1;
+	}
+	for (i = 0; i < MAX_OBJECTS; i++)
+		if ((Objects[i].type == OBJ_NONE) != (free_seen[i] != 0))
+			return 0;
+	return 1;
+}
+
 void object_set_runtime_state(const object_runtime_state *state)
 {
 	int i;

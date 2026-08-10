@@ -541,6 +541,7 @@ void obj_free(int objnum);
 // this function if you don't know what you're doing.
 void special_reset_objects(void);
 void object_get_runtime_state(object_runtime_state *state);
+int object_validate_runtime_state(const object_runtime_state *state);
 void object_set_runtime_state(const object_runtime_state *state);
 
 // attaches an object, such as a fireball, to another object, such as

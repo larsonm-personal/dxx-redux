@@ -101,8 +101,12 @@ static unsigned int rb_available(void)
 
 static preview_bin_handle_t s_bin_files[CUE_MAX_FILES];
 static int s_num_bin_files = 0;
-static volatile int s_playing = 0;
-static volatile int s_paused = 0;
+static int s_playing = 0;
+static int s_paused = 0;
+static int s_output_enabled = 0;
+static pthread_mutex_t s_control_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t s_playback_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t s_ring_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int s_start_sector = 0;     /* first sector of current track */
 static int s_read_sector = 0;      /* next sector to read */
@@ -268,22 +272,26 @@ static void *render_thread_func(void *data)
 	LOGI("Preview render thread started");
 
 	while (__atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST)) {
+		int sleep_usec = 0;
+		int stop = 0;
+		pthread_mutex_lock(&s_playback_mutex);
 		if (!s_playing || s_paused) {
-			usleep(20000);
-			continue;
+			sleep_usec = 20000;
+		} else {
+			unsigned int space = RB_SAMPLES - rb_available();
+			if (space < CHUNK * 2u) {
+				sleep_usec = 5000;
+			} else {
+				int got = render_cd_frames(buf, CHUNK);
+				if (got > 0)
+					rb_write(buf, got * 2);
+				stop = !s_playing;
+			}
 		}
+		pthread_mutex_unlock(&s_playback_mutex);
 
-		unsigned int space = RB_SAMPLES - rb_available();
-		if (space < CHUNK * 2u) {
-			usleep(5000);
-			continue;
-		}
-
-		int got = render_cd_frames(buf, CHUNK);
-		if (got > 0)
-			rb_write(buf, got * 2);
-
-		if (!s_playing) break;
+		if (stop) break;
+		if (sleep_usec) usleep((useconds_t) sleep_usec);
 	}
 
 	LOGI("Preview render thread exiting");
@@ -293,7 +301,6 @@ static void *render_thread_func(void *data)
 static void render_thread_start(void)
 {
 	if (s_thread_created) return;
-	rb_reset();
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
 	if (pthread_create(&s_render_tid, NULL, render_thread_func, NULL) == 0)
 		s_thread_created = 1;
@@ -314,13 +321,17 @@ static void render_thread_stop(void)
 static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 {
 	(void) ctx;
-	short *buf = s_play_bufs[s_next_buf];
+	short *buf;
 	int needed = BUF_FRAMES * 2; /* stereo samples */
+	int got = 0;
 
+	if (pthread_mutex_trylock(&s_ring_reset_mutex) != 0)
+		return;
+	buf = s_play_bufs[s_next_buf];
 	memset(buf, 0, needed * sizeof(short));
 
-	if (s_playing && !s_paused) {
-		int got = rb_read(buf, needed);
+	if (__atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE)) {
+		got = rb_read(buf, needed);
 		/* Volume scaling */
 		if (s_volume < 0.99f && got > 0) {
 			int i;
@@ -333,6 +344,40 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 
 	(*bq)->Enqueue(bq, buf, needed * sizeof(short));
 	s_next_buf = (s_next_buf + 1) % NUM_BUFFERS;
+	pthread_mutex_unlock(&s_ring_reset_mutex);
+}
+
+static int osl_reprime_queue_locked(void)
+{
+	SLresult r;
+	int i;
+
+	if (!s_player_play || !s_player_bq) return 0;
+	r = (*s_player_play)->SetPlayState(s_player_play, SL_PLAYSTATE_PAUSED);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Pause preview for seek: %d", (int) r);
+		return 0;
+	}
+	r = (*s_player_bq)->Clear(s_player_bq);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Clear preview queue: %d", (int) r);
+		return 0;
+	}
+	for (i = 0; i < NUM_BUFFERS; i++) {
+		memset(s_play_bufs[i], 0, sizeof(s_play_bufs[i]));
+		r = (*s_player_bq)->Enqueue(s_player_bq, s_play_bufs[i], sizeof(s_play_bufs[i]));
+		if (r != SL_RESULT_SUCCESS) {
+			LOGE("Re-prime preview queue: %d", (int) r);
+			return 0;
+		}
+	}
+	s_next_buf = 0;
+	r = (*s_player_play)->SetPlayState(s_player_play, SL_PLAYSTATE_PLAYING);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Resume preview after seek: %d", (int) r);
+		return 0;
+	}
+	return 1;
 }
 
 static int osl_init(int sample_rate)
@@ -417,6 +462,8 @@ static void osl_shutdown(void)
 }
 
 /* ── Public API ──────────────────────────────────────────────────────── */
+
+static void cd_preview_stop_internal(void);
 
 /* Common start logic after all BIN handles are already open */
 static int cd_preview_start_common(const char *cue_path,
@@ -507,6 +554,10 @@ static int cd_preview_start_common(const char *cue_path,
 	s_output_frames = 0;
 	s_paused = 0;
 	s_playing = 1;
+	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	pthread_mutex_lock(&s_ring_reset_mutex);
+	rb_reset();
+	pthread_mutex_unlock(&s_ring_reset_mutex);
 
 	LOGI("Starting track %d (audio #%d): file=%d sectors %d-%d (%d), rate=%d",
 	     i + 1, audio_track_1based, s_track_file_index, s_start_sector, s_track_end - 1,
@@ -522,6 +573,7 @@ static int cd_preview_start_common(const char *cue_path,
 
 	/* Start render thread */
 	render_thread_start();
+	__atomic_store_n(&s_output_enabled, 1, __ATOMIC_RELEASE);
 
 	return 1;
 }
@@ -570,27 +622,32 @@ int cd_preview_start_multi(const char *const *bin_paths, int num_bins,
                            const char *cue_path,
                            int audio_track_1based, int sample_rate)
 {
-	int i;
+	int i, result;
+	pthread_mutex_lock(&s_control_mutex);
 
 	/* Stop any existing preview */
-	cd_preview_stop();
+	cd_preview_stop_internal();
 
 	if (!bin_paths || num_bins < 1 || num_bins > CUE_MAX_FILES || !cue_path ||
 	    audio_track_1based < 1 || sample_rate <= 0) {
 		LOGE("Invalid args: bins=%d cue=%s track=%d rate=%d",
 		     num_bins, cue_path ? cue_path : "NULL",
 		     audio_track_1based, sample_rate);
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
 	for (i = 0; i < num_bins; i++) {
 		if (!open_bin_path_for_preview(bin_paths[i])) {
 			close_bin_files();
+			pthread_mutex_unlock(&s_control_mutex);
 			return 0;
 		}
 	}
 
-	return cd_preview_start_common(cue_path, audio_track_1based, sample_rate);
+	result = cd_preview_start_common(cue_path, audio_track_1based, sample_rate);
+	pthread_mutex_unlock(&s_control_mutex);
+	return result;
 }
 
 int cd_preview_start_fd(int fd, const char *cue_path,
@@ -604,54 +661,84 @@ int cd_preview_start_multi_fd(const int *fds, int num_fds,
                               const char *cue_path,
                               int audio_track_1based, int sample_rate)
 {
-	int i;
+	int i, result;
+	pthread_mutex_lock(&s_control_mutex);
 
 	/* Stop any existing preview */
-	cd_preview_stop();
+	cd_preview_stop_internal();
 
 	if (!fds || num_fds < 1 || num_fds > CUE_MAX_FILES || !cue_path ||
 	    audio_track_1based < 1 || sample_rate <= 0) {
 		LOGE("Invalid args: fds=%d cue=%s track=%d rate=%d",
 		     num_fds, cue_path ? cue_path : "NULL",
 		     audio_track_1based, sample_rate);
+		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
 
 	for (i = 0; i < num_fds; i++) {
 		if (!open_bin_fd_for_preview(fds[i])) {
 			close_bin_files();
+			pthread_mutex_unlock(&s_control_mutex);
 			return 0;
 		}
 	}
 
-	return cd_preview_start_common(cue_path, audio_track_1based, sample_rate);
+	result = cd_preview_start_common(cue_path, audio_track_1based, sample_rate);
+	pthread_mutex_unlock(&s_control_mutex);
+	return result;
+}
+
+static void cd_preview_stop_internal(void)
+{
+	pthread_mutex_lock(&s_playback_mutex);
+	s_playing = 0;
+	s_paused = 0;
+	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_playback_mutex);
+	render_thread_stop();
+	osl_shutdown();
+	pthread_mutex_lock(&s_playback_mutex);
+	close_bin_files();
+	rb_reset();
+	pthread_mutex_unlock(&s_playback_mutex);
 }
 
 void cd_preview_stop(void)
 {
-	s_playing = 0;
-	s_paused = 0;
-	render_thread_stop();
-	osl_shutdown();
-	close_bin_files();
-	rb_reset();
+	pthread_mutex_lock(&s_control_mutex);
+	cd_preview_stop_internal();
+	pthread_mutex_unlock(&s_control_mutex);
 }
 
 void cd_preview_pause(void)
 {
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
 	s_paused = 1;
+	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
 }
 
 void cd_preview_resume(void)
 {
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
 	s_paused = 0;
+	__atomic_store_n(&s_output_enabled, s_playing ? 1 : 0, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
 }
 
 int cd_preview_seek(float fraction)
 {
 	int target;
+	int result = 0;
 
-	if (!s_playing && !s_paused) return 0;
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
+	if (!s_playing && !s_paused) goto done;
 	if (fraction < 0.0f) fraction = 0.0f;
 	if (fraction > 1.0f) fraction = 1.0f;
 
@@ -659,7 +746,9 @@ int cd_preview_seek(float fraction)
 	if (target >= s_track_end) target = s_track_end - 1;
 	if (target < s_start_sector) target = s_start_sector;
 
-	/* Reset PCM state and ring buffer */
+	/* Stop callback consumption before replacing decoder and queued audio. */
+	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	pthread_mutex_lock(&s_ring_reset_mutex);
 	s_read_sector = target;
 	s_pcm_len = 0;
 	s_pcm_pos = 0;
@@ -673,12 +762,27 @@ int cd_preview_seek(float fraction)
 		long long output_frames = (input_frames * s_output_rate) / CD_SAMPLE_RATE;
 		__atomic_store_n(&s_output_frames, output_frames, __ATOMIC_RELAXED);
 	}
+	if (!osl_reprime_queue_locked()) {
+		s_playing = 0;
+		s_paused = 0;
+		pthread_mutex_unlock(&s_ring_reset_mutex);
+		goto done;
+	}
+	__atomic_store_n(&s_output_enabled, s_paused ? 0 : 1, __ATOMIC_RELEASE);
+	pthread_mutex_unlock(&s_ring_reset_mutex);
+	result = 1;
 
-	return 1;
+done:
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
+	return result;
 }
 
 int cd_preview_get_state(int *out_position_ms, int *out_duration_ms)
 {
+	int state;
+	pthread_mutex_lock(&s_control_mutex);
+	pthread_mutex_lock(&s_playback_mutex);
 	/* Duration from sector count */
 	int duration_ms = (int) ((long long) s_num_sectors * FRAMES_PER_SECTOR * 1000 /
 	                         CD_SAMPLE_RATE);
@@ -693,7 +797,13 @@ int cd_preview_get_state(int *out_position_ms, int *out_duration_ms)
 	if (out_position_ms) *out_position_ms = position_ms;
 	if (out_duration_ms) *out_duration_ms = duration_ms;
 
-	if (s_playing && !s_paused) return CDP_PLAYING;
-	if (s_paused) return CDP_PAUSED;
-	return CDP_STOPPED;
+	if (s_playing && !s_paused)
+		state = CDP_PLAYING;
+	else if (s_paused)
+		state = CDP_PAUSED;
+	else
+		state = CDP_STOPPED;
+	pthread_mutex_unlock(&s_playback_mutex);
+	pthread_mutex_unlock(&s_control_mutex);
+	return state;
 }

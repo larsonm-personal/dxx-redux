@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "cntrlcen.h"
 #include "morph.h"
+#include "polyobj.h"
 #include "weapon.h"
 #include "render.h"
 #include "gameseq.h"
@@ -836,6 +837,225 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
 	state_write_secret_area_runtime_state(fp);
+}
+
+#define STATE_PHYSICS_INFO_DISK_BYTES ((size_t)(5 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
+
+static int state_runtime_read_s16(PHYSFS_file *fp, int swap, short *value)
+{
+	PHYSFS_sint16 raw;
+	if (PHYSFS_read(fp, &raw, sizeof(raw), 1) != 1)
+		return 0;
+	*value = (short)(swap ? SWAPSHORT(raw) : raw);
+	return 1;
+}
+
+static int state_runtime_read_s32(PHYSFS_file *fp, int swap, int *value)
+{
+	PHYSFS_sint32 raw;
+	if (PHYSFS_read(fp, &raw, sizeof(raw), 1) != 1)
+		return 0;
+	*value = swap ? SWAPINT(raw) : raw;
+	return 1;
+}
+
+static int state_runtime_skip(PHYSFS_file *fp, size_t bytes)
+{
+	PHYSFS_sint64 length = PHYSFS_fileLength(fp);
+	PHYSFS_sint64 position = PHYSFS_tell(fp);
+	if (length < 0 || position < 0 || position > length ||
+	    bytes > (size_t)(length - position))
+		return 0;
+	return PHYSFS_seek(fp, position + (PHYSFS_sint64)bytes);
+}
+
+static int state_runtime_control_type_valid(unsigned char value)
+{
+	return value == CT_NONE || value == CT_AI || value == CT_EXPLOSION ||
+	       value == CT_FLYING || value == CT_SLEW || value == CT_FLYTHROUGH ||
+	       value == CT_WEAPON || value == CT_REPAIRCEN || value == CT_MORPH ||
+	       value == CT_DEBRIS || value == CT_POWERUP || value == CT_LIGHT ||
+	       value == CT_REMOTE || value == CT_CNTRLCEN;
+}
+
+static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap)
+{
+	ubyte seen[MAX_OBJECTS];
+	int active_morphs, i, j;
+
+	memset(seen, 0, sizeof(seen));
+	if (!state_runtime_read_s32(fp, swap, &active_morphs) ||
+	    active_morphs < 0 || active_morphs > MAX_MORPH_OBJECTS)
+		return 0;
+	for (i = 0; i < active_morphs; i++) {
+		int active_count = 0;
+		int model_num, morph_sig, n_submodels_active, objnum;
+		int active[MAX_SUBMODELS], counts[MAX_SUBMODELS], starts[MAX_SUBMODELS];
+		unsigned char control_type, movement_type;
+
+		if (!state_runtime_read_s32(fp, swap, &objnum) ||
+		    !state_runtime_read_s32(fp, swap, &morph_sig) ||
+		    objnum < 0 || objnum > Highest_object_index || seen[objnum] ||
+		    Objects[objnum].type == OBJ_NONE || Objects[objnum].signature != morph_sig ||
+		    Objects[objnum].render_type != RT_MORPH)
+			return 0;
+		seen[objnum] = 1;
+		model_num = Objects[objnum].rtype.pobj_info.model_num;
+		if (model_num < 0 || model_num >= N_polygon_models ||
+		    Polygon_models[model_num].n_models < 1 ||
+		    Polygon_models[model_num].n_models > MAX_SUBMODELS ||
+		    !state_runtime_skip(fp, (size_t)MAX_VECS * 2 * 3 * sizeof(int)) ||
+		    !state_runtime_skip(fp, (size_t)MAX_VECS * sizeof(int)))
+			return 0;
+		for (j = 0; j < MAX_SUBMODELS; j++)
+			if (!state_runtime_read_s32(fp, swap, &active[j]))
+				return 0;
+		for (j = 0; j < MAX_SUBMODELS; j++)
+			if (!state_runtime_read_s32(fp, swap, &counts[j]))
+				return 0;
+		for (j = 0; j < MAX_SUBMODELS; j++)
+			if (!state_runtime_read_s32(fp, swap, &starts[j]))
+				return 0;
+		if (!state_runtime_read_s32(fp, swap, &n_submodels_active) ||
+		    PHYSFS_read(fp, &control_type, sizeof(control_type), 1) != 1 ||
+		    PHYSFS_read(fp, &movement_type, sizeof(movement_type), 1) != 1 ||
+		    !state_runtime_skip(fp, STATE_PHYSICS_INFO_DISK_BYTES))
+			return 0;
+		for (j = 0; j < MAX_SUBMODELS; j++) {
+			if (active[j] < 0 || active[j] > 2 || counts[j] < 0 ||
+			    starts[j] < 0 || starts[j] > MAX_VECS ||
+			    counts[j] > MAX_VECS - starts[j] ||
+			    (j >= Polygon_models[model_num].n_models &&
+			     (active[j] || counts[j])))
+				return 0;
+			if (active[j] == 1)
+				active_count++;
+		}
+		if (n_submodels_active != active_count ||
+		    !state_runtime_control_type_valid(control_type) ||
+		    (movement_type != MT_NONE && movement_type != MT_PHYSICS &&
+		     movement_type != MT_SPINNING))
+			return 0;
+	}
+	return 1;
+}
+
+static int state_validate_stuck_runtime_state(PHYSFS_file *fp, int swap)
+{
+	int active = 0;
+	int count, i;
+
+	if (!state_runtime_read_s32(fp, swap, &count) || count < 0 || count > MAX_STUCK_OBJECTS)
+		return 0;
+	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
+		int signature;
+		short objnum, wallnum;
+		if (!state_runtime_read_s16(fp, swap, &objnum) ||
+		    !state_runtime_read_s16(fp, swap, &wallnum) ||
+		    !state_runtime_read_s32(fp, swap, &signature))
+			return 0;
+		if (objnum == -1) {
+			if (wallnum != -1)
+				return 0;
+			continue;
+		}
+		if (objnum < 0 || objnum > Highest_object_index ||
+		    Objects[objnum].type == OBJ_NONE || Objects[objnum].signature != signature ||
+		    wallnum < 0 || wallnum >= Num_walls)
+			return 0;
+		active++;
+	}
+	return count == active;
+}
+
+static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int version)
+{
+	ubyte seen[MAX_EFFECTS];
+	int count, i;
+
+	if (version < STATE_EFFECT_RUNTIME_VERSION)
+		return 1;
+	memset(seen, 0, sizeof(seen));
+	if (!state_runtime_skip(fp, 2 * sizeof(int)) ||
+	    !state_runtime_read_s32(fp, swap, &count) || count < 0 || count > Num_effects)
+		return 0;
+	for (i = 0; i < count; i++) {
+		int dest_bm_num, dynamic_flags, effect_num, frame_count, segnum, sidenum, time_left;
+		if (!state_runtime_read_s32(fp, swap, &effect_num) ||
+		    !state_runtime_read_s32(fp, swap, &time_left) ||
+		    !state_runtime_read_s32(fp, swap, &frame_count) ||
+		    !state_runtime_read_s32(fp, swap, &dynamic_flags) ||
+		    !state_runtime_read_s32(fp, swap, &segnum) ||
+		    !state_runtime_read_s32(fp, swap, &sidenum) ||
+		    !state_runtime_read_s32(fp, swap, &dest_bm_num) ||
+		    effect_num < 0 || effect_num >= Num_effects || seen[effect_num] ||
+		    time_left < 0 || Effects[effect_num].vc.num_frames < 1 ||
+		    frame_count < 0 || frame_count >= Effects[effect_num].vc.num_frames ||
+		    (dynamic_flags & ~(EF_ONE_SHOT | EF_STOPPED)))
+			return 0;
+		seen[effect_num] = 1;
+		if (segnum != -1 &&
+		    (segnum < 0 || segnum > Highest_segment_index || sidenum < 0 || sidenum >= 6 ||
+		     dest_bm_num <= 0 || dest_bm_num >= NumTextures))
+			return 0;
+		if ((dynamic_flags & EF_ONE_SHOT) && segnum == -1)
+			return 0;
+	}
+	return 1;
+}
+
+static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
+{
+	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	object_runtime_state object_state;
+	int i, valid = 0;
+
+	memset(&object_state, 0, sizeof(object_state));
+	if (start < 0 || !state_runtime_skip(fp, 9 * sizeof(int)))
+		goto done;
+	if (version >= STATE_FX_RNG_RUNTIME_VERSION && !state_runtime_skip(fp, 3 * sizeof(int)))
+		goto done;
+	if (!state_runtime_skip(fp, 3 * sizeof(int)) ||
+	    !state_runtime_read_s32(fp, swap, &object_state.num_objects) ||
+	    !state_runtime_read_s32(fp, swap, &object_state.highest_object_index))
+		goto done;
+	for (i = 0; i < MAX_OBJECTS; i++)
+		if (!state_runtime_read_s16(fp, swap, &object_state.free_obj_list[i]))
+			goto done;
+	if (version >= STATE_OBJECT_SIGNATURE_RUNTIME_VERSION) {
+		if (!state_runtime_read_s32(fp, swap, &object_state.signature_seed))
+			goto done;
+	} else {
+		object_state.signature_seed = 0;
+	}
+	if (!state_runtime_skip(fp, 2 * sizeof(int)) ||
+	    !state_runtime_read_s32(fp, swap, &object_state.do_homer_frame) ||
+	    !object_validate_runtime_state(&object_state) ||
+	    !state_runtime_skip(fp, 7 * sizeof(int)))
+		goto done;
+	if (version >= STATE_FIDELITY_VERSION) {
+		for (i = 0; i <= Highest_object_index; i++)
+			if (Objects[i].type != OBJ_NONE && Objects[i].control_type == CT_WEAPON &&
+			    !state_runtime_skip(fp, sizeof(int) + MAX_OBJECTS))
+				goto done;
+		if (!state_validate_morph_runtime_state(fp, swap) ||
+		    !state_validate_stuck_runtime_state(fp, swap) ||
+		    !state_runtime_skip(fp, 2 * sizeof(int) + (size_t)MAX_OBJECTS * sizeof(int)))
+			goto done;
+	}
+	if (version >= STATE_AI_PATH_RUNTIME_VERSION &&
+	    !state_runtime_skip(fp, 6 * sizeof(int) + sizeof(short)))
+		goto done;
+	if (!state_validate_effect_runtime_state(fp, swap, version))
+		goto done;
+	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
+	    !state_runtime_skip(fp, sizeof(int) + SECRET_AREA_MAX_GENERATED))
+		goto done;
+	valid = 1;
+done:
+	if (start >= 0)
+		PHYSFS_seek(fp, start);
+	return valid;
 }
 
 static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version)
@@ -3006,7 +3226,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		
 
 	// Restore the AI state
-	ai_restore_state( fp, version, swap );
+	if (!ai_restore_state(fp, version, swap)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 
 	// Restore the automap visited info
 	if ( Highest_segment_index+1 > MAX_SEGMENTS_ORIGINAL )
@@ -3265,8 +3488,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	state_android_restore_player_flight_state();
 #endif
 
-	if (version >= STATE_RUNTIME_VERSION)
+	if (version >= STATE_RUNTIME_VERSION) {
+		if (!state_validate_runtime_state(fp, swap, version)) {
+			PHYSFS_close(fp);
+			return 0;
+		}
 		state_read_runtime_state(fp, swap, secret_restore, version);
+	}
 	state_log_checkpoint_ai_restore_state();
 
 #ifdef __ANDROID__

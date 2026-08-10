@@ -2317,25 +2317,39 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 	if (version >= 15) {
 		int temp;
 		temp = PHYSFSX_readSXE32(fp, swap);
+		if (temp < 0 || temp > MAX_POINT_SEGS)
+			return 0;
 		Point_segs_free_ptr = &Point_segs[temp];
 	} else
 		ai_reset_all_paths();
 
 	if (version >= 21) {
 		int i;
-												
+
 		Num_boss_teleport_segs = PHYSFSX_readSXE32(fp, swap);
 		Num_boss_gate_segs = PHYSFSX_readSXE32(fp, swap);
+		if (Num_boss_teleport_segs < 0 || Num_boss_teleport_segs > MAX_BOSS_TELEPORT_SEGS ||
+			Num_boss_gate_segs < 0 || Num_boss_gate_segs > MAX_BOSS_TELEPORT_SEGS)
+			return 0;
 
-		for (i = 0; i < Num_boss_gate_segs; i++)
+		for (i = 0; i < Num_boss_gate_segs; i++) {
 			Boss_gate_segs[i] = PHYSFSX_readSXE16(fp, swap);
+			if (Boss_gate_segs[i] < 0 || Boss_gate_segs[i] > Highest_segment_index)
+				return 0;
+		}
 
-		for (i = 0; i < Num_boss_teleport_segs; i++)
+		for (i = 0; i < Num_boss_teleport_segs; i++) {
 			Boss_teleport_segs[i] = PHYSFSX_readSXE16(fp, swap);
+			if (Boss_teleport_segs[i] < 0 ||
+			    Boss_teleport_segs[i] > Highest_segment_index)
+				return 0;
+		}
 	}
 
 	if (version >= 23) {
 		int saved_num_awareness_events = PHYSFSX_readSXE32(fp, swap);
+		if (saved_num_awareness_events < 0 || saved_num_awareness_events > MAX_AWARENESS_EVENTS)
+			return 0;
 
 		Num_awareness_events = 0;
 		for (i = 0; i < saved_num_awareness_events; i++) {
@@ -2344,11 +2358,17 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 			event.segnum = (short)PHYSFSX_readSXE16(fp, swap);
 			event.type = (short)PHYSFSX_readSXE16(fp, swap);
 			PHYSFSX_readVectorX(fp, &event.pos, swap);
+			if (event.segnum < 0 || event.segnum > Highest_segment_index ||
+			    event.type < PA_NEARBY_ROBOT_FIRED ||
+			    event.type > PA_WEAPON_ROBOT_COLLISION)
+				return 0;
 			if (Num_awareness_events < MAX_AWARENESS_EVENTS)
 				Awareness_events[Num_awareness_events++] = event;
 		}
 		PHYSFSX_readVectorX(fp, &Believed_player_pos, swap);
 		Believed_player_seg = PHYSFSX_readSXE32(fp, swap);
+		if (Believed_player_seg < -1 || Believed_player_seg > Highest_segment_index)
+			return 0;
 		PHYSFSX_readVectorX(fp, &Last_fired_upon_player_pos, swap);
 	} else {
 		Num_awareness_events = 0;

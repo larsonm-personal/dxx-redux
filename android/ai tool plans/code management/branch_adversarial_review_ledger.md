@@ -14964,23 +14964,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Render a known distinct activation and aim pair in software, desktop OpenGL, and Android OpenGL, capture the endpoint pixels, and assert that the line begins and ends outside the measured label rectangles with matching inset tolerance. Retain candidate and drawn-count assertions, and add a negative case whose projected separation is too short for two insets.
 - Resolution: Pending
 
-### BR-0274: P1 - Serialize CD preview seek with rendering
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: concurrency
-- Found by: R1-CHUNK-0159
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/cd_preview.c:L197-L279,L292-L308,L336-L357,L652-L719` in rendering, callback consumption, seek, pause, and state access
-- Related: `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt:L1301-L1314,L1439-L1479`, `android/app/src/main/cpp/jni_cd_preview.c:L122-L161`, BR-0016, and archived BR-0028
-- Evidence: The Compose slider calls seek while the render thread can be inside `refill_pcm` or `render_cd_frames`. Seek concurrently rewrites `s_read_sector`, `s_pcm_len`, `s_pcm_pos`, and `s_resample_frac`, then resets the ring positions, while rendering reads and mutates the same plain PCM cursor fields and writes the same ring. Pause, resume, render EOF, the OpenSL callback, and the 100 ms UI state poll likewise read or write plain volatile `s_playing` and `s_paused`; volatile supplies no C synchronization. The ring atomics implement one producer and one consumer, but seek becomes a third position writer without a handoff to either owner. The same race was fixed for the separate MIDI preview under archived BR-0028, but the added CD implementation retains it.
-- Trigger: Drag and release the CD preview progress slider while audio is actively rendering, especially with repeated seeks near a sector refill or OpenSL callback; pause and resume while the same threads are active widens the state race
-- Impact: Concurrent PCM cursor mutation is undefined native behavior and can make the renderer copy or index inconsistent buffer state, seek to an unintended sector, publish pre-seek samples after the reset, return incoherent state, produce corrupted audio, or crash the launcher.
-- Expected: One owner mutates BIN, PCM, resampler, and ring state; seek, pause, resume, and state queries use ordered commands or a synchronized snapshot, and a completed seek defines exactly which pre-seek samples can still reach OpenSL.
-- Suggested fix: Route controls through a render-thread command queue or guard playback state with one lifecycle mutex, pause rendering while applying seek, and serialize ring reset against the non-blocking callback reader. Publish simple state through C atomics or one coherent locked snapshot, with an explicit lock order compatible with stop and join.
-- Validation: Add rapid and barrier-controlled seeks during refill, interpolation, ring write, callback read, pause, resume, and natural EOF. Assert the first post-seek audio and reported position belong to the selected sector, no pre-seek ring data reappears, state snapshots are coherent, stop remains deadlock-free, and native race and memory instrumentation report no defect.
-- Resolution: Pending
-
 ### BR-0275: P1 - Check every CD preview audio initialization step
 
 - [ ] OPEN

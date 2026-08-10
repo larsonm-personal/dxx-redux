@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ai.h"
 #include "byteswap.h"
 #include "cntrlcen.h"
+#include "console.h"
 #include "d1_save_translate.h"
 #include "effects.h"
 #include "fuelcen.h"
@@ -12,12 +14,16 @@
 #include "laser.h"
 #include "morph.h"
 #include "object.h"
+#include "polyobj.h"
+#include "powerup.h"
 #include "robot.h"
 #include "secretarea.h"
 #include "segment.h"
 #include "switch.h"
+#include "textures.h"
 #include "wall.h"
 #include "weapon.h"
+#include "vclip.h"
 
 #define D1_SAVE_VERSION 15
 #define D1_SAVE_COMPATIBLE_VERSION 6
@@ -37,6 +43,7 @@
 #define D1_SAVE_AI_CLOAK_INFO_RW_BYTES 16
 #define D1_SAVE_MAX_AI_CLOAK_INFO 8
 #define D1_SAVE_MAX_AWARENESS_EVENTS 64
+#define D1_SAVE_MAX_POLYGON_MODELS 85
 
 typedef struct d1_save_translate_reader {
 	const uint8_t *data;
@@ -598,6 +605,153 @@ static int d1_save_translate_read_object(d1_save_translate_reader *reader,
 	return 1;
 }
 
+static int d1_save_translate_control_type_valid(ubyte value)
+{
+	return value == CT_NONE || value == CT_AI || value == CT_EXPLOSION ||
+	       value == CT_FLYING || value == CT_SLEW || value == CT_FLYTHROUGH ||
+	       value == CT_WEAPON || value == CT_REPAIRCEN || value == CT_MORPH ||
+	       value == CT_DEBRIS || value == CT_POWERUP || value == CT_LIGHT ||
+	       value == CT_REMOTE || value == CT_CNTRLCEN;
+}
+
+static int d1_save_translate_object_index_valid(short value, int object_count)
+{
+	return value == -1 || (value >= 0 && value < object_count);
+}
+
+static int d1_save_translate_validate_object(const object *obj, int object_count)
+{
+	if (!obj)
+		return 0;
+	if (obj->type == OBJ_NONE)
+		return 1;
+	if (obj->type >= MAX_OBJECT_TYPES ||
+	    !d1_save_translate_control_type_valid(obj->control_type) ||
+	    (obj->movement_type != MT_NONE && obj->movement_type != MT_PHYSICS &&
+	     obj->movement_type != MT_SPINNING) ||
+	    obj->render_type > RT_WEAPON_VCLIP ||
+	    (obj->type != OBJ_NONE &&
+	     (obj->segnum < 0 || obj->segnum > Highest_segment_index)) ||
+	    !d1_save_translate_object_index_valid(obj->attached_obj, object_count))
+		return 0;
+
+	switch (obj->type) {
+	case OBJ_ROBOT:
+		if (obj->id >= N_robot_types)
+			return 0;
+		break;
+	case OBJ_PLAYER:
+	case OBJ_COOP:
+	case OBJ_GHOST:
+		if (obj->id >= MAX_PLAYERS)
+			return 0;
+		break;
+	case OBJ_WEAPON:
+	case OBJ_FLARE:
+		if (obj->id >= N_weapon_types)
+			return 0;
+		break;
+	case OBJ_POWERUP:
+		if (obj->id >= N_powerup_types)
+			return 0;
+		break;
+	case OBJ_CNTRLCEN:
+		break;
+	}
+
+	if (obj->render_type == RT_POLYOBJ || obj->render_type == RT_MORPH) {
+		int model_limit = N_polygon_models;
+		if (obj->type == OBJ_ROBOT || obj->type == OBJ_PLAYER ||
+		    obj->type == OBJ_COOP || obj->type == OBJ_GHOST)
+			model_limit = D1_SAVE_MAX_POLYGON_MODELS;
+		if (obj->rtype.pobj_info.model_num < 0 ||
+		    obj->rtype.pobj_info.model_num >= model_limit)
+			return 0;
+	}
+	if ((obj->render_type == RT_WEAPON_VCLIP || obj->render_type == RT_HOSTAGE ||
+	     obj->render_type == RT_POWERUP || obj->render_type == RT_FIREBALL) &&
+	    (obj->rtype.vclip_info.vclip_num < 0 ||
+	     obj->rtype.vclip_info.vclip_num >= Num_vclips))
+		return 0;
+
+	if (obj->control_type == CT_WEAPON &&
+	    (!d1_save_translate_object_index_valid(obj->ctype.laser_info.parent_num,
+	                                          object_count) ||
+	     !d1_save_translate_object_index_valid(obj->ctype.laser_info.last_hitobj,
+	                                          object_count) ||
+	     !d1_save_translate_object_index_valid(obj->ctype.laser_info.track_goal,
+	                                          object_count)))
+		return 0;
+	if (obj->control_type == CT_EXPLOSION &&
+	    (!d1_save_translate_object_index_valid(obj->ctype.expl_info.delete_objnum,
+	                                          object_count) ||
+	     !d1_save_translate_object_index_valid(obj->ctype.expl_info.attach_parent,
+	                                          object_count) ||
+	     !d1_save_translate_object_index_valid(obj->ctype.expl_info.prev_attach,
+	                                          object_count) ||
+	     !d1_save_translate_object_index_valid(obj->ctype.expl_info.next_attach,
+	                                          object_count)))
+		return 0;
+	if (obj->control_type == CT_AI &&
+	    ((obj->ctype.ai_info.hide_segment != -1 &&
+	      (obj->ctype.ai_info.hide_segment < 0 ||
+	       obj->ctype.ai_info.hide_segment > Highest_segment_index)) ||
+	     !d1_save_translate_object_index_valid(obj->ctype.ai_info.danger_laser_num,
+	                                          object_count)))
+		return 0;
+	if (obj->contains_count < -1 ||
+	    (obj->contains_count > 0 &&
+	     (obj->contains_type < 0 || obj->contains_type >= MAX_OBJECT_TYPES)))
+		return 0;
+	return 1;
+}
+
+static int d1_save_translate_validate_object_references(object *objects,
+	int object_count)
+{
+	int i;
+	for (i = 0; i < object_count; i++) {
+		object *obj = &objects[i];
+		if (!d1_save_translate_validate_object(obj, object_count)) {
+			con_printf(CON_URGENT,
+			           "D1 checkpoint translation: invalid object %d type=%u id=%u control=%u movement=%u render=%u seg=%d attached=%d next=%d prev=%d model=%d vclip=%d contains=%d/%d/%d limits=%d/%d/%d/%d\n",
+			           i, obj->type, obj->id, obj->control_type,
+			           obj->movement_type, obj->render_type, obj->segnum,
+			           obj->attached_obj, obj->next, obj->prev,
+			           obj->rtype.pobj_info.model_num,
+			           obj->rtype.vclip_info.vclip_num, obj->contains_type,
+			           obj->contains_id, obj->contains_count, MAX_OBJECT_TYPES,
+			           N_polygon_models, Num_vclips, MAX_PLAYERS);
+			return 0;
+		}
+		if ((obj->type == OBJ_PLAYER || obj->type == OBJ_COOP ||
+		     obj->type == OBJ_GHOST) && obj->render_type == RT_POLYOBJ) {
+			if (!Player_ship || Player_ship->model_num < 0 ||
+			    Player_ship->model_num >= N_polygon_models)
+				return 0;
+			obj->rtype.pobj_info.model_num = Player_ship->model_num;
+		} else if (obj->type == OBJ_ROBOT && obj->render_type == RT_POLYOBJ) {
+			int model_num = Robot_info[obj->id].model_num;
+			if (model_num < 0 || model_num >= N_polygon_models)
+				return 0;
+			obj->rtype.pobj_info.model_num = model_num;
+		}
+		if (obj->type == OBJ_CNTRLCEN)
+			obj->id = 0;
+		if (obj->attached_obj != -1 && objects[obj->attached_obj].type == OBJ_NONE)
+			return 0;
+		if (obj->control_type == CT_WEAPON && obj->ctype.laser_info.parent_num != -1 &&
+		    objects[obj->ctype.laser_info.parent_num].signature !=
+		        obj->ctype.laser_info.parent_signature)
+			return 0;
+		if (obj->control_type == CT_AI && obj->ctype.ai_info.danger_laser_num != -1 &&
+		    objects[obj->ctype.ai_info.danger_laser_num].signature !=
+		        obj->ctype.ai_info.danger_laser_signature)
+			return 0;
+	}
+	return 1;
+}
+
 static int d1_save_translate_read_ai_local(d1_save_translate_reader *reader,
                                            ai_local *local)
 {
@@ -888,6 +1042,79 @@ static int d1_save_translate_read_d1_fuelcen(d1_save_translate_reader *reader,
 	       d1_save_translate_read_vector(reader, &out->Center);
 }
 
+static int d1_save_translate_validate_world_state(void)
+{
+	int i, j;
+
+	for (i = 0; i < Num_walls; i++) {
+		const wall *wallp = &Walls[i];
+		if (wallp->segnum < 0 || wallp->segnum > Highest_segment_index ||
+		    wallp->sidenum < 0 || wallp->sidenum >= MAX_SIDES_PER_SEGMENT ||
+		    (wallp->linked_wall != -1 &&
+		     (wallp->linked_wall < 0 || wallp->linked_wall >= Num_walls)) ||
+		    wallp->type > WALL_CLOAKED || wallp->state > WALL_DOOR_DECLOAKING ||
+		    (wallp->trigger != -1 &&
+		     (wallp->trigger < 0 || wallp->trigger >= Num_triggers)) ||
+		    (wallp->clip_num != -1 &&
+		     (wallp->clip_num < 0 || wallp->clip_num >= Num_wall_anims)) ||
+		    (wallp->keys != KEY_NONE && wallp->keys != KEY_BLUE &&
+		     wallp->keys != KEY_RED && wallp->keys != KEY_GOLD))
+			return 0;
+	}
+	for (i = 0; i < Num_open_doors; i++) {
+		const active_door *door = &ActiveDoors[i];
+		if (door->n_parts < 1 || door->n_parts > 2)
+			return 0;
+		for (j = 0; j < door->n_parts; j++)
+			if (door->front_wallnum[j] < 0 || door->front_wallnum[j] >= Num_walls ||
+			    door->back_wallnum[j] < 0 || door->back_wallnum[j] >= Num_walls)
+				return 0;
+	}
+	for (i = 0; i < Num_triggers; i++) {
+		const trigger *triggerp = &Triggers[i];
+		if (triggerp->type >= NUM_TRIGGER_TYPES || triggerp->num_links < 0 ||
+		    triggerp->num_links > MAX_WALLS_PER_LINK)
+			return 0;
+		for (j = 0; j < triggerp->num_links; j++)
+			if (triggerp->seg[j] < 0 || triggerp->seg[j] > Highest_segment_index ||
+			    triggerp->side[j] < 0 || triggerp->side[j] >= MAX_SIDES_PER_SEGMENT)
+				return 0;
+	}
+	for (i = 0; i <= Highest_segment_index; i++)
+		for (j = 0; j < MAX_SIDES_PER_SEGMENT; j++) {
+			const side *sidep = &Segments[i].sides[j];
+			if ((sidep->wall_num != -1 &&
+			     (sidep->wall_num < 0 || sidep->wall_num >= Num_walls)) ||
+			    sidep->tmap_num < 0 || sidep->tmap_num >= NumTextures ||
+			    (sidep->tmap_num2 & 0x3fff) >= NumTextures)
+				return 0;
+		}
+	for (i = 0; i < Num_fuelcenters; i++)
+		if (Station[i].Type < SEGMENT_IS_NOTHING || Station[i].Type > SEGMENT_IS_GOAL_RED ||
+		    Station[i].segnum < 0 || Station[i].segnum > Highest_segment_index)
+			return 0;
+	for (i = 0; i < Num_robot_centers; i++)
+		if (RobotCenters[i].segnum < 0 || RobotCenters[i].segnum > Highest_segment_index ||
+		    RobotCenters[i].fuelcen_num < 0 ||
+		    RobotCenters[i].fuelcen_num >= Num_fuelcenters)
+			return 0;
+	if (ControlCenterTriggers.num_links < 0 ||
+	    ControlCenterTriggers.num_links > MAX_WALLS_PER_LINK)
+		return 0;
+	for (i = 0; i < ControlCenterTriggers.num_links; i++)
+		if (ControlCenterTriggers.seg[i] < 0 ||
+		    ControlCenterTriggers.seg[i] > Highest_segment_index ||
+		    ControlCenterTriggers.side[i] < 0 ||
+		    ControlCenterTriggers.side[i] >= MAX_SIDES_PER_SEGMENT)
+			return 0;
+	if (Dead_controlcen_object_num != -1 &&
+	    (Dead_controlcen_object_num < 0 ||
+	     Dead_controlcen_object_num > Highest_object_index ||
+	     Objects[Dead_controlcen_object_num].type != OBJ_CNTRLCEN))
+		return 0;
+	return 1;
+}
+
 static int d1_save_translate_apply_d1_world_state(
     d1_save_translate_reader *reader)
 {
@@ -966,6 +1193,8 @@ static int d1_save_translate_apply_d1_world_state(
 	    !d1_save_translate_read_s32(reader, &Control_center_next_fire_time) ||
 	    !d1_save_translate_read_s32(reader, &Control_center_present) ||
 	    !d1_save_translate_read_s32(reader, &Dead_controlcen_object_num))
+		return 0;
+	if (!d1_save_translate_validate_world_state())
 		return 0;
 	if (Control_center_destroyed)
 		Total_countdown_time = Countdown_timer / F0_5;
@@ -1101,6 +1330,8 @@ static int d1_save_translate_apply_runtime_state(
 	if (!d1_save_translate_skip(reader,
 	                            sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		return 0;
+	if (!object_validate_runtime_state(&object_state))
+		return 0;
 
 	Next_laser_fire_time = GameTime64 + (fix64) next_laser_fire_delta;
 	Next_missile_fire_time = GameTime64 + (fix64) next_missile_fire_delta;
@@ -1201,22 +1432,39 @@ int d1_save_translate_apply_checkpoint_objects(
     const d1_save_translate_checkpoint_start *start)
 {
 	int i;
+	object *translated_objects;
 	d1_save_translate_reader reader;
 
 	if (!data || !start || start->object_count <= 0 ||
 	    start->object_count > MAX_OBJECTS ||
 	    start->object_stream_offset >= size)
 		return 0;
-	reset_objects(1);
-	init_morphs();
-	Do_appearance_effect = 0;
+	translated_objects = (object *)calloc((size_t)start->object_count,
+	                                      sizeof(*translated_objects));
+	if (!translated_objects)
+		return 0;
 	reader.data = data;
 	reader.size = size;
 	reader.pos = start->object_stream_offset;
 	reader.swap = start->checkpoint_swap;
 	for (i = 0; i < start->object_count; i++)
-		if (!d1_save_translate_read_object(&reader, &Objects[i]))
+		if (!d1_save_translate_read_object(&reader, &translated_objects[i])) {
+			con_printf(CON_URGENT, "D1 checkpoint translation: object %d could not be decoded\n", i);
+			free(translated_objects);
 			return 0;
+		}
+	if (!d1_save_translate_validate_object_references(translated_objects,
+	                                                 start->object_count)) {
+		con_printf(CON_URGENT, "D1 checkpoint translation: object references are invalid\n");
+		free(translated_objects);
+		return 0;
+	}
+	reset_objects(1);
+	init_morphs();
+	Do_appearance_effect = 0;
+	memcpy(Objects, translated_objects,
+	       (size_t)start->object_count * sizeof(*translated_objects));
+	free(translated_objects);
 	Highest_object_index = start->object_count - 1;
 	if (!d1_save_translate_restore_checkpoint_object_links())
 		return 0;
@@ -1236,9 +1484,14 @@ int d1_save_translate_apply_checkpoint_objects(
 		}
 	}
 	special_reset_objects();
-	if (!d1_save_translate_skip_d1_state_to_runtime(&reader) ||
-	    !d1_save_translate_apply_runtime_state(&reader))
+	if (!d1_save_translate_skip_d1_state_to_runtime(&reader)) {
+		con_printf(CON_URGENT, "D1 checkpoint translation: world or AI state is invalid\n");
 		return 0;
+	}
+	if (!d1_save_translate_apply_runtime_state(&reader)) {
+		con_printf(CON_URGENT, "D1 checkpoint translation: runtime state is invalid\n");
+		return 0;
+	}
 	return 1;
 }
 

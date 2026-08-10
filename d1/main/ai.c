@@ -3391,6 +3391,9 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 		int saved_num_awareness_events = PHYSFSX_readSXE32(fp, swap);
 		int i;
 
+		if (saved_num_awareness_events < 0 || saved_num_awareness_events > MAX_AWARENESS_EVENTS)
+			return 0;
+
 		Num_awareness_events = 0;
 		for (i = 0; i < saved_num_awareness_events; i++) {
 			awareness_event event;
@@ -3398,6 +3401,10 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 			event.segnum = (short)PHYSFSX_readSXE16(fp, swap);
 			event.type = (short)PHYSFSX_readSXE16(fp, swap);
 			PHYSFSX_readVectorX(fp, &event.pos, swap);
+			if (event.segnum < 0 || event.segnum > Highest_segment_index ||
+			    event.type < PA_NEARBY_ROBOT_FIRED ||
+			    event.type > PA_WEAPON_ROBOT_COLLISION)
+				return 0;
 			if (Num_awareness_events < MAX_AWARENESS_EVENTS)
 				Awareness_events[Num_awareness_events++] = event;
 		}
