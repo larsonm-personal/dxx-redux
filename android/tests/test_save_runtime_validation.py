@@ -10,6 +10,7 @@ D1_OBJECT = (REPO_ROOT / "d1/main/object.c").read_text(encoding="utf-8")
 D2_OBJECT = (REPO_ROOT / "d2/main/object.c").read_text(encoding="utf-8")
 D1_AI = (REPO_ROOT / "d1/main/ai.c").read_text(encoding="utf-8")
 D2_AI = (REPO_ROOT / "d2/main/ai.c").read_text(encoding="utf-8")
+D1_INPUT_DEMO = (REPO_ROOT / "d1/main/input_demo_hooks.c").read_text(encoding="utf-8")
 TRANSLATOR = (REPO_ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
 
 
@@ -44,7 +45,76 @@ def allocator_valid(
     }
 
 
+def topology_valid(objects: list[tuple[int, int, int] | None], segment_count: int) -> bool:
+    heads = [-1] * segment_count
+    seen: set[int] = set()
+    for index, obj in enumerate(objects):
+        if obj is None:
+            continue
+        segment, previous, _ = obj
+        if not 0 <= segment < segment_count:
+            return False
+        if previous == -1:
+            if heads[segment] != -1:
+                return False
+            heads[segment] = index
+    for index, obj in enumerate(objects):
+        if obj is None:
+            continue
+        segment, previous, following = obj
+        if previous != -1:
+            if not 0 <= previous < len(objects) or objects[previous] is None:
+                return False
+            if objects[previous][0] != segment or objects[previous][2] != index:
+                return False
+        if following != -1:
+            if not 0 <= following < len(objects) or objects[following] is None:
+                return False
+            if objects[following][0] != segment or objects[following][1] != index:
+                return False
+    for segment, head in enumerate(heads):
+        current = head
+        while current != -1:
+            if current in seen or objects[current] is None or objects[current][0] != segment:
+                return False
+            seen.add(current)
+            current = objects[current][2]
+    return seen == {index for index, obj in enumerate(objects) if obj is not None}
+
+
 class SaveRuntimeValidationTest(unittest.TestCase):
+    def test_topology_model_covers_valid_and_malformed_graphs(self) -> None:
+        self.assertTrue(topology_valid([], 2))
+        self.assertTrue(topology_valid([(0, -1, 2), None, (0, 0, -1)], 2))
+        self.assertTrue(topology_valid([(1, -1, -1), (0, -1, -1)], 2))
+        self.assertFalse(topology_valid([(0, -1, -1), (0, -1, -1)], 1))
+        self.assertFalse(topology_valid([(0, -1, 1), (0, 0, 0)], 1))
+        self.assertFalse(topology_valid([(0, -1, 1), (0, -1, -1)], 1))
+        self.assertFalse(topology_valid([(0, -1, -1), (0, 0, -1)], 1))
+        self.assertFalse(topology_valid([(2, -1, -1)], 2))
+
+    def test_topology_validation_is_staged_and_fallback_starts_empty(self) -> None:
+        for source, name in (
+            (D1_INPUT_DEMO, "input_demo_restore_checkpoint_object_links"),
+            (D2_STATE, "state_restore_segment_object_links"),
+        ):
+            body = function_body(source, name)
+            self.assertIn("int segment_heads[MAX_SEGMENTS]", body)
+            self.assertIn("segment_heads[obj->segnum] = i", body)
+            publish = body.index("Segments[segnum].objects = segment_heads[segnum]")
+            coverage = body.index("Objects[i].type != OBJ_NONE && !seen[i]")
+            self.assertLess(coverage, publish)
+
+        d1_restore = D1_STATE.index("input_demo_restore_checkpoint_object_links()))")
+        d1_clear = D1_STATE.index("Segments[i].objects = -1", d1_restore)
+        d1_link = D1_STATE.index("obj_link(i,segnum)", d1_clear)
+        self.assertLess(d1_clear, d1_link)
+        d2_fallback = function_body(D2_STATE, "state_relink_objects_by_index")
+        self.assertLess(
+            d2_fallback.index("Segments[i].objects = -1"),
+            d2_fallback.index("obj_link(i,segnum)"),
+        )
+
     def test_allocator_partition_model_rejects_unsafe_states(self) -> None:
         in_use = [True, False, True, False]
         self.assertTrue(allocator_valid(in_use, 2, 2, [3, 1]))

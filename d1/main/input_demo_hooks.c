@@ -190,6 +190,7 @@ void input_demo_log_fvi_weapon_robot_check(
 int input_demo_restore_checkpoint_object_links(void)
 {
 	int i, objnum, segnum;
+	int segment_heads[MAX_SEGMENTS];
 	ubyte seen[MAX_OBJECTS];
 
 	if (!input_demo_replay_has_checkpoint())
@@ -197,20 +198,19 @@ int input_demo_restore_checkpoint_object_links(void)
 
 	memset(seen, 0, sizeof(seen));
 	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		Segments[segnum].objects = -1;
+		segment_heads[segnum] = -1;
 
 	for (i = 0; i <= Highest_object_index; i++) {
 		object *obj = &Objects[i];
 
-		obj->rtype.pobj_info.alt_textures = -1;
 		if (obj->type == OBJ_NONE)
 			continue;
 		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
 			return 0;
 		if (obj->prev == -1) {
-			if (Segments[obj->segnum].objects != -1)
+			if (segment_heads[obj->segnum] != -1)
 				return 0;
-			Segments[obj->segnum].objects = i;
+			segment_heads[obj->segnum] = i;
 		}
 	}
 
@@ -221,7 +221,7 @@ int input_demo_restore_checkpoint_object_links(void)
 			continue;
 		segnum = obj->segnum;
 		if (obj->prev == -1) {
-			if (Segments[segnum].objects != i)
+			if (segment_heads[segnum] != i)
 				return 0;
 		} else {
 			if (obj->prev < 0 || obj->prev > Highest_object_index)
@@ -242,7 +242,7 @@ int input_demo_restore_checkpoint_object_links(void)
 	}
 
 	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		for (objnum = Segments[segnum].objects; objnum != -1;
+		for (objnum = segment_heads[segnum]; objnum != -1;
 			 objnum = Objects[objnum].next) {
 			if (objnum < 0 || objnum > Highest_object_index)
 				return 0;
@@ -257,6 +257,11 @@ int input_demo_restore_checkpoint_object_links(void)
 	for (i = 0; i <= Highest_object_index; i++)
 		if (Objects[i].type != OBJ_NONE && !seen[i])
 			return 0;
+
+	for (i = 0; i <= Highest_object_index; i++)
+		Objects[i].rtype.pobj_info.alt_textures = -1;
+	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
+		Segments[segnum].objects = segment_heads[segnum];
 
 	return 1;
 }

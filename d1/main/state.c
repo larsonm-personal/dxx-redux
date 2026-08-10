@@ -2416,6 +2416,8 @@ RetryObjectLoading:
 
 	if (!(input_demo_replay_has_checkpoint() &&
 		input_demo_restore_checkpoint_object_links())) {
+		for (i=0; i<=Highest_segment_index; i++)
+			Segments[i].objects = -1;
 		for (i=0; i<=Highest_object_index; i++ )	{
 			obj = &Objects[i];
 			obj->rtype.pobj_info.alt_textures = -1;

@@ -1741,6 +1741,9 @@ static void state_relink_objects_by_index(void)
 	int i, segnum;
 	object *obj;
 
+	for (i=0; i<=Highest_segment_index; i++)
+		Segments[i].objects = -1;
+
 	for (i=0; i<=Highest_object_index; i++ ) {
 		obj = &Objects[i];
 		obj->rtype.pobj_info.alt_textures = -1;
@@ -1754,25 +1757,25 @@ static void state_relink_objects_by_index(void)
 static int state_restore_segment_object_links(void)
 {
 	int i, segnum, objnum;
+	int segment_heads[MAX_SEGMENTS];
 	ubyte seen[MAX_OBJECTS];
 
 	memset(seen, 0, sizeof(seen));
 
 	for (segnum=0; segnum <= Highest_segment_index; segnum++)
-		Segments[segnum].objects = -1;
+		segment_heads[segnum] = -1;
 
 	for (i=0; i<=Highest_object_index; i++) {
 		object *obj = &Objects[i];
 
-		obj->rtype.pobj_info.alt_textures = -1;
 		if (obj->type == OBJ_NONE)
 			continue;
 		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
 			return 0;
 		if (obj->prev == -1) {
-			if (Segments[obj->segnum].objects != -1)
+			if (segment_heads[obj->segnum] != -1)
 				return 0;
-			Segments[obj->segnum].objects = i;
+			segment_heads[obj->segnum] = i;
 		}
 	}
 
@@ -1783,7 +1786,7 @@ static int state_restore_segment_object_links(void)
 			continue;
 		segnum = obj->segnum;
 		if (obj->prev == -1) {
-			if (Segments[segnum].objects != i)
+			if (segment_heads[segnum] != i)
 				return 0;
 		} else {
 			if (obj->prev < 0 || obj->prev > Highest_object_index)
@@ -1804,7 +1807,7 @@ static int state_restore_segment_object_links(void)
 	}
 
 	for (segnum=0; segnum <= Highest_segment_index; segnum++)
-		for (objnum=Segments[segnum].objects; objnum!=-1; objnum=Objects[objnum].next) {
+		for (objnum=segment_heads[segnum]; objnum!=-1; objnum=Objects[objnum].next) {
 			if (objnum < 0 || objnum > Highest_object_index)
 				return 0;
 			if (seen[objnum])
@@ -1817,6 +1820,11 @@ static int state_restore_segment_object_links(void)
 	for (i=0; i<=Highest_object_index; i++)
 		if (Objects[i].type != OBJ_NONE && !seen[i])
 			return 0;
+
+	for (i=0; i<=Highest_object_index; i++)
+		Objects[i].rtype.pobj_info.alt_textures = -1;
+	for (segnum=0; segnum <= Highest_segment_index; segnum++)
+		Segments[segnum].objects = segment_heads[segnum];
 
 	return 1;
 }
