@@ -127,6 +127,8 @@ void read_bitmap_frames(bitmap_index *frames, int count, const json &value)
 {
 	if (!value.is_array())
 		throw std::runtime_error("frames field is not an array");
+	if (value.size() > static_cast<size_t>(count))
+		throw std::runtime_error("frames field exceeds clip capacity");
 	for (int i = 0; i < count; i++) {
 		int frame = 0;
 		if (i < static_cast<int>(value.size())) {
@@ -142,6 +144,8 @@ void read_wclip_frames(wclip &wall, const json &value)
 {
 	if (!value.is_array())
 		throw std::runtime_error("frames field is not an array");
+	if (value.size() > MAX_CLIP_FRAMES)
+		throw std::runtime_error("frames field exceeds wall clip capacity");
 	for (int i = 0; i < MAX_CLIP_FRAMES; i++) {
 		int frame = 0;
 		if (i < static_cast<int>(value.size())) {
@@ -153,6 +157,46 @@ void read_wclip_frames(wclip &wall, const json &value)
 			throw std::runtime_error("wall frame out of range");
 		wall.frames[i] = static_cast<short>(frame);
 	}
+}
+
+void validate_vclip_record(const vclip &clip, const json &frames)
+{
+	if (clip.num_frames < 1 || clip.num_frames > VCLIP_MAX_FRAMES)
+		throw std::runtime_error("vclip frame count is out of range");
+	if (frames.size() < static_cast<size_t>(clip.num_frames))
+		throw std::runtime_error("vclip has fewer frames than its declared count");
+	if (clip.play_time <= 0 || clip.frame_time <= 0)
+		throw std::runtime_error("vclip timing must be positive");
+	if (clip.play_time / clip.num_frames <= 0)
+		throw std::runtime_error("vclip frame interval is not representable");
+}
+
+void validate_eclip_record(const eclip &effect, const json *frames = nullptr)
+{
+	if (effect.vc.num_frames < 1 || effect.vc.num_frames > VCLIP_MAX_FRAMES)
+		throw std::runtime_error("effect frame count is out of range");
+	if (frames && frames->size() < static_cast<size_t>(effect.vc.num_frames))
+		throw std::runtime_error("effect has fewer frames than its declared count");
+	if (effect.vc.play_time <= 0 || effect.vc.frame_time <= 0)
+		throw std::runtime_error("effect timing must be positive");
+	if (effect.vc.play_time / effect.vc.num_frames <= 0)
+		throw std::runtime_error("effect frame interval is not representable");
+	if (effect.time_left < 0)
+		throw std::runtime_error("effect time cursor is negative");
+	if (effect.frame_count < 0 || effect.frame_count >= effect.vc.num_frames)
+		throw std::runtime_error("effect frame cursor is out of range");
+}
+
+void validate_wclip_record(const wclip &wall, const json *frames = nullptr)
+{
+	if (wall.num_frames < 1 || wall.num_frames > MAX_CLIP_FRAMES)
+		throw std::runtime_error("wall clip frame count is out of range");
+	if (frames && frames->size() < static_cast<size_t>(wall.num_frames))
+		throw std::runtime_error("wall clip has fewer frames than its declared count");
+	if (wall.play_time <= 0)
+		throw std::runtime_error("wall clip timing must be positive");
+	if (wall.play_time / wall.num_frames <= 0)
+		throw std::runtime_error("wall clip frame interval is not representable");
 }
 
 bool read_physfs_text(const char *path, std::string &text)
@@ -677,14 +721,16 @@ void apply_vclip(int index, const json &value)
 	int value_index = required_int(value, "Index", 0, VCLIP_MAXNUM - 1);
 	if (value_index != index)
 		throw std::runtime_error("vclip index field does not match path");
-	vclip &clip = Vclip[index];
-	clip.play_time = required_int(value, "PlayTime", -0x40000000, 0x40000000);
-	clip.num_frames = required_int(value, "NumFrames", -1, VCLIP_MAX_FRAMES);
-	clip.frame_time = required_int(value, "FrameTime", -0x40000000, 0x40000000);
+	vclip clip = Vclip[index];
+	clip.play_time = required_int(value, "PlayTime", 1, 0x40000000);
+	clip.num_frames = required_int(value, "NumFrames", 1, VCLIP_MAX_FRAMES);
+	clip.frame_time = required_int(value, "FrameTime", 1, 0x40000000);
 	clip.flags = required_int(value, "Flags", -0x40000000, 0x40000000);
 	clip.sound_num = static_cast<short>(required_int(value, "Sound", -1, MAX_SOUNDS - 1));
 	read_bitmap_frames(clip.frames, VCLIP_MAX_FRAMES, value.at("Frames"));
 	clip.light_value = required_int(value, "Light", -0x40000000, 0x40000000);
+	validate_vclip_record(clip, value.at("Frames"));
+	Vclip[index] = clip;
 	Num_vclips = (std::max)(Num_vclips, index + 1);
 }
 
@@ -695,16 +741,16 @@ void apply_eclip(int index, const json &value)
 	int value_index = required_int(value, "Index", 0, MAX_EFFECTS - 1);
 	if (value_index != index)
 		throw std::runtime_error("eclip index field does not match path");
-	eclip &effect = Effects[index];
-	effect.vc.play_time = required_int(value, "PlayTime", -0x40000000, 0x40000000);
-	effect.vc.num_frames = required_int(value, "NumFrames", -1, VCLIP_MAX_FRAMES);
-	effect.vc.frame_time = required_int(value, "FrameTime", -0x40000000, 0x40000000);
+	eclip effect = Effects[index];
+	effect.vc.play_time = required_int(value, "PlayTime", 1, 0x40000000);
+	effect.vc.num_frames = required_int(value, "NumFrames", 1, VCLIP_MAX_FRAMES);
+	effect.vc.frame_time = required_int(value, "FrameTime", 1, 0x40000000);
 	effect.vc.flags = required_int(value, "VclipFlags", -0x40000000, 0x40000000);
 	effect.vc.sound_num = static_cast<short>(required_int(value, "VclipSound", -1, MAX_SOUNDS - 1));
 	read_bitmap_frames(effect.vc.frames, VCLIP_MAX_FRAMES, value.at("Frames"));
 	effect.vc.light_value = required_int(value, "Light", -0x40000000, 0x40000000);
-	effect.time_left = required_int(value, "TimeLeft", -0x40000000, 0x40000000);
-	effect.frame_count = required_int(value, "FrameCount", -0x40000000, 0x40000000);
+	effect.time_left = required_int(value, "TimeLeft", 0, 0x40000000);
+	effect.frame_count = required_int(value, "FrameCount", 0, VCLIP_MAX_FRAMES - 1);
 	effect.changing_wall_texture = static_cast<short>(required_int(value, "ChangingWall", -1, MAX_TEXTURES - 1));
 	effect.changing_object_texture = static_cast<short>(required_int(value, "ChangingObject", -1, MAX_OBJ_BITMAPS - 1));
 	effect.flags = required_int(value, "Flags", -0x40000000, 0x40000000);
@@ -716,6 +762,8 @@ void apply_eclip(int index, const json &value)
 	effect.sound_num = required_int(value, "Sound", -1, MAX_SOUNDS - 1);
 	effect.segnum = required_int(value, "Seg", -1, 32767);
 	effect.sidenum = required_int(value, "Side", 0, 5);
+	validate_eclip_record(effect, &value.at("Frames"));
+	Effects[index] = effect;
 	Num_effects = (std::max)(Num_effects, index + 1);
 }
 
@@ -726,9 +774,9 @@ void apply_wclip(int index, const json &value)
 	int value_index = required_int(value, "Index", 0, MAX_WALL_ANIMS - 1);
 	if (value_index != index)
 		throw std::runtime_error("wclip index field does not match path");
-	wclip &wall = WallAnims[index];
-	wall.play_time = required_int(value, "PlayTime", -0x40000000, 0x40000000);
-	wall.num_frames = static_cast<short>(required_int(value, "NumFrames", -1, MAX_CLIP_FRAMES));
+	wclip wall = WallAnims[index];
+	wall.play_time = required_int(value, "PlayTime", 1, 0x40000000);
+	wall.num_frames = static_cast<short>(required_int(value, "NumFrames", 1, MAX_CLIP_FRAMES));
 	read_wclip_frames(wall, value.at("Frames"));
 	wall.open_sound = static_cast<short>(required_int(value, "OpenSound", -1, MAX_SOUNDS - 1));
 	wall.close_sound = static_cast<short>(required_int(value, "CloseSound", -1, MAX_SOUNDS - 1));
@@ -737,6 +785,8 @@ void apply_wclip(int index, const json &value)
 	std::memset(wall.filename, 0, sizeof(wall.filename));
 	std::memcpy(wall.filename, filename.data(), (std::min)(filename.size(), sizeof(wall.filename)));
 	wall.pad = static_cast<char>(required_int(value, "Pad", -128, 127));
+	validate_wclip_record(wall, &value.at("Frames"));
+	WallAnims[index] = wall;
 	Num_wall_anims = (std::max)(Num_wall_anims, index + 1);
 }
 
@@ -757,28 +807,32 @@ void apply_eclip_field(int index, const std::string &field, const json &value)
 {
 	if (index < 0 || index >= Num_effects)
 		throw std::runtime_error("eclip index out of range");
-	eclip &effect = Effects[index];
+	eclip effect = Effects[index];
 	if (field == "FrameTime")
-		effect.vc.frame_time = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+		effect.vc.frame_time = required_int_value(value, field.c_str(), 1, 0x40000000);
 	else if (field == "Sound")
 		effect.sound_num = required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1);
 	else
 		throw std::runtime_error("unsupported eclip HAM patch field");
+	validate_eclip_record(effect);
+	Effects[index] = effect;
 }
 
 void apply_wclip_field(int index, const std::string &field, const json &value)
 {
 	if (index < 0 || index >= Num_wall_anims)
 		throw std::runtime_error("wclip index out of range");
-	wclip &wall = WallAnims[index];
+	wclip wall = WallAnims[index];
 	if (field == "PlayTime")
-		wall.play_time = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+		wall.play_time = required_int_value(value, field.c_str(), 1, 0x40000000);
 	else if (field == "OpenSound")
 		wall.open_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
 	else if (field == "CloseSound")
 		wall.close_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
 	else
 		throw std::runtime_error("unsupported wclip HAM patch field");
+	validate_wclip_record(wall);
+	WallAnims[index] = wall;
 }
 
 void apply_robot_field(int index, const std::string &field, const json &value)

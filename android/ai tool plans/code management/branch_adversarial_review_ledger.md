@@ -16544,23 +16544,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Generate valid little-endian and swapped D1 checkpoints for every version 6 through 15 with zero and populated awareness, effects, weapon fidelity, morph, path, FX RNG, and secret sections as applicable. Replay each through native D1 and D1-in-D2, compare decoded offsets and frame-zero state, and require unsupported variants to fail before mission or global mutation. Add truncation at every version-specific boundary and assert bounded rejection with unchanged prior state.
 - Resolution: Pending
 
-### BR-0380: P1 - Reject nonprogressing DXA animation metadata
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/input-validation
-- Found by: R1-CHUNK-0292
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/dxa_metadata_patch.cpp:L613-L680,L696-L718` in vclip, effect, and wall-clip full-row and field mutation
-- Related: `d2/main/bm.c:L236-L244`, `d2/main/effects.c:L39-L95`, `d2/main/powerup.c:L61-L84`, `d2/main/vclip.c:L33-L91`, `d2/main/wall.c:L283-L341,L851-L875,L941-L980`, `d2/main/lighting.c:L273-L280,L399-L419`, `d2/main/gauges.c:L2120-L2137`, BR-0365, and BR-0373
-- Evidence: Full-row vclip and effect patches accept `PlayTime` and `FrameTime` from `-0x40000000` through `0x40000000` and `NumFrames` from `-1` through the array capacity. Full-row wall clips likewise accept nonpositive play times and frame counts, while field replacements independently allow any signed-range effect `FrameTime` and wall `PlayTime`. These values are published after base HAM loading with no semantic validation. Active effects and powerups subtract the positive per-frame delta and then loop while their remaining time is negative, adding the patched `frame_time`; zero or negative values can never make the loop terminate. Vclip rendering divides by `play_time`, weapon-vclip wrapping repeatedly subtracts it, door animation computes `play_time / num_frames` and then divides by that result, wall damage divides by `num_frames`, and lighting indexes `frames[num_frames - 1]`. The parser therefore admits deterministic hangs, divide-by-zero faults, and negative frame indices at ordinary consumers.
-- Trigger: Mount a D2 DXA whose HAM patch replaces an active effect's `FrameTime` with zero or a negative value, or supplies a used vclip or wall clip with nonpositive `PlayTime` or `NumFrames`, then advance the corresponding animated effect or powerup, render the vclip, open or damage the wall, or compute its lighting
-- Impact: A malformed or malicious mod can freeze the main simulation thread as soon as an affected animation ticks. Depending on the chosen record and consumer, it can instead cause integer division by zero or read before the fixed frame array, crashing the process or consuming unrelated memory during gameplay or level preparation.
-- Expected: Every published animation record has a strictly positive frame count within capacity, strictly positive playback and frame intervals wherever consumed, a frame array consistent with the declared count, and initialized runtime cursors within that count.
-- Suggested fix: Define semantic validators for vclip, eclip, and wall-clip records and apply them to both full-row and field mutations before publication. Require `1 <= NumFrames <= capacity`, positive representable `PlayTime` and `FrameTime`, consistency between the timing fields, enough valid frames for the declared count, and `0 <= FrameCount < NumFrames`; validate field replacements against a staged copy of the complete resulting record. Commit only after the whole patch passes, as coordinated with BR-0373, and add defensive guards at animation consumers where corrupt save or legacy asset state may still enter.
-- Validation: Add parser and mounted-DXA tests for each timing field at minimum integer, `-1`, zero, one, normal values, and maximum, and each frame count at `-1`, zero, one, capacity, and capacity plus one. Cover full-row and field operations and mismatched frame arrays. Require invalid patches to preserve byte-identical HAM state, then exercise effects, powerups, weapon and ordinary vclips, doors, blastable walls, gauges, and lighting under ASan and UBSan with watchdog timeouts; every accepted boundary must progress without division faults or out-of-range frame access.
-- Resolution: Pending
-
 ### BR-0381: P2 - Keep Guide-Bot path parity probes observational
 
 - [ ] OPEN
