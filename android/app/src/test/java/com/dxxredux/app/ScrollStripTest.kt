@@ -34,6 +34,50 @@ class ScrollStripTest {
     }
 
     @Test
+    fun optionRowPositionsUseTheCrossAxisAndDefaultAboveOrLeft() {
+        assertEquals(-25f, scrollStripRowCrossOffset(10f, ScrollStripRowOffset.ABOVE_LEFT), 0.001f)
+        assertEquals(0f, scrollStripRowCrossOffset(10f, ScrollStripRowOffset.CENTERED), 0.001f)
+        assertEquals(25f, scrollStripRowCrossOffset(10f, ScrollStripRowOffset.BELOW_RIGHT), 0.001f)
+        assertEquals(
+            -25f / LEGACY_SCROLL_STRIP_CARD_SCALE,
+            scrollStripRowCrossOffset(10f, ScrollStripRowOffset.ABOVE_LEFT, DEFAULT_SCROLL_STRIP_CARD_SCALE),
+            0.001f,
+        )
+        assertEquals(
+            ScrollStripRowOffset.ABOVE_LEFT,
+            RadialMenuControl(id = "test", xPct = 50f, yPct = 50f, segments = emptyList()).stripRowOffset,
+        )
+    }
+
+    @Test
+    fun cardScaleTreatsTheOldSizeAsPointSevenAndDefaultsLarger() {
+        assertEquals(4.2f, scrollStripBaseTextSize(10f, LEGACY_SCROLL_STRIP_CARD_SCALE), 0.001f)
+        assertEquals(6f, scrollStripBaseTextSize(10f, DEFAULT_SCROLL_STRIP_CARD_SCALE), 0.001f)
+        assertEquals(
+            DEFAULT_SCROLL_STRIP_CARD_SCALE,
+            RadialMenuControl(id = "test", xPct = 50f, yPct = 50f, segments = emptyList()).stripCardScale,
+            0.001f,
+        )
+    }
+
+    @Test
+    fun optionRowPositionRoundTripsThroughTouchLayoutJson() {
+        val control =
+            RadialMenuControl(
+                id = "test",
+                xPct = 50f,
+                yPct = 50f,
+                segments = emptyList(),
+                stripCardScale = LEGACY_SCROLL_STRIP_CARD_SCALE,
+                stripRowOffset = ScrollStripRowOffset.BELOW_RIGHT,
+            )
+
+        val restored = RadialMenuControl.fromJson(control.toJson())
+        assertEquals(LEGACY_SCROLL_STRIP_CARD_SCALE, restored.stripCardScale, 0.001f)
+        assertEquals(ScrollStripRowOffset.BELOW_RIGHT, restored.stripRowOffset)
+    }
+
+    @Test
     fun angledCardsTouchAtTheirRotatedEdges() {
         val cards = List(3) { ScrollStripCardSize(100f, 50f) }
         val offsets = scrollStripTouchingOffsets(cards, FloatArray(3) { 1f }, 1f, 45f, vertical = false)

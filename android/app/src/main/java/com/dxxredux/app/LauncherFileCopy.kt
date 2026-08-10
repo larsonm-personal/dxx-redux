@@ -27,8 +27,12 @@ internal object LauncherFileCopy {
         output: OutputStream,
         bytesTotal: Long,
         label: String,
+        maxBytes: Long = Long.MAX_VALUE,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
+        if (maxBytes < 0L || bytesTotal > maxBytes) {
+            throw IOException("$label exceeds the $maxBytes byte copy limit")
+        }
         val buffer = ByteArray(BUFFER_BYTES)
         var bytesDone = 0L
         var lastReported = -REPORT_STEP_BYTES
@@ -39,9 +43,13 @@ internal object LauncherFileCopy {
             if (count == 0) {
                 val byte = input.read()
                 if (byte < 0) break
+                if (bytesDone >= maxBytes) throw IOException("$label exceeds the $maxBytes byte copy limit")
                 output.write(byte)
                 bytesDone++
             } else {
+                if (count.toLong() > maxBytes - bytesDone) {
+                    throw IOException("$label exceeds the $maxBytes byte copy limit")
+                }
                 output.write(buffer, 0, count)
                 bytesDone += count.toLong()
             }
@@ -62,10 +70,11 @@ internal object LauncherFileCopy {
         uri: Uri,
         dest: File,
         label: String = dest.name,
+        maxBytes: Long = Long.MAX_VALUE,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
         val total = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri) ?: 0L
-        return copyInputToFile(dest, total, label, onProgress) {
+        return copyInputToFile(dest, total, label, maxBytes, onProgress) {
             context.contentResolver.openInputStream(uri) ?: throw IOException("Could not open selected file")
         }
     }
@@ -74,10 +83,11 @@ internal object LauncherFileCopy {
         source: File,
         dest: File,
         label: String = source.name,
+        maxBytes: Long = Long.MAX_VALUE,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
         val expectedBytes = source.length()
-        return copyInputToFile(dest, expectedBytes, label, onProgress) { FileInputStream(source) }
+        return copyInputToFile(dest, expectedBytes, label, maxBytes, onProgress) { FileInputStream(source) }
     }
 
     fun copyFileToUri(
@@ -89,7 +99,7 @@ internal object LauncherFileCopy {
     ): Long {
         FileInputStream(source).use { input ->
             context.contentResolver.openOutputStream(destUri)?.use { output ->
-                return copyStream(input, output, source.length(), label, onProgress)
+                return copyStream(input, output, source.length(), label, onProgress = onProgress)
             }
         }
         throw java.io.IOException("Could not open output file")
@@ -99,9 +109,13 @@ internal object LauncherFileCopy {
         dest: File,
         expectedBytes: Long,
         label: String = dest.name,
+        maxBytes: Long = Long.MAX_VALUE,
         onProgress: (LauncherCopyProgress) -> Unit = {},
         openInput: () -> InputStream,
     ): Long {
+        if (maxBytes < 0L || expectedBytes > maxBytes) {
+            throw IOException("$label exceeds the $maxBytes byte copy limit")
+        }
         ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, expectedBytes, label)
         dest.parentFile?.mkdirs()
         val temporary = AtomicFilePublication.uniqueSibling(dest, "copy")
@@ -109,7 +123,7 @@ internal object LauncherFileCopy {
             val copied =
                 openInput().use { input ->
                     FileOutputStream(temporary).use { output ->
-                        val count = copyStream(input, output, expectedBytes, label, onProgress)
+                        val count = copyStream(input, output, expectedBytes, label, maxBytes, onProgress)
                         output.flush()
                         output.fd.sync()
                         count

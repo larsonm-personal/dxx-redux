@@ -7,3 +7,8 @@ FILE "test_disc.bin" BINARY
   TRACK 03 AUDIO
     TITLE "Test Track 3"
     INDEX 01 00:00:20
+  TRACK 04 MODE1/2352
+    INDEX 01 00:02:00
+  TRACK 05 AUDIO
+    TITLE "Test Track 5"
+    INDEX 01 00:02:10

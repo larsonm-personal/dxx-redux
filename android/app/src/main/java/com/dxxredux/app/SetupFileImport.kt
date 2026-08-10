@@ -162,7 +162,7 @@ internal fun importFile(
             ImportStorageGuard.queryUriSizeBytes(context.contentResolver, source.uri) ?: 0L,
             "import ${source.name}",
         )
-        LauncherFileCopy.copyUriToFile(context, source.uri, destFile, source.name, onProgress)
+        LauncherFileCopy.copyUriToFile(context, source.uri, destFile, source.name, onProgress = onProgress)
         Log.i("DXX-Setup", "Imported ${source.name} -> $canonicalName (${destFile.length()} bytes)")
         true
     } catch (e: InsufficientStorageException) {

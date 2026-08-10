@@ -39,7 +39,7 @@
     // Clear any previous audio sources and mods
     {"action": "setup_command", "command": "clear_audio_sources", "post_delay_ms": 500},
     {"action": "write_config", "file": "test_disc.cue",
-     "content": "FILE \"test_disc.bin\" BINARY\n  TRACK 01 MODE1/2352\n    INDEX 01 00:00:00\n  TRACK 02 AUDIO\n    TITLE \"Test Track 2\"\n    INDEX 01 00:00:10\n  TRACK 03 AUDIO\n    TITLE \"Test Track 3\"\n    INDEX 01 00:00:20\n"},
+     "content": "FILE \"test_disc.bin\" BINARY\n  TRACK 01 MODE1/2352\n    INDEX 01 00:00:00\n  TRACK 02 AUDIO\n    TITLE \"Test Track 2\"\n    INDEX 01 00:00:10\n  TRACK 03 AUDIO\n    TITLE \"Test Track 3\"\n    INDEX 01 00:00:20\n  TRACK 04 MODE1/2352\n    INDEX 01 00:02:00\n  TRACK 05 AUDIO\n    TITLE \"Test Track 5\"\n    INDEX 01 00:02:10\n"},
     // Write empty mod manifest so no mods are loaded
     {"action": "write_config", "file": "mods/mod_manifest.json",
      "content": "{\"mods\":[]}"},
@@ -79,26 +79,15 @@
     {"action": "select", "text": "Ok", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "player", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
 
-    // The original-order title hook advances from the short track 2 to the
-    // long track 3 fixture. Prove live SAF reads and mixer delivery here;
-    // level start later stops Redbook because this synthetic disc has no track 4.
+    // Confirm that the combined physical track table is ready before entering
+    // the mission. Live reads and mixer delivery are proved at level start.
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "wait_ms", "ms": 250},
     {"action": "introspect"},
     {"action": "assert", "expect": {
-        "redbook.current_track": "3",
-        "redbook.play_status": "playing",
-        "redbook.playback_generation": {"gte": 1},
-        "redbook.playback_first_track": "3",
-        "redbook.playback_source_index": "0",
-        "redbook.generation_source_sectors_read": {"gte": 1},
-        "redbook.generation_mixer_frames_delivered": {"gte": 1},
-        "redbook.generation_source_io_errors": "0",
-        "redbook.proven_generation": {"gte": 1},
-        "redbook.proven_first_track": "3",
-        "redbook.proven_source_index": "0",
-        "redbook.proven_source_sectors_read": {"gte": 1},
-        "redbook.proven_mixer_frames_delivered": {"gte": 1}
+        "redbook.enabled": "true",
+        "redbook.num_tracks": "5",
+        "redbook.num_audio_tracks": "3"
     }},
 
     // Main menu -> New game
@@ -130,14 +119,14 @@
         "screen_mode": "game",
         "current_level_num": "1",
         "redbook.enabled": "true",
-        "redbook.num_tracks": {"gte": 2},
-        "redbook.num_audio_tracks": "2",
+        "redbook.num_tracks": "5",
+        "redbook.num_audio_tracks": "3",
         "redbook.playback_generation": {"gte": 1},
-        "redbook.playback_first_track": "3",
+        "redbook.playback_first_track": "5",
         "redbook.playback_source_index": "0",
         "redbook.generation_source_io_errors": "0",
         "redbook.proven_generation": {"gte": 1},
-        "redbook.proven_first_track": "3",
+        "redbook.proven_first_track": "5",
         "redbook.proven_source_index": "0",
         "redbook.proven_source_sectors_read": {"gte": 1},
         "redbook.proven_mixer_frames_delivered": {"gte": 1}
@@ -149,6 +138,72 @@
         "hires_textures.hires_count": "0"
     }},
     {"action": "log", "message": "Confirmed hires_count=0 in base game (no mods)"},
+
+    // A data-only range must fail, and an audio range must advance across an
+    // interleaved data track without decoding it as PCM.
+    {"action": "music_control", "operation": "play_range", "track": 4, "last_track": 4, "expect_success": false},
+    {"action": "music_control", "operation": "play_range", "track": 3, "last_track": 5},
+    {"action": "wait_for", "expect": {
+        "redbook.current_track": "5",
+        "redbook.play_status": "playing"
+    }, "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "redbook.playback_first_track": "3",
+        "redbook.generation_source_io_errors": "0"
+    }},
+    {"action": "log", "message": "Data-only ranges were rejected and interleaved data tracks were skipped"},
+
+    // Paused is reachable only from active playback. Repeated transitions and
+    // pause/resume while stopped must be rejected without changing state.
+    {"action": "music_control", "operation": "play", "track": 5},
+    {"action": "music_control", "operation": "pause"},
+    {"action": "assert", "expect": {
+        "redbook.play_status": "paused",
+        "redbook.terminal_reason": "none"
+    }},
+    {"action": "music_control", "operation": "pause", "expect_success": false},
+    {"action": "music_control", "operation": "resume"},
+    {"action": "assert", "expect": {
+        "redbook.play_status": "playing",
+        "redbook.terminal_reason": "none"
+    }},
+    {"action": "music_control", "operation": "resume", "expect_success": false},
+    {"action": "music_control", "operation": "pause"},
+    {"action": "music_control", "operation": "stop"},
+    {"action": "assert", "expect": {
+        "redbook.play_status": "stopped",
+        "redbook.terminal_reason": "stopped"
+    }},
+    {"action": "music_control", "operation": "pause", "expect_success": false},
+    {"action": "music_control", "operation": "resume", "expect_success": false},
+    {"action": "assert", "expect": {
+        "redbook.play_status": "stopped",
+        "redbook.terminal_reason": "stopped"
+    }},
+    {"action": "log", "message": "Confirmed exact Redbook play, pause, resume, and stop transitions"},
+
+    // Restart a playable track, then inject a source failure on the render
+    // thread. The prior bug dispatched the normal finished hook and retried it.
+    {"action": "music_control", "operation": "play", "track": 5},
+    {"action": "wait_for", "expect": {
+        "redbook.play_status": "playing",
+        "redbook.generation_source_sectors_read": {"gte": 1}
+    }, "timeout_ms": 5000},
+    {"action": "redbook_invalidate_source"},
+    {"action": "wait_for", "expect": {
+        "redbook.play_status": "error"
+    }, "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 2500},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "redbook.play_status": "error",
+        "redbook.terminal_reason": "io_error",
+        "redbook.error_source_index": "0",
+        "redbook.error_track": "5",
+        "redbook.error_operation": "handle",
+        "redbook.generation_source_io_errors": "1"
+    }},
+    {"action": "log", "message": "Source failure stopped without dispatching the normal completion hook"},
 
     {"action": "log", "message": "=== TEST: SAF Redbook Audio -- ALL CHECKS PASS ==="}
 ]

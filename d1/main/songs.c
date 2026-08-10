@@ -463,19 +463,27 @@ int songs_play_level_song( int levelnum, int offset )
 				if (Song_playing >= SONG_FIRST_LEVEL_SONG && songnum + SONG_FIRST_LEVEL_SONG == Song_playing)
 					return Song_playing;
 
+#if defined(__ANDROID__) || defined(ANDROID)
+				tracknum = android_music_redbook_track_for_ordinal(REDBOOK_FIRST_LEVEL_TRACK, n_tracks, songnum);
+#else
 				tracknum = REDBOOK_FIRST_LEVEL_TRACK + ((n_tracks<=REDBOOK_FIRST_LEVEL_TRACK) ? 0 : (songnum % (n_tracks-REDBOOK_FIRST_LEVEL_TRACK)));
+#endif
 			}
 			else
 			{
+#if defined(__ANDROID__) || defined(ANDROID)
+				tracknum = android_music_redbook_track_offset(REDBOOK_FIRST_LEVEL_TRACK, n_tracks, Redbook_playing, offset);
+#else
 				tracknum = Redbook_playing+offset;
 				if (tracknum < REDBOOK_FIRST_LEVEL_TRACK)
 					tracknum = n_tracks - (REDBOOK_FIRST_LEVEL_TRACK - tracknum) + 1;
 				else if (tracknum > n_tracks)
 					tracknum = REDBOOK_FIRST_LEVEL_TRACK + (tracknum - n_tracks) - 1;
+#endif
 			}
 
 			Song_playing = -1;
-			if (RBAEnabled() && (tracknum <= n_tracks))
+			if (RBAEnabled() && (tracknum >= 1) && (tracknum <= n_tracks))
 			{
 				if (RBAPlayTracks(tracknum, !songs_haved1_cd()?n_tracks:tracknum, songs_haved1_cd() ? redbook_repeat_func : redbook_first_song_func))
 				{

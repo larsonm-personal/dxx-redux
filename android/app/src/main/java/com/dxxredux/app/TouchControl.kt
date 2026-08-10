@@ -18,6 +18,15 @@ enum class SliderOrientation { VERTICAL, HORIZONTAL }
 
 enum class SelectorPresentation { WHEEL, SCROLL_STRIP }
 
+enum class ScrollStripRowOffset(
+    val crossDirection: Float,
+    val symbol: String,
+) {
+    ABOVE_LEFT(-1f, "+"),
+    CENTERED(0f, "0"),
+    BELOW_RIGHT(1f, "-"),
+}
+
 enum class GyroActivation { ALWAYS, TOUCH_STICK, ADS_ONLY }
 
 enum class GyroMode { RATE, ABSOLUTE }
@@ -524,6 +533,8 @@ data class RadialMenuControl(
     val stripDragSpanWidthPct: Float = 20f,
     val stripLabelAngleDeg: Float = 0f,
     val stripSelectedScale: Float = DEFAULT_SCROLL_STRIP_SELECTED_SCALE,
+    val stripCardScale: Float = DEFAULT_SCROLL_STRIP_CARD_SCALE,
+    val stripRowOffset: ScrollStripRowOffset = ScrollStripRowOffset.ABOVE_LEFT,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -543,6 +554,8 @@ data class RadialMenuControl(
             put("stripDragSpanWidthPct", stripDragSpanWidthPct.toDouble())
             put("stripLabelAngleDeg", stripLabelAngleDeg.toDouble())
             put("stripSelectedScale", stripSelectedScale.toDouble())
+            put("stripCardScale", stripCardScale.toDouble())
+            put("stripRowOffset", stripRowOffset.name)
         }
 
     companion object {
@@ -573,6 +586,17 @@ data class RadialMenuControl(
                 stripLabelAngleDeg = j.optDouble("stripLabelAngleDeg", 0.0).toFloat(),
                 stripSelectedScale =
                     j.optDouble("stripSelectedScale", DEFAULT_SCROLL_STRIP_SELECTED_SCALE.toDouble()).toFloat(),
+                stripCardScale =
+                    j
+                        .optDouble("stripCardScale", DEFAULT_SCROLL_STRIP_CARD_SCALE.toDouble())
+                        .toFloat()
+                        .coerceIn(MIN_SCROLL_STRIP_CARD_SCALE, MAX_SCROLL_STRIP_CARD_SCALE),
+                stripRowOffset =
+                    runCatching {
+                        ScrollStripRowOffset.valueOf(
+                            j.optString("stripRowOffset", ScrollStripRowOffset.ABOVE_LEFT.name),
+                        )
+                    }.getOrDefault(ScrollStripRowOffset.ABOVE_LEFT),
             )
     }
 }

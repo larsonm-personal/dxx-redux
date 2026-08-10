@@ -107,7 +107,7 @@ static const char *music_current_source(void)
 static int music_is_paused(void)
 {
 	if (GameCfg.MusicType == MUSIC_TYPE_REDBOOK)
-		return RBAPeekPlayStatus() < 0;
+		return RBAPeekPlayStatus() == -1;
 	if (GameCfg.MusicType == MUSIC_TYPE_BUILTIN || GameCfg.MusicType == MUSIC_TYPE_CUSTOM)
 		return tsf_music_get_paused();
 	return 0;
@@ -389,8 +389,14 @@ JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetMusicPaused(
     JNIEnv *env, jobject thiz, jboolean paused)
 {
+	int redbook_status;
 	(void) env;
 	(void) thiz;
+	if (GameCfg.MusicType == MUSIC_TYPE_REDBOOK) {
+		redbook_status = RBAPeekPlayStatus();
+		if ((paused && redbook_status != 1) || (!paused && redbook_status != -1))
+			return JNI_FALSE;
+	}
 	if (paused)
 		songs_pause();
 	else

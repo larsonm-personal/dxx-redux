@@ -10,6 +10,7 @@ import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Toast
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.abs
@@ -157,7 +158,10 @@ class MusicControlPanel(
 
     private fun refreshSourceOptions() {
         val a = activity ?: return
-        sourceOptionsCache = musicOverlaySourceOptions(a.filesDir, a.gameVariantForMusicOverlay())
+        sourceOptionsCache =
+            musicOverlaySourceOptions(a.filesDir, a.gameVariantForMusicOverlay()) { uri, useFileDescriptor ->
+                canAccessSafUri(a, android.net.Uri.parse(uri), useFileDescriptor)
+            }
         sourceDropdownIndex = sourceDropdownIndex.coerceIn(0, sourceOptionsCache.lastIndex)
     }
 
@@ -739,7 +743,15 @@ class MusicControlPanel(
             CustomAudioSetManager(a.filesDir).writeM3U(a)
         }
         if (source == "cd") {
-            AudioSourceManager(a.filesDir).writePlaylist(a.contentResolver)
+            try {
+                AudioSourceManager(a.filesDir).writePlaylist(a.contentResolver)
+            } catch (e: Exception) {
+                Log.e("DXX-MusicPanel", "Could not select CD audio", e)
+                Toast.makeText(a, "Could not select CD audio: ${e.message}", Toast.LENGTH_LONG).show()
+                refreshSourceOptions()
+                invalidate()
+                return
+            }
         }
         state = state.copy(source = source)
         invalidate()

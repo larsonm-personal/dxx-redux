@@ -1252,7 +1252,13 @@ internal fun DiscImportDialog(
                 val tmpDir = File(filesDir, "tmp")
                 tmpDir.mkdirs()
                 val tmpCue = File(tmpDir, cueName.lowercase())
-                LauncherFileCopy.copyUriToFile(context, cueUri, tmpCue, cueName)
+                LauncherFileCopy.copyUriToFile(
+                    context,
+                    cueUri,
+                    tmpCue,
+                    cueName,
+                    maxBytes = CD_CUE_MAX_BYTES,
+                )
                 tempCuePath = tmpCue.absolutePath
                 Log.i("DXX-DiscImport", "CUE copied to ${tmpCue.absolutePath} (${tmpCue.length()} bytes)")
 
@@ -1513,7 +1519,11 @@ internal fun DiscImportDialog(
                                                 )
                                                 val destCue = File(filesDir, "$sourceFileStem.cue")
                                                 tempCuePath?.let {
-                                                    LauncherFileCopy.copyFileToFile(File(it), destCue)
+                                                    LauncherFileCopy.copyFileToFile(
+                                                        File(it),
+                                                        destCue,
+                                                        maxBytes = CD_CUE_MAX_BYTES,
+                                                    )
                                                 }
                                                 var trackNames = emptyMap<Int, String>()
                                                 try {

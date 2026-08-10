@@ -2668,7 +2668,7 @@ private fun saveToDownloads(
             @Suppress("DEPRECATION")
             val dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             dlDir.mkdirs()
-            LauncherFileCopy.copyFileToFile(file, File(dlDir, file.name), file.name, onProgress)
+            LauncherFileCopy.copyFileToFile(file, File(dlDir, file.name), file.name, onProgress = onProgress)
         }
         true
     } catch (e: Exception) {

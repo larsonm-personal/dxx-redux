@@ -82,13 +82,13 @@ internal object InputDemoManager {
         val safeName = sanitizeInstallName(requestedName)
         val destFile = File(demosDir, safeName + INPUT_DEMO_EXTENSION)
 
-        LauncherFileCopy.copyFileToFile(demo.file, destFile, demo.file.name, onProgress)
+        LauncherFileCopy.copyFileToFile(demo.file, destFile, demo.file.name, onProgress = onProgress)
         demo.traceFile?.let {
             LauncherFileCopy.copyFileToFile(
                 it,
                 File(demosDir, destFile.name + INPUT_DEMO_RNG_TRACE_SUFFIX),
                 it.name,
-                onProgress,
+                onProgress = onProgress,
             )
         }
         demo.classicDemoFile?.let {
@@ -96,7 +96,7 @@ internal object InputDemoManager {
                 it,
                 File(demosDir, safeName + CLASSIC_DEMO_EXTENSION),
                 it.name,
-                onProgress,
+                onProgress = onProgress,
             )
         }
         demo.file.delete()

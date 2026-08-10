@@ -45,6 +45,8 @@ class MusicOverlaySourcesTest {
             }
             """.trimIndent(),
         )
+        File(filesDir, "disc.cue").writeText("FILE \"disc.bin\" BINARY\n")
+        File(filesDir, "disc.bin").writeText("audio")
 
         assertEquals(
             listOf(
@@ -52,6 +54,22 @@ class MusicOverlaySourcesTest {
                 MusicOverlaySourceOption("cd", "CD"),
                 MusicOverlaySourceOption("midi", "Base game MIDI"),
             ),
+            musicOverlaySourceOptions(filesDir, "d2"),
+        )
+    }
+
+    @Test
+    fun cdOptionRequiresCompleteAccessiblePlaylist() {
+        val filesDir = freshDir("build/test-music-overlay-invalid-cd")
+        File(filesDir, "audio_sources.json").writeText(
+            """
+            {"sources":[{"id":"cd","cue":"missing.cue","bins":["missing.bin"],"label":"Disc",
+            "disc_id":"unknown","track_count":101,"audio_track_count":100,"legacy_disc_id":0,"enabled":true}]}
+            """.trimIndent(),
+        )
+
+        assertEquals(
+            listOf(MusicOverlaySourceOption("midi", "Base game MIDI")),
             musicOverlaySourceOptions(filesDir, "d2"),
         )
     }

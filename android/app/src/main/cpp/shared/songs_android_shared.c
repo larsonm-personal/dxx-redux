@@ -20,6 +20,48 @@ extern int Num_bim_songs;
 
 static int Android_music_prefer_mission_soundtrack = 1;
 
+int android_music_redbook_track_for_ordinal(int first, int last, int ordinal)
+{
+	int audio_count = 0;
+	int i;
+
+	if (first < 1)
+		first = 1;
+	if (last > RBAGetNumberOfTracks())
+		last = RBAGetNumberOfTracks();
+	for (i = first; i <= last; i++)
+		if (RBAIsAudioTrack(i))
+			audio_count++;
+	if (audio_count == 0)
+		return 0;
+
+	ordinal %= audio_count;
+	if (ordinal < 0)
+		ordinal += audio_count;
+	for (i = first; i <= last; i++) {
+		if (!RBAIsAudioTrack(i))
+			continue;
+		if (ordinal-- == 0)
+			return i;
+	}
+	return 0;
+}
+
+int android_music_redbook_track_offset(int first, int last, int current, int offset)
+{
+	int ordinal = 0;
+	int i;
+
+	for (i = first; i <= last; i++) {
+		if (!RBAIsAudioTrack(i))
+			continue;
+		if (i == current)
+			return android_music_redbook_track_for_ordinal(first, last, ordinal + offset);
+		ordinal++;
+	}
+	return android_music_redbook_track_for_ordinal(first, last, offset < 0 ? -1 : 0);
+}
+
 void android_music_set_prefer_mission_soundtrack(int enabled)
 {
 	Android_music_prefer_mission_soundtrack = enabled ? 1 : 0;

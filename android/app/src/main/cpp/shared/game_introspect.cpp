@@ -198,6 +198,9 @@ void RBAGetLastPlaybackProof(unsigned int *generation, int *first_track,
                              unsigned long long *mixer_frames_delivered);
 void RBAGetPlaybackErrorDiagnostics(unsigned long long *source_io_errors_total,
                                     unsigned long long *generation_source_io_errors);
+void RBAGetPlaybackTerminalDiagnostics(int *terminal_state, int *source_index,
+                                       int *track, int *sector,
+                                       int *operation, int *platform_code);
 extern int g_startup_title_song_requested;
 }
 
@@ -1835,6 +1838,12 @@ extern "C" char *game_introspect_get_state(void)
 			unsigned long long proven_mixer_frames_delivered;
 			unsigned long long source_io_errors_total;
 			unsigned long long generation_source_io_errors;
+			int terminal_state;
+			int error_source_index;
+			int error_track;
+			int error_sector;
+			int error_operation;
+			int error_platform_code;
 			rb["enabled"] = true;
 			int status = RBAPeekPlayStatus();
 			RBAGetPlaybackDiagnostics(&generation, &first_track, &source_index,
@@ -1847,11 +1856,25 @@ extern "C" char *game_introspect_get_state(void)
 			                        &proven_mixer_frames_delivered);
 			RBAGetPlaybackErrorDiagnostics(&source_io_errors_total,
 			                               &generation_source_io_errors);
+			RBAGetPlaybackTerminalDiagnostics(&terminal_state, &error_source_index,
+			                                  &error_track, &error_sector,
+			                                  &error_operation, &error_platform_code);
 			rb["num_tracks"] = RBAGetNumberOfTracks();
 			rb["num_audio_tracks"] = RBAGetNumAudioTracks();
 			rb["current_track"] = RBAGetTrackNum();
 			rb["play_status"] = (status == 1) ? "playing" : (status == -1) ? "paused"
+			                                            : (status == -2)   ? "error"
 			                                                               : "stopped";
+			rb["terminal_reason"] = terminal_state == 1 ? "completed" : terminal_state == 2 ? "io_error"
+			                                                        : terminal_state == 3   ? "stopped"
+			                                                                                : "none";
+			rb["error_source_index"] = error_source_index;
+			rb["error_track"] = error_track;
+			rb["error_sector"] = error_sector;
+			rb["error_operation"] = error_operation == 1 ? "handle" : error_operation == 2 ? "seek"
+			                                                      : error_operation == 3   ? "read"
+			                                                                               : "none";
+			rb["error_platform_code"] = error_platform_code;
 			rb["playback_generation"] = generation;
 			rb["playback_first_track"] = first_track;
 			rb["playback_source_index"] = source_index;

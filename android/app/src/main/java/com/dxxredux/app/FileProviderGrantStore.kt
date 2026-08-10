@@ -29,7 +29,7 @@ internal object FileProviderGrantStore {
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Uri =
         publish(context, rootName, source.name, source.length()) { temporary ->
-            LauncherFileCopy.copyFileToFile(source, temporary, source.name, onProgress)
+            LauncherFileCopy.copyFileToFile(source, temporary, source.name, onProgress = onProgress)
         }
 
     fun writeUtf8(

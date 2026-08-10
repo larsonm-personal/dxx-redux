@@ -45,7 +45,7 @@ class CdAudioSourceNormalizationTest {
     }
 
     @Test
-    fun detectsGeneratedMergedArtifactsFromCueMarkerAndLegacyCustomStem() {
+    fun detectsGeneratedMergedArtifactsOnlyFromCueMarker() {
         val tempDir = createTempDirectory("merged-cue-test").toFile()
         val markedCue = File(tempDir, "known-disc.cue")
         markedCue.writeText("$GENERATED_MERGED_CUE_MARKER\nFILE \"known-disc.bin\" BINARY\n")
@@ -59,8 +59,10 @@ class CdAudioSourceNormalizationTest {
 
         assertEquals(true, isGeneratedMergedCueFile(markedCue))
         assertEquals(true, isGeneratedMergedStorageArtifact(markedBin))
-        assertEquals(true, isGeneratedMergedCueFile(legacyCue))
-        assertEquals(true, isGeneratedMergedStorageArtifact(legacyBin))
+        assertEquals(false, isGeneratedMergedCueFile(legacyCue))
+        assertEquals(false, isGeneratedMergedStorageArtifact(legacyBin))
+        assertEquals(true, isLegacyGeneratedMergedStorageArtifact(legacyCue))
+        assertEquals(true, isLegacyGeneratedMergedStorageArtifact(legacyBin))
     }
 
     @Test

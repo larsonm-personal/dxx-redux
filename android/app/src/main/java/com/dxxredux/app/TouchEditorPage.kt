@@ -1317,8 +1317,11 @@ private fun drawAllControls(
         if (rm.presentation == SelectorPresentation.SCROLL_STRIP) {
             val halfSpan = w * rm.stripDragSpanWidthPct / 200f
             val vertical = rm.stripOrientation == SliderOrientation.VERTICAL
-            val start = if (vertical) Offset(cx, cy - halfSpan) else Offset(cx - halfSpan, cy)
-            val end = if (vertical) Offset(cx, cy + halfSpan) else Offset(cx + halfSpan, cy)
+            val crossOffset = scrollStripRowCrossOffset(trigR, rm.stripRowOffset, rm.stripCardScale)
+            val rowCx = cx + if (vertical) crossOffset else 0f
+            val rowCy = cy + if (vertical) 0f else crossOffset
+            val start = if (vertical) Offset(rowCx, cy - halfSpan) else Offset(cx - halfSpan, rowCy)
+            val end = if (vertical) Offset(rowCx, cy + halfSpan) else Offset(cx + halfSpan, rowCy)
             scope.drawLine(
                 color = cStickRing.copy(alpha = alpha * 0.7f),
                 start = start,
@@ -1329,20 +1332,20 @@ private fun drawAllControls(
                 color = cStickRing.copy(alpha = alpha * 0.7f),
                 start =
                     if (vertical) {
-                        Offset(cx - trigR * 0.3f, cy - halfSpan)
+                        Offset(rowCx - trigR * 0.3f, cy - halfSpan)
                     } else {
                         Offset(
                             cx - halfSpan,
-                            cy - trigR * 0.3f,
+                            rowCy - trigR * 0.3f,
                         )
                     },
                 end =
                     if (vertical) {
-                        Offset(cx + trigR * 0.3f, cy - halfSpan)
+                        Offset(rowCx + trigR * 0.3f, cy - halfSpan)
                     } else {
                         Offset(
                             cx - halfSpan,
-                            cy + trigR * 0.3f,
+                            rowCy + trigR * 0.3f,
                         )
                     },
                 strokeWidth = 2f,
@@ -1351,20 +1354,20 @@ private fun drawAllControls(
                 color = cStickRing.copy(alpha = alpha * 0.7f),
                 start =
                     if (vertical) {
-                        Offset(cx - trigR * 0.3f, cy + halfSpan)
+                        Offset(rowCx - trigR * 0.3f, cy + halfSpan)
                     } else {
                         Offset(
                             cx + halfSpan,
-                            cy - trigR * 0.3f,
+                            rowCy - trigR * 0.3f,
                         )
                     },
                 end =
                     if (vertical) {
-                        Offset(cx + trigR * 0.3f, cy + halfSpan)
+                        Offset(rowCx + trigR * 0.3f, cy + halfSpan)
                     } else {
                         Offset(
                             cx + halfSpan,
-                            cy + trigR * 0.3f,
+                            rowCy + trigR * 0.3f,
                         )
                     },
                 strokeWidth = 2f,
@@ -2691,6 +2694,21 @@ private fun RadialPropertiesPanel(
                 }
             }
         }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Options row: ", color = Color.Gray, fontSize = 12.sp)
+            ScrollStripRowOffset.entries.forEach { rowOffset ->
+                TextButton(onClick = { updateRadial(radial.copy(stripRowOffset = rowOffset)) }) {
+                    Text(
+                        rowOffset.symbol,
+                        fontSize = 14.sp,
+                        color = if (radial.stripRowOffset == rowOffset) cSelected else Color.Gray,
+                    )
+                }
+            }
+        }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledSlider(
                 "Drag area %W",
@@ -2710,6 +2728,15 @@ private fun RadialPropertiesPanel(
             ) {
                 updateRadial(radial.copy(stripSelectedScale = it))
             }
+        }
+        LabeledSlider(
+            "Text/button scale",
+            radial.stripCardScale,
+            MIN_SCROLL_STRIP_CARD_SCALE,
+            MAX_SCROLL_STRIP_CARD_SCALE,
+            Modifier.fillMaxWidth(),
+        ) {
+            updateRadial(radial.copy(stripCardScale = it))
         }
         LabeledSlider(
             "Label angle",

@@ -16,6 +16,8 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -40,6 +42,7 @@
 #include "timer.h"
 #include "ignorecase.h"
 #include "track_names.h"
+#include "../extract/cd_read_contract.h"
 #include "../extract/cue_parser.h"
 
 #ifdef ANDROID
@@ -204,6 +207,19 @@ static int s_num_tracks = 0;
 static audio_source_t s_sources[MAX_SOURCES];
 static int s_num_sources = 0;
 static char s_init_status[160] = "not initialized";
+static void close_source_bins(audio_source_t *src);
+
+static void clear_playlist_state(void)
+{
+	int i;
+	for (i = 0; i < s_num_sources; i++)
+		close_source_bins(&s_sources[i]);
+	s_num_tracks = 0;
+	s_num_sources = 0;
+	memset(s_tracks, 0, sizeof(s_tracks));
+	memset(s_sources, 0, sizeof(s_sources));
+	track_names_set_cue_count(0);
+}
 
 /* Legacy single-source file handle (used when no audio_playlist.json) */
 static bin_handle_t s_gog_handle = { NULL, NULL };
@@ -251,9 +267,30 @@ static int s_proven_first_track = 0;
 static int s_proven_source_index = -1;
 static unsigned int s_playback_proof_sequence = 0;
 
+enum {
+	RBA_TERMINAL_NONE = 0,
+	RBA_TERMINAL_COMPLETE = 1,
+	RBA_TERMINAL_IO_ERROR = 2,
+	RBA_TERMINAL_STOPPED = 3
+};
+enum {
+	RBA_IO_NONE = 0,
+	RBA_IO_HANDLE = 1,
+	RBA_IO_SEEK = 2,
+	RBA_IO_READ = 3
+};
+static int s_terminal_state = RBA_TERMINAL_STOPPED;
+static int s_error_source_index = -1;
+static int s_error_track = 0;
+static int s_error_sector = 0;
+static int s_error_operation = RBA_IO_NONE;
+static int s_error_platform_code = 0;
+#ifdef INTROSPECT_ON
+static int s_test_source_failure_operation = RBA_IO_NONE;
+#endif
+
 static void (*s_finished_hook)(void) = NULL;
 static volatile int s_song_finished = 0;
-static int s_logged_data_track_decode = 0;
 
 /* ── PCM input buffer (raw CD audio before resampling) ───────────────── */
 
@@ -379,56 +416,34 @@ static bin_handle_t *get_track_handle(int combined_track_1based)
 static char *read_text_file_any(const char *path)
 {
 	PHYSFS_File *pf = NULL;
-	FILE *sf = NULL;
 	PHYSFS_sint64 size;
 	char *buf;
 
-	if (path_is_local(path)) {
-		sf = fopen(path, "rb");
-		if (!sf) return NULL;
-		if (fseek(sf, 0, SEEK_END) != 0) {
-			fclose(sf);
-			return NULL;
-		}
-		size = (PHYSFS_sint64) ftell(sf);
-		if (size < 0 || fseek(sf, 0, SEEK_SET) != 0) {
-			fclose(sf);
-			return NULL;
-		}
-	} else {
-		pf = open_ci(path);
-		if (!pf) return NULL;
-		size = PHYSFS_fileLength(pf);
-		if (size < 0) {
-			PHYSFS_close(pf);
-			return NULL;
-		}
+	if (path_is_local(path))
+		return cd_read_file_exact(path, CD_CUE_MAX_BYTES, &buf, NULL) ? buf : NULL;
+
+	pf = open_ci(path);
+	if (!pf) return NULL;
+	size = PHYSFS_fileLength(pf);
+	if (size <= 0 || size > CD_CUE_MAX_BYTES ||
+	    (PHYSFS_uint64) size > (PHYSFS_uint64) SIZE_MAX - 1 ||
+	    (PHYSFS_uint64) size > (PHYSFS_uint64) UINT32_MAX) {
+		PHYSFS_close(pf);
+		return NULL;
 	}
 
 	buf = (char *) malloc((size_t) size + 1);
 	if (!buf) {
-		if (sf)
-			fclose(sf);
-		else if (pf)
-			PHYSFS_close(pf);
+		PHYSFS_close(pf);
 		return NULL;
 	}
 
-	if (sf) {
-		if (fread(buf, 1, (size_t) size, sf) != (size_t) size) {
-			free(buf);
-			fclose(sf);
-			return NULL;
-		}
-		fclose(sf);
-	} else {
-		if (PHYSFS_read(pf, buf, 1, (PHYSFS_uint32) size) != size) {
-			free(buf);
-			PHYSFS_close(pf);
-			return NULL;
-		}
+	if (PHYSFS_read(pf, buf, 1, (PHYSFS_uint32) size) != size) {
+		free(buf);
 		PHYSFS_close(pf);
+		return NULL;
 	}
+	PHYSFS_close(pf);
 
 	buf[size] = '\0';
 	return buf;
@@ -671,7 +686,8 @@ static int parse_audio_playlist(void)
 	PHYSFS_sint64 fsize;
 	char *json;
 	const char *p;
-	int total;
+	char root_key[64];
+	int total, audio_total = 0;
 
 	f = PHYSFS_openRead("audio_playlist.json");
 	if (!f) {
@@ -683,48 +699,39 @@ static int parse_audio_playlist(void)
 	if (fsize <= 0 || fsize > 64 * 1024) {
 		rba_set_status("audio_playlist.json invalid size: %lld", (long long) fsize);
 		PHYSFS_close(f);
-		return 0;
+		return -1;
 	}
 
 	json = (char *) malloc((size_t) fsize + 1);
 	if (!json) {
 		rba_set_status("audio_playlist.json alloc failed");
 		PHYSFS_close(f);
-		return 0;
+		return -1;
 	}
 	if (PHYSFS_read(f, json, 1, (PHYSFS_uint32) fsize) != fsize) {
 		rba_set_status("audio_playlist.json read failed");
 		free(json);
 		PHYSFS_close(f);
-		return 0;
+		return -1;
 	}
 	json[fsize] = '\0';
 	PHYSFS_close(f);
 
-	s_num_tracks = 0;
-	s_num_sources = 0;
-	memset(s_tracks, 0, sizeof(s_tracks));
-	memset(s_sources, 0, sizeof(s_sources));
+	clear_playlist_state();
 
-	/* Find "sources" array */
-	p = strstr(json, "\"sources\"");
-	if (!p) {
-		rba_set_status("audio_playlist.json missing sources");
-		free(json);
-		return 0;
-	}
-	p += 9;
+	/* AudioSourceManager writes one root object containing the sources array. */
+	p = pj_skip_ws(json);
+	if (*p++ != '{') goto malformed;
 	p = pj_skip_ws(p);
-	if (*p == ':') p++;
+	if (!pj_string(&p, root_key, sizeof(root_key)) || strcmp(root_key, "sources") != 0)
+		goto malformed;
 	p = pj_skip_ws(p);
-	if (*p != '[') {
-		rba_set_status("audio_playlist.json malformed sources");
-		free(json);
-		return 0;
-	}
+	if (*p++ != ':') goto malformed;
+	p = pj_skip_ws(p);
+	if (*p != '[') goto malformed;
 	p++; /* skip '[' */
 
-	while (s_num_sources < MAX_SOURCES) {
+	for (;;) {
 		char cue_name[256] = { 0 };
 		char bin_names[CUE_MAX_FILES][256];
 		const char *bin_ptrs[CUE_MAX_FILES];
@@ -735,99 +742,114 @@ static int parse_audio_playlist(void)
 		/* Per-track names from fingerprint matching (keyed by 1-based CUE track num) */
 		char tn_names[MAX_TRACKS][64];
 		int tn_has_names = 0;
+		int member_count = 0;
 
 		memset(tn_names, 0, sizeof(tn_names));
 		memset(bin_names, 0, sizeof(bin_names));
 		memset(bin_ptrs, 0, sizeof(bin_ptrs));
 
 		p = pj_skip_ws(p);
-		if (*p == ']') break;
-		if (*p == ',') {
+		if (*p == ']') {
 			p++;
+			break;
+		}
+		if (s_num_sources >= MAX_SOURCES) {
+			rba_set_status("audio playlist exceeds %d sources", MAX_SOURCES);
+			goto fail;
+		}
+		if (s_num_sources > 0) {
+			if (*p++ != ',') goto malformed;
 			p = pj_skip_ws(p);
 		}
-		if (*p != '{') break;
+		if (*p != '{') goto malformed;
 		p++; /* skip '{' */
 
 		/* Parse object keys */
-		while (*p && *p != '}') {
+		for (;;) {
 			p = pj_skip_ws(p);
-			if (*p == ',') {
+			if (*p == '}') {
 				p++;
+				break;
+			}
+			if (member_count++ > 0) {
+				if (*p++ != ',') goto malformed;
 				p = pj_skip_ws(p);
 			}
-			if (*p == '}') break;
 
-			if (!pj_string(&p, key, sizeof(key))) break;
+			if (!pj_string(&p, key, sizeof(key))) goto malformed;
 			p = pj_skip_ws(p);
-			if (*p == ':') p++;
+			if (*p++ != ':') goto malformed;
 			p = pj_skip_ws(p);
 
 			if (strcmp(key, "cue") == 0) {
-				pj_string(&p, cue_name, sizeof(cue_name));
+				if (!pj_string(&p, cue_name, sizeof(cue_name))) goto malformed;
 			} else if (strcmp(key, "bins") == 0) {
 				/* Array of bin filenames -- preserve all entries for multi-BIN CUEs */
-				if (*p == '[') {
-					p++;
-					while (*p && *p != ']') {
-						char bin_entry[256] = { 0 };
-						p = pj_skip_ws(p);
-						if (*p == ',') {
-							p++;
-							continue;
-						}
-						if (*p == ']') break;
-						if (*p == '"' && pj_string(&p, bin_entry, sizeof(bin_entry))) {
-							if (num_bins < CUE_MAX_FILES) {
-								strncpy(bin_names[num_bins], bin_entry, sizeof(bin_names[num_bins]) - 1);
-								bin_names[num_bins][sizeof(bin_names[num_bins]) - 1] = '\0';
-								bin_ptrs[num_bins] = bin_names[num_bins];
-								num_bins++;
-							}
-						} else {
-							pj_skip_value(&p);
-						}
+				int bin_index = 0;
+				if (*p++ != '[') goto malformed;
+				for (;;) {
+					char bin_entry[256] = { 0 };
+					p = pj_skip_ws(p);
+					if (*p == ']') {
+						p++;
+						break;
 					}
-					if (*p == ']') p++;
+					if (bin_index++ > 0) {
+						if (*p++ != ',') goto malformed;
+						p = pj_skip_ws(p);
+					}
+					if (num_bins >= CUE_MAX_FILES) {
+						rba_set_status("audio source exceeds %d BIN files", CUE_MAX_FILES);
+						goto fail;
+					}
+					if (!pj_string(&p, bin_entry, sizeof(bin_entry))) goto malformed;
+					strncpy(bin_names[num_bins], bin_entry, sizeof(bin_names[num_bins]) - 1);
+					bin_names[num_bins][sizeof(bin_names[num_bins]) - 1] = '\0';
+					bin_ptrs[num_bins] = bin_names[num_bins];
+					num_bins++;
 				}
 			} else if (strcmp(key, "label") == 0) {
-				pj_string(&p, label, sizeof(label));
+				if (!pj_string(&p, label, sizeof(label))) goto malformed;
 			} else if (strcmp(key, "legacy_disc_id") == 0) {
+				const char *number_start = p;
 				legacy_id = pj_long(&p);
+				if (p == number_start) goto malformed;
 			} else if (strcmp(key, "track_names") == 0) {
 				/* {"2":"Title","3":"Base Return",...} */
-				if (*p == '{') {
-					p++;
-					while (*p && *p != '}') {
-						char tk[16] = { 0 };
-						int tnum;
-						p = pj_skip_ws(p);
-						if (*p == ',') {
-							p++;
-							continue;
-						}
-						if (*p == '}') break;
-						if (!pj_string(&p, tk, sizeof(tk))) break;
-						p = pj_skip_ws(p);
-						if (*p == ':') p++;
-						p = pj_skip_ws(p);
-						tnum = atoi(tk);
-						if (tnum >= 1 && tnum <= MAX_TRACKS) {
-							pj_string(&p, tn_names[tnum - 1], 64);
-							tn_has_names = 1;
-						} else {
-							pj_skip_value(&p);
-						}
+				int name_index = 0;
+				if (*p++ != '{') goto malformed;
+				for (;;) {
+					char tk[16] = { 0 };
+					char name[64] = { 0 };
+					int tnum;
+					p = pj_skip_ws(p);
+					if (*p == '}') {
+						p++;
+						break;
 					}
-					if (*p == '}') p++;
+					if (name_index++ > 0) {
+						if (*p++ != ',') goto malformed;
+						p = pj_skip_ws(p);
+					}
+					if (!pj_string(&p, tk, sizeof(tk))) goto malformed;
+					p = pj_skip_ws(p);
+					if (*p++ != ':') goto malformed;
+					p = pj_skip_ws(p);
+					if (!pj_string(&p, name, sizeof(name))) goto malformed;
+					tnum = atoi(tk);
+					if (tnum >= 1 && tnum <= MAX_TRACKS) {
+						strncpy(tn_names[tnum - 1], name, 63);
+						tn_names[tnum - 1][63] = '\0';
+						tn_has_names = 1;
+					}
 				}
 			} else {
 				pj_skip_value(&p);
 			}
 		}
-		if (*p == '}') p++; /* skip '}' */
 
-		if (cue_name[0] && num_bins > 0) {
+		if (!cue_name[0] || num_bins <= 0) goto malformed;
+		{
 			int src = s_num_sources;
 			int base = s_num_tracks;
 			int parsed;
@@ -842,9 +864,7 @@ static int parse_audio_playlist(void)
 
 			parsed = parse_source_cue(cue_name, bin_ptrs, num_bins, src);
 			if (parsed <= 0) {
-				memset(&s_sources[src], 0, sizeof(s_sources[src]));
-				s_num_sources--;
-				continue;
+				goto fail;
 			}
 
 			/* Apply fingerprint-matched track names (override CUE titles) */
@@ -861,7 +881,19 @@ static int parse_audio_playlist(void)
 		}
 	}
 
+	p = pj_skip_ws(p);
+	if (*p++ != '}') goto malformed;
+	p = pj_skip_ws(p);
+	if (*p != '\0') goto malformed;
+
 	free(json);
+	json = NULL;
+	for (total = 0; total < s_num_tracks; total++)
+		if (s_tracks[total].type == 1) audio_total++;
+	if (audio_total <= 0) {
+		rba_set_status("audio playlist has no playable tracks");
+		goto fail;
+	}
 
 	/* Set track names for the track_names system */
 	track_names_set_cue_count(s_num_tracks);
@@ -881,6 +913,13 @@ static int parse_audio_playlist(void)
 	RBA_LOG("audio_playlist.json: %d sources, %d total tracks",
 	        s_num_sources, total);
 	return total;
+
+malformed:
+	rba_set_status("audio_playlist.json malformed");
+fail:
+	free(json);
+	clear_playlist_state();
+	return -1;
 }
 
 static int parse_cue_file(void)
@@ -1017,11 +1056,47 @@ static int parse_cue_file(void)
 
 /* ── Sector I/O ──────────────────────────────────────────────────────── */
 
-/* Refill s_pcm_buf with raw CD audio frames.  Returns number of new
- * stereo frames appended, or 0 when the current track range is done. */
+/* Refill s_pcm_buf with raw CD audio frames.  Returns the number of new
+ * stereo frames appended, 0 when the current track range is done, or -1
+ * after a source I/O failure with no newly appended frames. */
+static void record_source_io_error(int operation, const bin_handle_t *source)
+{
+	int source_index = -1;
+	if (__atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) == RBA_TERMINAL_IO_ERROR)
+		return;
+	if (s_current_track >= 1 && s_current_track <= s_num_tracks)
+		source_index = s_tracks[s_current_track - 1].source_index;
+	s_error_source_index = source_index;
+	s_error_track = s_current_track;
+	s_error_sector = s_read_sector;
+	s_error_operation = operation;
+	s_error_platform_code = !source ? 0 : source->pf ? (int) PHYSFS_getLastErrorCode()
+	                                                 : errno;
+	__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_IO_ERROR, __ATOMIC_RELEASE);
+	RBA_LOG("CD source I/O error: source=%d track=%d sector=%d operation=%d code=%d",
+	        source_index, s_current_track, s_read_sector, operation, s_error_platform_code);
+}
+
+static int find_audio_track(int first, int last)
+{
+	int track;
+
+	if (first < 1)
+		first = 1;
+	if (last > s_num_tracks)
+		last = s_num_tracks;
+	for (track = first; track <= last; track++)
+		if (s_tracks[track - 1].type == 1)
+			return track;
+	return 0;
+}
+
 static int refill_pcm(void)
 {
 	int frames_read = 0;
+	if (__atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) == RBA_TERMINAL_IO_ERROR)
+		return -1;
 
 	/* Shift unconsumed data to front */
 	if (s_pcm_pos > 0 && s_pcm_pos < s_pcm_len) {
@@ -1038,40 +1113,40 @@ static int refill_pcm(void)
 		PHYSFS_sint64 offset;
 		int i;
 
+#ifdef INTROSPECT_ON
+		{
+			int test_operation = __atomic_exchange_n(&s_test_source_failure_operation,
+			                                         RBA_IO_NONE, __ATOMIC_ACQ_REL);
+			if (test_operation != RBA_IO_NONE) {
+				record_source_io_error(test_operation, NULL);
+				break;
+			}
+		}
+#endif
+
 		/* Advance track if current one is exhausted */
 		while (s_read_sector >= s_track_end) {
-			if (s_current_track >= s_play_last) {
+			int next_track = find_audio_track(s_current_track + 1, s_play_last);
+			if (next_track == 0)
 				return frames_read; /* all tracks done */
-			}
-			s_current_track++;
+			s_current_track = next_track;
 			s_read_sector = s_tracks[s_current_track - 1].start_sector;
 			s_track_end = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
-		}
-
-		if (!s_logged_data_track_decode &&
-		    s_current_track >= 1 && s_current_track <= s_num_tracks &&
-		    s_tracks[s_current_track - 1].type != 1) {
-			s_logged_data_track_decode = 1;
-			RBA_DIAG("decoding data track current=%d play_range=%d-%d disc_id=0x%08lx orig_track_order=%d start=%d len=%d",
-			         s_current_track, s_play_first, s_play_last,
-			         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
-			         s_tracks[s_current_track - 1].start_sector,
-			         s_tracks[s_current_track - 1].num_sectors);
 		}
 
 		{
 			bin_handle_t *src = get_track_handle(s_current_track);
 			if (!src || !bh_valid(src)) {
-				__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+				record_source_io_error(RBA_IO_HANDLE, src);
 				break;
 			}
 			offset = (PHYSFS_sint64) s_read_sector * SECTOR_SIZE;
 			if (!bh_seek(src, offset)) {
-				__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+				record_source_io_error(RBA_IO_SEEK, src);
 				break;
 			}
 			if (!bh_read(src, raw, SECTOR_SIZE)) {
-				__atomic_add_fetch(&s_source_io_errors_total, 1, __ATOMIC_RELAXED);
+				record_source_io_error(RBA_IO_READ, src);
 				break;
 			}
 		}
@@ -1088,6 +1163,9 @@ static int refill_pcm(void)
 		s_read_sector++;
 	}
 
+	if (frames_read == 0 &&
+	    __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) == RBA_TERMINAL_IO_ERROR)
+		return -1;
 	return frames_read;
 }
 
@@ -1102,10 +1180,14 @@ static int render_cd_frames(short *out, int max_frames)
 	while (written < max_frames && s_playing) {
 		/* Need more input? */
 		if (s_pcm_pos >= s_pcm_len - 1) {
-			if (refill_pcm() == 0 && s_pcm_pos >= s_pcm_len - 1) {
-				/* End of all tracks */
+			int refill_result = refill_pcm();
+			if (refill_result <= 0 && s_pcm_pos >= s_pcm_len - 1) {
 				s_playing = 0;
-				s_song_finished = 1;
+				s_paused = 0;
+				if (refill_result == 0) {
+					__atomic_store_n(&s_terminal_state, RBA_TERMINAL_COMPLETE, __ATOMIC_RELEASE);
+					s_song_finished = 1;
+				}
 				break;
 			}
 		}
@@ -1285,6 +1367,7 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 
 void RBAInit(void)
 {
+	int playlist_tracks;
 	if (s_initialised) return;
 	rba_set_status("initializing redbook");
 
@@ -1300,9 +1383,13 @@ void RBAInit(void)
 		RBA_LOG("Output rate: %d Hz", s_output_rate);
 	}
 
-	if (parse_audio_playlist() >= 2) {
+	playlist_tracks = parse_audio_playlist();
+	if (playlist_tracks > 0) {
 		RBA_LOG("Loaded multi-source playlist");
-	} else if (parse_cue_file() < 2) {
+	} else if (playlist_tracks < 0) {
+		RBA_LOG("Rejected invalid audio playlist: %s", s_init_status);
+		return;
+	} else if (parse_cue_file() < 1) {
 		RBA_LOG("No usable tracks found in CUE/BIN");
 		rba_set_status("no usable tracks found");
 		s_num_tracks = 0;
@@ -1339,6 +1426,15 @@ int RBAEnabled(void)
 
 static void playback_diagnostics_begin(int first_track)
 {
+	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_NONE, __ATOMIC_RELEASE);
+	s_error_source_index = -1;
+	s_error_track = 0;
+	s_error_sector = 0;
+	s_error_operation = RBA_IO_NONE;
+	s_error_platform_code = 0;
+#ifdef INTROSPECT_ON
+	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_NONE, __ATOMIC_RELEASE);
+#endif
 	__atomic_add_fetch(&s_playback_diagnostics_sequence, 1, __ATOMIC_ACQ_REL);
 	__atomic_store_n(&s_generation_source_read_start,
 	                 __atomic_load_n(&s_source_sectors_read_total, __ATOMIC_RELAXED),
@@ -1420,6 +1516,31 @@ void RBAGetPlaybackErrorDiagnostics(unsigned long long *source_io_errors_total,
 		*generation_source_io_errors = error_total >= error_start ? error_total - error_start : 0;
 }
 
+void RBAGetPlaybackTerminalDiagnostics(int *terminal_state, int *source_index,
+                                       int *track, int *sector,
+                                       int *operation, int *platform_code)
+{
+	int state = __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE);
+	if (terminal_state) *terminal_state = state;
+	if (source_index) *source_index = s_error_source_index;
+	if (track) *track = s_error_track;
+	if (sector) *sector = s_error_sector;
+	if (operation) *operation = s_error_operation;
+	if (platform_code) *platform_code = s_error_platform_code;
+}
+
+#ifdef INTROSPECT_ON
+int RBAInvalidateCurrentSourceForTest(void)
+{
+	int write_position;
+	if (!s_playing) return 0;
+	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_HANDLE, __ATOMIC_RELEASE);
+	write_position = __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
+	__atomic_store_n(&s_rb_rpos, write_position, __ATOMIC_RELEASE);
+	return 1;
+}
+#endif
+
 void RBAGetLastPlaybackProof(unsigned int *generation, int *first_track,
                              int *source_index,
                              unsigned long long *source_sectors_read,
@@ -1473,7 +1594,6 @@ int RBAPlayTrack(int track)
 	s_paused = 0;
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
-	s_logged_data_track_decode = 0;
 	playback_diagnostics_begin(track);
 	s_playing = 1;
 
@@ -1493,19 +1613,23 @@ int RBAPlayTrack(int track)
 /* Play tracks first..last (inclusive, 1-based), call hook when done */
 int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 {
+	int first_audio;
+
 	if (!s_initialised) return 0;
 	if (first < 1 || first > s_num_tracks) return 0;
 	if (last < first) last = first;
 	if (last > s_num_tracks) last = s_num_tracks;
+	first_audio = find_audio_track(first, last);
+	if (first_audio == 0) return 0;
 
 	RBAStop();
 
 	s_finished_hook = hook_finished;
-	s_current_track = first;
-	s_play_first = first;
+	s_current_track = first_audio;
+	s_play_first = first_audio;
 	s_play_last = last;
-	s_read_sector = s_tracks[first - 1].start_sector;
-	s_track_end = s_read_sector + s_tracks[first - 1].num_sectors;
+	s_read_sector = s_tracks[first_audio - 1].start_sector;
+	s_track_end = s_read_sector + s_tracks[first_audio - 1].num_sectors;
 	s_pcm_len = 0;
 	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
@@ -1513,33 +1637,42 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 	s_paused = 0;
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
-	s_logged_data_track_decode = 0;
-	playback_diagnostics_begin(first);
+	playback_diagnostics_begin(first_audio);
 	s_playing = 1;
 
 	render_thread_start();
 	Mix_HookMusic(rba_music_callback, NULL);
 
 	RBA_DIAG("play_tracks first=%d last=%d first_type=%s disc_id=0x%08lx orig_track_order=%d first_start=%d first_len=%d",
-	         first, last,
-	         s_tracks[first - 1].type ? "audio" : "data",
+	         first_audio, last,
+	         s_tracks[first_audio - 1].type ? "audio" : "data",
 	         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
-	         s_tracks[first - 1].start_sector,
-	         s_tracks[first - 1].num_sectors);
-	RBA_LOG("Playing tracks %d–%d", first, last);
+	         s_tracks[first_audio - 1].start_sector,
+	         s_tracks[first_audio - 1].num_sectors);
+	RBA_LOG("Playing tracks %d–%d", first_audio, last);
 	return 1;
 }
 
 void RBAStop(void)
 {
-	if (!s_initialised) return;
-
 	s_playing = 0;
+	s_paused = 0;
+	if (!s_initialised) {
+		__atomic_store_n(&s_terminal_state, RBA_TERMINAL_STOPPED, __ATOMIC_RELEASE);
+#ifdef INTROSPECT_ON
+		__atomic_store_n(&s_test_source_failure_operation, RBA_IO_NONE, __ATOMIC_RELEASE);
+#endif
+		return;
+	}
+
 	render_thread_stop();
 	Mix_HookMusic(NULL, NULL);
 	s_finished_hook = NULL;
 	s_song_finished = 0;
-	s_logged_data_track_decode = 0;
+	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_STOPPED, __ATOMIC_RELEASE);
+#ifdef INTROSPECT_ON
+	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_NONE, __ATOMIC_RELEASE);
+#endif
 	rb_reset();
 
 	RBA_LOG("Playback stopped");
@@ -1553,6 +1686,9 @@ void RBASetVolume(int volume)
 
 void RBAPause(void)
 {
+	if (!s_initialised || !s_playing || s_paused ||
+	    __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) != RBA_TERMINAL_NONE)
+		return;
 	s_paused = 1;
 	RBA_LOG("Paused");
 }
@@ -1560,6 +1696,9 @@ void RBAPause(void)
 int RBAResume(void)
 {
 	if (!s_initialised) return -1;
+	if (!s_playing || !s_paused ||
+	    __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) != RBA_TERMINAL_NONE)
+		return 0;
 	s_paused = 0;
 	RBA_LOG("Resumed");
 	return 1;
@@ -1586,15 +1725,15 @@ void RBABackgroundResume(void)
 
 int RBAPauseResume(void)
 {
-	if (!s_initialised) return 0;
+	if (!s_initialised || !s_playing ||
+	    __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) != RBA_TERMINAL_NONE)
+		return 0;
 	if (s_paused) {
 		s_paused = 0;
 		RBA_LOG("Toggle → resumed");
-	} else if (s_playing) {
+	} else {
 		s_paused = 1;
 		RBA_LOG("Toggle → paused");
-	} else {
-		return 0;
 	}
 	return 1;
 }
@@ -1633,8 +1772,9 @@ int RBAGetTrackNum(void)
 int RBAPeekPlayStatus(void)
 {
 	if (!s_initialised) return 0;
+	if (__atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) == RBA_TERMINAL_IO_ERROR) return -2;
 	if (s_playing && !s_paused) return 1;
-	if (s_paused) return -1;
+	if (s_playing && s_paused) return -1;
 	return 0;
 }
 

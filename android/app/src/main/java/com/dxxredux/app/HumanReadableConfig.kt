@@ -435,6 +435,17 @@ object HumanReadableConfig {
             stripLabelAngleDeg = j.optDouble("stripLabelAngleDeg", 0.0).toFloat(),
             stripSelectedScale =
                 j.optDouble("stripSelectedScale", DEFAULT_SCROLL_STRIP_SELECTED_SCALE.toDouble()).toFloat(),
+            stripCardScale =
+                j
+                    .optDouble("stripCardScale", DEFAULT_SCROLL_STRIP_CARD_SCALE.toDouble())
+                    .toFloat()
+                    .coerceIn(MIN_SCROLL_STRIP_CARD_SCALE, MAX_SCROLL_STRIP_CARD_SCALE),
+            stripRowOffset =
+                runCatching {
+                    ScrollStripRowOffset.valueOf(
+                        j.optString("stripRowOffset", ScrollStripRowOffset.ABOVE_LEFT.name),
+                    )
+                }.getOrDefault(ScrollStripRowOffset.ABOVE_LEFT),
         )
     }
 

@@ -1008,6 +1008,11 @@ class SetupActivity : ComponentActivity() {
                             } else {
                                 binPaths
                             }
+                        val parsedTracks =
+                            DiscImportBridge.parseCue(
+                                resolveCdAudioSourceFile(filesDir, cueName).absolutePath,
+                                orderedBinPaths.map { File(it).length() }.toLongArray(),
+                            ) ?: return
                         val srcManager = AudioSourceManager(filesDir)
                         srcManager.addSource(
                             AudioSourceManager.AudioSource(
@@ -1016,8 +1021,8 @@ class SetupActivity : ComponentActivity() {
                                 binPaths = orderedBinPaths.map { File(it).name.lowercase() },
                                 discLabel = label,
                                 discId = id,
-                                trackCount = 0,
-                                audioTrackCount = 0,
+                                trackCount = parsedTracks.size,
+                                audioTrackCount = parsedTracks.count { it.isAudio },
                                 legacyDiscId = 0,
                                 binContentUri = orderedBinPaths.first(),
                                 binContentUris = orderedBinPaths,

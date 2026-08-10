@@ -54,13 +54,29 @@ internal fun chooseUniqueCdAudioImportStem(
 
 internal fun isGeneratedMergedCueFile(cueFile: File): Boolean {
     if (!cueFile.isFile || !cueFile.name.endsWith(".cue", ignoreCase = true)) return false
-    if (cueFile.nameWithoutExtension.startsWith("custom-")) return true
     return try {
         cueFile.bufferedReader().use { it.readLine() == GENERATED_MERGED_CUE_MARKER }
     } catch (_: Exception) {
         false
     }
 }
+
+internal fun isLegacyGeneratedMergedStorageArtifact(file: File): Boolean =
+    when {
+        file.name.endsWith(".cue", ignoreCase = true) -> {
+            file.nameWithoutExtension.startsWith("custom-")
+        }
+
+        file.name.endsWith(".bin", ignoreCase = true) -> {
+            File(file.parentFile ?: return false, "${file.nameWithoutExtension}.cue")
+                .nameWithoutExtension
+                .startsWith("custom-")
+        }
+
+        else -> {
+            false
+        }
+    }
 
 internal fun isGeneratedMergedStorageArtifact(file: File): Boolean =
     when {

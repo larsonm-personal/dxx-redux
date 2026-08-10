@@ -26,6 +26,7 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
+#include "../extract/cd_read_contract.h"
 #include "../extract/cue_parser.h"
 
 #define TAG       "DXX-CdPreview"
@@ -160,35 +161,12 @@ static FILE *current_track_fp(void)
 
 static char *read_cue_text(const char *cue_path)
 {
-	FILE *fp = fopen(cue_path, "rb");
-	char *buf;
-	long size;
+	char *buf = NULL;
 
-	if (!fp) {
+	if (!cd_read_file_exact(cue_path, CD_CUE_MAX_BYTES, &buf, NULL)) {
 		LOGE("Cannot open CUE: %s", cue_path);
 		return NULL;
 	}
-	if (fseek(fp, 0, SEEK_END) != 0) {
-		fclose(fp);
-		return NULL;
-	}
-	size = ftell(fp);
-	if (size < 0 || fseek(fp, 0, SEEK_SET) != 0) {
-		fclose(fp);
-		return NULL;
-	}
-	buf = (char *) malloc((size_t) size + 1);
-	if (!buf) {
-		fclose(fp);
-		return NULL;
-	}
-	if (fread(buf, 1, (size_t) size, fp) != (size_t) size) {
-		free(buf);
-		fclose(fp);
-		return NULL;
-	}
-	fclose(fp);
-	buf[size] = '\0';
 	return buf;
 }
 

@@ -111,4 +111,35 @@ class LauncherFileCopyTest {
         assertEquals("prior", destination.readText())
         assertTrue(dir.listFiles().orEmpty().none { it.name != destination.name })
     }
+
+    @Test
+    fun copyInputToFile_enforcesKnownAndStreamingLimitsBeforePublication() {
+        val dir = File("build/test-launcher-copy-limit").absoluteFile
+        dir.deleteRecursively()
+        dir.mkdirs()
+        val destination = File(dir, "disc.cue").apply { writeText("prior") }
+
+        assertThrows(IOException::class.java) {
+            LauncherFileCopy.copyInputToFile(destination, 5L, maxBytes = 4L) {
+                ByteArrayInputStream("12345".toByteArray())
+            }
+        }
+        assertThrows(IOException::class.java) {
+            LauncherFileCopy.copyInputToFile(destination, 0L, maxBytes = 4L) {
+                ByteArrayInputStream("12345".toByteArray())
+            }
+        }
+
+        assertEquals("prior", destination.readText())
+        assertTrue(dir.listFiles().orEmpty().none { it.name != destination.name })
+    }
+
+    @Test
+    fun cueLimit_acceptsExactSizeAndRejectsEmptyOrOversizedFiles() {
+        requireCueSizeWithinLimit(CD_CUE_MAX_BYTES, "exact.cue")
+        assertThrows(IOException::class.java) { requireCueSizeWithinLimit(0L, "empty.cue") }
+        assertThrows(IOException::class.java) {
+            requireCueSizeWithinLimit(CD_CUE_MAX_BYTES + 1L, "large.cue")
+        }
+    }
 }

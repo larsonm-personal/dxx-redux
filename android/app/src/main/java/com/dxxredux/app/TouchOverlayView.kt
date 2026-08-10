@@ -2491,30 +2491,28 @@ class TouchOverlayView
         ) {
             val vertical = state.control.stripOrientation == SliderOrientation.VERTICAL
             val halfSpan = state.dragHalfSpan
-            val cx = state.triggerX
-            val cy = state.triggerY
+            val baseCrossOffset =
+                scrollStripRowCrossOffset(
+                    state.triggerRadius,
+                    state.control.stripRowOffset,
+                    state.control.stripCardScale,
+                )
             val eff = (gAlpha * state.control.opacity).coerceIn(0f, 1f)
-            paintRing.alpha = (0x88 * eff).toInt()
-            if (vertical) {
-                canvas.drawLine(cx, cy - halfSpan, cx, cy + halfSpan, paintRing)
-            } else {
-                canvas.drawLine(cx - halfSpan, cy, cx + halfSpan, cy, paintRing)
-            }
-            canvas.drawCircle(cx, cy, max(2f, state.triggerRadius * 0.08f), paintThumb)
 
             val rows = state.stripRows
             if (rows.isEmpty()) return
-            val rowGap = state.triggerRadius * 2.5f
+            val rowGap = scrollStripRowSpacing(state.triggerRadius, state.control.stripCardScale)
             val crossSign = state.stripCrossSign
             rows.forEachIndexed { rowIndex, items ->
                 if (items.isEmpty()) return@forEachIndexed
                 val rowProgress = if (rowIndex == 0) 1f - state.stripCrossProgress else state.stripCrossProgress
                 if (rowProgress <= 0f) return@forEachIndexed
                 val crossOffset =
-                    when (rowIndex) {
-                        0 -> -state.stripCrossProgress * rowGap * crossSign
-                        else -> (1f - state.stripCrossProgress) * rowGap * crossSign
-                    }
+                    baseCrossOffset +
+                        when (rowIndex) {
+                            0 -> -state.stripCrossProgress * rowGap * crossSign
+                            else -> (1f - state.stripCrossProgress) * rowGap * crossSign
+                        }
                 val initial = state.stripRowInitialIndices.getOrElse(rowIndex) { 0 }
                 val fractional = scrollStripFractionalIndex(state.stripMainDelta, halfSpan, initial, items.size)
                 drawScrollStripRow(canvas, state, rowIndex, items, fractional, crossOffset, eff * rowProgress, vertical)
@@ -2531,7 +2529,7 @@ class TouchOverlayView
             alpha: Float,
             vertical: Boolean,
         ) {
-            val baseTextSize = state.triggerRadius * 0.42f
+            val baseTextSize = scrollStripBaseTextSize(state.triggerRadius, state.control.stripCardScale)
             val rotation =
                 if (vertical) {
                     state.control.stripLabelAngleDeg

@@ -1976,6 +1976,7 @@ internal fun MusicInfoSection(
         mutableStateOf<List<AudioSourceManager.AudioSource>>(emptyList())
     }
     var audioMutationActive by remember { mutableStateOf(false) }
+    var pendingAudioSourceRemoval by remember { mutableStateOf<AudioSourceManager.AudioSource?>(null) }
     LaunchedEffect(filesDir.absolutePath, refreshTrigger) {
         val loaded =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -2175,26 +2176,48 @@ internal fun MusicInfoSection(
                     }
                     TextButton(
                         enabled = !audioMutationActive,
-                        onClick = {
-                            val manager = audioSrcManager ?: return@TextButton
-                            audioMutationActive = true
-                            scope.launch {
-                                audioSources =
-                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                        manager.removeSource(src.id, context)
-                                        manager.getSources()
-                                    }
-                                audioMutationActive = false
-                            }
-                        },
+                        onClick = { pendingAudioSourceRemoval = src },
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                         modifier = Modifier.height(24.dp),
                     ) {
-                        Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+                        Text("Remove", fontSize = 12.sp, color = Color(0xFFFF5252))
                     }
                 }
             }
         }
+    }
+    pendingAudioSourceRemoval?.let { source ->
+        AlertDialog(
+            onDismissRequest = { pendingAudioSourceRemoval = null },
+            title = { Text("Remove CD audio source?") },
+            text = {
+                Text(
+                    "Remove ${source.discLabel} from the audio source list? " +
+                        "App-created helper files will be deleted. External disc images will remain untouched.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !audioMutationActive,
+                    onClick = {
+                        val manager = audioSrcManager ?: return@TextButton
+                        pendingAudioSourceRemoval = null
+                        audioMutationActive = true
+                        scope.launch {
+                            audioSources =
+                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    manager.removeSource(source.id, context)
+                                    manager.getSources()
+                                }
+                            audioMutationActive = false
+                        }
+                    },
+                ) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingAudioSourceRemoval = null }) { Text("Cancel") }
+            },
+        )
     }
     detailStatus?.let { status ->
         FileDetailDialog(

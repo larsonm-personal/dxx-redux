@@ -58,6 +58,8 @@ extern "C" {
 #include "inferno.h"
 #include "key.h"
 #include "playsave.h"
+#include "rbaudio.h"
+#include "songs.h"
 #include "songs_android_shared.h"
 #include "state.h"
 #include "window.h"
@@ -90,6 +92,7 @@ extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
 extern "C" int gles3_shim_probe_vbo_arrays(void);
 extern "C" int do_game_pause(void);
+extern "C" int RBAInvalidateCurrentSourceForTest(void);
 extern "C" android_axis_generation android_joystick_axis_publish(
     int axis, int raw_value, int touch_source);
 extern "C" JavaVM *g_jvm;
@@ -368,6 +371,7 @@ enum step_type {
 	STEP_TRIGGER_LEVELCOMPLETE,      /* call PlayerFinishedLevel(0) directly */
 	STEP_TRIGGER_POSTLEVEL,          /* open the multiplayer post-level summary */
 	STEP_MUSIC_CONTROL,              /* invoke shared Android track controls */
+	STEP_REDBOOK_INVALIDATE_SOURCE,  /* automation-only source I/O failure injection */
 	STEP_WRITE_CONFIG,               /* launcher-only: no-op in game engine (skip) */
 	STEP_TAP_BUTTON,                 /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_BUTTON,              /* launcher-only: no-op in game engine (skip) */
@@ -421,8 +425,10 @@ struct auto_step {
 	int button_held = 0;                   /* STEP_SEND_BUTTON: 1 = hold (no release) */
 	int button_pressed = 1;                /* STEP_SEND_BUTTON: 0 = release only */
 	int meta_action_id = -1;               /* STEP_META_ACTION: action ID */
-	std::string music_operation;           /* STEP_MUSIC_CONTROL: next, previous, or play */
+	std::string music_operation;           /* STEP_MUSIC_CONTROL operation */
 	int music_track = -1;                  /* STEP_MUSIC_CONTROL: index for play */
+	int music_last_track = -1;             /* STEP_MUSIC_CONTROL: range end */
+	bool music_expect_success = true;      /* STEP_MUSIC_CONTROL: expected result */
 	int segment = -1;                      /* STEP_FACE_VIEW: target segment */
 	int side = -1;                         /* STEP_FACE_VIEW: target side */
 	int face = 0;                          /* STEP_FACE_VIEW: target face on side */
@@ -571,6 +577,7 @@ static const char *step_type_name(step_type t)
 		case STEP_TRIGGER_LEVELCOMPLETE: return "trigger_levelcomplete";
 		case STEP_TRIGGER_POSTLEVEL: return "trigger_postlevel";
 		case STEP_MUSIC_CONTROL: return "music_control";
+		case STEP_REDBOOK_INVALIDATE_SOURCE: return "redbook_invalidate_source";
 		case STEP_WRITE_CONFIG: return "write_config";
 		case STEP_TAP_BUTTON: return "tap_button";
 		case STEP_ASSERT_BUTTON: return "assert_button";
@@ -2190,6 +2197,7 @@ static int parse_script(const char *json_text)
 			else if (action == "trigger_levelcomplete") s.type = STEP_TRIGGER_LEVELCOMPLETE;
 			else if (action == "trigger_postlevel") s.type = STEP_TRIGGER_POSTLEVEL;
 			else if (action == "music_control") s.type = STEP_MUSIC_CONTROL;
+			else if (action == "redbook_invalidate_source") s.type = STEP_REDBOOK_INVALIDATE_SOURCE;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
@@ -2228,6 +2236,8 @@ static int parse_script(const char *json_text)
 			s.meta_action_id = step_json.value("id", -1);
 			s.music_operation = step_json.value("operation", "");
 			s.music_track = step_json.value("track", -1);
+			s.music_last_track = step_json.value("last_track", -1);
+			s.music_expect_success = step_json.value("expect_success", true);
 			s.segment = step_json.value("segment", -1);
 			s.side = step_json.value("side", -1);
 			s.face = step_json.value("face", 0);
@@ -3558,19 +3568,42 @@ extern "C" void game_automate_tick(void)
 				result = songs_prev_track();
 			else if (s.music_operation == "play")
 				result = songs_play_specific_track(s.music_track);
-			else {
+			else if (s.music_operation == "play_range")
+				result = RBAPlayTracks(s.music_track, s.music_last_track, NULL);
+			else if (s.music_operation == "pause") {
+				int before = RBAPeekPlayStatus();
+				songs_pause();
+				result = before == 1 && RBAPeekPlayStatus() == -1;
+			} else if (s.music_operation == "resume") {
+				int before = RBAPeekPlayStatus();
+				songs_resume();
+				result = before == -1 && RBAPeekPlayStatus() == 1;
+			} else if (s.music_operation == "stop") {
+				songs_stop_all();
+				result = RBAPeekPlayStatus() == 0;
+			} else {
 				stop_script_fail("music_control: unknown operation");
 				break;
 			}
-			if (!result) {
-				stop_script_fail("music_control: track operation failed");
+			if (!!result != s.music_expect_success) {
+				stop_script_fail("music_control: unexpected operation result");
 				break;
 			}
-			LOGI("music_control: operation=%s track=%d result=%d",
-			     s.music_operation.c_str(), s.music_track, result);
+			LOGI("music_control: operation=%s track=%d result=%d expected=%d",
+			     s.music_operation.c_str(), s.music_track, result,
+			     s.music_expect_success ? 1 : 0);
 			advance_step();
 			break;
 		}
+
+		case STEP_REDBOOK_INVALIDATE_SOURCE:
+			if (!RBAInvalidateCurrentSourceForTest()) {
+				stop_script_fail("redbook_invalidate_source: no active source");
+				break;
+			}
+			LOGI("redbook_invalidate_source: queued source handle failure");
+			advance_step();
+			break;
 
 		case STEP_SET_DEBUG:
 			if (s.field == "tex_overlay")

@@ -8,6 +8,39 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
+
+// Keep in sync with CD_CUE_MAX_BYTES in native cd_read_contract.h.
+internal const val CD_CUE_MAX_BYTES = 1024L * 1024L
+
+// Keep in sync with MAX_SOURCES and MAX_TRACKS in native rbaudio_bin.c.
+internal const val AUDIO_PLAYLIST_MAX_SOURCES = 8
+internal const val AUDIO_PLAYLIST_MAX_TRACKS = 100
+
+internal fun requireCueSizeWithinLimit(
+    size: Long,
+    label: String,
+) {
+    if (size <= 0L || size > CD_CUE_MAX_BYTES) {
+        throw IOException("CUE $label must be between 1 and $CD_CUE_MAX_BYTES bytes")
+    }
+}
+
+internal fun requireAudioPlaylistCapacity(sources: List<AudioSourceManager.AudioSource>) {
+    if (sources.size > AUDIO_PLAYLIST_MAX_SOURCES) {
+        throw IOException("Audio playlist has ${sources.size} sources; maximum is $AUDIO_PLAYLIST_MAX_SOURCES")
+    }
+    var totalTracks = 0
+    sources.forEach { source ->
+        if (source.trackCount <= 0 || source.audioTrackCount <= 0 || source.audioTrackCount > source.trackCount) {
+            throw IOException("Audio source ${source.discLabel} has invalid track counts")
+        }
+        if (source.trackCount > AUDIO_PLAYLIST_MAX_TRACKS - totalTracks) {
+            throw IOException("Audio playlist exceeds the $AUDIO_PLAYLIST_MAX_TRACKS track maximum")
+        }
+        totalTracks += source.trackCount
+    }
+}
 
 internal fun getManagedInternalArtifactPaths(
     filesDir: File,
@@ -69,7 +102,16 @@ private fun getManagedInternalArtifactFilesForSource(
 private fun isManagedCdArtifactFile(
     file: File,
     filesDir: File,
-): Boolean = isUnderDirectory(file, filesDir) || isGeneratedMergedStorageArtifact(file)
+): Boolean {
+    if (!file.name.endsWith(".cue", ignoreCase = true) && !file.name.endsWith(".bin", ignoreCase = true)) {
+        return false
+    }
+    val generatedRoot = File(ImportLocationManager(filesDir).getActiveRoot(), GENERATED_CD_AUDIO_ARTIFACT_DIR)
+    if (isUnderDirectory(file, generatedRoot)) return true
+    if (!isUnderDirectory(file, filesDir)) return false
+    if (file.name.endsWith(".cue", ignoreCase = true)) return true
+    return isGeneratedMergedStorageArtifact(file) || isLegacyGeneratedMergedStorageArtifact(file)
+}
 
 private fun isUnderDirectory(
     file: File,
@@ -80,9 +122,7 @@ private fun isUnderDirectory(
         val rootPath = root.canonicalPath
         filePath == rootPath || filePath.startsWith(rootPath + File.separator)
     } catch (_: Exception) {
-        val filePath = file.absolutePath
-        val rootPath = root.absolutePath
-        filePath == rootPath || filePath.startsWith(rootPath + File.separator)
+        false
     }
 
 /**
@@ -221,7 +261,7 @@ class AudioSourceManager(
     private fun releaseSourceResources(source: AudioSource) {
         val managedFiles = managedInternalFilesForSource(source)
         managedFiles.forEach { file ->
-            if (file.exists()) {
+            if (file.exists() && isManagedCdArtifactFile(file, filesDir)) {
                 file.delete()
             }
         }
@@ -267,15 +307,20 @@ class AudioSourceManager(
 
     private fun pruneOrphanedGeneratedMergedFiles() {
         val referencedPaths = getManagedInternalArtifactPaths()
+        val generatedRoot = generatedCdAudioArtifactsDir(filesDir)
         val scanDirs =
-            listOf(filesDir, generatedCdAudioArtifactsDir(filesDir))
+            listOf(filesDir, generatedRoot)
                 .distinctBy { it.absolutePath }
         scanDirs.forEach { dir ->
             val cueFiles =
                 dir.listFiles()?.filter { it.isFile && it.name.endsWith(".cue", ignoreCase = true) }
                     ?: return@forEach
             cueFiles.forEach { cueFile ->
-                if (!isGeneratedMergedCueFile(cueFile)) return@forEach
+                val isOwnedGeneration =
+                    isUnderDirectory(cueFile, generatedRoot) ||
+                        isGeneratedMergedCueFile(cueFile) ||
+                        (isUnderDirectory(cueFile, filesDir) && isLegacyGeneratedMergedStorageArtifact(cueFile))
+                if (!isOwnedGeneration) return@forEach
                 val binFile = File(cueFile.parentFile, "${cueFile.nameWithoutExtension}.bin")
                 if (!binFile.isFile) return@forEach
                 if (cueFile.absolutePath in referencedPaths || binFile.absolutePath in referencedPaths) return@forEach
@@ -351,11 +396,14 @@ class AudioSourceManager(
      */
     fun writePlaylist(resolver: ContentResolver? = null): Boolean {
         closeActivePfds()
+        val playlistFile = File(filesDir, PLAYLIST_FILE)
         val enabled = getEnabledSources()
         if (enabled.isEmpty()) {
-            File(filesDir, PLAYLIST_FILE).delete()
+            playlistFile.delete()
             return false
         }
+        playlistFile.delete()
+        requireAudioPlaylistCapacity(enabled)
         val activeSetDir = activeSetDirOrNull()
 
         val json = JSONObject()
@@ -363,6 +411,9 @@ class AudioSourceManager(
         for (src in enabled) {
             val entry = JSONObject()
             val cuePath = resolvePlaylistCuePath(filesDir, src) { stagedCuePath(src, activeSetDir) }
+            resolveCdAudioSourceFile(filesDir, cuePath).takeIf { it.isFile }?.let {
+                requireCueSizeWithinLimit(it.length(), it.name)
+            }
             entry.put("cue", cuePath)
             val bins = JSONArray()
             resolvePlaylistBinPaths(src, resolver, activeSetDir).forEach(bins::put)
@@ -378,7 +429,7 @@ class AudioSourceManager(
         }
         json.put("sources", arr)
 
-        File(filesDir, PLAYLIST_FILE).writeText(json.toString(2))
+        playlistFile.writeText(json.toString(2))
         Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources (${activePfds.size} SAF fds)")
         return true
     }
@@ -471,12 +522,13 @@ class AudioSourceManager(
         if (localCue.exists()) return src.cuePath
 
         val cueFile = resolveExistingFile(src.cuePath, activeSetDir) ?: return src.cuePath
+        requireCueSizeWithinLimit(cueFile.length(), cueFile.name)
         val stageDir = File(filesDir, "audio_cue_stage").also { it.mkdirs() }
         val safeId = src.id.replace(Regex("[^A-Za-z0-9_.-]"), "_")
         val ext = cueFile.extension.ifEmpty { "cue" }
         val staged = File(stageDir, "$safeId.$ext")
         if (!staged.exists() || staged.length() != cueFile.length() || staged.lastModified() < cueFile.lastModified()) {
-            LauncherFileCopy.copyFileToFile(cueFile, staged)
+            LauncherFileCopy.copyFileToFile(cueFile, staged, maxBytes = CD_CUE_MAX_BYTES)
             staged.setLastModified(cueFile.lastModified())
         }
         return staged.relativeTo(filesDir).path

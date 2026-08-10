@@ -329,7 +329,7 @@ class ModManager(
                         output,
                         ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L,
                         displayName,
-                        onProgress,
+                        onProgress = onProgress,
                     )
                 }
             } ?: run {
@@ -418,7 +418,13 @@ class ModManager(
             ImportStorageGuard.requireFreeSpace(modsDir, total, "import mission zip $displayName")
             contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(temp).use { output ->
-                    LauncherFileCopy.copyStream(input, output, total, "Copying level pack: $displayName", onProgress)
+                    LauncherFileCopy.copyStream(
+                        input,
+                        output,
+                        total,
+                        "Copying level pack: $displayName",
+                        onProgress = onProgress,
+                    )
                 }
             } ?: return null
             onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
@@ -516,7 +522,7 @@ class ModManager(
                             output,
                             child.size.coerceAtLeast(0),
                             "Extracting Rebirth level pack from archive: $safeName",
-                            onProgress,
+                            onProgress = onProgress,
                         )
                     }
                 }
