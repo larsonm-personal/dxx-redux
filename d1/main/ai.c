@@ -3351,9 +3351,131 @@ void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *
 	}
 }
 
+static int ai_restore_advanced_exactly(PHYSFS_file *fp, PHYSFS_sint64 start,
+	PHYSFS_uint64 bytes)
+{
+	PHYSFS_sint64 end;
+
+	if (start < 0 || bytes > (PHYSFS_uint64)INT64_MAX - (PHYSFS_uint64)start)
+		return 0;
+	end = PHYSFS_tell(fp);
+	return end == start + (PHYSFS_sint64)bytes;
+}
+
+static int ai_restore_preflight_s32(PHYSFS_file *fp, int swap, int *value)
+{
+	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	*value = PHYSFSX_readSXE32(fp, swap);
+	return ai_restore_advanced_exactly(fp, start, sizeof(int));
+}
+
+static int ai_restore_preflight_s16(PHYSFS_file *fp, int swap, short *value)
+{
+	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	*value = (short)PHYSFSX_readSXE16(fp, swap);
+	return ai_restore_advanced_exactly(fp, start, sizeof(short));
+}
+
+static int ai_restore_preflight_vector(PHYSFS_file *fp, int swap)
+{
+	vms_vector value;
+	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	PHYSFSX_readVectorX(fp, &value, swap);
+	return ai_restore_advanced_exactly(fp, start, sizeof(value));
+}
+
+static int ai_restore_preflight(PHYSFS_file *fp, int version, int swap, int rebirth)
+{
+	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	PHYSFS_sint64 block_start;
+	ai_local *locals = NULL;
+	point_seg *points = NULL;
+	ai_cloak_info *cloaks = NULL;
+	int local_count = rebirth ? 350 : MAX_OBJECTS;
+	int value;
+	int i;
+	int ok = 0;
+	int stage = 1;
+
+	if (start < 0)
+		return 0;
+	locals = (ai_local *)malloc((size_t)local_count * sizeof(*locals));
+	points = (point_seg *)malloc((size_t)MAX_POINT_SEGS * sizeof(*points));
+	cloaks = (ai_cloak_info *)malloc((size_t)MAX_AI_CLOAK_INFO * sizeof(*cloaks));
+	if (!locals || !points || !cloaks)
+		goto done;
+	stage = 2;
+	if (!ai_restore_preflight_s32(fp, swap, &value) ||
+	    !ai_restore_preflight_s32(fp, swap, &value))
+		goto done;
+	stage = 3;
+	block_start = PHYSFS_tell(fp);
+	ai_local_read_n_swap(locals, local_count, swap, fp);
+	if (!ai_restore_advanced_exactly(fp, block_start,
+	                                (PHYSFS_uint64)local_count * 184u))
+		goto done;
+	stage = 4;
+	block_start = PHYSFS_tell(fp);
+	point_seg_read_n_swap(points, MAX_POINT_SEGS, swap, fp);
+	if (!ai_restore_advanced_exactly(fp, block_start,
+	                                (PHYSFS_uint64)MAX_POINT_SEGS * 16u))
+		goto done;
+	stage = 5;
+	block_start = PHYSFS_tell(fp);
+	ai_cloak_info_read_n_swap(cloaks, MAX_AI_CLOAK_INFO, swap, fp);
+	if (!ai_restore_advanced_exactly(fp, block_start,
+	                                (PHYSFS_uint64)MAX_AI_CLOAK_INFO * 16u))
+		goto done;
+	stage = 6;
+	for (i = 0; i < 13; i++)
+		if (!ai_restore_preflight_s32(fp, swap, &value))
+			goto done;
+	if (version >= 15) {
+		stage = 7;
+		if (!ai_restore_preflight_s32(fp, swap, &value) ||
+		    value < 0 || value > MAX_POINT_SEGS)
+			goto done;
+	}
+	if (version >= 8) {
+		stage = 8;
+		if (!ai_restore_preflight_s32(fp, swap, &value) ||
+		    value < 0 || value > MAX_AWARENESS_EVENTS)
+			goto done;
+		for (i = 0; i < value; i++) {
+			short segnum;
+			short type;
+			stage = 9;
+			if (!ai_restore_preflight_s16(fp, swap, &segnum) ||
+			    !ai_restore_preflight_s16(fp, swap, &type) ||
+			    !ai_restore_preflight_vector(fp, swap) ||
+			    segnum < 0 || segnum > Highest_segment_index ||
+			    type < PA_NEARBY_ROBOT_FIRED ||
+			    type > PA_WEAPON_ROBOT_COLLISION)
+				goto done;
+		}
+		stage = 10;
+		if (!ai_restore_preflight_vector(fp, swap))
+			goto done;
+	}
+	ok = 1;
+
+done:
+	if (!ok)
+		con_printf(CON_URGENT, "AI restore preflight rejected D1 state at stage %d\n", stage);
+	free(cloaks);
+	free(points);
+	free(locals);
+	if (!PHYSFS_seek(fp, start))
+		return 0;
+	return ok;
+}
+
 int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 {
 	fix tmptime32 = 0;
+
+	if (!ai_restore_preflight(fp, version, swap, rebirth))
+		return 0;
 
 	Ai_initialized = PHYSFSX_readSXE32(fp, swap);
 	Overall_agitation = PHYSFSX_readSXE32(fp, swap);

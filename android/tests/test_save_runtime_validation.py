@@ -105,6 +105,17 @@ class SaveRuntimeValidationTest(unittest.TestCase):
             self.assertLess(restore, close)
             self.assertLess(close, reject)
 
+    def test_ai_restore_preflights_exact_bytes_before_publication(self) -> None:
+        for source in (D1_AI, D2_AI):
+            preflight = function_body(source, "ai_restore_preflight")
+            restore = function_body(source, "ai_restore_state")
+            self.assertIn("ai_restore_advanced_exactly", preflight)
+            self.assertIn("PHYSFS_seek(fp, start)", preflight)
+            self.assertIn("if (!ai_restore_preflight", restore)
+            validate = restore.index("if (!ai_restore_preflight")
+            publish = restore.index("Ai_initialized =")
+            self.assertLess(validate, publish)
+
     def test_runtime_references_are_validated_before_publication(self) -> None:
         required_morph = (
             "objnum > Highest_object_index",
@@ -143,9 +154,13 @@ class SaveRuntimeValidationTest(unittest.TestCase):
             self.assertNotIn("position + bytes > length", body)
 
     def test_translated_checkpoint_validates_allocator_before_global_apply(self) -> None:
-        body = function_body(TRANSLATOR, "d1_save_translate_apply_runtime_state")
-        validate = body.index("object_validate_runtime_state(&object_state)")
-        publish = body.index("object_set_runtime_state(&object_state)")
+        reader = function_body(TRANSLATOR, "d1_save_translate_read_runtime_state")
+        commit = function_body(TRANSLATOR, "d1_save_translate_commit_runtime_state")
+        self.assertIn("d1_save_translate_validate_runtime_allocator", reader)
+        self.assertIn("object_set_runtime_state(&state->object_state)", commit)
+        apply = function_body(TRANSLATOR, "d1_save_translate_apply_checkpoint_objects")
+        validate = apply.index("d1_save_translate_read_runtime_state")
+        publish = apply.index("reset_objects(1)")
         self.assertLess(validate, publish)
 
     def test_translated_objects_are_staged_and_validated_before_publication(self) -> None:
@@ -172,15 +187,33 @@ class SaveRuntimeValidationTest(unittest.TestCase):
         body = function_body(TRANSLATOR, "d1_save_translate_validate_world_state")
         for text in (
             "wallp->segnum > Highest_segment_index",
-            "wallp->linked_wall >= Num_walls",
-            "wallp->trigger >= Num_triggers",
-            "door->front_wallnum[j] >= Num_walls",
+            "wallp->linked_wall >= state->num_walls",
+            "wallp->trigger >= state->num_triggers",
+            "door->front_wallnum[j] >= state->num_walls",
             "triggerp->num_links > MAX_WALLS_PER_LINK",
-            "sidep->wall_num >= Num_walls",
-            "RobotCenters[i].fuelcen_num >= Num_fuelcenters",
-            "ControlCenterTriggers.num_links > MAX_WALLS_PER_LINK",
+            "sidep->wall_num >= state->num_walls",
+            "state->robot_centers[i].fuelcen_num >= state->num_fuelcenters",
+            "state->control_center_triggers.num_links > MAX_CONTROLCEN_LINKS",
         ):
             self.assertIn(text, body)
+
+    def test_translated_checkpoint_stages_every_section_before_commit(self) -> None:
+        body = function_body(TRANSLATOR, "d1_save_translate_apply_checkpoint_objects")
+        for text in (
+            "d1_save_translate_read_d1_state_to_runtime",
+            "d1_save_translate_validate_world_state",
+            "d1_save_translate_validate_d1_ai_state",
+            "d1_save_translate_read_runtime_state",
+        ):
+            self.assertIn(text, body)
+        first_publish = body.index("reset_objects(1)")
+        for text in (
+            "d1_save_translate_read_d1_state_to_runtime",
+            "d1_save_translate_validate_world_state",
+            "d1_save_translate_validate_d1_ai_state",
+            "d1_save_translate_read_runtime_state",
+        ):
+            self.assertLess(body.index(text), first_publish)
 
 
 if __name__ == "__main__":

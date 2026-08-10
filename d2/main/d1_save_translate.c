@@ -52,6 +52,77 @@ typedef struct d1_save_translate_reader {
 	int swap;
 } d1_save_translate_reader;
 
+typedef struct d1_save_translate_side_state {
+	short wall_num;
+	short tmap_num;
+	short tmap_num2;
+} d1_save_translate_side_state;
+
+typedef struct d1_save_translate_world_state {
+	int num_walls;
+	wall walls[MAX_WALLS];
+	int num_open_doors;
+	active_door active_doors[MAX_DOORS];
+	int num_triggers;
+	trigger triggers[MAX_TRIGGERS];
+	d1_save_translate_side_state sides[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+	int control_center_destroyed;
+	int countdown_seconds_left;
+	int num_robot_centers;
+	matcen_info robot_centers[MAX_ROBOT_CENTERS];
+	control_center_triggers control_center_triggers;
+	int num_fuelcenters;
+	FuelCenter stations[MAX_NUM_FUELCENS];
+	fix countdown_timer;
+	int control_center_been_hit;
+	int control_center_player_been_seen;
+	int control_center_next_fire_time;
+	int control_center_present;
+	int dead_controlcen_object_num;
+} d1_save_translate_world_state;
+
+typedef struct d1_save_translate_ai_state {
+	int ai_initialized;
+	int overall_agitation;
+	ai_local local_info[MAX_OBJECTS];
+	point_seg point_segs[MAX_POINT_SEGS];
+	ai_cloak_info cloak_info[D1_SAVE_MAX_AI_CLOAK_INFO];
+	fix64 boss_cloak_start_time;
+	fix64 boss_cloak_end_time;
+	fix64 last_teleport_time;
+	fix boss_teleport_interval;
+	fix boss_cloak_interval;
+	fix boss_cloak_duration;
+	fix64 last_gate_time;
+	fix gate_interval;
+	fix64 boss_dying_start_time;
+	int boss_dying;
+	sbyte boss_dying_sound_playing;
+	int point_seg_free_index;
+	int awareness_count;
+	awareness_event awareness_events[D1_SAVE_MAX_AWARENESS_EVENTS];
+	vms_vector believed_player_pos;
+} d1_save_translate_ai_state;
+
+typedef struct d1_save_translate_runtime_state {
+	fix next_laser_fire_delta;
+	fix next_missile_fire_delta;
+	fix last_laser_fired_delta;
+	fix next_flare_fire_delta;
+	fix auto_fire_fusion_delta;
+	int global_laser_firing_count;
+	int global_missile_firing_count;
+	int has_rng_state;
+	uint rng_state;
+	int has_fx_rng_state;
+	uint fx_rng_state;
+	uint fx_rng_call_count;
+	game_d_tick_state d_tick_state;
+	object_runtime_state object_state;
+	laser_runtime_state laser_state;
+	ai_path_runtime_state ai_path_state;
+} d1_save_translate_runtime_state;
+
 extern int Do_appearance_effect;
 extern void copy_defaults_to_robot(object *objp);
 
@@ -703,6 +774,20 @@ static int d1_save_translate_validate_object(const object *obj, int object_count
 	    (obj->contains_count > 0 &&
 	     (obj->contains_type < 0 || obj->contains_type >= MAX_OBJECT_TYPES)))
 		return 0;
+	if (obj->contains_count > 0) {
+		switch (obj->contains_type) {
+		case OBJ_ROBOT:
+			if (obj->contains_id < 0 || obj->contains_id >= N_robot_types)
+				return 0;
+			break;
+		case OBJ_POWERUP:
+			if (obj->contains_id < 0 || obj->contains_id >= N_powerup_types)
+				return 0;
+			break;
+		default:
+			return 0;
+		}
+	}
 	return 1;
 }
 
@@ -818,85 +903,141 @@ static int d1_save_translate_read_ai_local(d1_save_translate_reader *reader,
 	return 1;
 }
 
-static int d1_save_translate_apply_d1_ai_state(d1_save_translate_reader *reader)
+static int d1_save_translate_read_d1_ai_state(
+	d1_save_translate_reader *reader, d1_save_translate_ai_state *state)
 {
 	int i;
-	int point_seg_free_index;
-	int awareness_count;
 	int unused_s32;
 	fix time_delta;
 
-	if (!d1_save_translate_read_s32(reader, &Ai_initialized) ||
-	    !d1_save_translate_read_s32(reader, &Overall_agitation))
+	if (!reader || !state)
+		return 0;
+	memset(state, 0, sizeof(*state));
+	if (!d1_save_translate_read_s32(reader, &state->ai_initialized) ||
+	    !d1_save_translate_read_s32(reader, &state->overall_agitation))
 		return 0;
 	for (i = 0; i < MAX_OBJECTS; i++)
-		if (!d1_save_translate_read_ai_local(reader, &Ai_local_info[i]))
+		if (!d1_save_translate_read_ai_local(reader, &state->local_info[i]))
 			return 0;
 	for (i = 0; i < MAX_POINT_SEGS; i++)
-		if (!d1_save_translate_read_s32(reader, &Point_segs[i].segnum) ||
-		    !d1_save_translate_read_vector(reader, &Point_segs[i].point))
+		if (!d1_save_translate_read_s32(reader, &state->point_segs[i].segnum) ||
+		    !d1_save_translate_read_vector(reader, &state->point_segs[i].point))
 			return 0;
 	for (i = 0; i < D1_SAVE_MAX_AI_CLOAK_INFO; i++) {
 		if (!d1_save_translate_read_fix(reader, &time_delta) ||
-		    !d1_save_translate_read_vector(reader, &Ai_cloak_info[i].last_position))
+		    !d1_save_translate_read_vector(reader,
+		                                   &state->cloak_info[i].last_position))
 			return 0;
-		Ai_cloak_info[i].last_time = GameTime64 + (fix64) time_delta;
-		Ai_cloak_info[i].last_segment = -1;
+		state->cloak_info[i].last_time = GameTime64 + (fix64) time_delta;
+		state->cloak_info[i].last_segment = -1;
 	}
 	if (!d1_save_translate_read_fix(reader, &time_delta))
 		return 0;
-	Boss_cloak_start_time = GameTime64 + (fix64) time_delta;
+	state->boss_cloak_start_time = GameTime64 + (fix64) time_delta;
 	if (!d1_save_translate_read_fix(reader, &time_delta))
 		return 0;
-	Boss_cloak_end_time = GameTime64 + (fix64) time_delta;
+	state->boss_cloak_end_time = GameTime64 + (fix64) time_delta;
 	if (!d1_save_translate_read_fix(reader, &time_delta))
 		return 0;
-	Last_teleport_time = GameTime64 + (fix64) time_delta;
-	if (!d1_save_translate_read_fix(reader, &Boss_teleport_interval) ||
-	    !d1_save_translate_read_fix(reader, &Boss_cloak_interval) ||
-	    !d1_save_translate_read_fix(reader, &Boss_cloak_duration) ||
+	state->last_teleport_time = GameTime64 + (fix64) time_delta;
+	if (!d1_save_translate_read_fix(reader, &state->boss_teleport_interval) ||
+	    !d1_save_translate_read_fix(reader, &state->boss_cloak_interval) ||
+	    !d1_save_translate_read_fix(reader, &state->boss_cloak_duration) ||
 	    !d1_save_translate_read_fix(reader, &time_delta))
 		return 0;
-	Last_gate_time = GameTime64 + (fix64) time_delta;
-	if (!d1_save_translate_read_fix(reader, &Gate_interval) ||
+	state->last_gate_time = GameTime64 + (fix64) time_delta;
+	if (!d1_save_translate_read_fix(reader, &state->gate_interval) ||
 	    !d1_save_translate_read_fix(reader, &time_delta))
 		return 0;
-	Boss_dying_start_time = time_delta ? GameTime64 + (fix64) time_delta : 0;
-	if (!d1_save_translate_read_s32(reader, &Boss_dying) ||
+	state->boss_dying_start_time = time_delta ? GameTime64 + (fix64) time_delta : 0;
+	if (!d1_save_translate_read_s32(reader, &state->boss_dying) ||
 	    !d1_save_translate_read_s32(reader, &unused_s32))
 		return 0;
-	Boss_dying_sound_playing = (sbyte) unused_s32;
+	state->boss_dying_sound_playing = (sbyte) unused_s32;
 	if (!d1_save_translate_skip(reader, 2 * sizeof(int)) ||
-	    !d1_save_translate_read_s32(reader, &point_seg_free_index))
+	    !d1_save_translate_read_s32(reader, &state->point_seg_free_index))
 		return 0;
-	if (point_seg_free_index >= 0 && point_seg_free_index <= MAX_POINT_SEGS)
-		Point_segs_free_ptr = &Point_segs[point_seg_free_index];
-	else
+	if (state->point_seg_free_index < 0 ||
+	    state->point_seg_free_index > MAX_POINT_SEGS)
 		return 0;
-	if (!d1_save_translate_read_s32(reader, &awareness_count))
+	if (!d1_save_translate_read_s32(reader, &state->awareness_count))
 		return 0;
-	if (awareness_count < 0 || awareness_count > D1_SAVE_MAX_AWARENESS_EVENTS)
+	if (state->awareness_count < 0 ||
+	    state->awareness_count > D1_SAVE_MAX_AWARENESS_EVENTS)
 		return 0;
-	Num_awareness_events = 0;
-	for (i = 0; i < awareness_count; i++) {
-		awareness_event event;
+	for (i = 0; i < state->awareness_count; i++) {
 		short value;
 
 		if (!d1_save_translate_read_s16(reader, &value))
 			return 0;
-		event.segnum = value;
+		state->awareness_events[i].segnum = value;
 		if (!d1_save_translate_read_s16(reader, &value) ||
-		    !d1_save_translate_read_vector(reader, &event.pos))
+		    !d1_save_translate_read_vector(reader,
+		                                   &state->awareness_events[i].pos))
 			return 0;
-		event.type = value;
-		if (Num_awareness_events < MAX_AWARENESS_EVENTS)
-			Awareness_events[Num_awareness_events++] = event;
+		state->awareness_events[i].type = value;
 	}
-	if (!d1_save_translate_read_vector(reader, &Believed_player_pos))
+	return d1_save_translate_read_vector(reader, &state->believed_player_pos);
+}
+
+static int d1_save_translate_validate_d1_ai_state(
+	const d1_save_translate_ai_state *state, const object *objects,
+	int object_count)
+{
+	int i;
+
+	if (!state || !objects || state->point_seg_free_index < 0 ||
+	    state->point_seg_free_index > MAX_POINT_SEGS ||
+	    state->awareness_count < 0 ||
+	    state->awareness_count > D1_SAVE_MAX_AWARENESS_EVENTS)
 		return 0;
-	Believed_player_seg = -1;
-	Last_fired_upon_player_pos = Believed_player_pos;
+	for (i = 0; i < object_count; i++) {
+		int goal_segment;
+		if (objects[i].type == OBJ_NONE || objects[i].control_type != CT_AI)
+			continue;
+		goal_segment = state->local_info[i].goal_segment;
+		if (goal_segment < -1 || goal_segment > Highest_segment_index)
+			return 0;
+	}
+	for (i = 0; i < state->point_seg_free_index; i++)
+		if (state->point_segs[i].segnum < 0 ||
+		    state->point_segs[i].segnum > Highest_segment_index)
+			return 0;
+	for (i = 0; i < state->awareness_count; i++)
+		if (state->awareness_events[i].segnum < 0 ||
+		    state->awareness_events[i].segnum > Highest_segment_index ||
+		    state->awareness_events[i].type < PA_NEARBY_ROBOT_FIRED ||
+		    state->awareness_events[i].type > PA_WEAPON_ROBOT_COLLISION)
+			return 0;
 	return 1;
+}
+
+static void d1_save_translate_commit_d1_ai_state(
+	const d1_save_translate_ai_state *state)
+{
+	Ai_initialized = state->ai_initialized;
+	Overall_agitation = state->overall_agitation;
+	memcpy(Ai_local_info, state->local_info, sizeof(state->local_info));
+	memcpy(Point_segs, state->point_segs, sizeof(state->point_segs));
+	memcpy(Ai_cloak_info, state->cloak_info, sizeof(state->cloak_info));
+	Boss_cloak_start_time = state->boss_cloak_start_time;
+	Boss_cloak_end_time = state->boss_cloak_end_time;
+	Last_teleport_time = state->last_teleport_time;
+	Boss_teleport_interval = state->boss_teleport_interval;
+	Boss_cloak_interval = state->boss_cloak_interval;
+	Boss_cloak_duration = state->boss_cloak_duration;
+	Last_gate_time = state->last_gate_time;
+	Gate_interval = state->gate_interval;
+	Boss_dying_start_time = state->boss_dying_start_time;
+	Boss_dying = state->boss_dying;
+	Boss_dying_sound_playing = state->boss_dying_sound_playing;
+	Point_segs_free_ptr = &Point_segs[state->point_seg_free_index];
+	Num_awareness_events = state->awareness_count;
+	memcpy(Awareness_events, state->awareness_events,
+	       (size_t)state->awareness_count * sizeof(state->awareness_events[0]));
+	Believed_player_pos = state->believed_player_pos;
+	Believed_player_seg = -1;
+	Last_fired_upon_player_pos = state->believed_player_pos;
 }
 
 static int d1_save_translate_read_d1_wall(d1_save_translate_reader *reader,
@@ -1042,36 +1183,44 @@ static int d1_save_translate_read_d1_fuelcen(d1_save_translate_reader *reader,
 	       d1_save_translate_read_vector(reader, &out->Center);
 }
 
-static int d1_save_translate_validate_world_state(void)
+static int d1_save_translate_validate_world_state(
+	const d1_save_translate_world_state *state, const object *objects,
+	int object_count)
 {
 	int i, j;
 
-	for (i = 0; i < Num_walls; i++) {
-		const wall *wallp = &Walls[i];
+	if (!state || !objects)
+		return 0;
+	for (i = 0; i < state->num_walls; i++) {
+		const wall *wallp = &state->walls[i];
 		if (wallp->segnum < 0 || wallp->segnum > Highest_segment_index ||
 		    wallp->sidenum < 0 || wallp->sidenum >= MAX_SIDES_PER_SEGMENT ||
 		    (wallp->linked_wall != -1 &&
-		     (wallp->linked_wall < 0 || wallp->linked_wall >= Num_walls)) ||
+		     (wallp->linked_wall < 0 || wallp->linked_wall >= state->num_walls)) ||
 		    wallp->type > WALL_CLOAKED || wallp->state > WALL_DOOR_DECLOAKING ||
 		    (wallp->trigger != -1 &&
-		     (wallp->trigger < 0 || wallp->trigger >= Num_triggers)) ||
+		     (wallp->trigger < 0 || wallp->trigger >= state->num_triggers)) ||
 		    (wallp->clip_num != -1 &&
 		     (wallp->clip_num < 0 || wallp->clip_num >= Num_wall_anims)) ||
 		    (wallp->keys != KEY_NONE && wallp->keys != KEY_BLUE &&
 		     wallp->keys != KEY_RED && wallp->keys != KEY_GOLD))
 			return 0;
+		if (state->sides[wallp->segnum][wallp->sidenum].wall_num != i)
+			return 0;
 	}
-	for (i = 0; i < Num_open_doors; i++) {
-		const active_door *door = &ActiveDoors[i];
+	for (i = 0; i < state->num_open_doors; i++) {
+		const active_door *door = &state->active_doors[i];
 		if (door->n_parts < 1 || door->n_parts > 2)
 			return 0;
 		for (j = 0; j < door->n_parts; j++)
-			if (door->front_wallnum[j] < 0 || door->front_wallnum[j] >= Num_walls ||
-			    door->back_wallnum[j] < 0 || door->back_wallnum[j] >= Num_walls)
+			if (door->front_wallnum[j] < 0 ||
+			    door->front_wallnum[j] >= state->num_walls ||
+			    door->back_wallnum[j] < 0 ||
+			    door->back_wallnum[j] >= state->num_walls)
 				return 0;
 	}
-	for (i = 0; i < Num_triggers; i++) {
-		const trigger *triggerp = &Triggers[i];
+	for (i = 0; i < state->num_triggers; i++) {
+		const trigger *triggerp = &state->triggers[i];
 		if (triggerp->type >= NUM_TRIGGER_TYPES || triggerp->num_links < 0 ||
 		    triggerp->num_links > MAX_WALLS_PER_LINK)
 			return 0;
@@ -1082,130 +1231,172 @@ static int d1_save_translate_validate_world_state(void)
 	}
 	for (i = 0; i <= Highest_segment_index; i++)
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; j++) {
-			const side *sidep = &Segments[i].sides[j];
+			const d1_save_translate_side_state *sidep = &state->sides[i][j];
 			if ((sidep->wall_num != -1 &&
-			     (sidep->wall_num < 0 || sidep->wall_num >= Num_walls)) ||
+			     (sidep->wall_num < 0 || sidep->wall_num >= state->num_walls)) ||
 			    sidep->tmap_num < 0 || sidep->tmap_num >= NumTextures ||
 			    (sidep->tmap_num2 & 0x3fff) >= NumTextures)
 				return 0;
+			if (sidep->wall_num != -1 &&
+			    (state->walls[sidep->wall_num].segnum != i ||
+			     state->walls[sidep->wall_num].sidenum != j))
+				return 0;
 		}
-	for (i = 0; i < Num_fuelcenters; i++)
-		if (Station[i].Type < SEGMENT_IS_NOTHING || Station[i].Type > SEGMENT_IS_GOAL_RED ||
-		    Station[i].segnum < 0 || Station[i].segnum > Highest_segment_index)
+	for (i = 0; i < state->num_fuelcenters; i++)
+		if (state->stations[i].Type < SEGMENT_IS_NOTHING ||
+		    state->stations[i].Type > SEGMENT_IS_GOAL_RED ||
+		    state->stations[i].segnum < 0 ||
+		    state->stations[i].segnum > Highest_segment_index ||
+		    Segments[state->stations[i].segnum].special != state->stations[i].Type)
 			return 0;
-	for (i = 0; i < Num_robot_centers; i++)
-		if (RobotCenters[i].segnum < 0 || RobotCenters[i].segnum > Highest_segment_index ||
-		    RobotCenters[i].fuelcen_num < 0 ||
-		    RobotCenters[i].fuelcen_num >= Num_fuelcenters)
+	for (i = 0; i < state->num_robot_centers; i++)
+		if (state->robot_centers[i].segnum < 0 ||
+		    state->robot_centers[i].segnum > Highest_segment_index ||
+		    state->robot_centers[i].fuelcen_num < 0 ||
+		    state->robot_centers[i].fuelcen_num >= state->num_fuelcenters ||
+		    state->stations[state->robot_centers[i].fuelcen_num].segnum !=
+		        state->robot_centers[i].segnum ||
+		    Segments[state->robot_centers[i].segnum].special != SEGMENT_IS_ROBOTMAKER)
 			return 0;
-	if (ControlCenterTriggers.num_links < 0 ||
-	    ControlCenterTriggers.num_links > MAX_WALLS_PER_LINK)
+	if (state->control_center_triggers.num_links < 0 ||
+	    state->control_center_triggers.num_links > MAX_CONTROLCEN_LINKS)
 		return 0;
-	for (i = 0; i < ControlCenterTriggers.num_links; i++)
-		if (ControlCenterTriggers.seg[i] < 0 ||
-		    ControlCenterTriggers.seg[i] > Highest_segment_index ||
-		    ControlCenterTriggers.side[i] < 0 ||
-		    ControlCenterTriggers.side[i] >= MAX_SIDES_PER_SEGMENT)
+	for (i = 0; i < state->control_center_triggers.num_links; i++)
+		if (state->control_center_triggers.seg[i] < 0 ||
+		    state->control_center_triggers.seg[i] > Highest_segment_index ||
+		    state->control_center_triggers.side[i] < 0 ||
+		    state->control_center_triggers.side[i] >= MAX_SIDES_PER_SEGMENT)
 			return 0;
-	if (Dead_controlcen_object_num != -1 &&
-	    (Dead_controlcen_object_num < 0 ||
-	     Dead_controlcen_object_num > Highest_object_index ||
-	     Objects[Dead_controlcen_object_num].type != OBJ_CNTRLCEN))
+	if (state->dead_controlcen_object_num != -1 &&
+	    (state->dead_controlcen_object_num < 0 ||
+	     state->dead_controlcen_object_num >= object_count ||
+	     objects[state->dead_controlcen_object_num].type != OBJ_CNTRLCEN))
 		return 0;
 	return 1;
 }
 
-static int d1_save_translate_apply_d1_world_state(
-    d1_save_translate_reader *reader)
+static int d1_save_translate_read_d1_world_state(
+	d1_save_translate_reader *reader, d1_save_translate_world_state *state)
 {
 	int i;
 	int j;
 
-	if (!d1_save_translate_read_s32(reader, &Num_walls) ||
-	    Num_walls < 0 || Num_walls > MAX_WALLS)
+	if (!reader || !state)
 		return 0;
-	for (i = 0; i < Num_walls; i++)
-		if (!d1_save_translate_read_d1_wall(reader, &Walls[i]))
+	memset(state, 0, sizeof(*state));
+	if (!d1_save_translate_read_s32(reader, &state->num_walls) ||
+	    state->num_walls < 0 || state->num_walls > MAX_WALLS)
+		return 0;
+	for (i = 0; i < state->num_walls; i++)
+		if (!d1_save_translate_read_d1_wall(reader, &state->walls[i]))
 			return 0;
-	for (i = Num_walls; i < MAX_WALLS; i++)
-		memset(&Walls[i], 0, sizeof(Walls[i]));
 
-	if (!d1_save_translate_read_s32(reader, &Num_open_doors) ||
-	    Num_open_doors < 0 || Num_open_doors > MAX_DOORS)
+	if (!d1_save_translate_read_s32(reader, &state->num_open_doors) ||
+	    state->num_open_doors < 0 || state->num_open_doors > MAX_DOORS)
 		return 0;
-	for (i = 0; i < Num_open_doors; i++)
-		if (!d1_save_translate_read_d1_active_door(reader, &ActiveDoors[i]))
+	for (i = 0; i < state->num_open_doors; i++)
+		if (!d1_save_translate_read_d1_active_door(reader,
+		                                            &state->active_doors[i]))
 			return 0;
-	for (i = Num_open_doors; i < MAX_DOORS; i++)
-		memset(&ActiveDoors[i], 0, sizeof(ActiveDoors[i]));
 
-	if (!d1_save_translate_read_s32(reader, &Num_triggers) ||
-	    Num_triggers < 0 || Num_triggers > MAX_TRIGGERS)
+	if (!d1_save_translate_read_s32(reader, &state->num_triggers) ||
+	    state->num_triggers < 0 || state->num_triggers > MAX_TRIGGERS)
 		return 0;
-	for (i = 0; i < Num_triggers; i++)
-		if (!d1_save_translate_read_d1_trigger(reader, &Triggers[i]))
+	for (i = 0; i < state->num_triggers; i++)
+		if (!d1_save_translate_read_d1_trigger(reader, &state->triggers[i]))
 			return 0;
-	for (i = Num_triggers; i < MAX_TRIGGERS; i++)
-		memset(&Triggers[i], 0, sizeof(Triggers[i]));
 
 	for (i = 0; i <= Highest_segment_index; i++) {
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; j++) {
 			short tmap_num;
 			short tmap_num2;
-			if (!d1_save_translate_read_s16(reader,
-			                                &Segments[i].sides[j].wall_num) ||
+			if (!d1_save_translate_read_s16(reader, &state->sides[i][j].wall_num) ||
 			    !d1_save_translate_read_s16(reader,
 			                                &tmap_num) ||
 			    !d1_save_translate_read_s16(reader,
 			                                &tmap_num2))
 				return 0;
-			Segments[i].sides[j].tmap_num = convert_d1_tmap_num(tmap_num);
-			Segments[i].sides[j].tmap_num2 = tmap_num2 ? convert_d1_tmap_num(tmap_num2) : 0;
+			state->sides[i][j].tmap_num = convert_d1_tmap_num(tmap_num);
+			state->sides[i][j].tmap_num2 =
+				tmap_num2 ? convert_d1_tmap_num(tmap_num2) : 0;
 		}
 	}
 
-	if (!d1_save_translate_read_s32(reader, &Control_center_destroyed) ||
-	    !d1_save_translate_read_s32(reader, &Countdown_seconds_left) ||
-	    !d1_save_translate_read_s32(reader, &Num_robot_centers) ||
-	    Num_robot_centers < 0 || Num_robot_centers > MAX_ROBOT_CENTERS)
+	if (!d1_save_translate_read_s32(reader, &state->control_center_destroyed) ||
+	    !d1_save_translate_read_s32(reader, &state->countdown_seconds_left) ||
+	    !d1_save_translate_read_s32(reader, &state->num_robot_centers) ||
+	    state->num_robot_centers < 0 ||
+	    state->num_robot_centers > MAX_ROBOT_CENTERS)
 		return 0;
-	for (i = 0; i < Num_robot_centers; i++)
-		if (!d1_save_translate_read_d1_matcen(reader, &RobotCenters[i]))
+	for (i = 0; i < state->num_robot_centers; i++)
+		if (!d1_save_translate_read_d1_matcen(reader,
+		                                      &state->robot_centers[i]))
 			return 0;
-	for (i = Num_robot_centers; i < MAX_ROBOT_CENTERS; i++)
-		memset(&RobotCenters[i], 0, sizeof(RobotCenters[i]));
 	if (!d1_save_translate_read_d1_control_center_triggers(
-	        reader, &ControlCenterTriggers) ||
-	    !d1_save_translate_read_s32(reader, &Num_fuelcenters) ||
-	    Num_fuelcenters < 0 || Num_fuelcenters > MAX_NUM_FUELCENS)
+	        reader, &state->control_center_triggers) ||
+	    !d1_save_translate_read_s32(reader, &state->num_fuelcenters) ||
+	    state->num_fuelcenters < 0 ||
+	    state->num_fuelcenters > MAX_NUM_FUELCENS)
 		return 0;
-	for (i = 0; i < Num_fuelcenters; i++) {
-		if (!d1_save_translate_read_d1_fuelcen(reader, &Station[i]))
+	for (i = 0; i < state->num_fuelcenters; i++) {
+		if (!d1_save_translate_read_d1_fuelcen(reader, &state->stations[i]))
 			return 0;
-		if (Station[i].Type == SEGMENT_IS_CONTROLCEN)
-			Countdown_timer = Station[i].Timer;
+		if (state->stations[i].Type == SEGMENT_IS_CONTROLCEN)
+			state->countdown_timer = state->stations[i].Timer;
 	}
-	for (i = Num_fuelcenters; i < MAX_NUM_FUELCENS; i++)
-		memset(&Station[i], 0, sizeof(Station[i]));
 
-	if (!d1_save_translate_read_s32(reader, &Control_center_been_hit) ||
-	    !d1_save_translate_read_s32(reader, &Control_center_player_been_seen) ||
-	    !d1_save_translate_read_s32(reader, &Control_center_next_fire_time) ||
-	    !d1_save_translate_read_s32(reader, &Control_center_present) ||
-	    !d1_save_translate_read_s32(reader, &Dead_controlcen_object_num))
-		return 0;
-	if (!d1_save_translate_validate_world_state())
-		return 0;
-	if (Control_center_destroyed)
-		Total_countdown_time = Countdown_timer / F0_5;
-	return 1;
+	return d1_save_translate_read_s32(reader, &state->control_center_been_hit) &&
+	       d1_save_translate_read_s32(reader,
+	                                  &state->control_center_player_been_seen) &&
+	       d1_save_translate_read_s32(reader,
+	                                  &state->control_center_next_fire_time) &&
+	       d1_save_translate_read_s32(reader, &state->control_center_present) &&
+	       d1_save_translate_read_s32(reader,
+	                                  &state->dead_controlcen_object_num);
 }
 
-static int d1_save_translate_skip_d1_state_to_runtime(
-    d1_save_translate_reader *reader)
+static void d1_save_translate_commit_d1_world_state(
+	const d1_save_translate_world_state *state)
 {
-	if (!d1_save_translate_apply_d1_world_state(reader) ||
-	    !d1_save_translate_apply_d1_ai_state(reader))
+	int i, j;
+
+	Num_walls = state->num_walls;
+	memcpy(Walls, state->walls, sizeof(state->walls));
+	Num_open_doors = state->num_open_doors;
+	memcpy(ActiveDoors, state->active_doors, sizeof(state->active_doors));
+	Num_triggers = state->num_triggers;
+	memcpy(Triggers, state->triggers, sizeof(state->triggers));
+	for (i = 0; i <= Highest_segment_index; i++)
+		for (j = 0; j < MAX_SIDES_PER_SEGMENT; j++) {
+			Segments[i].sides[j].wall_num = state->sides[i][j].wall_num;
+			Segments[i].sides[j].tmap_num = state->sides[i][j].tmap_num;
+			Segments[i].sides[j].tmap_num2 = state->sides[i][j].tmap_num2;
+		}
+	Control_center_destroyed = state->control_center_destroyed;
+	Countdown_seconds_left = state->countdown_seconds_left;
+	Num_robot_centers = state->num_robot_centers;
+	memcpy(RobotCenters, state->robot_centers, sizeof(state->robot_centers));
+	ControlCenterTriggers = state->control_center_triggers;
+	Num_fuelcenters = state->num_fuelcenters;
+	memcpy(Station, state->stations, sizeof(state->stations));
+	Countdown_timer = state->countdown_timer;
+	Control_center_been_hit = state->control_center_been_hit;
+	Control_center_player_been_seen = state->control_center_player_been_seen;
+	Control_center_next_fire_time = state->control_center_next_fire_time;
+	Control_center_present = state->control_center_present;
+	Dead_controlcen_object_num = state->dead_controlcen_object_num;
+	if (Control_center_destroyed)
+		Total_countdown_time = Countdown_timer / F0_5;
+	else
+		Total_countdown_time = 0;
+}
+
+static int d1_save_translate_read_d1_state_to_runtime(
+	d1_save_translate_reader *reader, d1_save_translate_world_state *world,
+	d1_save_translate_ai_state *ai)
+{
+	if (!d1_save_translate_read_d1_world_state(reader, world) ||
+	    !d1_save_translate_read_d1_ai_state(reader, ai))
 		return 0;
 	if (Highest_segment_index + 1 > MAX_SEGMENTS_ORIGINAL) {
 		if (!d1_save_translate_skip(reader, (size_t) Highest_segment_index + 1))
@@ -1217,16 +1408,53 @@ static int d1_save_translate_skip_d1_state_to_runtime(
 }
 
 static int d1_save_translate_skip_weapon_fidelity_state(
-    d1_save_translate_reader *reader)
+	d1_save_translate_reader *reader, const object *objects, int object_count)
 {
 	int i;
 
-	for (i = 0; i <= Highest_object_index; i++) {
-		if (Objects[i].type == OBJ_NONE || Objects[i].control_type != CT_WEAPON)
+	for (i = 0; i < object_count; i++) {
+		if (objects[i].type == OBJ_NONE || objects[i].control_type != CT_WEAPON)
 			continue;
 		if (!d1_save_translate_skip(reader, sizeof(int) + MAX_OBJECTS))
 			return 0;
 	}
+	return 1;
+}
+
+static int d1_save_translate_validate_runtime_allocator(
+	const object_runtime_state *state, const object *objects, int object_count)
+{
+	ubyte seen[MAX_OBJECTS];
+	int i;
+	int live_count = 0;
+	int highest_live = -1;
+
+	if (!state || !objects || object_count <= 0 || object_count > MAX_OBJECTS ||
+	    state->num_objects < 0 || state->num_objects > MAX_OBJECTS ||
+	    state->highest_object_index < -1 ||
+	    state->highest_object_index >= MAX_OBJECTS ||
+	    state->signature_seed < 0 ||
+	    (state->do_homer_frame != 0 && state->do_homer_frame != 1))
+		return 0;
+	memset(seen, 0, sizeof(seen));
+	for (i = 0; i < MAX_OBJECTS; i++)
+		if (i < object_count && objects[i].type != OBJ_NONE) {
+			live_count++;
+			highest_live = i;
+		}
+	if (state->num_objects != live_count ||
+	    state->highest_object_index != highest_live)
+		return 0;
+	for (i = state->num_objects; i < MAX_OBJECTS; i++) {
+		int objnum = state->free_obj_list[i];
+		if (objnum < 0 || objnum >= MAX_OBJECTS || seen[objnum] ||
+		    (objnum < object_count && objects[objnum].type != OBJ_NONE))
+			return 0;
+		seen[objnum] = 1;
+	}
+	for (i = 0; i < MAX_OBJECTS; i++)
+		if ((i >= object_count || objects[i].type == OBJ_NONE) != (seen[i] != 0))
+			return 0;
 	return 1;
 }
 
@@ -1245,77 +1473,78 @@ static int d1_save_translate_skip_morph_state(d1_save_translate_reader *reader)
 	return d1_save_translate_skip(reader, (size_t) active_morphs * morph_bytes);
 }
 
-static int d1_save_translate_apply_runtime_state(
-    d1_save_translate_reader *reader)
+static int d1_save_translate_read_runtime_state(
+	d1_save_translate_reader *reader, const object *objects, int object_count,
+	d1_save_translate_runtime_state *state)
 {
 	int i;
-	int has_rng_state;
-	int has_fx_rng_state;
 	int active_effects;
-	uint rng_state;
-	uint fx_rng_state;
-	uint fx_rng_call_count;
-	fix next_laser_fire_delta;
-	fix next_missile_fire_delta;
-	fix last_laser_fired_delta;
-	fix next_flare_fire_delta;
-	fix auto_fire_fusion_delta;
 	fix effect_time_unused;
 	fix64 effect_loop_time_unused;
-	game_d_tick_state d_tick_state;
-	object_runtime_state object_state;
-	laser_runtime_state laser_state;
-	ai_path_runtime_state ai_path_state;
 
-	memset(&object_state, 0, sizeof(object_state));
-	memset(&laser_state, 0, sizeof(laser_state));
-	memset(&ai_path_state, 0, sizeof(ai_path_state));
-	if (!d1_save_translate_read_fix(reader, &next_laser_fire_delta) ||
-	    !d1_save_translate_read_fix(reader, &next_missile_fire_delta) ||
-	    !d1_save_translate_read_fix(reader, &last_laser_fired_delta) ||
-	    !d1_save_translate_read_fix(reader, &next_flare_fire_delta) ||
-	    !d1_save_translate_read_fix(reader, &auto_fire_fusion_delta) ||
-	    !d1_save_translate_read_s32(reader, &Global_laser_firing_count) ||
-	    !d1_save_translate_read_s32(reader, &Global_missile_firing_count) ||
-	    !d1_save_translate_read_s32(reader, &has_rng_state) ||
-	    !d1_save_translate_read_u32(reader, &rng_state) ||
-	    !d1_save_translate_read_s32(reader, &has_fx_rng_state) ||
-	    !d1_save_translate_read_u32(reader, &fx_rng_state) ||
-	    !d1_save_translate_read_u32(reader, &fx_rng_call_count) ||
-	    !d1_save_translate_read_s32(reader, &d_tick_state.count) ||
-	    !d1_save_translate_read_s32(reader, &d_tick_state.step) ||
-	    !d1_save_translate_read_fix(reader, &d_tick_state.timer) ||
-	    !d1_save_translate_read_s32(reader, &object_state.num_objects) ||
-	    !d1_save_translate_read_s32(reader, &object_state.highest_object_index))
+	if (!reader || !objects || !state)
 		return 0;
-	if (object_state.num_objects < 1 ||
-	    object_state.num_objects > MAX_OBJECTS ||
-	    object_state.highest_object_index < 0 ||
-	    object_state.highest_object_index >= MAX_OBJECTS)
+	memset(state, 0, sizeof(*state));
+	if (!d1_save_translate_read_fix(reader, &state->next_laser_fire_delta) ||
+	    !d1_save_translate_read_fix(reader, &state->next_missile_fire_delta) ||
+	    !d1_save_translate_read_fix(reader, &state->last_laser_fired_delta) ||
+	    !d1_save_translate_read_fix(reader, &state->next_flare_fire_delta) ||
+	    !d1_save_translate_read_fix(reader, &state->auto_fire_fusion_delta) ||
+	    !d1_save_translate_read_s32(reader,
+	                                &state->global_laser_firing_count) ||
+	    !d1_save_translate_read_s32(reader,
+	                                &state->global_missile_firing_count) ||
+	    !d1_save_translate_read_s32(reader, &state->has_rng_state) ||
+	    !d1_save_translate_read_u32(reader, &state->rng_state) ||
+	    !d1_save_translate_read_s32(reader, &state->has_fx_rng_state) ||
+	    !d1_save_translate_read_u32(reader, &state->fx_rng_state) ||
+	    !d1_save_translate_read_u32(reader, &state->fx_rng_call_count) ||
+	    !d1_save_translate_read_s32(reader, &state->d_tick_state.count) ||
+	    !d1_save_translate_read_s32(reader, &state->d_tick_state.step) ||
+	    !d1_save_translate_read_fix(reader, &state->d_tick_state.timer) ||
+	    !d1_save_translate_read_s32(reader, &state->object_state.num_objects) ||
+	    !d1_save_translate_read_s32(reader,
+	                                &state->object_state.highest_object_index))
+		return 0;
+	if (state->object_state.num_objects < 1 ||
+	    state->object_state.num_objects > MAX_OBJECTS ||
+	    state->object_state.highest_object_index < 0 ||
+	    state->object_state.highest_object_index >= MAX_OBJECTS)
 		return 0;
 	for (i = 0; i < MAX_OBJECTS; i++)
-		if (!d1_save_translate_read_s16(reader, &object_state.free_obj_list[i]))
+		if (!d1_save_translate_read_s16(
+		        reader, &state->object_state.free_obj_list[i]))
 			return 0;
-	if (!d1_save_translate_read_s32(reader, &object_state.signature_seed) ||
-	    !d1_save_translate_read_u32(reader, &object_state.homer_frame_count) ||
-	    !d1_save_translate_read_fix(reader, &object_state.current_homer_frame_time) ||
-	    !d1_save_translate_read_s32(reader, &object_state.do_homer_frame) ||
-	    !d1_save_translate_read_fix(reader, &laser_state.fusion_charge) ||
-	    !d1_save_translate_read_s32(reader, &laser_state.spreadfire_toggle) ||
-	    !d1_save_translate_read_s32(reader, &laser_state.missile_gun) ||
-	    !d1_save_translate_read_s32(reader, &laser_state.proximity_dropped) ||
-	    !d1_save_translate_skip_weapon_fidelity_state(reader) ||
+	if (!d1_save_translate_read_s32(reader, &state->object_state.signature_seed) ||
+	    !d1_save_translate_read_u32(reader,
+	                                &state->object_state.homer_frame_count) ||
+	    !d1_save_translate_read_fix(
+	        reader, &state->object_state.current_homer_frame_time) ||
+	    !d1_save_translate_read_s32(reader,
+	                                &state->object_state.do_homer_frame) ||
+	    !d1_save_translate_read_fix(reader, &state->laser_state.fusion_charge) ||
+	    !d1_save_translate_read_s32(reader,
+	                                &state->laser_state.spreadfire_toggle) ||
+	    !d1_save_translate_read_s32(reader, &state->laser_state.missile_gun) ||
+	    !d1_save_translate_read_s32(reader,
+	                                &state->laser_state.proximity_dropped) ||
+	    !d1_save_translate_skip_weapon_fidelity_state(reader, objects,
+	                                                  object_count) ||
 	    !d1_save_translate_skip_morph_state(reader) ||
 	    !d1_save_translate_skip(reader, sizeof(int) + MAX_STUCK_OBJECTS * 8) ||
 	    !d1_save_translate_skip(reader, sizeof(int)) ||
-	    !d1_save_translate_read_s32(reader,
-	                                &ai_path_state.last_tick_garbage_collected) ||
-	    !d1_save_translate_read_s16(reader, &ai_path_state.player_path_length) ||
-	    !d1_save_translate_read_s32(reader, &ai_path_state.player_hide_index) ||
-	    !d1_save_translate_read_s32(reader, &ai_path_state.player_cur_path_index) ||
 	    !d1_save_translate_read_s32(
-	        reader, &ai_path_state.player_following_path_flag) ||
-	    !d1_save_translate_read_s32(reader, &ai_path_state.player_goal_segment) ||
+	        reader, &state->ai_path_state.last_tick_garbage_collected) ||
+	    !d1_save_translate_read_s16(
+	        reader, &state->ai_path_state.player_path_length) ||
+	    !d1_save_translate_read_s32(
+	        reader, &state->ai_path_state.player_hide_index) ||
+	    !d1_save_translate_read_s32(
+	        reader, &state->ai_path_state.player_cur_path_index) ||
+	    !d1_save_translate_read_s32(
+	        reader, &state->ai_path_state.player_following_path_flag) ||
+	    !d1_save_translate_read_s32(
+	        reader, &state->ai_path_state.player_goal_segment) ||
 	    !d1_save_translate_read_fix64(reader, &effect_loop_time_unused) ||
 	    !d1_save_translate_read_s32(reader, &active_effects))
 		return 0;
@@ -1330,101 +1559,145 @@ static int d1_save_translate_apply_runtime_state(
 	if (!d1_save_translate_skip(reader,
 	                            sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		return 0;
-	if (!object_validate_runtime_state(&object_state))
+	if (!d1_save_translate_validate_runtime_allocator(
+	        &state->object_state, objects, object_count))
 		return 0;
-
-	Next_laser_fire_time = GameTime64 + (fix64) next_laser_fire_delta;
-	Next_missile_fire_time = GameTime64 + (fix64) next_missile_fire_delta;
-	Last_laser_fired_time = GameTime64 + (fix64) last_laser_fired_delta;
-	Next_flare_fire_time = GameTime64 + (fix64) next_flare_fire_delta;
-	Auto_fire_fusion_cannon_time = GameTime64 + (fix64) auto_fire_fusion_delta;
-	if (has_rng_state)
-		d_rand_set_state(rng_state);
-	d_rand_reset_call_count();
-	if (has_fx_rng_state) {
-		d_rand_set_stream_state(D_RNG_FX, fx_rng_state);
-		d_rand_set_stream_call_count(D_RNG_FX, fx_rng_call_count);
-	}
-	game_set_d_tick_state(&d_tick_state);
-	object_set_runtime_state(&object_state);
-	laser_state.helix_orientation = 0;
-	laser_state.smartmines_dropped = 0;
-	laser_state.last_omega_fire_time = 0;
-	laser_set_runtime_state(&laser_state);
-	ai_path_state.last_buddy_polish_path_tick = 0;
-	ai_path_set_runtime_state(&ai_path_state);
+	if (state->ai_path_state.player_goal_segment < -1 ||
+	    state->ai_path_state.player_goal_segment > Highest_segment_index ||
+	    state->ai_path_state.player_path_length < 0 ||
+	    state->ai_path_state.player_path_length > MAX_POINT_SEGS)
+		return 0;
 	return 1;
 }
 
-static int d1_save_translate_restore_checkpoint_object_links(void)
+static void d1_save_translate_commit_runtime_state(
+	const d1_save_translate_runtime_state *state)
+{
+	Next_laser_fire_time = GameTime64 + (fix64)state->next_laser_fire_delta;
+	Next_missile_fire_time = GameTime64 + (fix64)state->next_missile_fire_delta;
+	Last_laser_fired_time = GameTime64 + (fix64)state->last_laser_fired_delta;
+	Next_flare_fire_time = GameTime64 + (fix64)state->next_flare_fire_delta;
+	Auto_fire_fusion_cannon_time = GameTime64 +
+	                               (fix64)state->auto_fire_fusion_delta;
+	Global_laser_firing_count = state->global_laser_firing_count;
+	Global_missile_firing_count = state->global_missile_firing_count;
+	if (state->has_rng_state)
+		d_rand_set_state(state->rng_state);
+	d_rand_reset_call_count();
+	if (state->has_fx_rng_state) {
+		d_rand_set_stream_state(D_RNG_FX, state->fx_rng_state);
+		d_rand_set_stream_call_count(D_RNG_FX, state->fx_rng_call_count);
+	}
+	game_set_d_tick_state(&state->d_tick_state);
+	object_set_runtime_state(&state->object_state);
+	laser_set_runtime_state(&state->laser_state);
+	ai_path_set_runtime_state(&state->ai_path_state);
+}
+
+static int d1_save_translate_validate_runtime_ai_path(
+	const d1_save_translate_runtime_state *runtime,
+	const d1_save_translate_ai_state *ai)
+{
+	const ai_path_runtime_state *path;
+
+	if (!runtime || !ai)
+		return 0;
+	path = &runtime->ai_path_state;
+	if (path->player_hide_index == -1)
+		return path->player_path_length == 0;
+	if (path->player_hide_index < 0 || path->player_path_length <= 0 ||
+	    path->player_cur_path_index < 0 ||
+	    path->player_cur_path_index >= path->player_path_length ||
+	    path->player_hide_index > ai->point_seg_free_index ||
+	    path->player_path_length >
+	        ai->point_seg_free_index - path->player_hide_index)
+		return 0;
+	return 1;
+}
+
+static int d1_save_translate_validate_checkpoint_object_links(
+	const object *objects, int object_count)
 {
 	int i, objnum, segnum;
 	ubyte seen[MAX_OBJECTS];
+	short heads[MAX_SEGMENTS];
 
 	memset(seen, 0, sizeof(seen));
 	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		Segments[segnum].objects = -1;
+		heads[segnum] = -1;
 
-	for (i = 0; i <= Highest_object_index; i++) {
-		object *obj = &Objects[i];
+	for (i = 0; i < object_count; i++) {
+		const object *obj = &objects[i];
 
-		obj->rtype.pobj_info.alt_textures = -1;
 		if (obj->type == OBJ_NONE)
 			continue;
 		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
 			return 0;
 		if (obj->prev == -1) {
-			if (Segments[obj->segnum].objects != -1)
+			if (heads[obj->segnum] != -1)
 				return 0;
-			Segments[obj->segnum].objects = i;
+			heads[obj->segnum] = (short)i;
 		}
 	}
 
-	for (i = 0; i <= Highest_object_index; i++) {
-		object *obj = &Objects[i];
+	for (i = 0; i < object_count; i++) {
+		const object *obj = &objects[i];
 
 		if (obj->type == OBJ_NONE)
 			continue;
 		segnum = obj->segnum;
 		if (obj->prev == -1) {
-			if (Segments[segnum].objects != i)
+			if (heads[segnum] != i)
 				return 0;
 		} else {
-			if (obj->prev < 0 || obj->prev > Highest_object_index)
+			if (obj->prev < 0 || obj->prev >= object_count)
 				return 0;
-			if (Objects[obj->prev].type == OBJ_NONE ||
-			    Objects[obj->prev].segnum != segnum ||
-			    Objects[obj->prev].next != i)
+			if (objects[obj->prev].type == OBJ_NONE ||
+			    objects[obj->prev].segnum != segnum ||
+			    objects[obj->prev].next != i)
 				return 0;
 		}
 		if (obj->next != -1) {
-			if (obj->next < 0 || obj->next > Highest_object_index)
+			if (obj->next < 0 || obj->next >= object_count)
 				return 0;
-			if (Objects[obj->next].type == OBJ_NONE ||
-			    Objects[obj->next].segnum != segnum ||
-			    Objects[obj->next].prev != i)
+			if (objects[obj->next].type == OBJ_NONE ||
+			    objects[obj->next].segnum != segnum ||
+			    objects[obj->next].prev != i)
 				return 0;
 		}
 	}
 
 	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		for (objnum = Segments[segnum].objects; objnum != -1;
-		     objnum = Objects[objnum].next) {
-			if (objnum < 0 || objnum > Highest_object_index)
+		for (objnum = heads[segnum]; objnum != -1;
+		     objnum = objects[objnum].next) {
+			if (objnum < 0 || objnum >= object_count)
 				return 0;
 			if (seen[objnum])
 				return 0;
-			if (Objects[objnum].type == OBJ_NONE ||
-			    Objects[objnum].segnum != segnum)
+			if (objects[objnum].type == OBJ_NONE ||
+			    objects[objnum].segnum != segnum)
 				return 0;
 			seen[objnum] = 1;
 		}
 
-	for (i = 0; i <= Highest_object_index; i++)
-		if (Objects[i].type != OBJ_NONE && !seen[i])
+	for (i = 0; i < object_count; i++)
+		if (objects[i].type != OBJ_NONE && !seen[i])
 			return 0;
 
 	return 1;
+}
+
+static void d1_save_translate_commit_checkpoint_object_links(void)
+{
+	int i;
+
+	for (i = 0; i <= Highest_segment_index; i++)
+		Segments[i].objects = -1;
+	for (i = 0; i <= Highest_object_index; i++) {
+		Objects[i].rtype.pobj_info.alt_textures = -1;
+		if (Objects[i].type != OBJ_NONE && Objects[i].prev == -1)
+			Segments[Objects[i].segnum].objects = (short)i;
+	}
 }
 
 int d1_save_translate_apply_checkpoint_objects(
@@ -1432,8 +1705,12 @@ int d1_save_translate_apply_checkpoint_objects(
     const d1_save_translate_checkpoint_start *start)
 {
 	int i;
-	object *translated_objects;
+	object *translated_objects = NULL;
+	d1_save_translate_world_state *world = NULL;
+	d1_save_translate_ai_state *ai = NULL;
+	d1_save_translate_runtime_state *runtime = NULL;
 	d1_save_translate_reader reader;
+	const char *failure = "allocation";
 
 	if (!data || !start || start->object_count <= 0 ||
 	    start->object_count > MAX_OBJECTS ||
@@ -1441,33 +1718,50 @@ int d1_save_translate_apply_checkpoint_objects(
 		return 0;
 	translated_objects = (object *)calloc((size_t)start->object_count,
 	                                      sizeof(*translated_objects));
-	if (!translated_objects)
-		return 0;
+	world = (d1_save_translate_world_state *)calloc(1, sizeof(*world));
+	ai = (d1_save_translate_ai_state *)calloc(1, sizeof(*ai));
+	runtime = (d1_save_translate_runtime_state *)calloc(1, sizeof(*runtime));
+	if (!translated_objects || !world || !ai || !runtime)
+		goto fail;
 	reader.data = data;
 	reader.size = size;
 	reader.pos = start->object_stream_offset;
 	reader.swap = start->checkpoint_swap;
+	failure = "object decoding";
 	for (i = 0; i < start->object_count; i++)
-		if (!d1_save_translate_read_object(&reader, &translated_objects[i])) {
-			con_printf(CON_URGENT, "D1 checkpoint translation: object %d could not be decoded\n", i);
-			free(translated_objects);
-			return 0;
-		}
+		if (!d1_save_translate_read_object(&reader, &translated_objects[i]))
+			goto fail;
+	failure = "object references";
 	if (!d1_save_translate_validate_object_references(translated_objects,
-	                                                 start->object_count)) {
-		con_printf(CON_URGENT, "D1 checkpoint translation: object references are invalid\n");
-		free(translated_objects);
-		return 0;
-	}
+	                                                 start->object_count) ||
+	    !d1_save_translate_validate_checkpoint_object_links(
+	        translated_objects, start->object_count))
+		goto fail;
+	failure = "world or AI decoding";
+	if (!d1_save_translate_read_d1_state_to_runtime(&reader, world, ai))
+		goto fail;
+	failure = "world references";
+	if (!d1_save_translate_validate_world_state(
+	        world, translated_objects, start->object_count))
+		goto fail;
+	failure = "AI references";
+	if (!d1_save_translate_validate_d1_ai_state(
+	        ai, translated_objects, start->object_count))
+		goto fail;
+	failure = "runtime state";
+	if (!d1_save_translate_read_runtime_state(
+	        &reader, translated_objects, start->object_count, runtime))
+		goto fail;
+	if (!d1_save_translate_validate_runtime_ai_path(runtime, ai))
+		goto fail;
+
 	reset_objects(1);
 	init_morphs();
 	Do_appearance_effect = 0;
 	memcpy(Objects, translated_objects,
 	       (size_t)start->object_count * sizeof(*translated_objects));
-	free(translated_objects);
 	Highest_object_index = start->object_count - 1;
-	if (!d1_save_translate_restore_checkpoint_object_links())
-		return 0;
+	d1_save_translate_commit_checkpoint_object_links();
 	for (i = 0; i <= Highest_object_index; i++) {
 		object *obj = &Objects[i];
 
@@ -1484,15 +1778,22 @@ int d1_save_translate_apply_checkpoint_objects(
 		}
 	}
 	special_reset_objects();
-	if (!d1_save_translate_skip_d1_state_to_runtime(&reader)) {
-		con_printf(CON_URGENT, "D1 checkpoint translation: world or AI state is invalid\n");
-		return 0;
-	}
-	if (!d1_save_translate_apply_runtime_state(&reader)) {
-		con_printf(CON_URGENT, "D1 checkpoint translation: runtime state is invalid\n");
-		return 0;
-	}
+	d1_save_translate_commit_d1_world_state(world);
+	d1_save_translate_commit_d1_ai_state(ai);
+	d1_save_translate_commit_runtime_state(runtime);
+	free(runtime);
+	free(ai);
+	free(world);
+	free(translated_objects);
 	return 1;
+
+fail:
+	con_printf(CON_URGENT, "D1 checkpoint translation rejected %s\n", failure);
+	free(runtime);
+	free(ai);
+	free(world);
+	free(translated_objects);
+	return 0;
 }
 
 void d1_save_translate_apply_checkpoint_player(
