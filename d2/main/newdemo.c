@@ -27,6 +27,34 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <ctype.h>
 #include <limits.h>
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#include <process.h>
+#include <sys/stat.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#define demo_dump_close  _close
+#define demo_dump_fdopen _fdopen
+#define demo_dump_fileno _fileno
+#define demo_dump_fsync  _commit
+#define demo_dump_getpid _getpid
+#define demo_dump_open(path) \
+	_open(path, _O_WRONLY | _O_CREAT | _O_EXCL | _O_BINARY, _S_IREAD | _S_IWRITE)
+#else
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define demo_dump_close      close
+#define demo_dump_fdopen     fdopen
+#define demo_dump_fileno     fileno
+#define demo_dump_fsync      fsync
+#define demo_dump_getpid     getpid
+#define demo_dump_open(path) open(path, O_WRONLY | O_CREAT | O_EXCL, 0600)
+#endif
+
 #include "u_mem.h"
 #include "inferno.h"
 #include "game.h"
@@ -4201,13 +4229,121 @@ static int newdemo_dump_finish_write(FILE *fp, char *error, size_t error_size)
 	return 0;
 }
 
+static int newdemo_dump_same_file(FILE *source, const char *path,
+	int *same, char *error, size_t error_size)
+{
+	FILE *candidate;
+
+	*same = 0;
+	errno = 0;
+	candidate = fopen(path, "rb");
+	if (!candidate) {
+		if (errno == ENOENT)
+			return 1;
+		newdemo_dump_set_error(error, error_size, "could not inspect classic demo output path");
+		return 0;
+	}
+#ifdef _WIN32
+	{
+		BY_HANDLE_FILE_INFORMATION source_info;
+		BY_HANDLE_FILE_INFORMATION candidate_info;
+		HANDLE source_handle = (HANDLE)_get_osfhandle(demo_dump_fileno(source));
+		HANDLE candidate_handle = (HANDLE)_get_osfhandle(demo_dump_fileno(candidate));
+
+		if (source_handle == INVALID_HANDLE_VALUE || candidate_handle == INVALID_HANDLE_VALUE ||
+			!GetFileInformationByHandle(source_handle, &source_info) ||
+			!GetFileInformationByHandle(candidate_handle, &candidate_info)) {
+			fclose(candidate);
+			newdemo_dump_set_error(error, error_size, "could not identify classic demo paths");
+			return 0;
+		}
+		*same = source_info.dwVolumeSerialNumber == candidate_info.dwVolumeSerialNumber &&
+			source_info.nFileIndexHigh == candidate_info.nFileIndexHigh &&
+			source_info.nFileIndexLow == candidate_info.nFileIndexLow;
+	}
+#else
+	{
+		struct stat source_info;
+		struct stat candidate_info;
+
+		if (fstat(demo_dump_fileno(source), &source_info) ||
+			fstat(demo_dump_fileno(candidate), &candidate_info)) {
+			fclose(candidate);
+			newdemo_dump_set_error(error, error_size, "could not identify classic demo paths");
+			return 0;
+		}
+		*same = source_info.st_dev == candidate_info.st_dev &&
+			source_info.st_ino == candidate_info.st_ino;
+	}
+#endif
+	if (fclose(candidate)) {
+		newdemo_dump_set_error(error, error_size, "could not close classic demo output probe");
+		return 0;
+	}
+	return 1;
+}
+
+static FILE *newdemo_dump_open_temporary(const char *output_path,
+	char *temporary_path, size_t temporary_path_size,
+	char *error, size_t error_size)
+{
+	static unsigned long counter;
+	int attempt;
+	int fd = -1;
+
+	for (attempt = 0; attempt < 100; attempt++) {
+		int length = snprintf(temporary_path, temporary_path_size,
+			"%s.tmp.%ld.%lu", output_path, (long)demo_dump_getpid(), ++counter);
+
+		if (length < 0 || (size_t)length >= temporary_path_size) {
+			newdemo_dump_set_error(error, error_size, "classic demo output path is too long");
+			return NULL;
+		}
+		fd = demo_dump_open(temporary_path);
+		if (fd >= 0)
+			break;
+		if (errno != EEXIST) {
+			newdemo_dump_set_error(error, error_size, "could not create classic demo temporary output");
+			return NULL;
+		}
+	}
+	if (fd < 0) {
+		newdemo_dump_set_error(error, error_size, "could not allocate classic demo temporary output");
+		return NULL;
+	}
+	{
+		FILE *fp = demo_dump_fdopen(fd, "wb");
+		if (!fp) {
+			demo_dump_close(fd);
+			remove(temporary_path);
+			temporary_path[0] = 0;
+			newdemo_dump_set_error(error, error_size, "could not open classic demo temporary output");
+		}
+		return fp;
+	}
+}
+
+static int newdemo_dump_replace_output(const char *temporary_path,
+	const char *output_path)
+{
+#ifdef _WIN32
+	return MoveFileExA(temporary_path, output_path,
+		MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+	return rename(temporary_path, output_path) == 0;
+#endif
+}
+
 int newdemo_dump_json(const char *demo_path, const char *output_path,
 	char *error, size_t error_size)
 {
 	FILE *fp = NULL;
+	FILE *source = NULL;
 	char mount_dir[PATH_MAX] = "";
 	char logical_path[PATH_MAX] = "";
+	char temporary_path[PATH_MAX] = "";
 	int mounted = 0;
+	int same = 0;
 	int frame_count = 0;
 	int object_total = 0;
 	int decode_failed = 0;
@@ -4218,12 +4354,17 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 		newdemo_dump_set_error(error, error_size, "classic demo dump requires input and output paths");
 		return 0;
 	}
-	fp = fopen(output_path, "wb");
-	if (!fp) {
-		newdemo_dump_set_error(error, error_size, "could not open classic demo json output path");
+	source = fopen(demo_path, "rb");
+	if (!source) {
+		newdemo_dump_set_error(error, error_size, "could not open classic demo source path");
 		return 0;
 	}
-	classic_demo_json_writer_init_file(&nd_dump_v_writer, fp);
+	if (!newdemo_dump_same_file(source, output_path, &same, error, error_size))
+		goto cleanup;
+	if (same) {
+		newdemo_dump_set_error(error, error_size, "classic demo input and output identify the same file");
+		goto cleanup;
+	}
 	if (!newdemo_dump_open_input(demo_path, mount_dir, sizeof(mount_dir), logical_path, sizeof(logical_path), &mounted, error, error_size))
 		goto cleanup;
 
@@ -4247,6 +4388,11 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 		newdemo_dump_set_error(error, error_size, "classic demo header parse failed");
 		goto cleanup;
 	}
+	fp = newdemo_dump_open_temporary(output_path, temporary_path,
+		sizeof(temporary_path), error, error_size);
+	if (!fp)
+		goto cleanup;
+	classic_demo_json_writer_init_file(&nd_dump_v_writer, fp);
 
 	Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);
 	Newdemo_state = ND_STATE_PLAYBACK;
@@ -4301,6 +4447,27 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	}
 	if (!newdemo_dump_finish_write(fp, error, error_size))
 		goto cleanup;
+	if (demo_dump_fsync(demo_dump_fileno(fp))) {
+		newdemo_dump_set_error(error, error_size, "classic demo json output sync failed");
+		goto cleanup;
+	}
+	if (fclose(fp)) {
+		fp = NULL;
+		newdemo_dump_set_error(error, error_size, "classic demo json output close failed");
+		goto cleanup;
+	}
+	fp = NULL;
+	if (!newdemo_dump_same_file(source, output_path, &same, error, error_size))
+		goto cleanup;
+	if (same) {
+		newdemo_dump_set_error(error, error_size, "classic demo output became an alias of the input");
+		goto cleanup;
+	}
+	if (!newdemo_dump_replace_output(temporary_path, output_path)) {
+		newdemo_dump_set_error(error, error_size, "could not publish classic demo json output");
+		goto cleanup;
+	}
+	temporary_path[0] = 0;
 	ok = 1;
 
 cleanup:
@@ -4320,6 +4487,13 @@ cleanup:
 			newdemo_dump_set_error(error, error_size, "classic demo json output write failed");
 		ok = 0;
 	}
+	if (source && fclose(source)) {
+		if (ok)
+			newdemo_dump_set_error(error, error_size, "could not close classic demo source path");
+		ok = 0;
+	}
+	if (temporary_path[0])
+		remove(temporary_path);
 	return ok;
 }
 

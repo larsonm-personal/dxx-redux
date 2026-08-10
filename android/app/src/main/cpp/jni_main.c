@@ -1098,7 +1098,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject th
  *   [4]  = Player_num (local player index)
  *   [5..5+2*MAX_PLAYERS-1] = per-player pairs: [kills, score_earned] x MAX_PLAYERS
  *
- * Shared constant: MAX_PLAYERS = 8 (duplicated in CoopStatsOverlay.kt)
+ * Shared constant: MAX_PLAYERS = 8 (duplicated in MultiplayerStatsOverlay.kt)
  *
  * android port: coop QoL overlay
  */
@@ -1155,7 +1155,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetCoopRobotStats(JNIEnv *env, jobject 
  *
  * Shields/energy as percentage (0-200, can exceed 100 from powerups)
  *
- * Shared constant: MAX_PLAYERS = 8 (duplicated in CoopStatsOverlay.kt)
+ * Shared constant: MAX_PLAYERS = 8 (duplicated in MultiplayerStatsOverlay.kt)
  *
  * android port: coop QoL overlay
  */

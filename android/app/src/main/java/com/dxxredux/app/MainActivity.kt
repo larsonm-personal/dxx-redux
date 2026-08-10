@@ -599,7 +599,6 @@ class MainActivity :
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var videoInfoOverlay: VideoInfoOverlay? = null
     private var loadingProgressOverlay: LoadingProgressOverlayView? = null
-    private var coopStatsOverlay: CoopStatsOverlay? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
     private var adminTrayPausedGame = false
@@ -1507,6 +1506,27 @@ class MainActivity :
                 connectionInfoProvider = {
                     RuntimeGameStateBridge.getConnectionInfo()
                 }
+                robotStatsProvider = {
+                    try {
+                        nativeGetCoopRobotStats()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                teammateStatusProvider = {
+                    try {
+                        nativeGetTeammateStatus()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                escortOwnerProvider = {
+                    try {
+                        nativeGetEscortOwnerPlayer()
+                    } catch (_: Exception) {
+                        -1
+                    }
+                }
                 localIp = resolveLocalIp()
             }
         netStatsOverlay = statsOverlay
@@ -1570,41 +1590,6 @@ class MainActivity :
             ),
         )
         applyGraphicsDebugPrefs(prefs)
-
-        // android port: coop QoL overlay -- robot kill stats + teammate status
-        val coopOverlay =
-            CoopStatsOverlay(this).apply {
-                visibility = View.GONE
-                robotStatsProvider = {
-                    try {
-                        nativeGetCoopRobotStats()
-                    } catch (_: Exception) {
-                        null
-                    }
-                }
-                teammateStatusProvider = {
-                    try {
-                        nativeGetTeammateStatus()
-                    } catch (_: Exception) {
-                        null
-                    }
-                }
-                escortOwnerProvider = {
-                    try {
-                        nativeGetEscortOwnerPlayer()
-                    } catch (_: Exception) {
-                        -1
-                    }
-                }
-            }
-        coopStatsOverlay = coopOverlay
-        frame.addView(
-            coopOverlay,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
-            ),
-        )
 
         // android port: coop QoL -- warp-to-player button overlay
         val warpOverlay =
@@ -1804,8 +1789,6 @@ class MainActivity :
                     startGame()
                 }.start()
 
-                // android port: coop QoL -- begin polling (auto-shows in coop)
-                coopStatsOverlay?.startPolling()
                 warpButtonOverlay?.startPolling()
             }
         }
@@ -1858,7 +1841,6 @@ class MainActivity :
         if (uiWorkSuspended) return
         uiWorkSuspended = true
         overlayPoller.removeCallbacksAndMessages(null)
-        coopStatsOverlay?.suspendPolling()
         warpButtonOverlay?.suspendPolling()
         videoInfoOverlay?.suspendPolling()
         netStatsOverlay?.suspendPolling()
@@ -1870,7 +1852,6 @@ class MainActivity :
     private fun resumeUiWork() {
         if (!uiWorkSuspended) return
         uiWorkSuspended = false
-        coopStatsOverlay?.resumePolling()
         warpButtonOverlay?.resumePolling()
         videoInfoOverlay?.resumePolling()
         netStatsOverlay?.resumePolling()
@@ -2395,7 +2376,6 @@ class MainActivity :
                         netStatsOverlay?.hide()
                         netEventsOverlay?.hide()
                         videoInfoOverlay?.hide()
-                        coopStatsOverlay?.hide()
                         warpButtonOverlay?.stopPolling()
                         netEventsManualToggle = false
                     }

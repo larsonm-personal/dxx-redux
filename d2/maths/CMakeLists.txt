@@ -106,6 +106,11 @@ if(NOT ANDROID)
         ../../android/tests/test_classic_demo_json.c
         ../../android/app/src/main/cpp/shared/classic_demo_json.c)
     target_include_directories(test_classic_demo_json PRIVATE ../../android/app/src/main/cpp/shared)
+
+	add_executable(test_bounded_rle
+		../../android/tests/test_bounded_rle.c
+		../../android/app/src/main/cpp/shared/bounded_rle.c)
+	target_include_directories(test_bounded_rle PRIVATE ../../android/app/src/main/cpp/shared)
     target_include_directories(test_playsave_transaction PRIVATE ../../android/app/src/main/cpp/shared)
 
     add_executable(test_android_rewind_policy
@@ -270,6 +275,7 @@ if(NOT ANDROID)
             test_playsave_text
             test_kconfig_android_shared
             test_classic_demo_json
+			test_bounded_rle
             test_android_rewind_policy
             test_android_slowdown_detector
             test_net_udp_reconnect_auth

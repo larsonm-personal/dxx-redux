@@ -127,6 +127,7 @@ void piggy_new_pigfile(char *pigname);
 void load_bitmap_replacements(char *level_name);
 //if descent.pig exists, loads descent 1 texture bitmaps
 void load_d1_bitmap_replacements();
+int d2_index_for_d1_index(int d1_index);
 int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap);
 void d1_bitmap_replacement_get_stats(d1_bitmap_replacement_stats *stats);
 

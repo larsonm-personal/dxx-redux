@@ -2097,13 +2097,21 @@ void read_d1_tmap_nums_from_hog(PHYSFS_file *d1_pig)
  * that should be replaced while emulating D1.
  * Returns -1 if the given d1_index is not used by a D1 texture.
  */
-short d2_index_for_d1_index(short d1_index)
+int d2_index_for_d1_index(int d1_index)
 {
-	Assert(d1_index >= 0 && d1_index < D1_MAX_TMAP_NUM);
-	if (! d1_tmap_nums || d1_tmap_nums[d1_index] == -1)
-  		return -1;
+	int d2_tmap_num;
+	int d2_bitmap_index;
 
-	return Textures[convert_d1_tmap_num(d1_tmap_nums[d1_index])].index;
+	if (d1_index < 0 || d1_index >= D1_MAX_TMAP_NUM || !d1_tmap_nums || d1_tmap_nums[d1_index] < 0)
+		return -1;
+	d2_tmap_num = convert_d1_tmap_num(d1_tmap_nums[d1_index]);
+	if (d2_tmap_num < 0 || d2_tmap_num >= NumTextures)
+		return -1;
+	d2_bitmap_index = Textures[d2_tmap_num].index;
+	if (d2_bitmap_index < 0 || d2_bitmap_index >= MAX_BITMAP_FILES)
+		return -1;
+
+	return d2_bitmap_index;
 }
 
 #define D1_BITMAPS_SIZE (5 * 1024 * 1024)
@@ -2114,7 +2122,8 @@ void load_d1_bitmap_replacements()
 	int pig_data_start, bitmap_header_start, bitmap_data_start;
 	int N_bitmaps;
 	PHYSFS_sint64 header_size;
-	short d1_index, d2_index;
+	short d1_index;
+	int d2_index;
 	ubyte colormap[256];
 	ubyte d1_palette[256*3];
 	char *p;

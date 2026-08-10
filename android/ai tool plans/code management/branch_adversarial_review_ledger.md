@@ -16441,22 +16441,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add an injectable PCX-read failure test for missing, truncated, malformed, and allocation-failing backgrounds on Android. Open and close the automap repeatedly under ASan or HWASan and allocator diagnostics; require one window close, one release of every automap allocation, restoration of the game window and input/time state, no stale active pointer, no invalid free or leak, and successful automap entry after restoring a valid background.
 - Resolution: Pending
 
-### BR-0370: P1 - Reject classic-demo source and output aliases
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-loss
-- Found by: R1-CHUNK-0280
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/inferno.c:L230-L253` in `maybe_dump_classic_demo_json` and `d2/main/newdemo.c:L4149-L4193,L4204-L4228` in classic-demo input and output opening
-- Related: BR-0233 and `android/ai tool plans/input demo, replay, determinism/plan_dem_to_json_and_desync_analysis_20260429.md:L14,L58,L128-L129`
-- Evidence: The public command takes independent input and output strings but performs no identity or alias check. `newdemo_dump_json` calls `fopen(output_path, "wb")` first, which truncates an existing file immediately, and only afterward derives, mounts, and opens `demo_path` through PhysicsFS. If both arguments name the same file, or distinct spellings resolve to the same file, the converter truncates its source to zero bytes before the input open or header parse. Cleanup closes streams but cannot restore the original demo.
-- Trigger: Run `-classicdemo-dump-json <demo.dem> <demo.dem>`, or use relative, absolute, separator, case, symlink, or hard-link aliases that resolve the input and output arguments to the same file
-- Impact: A mistyped local diagnostic command irreversibly destroys the selected classic demo and then reports conversion failure. The demo may be the only recording of a nondeterministic or gameplay failure under investigation, so the converter can erase its own non-reproducible source artifact.
-- Expected: Conversion rejects any input/output identity before opening either path destructively and never replaces, truncates, or renames over its source through an alias.
-- Suggested fix: Resolve both paths with platform-appropriate canonical and file-identity checks before publication, reject exact and aliased identity, open and validate the input first, and write the JSONL to a uniquely owned sibling temporary file. After complete decode and checked flush and close, recheck source/destination identity as needed and atomically replace only a distinct destination.
-- Validation: Cover identical strings; relative versus absolute paths; slash and case variants on applicable filesystems; `.` and `..`; symlink, junction, and hard-link aliases; and distinct ordinary paths. Seed the demo with a known hash, require every alias case to fail before any byte changes, require distinct malformed-input failures to preserve both source and prior output, and require a successful distinct-path conversion to publish one complete JSONL document.
-- Resolution: Pending
 
 ### BR-0371: P2 - Report actual D1-in-D2 robot kills
 
@@ -16492,27 +16476,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add parser and mounted-DXA tests for `-2`, `-1`, 0, the highest loaded weapon, exactly `N_weapon_types`, 127, 128, 254, 255, noninteger, and overflow values in both fields. Require only the documented domains to load; rejected patches must leave HAM state unchanged as coordinated with BR-0373. Under ASan/UBSan, page and exercise ordinary, homing, leading, and multiplayer firing for every accepted boundary.
 - Resolution: Pending
 
-### BR-0373: P2 - Validate the complete HAM patch before mutating live tables
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/transactionality
-- Found by: R1-CHUNK-0286
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/dxa_metadata_patch.cpp:L895-L935` in `dxa_metadata_patch_apply_d2_ham`
-- Related: `d2/main/dxa_metadata_patch.cpp:L52-L95,L118-L152,L860-L891`, `d2/main/bm.c:L236-L244`, `d2/main/piggy.c:L582,L710`, and BR-0372
-- Evidence: The first loop parses and validates only operations whose `"op"` is `"test"`; add and replace operations are checked only for their operation name. The second loop immediately applies each mutation to global textures, clips, effects, robots, weapons, object bitmaps, and `g_max_virtual_bitmap_index`. Any later missing value, malformed path, invalid index, unsupported field, wrong JSON type, or out-of-range value throws after earlier operations have committed. The catch logs that the patch failed but has no snapshot, rollback, reset, or failure result for `bm_read_all`, which continues with the mixed base-and-partial-patch tables. Virtual bitmap registration later also observes any high-water mark set before the failure.
-- Additional location (R1-CHUNK-0292): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/dxa_metadata_patch.cpp:L592-L680` in the texture, vclip, effect, and wall-clip row mutation helpers
-- Additional evidence (R1-CHUNK-0292): Partial publication does not require two operations. Each full-row helper assigns directly into the live destination in field order, then validates later required fields. For example, `apply_vclip` overwrites play time, frame count, frame time, flags, and sound before `value.at("Frames")` can throw; `apply_eclip` and `apply_wclip` have the same early-assignment pattern. A malformed first add or replace operation can therefore leave one record internally split between patched early fields and base late fields even though the patch reports failure.
-- Trigger: Mount a patch with one or more valid add or replace operations followed by a malformed path, missing value, unsupported field, wrong value type, out-of-range destination, or a BR-0372 boundary rejection
-- Additional trigger (R1-CHUNK-0292): Make the first operation a full-row vclip, eclip, wall-clip, or texture replacement with valid early scalar fields but a missing, wrong-typed, or invalid later required field
-- Impact: The game reports patch failure yet runs with an undocumented partial asset generation. Related texture, animation, robot, weapon, sound, and bitmap changes can be split across incompatible versions, causing missing or incorrect assets, invalid cross-table references, crashes, and replay or multiplayer divergence that depends on the position of the first bad operation.
-- Expected: Either every test and mutation is valid and one complete patch generation becomes visible, or no HAM table, bitmap mapping, or virtual-index state differs from the base generation.
-- Suggested fix: Parse every operation into a typed, fully validated mutation plan without touching global state, including semantic cross-reference checks from BR-0372. Apply the plan only after complete validation, preferably to copied tables and counters that are atomically committed; alternatively snapshot every affected table and `g_max_virtual_bitmap_index` and restore them on any exception. Return status to the caller and fail asset initialization if safe rollback cannot be guaranteed.
-- Validation: For each supported section and field, create patches whose first, middle, and final operation fails through missing values, malformed paths, unsupported names, wrong types, index boundaries, semantic reference boundaries, and allocation or parse failures. Hash every affected table and virtual-index state before and after; require rejection to preserve the complete base hash and successful patches to publish the exact expected complete hash. Then page assets and run a level, replay, and multiplayer parity check under sanitizers.
-- Additional validation (R1-CHUNK-0292): For every full-row helper, fail validation at each successive required field within the first operation and require the destination record, table counts, and virtual-bitmap high-water state to remain byte-identical to the base generation.
-- Resolution: Pending
-
 ### BR-0374: P2 - Preserve Guide-Bot collision recovery for its authoritative owner
 
 - [ ] OPEN
@@ -16528,40 +16491,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: The authoritative cooperative owner applies the same bounded collision-retry recovery to its companion that single-player applies, while replicas and ordinary multiplayer robots remain excluded.
 - Suggested fix: Replace the blanket multiplayer exclusion with an explicit policy that admits single-player AI and only the locally authoritative cooperative companion. Keep remote replicas and non-companion multiplayer robots ineligible, including the temporary unowned-state rules used by the existing owner gate.
 - Validation: Add a pure ownership-policy test and a two-peer cooperative integration case that forces repeated Guide-Bot wall-edge retries. Require recovery only on the owner after the established threshold, a new valid path and resumed progress, replicated movement on the other peer, and unchanged exclusion for remote companions and ordinary competitive or cooperative robots.
-- Resolution: Pending
-
-### BR-0375: P2 - Map DPOG targets through the D1 bitmap namespace
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility
-- Found by: R1-CHUNK-0288
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/d1_custom.c:L592-L620` in `d1_custom_load_pog_data`
-- Related: `d1/main/custom.c:L170-L253`, `d2/main/piggy.c:L2027-L2038,L2116-L2121`, `android/ai tool plans/asset management/plan_d1_d2_overlay_mod_compatibility_20260614.md`, `android/ai tool plans/asset management/plan_d1_in_d2_full_support_design_20260613.md`, and `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt`
-- Evidence: A DPOG stores an explicit D1 replacement bitmap index for every entry. The new D2 loader first searches the D2 `AllBitmapsNames` table using the header name and, if that misses, assigns the D1 replacement index directly to `repl_idx`. The paired D1 loader treats the replacement table as the target, while the existing D1-in-D2 base loader calls `d2_index_for_d1_index` because D1 bitmap indices and D2 runtime bitmap slots are different namespaces. Consequently, a matching but unrelated D2 header name overrides the DPOG target, while a name miss writes the D1 numeric value into `GameBitmaps` as though it were a D2 index. The compatibility plan explicitly requires index-based replacements to map through the selected source-game namespace, but current tests only verify archive staging and aggregate application statistics, not the final target identity.
-- Trigger: Load a D1-in-D2 mission with a DPOG entry whose explicit D1 bitmap index maps to a different D2 runtime slot, and whose header name is either absent from or collides within the D2 bitmap-name table
-- Impact: The intended wall texture remains unchanged while an unrelated or unused D2 bitmap slot receives the custom pixels. A header-name collision can deterministically replace different art than the DPOG replacement table specifies, producing incorrect level visuals and potentially changing texture flags used by collision or transparency checks.
-- Expected: DPOG replacement indices are interpreted in the D1 catalog and mapped to the corresponding D2 runtime bitmap slot; the explicit table remains authoritative regardless of the header's descriptive name.
-- Suggested fix: Expose or centralize a checked D1-bitmap-to-D2-slot resolver built from the selected D1 PIG mapping, use it for every DPOG replacement index, and reject unmapped or out-of-range results before publication. Do not fall back to a raw numeric D2 index or let a D2-name lookup override an explicit DPOG target. Use the same source-aware map for name-only legacy files where D1-only names must be supported.
-- Validation: Add native mounted-file tests with D1 indices whose D2 slots differ, D1-only names, D2-name collisions, unmapped indices, zero, the highest valid D1 index, and exactly-out-of-range values. Assert the exact `GameBitmaps` slot and flags replaced, that unrelated slots remain byte-identical, and that teardown restores every affected slot. Extend the Android mission fixture beyond staging to execute the loader and verify target identity.
-- Resolution: Pending
-
-### BR-0376: P1 - Validate custom RLE rows before publishing bitmaps
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/memory-safety
-- Found by: R1-CHUNK-0288
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/d1_custom.c:L181-L226` in `d1_custom_apply_bitmap`
-- Related: `d2/2d/rle.c:L39-L56,L371-L438`, `d2/arch/ogl/ogl.c:L3535-L3549`, `d2/main/texmerge.c:L224-L227,L283-L286`, `d2/main/collide.c:L669`, `d2/main/fvi.c:L890,L1374`, and `d2/main/gameseq.c:L893-L908`
-- Evidence: For an RLE custom bitmap, the loader accepts any declared `data_size >= 4` whose aggregate extent fits the file, allocates exactly that many bytes, and publishes the file bytes with attacker-controlled positive width and height. It does not require the `4 + height` byte row-size table, prove that row sizes stay within the allocation, require row terminators, or bound each decoded row to `width` pixels. Software expansion immediately forms `bm_data + 4 + bm_h`, reads every row-size byte, and calls `gr_rle_decode`, which reads until a terminator and writes run counts without source or destination bounds. OpenGL upload repeats the same operations. Thus a bitmap with positive height and declared size 4 passes the loader but makes the first consumer dereference beyond the four-byte allocation; a longer malformed row can also overrun the width-by-height destination.
-- Trigger: Mount a PhysFS-visible D1 mission `.pg1`, `.dtx`, or `.pog` containing an in-range replacement with positive dimensions, `BM_FLAG_RLE`, and either a four-byte declared payload, a truncated row table or row, a missing terminator, or runs that decode beyond the declared width, then load or render the affected texture
-- Impact: Mission-controlled bytes cause out-of-bounds reads and writes during texture merge, collision or FVI transparency sampling, software expansion, or OpenGL upload. The game can crash or corrupt heap memory while loading or entering a modded mission, so the branch is unsafe to distribute with this asset path enabled.
-- Expected: No custom bitmap becomes visible until its complete encoded structure is proven to fit the source allocation and every row is proven to decode to the supported destination width without overrun.
-- Suggested fix: Parse and validate the RLE payload into a temporary exact-size bitmap before mutating `GameBitmaps`: require a complete row table, checked row-span sums within `data_size`, an in-span terminator for each row, and exactly the permitted decoded width with checked run totals. Reject unsupported flag variants and dimensions, and commit the replacement only after every structural and allocation check succeeds. Prefer a shared bounded RLE decoder so later consumers cannot reintroduce unbounded reads or writes.
-- Validation: Add malformed custom-asset tests for payload sizes 0 through `4 + height`, exact and one-byte-short row tables, zero and oversized row lengths, missing and early terminators, truncated run pairs, runs decoding to width minus one, exactly width, and width plus one, maximum dimensions, offset boundaries, and multi-entry files where a later entry fails. Under ASan and UBSan, exercise OpenGL upload, texmerge, collision, and FVI sampling; require rejection without slot mutation or leaked saved-original state and successful load and teardown for valid raw and RLE controls.
 - Resolution: Pending
 
 ### BR-0377: P2 - Restore sound generations for supported demo data
@@ -17649,23 +17578,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Inject insert, open, short-read, write, close, byte-count, process-death, cancellation, and second and third companion failures on Q-plus and legacy paths with preexisting same-name files. Require no visible partial or stale row, preservation of prior bytes, accurate grouped results, cleanup after restart, and exact successful bytes and MIME types.
 - Resolution: Pending
 
-
-### BR-0445: P2 - Validate D1 PIG metadata offsets without integer wraparound
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/input-validation
-- Found by: R1-CHUNK-0394
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/GameFileMetadata.kt:L327-L340,L436-L445` in `summarizeD1Pig` and `plausibleD1Counts`
-- Related: `android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt:L776-L810`, `android/app/src/main/java/com/dxxredux/app/SetupSections.kt:L1299-L1340,L2195-L2207,L2247-L2269`, and `android/app/src/test/java/com/dxxredux/app/GameFileMetadataTest.kt:L147-L161,L214-L240`
-- Evidence: D1 metadata reads the first signed integer as a possible table offset and admits it when `offset >= 0 && offset + 8 <= bytes.size`. Both that check and `plausibleD1Counts` calculate `offset + 8` as an `Int`. For `offset = Int.MAX_VALUE`, the addition wraps negative, passes the upper-bound comparisons, and `plausibleD1Counts` calls `leInt(bytes, offset)`, which indexes the small materialized byte array at `Int.MAX_VALUE` and throws `ArrayIndexOutOfBoundsException`. The intended unsupported-or-truncated problem summary is therefore unreachable for this malformed offset. Most UI callers happen to wrap the complete metadata call in `runCatching`, converting the failure to missing details, but both level-metadata automation target builders call it directly.
-- Trigger: Place little-endian `ff ff ff 7f` in the first four bytes of any selected local file with a `.pig` name and at least the minimum parser length, then request its metadata through launcher automation or a direct metadata caller
-- Impact: A malformed or damaged imported PIG can abort an automation command and silently suppress metadata in guarded UI paths instead of producing the designed diagnostic. This makes one ordinary file-inspection boundary exception-throwing based solely on wrapped offset arithmetic and can break scripted validation of an imported set.
-- Expected: Every offset and derived table span is checked without signed overflow before byte-array access, and every malformed D1 PIG returns a deterministic problem summary without throwing.
-- Suggested fix: Express the bounds as subtraction-safe predicates such as `offset <= bytes.size - 8`, or convert offsets and all derived header spans to checked `Long` arithmetic before narrowing. Centralize the validation so the admission predicate and parser cannot diverge, and catch no indexing exception as a substitute for structural validation.
-- Validation: Add D1 PIG fixtures with offsets at `Int.MIN_VALUE`, `-1`, zero, `bytes.size - 8`, `bytes.size - 7`, `Int.MAX_VALUE - 7`, and `Int.MAX_VALUE`, plus count and header-span values at exact fit and one byte beyond. Exercise direct, UI, and automation callers and require a valid summary only for complete spans, an explicit problem summary for every malformed input, and no exception.
-- Resolution: Pending
 
 ### BR-0446: P2 - Bound and rotate active debug logs by byte size
 

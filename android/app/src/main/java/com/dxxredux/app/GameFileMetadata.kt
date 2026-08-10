@@ -325,29 +325,49 @@ internal object GameFileMetadata {
     }
 
     private fun summarizeD1Pig(bytes: ByteArray): Summary? {
-        val offset = leInt(bytes, 0).takeIf { it >= 0 && it + 8 <= bytes.size && plausibleD1Counts(bytes, it) } ?: 0
-        if (!plausibleD1Counts(bytes, offset)) {
+        if (bytes.size < 4) {
             return problemSummary("PIG", "Texture and sound data", "D1", "Unsupported or truncated D1 PIG")
         }
-        val bitmapCount = leInt(bytes, offset)
-        val soundCount = leInt(bytes, offset + 4)
-        val headerStart = offset + 8
-        val bitmapHeaderBytes = bitmapCount * D1_BITMAP_HEADER_SIZE
-        val soundHeaderBytes = soundCount * SOUND_HEADER_SIZE
-        if (headerStart + bitmapHeaderBytes + soundHeaderBytes > bytes.size) {
-            return problemSummary("PIG", "Texture and sound data", "D1", "Truncated D1 PIG headers")
+        val declaredOffset = leInt(bytes, 0)
+        val layout = d1PigLayout(bytes, declaredOffset) ?: d1PigLayout(bytes, 0)
+        if (layout == null) {
+            return problemSummary("PIG", "Texture and sound data", "D1", "Unsupported or truncated D1 PIG")
         }
-        val bitmaps = readBitmapHeaders(bytes, headerStart, bitmapCount, D1_BITMAP_HEADER_SIZE, false)
-        val notes = if (offset > 0) listOf("Pig data starts at $offset") else emptyList()
-        val dataStart = headerStart + bitmapHeaderBytes + soundHeaderBytes
+        val bitmaps = readBitmapHeaders(bytes, layout.headerStart, layout.bitmapCount, D1_BITMAP_HEADER_SIZE, false)
+        val notes = if (layout.offset > 0) listOf("Pig data starts at ${layout.offset}") else emptyList()
         return pigSummary(
             "D1",
-            bitmapCount,
-            soundCount,
-            (bytes.size - dataStart).coerceAtLeast(0).toLong(),
+            layout.bitmapCount,
+            layout.soundCount,
+            (bytes.size - layout.dataStart).toLong(),
             bitmaps,
             notes,
         )
+    }
+
+    private data class D1PigLayout(
+        val offset: Int,
+        val bitmapCount: Int,
+        val soundCount: Int,
+        val headerStart: Int,
+        val dataStart: Int,
+    )
+
+    private fun d1PigLayout(
+        bytes: ByteArray,
+        offset: Int,
+    ): D1PigLayout? {
+        if (offset < 0 || offset.toLong() + 8L > bytes.size.toLong()) return null
+        val bitmapCount = leInt(bytes, offset)
+        val soundCount = leInt(bytes, offset + 4)
+        if (!validCount(bitmapCount) || !validCount(soundCount)) return null
+        val headerStart = offset.toLong() + 8L
+        val dataStart =
+            headerStart +
+                bitmapCount.toLong() * D1_BITMAP_HEADER_SIZE +
+                soundCount.toLong() * SOUND_HEADER_SIZE
+        if (dataStart > bytes.size.toLong()) return null
+        return D1PigLayout(offset, bitmapCount, soundCount, headerStart.toInt(), dataStart.toInt())
     }
 
     private data class BitmapHeader(
@@ -431,17 +451,6 @@ internal object GameFileMetadata {
             contents = contents,
             notes = notes,
         )
-    }
-
-    private fun plausibleD1Counts(
-        bytes: ByteArray,
-        offset: Int,
-    ): Boolean {
-        if (offset < 0 || offset + 8 > bytes.size) return false
-        val bitmapCount = leInt(bytes, offset)
-        val soundCount = leInt(bytes, offset + 4)
-        if (!validCount(bitmapCount) || !validCount(soundCount)) return false
-        return offset + 8 + bitmapCount * D1_BITMAP_HEADER_SIZE + soundCount * SOUND_HEADER_SIZE <= bytes.size
     }
 
     private fun validCount(count: Int): Boolean = count in 0..20_000

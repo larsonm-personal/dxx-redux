@@ -4,7 +4,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
+#include "bounded_rle.h"
 #include "pstypes.h"
 #include "strutil.h"
 #include "physfsx.h"
@@ -59,12 +61,14 @@ typedef struct d1_custom_sound_header {
 } d1_custom_sound_header;
 
 typedef struct d1_custom_bitmap_info {
-	int offset;
+	PHYSFS_sint64 offset;
 	int repl_idx;
 	ubyte flags;
 	ubyte avg_color;
 	int width;
 	int height;
+	int rle_big;
+	ubyte *data;
 } d1_custom_bitmap_info;
 
 typedef struct d1_custom_sound_info {
@@ -178,28 +182,44 @@ static void d1_custom_save_original(int bitmap_index)
 	Bitmap_original_valid[bitmap_index] = D1_CUSTOM_VALID;
 }
 
-static int d1_custom_apply_bitmap(PHYSFS_file *fp, d1_custom_bitmap_info *info)
+static void d1_custom_free_staged_bitmaps(d1_custom_bitmap_info *info, int count)
 {
-	grs_bitmap *bmp;
+	int i;
+
+	for (i = 0; i < count; i++) {
+		if (info[i].data)
+			d_free(info[i].data);
+		info[i].data = NULL;
+	}
+}
+
+static int d1_custom_stage_bitmap(PHYSFS_file *fp, d1_custom_bitmap_info *info)
+{
 	ubyte *data;
 	int data_size;
 	PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
+	PHYSFS_sint64 raw_size;
 
 	if (info->repl_idx < 0 || info->repl_idx >= MAX_BITMAP_FILES)
-		return 0;
+		return info->repl_idx < 0;
 	if (info->width <= 0 || info->height <= 0 || info->offset < 0 || info->offset >= file_len)
 		return 0;
 
 	PHYSFSX_fseek(fp, info->offset, SEEK_SET);
 	if (info->flags & BM_FLAG_RLE) {
+		if (info->rle_big)
+			return 0;
 		data_size = PHYSFSX_readInt(fp);
-		if (data_size < 4)
+		if (data_size < 4 || info->height > data_size - 4)
 			return 0;
 		PHYSFSX_fseek(fp, -4, SEEK_CUR);
 	} else {
-		data_size = info->width * info->height;
+		raw_size = (PHYSFS_sint64)info->width * info->height;
+		if (raw_size <= 0 || raw_size > INT_MAX)
+			return 0;
+		data_size = (int)raw_size;
 	}
-	if (data_size <= 0 || (PHYSFS_sint64) info->offset + data_size > file_len)
+	if (data_size <= 0 || data_size > file_len - info->offset)
 		return 0;
 
 	MALLOC(data, ubyte, data_size);
@@ -209,6 +229,23 @@ static int d1_custom_apply_bitmap(PHYSFS_file *fp, d1_custom_bitmap_info *info)
 		d_free(data);
 		return 0;
 	}
+	if ((info->flags & BM_FLAG_RLE) &&
+		!bounded_rle_validate_bitmap(data, (size_t)data_size,
+			info->width, info->height, 1)) {
+		d_free(data);
+		return 0;
+	}
+	info->data = data;
+	return 1;
+}
+
+static int d1_custom_commit_bitmap(d1_custom_bitmap_info *info)
+{
+	grs_bitmap *bmp;
+	ubyte *data = info->data;
+
+	if (!data)
+		return 0;
 
 	bmp = &GameBitmaps[info->repl_idx];
 	if (Bitmap_original_valid[info->repl_idx])
@@ -223,6 +260,7 @@ static int d1_custom_apply_bitmap(PHYSFS_file *fp, d1_custom_bitmap_info *info)
 	gr_init_bitmap(bmp, 0, 0, 0, info->width, info->height, info->width, data);
 	gr_set_bitmap_flags(bmp, info->flags);
 	bmp->avg_color = info->avg_color;
+	info->data = NULL;
 	return 1;
 }
 
@@ -601,8 +639,6 @@ static int d1_custom_load_pog_data(PHYSFS_file *fp, int sig, int version, d1_cus
 
 	for (i = 0; i < num_bitmaps; i++) {
 		d1_custom_bitmap_header2 bmh;
-		char name[15];
-		int name_idx;
 		int repl_idx = -1;
 
 		if (!d1_custom_read_bitmap_header2(fp, &bmh)) {
@@ -612,32 +648,45 @@ static int d1_custom_load_pog_data(PHYSFS_file *fp, int sig, int version, d1_cus
 			return -1;
 		}
 
-		d1_custom_bitmap_name(name, bmh.name, bmh.dflags);
-		name_idx = hashtable_search(&AllBitmapsNames, name);
-		if (name_idx >= 0)
-			repl_idx = name_idx;
-		else if (has_repl && indices[i] < MAX_BITMAP_FILES)
-			repl_idx = indices[i];
+		if (has_repl)
+			repl_idx = d2_index_for_d1_index(indices[i]);
+		else {
+			char name[15];
 
-		bitmap_info[i].offset = bmh.offset + data_ofs;
+			d1_custom_bitmap_name(name, bmh.name, bmh.dflags);
+			repl_idx = hashtable_search(&AllBitmapsNames, name);
+		}
+
+		bitmap_info[i].offset = (PHYSFS_sint64)bmh.offset + data_ofs;
 		bitmap_info[i].repl_idx = repl_idx;
 		bitmap_info[i].flags = bmh.flags & D1_CUSTOM_BITMAP_FLAGS_TO_COPY;
 		bitmap_info[i].avg_color = bmh.avg_color;
 		bitmap_info[i].width = bmh.width + ((bmh.hi_wh & 15) << 8);
 		bitmap_info[i].height = bmh.height + ((bmh.hi_wh >> 4) << 8);
+		bitmap_info[i].rle_big = (bmh.flags & BM_FLAG_RLE_BIG) != 0;
 
 		stats->bitmap_entries++;
 		if (bitmap_info[i].repl_idx < 0)
 			stats->bitmap_unresolved++;
 	}
 
+	for (i = 0; i < num_bitmaps; i++)
+		if (!d1_custom_stage_bitmap(fp, &bitmap_info[i])) {
+			d1_custom_free_staged_bitmaps(bitmap_info, num_bitmaps);
+			if (indices)
+				d_free(indices);
+			d_free(bitmap_info);
+			return 0;
+		}
+
 	for (i = 0; i < num_bitmaps; i++) {
-		if (d1_custom_apply_bitmap(fp, &bitmap_info[i])) {
+		if (d1_custom_commit_bitmap(&bitmap_info[i])) {
 			stats->bitmap_applied++;
 			applied++;
 		}
 	}
 
+	d1_custom_free_staged_bitmaps(bitmap_info, num_bitmaps);
 	if (indices)
 		d_free(indices);
 	d_free(bitmap_info);
@@ -679,6 +728,7 @@ static int d1_custom_load_file(char *filename, d1_custom_texture_stats *stats)
 			PHYSFS_close(fp);
 			return 0;
 		}
+		memset(bitmap_info, 0, num_bitmaps * sizeof(*bitmap_info));
 	}
 
 	for (i = 0; i < num_bitmaps; i++) {
@@ -693,12 +743,13 @@ static int d1_custom_load_file(char *filename, d1_custom_texture_stats *stats)
 		}
 
 		d1_custom_bitmap_name(name, bmh.name, bmh.dflags);
-		bitmap_info[i].offset = bmh.offset + data_ofs;
+		bitmap_info[i].offset = (PHYSFS_sint64)bmh.offset + data_ofs;
 		bitmap_info[i].repl_idx = hashtable_search(&AllBitmapsNames, name);
 		bitmap_info[i].flags = bmh.flags & D1_CUSTOM_BITMAP_FLAGS_TO_COPY;
 		bitmap_info[i].avg_color = bmh.avg_color;
 		bitmap_info[i].width = bmh.width + ((bmh.dflags & D1_CUSTOM_DBM_FLAG_LARGE) ? 256 : 0);
 		bitmap_info[i].height = bmh.height;
+		bitmap_info[i].rle_big = (bmh.flags & BM_FLAG_RLE_BIG) != 0;
 
 		stats->bitmap_entries++;
 		if (bitmap_info[i].repl_idx < 0)
@@ -738,8 +789,18 @@ static int d1_custom_load_file(char *filename, d1_custom_texture_stats *stats)
 			stats->sound_unresolved++;
 	}
 
+	for (i = 0; i < num_bitmaps; i++)
+		if (!d1_custom_stage_bitmap(fp, &bitmap_info[i])) {
+			d1_custom_free_staged_bitmaps(bitmap_info, num_bitmaps);
+			if (sound_info)
+				d_free(sound_info);
+			d_free(bitmap_info);
+			PHYSFS_close(fp);
+			return 0;
+		}
+
 	for (i = 0; i < num_bitmaps; i++) {
-		if (d1_custom_apply_bitmap(fp, &bitmap_info[i])) {
+		if (d1_custom_commit_bitmap(&bitmap_info[i])) {
 			stats->bitmap_applied++;
 			applied++;
 		}
@@ -752,8 +813,10 @@ static int d1_custom_load_file(char *filename, d1_custom_texture_stats *stats)
 
 	if (sound_info)
 		d_free(sound_info);
-	if (bitmap_info)
+	if (bitmap_info) {
+		d1_custom_free_staged_bitmaps(bitmap_info, num_bitmaps);
 		d_free(bitmap_info);
+	}
 	PHYSFS_close(fp);
 	return applied;
 }

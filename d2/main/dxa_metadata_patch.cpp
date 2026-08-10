@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -30,6 +31,65 @@ namespace {
 const char kD2HamPatchPath[] = "patches/d2/ham_patch.rfc6902.json";
 const PHYSFS_sint64 kMaxPatchBytes = 2 * 1024 * 1024;
 int g_max_virtual_bitmap_index = -1;
+
+struct ham_patch_snapshot {
+	bitmap_index textures[MAX_TEXTURES];
+	tmap_info texture_info[MAX_TEXTURES];
+	vclip vclips[VCLIP_MAXNUM];
+	eclip effects[MAX_EFFECTS];
+	wclip wall_anims[MAX_WALL_ANIMS];
+	ubyte sounds[MAX_SOUNDS];
+	ubyte alt_sounds[MAX_SOUNDS];
+	robot_info robots[MAX_ROBOT_TYPES];
+	weapon_info weapons[MAX_WEAPON_TYPES];
+	bitmap_index object_bitmaps[MAX_OBJ_BITMAPS];
+	ushort object_bitmap_pointers[MAX_OBJ_BITMAPS];
+	int texture_count;
+	int vclip_count;
+	int effect_count;
+	int wall_anim_count;
+	int max_virtual_bitmap_index;
+
+	ham_patch_snapshot()
+	{
+		std::memcpy(textures, Textures, sizeof(textures));
+		std::memcpy(texture_info, TmapInfo, sizeof(texture_info));
+		std::memcpy(vclips, Vclip, sizeof(vclips));
+		std::memcpy(effects, Effects, sizeof(effects));
+		std::memcpy(wall_anims, WallAnims, sizeof(wall_anims));
+		std::memcpy(sounds, Sounds, sizeof(sounds));
+		std::memcpy(alt_sounds, AltSounds, sizeof(alt_sounds));
+		std::memcpy(robots, Robot_info, sizeof(robots));
+		std::memcpy(weapons, Weapon_info, sizeof(weapons));
+		std::memcpy(object_bitmaps, ObjBitmaps, sizeof(object_bitmaps));
+		std::memcpy(object_bitmap_pointers, ObjBitmapPtrs, sizeof(object_bitmap_pointers));
+		texture_count = NumTextures;
+		vclip_count = Num_vclips;
+		effect_count = Num_effects;
+		wall_anim_count = Num_wall_anims;
+		max_virtual_bitmap_index = g_max_virtual_bitmap_index;
+	}
+
+	void restore() const
+	{
+		std::memcpy(Textures, textures, sizeof(textures));
+		std::memcpy(TmapInfo, texture_info, sizeof(texture_info));
+		std::memcpy(Vclip, vclips, sizeof(vclips));
+		std::memcpy(Effects, effects, sizeof(effects));
+		std::memcpy(WallAnims, wall_anims, sizeof(wall_anims));
+		std::memcpy(Sounds, sounds, sizeof(sounds));
+		std::memcpy(AltSounds, alt_sounds, sizeof(alt_sounds));
+		std::memcpy(Robot_info, robots, sizeof(robots));
+		std::memcpy(Weapon_info, weapons, sizeof(weapons));
+		std::memcpy(ObjBitmaps, object_bitmaps, sizeof(object_bitmaps));
+		std::memcpy(ObjBitmapPtrs, object_bitmap_pointers, sizeof(object_bitmap_pointers));
+		NumTextures = texture_count;
+		Num_vclips = vclip_count;
+		Num_effects = effect_count;
+		Num_wall_anims = wall_anim_count;
+		g_max_virtual_bitmap_index = max_virtual_bitmap_index;
+	}
+};
 
 int required_int_value(const json &value, const char *description, int min_value, int max_value)
 {
@@ -895,6 +955,7 @@ void apply_patch_value(const patch_path &path, const json &value)
 extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 {
 	std::string text;
+	std::unique_ptr<ham_patch_snapshot> snapshot;
 	try {
 		if (!read_physfs_text(kD2HamPatchPath, text))
 			return;
@@ -915,6 +976,7 @@ extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 			} else if (operation != "add" && operation != "replace")
 				throw std::runtime_error("unsupported HAM patch operation");
 		}
+		snapshot = std::make_unique<ham_patch_snapshot>();
 		int applied = 0;
 		for (const json &op : patch) {
 			std::string operation = op.value("op", std::string());
@@ -931,6 +993,8 @@ extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 		}
 		con_printf(CON_NORMAL, "DXA metadata: applied %d HAM patch operations after %d tests\n", applied, tested);
 	} catch (const std::exception &ex) {
+		if (snapshot)
+			snapshot->restore();
 		con_printf(CON_URGENT, "DXA metadata: failed to apply %s: %s\n", kD2HamPatchPath, ex.what());
 	}
 }

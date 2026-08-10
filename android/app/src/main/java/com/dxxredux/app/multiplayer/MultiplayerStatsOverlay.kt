@@ -12,9 +12,10 @@ import com.dxxredux.app.DormancyDiagnostics
 import kotlin.math.exp
 
 /**
- * In-game overlay for multiplayer network stats.
+ * In-game overlay for multiplayer network and cooperative stats.
  *
- * Shows: packet counts, ping EMA + color-coded graph, connection type per peer.
+ * Shows cooperative player status first when applicable, followed by packet counts,
+ * ping EMA + color-coded graph, and connection type per peer.
  * Toggle via admin tray (ADMIN_NET_STATS).
  *
  * Shared constant: MAX_PLAYERS = 8 (matches C #define in player.h)
@@ -27,6 +28,9 @@ class MultiplayerStatsOverlay(
     var packetStatsProvider: (() -> IntArray?)? = null
     var proxyStatsProvider: (() -> List<PeerProxyStats>)? = null
     var connectionInfoProvider: (() -> List<PeerConnectionInfoMsg>)? = null
+    var robotStatsProvider: (() -> IntArray?)? = null
+    var teammateStatusProvider: (() -> IntArray?)? = null
+    var escortOwnerProvider: (() -> Int)? = null
     var isLan = false
     var localIp: String? = null
 
@@ -60,6 +64,22 @@ class MultiplayerStatsOverlay(
 
     // Loss history: ring buffer parallel to pingHistory (max loss% across peers per sample)
     private val lossHistory = IntArray(GRAPH_SAMPLES)
+
+    // Cooperative stats from the engine
+    private var totalKilled = 0
+    private var robotCount = 0
+    private var totalRobotScore = 0
+    private var coopPlayerCount = 0
+    private var coopLocalPlayerNum = 0
+    private val perPlayerKills = IntArray(MAX_PLAYERS)
+    private val perPlayerScore = IntArray(MAX_PLAYERS)
+    private var gameMode = 0
+    private val connected = IntArray(MAX_PLAYERS)
+    private val shieldsPct = IntArray(MAX_PLAYERS)
+    private val energyPct = IntArray(MAX_PLAYERS)
+    private val secondaryWeapon = IntArray(MAX_PLAYERS)
+    private val secondaryAmmo = IntArray(MAX_PLAYERS)
+    private var escortOwnerPlayer = -1
 
     // Paints
     private val bgPaint =
@@ -98,6 +118,31 @@ class MultiplayerStatsOverlay(
     private val lossDotPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFFFF4444u.toInt()
+            style = Paint.Style.FILL
+        }
+    private val goodPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF44FF44u.toInt()
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+    private val badPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFF4444u.toInt()
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+    private val barBgPaint =
+        Paint().apply {
+            color = 0x44FFFFFF
+            style = Paint.Style.FILL
+        }
+    private val shieldBarPaint =
+        Paint().apply {
+            color = 0xFF4488FFu.toInt()
+            style = Paint.Style.FILL
+        }
+    private val energyBarPaint =
+        Paint().apply {
+            color = 0xFFFFDD44u.toInt()
             style = Paint.Style.FILL
         }
 
@@ -156,6 +201,20 @@ class MultiplayerStatsOverlay(
         lossHistory.fill(0)
         enginePktSent = 0
         enginePktRecv = 0
+        totalKilled = 0
+        robotCount = 0
+        totalRobotScore = 0
+        coopPlayerCount = 0
+        coopLocalPlayerNum = 0
+        perPlayerKills.fill(0)
+        perPlayerScore.fill(0)
+        gameMode = 0
+        connected.fill(0)
+        shieldsPct.fill(0)
+        energyPct.fill(0)
+        secondaryWeapon.fill(0)
+        secondaryAmmo.fill(0)
+        escortOwnerPlayer = -1
     }
 
     private fun pollStats() {
@@ -230,6 +289,49 @@ class MultiplayerStatsOverlay(
             } catch (_: Exception) {
                 emptyList()
             }
+
+        val robotStats =
+            try {
+                robotStatsProvider?.invoke()
+            } catch (_: Exception) {
+                null
+            }
+        if (robotStats != null && robotStats.size >= 5 + 2 * MAX_PLAYERS) {
+            totalKilled = robotStats[0]
+            robotCount = robotStats[1]
+            totalRobotScore = robotStats[2]
+            coopPlayerCount = robotStats[3]
+            coopLocalPlayerNum = robotStats[4]
+            for (i in 0 until MAX_PLAYERS) {
+                perPlayerKills[i] = robotStats[5 + i * 2]
+                perPlayerScore[i] = robotStats[5 + i * 2 + 1]
+            }
+        }
+
+        val teammateStatus =
+            try {
+                teammateStatusProvider?.invoke()
+            } catch (_: Exception) {
+                null
+            }
+        if (teammateStatus != null && teammateStatus.size >= 3 + 5 * MAX_PLAYERS) {
+            gameMode = teammateStatus[2]
+            for (i in 0 until MAX_PLAYERS) {
+                val base = 3 + i * 5
+                connected[i] = teammateStatus[base]
+                shieldsPct[i] = teammateStatus[base + 1]
+                energyPct[i] = teammateStatus[base + 2]
+                secondaryWeapon[i] = teammateStatus[base + 3]
+                secondaryAmmo[i] = teammateStatus[base + 4]
+            }
+        }
+
+        escortOwnerPlayer =
+            try {
+                escortOwnerProvider?.invoke() ?: -1
+            } catch (_: Exception) {
+                -1
+            }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -243,12 +345,17 @@ class MultiplayerStatsOverlay(
         val baseTextSize = (13f * density).coerceAtMost(w * 0.018f)
         textPaint.textSize = baseTextSize
         labelPaint.textSize = baseTextSize * 0.85f
+        goodPaint.textSize = baseTextSize * 0.85f
+        badPaint.textSize = baseTextSize * 0.85f
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
         val graphH = 70f * density
+        val barH = baseTextSize * 0.6f
 
         // Count content lines
+        val coopLines = coopContentLineCount(gameMode, coopPlayerCount, connected, escortOwnerPlayer >= 0)
+        val showCoop = coopLines > 0
         val peerCount = (nPlayers - 1).coerceAtLeast(0)
         val connLines =
             if (lastConnectionInfo.isNotEmpty()) {
@@ -268,7 +375,8 @@ class MultiplayerStatsOverlay(
         val hasLoss = maxLossNow > 0
         // Title + packets + loss(opt) + avg ping + per-peer pings + connections + graph
         val contentLines = 1 + 1 + (if (hasLoss) 1 else 0) + 1 + peerCount + connLines
-        val panelH = pad * 2 + lineH * contentLines + graphH + pad
+        val coopSectionH = if (showCoop) lineH * coopLines + pad else 0f
+        val panelH = pad * 2 + coopSectionH + lineH * contentLines + graphH + pad
         val panelW = (w * 0.3f).coerceIn(180f * density, w * 0.45f)
 
         val panelLeft = pad
@@ -283,6 +391,63 @@ class MultiplayerStatsOverlay(
         )
 
         var y = panelTop + pad + baseTextSize
+
+        if (showCoop) {
+            textPaint.color = Color.WHITE
+            canvas.drawText("COOP $totalKilled/$robotCount", panelLeft + pad, y, textPaint)
+            y += lineH
+
+            labelPaint.color = 0xFFAAAAAAu.toInt()
+            val scoreEarned = perPlayerScore.sum()
+            val scorePct = if (totalRobotScore > 0) "${scoreEarned * 100 / totalRobotScore}%" else "--"
+            canvas.drawText("Score: $scorePct earned", panelLeft + pad, y, labelPaint)
+            y += lineH
+
+            val barLeft = panelLeft + pad
+            val barMaxW = panelW - pad * 2
+            val halfBarW = (barMaxW - pad) / 2
+            for (i in 0 until MAX_PLAYERS) {
+                if (connected[i] == 0) continue
+
+                val marker = if (i == coopLocalPlayerNum) "*" else " "
+                val playerScorePct = if (totalRobotScore > 0) perPlayerScore[i] * 100 / totalRobotScore else 0
+                val playerPaint = if (i == coopLocalPlayerNum) textPaint else labelPaint
+                canvas.drawText(
+                    "$marker P$i: ${perPlayerKills[i]} kills  $playerScorePct%",
+                    barLeft,
+                    y,
+                    playerPaint,
+                )
+                y += lineH
+
+                canvas.drawRect(barLeft, y - barH, barLeft + halfBarW, y, barBgPaint)
+                val shieldWidth = halfBarW * shieldsPct[i].coerceIn(0, 200) / 200
+                canvas.drawRect(barLeft, y - barH, barLeft + shieldWidth, y, shieldBarPaint)
+
+                val energyLeft = barLeft + halfBarW + pad
+                canvas.drawRect(energyLeft, y - barH, energyLeft + halfBarW, y, barBgPaint)
+                val energyWidth = halfBarW * energyPct[i].coerceIn(0, 200) / 200
+                canvas.drawRect(energyLeft, y - barH, energyLeft + energyWidth, y, energyBarPaint)
+
+                val secondaryName = SECONDARY_NAMES.getOrElse(secondaryWeapon[i]) { "?" }
+                val secondaryPaint = if (secondaryAmmo[i] > 0) goodPaint else badPaint
+                canvas.drawText(
+                    "$secondaryName:${secondaryAmmo[i]}",
+                    energyLeft,
+                    y - barH - 2f * density,
+                    secondaryPaint,
+                )
+                y += lineH
+            }
+
+            if (escortOwnerPlayer >= 0) {
+                val owner = if (escortOwnerPlayer == coopLocalPlayerNum) "You" else "P$escortOwnerPlayer"
+                canvas.drawText("Guide-Bot: $owner", panelLeft + pad, y, labelPaint)
+                y += lineH
+            }
+
+            y += pad
+        }
 
         // Title + IP right-aligned
         textPaint.color = Color.WHITE
@@ -421,6 +586,35 @@ class MultiplayerStatsOverlay(
         const val PING_CAP_MS = 500
         const val POLL_INTERVAL_MS = 1000L
         val EMA_ALPHA = (1.0 - exp(-1.0 / 10.0)).toFloat()
+
+        private const val GM_MULTI_COOP = 16
+        private val SECONDARY_NAMES =
+            arrayOf(
+                "Conc",
+                "Hom",
+                "Prox",
+                "Smt",
+                "Meg",
+                "Flsh",
+                "Guid",
+                "SBmb",
+                "Merc",
+                "ShkR",
+            )
+
+        fun coopContentLineCount(
+            gameMode: Int,
+            playerCount: Int,
+            connected: IntArray,
+            hasEscort: Boolean,
+        ): Int {
+            if (gameMode and GM_MULTI_COOP == 0 || playerCount < 2) return 0
+            var activePlayers = 0
+            for (i in 0 until minOf(MAX_PLAYERS, connected.size)) {
+                if (connected[i] != 0) activePlayers++
+            }
+            return 2 + activePlayers * 2 + if (hasEscort) 1 else 0
+        }
 
         fun pingColor(ms: Int): Int =
             when {

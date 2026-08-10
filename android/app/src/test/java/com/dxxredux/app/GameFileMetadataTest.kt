@@ -161,6 +161,41 @@ class GameFileMetadataTest {
         assertTrue(summary.notes.any { it.startsWith("Pig data starts at ") })
     }
 
+    @Test
+    fun rejectsD1PigOffsetsOutsideTheCountSpan() {
+        val invalidOffsets = listOf(Int.MIN_VALUE, -1, 33, Int.MAX_VALUE - 7, Int.MAX_VALUE)
+
+        invalidOffsets.forEach { offset ->
+            val summary = summarizeD1Pig(createD1PigLayout(40, offset))
+
+            assertEquals("offset $offset", listOf("Unsupported or truncated D1 PIG"), summary.problems)
+        }
+        assertEquals(
+            listOf("Unsupported or truncated D1 PIG"),
+            summarizeD1Pig(ByteArray(3)).problems,
+        )
+    }
+
+    @Test
+    fun acceptsD1PigCountSpansAtBothBoundaries() {
+        val offsetZero = summarizeD1Pig(createD1PigLayout(8, 0))
+        val offsetAtEnd = summarizeD1Pig(createD1PigLayout(40, 32))
+
+        assertTrue(offsetZero.problems.isEmpty())
+        assertTrue(offsetAtEnd.problems.isEmpty())
+        assertTrue(offsetAtEnd.notes.contains("Pig data starts at 32"))
+    }
+
+    @Test
+    fun requiresTheCompleteD1PigHeaderSpan() {
+        val exactFit = summarizeD1Pig(createD1PigLayout(41, 16, bitmapCount = 1))
+        val oneByteShort = summarizeD1Pig(createD1PigLayout(40, 16, bitmapCount = 1))
+
+        assertTrue(exactFit.problems.isEmpty())
+        assertEquals("1", exactFit.detailRows.first { it.first == "Bitmaps" }.second)
+        assertEquals(listOf("Unsupported or truncated D1 PIG"), oneByteShort.problems)
+    }
+
     private data class BitmapHeader(
         val name: String,
         val width: Int,
@@ -236,6 +271,35 @@ class GameFileMetadataTest {
         }
         out.write(ByteArray(64))
         return out.toByteArray()
+    }
+
+    private fun createD1PigLayout(
+        size: Int,
+        offset: Int,
+        bitmapCount: Int = 0,
+        soundCount: Int = 0,
+    ): ByteArray =
+        ByteArray(size).also { bytes ->
+            writeLeInt(bytes, 0, offset)
+            if (offset >= 0 && offset.toLong() + 8L <= size.toLong()) {
+                writeLeInt(bytes, offset, bitmapCount)
+                writeLeInt(bytes, offset + 4, soundCount)
+            }
+        }
+
+    private fun summarizeD1Pig(bytes: ByteArray): GameFileMetadata.Summary {
+        val pig = File.createTempFile("d1-layout", ".pig")
+        pig.deleteOnExit()
+        pig.writeBytes(bytes)
+        return requireNotNull(GameFileMetadata.summarizeLocalFile(pig))
+    }
+
+    private fun writeLeInt(
+        bytes: ByteArray,
+        offset: Int,
+        value: Int,
+    ) {
+        leInt(value).copyInto(bytes, offset)
     }
 
     private fun createPog(vararg bitmaps: Pair<Int, BitmapHeader>): ByteArray {
