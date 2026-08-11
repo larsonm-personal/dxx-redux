@@ -77,6 +77,12 @@ typedef int (*iso_progress_fn)(const char *current_file,
 int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
                    iso_file_list_t *out);
 
+/* Geometry-aware CUE-track variant. The 2048-byte logical payload must fit
+ * within sector_stride beginning at user_data_offset. */
+int iso_list_track_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                         int sector_stride, int user_data_offset,
+                         iso_file_list_t *out);
+
 /*
  * List files from a standalone ISO image file.
  *
@@ -107,6 +113,13 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
                       const char *output_dir,
                       const char **extensions,
                       iso_progress_fn progress, void *user_data);
+
+int iso_extract_track_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                            int sector_stride, int user_data_offset,
+                            const iso_file_list_t *file_list,
+                            const char *output_dir,
+                            const char **extensions,
+                            iso_progress_fn progress, void *user_data);
 
 /*
  * Extract files from a standalone ISO image file to an output directory.

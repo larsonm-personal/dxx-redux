@@ -424,17 +424,25 @@ static fix d_tick_timer = 0;
 
 void calc_d_tick()
 {
+	fix64 next_timer;
+
 	d_tick_step = 0;
 
-	d_tick_timer += FrameTime;
-	if (d_tick_timer >= F1_0/20)
+	next_timer = (fix64)d_tick_timer + FrameTime;
+	if (next_timer >= F1_0/20)
 	{
 		d_tick_step = 1;
-		d_tick_count++;
-		if (d_tick_count > 1000000)
+		if (d_tick_count < 0 || d_tick_count >= GAME_D_TICK_COUNT_MAX)
 			d_tick_count = 0;
-		d_tick_timer = (d_tick_timer-(F1_0/20));
+		else
+			d_tick_count++;
+		next_timer -= F1_0/20;
 	}
+	if (next_timer < 0)
+		next_timer = 0;
+	if (next_timer > GAME_D_TICK_TIMER_MAX)
+		next_timer = GAME_D_TICK_TIMER_MAX;
+	d_tick_timer = (fix)next_timer;
 }
 
 void game_get_d_tick_state(game_d_tick_state *state)
@@ -447,14 +455,26 @@ void game_get_d_tick_state(game_d_tick_state *state)
 	state->timer = d_tick_timer;
 }
 
+int game_d_tick_state_is_valid(const game_d_tick_state *state)
+{
+	return state && state->count >= 0 && state->count <= GAME_D_TICK_COUNT_MAX &&
+	       (state->step == 0 || state->step == 1) &&
+	       state->timer >= 0 && state->timer <= GAME_D_TICK_TIMER_MAX;
+}
+
 void game_set_d_tick_state(const game_d_tick_state *state)
 {
-	if (!state)
+	if (!game_d_tick_state_is_valid(state))
 		return;
 
 	d_tick_count = state->count;
 	d_tick_step = state->step;
 	d_tick_timer = state->timer;
+}
+
+int cockpit_mode_is_persistable(int mode)
+{
+	return mode == CM_FULL_COCKPIT || mode == CM_STATUS_BAR || mode == CM_FULL_SCREEN;
 }
 
 void reset_time()

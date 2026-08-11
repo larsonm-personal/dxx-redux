@@ -5,7 +5,7 @@
  * format used by chromaprint_db_load), loads them, and reports all pairs that
  * exceed the match threshold using proper XOR-popcount similarity.
  *
- * Usage: fingerprint_match <db.json> <threshold>
+ * Usage: fingerprint_match <db.json> <threshold> <duration-tolerance>
  *
  * Output: one JSON line per duplicate pair:
  *   {"a_disc":"...","a_track":N,"b_disc":"...","b_track":N,"score":0.XX}
@@ -19,16 +19,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <chromaprint.h>
+#include <nlohmann/json.hpp>
 
 #include "json_writer.h"
+#include "../shared/fingerprint_duration.h"
 
 /* ── Matching parameters ──────────────────────────────────────────── */
 
-#define MAX_OFFSET         15
-#define DURATION_TOLERANCE 0.10f
-#define MAX_ENTRIES        4096
-#define MAX_NAME           128
-#define MAX_DISC_ID        128
+#define MAX_OFFSET      15
+#define MAX_ENTRIES     4096
+#define MAX_NAME        128
+#define MAX_DISC_ID     128
+#define MAX_FINGERPRINT (1024 * 1024)
 
 /* ── Data ─────────────────────────────────────────────────────────── */
 
@@ -85,14 +87,13 @@ static float fp_similarity(const uint32_t *a, int a_len,
 	return 1.0f - (float) total / ((float) overlap * 32.0f);
 }
 
-static float best_similarity(const entry_t *a, const entry_t *b)
+static float best_similarity(const entry_t *a, const entry_t *b,
+                             float duration_tolerance)
 {
 	/* Duration pre-filter */
-	if (a->duration_ms > 0 && b->duration_ms > 0) {
-		float ratio = (float) a->duration_ms / (float) b->duration_ms;
-		if (ratio < 1.0f - DURATION_TOLERANCE || ratio > 1.0f + DURATION_TOLERANCE)
-			return 0.0f;
-	}
+	if (!fingerprint_durations_compatible(a->duration_ms, b->duration_ms,
+	                                      duration_tolerance))
+		return 0.0f;
 	float best = 0.0f;
 	for (int off = -MAX_OFFSET; off <= MAX_OFFSET; off++) {
 		float s = fp_similarity(a->raw_fp, a->fp_len, b->raw_fp, b->fp_len, off);
@@ -101,178 +102,66 @@ static float best_similarity(const entry_t *a, const entry_t *b)
 	return best;
 }
 
-/* ── Minimal JSON parsing (reused pattern from chromaprint_db.c) ── */
-
-static const char *skip_ws(const char *p, const char *end)
-{
-	while (p < end && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
-		p++;
-	return p;
-}
-
-static const char *parse_str(const char *p, const char *end, char *buf, int blen)
-{
-	if (p >= end || *p != '"') return NULL;
-	p++;
-	int i = 0;
-	while (p < end && *p != '"') {
-		if (*p == '\\' && p + 1 < end) p++;
-		if (i < blen - 1) buf[i++] = *p;
-		p++;
-	}
-	buf[i] = '\0';
-	if (p < end) p++;
-	return p;
-}
-
-static const char *parse_int(const char *p, const char *end, int *out)
-{
-	int neg = 0, v = 0;
-	if (p < end && *p == '-') {
-		neg = 1;
-		p++;
-	}
-	while (p < end && *p >= '0' && *p <= '9') {
-		v = v * 10 + (*p - '0');
-		p++;
-	}
-	*out = neg ? -v : v;
-	return p;
-}
-
-static const char *skip_val(const char *p, const char *end)
-{
-	p = skip_ws(p, end);
-	if (p >= end) return p;
-	if (*p == '"') {
-		p++;
-		while (p < end && *p != '"') {
-			if (*p == '\\') p++;
-			p++;
-		}
-		if (p < end) p++;
-		return p;
-	}
-	if (*p == '{' || *p == '[') {
-		char open = *p, close = (*p == '{') ? '}' : ']';
-		int depth = 1;
-		p++;
-		while (p < end && depth > 0) {
-			if (*p == open) depth++;
-			else if (*p == close) depth--;
-			else if (*p == '"') {
-				p++;
-				while (p < end && *p != '"') {
-					if (*p == '\\') p++;
-					p++;
-				}
-			}
-			p++;
-		}
-		return p;
-	}
-	/* Handles numbers, true, false, null */
-	while (p < end && *p != ',' && *p != '}' && *p != ']' &&
-	       *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r')
-		p++;
-	return p;
-}
-
-/* Parse a JSON string value, or handle null by leaving buf empty */
-static const char *parse_str_or_null(const char *p, const char *end,
-                                     char *buf, int blen)
-{
-	p = skip_ws(p, end);
-	if (p >= end) return NULL;
-	if (*p == 'n' && p + 3 < end && p[1] == 'u' && p[2] == 'l' && p[3] == 'l') {
-		buf[0] = '\0';
-		return p + 4;
-	}
-	return parse_str(p, end, buf, blen);
-}
-
 static int load_db(const char *data, int len)
 {
-	const char *p = data, *end = data + len;
-	p = skip_ws(p, end);
-	if (p >= end || *p != '[') {
-		fprintf(stderr, "Expected JSON array\n");
+	auto root = nlohmann::json::parse(data, data + len, NULL, false);
+	if (!root.is_array() || root.empty() || root.size() > MAX_ENTRIES) {
+		fprintf(stderr, "Expected a nonempty JSON array within the entry limit\n");
 		return -1;
 	}
-	p++;
 
-	while (s_count < MAX_ENTRIES) {
-		p = skip_ws(p, end);
-		if (p >= end || *p == ']') break;
-		if (*p == ',') {
-			p++;
-			continue;
-		}
-		if (*p != '{') {
-			p++;
-			continue;
-		}
-		p++;
-
-		char name[MAX_NAME] = { 0 };
-		char disc_id[MAX_DISC_ID] = { 0 };
-		char fp_b64[8192] = { 0 };
-		int track = 0, dur = 0;
-
-		while (p < end && *p != '}') {
-			p = skip_ws(p, end);
-			if (p >= end || *p == '}') break;
-			if (*p == ',') {
-				p++;
-				continue;
-			}
-
-			char key[32] = { 0 };
-			p = parse_str(p, end, key, sizeof(key));
-			if (!p) break;
-			p = skip_ws(p, end);
-			if (p >= end || *p != ':') break;
-			p++;
-			p = skip_ws(p, end);
-
-			if (strcmp(key, "name") == 0)
-				p = parse_str_or_null(p, end, name, sizeof(name));
-			else if (strcmp(key, "disc_id") == 0)
-				p = parse_str_or_null(p, end, disc_id, sizeof(disc_id));
-			else if (strcmp(key, "chromaprint") == 0)
-				p = parse_str_or_null(p, end, fp_b64, sizeof(fp_b64));
-			else if (strcmp(key, "track") == 0)
-				p = parse_int(p, end, &track);
-			else if (strcmp(key, "duration_ms") == 0)
-				p = parse_int(p, end, &dur);
-			else
-				p = skip_val(p, end);
-			if (!p) break;
-		}
-		if (p < end && *p == '}') p++;
-
-		if (fp_b64[0] && dur > 0) {
+	for (const auto &item : root) {
+		if (!item.is_object() || !item.contains("name") || !item["name"].is_string() ||
+		    !item.contains("disc_id") || !item["disc_id"].is_string() ||
+		    !item.contains("chromaprint") || !item["chromaprint"].is_string() ||
+		    !item.contains("track") || !item["track"].is_number_integer() ||
+		    !item.contains("duration_ms") || !item["duration_ms"].is_number_integer())
+			goto fail;
+		try {
+			const std::string name = item["name"].get<std::string>();
+			const std::string disc_id = item["disc_id"].get<std::string>();
+			const std::string fp_b64 = item["chromaprint"].get<std::string>();
+			const int track = item["track"].get<int>();
+			const int dur = item["duration_ms"].get<int>();
 			uint32_t *raw = NULL;
 			int raw_len = 0, alg = 0;
-			if (chromaprint_decode_fingerprint(fp_b64, (int) strlen(fp_b64),
-			                                   &raw, &raw_len, &alg, 1) == 1 &&
-			    raw) {
-				entry_t *e = &s_entries[s_count];
-				e->raw_fp = (uint32_t *) malloc((size_t) raw_len * sizeof(uint32_t));
-				if (e->raw_fp) {
-					memcpy(e->raw_fp, raw, (size_t) raw_len * sizeof(uint32_t));
-					e->fp_len = raw_len;
-					e->duration_ms = dur;
-					e->track_num = track;
-					strncpy(e->name, name, MAX_NAME - 1);
-					strncpy(e->disc_id, disc_id, MAX_DISC_ID - 1);
-					s_count++;
-				}
-				chromaprint_dealloc(raw);
+
+			if (name.empty() || name.size() >= MAX_NAME || disc_id.size() >= MAX_DISC_ID ||
+			    fp_b64.empty() || fp_b64.size() > MAX_FINGERPRINT || dur <= 0 ||
+			    chromaprint_decode_fingerprint(fp_b64.data(), (int) fp_b64.size(),
+			                                   &raw, &raw_len, &alg, 1) != 1 ||
+			    !raw || raw_len <= 0) {
+				if (raw) chromaprint_dealloc(raw);
+				goto fail;
 			}
+			entry_t *e = &s_entries[s_count];
+			e->raw_fp = (uint32_t *) malloc((size_t) raw_len * sizeof(uint32_t));
+			if (!e->raw_fp) {
+				chromaprint_dealloc(raw);
+				goto fail;
+			}
+			memcpy(e->raw_fp, raw, (size_t) raw_len * sizeof(uint32_t));
+			chromaprint_dealloc(raw);
+			e->fp_len = raw_len;
+			e->duration_ms = dur;
+			e->track_num = track;
+			memcpy(e->name, name.c_str(), name.size() + 1);
+			memcpy(e->disc_id, disc_id.c_str(), disc_id.size() + 1);
+			s_count++;
+		} catch (...) {
+			goto fail;
 		}
 	}
 	return s_count;
+
+fail:
+	for (int i = 0; i < s_count; i++) {
+		free(s_entries[i].raw_fp);
+		s_entries[i] = {};
+	}
+	s_count = 0;
+	fprintf(stderr, "Invalid or incomplete fingerprint database\n");
+	return -1;
 }
 
 /* ── JSON-escape a string ─────────────────────────────────────────── */
@@ -286,8 +175,10 @@ static void print_escaped(FILE *f, const char *s)
 
 int main(int argc, char **argv)
 {
-	if (argc != 3) {
-		fprintf(stderr, "Usage: fingerprint_match <db.json> <threshold>\n");
+	if (argc != 4) {
+		fprintf(stderr,
+		        "Usage: fingerprint_match <db.json> <threshold> "
+		        "<duration-tolerance>\n");
 		return 1;
 	}
 
@@ -300,20 +191,40 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	errno = 0;
+	char *tolerance_end = NULL;
+	float duration_tolerance = strtof(argv[3], &tolerance_end);
+	if (tolerance_end == argv[3] || *tolerance_end != '\0' || errno == ERANGE ||
+	    !isfinite(duration_tolerance) || duration_tolerance < 0.0f ||
+	    duration_tolerance > 1.0f) {
+		fprintf(stderr, "Invalid duration tolerance: %s\n", argv[3]);
+		return 1;
+	}
+
 	FILE *f = fopen(argv[1], "rb");
 	if (!f) {
 		fprintf(stderr, "Cannot open %s\n", argv[1]);
 		return 1;
 	}
-	fseek(f, 0, SEEK_END);
+	if (fseek(f, 0, SEEK_END) != 0) {
+		fclose(f);
+		return 1;
+	}
 	long sz = ftell(f);
-	fseek(f, 0, SEEK_SET);
+	if (sz <= 0 || sz > INT_MAX || fseek(f, 0, SEEK_SET) != 0) {
+		fclose(f);
+		return 1;
+	}
 	char *data = (char *) malloc(sz + 1);
 	if (!data) {
 		fclose(f);
 		return 1;
 	}
-	fread(data, 1, sz, f);
+	if (fread(data, 1, (size_t) sz, f) != (size_t) sz) {
+		free(data);
+		fclose(f);
+		return 1;
+	}
 	data[sz] = '\0';
 	fclose(f);
 
@@ -323,14 +234,16 @@ int main(int argc, char **argv)
 		fprintf(stderr, "No entries loaded\n");
 		return 1;
 	}
-	fprintf(stderr, "Loaded %d entries, threshold=%.2f\n", n, threshold);
+	fprintf(stderr, "Loaded %d entries, threshold=%.2f, duration tolerance=%.2f\n",
+	        n, threshold, duration_tolerance);
 
 	/* Compare all pairs, output duplicates */
 	int dup_count = 0;
 	printf("[\n");
 	for (int i = 0; i < s_count; i++) {
 		for (int j = i + 1; j < s_count; j++) {
-			float score = best_similarity(&s_entries[i], &s_entries[j]);
+			float score = best_similarity(&s_entries[i], &s_entries[j],
+			                              duration_tolerance);
 			if (score >= threshold) {
 				if (dup_count > 0) printf(",\n");
 				printf("  {\"a_disc\": ");

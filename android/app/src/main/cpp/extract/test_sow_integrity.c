@@ -310,6 +310,63 @@ int main(void)
 			failures++;
 		}
 	}
+	if (write_fixture("sow_integrity_temp/scan/z.sow", &fixture) < 0 ||
+	    write_fixture("sow_integrity_temp/scan/a.sow", &fixture) < 0 ||
+	    write_fixture("sow_integrity_temp/scan/d2_10.sow", &fixture) < 0 ||
+	    write_fixture("sow_integrity_temp/scan/d2_2.sow", &fixture) < 0) {
+		fprintf(stderr, "failed to write SOW ordering fixtures\n");
+		failures++;
+	} else {
+		sow_file_list_t list;
+		if (sow_scan_dir("sow_integrity_temp/scan", &list) != 5 ||
+		    strstr(list.paths[0], "a.sow") == NULL ||
+		    strstr(list.paths[1], "d2_2.sow") == NULL ||
+		    strstr(list.paths[2], "d2_10.sow") == NULL ||
+		    strstr(list.paths[3], "one.SoW") == NULL ||
+		    strstr(list.paths[4], "z.sow") == NULL) {
+			fprintf(stderr, "SOW scan order was not deterministic\n");
+			failures++;
+		}
+	}
+	{
+		char long_path[SOW_PATH_LEN + 32];
+		sow_file_list_t list;
+		memset(long_path, 'x', sizeof(long_path));
+		long_path[sizeof(long_path) - 1] = '\0';
+		if (sow_scan_dir("sow_integrity_temp/missing", &list) != -1 ||
+		    sow_scan_dir(long_path, &list) != -1 || list.count != 0) {
+			fprintf(stderr, "SOW scan errors did not fail closed\n");
+			failures++;
+		}
+	}
+	make_dir("sow_integrity_temp/limit");
+	{
+		char path[SOW_PATH_LEN];
+		sow_file_list_t list;
+		for (int i = 0; i < SOW_MAX_FILES; i++) {
+			snprintf(path, sizeof(path), "sow_integrity_temp/limit/f%02d.sow", i);
+			if (write_fixture(path, &fixture) < 0) failures++;
+		}
+		if (sow_scan_dir("sow_integrity_temp/limit", &list) != SOW_MAX_FILES)
+			failures++;
+		snprintf(path, sizeof(path), "sow_integrity_temp/limit/overflow.sow");
+		if (write_fixture(path, &fixture) < 0 ||
+		    sow_scan_dir("sow_integrity_temp/limit", &list) != -1 ||
+		    list.count != 0) {
+			fprintf(stderr, "SOW scan capacity did not fail closed\n");
+			failures++;
+		}
+	}
+#ifndef _WIN32
+	if (symlink(".", "sow_integrity_temp/scan/loop") == 0) {
+		sow_file_list_t list;
+		if (sow_scan_dir("sow_integrity_temp/scan", &list) != 5) {
+			fprintf(stderr, "SOW scan followed a directory symlink\n");
+			failures++;
+		}
+		remove("sow_integrity_temp/scan/loop");
+	}
+#endif
 	failures += run_case("valid_stored", &fixture, stored, sizeof(stored) - 1u, 1);
 	{
 		char first_path[SOW_PATH_LEN];
@@ -490,6 +547,17 @@ int main(void)
 	}
 
 	remove("sow_integrity_temp/scan/one.SoW");
+	remove("sow_integrity_temp/scan/a.sow");
+	remove("sow_integrity_temp/scan/d2_2.sow");
+	remove("sow_integrity_temp/scan/d2_10.sow");
+	remove("sow_integrity_temp/scan/z.sow");
+	for (int i = 0; i < SOW_MAX_FILES; i++) {
+		char path[SOW_PATH_LEN];
+		snprintf(path, sizeof(path), "sow_integrity_temp/limit/f%02d.sow", i);
+		remove(path);
+	}
+	remove("sow_integrity_temp/limit/overflow.sow");
+	remove_dir("sow_integrity_temp/limit");
 	remove_dir("sow_integrity_temp/scan");
 	remove_dir("sow_integrity_temp/output");
 	remove_dir("sow_integrity_temp");

@@ -86,6 +86,33 @@ class MissionZipMusicExtractedPreviewTest {
         )
     }
 
+    @Test
+    fun malformedOptionalDxaDoesNotHideIndependentExtractedMusic() {
+        val root = File("build/test-mission-zip-music-extracted-preview/malformed/Mission.7z").absoluteFile
+        root.deleteRecursively()
+        val missionsDir = File(root, "missions").apply { mkdirs() }
+        val malformed = File(missionsDir, "broken.dxa").apply { writeText("not a zip") }
+        val playable = File(missionsDir, "level01.ogg").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val record =
+            MissionZipExtractionRecord(
+                ownerFilename = root.name,
+                ownerSizeBytes = malformed.length() + playable.length(),
+                ownerLastModifiedMs = 0L,
+                rootDir = root,
+                files =
+                    listOf(
+                        MissionZipExtractedFile("broken.dxa", "missions/broken.dxa", malformed.length()),
+                        MissionZipExtractedFile("level01.ogg", "missions/level01.ogg", playable.length()),
+                    ),
+                archiveFormat = "7z",
+            )
+
+        val catalog = MissionZipMusic.inspectExtracted(record)
+
+        assertNotNull(catalog)
+        assertTrue(catalog!!.sources.flatMap { it.tracks }.single().playable)
+    }
+
     private fun extractedRecord(
         root: File,
         trackBytes: ByteArray,

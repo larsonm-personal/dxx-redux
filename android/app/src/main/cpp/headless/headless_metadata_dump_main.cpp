@@ -445,7 +445,10 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 			++opener_links;
 		}
 	}
-	for (trigger_num = 0; trigger_num < ControlCenterTriggers.num_links; ++trigger_num) {
+	for (trigger_num = 0;
+	     control_center_triggers_are_valid(&ControlCenterTriggers, Highest_segment_index) &&
+	     trigger_num < ControlCenterTriggers.num_links;
+	     ++trigger_num) {
 		int seg = ControlCenterTriggers.seg[trigger_num];
 		int side = ControlCenterTriggers.side[trigger_num];
 		int wall = seg >= 0 && seg < Num_segments && side >= 0 && side < MAX_SIDES_PER_SEGMENT ? Segments[seg].sides[side].wall_num : -1;

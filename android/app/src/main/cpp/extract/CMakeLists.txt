@@ -397,9 +397,10 @@ endif()
 # ── fingerprint_match (find duplicate fingerprints in a JSON DB) ─────
 add_executable(fingerprint_match ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c
                                  ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c PROPERTIES LANGUAGE CXX)
 target_include_directories(fingerprint_match PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(fingerprint_match PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(fingerprint_match PRIVATE chromaprint)
+target_link_libraries(fingerprint_match PRIVATE chromaprint nlohmann_json::nlohmann_json)
 if(MSVC)
     target_compile_options(fingerprint_match PRIVATE /W3)
 else()

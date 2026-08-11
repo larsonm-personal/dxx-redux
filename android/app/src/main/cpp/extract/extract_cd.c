@@ -484,11 +484,12 @@ int main(int argc, char *argv[])
 			const char *track_type = t->type == CUE_TRACK_AUDIO ? "audio" : "data";
 
 			if (t->file_index < 0 || t->file_index >= disc.num_files ||
-			    !cd_track_span(t->start_sector, t->num_sectors,
-			                   t->file_index >= 0 && t->file_index < disc.num_files
-			                       ? bin_sizes[t->file_index]
-			                       : -1,
-			                   &track_offset, NULL)) {
+			    !cd_track_span_with_stride(t->start_sector, t->num_sectors,
+			                               t->sector_size,
+			                               t->file_index >= 0 && t->file_index < disc.num_files
+			                                   ? bin_sizes[t->file_index]
+			                                   : -1,
+			                               &track_offset, NULL)) {
 				fprintf(stderr, "ERROR: Invalid or incomplete span for track %d\n", t->track_num);
 				printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"invalid track span\"}\n",
 				       t->track_num, track_type);
@@ -520,13 +521,13 @@ int main(int argc, char *argv[])
 			}
 
 			for (s = 0; s < t->num_sectors; s++) {
-				int n = read_fd(bin_fd, sector_buf, CUE_SECTOR_SIZE);
-				if (n != CUE_SECTOR_SIZE) {
+				int n = read_fd(bin_fd, sector_buf, t->sector_size);
+				if (n != t->sector_size) {
 					fprintf(stderr, "ERROR: Short read on track %d sector %d (got %d)\n",
 					        t->track_num, s, n);
 					break;
 				}
-				sha1_update(&sha_ctx, sector_buf, CUE_SECTOR_SIZE);
+				sha1_update(&sha_ctx, sector_buf, (size_t) t->sector_size);
 			}
 
 			if (s != t->num_sectors) {
@@ -565,12 +566,14 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				nf = iso_list_files(bin_fd, t->start_sector, t->num_sectors, file_list);
+				nf = iso_list_track_files(bin_fd, t->start_sector, t->num_sectors,
+				                          t->sector_size, t->user_data_offset, file_list);
 				if (nf > 0) {
 					int extracted;
 					mkdir_p(out_dir);
-					extracted = iso_extract_files(bin_fd, t->start_sector, t->num_sectors,
-					                              file_list, out_dir, NULL, progress_cb, NULL);
+					extracted = iso_extract_track_files(bin_fd, t->start_sector, t->num_sectors,
+					                                    t->sector_size, t->user_data_offset,
+					                                    file_list, out_dir, NULL, progress_cb, NULL);
 					if (extracted > 0) {
 						data_tracks_extracted++;
 						total_files_extracted += extracted;
@@ -587,7 +590,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "  Track %d: no files found in ISO\n", t->track_num);
 					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
 					       t->track_num, sha_hex);
-				} else {
+				} else if (t->sector_mode == CUE_SECTOR_MODE1_2352) {
 					hfs_partition_info_t hfs_info;
 
 					if (hfs_find_partition(bin_fd, t->start_sector, t->num_sectors, &hfs_info) == 0) {
@@ -624,6 +627,10 @@ int main(int argc, char *argv[])
 						       t->track_num, sha_hex);
 						errors++;
 					}
+				} else {
+					fprintf(stderr, "  Track %d: ISO listing failed\n", t->track_num);
+					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
+					       t->track_num, sha_hex);
 				}
 				iso_file_list_destroy(file_list);
 			} else {
@@ -676,6 +683,9 @@ int main(int argc, char *argv[])
 					errors++;
 				}
 			}
+		} else if (nsow < 0) {
+			fprintf(stderr, "Failed to scan extracted data for .sow archives\n");
+			errors++;
 		}
 	}
 

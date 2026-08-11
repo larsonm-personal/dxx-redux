@@ -12,6 +12,11 @@ import java.io.File
 object DiscImportBridge {
     private const val TAG = "DXX-DiscImport"
 
+    const val CUE_SECTOR_AUDIO = 0
+    const val CUE_SECTOR_MODE1_2352 = 1
+    const val CUE_SECTOR_MODE1_2048 = 2
+    const val CUE_SECTOR_MODE2_2352 = 3
+
     private fun parseIsoEntries(raw: Array<String>): List<IsoFile>? {
         val parsed = ArrayList<IsoFile>(raw.size)
         for (entry in raw) {
@@ -38,6 +43,9 @@ object DiscImportBridge {
         val startSector: Int,
         val numSectors: Int,
         val title: String,
+        val sectorMode: Int = if (type == 1) CUE_SECTOR_AUDIO else CUE_SECTOR_MODE1_2352,
+        val sectorSize: Int = 2352,
+        val userDataOffset: Int = if (type == 1) 0 else 16,
     ) {
         val isData get() = type == 0
         val isAudio get() = type == 1
@@ -56,15 +64,18 @@ object DiscImportBridge {
     ): List<CueTrack>? {
         val rows = nativeParseCueRows(cuePath, binSizes) ?: return null
         return rows.map { row ->
-            val fields = row.split('|', limit = 6)
-            if (fields.size != 6) return null
+            val fields = row.split('|', limit = 9)
+            if (fields.size != 9) return null
             CueTrack(
                 trackNum = fields[0].toIntOrNull() ?: return null,
                 type = fields[1].toIntOrNull() ?: return null,
-                fileIndex = fields[2].toIntOrNull() ?: return null,
-                startSector = fields[3].toIntOrNull() ?: return null,
-                numSectors = fields[4].toIntOrNull() ?: return null,
-                title = fields[5],
+                sectorMode = fields[2].toIntOrNull() ?: return null,
+                sectorSize = fields[3].toIntOrNull() ?: return null,
+                userDataOffset = fields[4].toIntOrNull() ?: return null,
+                fileIndex = fields[5].toIntOrNull() ?: return null,
+                startSector = fields[6].toIntOrNull() ?: return null,
+                numSectors = fields[7].toIntOrNull() ?: return null,
+                title = fields[8],
             )
         }
     }
@@ -89,8 +100,10 @@ object DiscImportBridge {
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,
+        sectorStride: Int,
+        userDataOffset: Int,
     ): List<IsoFile>? {
-        val raw = nativeListIsoFiles(binFd, trackStart, trackSectors) ?: return null
+        val raw = nativeListIsoFiles(binFd, trackStart, trackSectors, sectorStride, userDataOffset) ?: return null
         return parseIsoEntries(raw)
     }
 
@@ -101,6 +114,8 @@ object DiscImportBridge {
         binPath: String,
         trackStart: Int,
         trackSectors: Int,
+        sectorStride: Int,
+        userDataOffset: Int,
     ): List<IsoFile>? {
         val pfd =
             ParcelFileDescriptor.open(
@@ -108,7 +123,7 @@ object DiscImportBridge {
                 ParcelFileDescriptor.MODE_READ_ONLY,
             )
         return try {
-            listIsoFiles(pfd.fd, trackStart, trackSectors)
+            listIsoFiles(pfd.fd, trackStart, trackSectors, sectorStride, userDataOffset)
         } finally {
             pfd.close()
         }
@@ -164,9 +179,20 @@ object DiscImportBridge {
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,
+        sectorStride: Int,
+        userDataOffset: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
-    ): Int = nativeExtractIsoFiles(binFd, trackStart, trackSectors, outputDir, progress)
+    ): Int =
+        nativeExtractIsoFiles(
+            binFd,
+            trackStart,
+            trackSectors,
+            sectorStride,
+            userDataOffset,
+            outputDir,
+            progress,
+        )
 
     /**
      * Extract from a BIN file path (opens the fd internally).
@@ -175,6 +201,8 @@ object DiscImportBridge {
         binPath: String,
         trackStart: Int,
         trackSectors: Int,
+        sectorStride: Int,
+        userDataOffset: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
     ): Int {
@@ -184,7 +212,15 @@ object DiscImportBridge {
                 ParcelFileDescriptor.MODE_READ_ONLY,
             )
         return try {
-            extractIsoFiles(pfd.fd, trackStart, trackSectors, outputDir, progress)
+            extractIsoFiles(
+                pfd.fd,
+                trackStart,
+                trackSectors,
+                sectorStride,
+                userDataOffset,
+                outputDir,
+                progress,
+            )
         } finally {
             pfd.close()
         }
@@ -307,6 +343,8 @@ object DiscImportBridge {
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,
+        sectorStride: Int,
+        userDataOffset: Int,
     ): Array<String>?
 
     private external fun nativeListIsoImageFiles(isoFd: Int): Array<String>?
@@ -315,6 +353,8 @@ object DiscImportBridge {
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,
+        sectorStride: Int,
+        userDataOffset: Int,
         outputDir: String,
         progress: ExtractProgress?,
     ): Int

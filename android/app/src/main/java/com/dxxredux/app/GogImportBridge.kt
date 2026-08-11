@@ -1,5 +1,25 @@
 package com.dxxredux.app
 
+import java.util.Locale
+
+internal fun parseGogFileList(raw: Array<String>): List<GogImportBridge.GogFile>? {
+    val files =
+        raw.map { entry ->
+            val parts = entry.split("|", limit = 3)
+            val size = parts.getOrNull(1)?.toLongOrNull()
+            val crc = parts.getOrNull(2)?.toLongOrNull()
+            if (parts[0].isEmpty() || size == null || size < 0 ||
+                (parts.size == 3 && (crc == null || crc !in 0..0xffffffffL))
+            ) {
+                return null
+            }
+            GogImportBridge.GogFile(parts[0], size, crc)
+        }
+    return files.takeIf {
+        it.map { file -> file.name.lowercase(Locale.US) }.distinct().size == it.size
+    }
+}
+
 /**
  * JNI bridge for GOG installer extraction (.exe InnoSetup, .pkg Mac).
  *
@@ -17,6 +37,7 @@ object GogImportBridge {
     data class GogFile(
         val name: String,
         val size: Long,
+        val crc32: Long? = null,
     )
 
     /** Check if a filename is a GOG audio file (.gog or .inst) */
@@ -47,15 +68,7 @@ object GogImportBridge {
         return parseFileList(raw)
     }
 
-    private fun parseFileList(raw: Array<String>): List<GogFile> =
-        raw.mapNotNull { entry ->
-            val parts = entry.split("|", limit = 2)
-            if (parts.size == 2) {
-                GogFile(parts[0], parts[1].toLongOrNull() ?: 0L)
-            } else {
-                null
-            }
-        }
+    internal fun parseFileList(raw: Array<String>): List<GogFile>? = parseGogFileList(raw)
 
     /** Callback interface for extraction progress (same as DiscImportBridge) */
     interface ExtractProgress {
@@ -81,7 +94,19 @@ object GogImportBridge {
         outputDir: String,
         progress: ExtractProgress? = null,
         includeAudio: Boolean = true,
-    ): Int = nativeExtractFiles(path, outputDir, progress, includeAudio)
+        expectedFiles: List<GogFile>? = null,
+    ): Int {
+        val currentFiles = listFiles(path) ?: return -1
+        if (expectedFiles != null && currentFiles != expectedFiles) return -1
+        val manifest = expectedFiles ?: currentFiles
+        val expectedEntries =
+            manifest
+                .map { file ->
+                    val crc = file.crc32 ?: -1L
+                    "${file.name}|${file.size}|$crc"
+                }.toTypedArray()
+        return nativeExtractFiles(path, outputDir, progress, includeAudio, expectedEntries)
+    }
 
     /** Extract game files from an already-open InnoSetup installer fd */
     fun extractFilesFromFd(
@@ -104,6 +129,7 @@ object GogImportBridge {
         outputDir: String,
         progress: ExtractProgress?,
         includeAudio: Boolean,
+        expectedEntries: Array<String>,
     ): Int
 
     private external fun nativeExtractFilesFromFd(

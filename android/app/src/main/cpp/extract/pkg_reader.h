@@ -28,6 +28,7 @@ extern "C" {
 typedef struct {
 	char name[PKG_PATH_LEN]; /* basename (e.g., "DESCENT.HOG") */
 	uint64_t size;           /* uncompressed file size */
+	uint32_t crc32;          /* uncompressed file content */
 } pkg_file_entry_t;
 
 /* -- Archive handle ------------------------------------------------ */
@@ -37,6 +38,7 @@ typedef struct {
 	uint64_t scripts_length;     /* length of gzip data */
 	uint64_t scanned_bytes;      /* complete expanded cpio payload bytes */
 	uint64_t output_bytes;       /* selected game-file bytes */
+	uint32_t scripts_crc32;      /* complete expanded Scripts member */
 
 	pkg_file_entry_t files[PKG_MAX_FILES];
 	int file_count;

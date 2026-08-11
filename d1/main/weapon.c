@@ -47,6 +47,26 @@ int POrderList (int num);
 int SOrderList (int num);
 const ubyte DefaultPrimaryOrder[] = { 4, 3, 2, 1, 0, 255, 16 };
 const ubyte DefaultSecondaryOrder[] = { 4, 3, 1, 0, 255, 2 };
+
+int weapon_order_is_valid(const ubyte *order, int count, int secondary)
+{
+	const ubyte *domain = secondary ? DefaultSecondaryOrder : DefaultPrimaryOrder;
+	const int expected = secondary ? MAX_SECONDARY_WEAPONS + 1 : MAX_PRIMARY_WEAPONS + 2;
+	ubyte seen[MAX_PRIMARY_WEAPONS + 2] = { 0 };
+	int i, j;
+
+	if (!order || count != expected)
+		return 0;
+	for (i = 0; i < count; i++) {
+		for (j = 0; j < expected; j++)
+			if (order[i] == domain[j])
+				break;
+		if (j == expected || seen[j])
+			return 0;
+		seen[j] = 1;
+	}
+	return 1;
+}
 extern ubyte MenuReordering;
 
 int player_has_weapon_lasers_not_quads(int weapon_num, int secondary_flag) {

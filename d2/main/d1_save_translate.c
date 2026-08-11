@@ -476,6 +476,12 @@ int d1_save_translate_read_checkpoint_start(const uint8_t *data, size_t size,
 	    !d1_save_translate_read_s8(&reader, &start->secondary_weapon) ||
 	    !d1_save_translate_read_s32(&reader, &start->difficulty))
 		return 0;
+	if (start->primary_weapon < 0 ||
+	    start->primary_weapon >= D1_SAVE_TRANSLATE_PRIMARY_WEAPONS ||
+	    start->secondary_weapon < 0 ||
+	    start->secondary_weapon >= D1_SAVE_TRANSLATE_SECONDARY_WEAPONS ||
+	    start->difficulty < 0 || start->difficulty >= NDL)
+		return 0;
 	if (version >= 13) {
 		if (!d1_save_translate_read_s32(&reader, &start->difficulty_changed) ||
 		    !d1_save_translate_read_s32(&reader, &start->difficulty_min) ||
@@ -1509,7 +1515,8 @@ static int d1_save_translate_read_runtime_state(
 	if (state->object_state.num_objects < 1 ||
 	    state->object_state.num_objects > MAX_OBJECTS ||
 	    state->object_state.highest_object_index < 0 ||
-	    state->object_state.highest_object_index >= MAX_OBJECTS)
+	    state->object_state.highest_object_index >= MAX_OBJECTS ||
+	    !game_d_tick_state_is_valid(&state->d_tick_state))
 		return 0;
 	for (i = 0; i < MAX_OBJECTS; i++)
 		if (!d1_save_translate_read_s16(

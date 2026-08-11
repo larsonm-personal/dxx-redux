@@ -109,8 +109,9 @@ Java_com_dxxredux_app_DiscImportBridge_nativeParseCueRows(
 	for (int i = 0; i < n; i++) {
 		const cue_track_info_t *track = &disc.tracks[i];
 		if (track->file_index < 0 || track->file_index >= num_sizes ||
-		    !cd_track_span(track->start_sector, track->num_sectors,
-		                   sizes[track->file_index], NULL, NULL)) {
+		    !cd_track_span_with_stride(track->start_sector, track->num_sectors,
+		                               track->sector_size,
+		                               sizes[track->file_index], NULL, NULL)) {
 			LOGE("Invalid or incomplete span for track %d", track->track_num);
 			free(sizes);
 			return NULL;
@@ -128,8 +129,9 @@ Java_com_dxxredux_app_DiscImportBridge_nativeParseCueRows(
 		size_t row_size = strlen(track->title) + 128;
 		char *row = (char *) malloc(row_size);
 		if (!row) return NULL;
-		snprintf(row, row_size, "%d|%d|%d|%d|%d|%s", track->track_num,
-		         track->type, track->file_index, track->start_sector,
+		snprintf(row, row_size, "%d|%d|%d|%d|%d|%d|%d|%d|%s", track->track_num,
+		         track->type, track->sector_mode, track->sector_size,
+		         track->user_data_offset, track->file_index, track->start_sector,
 		         track->num_sectors, track->title);
 		jstring value = dxx_jni_string_from_utf8(env, row);
 		free(row);
@@ -159,7 +161,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeParseCueRows(
 JNIEXPORT jobjectArray JNICALL
 Java_com_dxxredux_app_DiscImportBridge_nativeListIsoFiles(
     JNIEnv *env, jclass clazz,
-    jint binFd, jint trackStart, jint trackSectors)
+    jint binFd, jint trackStart, jint trackSectors,
+    jint sectorStride, jint userDataOffset)
 {
 	if (binFd < 0) {
 		LOGE("nativeListIsoFiles: invalid binFd %d", binFd);
@@ -169,7 +172,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeListIsoFiles(
 	iso_file_list_t *list = iso_file_list_create();
 	if (!list) return NULL;
 
-	int n = iso_list_files(binFd, trackStart, trackSectors, list);
+	int n = iso_list_track_files(binFd, trackStart, trackSectors,
+	                             sectorStride, userDataOffset, list);
 	if (n < 0) {
 		LOGE("iso_list_files failed");
 		iso_file_list_destroy(list);
@@ -267,6 +271,7 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
     JNIEnv *env, jclass clazz,
     jint binFd, jint trackStart, jint trackSectors,
+    jint sectorStride, jint userDataOffset,
     jstring outputDir, jobject progress)
 {
 	if (binFd < 0) {
@@ -283,7 +288,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 		free(out_dir);
 		return -1;
 	}
-	int n = iso_list_files(binFd, trackStart, trackSectors, list);
+	int n = iso_list_track_files(binFd, trackStart, trackSectors,
+	                             sectorStride, userDataOffset, list);
 	if (n < 0) {
 		iso_file_list_destroy(list);
 		free(out_dir);
@@ -294,10 +300,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	extract_ctx_t ctx;
 	init_extract_ctx(env, progress, &ctx);
 
-	int extracted = iso_extract_files(binFd, trackStart, trackSectors,
-	                                  list, out_dir, dxx_android_disc_extract_extensions,
-	                                  progress ? extract_progress_cb : NULL,
-	                                  &ctx);
+	int extracted = iso_extract_track_files(binFd, trackStart, trackSectors,
+	                                        sectorStride, userDataOffset,
+	                                        list, out_dir, dxx_android_disc_extract_extensions,
+	                                        progress ? extract_progress_cb : NULL,
+	                                        &ctx);
 
 	iso_file_list_destroy(list);
 	free(out_dir);

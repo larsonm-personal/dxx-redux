@@ -44,6 +44,45 @@ class MissionZipExtractionStoreTest {
     }
 
     @Test
+    fun freshRecordRejectsChangedArchiveWithRestoredSizeAndModificationTime() {
+        val filesDir = File("build/test-mission-zip-extraction/source-content").absoluteFile
+        filesDir.deleteRecursively()
+        val modsDir = File(filesDir, "mods").apply { mkdirs() }
+        val archive = File(modsDir, "preview.zip")
+        writeMissionArchive(archive, listOf("docs/readme.txt" to "original"))
+        val store = MissionZipExtractionStore(filesDir)
+        val originalRecord = store.ensureExtracted(archive.name, archive, requireNotNull(MissionZip.inspect(archive)))
+        val originalLength = archive.length()
+
+        writeMissionArchive(archive, listOf("docs/readme.txt" to "changed!"))
+        assertEquals(originalLength, archive.length())
+        assertTrue(archive.setLastModified(originalRecord.ownerLastModifiedMs))
+
+        assertNull(store.freshRecord(archive.name, archive))
+        val replacement = store.ensureExtracted(archive.name, archive, requireNotNull(MissionZip.inspect(archive)))
+        assertEquals("changed!", File(replacement.rootDir, "docs/readme.txt").readText())
+    }
+
+    @Test
+    fun freshRecordRejectsSameSizeExtractedFileReplacement() {
+        val filesDir = File("build/test-mission-zip-extraction/output-content").absoluteFile
+        filesDir.deleteRecursively()
+        val modsDir = File(filesDir, "mods").apply { mkdirs() }
+        val archive = File(modsDir, "preview.zip")
+        writeMissionArchive(archive, listOf("docs/readme.txt" to "original"))
+        val store = MissionZipExtractionStore(filesDir)
+        val originalRecord = store.ensureExtracted(archive.name, archive, requireNotNull(MissionZip.inspect(archive)))
+        val extracted = File(originalRecord.rootDir, "docs/readme.txt")
+
+        extracted.writeText("changed!")
+        assertEquals(8L, extracted.length())
+
+        assertNull(store.freshRecord(archive.name, archive))
+        val repaired = store.ensureExtracted(archive.name, archive, requireNotNull(MissionZip.inspect(archive)))
+        assertEquals("original", File(repaired.rootDir, "docs/readme.txt").readText())
+    }
+
+    @Test
     fun extractedTargetPreservesParsedMissionDisplayName() {
         val filesDir = File("build/test-mission-zip-extraction/display-name").absoluteFile
         filesDir.deleteRecursively()
@@ -92,7 +131,7 @@ class MissionZipExtractionStoreTest {
         val originalScan = requireNotNull(MissionZip.inspect(archive))
         val store = MissionZipExtractionStore(filesDir)
         val originalRecord = store.ensureExtracted(archive.name, archive, originalScan)
-        val originalReadme = File(originalRecord.rootDir, "missions/docs/readme.txt")
+        val originalReadme = File(originalRecord.rootDir, "docs/readme.txt")
         assertEquals("original", originalReadme.readText())
 
         writeMissionArchive(
@@ -112,7 +151,7 @@ class MissionZipExtractionStoreTest {
     }
 
     @Test
-    fun generatedSongAliasCollisionRejectsBeforeTargetMutation() {
+    fun generatedRootSongAliasDoesNotCollideWithMissionDirectoryFile() {
         val filesDir = File("build/test-mission-zip-extraction/generated-alias-collision").absoluteFile
         filesDir.deleteRecursively()
         filesDir.mkdirs()
@@ -124,13 +163,12 @@ class MissionZipExtractionStoreTest {
             zip.writeEntry("missions/descent.sng", "existing.ogg")
         }
         val scan = requireNotNull(MissionZip.inspect(archive))
-        val target = File(filesDir, "target").apply { mkdirs() }
-        val sentinel = File(target, "sentinel.txt").apply { writeText("keep") }
+        val target = File(filesDir, "target")
 
-        collisionMessage { extractZipToRoot(archive, target, scan) }
+        extractZipToRoot(archive, target, scan)
 
-        assertEquals("keep", sentinel.readText())
-        assertEquals(listOf("sentinel.txt"), target.list()?.sorted()?.toList())
+        assertEquals("level01.ogg", File(target, "descent.sng").readText())
+        assertEquals("existing.ogg", File(target, "missions/descent.sng").readText())
     }
 
     private fun file(

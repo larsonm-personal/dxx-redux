@@ -1482,7 +1482,7 @@ void remove_obsolete_stuck_objects(void)
 	if (!Num_stuck_objects)
 		return;
 
-	objnum = d_tick_count % MAX_STUCK_OBJECTS;
+	objnum = (unsigned int)d_tick_count % MAX_STUCK_OBJECTS;
 
 	if (Stuck_objects[objnum].wallnum != -1)
 		if ((Walls[Stuck_objects[objnum].wallnum].state != WALL_DOOR_CLOSED) || (Objects[Stuck_objects[objnum].objnum].signature != Stuck_objects[objnum].signature)) {

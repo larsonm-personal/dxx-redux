@@ -62,6 +62,24 @@ extern "C" {
 /* Max of D1/D2 lengths, for stack buffers */
 #define MAX_ORDER_LEN 11
 
+static int read_valid_order(JNIEnv *env, jintArray values, int expected,
+                            int secondary, ubyte *out)
+{
+	jint raw[MAX_ORDER_LEN];
+
+	if (!values || !out || env->GetArrayLength(values) != expected)
+		return 0;
+	env->GetIntArrayRegion(values, 0, expected, raw);
+	if (env->ExceptionCheck())
+		return 0;
+	for (int i = 0; i < expected; i++) {
+		if (raw[i] < 0 || raw[i] > 255)
+			return 0;
+		out[i] = (ubyte) raw[i];
+	}
+	return weapon_order_is_valid(out, expected, secondary);
+}
+
 /* -- pilot file scanning ----------------------------------------- */
 
 typedef int (*pilot_visitor_fn)(const char *path, void *ctx);
@@ -292,7 +310,15 @@ JNI_FUNC(nativeWriteAutoselect)(
     JNIEnv *env, jclass, jstring jfilesDir,
     jintArray jprimary, jintArray jsecondary)
 {
+	ubyte primary[MAX_ORDER_LEN] = { 0 }, secondary[MAX_ORDER_LEN] = { 0 };
+	if (!jfilesDir || !read_valid_order(env, jprimary, PRIM_ORDER_LEN, 0, primary) ||
+	    !read_valid_order(env, jsecondary, SEC_ORDER_LEN, 1, secondary)) {
+		LOGE("nativeWriteAutoselect: rejected invalid weapon order");
+		return -1;
+	}
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	if (!files_dir)
+		return -1;
 
 #ifdef DXX_BUILD_DESCENT_II
 	const char *subdir = "d2x-redux";
@@ -301,20 +327,6 @@ JNI_FUNC(nativeWriteAutoselect)(
 	const char *subdir = "d1x-redux";
 	const char *ext = ".plx";
 #endif
-
-	jint *jprim = env->GetIntArrayElements(jprimary, NULL);
-	jint *jsec = env->GetIntArrayElements(jsecondary, NULL);
-	int jprim_len = env->GetArrayLength(jprimary);
-	int jsec_len = env->GetArrayLength(jsecondary);
-
-	ubyte primary[MAX_ORDER_LEN], secondary[MAX_ORDER_LEN];
-	for (int i = 0; i < PRIM_ORDER_LEN && i < jprim_len; i++)
-		primary[i] = (ubyte) (jprim[i] & 0xFF);
-	for (int i = 0; i < SEC_ORDER_LEN && i < jsec_len; i++)
-		secondary[i] = (ubyte) (jsec[i] & 0xFF);
-
-	env->ReleaseIntArrayElements(jprimary, jprim, JNI_ABORT);
-	env->ReleaseIntArrayElements(jsecondary, jsec, JNI_ABORT);
 
 	struct write_ctx wc = { primary, PRIM_ORDER_LEN, secondary, SEC_ORDER_LEN };
 	int total = for_each_pilot(files_dir, subdir, ext, write_visitor, &wc);

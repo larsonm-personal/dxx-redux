@@ -10,6 +10,7 @@
  */
 
 #include "chromaprint_db.h"
+#include "fingerprint_duration.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -243,12 +244,9 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 		const chromaprint_db_entry_t *e = &s_entries[i];
 
 		/* Duration pre-filter */
-		if (duration_ms > 0 && e->duration_ms > 0) {
-			float ratio = (float) duration_ms / (float) e->duration_ms;
-			if (ratio < (1.0f - s_duration_tolerance) ||
-			    ratio > (1.0f + s_duration_tolerance))
-				continue;
-		}
+		if (!fingerprint_durations_compatible(duration_ms, e->duration_ms,
+		                                      s_duration_tolerance))
+			continue;
 
 		/* Try several offset alignments */
 		float entry_score = 0.0f;

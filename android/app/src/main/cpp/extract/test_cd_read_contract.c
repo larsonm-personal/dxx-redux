@@ -38,6 +38,9 @@ int main(void)
 	CHECK(!cd_track_span(0, 0, 2352, NULL, NULL));
 	CHECK(!cd_track_span(0, 2, 2352, NULL, NULL));
 	CHECK(!cd_track_span(INT_MAX, INT_MAX, 2352, NULL, NULL));
+	CHECK(cd_track_span_with_stride(2, 3, 2048, 5 * 2048LL, &offset, &bytes));
+	CHECK(offset == 2 * 2048LL && bytes == 3 * 2048LL);
+	CHECK(!cd_track_span_with_stride(0, 1, 0, 2048, NULL, NULL));
 	printf("CD read contract tests passed\n");
 	return 0;
 }

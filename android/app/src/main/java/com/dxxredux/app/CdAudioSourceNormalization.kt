@@ -3,7 +3,6 @@ package com.dxxredux.app
 import java.io.File
 import java.util.Locale
 
-private const val CD_SECTOR_BYTES = 2352L
 internal const val GENERATED_MERGED_CUE_MARKER = "REM DXX-REDUX GENERATED MERGED LOCAL SOURCE"
 internal const val GENERATED_CD_AUDIO_ARTIFACT_DIR = "cd_audio"
 private const val FALLBACK_CD_AUDIO_SOURCE_STEM = "cd_audio_source"
@@ -113,8 +112,15 @@ internal fun normalizeCueTracksForMergedBin(
     val fileStartSectors = IntArray(binSizes.size)
     var sectorCursor = 0L
     for (index in binSizes.indices) {
+        val sectorSizes = tracks.filter { it.fileIndex == index }.map { it.sectorSize }.distinct()
+        require(sectorSizes.size == 1) { "BIN $index must use one sector size" }
+        val sectorSize = sectorSizes.single().toLong()
+        require(sectorSize > 0L && binSizes[index] % sectorSize == 0L) {
+            "BIN $index size is not sector aligned"
+        }
         fileStartSectors[index] = sectorCursor.toInt()
-        sectorCursor += binSizes[index] / CD_SECTOR_BYTES
+        sectorCursor = Math.addExact(sectorCursor, binSizes[index] / sectorSize)
+        require(sectorCursor <= Int.MAX_VALUE) { "Merged CUE sector count is too large" }
     }
 
     return tracks.map { track ->
@@ -142,7 +148,7 @@ internal fun buildMergedCueText(
         builder.append("  TRACK ")
         builder.append(track.trackNum.toString().padStart(2, '0'))
         builder.append(' ')
-        builder.append(if (track.isAudio) "AUDIO" else "MODE1/2352")
+        builder.append(cueSectorModeToken(track.sectorMode))
         builder.append('\n')
         if (track.title.isNotEmpty()) {
             builder.append("    TITLE \"")
@@ -155,6 +161,15 @@ internal fun buildMergedCueText(
     }
     return builder.toString()
 }
+
+private fun cueSectorModeToken(sectorMode: Int): String =
+    when (sectorMode) {
+        DiscImportBridge.CUE_SECTOR_AUDIO -> "AUDIO"
+        DiscImportBridge.CUE_SECTOR_MODE1_2352 -> "MODE1/2352"
+        DiscImportBridge.CUE_SECTOR_MODE1_2048 -> "MODE1/2048"
+        DiscImportBridge.CUE_SECTOR_MODE2_2352 -> "MODE2/2352"
+        else -> throw IllegalArgumentException("Unsupported CUE sector mode $sectorMode")
+    }
 
 private fun sectorToMsf(sector: Int): String {
     val minutes = sector / (60 * 75)

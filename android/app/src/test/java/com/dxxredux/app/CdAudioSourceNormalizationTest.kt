@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -42,6 +43,51 @@ class CdAudioSourceNormalizationTest {
                 "    INDEX 01 00:01:25\n",
             cueText,
         )
+    }
+
+    @Test
+    fun preservesSupportedDataTrackModesInMergedCue() {
+        val tracks =
+            listOf(
+                DiscImportBridge.CueTrack(
+                    1,
+                    0,
+                    0,
+                    0,
+                    10,
+                    "2048 data",
+                    DiscImportBridge.CUE_SECTOR_MODE1_2048,
+                    2048,
+                    0,
+                ),
+            )
+
+        val normalized = normalizeCueTracksForMergedBin(tracks, listOf(10L * 2048L))
+
+        assertEquals(true, buildMergedCueText("merged.bin", normalized).contains("TRACK 01 MODE1/2048"))
+    }
+
+    @Test
+    fun rejectsMixedSectorSizesWithinOneSourceFile() {
+        val tracks =
+            listOf(
+                DiscImportBridge.CueTrack(1, 0, 0, 0, 10, "raw data"),
+                DiscImportBridge.CueTrack(
+                    2,
+                    0,
+                    0,
+                    10,
+                    10,
+                    "2048 data",
+                    DiscImportBridge.CUE_SECTOR_MODE1_2048,
+                    2048,
+                    0,
+                ),
+            )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            normalizeCueTracksForMergedBin(tracks, listOf(20L * 2352L))
+        }
     }
 
     @Test

@@ -34,7 +34,9 @@ if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
 $fingerprintConfig = Get-DxxFingerprintMatchingConfig -Path $configPath
 $matchThreshold = $fingerprintConfig.MatchThreshold
 $matchThresholdArgument = $matchThreshold.ToString('R', [Globalization.CultureInfo]::InvariantCulture)
-Write-Host "Match threshold: $matchThreshold"
+$durationTolerance = $fingerprintConfig.DurationTolerance
+$durationToleranceArgument = $durationTolerance.ToString('R', [Globalization.CultureInfo]::InvariantCulture)
+Write-Host "Match threshold: $matchThreshold; duration tolerance: $durationTolerance"
 
 # Ensure fingerprint_match.exe is available
 # Uses the C tool (XOR-popcount with offset alignment) for proper matching.
@@ -181,7 +183,7 @@ Write-Host "Wrote $($flatEntries.Count) entries to temp JSON for matching"
 Write-Host "Running fingerprint_match.exe (threshold $matchThreshold)..."
 $matchStderrFile = Join-Path $repoRoot "temp/dedup_match_stderr.txt"
 $matchStdoutFile = Join-Path $repoRoot "temp/dedup_match_stdout.json"
-$proc = Start-Process -FilePath $matchExe -ArgumentList $tempJson, $matchThresholdArgument `
+$proc = Start-Process -FilePath $matchExe -ArgumentList $tempJson, $matchThresholdArgument, $durationToleranceArgument `
     -RedirectStandardOutput $matchStdoutFile -RedirectStandardError $matchStderrFile `
     -NoNewWindow -Wait -PassThru
 if (Test-Path $matchStderrFile) {

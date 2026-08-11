@@ -7,8 +7,8 @@ import java.util.zip.ZipFile
 
 /**
  * Scans DXA (ZIP) archives for image file dimensions.
- * Used by the launcher to warn about oversized textures that the engine
- * will silently skip (engine caps at ogl_max_texture_size = min(GL_MAX, 2048)).
+ * Used by the launcher to reject oversized textures before enabling a mod
+ * (engine caps at ogl_max_texture_size = min(GL_MAX, 2048)).
  *
  * ENGINE_TEXTURE_CAP must match the cap in d2/arch/ogl/gr.c ogl_get_verinfo().
  */
@@ -68,6 +68,7 @@ object DxaTextureScanner {
                         when {
                             name.endsWith(".ktx2") -> zip.getInputStream(entry).use { readKtx2Dims(it) }
                             name.endsWith(".png") -> zip.getInputStream(entry).use { readPngDims(it) }
+                            name.endsWith(".jpg") -> zip.getInputStream(entry).use { readJpegDims(it) }
                             name.endsWith(".tga") -> zip.getInputStream(entry).use { readTgaDims(it) }
                             else -> null
                         }
@@ -116,6 +117,41 @@ object DxaTextureScanner {
         return if (w in 1..65536 && h in 1..65536) Pair(w, h) else null
     }
 
+    /** Read dimensions from a JPEG start-of-frame segment without decoding pixels. */
+    private fun readJpegDims(input: InputStream): Pair<Int, Int>? {
+        if (input.read() != 0xFF || input.read() != 0xD8) return null
+        var scanned = 2
+        while (scanned < 64 * 1024) {
+            var markerStart = input.read()
+            scanned++
+            while (markerStart != -1 && markerStart != 0xFF) {
+                markerStart = input.read()
+                scanned++
+            }
+            if (markerStart == -1) return null
+            var marker = input.read()
+            scanned++
+            while (marker == 0xFF) {
+                marker = input.read()
+                scanned++
+            }
+            if (marker == -1 || marker == 0xD9 || marker == 0xDA) return null
+            if (marker == 0x01 || marker in 0xD0..0xD8) continue
+            val length = readBe16(input) ?: return null
+            scanned += 2
+            if (length < 2) return null
+            if (marker in JPEG_SOF_MARKERS) {
+                if (length < 7 || input.read() == -1) return null
+                val height = readBe16(input) ?: return null
+                val width = readBe16(input) ?: return null
+                return if (width > 0 && height > 0) Pair(width, height) else null
+            }
+            if (!skipExact(input, length - 2)) return null
+            scanned += length - 2
+        }
+        return null
+    }
+
     /** Read width/height from the fixed-width KTX2 header. */
     private fun readKtx2Dims(input: InputStream): Pair<Int, Int>? {
         val buf = readPrefix(input, 28) ?: return null
@@ -137,6 +173,30 @@ object DxaTextureScanner {
             read += n
         }
         return buf
+    }
+
+    private fun readBe16(input: InputStream): Int? {
+        val high = input.read()
+        val low = input.read()
+        return if (high >= 0 && low >= 0) (high shl 8) or low else null
+    }
+
+    private fun skipExact(
+        input: InputStream,
+        count: Int,
+    ): Boolean {
+        var remaining = count
+        while (remaining > 0) {
+            val skipped = input.skip(remaining.toLong()).toInt()
+            if (skipped > 0) {
+                remaining -= skipped
+            } else if (input.read() >= 0) {
+                remaining--
+            } else {
+                return false
+            }
+        }
+        return true
     }
 
     private fun readBe32(
@@ -168,4 +228,7 @@ object DxaTextureScanner {
         while (p < v) p = p shl 1
         return p
     }
+
+    private val JPEG_SOF_MARKERS =
+        setOf(0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF)
 }

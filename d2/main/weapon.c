@@ -69,6 +69,26 @@ int	N_weapon_types=0;
 const ubyte DefaultPrimaryOrder[]={9,8,7,6,5,4,3,2,1,0,255};
 const ubyte DefaultSecondaryOrder[]={9,8,4,3,1,5,0,255,7,6,2};
 
+int weapon_order_is_valid(const ubyte *order, int count, int secondary)
+{
+	const ubyte *domain = secondary ? DefaultSecondaryOrder : DefaultPrimaryOrder;
+	const int expected = secondary ? MAX_SECONDARY_WEAPONS + 1 : MAX_PRIMARY_WEAPONS + 1;
+	ubyte seen[MAX_PRIMARY_WEAPONS + 1] = { 0 };
+	int i, j;
+
+	if (!order || count != expected)
+		return 0;
+	for (i = 0; i < count; i++) {
+		for (j = 0; j < expected; j++)
+			if (order[i] == domain[j])
+				break;
+		if (j == expected || seen[j])
+			return 0;
+		seen[j] = 1;
+	}
+	return 1;
+}
+
 //allow player to reorder menus?
 extern ubyte MenuReordering;
 

@@ -175,6 +175,8 @@ object NativePilotPreferences {
         return readEnginePrefs(if (preferredGame == "d1") "d2" else "d1", filesDir)
     }
 
+    private fun validCockpitMode(mode: Int): Boolean = mode == 0 || mode == 2 || mode == 3
+
     fun writeEnginePrefs(
         game: String,
         filesDir: String,
@@ -183,8 +185,9 @@ object NativePilotPreferences {
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
         headlightActiveDefault: Boolean = false,
-    ): Int =
-        if (game == "d1") {
+    ): Int {
+        if (!validCockpitMode(cockpitMode)) return -1
+        return if (game == "d1") {
             nativeWriteEnginePrefsD1(
                 filesDir,
                 cockpitMode,
@@ -203,6 +206,7 @@ object NativePilotPreferences {
                 headlightActiveDefault,
             )
         }
+    }
 
     fun writeEnginePrefsToAll(
         filesDir: String,
@@ -211,8 +215,9 @@ object NativePilotPreferences {
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
         headlightActiveDefault: Boolean = false,
-    ): Int =
-        nativeWriteEnginePrefsD1(
+    ): Int {
+        if (!validCockpitMode(cockpitMode)) return -1
+        return nativeWriteEnginePrefsD1(
             filesDir,
             cockpitMode,
             autoLeveling,
@@ -228,6 +233,7 @@ object NativePilotPreferences {
                 showBossHealthBar,
                 headlightActiveDefault,
             )
+    }
 
     fun readVisualPrefs(
         game: String,

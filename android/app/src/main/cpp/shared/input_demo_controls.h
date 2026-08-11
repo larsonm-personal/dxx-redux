@@ -18,6 +18,7 @@ extern "C" {
 
 #define INPUT_DEMO_GAME_D1 1
 #define INPUT_DEMO_GAME_D2 2
+#define INPUT_DEMO_FRAME_TIME_MAX 65536
 
 typedef struct input_demo_control_state {
 	int32_t pitch_time;

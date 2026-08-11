@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -376,14 +377,6 @@ static PHYSFS_File *open_ci(const char *name)
 }
 
 /* ── CUE parser (uses standalone cue_parser module) ──────────────────── */
-
-/* parse_msf kept for backward compat convenience */
-static int parse_msf(const char *msf)
-{
-	int m = 0, s = 0, f = 0;
-	if (sscanf(msf, "%d:%d:%d", &m, &s, &f) < 3) return 0;
-	return m * 60 * 75 + s * 75 + f;
-}
 
 static void close_source_bins(audio_source_t *src)
 {
@@ -928,6 +921,8 @@ static int parse_cue_file(void)
 	PHYSFS_sint64 file_size;
 	int cur_track = -1;
 	int i, total_sectors;
+	unsigned char has_index[MAX_TRACKS] = { 0 };
+	int malformed = 0;
 
 	f = open_ci("descent_ii.inst");
 	if (!f) {
@@ -993,16 +988,24 @@ static int parse_cue_file(void)
 		/* INDEX 01 MM:SS:FF */
 		{
 			int idx;
+			int sector;
 			char msf[32];
 			if (cur_track >= 1 &&
 			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1) {
-				s_tracks[cur_track - 1].start_sector = parse_msf(msf);
+				sector = cue_msf_to_sector(msf);
+				if (sector < 0 || has_index[cur_track - 1]) {
+					malformed = 1;
+					break;
+				}
+				s_tracks[cur_track - 1].start_sector = sector;
+				has_index[cur_track - 1] = 1;
 			}
 		}
 	}
 	PHYSFS_close(f);
-
-	track_names_set_cue_count(s_num_tracks);
+	if (malformed || s_num_tracks < 1) goto malformed_cue;
+	for (i = 0; i < s_num_tracks; i++)
+		if (!has_index[i]) goto malformed_cue;
 
 	/* Open the BIN file */
 	bh_open(&s_gog_handle, "descent_ii.gog");
@@ -1013,7 +1016,25 @@ static int parse_cue_file(void)
 		return 0;
 	}
 
-	/* Set up single legacy source */
+	/* Compute track lengths from successive start positions */
+	file_size = bh_length(&s_gog_handle);
+	if (file_size <= 0 || file_size / SECTOR_SIZE > INT_MAX)
+		goto malformed_cue;
+	total_sectors = (int) (file_size / SECTOR_SIZE);
+
+	for (i = 0; i < s_num_tracks; i++) {
+		if (s_tracks[i].start_sector < 0 ||
+		    s_tracks[i].start_sector >= total_sectors ||
+		    (i + 1 < s_num_tracks &&
+		     s_tracks[i + 1].start_sector <= s_tracks[i].start_sector))
+			goto malformed_cue;
+		if (i + 1 < s_num_tracks)
+			s_tracks[i].num_sectors = s_tracks[i + 1].start_sector - s_tracks[i].start_sector;
+		else
+			s_tracks[i].num_sectors = total_sectors - s_tracks[i].start_sector;
+	}
+
+	/* Set up single legacy source only after validating complete geometry. */
 	s_num_sources = 1;
 	memset(&s_sources[0], 0, sizeof(s_sources[0]));
 	s_sources[0].bin_files[0] = s_gog_handle;
@@ -1032,17 +1053,7 @@ static int parse_cue_file(void)
 			if (s_tracks[i].type == 1) ac++;
 		s_sources[0].audio_count = ac;
 	}
-
-	/* Compute track lengths from successive start positions */
-	file_size = bh_length(&s_sources[0].bin_files[0]);
-	total_sectors = (int) (file_size / SECTOR_SIZE);
-
-	for (i = 0; i < s_num_tracks; i++) {
-		if (i + 1 < s_num_tracks)
-			s_tracks[i].num_sectors = s_tracks[i + 1].start_sector - s_tracks[i].start_sector;
-		else
-			s_tracks[i].num_sectors = total_sectors - s_tracks[i].start_sector;
-	}
+	track_names_set_cue_count(s_num_tracks);
 
 	for (i = 0; i < s_num_tracks; i++) {
 		RBA_LOG("Track %d: %s  start=%d  len=%d",
@@ -1052,6 +1063,14 @@ static int parse_cue_file(void)
 	rba_set_status("legacy cue loaded: %d tracks", s_num_tracks);
 
 	return s_num_tracks;
+
+malformed_cue:
+	bh_close(&s_gog_handle);
+	s_num_tracks = 0;
+	memset(s_tracks, 0, sizeof(s_tracks));
+	track_names_set_cue_count(0);
+	rba_set_status("legacy cue malformed");
+	return 0;
 }
 
 /* ── Sector I/O ──────────────────────────────────────────────────────── */

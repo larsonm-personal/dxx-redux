@@ -1836,6 +1836,7 @@ private fun ModRow(
         Checkbox(
             checked = mod.enabled,
             onCheckedChange = onToggle,
+            enabled = mod.enabled || (scanResult?.oversizedCount ?: 0) == 0,
             modifier = Modifier.size(20.dp).tvFocusBorder(),
         )
         Spacer(modifier = Modifier.width(6.dp))
@@ -1866,7 +1867,7 @@ private fun ModRow(
                     text =
                         "${scanResult.oversizedCount} of ${scanResult.textureCount} textures exceed " +
                             "${DxaTextureScanner.ENGINE_TEXTURE_CAP}px " +
-                            "(max ${scanResult.maxWidth}x${scanResult.maxHeight}) -- will be skipped",
+                            "(max ${scanResult.maxWidth}x${scanResult.maxHeight}) - mod cannot be enabled",
                     fontSize = 10.sp,
                     color = Color(0xFFF44336),
                 )

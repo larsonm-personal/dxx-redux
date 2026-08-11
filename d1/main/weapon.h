@@ -138,6 +138,7 @@ extern void select_weapon(int weapon_num, int secondary_flag, int print_message,
 
 extern const ubyte DefaultPrimaryOrder[];
 extern const ubyte DefaultSecondaryOrder[];
+int weapon_order_is_valid(const ubyte *order, int count, int secondary);
 
 
 

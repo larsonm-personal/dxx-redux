@@ -871,9 +871,9 @@ void apply_robot_field(int index, const std::string &field, const json &value)
 	else if (field == "Exp2Vclip")
 		robot.exp2_vclip_num = static_cast<short>(required_int_value(value, field.c_str(), -1, VCLIP_MAXNUM - 1));
 	else if (field == "WeaponType")
-		robot.weapon_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+		robot.weapon_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, N_weapon_types - 1));
 	else if (field == "WeaponType2")
-		robot.weapon_type2 = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+		robot.weapon_type2 = static_cast<sbyte>(required_int_value(value, field.c_str(), -1, N_weapon_types - 1));
 	else if (field == "NGuns")
 		robot.n_guns = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, MAX_GUNS));
 	else if (field == "ContainsId")

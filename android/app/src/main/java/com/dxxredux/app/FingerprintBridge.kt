@@ -128,8 +128,13 @@ object FingerprintBridge {
         if (dbLoaded) return nativeGetDbCount()
         loadFingerprintConfig(context)
         val json = flattenFingerprintDb(context) ?: return 0
+        val expected = JSONArray(json).length()
         val count = nativeLoadFingerprintDb(json)
-        dbLoaded = count > 0
+        dbLoaded = expected > 0 && count == expected
+        if (!dbLoaded) {
+            Log.e(TAG, "Fingerprint DB load incomplete: expected $expected, loaded $count")
+            return 0
+        }
         Log.i(TAG, "Fingerprint DB: $count entries loaded")
         return count
     }

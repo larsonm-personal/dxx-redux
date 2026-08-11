@@ -400,6 +400,7 @@ typedef struct {
 	int initialized;
 	int stream_end;
 	int failed;
+	uLong output_crc32;
 } gz_stream_t;
 
 static int gz_open(gz_stream_t *gs, int fd, uint64_t offset, uint64_t length)
@@ -407,6 +408,7 @@ static int gz_open(gz_stream_t *gs, int fd, uint64_t offset, uint64_t length)
 	memset(gs, 0, sizeof(*gs));
 	gs->fd = fd;
 	gs->input_remaining = length;
+	gs->output_crc32 = crc32(0L, Z_NULL, 0);
 	if (length == 0 || offset > INT64_MAX ||
 	    LSEEK(fd, (int64_t) offset, SEEK_SET) < 0) {
 		LOG_E("pkg: failed to seek to Scripts member\n");
@@ -425,6 +427,7 @@ static int gz_open(gz_stream_t *gs, int fd, uint64_t offset, uint64_t length)
 /* Read up to size decompressed bytes, failing on physical or member exhaustion. */
 static int gz_read(gz_stream_t *gs, void *buf, int size)
 {
+	Bytef *output = (Bytef *) buf;
 	if (size <= 0 || gs->failed) return -1;
 	if (gs->stream_end) return 0;
 
@@ -456,7 +459,10 @@ static int gz_read(gz_stream_t *gs, void *buf, int size)
 			return -1;
 		}
 	}
-	return size - (int) gs->strm.avail_out;
+	int produced = size - (int) gs->strm.avail_out;
+	if (produced > 0)
+		gs->output_crc32 = crc32(gs->output_crc32, output, (uInt) produced);
+	return produced;
 }
 
 /* Skip `size` bytes in the decompressed stream (read and discard). */
@@ -469,6 +475,21 @@ static int gz_skip(gz_stream_t *gs, uint64_t size)
 		if (got <= 0) return -1;
 		size -= (uint64_t) got;
 	}
+	return 0;
+}
+
+static int gz_crc_skip(gz_stream_t *gs, uint64_t size, uint32_t *crc_out)
+{
+	uint8_t discard[8192];
+	uLong crc = crc32(0L, Z_NULL, 0);
+	while (size > 0) {
+		int chunk = (size > sizeof(discard)) ? (int) sizeof(discard) : (int) size;
+		int got = gz_read(gs, discard, chunk);
+		if (got <= 0) return -1;
+		crc = crc32(crc, discard, (uInt) got);
+		size -= (uint64_t) got;
+	}
+	*crc_out = (uint32_t) crc;
 	return 0;
 }
 
@@ -650,6 +671,10 @@ static int is_game_file(const char *cpio_path, uint32_t mode,
 
 	for (const char **ext = dxx_android_game_file_extensions; *ext; ext++) {
 		if (_stricmp(dot, *ext) == 0) {
+			if ((mode & 0170000u) != 0100000u) {
+				LOG_E("pkg: game output is not a regular file\n");
+				return PKG_FILE_INVALID;
+			}
 			*basename_out = fname;
 			return PKG_FILE_GAME;
 		}
@@ -666,6 +691,32 @@ static int build_output_path(char *out, size_t out_size,
 		return -1;
 	length = snprintf(out, out_size, "%s/%s", output_dir, basename);
 	return length >= 0 && (size_t) length < out_size ? 0 : -1;
+}
+
+static int pkg_manifest_add(pkg_archive_t *arc, const char *name,
+                            uint64_t size, uint32_t crc)
+{
+	if (arc->file_count >= PKG_MAX_FILES) return -1;
+	for (int i = 0; i < arc->file_count; i++) {
+		if (_stricmp(arc->files[i].name, name) == 0) {
+			LOG_E("pkg: duplicate game output basename %s\n", name);
+			return -1;
+		}
+	}
+	pkg_file_entry_t *file = &arc->files[arc->file_count++];
+	snprintf(file->name, sizeof(file->name), "%s", name);
+	file->size = size;
+	file->crc32 = crc;
+	return 0;
+}
+
+static int pkg_manifest_matches(const pkg_archive_t *arc, int index,
+                                const char *name, uint64_t size, uint32_t crc)
+{
+	if (index < 0 || index >= arc->file_count) return 0;
+	const pkg_file_entry_t *file = &arc->files[index];
+	return strcmp(file->name, name) == 0 && file->size == size &&
+	       file->crc32 == crc;
 }
 
 /* ── Scan pass: enumerate game files without extracting ──────────── */
@@ -699,18 +750,15 @@ static int pkg_scan_cpio(pkg_archive_t *arc)
 			break;
 		}
 		if (game_file == PKG_FILE_GAME) {
-			if (arc->file_count >= PKG_MAX_FILES ||
-			    dxx_extract_add_bytes(&arc->output_bytes, entry.filesize,
-			                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+			uint32_t crc;
+			if (dxx_extract_add_bytes(&arc->output_bytes, entry.filesize,
+			                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0 ||
+			    gz_crc_skip(&gs, entry.filesize, &crc) < 0 ||
+			    pkg_manifest_add(arc, basename, entry.filesize, crc) < 0) {
 				ret = -1;
 				break;
 			}
-			pkg_file_entry_t *f = &arc->files[arc->file_count++];
-			snprintf(f->name, PKG_PATH_LEN, "%s", basename);
-			f->size = entry.filesize;
-		}
-		/* Skip file data */
-		if (entry.filesize > 0) {
+		} else if (entry.filesize > 0) {
 			if (gz_skip(&gs, entry.filesize) < 0) {
 				ret = -1;
 				break;
@@ -718,8 +766,12 @@ static int pkg_scan_cpio(pkg_archive_t *arc)
 		}
 	}
 
-	if (ret == 0 && gz_require_complete(&gs) < 0)
-		ret = -1;
+	if (ret == 0) {
+		if (gz_require_complete(&gs) < 0)
+			ret = -1;
+		else
+			arc->scripts_crc32 = (uint32_t) gs.output_crc32;
+	}
 	gz_close(&gs);
 	if (ret >= 0 && !dxx_extract_ratio_allowed(arc->scanned_bytes, arc->scripts_length))
 		return -1;
@@ -823,6 +875,7 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		return -1;
 
 	int extracted = 0;
+	int manifest_index = 0;
 	uint64_t scanned_bytes = 0;
 	uint64_t output_bytes = 0;
 	unsigned int entry_count = 0;
@@ -843,9 +896,21 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 			ret = -1;
 			break;
 		}
+		if (is_game == PKG_FILE_GAME) {
+			uint32_t crc;
+			int skip = skip_audio && is_audio_ext(basename);
+			if (skip) {
+				if (gz_crc_skip(&gs, entry.filesize, &crc) < 0 ||
+				    !pkg_manifest_matches(arc, manifest_index++, basename,
+				                          entry.filesize, crc)) {
+					ret = -1;
+					break;
+				}
+				continue;
+			}
+		}
 
-		if (is_game != PKG_FILE_GAME || entry.filesize == 0 ||
-		    (skip_audio && is_audio_ext(basename))) {
+		if (is_game != PKG_FILE_GAME) {
 			if (entry.filesize > 0 && gz_skip(&gs, entry.filesize) < 0) {
 				ret = -1;
 				break;
@@ -881,6 +946,7 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		uint64_t remaining = entry.filesize;
 		uint8_t buf[65536];
 		int ok = 1;
+		uLong file_crc = crc32(0L, Z_NULL, 0);
 		while (remaining > 0) {
 			int chunk = (remaining > sizeof(buf)) ? (int) sizeof(buf) : (int) remaining;
 			int got = gz_read(&gs, buf, chunk);
@@ -892,6 +958,7 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 				ok = 0;
 				break;
 			}
+			file_crc = crc32(file_crc, buf, (uInt) got);
 			remaining -= (uint64_t) got;
 
 			if (progress)
@@ -901,7 +968,8 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		if (fclose(fp) != 0)
 			ok = 0;
 
-		if (!ok) {
+		if (!ok || !pkg_manifest_matches(arc, manifest_index++, basename,
+		                                 entry.filesize, (uint32_t) file_crc)) {
 			LOG_E("pkg: failed to extract %s\n", basename);
 			remove(out_path);
 			ret = -1;
@@ -910,7 +978,9 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		extracted++;
 	}
 
-	if (ret == 0 && gz_require_complete(&gs) < 0)
+	if (ret == 0 && (gz_require_complete(&gs) < 0 ||
+	                 manifest_index != arc->file_count ||
+	                 (uint32_t) gs.output_crc32 != arc->scripts_crc32))
 		ret = -1;
 	gz_close(&gs);
 	if (ret >= 0 && (!dxx_extract_ratio_allowed(scanned_bytes, arc->scripts_length) ||

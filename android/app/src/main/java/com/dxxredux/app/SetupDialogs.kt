@@ -776,6 +776,7 @@ internal fun GogImportDialog(
                                                     stagingDir.absolutePath,
                                                     progress,
                                                     includeAudio = includeAudio,
+                                                    expectedFiles = fileList,
                                                 )
                                             } else {
                                                 context.contentResolver
@@ -1850,9 +1851,17 @@ internal fun IsoImportDialog(
                                                 }
                                             withContext(Dispatchers.Main) {
                                                 extractedCount =
-                                                    isoExtracted.coerceAtLeast(0) + sowExtracted
+                                                    if (sowExtracted < 0) {
+                                                        0
+                                                    } else {
+                                                        isoExtracted.coerceAtLeast(0) + sowExtracted
+                                                    }
                                                 status =
                                                     when {
+                                                        sowExtracted < 0 -> {
+                                                            "Could not scan extracted disc files for SOW archives"
+                                                        }
+
                                                         isoExtracted > 0 -> {
                                                             buildDiscExtractSummary(
                                                                 isoExtracted,

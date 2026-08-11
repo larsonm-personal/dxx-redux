@@ -107,17 +107,24 @@ static long long fd_length(int fd)
 #endif
 }
 
-static void init_raw_track_source(iso_reader_source_t *src,
-                                  int fd,
-                                  int track_start_sector,
-                                  int track_num_sectors)
+static int init_track_source(iso_reader_source_t *src,
+                             int fd,
+                             int track_start_sector,
+                             int track_num_sectors,
+                             int sector_stride,
+                             int user_data_offset)
 {
 	memset(src, 0, sizeof(*src));
+	if (fd < 0 || track_start_sector < 0 || track_num_sectors <= 0 ||
+	    sector_stride < USER_DATA_SIZE || user_data_offset < 0 ||
+	    user_data_offset > sector_stride - USER_DATA_SIZE)
+		return -1;
 	src->fd = fd;
-	src->base_offset = (long long) track_start_sector * RAW_SECTOR_SIZE;
-	src->sector_stride = RAW_SECTOR_SIZE;
-	src->user_data_offset = USER_DATA_OFFSET;
+	src->base_offset = (long long) track_start_sector * sector_stride;
+	src->sector_stride = sector_stride;
+	src->user_data_offset = user_data_offset;
 	src->num_logical_sectors = track_num_sectors;
+	return 0;
 }
 
 static void init_iso_image_source(iso_reader_source_t *src, int fd)
@@ -919,9 +926,19 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
                    iso_file_list_t *out)
 {
+	return iso_list_track_files(bin_fd, track_start_sector, track_num_sectors,
+	                            RAW_SECTOR_SIZE, USER_DATA_OFFSET, out);
+}
+
+int iso_list_track_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                         int sector_stride, int user_data_offset,
+                         iso_file_list_t *out)
+{
 	iso_reader_source_t src;
 
-	init_raw_track_source(&src, bin_fd, track_start_sector, track_num_sectors);
+	if (init_track_source(&src, bin_fd, track_start_sector, track_num_sectors,
+	                      sector_stride, user_data_offset) < 0)
+		return -1;
 	return iso_list_files_from_source(&src, out);
 }
 
@@ -941,9 +958,23 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
                       const char **extensions,
                       iso_progress_fn progress, void *user_data)
 {
+	return iso_extract_track_files(bin_fd, track_start_sector, track_num_sectors,
+	                               RAW_SECTOR_SIZE, USER_DATA_OFFSET, file_list,
+	                               output_dir, extensions, progress, user_data);
+}
+
+int iso_extract_track_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                            int sector_stride, int user_data_offset,
+                            const iso_file_list_t *file_list,
+                            const char *output_dir,
+                            const char **extensions,
+                            iso_progress_fn progress, void *user_data)
+{
 	iso_reader_source_t src;
 
-	init_raw_track_source(&src, bin_fd, track_start_sector, track_num_sectors);
+	if (init_track_source(&src, bin_fd, track_start_sector, track_num_sectors,
+	                      sector_stride, user_data_offset) < 0)
+		return -1;
 	return iso_extract_files_from_source(&src, file_list, output_dir, extensions,
 	                                     progress, user_data);
 }

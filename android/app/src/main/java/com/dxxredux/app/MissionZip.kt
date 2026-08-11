@@ -193,8 +193,9 @@ object MissionZip {
 
     fun isImportCandidate(input: InputStream): Boolean {
         val budget = ExtractionBudget()
-        var hasMissionDescriptor = false
-        var hasMissionAssets = false
+        val metadataBudget = descriptorBudget()
+        val constituents = mutableListOf<Constituent>()
+        val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
         var hasRebirthChildZip = false
         openZipInputStreamSkippingPreamble(input).use { zip ->
             var entry = zip.nextEntry
@@ -207,24 +208,38 @@ object MissionZip {
                 if (!entry.isDirectory) {
                     val name = leafName(entry.name)
                     val role = GameFileFormats.missionZipRoleForFile(name)
-                    if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) hasMissionDescriptor = true
-                    if (role == GameFileFormats.MISSION_ZIP_HOG ||
-                        role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE
-                    ) {
-                        hasMissionAssets = true
+                    constituents +=
+                        Constituent(
+                            path = normalizePath(entry.name),
+                            name = name,
+                            role = role,
+                            sizeBytes = entry.size.coerceAtLeast(0),
+                            compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
+                        )
+                    if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
+                        missions +=
+                            parseMissionDescriptor(
+                                entry.name,
+                                zip
+                                    .readBytesBounded(
+                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                        entry.name,
+                                        metadataBudget,
+                                        entry.compressedSize,
+                                    ).toString(Charsets.UTF_8),
+                            )
                     }
                     if (GameFileFormats.extensionOf(name) == "zip" &&
                         name.lowercase(Locale.US).contains("rebirth")
                     ) {
                         hasRebirthChildZip = true
                     }
-                    if (hasRebirthChildZip || (hasMissionDescriptor && hasMissionAssets)) return true
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
             }
         }
-        return (hasMissionDescriptor && hasMissionAssets) || hasRebirthChildZip
+        return hasRebirthChildZip || playableMissionSets(sortedConstituents(constituents), missions).isNotEmpty()
     }
 
     private fun descriptorBudget() =
@@ -292,17 +307,16 @@ object MissionZip {
         zipStem: String?,
         archiveFormat: String,
     ): ScanResult? {
-        val mission = missions.firstOrNull() ?: return null
-        val roles = constituents.map { it.role }.toSet()
-        if (GameFileFormats.MISSION_ZIP_HOG !in roles && GameFileFormats.MISSION_ZIP_MOD_ARCHIVE !in roles) return null
+        val sortedConstituents = sortedConstituents(constituents)
+        val missionSets = playableMissionSets(sortedConstituents, missions)
+        val mission = missionSets.firstOrNull()?.mission ?: return null
         val game =
-            missions
+            missionSets
+                .map { it.mission }
                 .map { it.game }
                 .distinct()
                 .singleOrNull()
                 ?: "both"
-        val sortedConstituents = sortedConstituents(constituents)
-        val missionSets = missionSets(sortedConstituents, missions)
         return ScanResult(
             constituents = sortedConstituents,
             mission = mission,
@@ -342,15 +356,16 @@ object MissionZip {
         }
     }
 
-    private fun missionSets(
+    private fun playableMissionSets(
         constituents: List<Constituent>,
         missions: List<GameFileFormats.MissionDescriptor>,
     ): List<MissionSet> =
         missions
+            .filter { it.valid }
             .sortedWith(
                 compareBy<GameFileFormats.MissionDescriptor> { it.path.lowercase(Locale.US) }
                     .thenBy { it.path },
-            ).map { mission ->
+            ).mapNotNull { mission ->
                 val stem = leafName(mission.path).substringBeforeLast('.').lowercase(Locale.US)
                 val missionDir = parentPath(mission.path)
                 val levelNames =
@@ -365,16 +380,14 @@ object MissionZip {
                                     isMissionPayload(constituent, stem, levelNames)
                             )
                     }
-                val related =
-                    if (inMissionDirectory.any(::isMissionHog)) {
-                        inMissionDirectory
-                    } else {
-                        constituents.filter { constituent ->
-                            constituent.path.equals(mission.path, ignoreCase = true) ||
-                                isMissionPayload(constituent, stem, levelNames)
-                        }
-                    }
-                MissionSet(mission, related.ifEmpty { constituents })
+                val hasArchive = inMissionDirectory.any(::isMissionArchive)
+                val directLevels =
+                    inMissionDirectory
+                        .filter { it.name.lowercase(Locale.US) in levelNames }
+                        .map { it.name.lowercase(Locale.US) }
+                        .toSet()
+                if (!hasArchive && !directLevels.containsAll(levelNames)) return@mapNotNull null
+                MissionSet(mission, inMissionDirectory)
             }
 
     private fun isMissionPayload(

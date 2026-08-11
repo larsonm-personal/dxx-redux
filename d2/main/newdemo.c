@@ -1933,6 +1933,8 @@ void newdemo_pop_ctrlcen_triggers()
 	int side, cside;
 	segment *seg, *csegp;
 
+	if (!control_center_triggers_are_valid(&ControlCenterTriggers, Highest_segment_index))
+		return;
 	for (i = 0; i < ControlCenterTriggers.num_links; i++)	{
 		seg = &Segments[ControlCenterTriggers.seg[i]];
 		side = ControlCenterTriggers.side[i];

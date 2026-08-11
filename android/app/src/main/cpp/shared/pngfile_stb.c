@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
 #include <physfs.h>
 
 #include "pngfile.h"
@@ -26,7 +27,12 @@
 #define STBI_NO_LINEAR /* no linear float output needed */
 #define STBI_NO_PSD
 #define STBI_NO_GIF
+#define STBI_MAX_DIMENSIONS 2048
 #include "stb_image.h"
+
+#define ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION 2048u
+#define ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES \
+	(ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION * ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION * 4u)
 
 #define TEXTURE_LOOKUP_MISS_CACHE_SIZE      16384u
 #define TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT ((TEXTURE_LOOKUP_MISS_CACHE_SIZE * 3u) / 4u)
@@ -311,6 +317,15 @@ int read_png(const char *filename, png_data *pdata)
 	}
 	PHYSFS_close(fp);
 
+	if (!stbi_info_from_memory(fbuf, (int) fsize, &w, &h, &channels) ||
+	    w <= 0 || h <= 0 || channels < 1 || channels > 4 ||
+	    (unsigned int) w > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION ||
+	    (unsigned int) h > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION ||
+	    (size_t) w * (size_t) h * (size_t) channels > ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES) {
+		free(fbuf);
+		return 0;
+	}
+
 	/* Ask stb_image for RGBA or RGB depending on what's in the file.
 	 * channels=0 means "give me whatever the file has". */
 	pixels = stbi_load_from_memory(fbuf, (int) fsize, &w, &h, &channels, 0);
@@ -413,6 +428,14 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 	}
 
 	ktxTexture *base = ktxTexture(tex);
+	if (base->numDimensions != 2 || base->isArray || base->numFaces != 1 ||
+	    base->numLayers != 1 || base->numLevels < 1 || base->numLevels > 12 ||
+	    base->baseWidth < 1 || base->baseHeight < 1 ||
+	    base->baseWidth > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION ||
+	    base->baseHeight > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION) {
+		ktxTexture_Destroy(base);
+		return 0;
+	}
 
 	memset(edata, 0, sizeof(*edata));
 	edata->width = base->baseWidth;
@@ -441,19 +464,40 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 	} else {
 		edata->orig_height = edata->height;
 	}
+	if (!edata->orig_width || !edata->orig_height ||
+	    edata->orig_width > edata->width || edata->orig_height > edata->height) {
+		ktxTexture_Destroy(base);
+		return 0;
+	}
 
 	/* Build [uint32_le size][data] buffer that ogl.c expects */
-	unsigned int total = 0;
+	size_t total = 0;
 	ktx_uint32_t nlev = base->numLevels;
-	for (ktx_uint32_t lv = 0; lv < nlev; lv++)
-		total += 4 + (unsigned int) ktxTexture_GetImageSize(base, lv);
+	for (ktx_uint32_t lv = 0; lv < nlev; lv++) {
+		ktx_size_t image_size = ktxTexture_GetImageSize(base, lv);
+		unsigned int level_width = base->baseWidth >> lv;
+		unsigned int level_height = base->baseHeight >> lv;
+		size_t expected_size;
+
+		if (!level_width) level_width = 1;
+		if (!level_height) level_height = 1;
+		expected_size = (size_t) ((level_width + 3u) / 4u) *
+		                (size_t) ((level_height + 3u) / 4u) *
+		                (fmt ? 16u : 8u);
+		if (image_size != expected_size || image_size > UINT_MAX ||
+		    total > UINT_MAX - 4u - image_size) {
+			ktxTexture_Destroy(base);
+			return 0;
+		}
+		total += 4u + image_size;
+	}
 
 	edata->filedata = (unsigned char *) malloc(total);
 	if (!edata->filedata) {
 		ktxTexture_Destroy(base);
 		return 0;
 	}
-	edata->filedata_size = total;
+	edata->filedata_size = (unsigned int) total;
 
 	unsigned char *p = edata->filedata;
 	for (ktx_uint32_t lv = 0; lv < nlev; lv++) {

@@ -298,6 +298,11 @@ static bool parse_int32_field(const ordered_json &value, int32_t *out, std::stri
 
 	if (!value.is_number_integer())
 		return fail(error, std::string(field_name) + " must be an integer");
+	if (value.is_number_unsigned()) {
+		const unsigned long long unsigned_value = value.get<unsigned long long>();
+		if (unsigned_value > INT32_MAX)
+			return fail(error, std::string(field_name) + " is out of range");
+	}
 	parsed = value.get<long long>();
 	if (parsed < INT32_MIN || parsed > INT32_MAX)
 		return fail(error, std::string(field_name) + " is out of range");
@@ -450,7 +455,7 @@ static bool parse_pulse_object(const ordered_json &value, int game,
 				return false;
 			update->has_cycle_secondary_count = 1;
 		} else if (name == "sw") {
-			if (!parse_u8_field(it.value(), &update->select_weapon_count, error, "p.sw", UCHAR_MAX))
+			if (!parse_u8_field(it.value(), &update->select_weapon_count, error, "p.sw", 10))
 				return false;
 			update->has_select_weapon_count = 1;
 		} else if (name == "rv") {
@@ -484,6 +489,9 @@ static bool validate_record(const input_demo_control_record &record, int game, s
 {
 	if (!record.run_length)
 		return fail(error, "record n must be positive");
+	if (record.has_frame_time &&
+	    (record.frame_time <= 0 || record.frame_time > INPUT_DEMO_FRAME_TIME_MAX))
+		return fail(error, "record ft is outside the supported frame-time range");
 	if (game == INPUT_DEMO_GAME_D1 && input_demo_control_record_has_d2_fields(&record))
 		return fail(error, "D1 fixtures must reject D2-only control keys");
 	return true;
@@ -522,8 +530,8 @@ static bool validate_frame(const input_demo_control_frame &frame, int game, std:
 	    (frame.state.afterburner_state || frame.state.energy_to_shield_state ||
 	     frame.pulse.toggle_bomb_count || frame.pulse.headlight_count))
 		return fail(error, "D1 coalescer input must reject D2-only control fields");
-	if (frame.frame_time < 0)
-		return fail(error, "control frame_time must be non-negative");
+	if (frame.frame_time <= 0 || frame.frame_time > INPUT_DEMO_FRAME_TIME_MAX)
+		return fail(error, "control frame_time is outside the supported range");
 	return true;
 }
 

@@ -299,7 +299,8 @@ function Convert-AndAdd {
                 $safeName = $name -replace '#', '_H_'
                 $tempEtc2 = Join-Path $outDir "$safeName.ktx2"
                 # Skip downscaling for HUD/cockpit textures
-                $effectiveMaxDim = if ($maxDim -gt 0 -and $name -match $noDownscalePattern) { 0 } else { $maxDim }
+                $skipQualityDownscale = $name -match $noDownscalePattern
+                $effectiveMaxDim = if ($skipQualityDownscale -or $maxDim -le 0) { 2048 } else { [Math]::Min($maxDim, 2048) }
                 if ($effectiveMaxDim -gt 0 -and $Magick) {
                     # Copy to safe name to avoid IM interpreting '#' as scene selector
                     $safeSrc = Join-Path $outDir "${safeName}_src$([IO.Path]::GetExtension($src))"

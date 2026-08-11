@@ -168,6 +168,45 @@ class MissionZipTest {
     }
 
     @Test
+    fun rejectsMalformedAndOrphanMissionDescriptors() {
+        val malformed = createMissionZip("bad.mn2", "name = Bad\nnum_levels = 1\n")
+        assertNull(MissionZip.inspect(malformed))
+
+        val orphan = File.createTempFile("orphan-mission", ".zip")
+        orphan.deleteOnExit()
+        ZipOutputStream(orphan.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("orphan.mn2"))
+            zip.write("name = Orphan\nnum_levels = 1\norphan01.rl2\n".toByteArray())
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("other.hog"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+        }
+
+        assertNull(MissionZip.inspect(orphan))
+        assertFalse(orphan.inputStream().use { MissionZip.isImportCandidate(it) })
+    }
+
+    @Test
+    fun keepsValidMissionAndOmitsOrphanInSameArchive() {
+        val zipFile = File.createTempFile("partial-mission", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (stem in listOf("valid", "orphan")) {
+                zip.putNextEntry(ZipEntry("$stem.mn2"))
+                zip.write("name = $stem\nnum_levels = 1\n$stem.rl2\n".toByteArray())
+                zip.closeEntry()
+            }
+            zip.putNextEntry(ZipEntry("valid.hog"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        assertEquals(listOf("valid"), scan.missionSets.map { it.mission.displayName })
+    }
+
+    @Test
     fun importCandidateRecognizesRebirthChildZip() {
         val zipFile = File.createTempFile("parent-missionzip", ".zip")
         zipFile.deleteOnExit()

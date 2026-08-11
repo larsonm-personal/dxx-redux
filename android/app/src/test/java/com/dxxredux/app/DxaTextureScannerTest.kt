@@ -72,6 +72,26 @@ class DxaTextureScannerTest {
         assertEquals(0, result.oversizedCount)
     }
 
+    @Test
+    fun scanReportsOversizedJpegEntries() {
+        val zipFile = File.createTempFile("dxa-scan-jpeg", ".dxa")
+        zipFile.deleteOnExit()
+
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("large.jpg"))
+            zip.write(makeJpegHeader(width = 4096, height = 1024))
+            zip.closeEntry()
+        }
+
+        val result = DxaTextureScanner.scan(zipFile)
+
+        assertNotNull(result)
+        result!!
+        assertEquals(1, result.textureCount)
+        assertEquals(1, result.oversizedCount)
+        assertEquals("large.jpg", result.oversizedEntries.single().name)
+    }
+
     private fun makePngHeader(
         width: Int,
         height: Int,
@@ -123,4 +143,24 @@ class DxaTextureScannerTest {
         System.arraycopy(sizeBytes.array(), 0, bytes, 20, 8)
         return bytes
     }
+
+    private fun makeJpegHeader(
+        width: Int,
+        height: Int,
+    ): ByteArray =
+        byteArrayOf(
+            0xFF.toByte(),
+            0xD8.toByte(),
+            0xFF.toByte(),
+            0xC0.toByte(),
+            0x00,
+            0x0B,
+            0x08,
+            (height ushr 8).toByte(),
+            height.toByte(),
+            (width ushr 8).toByte(),
+            width.toByte(),
+            0x01,
+            0x01,
+        )
 }

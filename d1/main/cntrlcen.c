@@ -39,6 +39,19 @@ reactor Reactors[MAX_REACTORS];
 
 control_center_triggers ControlCenterTriggers;
 
+int control_center_triggers_are_valid(const control_center_triggers *cct, int highest_segment_index)
+{
+	int i;
+
+	if (!cct || cct->num_links < 0 || cct->num_links > MAX_CONTROLCEN_LINKS)
+		return 0;
+	for (i = 0; i < cct->num_links; i++)
+		if (cct->seg[i] < 0 || cct->seg[i] > highest_segment_index ||
+		    cct->side[i] < 0 || cct->side[i] >= MAX_SIDES_PER_SEGMENT)
+			return 0;
+	return 1;
+}
+
 int	Control_center_been_hit;
 int	Control_center_player_been_seen;
 int	Control_center_next_fire_time;
@@ -217,8 +230,9 @@ void do_controlcen_destroyed_stuff(object *objp)
 	int i;
 
 	// Must toggle walls whether it is a boss or control center.
-	for (i=0;i<ControlCenterTriggers.num_links;i++)
-		wall_toggle(ControlCenterTriggers.seg[i], ControlCenterTriggers.side[i]);
+	if (control_center_triggers_are_valid(&ControlCenterTriggers, Highest_segment_index))
+		for (i=0;i<ControlCenterTriggers.num_links;i++)
+			wall_toggle(ControlCenterTriggers.seg[i], ControlCenterTriggers.side[i]);
 
 	// And start the countdown stuff.
 	Control_center_destroyed = 1;
@@ -447,6 +461,9 @@ extern int control_center_triggers_read_n(control_center_triggers *cct, int n, P
 			cct->seg[j] = PHYSFSX_readShort(fp);
 		for (j = 0; j < MAX_WALLS_PER_LINK; j++)
 			cct->side[j] = PHYSFSX_readShort(fp);
+		if (PHYSFS_eof(fp) || !control_center_triggers_are_valid(cct, Highest_segment_index))
+			return 0;
+		cct++;
 	}
 	return i;
 }
@@ -468,15 +485,20 @@ void control_center_triggers_swap(control_center_triggers *cct, int swap)
 /*
  * reads n control_center_triggers structs from a PHYSFS_file and swaps if specified
  */
-void control_center_triggers_read_n_swap(control_center_triggers *cct, int n, int swap, PHYSFS_file *fp)
+int control_center_triggers_read_n_swap(control_center_triggers *cct, int n, int swap, PHYSFS_file *fp)
 {
 	int i;
 	
-	PHYSFS_read(fp, cct, sizeof(control_center_triggers), n);
+	if (PHYSFS_read(fp, cct, sizeof(control_center_triggers), n) != n)
+		return 0;
 	
-	if (swap)
-		for (i = 0; i < n; i++)
+	for (i = 0; i < n; i++) {
+		if (swap)
 			control_center_triggers_swap(&cct[i], swap);
+		if (!control_center_triggers_are_valid(&cct[i], Highest_segment_index))
+			return 0;
+	}
+	return n;
 }
 
 int control_center_triggers_write(control_center_triggers *cct, PHYSFS_file *fp)

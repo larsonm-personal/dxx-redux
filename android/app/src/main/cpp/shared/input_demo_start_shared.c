@@ -41,6 +41,15 @@ extern int state_restore_all_sub(char *filename);
 
 static int input_demo_d1_in_d2_enabled = 0;
 
+#if NDL != INPUT_DEMO_DIFFICULTY_LEVELS
+#error Input demo difficulty domain must match the engine difficulty domain
+#endif
+
+static int input_demo_difficulty_is_valid(int difficulty)
+{
+	return difficulty >= 0 && difficulty < NDL;
+}
+
 static unsigned int input_demo_primary_order_copy_count(void)
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -466,6 +475,12 @@ static int input_demo_start_replay_new_level(
 
 	if (!replay_context)
 		return 1;
+	if (!input_demo_difficulty_is_valid(input_demo_replay_difficulty())) {
+		printf("Input demo replay difficulty is out of range: %d\n",
+		       input_demo_replay_difficulty());
+		input_demo_replay_unload();
+		return 1;
+	}
 	replay_player_cfg = &replay_context->replay_player_cfg;
 	have_replay_player_cfg = replay_context->have_replay_player_cfg;
 	INPUT_DEMO_CRUMB_V("input_demo: new_level mission=%s level=%d frames=%u",
@@ -540,6 +555,12 @@ int input_demo_start_loaded_replay_common(void)
 		if (!d1_save_translate_read_checkpoint_start(checkpoint_data, checkpoint_size,
 		                                             &d1_checkpoint)) {
 			printf("Input demo replay could not parse D1 checkpoint metadata\n");
+			input_demo_replay_unload();
+			return 1;
+		}
+		if (!input_demo_difficulty_is_valid(d1_checkpoint.difficulty)) {
+			printf("Input demo replay translated checkpoint difficulty is out of range: %d\n",
+			       d1_checkpoint.difficulty);
 			input_demo_replay_unload();
 			return 1;
 		}

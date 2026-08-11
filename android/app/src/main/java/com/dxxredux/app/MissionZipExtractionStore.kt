@@ -4,25 +4,29 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.security.MessageDigest
 import java.util.Locale
 
 internal const val MISSION_ZIP_EXTRACTED_DIR = ".extracted_mission_zips"
 internal const val MISSION_ZIP_GENERATED_MISSION_DIR = "missions"
 
 private const val MANIFEST_FILE = "manifest.json"
-private const val MANIFEST_SCHEMA = "dxx-mission-zip-extractions-v2"
+private const val MANIFEST_SCHEMA = "dxx-mission-zip-extractions-v3"
 private val MISSION_ZIP_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
 
 internal data class MissionZipExtractedFile(
     val entryPath: String,
     val relativePath: String,
     val sizeBytes: Long,
+    val contentSha256: String = "",
 )
 
 internal data class MissionZipExtractionRecord(
     val ownerFilename: String,
     val ownerSizeBytes: Long,
     val ownerLastModifiedMs: Long,
+    val ownerSha256: String = "",
     val rootDir: File,
     val files: List<MissionZipExtractedFile>,
     val archiveFormat: String = "zip",
@@ -60,15 +64,32 @@ internal class MissionZipExtractionStore(
         onProgress: (Long, Long, String) -> Unit = { _, _, _ -> },
     ): MissionZipExtractionRecord {
         freshRecord(ownerFilename, modFile)?.let { return it }
+        if (!modFile.isFile) throw IOException("Mission archive is missing: ${modFile.absolutePath}")
+        val ownerSizeBytes = modFile.length()
+        val ownerLastModifiedMs = modFile.lastModified()
+        val ownerSha256 = missionZipFileSha256(modFile)
         val ownerRoot = extractedRoot(ownerFilename)
         val tempRoot = File(rootDir, "${safeMissionZipDirName(ownerFilename)}.tmp")
         tempRoot.deleteRecursively()
-        val files =
+        val extractedFiles =
             try {
                 extractZipToRoot(modFile, tempRoot, scan, onProgress)
             } catch (e: Exception) {
                 tempRoot.deleteRecursively()
                 throw e
+            }
+        val ownerSha256After = missionZipFileSha256(modFile)
+        if (modFile.length() != ownerSizeBytes ||
+            modFile.lastModified() != ownerLastModifiedMs ||
+            ownerSha256After != ownerSha256
+        ) {
+            tempRoot.deleteRecursively()
+            throw IOException("Mission archive changed during extraction: ${modFile.name}")
+        }
+        val files =
+            extractedFiles.map { file ->
+                val output = File(tempRoot, file.relativePath.replace('/', File.separatorChar))
+                file.copy(contentSha256 = missionZipFileSha256(output))
             }
         try {
             ownerRoot.deleteRecursively()
@@ -85,8 +106,9 @@ internal class MissionZipExtractionStore(
         val record =
             MissionZipExtractionRecord(
                 ownerFilename = ownerFilename,
-                ownerSizeBytes = modFile.length(),
-                ownerLastModifiedMs = modFile.lastModified(),
+                ownerSizeBytes = ownerSizeBytes,
+                ownerLastModifiedMs = ownerLastModifiedMs,
+                ownerSha256 = ownerSha256,
                 rootDir = ownerRoot,
                 files = files,
                 archiveFormat = scan.archiveFormat,
@@ -102,12 +124,15 @@ internal class MissionZipExtractionStore(
         modFile: File? = File(modsDir, ownerFilename),
     ): MissionZipExtractionRecord? {
         val record = records().firstOrNull { it.ownerFilename == ownerFilename } ?: return null
+        if (!record.hasValidContentIdentity()) return null
         if (!record.rootDir.isDirectory) return null
         if (modFile != null &&
             (
                 !modFile.isFile ||
                     modFile.length() != record.ownerSizeBytes ||
-                    modFile.lastModified() != record.ownerLastModifiedMs
+                    modFile.lastModified() != record.ownerLastModifiedMs ||
+                    record.ownerSha256.isBlank() ||
+                    runCatching { missionZipFileSha256(modFile) }.getOrNull() != record.ownerSha256
             )
         ) {
             return null
@@ -115,7 +140,10 @@ internal class MissionZipExtractionStore(
         val allFilesPresent =
             record.files.all { file ->
                 File(record.rootDir, file.relativePath.replace('/', File.separatorChar)).let {
-                    it.isFile && (file.sizeBytes <= 0L || it.length() == file.sizeBytes)
+                    it.isFile &&
+                        it.length() == file.sizeBytes &&
+                        file.contentSha256.isNotBlank() &&
+                        runCatching { missionZipFileSha256(it) }.getOrNull() == file.contentSha256
                 }
             }
         return if (allFilesPresent) record else null
@@ -300,12 +328,22 @@ internal class MissionZipExtractionStore(
         if (!manifestFile.isFile) return emptyList()
         return try {
             val root = JSONObject(manifestFile.readText(Charsets.UTF_8))
+            if (root.optString("schema") != MANIFEST_SCHEMA) return emptyList()
             val entries = root.optJSONArray("entries") ?: JSONArray()
             buildList {
                 for (index in 0 until entries.length()) {
                     val obj = entries.optJSONObject(index) ?: continue
                     val owner = obj.optString("owner_filename").takeIf { it.isNotBlank() } ?: continue
                     val files = obj.optJSONArray("files") ?: JSONArray()
+                    if (!obj.has("owner_size_bytes") ||
+                        !obj.has("owner_last_modified_ms") ||
+                        !obj.has("owner_sha256") ||
+                        !obj.has("extracted_size_bytes") ||
+                        !obj.has("file_count") ||
+                        obj.optInt("file_count", -1) != files.length()
+                    ) {
+                        continue
+                    }
                     val extractedFiles =
                         buildList {
                             for (fileIndex in 0 until files.length()) {
@@ -317,15 +355,17 @@ internal class MissionZipExtractionStore(
                                         entryPath = file.optString("entry_path"),
                                         relativePath = relativePath,
                                         sizeBytes = file.optLong("size_bytes"),
+                                        contentSha256 = file.optString("sha256"),
                                     ),
                                 )
                             }
                         }
-                    add(
+                    val record =
                         MissionZipExtractionRecord(
                             ownerFilename = owner,
                             ownerSizeBytes = obj.optLong("owner_size_bytes"),
                             ownerLastModifiedMs = obj.optLong("owner_last_modified_ms"),
+                            ownerSha256 = obj.optString("owner_sha256"),
                             rootDir = File(obj.optString("root_path").ifBlank { extractedRoot(owner).absolutePath }),
                             files = extractedFiles,
                             archiveFormat = obj.optString("archive_format", "zip"),
@@ -334,8 +374,8 @@ internal class MissionZipExtractionStore(
                             extractedSizeBytes =
                                 obj.optLong("extracted_size_bytes", extractedFiles.sumOf { it.sizeBytes }),
                             fileCount = obj.optInt("file_count", extractedFiles.size),
-                        ),
-                    )
+                        )
+                    if (record.hasValidContentIdentity()) add(record)
                 }
             }
         } catch (_: Exception) {
@@ -352,6 +392,7 @@ internal class MissionZipExtractionStore(
                     .put("owner_filename", record.ownerFilename)
                     .put("owner_size_bytes", record.ownerSizeBytes)
                     .put("owner_last_modified_ms", record.ownerLastModifiedMs)
+                    .put("owner_sha256", record.ownerSha256)
                     .put("root_path", record.rootDir.absolutePath)
                     .put("archive_format", record.archiveFormat)
                     .put("import_mode", record.importMode)
@@ -366,7 +407,8 @@ internal class MissionZipExtractionStore(
                                     JSONObject()
                                         .put("entry_path", file.entryPath)
                                         .put("relative_path", file.relativePath)
-                                        .put("size_bytes", file.sizeBytes),
+                                        .put("size_bytes", file.sizeBytes)
+                                        .put("sha256", file.contentSha256),
                                 )
                             }
                         },
@@ -376,6 +418,29 @@ internal class MissionZipExtractionStore(
         manifestFile.writeText(JSONObject().put("schema", MANIFEST_SCHEMA).put("entries", entries).toString(2))
     }
 }
+
+private fun missionZipFileSha256(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().buffered().use { input ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            digest.update(buffer, 0, count)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(Locale.US, it) }
+}
+
+private fun MissionZipExtractionRecord.hasValidContentIdentity(): Boolean {
+    if (!ownerSha256.isSha256() || ownerSizeBytes < 0L || files.isEmpty() || fileCount != files.size) return false
+    if (files.any { it.sizeBytes < 0L || !it.contentSha256.isSha256() }) return false
+    if (files.map { it.relativePath.lowercase(Locale.US) }.toSet().size != files.size) return false
+    val total = runCatching { files.fold(0L) { sum, file -> Math.addExact(sum, file.sizeBytes) } }.getOrNull()
+    return total == extractedSizeBytes
+}
+
+private fun String.isSha256(): Boolean = length == 64 && all { it in '0'..'9' || it in 'a'..'f' }
 
 internal fun missionZipExtractedStoreForArchivePath(archivePath: String): MissionZipExtractionStore? {
     val modsDir = File(archivePath).parentFile ?: return null
@@ -391,22 +456,13 @@ internal fun stagedRelativePath(
     path: String,
 ): String {
     val normalized = path.replace('\\', '/').trim('/')
-    return if (missionZipUsesRootedLayout(scan)) {
-        normalized
-    } else {
-        "$MISSION_ZIP_GENERATED_MISSION_DIR/$normalized"
-    }
+    if (normalized.startsWith("$MISSION_ZIP_GENERATED_MISSION_DIR/", ignoreCase = true)) return normalized
+    val isMissionPayload =
+        scan.missionSets.any { missionSet ->
+            missionSet.constituents.any { it.path.equals(normalized, ignoreCase = true) }
+        }
+    return if (isMissionPayload) "$MISSION_ZIP_GENERATED_MISSION_DIR/$normalized" else normalized
 }
-
-internal fun missionZipUsesRootedLayout(scan: MissionZip.ScanResult): Boolean =
-    scan.constituents.any {
-        val path = it.path.lowercase(Locale.US)
-        path.startsWith("$MISSION_ZIP_GENERATED_MISSION_DIR/") &&
-            (
-                it.role == GameFileFormats.MISSION_ZIP_DESCRIPTOR ||
-                    it.role == GameFileFormats.MISSION_ZIP_HOG
-            )
-    }
 
 internal fun safeMissionZipDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
@@ -467,7 +523,7 @@ private fun missionZipExtractionPlan(
                 candidate.entryPath.lowercase(Locale.US) in MISSION_ZIP_SONG_LIST_FILES
         }
     val generatedSongListSource = songLists.singleOrNull().takeIf { !engineSongListExists }
-    val generatedRelativePath = "$MISSION_ZIP_GENERATED_MISSION_DIR/descent.sng"
+    val generatedRelativePath = "descent.sng"
     val projections =
         candidates.map { candidate ->
             ArchiveOutputProjection(
@@ -575,7 +631,7 @@ internal fun extractZipToRoot(
         }
         plan.generatedSongListSource?.let { generatedSource ->
             val source = File(stageRoot, generatedSource.relativePath.replace('/', File.separatorChar))
-            val relativePath = "$MISSION_ZIP_GENERATED_MISSION_DIR/descent.sng"
+            val relativePath = "descent.sng"
             val target = File(stageRoot, relativePath.replace('/', File.separatorChar))
             ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "extract descent.sng")
             target.parentFile?.mkdirs()

@@ -169,8 +169,8 @@ static int expect_rng_coalescer(void)
 	if (records.size() != 3)
 		return report_failure("rng coalescer did not produce three records");
 	if (!input_demo_rng_record_to_json_line(records[0], &line0, &error) ||
-		!input_demo_rng_record_to_json_line(records[1], &line1, &error) ||
-		!input_demo_rng_record_to_json_line(records[2], &line2, &error))
+	    !input_demo_rng_record_to_json_line(records[1], &line1, &error) ||
+	    !input_demo_rng_record_to_json_line(records[2], &line2, &error))
 		return report_failure_string(std::string("rng line write failed: ") + error);
 	if (line0 != "{\"f\":0,\"n\":3,\"s\":305419896}")
 		return report_failure_string(std::string("unexpected rng line 0: ") + line0);
@@ -211,11 +211,11 @@ static int expect_rng_file_round_trip(void)
 	if (parsed_records.size() != 2)
 		return report_failure("rng file round trip produced the wrong record count");
 	if (parsed_records[0].frame != 0 || parsed_records[0].run_length != 2 ||
-		parsed_records[0].state != 99 || parsed_records[0].has_call_count)
+	    parsed_records[0].state != 99 || parsed_records[0].has_call_count)
 		return report_failure("rng file round trip corrupted first record");
 	if (parsed_records[1].frame != 2 || parsed_records[1].run_length != 1 ||
-		parsed_records[1].state != 123 || !parsed_records[1].has_call_count ||
-		parsed_records[1].call_count != 7)
+	    parsed_records[1].state != 123 || !parsed_records[1].has_call_count ||
+	    parsed_records[1].call_count != 7)
 		return report_failure("rng file round trip corrupted second record");
 	return 0;
 }
@@ -272,17 +272,17 @@ static int expect_demo_file_output(void)
 	if (!input_demo_file_to_text(demo, &text, &error))
 		return report_failure_string(std::string("demo file text failed: ") + error);
 	expected =
-		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() +
-		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
-		",\"git_version\":\"" + input_demo_test_git_version() +
-		"\",\"arch\":\"" + input_demo_test_arch() +
-		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + rng_mode +
-		"\",\"frame_count\":2}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":101,\"c\":3}}\n" +
-		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":2}}\n";
+	    std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
+	    "\",\"mission\":\"" + input_demo_test_game_name() +
+	    "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
+	    ",\"git_version\":\"" + input_demo_test_git_version() +
+	    "\",\"arch\":\"" + input_demo_test_arch() +
+	    "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + rng_mode +
+	    "\",\"frame_count\":2}\n" +
+	    "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+	    "{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":101,\"c\":3}}\n" +
+	    "{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+	    "\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":2}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected demo file text: ") + text);
 	if (!input_demo_file_write(path, demo, &error))
@@ -313,8 +313,8 @@ static int expect_legacy_player_cfg_defaults_to_redux_homing(void)
 	input_demo_metadata metadata;
 	std::string error;
 	std::string header =
-		std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
-		"\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1,\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,";
+	    std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
+	    "\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1,\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,";
 #if defined(INPUT_DEMO_TEST_D2)
 	header += "\"primary_order\":[9,8,7,6,5,4,3,2,1,0,255],\"secondary_order\":[9,8,4,3,1,5,0,255,7,6,2]}}";
 #else
@@ -324,6 +324,78 @@ static int expect_legacy_player_cfg_defaults_to_redux_homing(void)
 		return report_failure_string(std::string("legacy player_cfg parse failed: ") + error);
 	if (!metadata.has_player_cfg || metadata.player_cfg.original_homing != 0)
 		return report_failure("legacy player_cfg did not default to Redux homing");
+	return 0;
+}
+
+static int expect_metadata_difficulty_validation(void)
+{
+	input_demo_metadata metadata;
+	std::string error;
+	const int valid_values[] = { 0, INPUT_DEMO_DIFFICULTY_LEVELS - 1 };
+	const char *invalid_values[] = {
+		"-2147483648", "-1", "5", "2147483647", "2147483648",
+		"18446744073709551615"
+	};
+	size_t i;
+
+	for (i = 0; i != sizeof(valid_values) / sizeof(valid_values[0]); ++i) {
+		const std::string header =
+		    std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") +
+		    input_demo_test_game_name() +
+		    "\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":" +
+		    std::to_string(valid_values[i]) +
+		    ",\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1}";
+		if (!input_demo_metadata_parse_header_line(header, &metadata, &error))
+			return report_failure_string(std::string("valid metadata difficulty failed: ") + error);
+		if (metadata.difficulty != valid_values[i])
+			return report_failure("valid metadata difficulty changed during parsing");
+	}
+	for (i = 0; i != sizeof(invalid_values) / sizeof(invalid_values[0]); ++i) {
+		const std::string header =
+		    std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") +
+		    input_demo_test_game_name() +
+		    "\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":" +
+		    invalid_values[i] +
+		    ",\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1}";
+		if (input_demo_metadata_parse_header_line(header, &metadata, &error))
+			return report_failure("out-of-domain metadata difficulty unexpectedly validated");
+	}
+	return 0;
+}
+
+static std::string player_cfg_header_with_orders(const char *primary_order,
+                                                 const char *secondary_order)
+{
+	return std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
+	       "\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1,\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"original_homing\":1,\"primary_order\":" +
+	       primary_order + ",\"secondary_order\":" + secondary_order + "}}";
+}
+
+static int expect_player_cfg_order_validation(void)
+{
+	input_demo_metadata metadata;
+	std::string error;
+#if defined(INPUT_DEMO_TEST_D2)
+	const char *valid_primary = "[255,0,1,2,3,4,5,6,7,8,9]";
+	const char *valid_secondary = "[255,9,8,7,6,5,4,3,2,1,0]";
+	const char *duplicate_primary = "[255,0,1,2,3,4,5,6,7,8,8]";
+	const char *invalid_secondary = "[255,9,8,7,6,5,4,3,2,1,16]";
+#else
+	const char *valid_primary = "[255,16,0,1,2,3,4]";
+	const char *valid_secondary = "[255,4,3,2,1,0]";
+	const char *duplicate_primary = "[255,16,0,1,2,3,3]";
+	const char *invalid_secondary = "[255,4,3,2,1,16]";
+#endif
+
+	if (!input_demo_metadata_parse_header_line(
+	        player_cfg_header_with_orders(valid_primary, valid_secondary), &metadata, &error))
+		return report_failure_string(std::string("valid player_cfg permutation failed: ") + error);
+	if (input_demo_metadata_parse_header_line(
+	        player_cfg_header_with_orders(duplicate_primary, valid_secondary), &metadata, &error))
+		return report_failure("duplicate player_cfg weapon unexpectedly validated");
+	if (input_demo_metadata_parse_header_line(
+	        player_cfg_header_with_orders(valid_primary, invalid_secondary), &metadata, &error))
+		return report_failure("wrong-domain player_cfg weapon unexpectedly validated");
 	return 0;
 }
 
@@ -385,17 +457,17 @@ static int expect_checkpoint_demo_file_output(void)
 	if (!input_demo_file_to_text(demo, &text, &error))
 		return report_failure_string(std::string("checkpoint demo file text failed: ") + error);
 	expected =
-		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() +
-		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
-		",\"git_version\":\"" + input_demo_test_git_version() +
-		"\",\"arch\":\"" + input_demo_test_arch() +
-		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
-		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"buddy_allowed_to_talk\":0,\"buddy_last_seen_player\":1077412,\"buddy_last_player_path_created\":899154,\"escort_kill_object\":42,\"escort_last_path_created\":1077412,\"escort_goal_object\":11,\"escort_special_goal\":-1,\"escort_goal_index\":31,\"buddy_messages_suppressed\":1,\"buddy_sorry_time\":262144,\"looking_for_marker\":-1,\"last_buddy_key\":7,\"last_buddy_message_time\":65536,\"last_come_back_message_time\":899154,\"buddy_last_missile_time\":524288,\"escort_owner_player\":-1,\"thief_stolen_item_index\":5,\"re_init_thief_time\":1703936,\"last_thief_hit_time\":1507328,\"data\":\"REdTUxgAAAA=\"}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
+	    std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
+	    "\",\"mission\":\"" + input_demo_test_game_name() +
+	    "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
+	    ",\"git_version\":\"" + input_demo_test_git_version() +
+	    "\",\"arch\":\"" + input_demo_test_arch() +
+	    "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
+	    "\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
+	    "{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"buddy_allowed_to_talk\":0,\"buddy_last_seen_player\":1077412,\"buddy_last_player_path_created\":899154,\"escort_kill_object\":42,\"escort_last_path_created\":1077412,\"escort_goal_object\":11,\"escort_special_goal\":-1,\"escort_goal_index\":31,\"buddy_messages_suppressed\":1,\"buddy_sorry_time\":262144,\"looking_for_marker\":-1,\"last_buddy_key\":7,\"last_buddy_message_time\":65536,\"last_come_back_message_time\":899154,\"buddy_last_missile_time\":524288,\"escort_owner_player\":-1,\"thief_stolen_item_index\":5,\"re_init_thief_time\":1703936,\"last_thief_hit_time\":1507328,\"data\":\"REdTUxgAAAA=\"}\n" +
+	    "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+	    "{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+	    "\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected checkpoint demo file text: ") + text);
 	if (!input_demo_file_write(path, demo, &error))
@@ -414,25 +486,25 @@ static int expect_checkpoint_demo_file_output(void)
 	}
 	remove(path);
 	if (!parsed.has_checkpoint || parsed.frames.size() != 1 || parsed.checkpoint.size != 8 ||
-		parsed.checkpoint.compression != "none" || parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
-		parsed.checkpoint.start_gt != 124125)
+	    parsed.checkpoint.compression != "none" || parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
+	    parsed.checkpoint.start_gt != 124125)
 		return report_failure("checkpoint demo file round trip corrupted content");
 	if (expect_test_checkpoint_escort_state(&parsed.checkpoint.escort_state))
 		return 1;
 	if (expect_test_checkpoint_thief_state(&parsed.checkpoint.thief_state))
 		return 1;
 	reordered =
-		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() +
-		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
-		",\"git_version\":\"" + input_demo_test_git_version() +
-		"\",\"arch\":\"" + input_demo_test_arch() +
-		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
-		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"REdTUxgAAAA=\"}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
+	    std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
+	    "\",\"mission\":\"" + input_demo_test_game_name() +
+	    "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
+	    ",\"git_version\":\"" + input_demo_test_git_version() +
+	    "\",\"arch\":\"" + input_demo_test_arch() +
+	    "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
+	    "\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
+	    "{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"REdTUxgAAAA=\"}\n" +
+	    "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+	    "{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+	    "\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (input_demo_file_parse_text(reordered, &parsed, &error))
 		return report_failure("legacy checkpoint demo unexpectedly accepted timing metadata");
 	invalid = demo;
@@ -449,11 +521,29 @@ static int expect_checkpoint_demo_file_output(void)
 	if (frame_offset == std::string::npos || result_offset == std::string::npos)
 		return report_failure("checkpoint expected text missing frame or result records");
 	reordered = expected.substr(0, expected.find("{\"type\":\"checkpoint\"")) +
-		expected.substr(frame_offset, result_offset - frame_offset) +
-		expected.substr(expected.find("{\"type\":\"checkpoint\""), frame_offset - expected.find("{\"type\":\"checkpoint\"")) +
-		expected.substr(result_offset);
+	            expected.substr(frame_offset, result_offset - frame_offset) +
+	            expected.substr(expected.find("{\"type\":\"checkpoint\""), frame_offset - expected.find("{\"type\":\"checkpoint\"")) +
+	            expected.substr(result_offset);
 	if (input_demo_file_parse_text(reordered, &parsed, &error))
 		return report_failure("checkpoint record unexpectedly validated after frame record");
+	{
+		const int valid_indices[] = { 0, INPUT_DEMO_CHECKPOINT_STOLEN_ITEM_COUNT - 1 };
+		const int invalid_indices[] = { -1, INPUT_DEMO_CHECKPOINT_STOLEN_ITEM_COUNT, INT_MAX };
+		size_t i;
+
+		for (i = 0; i != sizeof(valid_indices) / sizeof(valid_indices[0]); ++i) {
+			invalid = demo;
+			invalid.checkpoint.thief_state.stolen_item_index = valid_indices[i];
+			if (!input_demo_file_to_text(invalid, &text, &error))
+				return report_failure_string(std::string("valid thief cursor failed: ") + error);
+		}
+		for (i = 0; i != sizeof(invalid_indices) / sizeof(invalid_indices[0]); ++i) {
+			invalid = demo;
+			invalid.checkpoint.thief_state.stolen_item_index = invalid_indices[i];
+			if (input_demo_file_to_text(invalid, &text, &error))
+				return report_failure("out-of-domain thief cursor unexpectedly validated");
+		}
+	}
 	return 0;
 }
 
@@ -466,6 +556,10 @@ int main(void)
 	if (expect_demo_file_output())
 		return 1;
 	if (expect_legacy_player_cfg_defaults_to_redux_homing())
+		return 1;
+	if (expect_metadata_difficulty_validation())
+		return 1;
+	if (expect_player_cfg_order_validation())
 		return 1;
 	if (expect_checkpoint_demo_file_output())
 		return 1;

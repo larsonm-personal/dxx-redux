@@ -647,7 +647,7 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 	have_preview = !meta_valid && read_save_header_preview(path.c_str(), path_game, &preview);
 	if (have_preview && mission.empty())
 		mission = preview.mission;
-	if (!loadable && !meta_valid && scope == "single" && !path_game.empty() &&
+	if (!loadable && !meta_valid && have_preview && scope == "single" && !path_game.empty() &&
 	    !is_sentinel_callsign(pilot.empty() ? callsign_from_path(path.c_str()) : pilot)) {
 		loadable = true;
 	}
@@ -714,7 +714,8 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 	out["loadable"] = loadable;
 	out["orphan"] = !meta_valid || !loadable;
 	out["orphan_reason"] =
-	    meta_valid ? (loadable ? "" : "not_loadable_from_launcher") : meta_error;
+	    meta_valid ? (loadable ? "" : "not_loadable_from_launcher")
+	               : (have_preview ? meta_error : "legacy_save_header_invalid");
 	out["size_bytes"] = file_size_bytes(path.c_str());
 	out["modified_unix_seconds"] = modified;
 	return out;

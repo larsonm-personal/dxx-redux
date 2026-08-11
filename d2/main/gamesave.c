@@ -981,7 +981,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
 
-	control_center_triggers_read_n(&ControlCenterTriggers, 1, load_rewind_file);
+	if (!control_center_triggers_read_n(&ControlCenterTriggers, 1, load_rewind_file))
+		return -1;
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
 

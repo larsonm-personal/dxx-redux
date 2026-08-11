@@ -22,6 +22,11 @@ extern "C" {
 #define CUE_TRACK_DATA  0
 #define CUE_TRACK_AUDIO 1
 
+#define CUE_SECTOR_AUDIO      0
+#define CUE_SECTOR_MODE1_2352 1
+#define CUE_SECTOR_MODE1_2048 2
+#define CUE_SECTOR_MODE2_2352 3
+
 /* Raw sector size on all CD formats */
 #define CUE_SECTOR_SIZE 2352
 
@@ -34,11 +39,14 @@ typedef struct {
 
 /* One track in the CUE sheet */
 typedef struct {
-	int track_num;    /* 1-based */
-	int type;         /* CUE_TRACK_DATA or CUE_TRACK_AUDIO */
-	int file_index;   /* index into cue_disc_t.files[] */
-	int start_sector; /* sector offset within the parent BIN file */
-	int num_sectors;  /* computed after parsing */
+	int track_num;        /* 1-based */
+	int type;             /* CUE_TRACK_DATA or CUE_TRACK_AUDIO */
+	int sector_mode;      /* one CUE_SECTOR_* value */
+	int sector_size;      /* bytes stored per sector in the owning file */
+	int user_data_offset; /* byte offset of 2048-byte data in each data sector */
+	int file_index;       /* index into cue_disc_t.files[] */
+	int start_sector;     /* sector offset within the parent BIN file */
+	int num_sectors;      /* computed after parsing */
 	char title[CUE_TITLE_LEN];
 } cue_track_info_t;
 
@@ -67,8 +75,9 @@ int cue_parse(const char *cue_text,
               cue_disc_t *out);
 
 /*
- * Convert MM:SS:FF to an absolute sector number.
+ * Convert a complete MM:SS:FF token to an absolute sector number.
  * 75 frames per second, 60 seconds per minute.
+ * Returns -1 for invalid fields or a value that does not fit in int.
  */
 int cue_msf_to_sector(const char *msf);
 

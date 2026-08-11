@@ -127,6 +127,33 @@ static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
 	return result;
 }
 
+static int pkg_manifest_matches_java(JNIEnv *env, const pkg_archive_t *arc,
+                                     jobjectArray expected_entries)
+{
+	if (!expected_entries ||
+	    (*env)->GetArrayLength(env, expected_entries) != arc->file_count)
+		return 0;
+	for (int i = 0; i < arc->file_count; i++) {
+		jstring value = (jstring) (*env)->GetObjectArrayElement(env,
+		                                                        expected_entries, i);
+		char *actual = NULL;
+		char expected[PKG_PATH_LEN + 48];
+		int matches;
+		if (!value || !dxx_jni_string_to_utf8(env, value, &actual)) {
+			if (value) (*env)->DeleteLocalRef(env, value);
+			return 0;
+		}
+		snprintf(expected, sizeof(expected), "%s|%llu|%u",
+		         arc->files[i].name, (unsigned long long) arc->files[i].size,
+		         arc->files[i].crc32);
+		matches = strcmp(actual, expected) == 0;
+		free(actual);
+		(*env)->DeleteLocalRef(env, value);
+		if (!matches) return 0;
+	}
+	return 1;
+}
+
 /* ── Format detection ────────────────────────────────────────────── */
 
 /*
@@ -183,9 +210,10 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 		/* All pkg files are already filtered to game files */
 		jobjectArray result = (*env)->NewObjectArray(env, arc.file_count, strClass, NULL);
 		for (int i = 0; i < arc.file_count; i++) {
-			char buf[PKG_PATH_LEN + 32];
-			snprintf(buf, sizeof(buf), "%s|%llu",
-			         arc.files[i].name, (unsigned long long) arc.files[i].size);
+			char buf[PKG_PATH_LEN + 48];
+			snprintf(buf, sizeof(buf), "%s|%llu|%u",
+			         arc.files[i].name, (unsigned long long) arc.files[i].size,
+			         arc.files[i].crc32);
 			jstring s = dxx_jni_string_from_utf8(env, buf);
 			if (!s) {
 				(*env)->DeleteLocalRef(env, result);
@@ -340,7 +368,7 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
     JNIEnv *env, jclass clazz,
     jstring path, jstring outputDir, jobject progress,
-    jboolean includeAudio)
+    jboolean includeAudio, jobjectArray expectedEntries)
 {
 	char *p;
 	char *out_dir;
@@ -370,6 +398,10 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 		if (n < 0) {
 			LOGE("Failed to open .pkg: %s", p);
 			extracted = -1;
+		} else if (!pkg_manifest_matches_java(env, &arc, expectedEntries)) {
+			LOGE("Analyzed .pkg manifest changed before extraction");
+			extracted = -1;
+			pkg_close(&arc);
 		} else {
 			int skip_audio = !includeAudio;
 			extracted = pkg_extract_all(&arc, out_dir,

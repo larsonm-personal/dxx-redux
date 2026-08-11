@@ -89,6 +89,8 @@ static bool parse_int_field(const ordered_json &value, int *out, std::string *er
 
 	if (!value.is_number_integer())
 		return fail(error, std::string(field_name) + " must be an integer");
+	if (value.is_number_unsigned() && value.get<unsigned long long>() > INT_MAX)
+		return fail(error, std::string(field_name) + " is out of range");
 	parsed = value.get<long long>();
 	if (parsed < INT_MIN || parsed > INT_MAX)
 		return fail(error, std::string(field_name) + " is out of range");
@@ -223,20 +225,64 @@ static bool parse_player_cfg(const ordered_json &value,
 	return true;
 }
 
+static bool validate_player_cfg_order(const uint8_t *items,
+                                      uint8_t count,
+                                      const uint8_t *domain,
+                                      uint8_t domain_count,
+                                      std::string *error,
+                                      const char *field_name)
+{
+	bool seen[UINT8_MAX + 1] = {};
+	uint8_t i;
+
+	if (count != domain_count)
+		return fail(error, std::string(field_name) + " has the wrong length");
+	for (i = 0; i != count; ++i) {
+		uint8_t j;
+		bool allowed = false;
+
+		for (j = 0; j != domain_count; ++j) {
+			if (items[i] == domain[j]) {
+				allowed = true;
+				break;
+			}
+		}
+		if (!allowed)
+			return fail(error, std::string(field_name) + " contains an unsupported weapon");
+		if (seen[items[i]])
+			return fail(error, std::string(field_name) + " contains a duplicate weapon");
+		seen[items[i]] = true;
+	}
+	return true;
+}
+
 static bool validate_player_cfg(const input_demo_player_cfg &player_cfg,
                                 const std::string &game,
                                 std::string *error)
 {
+	static const uint8_t d1_primary_domain[] = { 0, 1, 2, 3, 4, 16, 255 };
+	static const uint8_t d1_secondary_domain[] = { 0, 1, 2, 3, 4, 255 };
+	static const uint8_t d2_weapon_domain[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255 };
 	const uint8_t expected_primary = player_cfg_primary_order_count_for_game(game);
 	const uint8_t expected_secondary = player_cfg_secondary_order_count_for_game(game);
+	const uint8_t *primary_domain;
+	const uint8_t *secondary_domain;
 
 	if (!expected_primary || !expected_secondary)
 		return fail(error, "metadata player_cfg requires a valid game");
-	if (player_cfg.primary_order_count != expected_primary)
-		return fail(error, "metadata player_cfg primary_order has the wrong length");
-	if (player_cfg.secondary_order_count != expected_secondary)
-		return fail(error, "metadata player_cfg secondary_order has the wrong length");
-	return true;
+	if (game == "d1") {
+		primary_domain = d1_primary_domain;
+		secondary_domain = d1_secondary_domain;
+	} else {
+		primary_domain = d2_weapon_domain;
+		secondary_domain = d2_weapon_domain;
+	}
+	return validate_player_cfg_order(player_cfg.primary_order, player_cfg.primary_order_count,
+	                                 primary_domain, expected_primary, error,
+	                                 "metadata player_cfg primary_order") &&
+	       validate_player_cfg_order(player_cfg.secondary_order, player_cfg.secondary_order_count,
+	                                 secondary_domain, expected_secondary, error,
+	                                 "metadata player_cfg secondary_order");
 }
 
 static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
@@ -491,8 +537,10 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 	    checkpoint.escort_state.buddy_allowed_to_talk != 0 &&
 	    checkpoint.escort_state.buddy_allowed_to_talk != 1)
 		return fail(error, "checkpoint buddy_allowed_to_talk must be 0 or 1");
-	if (checkpoint.thief_state.valid && checkpoint.thief_state.stolen_item_index < 0)
-		return fail(error, "checkpoint thief_stolen_item_index must be non-negative");
+	if (checkpoint.thief_state.valid &&
+	    (checkpoint.thief_state.stolen_item_index < 0 ||
+	     checkpoint.thief_state.stolen_item_index >= INPUT_DEMO_CHECKPOINT_STOLEN_ITEM_COUNT))
+		return fail(error, "checkpoint thief_stolen_item_index is out of range");
 	if (checkpoint.data.empty())
 		return fail(error, "checkpoint data is required");
 	return true;
@@ -512,8 +560,8 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata git_version is required");
 	if (metadata.arch.empty())
 		return fail(error, "metadata arch is required");
-	if (metadata.difficulty < 0)
-		return fail(error, "metadata difficulty must be non-negative");
+	if (metadata.difficulty < 0 || metadata.difficulty >= INPUT_DEMO_DIFFICULTY_LEVELS)
+		return fail(error, "metadata difficulty is out of range");
 	if (metadata.start_mode != "new_level" && metadata.start_mode != "save_checkpoint")
 		return fail(error, "metadata start_mode must be new_level or save_checkpoint");
 	if (metadata.start_mode == "save_checkpoint" && metadata.start_save.empty())

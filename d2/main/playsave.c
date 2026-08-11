@@ -952,7 +952,12 @@ int read_player_file()
 	PlayerCfg.DefaultDifficulty = PHYSFSX_readByte(file);
 	PlayerCfg.AutoLeveling       = PHYSFSX_readByte(file);
 	PHYSFS_seek(file,PHYSFS_tell(file)+sizeof(sbyte)); // skip ReticleOn
-	PlayerCfg.CurrentCockpitMode = PlayerCfg.PreferredCockpitMode = PHYSFSX_readByte(file);
+	{
+		int cockpit_mode = PHYSFSX_readByte(file);
+		if (!cockpit_mode_is_persistable(cockpit_mode))
+			cockpit_mode = CM_FULL_COCKPIT;
+		PlayerCfg.CurrentCockpitMode = PlayerCfg.PreferredCockpitMode = cockpit_mode;
+	}
 	PHYSFS_seek(file,PHYSFS_tell(file)+sizeof(sbyte)); //skip Default_display_mode
 	PlayerCfg.MissileViewEnabled      = PHYSFSX_readByte(file);
 	PlayerCfg.HeadlightActiveDefault  = PHYSFSX_readByte(file);
@@ -1019,6 +1024,9 @@ int read_player_file()
 			PlayerCfg.PrimaryOrder[i] = PHYSFSX_readByte(file);
 			PlayerCfg.SecondaryOrder[i] = PHYSFSX_readByte(file);
 		}
+		if (!weapon_order_is_valid(PlayerCfg.PrimaryOrder, MAX_PRIMARY_WEAPONS + 1, 0) ||
+		    !weapon_order_is_valid(PlayerCfg.SecondaryOrder, MAX_SECONDARY_WEAPONS + 1, 1))
+			InitWeaponOrdering();
 
 		if (player_file_version>=16)
 		{
@@ -1495,7 +1503,7 @@ int plr_read_cockpit_autolevel(const char *path,
 
 	if (fseek(f, 13, SEEK_SET) != 0) { fclose(f); return 0; }
 	*cockpit_mode = fgetc(f);
-	if (*cockpit_mode == EOF) { fclose(f); return 0; }
+	if (*cockpit_mode == EOF || !cockpit_mode_is_persistable(*cockpit_mode)) { fclose(f); return 0; }
 
 	if (fseek(f, 16, SEEK_SET) != 0) { fclose(f); return 0; }
 	*headlight_active_default = fgetc(f);
@@ -1521,6 +1529,8 @@ int plr_patch_cockpit_autolevel(const char *path,
 	int ver;
 	FILE *f;
 
+	if (!cockpit_mode_is_persistable(cockpit_mode))
+		return 0;
 	f = fopen(path, "rb");
 	if (!f) return 0;
 
@@ -1559,6 +1569,9 @@ int plr_read_weapon_order(const char *path,
                           ubyte *primary, int prim_len,
                           ubyte *secondary, int sec_len)
 {
+	if (!primary || prim_len != MAX_PRIMARY_WEAPONS + 1 ||
+	    !secondary || sec_len != MAX_SECONDARY_WEAPONS + 1)
+		return 0;
 	FILE *f = fopen(path, "rb");
 	if (!f) return 0;
 
@@ -1576,7 +1589,8 @@ int plr_read_weapon_order(const char *path,
 	}
 
 	fclose(f);
-	return 1;
+	return weapon_order_is_valid(primary, prim_len, 0) &&
+	       weapon_order_is_valid(secondary, sec_len, 1);
 }
 
 /*
@@ -1588,6 +1602,9 @@ int plr_patch_weapon_order(const char *path,
                            const ubyte *primary, int prim_len,
                            const ubyte *secondary, int sec_len)
 {
+	if (!weapon_order_is_valid(primary, prim_len, 0) ||
+	    !weapon_order_is_valid(secondary, sec_len, 1))
+		return 0;
 	FILE *f = fopen(path, "rb");
 	if (!f) return 0;
 

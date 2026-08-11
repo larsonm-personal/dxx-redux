@@ -362,6 +362,20 @@ static unsigned char *build_minimal_iso_image(const char *file_name,
 	return img;
 }
 
+static unsigned char *wrap_iso_image_sectors(const unsigned char *image,
+                                             int sectors,
+                                             int sector_stride,
+                                             int user_data_offset)
+{
+	unsigned char *wrapped =
+	    (unsigned char *) calloc((size_t) sectors, (size_t) sector_stride);
+	if (!wrapped) return NULL;
+	for (int i = 0; i < sectors; i++)
+		memcpy(wrapped + (size_t) i * sector_stride + user_data_offset,
+		       image + (size_t) i * USER_DATA_SIZE, USER_DATA_SIZE);
+	return wrapped;
+}
+
 static unsigned char *build_iso_record_test_image(int standalone,
                                                   int *out_sectors)
 {
@@ -1135,7 +1149,8 @@ static void test_malformed_cue(void)
 		                "FILE \"tracks.bin\" BINARY\n");
 		for (i = 0; i < CUE_MAX_TRACKS; i++)
 			pos += snprintf(cue + pos, sizeof(cue) - pos,
-			                "TRACK %02d AUDIO\n", i + 1);
+			                "TRACK %02d AUDIO\nINDEX 01 00:%02d:%02d\n",
+			                i + 1, i / 75, i % 75);
 		if (cue_parse(cue, NULL, 0, &guarded.disc) != CUE_MAX_TRACKS ||
 		    guarded.disc.num_tracks != CUE_MAX_TRACKS ||
 		    guarded.disc.tracks[CUE_MAX_TRACKS - 1].track_num != CUE_MAX_TRACKS ||
@@ -1162,8 +1177,9 @@ static void test_malformed_cue(void)
 		                "FILE \"tracks.bin\" BINARY\n");
 		for (i = 0; i <= CUE_MAX_TRACKS; i++)
 			pos += snprintf(cue + pos, sizeof(cue) - pos,
-			                "TRACK %02d AUDIO\n",
-			                i < CUE_MAX_TRACKS ? i + 1 : 1);
+			                "TRACK %02d AUDIO\nINDEX 01 00:%02d:%02d\n",
+			                i < CUE_MAX_TRACKS ? i + 1 : 1,
+			                i / 75, i % 75);
 		if (cue_parse(cue, NULL, 0, &guarded.disc) != 0 ||
 		    guarded.disc.num_tracks != 0 || guarded.disc.num_files != 0 ||
 		    guarded.before != 0x12345678U || guarded.after != 0x87654321U) {
@@ -1233,19 +1249,30 @@ static void test_malformed_cue(void)
 
 	TEST(malformed_cue_invalid_msf);
 	{
-		/* Garbage in MSF field — sscanf should fail, sector = 0 */
 		const char *cue =
 		    "FILE \"x.bin\" BINARY\n"
 		    "TRACK 01 MODE1/2352\n"
 		    "  INDEX 01 GARBAGE\n";
 		cue_disc_t disc;
 		int n = cue_parse(cue, NULL, 0, &disc);
-		if (n != 1) {
-			FAIL("should parse 1 track");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("invalid MSF should reject the complete parse");
 			return;
 		}
-		if (disc.tracks[0].start_sector != 0) {
-			FAIL("bad MSF should give sector 0");
+		PASS();
+	}
+
+	TEST(malformed_cue_duplicate_index_01);
+	{
+		const char *cue =
+		    "FILE \"x.bin\" BINARY\n"
+		    "TRACK 01 AUDIO\n"
+		    "  INDEX 01 00:00:00\n"
+		    "  INDEX 01 00:01:00\n";
+		cue_disc_t disc;
+		if (cue_parse(cue, NULL, 0, &disc) != 0 ||
+		    disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("duplicate INDEX 01 should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -1253,7 +1280,6 @@ static void test_malformed_cue(void)
 
 	TEST(malformed_cue_missing_index);
 	{
-		/* Track without INDEX 01 — start_sector stays 0 */
 		const char *cue =
 		    "FILE \"x.bin\" BINARY\n"
 		    "TRACK 01 MODE1/2352\n"
@@ -1262,20 +1288,16 @@ static void test_malformed_cue(void)
 		long long sz = 300LL * CUE_SECTOR_SIZE;
 		cue_disc_t disc;
 		int n = cue_parse(cue, &sz, 1, &disc);
-		if (n != 2) {
-			FAIL("should parse 2 tracks");
-			return;
-		}
-		if (disc.tracks[0].start_sector != 0) {
-			FAIL("track 1 start should be 0");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("missing INDEX 01 should reject the complete parse");
 			return;
 		}
 		PASS();
 	}
 
-	TEST(malformed_cue_negative_sectors_clamped);
+	TEST(malformed_cue_start_past_eof);
 	{
-		/* start_sector beyond file size — num_sectors should be clamped to 0 */
+		/* A start at or beyond EOF is not a usable track range. */
 		const char *cue =
 		    "FILE \"tiny.bin\" BINARY\n"
 		    "TRACK 01 MODE1/2352\n"
@@ -1283,16 +1305,8 @@ static void test_malformed_cue(void)
 		long long sz = 1LL * CUE_SECTOR_SIZE; /* 1 sector file */
 		cue_disc_t disc;
 		int n = cue_parse(cue, &sz, 1, &disc);
-		if (n != 1) {
-			FAIL("should parse 1 track");
-			return;
-		}
-		if (disc.tracks[0].num_sectors < 0) {
-			FAIL("negative sector count not clamped");
-			return;
-		}
-		if (disc.tracks[0].num_sectors != 0) {
-			FAIL("should be 0 sectors");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("past-EOF track should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -1307,13 +1321,8 @@ static void test_malformed_cue(void)
 		long long sz = 0;
 		cue_disc_t disc;
 		int n = cue_parse(cue, &sz, 1, &disc);
-		if (n != 1) {
-			FAIL("should parse 1 track");
-			return;
-		}
-		/* With 0-size file, num_sectors stays 0 (fsize not > 0 path) */
-		if (disc.tracks[0].num_sectors != 0) {
-			FAIL("should be 0");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("zero-size source should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -1445,6 +1454,77 @@ static void test_iso_reader(void)
 		close_fd(fd);
 		if (!found) {
 			FAIL("direct.hog not found in ISO image listing");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(iso_cue_sector_geometries);
+	{
+		static const struct {
+			int stride;
+			int offset;
+			const char *suffix;
+		} geometries[] = {
+			{ 2048, 0, "m1-2048" },
+			{ 2352, 16, "m1-2352" },
+			{ 2352, 24, "m2-2352" },
+		};
+		for (size_t g = 0; g < sizeof(geometries) / sizeof(geometries[0]); g++) {
+			int sectors;
+			unsigned char *image = build_minimal_iso_image(
+			    "GEOMETRY.HOG", (const unsigned char *) "geometry", 8, &sectors);
+			unsigned char *track = wrap_iso_image_sectors(
+			    image, sectors, geometries[g].stride, geometries[g].offset);
+			char path[512];
+			FILE *file;
+			int fd;
+			iso_file_list_t list;
+			int found = 0;
+			free(image);
+			if (!track) {
+				FAIL("cannot allocate geometry fixture");
+				return;
+			}
+			snprintf(path, sizeof(path), "%s/geometry-%s.bin", TEST_DIR,
+			         geometries[g].suffix);
+			file = fopen(path, "wb");
+			if (!file || fwrite(track, (size_t) geometries[g].stride,
+			                    (size_t) sectors, file) != (size_t) sectors) {
+				if (file) fclose(file);
+				free(track);
+				FAIL("cannot write geometry fixture");
+				return;
+			}
+			fclose(file);
+			free(track);
+			fd = open_bin(path);
+			if (iso_list_track_files(fd, 0, sectors, geometries[g].stride,
+			                         geometries[g].offset, &list) < 0) {
+				close_fd(fd);
+				FAIL("geometry-aware ISO listing failed");
+				return;
+			}
+			for (int i = 0; i < list.num_files; i++)
+				if (!list.files[i].is_dir &&
+				    strcmp(list.files[i].path, "geometry.hog") == 0)
+					found = 1;
+			close_fd(fd);
+			if (!found) {
+				FAIL("geometry-aware ISO listing selected the wrong payload bytes");
+				return;
+			}
+		}
+		PASS();
+	}
+
+	TEST(iso_invalid_track_geometry);
+	{
+		iso_file_list_t list;
+		if (iso_list_track_files(0, 0, 20, 2047, 0, &list) != -1 ||
+		    iso_list_track_files(0, 0, 20, 2352, 305, &list) != -1 ||
+		    iso_list_track_files(0, -1, 20, 2352, 16, &list) != -1) {
+			FAIL("invalid sector geometry was accepted");
 			return;
 		}
 		PASS();
@@ -2207,6 +2287,63 @@ static void test_iso_extraction(void)
 		PASS();
 	}
 
+	TEST(iso_mode2_track_extract_files_valid);
+	{
+		int sectors;
+		const char *payload = "mode2 payload";
+		unsigned char *image = build_minimal_iso_image(
+		    "MODE2.HOG", (const unsigned char *) payload,
+		    (int) strlen(payload), &sectors);
+		unsigned char *track = wrap_iso_image_sectors(image, sectors, 2352, 24);
+		char path[512];
+		char out_dir[512];
+		char output_path[512];
+		FILE *file;
+		int fd;
+		iso_file_list_t list;
+		static const char *exts[] = { "hog", NULL };
+		free(image);
+		if (!track) {
+			FAIL("cannot allocate Mode 2 extraction fixture");
+			return;
+		}
+		snprintf(path, sizeof(path), "%s/mode2_extract.bin", TEST_DIR);
+		file = fopen(path, "wb");
+		if (!file || fwrite(track, 2352, (size_t) sectors, file) != (size_t) sectors) {
+			if (file) fclose(file);
+			free(track);
+			FAIL("cannot write Mode 2 extraction fixture");
+			return;
+		}
+		fclose(file);
+		free(track);
+		snprintf(out_dir, sizeof(out_dir), "%s/extracted_mode2", TEST_DIR);
+		mkdir_p(out_dir);
+		fd = open_bin(path);
+		if (iso_list_track_files(fd, 0, sectors, 2352, 24, &list) < 0 ||
+		    iso_extract_track_files(fd, 0, sectors, 2352, 24, &list,
+		                            out_dir, exts, NULL, NULL) != 1) {
+			close_fd(fd);
+			FAIL("Mode 2 geometry listing or extraction failed");
+			return;
+		}
+		close_fd(fd);
+		snprintf(output_path, sizeof(output_path), "%s/extracted_mode2/mode2.hog", TEST_DIR);
+		file = fopen(output_path, "rb");
+		if (!file) {
+			FAIL("Mode 2 extracted file missing");
+			return;
+		}
+		char buf[64];
+		size_t length = fread(buf, 1, sizeof(buf), file);
+		fclose(file);
+		if (length != strlen(payload) || memcmp(buf, payload, length) != 0) {
+			FAIL("Mode 2 extracted payload mismatch");
+			return;
+		}
+		PASS();
+	}
+
 	TEST(iso_mixed_success_destination_failure_is_error);
 	{
 		int iso_sectors;
@@ -2442,8 +2579,65 @@ static void test_file_based_cue(void)
 			FAIL("expected 1 track");
 			return;
 		}
-		if (disc.tracks[0].type != CUE_TRACK_DATA) {
-			FAIL("mode2 should be data");
+		if (disc.tracks[0].type != CUE_TRACK_DATA ||
+		    disc.tracks[0].sector_mode != CUE_SECTOR_MODE2_2352 ||
+		    disc.tracks[0].sector_size != 2352 ||
+		    disc.tracks[0].user_data_offset != 24) {
+			FAIL("mode2 geometry was not preserved");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(cue_mode1_2048_geometry);
+	{
+		const char *cue =
+		    "FILE \"disc.iso\" BINARY\n"
+		    "TRACK 01 MODE1/2048\n"
+		    "  INDEX 01 00:00:00\n";
+		long long size = 20LL * 2048;
+		cue_disc_t disc;
+		if (cue_parse(cue, &size, 1, &disc) != 1 ||
+		    disc.tracks[0].sector_mode != CUE_SECTOR_MODE1_2048 ||
+		    disc.tracks[0].sector_size != 2048 ||
+		    disc.tracks[0].user_data_offset != 0 ||
+		    disc.tracks[0].num_sectors != 20) {
+			FAIL("MODE1/2048 geometry or sector count was not preserved");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(cue_unknown_and_false_audio_modes_rejected);
+	{
+		static const char *modes[] = {
+			"MODE2/2336", "MODE2/2048", "CDG", "AUDIOPLUS", "UNKNOWN", NULL
+		};
+		for (int i = 0; modes[i]; i++) {
+			char cue[256];
+			cue_disc_t disc;
+			snprintf(cue, sizeof(cue),
+			         "FILE \"x.bin\" BINARY\nTRACK 01 %s\nINDEX 01 00:00:00\n",
+			         modes[i]);
+			if (cue_parse(cue, NULL, 0, &disc) != 0 ||
+			    disc.num_tracks != 0 || disc.num_files != 0) {
+				FAIL("unsupported CUE track mode was accepted");
+				return;
+			}
+		}
+		PASS();
+	}
+
+	TEST(cue_mixed_stride_same_file_rejected);
+	{
+		const char *cue =
+		    "FILE \"mixed.bin\" BINARY\n"
+		    "TRACK 01 MODE1/2048\nINDEX 01 00:00:00\n"
+		    "TRACK 02 AUDIO\nINDEX 01 00:02:00\n";
+		cue_disc_t disc;
+		if (cue_parse(cue, NULL, 0, &disc) != 0 ||
+		    disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("mixed sector strides in one FILE were accepted");
 			return;
 		}
 		PASS();
@@ -2519,12 +2713,8 @@ static void test_file_based_cue(void)
 		cue_disc_t disc;
 		int n = cue_parse(cue, NULL, 0, &disc);
 		free(cue);
-		if (n != 1) {
-			FAIL("should parse 1 track");
-			return;
-		}
-		if (disc.tracks[0].start_sector != 0) {
-			FAIL("garbage MSF should give 0");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("garbage MSF should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -2541,12 +2731,8 @@ static void test_file_based_cue(void)
 		cue_disc_t disc;
 		int n = cue_parse(cue, &sz, 1, &disc);
 		free(cue);
-		if (n != 2) {
-			FAIL("should parse 2 tracks");
-			return;
-		}
-		if (disc.tracks[0].start_sector != 0) {
-			FAIL("track 1 start should be 0");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("missing INDEX 01 should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -2563,12 +2749,8 @@ static void test_file_based_cue(void)
 		cue_disc_t disc;
 		int n = cue_parse(cue, &sz, 1, &disc);
 		free(cue);
-		if (n != 1) {
-			FAIL("should parse 1 track");
-			return;
-		}
-		if (disc.tracks[0].num_sectors != 0) {
-			FAIL("should be 0 sectors");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("past-EOF track should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -2602,16 +2784,8 @@ static void test_file_based_cue(void)
 		cue_disc_t disc;
 		int n = cue_parse(cue, &sz, 1, &disc);
 		free(cue);
-		if (n != 2) {
-			FAIL("should parse 2 tracks");
-			return;
-		}
-		if (disc.tracks[0].num_sectors < 0) {
-			FAIL("negative sectors");
-			return;
-		}
-		if (disc.tracks[0].num_sectors != 0) {
-			FAIL("should be 0 sectors (clamped)");
+		if (n != 0 || disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("backwards INDEX should reject the complete parse");
 			return;
 		}
 		PASS();
@@ -2702,13 +2876,31 @@ static void test_cue_edge_cases(void)
 			                "FILE \"file%02d.bin\" BINARY\nTRACK %02d MODE1/2352\n  INDEX 01 00:00:00\n",
 			                i, i + 1);
 		}
-		pos += snprintf(big_cue + pos, sizeof(big_cue) - pos,
-		                "FILE \"overflow.bin\" BINARY\nTRACK 51 MODE1/2352\n  INDEX 01 00:00:00\n");
+		cue_disc_t disc;
+		if (cue_parse(big_cue, NULL, 0, &disc) != CUE_MAX_FILES ||
+		    disc.num_files != CUE_MAX_FILES ||
+		    disc.num_tracks != CUE_MAX_FILES ||
+		    disc.tracks[CUE_MAX_FILES - 1].file_index != CUE_MAX_FILES - 1) {
+			FAIL("exact file capacity was rejected or associated incorrectly");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(cue_max_files_exceeded);
+	{
+		char big_cue[8192];
+		int pos = 0;
+		for (int i = 0; i <= CUE_MAX_FILES; i++) {
+			pos += snprintf(big_cue + pos, sizeof(big_cue) - pos,
+			                "FILE \"file%02d.bin\" BINARY\nTRACK %02d AUDIO\n  INDEX 01 00:00:00\n",
+			                i, i + 1);
+		}
 
 		cue_disc_t disc;
-		cue_parse(big_cue, NULL, 0, &disc);
-		if (disc.num_files != CUE_MAX_FILES) {
-			FAIL("should cap at CUE_MAX_FILES");
+		if (cue_parse(big_cue, NULL, 0, &disc) != 0 ||
+		    disc.num_files != 0 || disc.num_tracks != 0) {
+			FAIL("excess FILE was accepted or returned a partial disc");
 			return;
 		}
 		PASS();
@@ -2716,6 +2908,11 @@ static void test_cue_edge_cases(void)
 
 	TEST(cue_msf_edge_values);
 	{
+		static const char *invalid[] = {
+			"-1:00:00", "+1:00:00", "00:-1:00", "00:00:-1",
+			"00:60:00", "00:00:75", "00:00:00junk",
+			"477218:35:23", "477219:00:00", "", NULL
+		};
 		if (cue_msf_to_sector("00:00:74") != 74) {
 			FAIL("00:00:74");
 			return;
@@ -2730,6 +2927,20 @@ static void test_cue_edge_cases(void)
 		}
 		if (cue_msf_to_sector("00:00:00") != 0) {
 			FAIL("00:00:00");
+			return;
+		}
+		if (cue_msf_to_sector("477218:35:22") != INT_MAX) {
+			FAIL("exact INT_MAX sector");
+			return;
+		}
+		for (int i = 0; invalid[i]; i++) {
+			if (cue_msf_to_sector(invalid[i]) != -1) {
+				FAIL("invalid MSF accepted");
+				return;
+			}
+		}
+		if (cue_msf_to_sector(NULL) != -1) {
+			FAIL("NULL MSF accepted");
 			return;
 		}
 		PASS();
@@ -3086,8 +3297,10 @@ static void test_integration_round_trip(void)
 		}
 
 		iso_file_list_t list;
-		int rc = iso_list_files(fd, disc.tracks[0].start_sector,
-		                        disc.tracks[0].num_sectors, &list);
+		int rc = iso_list_track_files(fd, disc.tracks[0].start_sector,
+		                              disc.tracks[0].num_sectors,
+		                              disc.tracks[0].sector_size,
+		                              disc.tracks[0].user_data_offset, &list);
 		if (rc < 0) {
 			FAIL("iso_list_files failed");
 			close_fd(fd);
@@ -3100,9 +3313,11 @@ static void test_integration_round_trip(void)
 		mkdir_p(out_dir);
 
 		static const char *exts[] = { "hog", NULL };
-		int extracted = iso_extract_files(fd, disc.tracks[0].start_sector,
-		                                  disc.tracks[0].num_sectors,
-		                                  &list, out_dir, exts, NULL, NULL);
+		int extracted = iso_extract_track_files(fd, disc.tracks[0].start_sector,
+		                                        disc.tracks[0].num_sectors,
+		                                        disc.tracks[0].sector_size,
+		                                        disc.tracks[0].user_data_offset,
+		                                        &list, out_dir, exts, NULL, NULL);
 		close_fd(fd);
 
 		if (extracted != 1) {
@@ -3135,7 +3350,7 @@ static void test_sector_count_edge_cases(void)
 {
 	TEST(sector_count_large_start_offset);
 	{
-		/* Track starts past file end — should get 0 sectors, not negative */
+		/* Track starts past file end and must reject the complete disc. */
 		const char *cue =
 		    "FILE \"x.bin\" BINARY\n"
 		    "TRACK 01 MODE1/2352\n"
@@ -3144,9 +3359,9 @@ static void test_sector_count_edge_cases(void)
 		    "  INDEX 01 50:00:00\n"; /* sector 225000 */
 		long long sz = 100LL * CUE_SECTOR_SIZE;
 		cue_disc_t disc;
-		cue_parse(cue, &sz, 1, &disc);
-		if (disc.tracks[1].num_sectors < 0) {
-			FAIL("negative sector count for track past EOF");
+		if (cue_parse(cue, &sz, 1, &disc) != 0 ||
+		    disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("past-EOF track was accepted or partially returned");
 			return;
 		}
 		PASS();
@@ -3154,7 +3369,7 @@ static void test_sector_count_edge_cases(void)
 
 	TEST(sector_count_overlapping_tracks);
 	{
-		/* Track 2 starts before track 1 — should get 0 sectors for track 1 */
+		/* Track 2 starts before track 1 and must reject the complete disc. */
 		const char *cue =
 		    "FILE \"x.bin\" BINARY\n"
 		    "TRACK 01 MODE1/2352\n"
@@ -3163,10 +3378,9 @@ static void test_sector_count_edge_cases(void)
 		    "  INDEX 01 00:02:00\n";
 		long long sz = 500LL * CUE_SECTOR_SIZE;
 		cue_disc_t disc;
-		cue_parse(cue, &sz, 1, &disc);
-		/* Track 1 starts at 300, track 2 at 150 → track 1 gets clamped to 0 */
-		if (disc.tracks[0].num_sectors < 0) {
-			FAIL("negative sector count for overlapping tracks");
+		if (cue_parse(cue, &sz, 1, &disc) != 0 ||
+		    disc.num_tracks != 0 || disc.num_files != 0) {
+			FAIL("backwards track was accepted or partially returned");
 			return;
 		}
 		PASS();

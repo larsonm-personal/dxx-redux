@@ -11,11 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "cue_parser.h"
 
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
+#define strcasecmp  _stricmp
 #endif
 
 #ifdef ANDROID
@@ -27,9 +29,31 @@
 
 int cue_msf_to_sector(const char *msf)
 {
-	int m = 0, s = 0, f = 0;
-	if (sscanf(msf, "%d:%d:%d", &m, &s, &f) < 3) return 0;
-	return m * 60 * 75 + s * 75 + f;
+	const unsigned char *p = (const unsigned char *) msf;
+	unsigned long long component[3] = { 0, 0, 0 };
+	int i;
+	long long sector;
+
+	if (!p) return -1;
+	for (i = 0; i < 3; i++) {
+		if (!isdigit(*p)) return -1;
+		do {
+			unsigned int digit = (unsigned int) (*p - '0');
+			if (component[i] > ((unsigned long long) INT_MAX - digit) / 10)
+				return -1;
+			component[i] = component[i] * 10 + digit;
+			p++;
+		} while (isdigit(*p));
+		if (i < 2) {
+			if (*p++ != ':') return -1;
+		} else if (*p != '\0') {
+			return -1;
+		}
+	}
+	if (component[1] >= 60 || component[2] >= 75) return -1;
+	sector = (long long) component[0] * 60 * 75 +
+	         (long long) component[1] * 75 + (long long) component[2];
+	return sector <= INT_MAX ? (int) sector : -1;
 }
 
 /* Extract a quoted string from a line like:  FILE "name.bin" BINARY
@@ -57,6 +81,7 @@ int cue_parse(const char *cue_text,
 	const char *p = cue_text;
 	int cur_file = -1;
 	int cur_track = -1;
+	unsigned char has_index[CUE_MAX_TRACKS] = { 0 };
 
 	if (!cue_text || !out) return 0;
 
@@ -82,7 +107,10 @@ int cue_parse(const char *cue_text,
 		/* FILE "name.bin" BINARY */
 		if (strncasecmp(trimmed, "FILE", 4) == 0 &&
 		    (trimmed[4] == ' ' || trimmed[4] == '\t')) {
-			if (out->num_files >= CUE_MAX_FILES) continue;
+			if (out->num_files >= CUE_MAX_FILES) {
+				memset(out, 0, sizeof(*out));
+				return 0;
+			}
 			cur_file = out->num_files;
 			out->files[cur_file].file_index = cur_file;
 			out->files[cur_file].file_size = -1;
@@ -108,8 +136,29 @@ int cue_parse(const char *cue_text,
 					cur_track = tnum;
 					out->tracks[idx].track_num = tnum;
 					out->tracks[idx].file_index = cur_file;
-					out->tracks[idx].type =
-					    (strncasecmp(ttype, "AUDIO", 5) == 0) ? CUE_TRACK_AUDIO : CUE_TRACK_DATA;
+					if (strcasecmp(ttype, "AUDIO") == 0) {
+						out->tracks[idx].type = CUE_TRACK_AUDIO;
+						out->tracks[idx].sector_mode = CUE_SECTOR_AUDIO;
+						out->tracks[idx].sector_size = 2352;
+						out->tracks[idx].user_data_offset = 0;
+					} else if (strcasecmp(ttype, "MODE1/2352") == 0) {
+						out->tracks[idx].type = CUE_TRACK_DATA;
+						out->tracks[idx].sector_mode = CUE_SECTOR_MODE1_2352;
+						out->tracks[idx].sector_size = 2352;
+						out->tracks[idx].user_data_offset = 16;
+					} else if (strcasecmp(ttype, "MODE1/2048") == 0) {
+						out->tracks[idx].type = CUE_TRACK_DATA;
+						out->tracks[idx].sector_mode = CUE_SECTOR_MODE1_2048;
+						out->tracks[idx].sector_size = 2048;
+						out->tracks[idx].user_data_offset = 0;
+					} else if (strcasecmp(ttype, "MODE2/2352") == 0) {
+						out->tracks[idx].type = CUE_TRACK_DATA;
+						out->tracks[idx].sector_mode = CUE_SECTOR_MODE2_2352;
+						out->tracks[idx].sector_size = 2352;
+						out->tracks[idx].user_data_offset = 24;
+					} else {
+						goto parse_failure;
+					}
 					out->tracks[idx].title[0] = '\0';
 					out->num_tracks++;
 				}
@@ -127,10 +176,15 @@ int cue_parse(const char *cue_text,
 		if (strncasecmp(trimmed, "INDEX", 5) == 0 &&
 		    (trimmed[5] == ' ' || trimmed[5] == '\t')) {
 			int idx_num;
+			int sector;
 			char msf[32];
 			if (cur_track >= 1 && out->num_tracks > 0 &&
 			    sscanf(trimmed + 5, " %d %31s", &idx_num, msf) == 2 && idx_num == 1) {
-				out->tracks[out->num_tracks - 1].start_sector = cue_msf_to_sector(msf);
+				int track_index = out->num_tracks - 1;
+				sector = cue_msf_to_sector(msf);
+				if (sector < 0 || has_index[track_index]) goto parse_failure;
+				out->tracks[track_index].start_sector = sector;
+				has_index[track_index] = 1;
 			}
 		}
 	}
@@ -142,13 +196,18 @@ int cue_parse(const char *cue_text,
 		int i;
 		for (i = 0; i < out->num_tracks; i++) {
 			int fi = out->tracks[i].file_index;
+			if (!has_index[i] || fi < 0 || fi >= out->num_files)
+				goto parse_failure;
 			/* Find the next track in the same file */
 			int j;
 			int found_next = 0;
 			for (j = i + 1; j < out->num_tracks; j++) {
 				if (out->tracks[j].file_index == fi) {
+					if (out->tracks[j].sector_size != out->tracks[i].sector_size)
+						goto parse_failure;
 					int ns = out->tracks[j].start_sector - out->tracks[i].start_sector;
-					out->tracks[i].num_sectors = (ns > 0) ? ns : 0;
+					if (ns <= 0) goto parse_failure;
+					out->tracks[i].num_sectors = ns;
 					found_next = 1;
 					break;
 				}
@@ -156,10 +215,13 @@ int cue_parse(const char *cue_text,
 			if (!found_next) {
 				/* Last track in this file — use file size */
 				long long fsize = out->files[fi].file_size;
-				if (fsize > 0) {
-					int total = (int) (fsize / CUE_SECTOR_SIZE);
-					int ns = total - out->tracks[i].start_sector;
-					out->tracks[i].num_sectors = (ns > 0) ? ns : 0;
+				if (bin_sizes && fi < num_bin_sizes) {
+					long long total = fsize / out->tracks[i].sector_size;
+					if (fsize <= 0 || total > INT_MAX ||
+					    out->tracks[i].start_sector >= total)
+						goto parse_failure;
+					out->tracks[i].num_sectors =
+					    (int) (total - out->tracks[i].start_sector);
 				}
 				/* else: leave as 0, caller can fix up */
 			}
@@ -181,4 +243,8 @@ int cue_parse(const char *cue_text,
 	}
 
 	return out->num_tracks;
+
+parse_failure:
+	memset(out, 0, sizeof(*out));
+	return 0;
 }

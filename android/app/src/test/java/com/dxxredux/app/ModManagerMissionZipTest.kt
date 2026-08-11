@@ -5,6 +5,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -237,12 +238,17 @@ class ModManagerMissionZipTest {
         assertTrue(manager.hasEnabledMissionZipSoundtrack("d2"))
         manager.writeEnabledModPaths("d2")
 
-        val stageDir = File(filesDir, "d2x-redux/.generated_mission_zips/Obsidian.zip/missions")
-        assertTrue(File(stageDir, "obsidian.sng").isFile)
+        val stageRoot = File(filesDir, "d2x-redux/.generated_mission_zips/Obsidian.zip")
+        assertTrue(File(stageRoot, "obsidian.sng").isFile)
+        assertFalse(File(stageRoot, "missions/obsidian.sng").exists())
+        assertTrue(File(stageRoot, "loose.ogg").isFile)
+        assertFalse(File(stageRoot, "missions/loose.ogg").exists())
         assertEquals(
-            "descent.hmp\nbriefing.hmp\ngame01.hmp\n",
-            File(stageDir, "descent.sng").readText(),
+            "descent.hmp\nbriefing.hmp\ngame01.hmp\nloose.ogg\n",
+            File(stageRoot, "descent.sng").readText(),
         )
+        assertTrue(File(stageRoot, "missions/obsidian.mn2").isFile)
+        assertTrue(File(stageRoot, "missions/obsidian.hog").isFile)
 
         val details = manager.getModDetails(imported!!, File(filesDir, "sets/default"))
         assertTrue(details.notes.any { it == "Includes a mission song list" })
@@ -398,7 +404,7 @@ class ModManagerMissionZipTest {
     }
 
     @Test
-    fun durableMissionZipLaunchAndDetailsUseFreshExtractedRecord() {
+    fun sameMetadataArchiveReplacementDoesNotLaunchStaleExtraction() {
         val filesDir = File("build/test-mod-manager-mission-zip-extracted-record").absoluteFile
         filesDir.deleteRecursively()
         filesDir.mkdirs()
@@ -420,19 +426,12 @@ class ModManagerMissionZipTest {
         }
         assertTrue(modFile.setLastModified(originalLastModified))
 
-        manager.writeEnabledModPaths("d2")
+        assertThrows(Exception::class.java) { manager.writeEnabledModPaths("d2") }
         val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/LargeMission.zip")
-        val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
-        assertEquals(listOf(extractedRoot.absolutePath), lines)
-
-        val details = manager.getModDetails(imported, File(filesDir, "sets/default"))
-        assertNotNull(details.missionZip)
-        assertEquals("Uneasy 4", details.missionZip!!.mission.displayName)
-        val extraction = requireNotNull(details.missionZipExtraction)
-        assertEquals("LargeMission.zip", extraction.sourceArchiveName)
-        assertEquals("zip", extraction.archiveFormat)
-        assertEquals(2, extraction.fileCount)
-        assertTrue(details.notes.any { it.startsWith("Uneasy4.hog contents:") })
+        assertTrue(extractedRoot.isDirectory)
+        assertEquals(null, MissionZipExtractionStore(filesDir).freshRecord(modFile.name, modFile))
+        val activePaths = File(filesDir, "d2x-redux/.active_mod_paths")
+        assertTrue(!activePaths.exists() || extractedRoot.absolutePath !in activePaths.readLines())
     }
 
     @Test
@@ -714,7 +713,11 @@ class ModManagerMissionZipTest {
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("obsidian.sng"))
-            zip.write("descent.hmp\nbriefing.hmp\ngame01.hmp\n".toByteArray())
+            zip.write("descent.hmp\nbriefing.hmp\ngame01.hmp\nloose.ogg\n".toByteArray())
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("loose.ogg"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
             zip.closeEntry()
         }
         return zipFile

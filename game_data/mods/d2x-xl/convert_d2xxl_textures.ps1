@@ -758,8 +758,8 @@ function Convert-GameTextures {
     $errors = 0
     $processed = 0
 
-    # Textures that should never be downscaled: full-screen cockpit overlays
-    # and targeting reticles are HUD elements drawn at screen resolution
+    # Cockpit overlays retain source quality up to the engine's hard safety cap
+    $engineTextureCap = 2048
     $noDownscalePattern = '^(cockpit|hires-cockpit)'
 
     foreach ($tga in @($tgaFiles) + @($pngFiles)) {
@@ -768,9 +768,9 @@ function Convert-GameTextures {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
         $isTga = $tga.Extension -eq '.tga'
 
-        # Skip downscaling for HUD/cockpit textures
-        $skipDownscale = $MaxDim -gt 0 -and $baseName -match $noDownscalePattern
-        $effectiveMaxDim = if ($skipDownscale) { 0 } else { $MaxDim }
+        # The quality exemption never bypasses the engine's safety cap
+        $skipDownscale = $baseName -match $noDownscalePattern
+        $effectiveMaxDim = if ($skipDownscale -or $MaxDim -le 0) { $engineTextureCap } else { [Math]::Min($MaxDim, $engineTextureCap) }
         $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
 
         try {
@@ -911,9 +911,9 @@ function Convert-GameTextures {
         $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
         $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
-        # Skip downscaling for HUD/cockpit textures
-        $skipDownscale = $MaxDim -gt 0 -and $baseName -match $noDownscalePattern
-        $effectiveMaxDim = if ($skipDownscale) { 0 } else { $MaxDim }
+        # The quality exemption never bypasses the engine's safety cap
+        $skipDownscale = $baseName -match $noDownscalePattern
+        $effectiveMaxDim = if ($skipDownscale -or $MaxDim -le 0) { $engineTextureCap } else { [Math]::Min($MaxDim, $engineTextureCap) }
         $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
 
         try {

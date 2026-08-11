@@ -1225,6 +1225,15 @@ static void escort_route_apply_target_pos(object *objp)
 #define STOLEN_ITEM_PROXIMITY_MINE 254
 #define STOLEN_ITEM_SMART_MINE 253
 
+#if MAX_STOLEN_ITEMS != INPUT_DEMO_CHECKPOINT_STOLEN_ITEM_COUNT
+#error Input demo stolen-item capacity must match the engine capacity
+#endif
+
+static int thief_stolen_item_index_is_valid(int index)
+{
+	return index >= 0 && index < MAX_STOLEN_ITEMS;
+}
+
 static int thief_full_drop_enabled(void)
 {
 #ifdef NETWORK
@@ -1237,6 +1246,9 @@ static int thief_full_drop_enabled(void)
 static int thief_find_stolen_item_slot(void)
 {
 	int i;
+
+	if (!thief_stolen_item_index_is_valid(Stolen_item_index))
+		return -1;
 
 	if (!thief_full_drop_enabled())
 		return Stolen_item_index;
@@ -2871,7 +2883,10 @@ void escort_rebuild_runtime_state_after_restore(void)
 	}
 
 	if (have_checkpoint_thief_state) {
-		Stolen_item_index = checkpoint_thief_state.stolen_item_index;
+		if (thief_stolen_item_index_is_valid(checkpoint_thief_state.stolen_item_index))
+			Stolen_item_index = checkpoint_thief_state.stolen_item_index;
+		else
+			Stolen_item_index = 0;
 		Re_init_thief_time = checkpoint_thief_state.re_init_thief_time;
 		Last_thief_hit_time = checkpoint_thief_state.last_thief_hit_time;
 	}

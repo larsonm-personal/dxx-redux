@@ -15,6 +15,7 @@
 #include <android/log.h>
 
 extern "C" {
+#include "game.h"
 #include "playsave.h"
 }
 
@@ -343,9 +344,16 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
                                  jboolean showBossHealthBar,
                                  jboolean headlightActiveDefault)
 {
-	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	const char *files_dir;
 	struct write_ctx wc;
 	int total;
+
+	if (!jfilesDir || !cockpit_mode_is_persistable((int) cockpitMode)) {
+		LOGI("nativeWriteEnginePrefs: rejected cockpit mode %d", (int) cockpitMode);
+		return -1;
+	}
+	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	if (!files_dir) return -1;
 
 	wc.cockpit_mode = (int) cockpitMode;
 	wc.auto_leveling = autoLeveling ? 1 : 0;

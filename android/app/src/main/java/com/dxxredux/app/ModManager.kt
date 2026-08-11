@@ -273,6 +273,10 @@ class ModManager(
         filename: String,
         enabled: Boolean,
     ) {
+        if (enabled && DxaTextureScanner.scan(File(modsDir, filename))?.oversizedCount?.let { it > 0 } == true) {
+            Log.w(TAG, "Refusing to enable mod with oversized textures: $filename")
+            return
+        }
         mods =
             mods
                 .map {
@@ -363,7 +367,7 @@ class ModManager(
             ModInfo(
                 filename = safeName,
                 displayName = generateDisplayName(safeName),
-                enabled = true,
+                enabled = DxaTextureScanner.scan(dest)?.oversizedCount?.let { it > 0 } != true,
                 addedAt = System.currentTimeMillis(),
                 sizeBytes = dest.length(),
                 game = detectGame(safeName),
@@ -388,7 +392,7 @@ class ModManager(
             ModInfo(
                 filename = filename,
                 displayName = displayName,
-                enabled = true,
+                enabled = DxaTextureScanner.scan(File(modsDir, filename))?.oversizedCount?.let { it > 0 } != true,
                 addedAt = System.currentTimeMillis(),
                 sizeBytes = sizeBytes,
                 game = game,
@@ -737,9 +741,14 @@ class ModManager(
     ) {
         val appContext = context ?: return
         val catalog =
-            extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }
-                ?: MissionZipMusic.inspect(modFile)
-                ?: return
+            try {
+                extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }
+                    ?: MissionZipMusic.inspect(modFile)
+                    ?: return
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not inspect optional mission music for $displayName", e)
+                return
+            }
         val sidecar =
             extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
                 ?: MissionZipMusicNames.cacheFile(filesDir, ownerFilename)

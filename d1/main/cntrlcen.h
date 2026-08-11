@@ -38,6 +38,7 @@ typedef struct control_center_triggers {
 } __pack__ control_center_triggers;
 
 extern control_center_triggers ControlCenterTriggers;
+extern int control_center_triggers_are_valid(const control_center_triggers *cct, int highest_segment_index);
 
 typedef struct reactor {
 	int n_guns;
@@ -94,7 +95,7 @@ extern int control_center_triggers_read_n(control_center_triggers *cct, int n, r
 /*
  * reads n control_center_triggers structs from a PHYSFS_file and swaps if specified
  */
-void control_center_triggers_read_n_swap(control_center_triggers *cct, int n, int swap, rewind_file *fp);
+int control_center_triggers_read_n_swap(control_center_triggers *cct, int n, int swap, rewind_file *fp);
 
 extern int control_center_triggers_write(control_center_triggers *cct, rewind_file *fp);
 

@@ -656,6 +656,8 @@ static int secret_area_side_is_control_center_link(void *user, int seg, int side
 	int i;
 
 	(void) user;
+	if (!control_center_triggers_are_valid(&ControlCenterTriggers, Highest_segment_index))
+		return 0;
 	for (i = 0; i < ControlCenterTriggers.num_links; ++i)
 		if (ControlCenterTriggers.seg[i] == seg && ControlCenterTriggers.side[i] == side)
 			return 1;

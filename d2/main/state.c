@@ -1007,6 +1007,7 @@ static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int ve
 static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 {
 	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	game_d_tick_state d_tick_state;
 	object_runtime_state object_state;
 	int i, valid = 0;
 
@@ -1015,7 +1016,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		goto done;
 	if (version >= STATE_FX_RNG_RUNTIME_VERSION && !state_runtime_skip(fp, 3 * sizeof(int)))
 		goto done;
-	if (!state_runtime_skip(fp, 3 * sizeof(int)) ||
+	if (!state_runtime_read_s32(fp, swap, &d_tick_state.count) ||
+	    !state_runtime_read_s32(fp, swap, &d_tick_state.step) ||
+	    !state_runtime_read_s32(fp, swap, &d_tick_state.timer) ||
+	    !game_d_tick_state_is_valid(&d_tick_state) ||
 	    !state_runtime_read_s32(fp, swap, &object_state.num_objects) ||
 	    !state_runtime_read_s32(fp, swap, &object_state.highest_object_index))
 		goto done;
@@ -3219,7 +3223,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	Countdown_timer = PHYSFSX_readSXE32(fp, swap);
 	Num_robot_centers = PHYSFSX_readSXE32(fp, swap);
 	matcen_info_read_n_swap(RobotCenters, Num_robot_centers, swap, fp);
-	control_center_triggers_read_n_swap(&ControlCenterTriggers, 1, swap, fp);
+	if (!control_center_triggers_read_n_swap(&ControlCenterTriggers, 1, swap, fp)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 	Num_fuelcenters = PHYSFSX_readSXE32(fp, swap);
 	fuelcen_read_n_swap(Station, Num_fuelcenters, swap, fp);
 

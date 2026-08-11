@@ -130,14 +130,15 @@ static void write_octal(char *field, size_t width, uint64_t value)
 	memcpy(field, text, width);
 }
 
-static int append_cpio_entry(test_buffer_t *cpio, const char *name,
-                             const uint8_t *data, size_t data_size)
+static int append_cpio_entry_mode(test_buffer_t *cpio, const char *name,
+                                  const uint8_t *data, size_t data_size,
+                                  uint32_t mode)
 {
 	char header[76];
 	size_t name_size = strlen(name) + 1;
 	memset(header, '0', sizeof(header));
 	memcpy(header, "070707", 6);
-	write_octal(header + 18, 6, 0100644);
+	write_octal(header + 18, 6, mode);
 	write_octal(header + 59, 6, name_size);
 	write_octal(header + 65, 11, data_size);
 	return buffer_append(cpio, header, sizeof(header)) < 0 ||
@@ -145,6 +146,12 @@ static int append_cpio_entry(test_buffer_t *cpio, const char *name,
 	               buffer_append(cpio, data, data_size) < 0
 	           ? -1
 	           : 0;
+}
+
+static int append_cpio_entry(test_buffer_t *cpio, const char *name,
+                             const uint8_t *data, size_t data_size)
+{
+	return append_cpio_entry_mode(cpio, name, data, data_size, 0100644);
 }
 
 static int append_cpio_entry_raw_name(test_buffer_t *cpio, const uint8_t *name,
@@ -266,7 +273,7 @@ static int run_xar_fixture(const char *xml, const uint8_t *heap,
 }
 
 static int run_xar_extraction(const char *xml, const uint8_t *heap,
-                              size_t heap_size)
+                              size_t heap_size, int corrupt_manifest)
 {
 	char path[64];
 	char output_dir[64];
@@ -288,6 +295,8 @@ static int run_xar_extraction(const char *xml, const uint8_t *heap,
 		if (opened >= 0) pkg_close(&archive);
 		goto cleanup;
 	}
+	if (corrupt_manifest)
+		archive.files[0].crc32 ^= 1u;
 	result = pkg_extract_all(&archive, output_dir, NULL, NULL, 0);
 	pkg_close(&archive);
 	if (result == 1) {
@@ -353,6 +362,66 @@ cleanup:
 	return result;
 }
 
+static int run_game_mode_fixture(const char *relative_name, uint32_t mode)
+{
+	static const char prefix[] = "./payload/Contents/Resources/game/";
+	static const uint8_t payload[] = { 0x42 };
+	test_buffer_t cpio = { 0 };
+	test_buffer_t gzip = { 0 };
+	char name[PKG_PATH_LEN];
+	char xml[1024];
+	char size_text[32];
+	int result = -2;
+	if (snprintf(name, sizeof(name), "%s%s", prefix, relative_name) < 0 ||
+	    append_cpio_entry_mode(&cpio, name, payload, sizeof(payload), mode) < 0 ||
+	    append_cpio_entry(&cpio, "TRAILER!!!", NULL, 0) < 0 ||
+	    gzip_buffer(cpio.data, cpio.size, &gzip) < 0)
+		goto cleanup;
+	snprintf(size_text, sizeof(size_text), "%llu",
+	         (unsigned long long) gzip.size);
+	scripts_xml(xml, sizeof(xml), "0", size_text, size_text,
+	            "application/octet-stream");
+	result = run_xar_fixture(xml, gzip.data, gzip.size);
+
+cleanup:
+	free(cpio.data);
+	free(gzip.data);
+	return result;
+}
+
+static int run_game_names_fixture(const char *const *relative_names,
+                                  size_t count)
+{
+	static const char prefix[] = "./payload/Contents/Resources/game/";
+	static const uint8_t payload[] = { 0x42 };
+	test_buffer_t cpio = { 0 };
+	test_buffer_t gzip = { 0 };
+	char xml[1024];
+	char size_text[32];
+	char name[PKG_PATH_LEN];
+	int result = -2;
+	for (size_t i = 0; i < count; i++) {
+		int length = snprintf(name, sizeof(name), "%s%s", prefix,
+		                      relative_names[i]);
+		if (length < 0 || (size_t) length >= sizeof(name) ||
+		    append_cpio_entry(&cpio, name, payload, sizeof(payload)) < 0)
+			goto cleanup;
+	}
+	if (append_cpio_entry(&cpio, "TRAILER!!!", NULL, 0) < 0 ||
+	    gzip_buffer(cpio.data, cpio.size, &gzip) < 0)
+		goto cleanup;
+	snprintf(size_text, sizeof(size_text), "%llu",
+	         (unsigned long long) gzip.size);
+	scripts_xml(xml, sizeof(xml), "0", size_text, size_text,
+	            "application/octet-stream");
+	result = run_xar_fixture(xml, gzip.data, gzip.size);
+
+cleanup:
+	free(cpio.data);
+	free(gzip.data);
+	return result;
+}
+
 static void test_game_output_names(void)
 {
 	static const char *unsafe_names[] = {
@@ -373,6 +442,8 @@ static void test_game_output_names(void)
 
 	CHECK(run_game_name_fixture("DESCENT.HOG") == 1);
 	CHECK(run_game_name_fixture("notes.txt") == 0);
+	CHECK(run_game_mode_fixture("DESCENT.HOG", 0120777) == -1);
+	CHECK(run_game_mode_fixture("DESCENT.HOG", 0010644) == -1);
 	for (const char **name = unsafe_names; *name; name++)
 		CHECK(run_game_name_fixture(*name) == -1);
 	for (const char **name = ignored_nested_names; *name; name++)
@@ -400,6 +471,20 @@ static void test_game_output_names(void)
 	}
 	free(cpio.data);
 	free(gzip.data);
+}
+
+static void test_game_manifest_limits_and_collisions(void)
+{
+	char names[PKG_MAX_FILES + 1][32];
+	const char *name_refs[PKG_MAX_FILES + 1];
+	const char *duplicates[] = { "DESCENT.HOG", "descent.hog" };
+	for (int i = 0; i <= PKG_MAX_FILES; i++) {
+		snprintf(names[i], sizeof(names[i]), "file%03d.hog", i);
+		name_refs[i] = names[i];
+	}
+	CHECK(run_game_names_fixture(name_refs, PKG_MAX_FILES) == PKG_MAX_FILES);
+	CHECK(run_game_names_fixture(name_refs, PKG_MAX_FILES + 1) == -1);
+	CHECK(run_game_names_fixture(duplicates, 2) == -1);
 }
 
 static void test_scripts_member_completion(void)
@@ -455,7 +540,8 @@ static void test_scripts_member_completion(void)
 	scripts_xml(xml, sizeof(xml), "0", size_text, size_text,
 	            "application/octet-stream");
 	CHECK(run_xar_fixture(xml, complete_gzip.data, complete_gzip.size) == 1);
-	CHECK(run_xar_extraction(xml, complete_gzip.data, complete_gzip.size) == 1);
+	CHECK(run_xar_extraction(xml, complete_gzip.data, complete_gzip.size, 0) == 1);
+	CHECK(run_xar_extraction(xml, complete_gzip.data, complete_gzip.size, 1) == -1);
 	snprintf(size_text, sizeof(size_text), "%llu",
 	         (unsigned long long) padded_gzip.size);
 	scripts_xml(xml, sizeof(xml), "0", size_text, size_text,
@@ -568,6 +654,7 @@ int main(void)
 	test_xar_toc_bounds();
 	test_xar_toc_decompression();
 	test_game_output_names();
+	test_game_manifest_limits_and_collisions();
 	test_scripts_member_completion();
 	if (failures) {
 		fprintf(stderr, "%d PKG reader test(s) failed\n", failures);

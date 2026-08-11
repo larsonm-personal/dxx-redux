@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -28,6 +29,7 @@
 #define PATH_SEP     '\\'
 #else
 #include <dirent.h>
+#include <strings.h>
 #include <unistd.h>
 #define mkdir_sow(d) mkdir(d, 0755)
 #define PATH_SEP     '/'
@@ -56,15 +58,16 @@ static int has_sow_ext(const char *name)
 
 #ifdef _WIN32
 /* Windows: use FindFirstFile/FindNextFile */
-static void scan_dir_recursive(const char *base, sow_file_list_t *out)
+static int scan_dir_recursive(const char *base, sow_file_list_t *out)
 {
 	char pattern[SOW_PATH_LEN];
 	WIN32_FIND_DATAA fd;
 	HANDLE h;
 
-	snprintf(pattern, sizeof(pattern), "%s\\*", base);
+	int pattern_len = snprintf(pattern, sizeof(pattern), "%s\\*", base);
+	if (pattern_len < 0 || (size_t) pattern_len >= sizeof(pattern)) return -1;
 	h = FindFirstFileA(pattern, &fd);
-	if (h == INVALID_HANDLE_VALUE) return;
+	if (h == INVALID_HANDLE_VALUE) return -1;
 
 	do {
 		if (fd.cFileName[0] == '.' &&
@@ -73,53 +76,135 @@ static void scan_dir_recursive(const char *base, sow_file_list_t *out)
 			continue;
 
 		char fullpath[SOW_PATH_LEN];
-		snprintf(fullpath, sizeof(fullpath), "%s\\%s", base, fd.cFileName);
+		int path_len = snprintf(fullpath, sizeof(fullpath), "%s\\%s", base,
+		                        fd.cFileName);
+		if (path_len < 0 || (size_t) path_len >= sizeof(fullpath)) {
+			FindClose(h);
+			return -1;
+		}
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+			continue;
 
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			scan_dir_recursive(fullpath, out);
-		} else if (has_sow_ext(fd.cFileName) && out->count < SOW_MAX_FILES) {
-			strncpy(out->paths[out->count], fullpath, SOW_PATH_LEN - 1);
-			out->paths[out->count][SOW_PATH_LEN - 1] = '\0';
-			out->count++;
+			if (scan_dir_recursive(fullpath, out) < 0) {
+				FindClose(h);
+				return -1;
+			}
+		} else if (has_sow_ext(fd.cFileName)) {
+			if (out->count >= SOW_MAX_FILES) {
+				FindClose(h);
+				return -1;
+			}
+			memcpy(out->paths[out->count++], fullpath, (size_t) path_len + 1u);
 		}
 	} while (FindNextFileA(h, &fd));
 
+	if (GetLastError() != ERROR_NO_MORE_FILES) {
+		FindClose(h);
+		return -1;
+	}
 	FindClose(h);
+	return 0;
 }
 #else
 /* POSIX: use opendir/readdir */
-static void scan_dir_recursive(const char *base, sow_file_list_t *out)
+static int scan_dir_recursive(const char *base, sow_file_list_t *out)
 {
 	DIR *d = opendir(base);
-	if (!d) return;
+	if (!d) return -1;
 
 	struct dirent *ent;
+	errno = 0;
 	while ((ent = readdir(d)) != NULL) {
-		if (ent->d_name[0] == '.') continue;
+		if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+			continue;
 
 		char fullpath[SOW_PATH_LEN];
-		snprintf(fullpath, sizeof(fullpath), "%s/%s", base, ent->d_name);
+		int path_len = snprintf(fullpath, sizeof(fullpath), "%s/%s", base,
+		                        ent->d_name);
+		if (path_len < 0 || (size_t) path_len >= sizeof(fullpath)) {
+			closedir(d);
+			return -1;
+		}
 
 		struct stat st;
-		if (stat(fullpath, &st) != 0) continue;
+		if (lstat(fullpath, &st) != 0) {
+			closedir(d);
+			return -1;
+		}
+		if (S_ISLNK(st.st_mode)) continue;
 
 		if (S_ISDIR(st.st_mode)) {
-			scan_dir_recursive(fullpath, out);
-		} else if (has_sow_ext(ent->d_name) && out->count < SOW_MAX_FILES) {
-			strncpy(out->paths[out->count], fullpath, SOW_PATH_LEN - 1);
-			out->paths[out->count][SOW_PATH_LEN - 1] = '\0';
-			out->count++;
+			if (scan_dir_recursive(fullpath, out) < 0) {
+				closedir(d);
+				return -1;
+			}
+		} else if (S_ISREG(st.st_mode) && has_sow_ext(ent->d_name)) {
+			if (out->count >= SOW_MAX_FILES) {
+				closedir(d);
+				return -1;
+			}
+			memcpy(out->paths[out->count++], fullpath, (size_t) path_len + 1u);
 		}
+		errno = 0;
+	}
+	if (errno != 0) {
+		closedir(d);
+		return -1;
 	}
 	closedir(d);
+	return 0;
 }
 #endif
+
+static int sow_path_compare(const void *left, const void *right)
+{
+	const unsigned char *a = (const unsigned char *) left;
+	const unsigned char *b = (const unsigned char *) right;
+	while (*a && *b) {
+		if (*a >= '0' && *a <= '9' && *b >= '0' && *b <= '9') {
+			const unsigned char *a_start = a;
+			const unsigned char *b_start = b;
+			while (*a == '0') a++;
+			while (*b == '0') b++;
+			const unsigned char *a_end = a;
+			const unsigned char *b_end = b;
+			while (*a_end >= '0' && *a_end <= '9') a_end++;
+			while (*b_end >= '0' && *b_end <= '9') b_end++;
+			size_t a_digits = (size_t) (a_end - a);
+			size_t b_digits = (size_t) (b_end - b);
+			if (a_digits != b_digits) return a_digits < b_digits ? -1 : 1;
+			int digits = memcmp(a, b, a_digits);
+			if (digits != 0) return digits;
+			size_t a_width = (size_t) (a_end - a_start);
+			size_t b_width = (size_t) (b_end - b_start);
+			if (a_width != b_width) return a_width < b_width ? -1 : 1;
+			a = a_end;
+			b = b_end;
+			continue;
+		}
+		unsigned char ca = *a == '\\' ? '/' : *a;
+		unsigned char cb = *b == '\\' ? '/' : *b;
+		if (ca >= 'A' && ca <= 'Z') ca = (unsigned char) (ca - 'A' + 'a');
+		if (cb >= 'A' && cb <= 'Z') cb = (unsigned char) (cb - 'A' + 'a');
+		if (ca != cb) return ca < cb ? -1 : 1;
+		a++;
+		b++;
+	}
+	if (*a != *b) return *a ? 1 : -1;
+	return strcmp((const char *) left, (const char *) right);
+}
 
 int sow_scan_dir(const char *dir_path, sow_file_list_t *out)
 {
 	if (!dir_path || !out) return -1;
 	memset(out, 0, sizeof(*out));
-	scan_dir_recursive(dir_path, out);
+	if (scan_dir_recursive(dir_path, out) < 0) {
+		memset(out, 0, sizeof(*out));
+		return -1;
+	}
+	qsort(out->paths, (size_t) out->count, sizeof(out->paths[0]),
+	      sow_path_compare);
 	return out->count;
 }
 

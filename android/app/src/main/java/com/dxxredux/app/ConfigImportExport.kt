@@ -288,13 +288,20 @@ object ConfigImportExport {
                 try {
                     val arr = json.getJSONArray(key)
                     val primEntries = NativeAutoselectPatcher.getPrimaryWeaponEntries(game)
+                    val secEntries = NativeAutoselectPatcher.getSecondaryWeaponEntries(game)
                     val primLen = primEntries.size / 2
-                    val secLen = arr.length() - primLen
-                    if (secLen > 0) {
+                    val secLen = secEntries.size / 2
+                    if (arr.length() == primLen + secLen) {
                         val prim = IntArray(primLen) { arr.getInt(it) }
                         val sec = IntArray(secLen) { arr.getInt(primLen + it) }
                         val count = NativeAutoselectPatcher.writeAutoselect(game, filesDir, prim, sec)
-                        results.add("Autoselect ($game): patched $count file(s)")
+                        if (count >= 0) {
+                            results.add("Autoselect ($game): patched $count file(s)")
+                        } else {
+                            results.add("Autoselect ($game) import failed: invalid weapon order")
+                        }
+                    } else {
+                        results.add("Autoselect ($game) import failed: invalid entry count")
                     }
                 } catch (e: Exception) {
                     results.add("Autoselect ($game) import failed: ${e.message}")
@@ -406,6 +413,10 @@ object ConfigImportExport {
                         obj.optBoolean("show_boss_health_bar", true),
                         obj.optBoolean("headlight_active_default", false),
                     )
+                if (engineCount < 0) {
+                    results.add("Engine prefs ($game) import failed: invalid cockpit mode")
+                    continue
+                }
                 val homingCount =
                     if (obj.has("original_homing")) {
                         NativePilotPreferences.writeOriginalHomingPrefs(

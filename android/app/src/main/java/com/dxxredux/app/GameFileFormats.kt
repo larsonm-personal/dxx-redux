@@ -28,6 +28,8 @@ object GameFileFormats {
         val declaredSecretLevelCount: Int?,
         val assetReferences: Map<String, String>,
         val game: String,
+        val valid: Boolean = true,
+        val problem: String? = null,
     ) {
         val displayName: String
             get() =
@@ -190,6 +192,7 @@ object GameFileFormats {
             "flac" to FormatInfo("FLAC music file", roleLabel = "Audio", music = true),
             "m3u" to FormatInfo("Music playlist", music = true),
             "png" to FormatInfo("PNG image", textureReplacement = true),
+            "jpg" to FormatInfo("JPEG image", textureReplacement = true),
             "tga" to FormatInfo("TGA image", textureReplacement = true),
             "ktx2" to FormatInfo("KTX2 texture", textureReplacement = true),
             "plr" to FormatInfo("Pilot file"),
@@ -396,6 +399,8 @@ object GameFileFormats {
         path: String,
         text: String,
     ): MissionDescriptor {
+        val maxMissionLevels = 127
+        val maxMissionFilenameLength = 12
         val values = linkedMapOf<String, String>()
         val assetReferences = linkedMapOf<String, String>()
         val levels = mutableListOf<String>()
@@ -405,26 +410,38 @@ object GameFileFormats {
         var remainingSecrets = 0
         var declaredLevelCount: Int? = null
         var declaredSecretLevelCount: Int? = null
+        var problem: String? = null
         for (rawLine in text.lineSequence()) {
             val line = rawLine.trim()
-            if (line.isBlank() || line.startsWith(";") || line.startsWith("#")) continue
-            if (remainingLevels > 0 && '=' !in line) {
-                val level = cleanMissionListLine(line).substringBefore(',').trim()
-                if (level.isNotBlank()) levels += level
+            if (remainingLevels > 0) {
                 remainingLevels--
+                val level = cleanMissionListLine(line).substringBefore(',').trim()
+                if (line.isBlank() || line.startsWith(";") || line.startsWith("#") ||
+                    '=' in line || level.isBlank() || level.length > maxMissionFilenameLength
+                ) {
+                    problem = problem ?: "Invalid ordinary level list"
+                } else {
+                    levels += level
+                }
                 continue
             }
-            if (remainingSecrets > 0 && '=' !in line) {
+            if (remainingSecrets > 0) {
+                remainingSecrets--
                 val secretLine = cleanMissionListLine(line)
                 val secret = secretLine.substringBefore(',').trim()
                 val origin = secretLine.substringAfter(',', "").trim().toIntOrNull()
-                if (secret.isNotBlank()) {
+                if (line.isBlank() || line.startsWith(";") || line.startsWith("#") ||
+                    '=' in line || ',' !in secretLine || secret.isBlank() ||
+                    secret.length > maxMissionFilenameLength || origin == null || origin !in 1..levels.size
+                ) {
+                    problem = problem ?: "Invalid secret level list"
+                } else {
                     secrets += secret
-                    origin?.let { secretOrigins += it }
+                    secretOrigins += requireNotNull(origin)
                 }
-                remainingSecrets--
                 continue
             }
+            if (line.isBlank() || line.startsWith(";") || line.startsWith("#")) continue
             val eq = line.indexOf('=')
             if (eq < 0) continue
             val key = line.substring(0, eq).trim().lowercase(Locale.US)
@@ -432,12 +449,18 @@ object GameFileFormats {
             values[key] = value
             when (key) {
                 "num_levels" -> {
-                    declaredLevelCount = value.toIntOrNull()?.coerceAtLeast(0)
+                    declaredLevelCount = value.toIntOrNull()
+                    if (declaredLevelCount == null || declaredLevelCount !in 1..maxMissionLevels) {
+                        problem = problem ?: "Invalid ordinary level count"
+                    }
                     remainingLevels = declaredLevelCount ?: 0
                 }
 
                 "num_secrets" -> {
-                    declaredSecretLevelCount = value.toIntOrNull()?.coerceAtLeast(0)
+                    declaredSecretLevelCount = value.toIntOrNull()
+                    if (declaredSecretLevelCount == null || declaredSecretLevelCount !in 0..maxMissionLevels) {
+                        problem = problem ?: "Invalid secret level count"
+                    }
                     remainingSecrets = declaredSecretLevelCount ?: 0
                 }
 
@@ -446,9 +469,18 @@ object GameFileFormats {
                 }
             }
         }
+        val name = preferredMissionName(path, values)
+        if (name.isNullOrBlank()) problem = problem ?: "Mission name is missing"
+        if (declaredLevelCount == null || remainingLevels != 0 || levels.size != declaredLevelCount) {
+            problem = problem ?: "Ordinary level list is incomplete"
+        }
+        val expectedSecrets = declaredSecretLevelCount ?: 0
+        if (remainingSecrets != 0 || secrets.size != expectedSecrets || secretOrigins.size != expectedSecrets) {
+            problem = problem ?: "Secret level list is incomplete"
+        }
         return MissionDescriptor(
             path = normalizePath(path),
-            name = preferredMissionName(path, values),
+            name = name,
             type = values["type"],
             author = values["author"],
             editor = values["editor"],
@@ -459,6 +491,8 @@ object GameFileFormats {
             declaredSecretLevelCount = declaredSecretLevelCount,
             assetReferences = assetReferences,
             game = detectMissionGame(path, levels),
+            valid = problem == null,
+            problem = problem,
         )
     }
 

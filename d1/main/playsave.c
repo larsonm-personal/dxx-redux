@@ -467,8 +467,12 @@ int read_player_d1x(char *filename)
 	
 			while(!strstr(word,"END") && !PHYSFS_eof(f))
 			{
-				if(!strcmp(word,"MODE"))
-					PlayerCfg.CurrentCockpitMode = PlayerCfg.PreferredCockpitMode = atoi(line);
+				if(!strcmp(word,"MODE")) {
+					int mode = atoi(line);
+					if (!cockpit_mode_is_persistable(mode))
+						mode = CM_FULL_COCKPIT;
+					PlayerCfg.CurrentCockpitMode = PlayerCfg.PreferredCockpitMode = mode;
+				}
 				else if(!strcmp(word,"HUD"))
 					PlayerCfg.HudMode = atoi(line);
 				else if(!strcmp(word,"ROBOTHOSTAGECOUNTS"))
@@ -678,6 +682,10 @@ int read_player_d1x(char *filename)
 		if(word)
 			d_free(word);
 	}
+
+	if (!weapon_order_is_valid(PlayerCfg.PrimaryOrder, MAX_PRIMARY_WEAPONS + 2, 0) ||
+	    !weapon_order_is_valid(PlayerCfg.SecondaryOrder, MAX_SECONDARY_WEAPONS + 1, 1))
+		InitWeaponOrdering();
 
 	PHYSFS_close(f);
 
@@ -1958,7 +1966,12 @@ int plx_read_cockpit_mode(const char *path, int *cockpit_mode)
 		if (!d_strnicmp(line, "[end]", 5))
 			break;
 		if (!d_strnicmp(line, "mode=", 5)) {
-			*cockpit_mode = atoi(line + 5);
+			int mode = atoi(line + 5);
+			if (!cockpit_mode_is_persistable(mode)) {
+				fclose(f);
+				return 0;
+			}
+			*cockpit_mode = mode;
 			fclose(f);
 			return 1;
 		}
@@ -1977,6 +1990,8 @@ int plx_write_cockpit_mode(const char *path, int cockpit_mode)
 {
 	char line[32];
 	struct playsave_text_entry entry = {"mode=", line};
+	if (!cockpit_mode_is_persistable(cockpit_mode))
+		return 0;
 
 	snprintf(line, sizeof(line), "mode=%i\n", cockpit_mode);
 	return playsave_text_update_section(path, "[D1X Options]\n", "[cockpit]",
@@ -1993,6 +2008,9 @@ int plx_read_weapon_order(const char *path,
                           ubyte *primary, int prim_len,
                           ubyte *secondary, int sec_len)
 {
+	if (!primary || prim_len != MAX_PRIMARY_WEAPONS + 2 ||
+	    !secondary || sec_len != MAX_SECONDARY_WEAPONS + 1)
+		return 0;
 	FILE *f = fopen(path, "r");
 	if (!f) return 0;
 
@@ -2021,18 +2039,24 @@ int plx_read_weapon_order(const char *path,
 			int n = sscanf(line + 8,
 			               "0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",
 			               &w[0], &w[1], &w[2], &w[3], &w[4], &w[5], &w[6]);
-			if (n >= 6) {
-				for (int i = 0; i < prim_len && i < 7; i++)
-					primary[i] = (ubyte)w[i];
+			if (n == 7 && prim_len == 7) {
+				ubyte parsed[7];
+				for (int i = 0; i < 7; i++)
+					parsed[i] = (ubyte)w[i];
+				if (weapon_order_is_valid(parsed, 7, 0))
+					memcpy(primary, parsed, sizeof(parsed));
 			}
 		} else if (strncmp(line, "secondary=", 10) == 0) {
 			unsigned int w[6] = { 0 };
 			int n = sscanf(line + 10,
 			               "0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",
 			               &w[0], &w[1], &w[2], &w[3], &w[4], &w[5]);
-			if (n >= 5) {
-				for (int i = 0; i < sec_len && i < 6; i++)
-					secondary[i] = (ubyte)w[i];
+			if (n == 6 && sec_len == 6) {
+				ubyte parsed[6];
+				for (int i = 0; i < 6; i++)
+					parsed[i] = (ubyte)w[i];
+				if (weapon_order_is_valid(parsed, 6, 1))
+					memcpy(secondary, parsed, sizeof(parsed));
 			}
 		}
 	}
@@ -2055,7 +2079,8 @@ int plx_write_weapon_order(const char *path,
 	char secondary_line[128];
 	struct playsave_text_entry entries[2];
 
-	if (!primary || !secondary || prim_len < 6 || sec_len < 5)
+	if (!weapon_order_is_valid(primary, prim_len, 0) ||
+	    !weapon_order_is_valid(secondary, sec_len, 1))
 		return 0;
 	snprintf(primary_line, sizeof(primary_line),
 	         "primary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",

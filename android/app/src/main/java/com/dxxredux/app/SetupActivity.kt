@@ -567,6 +567,10 @@ class SetupActivity : ComponentActivity() {
                                     showBossHealthBar,
                                     headlightActiveDefault,
                                 )
+                            if (engineCount < 0) {
+                                Log.w("DXX-Setup", "write_engine_prefs: rejected invalid cockpit mode $cockpitMode")
+                                return@runIo
+                            }
                             val homingCount =
                                 if (hasOriginalHoming) {
                                     NativePilotPreferences.writeOriginalHomingPrefsToAll(
@@ -848,7 +852,11 @@ class SetupActivity : ComponentActivity() {
                                 prim,
                                 sec,
                             )
-                        Log.i("DXX-Setup", "write_autoselect ($game): patched $count file(s)")
+                        if (count >= 0) {
+                            Log.i("DXX-Setup", "write_autoselect ($game): patched $count file(s)")
+                        } else {
+                            Log.w("DXX-Setup", "write_autoselect ($game): invalid weapon order")
+                        }
                     }
 
                     "music_midi_play" -> {

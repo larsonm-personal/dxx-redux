@@ -43,13 +43,21 @@ int cd_read_file_exact(const char *path, size_t max_bytes, char **data, size_t *
 int cd_track_span(int start_sector, int num_sectors, long long file_size,
                   long long *byte_offset, long long *byte_length)
 {
+	return cd_track_span_with_stride(start_sector, num_sectors, CD_SECTOR_BYTES,
+	                                 file_size, byte_offset, byte_length);
+}
+
+int cd_track_span_with_stride(int start_sector, int num_sectors, int sector_size,
+                              long long file_size, long long *byte_offset,
+                              long long *byte_length)
+{
 	long long offset;
 	long long length;
 
-	if (start_sector < 0 || num_sectors <= 0 || file_size < 0)
+	if (start_sector < 0 || num_sectors <= 0 || sector_size <= 0 || file_size < 0)
 		return 0;
-	offset = (long long) start_sector * CD_SECTOR_BYTES;
-	length = (long long) num_sectors * CD_SECTOR_BYTES;
+	offset = (long long) start_sector * sector_size;
+	length = (long long) num_sectors * sector_size;
 	if (offset > file_size || length > file_size - offset) return 0;
 	if (byte_offset) *byte_offset = offset;
 	if (byte_length) *byte_length = length;

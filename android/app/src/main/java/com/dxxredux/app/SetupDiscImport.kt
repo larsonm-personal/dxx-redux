@@ -241,7 +241,7 @@ internal fun extractSowArchives(
     setDir: File,
     progress: DiscImportBridge.ExtractProgress? = null,
 ): Int {
-    val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return 0
+    val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return -1
     var sowExtracted = 0
     for (sow in sowFiles) {
         val outputDir = File(sow).parentFile?.absolutePath ?: setDir.absolutePath
@@ -465,8 +465,8 @@ internal fun registerDiscAudioSourceFromPath(
     if (firstAudio != null) {
         try {
             val identifier = DiscIdentifier(context)
-            val trackOffset = firstAudio.startSector.toLong() * 2352L
-            val trackBytes = firstAudio.numSectors.toLong() * 2352L
+            val trackOffset = firstAudio.startSector.toLong() * firstAudio.sectorSize
+            val trackBytes = firstAudio.numSectors.toLong() * firstAudio.sectorSize
             val audioBinFile = orderedBinFiles.getOrNull(firstAudio.fileIndex)
             if (audioBinFile == null) {
                 Log.w(
@@ -628,7 +628,8 @@ internal fun cueDataTrackPeakStorageBytes(
             .filter { it.isData }
             .fold(0L) { total, track ->
                 require(track.numSectors > 0) { "Invalid data track length" }
-                Math.addExact(total, Math.multiplyExact(track.numSectors.toLong(), 2352L))
+                require(track.sectorSize == 2048 || track.sectorSize == 2352) { "Invalid data sector size" }
+                Math.addExact(total, Math.multiplyExact(track.numSectors.toLong(), track.sectorSize.toLong()))
             }
     return Math.addExact(extractedBytes, stagedImageBytes)
 }
@@ -740,13 +741,15 @@ internal fun extractPickedCueDataTracks(
                             it.fd,
                             track.startSector,
                             track.numSectors,
+                            track.sectorSize,
+                            track.userDataOffset,
                             outputDir.absolutePath,
                             trackProgress,
                         )
                     val mac =
                         if (iso > 0) {
                             0
-                        } else {
+                        } else if (track.sectorMode == DiscImportBridge.CUE_SECTOR_MODE1_2352) {
                             postUpdate { onStatus("Trying Mac HFS track ${track.trackNum}...") }
                             DiscImportBridge.extractMacFiles(
                                 it.fd,
@@ -755,6 +758,8 @@ internal fun extractPickedCueDataTracks(
                                 outputDir.absolutePath,
                                 trackProgress,
                             )
+                        } else {
+                            -1
                         }
                     CueDataTrackAttempt(iso, mac)
                 }
@@ -767,7 +772,8 @@ private class CueDataTrackProgress(
     private val tracks: List<DiscImportBridge.CueTrack>,
     private val delegate: DiscImportBridge.ExtractProgress?,
 ) {
-    private val trackBytes = tracks.map { Math.multiplyExact(it.numSectors.toLong(), 2352L) }
+    private val trackBytes =
+        tracks.map { Math.multiplyExact(it.numSectors.toLong(), it.sectorSize.toLong()) }
     private val offsets =
         trackBytes.runningFold(0L) { total, bytes -> Math.addExact(total, bytes) }
     val totalBytes: Long = offsets.last()
@@ -818,7 +824,24 @@ internal fun extractCueDataTracks(
         dataTracks.firstOrNull {
             it.fileIndex !in 0 until imageCount ||
                 it.startSector < 0 ||
-                it.numSectors <= 0
+                it.numSectors <= 0 ||
+                when (it.sectorMode) {
+                    DiscImportBridge.CUE_SECTOR_MODE1_2352 -> {
+                        it.sectorSize != 2352 || it.userDataOffset != 16
+                    }
+
+                    DiscImportBridge.CUE_SECTOR_MODE1_2048 -> {
+                        it.sectorSize != 2048 || it.userDataOffset != 0
+                    }
+
+                    DiscImportBridge.CUE_SECTOR_MODE2_2352 -> {
+                        it.sectorSize != 2352 || it.userDataOffset != 24
+                    }
+
+                    else -> {
+                        true
+                    }
+                }
         }
     if (invalidTrack != null) {
         return CueDataTrackExtractionResult(
@@ -975,13 +998,15 @@ internal fun importDiscImageFromPath(
                         image.absolutePath,
                         track.startSector,
                         track.numSectors,
+                        track.sectorSize,
+                        track.userDataOffset,
                         outputDir.absolutePath,
                         progress,
                     )
                 val mac =
                     if (iso > 0) {
                         0
-                    } else {
+                    } else if (track.sectorMode == DiscImportBridge.CUE_SECTOR_MODE1_2352) {
                         DiscImportBridge.extractMacFiles(
                             image.absolutePath,
                             track.startSector,
@@ -989,6 +1014,8 @@ internal fun importDiscImageFromPath(
                             outputDir.absolutePath,
                             progress,
                         )
+                    } else {
+                        -1
                     }
                 CueDataTrackAttempt(iso, mac)
             },
@@ -1038,5 +1065,5 @@ internal fun importIsoImageFromPath(
         "DXX-DiscImport",
         "importIsoImageFromPath: iso=$isoPath files=$isoExtracted sow=$sowExtracted",
     )
-    return if (isoExtracted < 0) isoExtracted else isoExtracted + sowExtracted
+    return if (isoExtracted < 0 || sowExtracted < 0) -1 else isoExtracted + sowExtracted
 }

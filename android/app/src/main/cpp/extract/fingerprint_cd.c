@@ -330,11 +330,12 @@ int main(int argc, char *argv[])
 		const char *track_type = t->type == CUE_TRACK_AUDIO ? "audio" : "data";
 
 		if (t->file_index < 0 || t->file_index >= disc.num_files ||
-		    !cd_track_span(t->start_sector, t->num_sectors,
-		                   t->file_index >= 0 && t->file_index < disc.num_files
-		                       ? bin_sizes[t->file_index]
-		                       : -1,
-		                   &track_offset, NULL)) {
+		    !cd_track_span_with_stride(t->start_sector, t->num_sectors,
+		                               t->sector_size,
+		                               t->file_index >= 0 && t->file_index < disc.num_files
+		                                   ? bin_sizes[t->file_index]
+		                                   : -1,
+		                               &track_offset, NULL)) {
 			fprintf(stderr, "ERROR: Invalid or incomplete span for track %d\n", t->track_num);
 			printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"invalid track span\"}\n",
 			       t->track_num, track_type);
@@ -368,14 +369,14 @@ int main(int argc, char *argv[])
 		}
 
 		for (s = 0; s < t->num_sectors; s++) {
-			int n = read_fd(bin_fd, sector_buf, CUE_SECTOR_SIZE);
-			if (n != CUE_SECTOR_SIZE) {
+			int n = read_fd(bin_fd, sector_buf, t->sector_size);
+			if (n != t->sector_size) {
 				fprintf(stderr, "ERROR: Short read on track %d sector %d\n",
 				        t->track_num, s);
 				read_failed = 1;
 				break;
 			}
-			sha1_update(&sha_ctx, sector_buf, CUE_SECTOR_SIZE);
+			sha1_update(&sha_ctx, sector_buf, (size_t) t->sector_size);
 			if (audio_stream &&
 			    fingerprint_stream_feed(audio_stream,
 			                            (const int16_t *) sector_buf, 588) != 0) {

@@ -53,6 +53,9 @@ typedef struct game_d_tick_state {
 	fix timer;
 } game_d_tick_state;
 
+#define GAME_D_TICK_COUNT_MAX 1000000
+#define GAME_D_TICK_TIMER_MAX ((fix) 0x7ffeffff)
+
 extern struct object *Missile_viewer;
 extern int Missile_viewer_sig;
 
@@ -130,6 +133,7 @@ void calc_game_time(void);
 void calc_d_tick();
 unsigned int game_get_simulation_frame_id(void);
 void game_get_d_tick_state(game_d_tick_state *state);
+int game_d_tick_state_is_valid(const game_d_tick_state *state);
 void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);
 
@@ -186,6 +190,8 @@ extern void save_screen_shot(int automap_flag);
 #define CM_STATUS_BAR       2   // small status bar, w/ reticle
 #define CM_FULL_SCREEN      3   // full screen, no cockpit (w/ reticle)
 #define CM_LETTERBOX        4   // half-height window (for cutscenes)
+
+int cockpit_mode_is_persistable(int mode);
 
 extern int Game_window_w,       // width and height of player's game window
            Game_window_h;

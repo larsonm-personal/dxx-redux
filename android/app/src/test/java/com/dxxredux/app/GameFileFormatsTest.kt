@@ -71,12 +71,12 @@ class GameFileFormatsTest {
                 num_levels = 1
                 humility.rdl           ;level filename 1
                 num_secrets = 1
-                humilitys.rdl,1        ;secret filename and origin
+                humils.rdl,1           ;secret filename and origin
                 """.trimIndent(),
             )
 
         assertEquals(listOf("humility.rdl"), mission.levelNames)
-        assertEquals(listOf("humilitys.rdl"), mission.secretLevelNames)
+        assertEquals(listOf("humils.rdl"), mission.secretLevelNames)
         assertEquals(listOf(1), mission.secretLevelOrigins)
         assertEquals(GameFileFormats.GAME_D1, mission.game)
     }

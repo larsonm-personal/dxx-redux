@@ -3233,6 +3233,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						GLenum gl_fmt = edata.format
 							? GL_COMPRESSED_RGBA8_ETC2_EAC
 							: GL_COMPRESSED_RGB8_ETC2;
+						GLenum gl_err;
 						android_perf_clock_now(&stage_start);
 						glGenTextures(1, &bm->gltexture->handle);
 						OGL_BINDTEXTURE(bm->gltexture->handle);
@@ -3245,10 +3246,11 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 						}
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+						while (glGetError() != GL_NO_ERROR) {}
 						glCompressedTexImage2D(GL_TEXTURE_2D, 0, gl_fmt,
 							mw, mh, 0, (GLsizei)sz, p);
 						{
-							GLenum gl_err = glGetError();
+							gl_err = glGetError();
 							int nz64 = 0;
 							unsigned int check = sz < 64 ? sz : 64;
 							unsigned int ci;
@@ -3260,6 +3262,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 								__android_log_print(ANDROID_LOG_ERROR, "DXX-TEX",
 									"ETC2 upload FAILED: %s %dx%d fmt=0x%x sz=%u err=0x%x",
 									bitmapname, mw, mh, gl_fmt, sz, gl_err);
+								glDeleteTextures(1, &bm->gltexture->handle);
+								bm->gltexture->handle = 0;
 							}
 							if (nz64 == 0) {
 								__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
@@ -3272,13 +3276,15 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 								sz >= 4 ? p[0] : 0, sz >= 4 ? p[1] : 0,
 								sz >= 4 ? p[2] : 0, sz >= 4 ? p[3] : 0, nz64);
 						}
-						tex_set_size(bm->gltexture);
-						r_texcount++;
 						android_perf_clock_now(&stage_end);
 						profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
-						android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
-						android_cache_profile_count(&g_cache_upload_count);
-						ok = 1;
+						if (gl_err == GL_NO_ERROR) {
+							tex_set_size(bm->gltexture);
+							r_texcount++;
+							android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
+							android_cache_profile_count(&g_cache_upload_count);
+							ok = 1;
+						}
 					}
 				}
 				free(edata.filedata);

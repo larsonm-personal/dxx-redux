@@ -26,6 +26,7 @@ data class MissionZipMusicSource(
 data class MissionZipMusicTrack(
     val id: String,
     val displayName: String,
+    val sourceRelativeName: String = displayName,
     val archiveEntryPath: String,
     val nestedEntryPath: String? = null,
     val hogEntryName: String? = null,
@@ -46,6 +47,15 @@ object MissionZipMusic {
     private val COMPRESSED_AUDIO_EXTENSIONS = setOf("flac", "mp3", "ogg", "wav")
     private val PLAYABLE_EXTENSIONS = MIDI_EXTENSIONS + COMPRESSED_AUDIO_EXTENSIONS
 
+    private fun logSkippedOptionalSource(
+        path: String,
+        error: Exception,
+    ) {
+        runCatching {
+            android.util.Log.w("DXX-MissionZipMusic", "Skipping optional music source $path", error)
+        }
+    }
+
     fun inspect(file: java.io.File): MissionZipMusicCatalog? {
         if (!file.isFile) return null
         val sources =
@@ -62,43 +72,48 @@ object MissionZipMusic {
                         for (entry in archive.entries) {
                             if (entry.isDirectory) continue
                             val normalized = normalizePath(entry.path)
-                            when (extensionOf(normalized)) {
-                                "sng" -> {
-                                    archive.openInputStream(entry).use { input ->
-                                        archiveBuilder.addSongList(
-                                            normalized,
-                                            input
-                                                .readBytesBounded(
-                                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                                    normalized,
-                                                    metadataBudget,
-                                                    entry.compressedSizeBytes,
-                                                ).toString(Charsets.UTF_8),
+                            try {
+                                when (extensionOf(normalized)) {
+                                    "sng" -> {
+                                        archive.openInputStream(entry).use { input ->
+                                            archiveBuilder.addSongList(
+                                                normalized,
+                                                input
+                                                    .readBytesBounded(
+                                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                                        normalized,
+                                                        metadataBudget,
+                                                        entry.compressedSizeBytes,
+                                                    ).toString(Charsets.UTF_8),
+                                            )
+                                        }
+                                    }
+
+                                    in PLAYABLE_EXTENSIONS -> {
+                                        archiveBuilder.addPlayable(
+                                            archiveEntryPath = normalized,
+                                            nestedEntryPath = null,
+                                            hogEntryName = null,
+                                            name = leafName(normalized),
+                                            sourceRelativeName = normalized,
+                                            sizeBytes = entry.sizeBytes,
                                         )
                                     }
-                                }
 
-                                in PLAYABLE_EXTENSIONS -> {
-                                    archiveBuilder.addPlayable(
-                                        archiveEntryPath = normalized,
-                                        nestedEntryPath = null,
-                                        hogEntryName = null,
-                                        name = leafName(normalized),
-                                        sizeBytes = entry.sizeBytes,
-                                    )
-                                }
+                                    "dxa" -> {
+                                        archive.openInputStream(entry).use { input ->
+                                            scanDxa(normalized, input)?.let { add(it) }
+                                        }
+                                    }
 
-                                "dxa" -> {
-                                    archive.openInputStream(entry).use { input ->
-                                        scanDxa(normalized, input)?.let { add(it) }
+                                    "hog" -> {
+                                        archive.openInputStream(entry).use { input ->
+                                            scanHog(normalized, input)?.let { add(it) }
+                                        }
                                     }
                                 }
-
-                                "hog" -> {
-                                    archive.openInputStream(entry).use { input ->
-                                        scanHog(normalized, input)?.let { add(it) }
-                                    }
-                                }
+                            } catch (e: Exception) {
+                                logSkippedOptionalSource(normalized, e)
                             }
                         }
                         archiveBuilder.build()?.let { add(0, it) }
@@ -128,44 +143,57 @@ object MissionZipMusic {
                     val diskFile = File(record.rootDir, relativePath.replace('/', File.separatorChar))
                     if (!diskFile.isFile) continue
                     entryBudget.registerEntry(file.sizeBytes, file.sizeBytes, relativePath)
-                    when (extensionOf(relativePath)) {
-                        "sng" -> {
-                            archiveBuilder.addSongList(
-                                relativePath,
-                                diskFile.inputStream().use {
-                                    it
-                                        .readBytesBounded(
-                                            ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                            relativePath,
-                                            metadataBudget,
-                                            file.sizeBytes,
-                                        ).toString(Charsets.UTF_8)
-                                },
-                            )
-                        }
+                    try {
+                        when (extensionOf(relativePath)) {
+                            "sng" -> {
+                                archiveBuilder.addSongList(
+                                    relativePath,
+                                    diskFile.inputStream().use {
+                                        it
+                                            .readBytesBounded(
+                                                ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                                relativePath,
+                                                metadataBudget,
+                                                file.sizeBytes,
+                                            ).toString(Charsets.UTF_8)
+                                    },
+                                )
+                            }
 
-                        in PLAYABLE_EXTENSIONS -> {
-                            archiveBuilder.addPlayable(
-                                archiveEntryPath = relativePath,
-                                nestedEntryPath = null,
-                                hogEntryName = null,
-                                name = leafName(relativePath),
-                                sizeBytes = file.sizeBytes,
-                                sourceFilePath = diskFile.absolutePath,
-                            )
-                        }
+                            in PLAYABLE_EXTENSIONS -> {
+                                archiveBuilder.addPlayable(
+                                    archiveEntryPath = relativePath,
+                                    nestedEntryPath = null,
+                                    hogEntryName = null,
+                                    name = leafName(relativePath),
+                                    sourceRelativeName = relativePath,
+                                    sizeBytes = file.sizeBytes,
+                                    sourceFilePath = diskFile.absolutePath,
+                                )
+                            }
 
-                        "dxa" -> {
-                            diskFile.inputStream().use { input ->
-                                scanDxa(relativePath, input, sourceFilePath = diskFile.absolutePath)?.let { add(it) }
+                            "dxa" -> {
+                                diskFile.inputStream().use { input ->
+                                    scanDxa(
+                                        relativePath,
+                                        input,
+                                        sourceFilePath = diskFile.absolutePath,
+                                    )?.let { add(it) }
+                                }
+                            }
+
+                            "hog" -> {
+                                diskFile.inputStream().use { input ->
+                                    scanHog(
+                                        relativePath,
+                                        input,
+                                        sourceFilePath = diskFile.absolutePath,
+                                    )?.let { add(it) }
+                                }
                             }
                         }
-
-                        "hog" -> {
-                            diskFile.inputStream().use { input ->
-                                scanHog(relativePath, input, sourceFilePath = diskFile.absolutePath)?.let { add(it) }
-                            }
-                        }
+                    } catch (e: Exception) {
+                        logSkippedOptionalSource(relativePath, e)
                     }
                 }
                 archiveBuilder.build()?.let { add(0, it) }
@@ -278,6 +306,7 @@ object MissionZipMusic {
                                 nestedEntryPath = nestedPath,
                                 hogEntryName = null,
                                 name = leafName(nestedPath),
+                                sourceRelativeName = nestedPath,
                                 sizeBytes = entry.size.coerceAtLeast(0),
                                 sourceFilePath = sourceFilePath,
                             )
@@ -350,6 +379,7 @@ object MissionZipMusic {
                         nestedEntryPath = nestedEntryPath,
                         hogEntryName = entryName,
                         name = entryName,
+                        sourceRelativeName = entryName,
                         sizeBytes = size,
                         sourceFilePath = sourceFilePath,
                     )
@@ -391,6 +421,7 @@ object MissionZipMusic {
             nestedEntryPath: String?,
             hogEntryName: String?,
             name: String,
+            sourceRelativeName: String = name,
             sizeBytes: Long,
             sourceFilePath: String? = null,
         ) {
@@ -401,6 +432,7 @@ object MissionZipMusic {
                         listOf(id, archiveEntryPath, nestedEntryPath.orEmpty(), hogEntryName.orEmpty(), name)
                             .joinToString(":"),
                     displayName = name,
+                    sourceRelativeName = normalizePath(sourceRelativeName),
                     archiveEntryPath = archiveEntryPath,
                     nestedEntryPath = nestedEntryPath,
                     hogEntryName = hogEntryName,
@@ -429,12 +461,11 @@ object MissionZipMusic {
             if (songReferences.isEmpty()) return playableTracks
             val byName =
                 playableTracks
-                    .groupBy { it.displayName.lowercase(Locale.US) }
+                    .groupBy { it.sourceRelativeName.lowercase(Locale.US) }
                     .mapValues { (_, tracks) -> ArrayDeque(tracks) }
             val byLeafName =
                 playableTracks
-                    .groupBy { leafName(it.displayName).lowercase(Locale.US) }
-                    .mapValues { (_, tracks) -> ArrayDeque(tracks) }
+                    .groupBy { leafName(it.sourceRelativeName).lowercase(Locale.US) }
             val usedTrackIds = mutableSetOf<String>()
             val usedNames = mutableSetOf<String>()
             val displayTracks = mutableListOf<MissionZipMusicTrack>()
@@ -442,11 +473,16 @@ object MissionZipMusic {
             songReferences.forEach { reference ->
                 val nameKey = reference.name.lowercase(Locale.US)
                 if (!usedNames.add(nameKey)) return@forEach
-                val playable =
-                    byName[nameKey].removeFirstUnused(usedTrackIds)
-                        ?: byLeafName[leafName(reference.name).lowercase(Locale.US)].removeFirstUnused(usedTrackIds)
+                val exact = byName[nameKey].removeFirstUnused(usedTrackIds)
+                val leafMatches = byLeafName[leafName(reference.name).lowercase(Locale.US)].orEmpty()
+                val playable = exact ?: leafMatches.singleOrNull()?.takeIf { it.id !in usedTrackIds }
                 if (playable != null) {
-                    displayTracks += playable
+                    displayTracks +=
+                        if ('/' in reference.name || '\\' in reference.name) {
+                            playable.copy(displayName = normalizePath(reference.name))
+                        } else {
+                            playable
+                        }
                     usedTrackIds += playable.id
                 } else {
                     displayTracks +=
@@ -462,9 +498,19 @@ object MissionZipMusic {
                 }
             }
 
+            val duplicateLeaves =
+                playableTracks
+                    .groupingBy { leafName(it.sourceRelativeName).lowercase(Locale.US) }
+                    .eachCount()
             playableTracks.forEach { track ->
-                if (track.id !in usedTrackIds && usedNames.add(track.displayName.lowercase(Locale.US))) {
-                    displayTracks += track
+                if (track.id !in usedTrackIds) {
+                    val leafKey = leafName(track.sourceRelativeName).lowercase(Locale.US)
+                    displayTracks +=
+                        if (duplicateLeaves.getValue(leafKey) > 1) {
+                            track.copy(displayName = track.sourceRelativeName)
+                        } else {
+                            track
+                        }
                 }
             }
             return displayTracks
