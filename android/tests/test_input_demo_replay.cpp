@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "input_demo_direct_command_policy.h"
+#include "input_demo_limits.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -50,6 +51,17 @@ static bool read_text_file(const char *path, std::string *text)
 		text->append(buffer, bytes);
 	fclose(f);
 	return true;
+}
+
+static bool write_text_file(const char *path, const std::string &text)
+{
+	FILE *f = fopen(path, "wb");
+
+	if (!f)
+		return false;
+	const bool wrote = fwrite(text.data(), 1, text.size(), f) == text.size();
+	const bool closed = fclose(f) == 0;
+	return wrote && closed;
 }
 
 static const char *input_demo_test_game_name(void)
@@ -598,6 +610,56 @@ static int expect_checkpoint_replay_loader(void)
 	return 0;
 }
 
+static int expect_checkpoint_replay_limits(void)
+{
+	const char *dir = "test_input_demo_replay_limit_fixture";
+	const std::string demo_path = std::string(dir) + "/checkpoint_limit.dximdemo";
+	std::string demo_text;
+	std::string oversized;
+	char error[256] = "";
+	size_t size_field;
+	size_t size_end;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create checkpoint limit test directory");
+	if (write_checkpoint_test_fixture(demo_path.c_str()))
+		return 1;
+	if (!read_text_file(demo_path.c_str(), &demo_text))
+		return report_failure("could not read checkpoint limit fixture");
+	size_field = demo_text.find("\"size\":256");
+	if (size_field == std::string::npos)
+		return report_failure("checkpoint limit fixture is missing its size field");
+	size_end = size_field + strlen("\"size\":256");
+
+	oversized = demo_text;
+	oversized.replace(size_field, size_end - size_field,
+	                  "\"size\":" + std::to_string(INPUT_DEMO_CHECKPOINT_MAX_BYTES + 1u));
+	if (!write_text_file(demo_path.c_str(), oversized))
+		return report_failure("could not write oversized checkpoint fixture");
+	if (input_demo_replay_load(demo_path.c_str(), error, sizeof(error)))
+		return report_failure("oversized checkpoint unexpectedly loaded");
+	if (strstr(error, "supported limit") == NULL)
+		return report_failure_string(std::string("oversized checkpoint returned the wrong error: ") + error);
+	if (input_demo_replay_is_loaded())
+		return report_failure("oversized checkpoint left replay state loaded");
+
+	oversized = demo_text;
+	oversized.replace(size_field, size_end - size_field,
+	                  "\"size\":" + std::to_string(INPUT_DEMO_CHECKPOINT_MAX_BYTES));
+	if (!write_text_file(demo_path.c_str(), oversized))
+		return report_failure("could not write excessive-ratio checkpoint fixture");
+	if (input_demo_replay_load(demo_path.c_str(), error, sizeof(error)))
+		return report_failure("excessive-ratio checkpoint unexpectedly loaded");
+	if (strstr(error, "compression ratio") == NULL)
+		return report_failure_string(std::string("excessive-ratio checkpoint returned the wrong error: ") + error);
+	if (input_demo_replay_is_loaded())
+		return report_failure("excessive-ratio checkpoint left replay state loaded");
+
+	remove(demo_path.c_str());
+	remove_test_dir(dir);
+	return 0;
+}
+
 enum direct_command_policy_fixture_kind {
 	DIRECT_COMMAND_POLICY_FIXTURE_ZERO,
 	DIRECT_COMMAND_POLICY_FIXTURE_ONE,
@@ -987,6 +1049,8 @@ int main(void)
 	if (expect_replay_loader())
 		return 1;
 	if (expect_checkpoint_replay_loader())
+		return 1;
+	if (expect_checkpoint_replay_limits())
 		return 1;
 	if (expect_direct_command_policy())
 		return 1;

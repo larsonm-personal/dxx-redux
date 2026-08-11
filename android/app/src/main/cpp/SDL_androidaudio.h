@@ -29,7 +29,7 @@ struct SDL_PrivateAudioData {
      * via SDL_mixer's callback, then re-enqueues.  mixbuf is kept
      * for SDL_RunAudio compatibility but unused in callback mode. */
     Uint8   *mixbuf;              /* SDL mix buffer (unused in callback mode) */
-    Sint16  *playbuf[NUM_BUFFERS]; /* play buffers rotated by callback */
+    Uint8   *playbuf[NUM_BUFFERS]; /* play buffers rotated by callback */
     int      next_buf;            /* which playbuf to fill next */
     Uint32   mixlen;              /* spec.size (bytes) */
     Uint32   playlen;             /* playbuf size in bytes */

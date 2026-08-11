@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "input_demo_rng_mode.h"
+#include "input_demo_limits.h"
 
 static int is_identifier_char(int c)
 {
@@ -48,6 +49,10 @@ static const char *read_text_file(const char *path, char **text_out)
 	if (size < 0) {
 		fclose(f);
 		return "could not size demo file";
+	}
+	if (!input_demo_file_size_supported((unsigned long) size)) {
+		fclose(f);
+		return "demo file exceeds the supported size limit";
 	}
 	if (fseek(f, 0, SEEK_SET) != 0) {
 		fclose(f);

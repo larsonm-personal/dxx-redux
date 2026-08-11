@@ -71,3 +71,13 @@ target_compile_definitions(etc2tool PRIVATE KHRONOS_STATIC)
 target_include_directories(
     etc2tool PRIVATE ${etc2comp_SOURCE_DIR}/EtcLib/Etc ${etc2comp_SOURCE_DIR}/EtcLib/EtcCodec
                      ${CMAKE_CURRENT_BINARY_DIR})
+
+enable_testing()
+add_executable(test_etc2_limits test_etc2_limits.cpp)
+target_include_directories(test_etc2_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(MSVC)
+    target_compile_options(test_etc2_limits PRIVATE /W4)
+else()
+    target_compile_options(test_etc2_limits PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME etc2_limit_tests COMMAND test_etc2_limits)

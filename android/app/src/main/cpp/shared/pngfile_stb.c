@@ -17,6 +17,7 @@
 
 #include "pngfile.h"
 #include "pstypes.h"
+#include "android_log.h"
 
 #define KHRONOS_STATIC
 #include <ktx.h>
@@ -38,12 +39,37 @@
 #define TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT ((TEXTURE_LOOKUP_MISS_CACHE_SIZE * 3u) / 4u)
 #define TEXTURE_LOOKUP_FILE_INDEX_SIZE      65536u
 #define TEXTURE_LOOKUP_FILE_INDEX_MAX_COUNT ((TEXTURE_LOOKUP_FILE_INDEX_SIZE * 3u) / 4u)
+/* Traversal limits must match DxaTextureScanner.kt launcher preflight. */
+#define TEXTURE_LOOKUP_MAX_DEPTH               64u
+#define TEXTURE_LOOKUP_MAX_ENTRIES             65536u
+#define TEXTURE_LOOKUP_MAX_DIRECTORIES         16384u
+#define TEXTURE_LOOKUP_MAX_PATH_BYTES          4096u
+#define TEXTURE_LOOKUP_MAX_RETAINED_PATH_BYTES (8u * 1024u * 1024u)
+#define TEXTURE_LOOKUP_MAX_INDEXED_PATH_BYTES  (16u * 1024u * 1024u)
 
 static char *g_texture_lookup_miss_cache[TEXTURE_LOOKUP_MISS_CACHE_SIZE];
 static unsigned int g_texture_lookup_miss_cache_count = 0;
 static char *g_texture_lookup_file_index[TEXTURE_LOOKUP_FILE_INDEX_SIZE];
 static unsigned int g_texture_lookup_file_index_count = 0;
+static size_t g_texture_lookup_file_index_bytes = 0;
 static int g_texture_lookup_file_index_ready = 0;
+
+typedef struct texture_lookup_directory {
+	char *path;
+	unsigned int depth;
+} texture_lookup_directory;
+
+typedef struct texture_lookup_walk {
+	texture_lookup_directory *directories;
+	size_t directory_count;
+	size_t directory_capacity;
+	size_t retained_path_bytes;
+	unsigned int visited_entries;
+	unsigned int discovered_directories;
+	unsigned int current_depth;
+	int failed;
+	char failure_path[256];
+} texture_lookup_walk;
 
 static unsigned char texture_lookup_ascii_fold(unsigned char c)
 {
@@ -91,7 +117,7 @@ static int texture_lookup_is_indexed_extension(const char *filename)
 	       texture_lookup_path_equals_ci(dot, ".tga");
 }
 
-static void texture_lookup_file_index_add(const char *filename)
+static int texture_lookup_file_index_add(const char *filename)
 {
 	unsigned int index;
 	unsigned int probe;
@@ -99,9 +125,9 @@ static void texture_lookup_file_index_add(const char *filename)
 	size_t len;
 
 	if (!filename || !filename[0] || !texture_lookup_is_indexed_extension(filename))
-		return;
+		return 1;
 	if (g_texture_lookup_file_index_count >= TEXTURE_LOOKUP_FILE_INDEX_MAX_COUNT)
-		return;
+		return 0;
 
 	index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_FILE_INDEX_SIZE - 1u);
 	for (probe = 0; probe < TEXTURE_LOOKUP_FILE_INDEX_SIZE; probe++) {
@@ -110,58 +136,153 @@ static void texture_lookup_file_index_add(const char *filename)
 		if (!entry)
 			break;
 		if (texture_lookup_path_equals_ci(entry, filename))
-			return;
+			return 1;
 		index = (index + 1u) & (TEXTURE_LOOKUP_FILE_INDEX_SIZE - 1u);
 	}
 	if (probe >= TEXTURE_LOOKUP_FILE_INDEX_SIZE)
-		return;
+		return 0;
 
 	len = strlen(filename) + 1u;
+	if (len > TEXTURE_LOOKUP_MAX_PATH_BYTES + 1u ||
+	    len > TEXTURE_LOOKUP_MAX_INDEXED_PATH_BYTES - g_texture_lookup_file_index_bytes)
+		return 0;
 	copy = (char *) malloc(len);
 	if (!copy)
-		return;
+		return 0;
 	memcpy(copy, filename, len);
 	g_texture_lookup_file_index[index] = copy;
 	g_texture_lookup_file_index_count++;
+	g_texture_lookup_file_index_bytes += len;
+	return 1;
 }
 
-static void texture_lookup_build_file_index_recursive(const char *path)
+static void texture_lookup_walk_fail(texture_lookup_walk *walk, const char *path)
 {
-	char **list;
-	char **entry;
-
-	list = PHYSFS_enumerateFiles(path && path[0] ? path : "");
-	if (!list)
+	if (!walk || walk->failed)
 		return;
+	walk->failed = 1;
+	snprintf(walk->failure_path, sizeof(walk->failure_path), "%s", path ? path : "");
+}
 
-	for (entry = list; *entry; entry++) {
-		const char *leaf = *entry;
-		PHYSFS_Stat statbuf;
-		char *child_path;
-		size_t path_len = path && path[0] ? strlen(path) : 0u;
-		size_t leaf_len = strlen(leaf);
-		size_t child_len = path_len ? (path_len + 1u + leaf_len + 1u) : (leaf_len + 1u);
+static int texture_lookup_walk_push(texture_lookup_walk *walk, char *path, unsigned int depth)
+{
+	texture_lookup_directory *next;
+	size_t path_bytes = strlen(path) + 1u;
 
-		child_path = (char *) malloc(child_len);
-		if (!child_path)
-			continue;
+	if (depth > TEXTURE_LOOKUP_MAX_DEPTH ||
+	    (depth && walk->discovered_directories >= TEXTURE_LOOKUP_MAX_DIRECTORIES) ||
+	    path_bytes > TEXTURE_LOOKUP_MAX_RETAINED_PATH_BYTES - walk->retained_path_bytes) {
+		texture_lookup_walk_fail(walk, path);
+		return 0;
+	}
+	if (walk->directory_count == walk->directory_capacity) {
+		size_t next_capacity = walk->directory_capacity ? walk->directory_capacity * 2u : 64u;
 
-		if (path_len)
-			snprintf(child_path, child_len, "%s/%s", path, leaf);
-		else
-			memcpy(child_path, leaf, child_len);
-
-		if (PHYSFS_stat(child_path, &statbuf)) {
-			if (statbuf.filetype == PHYSFS_FILETYPE_DIRECTORY)
-				texture_lookup_build_file_index_recursive(child_path);
-			else if (statbuf.filetype == PHYSFS_FILETYPE_REGULAR)
-				texture_lookup_file_index_add(child_path);
+		if (next_capacity > TEXTURE_LOOKUP_MAX_DIRECTORIES)
+			next_capacity = TEXTURE_LOOKUP_MAX_DIRECTORIES;
+		next = (texture_lookup_directory *) realloc(
+		    walk->directories, next_capacity * sizeof(*walk->directories));
+		if (!next) {
+			texture_lookup_walk_fail(walk, path);
+			return 0;
 		}
+		walk->directories = next;
+		walk->directory_capacity = next_capacity;
+	}
+	walk->directories[walk->directory_count].path = path;
+	walk->directories[walk->directory_count].depth = depth;
+	walk->directory_count++;
+	if (depth)
+		walk->discovered_directories++;
+	walk->retained_path_bytes += path_bytes;
+	return 1;
+}
 
+static PHYSFS_EnumerateCallbackResult texture_lookup_walk_entry(void *data,
+                                                                const char *origdir, const char *leaf)
+{
+	texture_lookup_walk *walk = (texture_lookup_walk *) data;
+	PHYSFS_Stat statbuf;
+	char *child_path;
+	size_t path_len = origdir && origdir[0] ? strlen(origdir) : 0u;
+	size_t leaf_len = leaf ? strlen(leaf) : 0u;
+	size_t child_len;
+	unsigned int depth;
+
+	if (!walk || walk->failed)
+		return PHYSFS_ENUM_STOP;
+	if (++walk->visited_entries > TEXTURE_LOOKUP_MAX_ENTRIES ||
+	    !leaf || !leaf[0] || strchr(leaf, '/') || strchr(leaf, '\\') ||
+	    leaf_len > TEXTURE_LOOKUP_MAX_PATH_BYTES ||
+	    (path_len && (leaf_len > TEXTURE_LOOKUP_MAX_PATH_BYTES - 1u ||
+	                  path_len > TEXTURE_LOOKUP_MAX_PATH_BYTES - leaf_len - 1u))) {
+		texture_lookup_walk_fail(walk, origdir);
+		return PHYSFS_ENUM_STOP;
+	}
+	child_len = path_len ? path_len + 1u + leaf_len + 1u : leaf_len + 1u;
+	child_path = (char *) malloc(child_len);
+	if (!child_path) {
+		texture_lookup_walk_fail(walk, origdir);
+		return PHYSFS_ENUM_STOP;
+	}
+	if (path_len) {
+		snprintf(child_path, child_len, "%s/%s", origdir, leaf);
+	} else {
+		memcpy(child_path, leaf, child_len);
+	}
+	depth = walk->current_depth + 1u;
+	if (!PHYSFS_stat(child_path, &statbuf)) {
+		texture_lookup_walk_fail(walk, child_path);
+		free(child_path);
+		return PHYSFS_ENUM_STOP;
+	}
+	if (statbuf.filetype == PHYSFS_FILETYPE_DIRECTORY) {
+		if (!texture_lookup_walk_push(walk, child_path, depth)) {
+			free(child_path);
+			return PHYSFS_ENUM_STOP;
+		}
+	} else {
+		if (statbuf.filetype == PHYSFS_FILETYPE_REGULAR &&
+		    !texture_lookup_file_index_add(child_path))
+			texture_lookup_walk_fail(walk, child_path);
 		free(child_path);
 	}
+	return walk->failed ? PHYSFS_ENUM_STOP : PHYSFS_ENUM_OK;
+}
 
-	PHYSFS_freeList(list);
+static int texture_lookup_build_file_index(void)
+{
+	texture_lookup_walk walk = { 0 };
+	char *root = (char *) malloc(1u);
+
+	if (!root)
+		return 0;
+	root[0] = '\0';
+	if (!texture_lookup_walk_push(&walk, root, 0u)) {
+		free(root);
+		free(walk.directories);
+		return 0;
+	}
+	while (walk.directory_count && !walk.failed) {
+		texture_lookup_directory directory = walk.directories[--walk.directory_count];
+
+		walk.retained_path_bytes -= strlen(directory.path) + 1u;
+		walk.current_depth = directory.depth;
+		if (!PHYSFS_enumerate(directory.path, texture_lookup_walk_entry, &walk))
+			texture_lookup_walk_fail(&walk, directory.path);
+		free(directory.path);
+	}
+	while (walk.directory_count)
+		free(walk.directories[--walk.directory_count].path);
+	if (walk.failed) {
+		const char *real_dir = walk.failure_path[0] ? PHYSFS_getRealDir(walk.failure_path) : NULL;
+
+		debug_log(DLOG_TEXTURE,
+		          "texture index rejected at '%s' from '%s': hierarchy exceeds safe limits or cannot be read",
+		          walk.failure_path, real_dir ? real_dir : "unknown mount");
+	}
+	free(walk.directories);
+	return !walk.failed;
 }
 
 static void texture_lookup_ensure_file_index(void)
@@ -170,7 +291,16 @@ static void texture_lookup_ensure_file_index(void)
 		return;
 
 	g_texture_lookup_file_index_ready = 1;
-	texture_lookup_build_file_index_recursive("");
+	if (!texture_lookup_build_file_index()) {
+		unsigned int i;
+
+		for (i = 0; i < TEXTURE_LOOKUP_FILE_INDEX_SIZE; i++) {
+			free(g_texture_lookup_file_index[i]);
+			g_texture_lookup_file_index[i] = NULL;
+		}
+		g_texture_lookup_file_index_count = 0;
+		g_texture_lookup_file_index_bytes = 0;
+	}
 }
 
 static const char *texture_lookup_resolve_indexed_path(const char *filename)
@@ -211,6 +341,7 @@ void clear_texture_lookup_cache(void)
 	}
 	g_texture_lookup_miss_cache_count = 0;
 	g_texture_lookup_file_index_count = 0;
+	g_texture_lookup_file_index_bytes = 0;
 	g_texture_lookup_file_index_ready = 0;
 }
 

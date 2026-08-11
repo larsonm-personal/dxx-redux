@@ -273,9 +273,12 @@ class ModManager(
         filename: String,
         enabled: Boolean,
     ) {
-        if (enabled && DxaTextureScanner.scan(File(modsDir, filename))?.oversizedCount?.let { it > 0 } == true) {
-            Log.w(TAG, "Refusing to enable mod with oversized textures: $filename")
-            return
+        if (enabled) {
+            val scan = DxaTextureScanner.scan(File(modsDir, filename))
+            if (scan?.canEnable != true) {
+                Log.w(TAG, "Refusing to enable unsafe or unreadable mod: $filename")
+                return
+            }
         }
         mods =
             mods
@@ -367,7 +370,7 @@ class ModManager(
             ModInfo(
                 filename = safeName,
                 displayName = generateDisplayName(safeName),
-                enabled = DxaTextureScanner.scan(dest)?.oversizedCount?.let { it > 0 } != true,
+                enabled = DxaTextureScanner.scan(dest)?.canEnable == true,
                 addedAt = System.currentTimeMillis(),
                 sizeBytes = dest.length(),
                 game = detectGame(safeName),
@@ -392,7 +395,7 @@ class ModManager(
             ModInfo(
                 filename = filename,
                 displayName = displayName,
-                enabled = DxaTextureScanner.scan(File(modsDir, filename))?.oversizedCount?.let { it > 0 } != true,
+                enabled = DxaTextureScanner.scan(File(modsDir, filename))?.canEnable == true,
                 addedAt = System.currentTimeMillis(),
                 sizeBytes = sizeBytes,
                 game = game,

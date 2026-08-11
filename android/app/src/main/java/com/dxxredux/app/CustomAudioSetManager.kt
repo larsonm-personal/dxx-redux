@@ -190,6 +190,7 @@ class CustomAudioSetManager(
         }
         if (allFiles.isEmpty()) {
             File(filesDir, PLAYLIST_FILE).delete()
+            File(filesDir, NAMES_FILE).delete()
             return null
         }
         // No global sort -- sets are sequential in their configured order,
@@ -198,9 +199,7 @@ class CustomAudioSetManager(
         for ((_, path) in allFiles) {
             m3u.appendLine(path)
         }
-        File(filesDir, PLAYLIST_FILE).writeText(m3u.toString())
-        // Write sidecar JSON mapping absolute paths to chromaprint-decoded names
-        val namesJson = JSONObject()
+        val nameRecords = mutableListOf<MusicNameSidecar.Record>()
         for (set in enabled) {
             val dir = setDir(set.id)
             for (f in set.files) {
@@ -212,15 +211,17 @@ class CustomAudioSetManager(
                     } else {
                         File(dir, f).absolutePath
                     }
-                namesJson.put(absPath, name)
+                nameRecords += MusicNameSidecar.Record(listOf(absPath), emptyList(), name)
             }
         }
-        if (namesJson.length() > 0) {
-            File(filesDir, NAMES_FILE).writeText(namesJson.toString())
+        val namesText = nameRecords.takeIf { it.isNotEmpty() }?.let(MusicNameSidecar::encode)
+        File(filesDir, PLAYLIST_FILE).writeText(m3u.toString())
+        if (namesText != null) {
+            AtomicFilePublication.writeUtf8(File(filesDir, NAMES_FILE), namesText)
         } else {
             File(filesDir, NAMES_FILE).delete()
         }
-        logInfo("Wrote $PLAYLIST_FILE with ${allFiles.size} tracks, ${namesJson.length()} names")
+        logInfo("Wrote $PLAYLIST_FILE with ${allFiles.size} tracks, ${nameRecords.size} names")
         return File(filesDir, PLAYLIST_FILE).absolutePath
     }
 

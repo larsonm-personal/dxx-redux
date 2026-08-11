@@ -777,9 +777,10 @@ int state_save_to_memory(rewind_memory_buffer *buffer, const char *desc,
 		return 0;
 	state_android_memory_filename(filename, sizeof(filename));
 	g_state_android_memory_write_buffer = buffer;
+	buffer->error = 0;
 	result = state_android_save_to_path(filename, desc, save_kind, blank_thumbnail);
 	g_state_android_memory_write_buffer = NULL;
-	return result;
+	return result && !buffer->error;
 }
 
 static int state_restore_from_memory_internal(const rewind_memory_buffer *buffer,

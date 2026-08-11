@@ -1,4 +1,5 @@
 #include "input_demo_fixture.h"
+#include "input_demo_limits.h"
 
 #include <limits.h>
 #include <stdio.h>
@@ -527,6 +528,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 		return fail(error, "checkpoint compression must be none or zlib");
 	if (!checkpoint.size)
 		return fail(error, "checkpoint size must be positive");
+	if (!input_demo_checkpoint_size_supported(checkpoint.size))
+		return fail(error, "checkpoint size exceeds the supported limit");
 	if (checkpoint.sha256.empty())
 		return fail(error, "checkpoint sha256 is required");
 	if (checkpoint.save_name.empty())
@@ -543,6 +546,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 		return fail(error, "checkpoint thief_stolen_item_index is out of range");
 	if (checkpoint.data.empty())
 		return fail(error, "checkpoint data is required");
+	if (!input_demo_checkpoint_encoded_size_supported(checkpoint.data.size()))
+		return fail(error, "checkpoint encoded data exceeds the supported limit");
 	return true;
 }
 
@@ -1162,6 +1167,8 @@ bool input_demo_file_parse_text(const std::string &text,
 
 	if (!demo)
 		return fail(error, "missing demo file output");
+	if (!input_demo_file_size_supported(text.size()))
+		return fail(error, "demo file exceeds the supported size limit");
 	while (std::getline(input, line)) {
 		ordered_json root;
 		std::string record_type;
@@ -1225,6 +1232,7 @@ bool input_demo_file_read(const char *path,
 {
 	std::ifstream in(path, std::ios::in | std::ios::binary);
 	std::ostringstream text;
+	std::streamoff file_size;
 
 	if (!demo)
 		return fail(error, "missing demo file output");
@@ -1232,6 +1240,15 @@ bool input_demo_file_read(const char *path,
 		return fail(error, "missing demo file path");
 	if (!in)
 		return fail(error, std::string("could not open demo file: ") + path);
+	in.seekg(0, std::ios::end);
+	file_size = in.tellg();
+	if (file_size < 0)
+		return fail(error, std::string("could not size demo file: ") + path);
+	if (!input_demo_file_size_supported(static_cast<uint64_t>(file_size)))
+		return fail(error, "demo file exceeds the supported size limit");
+	in.seekg(0, std::ios::beg);
+	if (!in)
+		return fail(error, std::string("could not rewind demo file: ") + path);
 	text << in.rdbuf();
 	if (in.bad())
 		return fail(error, std::string("could not read demo file: ") + path);

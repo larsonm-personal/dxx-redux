@@ -14,6 +14,14 @@ import java.util.zip.ZipFile
  */
 object DxaTextureScanner {
     private const val TAG = "DXX-DxaScan"
+
+    // Traversal limits must match pngfile_stb.c native texture indexing.
+    private const val MAX_ARCHIVE_ENTRIES = 65_536
+    private const val MAX_DIRECTORIES = 16_384
+    private const val MAX_TEXTURE_ENTRIES = 49_152
+    private const val MAX_PATH_DEPTH = 64
+    private const val MAX_PATH_BYTES = 4_096
+    private const val MAX_TOTAL_PATH_BYTES = 16 * 1024 * 1024
     private val KTX2_IDENTIFIER =
         byteArrayOf(
             0xAB.toByte(),
@@ -47,7 +55,58 @@ object DxaTextureScanner {
         val textureCount: Int,
         val oversizedCount: Int,
         val oversizedEntries: List<OversizedTexture>,
-    )
+        val rejectedReason: String? = null,
+    ) {
+        val canEnable: Boolean
+            get() = rejectedReason == null && oversizedCount == 0
+    }
+
+    internal fun validateStructure(entryNames: Sequence<String>): String? {
+        var entryCount = 0
+        var textureCount = 0
+        var totalPathBytes = 0L
+        val directories = HashSet<String>()
+
+        for (name in entryNames) {
+            entryCount++
+            if (entryCount > MAX_ARCHIVE_ENTRIES) return "archive has more than $MAX_ARCHIVE_ENTRIES entries"
+            val pathBytes = name.toByteArray(Charsets.UTF_8).size
+            if (pathBytes == 0 || pathBytes > MAX_PATH_BYTES) return "archive path exceeds $MAX_PATH_BYTES bytes"
+            totalPathBytes += pathBytes.toLong() + 1L
+            if (totalPathBytes > MAX_TOTAL_PATH_BYTES) return "archive paths exceed $MAX_TOTAL_PATH_BYTES bytes"
+            if (name.startsWith('/') || '\\' in name || '\u0000' in name) return "archive contains an invalid path"
+
+            val trimmed = name.trimEnd('/')
+            var depth = 0
+            var segmentStart = 0
+            for (index in trimmed.indices) {
+                if (trimmed[index] != '/') continue
+                val segment = trimmed.substring(segmentStart, index)
+                if (segment.isEmpty() || segment == "." || segment == "..") return "archive contains an invalid path"
+                depth++
+                if (depth > MAX_PATH_DEPTH) return "archive path exceeds $MAX_PATH_DEPTH directory components"
+                directories += trimmed.substring(0, index)
+                if (directories.size > MAX_DIRECTORIES) return "archive has more than $MAX_DIRECTORIES directories"
+                segmentStart = index + 1
+            }
+            val leaf = trimmed.substring(segmentStart)
+            if (leaf.isEmpty() || leaf == "." || leaf == "..") return "archive contains an invalid path"
+            if (name.endsWith('/')) {
+                depth++
+                if (depth > MAX_PATH_DEPTH) return "archive path exceeds $MAX_PATH_DEPTH directory components"
+                directories += trimmed
+                if (directories.size > MAX_DIRECTORIES) return "archive has more than $MAX_DIRECTORIES directories"
+            } else if (GameFileFormats.isTextureReplacement(trimmed)) {
+                textureCount++
+                if (textureCount >
+                    MAX_TEXTURE_ENTRIES
+                ) {
+                    return "archive has more than $MAX_TEXTURE_ENTRIES texture entries"
+                }
+            }
+        }
+        return null
+    }
 
     /** Scan a DXA file and return the max texture dimensions found. */
     fun scan(dxaFile: File): ScanResult? {
@@ -59,6 +118,10 @@ object DxaTextureScanner {
                 var count = 0
                 var oversized = 0
                 val oversizedEntries = mutableListOf<OversizedTexture>()
+                val rejectedReason = validateStructure(zip.entries().asSequence().map { it.name })
+                if (rejectedReason != null) {
+                    return@use ScanResult(0, 0, 0, 0, emptyList(), rejectedReason)
+                }
                 for (entry in zip.entries()) {
                     val name = entry.name.lowercase()
                     if (entry.isDirectory) continue

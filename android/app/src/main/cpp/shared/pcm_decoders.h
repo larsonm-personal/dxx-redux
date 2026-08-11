@@ -22,7 +22,8 @@ typedef struct {
 enum {
 	PCM_DECODE_OK = 0,
 	PCM_DECODE_ERROR = -1,
-	PCM_DECODE_UNSUPPORTED_CHANNELS = -2
+	PCM_DECODE_UNSUPPORTED_CHANNELS = -2,
+	PCM_DECODE_BUDGET_EXCEEDED = -3
 };
 
 /* Validate the shared PCM ownership and mono/stereo output contract */

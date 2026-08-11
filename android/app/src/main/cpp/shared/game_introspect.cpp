@@ -1805,14 +1805,16 @@ extern "C" char *game_introspect_get_state(void)
 		};
 		if (have_track == 0 && name[0])
 			music["name"] = std::string(name);
-		char *track_list = (char *) malloc(32768);
-		if (track_list) {
-			songs_get_track_list(track_list, 32768);
+		const int track_list_size = songs_get_track_list(nullptr, 0);
+		char *track_list = track_list_size >= 0 && (unsigned int) track_list_size <= SONGS_TRACK_LIST_MAX_BYTES
+		                       ? (char *) malloc((size_t) track_list_size + 1)
+		                       : nullptr;
+		if (track_list && songs_get_track_list(track_list, (size_t) track_list_size + 1) == track_list_size) {
 			json tracks = json::parse(track_list, nullptr, false);
 			if (tracks.is_array())
 				music["tracks"] = std::move(tracks);
-			free(track_list);
 		}
+		free(track_list);
 		j["music"] = std::move(music);
 	}
 

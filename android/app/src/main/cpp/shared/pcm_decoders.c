@@ -4,6 +4,7 @@
  */
 
 #include "pcm_decoders.h"
+#include "music_decode_limits.h"
 
 #include <limits.h>
 #include <stdlib.h>
@@ -28,9 +29,9 @@ typedef int ssize_t;
 #include "minimp3.h"
 #include "minimp3_ex.h"
 
-/* stb_vorbis -- OGG Vorbis decoder (compiled as separate TU, just declare API) */
-extern int stb_vorbis_decode_filename(const char *filename, int *channels,
-                                      int *sample_rate, short **output);
+/* stb_vorbis -- OGG Vorbis decoder (implementation is compiled separately) */
+#define STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"
 
 /* dr_flac -- FLAC decoder */
 #define DR_FLAC_IMPLEMENTATION
@@ -69,6 +70,9 @@ int pcm_decode_result_status(const pcm_decode_result_t *result)
 		return PCM_DECODE_UNSUPPORTED_CHANNELS;
 	if (result->pcm_samples > SIZE_MAX / (size_t) result->channels)
 		return PCM_DECODE_ERROR;
+	if (result->pcm_samples > MUSIC_PCM_DECODED_MAX_BYTES /
+	                              ((size_t) result->channels * sizeof(int16_t)))
+		return PCM_DECODE_BUDGET_EXCEEDED;
 	return PCM_DECODE_OK;
 }
 
@@ -183,7 +187,23 @@ extern int stb_vorbis_decode_memory(const unsigned char *mem, int len,
 static int decode_mp3_mem(const void *data, size_t size, pcm_decode_result_t *out)
 {
 	mp3dec_t mp3d;
+	mp3dec_ex_t probe;
 	mp3dec_file_info_t info;
+	int probe_status;
+
+	memset(&probe, 0, sizeof(probe));
+	probe_status = mp3dec_ex_open_buf(&probe, (const uint8_t *) data, size,
+	                                  MP3D_SEEK_TO_SAMPLE);
+	if (probe_status || probe.samples == 0 || probe.samples > SIZE_MAX ||
+	    probe.info.channels <= 0 ||
+	    probe.samples % (uint64_t) probe.info.channels != 0 ||
+	    !music_pcm_budget_allows(size,
+	                             (size_t) (probe.samples / (uint64_t) probe.info.channels),
+	                             probe.info.channels)) {
+		mp3dec_ex_close(&probe);
+		return PCM_DECODE_BUDGET_EXCEEDED;
+	}
+	mp3dec_ex_close(&probe);
 	memset(&info, 0, sizeof(info));
 	mp3dec_init(&mp3d);
 	if (mp3dec_load_buf(&mp3d, (const uint8_t *) data, size, &info, NULL, NULL)) {
@@ -204,11 +224,24 @@ static int decode_mp3_mem(const void *data, size_t size, pcm_decode_result_t *ou
 
 static int decode_ogg_mem(const void *data, size_t size, pcm_decode_result_t *out)
 {
+	stb_vorbis *probe;
+	stb_vorbis_info probe_info;
+	unsigned int probe_frames;
 	int channels = 0, sample_rate = 0;
 	short *pcm = NULL;
+	int error = 0;
 	int n;
 	if (size > INT_MAX)
 		return PCM_DECODE_ERROR;
+	probe = stb_vorbis_open_memory((const unsigned char *) data, (int) size,
+	                               &error, NULL);
+	if (!probe)
+		return PCM_DECODE_ERROR;
+	probe_info = stb_vorbis_get_info(probe);
+	probe_frames = stb_vorbis_stream_length_in_samples(probe);
+	stb_vorbis_close(probe);
+	if (!music_pcm_budget_allows(size, probe_frames, probe_info.channels))
+		return PCM_DECODE_BUDGET_EXCEEDED;
 	n = stb_vorbis_decode_memory((const unsigned char *) data, (int) size,
 	                             &channels, &sample_rate, &pcm);
 	if (n <= 0 || !pcm) {
@@ -225,8 +258,19 @@ static int decode_ogg_mem(const void *data, size_t size, pcm_decode_result_t *ou
 
 static int decode_flac_mem(const void *data, size_t size, pcm_decode_result_t *out)
 {
+	drflac *probe = drflac_open_memory(data, size, NULL);
 	unsigned int channels = 0, sample_rate = 0;
 	drflac_uint64 total = 0;
+
+	if (!probe)
+		return PCM_DECODE_ERROR;
+	if (probe->totalPCMFrameCount > SIZE_MAX ||
+	    !music_pcm_budget_allows(size, (size_t) probe->totalPCMFrameCount,
+	                             (int) probe->channels)) {
+		drflac_close(probe);
+		return PCM_DECODE_BUDGET_EXCEEDED;
+	}
+	drflac_close(probe);
 	drflac_int16 *pcm = drflac_open_memory_and_read_pcm_frames_s16(
 	    data, size, &channels, &sample_rate, &total, NULL);
 	if (!pcm || total == 0 || sample_rate > INT_MAX || total > SIZE_MAX) {
@@ -258,7 +302,13 @@ int pcm_decode_memory(const void *data, size_t size, const char *ext,
 	else
 		return PCM_DECODE_ERROR;
 
-	return finish_decode(status, out);
+	status = finish_decode(status, out);
+	if (status == PCM_DECODE_OK &&
+	    !music_pcm_budget_allows(size, out->total_samples, out->channels)) {
+		pcm_decode_free(out);
+		return PCM_DECODE_BUDGET_EXCEEDED;
+	}
+	return status;
 }
 
 /* CD-DA: 2352 bytes per sector, 588 stereo samples per sector (16-bit LE) */

@@ -6,9 +6,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if !defined(DXX_REWIND_FILE_CORE_ONLY)
 #include "byteswap.h"
 #include "pstypes.h"
 #include "vecmat.h"
+#endif
 
 #if defined(__ANDROID__) || defined(DXX_REWIND_FILE_WRAPPER)
 #include <stdlib.h>
@@ -23,7 +25,28 @@ typedef struct rewind_memory_buffer {
 	unsigned char *data;
 	size_t size;
 	size_t capacity;
+	int error;
 } rewind_memory_buffer;
+
+#if defined(__ANDROID__) || defined(DXX_REWIND_FILE_WRAPPER)
+static inline void rewind_memory_buffer_discard(rewind_memory_buffer *buffer)
+{
+	if (!buffer)
+		return;
+	free(buffer->data);
+	memset(buffer, 0, sizeof(*buffer));
+}
+
+static inline void rewind_memory_buffer_replace(rewind_memory_buffer *destination,
+                                                rewind_memory_buffer *source)
+{
+	if (!destination || !source || destination == source)
+		return;
+	rewind_memory_buffer_discard(destination);
+	*destination = *source;
+	memset(source, 0, sizeof(*source));
+}
+#endif
 
 typedef enum rewind_file_kind {
 	REWIND_FILE_KIND_PHYSFS = 0,
@@ -41,6 +64,7 @@ typedef struct rewind_file {
 	const unsigned char *memory_read_data;
 	size_t memory_read_size;
 	size_t position;
+	int error;
 } rewind_file;
 
 static inline void rewind_file_init_physfs(rewind_file *file, PHYSFS_file *physfs)
@@ -74,7 +98,9 @@ static inline void rewind_file_init_memory_write(rewind_file *file,
 	file->memory_buffer = buffer;
 	if (buffer) {
 		file->memory_read_data = buffer->data;
-		file->memory_read_size = buffer->size;
+		file->memory_read_size = 0;
+		buffer->size = 0;
+		buffer->error = 0;
 	}
 }
 
@@ -104,11 +130,13 @@ static inline int rewind_file_close(rewind_file *file)
 		return 0;
 	if (file->kind == REWIND_FILE_KIND_PHYSFS && file->physfs)
 		result = PHYSFS_close(file->physfs);
+	if (file->error)
+		result = 0;
 	file->physfs = NULL;
 	if (file->memory_buffer) {
 		file->memory_buffer->data = (unsigned char *) file->memory_read_data;
-		file->memory_buffer->size = file->memory_read_size;
-		file->memory_buffer->capacity = file->memory_buffer->capacity;
+		file->memory_buffer->size = file->position;
+		file->memory_buffer->error = file->error;
 	}
 	return result;
 }
@@ -131,9 +159,15 @@ static inline int rewind_file_memory_reserve(rewind_file *file, size_t required)
 		}
 		next_capacity = doubled;
 	}
-	next_data = (unsigned char *) realloc(file->memory_buffer->data, next_capacity);
-	if (!next_data)
+#ifndef REWIND_FILE_REALLOC
+#define REWIND_FILE_REALLOC realloc
+#endif
+	next_data = (unsigned char *) REWIND_FILE_REALLOC(file->memory_buffer->data, next_capacity);
+	if (!next_data) {
+		file->error = 1;
+		file->memory_buffer->error = 1;
 		return 0;
+	}
 	file->memory_buffer->data = next_data;
 	file->memory_buffer->capacity = next_capacity;
 	file->memory_read_data = next_data;
@@ -174,9 +208,24 @@ static inline PHYSFS_sint64 rewind_file_write(rewind_file *file,
 
 	if (!file || !buffer || obj_size == 0 || obj_count == 0)
 		return 0;
-	if (file->kind == REWIND_FILE_KIND_PHYSFS)
-		return PHYSFS_writeBytes(file->physfs, buffer, (PHYSFS_uint64) obj_size * obj_count) / obj_size;
+	if (file->kind == REWIND_FILE_KIND_PHYSFS) {
+		const PHYSFS_uint64 bytes = (PHYSFS_uint64) obj_size * obj_count;
+		const PHYSFS_sint64 written = PHYSFS_writeBytes(file->physfs, buffer, bytes);
+		if (written != (PHYSFS_sint64) bytes)
+			file->error = 1;
+		return written > 0 ? written / obj_size : 0;
+	}
+	if ((size_t) obj_count > SIZE_MAX / (size_t) obj_size) {
+		file->error = 1;
+		file->memory_buffer->error = 1;
+		return 0;
+	}
 	requested_bytes = (size_t) obj_size * obj_count;
+	if (requested_bytes > SIZE_MAX - file->position) {
+		file->error = 1;
+		file->memory_buffer->error = 1;
+		return 0;
+	}
 	end_position = file->position + requested_bytes;
 	if (!rewind_file_memory_reserve(file, end_position))
 		return 0;
@@ -184,9 +233,8 @@ static inline PHYSFS_sint64 rewind_file_write(rewind_file *file,
 		memset(file->memory_buffer->data + file->memory_read_size, 0, file->position - file->memory_read_size);
 	memcpy(file->memory_buffer->data + file->position, buffer, requested_bytes);
 	file->position = end_position;
-	if (file->memory_read_size < end_position)
-		file->memory_read_size = end_position;
-	file->memory_buffer->size = file->memory_read_size;
+	file->memory_read_size = end_position;
+	file->memory_buffer->size = end_position;
 	file->memory_read_data = file->memory_buffer->data;
 	return (PHYSFS_sint64) obj_count;
 }
@@ -230,6 +278,7 @@ static inline int rewind_file_eof(rewind_file *file)
 	return file->position >= file->memory_read_size;
 }
 
+#if !defined(DXX_REWIND_FILE_CORE_ONLY)
 static inline int rewind_file_read_sxe16(rewind_file *file, int swap)
 {
 	PHYSFS_sint16 value = 0;
@@ -335,6 +384,7 @@ static inline int rewind_file_write_vector(rewind_file *file, vms_vector *vector
 		return 0;
 	return 1;
 }
+#endif
 
 #else
 

@@ -630,7 +630,7 @@ internal object LevelMetadataTargets {
     ): LevelMetadataTarget? {
         val mission =
             runCatching {
-                GameFileFormats.parseMissionDescriptor(constituent.path, extracted.file.readText(Charsets.UTF_8))
+                MissionZip.parseMissionDescriptor(constituent.path, extracted.file.readBytes())
             }.getOrNull() ?: return null
         val hog = store.findExtractedSameStemEntry(archivePath, constituent.path, "hog") ?: return null
         val sourceLayout =
@@ -663,9 +663,9 @@ internal object LevelMetadataTargets {
         val descriptor = store.findExtractedSameStemEntry(archivePath, constituent.path, descriptorExt) ?: return null
         val mission =
             runCatching {
-                GameFileFormats.parseMissionDescriptor(
+                MissionZip.parseMissionDescriptor(
                     descriptor.relativePath,
-                    descriptor.file.readText(Charsets.UTF_8),
+                    descriptor.file.readBytes(),
                 )
             }.getOrNull() ?: return null
         val sourceLayout =
@@ -763,7 +763,7 @@ internal object LevelMetadataTargets {
     ): LevelMetadataTarget? {
         val mission =
             runCatching {
-                GameFileFormats.parseMissionDescriptor(descriptor.name, descriptor.readText(Charsets.UTF_8))
+                MissionZip.parseMissionDescriptor(descriptor.name, descriptor.readBytes())
             }.getOrNull() ?: return null
         val hog = File(descriptor.parentFile, "${descriptor.name.substringBeforeLast('.')}.hog")
         if (!hog.isFile) return null
@@ -795,8 +795,8 @@ internal object LevelMetadataTargets {
             val descriptorEntry = zip.getEntry(constituent.path) ?: return null
             val mission =
                 runCatching {
-                    zip.getInputStream(descriptorEntry).bufferedReader().use {
-                        GameFileFormats.parseMissionDescriptor(constituent.path, it.readText())
+                    zip.getInputStream(descriptorEntry).use {
+                        MissionZip.parseMissionDescriptor(constituent.path, it.readBytes())
                     }
                 }.getOrNull() ?: return null
             val hogEntry = findSameStemZipEntry(zip, constituent.path, "hog") ?: return null
@@ -832,8 +832,8 @@ internal object LevelMetadataTargets {
             val descriptorEntry = findSameStemZipEntry(zip, constituent.path, descriptorExt) ?: return null
             val mission =
                 runCatching {
-                    zip.getInputStream(descriptorEntry).bufferedReader().use {
-                        GameFileFormats.parseMissionDescriptor(descriptorEntry.name, it.readText())
+                    zip.getInputStream(descriptorEntry).use {
+                        MissionZip.parseMissionDescriptor(descriptorEntry.name, it.readBytes())
                     }
                 }.getOrNull() ?: return null
             return LevelMetadataTarget(
@@ -882,7 +882,7 @@ internal object LevelMetadataTargets {
         val descriptor = File(hogFile.parentFile, "${hogFile.name.substringBeforeLast('.')}.$descriptorExt")
         if (!descriptor.isFile) return null
         return runCatching {
-            GameFileFormats.parseMissionDescriptor(descriptor.name, descriptor.readText(Charsets.UTF_8))
+            MissionZip.parseMissionDescriptor(descriptor.name, descriptor.readBytes())
         }.getOrNull()
     }
 

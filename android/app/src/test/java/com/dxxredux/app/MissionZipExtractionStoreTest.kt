@@ -30,7 +30,7 @@ class MissionZipExtractionStoreTest {
             )
             zip.closeEntry()
             zip.putNextEntry(ZipEntry("preview.hog"))
-            zip.write(byteArrayOf('D'.code.toByte(), 'H'.code.toByte(), 'F'.code.toByte()))
+            zip.write(missionHog())
             zip.closeEntry()
         }
         val scan = requireNotNull(MissionZip.inspect(archive))
@@ -90,7 +90,7 @@ class MissionZipExtractionStoreTest {
         val archive = File(modsDir, "preview.zip")
         ZipOutputStream(archive.outputStream()).use { zip ->
             zip.writeEntry("preview.mn2", missionDescriptor("Detailed Preview Title"))
-            zip.writeEntry("preview.hog", "DHF")
+            zip.writeEntry("preview.hog", missionHog())
         }
         val scan = requireNotNull(MissionZip.inspect(archive))
         val store = MissionZipExtractionStore(filesDir)
@@ -158,7 +158,7 @@ class MissionZipExtractionStoreTest {
         val archive = File(filesDir, "rooted.zip")
         ZipOutputStream(archive.outputStream()).use { zip ->
             zip.writeEntry("missions/rooted.mn2", missionDescriptor("Rooted"))
-            zip.writeEntry("missions/rooted.hog", "DHF")
+            zip.writeEntry("missions/rooted.hog", missionHog())
             zip.writeEntry("custom.sng", "level01.ogg")
             zip.writeEntry("missions/descent.sng", "existing.ogg")
         }
@@ -194,7 +194,7 @@ class MissionZipExtractionStoreTest {
     ) {
         ZipOutputStream(archive.outputStream()).use { zip ->
             zip.writeEntry("preview.mn2", missionDescriptor("Preview"))
-            zip.writeEntry("preview.hog", "DHF")
+            zip.writeEntry("preview.hog", missionHog())
             for ((path, contents) in extras) zip.writeEntry(path, contents)
         }
     }
@@ -210,9 +210,22 @@ class MissionZipExtractionStoreTest {
     private fun ZipOutputStream.writeEntry(
         path: String,
         contents: String,
+    ) = writeEntry(path, contents.toByteArray())
+
+    private fun ZipOutputStream.writeEntry(
+        path: String,
+        contents: ByteArray,
     ) {
         putNextEntry(ZipEntry(path))
-        write(contents.toByteArray())
+        write(contents)
         closeEntry()
     }
+
+    private fun missionHog(): ByteArray =
+        java.io.ByteArrayOutputStream().use { output ->
+            output.write("DHF".toByteArray(Charsets.US_ASCII))
+            output.write("preview.rl2".toByteArray(Charsets.US_ASCII).copyOf(13))
+            output.write(byteArrayOf(1, 0, 0, 0, 0))
+            output.toByteArray()
+        }
 }

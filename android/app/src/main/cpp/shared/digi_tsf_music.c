@@ -75,6 +75,8 @@ static void (*g_finished_hook)(void) = NULL; /* callback when song ends  */
 
 /* ── PCM playback state (OGG/MP3/FLAC via pcm_decoders) ─────────────── */
 #include "pcm_decoders.h"
+#include "music_decode_limits.h"
+#include "bounded_music_read.h"
 static int g_is_pcm;       /* 1 = PCM playback, 0 = MIDI         */
 static int16_t *g_pcm_buf; /* decoded interleaved PCM samples     */
 static size_t g_pcm_total; /* total frames (per-channel samples)  */
@@ -782,6 +784,97 @@ static void tsf_dispatch_finished(void)
 		}
 	}
 }
+
+static int64_t music_read_physfs_chunk(void *context,
+                                       unsigned char *destination, size_t maximum)
+{
+	return PHYSFS_readBytes((PHYSFS_file *) context, destination,
+	                        (PHYSFS_uint64) maximum);
+}
+
+static int64_t music_read_stdio_chunk(void *context,
+                                      unsigned char *destination, size_t maximum)
+{
+	FILE *file = (FILE *) context;
+	size_t amount = fread(destination, 1, maximum, file);
+
+	if (!amount && ferror(file))
+		return -1;
+	return (int64_t) amount;
+}
+
+static unsigned char *music_read_physfs_bounded(PHYSFS_file *file,
+                                                size_t maximum, size_t *size)
+{
+	PHYSFS_sint64 declared_size;
+	unsigned char *data;
+	size_t admitted_size;
+	int valid = 1;
+
+	if (!file || !size)
+		return NULL;
+	declared_size = PHYSFS_fileLength(file);
+	if (!music_encoded_size_allowed(declared_size, maximum, &admitted_size)) {
+		PHYSFS_close(file);
+		return NULL;
+	}
+	data = (unsigned char *) malloc(admitted_size);
+	if (!data) {
+		PHYSFS_close(file);
+		return NULL;
+	}
+	if (!bounded_music_read_exact(music_read_physfs_chunk, file, data, admitted_size) ||
+	    PHYSFS_tell(file) != declared_size ||
+	    PHYSFS_fileLength(file) != declared_size)
+		valid = 0;
+	if (!PHYSFS_close(file))
+		valid = 0;
+	if (!valid) {
+		free(data);
+		return NULL;
+	}
+	*size = admitted_size;
+	return data;
+}
+
+static unsigned char *music_read_stdio_bounded(const char *filename,
+                                               size_t maximum, size_t *size)
+{
+	FILE *file;
+	long declared_size;
+	unsigned char *data;
+	size_t admitted_size;
+	int valid = 1;
+
+	if (!filename || !size)
+		return NULL;
+	file = fopen(filename, "rb");
+	if (!file)
+		return NULL;
+	if (fseek(file, 0, SEEK_END) || (declared_size = ftell(file)) < 0 ||
+	    !music_encoded_size_allowed((int64_t) declared_size, maximum, &admitted_size) ||
+	    fseek(file, 0, SEEK_SET)) {
+		fclose(file);
+		return NULL;
+	}
+	data = (unsigned char *) malloc(admitted_size);
+	if (!data) {
+		fclose(file);
+		return NULL;
+	}
+	if (!bounded_music_read_exact(music_read_stdio_chunk, file, data, admitted_size) ||
+	    fgetc(file) != EOF || ferror(file))
+		valid = 0;
+	if (fclose(file))
+		valid = 0;
+	if (!valid) {
+		free(data);
+		return NULL;
+	}
+	*size = admitted_size;
+	return data;
+}
+
 int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 {
 	unsigned int bufsize = 0;
@@ -803,37 +896,16 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		/* Load file into memory.  Try PhysFS first (game archives),
 		 * fall back to fopen for absolute paths (M3U jukebox entries). */
 		unsigned char *fbuf = NULL;
-		unsigned int fsize = 0;
+		size_t fsize = 0;
 		PHYSFS_file *fh = PHYSFS_openRead(filename);
 		if (fh) {
-			fsize = (unsigned int) PHYSFS_fileLength(fh);
-			fbuf = (unsigned char *) malloc(fsize);
-			if (!fbuf) {
-				PHYSFS_close(fh);
-				return 0;
-			}
-			PHYSFS_read(fh, fbuf, 1, fsize);
-			PHYSFS_close(fh);
+			fbuf = music_read_physfs_bounded(fh, MUSIC_PCM_ENCODED_MAX_BYTES, &fsize);
 		} else {
-			FILE *fp = fopen(filename, "rb");
-			if (!fp) {
-				con_printf(CON_CRITICAL, "PCM: cannot open %s\n", filename);
-				return 0;
-			}
-			fseek(fp, 0, SEEK_END);
-			fsize = (unsigned int) ftell(fp);
-			fseek(fp, 0, SEEK_SET);
-			fbuf = (unsigned char *) malloc(fsize);
-			if (!fbuf) {
-				fclose(fp);
-				return 0;
-			}
-			if (fread(fbuf, 1, fsize, fp) != fsize) {
-				free(fbuf);
-				fclose(fp);
-				return 0;
-			}
-			fclose(fp);
+			fbuf = music_read_stdio_bounded(filename, MUSIC_PCM_ENCODED_MAX_BYTES, &fsize);
+		}
+		if (!fbuf) {
+			con_printf(CON_CRITICAL, "PCM: bounded file read failed for %s\n", filename);
+			return 0;
 		}
 
 		/* Decode to raw PCM */
@@ -906,26 +978,34 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 	/* Convert HMP -> MIDI in memory */
 	if (!d_stricmp(fptr, ".hmp")) {
+		size_t admitted_size;
+
 		hmp2mid(filename, &g_midi_buf, &bufsize);
-		if (!g_midi_buf || !bufsize) {
+		if (!g_midi_buf ||
+		    !music_encoded_size_allowed((int64_t) bufsize,
+		                                MUSIC_MIDI_ENCODED_MAX_BYTES, &admitted_size)) {
 			con_printf(CON_CRITICAL, "TSF: hmp2mid failed for %s\n", filename);
+			if (g_midi_buf) {
+				d_free(g_midi_buf);
+				g_midi_buf = NULL;
+			}
 			return 0;
 		}
 	} else {
 		/* For .mid files, read via PhysFS */
+		size_t midi_size = 0;
 		PHYSFS_file *fh = PHYSFS_openRead(filename);
 		if (!fh) {
 			con_printf(CON_CRITICAL, "TSF: cannot open %s\n", filename);
 			return 0;
 		}
-		bufsize = (unsigned int) PHYSFS_fileLength(fh);
-		g_midi_buf = (unsigned char *) d_malloc(bufsize);
+		g_midi_buf = music_read_physfs_bounded(fh, MUSIC_MIDI_ENCODED_MAX_BYTES,
+		                                       &midi_size);
 		if (!g_midi_buf) {
-			PHYSFS_close(fh);
+			con_printf(CON_CRITICAL, "TSF: bounded file read failed for %s\n", filename);
 			return 0;
 		}
-		PHYSFS_read(fh, g_midi_buf, 1, bufsize);
-		PHYSFS_close(fh);
+		bufsize = (unsigned int) midi_size;
 	}
 	crash_breadcrumb_v("tsf_music midi=%s bytes=%u ptr=%p a4=%lu a8=%lu",
 	                   fptr, bufsize, (void *) g_midi_buf,

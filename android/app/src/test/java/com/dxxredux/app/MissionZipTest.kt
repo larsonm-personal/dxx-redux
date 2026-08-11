@@ -8,6 +8,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipEntry
@@ -44,6 +45,7 @@ class MissionZipTest {
             scan.constituents.map { it.role }.sorted(),
         )
         assertEquals(listOf("Uneasy 4"), scan.missionSets.map { it.mission.displayName })
+        assertTrue(scan.constituents.all { it.compressedSizeBytes != null })
     }
 
     @Test
@@ -66,13 +68,40 @@ class MissionZipTest {
     }
 
     @Test
+    fun canonicalizesMultiMissionIdentityAcrossBackendsAndEntryOrders() {
+        val entries = descentMaximumEntries()
+        val scans =
+            listOf(
+                MissionZip.inspect(createArchiveZip(entries)),
+                MissionZip.inspect(createArchiveZip(entries.reversed())),
+                MissionZip.inspect(createArchive7z(entries)),
+                MissionZip.inspect(createArchive7z(entries.reversed())),
+                inspectExtractedEntries(entries),
+                inspectExtractedEntries(entries.reversed()),
+            ).map(::requireNotNull)
+
+        for (scan in scans) {
+            assertEquals("Descent Maximum (fixed)", scan.mission.displayName)
+            assertEquals("d2", scan.game)
+            assertEquals(
+                listOf("max_f.mn2", "maxlnk_f.mn2"),
+                scan.missionSets.map { it.mission.path },
+            )
+            assertEquals(
+                listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"),
+                scan.missionSets.map { it.mission.displayName },
+            )
+        }
+    }
+
+    @Test
     fun keepsSameNamedMissionAssetsWithinEachVariantDirectory() {
         val zipFile = File.createTempFile("mission-variants", ".zip")
         zipFile.deleteOnExit()
         ZipOutputStream(zipFile.outputStream()).use { zip ->
             for (variant in listOf("D2X", "DOS", "Rebirth")) {
                 zip.putNextEntry(ZipEntry("$variant/ULTERIOR.hog"))
-                zip.write(variant.toByteArray())
+                zip.write(hogBytes("LEVEL01.rl2"))
                 zip.closeEntry()
 
                 zip.putNextEntry(ZipEntry("$variant/ULTERIOR.mn2"))
@@ -138,6 +167,7 @@ class MissionZipTest {
         assertEquals("extracted_bundle", scan.importMode)
         assertEquals("Seven Pack", scan.mission.displayName)
         assertEquals("README.txt", scan.readme!!.name)
+        assertTrue(scan.constituents.all { it.compressedSizeBytes == null })
         assertEquals("7z readme", MissionZip.readTextFile(sevenZipFile, scan.readme.path).text)
     }
 
@@ -198,12 +228,75 @@ class MissionZipTest {
                 zip.closeEntry()
             }
             zip.putNextEntry(ZipEntry("valid.hog"))
-            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.write(hogBytes("valid.rl2"))
             zip.closeEntry()
         }
 
         val scan = requireNotNull(MissionZip.inspect(zipFile))
         assertEquals(listOf("valid"), scan.missionSets.map { it.mission.displayName })
+    }
+
+    @Test
+    fun rejectsSameStemArchivesWithoutEveryDeclaredLevel() {
+        val zipFile = File.createTempFile("incomplete-mission", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("pack.mn2"))
+            zip.write("name = Pack\nnum_levels = 2\nlevel01.rl2\nlevel02.rl2\n".toByteArray())
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("pack.hog"))
+            zip.write(hogBytes("level01.rl2"))
+            zip.closeEntry()
+        }
+
+        assertNull(MissionZip.inspect(zipFile))
+        assertFalse(zipFile.inputStream().use { MissionZip.isImportCandidate(it) })
+    }
+
+    @Test
+    fun acceptsDeclaredLevelsFromValidatedHogDxaOrLooseFiles() {
+        val zipFile = File.createTempFile("combined-mission", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("missions/pack.mn2"))
+            zip.write("name = Pack\nnum_levels = 3\nlevel01.rl2\nlevel02.rl2\nlevel03.rl2\n".toByteArray())
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("missions/pack.hog"))
+            zip.write(hogBytes("level01.rl2"))
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("missions/pack.dxa"))
+            zip.write(zipBytes("levels/level02.rl2"))
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("missions/level03.rl2"))
+            zip.write(byteArrayOf(3))
+            zip.closeEntry()
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        assertEquals(
+            listOf("level03.rl2", "pack.dxa", "pack.hog", "pack.mn2"),
+            scan.missionSets
+                .single()
+                .constituents
+                .map { it.name }
+                .sorted(),
+        )
+    }
+
+    @Test
+    fun rejectsTruncatedSameStemHog() {
+        val zipFile = File.createTempFile("truncated-hog-mission", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("pack.mn2"))
+            zip.write("name = Pack\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("pack.hog"))
+            zip.write(hogBytes("level01.rl2").dropLast(1).toByteArray())
+            zip.closeEntry()
+        }
+
+        assertNull(MissionZip.inspect(zipFile))
     }
 
     @Test
@@ -414,13 +507,14 @@ class MissionZipTest {
         val zipFile = File.createTempFile("missionzip", ".zip")
         zipFile.deleteOnExit()
         val stem = missionName.substringBeforeLast('.')
+        val mission = GameFileFormats.parseMissionDescriptor(missionName, missionText)
         ZipOutputStream(zipFile.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("$stem.dxa"))
             zip.write(byteArrayOf(1, 2, 3, 4))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("$stem.hog"))
-            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.write(hogBytes(*(mission.levelNames + mission.secretLevelNames).toTypedArray()))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry(missionName))
@@ -438,9 +532,10 @@ class MissionZipTest {
         val archive = File.createTempFile("missionzip", ".7z")
         archive.deleteOnExit()
         val stem = missionName.substringBeforeLast('.')
+        val mission = GameFileFormats.parseMissionDescriptor(missionName, missionText)
         SevenZOutputFile(archive).use { sevenZ ->
             sevenZ.writeEntry("$stem.dxa", byteArrayOf(1, 2, 3, 4))
-            sevenZ.writeEntry("$stem.hog", byteArrayOf(5, 6, 7, 8))
+            sevenZ.writeEntry("$stem.hog", hogBytes(*(mission.levelNames + mission.secretLevelNames).toTypedArray()))
             sevenZ.writeEntry(missionName, missionText.toByteArray())
             for ((name, text) in extraEntries) {
                 sevenZ.writeEntry(name, text.toByteArray())
@@ -477,7 +572,7 @@ class MissionZipTest {
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("Uneasy4.hog"))
-            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.write(hogBytes("Uneasy4.rl2"))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("Uneasy4.mn2"))
@@ -495,15 +590,14 @@ class MissionZipTest {
     }
 
     private fun createDescentMaximumStyleZip(): File {
-        val zipFile = File.createTempFile("descent-maximum-style", ".zip")
-        zipFile.deleteOnExit()
-        ZipOutputStream(zipFile.outputStream()).use { zip ->
-            zip.putNextEntry(ZipEntry("max_f.hog"))
-            zip.write(byteArrayOf(1, 2, 3, 4))
-            zip.closeEntry()
+        val entries = descentMaximumEntries() + ("max_f.txt" to "readme".toByteArray())
+        return createArchiveZip(entries)
+    }
 
-            zip.putNextEntry(ZipEntry("max_f.mn2"))
-            zip.write(
+    private fun descentMaximumEntries(): List<Pair<String, ByteArray>> =
+        listOf(
+            "max_f.hog" to hogBytes("psx01.rl2", "psxs1a.rl2"),
+            "max_f.mn2" to
                 """
                 name = Descent Maximum (fixed)
                 type = normal
@@ -512,28 +606,81 @@ class MissionZipTest {
                 num_secrets = 1
                 psxs1a.rl2,1
                 """.trimIndent().toByteArray(),
-            )
-            zip.closeEntry()
-
-            zip.putNextEntry(ZipEntry("maxlnk_f.hog"))
-            zip.write(byteArrayOf(5, 6, 7, 8))
-            zip.closeEntry()
-
-            zip.putNextEntry(ZipEntry("maxlnk_f.mn2"))
-            zip.write(
+            "maxlnk_f.hog" to hogBytes("psxlink1.rl2"),
+            "maxlnk_f.mn2" to
                 """
                 name = Descent Max Anarchy (fix)
                 type = anarchy
                 num_levels = 1
                 psxlink1.rl2
                 """.trimIndent().toByteArray(),
-            )
-            zip.closeEntry()
+        )
 
-            zip.putNextEntry(ZipEntry("max_f.txt"))
-            zip.write("readme".toByteArray())
-            zip.closeEntry()
+    private fun createArchiveZip(entries: List<Pair<String, ByteArray>>): File {
+        val zipFile = File.createTempFile("mission-entry-order", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for ((name, bytes) in entries) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
         }
         return zipFile
+    }
+
+    private fun createArchive7z(entries: List<Pair<String, ByteArray>>): File {
+        val archive = File.createTempFile("mission-entry-order", ".7z")
+        archive.deleteOnExit()
+        SevenZOutputFile(archive).use { sevenZ ->
+            for ((name, bytes) in entries) sevenZ.writeEntry(name, bytes)
+        }
+        return archive
+    }
+
+    private fun inspectExtractedEntries(entries: List<Pair<String, ByteArray>>): MissionZip.ScanResult? {
+        val root = File("build/test-mission-entry-order/${System.nanoTime()}").absoluteFile.apply { mkdirs() }
+        val files =
+            entries.map { (name, bytes) ->
+                File(root, name).apply {
+                    parentFile?.mkdirs()
+                    writeBytes(bytes)
+                }
+                MissionZipExtractedFile(name, name, bytes.size.toLong())
+            }
+        return MissionZip.inspectExtracted(
+            MissionZipExtractionRecord(
+                ownerFilename = "descent-maximum.zip",
+                ownerSizeBytes = entries.sumOf { it.second.size.toLong() },
+                ownerLastModifiedMs = 0,
+                rootDir = root,
+                files = files,
+            ),
+        )
+    }
+
+    private fun hogBytes(vararg names: String): ByteArray {
+        val output = ByteArrayOutputStream()
+        output.write("DHF".toByteArray(Charsets.US_ASCII))
+        for (name in names) {
+            val encoded = name.toByteArray(Charsets.US_ASCII)
+            require(encoded.size <= 13)
+            output.write(encoded.copyOf(13))
+            output.write(byteArrayOf(1, 0, 0, 0))
+            output.write(0)
+        }
+        return output.toByteArray()
+    }
+
+    private fun zipBytes(vararg names: String): ByteArray {
+        val output = ByteArrayOutputStream()
+        ZipOutputStream(output).use { zip ->
+            for (name in names) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(0)
+                zip.closeEntry()
+            }
+        }
+        return output.toByteArray()
     }
 }

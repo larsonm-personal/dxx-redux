@@ -83,7 +83,7 @@ object MissionZipMusic {
                                                         ExtractionLimits.MAX_DESCRIPTOR_BYTES,
                                                         normalized,
                                                         metadataBudget,
-                                                        entry.compressedSizeBytes,
+                                                        entry.compressedSizeBytes ?: -1,
                                                     ).toString(Charsets.UTF_8),
                                             )
                                         }

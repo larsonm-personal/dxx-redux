@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import shutil
+import struct
 import subprocess
 import tempfile
 from pathlib import Path
@@ -33,8 +34,38 @@ def run_dump(executable: Path, data_dir: Path, source: Path, output: Path) -> in
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         check=False,
+        timeout=10,
     )
     return result.returncode
+
+
+def initial_wall_count_offset(demo: bytes) -> int:
+    if len(demo) < 68 or demo[:3] not in (b"\x01\x0f\x03", b"\x01\x10\x03"):
+        raise AssertionError("fixture is not a supported D2 classic demo")
+    game_mode = struct.unpack_from("<i", demo, 7)[0]
+    if game_mode != 0:
+        raise AssertionError("wall-boundary fixture must be a single-player demo")
+    mission_length = demo[56]
+    event_offset = 57 + mission_length + 8
+    if len(demo) < event_offset + 7 or demo[event_offset] != 28:
+        raise AssertionError("fixture does not begin with a new-level event")
+    return event_offset + 3
+
+
+def require_malformed_preserves_output(
+    executable: Path,
+    data_dir: Path,
+    source: Path,
+    output: Path,
+    prior: bytes,
+) -> None:
+    output.write_bytes(prior)
+    if run_dump(executable, data_dir, source, output) == 0:
+        raise AssertionError(f"malformed demo unexpectedly converted: {source.name}")
+    if output.read_bytes() != prior:
+        raise AssertionError(f"malformed demo changed prior output: {source.name}")
+    if list(output.parent.glob(f"{output.name}.tmp.*")):
+        raise AssertionError(f"malformed demo leaked temporary output: {source.name}")
 
 
 def require_rejected_without_change(
@@ -89,6 +120,31 @@ def main() -> int:
             raise AssertionError("malformed input unexpectedly converted")
         if file_hash(prior_output) != prior_hash:
             raise AssertionError("malformed input changed the prior output")
+
+        demo_bytes = source.read_bytes()
+        wall_offset = initial_wall_count_offset(demo_bytes)
+        for wall_count in (-1, 255, 2_147_483_647):
+            wall_demo = case_dir / f"wall-count-{wall_count}.dem"
+            mutated = bytearray(demo_bytes)
+            struct.pack_into("<i", mutated, wall_offset, wall_count)
+            wall_demo.write_bytes(mutated)
+            require_malformed_preserves_output(
+                executable, data_dir, wall_demo, prior_output, b"preserve wall count"
+            )
+        for count_bytes in range(4):
+            truncated = case_dir / f"wall-count-truncated-{count_bytes}.dem"
+            truncated.write_bytes(demo_bytes[: wall_offset + count_bytes])
+            require_malformed_preserves_output(
+                executable, data_dir, truncated, prior_output, b"preserve count truncation"
+            )
+        one_wall = bytearray(demo_bytes[: wall_offset + 4])
+        struct.pack_into("<i", one_wall, wall_offset, 1)
+        for record_bytes in range(7):
+            truncated = case_dir / f"wall-record-truncated-{record_bytes}.dem"
+            truncated.write_bytes(one_wall + bytes(record_bytes))
+            require_malformed_preserves_output(
+                executable, data_dir, truncated, prior_output, b"preserve record truncation"
+            )
 
         output = case_dir / "result.jsonl"
         if run_dump(executable, data_dir, source, output) != 0:

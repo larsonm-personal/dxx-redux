@@ -1008,15 +1008,11 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 
 static void state_write_blank_thumbnail(PHYSFS_file *fp)
 {
-	ubyte *zero = d_malloc(THUMBNAIL_RGB_BYTES);
+	static const ubyte zero[THUMBNAIL_RGB_BYTES] = { 0 };
 #ifdef __ANDROID__
 	android_save_meta_clear_cached_thumbnail();
 #endif
-	if (!zero)
-		return;
-	memset(zero, 0, THUMBNAIL_RGB_BYTES);
 	PHYSFS_write(fp, zero, THUMBNAIL_RGB_BYTES, 1);
-	d_free(zero);
 }
 
 #ifdef __ANDROID__
@@ -2109,7 +2105,10 @@ int state_save_all_sub(char *filename, char *desc)
 	}
 #endif
 
-	PHYSFS_close(fp);
+	if (!PHYSFS_close(fp)) {
+		start_time();
+		return 0;
+	}
 
 	start_time();
 

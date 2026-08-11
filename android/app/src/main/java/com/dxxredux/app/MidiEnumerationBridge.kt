@@ -31,8 +31,16 @@ object MidiEnumerationBridge {
     )
 
     @Serializable
+    data class EnumerationError(
+        val hog: String,
+        val reason: String,
+    )
+
+    @Serializable
     data class EnumerationResult(
         val sources: List<SourceInfo> = emptyList(),
+        val complete: Boolean = true,
+        val errors: List<EnumerationError> = emptyList(),
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -43,7 +51,10 @@ object MidiEnumerationBridge {
             json.decodeFromString<EnumerationResult>(raw)
         } catch (e: Exception) {
             android.util.Log.w("DXX-MidiEnum", "JSON parse failed: ${e.message}")
-            EnumerationResult()
+            EnumerationResult(
+                complete = false,
+                errors = listOf(EnumerationError(filesDir, "invalid_native_response")),
+            )
         }
     }
 

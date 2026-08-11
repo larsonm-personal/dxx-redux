@@ -11,6 +11,7 @@
 
 #include "input_demo_codec.h"
 #include "input_demo_fixture.h"
+#include "input_demo_limits.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 
@@ -243,6 +244,8 @@ static bool input_demo_recorder_build_checkpoint(input_demo_checkpoint *checkpoi
 		return input_demo_recorder_fail(error, "missing checkpoint save name");
 	if (session.checkpoint_data.empty())
 		return input_demo_recorder_fail(error, "missing checkpoint data");
+	if (!input_demo_checkpoint_size_supported(session.checkpoint_data.size()))
+		return input_demo_recorder_fail(error, "checkpoint data exceeds the supported limit");
 	checkpoint->format = "dgss";
 	checkpoint->encoding = "base64";
 	checkpoint->compression = "none";
@@ -451,7 +454,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 			return input_demo_recorder_copy_error("missing recorder checkpoint_save_name", error, error_size);
 		if (!settings->checkpoint_data || !settings->checkpoint_size)
 			return input_demo_recorder_copy_error("missing recorder checkpoint_data", error, error_size);
-		if (settings->checkpoint_size > UINT32_MAX)
+		if (!input_demo_checkpoint_size_supported(settings->checkpoint_size))
 			return input_demo_recorder_copy_error("recorder checkpoint_data is too large", error, error_size);
 		if (!settings->has_checkpoint_start_gt)
 			return input_demo_recorder_copy_error("missing recorder checkpoint_start_gt", error, error_size);

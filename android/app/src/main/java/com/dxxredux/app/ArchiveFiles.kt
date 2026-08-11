@@ -23,7 +23,7 @@ internal data class ArchiveFileEntry(
     val path: String,
     val isDirectory: Boolean,
     val sizeBytes: Long,
-    val compressedSizeBytes: Long,
+    val compressedSizeBytes: Long?,
     internal val handle: Any,
 ) {
     val name: String get() = path.substringAfterLast('/').substringAfterLast('\\')
@@ -143,12 +143,12 @@ private class ZipReadableArchive(
                             path = entry.name,
                             isDirectory = entry.isDirectory,
                             sizeBytes = entry.size.coerceAtLeast(0),
-                            compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
+                            compressedSizeBytes = entry.compressedSize.takeIf { it >= 0 },
                             handle = entry,
                         ).also {
                             budget.registerEntry(
                                 if (it.isDirectory) 0 else it.sizeBytes,
-                                if (it.isDirectory) 0 else it.compressedSizeBytes,
+                                if (it.isDirectory) 0 else it.compressedSizeBytes ?: 0,
                                 it.path,
                             )
                         }
@@ -184,12 +184,12 @@ private class SevenZReadableArchive(
                         sizeBytes = entry.size.coerceAtLeast(0),
                         // Commons Compress does not expose the per-entry compressed size here.
                         // Actual-byte limits still apply when the entry is materialized.
-                        compressedSizeBytes = 0,
+                        compressedSizeBytes = null,
                         handle = entry,
                     ).also {
                         budget.registerEntry(
                             if (it.isDirectory) 0 else it.sizeBytes,
-                            if (it.isDirectory) 0 else it.compressedSizeBytes,
+                            if (it.isDirectory) 0 else it.compressedSizeBytes ?: 0,
                             it.path,
                         )
                     }
@@ -238,12 +238,12 @@ private class ExtractedReadableArchive(
                             path = relative,
                             isDirectory = child.isDirectory,
                             sizeBytes = if (child.isFile) child.length() else 0L,
-                            compressedSizeBytes = if (child.isFile) child.length() else 0L,
+                            compressedSizeBytes = null,
                             handle = child,
                         ).also {
                             budget.registerEntry(
                                 if (it.isDirectory) 0 else it.sizeBytes,
-                                if (it.isDirectory) 0 else it.compressedSizeBytes,
+                                if (it.isDirectory) 0 else it.compressedSizeBytes ?: 0,
                                 it.path,
                             )
                         }

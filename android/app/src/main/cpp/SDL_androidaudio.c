@@ -24,6 +24,7 @@
 #include "SDL_audio_c.h"
 #include "SDL_audiodev_c.h"
 #include "SDL_androidaudio.h"
+#include "shared/android_audio_format.h"
 
 #define LOG_TAG "DXX-Audio"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
@@ -166,7 +167,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     int play_count;
 
     /* Fill with silence */
-    SDL_memset(buf, 0, h->playlen);
+    SDL_memset(buf, audio->spec.silence, h->playlen);
 
     /* Mix audio directly from SDL_mixer */
     if (!audio->paused && audio->spec.callback) {
@@ -253,10 +254,20 @@ void androidaud_background_resume(void)
 static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
 {
     struct SDL_PrivateAudioData *h = this->hidden;
+    struct android_audio_format audio_format;
     SLresult result;
 
     LOGI("OpenAudio: freq=%d fmt=0x%04X channels=%d samples=%d",
          spec->freq, spec->format, spec->channels, spec->samples);
+
+    if (!android_audio_validate_spec(spec->format, spec->channels, spec->freq,
+                                    spec->samples, spec->size, &audio_format)) {
+        SDL_SetError("Android audio: unsupported or inconsistent spec");
+        LOGE("Rejected audio spec: freq=%d fmt=0x%04X channels=%d samples=%d size=%u",
+             spec->freq, spec->format, spec->channels, spec->samples, spec->size);
+        return -1;
+    }
+    spec->silence = audio_format.silence;
 
     h->mixlen  = spec->size;
     h->playlen = spec->size;
@@ -269,14 +280,14 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     }
     SDL_memset(h->mixbuf, spec->silence, h->mixlen);
 
-    /* Allocate S16 play buffers */
+    /* Allocate play buffers in the negotiated SDL/OpenSL PCM format */
     for (int i = 0; i < NUM_BUFFERS; i++) {
-        h->playbuf[i] = (Sint16 *)SDL_AllocAudioMem(h->playlen);
+        h->playbuf[i] = (Uint8 *)SDL_AllocAudioMem(h->playlen);
         if (!h->playbuf[i]) {
             LOGE("Failed to allocate playbuf[%d]", i);
             return -1;
         }
-        SDL_memset(h->playbuf[i], 0, h->playlen);
+        SDL_memset(h->playbuf[i], spec->silence, h->playlen);
     }
     h->next_buf = 0;
     g_audio_freq = spec->freq;
@@ -318,17 +329,19 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, NUM_BUFFERS
     };
 
-    /* 16-bit PCM — matches SDL mixer output format (AUDIO_S16) */
+    /* OpenSL ES represents U8 and signed 16-bit SDL callback output directly. */
     SLDataFormat_PCM format_pcm = {
         SL_DATAFORMAT_PCM,
         (SLuint32)spec->channels,
         (SLuint32)(spec->freq * 1000),   /* milliHz */
-        SL_PCMSAMPLEFORMAT_FIXED_16,
-        SL_PCMSAMPLEFORMAT_FIXED_16,
+        audio_format.sample_bits,
+        audio_format.container_bits,
         (spec->channels == 2)
             ? (SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT)
             : SL_SPEAKER_FRONT_CENTER,
-        SL_BYTEORDER_LITTLEENDIAN
+        (audio_format.byte_order == ANDROID_AUDIO_BIG_ENDIAN)
+            ? SL_BYTEORDER_BIGENDIAN
+            : SL_BYTEORDER_LITTLEENDIAN
     };
 
     SLDataSource audioSrc = { &loc_bufq, &format_pcm };

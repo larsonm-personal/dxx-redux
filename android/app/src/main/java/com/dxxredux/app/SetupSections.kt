@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -207,7 +206,8 @@ internal fun ModsSection(
         val summary =
             "mod-dxa-scan file=${mod.filename} bytes=${file.length()} " +
                 "textures=${scanResult.textureCount} oversized=${scanResult.oversizedCount} " +
-                "max=${scanResult.maxWidth}x${scanResult.maxHeight}"
+                "max=${scanResult.maxWidth}x${scanResult.maxHeight} " +
+                "rejected=${scanResult.rejectedReason ?: "none"}"
         if (scanResult.oversizedEntries.isEmpty()) {
             LauncherDebugLog.log(summary)
             return
@@ -1392,9 +1392,7 @@ private fun MissionZipConstituentDialog(
                     DetailRow("Role", missionZipRoleLabel(constituent.role))
                     DetailRow("Path", constituent.path)
                     DetailRow("Size", setupSectionFormatSize(constituent.sizeBytes))
-                    if (constituent.compressedSizeBytes > 0) {
-                        DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
-                    }
+                    DetailRow("Compressed", archiveCompressedSizeText(constituent.compressedSizeBytes))
                     val loadedMetadata = metadataResult
                     if (loadedMetadata == null) {
                         MetadataLoadProgressView(
@@ -1528,8 +1526,7 @@ private fun readExtractedMissionZipTextFile(
             }
         val truncated = bytes.size > limit
         val keptBytes = bytes.copyOf(minOf(bytes.size, limit))
-        val utf8 = keptBytes.toString(Charsets.UTF_8)
-        val text = if ('\uFFFD' in utf8) keptBytes.toString(Charset.forName("windows-1252")) else utf8
+        val text = MissionZip.decodeLegacyText(keptBytes, truncated)
         MissionZip.TextFileContent(text, truncated)
     } catch (e: Exception) {
         MissionZip.TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
@@ -1836,7 +1833,7 @@ private fun ModRow(
         Checkbox(
             checked = mod.enabled,
             onCheckedChange = onToggle,
-            enabled = mod.enabled || (scanResult?.oversizedCount ?: 0) == 0,
+            enabled = mod.enabled || scanResult?.canEnable != false,
             modifier = Modifier.size(20.dp).tvFocusBorder(),
         )
         Spacer(modifier = Modifier.width(6.dp))
@@ -1862,7 +1859,13 @@ private fun ModRow(
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (scanResult != null && scanResult.oversizedCount > 0) {
+            if (scanResult?.rejectedReason != null) {
+                Text(
+                    text = "Unsafe archive: ${scanResult.rejectedReason} - mod cannot be enabled",
+                    fontSize = 10.sp,
+                    color = Color(0xFFF44336),
+                )
+            } else if (scanResult != null && scanResult.oversizedCount > 0) {
                 Text(
                     text =
                         "${scanResult.oversizedCount} of ${scanResult.textureCount} textures exceed " +
@@ -2235,6 +2238,8 @@ private fun setupSectionFormatTimestamp(millis: Long): String {
     return sdf.format(Date(millis))
 }
 
+internal fun archiveCompressedSizeText(bytes: Long?): String = bytes?.let(::setupSectionFormatSize) ?: "Unknown"
+
 private fun setupSectionFormatSize(bytes: Long): String =
     when {
         bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
@@ -2268,7 +2273,7 @@ internal fun missionDescriptorForStatus(
                 if (total > maxBytes) return null
                 buffer.copyOf(total)
             }
-        GameFileFormats.parseMissionDescriptor(name, bytes.toString(Charsets.UTF_8))
+        MissionZip.parseMissionDescriptor(name, bytes)
     }.getOrNull()
 }
 

@@ -6,13 +6,48 @@
 - [x] Complete R1-SWEEP-006 through R1-SWEEP-014 sequentially with sol-5.6-medium
 - [x] Validate the completed sweep tranche, ledger integrity, and absence of ACTIVE rows
 - [x] Rank up to 40 open non-network findings by file-format and import correctness relevance
-- [ ] Fix ranked findings sequentially with focused regression coverage and proportionate builds (24 of up to 40 complete)
-- [ ] Move each completely fixed finding to the done ledger and record exact validation evidence (24 archived)
-- [ ] Run final ledger, quality, test, build, and diff validation
+- [x] Fix ranked findings sequentially with focused regression coverage and proportionate builds (34 complete)
+- [x] Move each completely fixed finding to the done ledger and record exact validation evidence (34 archived)
+- [x] Run final ledger, quality, test, build, and diff validation
+- [x] Finish BR-0096 by validating descriptor-referenced mission assets before admission
+- [x] Add focused mission-package parsing tests and run proportionate validation
+- [x] Archive BR-0096 and re-run ledger and diff integrity checks
+- [x] Migrate BR-0091 mission and custom music-name sidecars to one bounded versioned schema
+- [x] Add producer-to-native collision, boundary, Unicode, and malformed-input tests
+- [x] Validate, archive BR-0091, and re-run ledger integrity checks
+- [x] Fix BR-0094 by representing unavailable archive compressed sizes explicitly
+- [x] Add ZIP, 7z, extracted-archive, and details-rendering regression coverage
+- [x] Validate, archive BR-0094, and re-run ledger integrity checks
+- [x] Fix BR-0097 by canonicalizing multi-mission set ordering and primary identity
+- [x] Add reversed ZIP, 7z, and extracted-record regression coverage
+- [x] Validate, archive BR-0097, and re-run ledger integrity checks
+- [x] Fix BR-0098 with one bounded legacy-compatible descriptor decoder
+- [x] Add UTF-8, Windows-1252, malformed, and backend-parity regression coverage
+- [x] Validate, archive BR-0098, and re-run ledger integrity checks
+- [x] Fix BR-0095 with deterministic repository/configured RAR fixture resolution
+- [x] Add explicit fixture-present execution and format-independent failure coverage
+- [x] Validate, archive BR-0095, and re-run ledger integrity checks
+- [x] Audit duplicated native test stubs against authoritative engine headers
+- [x] Remove unnecessary stubs or document the smallest unavoidable test seam
+- [x] Rebuild affected native tests and run diff validation
 
 ## Current status
 
-All nine remaining review sweeps are complete. Twenty-four ranked format findings are fixed and archived, through BR-0185. Their focused regression tests, proportionate native or JVM builds, Android debug builds for maintained ABIs, scoped quality checks, and diff validation passed. BR-0082 remains open because complete body admission needs new scope-aware metadata integrity or a side-effect-free staged engine reader. BR-0096 now rejects malformed and directory-orphan descriptors but remains open until same-stem HOG/DXA contents are structurally checked for referenced levels. BR-0091 remains open with its required cross-language sidecar schema migration recorded. BR-0103 remains open because a complete fix requires immutable generations, a process-wide transaction owner, fsynced candidates, an atomic manifest-pointer switch, and restart recovery rather than a partial lock-only patch. BR-0185 now retains canonical container-relative member paths, performs exact normalized song-reference matching before unique-leaf fallback, rejects ambiguous leaf association, and displays colliding leaves with qualified identities. The next queued remediation is BR-0237.
+The native rewind test no longer carries duplicate `vecmat.h`, `pstypes.h`, `physfs.h`, or `byteswap.h` stubs. Its focused core-only compile excludes unexercised engine serialization helpers, while CMake supplies the pinned PhysFS 3.2.0 public header and normal D1/D2 builds continue to use their authoritative engine headers. The focused MSVC build, test, scoped quality checks, and diff validation passed.
+
+Continued remediation completed and archived BR-0095 by passing the repository root into JVM tests, supporting an explicit RAR fixture override, failing when an override is missing, and executing the local Reetus import with zero skips. Committed archive and extraction-store fixtures continue to cover format-independent failure behavior. Forty ranked format findings are now fixed and archived.
+
+Continued remediation completed and archived BR-0098 by routing every mission-descriptor source through one bounded strict-UTF-8 decoder with a Windows-1252 fallback. Truncated text views now discard only an incomplete final UTF-8 code point rather than reinterpreting the valid prefix. Thirty-nine ranked format findings are now fixed and archived.
+
+Continued remediation completed and archived BR-0097 by canonicalizing valid mission sets by case-insensitive descriptor path with an exact-path tie break before selecting the package identity. Reversed ZIP, 7z, and extracted-record projections now produce the same primary title, game, and mission ordering. Thirty-eight ranked format findings are now fixed and archived.
+
+Continued remediation completed and archived BR-0094 by replacing fabricated compressed byte counts with an explicit unknown state. ZIP retains defined compressed sizes, while 7z and extracted RAR entries report `Unknown`; extraction limits continue to enforce actual materialized bytes. Thirty-seven ranked format findings were fixed and archived at this point.
+
+Continued remediation completed and archived BR-0091 with one bounded versioned record contract shared by mission and custom-audio producers and the native consumer. Thirty-six ranked format findings were fixed and archived at this point.
+
+Continued remediation completed and archived BR-0096 by validating descriptor-referenced assets before mission-package admission. Thirty-five ranked format findings are now fixed and archived.
+
+All nine remaining review sweeps are complete. Forty ranked format findings are fixed and archived, including every item in the rescanned parser-first queue. Their focused regression tests, proportionate native or JVM builds, Android debug builds for maintained ABIs, scoped quality checks, and diff validation passed. BR-0082 remains open because complete body admission needs new scope-aware metadata integrity or a side-effect-free staged engine reader. BR-0096 now validates same-stem HOG/DXA structure and requires validated archive catalogs plus directory-local loose files to cover every declared level. BR-0095 now executes a repository-root or explicitly configured RAR fixture and fails closed for a missing override. BR-0098 now applies one strict UTF-8 and Windows-1252 fallback policy to every mission-descriptor consumer and bounded text view. BR-0097 now canonicalizes multi-mission identity and ordering across archive backends. BR-0091 now uses one bounded versioned sidecar schema with exact-path priority, ambiguity-aware aliases, and strict complete native decoding. BR-0103 remains open because a complete fix requires immutable generations, a process-wide transaction owner, fsynced candidates, an atomic manifest-pointer switch, and restart recovery rather than a partial lock-only patch. BR-0219 now enforces shared checkpoint, encoded-payload, expansion-ratio, and whole-demo limits before large replay allocations and applies the checkpoint ceiling to recording. BR-0218 now ignores recorded storage names and restores through collision-checked, replay-owned temporary files. BR-0208 now publishes rewind slots only after complete serialization, preserves full history on capture failure, resets smaller rewrites to their exact size, and emits mandatory blank thumbnails without allocation. BR-0320 now bounds native mounted texture indexing and rejects unsafe DXA structure before enablement. BR-0389 now validates classic-demo wall counts and complete record spans before decoding. BR-0281 now bounds and exactly reads custom PCM, MIDI, and converted HMP inputs and preflights decoded PCM and expansion budgets. BR-0237 now catalogs every MIDI and HMP entry in one validated pass and reports incomplete HOG scans explicitly. BR-0249 now preserves U8 and signed-16 SDL callback formats in OpenSL and rejects unsupported audio specs. BR-0531 now bounds ETC2 source dimensions, uses checked layout arithmetic throughout mip construction, and transactionally publishes complete KTX output. The rescanned parser-first queue is complete.
 
 ## Remediation queue
 

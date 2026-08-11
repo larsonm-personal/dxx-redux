@@ -538,11 +538,29 @@ private fun MidiSection(filesDir: File) {
     val sources = enumResult?.sources ?: emptyList()
     if (sources.isEmpty()) {
         Text(
-            "No MIDI tracks found. Import game data files first.",
+            if (enumResult?.complete == false) {
+                "MIDI scan failed for one or more HOG files. Check diagnostics and re-import game data."
+            } else {
+                "No MIDI tracks found. Import game data files first."
+            },
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color =
+                if (enumResult?.complete == false) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
         )
         return
+    }
+
+    if (enumResult?.complete == false) {
+        Text(
+            "Some HOG files could not be scanned; the list below is incomplete.",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.error,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     // Source selector dropdown

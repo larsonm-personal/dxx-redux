@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.GameFileFormats
+import com.dxxredux.app.MissionZip
 import com.dxxredux.app.dpadTextFieldNavigation
 import java.io.File
 
@@ -92,7 +93,7 @@ object MissionScanner {
         basename: String,
     ): MissionInfo? =
         try {
-            val descriptor = GameFileFormats.parseMissionDescriptor(file.name, file.readText())
+            val descriptor = MissionZip.parseMissionDescriptor(file.name, file.readBytes())
             MissionInfo(
                 filename = basename,
                 displayName = descriptor.displayName,

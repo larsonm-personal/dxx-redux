@@ -11,7 +11,7 @@
 
 #include "hmp_android_shared.h"
 #include "midi_enumeration.h"
-#include "midi_preview.h" /* hog_read_entry, hog_list_entries */
+#include "hog_midi_catalog.h"
 #include "u_mem.h"
 
 #include <stdio.h>
@@ -95,12 +95,6 @@ static void sb_append_json_str(strbuf_t *sb, const char *s)
 
 /* ── Track duration via TML ──────────────────────────────────────────── */
 
-/* hog_read_entry and hog_list_entries are in midi_preview.c */
-extern int hog_read_entry(const char *hog_path, const char *entry_name,
-                          unsigned char **out_data, int *out_len);
-extern int hog_list_entries(const char *hog_path, const char *ext,
-                            char (*names)[14], int *sizes, int max_entries);
-
 static int compute_hmp_duration(const unsigned char *hmp_data, int hmp_len)
 {
 	unsigned char *midi = NULL;
@@ -166,21 +160,36 @@ static int parse_mission_name(const char *path, char *out_name, int max_len)
 
 /* ── HOG scanning ────────────────────────────────────────────────────── */
 
-#define MAX_HOG_TRACKS 64
+static void append_catalog_error(strbuf_t *errors, int *first_error,
+                                 const char *hog_path, int status)
+{
+	if (!*first_error)
+		sb_append(errors, ",");
+	*first_error = 0;
+	sb_append(errors, "{\"hog\":");
+	sb_append_json_str(errors, hog_path);
+	sb_append(errors, ",\"reason\":");
+	sb_append_json_str(errors, hog_midi_catalog_status_name(status));
+	sb_append(errors, "}");
+}
 
 static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
                                  const char *label, const char *game,
-                                 strbuf_t *sb, int *first_source)
+                                 strbuf_t *sb, int *first_source,
+                                 strbuf_t *errors, int *first_error)
 {
-	char names[MAX_HOG_TRACKS][14];
-	int sizes[MAX_HOG_TRACKS];
+	struct hog_midi_catalog catalog;
+	int catalog_status = hog_midi_catalog_load(hog_path, &catalog);
+	size_t i;
 
-	int count = hog_list_entries(hog_path, ".hmp", names, sizes, MAX_HOG_TRACKS);
-	if (count <= 0) {
-		/* Also try .mid */
-		count = hog_list_entries(hog_path, ".mid", names, sizes, MAX_HOG_TRACKS);
+	if (catalog_status != HOG_MIDI_CATALOG_OK) {
+		append_catalog_error(errors, first_error, hog_path, catalog_status);
+		return;
 	}
-	if (count <= 0) return;
+	if (!catalog.count) {
+		hog_midi_catalog_free(&catalog);
+		return;
+	}
 
 	if (!*first_source) sb_append(sb, ",");
 	*first_source = 0;
@@ -195,19 +204,20 @@ static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
 	sb_append_json_str(sb, hog_path);
 	sb_append(sb, ",\"tracks\":[");
 
-	for (int i = 0; i < count; i++) {
+	for (i = 0; i < catalog.count; i++) {
 		if (i > 0) sb_append(sb, ",");
 		sb_append(sb, "{\"filename\":");
-		sb_append_json_str(sb, names[i]);
+		sb_append_json_str(sb, catalog.entries[i].name);
 
 		/* Compute duration */
 		unsigned char *data = NULL;
 		int data_len = 0;
 		int dur_ms = -1;
-		if (hog_read_entry(hog_path, names[i], &data, &data_len)) {
+		if (hog_midi_catalog_read(hog_path, &catalog, i, &data, &data_len)) {
 			/* Check extension for format */
-			int nlen = (int) strlen(names[i]);
-			int is_hmp = (nlen >= 4 && strncasecmp(names[i] + nlen - 4, ".hmp", 4) == 0);
+			int nlen = (int) strlen(catalog.entries[i].name);
+			int is_hmp = (nlen >= 4 &&
+			              strncasecmp(catalog.entries[i].name + nlen - 4, ".hmp", 4) == 0);
 			if (is_hmp) {
 				dur_ms = compute_hmp_duration(data, data_len);
 			} else {
@@ -226,6 +236,7 @@ static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
 		sb_appendf(sb, ",\"duration_ms\":%d}", dur_ms);
 	}
 	sb_append(sb, "]}");
+	hog_midi_catalog_free(&catalog);
 }
 
 /* ── Mission directory scanning ──────────────────────────────────────── */
@@ -238,7 +249,8 @@ static int has_extension(const char *name, const char *ext)
 }
 
 static void enumerate_missions_dir(const char *base_dir, const char *game,
-                                   strbuf_t *sb, int *first_source)
+                                   strbuf_t *sb, int *first_source,
+                                   strbuf_t *errors, int *first_error)
 {
 	char missions_path[512];
 	snprintf(missions_path, sizeof(missions_path), "%s/missions", base_dir);
@@ -255,13 +267,6 @@ static void enumerate_missions_dir(const char *base_dir, const char *game,
 
 		char hog_path[512];
 		snprintf(hog_path, sizeof(hog_path), "%s/%s", missions_path, ent->d_name);
-
-		/* Check if this HOG has any HMP/MID entries */
-		char test_names[1][14];
-		int test_count = hog_list_entries(hog_path, ".hmp", test_names, NULL, 1);
-		if (test_count <= 0)
-			test_count = hog_list_entries(hog_path, ".mid", test_names, NULL, 1);
-		if (test_count <= 0) continue;
 
 		/* Try to find a mission descriptor for a friendly name */
 		char mission_name[64];
@@ -290,7 +295,8 @@ static void enumerate_missions_dir(const char *base_dir, const char *game,
 		else
 			snprintf(label, sizeof(label), "%s", base_name);
 
-		enumerate_hog_tracks(hog_path, source_id, label, game, sb, first_source);
+		enumerate_hog_tracks(hog_path, source_id, label, game, sb, first_source,
+		                     errors, first_error);
 	}
 	closedir(dir);
 }
@@ -323,34 +329,42 @@ static int find_file_ci(const char *dir, const char *name, char *out_path, int m
 char *midi_enumerate_tracks(const char *files_dir)
 {
 	strbuf_t sb;
+	strbuf_t errors;
 	sb_init(&sb);
+	sb_init(&errors);
 	sb_append(&sb, "{\"sources\":[");
 	int first = 1;
+	int first_error = 1;
 
 	/* D2 built-in music from descent2.hog (case-insensitive lookup) */
 	char hog_path[512];
 	if (find_file_ci(files_dir, "descent2.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d2-builtin", "Descent 2 (built-in)",
-		                     "d2", &sb, &first);
+		                     "d2", &sb, &first, &errors, &first_error);
 	}
 
 	/* D1 built-in music from descent.hog */
 	if (find_file_ci(files_dir, "descent.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d1-builtin", "Descent 1 (built-in)",
-		                     "d1", &sb, &first);
+		                     "d1", &sb, &first, &errors, &first_error);
 	}
 
 	/* D2X Vertigo expansion */
 	if (find_file_ci(files_dir, "d2x.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d2-vertigo", "Vertigo Series",
-		                     "d2", &sb, &first);
+		                     "d2", &sb, &first, &errors, &first_error);
 	}
 
 	/* Mission add-ons */
-	enumerate_missions_dir(files_dir, "d2", &sb, &first);
-	enumerate_missions_dir(files_dir, "d1", &sb, &first);
+	enumerate_missions_dir(files_dir, "d2", &sb, &first, &errors, &first_error);
+	enumerate_missions_dir(files_dir, "d1", &sb, &first, &errors, &first_error);
 
+	sb_append(&sb, "],\"complete\":");
+	sb_append(&sb, first_error ? "true" : "false");
+	sb_append(&sb, ",\"errors\":[");
+	sb_append(&sb, errors.buf ? errors.buf : "");
 	sb_append(&sb, "]}");
+	free(errors.buf);
 
 	LOGI("Enumerated MIDI tracks: %d bytes JSON", sb.len);
 	return sb.buf;

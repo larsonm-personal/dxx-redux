@@ -110,7 +110,9 @@ class ModManagerMissionZipTest {
 
     @Test
     fun missionRarImportsReetusAndStagesAtMissions() {
-        val source = File("../game_data/mission_files/reetus.rar").absoluteFile
+        val configuredFixture = System.getProperty("dxx.reetusRarFixture")?.takeIf { it.isNotBlank() }
+        val repositoryRoot = File(requireNotNull(System.getProperty("dxx.repositoryRoot"))).absoluteFile
+        val source = resolveReetusFixture(repositoryRoot, configuredFixture)
         assumeTrue("reetus.rar fixture is available", source.isFile)
         val filesDir = File("build/test-mod-manager-mission-rar-active-path").absoluteFile
         filesDir.deleteRecursively()
@@ -119,6 +121,7 @@ class ModManagerMissionZipTest {
         val imported = ModManager(filesDir).importMissionZipFile(source, "reetus.rar")
 
         assertNotNull(imported)
+        assertTrue(requireNotNull(MissionZip.inspect(source)).constituents.all { it.compressedSizeBytes == null })
         imported!!
         assertEquals("reetus mission", imported.displayName)
         assertEquals("d1", imported.game)
@@ -133,6 +136,16 @@ class ModManagerMissionZipTest {
         val stageDir = File(filesDir, "mods/.extracted_mission_zips/reetus.rar/missions")
         assertTrue(File(stageDir, "reetus.MSN").isFile)
         assertTrue(File(stageDir, "reetus.hog").isFile)
+    }
+
+    @Test
+    fun configuredRarFixtureMustExist() {
+        val root = File("build/test-missing-rar-fixture").absoluteFile.apply { mkdirs() }
+        val missing = File(root, "missing.rar")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            resolveReetusFixture(root, missing.absolutePath)
+        }
     }
 
     @Test
@@ -499,7 +512,7 @@ class ModManagerMissionZipTest {
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("Uneasy4.hog"))
-            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.write(createHogBytes("Uneasy4.rl2" to ByteArray(1)))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("Uneasy4.mn2"))
@@ -521,7 +534,7 @@ class ModManagerMissionZipTest {
         archive.deleteOnExit()
         SevenZOutputFile(archive).use { sevenZ ->
             sevenZ.writeEntry("Seven.dxa", byteArrayOf(1, 2, 3, 4))
-            sevenZ.writeEntry("Seven.hog", byteArrayOf(5, 6, 7, 8))
+            sevenZ.writeEntry("Seven.hog", createHogBytes("seven01.rl2" to ByteArray(1)))
             sevenZ.writeEntry("Seven.mn2", "name = Seven Pack\nnum_levels = 1\nseven01.rl2\n".toByteArray())
         }
         return archive
@@ -549,6 +562,10 @@ class ModManagerMissionZipTest {
             zip.putNextEntry(ZipEntry("Uneasy4.hog"))
             val buffer = ByteArray(1024 * 1024)
             val chunks = (MissionZip.SMALL_NESTED_ARCHIVE_LIMIT_BYTES / buffer.size).toInt() + 1
+            val dataBytes = chunks * buffer.size
+            zip.write("DHF".toByteArray(Charsets.US_ASCII))
+            zip.write(fixedName("Uneasy4.rl2", 13))
+            zip.write(leInt(dataBytes))
             repeat(chunks) {
                 zip.write(buffer)
             }
@@ -751,7 +768,7 @@ class ModManagerMissionZipTest {
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("Uneasy4.hog"))
-            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.write(createHogBytes("Uneasy4.rl2" to ByteArray(1)))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("Uneasy4.mn2"))
@@ -933,4 +950,13 @@ class ModManagerMissionZipTest {
             (value and 0xff).toByte(),
             ((value shr 8) and 0xff).toByte(),
         )
+
+    private fun resolveReetusFixture(
+        repositoryRoot: File,
+        configuredPath: String?,
+    ): File {
+        val source = configuredPath?.let(::File) ?: File(repositoryRoot, "game_data/mission_files/reetus.rar")
+        require(configuredPath == null || source.isFile) { "Configured reetus.rar fixture is missing: $source" }
+        return source.absoluteFile
+    }
 }

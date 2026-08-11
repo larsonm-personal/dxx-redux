@@ -14,6 +14,7 @@
 #include "gr.h"
 #include "input_demo_hooks.h"
 #include "input_demo_hooks_shared.h"
+#include "input_demo_limits.h"
 #include "input_demo_recorder.h"
 #include "input_demo_result.h"
 #include "input_demo_rng_mode.h"
@@ -238,7 +239,7 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 		return 0;
 	}
 	file_size = PHYSFS_fileLength(fp);
-	if (file_size <= 0 || file_size > UINT32_MAX) {
+	if (file_size <= 0 || !input_demo_checkpoint_size_supported((uint64_t) file_size)) {
 		if (error && error_size)
 			snprintf(error, error_size, "%s", "input demo checkpoint save has invalid size");
 		PHYSFS_close(fp);

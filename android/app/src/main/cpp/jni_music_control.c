@@ -250,6 +250,24 @@ Java_com_dxxredux_app_MainActivity_nativeGetMusicType(
 	return GameCfg.MusicType;
 }
 
+static char *music_alloc_track_list(size_t *out_length)
+{
+	const int required = songs_get_track_list(NULL, 0);
+	char *buffer;
+	if (required < 0 || (unsigned int) required > SONGS_TRACK_LIST_MAX_BYTES)
+		return NULL;
+	buffer = (char *) malloc((size_t) required + 1);
+	if (!buffer)
+		return NULL;
+	if (songs_get_track_list(buffer, (size_t) required + 1) != required) {
+		free(buffer);
+		return NULL;
+	}
+	if (out_length)
+		*out_length = (size_t) required;
+	return buffer;
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
     JNIEnv *env, jobject thiz)
@@ -257,8 +275,11 @@ Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
 	int type = 0, track = -1, total = 0;
 	char name[128] = "";
 	char escaped_name[256];
-	char *tracks = (char *) malloc(32768);
-	char *buf = (char *) malloc(33792);
+	size_t tracks_length = 0;
+	char *tracks = music_alloc_track_list(&tracks_length);
+	const size_t buf_size = tracks_length + 1024;
+	char *buf = tracks ? (char *) malloc(buf_size) : NULL;
+	int written;
 	jstring result;
 	(void) thiz;
 
@@ -275,24 +296,27 @@ Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
 		name[0] = '\0';
 	}
 	music_json_escape(name, escaped_name, sizeof(escaped_name));
-	songs_get_track_list(tracks, 32768);
-
-	snprintf(buf, 33792,
-	         "{\"musicType\":%d,\"source\":\"%s\",\"preferMissionSoundtrack\":%d,"
-	         "\"playOrder\":%d,\"oneTrackPerLevel\":%d,\"volume\":%d,"
-	         "\"paused\":%d,\"currentTrack\":%d,\"totalTracks\":%d,"
-	         "\"currentName\":\"%s\",\"tracks\":%s}",
-	         type,
-	         music_current_source(),
-	         android_music_get_prefer_mission_soundtrack(),
-	         GameCfg.CMLevelMusicPlayOrder,
-	         GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL,
-	         GameCfg.MusicVolume,
-	         music_is_paused(),
-	         track,
-	         total,
-	         escaped_name,
-	         tracks);
+	written = snprintf(buf, buf_size,
+	                   "{\"musicType\":%d,\"source\":\"%s\",\"preferMissionSoundtrack\":%d,"
+	                   "\"playOrder\":%d,\"oneTrackPerLevel\":%d,\"volume\":%d,"
+	                   "\"paused\":%d,\"currentTrack\":%d,\"totalTracks\":%d,"
+	                   "\"currentName\":\"%s\",\"tracks\":%s}",
+	                   type,
+	                   music_current_source(),
+	                   android_music_get_prefer_mission_soundtrack(),
+	                   GameCfg.CMLevelMusicPlayOrder,
+	                   GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL,
+	                   GameCfg.MusicVolume,
+	                   music_is_paused(),
+	                   track,
+	                   total,
+	                   escaped_name,
+	                   tracks);
+	if (written < 0 || (size_t) written >= buf_size) {
+		free(tracks);
+		free(buf);
+		return (*env)->NewStringUTF(env, "{}");
+	}
 	result = dxx_jni_string_from_utf8(env, buf);
 	free(tracks);
 	free(buf);
@@ -412,12 +436,11 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetTrackList(
     JNIEnv *env, jobject thiz)
 {
-	char *buf = (char *) malloc(32768);
+	char *buf = music_alloc_track_list(NULL);
 	jstring result;
 	(void) thiz;
 	if (!buf)
 		return (*env)->NewStringUTF(env, "[]");
-	songs_get_track_list(buf, 32768);
 	result = dxx_jni_string_from_utf8(env, buf);
 	free(buf);
 	return result;

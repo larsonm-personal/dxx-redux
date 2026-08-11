@@ -126,6 +126,7 @@ extern volatile int g_demo_record_per_frame_state;
 #include "input_demo_rng_mode.h"
 #include "classic_demo_json.h"
 #include "classic_demo_json_d2_snapshot.h"
+#include "classic_demo_wall_validation.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -3031,16 +3032,28 @@ int newdemo_read_frame_information(int rewrite)
 				if (nd_playback_v_juststarted) {
 					int wall_count;
 					int wall_index;
+					PHYSFS_sint64 wall_position;
+					PHYSFS_sint64 wall_length;
 					ubyte wall_type, wall_flags, wall_state;
 					short tmap_num, tmap_num2;
 
 					nd_read_int(&wall_count);
+					wall_position = PHYSFS_tell(infile);
+					wall_length = PHYSFS_fileLength(infile);
+					if (nd_playback_v_bad_read || wall_position < 0 || wall_length < wall_position ||
+						!classic_demo_wall_records_fit(wall_count, MAX_WALLS,
+							wall_length - wall_position)) {
+						nd_playback_v_bad_read = -1;
+						return -1;
+					}
 					for (wall_index = 0; wall_index < wall_count; wall_index++) {
 						nd_read_byte((signed char *)&wall_type);
 						nd_read_byte((signed char *)&wall_flags);
 						nd_read_byte((signed char *)&wall_state);
 						nd_read_short(&tmap_num);
 						nd_read_short(&tmap_num2);
+						if (nd_playback_v_bad_read)
+							return -1;
 						if (wall_index == 135)
 							fprintf(stderr, "classic restore wall135 type=%d flags=0x%x state=%d tmap=%d tmap2=%d\n",
 								(int)wall_type, (unsigned)wall_flags, (int)wall_state,

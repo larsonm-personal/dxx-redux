@@ -20,6 +20,7 @@
 #include "track_names.h"
 
 #include "android_jni_overlay.h"
+#include "music_name_table.h"
 #include "overlay_ringbuf.h"
 
 /* -- CUE-parsed / fingerprint-matched titles ------------------------- */
@@ -62,77 +63,7 @@ const char *track_names_lookup(int track, unsigned long disc_id)
 /* Loaded from custom_music_names.json written by CustomAudioSetManager.
  * Maps absolute file paths to chromaprint-decoded track names. */
 
-#define MAX_JUKEBOX_NAMES 256
-#define JUKEBOX_PATH_LEN  256
-#define JUKEBOX_NAME_LEN  128
-
-static char s_jb_paths[MAX_JUKEBOX_NAMES][JUKEBOX_PATH_LEN];
-static char s_jb_names[MAX_JUKEBOX_NAMES][JUKEBOX_NAME_LEN];
-static int s_jb_count = 0;
-
-#define MAX_MISSION_MUSIC_NAMES  256
-#define MISSION_MUSIC_PATH_LEN   128
-#define MISSION_MUSIC_NAME_LEN   128
 #define MISSION_MUSIC_NAMES_FILE "mission_music_names.json"
-
-static char s_mission_music_paths[MAX_MISSION_MUSIC_NAMES][MISSION_MUSIC_PATH_LEN];
-static char s_mission_music_names[MAX_MISSION_MUSIC_NAMES][MISSION_MUSIC_NAME_LEN];
-static int s_mission_music_count = 0;
-
-/* Minimal JSON string extraction: advance *pp past opening '"',
- * copy contents into buf (handling \" escapes), null-terminate.
- * Returns 1 on success, 0 if not a valid JSON string. */
-static int jb_parse_string(const char **pp, char *buf, int bufsz)
-{
-	const char *p = *pp;
-	int i = 0;
-	if (*p != '"') return 0;
-	p++;
-	while (*p && *p != '"') {
-		if (*p == '\\') {
-			p++;
-			if (!*p) return 0;
-		}
-		if (i < bufsz - 1) buf[i++] = *p;
-		p++;
-	}
-	if (*p != '"') return 0;
-	buf[i] = '\0';
-	*pp = ++p;
-	return 1;
-}
-
-static void parse_flat_name_object(char *buf,
-                                   char *paths,
-                                   int path_len,
-                                   char *names,
-                                   int name_len,
-                                   int *count,
-                                   int max_count)
-{
-	char *p = buf;
-
-	*count = 0;
-	while (*p && *p != '{') p++;
-	if (*p == '{') p++;
-
-	while (*p && *count < max_count) {
-		while (*p && *p != '"' && *p != '}') p++;
-		if (*p != '"') break;
-
-		if (!jb_parse_string((const char **) &p, paths + *count * path_len, path_len))
-			break;
-
-		while (*p && *p != ':') p++;
-		if (*p == ':') p++;
-		while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
-
-		if (!jb_parse_string((const char **) &p, names + *count * name_len, name_len))
-			break;
-
-		(*count)++;
-	}
-}
 
 void jukebox_names_load(const char *json_path)
 {
@@ -140,7 +71,7 @@ void jukebox_names_load(const char *json_path)
 	long len;
 	char *buf;
 
-	s_jb_count = 0;
+	music_name_table_clear_jukebox();
 
 	f = fopen(json_path, "rb");
 	if (!f) return;
@@ -166,14 +97,7 @@ void jukebox_names_load(const char *json_path)
 	buf[len] = '\0';
 	fclose(f);
 
-	parse_flat_name_object(
-	    buf,
-	    (char *) s_jb_paths,
-	    JUKEBOX_PATH_LEN,
-	    (char *) s_jb_names,
-	    JUKEBOX_NAME_LEN,
-	    &s_jb_count,
-	    MAX_JUKEBOX_NAMES);
+	music_name_table_load_jukebox(buf, (size_t) len);
 	free(buf);
 }
 
@@ -196,29 +120,7 @@ void jukebox_names_load_for_playlist(const char *playlist_path)
 
 const char *jukebox_names_lookup(const char *filepath)
 {
-	int i;
-	if (!filepath) return NULL;
-	for (i = 0; i < s_jb_count; i++) {
-		if (strcmp(s_jb_paths[i], filepath) == 0)
-			return s_jb_names[i];
-	}
-	return NULL;
-}
-
-static int ascii_case_equal(const char *a, const char *b)
-{
-	unsigned char ca, cb;
-	if (!a || !b) return 0;
-	while (*a && *b) {
-		ca = (unsigned char) *a;
-		cb = (unsigned char) *b;
-		if (ca >= 'A' && ca <= 'Z') ca = (unsigned char) (ca - 'A' + 'a');
-		if (cb >= 'A' && cb <= 'Z') cb = (unsigned char) (cb - 'A' + 'a');
-		if (ca != cb) return 0;
-		a++;
-		b++;
-	}
-	return *a == '\0' && *b == '\0';
+	return music_name_table_lookup_jukebox(filepath);
 }
 
 static const char *base_name(const char *path)
@@ -260,7 +162,7 @@ void mission_music_names_load(void)
 	PHYSFS_sint64 len;
 	char *buf;
 
-	s_mission_music_count = 0;
+	music_name_table_clear_mission();
 
 	f = PHYSFS_openRead(MISSION_MUSIC_NAMES_FILE);
 	if (!f) return;
@@ -282,29 +184,13 @@ void mission_music_names_load(void)
 	buf[len] = '\0';
 	PHYSFS_close(f);
 
-	parse_flat_name_object(
-	    buf,
-	    (char *) s_mission_music_paths,
-	    MISSION_MUSIC_PATH_LEN,
-	    (char *) s_mission_music_names,
-	    MISSION_MUSIC_NAME_LEN,
-	    &s_mission_music_count,
-	    MAX_MISSION_MUSIC_NAMES);
+	music_name_table_load_mission(buf, (size_t) len);
 	free(buf);
 }
 
 const char *mission_music_names_lookup(const char *filename)
 {
-	int i;
-	const char *base;
-	if (!filename) return NULL;
-	base = base_name(filename);
-	for (i = 0; i < s_mission_music_count; i++) {
-		if (ascii_case_equal(s_mission_music_paths[i], filename) ||
-		    ascii_case_equal(s_mission_music_paths[i], base))
-			return s_mission_music_names[i];
-	}
-	return NULL;
+	return music_name_table_lookup_mission(filename);
 }
 
 /* -- Overlay formatting ---------------------------------------------- */

@@ -180,6 +180,7 @@ static void android_rewind_snapshot_get_buffer(android_rewind_snapshot *snapshot
 	buffer->data = snapshot->data;
 	buffer->size = snapshot->size;
 	buffer->capacity = snapshot->capacity;
+	buffer->error = 0;
 }
 
 static void android_rewind_snapshot_set_buffer(android_rewind_snapshot *snapshot,
@@ -210,17 +211,23 @@ static void android_rewind_record_demo_timeline(android_rewind_snapshot *snapsho
 
 static int android_rewind_capture_snapshot(android_rewind_snapshot *snapshot)
 {
-	rewind_memory_buffer buffer = { NULL, 0, 0 };
+	rewind_memory_buffer buffer = { NULL, 0, 0, 0 };
 
 	if (!snapshot)
 		return 0;
-	android_rewind_snapshot_get_buffer(snapshot, &buffer);
 	if (!state_save_to_memory(&buffer, "REWIND", ANDROID_SAVE_META_KIND_MANUAL, 1)) {
+		rewind_memory_buffer_discard(&buffer);
 		debug_log(DLOG_GAME, "rewind capture save failed: gt=%lld level=%d mission='%s'",
 		          (long long) GameTime64, Current_level_num, Current_mission_filename);
 		return 0;
 	}
-	android_rewind_snapshot_set_buffer(snapshot, &buffer);
+	{
+		rewind_memory_buffer prior;
+
+		android_rewind_snapshot_get_buffer(snapshot, &prior);
+		rewind_memory_buffer_replace(&prior, &buffer);
+		android_rewind_snapshot_set_buffer(snapshot, &prior);
+	}
 	snapshot->level_num = Current_level_num;
 	android_rewind_copy_mission(snapshot->mission, sizeof(snapshot->mission));
 	snapshot->game_time64 = GameTime64;
@@ -352,13 +359,13 @@ void android_rewind_maybe_capture_frame(void)
 			g_android_rewind_session.snapshot_count++;
 	} else {
 		rotated_snapshot = g_android_rewind_session.snapshots[0];
-		memmove(&g_android_rewind_session.snapshots[0], &g_android_rewind_session.snapshots[1],
-		        sizeof(g_android_rewind_session.snapshots[0]) * (ANDROID_REWIND_SNAPSHOT_LIMIT - 1));
-		g_android_rewind_session.snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT - 1] = rotated_snapshot;
-		captured = android_rewind_capture_snapshot(
-		    &g_android_rewind_session.snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT - 1]);
-		if (!captured)
-			g_android_rewind_session.snapshot_count = ANDROID_REWIND_SNAPSHOT_LIMIT - 1;
+		captured = android_rewind_capture_snapshot(&rotated_snapshot);
+		if (captured) {
+			memmove(&g_android_rewind_session.snapshots[0], &g_android_rewind_session.snapshots[1],
+			        sizeof(g_android_rewind_session.snapshots[0]) *
+			            (ANDROID_REWIND_SNAPSHOT_LIMIT - 1));
+			g_android_rewind_session.snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT - 1] = rotated_snapshot;
+		}
 	}
 	if (!captured)
 		return;

@@ -582,7 +582,7 @@ internal fun extractZipToRoot(
         archive.entries.forEach { entry ->
             extractionBudget.registerEntry(
                 if (entry.isDirectory) 0 else entry.sizeBytes,
-                if (entry.isDirectory) 0 else entry.compressedSizeBytes,
+                if (entry.isDirectory) 0 else entry.compressedSizeBytes ?: 0,
                 entry.path,
             )
         }
@@ -609,7 +609,7 @@ internal fun extractZipToRoot(
                     input.copyToBounded(
                         output = outputStream,
                         budget = extractionBudget,
-                        compressedSize = entry.compressedSizeBytes,
+                        compressedSize = entry.compressedSizeBytes ?: -1,
                         label = normalized,
                     ) { count ->
                         extractedBytes += count.toLong()

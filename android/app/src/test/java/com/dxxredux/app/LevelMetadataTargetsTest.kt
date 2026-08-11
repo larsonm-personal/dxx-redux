@@ -3,6 +3,7 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -54,11 +55,14 @@ class LevelMetadataTargetsTest {
                 detailRows = emptyList(),
                 categories = emptyList(),
                 contents =
-                    ((1..20).map {
-                        GameFileMetadata.EntrySummary("d2xlvl%02d.rl2".format(it), 1, "D2 level")
-                    } + (1..3).map {
-                        GameFileMetadata.EntrySummary("d2xlvls$it.rl2", 1, "D2 level")
-                    }),
+                    (
+                        (1..20).map {
+                            GameFileMetadata.EntrySummary("d2xlvl%02d.rl2".format(it), 1, "D2 level")
+                        } +
+                            (1..3).map {
+                                GameFileMetadata.EntrySummary("d2xlvls$it.rl2", 1, "D2 level")
+                            }
+                    ),
             )
 
         val target = LevelMetadataTargets.directFile(hog, setDir, metadata)
@@ -113,7 +117,7 @@ class LevelMetadataTargetsTest {
         zipFile.parentFile?.mkdirs()
         ZipOutputStream(zipFile.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("max_f.hog"))
-            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.write(hogBytes("psx01.rl2", "psxs1a.rl2"))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("max_f.mn2"))
@@ -130,7 +134,7 @@ class LevelMetadataTargetsTest {
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("maxlnk_f.hog"))
-            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.write(hogBytes("psxlink1.rl2"))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("maxlnk_f.mn2"))
@@ -151,13 +155,19 @@ class LevelMetadataTargetsTest {
 
         assertEquals(listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"), targets.map { it.displayName })
         assertEquals(listOf("max_f", "maxlnk_f"), targets.map { it.missionName })
-        assertEquals(listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"), targets.map { it.missionDisplayName })
+        assertEquals(
+            listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"),
+            targets.map { it.missionDisplayName },
+        )
         assertEquals(listOf("normal", "anarchy"), targets.map { it.missionType })
         assertEquals(listOf(listOf("max_f.hog"), listOf("maxlnk_f.hog")), targets.map { it.hogFiles })
         assertEquals(listOf(listOf("psxs1a.rl2"), emptyList<String>()), targets.map { it.secretLevelFiles })
-        assertEquals(listOf(listOf("max_f.hog", "max_f.mn2"), listOf("maxlnk_f.hog", "maxlnk_f.mn2")), targets.map {
-            it.archiveEntries.sorted()
-        })
+        assertEquals(
+            listOf(listOf("max_f.hog", "max_f.mn2"), listOf("maxlnk_f.hog", "maxlnk_f.mn2")),
+            targets.map {
+                it.archiveEntries.sorted()
+            },
+        )
     }
 
     @Test
@@ -204,7 +214,7 @@ class LevelMetadataTargetsTest {
         zipFile.parentFile?.mkdirs()
         ZipOutputStream(zipFile.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("max_f.hog"))
-            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.write(hogBytes("psx01.rl2", "psxs1a.rl2"))
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("max_f.mn2"))
@@ -236,4 +246,14 @@ class LevelMetadataTargetsTest {
         assertEquals(listOf("psxs1a.rl2"), target.secretLevelFiles)
         assertEquals(listOf("max_f.hog", "max_f.mn2"), target.archiveEntries.sorted())
     }
+
+    private fun hogBytes(vararg names: String): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write("DHF".toByteArray(Charsets.US_ASCII))
+            for (name in names) {
+                output.write(name.toByteArray(Charsets.US_ASCII).copyOf(13))
+                output.write(byteArrayOf(1, 0, 0, 0, 0))
+            }
+            output.toByteArray()
+        }
 }

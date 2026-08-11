@@ -11,6 +11,7 @@
 
 #include "midi_preview.h"
 #include "hmp_android_shared.h"
+#include "hog_midi_catalog.h"
 #include "midi_seek_timeline.h"
 
 #include <stdio.h>
@@ -127,16 +128,6 @@ static SLAndroidSimpleBufferQueueItf s_player_bq = NULL;
 static short s_play_bufs[NUM_BUFFERS][BUF_FRAMES * 2];
 static int s_next_buf = 0;
 
-/* ── Utility ─────────────────────────────────────────────────────────── */
-
-static unsigned int read_le32(const unsigned char *p)
-{
-	return (unsigned int) p[0] |
-	       ((unsigned int) p[1] << 8) |
-	       ((unsigned int) p[2] << 16) |
-	       ((unsigned int) p[3] << 24);
-}
-
 /* ── HOG file reader ─────────────────────────────────────────────────
  *
  * HOG format: 3-byte magic "DHF", then repeated entries of
@@ -145,128 +136,25 @@ static unsigned int read_le32(const unsigned char *p)
  * Keep in sync with d2/utilities/hogextract.c format assumptions.
  */
 
-/* Sanity limit: HMP/MIDI tracks in descent HOGs are at most a few hundred
- * KB. Cap well above that to reject obviously corrupt or non-HOG data
- * without preventing legitimate large entries. */
-#define HOG_ENTRY_MAX_BYTES (64 * 1024 * 1024)
-
-static long hog_file_size(FILE *fp)
-{
-	long cur = ftell(fp);
-	if (cur < 0 || fseek(fp, 0, SEEK_END) != 0) return -1;
-	long end = ftell(fp);
-	fseek(fp, cur, SEEK_SET);
-	return end;
-}
-
 int hog_read_entry(const char *hog_path, const char *entry_name,
                    unsigned char **out_data, int *out_len)
 {
-	if (!hog_path || !entry_name || !out_data || !out_len) return 0;
-	FILE *fp = fopen(hog_path, "rb");
-	if (!fp) return 0;
+	struct hog_midi_catalog catalog;
+	size_t index;
+	int result = 0;
 
-	long file_size = hog_file_size(fp);
-
-	char magic[3];
-	if (fread(magic, 1, 3, fp) != 3 || memcmp(magic, "DHF", 3) != 0) {
-		fclose(fp);
+	if (!hog_path || !entry_name || !out_data || !out_len)
 		return 0;
-	}
-
-	while (!feof(fp)) {
-		char name[14];
-		unsigned char len_bytes[4];
-		memset(name, 0, sizeof(name));
-		if (fread(name, 1, 13, fp) != 13) break;
-		if (fread(len_bytes, 1, 4, fp) != 4) break;
-		unsigned int entry_len = read_le32(len_bytes);
-
-		/* Reject unreasonable sizes (corrupt HOG or non-HOG file that
-		 * happened to start with DHF). Android: a bogus 4GB malloc here
-		 * causes a silent SIGSEGV with no Java crash report. */
-		if (entry_len > HOG_ENTRY_MAX_BYTES ||
-		    (file_size >= 0 && (long) entry_len > file_size)) {
-			LOGI("hog_read_entry: rejecting entry '%s' with bogus length %u", name, entry_len);
-			fclose(fp);
-			return 0;
-		}
-
-		if (strncasecmp(name, entry_name, 13) == 0) {
-			unsigned char *data = (unsigned char *) malloc(entry_len);
-			if (!data) {
-				fclose(fp);
-				return 0;
-			}
-			if (fread(data, 1, entry_len, fp) != entry_len) {
-				free(data);
-				fclose(fp);
-				return 0;
-			}
-			fclose(fp);
-			*out_data = data;
-			*out_len = (int) entry_len;
-			return 1;
-		}
-		if (fseek(fp, (long) entry_len, SEEK_CUR) != 0) break;
-	}
-	fclose(fp);
-	return 0;
-}
-
-/* List all entries in a HOG file matching a given extension.
- * Returns count of matching entries.  names[i] is a 14-byte buffer.
- * Caller provides names array and max_entries.
- */
-int hog_list_entries(const char *hog_path, const char *ext,
-                     char (*names)[14], int *sizes, int max_entries)
-{
-	FILE *fp = fopen(hog_path, "rb");
-	if (!fp) return 0;
-
-	char magic[3];
-	if (fread(magic, 1, 3, fp) != 3 || memcmp(magic, "DHF", 3) != 0) {
-		fclose(fp);
+	if (hog_midi_catalog_load(hog_path, &catalog) != HOG_MIDI_CATALOG_OK)
 		return 0;
-	}
-
-	long file_size = hog_file_size(fp);
-	int count = 0;
-	int ext_len = ext ? (int) strlen(ext) : 0;
-	while (!feof(fp) && count < max_entries) {
-		char name[14];
-		unsigned char len_bytes[4];
-		memset(name, 0, sizeof(name));
-		if (fread(name, 1, 13, fp) != 13) break;
-		if (fread(len_bytes, 1, 4, fp) != 4) break;
-		unsigned int entry_len = read_le32(len_bytes);
-
-		/* Same sanity guard as hog_read_entry. */
-		if (entry_len > HOG_ENTRY_MAX_BYTES ||
-		    (file_size >= 0 && (long) entry_len > file_size)) {
-			LOGI("hog_list_entries: rejecting entry '%s' with bogus length %u", name, entry_len);
+	for (index = 0; index < catalog.count; index++) {
+		if (!hog_catalog_strcasecmp(catalog.entries[index].name, entry_name)) {
+			result = hog_midi_catalog_read(hog_path, &catalog, index, out_data, out_len);
 			break;
 		}
-
-		if (ext && ext_len > 0) {
-			int nlen = (int) strlen(name);
-			if (nlen > ext_len) {
-				const char *dot = name + nlen - ext_len;
-				if (strncasecmp(dot, ext, ext_len) == 0) {
-					memcpy(names[count], name, 14);
-					if (sizes) sizes[count] = (int) entry_len;
-					count++;
-				}
-			}
-		} else {
-			memcpy(names[count], name, 14);
-			if (sizes) sizes[count] = (int) entry_len;
-			count++;
-		}
-		if (fseek(fp, (long) entry_len, SEEK_CUR) != 0) break;
 	}
-	fclose(fp);
-	return count;
+	hog_midi_catalog_free(&catalog);
+	return result;
 }
 
 /* ── MIDI duration calculation ───────────────────────────────────────── */

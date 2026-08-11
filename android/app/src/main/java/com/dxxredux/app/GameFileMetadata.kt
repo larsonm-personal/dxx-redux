@@ -81,7 +81,7 @@ internal object GameFileMetadata {
         name: String,
         input: InputStream,
     ): Summary {
-        val mission = GameFileFormats.parseMissionDescriptor(name, input.readBytes().toString(Charsets.UTF_8))
+        val mission = MissionZip.parseMissionDescriptor(name, input.readBytes())
         val rows =
             buildList {
                 add("Title" to mission.displayName)

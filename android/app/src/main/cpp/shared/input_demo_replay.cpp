@@ -14,6 +14,7 @@
 
 #include "input_demo_codec.h"
 #include "input_demo_fixture.h"
+#include "input_demo_limits.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
 
@@ -231,9 +232,19 @@ static bool zlib_decompress(const std::vector<uint8_t> &compressed,
 
 	if (!decoded)
 		return fail(error, "missing checkpoint decompress output");
+	if (!expected_size || !input_demo_checkpoint_size_supported(expected_size))
+		return fail(error, "checkpoint decoded size exceeds the supported limit");
+	if (compressed.empty() || !input_demo_checkpoint_size_supported(compressed.size()))
+		return fail(error, "checkpoint compressed payload exceeds the supported limit");
+	if (!input_demo_checkpoint_expansion_supported(expected_size, compressed.size()))
+		return fail(error, "checkpoint compression ratio exceeds the supported limit");
 	if (compressed.size() > std::numeric_limits<uLong>::max())
 		return fail(error, "checkpoint compressed payload is too large");
-	decoded->assign(expected_size, 0);
+	try {
+		decoded->assign(expected_size, 0);
+	} catch (const std::exception &) {
+		return fail(error, "could not allocate checkpoint decompression buffer");
+	}
 	z_result = uncompress(decoded->data(), &decoded_size, compressed.data(), (uLong) compressed.size());
 	if (z_result != Z_OK)
 		return fail(error, std::string("checkpoint zlib decompress failed: ") + std::to_string(z_result));
@@ -253,13 +264,19 @@ static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
 
 	if (!session)
 		return fail(error, "missing replay session output");
+	if (!checkpoint.size || !input_demo_checkpoint_size_supported(checkpoint.size))
+		return fail(error, "checkpoint decoded size exceeds the supported limit");
+	if (!input_demo_checkpoint_encoded_size_supported(checkpoint.data.size()))
+		return fail(error, "checkpoint encoded data exceeds the supported limit");
 	if (!input_demo_base64_decode(checkpoint.data, &decoded, error))
 		return false;
+	if (!input_demo_checkpoint_size_supported(decoded.size()))
+		return fail(error, "checkpoint decoded payload exceeds the supported limit");
 	if (checkpoint.compression == "zlib") {
 		if (!zlib_decompress(decoded, checkpoint.size, &raw_checkpoint, error))
 			return false;
 	} else {
-		raw_checkpoint = decoded;
+		raw_checkpoint = std::move(decoded);
 		if (raw_checkpoint.size() != checkpoint.size)
 			return fail(error, "checkpoint decoded size does not match metadata");
 	}
@@ -269,7 +286,11 @@ static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
 		return fail(error, "checkpoint sha256 does not match metadata");
 	session->has_checkpoint = true;
 	session->checkpoint_save_name = checkpoint.save_name;
-	session->checkpoint_data = raw_checkpoint;
+	try {
+		session->checkpoint_data = std::move(raw_checkpoint);
+	} catch (const std::exception &) {
+		return fail(error, "could not retain checkpoint data");
+	}
 	session->checkpoint_start_gt = checkpoint.start_gt;
 	session->has_checkpoint_collision_delay_last_play_time = checkpoint.has_collision_delay_last_play_time ? true : false;
 	session->checkpoint_collision_delay_last_play_time = checkpoint.collision_delay_last_play_time;

@@ -2,7 +2,10 @@ package com.dxxredux.app
 
 import java.io.File
 import java.io.InputStream
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
 import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction
 import java.util.Locale
 
 object MissionZip {
@@ -19,7 +22,8 @@ object MissionZip {
         val name: String,
         val role: String,
         val sizeBytes: Long,
-        val compressedSizeBytes: Long,
+        val compressedSizeBytes: Long?,
+        val archiveEntries: Set<String>? = null,
     )
 
     data class ScanResult(
@@ -55,12 +59,18 @@ object MissionZip {
             for (entry in archive.entries) {
                 budget.registerEntry(
                     if (entry.isDirectory) 0 else entry.sizeBytes,
-                    if (entry.isDirectory) 0 else entry.compressedSizeBytes,
+                    if (entry.isDirectory) 0 else entry.compressedSizeBytes ?: 0,
                     entry.path,
                 )
                 if (entry.isDirectory) continue
                 val name = leafName(entry.path)
                 val role = GameFileFormats.missionZipRoleForFile(name)
+                val archiveEntries =
+                    if (isMissionArchiveRole(role)) {
+                        archive.openInputStream(entry).use { MissionAssetCatalog.read(role, it, entry.path) }
+                    } else {
+                        null
+                    }
                 constituents +=
                     Constituent(
                         path = normalizePath(entry.path),
@@ -68,19 +78,20 @@ object MissionZip {
                         role = role,
                         sizeBytes = entry.sizeBytes,
                         compressedSizeBytes = entry.compressedSizeBytes,
+                        archiveEntries = archiveEntries,
                     )
                 if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
-                    val text =
+                    val bytes =
                         archive.openInputStream(entry).use {
                             it
                                 .readBytesBounded(
                                     ExtractionLimits.MAX_DESCRIPTOR_BYTES,
                                     entry.path,
                                     metadataBudget,
-                                    entry.compressedSizeBytes,
-                                ).toString(Charsets.UTF_8)
+                                    entry.compressedSizeBytes ?: -1,
+                                )
                         }
-                    missions += parseMissionDescriptor(entry.path, text)
+                    missions += parseMissionDescriptor(entry.path, bytes)
                 }
             }
             return buildResult(
@@ -109,6 +120,8 @@ object MissionZip {
                 if (!entry.isDirectory) {
                     val name = leafName(entry.name)
                     val role = GameFileFormats.missionZipRoleForFile(name)
+                    val archiveEntries =
+                        if (isMissionArchiveRole(role)) MissionAssetCatalog.read(role, zip, entry.name) else null
                     val size = entry.size.coerceAtLeast(0)
                     constituents +=
                         Constituent(
@@ -116,19 +129,19 @@ object MissionZip {
                             name = name,
                             role = role,
                             sizeBytes = size,
-                            compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
+                            compressedSizeBytes = entry.compressedSize.takeIf { it >= 0 },
+                            archiveEntries = archiveEntries,
                         )
                     if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
                         missions +=
                             parseMissionDescriptor(
                                 entry.name,
-                                zip
-                                    .readBytesBounded(
-                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                        entry.name,
-                                        metadataBudget,
-                                        entry.compressedSize,
-                                    ).toString(Charsets.UTF_8),
+                                zip.readBytesBounded(
+                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                    entry.name,
+                                    metadataBudget,
+                                    entry.compressedSize,
+                                ),
                             )
                     }
                 }
@@ -155,28 +168,34 @@ object MissionZip {
             val name = leafName(entryPath)
             val role = GameFileFormats.missionZipRoleForFile(name)
             budget.registerEntry(file.sizeBytes, file.sizeBytes, entryPath)
+            val diskFile = File(record.rootDir, file.relativePath.replace('/', File.separatorChar))
+            val archiveEntries =
+                if (diskFile.isFile && isMissionArchiveRole(role)) {
+                    diskFile.inputStream().use { MissionAssetCatalog.read(role, it, entryPath) }
+                } else {
+                    null
+                }
             constituents +=
                 Constituent(
                     path = entryPath,
                     name = name,
                     role = role,
                     sizeBytes = file.sizeBytes,
-                    compressedSizeBytes = file.sizeBytes,
+                    compressedSizeBytes = null,
+                    archiveEntries = archiveEntries,
                 )
             if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
-                val diskFile = File(record.rootDir, file.relativePath.replace('/', File.separatorChar))
                 if (diskFile.isFile) {
                     missions +=
                         diskFile.inputStream().use {
                             parseMissionDescriptor(
                                 entryPath,
-                                it
-                                    .readBytesBounded(
-                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                        entryPath,
-                                        metadataBudget,
-                                        file.sizeBytes,
-                                    ).toString(Charsets.UTF_8),
+                                it.readBytesBounded(
+                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                    entryPath,
+                                    metadataBudget,
+                                    file.sizeBytes,
+                                ),
                             )
                         }
                 }
@@ -208,25 +227,27 @@ object MissionZip {
                 if (!entry.isDirectory) {
                     val name = leafName(entry.name)
                     val role = GameFileFormats.missionZipRoleForFile(name)
+                    val archiveEntries =
+                        if (isMissionArchiveRole(role)) MissionAssetCatalog.read(role, zip, entry.name) else null
                     constituents +=
                         Constituent(
                             path = normalizePath(entry.name),
                             name = name,
                             role = role,
                             sizeBytes = entry.size.coerceAtLeast(0),
-                            compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
+                            compressedSizeBytes = entry.compressedSize.takeIf { it >= 0 },
+                            archiveEntries = archiveEntries,
                         )
                     if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
                         missions +=
                             parseMissionDescriptor(
                                 entry.name,
-                                zip
-                                    .readBytesBounded(
-                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                        entry.name,
-                                        metadataBudget,
-                                        entry.compressedSize,
-                                    ).toString(Charsets.UTF_8),
+                                zip.readBytesBounded(
+                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                    entry.name,
+                                    metadataBudget,
+                                    entry.compressedSize,
+                                ),
                             )
                     }
                     if (GameFileFormats.extensionOf(name) == "zip" &&
@@ -271,7 +292,7 @@ object MissionZip {
                         buffer.copyOf(total)
                     }
                 val truncated = bytes.size > limit
-                TextFileContent(decodeText(bytes.copyOf(minOf(bytes.size, limit))), truncated)
+                TextFileContent(decodeLegacyText(bytes.copyOf(minOf(bytes.size, limit)), truncated), truncated)
             }
         } catch (e: Exception) {
             TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
@@ -299,6 +320,11 @@ object MissionZip {
         path: String,
         text: String,
     ): GameFileFormats.MissionDescriptor = GameFileFormats.parseMissionDescriptor(path, text)
+
+    internal fun parseMissionDescriptor(
+        path: String,
+        bytes: ByteArray,
+    ): GameFileFormats.MissionDescriptor = GameFileFormats.parseMissionDescriptor(path, decodeLegacyText(bytes))
 
     private fun buildResult(
         constituents: List<Constituent>,
@@ -380,13 +406,17 @@ object MissionZip {
                                     isMissionPayload(constituent, stem, levelNames)
                             )
                     }
-                val hasArchive = inMissionDirectory.any(::isMissionArchive)
                 val directLevels =
                     inMissionDirectory
                         .filter { it.name.lowercase(Locale.US) in levelNames }
                         .map { it.name.lowercase(Locale.US) }
                         .toSet()
-                if (!hasArchive && !directLevels.containsAll(levelNames)) return@mapNotNull null
+                val archivedLevels =
+                    inMissionDirectory
+                        .filter(::isMissionArchive)
+                        .flatMap { it.archiveEntries.orEmpty() }
+                        .toSet()
+                if (!(directLevels + archivedLevels).containsAll(levelNames)) return@mapNotNull null
                 MissionSet(mission, inMissionDirectory)
             }
 
@@ -402,11 +432,10 @@ object MissionZip {
             )
 
     private fun isMissionArchive(constituent: Constituent): Boolean =
-        constituent.role in
-            setOf(
-                GameFileFormats.MISSION_ZIP_HOG,
-                GameFileFormats.MISSION_ZIP_MOD_ARCHIVE,
-            )
+        isMissionArchiveRole(constituent.role) && constituent.archiveEntries != null
+
+    private fun isMissionArchiveRole(role: String): Boolean =
+        role == GameFileFormats.MISSION_ZIP_HOG || role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE
 
     private fun isMissionHog(constituent: Constituent): Boolean = constituent.role == GameFileFormats.MISSION_ZIP_HOG
 
@@ -453,9 +482,47 @@ object MissionZip {
 
     private fun isTextFile(path: String): Boolean = isInlineReadmeCandidate(path)
 
-    private fun decodeText(bytes: ByteArray): String {
-        val utf8 = bytes.toString(Charsets.UTF_8)
-        return if ('\uFFFD' in utf8) bytes.toString(Charset.forName("windows-1252")) else utf8
+    internal fun decodeLegacyText(
+        bytes: ByteArray,
+        truncated: Boolean = false,
+    ): String {
+        decodeStrictUtf8(bytes)?.let { return it }
+        if (truncated) {
+            val incompleteBytes = incompleteUtf8SuffixLength(bytes)
+            if (incompleteBytes > 0) {
+                decodeStrictUtf8(bytes.copyOf(bytes.size - incompleteBytes))?.let { return it }
+            }
+        }
+        return bytes.toString(Charset.forName("windows-1252"))
+    }
+
+    private fun decodeStrictUtf8(bytes: ByteArray): String? =
+        try {
+            Charsets.UTF_8
+                .newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
+        } catch (_: CharacterCodingException) {
+            null
+        }
+
+    private fun incompleteUtf8SuffixLength(bytes: ByteArray): Int {
+        if (bytes.isEmpty()) return 0
+        var leadIndex = bytes.lastIndex
+        while (leadIndex >= 0 && bytes[leadIndex].toInt() and 0xc0 == 0x80) leadIndex--
+        if (leadIndex < 0) return 0
+        val lead = bytes[leadIndex].toInt() and 0xff
+        val expectedContinuationBytes =
+            when (lead) {
+                in 0xc2..0xdf -> 1
+                in 0xe0..0xef -> 2
+                in 0xf0..0xf4 -> 3
+                else -> return 0
+            }
+        val actualContinuationBytes = bytes.lastIndex - leadIndex
+        return if (actualContinuationBytes < expectedContinuationBytes) bytes.size - leadIndex else 0
     }
 
     private fun leafName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')

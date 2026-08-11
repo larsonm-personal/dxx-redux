@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#include <process.h>
+#define input_demo_getpid _getpid
+#else
+#include <unistd.h>
+#define input_demo_getpid getpid
+#endif
+
 #include "args.h"
 #include "game.h"
 #include "gameseq.h"
@@ -40,6 +48,10 @@ extern int state_restore_all_sub(char *filename);
 #endif
 
 static int input_demo_d1_in_d2_enabled = 0;
+static unsigned long input_demo_checkpoint_temp_id = 0;
+
+#define INPUT_DEMO_CHECKPOINT_TEMP_DIR      "input_demo_replay_tmp"
+#define INPUT_DEMO_CHECKPOINT_TEMP_ATTEMPTS 256
 
 #if NDL != INPUT_DEMO_DIFFICULTY_LEVELS
 #error Input demo difficulty domain must match the engine difficulty domain
@@ -406,60 +418,93 @@ static int input_demo_prepare_loaded_replay_context(
 	return 1;
 }
 
+static PHYSFS_file *input_demo_open_owned_checkpoint_temp(
+    char *path, size_t path_size)
+{
+	unsigned int attempt;
+
+	if (!path || !path_size)
+		return NULL;
+	path[0] = '\0';
+	PHYSFS_mkdir(INPUT_DEMO_CHECKPOINT_TEMP_DIR);
+	for (attempt = 0; attempt != INPUT_DEMO_CHECKPOINT_TEMP_ATTEMPTS; ++attempt) {
+		PHYSFS_file *file;
+		const unsigned long id = input_demo_checkpoint_temp_id++;
+		const int length = snprintf(
+		    path, path_size, INPUT_DEMO_CHECKPOINT_TEMP_DIR "/checkpoint-%ld-%lu.dgss",
+		    (long) input_demo_getpid(), id);
+
+		if (length < 0 || (size_t) length >= path_size) {
+			path[0] = '\0';
+			return NULL;
+		}
+		if (PHYSFS_exists(path))
+			continue;
+		file = PHYSFS_openWrite(path);
+		if (file)
+			return file;
+	}
+	path[0] = '\0';
+	return NULL;
+}
+
+static int input_demo_remove_owned_checkpoint_temp(const char *path)
+{
+	if (!path || !path[0])
+		return 0;
+	if (!PHYSFS_delete(path))
+		return 0;
+	PHYSFS_delete(INPUT_DEMO_CHECKPOINT_TEMP_DIR);
+	return 1;
+}
+
 static int input_demo_restore_replay_checkpoint_data(
-    const char *checkpoint_name,
     const uint8_t *checkpoint_data,
     size_t checkpoint_size)
 {
 	char local_checkpoint_name[PATH_MAX] = "";
-	PHYSFS_file *checkpoint_file = NULL;
-	const char *checkpoint_base_name;
+	PHYSFS_file *checkpoint_file = input_demo_open_owned_checkpoint_temp(
+	    local_checkpoint_name, sizeof(local_checkpoint_name));
 
-	checkpoint_base_name = strrchr(checkpoint_name, '/');
-	if (checkpoint_base_name)
-		checkpoint_base_name++;
-	else
-		checkpoint_base_name = checkpoint_name;
-	if (GameArg.SysUsePlayersDir)
-		snprintf(local_checkpoint_name, sizeof(local_checkpoint_name), "Players/%s",
-		         checkpoint_base_name);
-	else
-		snprintf(local_checkpoint_name, sizeof(local_checkpoint_name), "%s",
-		         checkpoint_base_name);
-	input_demo_debug_printf(
-	    "Input demo replay checkpoint temp path: recorded=%s local=%s\n",
-	    checkpoint_name, local_checkpoint_name);
+	input_demo_debug_printf("Input demo replay checkpoint owned temp path: %s\n",
+	                        local_checkpoint_name);
 	INPUT_DEMO_CRUMB_V("input_demo: checkpoint temp=%s size=%u",
 	                   local_checkpoint_name, (unsigned int) checkpoint_size);
-	if (!strncmp(local_checkpoint_name, "Players/", 8))
-		PHYSFS_mkdir("Players");
-	PHYSFS_delete(local_checkpoint_name);
-	checkpoint_file = PHYSFS_openWrite(local_checkpoint_name);
 	if (!checkpoint_file) {
-		printf("Input demo replay could not write checkpoint file: %s\n",
-		       local_checkpoint_name);
+		printf("Input demo replay could not create an owned checkpoint file\n");
 		input_demo_replay_unload();
 		return 0;
 	}
 	if (PHYSFS_writeBytes(checkpoint_file, checkpoint_data, checkpoint_size) !=
 	    (PHYSFS_sint64) checkpoint_size) {
 		PHYSFS_close(checkpoint_file);
-		PHYSFS_delete(local_checkpoint_name);
+		input_demo_remove_owned_checkpoint_temp(local_checkpoint_name);
 		printf("Input demo replay could not write checkpoint bytes: %s\n",
 		       local_checkpoint_name);
 		input_demo_replay_unload();
 		return 0;
 	}
-	PHYSFS_close(checkpoint_file);
+	if (!PHYSFS_close(checkpoint_file)) {
+		input_demo_remove_owned_checkpoint_temp(local_checkpoint_name);
+		printf("Input demo replay could not close checkpoint file: %s\n",
+		       local_checkpoint_name);
+		input_demo_replay_unload();
+		return 0;
+	}
 	INPUT_DEMO_CRUMB("input_demo: checkpoint bytes written");
 	if (!input_demo_restore_checkpoint_save(local_checkpoint_name)) {
-		PHYSFS_delete(local_checkpoint_name);
+		input_demo_remove_owned_checkpoint_temp(local_checkpoint_name);
 		printf("Input demo replay could not restore checkpoint: %s\n",
 		       local_checkpoint_name);
 		input_demo_replay_unload();
 		return 0;
 	}
-	PHYSFS_delete(local_checkpoint_name);
+	if (!input_demo_remove_owned_checkpoint_temp(local_checkpoint_name)) {
+		printf("Input demo replay could not remove owned checkpoint file: %s\n",
+		       local_checkpoint_name);
+		input_demo_replay_unload();
+		return 0;
+	}
 	INPUT_DEMO_CRUMB_V(
 	    "input_demo: checkpoint restored mission=%s level=%d difficulty=%d gt=%lld",
 	    Current_mission_filename, Current_level_num, Difficulty_level,
@@ -607,8 +652,7 @@ int input_demo_start_loaded_replay_common(void)
 	}
 #endif
 	PlayerCfg.OriginalHoming = have_replay_player_cfg ? replay_player_cfg->original_homing : 0;
-	if (!input_demo_restore_replay_checkpoint_data(checkpoint_name,
-	                                               checkpoint_data, checkpoint_size))
+	if (!input_demo_restore_replay_checkpoint_data(checkpoint_data, checkpoint_size))
 		return 1;
 	{
 		input_demo_replay_restored_player_diag player_diag;

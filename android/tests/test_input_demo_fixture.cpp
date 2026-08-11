@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "input_demo_fixture.h"
+#include "input_demo_limits.h"
 #include "input_demo_rng_mode.h"
 
 #ifndef DXX_INPUT_DEMO_BUILD_NUMBERi
@@ -544,6 +545,17 @@ static int expect_checkpoint_demo_file_output(void)
 				return report_failure("out-of-domain thief cursor unexpectedly validated");
 		}
 	}
+	invalid = demo;
+	invalid.checkpoint.size = INPUT_DEMO_CHECKPOINT_MAX_BYTES;
+	if (!input_demo_file_to_text(invalid, &text, &error))
+		return report_failure_string(std::string("maximum checkpoint size failed: ") + error);
+	invalid.checkpoint.size = INPUT_DEMO_CHECKPOINT_MAX_BYTES + 1u;
+	if (input_demo_file_to_text(invalid, &text, &error))
+		return report_failure("oversized checkpoint unexpectedly validated");
+	invalid = demo;
+	invalid.checkpoint.data.assign(INPUT_DEMO_CHECKPOINT_MAX_ENCODED_BYTES + 1u, 'A');
+	if (input_demo_file_to_text(invalid, &text, &error))
+		return report_failure("oversized encoded checkpoint unexpectedly validated");
 	return 0;
 }
 

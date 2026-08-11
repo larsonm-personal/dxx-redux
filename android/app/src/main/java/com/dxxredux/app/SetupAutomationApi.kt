@@ -951,6 +951,17 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         cdObj.put("duration_ms", cdState.durationMs)
         musicPreview.put("cd", cdObj)
         val midiEnum = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
+        musicPreview.put("midi_catalog_complete", midiEnum.complete)
+        if (midiEnum.errors.isNotEmpty()) {
+            val midiErrorArr = JSONArray()
+            for (error in midiEnum.errors) {
+                val errorObj = JSONObject()
+                errorObj.put("hog", error.hog)
+                errorObj.put("reason", error.reason)
+                midiErrorArr.put(errorObj)
+            }
+            musicPreview.put("midi_catalog_errors", midiErrorArr)
+        }
         if (midiEnum.sources.isNotEmpty()) {
             val midiSrcArr = JSONArray()
             for (ms in midiEnum.sources) {

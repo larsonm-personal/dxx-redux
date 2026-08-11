@@ -46,10 +46,12 @@ class MissionZipMusicNamesTest {
             )
 
         val root = JSONObject(output.readText())
-        assertEquals(2, count)
-        assertEquals("Decoded Mission Track", root.getString("music/game01.ogg"))
-        assertEquals("Decoded Mission Track", root.getString("game01.ogg"))
-        assertFalse(root.has("game02.ogg"))
+        assertEquals(1, count)
+        assertEquals(MusicNameSidecar.VERSION, root.getInt("version"))
+        val record = root.getJSONArray("records").getJSONObject(0)
+        assertEquals("Decoded Mission Track", record.getString("name"))
+        assertEquals(listOf("music/game01.ogg"), record.getJSONArray("paths").strings())
+        assertEquals(listOf("game01.ogg"), record.getJSONArray("aliases").strings())
         assertTrue(MissionZipMusicNames.isCurrent(output, catalog))
         assertFalse(MissionZipMusicNames.isCurrent(output, catalog.copy(sourceIdentity = "source-b")))
     }
@@ -126,7 +128,10 @@ class MissionZipMusicNamesTest {
         assertTrue(failure is IOException)
         assertEquals(original, output.readText())
         assertTrue(MissionZipMusicNames.isCurrent(output, catalog))
-        assertEquals("First Name", JSONObject(output.readText()).getString("game01.ogg"))
+        assertEquals(
+            "First Name",
+            JSONObject(output.readText()).getJSONArray("records").getJSONObject(0).getString("name"),
+        )
         assertTrue(
             output.parentFile!!
                 .listFiles()
@@ -169,4 +174,6 @@ class MissionZipMusicNamesTest {
                 it.parentFile?.deleteRecursively()
                 it.parentFile?.mkdirs()
             }
+
+    private fun org.json.JSONArray.strings(): List<String> = (0 until length()).map(::getString)
 }

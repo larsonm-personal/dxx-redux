@@ -1,7 +1,9 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.File
 import java.nio.ByteBuffer
@@ -10,6 +12,37 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class DxaTextureScannerTest {
+    @Test
+    fun structureValidationBoundsDepthEntriesAndTextureCount() {
+        val depth64 = (1..64).joinToString("/") { "d$it" } + "/texture.png"
+        val depth65 = (1..65).joinToString("/") { "d$it" } + "/texture.png"
+
+        assertNull(DxaTextureScanner.validateStructure(sequenceOf(depth64)))
+        assertNotNull(DxaTextureScanner.validateStructure(sequenceOf(depth65)))
+        assertNotNull(DxaTextureScanner.validateStructure(sequenceOf("safe/../texture.png")))
+        assertNotNull(DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(65_537).map { "f$it.txt" }))
+        assertNotNull(DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(49_153).map { "f$it.png" }))
+    }
+
+    @Test
+    fun scanRejectsUnsafeHierarchy() {
+        val zipFile = File.createTempFile("dxa-scan-depth", ".dxa")
+        zipFile.deleteOnExit()
+        val deepName = (1..65).joinToString("/") { "d$it" } + "/texture.png"
+
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry(deepName))
+            zip.write(makePngHeader(width = 64, height = 64))
+            zip.closeEntry()
+        }
+
+        val result = DxaTextureScanner.scan(zipFile)
+
+        assertNotNull(result)
+        assertNotNull(result!!.rejectedReason)
+        assertFalse(result.canEnable)
+    }
+
     @Test
     fun scanReportsOversizedPngEntries() {
         val zipFile = File.createTempFile("dxa-scan", ".dxa")

@@ -17,6 +17,17 @@ def main() -> None:
     assert "#define STBI_MAX_DIMENSIONS 2048" in loader
     assert png.index("stbi_info_from_memory") < png.index("stbi_load_from_memory")
     assert "ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES" in png
+    assert "texture_lookup_build_file_index_recursive" not in loader
+    assert "PHYSFS_enumerate(" in loader
+    for limit in (
+        "TEXTURE_LOOKUP_MAX_DEPTH",
+        "TEXTURE_LOOKUP_MAX_ENTRIES",
+        "TEXTURE_LOOKUP_MAX_DIRECTORIES",
+        "TEXTURE_LOOKUP_MAX_PATH_BYTES",
+        "TEXTURE_LOOKUP_MAX_RETAINED_PATH_BYTES",
+        "TEXTURE_LOOKUP_MAX_INDEXED_PATH_BYTES",
+    ):
+        assert limit in loader
 
     ktx = loader.split("int read_ktx2_file", 1)[1]
     assert "base->baseWidth > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION" in ktx
@@ -34,8 +45,14 @@ def main() -> None:
 
     scanner = read("android/app/src/main/java/com/dxxredux/app/DxaTextureScanner.kt")
     assert 'name.endsWith(".jpg")' in scanner
+    assert "validateStructure" in scanner
+    assert "MAX_PATH_DEPTH" in scanner
+    assert "MAX_ARCHIVE_ENTRIES" in scanner
+    assert "MAX_TEXTURE_ENTRIES" in scanner
     manager = read("android/app/src/main/java/com/dxxredux/app/ModManager.kt")
-    assert "Refusing to enable mod with oversized textures" in manager
+    assert "Refusing to enable unsafe or unreadable mod" in manager
+    assert manager.count("?.canEnable == true") == 2
+    assert "scan?.canEnable != true" in manager
 
     generator = read("game_data/mods/d2x-xl/convert_d2xxl_textures.ps1")
     assert "$engineTextureCap = 2048" in generator

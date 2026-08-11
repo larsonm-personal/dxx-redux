@@ -435,6 +435,14 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     }
 }
 
+tasks.withType(Test).configureEach {
+    systemProperty 'dxx.repositoryRoot', rootProject.projectDir.parentFile.absolutePath
+    def rarFixture = project.findProperty('reetusRarFixture') ?: System.getenv('DXX_REETUS_RAR_FIXTURE')
+    if (rarFixture) {
+        systemProperty 'dxx.reetusRarFixture', file(rarFixture).absolutePath
+    }
+}
+
 dependencies {
     implementation "androidx.core:core-ktx:${toolVersions['CORE_KTX_VERSION']}"
     implementation "androidx.appcompat:appcompat:${toolVersions['APPCOMPAT_VERSION']}"

@@ -1,7 +1,6 @@
 package com.dxxredux.app
 
 import android.content.Context
-import org.json.JSONObject
 import java.io.File
 import java.util.Locale
 
@@ -10,7 +9,7 @@ internal const val MISSION_ZIP_MUSIC_NAMES_FILE = "mission_music_names.json"
 internal object MissionZipMusicNames {
     private const val CACHE_DIR = ".mission_zip_music_names"
     private const val PLACEHOLDER_NAME = "[unknown] - [untitled]"
-    private const val SOURCE_IDENTITY_KEY = "__dxx_mission_music_source_identity_v1"
+    private const val SOURCE_IDENTITY_KEY = "sourceIdentity"
 
     fun cacheFile(
         filesDir: File,
@@ -31,8 +30,11 @@ internal object MissionZipMusicNames {
     ): Boolean =
         AtomicFilePublication.transaction {
             runCatching {
+                val root = org.json.JSONObject(outputFile.readText())
                 outputFile.isFile &&
-                    JSONObject(outputFile.readText()).optString(SOURCE_IDENTITY_KEY) == catalog.sourceIdentity
+                    root.optInt("version") == MusicNameSidecar.VERSION &&
+                    root.optJSONArray("records") != null &&
+                    root.optString(SOURCE_IDENTITY_KEY) == catalog.sourceIdentity
             }.getOrDefault(false)
         }
 
@@ -72,30 +74,31 @@ internal object MissionZipMusicNames {
         beforePublish: (File, File) -> Unit = { _, _ -> },
     ): Int =
         AtomicFilePublication.transaction {
-            val names = nameMap(catalog, entries)
-            if (names.isEmpty()) {
+            val records = records(catalog, entries)
+            if (records.isEmpty()) {
                 outputFile.delete()
                 identityFile(outputFile).delete()
                 return@transaction 0
             }
-            val root = JSONObject()
-            root.put(SOURCE_IDENTITY_KEY, catalog.sourceIdentity)
-            names.toSortedMap(String.CASE_INSENSITIVE_ORDER).forEach { (key, value) -> root.put(key, value) }
-            AtomicFilePublication.writeUtf8(outputFile, root.toString(2), beforePublish)
+            AtomicFilePublication.writeUtf8(
+                outputFile,
+                MusicNameSidecar.encode(records, catalog.sourceIdentity),
+                beforePublish,
+            )
             identityFile(outputFile).delete()
-            names.size
+            records.size
         }
 
-    private fun nameMap(
+    private fun records(
         catalog: MissionZipMusicCatalog,
         entries: Map<String, MissionZipAudioFingerprintCache.Entry>,
-    ): Map<String, String> =
-        buildMap {
+    ): List<MusicNameSidecar.Record> =
+        buildList {
             for (track in catalog.sources.flatMap { it.tracks }) {
                 val name = entries[track.id]?.bestName() ?: continue
-                for (key in track.lookupKeys()) {
-                    if (key.isNotBlank()) putIfAbsent(key, name)
-                }
+                val paths = track.exactPaths()
+                if (paths.isEmpty()) continue
+                add(MusicNameSidecar.Record(paths, paths.map(::leafName), name))
             }
         }
 
@@ -104,16 +107,12 @@ internal object MissionZipMusicNames {
             ?.trim()
             ?.takeIf { it.isNotBlank() && it != PLACEHOLDER_NAME }
 
-    private fun MissionZipMusicTrack.lookupKeys(): List<String> =
+    private fun MissionZipMusicTrack.exactPaths(): List<String> =
         listOf(
-            displayName,
-            leafName(displayName),
             archiveEntryPath,
-            leafName(archiveEntryPath),
             nestedEntryPath.orEmpty(),
-            leafName(nestedEntryPath.orEmpty()),
             hogEntryName.orEmpty(),
-            leafName(hogEntryName.orEmpty()),
+            displayName.takeIf { '/' in it || '\\' in it }.orEmpty(),
         ).map { it.replace('\\', '/').trim('/') }
             .filter { it.isNotBlank() }
             .distinctBy { it.lowercase(Locale.US) }
