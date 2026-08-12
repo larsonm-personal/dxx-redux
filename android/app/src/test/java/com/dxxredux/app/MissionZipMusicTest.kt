@@ -30,6 +30,58 @@ class MissionZipMusicTest {
     }
 
     @Test
+    fun preservesIndependentSongListsAndRepeatedRows() {
+        val zip = createZip("music-multiple-song-lists") {
+            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+            writeEntry("first.sng", "game01.ogg\ngame01.ogg\n".toByteArray())
+            writeEntry("second.sng", "game02.ogg\n".toByteArray())
+            writeEntry("game01.ogg", byteArrayOf(1))
+            writeEntry("game02.ogg", byteArrayOf(2))
+        }
+
+        val catalog = requireNotNull(MissionZipMusic.inspect(zip))
+
+        assertEquals(listOf("first.sng", "second.sng"), catalog.songLists.map { it.archiveEntryPath })
+        assertEquals(listOf("game01.ogg", "game01.ogg"), catalog.songLists.first().references)
+        assertEquals(
+            listOf("game01.ogg", "game01.ogg"),
+            MissionZipMusic.resolveSongList(catalog, catalog.songLists.first()).map { it.track.displayName },
+        )
+    }
+
+    @Test
+    fun resolvesObsidianSongListWithoutSelectingSiblingMidiFormats() {
+        val references =
+            listOf("descent.hmp", "briefing.hmp", "endlevel.hmp", "endgame.hmp", "credits.hmp") +
+                (1..9).map { "game%02d.hmp".format(it) }
+        val customNames = listOf("Credits") + (1..9).map { "game%02d".format(it) }
+        val hogEntries =
+            customNames.flatMap { name ->
+                listOf(
+                    "$name.hmp" to byteArrayOf(1),
+                    "$name.hmq" to byteArrayOf(2),
+                    "$name.mid" to byteArrayOf(3),
+                )
+            }
+        val zip = createZip("music-obsidian-song-list") {
+            writeEntry("obsidian.mn2", "name = Obsidian\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            writeEntry("obsidian.sng", references.joinToString("\n", postfix = "\n").toByteArray())
+            writeEntry("obsidian.hog", createHogBytes(*hogEntries.toTypedArray()))
+        }
+
+        val catalog = requireNotNull(MissionZipMusic.inspect(zip))
+        val entries = MissionZipMusic.resolveSongList(catalog, catalog.songLists.single())
+
+        assertEquals(14, entries.size)
+        assertTrue(entries.take(4).all { !it.track.playable })
+        assertTrue(entries.drop(4).all { it.track.playable })
+        assertTrue(entries.drop(4).all { it.track.extension == "hmp" })
+        assertEquals("Credits.hmp", entries[4].track.hogEntryName)
+        assertEquals("game01.hmp", entries[5].track.hogEntryName)
+    }
+
+    @Test
     fun detectsTopLevelSongListReferencesInSevenZip() {
         val archive = create7z("music-top-level") {
             writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())

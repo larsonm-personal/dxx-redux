@@ -6,6 +6,14 @@ import org.junit.Test
 
 class MissionZipMusicDisplayTest {
     @Test
+    fun songSlotLabelsMirrorEngineOrdering() {
+        assertEquals(
+            listOf("Title", "Briefing", "End level", "End game", "Credits", "Level music 1", "Level music 2"),
+            (0..6).map(::missionZipMusicSongSlotLabel),
+        )
+    }
+
+    @Test
     fun decodedNamePrefersBundledMatch() {
         val entry =
             entry(

@@ -173,10 +173,11 @@ class ImportLocationManager(
 
     /** Persist a new override.  Caller must have already migrated data. */
     fun setOverride(newRoot: File) {
-        newRoot.mkdirs()
+        check(newRoot.isDirectory || newRoot.mkdirs()) { "Could not create import root ${newRoot.absolutePath}" }
         // Flat key=value format keeps the parser trivial and avoids depending
         // on org.json (which is an unmocked Android stub in JVM unit tests).
-        prefFile.writeText(
+        AtomicFilePublication.writeUtf8(
+            prefFile,
             "schema=$SCHEMA_VERSION\n" +
                 "import_root=${newRoot.absolutePath}\n",
         )
@@ -185,8 +186,12 @@ class ImportLocationManager(
 
     /** Remove the override; subsequent [getActiveRoot] returns the default. */
     fun clearOverride() {
-        if (prefFile.exists() && !prefFile.delete()) {
-            logW("Failed to delete pref file ${prefFile.absolutePath}")
+        AtomicFilePublication.transaction {
+            if (prefFile.exists()) {
+                val retired = AtomicFilePublication.uniqueSibling(prefFile, "retired")
+                check(prefFile.renameTo(retired)) { "Failed to retire pref file ${prefFile.absolutePath}" }
+                if (!retired.delete()) logW("Failed to delete retired pref file ${retired.absolutePath}")
+            }
         }
         logI("Import root override cleared")
     }
@@ -223,25 +228,31 @@ class ImportLocationManager(
     }
 
     /**
-     * Copy everything under [src] into [dst], verify the copy by total byte
-     * count, then delete the source.  Both directories must exist before
-     * the call (they're created if absent).  [progress] is invoked with
-     * `(bytesCopied, totalBytes)` periodically.
+     * Copy everything under [src] into [dst], verify each file, commit the
+     * active-root change through [beforeSourceRetire], then delete the source.
+     * Existing identical files and destination-only files are preserved;
+     * differing collisions fail before publication. [progress] is invoked
+     * with `(bytesCopied, totalBytes)` periodically.
      *
-     * On any failure the source is left untouched and the destination is
-     * scrubbed of partial files; caller may safely retry.
+     * On any failure the source and every pre-existing destination entry are
+     * left untouched. Only entries created by this attempt are rolled back.
      *
      * Free-space check requires `dstVolumeFree >= totalBytes + SAFETY_MARGIN`.
      */
     fun migrate(
         src: File,
         dst: File,
+        beforeSourceRetire: () -> Unit = {},
         progress: (Long, Long) -> Unit = { _, _ -> },
     ): MigrateResult {
         if (!src.exists()) {
-            // Nothing to copy; just ensure dst exists.
-            dst.mkdirs()
-            return MigrateResult.Success
+            return try {
+                check(dst.isDirectory || dst.mkdirs()) { "Could not create destination" }
+                beforeSourceRetire()
+                MigrateResult.Success
+            } catch (e: Exception) {
+                MigrateResult.Failure("Cannot activate destination: ${e.message}")
+            }
         }
         if (src.absolutePath == dst.absolutePath) return MigrateResult.Success
 
@@ -256,96 +267,152 @@ class ImportLocationManager(
             )
         }
 
-        dst.mkdirs()
+        if (!dst.isDirectory && !dst.mkdirs()) return MigrateResult.Failure("Cannot create destination")
         // In-progress marker so a future launch can detect a crashed migrate.
         val marker = File(dst, IN_PROGRESS_MARKER)
+        if (marker.exists()) return MigrateResult.Failure("Destination contains an incomplete migration")
+        val createdFiles = mutableListOf<File>()
+        val createdDirs = mutableListOf<File>()
         try {
             marker.writeText(System.currentTimeMillis().toString())
+            createdFiles.add(marker)
         } catch (e: Exception) {
             return MigrateResult.Failure("Cannot write progress marker: ${e.message}")
         }
 
         var copied = 0L
         try {
+            // Reject every differing collision before publishing any source byte.
             for (file in src.walkTopDown()) {
                 val rel = file.relativeTo(src).path
-                if (rel.isEmpty()) {
-                    dst.mkdirs()
-                    continue
-                }
+                if (rel.isEmpty()) continue
                 val target = File(dst, rel)
                 if (file.isDirectory) {
-                    target.mkdirs()
+                    if (target.exists() && !target.isDirectory) {
+                        throw IllegalStateException("Destination path is not a directory: $rel")
+                    }
                     continue
                 }
-                target.parentFile?.mkdirs()
-                file.inputStream().use { input ->
-                    target.outputStream().use { output ->
-                        val buf = ByteArray(64 * 1024)
-                        while (true) {
-                            val n = input.read(buf)
-                            if (n <= 0) break
-                            output.write(buf, 0, n)
-                            copied += n
-                            progress(copied, totalBytes)
+                if (target.exists() && (!target.isFile || !sameFileContents(file, target))) {
+                    throw IllegalStateException("Destination file differs: $rel")
+                }
+            }
+
+            for (directory in src.walkTopDown().filter(File::isDirectory).drop(1)) {
+                ensureMigrationDirectory(File(dst, directory.relativeTo(src).path), dst, createdDirs)
+            }
+
+            for (file in src.walkTopDown().filter(File::isFile)) {
+                val rel = file.relativeTo(src).path
+                val target = File(dst, rel)
+                if (target.exists()) {
+                    copied += file.length()
+                    progress(copied, totalBytes)
+                    continue
+                }
+                ensureMigrationDirectory(target.parentFile, dst, createdDirs)
+                val temporary = AtomicFilePublication.uniqueSibling(target, "migration")
+                try {
+                    file.inputStream().use { input ->
+                        java.io.FileOutputStream(temporary).use { output ->
+                            val buf = ByteArray(64 * 1024)
+                            while (true) {
+                                val n = input.read(buf)
+                                if (n <= 0) break
+                                output.write(buf, 0, n)
+                                copied += n
+                                progress(copied, totalBytes)
+                            }
+                            output.flush()
+                            output.fd.sync()
                         }
                     }
+                    check(sameFileContents(file, temporary)) { "Staged file verification failed: $rel" }
+                    check(temporary.renameTo(target)) { "Could not publish migrated file: $rel" }
+                    createdFiles.add(target)
+                    target.setLastModified(file.lastModified())
+                } finally {
+                    temporary.delete()
                 }
-                target.setLastModified(file.lastModified())
             }
-        } catch (e: Exception) {
-            logE("Migrate copy failed", e)
-            // Roll back partial dest tree (everything we just wrote).
-            for (file in dst.walkBottomUp()) {
-                if (file == dst) continue
-                file.delete()
-            }
+
+            // The active-root pointer is part of the same logical commit.  If
+            // this fails, retain the source and remove only files we created.
+            beforeSourceRetire()
             marker.delete()
-            return MigrateResult.Failure("Copy failed: ${e.message}")
+            createdFiles.remove(marker)
+        } catch (e: Exception) {
+            logE("Migrate copy or activation failed", e)
+            rollbackMigrationFiles(createdFiles, createdDirs)
+            return MigrateResult.Failure("Migration failed: ${e.message}")
         }
 
-        // Verify by total bytes (dst minus marker).
-        val dstBytes =
-            dst
-                .walkTopDown()
-                .filter { it.isFile && it.name != IN_PROGRESS_MARKER }
-                .sumOf { it.length() }
-        if (dstBytes != totalBytes) {
-            logE("Migrate verify failed: src=$totalBytes dst=$dstBytes")
-            for (file in dst.walkBottomUp()) {
-                if (file == dst) continue
-                file.delete()
-            }
-            return MigrateResult.Failure("Verification mismatch: src=$totalBytes dst=$dstBytes")
-        }
-
-        marker.delete()
-
-        // Source removal -- if it fails we still report success since the
-        // destination is verified; user can clear the leftover from
-        // Storage Inspector.
+        // Source removal follows the durable root switch.  Failure leaves a
+        // harmless duplicate for Storage Inspector rather than losing data.
         if (!src.deleteRecursively()) {
             logW("Could not fully delete source ${src.absolutePath}")
         }
         return MigrateResult.Success
     }
 
+    private fun ensureMigrationDirectory(
+        directory: File?,
+        root: File,
+        createdDirs: MutableList<File>,
+    ) {
+        if (directory == null || directory == root || directory.exists()) return
+        ensureMigrationDirectory(directory.parentFile, root, createdDirs)
+        check(directory.mkdir()) { "Could not create destination directory ${directory.absolutePath}" }
+        createdDirs.add(directory)
+    }
+
+    private fun rollbackMigrationFiles(
+        createdFiles: List<File>,
+        createdDirs: List<File>,
+    ) {
+        createdFiles.asReversed().forEach { it.delete() }
+        createdDirs.asReversed().forEach { it.delete() }
+    }
+
+    private fun sameFileContents(
+        first: File,
+        second: File,
+    ): Boolean {
+        if (first.length() != second.length()) return false
+        first.inputStream().buffered().use { left ->
+            second.inputStream().buffered().use { right ->
+                val leftBuffer = ByteArray(64 * 1024)
+                val rightBuffer = ByteArray(64 * 1024)
+                while (true) {
+                    val leftCount = left.read(leftBuffer)
+                    val rightCount = right.read(rightBuffer)
+                    if (leftCount != rightCount) return false
+                    if (leftCount < 0) return true
+                    for (index in 0 until leftCount) {
+                        if (leftBuffer[index] != rightBuffer[index]) return false
+                    }
+                }
+            }
+        }
+    }
+
     /**
-     * On startup, if any candidate volume has a stale [IN_PROGRESS_MARKER]
-     * but isn't the active root, rename its tree to a `.partial-<ts>` sibling
-     * so the user can investigate via Storage Inspector.  Best-effort.
+     * Clear stale transaction markers without moving or deleting the root.
+     * Migration publishes only new, verified files and rejects differing
+     * collisions, so an interrupted inactive destination is safe to retry;
+     * an active marked destination crossed the root-switch commit and is a
+     * complete generation whose old source can be inspected separately.
      */
     fun handleStaleInProgressMarkers(ctx: Context) {
         val active = getActiveRoot().absolutePath
         for (option in listCandidateVolumes(ctx)) {
-            if (option.path.absolutePath == active) continue
             val marker = File(option.path, IN_PROGRESS_MARKER)
             if (marker.exists()) {
-                val parked = File(option.path.parentFile, option.path.name + ".partial-" + System.currentTimeMillis())
-                if (option.path.renameTo(parked)) {
-                    logW("Parked stale partial migration to ${parked.absolutePath}")
+                if (marker.delete()) {
+                    val state = if (option.path.absolutePath == active) "committed" else "retryable"
+                    logW("Recovered $state interrupted migration at ${option.path.absolutePath}")
                 } else {
-                    marker.delete()
+                    logW("Could not clear stale migration marker ${marker.absolutePath}")
                 }
             }
         }

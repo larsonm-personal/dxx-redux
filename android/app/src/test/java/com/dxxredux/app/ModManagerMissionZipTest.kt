@@ -19,6 +19,16 @@ import java.util.zip.ZipOutputStream
 
 class ModManagerMissionZipTest {
     @Test
+    fun activeModPathCapacityRejectsTheCompleteOverLimitSet() {
+        requireActiveModPathCapacity(List(ACTIVE_MOD_PATH_LIMIT) { "path-$it" })
+        val failure =
+            assertThrows(ActiveModPathCapacityException::class.java) {
+                requireActiveModPathCapacity(List(ACTIVE_MOD_PATH_LIMIT + 1) { "path-$it" })
+            }
+        assertTrue(failure.message.orEmpty().contains("65 mount paths"))
+    }
+
+    @Test
     fun importsMissionZipAndPersistsMetadata() {
         val filesDir = File("build/test-mod-manager-mission-zip").absoluteFile
         filesDir.deleteRecursively()

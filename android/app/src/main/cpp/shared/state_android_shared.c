@@ -200,7 +200,7 @@ int state_android_build_save_filename(char *filename, size_t filename_size,
                                       int slotnum, int coop, int for_save)
 {
 	char pilot[CALLSIGN_LEN + 1];
-	char mission[16];
+	char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
 
 	if (!filename || !filename_size)
 		return 0;
@@ -1009,20 +1009,23 @@ void state_android_maybe_periodic_autosave(void)
 	}
 
 	slotnum = state->next_slot;
-	state->next_slot =
-	    slotnum == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A
-	        ? ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_B
-	        : ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A;
-	state->next_save_time = GameTime64 + state_android_periodic_interval();
 	state->last_game_time = GameTime64;
 	result = state_android_save_to_slot(
 	    slotnum, "AUTO 5MIN", ANDROID_SAVE_META_KIND_AUTO_PERIODIC);
-	if (result)
+	if (result > 0) {
+		state->next_slot =
+		    slotnum == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A
+		        ? ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_B
+		        : ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A;
+		state->next_save_time = GameTime64 + state_android_periodic_interval();
 		debug_log(DLOG_GAME, "autosave periodic saved: %s slot %d",
 		          state_android_game_label(), slotnum);
-	else
+	} else {
+		state->next_save_time =
+		    GameTime64 + state_android_periodic_retry_interval();
 		debug_log(DLOG_GAME, "autosave periodic failed: %s slot %d",
 		          state_android_game_label(), slotnum);
+	}
 }
 
 void state_android_restore_player_flight_state(void)

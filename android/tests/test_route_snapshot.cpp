@@ -1033,6 +1033,57 @@ int main()
 	assert(least_cost_firing.terminal_segment == 1);
 	assert(least_cost_firing.terminal_position.value ==
 	       least_cost_visible.second_position.value);
+	auto keyed_shot_snapshot = reachable_visible_snapshot;
+	keyed_shot_snapshot.topology.walls.resize(2);
+	keyed_shot_snapshot.state.walls.resize(2);
+	keyed_shot_snapshot.state.segments[0].sides[0].flyable = false;
+	keyed_shot_snapshot.topology.segments[0].sides[0].wall = 1;
+	keyed_shot_snapshot.topology.walls[0].segment = 1;
+	keyed_shot_snapshot.topology.walls[0].side = 0;
+	keyed_shot_snapshot.topology.walls[0].target =
+	    keyed_shot_snapshot.topology.segments[1].center;
+	keyed_shot_snapshot.topology.walls[0].target.value[0] +=
+	    LEVEL_METADATA_FIX_SCALE;
+	keyed_shot_snapshot.topology.walls[1].segment = 0;
+	keyed_shot_snapshot.topology.walls[1].side = 0;
+	keyed_shot_snapshot.state.walls[1].kind =
+	    dxx_route::route_wall_kind::door;
+	keyed_shot_snapshot.state.walls[1].key =
+	    dxx_route::route_key_requirement::blue;
+	visible.segment = 0;
+	visible.position = keyed_shot_snapshot.topology.segments[0].center;
+	visible.second_segment = 1;
+	visible.second_position = keyed_shot_snapshot.topology.segments[1].center;
+	auto keyed_shot_progress = source_progress;
+	keyed_shot_progress.key_mask = 1;
+	const auto keyed_shot_search = dxx_route::search_routes(
+	    keyed_shot_snapshot, planner_query, keyed_shot_progress, false);
+	assert(keyed_shot_search.nodes[1].reachable);
+	const auto keyed_shot_path = dxx_route::build_route_path(
+	    keyed_shot_search, 1);
+	assert(keyed_shot_path.reached);
+	assert(keyed_shot_path.segments.size() == 2);
+	assert(keyed_shot_path.sides.size() == 1);
+	assert(keyed_shot_path.sides[0] == 0);
+	const auto keyed_shot_sources = dxx_route::discover_trigger_sources(
+	    keyed_shot_snapshot, keyed_shot_progress, 1, 0);
+	assert(keyed_shot_sources.size() == 1);
+	assert(keyed_shot_sources[0].source_segment == 1);
+	const auto conventional_keyed_firing =
+	    dxx_route::select_trigger_firing_path(
+	        keyed_shot_snapshot, planner_query, keyed_shot_progress,
+	        keyed_shot_sources, visibility);
+	assert(conventional_keyed_firing.found);
+	assert(conventional_keyed_firing.terminal_segment == 1);
+	keyed_shot_progress.key_mask = 0;
+	keyed_shot_snapshot.state.walls[1].key =
+	    dxx_route::route_key_requirement::none;
+	const auto ordinary_remote_firing =
+	    dxx_route::select_trigger_firing_path(
+	        keyed_shot_snapshot, planner_query, keyed_shot_progress,
+	        keyed_shot_sources, visibility);
+	assert(ordinary_remote_firing.found);
+	assert(ordinary_remote_firing.terminal_segment == 0);
 	const auto reachable_visible_dependency =
 	    dxx_route::resolve_trigger_dependency(
 	        reachable_visible_snapshot, planner_query, source_progress, 1, 0,

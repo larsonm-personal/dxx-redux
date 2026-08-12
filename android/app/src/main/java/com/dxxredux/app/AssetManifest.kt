@@ -41,18 +41,24 @@ class AssetManifest(
     private val manifestFile get() = File(filesDir, "assets.json")
 
     private fun findDiskFile(filename: String): File? =
-        filesDir.listFiles()?.firstOrNull { it.name.equals(filename, ignoreCase = true) }
+        filesDir.listFiles()?.firstOrNull {
+            portableGameFilenameIdentity(it.name) == portableGameFilenameIdentity(filename)
+        }
 
     private fun findCanonicalDiskFile(filename: String): File? =
         filesDir
             .listFiles()
-            ?.filter { it.name.equals(filename, ignoreCase = true) }
+            ?.filter { portableGameFilenameIdentity(it.name) == portableGameFilenameIdentity(filename) }
             ?.takeIf { it.isNotEmpty() }
             ?.let { canonicalDiskFile(it) }
 
-    private fun canonicalDiskFile(files: List<File>): File =
-        files.firstOrNull { it.name == it.name.lowercase() }
-            ?: files.sortedBy { it.name }.first()
+    private fun canonicalDiskFile(files: List<File>): File {
+        val canonicalName = portableGameFilenameIdentity(files.first().name)
+        files.firstOrNull { it.name == canonicalName }?.let { return it }
+        val picked = files.sortedBy { it.name }.first()
+        val repaired = File(picked.parentFile, canonicalName)
+        return if (!repaired.exists() && picked.renameTo(repaired)) repaired else picked
+    }
 
     private fun readEntriesFromDisk(): List<AssetEntry> {
         val file = manifestFile
@@ -61,8 +67,8 @@ class AssetManifest(
         return (0 until json.length()).map { i ->
             val obj = json.getJSONObject(i)
             AssetEntry(
-                filename = obj.getString("filename").lowercase(),
-                sha256 = obj.getString("sha256").lowercase(),
+                filename = portableGameFilenameIdentity(obj.getString("filename")),
+                sha256 = obj.getString("sha256").lowercase(java.util.Locale.ROOT),
                 sizeBytes = obj.getLong("sizeBytes"),
                 importedAt = obj.getLong("importedAt"),
                 versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
@@ -76,8 +82,8 @@ class AssetManifest(
             entries
                 .map {
                     it.copy(
-                        filename = it.filename.lowercase(),
-                        sha256 = it.sha256.lowercase(),
+                        filename = portableGameFilenameIdentity(it.filename),
+                        sha256 = it.sha256.lowercase(java.util.Locale.ROOT),
                     )
                 }.groupBy { it.filename }
 
@@ -144,11 +150,12 @@ class AssetManifest(
         sourceUri: String? = null,
     ): AssetEntry {
         val entries = load().toMutableList()
-        val lowerName = filename.lowercase()
+        val lowerName = portableGameFilenameIdentity(filename)
         val versionName = KnownVersions.lookup(lowerName, sha256)
         val now = System.currentTimeMillis()
 
-        val entry = AssetEntry(lowerName, sha256.lowercase(), sizeBytes, now, versionName, sourceUri)
+        val entry =
+            AssetEntry(lowerName, sha256.lowercase(java.util.Locale.ROOT), sizeBytes, now, versionName, sourceUri)
         entries.removeAll { it.filename == lowerName }
         entries.add(entry)
 
@@ -159,14 +166,15 @@ class AssetManifest(
     /**
      * Look up a manifest entry by filename (case-insensitive).
      */
-    fun getEntry(filename: String): AssetEntry? = load().firstOrNull { it.filename == filename.lowercase() }
+    fun getEntry(filename: String): AssetEntry? =
+        load().firstOrNull { it.filename == portableGameFilenameIdentity(filename) }
 
     /**
      * Remove a manifest entry by filename (case-insensitive).
      */
     fun remove(filename: String) {
         val entries = load().toMutableList()
-        entries.removeAll { it.filename == filename.lowercase() }
+        entries.removeAll { it.filename == portableGameFilenameIdentity(filename) }
         save(entries)
     }
 
@@ -207,8 +215,8 @@ class AssetManifest(
         val entries = load().associateBy { it.filename }
         val diskFiles = filesDir.listFiles() ?: return emptyList()
         return diskFiles
-            .filter { it.name.lowercase() in gameFilenames }
-            .groupBy { it.name.lowercase() }
+            .filter { portableGameFilenameIdentity(it.name) in gameFilenames }
+            .groupBy { portableGameFilenameIdentity(it.name) }
             .toSortedMap()
             .mapNotNull { (lower, variants) ->
                 val file = canonicalDiskFile(variants)

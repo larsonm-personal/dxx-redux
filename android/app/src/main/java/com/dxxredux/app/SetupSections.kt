@@ -122,6 +122,11 @@ private data class MissionZipViewAction(
     val onClick: () -> Unit,
 )
 
+private data class MissionZipMusicDialogTarget(
+    val catalog: MissionZipMusicCatalog,
+    val songList: MissionZipMusicSongList? = null,
+)
+
 @Composable
 internal fun GameSectionHeader(
     title: String,
@@ -315,8 +320,8 @@ internal fun ModsSection(
             }
         }
 
-        val installedNames = mods.map { it.filename.lowercase() }.toSet()
-        val uninstalled = RECOMMENDED_MODS.filter { it.filename.lowercase() !in installedNames }
+        val installedNames = mods.map { portableGameFilenameIdentity(it.filename) }.toSet()
+        val uninstalled = RECOMMENDED_MODS.filter { portableGameFilenameIdentity(it.filename) !in installedNames }
         if (uninstalled.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -422,7 +427,7 @@ private fun ModDetailsDialog(
     var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
-    var musicCatalogTarget by remember { mutableStateOf<MissionZipMusicCatalog?>(null) }
+    var musicDialogTarget by remember { mutableStateOf<MissionZipMusicDialogTarget?>(null) }
     val topLevelMetadataTargets =
         remember(details?.archivePath, details?.missionZip, setDir.absolutePath, mod.displayName, mod.game) {
             details?.let {
@@ -479,10 +484,11 @@ private fun ModDetailsDialog(
             onDismiss = { constituentTarget = null },
         )
     }
-    musicCatalogTarget?.let { catalog ->
+    musicDialogTarget?.let { target ->
         MissionZipMusicDialog(
-            catalog = catalog,
-            onDismiss = { musicCatalogTarget = null },
+            catalog = target.catalog,
+            songList = target.songList,
+            onDismiss = { musicDialogTarget = null },
         )
     }
     AlertDialog(
@@ -585,7 +591,7 @@ private fun ModDetailsDialog(
                         details.missionZipMusic?.let { catalog ->
                             val trackCount = catalog.sources.sumOf { it.tracks.size }
                             OutlinedButton(
-                                onClick = { musicCatalogTarget = catalog },
+                                onClick = { musicDialogTarget = MissionZipMusicDialogTarget(catalog) },
                                 shape = MaterialTheme.shapes.small,
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 modifier =
@@ -667,8 +673,22 @@ private fun ModDetailsDialog(
                                         .verticalScroll(fileListScrollState),
                             ) {
                                 details.missionZip.constituents.forEach { constituent ->
+                                    val catalog = details.missionZipMusic
+                                    val songList =
+                                        catalog?.let {
+                                            MissionZipMusic.songListForPath(
+                                                it,
+                                                constituent.path,
+                                            )
+                                        }
                                     OutlinedButton(
-                                        onClick = { constituentTarget = constituent },
+                                        onClick = {
+                                            if (catalog != null && songList != null) {
+                                                musicDialogTarget = MissionZipMusicDialogTarget(catalog, songList)
+                                            } else {
+                                                constituentTarget = constituent
+                                            }
+                                        },
                                         shape = MaterialTheme.shapes.small,
                                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -685,11 +705,15 @@ private fun ModDetailsDialog(
                                                 color = MaterialTheme.colorScheme.onSurface,
                                             )
                                             Text(
-                                                "${missionZipRoleLabel(constituent.role)}, ${
-                                                    setupSectionFormatSize(
-                                                        constituent.sizeBytes,
-                                                    )
-                                                }",
+                                                if (songList != null) {
+                                                    "Song list, ${songList.references.size} entries, ${
+                                                        setupSectionFormatSize(constituent.sizeBytes)
+                                                    }"
+                                                } else {
+                                                    "${missionZipRoleLabel(constituent.role)}, ${
+                                                        setupSectionFormatSize(constituent.sizeBytes)
+                                                    }"
+                                                },
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -822,9 +846,60 @@ internal data class MissionZipMusicAnalysisProgress(
         get() = total.takeIf { it > 0 }?.let { (completed.toFloat() / it.toFloat()).coerceIn(0f, 1f) }
 }
 
+private data class MissionZipMusicDisplayTrack(
+    val track: MissionZipMusicTrack,
+    val purposeLabel: String? = null,
+)
+
+private data class MissionZipMusicDisplaySource(
+    val label: String,
+    val containerPath: String,
+    val tracks: List<MissionZipMusicDisplayTrack>,
+)
+
+private fun missionZipMusicDisplaySources(
+    catalog: MissionZipMusicCatalog,
+    songList: MissionZipMusicSongList?,
+): List<MissionZipMusicDisplaySource> =
+    if (songList == null) {
+        catalog.sources.map { source ->
+            MissionZipMusicDisplaySource(
+                label = source.label,
+                containerPath = source.containerPath,
+                tracks = source.tracks.map { MissionZipMusicDisplayTrack(it) },
+            )
+        }
+    } else {
+        listOf(
+            MissionZipMusicDisplaySource(
+                label = "",
+                containerPath = "",
+                tracks =
+                    MissionZipMusic.resolveSongList(catalog, songList).map { entry ->
+                        MissionZipMusicDisplayTrack(
+                            track = entry.track,
+                            purposeLabel = missionZipMusicSongSlotLabel(entry.index),
+                        )
+                    },
+            ),
+        )
+    }
+
+// These five slot indices mirror d1/main/songs.h and d2/main/songs.h.
+internal fun missionZipMusicSongSlotLabel(index: Int): String =
+    when (index) {
+        0 -> "Title"
+        1 -> "Briefing"
+        2 -> "End level"
+        3 -> "End game"
+        4 -> "Credits"
+        else -> "Level music ${index - 4}"
+    }
+
 @Composable
 private fun MissionZipMusicDialog(
     catalog: MissionZipMusicCatalog,
+    songList: MissionZipMusicSongList? = null,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -850,11 +925,13 @@ private fun MissionZipMusicDialog(
     var stagingProblem by remember { mutableStateOf<String?>(null) }
     var musicProgress by remember { mutableStateOf<MissionZipMusicAnalysisProgress?>(null) }
     var storageFailureMessage by remember { mutableStateOf<String?>(null) }
+    val displaySources = remember(catalog, songList) { missionZipMusicDisplaySources(catalog, songList) }
     val fingerprintableTracks =
-        remember(catalog) {
-            catalog.sources
-                .flatMap { it.tracks }
+        remember(displaySources) {
+            displaySources
+                .flatMap { source -> source.tracks.map { it.track } }
                 .filter { MissionZipAudioFingerprintCache.isFingerprintSupported(it) }
+                .distinctBy { it.id }
         }
     val busy = stagingTrackId != null
 
@@ -985,7 +1062,11 @@ private fun MissionZipMusicDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         },
         title = {
-            Text("Music tracks", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(
+                songList?.let { "${it.displayName} tracks" } ?: "Music tracks",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+            )
         },
         text = {
             val scrollState = rememberScrollState()
@@ -997,7 +1078,8 @@ private fun MissionZipMusicDialog(
                         .verticalScroll(scrollState),
             ) {
                 Text(
-                    catalog.archivePath,
+                    songList?.let { "${it.archiveEntryPath}, ${it.references.size} entries" }
+                        ?: catalog.archivePath,
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp),
@@ -1093,12 +1175,15 @@ private fun MissionZipMusicDialog(
                         }
                     }
                 }
-                catalog.sources.forEach { source ->
-                    ModDetailSectionTitle(source.label)
+                displaySources.forEach { source ->
+                    if (source.label.isNotBlank()) {
+                        ModDetailSectionTitle(source.label)
+                    }
                     if (source.containerPath.isNotBlank()) {
                         ModDetailLine(source.containerPath)
                     }
-                    source.tracks.forEach { track ->
+                    source.tracks.forEach { displayTrack ->
+                        val track = displayTrack.track
                         val cachedFingerprint = cachedFingerprints[track.id]
                         val decodedName = cachedFingerprint?.let(::missionZipMusicDecodedName)
                         Row(
@@ -1202,7 +1287,7 @@ private fun MissionZipMusicDialog(
                                 }
                             }
                         }
-                        ModDetailLine(missionZipMusicTrackSubtitle(track))
+                        ModDetailLine(missionZipMusicTrackSubtitle(displayTrack))
                         if (cachedFingerprint != null) {
                             ModDetailLine(missionZipMusicFingerprintLine(cachedFingerprint))
                         }
@@ -1211,6 +1296,18 @@ private fun MissionZipMusicDialog(
             }
         },
     )
+}
+
+private fun missionZipMusicTrackSubtitle(displayTrack: MissionZipMusicDisplayTrack): String {
+    val track = displayTrack.track
+    if (displayTrack.purposeLabel != null && !track.playable) {
+        return buildList {
+            add(displayTrack.purposeLabel)
+            add("Referenced, not included in this mod")
+            if (track.extension.isNotBlank()) add(track.extension.uppercase(Locale.US))
+        }.joinToString(" - ")
+    }
+    return listOfNotNull(displayTrack.purposeLabel, missionZipMusicTrackSubtitle(track)).joinToString(" - ")
 }
 
 private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
@@ -1680,10 +1777,10 @@ internal fun DemosSection(
                 (
                     demosDir.listFiles()?.mapNotNull { file ->
                         file
-                            .takeIf { it.isFile && it.name.lowercase().endsWith(".dem") }
+                            .takeIf { it.isFile && portableGameFilenameIdentity(it.name).endsWith(".dem") }
                             ?.let { ClassicDemoEntry(it, it.length()) }
                     } ?: emptyList()
-                ).sortedBy { it.file.name.lowercase() }
+                ).sortedBy { portableGameFilenameIdentity(it.file.name) }
             }
     }
 
@@ -1990,7 +2087,8 @@ internal fun MusicInfoSection(
         audioSrcManager = loaded.first
         audioSources = loaded.second
     }
-    val hasCdAudio = audioSources.isNotEmpty()
+    val hasCdAudio = audioSources.any { it.enabled }
+    val hasCustomAudio = CustomAudioSetManager(filesDir).getEnabledSets().any { it.files.isNotEmpty() }
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
 
@@ -2008,7 +2106,7 @@ internal fun MusicInfoSection(
         when (musicMode) {
             "midi" -> hasMidiSource
             "cd" -> hasCdAudio
-            "files" -> true
+            "files" -> hasCustomAudio
             else -> hasCdAudio
         }
 
@@ -2385,7 +2483,7 @@ internal fun FileDetailDialog(
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
     var confirmingForget by remember { mutableStateOf(false) }
-    var showingLevelMetadata by remember { mutableStateOf(false) }
+    var openLevelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
     val closeFocus = remember { FocusRequester() }
     val okFocus = remember { FocusRequester() }
 
@@ -2413,10 +2511,10 @@ internal fun FileDetailDialog(
 
     RequestLauncherControllerFocus(closeFocus, true, name)
 
-    if (showingLevelMetadata && levelMetadataTarget != null) {
+    openLevelMetadataTarget?.let { target ->
         LevelMetadataDialog(
-            target = levelMetadataTarget,
-            onDismiss = { showingLevelMetadata = false },
+            target = target,
+            onDismiss = { openLevelMetadataTarget = null },
         )
     }
 
@@ -2467,9 +2565,9 @@ internal fun FileDetailDialog(
                             modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
                         )
                     } else {
-                        levelMetadataTarget?.let {
+                        levelMetadataTarget?.let { target ->
                             LevelMetadataButton(
-                                onClick = { showingLevelMetadata = true },
+                                onClick = { openLevelMetadataTarget = target },
                                 modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
                             )
                         }

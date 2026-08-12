@@ -119,6 +119,11 @@ if(NOT ANDROID)
     target_link_libraries(test_android_rewind_policy PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_android_rewind_policy PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_android_render_fov
+        ../../android/tests/test_android_render_fov.c
+        ../../android/app/src/main/cpp/shared/android_render_fov.c)
+    target_include_directories(test_android_render_fov PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_android_slowdown_detector
         ../../android/tests/test_android_slowdown_detector.c
         ../../android/app/src/main/cpp/shared/android_slowdown_detector.c)
@@ -279,6 +284,7 @@ if(NOT ANDROID)
             test_classic_demo_json
 			test_bounded_rle
             test_android_rewind_policy
+            test_android_render_fov
             test_android_slowdown_detector
             test_net_udp_reconnect_auth
             test_coop_host_migration_policy

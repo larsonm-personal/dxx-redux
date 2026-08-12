@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import java.io.File
+import java.util.Locale
 
 internal data class GameFileInfo(
     val filename: String,
@@ -33,7 +34,7 @@ internal fun launcherDumpDirectoryState(
     prefix: String,
     dir: File,
 ) {
-    val entries = dir.listFiles()?.sortedBy { it.name.lowercase() } ?: emptyArray<File>().toList()
+    val entries = dir.listFiles()?.sortedBy { it.name.lowercase(Locale.ROOT) } ?: emptyArray<File>().toList()
     LauncherDebugLog.log("$prefix dir=${dir.absolutePath} count=${entries.size}")
     if (entries.isEmpty()) {
         LauncherDebugLog.log("$prefix entry=<none>")
@@ -234,7 +235,7 @@ internal fun checkFiles(
 }
 
 internal fun descriptionForFile(filename: String): String {
-    val lower = filename.lowercase()
+    val lower = portableGameFilenameIdentity(filename)
     val allFiles = D2_FILES + D2_DEMO_FILES + D2_PARTIAL_FILES + D1_FILES
     return allFiles
         .firstOrNull { info ->
@@ -330,16 +331,25 @@ internal fun detectD2FileList(
     dir: File,
     safManifest: SafManifest? = null,
 ): List<GameFileInfo> {
-    val demoFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig")
-    val hasDemoOnDisk = demoFiles.any { findFile(dir, it) != null }
-    val hasDemoInSaf =
-        safManifest?.let { sm ->
-            val entries = sm.read()
-            demoFiles.any { demo -> entries.any { it.filename.equals(demo, ignoreCase = true) } }
-        } ?: false
-    if (hasDemoOnDisk || hasDemoInSaf) return D2_DEMO_FILES
-
     val safEntries = safManifest?.read() ?: emptyList()
+
+    fun hasFile(name: String): Boolean =
+        findFile(dir, name) != null || safEntries.any { it.filename.equals(name, ignoreCase = true) }
+
+    // Prefer a complete retail installation even if a stray demo component
+    // is present. Demo alternatives must not substitute for the three files
+    // that establish retail identity.
+    val retailIdentity = setOf("descent2.hog", "descent2.ham", "groupa.pig")
+    val hasCompleteRetail =
+        D2_FILES.filter { it.required }.all { info ->
+            hasFile(info.filename) ||
+                (info.filename !in retailIdentity && info.alternatives.any(::hasFile))
+        }
+    if (hasCompleteRetail) return D2_FILES
+
+    val demoFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig")
+    if (demoFiles.any(::hasFile)) return D2_DEMO_FILES
+
     val hogSize = fileSizeForLaunchCheck(dir, safEntries, "descent2.hog")
     return if (hogSize in D2_PARTIAL_HOG_SIZES) D2_PARTIAL_FILES else D2_FILES
 }
@@ -436,6 +446,6 @@ internal val ALL_GAME_FILENAMES: Set<String> by lazy {
     (D2_FILES + D2_DEMO_FILES + D2_PARTIAL_FILES + D1_FILES)
         .flatMap { info ->
             listOf(info.filename) + info.alternatives
-        }.map { it.lowercase() }
+        }.map(::portableGameFilenameIdentity)
         .toSet()
 }

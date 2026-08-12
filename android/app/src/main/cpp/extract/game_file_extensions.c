@@ -29,7 +29,7 @@ const char *dxx_android_game_file_extensions[] = {
  */
 const char *dxx_android_disc_extract_extensions[] = {
 	"hog", "pig", "ham", "s11", "s22", "dem",
-	"mvl", "msn", "mn2", "rdl", "rl2",
+	"mvl", "msn", "mn2", "rdl", "rl2", "sdl", "sl2",
 	"sow", "dxa", "pog", "hxm", "dtx",
 	NULL
 };

@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -11,6 +12,33 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class MissionZipMusicExtractedPreviewTest {
+    @Test
+    fun extractedCatalogKeepsOriginalSongListIdentityInsteadOfGeneratedAlias() {
+        val root = File("build/test-mission-zip-music-extracted-preview/song-list-identity").absoluteFile
+        root.deleteRecursively()
+        root.mkdirs()
+        val original = File(root, "obsidian.sng").apply { writeText("game01.hmp\n") }
+        val generated = File(root, "descent.sng").apply { writeText("game01.hmp\n") }
+        val record =
+            MissionZipExtractionRecord(
+                ownerFilename = "Obsidian.zip",
+                ownerSizeBytes = original.length(),
+                ownerLastModifiedMs = 0L,
+                rootDir = root,
+                files =
+                    listOf(
+                        MissionZipExtractedFile("obsidian.sng", "obsidian.sng", original.length()),
+                        MissionZipExtractedFile("", "descent.sng", generated.length()),
+                    ),
+                archiveFormat = "zip",
+            )
+
+        val catalog = requireNotNull(MissionZipMusic.inspectExtracted(record))
+
+        assertEquals("obsidian.sng", catalog.songLists.single().archiveEntryPath)
+        assertEquals("obsidian.sng", catalog.songLists.single().displayName)
+    }
+
     @Test
     fun extractedDirectoryCatalogStagesDxaTrackReferencedByPath() {
         val filesDir = File("build/test-mission-zip-music-extracted-preview").absoluteFile

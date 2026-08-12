@@ -33,6 +33,14 @@ class AutoselectOrderValidationTest(unittest.TestCase):
         self.assertIn("if (n == 7", helper)
         self.assertIn("if (n == 6", helper)
 
+    def test_summary_uses_nanoseconds_and_a_stable_exact_tie_breaker(self) -> None:
+        source = (
+            REPO_ROOT / "android/app/src/main/cpp/android_autoselect.cpp"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("st.st_mtim.tv_nsec", source)
+        self.assertIn("strcmp(path, rc->newest_path) < 0", source)
+
 
 if __name__ == "__main__":
     unittest.main()

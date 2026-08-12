@@ -637,9 +637,9 @@ static int render_thread_func(void *data)
 	return 0;
 }
 
-static void render_thread_start(void)
+static int render_thread_start(void)
 {
-	if (g_render_thread) return; /* already running */
+	if (g_render_thread) return 1; /* already running */
 	rb_reset();
 	pthread_mutex_lock(&g_tuning_mutex);
 	g_render_accepting_commands = 1;
@@ -667,7 +667,9 @@ static void render_thread_start(void)
 		g_render_thread_alive = 0;
 		pthread_cond_broadcast(&g_background_cond);
 		pthread_mutex_unlock(&g_background_mutex);
+		return 0;
 	}
+	return 1;
 }
 
 static void render_thread_stop(void)
@@ -973,7 +975,10 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		tsf_atomic_store_int(&g_rb_cb_count, 0);
 		__atomic_store_n(&g_render_pass_count, 0u, __ATOMIC_RELEASE);
 		__atomic_store_n(&g_callback_trace_count, 0u, __ATOMIC_RELEASE);
-		render_thread_start();
+		if (!render_thread_start()) {
+			mix_free_music();
+			return 0;
+		}
 #endif
 		Mix_HookMusic(tsf_music_callback, NULL);
 		return 1;
@@ -1063,7 +1068,10 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 #ifdef ANDROID
 	/* Start background render thread -- fills ring buffer ahead */
-	render_thread_start();
+	if (!render_thread_start()) {
+		mix_free_music();
+		return 0;
+	}
 #endif
 
 	Mix_HookMusic(tsf_music_callback, NULL);

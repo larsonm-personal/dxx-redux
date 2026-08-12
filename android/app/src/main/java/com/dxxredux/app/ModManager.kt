@@ -15,6 +15,16 @@ import java.util.Locale
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
+internal const val ACTIVE_MOD_PATH_LIMIT = 64
+
+internal class ActiveModPathCapacityException(
+    count: Int,
+) : IllegalStateException("Enabled content needs $count mount paths; the game supports at most $ACTIVE_MOD_PATH_LIMIT")
+
+internal fun requireActiveModPathCapacity(paths: List<String>) {
+    if (paths.size > ACTIVE_MOD_PATH_LIMIT) throw ActiveModPathCapacityException(paths.size)
+}
+
 /**
  * Manages .dxa mod files: import, enable/disable, reorder, delete.
  *
@@ -670,7 +680,13 @@ class ModManager(
                 pathFile.delete()
                 Log.w(TAG, "All enabled mods missing on disk, removed .active_mod_paths")
             } else {
-                pathFile.writeText(validPaths.joinToString("\n"))
+                try {
+                    requireActiveModPathCapacity(validPaths)
+                } catch (failure: ActiveModPathCapacityException) {
+                    pathFile.delete()
+                    throw failure
+                }
+                AtomicFilePublication.writeUtf8(pathFile, validPaths.joinToString("\n"))
             }
         }
         logInfo("Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")

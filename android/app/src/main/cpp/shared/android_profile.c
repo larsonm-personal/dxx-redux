@@ -169,6 +169,20 @@ static const char *g_android_profile_texture_lookup_ext_names[ANDROID_PROFILE_TE
 	"tga",
 };
 
+void android_profile_texture_lookup_note_ktx2(
+    struct android_profile_texture_lookup_metrics *lookup, int slot,
+    long long elapsed_us, int loaded)
+{
+	if (!lookup)
+		return;
+
+	lookup->ktx2_attempts++;
+	if (slot >= 0 && slot < ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_COUNT)
+		lookup->ktx2_slot_us[slot] += elapsed_us;
+	if (loaded)
+		lookup->ktx2_hit_slot = slot;
+}
+
 static long long android_profile_read_clock_ms(clockid_t clock_id)
 {
 	struct timespec ts;

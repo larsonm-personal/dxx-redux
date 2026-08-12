@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.io.File
 
@@ -25,6 +26,23 @@ class GameFileFormatsTest {
         assertTrue(GameFileFormats.hasDiscExtractExtension("level.rl2"))
         assertTrue(GameFileFormats.isGogAudioFile("descent_ii.inst"))
         assertFalse(GameFileFormats.hasGameImportExtension("readme.txt"))
+    }
+
+    @Test
+    fun secretLevelsShareOrdinaryLooseLevelRoles() {
+        for (filename in listOf("secret.sdl", "secret.sl2")) {
+            assertTrue(GameFileFormats.hasDiscExtractExtension(filename))
+            assertTrue(GameFileFormats.isSetGameData(filename))
+            assertTrue(GameFileFormats.isBaseReplacement(filename))
+        }
+    }
+
+    @Test
+    fun providerDisplayNamesAreLabelsRatherThanPaths() {
+        assertEquals("Música 01.ogg", requireSafeProviderDisplayName("Música 01.ogg"))
+        for (name in listOf("", ".", "..", "../victim.ogg", "dir\\victim.ogg", "C:evil.cue", "NUL.txt", "bad\u0001.ogg")) {
+            assertThrows(IllegalArgumentException::class.java) { requireSafeProviderDisplayName(name) }
+        }
     }
 
     @Test

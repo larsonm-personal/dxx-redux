@@ -416,16 +416,30 @@ class SetupActivity : ComponentActivity() {
         }
         try {
             fileSetManager.writeActiveSetPath()
-            AudioSourceManager(filesDir).writePlaylist(contentResolver)
+            val audioSourceManager = AudioSourceManager(filesDir)
+            val pilotMusic = NativePilotPreferences.readMusicPrefsForAll(game, filesDir.absolutePath)
+            val requestedMusicMode =
+                pilotMusic.source.takeIf { pilotMusic.hasPilotFile && it in setOf("cd", "files", "midi") }
+                    ?: getSharedPreferences("dxx_prefs", MODE_PRIVATE).getString("music_mode", "cd")
+            val cdPlaylistReady = audioSourceManager.writePlaylist(contentResolver)
+            if (requestedMusicMode == "cd" && !cdPlaylistReady) {
+                return "CD Audio is selected, but no enabled readable CD source is available"
+            }
             modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2)
             writeInitialGameConfig()
             migrateLegacyHalfRenderResolution()
-            writeMusicConfigForLaunch(game, musicTypeOverride, includeD1MissionZipsForD2)
+            if (!writeMusicConfigForLaunch(game, musicTypeOverride, includeD1MissionZipsForD2)) {
+                return "Audio Files is selected, but no enabled readable custom track is available"
+            }
         } catch (e: InsufficientStorageException) {
             Log.e("DXX-Setup", "Launch storage preflight failed for $game", e)
             LauncherDebugLog.log("launch-storage-block game=$game message=${e.message ?: ""}")
             ImportStorageGuard.recordFailure(filesDir, "Launch preparation failed", e)
             return ImportStorageGuard.messageForFailure(e)
+        } catch (e: ActiveModPathCapacityException) {
+            Log.e("DXX-Setup", "Launch mod-path preflight failed for $game", e)
+            LauncherDebugLog.log("mod-path-capacity-block game=$game message=${e.message ?: ""}")
+            return e.message ?: "Too many enabled mod paths"
         }
         return null
     }
@@ -817,7 +831,7 @@ class SetupActivity : ComponentActivity() {
                         val src = File(path)
                         if (src.isFile) {
                             val destDir =
-                                if (src.name.lowercase().endsWith(".dem")) {
+                                if (portableGameFilenameIdentity(src.name).endsWith(".dem")) {
                                     File(setDir, "demos").also { it.mkdirs() }
                                 } else {
                                     setDir
@@ -879,7 +893,7 @@ class SetupActivity : ComponentActivity() {
                                 Log.w("DXX-Setup", "music_midi_play: failed to read ${track.filename} from ${src.hog}")
                                 return@midiPlay
                             }
-                            val isHmp = track.filename.lowercase().endsWith(".hmp")
+                            val isHmp = portableGameFilenameIdentity(track.filename).endsWith(".hmp")
                             val sr = MidiPreviewBridge.getNativeSampleRate(this@SetupActivity)
                             if (MidiPreviewBridge.start(data, isHmp, sr)) {
                                 Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
@@ -1017,7 +1031,7 @@ class SetupActivity : ComponentActivity() {
                             AudioSourceManager.AudioSource(
                                 id = id,
                                 cuePath = cueName,
-                                binPaths = orderedBinPaths.map { File(it).name.lowercase() },
+                                binPaths = orderedBinPaths.map { portableGameFilenameIdentity(File(it).name) },
                                 discLabel = label,
                                 discId = id,
                                 trackCount = parsedTracks.size,
@@ -2934,7 +2948,7 @@ private fun SetupScreen(
                 val archiveErrors = mutableListOf<String>()
                 for ((arcName, arcUri) in zipUris) {
                     val archiveDir = OwnedCacheDirectories.create(tmpDir)
-                    val arcLower = arcName.lowercase()
+                    val arcLower = portableGameFilenameIdentity(arcName)
                     val result =
                         if (arcLower.endsWith(".7z")) {
                             extract7zContents(context, arcUri, archiveDir) { name, copied, total ->
@@ -3573,7 +3587,7 @@ private fun SetupScreen(
                             audioImportBytes = 0L
                             audioImportTotal = 0L
                             scope.launch {
-                                importAudioFiles(
+                                val imported = importAudioFiles(
                                     context,
                                     filesDir,
                                     audioCustomMgr,
@@ -3592,12 +3606,13 @@ private fun SetupScreen(
                                 audioImportLabel = ""
                                 audioImportBytes = 0L
                                 audioImportTotal = 0L
-                                // Auto-switch music mode to "files"
-                                context
-                                    .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-                                    .edit()
-                                    .putString("music_mode", "files")
-                                    .apply()
+                                if (imported) {
+                                    context
+                                        .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putString("music_mode", "files")
+                                        .apply()
+                                }
                             }
                         },
                     )

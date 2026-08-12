@@ -29,6 +29,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <android/log.h>
+#include <physfs.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,8 +65,18 @@ extern "C" {
 extern struct player_config PlayerCfg;
 }
 
-static const char CONFIG_PATH[] =
-    "/data/data/com.dxxredux.app/files/controller_config.json";
+static std::string controller_config_path()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	static const char game_dir[] = "d2x-redux";
+#else
+	static const char game_dir[] = "d1x-redux";
+#endif
+	const char *pref = PHYSFS_getPrefDir("com.dxxredux", game_dir);
+	if (!pref || !pref[0])
+		return std::string();
+	return std::string(pref) + "../controller_config.json";
+}
 
 static int clamp_threshold_pct(int pct)
 {
@@ -122,7 +133,10 @@ static bool json_byte_array(const json &value, ubyte *output, size_t count,
  */
 static bool load_config_into_playercfg(void)
 {
-	std::ifstream ifs(CONFIG_PATH);
+	const std::string config_path = controller_config_path();
+	if (config_path.empty())
+		return false;
+	std::ifstream ifs(config_path);
 	struct player_config staged;
 	int staged_axis_deadzone[6];
 	int axis_pct[6];

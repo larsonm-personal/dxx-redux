@@ -413,7 +413,7 @@ internal fun GogImportDialog(
                 suspend fun stageInstaller(copyStatus: String): Triple<String, String, List<GogImportBridge.GogFile>?> {
                     val tmpDir = File(filesDir, "tmp")
                     tmpDir.mkdirs()
-                    val tmpFile = File(tmpDir, installerName)
+                    val tmpFile = File(tmpDir, requireSafeProviderDisplayName(installerName))
                     withContext(Dispatchers.Main) {
                         status = copyStatus
                         copyingInstaller = true
@@ -984,7 +984,7 @@ internal fun SowImportDialog(
             try {
                 val tmpDir = File(filesDir, "tmp")
                 tmpDir.mkdirs()
-                val tmpFile = File(tmpDir, sowName)
+                val tmpFile = File(tmpDir, requireSafeProviderDisplayName(sowName))
                 withContext(Dispatchers.Main) {
                     status = "Copying SOW archive..."
                     copyProgressBytes = 0L
@@ -1252,7 +1252,7 @@ internal fun DiscImportDialog(
                 // Copy CUE file to temp
                 val tmpDir = File(filesDir, "tmp")
                 tmpDir.mkdirs()
-                val tmpCue = File(tmpDir, cueName.lowercase())
+                val tmpCue = File(tmpDir, requireSafeProviderDisplayName(cueName).lowercase(Locale.ROOT))
                 LauncherFileCopy.copyUriToFile(
                     context,
                     cueUri,

@@ -1292,9 +1292,9 @@ static int render_thread_func(void *data)
 	return 0;
 }
 
-static void render_thread_start(void)
+static int render_thread_start(void)
 {
-	if (s_render_thread) return;
+	if (s_render_thread) return 1;
 	rb_reset();
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
 	pthread_mutex_lock(&s_background_mutex);
@@ -1302,11 +1302,14 @@ static void render_thread_start(void)
 	pthread_mutex_unlock(&s_background_mutex);
 	s_render_thread = SDL_CreateThread(render_thread_func, NULL);
 	if (!s_render_thread) {
+		__atomic_store_n(&s_render_running, 0, __ATOMIC_SEQ_CST);
 		pthread_mutex_lock(&s_background_mutex);
 		s_render_thread_alive = 0;
 		pthread_cond_broadcast(&s_background_cond);
 		pthread_mutex_unlock(&s_background_mutex);
+		return 0;
 	}
+	return 1;
 }
 
 static void render_thread_stop(void)
@@ -1616,7 +1619,10 @@ int RBAPlayTrack(int track)
 	playback_diagnostics_begin(track);
 	s_playing = 1;
 
-	render_thread_start();
+	if (!render_thread_start()) {
+		RBAStop();
+		return -1;
+	}
 	Mix_HookMusic(rba_music_callback, NULL);
 
 	RBA_DIAG("play_track track=%d type=%s disc_id=0x%08lx orig_track_order=%d start=%d len=%d",
@@ -1659,7 +1665,10 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 	playback_diagnostics_begin(first_audio);
 	s_playing = 1;
 
-	render_thread_start();
+	if (!render_thread_start()) {
+		RBAStop();
+		return 0;
+	}
 	Mix_HookMusic(rba_music_callback, NULL);
 
 	RBA_DIAG("play_tracks first=%d last=%d first_type=%s disc_id=0x%08lx orig_track_order=%d first_start=%d first_len=%d",

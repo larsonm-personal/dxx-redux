@@ -1085,6 +1085,28 @@ route_target_selection select_key_target(
 	return result;
 }
 
+int path_traversed_key_mask(
+    const route_snapshot &snapshot,
+    const route_path_result &path)
+{
+	int mask = 0;
+	for (std::size_t index = 0;
+	     index < path.sides.size() && index < path.segments.size(); ++index) {
+		const int segment = path.segments[index];
+		const int side = path.sides[index];
+		if (!valid_segment(snapshot, segment) || side < 0 ||
+		    side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		const int wall = snapshot.topology.segments[segment].sides[side].wall;
+		if (!valid_wall(snapshot, wall))
+			continue;
+		const int key = key_index(snapshot.state.walls[wall].key);
+		if (key >= 0)
+			mask |= 1 << key;
+	}
+	return mask;
+}
+
 std::vector<route_trigger_source> discover_trigger_sources(
     const route_snapshot &snapshot,
     const route_progress_state &progress,
@@ -1103,6 +1125,9 @@ route_trigger_path_selection select_trigger_firing_path(
     const route_visibility_query &visibility)
 {
 	route_trigger_path_selection result;
+	route_trigger_path_selection keyed_result;
+	double result_shot_distance = std::numeric_limits<double>::infinity();
+	double keyed_shot_distance = std::numeric_limits<double>::infinity();
 	const auto search = search_routes(snapshot, query, progress, false);
 	if (!search.problem.empty())
 		return result;
@@ -1150,6 +1175,40 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.terminal_position = terminal;
 				candidate.found = true;
 			};
+			/* A nearer route can still be a needlessly difficult long shot.  When
+			 * the player already owns a key, separately test the switch's own
+			 * segment if reaching it uses that keyed door.  This preserves normal
+			 * distance ranking unless the conventional keyed route also produces
+			 * a physically shorter shot. */
+			if (progress.key_mask && valid_segment(snapshot, source.source_segment) &&
+			    search.nodes[source.source_segment].reachable) {
+				auto path = build_route_path(search, source.source_segment);
+				if (path_traversed_key_mask(snapshot, path) & progress.key_mask) {
+					double extra_distance = 0.0;
+					route_position terminal;
+					if (visible_source_position(
+					        snapshot, progress, source, visibility,
+					        source.source_segment, terminal, extra_distance)) {
+						path.distance += extra_distance;
+						const double shot_distance = point_distance(
+						    terminal, source.source_position);
+						if (!keyed_result.found ||
+						    shot_distance < keyed_shot_distance ||
+						    (shot_distance == keyed_shot_distance &&
+						     path.distance < keyed_result.path.distance)) {
+							path.progress_weight = 0;
+							path.terminal_segment = source.source_segment;
+							path.terminal_position = terminal;
+							keyed_result.source = source;
+							keyed_result.path = std::move(path);
+							keyed_result.terminal_segment = source.source_segment;
+							keyed_result.terminal_position = terminal;
+							keyed_result.found = true;
+							keyed_shot_distance = shot_distance;
+						}
+					}
+				}
+			}
 			/* Find a center-line candidate cheaply before sampling every face,
 			 * vertex, and edge.  The detailed pass only examines segments whose
 			 * center-path lower bound can still improve the selected route. */
@@ -1207,8 +1266,12 @@ route_trigger_path_selection select_trigger_firing_path(
 		    (result.found && candidate.path.distance >= result.path.distance))
 			continue;
 		result = std::move(candidate);
+		result_shot_distance = point_distance(
+		    result.terminal_position, result.source.source_position);
 	}
 	report_progress(visibility, "route_visibility", total, total);
+	if (keyed_result.found && keyed_shot_distance < result_shot_distance)
+		result = std::move(keyed_result);
 	if (result.found && visibility.wall_shootable_without_transparency &&
 	    valid_wall(snapshot, result.source.source_wall) &&
 	    consume_analysis_work(visibility))

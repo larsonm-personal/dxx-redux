@@ -2443,19 +2443,22 @@ private fun ImportLocationSection(filesDir: File) {
                             val result =
                                 withContext(Dispatchers.IO) {
                                     val outcome =
-                                        mgr.migrate(current.source, dst) { copied, total ->
+                                        mgr.migrate(
+                                            current.source,
+                                            dst,
+                                            beforeSourceRetire = {
+                                                if (dst.absolutePath == mgr.getDefaultRoot().absolutePath) {
+                                                    mgr.clearOverride()
+                                                } else {
+                                                    mgr.setOverride(dst)
+                                                }
+                                            },
+                                        ) { copied, total ->
                                             mainHandler.post {
                                                 migrateCopied = copied
                                                 migrateTotal = total
                                             }
                                         }
-                                    if (outcome is ImportLocationManager.MigrateResult.Success) {
-                                        if (dst.absolutePath == mgr.getDefaultRoot().absolutePath) {
-                                            mgr.clearOverride()
-                                        } else {
-                                            mgr.setOverride(dst)
-                                        }
-                                    }
                                     outcome
                                 }
                             migrating = false

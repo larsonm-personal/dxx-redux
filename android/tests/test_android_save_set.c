@@ -49,6 +49,19 @@ int main(void)
 		failures++;
 	}
 
+	expect_true("long mission A path",
+	            android_save_set_build_slot_path(
+	                path, sizeof(path), 1, "single", "Neuma",
+	                "abcdefghijklmnopqrstuvwxyzaaaaaa", 0, 0));
+	expect_true("long mission B path",
+	            android_save_set_build_slot_path(
+	                other, sizeof(other), 1, "single", "Neuma",
+	                "abcdefghijklmnopqrstuvwxyzbbbbbb", 0, 0));
+	if (!strcmp(path, other)) {
+		printf("long mission paths sharing a prefix should differ\n");
+		failures++;
+	}
+
 	expect_true("coop autosave path",
 	            android_save_set_build_slot_path(
 	                path, sizeof(path), 1, "coop",

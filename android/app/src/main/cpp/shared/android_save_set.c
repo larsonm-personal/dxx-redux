@@ -1,6 +1,8 @@
 #include "android_save_set.h"
 
 #include <ctype.h>
+#include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -51,6 +53,28 @@ void android_save_set_sanitize_component(char *dst, size_t dst_size,
 	}
 }
 
+static void android_save_set_mission_component(char *dst, size_t dst_size,
+                                               const char *mission)
+{
+	char full[PATH_MAX];
+	uint64_t hash = UINT64_C(1469598103934665603);
+	size_t i;
+	size_t prefix;
+
+	android_save_set_sanitize_component(full, sizeof(full), mission, "default");
+	if (strlen(full) < dst_size) {
+		snprintf(dst, dst_size, "%s", full);
+		return;
+	}
+	for (i = 0; full[i]; ++i) {
+		hash ^= (unsigned char) full[i];
+		hash *= UINT64_C(1099511628211);
+	}
+	prefix = dst_size > 18 ? dst_size - 18 : 0;
+	snprintf(dst, dst_size, "%.*s-%016llx", (int) prefix, full,
+	         (unsigned long long) hash);
+}
+
 int android_save_set_build_slot_path(char *dst, size_t dst_size,
                                      int use_players_dir,
                                      const char *scope,
@@ -66,8 +90,7 @@ int android_save_set_build_slot_path(char *dst, size_t dst_size,
 	if (!dst || !dst_size || slotnum < 0 || slotnum > 9)
 		return 0;
 
-	android_save_set_sanitize_component(mission_dir, sizeof(mission_dir),
-	                                    mission, "default");
+	android_save_set_mission_component(mission_dir, sizeof(mission_dir), mission);
 	if (coop) {
 		android_save_set_sanitize_component(file_pilot, sizeof(file_pilot),
 		                                    pilot, ANDROID_SAVE_SET_COOP_CALLSIGN);
@@ -100,8 +123,7 @@ int android_save_set_build_secret_path(char *dst, size_t dst_size,
 	fc = slotnum >= 10 ? (char) ('a' + slotnum - 10) : (char) ('0' + slotnum);
 	android_save_set_sanitize_component(pilot_dir, sizeof(pilot_dir),
 	                                    pilot, "player");
-	android_save_set_sanitize_component(mission_dir, sizeof(mission_dir),
-	                                    mission, "default");
+	android_save_set_mission_component(mission_dir, sizeof(mission_dir), mission);
 	return snprintf(dst, dst_size, "%s/single/%s/%s/%csecret.sgc",
 	                android_save_set_root(use_players_dir), pilot_dir,
 	                mission_dir, fc) < (int) dst_size;
@@ -120,8 +142,7 @@ int android_save_set_build_sidecar_path(char *dst, size_t dst_size,
 
 	if (!dst || !dst_size || !filename || !filename[0])
 		return 0;
-	android_save_set_sanitize_component(mission_dir, sizeof(mission_dir),
-	                                    mission, "default");
+	android_save_set_mission_component(mission_dir, sizeof(mission_dir), mission);
 	android_save_set_sanitize_component(safe_name, sizeof(safe_name),
 	                                    filename, "sidecar");
 	if (scope && !strcmp(scope, "coop"))

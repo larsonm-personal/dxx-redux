@@ -44,6 +44,23 @@ class SetupLaunchReadinessTest {
     }
 
     @Test
+    fun completeRetailD2SetWinsOverStrayDemoFiles() {
+        val setDir = createTempDirectory("d2-retail-with-demo-fragment").toFile()
+        writeD2Files(setDir)
+        writeFile(setDir, "d2demo.ham")
+
+        assertTrue(
+            launchDataReadyForGame(
+                game = "d2",
+                setDir = setDir,
+                manifest = AssetManifest(setDir),
+                safManifest = SafManifest.forDir(setDir),
+            ),
+        )
+        assertTrue(detectD2FileList(setDir) === D2_FILES)
+    }
+
+    @Test
     fun d1TestFlightSetIsNotLaunchReady() {
         val setDir = createTempDirectory("d1-test-flight").toFile()
         writeFile(setDir, "descent.hog", size = 1626232)

@@ -60,7 +60,7 @@ class AndroidGameFileExtensionsTest {
             GameFileFormats.macDiscExtractExtensions - GameFileFormats.discExtractExtensions,
         )
         assertEquals(
-            setOf("dtx", "hxm", "pog", "rdl", "rl2"),
+            setOf("dtx", "hxm", "pog", "rdl", "rl2", "sdl", "sl2"),
             GameFileFormats.discExtractExtensions - GameFileFormats.macDiscExtractExtensions,
         )
     }
@@ -83,6 +83,7 @@ class AndroidGameFileExtensionsTest {
     @Test
     fun genericAndMacRolesUseCaseInsensitiveNames() {
         assertTrue(GameFileFormats.hasDiscExtractExtension("LEVEL.RL2"))
+        assertTrue(GameFileFormats.hasDiscExtractExtension("SECRET.SL2"))
         assertTrue(GameFileFormats.extensionOf("README.TXT") in GameFileFormats.macDiscExtractExtensions)
         assertFalse(GameFileFormats.hasDiscExtractExtension("README.TXT"))
     }

@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.content.Context
 import android.util.Log
 import org.json.JSONObject
+import java.util.Locale
 
 /**
  * SHA-256 → version-name table for identifying known game asset versions.
@@ -34,8 +35,8 @@ object KnownVersions {
             val pkgs = mutableSetOf<String>()
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
-                val file = obj.getString("file").lowercase()
-                val sha = obj.getString("sha256").lowercase()
+                val file = portableGameFilenameIdentity(obj.getString("file"))
+                val sha = obj.getString("sha256").lowercase(Locale.ROOT)
                 val ver = obj.getString("version")
                 t.getOrPut(file) { mutableListOf() }.add(VersionEntry(sha, ver))
                 pkgs.add(ver)
@@ -58,8 +59,8 @@ object KnownVersions {
         filename: String,
         sha256: String,
     ): String? {
-        val entries = table[filename.lowercase()] ?: return null
-        return entries.firstOrNull { it.sha256 == sha256.lowercase() }?.versionName
+        val entries = table[portableGameFilenameIdentity(filename)] ?: return null
+        return entries.firstOrNull { it.sha256 == sha256.lowercase(Locale.ROOT) }?.versionName
     }
 
     /**

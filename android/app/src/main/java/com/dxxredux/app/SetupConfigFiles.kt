@@ -231,7 +231,7 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
     game: String? = null,
     musicTypeOverride: Int? = null,
     includeD1MissionZipsForD2: Boolean = true,
-) {
+): Boolean {
     val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
     val pilotMusic =
         NativePilotPreferences.readMusicPrefsForAll(
@@ -281,11 +281,10 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
         settings.add("OrigTrackOrder" to "1")
     } else if (policy.useCustomAudioFiles) {
         val m3uPath = CustomAudioSetManager(filesDir).writeM3U(this)
-        if (m3uPath != null) {
-            settings.add("CMLevelMusicPath" to m3uPath)
-            if (!pilotMusic.hasPilotFile) {
-                settings.add("CMLevelMusicPlayOrder" to "0")
-            }
+        if (m3uPath == null) return false
+        settings.add("CMLevelMusicPath" to m3uPath)
+        if (!pilotMusic.hasPilotFile) {
+            settings.add("CMLevelMusicPlayOrder" to "0")
         }
     }
 
@@ -294,4 +293,5 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
     } else {
         updateConfigFilesForGame(filesDir, game, settings)
     }
+    return true
 }

@@ -1685,18 +1685,21 @@ internal suspend fun importAudioFiles(
     targetSetId: String? = null,
     copyToStorage: Boolean = true,
     onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
-) {
+): Boolean {
     val setId = targetSetId ?: UUID.randomUUID().toString().take(8)
     val destDir = customMgr.setDir(setId)
 
-    withContext(Dispatchers.IO) {
+    return withContext(Dispatchers.IO) {
         val importDir = if (copyToStorage) createCopiedAudioImportAttemptDir(destDir) else destDir
         val imported = mutableListOf<String>()
         val referencedUris = mutableMapOf<String, String>()
         try {
             for (uri in uris) {
                 try {
-                    val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
+                    val fileName =
+                        requireSafeProviderDisplayName(
+                            resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio",
+                        )
                     if (isArchiveFile(fileName)) {
                         if (copyToStorage) {
                             val extracted = extractAudioFromArchive(ctx, uri, importDir, fileName, onProgress)
@@ -1746,7 +1749,7 @@ internal suspend fun importAudioFiles(
                                 Toast.LENGTH_SHORT,
                             ).show()
                     }
-                    return@withContext
+                    return@withContext false
                 }
                 // Run chromaprint matching on imported files
                 val trackNames = mutableMapOf<String, String>()
@@ -1818,10 +1821,12 @@ internal suspend fun importAudioFiles(
                     )
                     Log.i(TAG, "Imported ${imported.size} files as set '$setName' (${trackNames.size} matched)")
                 }
+                true
             } else {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(ctx, "No audio files found in import", Toast.LENGTH_SHORT).show()
                 }
+                false
             }
         } finally {
             if (copyToStorage) importDir.deleteRecursively()

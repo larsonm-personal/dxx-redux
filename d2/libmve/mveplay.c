@@ -570,11 +570,13 @@ static int play_audio_handler(unsigned char major, unsigned char minor, unsigned
 			int target_bytes;
 			int trim_bytes;
 
+			SDL_LockAudio();
 			queue_bytes = mve_audio_queue_bytes();
 			target_bytes = (mve_audio_mix_freq * mve_audio_output_frame_size * MVE_AUDIO_START_TARGET_MS) / 1000;
 			trim_bytes = queue_bytes - target_bytes;
 			if (trim_bytes > 0)
 				mve_audio_discard_lead_bytes(trim_bytes);
+			SDL_UnlockAudio();
 		}
 		#endif
 #ifdef USE_SDLMIXER

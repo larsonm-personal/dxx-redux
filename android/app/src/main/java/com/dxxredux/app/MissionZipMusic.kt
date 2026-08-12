@@ -12,6 +12,7 @@ data class MissionZipMusicCatalog(
     val archivePath: String,
     val sources: List<MissionZipMusicSource>,
     val sourceIdentity: String,
+    val songLists: List<MissionZipMusicSongList> = emptyList(),
 ) {
     val hasListableTracks: Boolean get() = sources.any { it.tracks.isNotEmpty() }
 }
@@ -21,6 +22,17 @@ data class MissionZipMusicSource(
     val label: String,
     val containerPath: String,
     val tracks: List<MissionZipMusicTrack>,
+)
+
+data class MissionZipMusicSongList(
+    val archiveEntryPath: String,
+    val displayName: String,
+    val references: List<String>,
+)
+
+internal data class MissionZipMusicSongListEntry(
+    val index: Int,
+    val track: MissionZipMusicTrack,
 )
 
 data class MissionZipMusicTrack(
@@ -58,6 +70,7 @@ object MissionZipMusic {
 
     fun inspect(file: java.io.File): MissionZipMusicCatalog? {
         if (!file.isFile) return null
+        val songLists = mutableListOf<MissionZipMusicSongList>()
         val sources =
             runCatching {
                 ArchiveFiles.open(file).use { archive ->
@@ -76,16 +89,28 @@ object MissionZipMusic {
                                 when (extensionOf(normalized)) {
                                     "sng" -> {
                                         archive.openInputStream(entry).use { input ->
+                                            val references =
+                                                parseSongListReferences(
+                                                    input
+                                                        .readBytesBounded(
+                                                            ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                                            normalized,
+                                                            metadataBudget,
+                                                            entry.compressedSizeBytes ?: -1,
+                                                        ).toString(Charsets.UTF_8),
+                                                )
                                             archiveBuilder.addSongList(
                                                 normalized,
-                                                input
-                                                    .readBytesBounded(
-                                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                                        normalized,
-                                                        metadataBudget,
-                                                        entry.compressedSizeBytes ?: -1,
-                                                    ).toString(Charsets.UTF_8),
+                                                references,
                                             )
+                                            if (references.isNotEmpty()) {
+                                                songLists +=
+                                                    MissionZipMusicSongList(
+                                                        archiveEntryPath = normalized,
+                                                        displayName = leafName(normalized),
+                                                        references = references,
+                                                    )
+                                            }
                                         }
                                     }
 
@@ -121,12 +146,13 @@ object MissionZipMusic {
                 }
             }.getOrNull()
                 ?: return null
-        return MissionZipMusicCatalog(file.absolutePath, sources, contentIdentity(file, sources))
+        return MissionZipMusicCatalog(file.absolutePath, sources, contentIdentity(file, sources), songLists)
             .takeIf { it.hasListableTracks }
     }
 
     internal fun inspectExtracted(record: MissionZipExtractionRecord): MissionZipMusicCatalog? {
         if (!record.rootDir.isDirectory) return null
+        val songLists = mutableListOf<MissionZipMusicSongList>()
         val sources =
             buildList {
                 val entryBudget = ExtractionBudget()
@@ -146,18 +172,31 @@ object MissionZipMusic {
                     try {
                         when (extensionOf(relativePath)) {
                             "sng" -> {
+                                val references =
+                                    diskFile.inputStream().use {
+                                        parseSongListReferences(
+                                            it
+                                                .readBytesBounded(
+                                                    ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                                    relativePath,
+                                                    metadataBudget,
+                                                    file.sizeBytes,
+                                                ).toString(Charsets.UTF_8),
+                                        )
+                                    }
                                 archiveBuilder.addSongList(
                                     relativePath,
-                                    diskFile.inputStream().use {
-                                        it
-                                            .readBytesBounded(
-                                                ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                                relativePath,
-                                                metadataBudget,
-                                                file.sizeBytes,
-                                            ).toString(Charsets.UTF_8)
-                                    },
+                                    references,
                                 )
+                                val entryPath = normalizePath(file.entryPath)
+                                if (references.isNotEmpty()) {
+                                    songLists +=
+                                        MissionZipMusicSongList(
+                                            archiveEntryPath = entryPath,
+                                            displayName = leafName(entryPath),
+                                            references = references,
+                                        )
+                                }
                             }
 
                             in PLAYABLE_EXTENSIONS -> {
@@ -198,8 +237,58 @@ object MissionZipMusic {
                 }
                 archiveBuilder.build()?.let { add(0, it) }
             }
-        return MissionZipMusicCatalog(record.rootDir.absolutePath, sources, contentIdentity(record.rootDir, sources))
-            .takeIf { it.hasListableTracks }
+        return MissionZipMusicCatalog(
+            record.rootDir.absolutePath,
+            sources,
+            contentIdentity(record.rootDir, sources),
+            songLists,
+        ).takeIf { it.hasListableTracks }
+    }
+
+    internal fun songListForPath(
+        catalog: MissionZipMusicCatalog,
+        path: String,
+    ): MissionZipMusicSongList? {
+        val normalized = normalizePath(path)
+        return catalog.songLists.singleOrNull { it.archiveEntryPath.equals(normalized, ignoreCase = true) }
+    }
+
+    internal fun resolveSongList(
+        catalog: MissionZipMusicCatalog,
+        songList: MissionZipMusicSongList,
+    ): List<MissionZipMusicSongListEntry> {
+        val playableTracks =
+            catalog.sources
+                .flatMap { it.tracks }
+                .filter { it.playable }
+                .distinctBy { it.id }
+        val byName = playableTracks.groupBy { normalizePath(it.sourceRelativeName).lowercase(Locale.US) }
+        val byLeaf = playableTracks.groupBy { leafName(it.sourceRelativeName).lowercase(Locale.US) }
+        return songList.references.mapIndexed { index, reference ->
+            val normalized = normalizePath(reference)
+            val exactMatches = byName[normalized.lowercase(Locale.US)].orEmpty()
+            val resolved =
+                exactMatches.singleOrNull()
+                    ?: if (exactMatches.isEmpty()) {
+                        byLeaf[leafName(normalized).lowercase(Locale.US)].orEmpty().singleOrNull()
+                    } else {
+                        null
+                    }
+            MissionZipMusicSongListEntry(
+                index = index,
+                track =
+                    resolved?.copy(displayName = reference) ?: MissionZipMusicTrack(
+                        id = "song-list:${songList.archiveEntryPath}:$index:${normalized.lowercase(Locale.US)}",
+                        displayName = reference,
+                        sourceRelativeName = normalized,
+                        archiveEntryPath = songList.archiveEntryPath,
+                        kind = KIND_SONG_REFERENCE,
+                        extension = extensionOf(reference),
+                        sizeBytes = 0,
+                        playable = false,
+                    ),
+            )
+        }
     }
 
     private fun contentIdentity(
@@ -290,13 +379,15 @@ object MissionZipMusic {
                         "sng" -> {
                             builder.addSongList(
                                 archiveEntryPath,
-                                zip
-                                    .readBytesBounded(
-                                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                                        nestedPath,
-                                        metadataBudget,
-                                        entry.compressedSize,
-                                    ).toString(Charsets.UTF_8),
+                                parseSongListReferences(
+                                    zip
+                                        .readBytesBounded(
+                                            ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                                            nestedPath,
+                                            metadataBudget,
+                                            entry.compressedSize,
+                                        ).toString(Charsets.UTF_8),
+                                ),
                             )
                         }
 
@@ -371,7 +462,10 @@ object MissionZipMusic {
                         entryName,
                         metadataBudget,
                     )
-                builder.addSongList(archiveEntryPath, bytes.toString(Charsets.UTF_8))
+                builder.addSongList(
+                    archiveEntryPath,
+                    parseSongListReferences(bytes.toString(Charsets.UTF_8)),
+                )
             } else {
                 if (ext in PLAYABLE_EXTENSIONS) {
                     builder.addPlayable(
@@ -406,9 +500,9 @@ object MissionZipMusic {
 
         fun addSongList(
             archiveEntryPath: String,
-            text: String,
+            references: List<String>,
         ) {
-            parseSongListReferences(text).forEachIndexed { index, name ->
+            references.forEachIndexed { index, name ->
                 if (songReferences.size >= ExtractionLimits.MAX_ENTRIES) {
                     throw IOException("Song lists exceed ${ExtractionLimits.MAX_ENTRIES} references")
                 }

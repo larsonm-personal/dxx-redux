@@ -159,7 +159,7 @@ internal fun importFile(
     onProgress: (LauncherCopyProgress) -> Unit = {},
 ): Boolean =
     try {
-        val canonicalName = source.name.lowercase(Locale.ROOT)
+        val canonicalName = requireSafeProviderDisplayName(source.name).lowercase(Locale.ROOT)
         val actualDestDir =
             if (canonicalName.endsWith(".dem")) {
                 File(destDir, "demos").also { it.mkdirs() }

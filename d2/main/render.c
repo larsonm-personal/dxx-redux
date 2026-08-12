@@ -64,6 +64,9 @@ struct replay_robot_label g_replay_robot_labels[REPLAY_ROBOT_LABEL_MAX];
 int g_replay_robot_label_count = 0;
 int g_replay_robot_labels_enabled = 0;
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#include "android_render_fov.h"
+#endif
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "escort.h"
@@ -108,56 +111,13 @@ int	N_render_segs;
 fix Render_zoom = 0x9000;					//the player's zoom factor
 
 #if defined(ANDROID) || defined(__ANDROID__)
-static int Android_main_view_fov_degrees;
-static int Android_main_view_fov_locked_to_base;
 static int Android_visual_only_render_pass;
 static fix Android_render_zoom_override;
 static short Android_base_render_list[MAX_RENDER_SEGS];
 
-static int android_render_clamp_main_view_fov(int fov_degrees)
-{
-	if (fov_degrees == 100 || fov_degrees == 110 || fov_degrees == 120)
-		return fov_degrees;
-	return 0;
-}
-
-static fix android_render_main_view_zoom(void)
-{
-	switch (android_render_main_view_fov_effective()) {
-		case 100:
-			return 43940;
-		case 110:
-			return 52658;
-		case 120:
-			return 63858;
-		default:
-			return Render_zoom;
-	}
-}
-
 static fix android_render_active_zoom(void)
 {
 	return Android_render_zoom_override ? Android_render_zoom_override : Render_zoom;
-}
-
-void android_render_set_main_view_fov(int fov_degrees)
-{
-	Android_main_view_fov_degrees = android_render_clamp_main_view_fov(fov_degrees);
-}
-
-int android_render_get_main_view_fov(void)
-{
-	return Android_main_view_fov_degrees;
-}
-
-void android_render_set_main_view_fov_locked(int locked_to_base)
-{
-	Android_main_view_fov_locked_to_base = locked_to_base ? 1 : 0;
-}
-
-int android_render_main_view_fov_effective(void)
-{
-	return Android_main_view_fov_locked_to_base ? 0 : Android_main_view_fov_degrees;
 }
 
 void android_render_frame_main_view(fix eye_offset, int window_num)
@@ -184,7 +144,7 @@ void android_render_frame_main_view(fix eye_offset, int window_num)
 		       sizeof(base_rendered_objects[0]) * base_num_objects);
 
 	Android_visual_only_render_pass = 1;
-	Android_render_zoom_override = android_render_main_view_zoom();
+	Android_render_zoom_override = android_render_main_view_zoom(Render_zoom);
 	render_frame(eye_offset, window_num);
 	Android_render_zoom_override = 0;
 	Android_visual_only_render_pass = 0;

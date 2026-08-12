@@ -254,4 +254,40 @@ class TouchEditorZoneEdgeTest {
                 ).value,
         )
     }
+
+    @Test
+    fun humanReadableRadialRoundTripPreservesBindingType() {
+        val layout =
+            TouchLayout(
+                radialMenus =
+                    listOf(
+                        RadialMenuControl(
+                            id = "weapons",
+                            xPct = 50f,
+                            yPct = 50f,
+                            segments =
+                                listOf(
+                                    RadialSegment(
+                                        label = "Fire Primary",
+                                        binding = TouchBindings.BTN_FIRE_PRIMARY,
+                                        bindingType = "action",
+                                    ),
+                                ),
+                        ),
+                    ),
+            )
+
+        val parsed = HumanReadableConfig.humanJsonToTouchLayout(HumanReadableConfig.touchLayoutToHumanJson(layout))
+
+        assertTrue(parsed.warnings.isEmpty())
+        assertEquals(
+            "action",
+            parsed.value
+                ?.radialMenus
+                ?.single()
+                ?.segments
+                ?.single()
+                ?.bindingType,
+        )
+    }
 }

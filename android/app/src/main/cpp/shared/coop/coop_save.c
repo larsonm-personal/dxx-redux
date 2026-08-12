@@ -754,7 +754,6 @@ int coop_autosave(void)
 
 	slot = COOP_AUTOSAVE_SLOT_FIRST +
 	       (coop_autosave_next_slot % COOP_AUTOSAVE_SLOT_COUNT);
-	coop_autosave_next_slot++;
 
 	state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
 	memset(desc, 0, sizeof(desc));
@@ -787,6 +786,7 @@ int coop_autosave(void)
 		state_game_id = saved_game_id;
 		memcpy(Players[Player_num].callsign, saved_callsign, CALLSIGN_LEN + 1);
 	}
+	coop_autosave_next_slot++;
 	if (multi_i_am_master())
 		multi_send_save_game(slot, autosave_game_id, desc);
 

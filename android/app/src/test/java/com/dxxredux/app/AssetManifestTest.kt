@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.util.Locale
 import kotlin.io.path.createTempDirectory
 
 class AssetManifestTest {
@@ -54,6 +55,28 @@ class AssetManifestTest {
         val raw = JSONArray(File(setDir, "assets.json").readText())
         assertEquals(1, raw.length())
         assertEquals(17L, raw.getJSONObject(0).getLong("sizeBytes"))
+    }
+
+    @Test
+    fun portableIdentityIsStableAndRepairsTurkishFoldedDiskNames() {
+        val previous = Locale.getDefault()
+        val setDir = createTempDirectory("asset-manifest-turkish").toFile()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            val malformedName = "descent.p\u0131g"
+            File(setDir, malformedName).writeBytes(ByteArray(17))
+            writeManifest(setDir, entry(malformedName, sizeBytes = 17, importedAt = 100))
+
+            val manifest = AssetManifest(setDir)
+            assertEquals("descent.pig", manifest.load().single().filename)
+            assertTrue(manifest.findStaleFiles(setOf("descent.pig")).isEmpty())
+            assertTrue(File(setDir, "descent.pig").isFile)
+
+            manifest.upsert("ALIEN1.PIG", "ABCDEF", 17)
+            assertTrue(manifest.getEntry("alien1.pig") != null)
+        } finally {
+            Locale.setDefault(previous)
+        }
     }
 
     private fun writeManifest(

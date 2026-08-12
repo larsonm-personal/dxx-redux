@@ -114,7 +114,8 @@ struct read_summary_ctx {
 	int valid_count;
 	int mismatch;
 	int have_reference;
-	time_t newest_mtime;
+	time_t newest_mtime_seconds;
+	long newest_mtime_nanoseconds;
 	char newest_path[512];
 	ubyte reference_primary[MAX_ORDER_LEN];
 	ubyte reference_secondary[MAX_ORDER_LEN];
@@ -165,11 +166,19 @@ static int read_summary_visitor(const char *path, void *ctx)
 	}
 
 	struct stat st;
-	time_t mtime = 0;
-	if (stat(path, &st) == 0)
-		mtime = st.st_mtime;
-	if (rc->valid_count == 0 || mtime > rc->newest_mtime) {
-		rc->newest_mtime = mtime;
+	time_t mtime_seconds = 0;
+	long mtime_nanoseconds = 0;
+	if (stat(path, &st) == 0) {
+		mtime_seconds = st.st_mtim.tv_sec;
+		mtime_nanoseconds = st.st_mtim.tv_nsec;
+	}
+	if (rc->valid_count == 0 || mtime_seconds > rc->newest_mtime_seconds ||
+	    (mtime_seconds == rc->newest_mtime_seconds &&
+	     (mtime_nanoseconds > rc->newest_mtime_nanoseconds ||
+	      (mtime_nanoseconds == rc->newest_mtime_nanoseconds &&
+	       strcmp(path, rc->newest_path) < 0)))) {
+		rc->newest_mtime_seconds = mtime_seconds;
+		rc->newest_mtime_nanoseconds = mtime_nanoseconds;
 		snprintf(rc->newest_path, sizeof(rc->newest_path), "%s", path);
 		memcpy(rc->newest_primary, primary, PRIM_ORDER_LEN);
 		memcpy(rc->newest_secondary, secondary, SEC_ORDER_LEN);

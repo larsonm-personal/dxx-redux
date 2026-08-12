@@ -3,6 +3,27 @@ package com.dxxredux.app
 import java.io.File
 import java.util.Locale
 
+/** Canonical identity for portable ASCII game-data names, including repair of names folded under Turkish. */
+internal fun portableGameFilenameIdentity(value: String): String = value.lowercase(Locale.ROOT).replace('\u0131', 'i')
+
+/** Treat provider metadata as a label, never as a path. */
+internal fun requireSafeProviderDisplayName(value: String): String {
+    require(value.isNotBlank()) { "Provider returned an empty file name" }
+    require(value.length <= 255) { "Provider file name is too long" }
+    require(value != "." && value != "..") { "Provider returned a path component as a file name" }
+    require(value.none { it == '/' || it == '\\' || it == ':' || it.code < 0x20 || it.code == 0x7f }) {
+        "Provider file name contains a path separator or control character"
+    }
+    require(!value.endsWith('.') && !value.endsWith(' ')) { "Provider file name has a reserved suffix" }
+    require(File(value).name == value && !File(value).isAbsolute) { "Provider returned a path instead of a file name" }
+    val windowsStem = value.substringBefore('.').trimEnd().uppercase(Locale.ROOT)
+    require(
+        windowsStem !in setOf("CON", "PRN", "AUX", "NUL") &&
+            !Regex("^(COM|LPT)[1-9]$").matches(windowsStem),
+    ) { "Provider file name is reserved" }
+    return value
+}
+
 object GameFileFormats {
     const val GAME_D1 = "d1"
     const val GAME_D2 = "d2"
@@ -152,8 +173,24 @@ object GameFileFormats {
                     setGameData = true,
                     baseReplacement = true,
                 ),
-            "sdl" to FormatInfo("Descent 1 secret level", roleLabel = "Secret level", gameHint = GAME_D1),
-            "sl2" to FormatInfo("Descent 2 secret level", roleLabel = "Secret level", gameHint = GAME_D2),
+            "sdl" to
+                FormatInfo(
+                    "Descent 1 secret level",
+                    roleLabel = "Secret level",
+                    gameHint = GAME_D1,
+                    discExtract = true,
+                    setGameData = true,
+                    baseReplacement = true,
+                ),
+            "sl2" to
+                FormatInfo(
+                    "Descent 2 secret level",
+                    roleLabel = "Secret level",
+                    gameHint = GAME_D2,
+                    discExtract = true,
+                    setGameData = true,
+                    baseReplacement = true,
+                ),
             "dxa" to
                 FormatInfo(
                     "Game mod",

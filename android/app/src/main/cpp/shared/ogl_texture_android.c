@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <android/log.h>
 
@@ -9,6 +10,54 @@
 #include "console.h"
 #include "ogl_texture_android.h"
 #include "pngfile.h"
+
+static void android_ogl_texture_clock_now(struct timespec *ts)
+{
+	clock_gettime(CLOCK_MONOTONIC, ts);
+}
+
+static int android_ogl_texture_elapsed_us(const struct timespec *start,
+                                          const struct timespec *end)
+{
+	return (int) ((end->tv_sec - start->tv_sec) * 1000000 +
+	              (end->tv_nsec - start->tv_nsec) / 1000);
+}
+
+int android_ogl_read_texture_with_extensions(
+    char *filename, const char *basename, png_data *pdata,
+    struct android_profile_texture_lookup_metrics *lookup, int slot)
+{
+	static const char *exts[] = { ".png", ".jpg", ".tga" };
+	int ei;
+
+	if (lookup)
+		lookup->png_attempts++;
+
+	for (ei = 0; ei < 3; ei++) {
+		struct timespec stage_start, stage_end;
+		int loaded;
+		long long elapsed_us;
+
+		sprintf(filename, "%s%s", basename, exts[ei]);
+		android_ogl_texture_clock_now(&stage_start);
+		loaded = read_png(filename, pdata);
+		android_ogl_texture_clock_now(&stage_end);
+		elapsed_us = android_ogl_texture_elapsed_us(&stage_start, &stage_end);
+		if (lookup) {
+			if (slot >= 0 && slot < ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_COUNT)
+				lookup->png_slot_us[slot] += elapsed_us;
+			if (ei < ANDROID_PROFILE_TEXTURE_LOOKUP_EXT_COUNT)
+				lookup->png_ext_us[ei] += elapsed_us;
+			if (loaded) {
+				lookup->png_hit_slot = slot;
+				lookup->png_hit_ext = ei;
+			}
+		}
+		if (loaded)
+			return 1;
+	}
+	return 0;
+}
 
 static void apply_bound_min_mag_filter(ogl_texture *texture, GLenum min_filter,
                                        GLenum mag_filter)

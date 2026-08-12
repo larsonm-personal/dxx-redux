@@ -145,7 +145,15 @@ int android_load_pilot_from_resume_save(const char *save_path, const char *game_
 		} else {
 			*strstr(filename, ".plr") = '\0';
 			strcpy(Players[Player_num].callsign, GameArg.SysUsePlayersDir ? &filename[8] : filename);
-			read_player_file();
+			if (read_player_file() != EZERO) {
+				con_printf(CON_URGENT,
+				           "startup resume: pilot file load failed for '%s'\n",
+				           save_callsign);
+				debug_log(DLOG_GAME,
+				          "startup resume prep: game=%s path='%s' result=failed reason=pilot_load callsign='%s'",
+				          game_name, save_path, save_callsign);
+				return 0;
+			}
 			WriteConfigFile();
 			load_source = "player_file";
 		}

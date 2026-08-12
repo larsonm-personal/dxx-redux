@@ -138,6 +138,59 @@ class ImportLocationMigrateTest {
     }
 
     @Test
+    fun migrate_preservesDestinationOwnedFilesAndAcceptsIdenticalCollisions() {
+        writeFile(dst, "destination-only.txt", "keep".toByteArray())
+        writeFile(dst, "sets/default/same.hog", "same".toByteArray())
+        writeFile(src, "sets/default/same.hog", "same".toByteArray())
+        writeFile(src, "sets/default/new.pig", "new".toByteArray())
+
+        assertEquals(ImportLocationManager.MigrateResult.Success, mgr.migrate(src, dst))
+        assertEquals("keep", File(dst, "destination-only.txt").readText())
+        assertEquals("same", File(dst, "sets/default/same.hog").readText())
+        assertEquals("new", File(dst, "sets/default/new.pig").readText())
+        assertFalse(src.exists())
+    }
+
+    @Test
+    fun migrate_rejectsDifferingCollisionBeforeChangingEitherTree() {
+        writeFile(dst, "destination-only.txt", "keep".toByteArray())
+        writeFile(dst, "sets/default/game.hog", "destination".toByteArray())
+        writeFile(src, "sets/default/game.hog", "source".toByteArray())
+        writeFile(src, "sets/default/new.pig", "new".toByteArray())
+
+        val result = mgr.migrate(src, dst)
+
+        assertTrue(result is ImportLocationManager.MigrateResult.Failure)
+        assertEquals("destination", File(dst, "sets/default/game.hog").readText())
+        assertEquals("keep", File(dst, "destination-only.txt").readText())
+        assertFalse(File(dst, "sets/default/new.pig").exists())
+        assertTrue(File(src, "sets/default/game.hog").exists())
+    }
+
+    @Test
+    fun migrate_activationFailureRollsBackOnlyAttemptOwnedFiles() {
+        writeFile(dst, "destination-only.txt", "keep".toByteArray())
+        writeFile(src, "sets/default/game.hog", "source".toByteArray())
+        var sawCommittedCopy = false
+
+        val result =
+            mgr.migrate(
+                src,
+                dst,
+                beforeSourceRetire = {
+                    sawCommittedCopy = File(dst, "sets/default/game.hog").readText() == "source" && src.exists()
+                    error("injected activation failure")
+                },
+            )
+
+        assertTrue(result is ImportLocationManager.MigrateResult.Failure)
+        assertTrue(sawCommittedCopy)
+        assertTrue(src.exists())
+        assertEquals("keep", File(dst, "destination-only.txt").readText())
+        assertFalse(File(dst, "sets/default/game.hog").exists())
+    }
+
+    @Test
     fun fileSetManager_usesImportRootForSetsDir() {
         // FileSetManager(filesDir) defaults to ImportLocationManager(filesDir).getActiveRoot()
         // which is filesDir/imported when no override is set.

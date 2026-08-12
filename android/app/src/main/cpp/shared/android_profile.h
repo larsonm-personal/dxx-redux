@@ -38,6 +38,9 @@ struct android_profile_texture_lookup_metrics {
 	long long png_ext_us[ANDROID_PROFILE_TEXTURE_LOOKUP_EXT_COUNT];
 };
 
+void android_profile_texture_lookup_note_ktx2(
+    struct android_profile_texture_lookup_metrics *lookup, int slot,
+    long long elapsed_us, int loaded);
 void android_profile_frame_begin(const char *game, unsigned int frame_id);
 void android_profile_set_frame_context(int level, int viewer_segment);
 void android_profile_set_frame_pacing(int max_fps, int vsync);
