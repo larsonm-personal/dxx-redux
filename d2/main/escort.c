@@ -832,6 +832,20 @@ static int escort_route_key_powerup_id(int key_index)
 	}
 }
 
+static int escort_route_key_flag(int key_index)
+{
+	switch (key_index) {
+		case 0:
+			return PLAYER_FLAGS_BLUE_KEY;
+		case 1:
+			return PLAYER_FLAGS_RED_KEY;
+		case 2:
+			return PLAYER_FLAGS_GOLD_KEY;
+		default:
+			return 0;
+	}
+}
+
 void escort_route_notify_wall_changed(int wall_num)
 {
 	int matches_objective = Escort_route_goal.active && wall_num >= 0 &&
@@ -3268,6 +3282,10 @@ void escort_note_player_key_flags(int old_flags, int new_flags)
 
 void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_flags)
 {
+#ifdef __ANDROID__
+	int objective_key_flag;
+#endif
+
 	if ((old_flags ^ new_flags) & ESCORT_KEY_FLAGS) {
 #ifdef NETWORK
 		if ((Game_mode & GM_MULTI_COOP) &&
@@ -3282,10 +3300,16 @@ void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_fl
 #endif
 		invalidate_escort_goal();
 #ifdef __ANDROID__
+		objective_key_flag = 0;
+		if (Escort_route_goal.active &&
+		    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_KEY)
+			objective_key_flag = escort_route_key_flag(
+			    Escort_route_goal.objective_key_index);
 		escort_route_record_event(
 		    ESCORT_ROUTE_EVENT_OBJECT,
 		    &Escort_route_object_generation,
-		    1);
+		    escort_route_key_change_matches_objective(
+		        old_flags, new_flags, objective_key_flag));
 		escort_route_note_replan("key_change");
 #endif
 	}

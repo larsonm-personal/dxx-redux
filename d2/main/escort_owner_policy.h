@@ -18,6 +18,10 @@ int escort_owner_request_allowed(int current_owner,
                                  unsigned int request_generation);
 int escort_owner_generation_is_newer(unsigned int candidate, unsigned int current);
 int escort_owner_key_change_relevant(int changed_player, int effective_owner);
+int escort_route_key_change_matches_objective(
+    int old_flags,
+    int new_flags,
+    int objective_key_flag);
 int escort_retry_recovery_allowed(
     int multiplayer,
     int cooperative,

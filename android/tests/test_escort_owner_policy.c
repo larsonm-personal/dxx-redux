@@ -94,6 +94,22 @@ static int test_only_effective_owner_key_changes_are_relevant(void)
 	return 1;
 }
 
+static int test_key_change_only_completes_matching_objective(void)
+{
+	const int blue = 1 << 1;
+	const int red = 1 << 2;
+	const int gold = 1 << 3;
+
+	CHECK(escort_route_key_change_matches_objective(0, blue, blue));
+	CHECK(!escort_route_key_change_matches_objective(0, blue, gold));
+	CHECK(!escort_route_key_change_matches_objective(0, blue, red));
+	CHECK(!escort_route_key_change_matches_objective(blue, blue, blue));
+	CHECK(!escort_route_key_change_matches_objective(blue, 0, blue));
+	CHECK(!escort_route_key_change_matches_objective(0, blue, 0));
+	CHECK(escort_route_key_change_matches_objective(blue, blue | gold, gold));
+	return 1;
+}
+
 static int test_retry_recovery_allows_only_authoritative_coop_companion(void)
 {
 	CHECK(escort_retry_recovery_allowed(0, 0, 0, 0));
@@ -132,6 +148,7 @@ int main(void)
 	    !test_ineligible_players_and_stale_requests_are_rejected() ||
 	    !test_owner_generation_comparison_handles_wrap() ||
 	    !test_only_effective_owner_key_changes_are_relevant() ||
+	    !test_key_change_only_completes_matching_objective() ||
 	    !test_retry_recovery_allows_only_authoritative_coop_companion() ||
 	    !test_route_events_dirty_only_authoritative_relevant_work())
 		return 1;

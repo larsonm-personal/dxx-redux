@@ -42,5 +42,11 @@ Fix the ranked non-network correctness queue selected from the active adversaria
 - [x] Add or extend focused tests for each completed finding
 - [x] Run scoped formatting and linting
 - [x] Run focused native, JVM, and script tests throughout
-- [ ] Run the full maintained test suite after the queue
-- [ ] Verify ledger uniqueness, dispositions, and `git diff --check`
+- [x] Run the full maintained test suite after the queue
+- [x] Verify ledger uniqueness, dispositions, and `git diff --check`
+
+## Final validation notes
+
+- The maintained suite completed all 112 selected tests: 90 passed and 22 failed. The deterministic secret-area baseline mismatch was regenerated from rebuilt D1/D2 metadata targets and then passed. Most later device failures shared one root cause: the assembled APK omitted `androidx.startup.R$string`, so `InitializationProvider` crashed before `Application.onCreate`; retaining dependency R classes repairs startup, and the native xCrash test subsequently passes.
+- Focused native D1/D2 host suites, JVM tests, all-ABI OpenGL and software builds, audio lifecycle tests, route corpus tests, test-helper process tests, and the regenerated secret-area baseline pass. The remaining axis-routing assertion is an independent pre-existing production-path timing/dispatch failure and is not hidden by weakening its test.
+- Ledger reconciliation found 674 unique BR/INV headings and no duplicates. Broad findings and P1 findings lacking the process-required independent verification remain open rather than being archived as false completions.

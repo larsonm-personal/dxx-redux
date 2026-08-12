@@ -6,9 +6,9 @@
 - [x] Trace level 17's blue-key state, blue door, exit, and trigger topology against that code
 - [x] Identify the regression and confirm it with focused history and checked-in route metadata
 - [x] Report the cause and proposed fix
-- [ ] Make key-change completion require the newly acquired key to match the active key objective
-- [ ] Add and run a focused regression test for blue pickup while gold is active
-- [ ] Run scoped formatting, D2 build verification, and relevant tests
+- [x] Make key-change completion require the newly acquired key to match the active key objective
+- [x] Add and run a focused regression test for blue pickup while gold is active
+- [x] Run scoped formatting, D2 build verification, and relevant tests
 
 ## Notes
 
@@ -33,3 +33,16 @@
   matches `Escort_route_goal.objective_key_index`, and make canonical reuse
   validate/recompute a real path from the current Guide-Bot state rather than
   fabricating the pending step's segment as a reachable terminal.
+- Implemented the direct regression fix through a small tested policy helper.
+  Key changes still invalidate and replan the route, but only acquisition of the
+  active objective's exact key queues semantic completion.
+- Validation passed:
+  - Scoped `android/run-code-quality.ps1 -Fix`
+  - `run-windows-build.ps1 -Target d2`
+  - `test_escort_owner_policy`
+  - CTest `test_level_metadata_scan`, `test_route_snapshot`, and
+    `test_escort_owner_policy`
+  - Android `:app:assembleDebug`, including arm64-v8a, armeabi-v7a, and x86_64
+- Canonical live-route reuse remains the broader pre-existing BR-0335 issue.
+  It is not required for this level-17 fix once gold is no longer falsely
+  completed, so it was left out of this focused change.

@@ -78,6 +78,16 @@ int escort_owner_key_change_relevant(int changed_player, int effective_owner)
 	return changed_player >= 0 && changed_player == effective_owner;
 }
 
+int escort_route_key_change_matches_objective(
+    int old_flags,
+    int new_flags,
+    int objective_key_flag)
+{
+	return objective_key_flag != 0 &&
+	       !(old_flags & objective_key_flag) &&
+	       (new_flags & objective_key_flag);
+}
+
 int escort_retry_recovery_allowed(
     int multiplayer,
     int cooperative,
