@@ -22,6 +22,7 @@
 . (Join-Path $PSScriptRoot "test_env.ps1")
 . (Join-Path $PSScriptRoot "test_host_platform.ps1")
 . (Join-Path $PSScriptRoot "standard_game_data.ps1")
+. (Join-Path $PSScriptRoot "json5.ps1")
 
 $script:ANDROID_ROOT = Split-Path $PSScriptRoot
 $script:REPO_ROOT = Split-Path $script:ANDROID_ROOT
@@ -1881,7 +1882,9 @@ function Get-TestScriptInfo {
             $depth--
             if ($depth -eq 0) {
                 try {
-                    $first = $raw.Substring($objectStart, $i - $objectStart + 1) | ConvertFrom-Json
+                    $firstText = $raw.Substring($objectStart, $i - $objectStart + 1)
+                    $first = ConvertFrom-Json5Text -Text $firstText -SourceName $ScriptPath |
+                        ConvertFrom-Json -ErrorAction Stop
                     if ($first._info) { return $first._info }
                 } catch {}
                 return $null
@@ -1927,10 +1930,9 @@ function Get-ScriptIsLauncher {
     param([Parameter(Mandatory = $true)] [string]$ScriptPath)
     if (-not (Test-Path $ScriptPath)) { return $false }
     $raw = Get-Content $ScriptPath -Raw
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
     try {
-        $arr = $raw | ConvertFrom-Json
+        $arr = ConvertFrom-Json5Text -Text $raw -SourceName $ScriptPath |
+            ConvertFrom-Json -ErrorAction Stop
         foreach ($step in $arr) {
             if ($step._info) { continue }
             return ($step.action -eq "enter_launcher")
@@ -1958,11 +1960,10 @@ function Resolve-TestScript {
     if (-not (Test-Path $ScriptPath)) { return $ScriptPath }
 
     $raw = Get-Content $ScriptPath -Raw
-    $cleaned = [regex]::Replace($raw, '//.*', '')
-    $cleaned = [regex]::Replace($cleaned, ',\s*([}\]])', '$1')
 
     try {
-        $arr = $cleaned | ConvertFrom-Json
+        $arr = ConvertFrom-Json5Text -Text $raw -SourceName $ScriptPath |
+            ConvertFrom-Json -ErrorAction Stop
     } catch {
         return $ScriptPath
     }

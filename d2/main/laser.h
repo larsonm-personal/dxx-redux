@@ -151,6 +151,8 @@ void release_guided_missile(int player_num);
 void rebuild_guided_missile_state(void);
 void laser_get_runtime_state(laser_runtime_state *state);
 void laser_set_runtime_state(const laser_runtime_state *state);
+int laser_runtime_state_is_valid(const laser_runtime_state *state);
+int laser_pending_fire_count_is_valid(int count);
 
 extern void create_smart_children(struct object *objp, int count);
 extern int object_to_object_visibility(struct object *obj1, struct object *obj2, int trans_type);

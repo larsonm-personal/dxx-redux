@@ -656,9 +656,12 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
 
 static void state_write_stuck_object_state(PHYSFS_file *fp)
 {
-	int i;
+	int i, count = 0;
 
-	PHYSFS_write(fp, &Num_stuck_objects, sizeof(Num_stuck_objects), 1);
+	for (i = 0; i < MAX_STUCK_OBJECTS; i++)
+		if (Stuck_objects[i].wallnum != -1)
+			count++;
+	PHYSFS_write(fp, &count, sizeof(count), 1);
 	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
 		PHYSFS_write(fp, &Stuck_objects[i].objnum, sizeof(Stuck_objects[i].objnum), 1);
 		PHYSFS_write(fp, &Stuck_objects[i].wallnum, sizeof(Stuck_objects[i].wallnum), 1);
@@ -668,8 +671,9 @@ static void state_write_stuck_object_state(PHYSFS_file *fp)
 
 static void state_read_stuck_object_state(PHYSFS_file *fp, int swap, int apply)
 {
-	int saved_num_stuck_objects = PHYSFSX_readSXE32(fp, swap);
-	int i;
+	int i, active = 0;
+
+	(void)PHYSFSX_readSXE32(fp, swap);
 
 	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
 		short objnum = (short)PHYSFSX_readSXE16(fp, swap);
@@ -682,15 +686,12 @@ static void state_read_stuck_object_state(PHYSFS_file *fp, int swap, int apply)
 		Stuck_objects[i].objnum = objnum;
 		Stuck_objects[i].wallnum = wallnum;
 		Stuck_objects[i].signature = signature;
+		if (wallnum != -1)
+			active++;
 	}
 
-	if (apply) {
-		if (saved_num_stuck_objects < 0)
-			saved_num_stuck_objects = 0;
-		else if (saved_num_stuck_objects > MAX_STUCK_OBJECTS)
-			saved_num_stuck_objects = MAX_STUCK_OBJECTS;
-		Num_stuck_objects = saved_num_stuck_objects;
-	}
+	if (apply)
+		Num_stuck_objects = active;
 }
 
 static void state_write_controlcen_runtime_state(PHYSFS_file *fp)
@@ -789,6 +790,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	ai_path_get_runtime_state(&ai_path_state);
 	game_get_d_tick_state(&d_tick_state);
 	laser_get_runtime_state(&laser_state);
+	laser_state.missile_gun &= 1;
 	has_rng_state = d_rand_get_state(&rng_state);
 	has_fx_rng_state = d_rand_get_stream_state(D_RNG_FX, &fx_rng_state);
 	fx_rng_call_count = d_rand_get_stream_call_count(D_RNG_FX);
@@ -942,11 +944,11 @@ static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap)
 
 static int state_validate_stuck_runtime_state(PHYSFS_file *fp, int swap)
 {
-	int active = 0;
 	int count, i;
 
-	if (!state_runtime_read_s32(fp, swap, &count) || count < 0 || count > MAX_STUCK_OBJECTS)
+	if (!state_runtime_read_s32(fp, swap, &count))
 		return 0;
+	(void)count;
 	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
 		int signature;
 		short objnum, wallnum;
@@ -954,18 +956,16 @@ static int state_validate_stuck_runtime_state(PHYSFS_file *fp, int swap)
 		    !state_runtime_read_s16(fp, swap, &wallnum) ||
 		    !state_runtime_read_s32(fp, swap, &signature))
 			return 0;
-		if (objnum == -1) {
-			if (wallnum != -1)
-				return 0;
+		/* wallnum is the historical occupancy sentinel; inactive slots retain
+		 * stale objnum/signature values after removal. */
+		if (wallnum == -1)
 			continue;
-		}
 		if (objnum < 0 || objnum > Highest_object_index ||
 		    Objects[objnum].type == OBJ_NONE || Objects[objnum].signature != signature ||
-		    wallnum < 0 || wallnum >= Num_walls)
+		    wallnum >= Num_walls)
 			return 0;
-		active++;
 	}
-	return count == active;
+	return 1;
 }
 
 static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int version)
@@ -1009,18 +1009,30 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	PHYSFS_sint64 start = PHYSFS_tell(fp);
 	game_d_tick_state d_tick_state;
 	object_runtime_state object_state;
+	laser_runtime_state laser_state;
+	int global_laser_firing_count;
+	int global_missile_firing_count;
 	int i, valid = 0;
 
 	memset(&object_state, 0, sizeof(object_state));
-	if (start < 0 || !state_runtime_skip(fp, 9 * sizeof(int)))
+	memset(&laser_state, 0, sizeof(laser_state));
+	if (start < 0 || !state_runtime_skip(fp, 5 * sizeof(int)) ||
+	    !state_runtime_read_s32(fp, swap, &global_laser_firing_count) ||
+	    !state_runtime_read_s32(fp, swap, &global_missile_firing_count) ||
+	    !laser_pending_fire_count_is_valid(global_laser_firing_count) ||
+	    !laser_pending_fire_count_is_valid(global_missile_firing_count) ||
+	    !state_runtime_skip(fp, 2 * sizeof(int)))
 		goto done;
 	if (version >= STATE_FX_RNG_RUNTIME_VERSION && !state_runtime_skip(fp, 3 * sizeof(int)))
 		goto done;
 	if (!state_runtime_read_s32(fp, swap, &d_tick_state.count) ||
 	    !state_runtime_read_s32(fp, swap, &d_tick_state.step) ||
-	    !state_runtime_read_s32(fp, swap, &d_tick_state.timer) ||
-	    !game_d_tick_state_is_valid(&d_tick_state) ||
-	    !state_runtime_read_s32(fp, swap, &object_state.num_objects) ||
+	    !state_runtime_read_s32(fp, swap, &d_tick_state.timer))
+		goto done;
+	if (!game_d_tick_state_is_valid(&d_tick_state)) {
+		goto done;
+	}
+	if (!state_runtime_read_s32(fp, swap, &object_state.num_objects) ||
 	    !state_runtime_read_s32(fp, swap, &object_state.highest_object_index))
 		goto done;
 	for (i = 0; i < MAX_OBJECTS; i++)
@@ -1033,18 +1045,30 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		object_state.signature_seed = 0;
 	}
 	if (!state_runtime_skip(fp, 2 * sizeof(int)) ||
-	    !state_runtime_read_s32(fp, swap, &object_state.do_homer_frame) ||
-	    !object_validate_runtime_state(&object_state) ||
-	    !state_runtime_skip(fp, 7 * sizeof(int)))
+	    !state_runtime_read_s32(fp, swap, &object_state.do_homer_frame))
+		goto done;
+	if (!object_validate_runtime_state(&object_state))
+		goto done;
+	if (!state_runtime_read_s32(fp, swap, &laser_state.fusion_charge) ||
+	    !state_runtime_read_s32(fp, swap, &laser_state.spreadfire_toggle) ||
+	    !state_runtime_read_s32(fp, swap, &laser_state.missile_gun) ||
+	    !state_runtime_read_s32(fp, swap, &laser_state.proximity_dropped) ||
+	    !state_runtime_read_s32(fp, swap, &laser_state.helix_orientation) ||
+	    !state_runtime_read_s32(fp, swap, &laser_state.smartmines_dropped) ||
+	    !state_runtime_skip(fp, sizeof(int)))
+		goto done;
+	if (!laser_runtime_state_is_valid(&laser_state))
 		goto done;
 	if (version >= STATE_FIDELITY_VERSION) {
 		for (i = 0; i <= Highest_object_index; i++)
 			if (Objects[i].type != OBJ_NONE && Objects[i].control_type == CT_WEAPON &&
 			    !state_runtime_skip(fp, sizeof(int) + MAX_OBJECTS))
 				goto done;
-		if (!state_validate_morph_runtime_state(fp, swap) ||
-		    !state_validate_stuck_runtime_state(fp, swap) ||
-		    !state_runtime_skip(fp, 2 * sizeof(int) + (size_t)MAX_OBJECTS * sizeof(int)))
+		if (!state_validate_morph_runtime_state(fp, swap))
+			goto done;
+		if (!state_validate_stuck_runtime_state(fp, swap))
+			goto done;
+		if (!state_runtime_skip(fp, 2 * sizeof(int) + (size_t)MAX_OBJECTS * sizeof(int)))
 			goto done;
 	}
 	if (version >= STATE_AI_PATH_RUNTIME_VERSION &&
@@ -1075,6 +1099,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	fix64 next_flare_fire_time = GameTime64 + state_read_time_delta(fp, swap);
 	fix64 auto_fire_fusion_cannon_time = GameTime64 + state_read_time_delta(fp, swap);
 	int have_legacy_fx_rng_seed = 0;
+	int global_laser_firing_count;
+	int global_missile_firing_count;
 	int has_rng_state;
 	int has_fx_rng_state = 0;
 	int i;
@@ -1084,8 +1110,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	unsigned int legacy_fx_rng_state = 0;
 	unsigned int rng_state;
 
-	Global_laser_firing_count = PHYSFSX_readSXE32(fp, swap);
-	Global_missile_firing_count = PHYSFSX_readSXE32(fp, swap);
+	global_laser_firing_count = PHYSFSX_readSXE32(fp, swap);
+	global_missile_firing_count = PHYSFSX_readSXE32(fp, swap);
 	has_rng_state = PHYSFSX_readSXE32(fp, swap);
 	rng_state = (unsigned int)PHYSFSX_readSXE32(fp, swap);
 	if (version >= STATE_FX_RNG_RUNTIME_VERSION) {
@@ -1142,6 +1168,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	Last_laser_fired_time = last_laser_fired_time;
 	Next_flare_fire_time = next_flare_fire_time;
 	Auto_fire_fusion_cannon_time = auto_fire_fusion_cannon_time;
+	Global_laser_firing_count = global_laser_firing_count;
+	Global_missile_firing_count = global_missile_firing_count;
 	if (has_rng_state)
 		d_rand_set_state(rng_state);
 	d_rand_reset_call_count();
@@ -2270,7 +2298,12 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 		}
 	}
 
+#ifdef __ANDROID__
+	rval = state_android_save_to_path(filename, desc,
+	                                    ANDROID_SAVE_META_KIND_MANUAL, 0);
+#else
 	rval = state_save_all_sub(filename, desc);
+#endif
 
 	if (rval && !secret_save)
 		HUD_init_message_literal(HM_DEFAULT, "Game saved");

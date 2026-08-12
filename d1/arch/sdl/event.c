@@ -19,6 +19,7 @@
 #include "android_axis_mailbox.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
+#include "digi_mixer_music.h"
 #endif
 #if defined(ANDROID) && defined(OGL)
 #include "game.h"
@@ -61,6 +62,9 @@ void event_poll()
 	int idle = 1;
 
 #ifdef ANDROID
+	/* Finished hooks may start the next song, so dispatch them on this
+	 * event/game thread rather than in the SDL audio callback. */
+	mix_poll_music();
 	if (android_axis_mailbox_drain(!GameArg.CtlNoJoystick) > 0)
 		idle = 0;
 #endif

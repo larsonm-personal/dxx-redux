@@ -5,7 +5,8 @@
 
 param(
     [string]$BuildType,
-    [string]$VersionCode   # Override version code (commit_count*10+rev). Default: commit_count*10
+    [string]$VersionCode,   # Override version code (commit_count*10+rev). Default: commit_count*10
+    [string]$OutputPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -140,9 +141,15 @@ if (-not $aab) { throw "AAB not found in $aabDir" }
 $outDir = Join-Path $PSScriptRoot "build-outputs"
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
 
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
-$outPath = Join-Path $outDir $outName
+if ($OutputPath) {
+    $outPath = if ([System.IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $PSScriptRoot $OutputPath }
+    $requestedDir = Split-Path -Parent $outPath
+    if (-not (Test-Path $requestedDir)) { New-Item -ItemType Directory -Path $requestedDir | Out-Null }
+} else {
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
+    $outPath = Join-Path $outDir $outName
+}
 
 Copy-Item $aab.FullName $outPath
 $sizeMB = [math]::Round((Get-Item $outPath).Length / 1MB, 1)

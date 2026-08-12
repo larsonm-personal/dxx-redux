@@ -11140,7 +11140,7 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0571): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:.tmp`, `android/test_fixtures/{allext_out/data.bin,allext_test.bin,bad_pvd.bin,extracted_iso_image/image.hog,extracted/test.hog,filter_test.bin,name_test1.bin,name_test2.bin,name_test3.bin,roundtrip_out/descent2.hog,roundtrip.bin,test_extract.bin,test_iso.bin}`, and `dxx_matchmaking.db{,-shm,-wal}`
 - Additional evidence (R1-CHUNK-0571): All 22 artifact-batch paths are new, tracked, ordinary-mode files and none is ignored. Thirteen `android/test_fixtures` blobs are fixed-name outputs created by the frozen `test_cue_iso.c`; repository-wide frozen search finds no consumer outside that generator, while the maintained wrapper recursively removes its generated fixture tree after execution. They were added together by the `debugging. iso work` commit and retain 1,129,011 bytes of run output in the publication range instead of being regenerated in test-owned temporary storage. The database trio is live SQLite runtime state rather than a fixture: a read-only query applies its WAL and finds four player rows, six connection-event rows and one player-count-history row. The remaining tables cover friends, matches, bans, administration and keypair identities. This confirms actual local server records, not merely an empty schema, are tracked beside the already-recorded machine-specific logs and scratch output.
 - Additional validation (R1-CHUNK-0571): Remove the empty scratch file, local build/test/runtime captures, SQLite database plus sidecars and the 13 generated extraction outputs from the publication series. Ignore the exact runtime locations or move producers into unique ignored build/temp directories without hiding the intentional baseline files that share `android/test_fixtures`. From a clean checkout, run the synthetic extraction suite and server/build/test workflows, require every generated path to remain ignored or outside the source tree and leave Git clean, and regenerate representative extraction bytes from `test_cue_iso.c` rather than checking in its working directory. Retain the separately reviewed canonical launcher PNG and all-zero Redbook input, and complete INV-0001's history-wide privacy/secret scan before publication.
-- Resolution: Pending
+- Resolution: Partial on 2026-08-11. Launcher engine, visual, original-homing, and music writes now pre-snapshot the complete bounded D1/D2 pilot set, require every per-file visitor and both game libraries to succeed, atomically restore all original bytes on any reported failure, and keep UI/mirrored preference state unchanged while reporting restoration. The D1 combined text visitor now requires both section writes, and focused native/JVM rollback tests plus all-ABI Android native compilation pass. This finding remains open for the separately evidenced gamepad/autoselect/reset bridges, transient-callsign engine serialization, exact target-identity diagnostics, and crash/concurrent-generation atomicity.
 
 ### BR-0002: P1 - Build an allowlisted upstream patch series instead of opening this branch directly
 
@@ -11647,22 +11647,6 @@ Append findings here in numeric order using the exact template in the process do
 - Verification (2026-08-10, sol-5.6-medium): CONFIRMED, with the remediation boundary narrowed. Frozen `android_save_meta_read_path` seeks from EOF and validates only the packed trailer and its enum/thumbnail fields (`android/app/src/main/cpp/shared/android_save_meta.c:L233-L279`); `read_resume_candidate` then publishes it without reading byte zero (`android/app/src/main/cpp/jni_resume_save.cpp:L378-L399`), and both newest/options selection loops rank that result at L444-L497. This is directly reproduced by the maintained native metadata test: `android/tests/test_android_save_meta.c:L5-L20,L78-L173` writes the literal non-DGSS body `base-save-body` before valid D1/D2 trailers and expects those files to parse and compete for newest selection. The launcher recursively collects both `.sgN` and `.mgN` files and converts the selected metadata directly to Resume JSON (`jni_resume_save.cpp:L39-L84,L744-L829`), while Kotlin's metadata-backed fixtures start from trusted candidate DTOs and do not disprove native body admission. The paired restore paths validate `DGSS` and only a game-specific minimum version, then read the header, load the mission, set time/player globals, and continue deserializing (`d1/main/state.c:L1930-L2085`; `d2/main/state.c:L2569-L2750`); startup invokes them only after launch through `startup_resume_shared.c:L57-L82`. They have no side-effect-free complete-body validation API or rollback wrapper. Complete preflight cannot be implemented by merely reusing `read_save_header_preview`: D1 version 15 and D2 version 29 share `DGSS`, the preview has only minimum-version gates, cooperative writers insert `state_game_id` plus a nine-byte callsign before description (`d1/main/state.c:L1697-L1712`; paired D2 L2075-L2089), and later DGSS sections are version-gated, count-driven, and unframed. The feasible local fix is therefore two-part: immediately require a scope-aware paired header probe and exclude cooperative layouts from single-player Resume; for newly written metadata, version the trailer to carry the exact pre-trailer byte count plus a digest computed over the complete DGSS/cooperative prefix, and verify both before ranking. Existing unhashed saves can remain inspectable and use only the explicitly weaker header-qualified legacy policy. A true semantic complete-body validator would require a separate staged-reader refactor and must not be simulated by calling the mutating restore. Focused tests should retain genuine paired D1/D2 single-player saves, reject the current literal-body fixtures, copied trailers, prefix truncation/bit flips, version-crossed bodies, and `.mgN` candidates, and prove invalid high-timestamp files cannot displace a valid older candidate.
 - Resolution: Pending
 
-### BR-0083: P2 - Reconcile save metadata with its discovered game and save-set path
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/path-identity
-- Found by: R1-CHUNK-0041
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_resume_save.cpp:L217-L239,L270-L305,L378-L399,L500-L529,L549-L590` in path decomposition, metadata candidate admission, and resume JSON
-- Related: `android/app/src/main/cpp/jni_resume_save.cpp:L611-L719`, `android/app/src/main/java/com/dxxredux/app/SetupResumePanel.kt:L371-L410`, `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L1857-L1921`, and `android/ai tool plans/storage, SAF, edge cases/plan_masked_save_sets_and_explorer_20260606.md:L126-L140`
-- Evidence: Candidate admission validates the metadata structure but never compares `game_id`, callsign, mission, or save kind with the root and save-set components from which the file was discovered, and it does not reconcile `.sgN` versus `.mgN` scope. JSON uses metadata `game_id` while retaining the path from either scanned root. Kotlin then selects the native game from that metadata and strips only the matching game prefix; for example, D2 metadata on a path under `d1x-redux/` launches D2 with a residual `d1x-redux/...` relative path instead of rejecting the conflict. Renamed or moved cooperative, pilot, or mission files can likewise be grouped and offered under identities that disagree with their actual save set. This contradicts the Save Explorer design rule that game, scope, and slot mismatches are orphan conditions
-- Trigger: Move or restore a metadata-backed save beneath the other game's root, rename a cooperative `.mgN` save as `.sgN` or vice versa, place it under another pilot or mission save-set directory, or retain stale metadata after a save-set migration; then choose Resume or Load
-- Impact: A valid save can be displayed in the wrong group, selected as the newest candidate for the wrong game or pilot, launched with an unresolvable relative path, or handed to an incompatible restore path rather than being identified for repair or cleanup
-- Expected: The discovered root, parsed save-set path, slot suffix, validated body, and metadata agree on game, single-player or cooperative scope, pilot, mission, and slot semantics before the file is loadable or participates in resume ranking
-- Suggested fix: Build one normalized path-identity record during discovery, compare every available metadata and header identity field against it, and admit a candidate only when the selected game root and relative launch path agree. Preserve mismatches as non-loadable orphan rows with field-specific reasons; use a deliberate migration operation rather than silently trusting either side
-- Validation: Add D1-in-D2-root, D2-in-D1-root, `.sgN`/`.mgN` swaps, wrong pilot, wrong mission, wrong slot, stale migration, valid legacy, and ordinary scoped-save fixtures; assert only consistent saves participate in newest and progress ranking, every mismatch has a stable orphan reason, and launch-path resolution never carries the other game-root prefix
-- Resolution: Pending
 
 ### BR-0084: P2 - Either connect SAF manifests to the production picker or remove the dormant subsystem
 
@@ -12762,22 +12746,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0091): Run two Windows wrappers and one Windows plus POSIX wrapper behind synchronized configure, fixture-write, CTest, and cleanup barriers; hang and interrupt each phase. Require bounded termination, isolated or locked build and fixture ownership, cleanup of only the invoking generation, and exact status preservation.
 - Resolution: Pending
 
-### BR-0161: P2 - Contain archive preflight failures within each batch item
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/resource-lifetime
-- Found by: R1-CHUNK-0065, R1-CHUNK-0091
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run_mission_zip_batch.ps1:L657-L716` before the per-archive `try`
-- Related: `android/helpers/run_mission_zip_batch.ps1:L406-L477,L745-L792` and `android/ai tool plans/testing/plan_mission_zip_batch_manual_run_20260609.md:L3-L16`
-- Evidence: The batch's stated design is to record each ZIP failure, continue, and report all failures. Instead, it hashes the complete file and inspects its archive contents before entering the per-item `try`. `ZipFile.OpenRead` and entry enumeration for ZIP files are not caught, so one corrupt, truncated, unreadable, or concurrently removed ZIP terminates the entire script before that archive has a record and before later archives or the final summaries run. The 500 MiB skip check occurs only after this hashing and parsing, so the configured limit does not protect preflight work. The 7z branch handles the same inspection failure differently: it converts the error to an `unknown` hint, which the loop records as a skip rather than a failure.
-- Trigger: Place a corrupt ZIP between two valid archives, make a selected file unreadable or remove it after enumeration, select an oversized ZIP intended to be skipped, or make 7-Zip listing fail for a selected `.7z`
-- Impact: ZIP failures abort the batch and omit later results and final summaries; oversized files still consume full hashing and archive-inspection work before being skipped; and equivalent 7z failures can be reported as harmless skips, allowing inconsistent and incomplete regeneration evidence
-- Expected: The size gate runs before expensive inspection, every fallible operation after enumeration belongs to one initialized item record, inspection failures are failed items, and recoverable per-item failures cannot prevent later records or final summary publication
-- Suggested fix: Initialize a minimal record first, apply the size policy before hashing or opening the archive, and move hashing, classification, template resolution, device work, and recoverable artifact capture under one per-item exception boundary. Represent inspection success separately from `unknown` game classification, mark tool or parser errors failed, and funnel all item completion through one record-and-continue path. Reserve whole-batch termination for failures that make further processing or truthful output impossible.
-- Validation: Run ordered good-corrupt-good ZIPs, a bad 7z file, an unreadable or disappearing file, an oversized sparse file, a nested-archive error, device failure, and local artifact-write failure. Assert exact per-item statuses, no pre-limit archive parsing, continued execution where possible, one record per selected input, complete final summaries, and nonzero exit whenever any selected input failed.
-- Resolution: Pending
 
 ### BR-0162: P2 - Fail test batches that execute no archive
 
@@ -12856,22 +12824,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Run the helper and dedicated test from clones on a different drive and under paths with spaces, from a working directory outside the repository, and with an explicit external `-ZipDir`; assert the same intended archive selection and clear errors only for the resolved missing directory.
 - Resolution: Pending
 
-### BR-0166: P2 - Reject metadata when JSON normalization fails
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0066
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/run_mission_zip_batch.ps1:L64-L143,L564-L580` in JSON normalization and device-file publication
-- Related: `android/helpers/normalize_json.py:L1-L111`, `android/helpers/generate_mission_metadata_host.py`, `android/ai tool plans/testing/mission_metadata_numeric_canonicalization_20260718.md`, and `android/tests/test_mission_metadata_json_normalization.ps1`
-- Evidence: `ConvertTo-NormalizedJsonText` relies on the Python normalizer to parse and canonicalize JSON, and malformed input makes that helper exit nonzero. `Write-TestJsonText` catches every such failure, warns, writes the original text directly to the destination, and returns normally. `Save-AppTextFile` consequently reports success for malformed, truncated, noncanonical, or unvalidated device output, which later item logic can copy into regression metadata as a successful artifact. The host generator instead treats normalization failure as fatal, and the numeric-canonicalization plan requires byte-stable host and emulator output.
-- Trigger: Return malformed or truncated metadata from the app, make Python or the normalizer unavailable, cause it to time out or exit nonzero, or interrupt it after device output has been captured
-- Impact: A passing batch item can publish invalid or noncanonical JSON, overwrite a previously valid regression file, and create emulator-versus-host drift while the only indication is a warning in a long batch log
-- Expected: JSON parse and canonicalization are mandatory validation gates, and failure leaves any prior valid artifact untouched while marking the affected archive failed
-- Suggested fix: Parse and canonicalize into a same-directory temporary file, treat every formatter or parser failure as an item failure, and atomically replace the destination only after successful validation. Preserve the prior file on failure and share the same canonicalization contract with the host generator; distinguish infrastructure failure from invalid app output in the record.
-- Validation: Cover malformed, truncated, non-object, noncanonical numeric, missing-Python, normalizer-exit, timeout, and interruption cases. Assert nonzero item status, no raw JSON publication, preservation of a prior valid file, atomic replacement for valid input, and byte equality between host and emulator canonical output.
-- Resolution: Pending
 
 ### BR-0167: P2 - Make mission batch run and archive artifact identities collision-free
 
@@ -13470,22 +13422,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0274): In paired cooperative restore tests, inject each setup failure before any begin packet: packet-loss prevention disabled, missing or unreadable host save, zero and oversized file, allocation and short-read failure, and an already active transfer. Require no legacy restore packet, no host or client state mutation, no score or object traffic from a new generation, an explicit failure result, and a cleared or recoverable transfer state; retain the no-connected-client case as the only path allowed to restore locally without a transfer.
 - Resolution: Pending
 
-### BR-0207: P2 - Preserve the complete mission identity for rewind history
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/performance
-- Found by: R1-CHUNK-0107
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/android_rewind.c:L23-L41,L126-L174,L326-L370` in mission identity and frame capture
-- Related: `d1/main/mission.c:L251-L303`, `d1/main/mission.h:L54-L59`, `d2/main/mission.c:L352-L420`, and `d2/main/mission.h:L68-L75`
-- Evidence: Rewind stores the current mission filename in a fixed 32-byte field using `snprintf`, but `android_rewind_current_level_matches_session` compares that truncated value with the complete `Current_mission_filename`. Both mission loaders retain an allocated descriptor basename without a 31-byte limit. For any basename of at least 32 bytes, the values can never compare equal. Every unpaused frame therefore calls `android_rewind_begin_level_history`, resets the count and next-capture deadline, and serializes another full save image. History never grows beyond the just-captured point, so the configured 5, 10, or 20 second selection is unavailable and the single-point fallback can report only the immediately preceding frame as a nominal one-second rewind.
-- Trigger: Import and play a supported custom `.msn` or `.mn2` mission whose descriptor basename contains at least 32 bytes, then leave rewind enabled
-- Impact: The game performs full world serialization every frame instead of every five seconds, causing sustained CPU and allocation pressure and visible frame stalls, while the rewind feature silently loses its requested history and restores at most a near-current state.
-- Expected: Level identity comparisons are stable for every mission filename accepted by the engine, and capture cadence remains five seconds regardless of descriptor basename length.
-- Suggested fix: Retain the complete canonical mission identity with owned dynamic storage or a length-plus-digest representation shared with mission loading. If a bounded representation is required, detect non-representable values and disable capture with a clear diagnostic rather than comparing a truncated prefix with the full string.
-- Validation: Run D1 and D2 custom missions with basenames of 31, 32, 33, and near-`PATH_MAX` bytes plus two names sharing the first 31 bytes. Instrument save calls and assert one initial capture plus five-second cadence, stable 5, 10, and 20 second selection, correct reset only on an actual mission or level change, and no per-frame serialization.
-- Resolution: Pending
 
 
 ### BR-0209: P2 - Fail headless execution when replay validation or requested output fails
@@ -13529,23 +13465,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: A completed-level checkpoint contains the same final score and persistent player totals shown by the end-level summary and carried into uninterrupted play.
 - Suggested fix: Publish the progress JSON and inventory only after the bonus calculation and all persistent end-level player updates have completed. Preserve the point before any new-level initialization clears transient state, and ensure each participant's authoritative final score has been synchronized before snapshotting records intended for later hosts.
 - Validation: Add paired D1 and D2 checkpoint-resume tests with known shield, energy, hostage, full-rescue, and skill bonuses. Record the pre-summary score, asserted total bonus, displayed final score, persisted record, and next-level restored score; require the latter three to equal pre-summary plus bonus for the host and for a participant that later becomes host.
-- Resolution: Pending
-
-### BR-0211: P2 - Publish cooperative progress inventories transactionally
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/state-persistence
-- Found by: R1-CHUNK-0109
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/coop/coop_save.c:L810-L850,L855-L949` in progress inventory write and load
-- Related: `d1/main/gameseq.c:L808-L810`, `d2/main/gameseq.c:L1029-L1031`, `d1/main/multi.c:L1439-L1445`, and `d2/main/multi.c:L1483-L1489`
-- Evidence: The writer opens the durable inventory path with truncation, writes its header and each raw player record directly, ignores every `PHYSFS_write` result and the close result, and logs success unconditionally. The next session's loader validates the declared record count but reads records in a loop that merely breaks on the first short read. It applies a matching host record and appends other records to the global absent list as they arrive, then returns success even if fewer than `num` records were available. There is no exact-length, checksum, or full-read requirement and no staging before live mutation.
-- Trigger: Kill the process, exhaust storage, or inject a short write while `coop_progress_inventory.bin` is replacing a prior valid checkpoint; alternatively truncate a valid file after any record and launch the immediately following cooperative level as host
-- Impact: The last valid checkpoint is destroyed and a later session can partially restore the host while silently dropping one or more teammates, or report successful loading with no host record at all. Returning players then spawn with fresh inventory and lost score or statistics, while already applied records make the failure non-atomic and difficult to retry safely.
-- Expected: A progress inventory replaces its predecessor only after every byte is durably written, and loading either validates and stages the complete declared record set before changing live state or leaves all player and absent-list state untouched.
-- Suggested fix: Serialize a versioned, length-delimited payload with an integrity check to a sibling temporary file, check every write and close, then atomically rename it over the prior file. On read, require the exact expected size and checksum, validate every bounded record and unique identity into temporary storage, and commit the host and absent-list changes only after complete validation.
-- Validation: Inject open, header-write, every record-write, close, and rename failure with an existing valid checkpoint and assert the old bytes remain loadable. Truncate and corrupt the replacement at every field and record boundary, add trailing bytes and duplicate identities, and verify loading returns failure without changing the host, absent list, or one-shot gate. Confirm a complete D1 and D2 file restores all declared participants exactly once.
 - Resolution: Pending
 
 ### BR-0212: P2 - Locate cooperative save metadata independently of the current layout
@@ -13732,23 +13651,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add MSVC compile-time header tests that include the API under default, pack-1, and pack-16 contexts and assert both the route summary ABI and a sentinel declared after the include. Repeat through paired D1 and D2 `secretarea.h`, compile translation units with reversed include order, require no packing warnings, compare shared structure sizes and offsets across C and C++, and run both Windows builds plus focused route and cache tests.
 - Resolution: Pending
 
-### BR-0230: P1 - Give the direct-command policy a stable Win64 ABI
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: portability/ABI
-- Found by: R1-CHUNK-0121
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/input_demo_direct_command_policy.h:L17-L31` in the cross-translation-unit policy structure and `android/app/src/main/cpp/shared/input_demo_direct_command_policy.c:L61-L110` in its callback reads
-- Related: `d1/main/input_demo_hooks.c:L1-L16,L80-L98`, `d2/main/input_demo_hooks.c:L1-L22,L257-L274`, `d1/include/pstypes.h:L87-L92`, `d2/include/pstypes.h:L87-L92`, and `android/tests/test_input_demo_replay.cpp:L1-L19`
-- Evidence: The public policy structure contains one pointer, one `int`, and three callback pointers but establishes no local packing boundary. The shared implementation includes this header first and therefore compiles it under MSVC's default pack-8 state. Both engine adapters include `args.h` and other engine headers first; their transitive `pstypes.h` executes `#pragma pack(push, packing)` followed by `#pragma pack(1)` without restoring that state before the policy header, so each adapter defines the same named structure under pack 1. On Win64, the engine object is 36 bytes with callback offsets 12, 20, and 28, while the shared implementation reads a 40-byte layout with callback offsets 16, 24, and 32. The first callback read therefore combines halves of adjacent engine pointers, and the last reads four bytes beyond the object. The standalone test includes the policy header before any engine header, so it constructs the same default layout as the shared implementation and cannot detect the production include-order mismatch.
-- Trigger: Build D1 or D2 for MSVC x64 and play a replay frame containing death-abort, difficulty-change, or game-specific direct commands through the paired engine adapter
-- Impact: The shared dispatcher can indirect-call a fabricated callback address or read beyond the policy object, causing an immediate access violation or unpredictable native control flow. Command-bearing deterministic replay is therefore unusable and memory-unsafe in an officially packaged Windows configuration.
-- Expected: The policy has one explicit ABI with identical size and field offsets in shared C, paired engine C, tests, and every supported compiler, independent of ambient packing and include order.
-- Suggested fix: Give this cross-translation-unit structure a locally balanced explicit layout boundary, such as MSVC `#pragma pack(push, 8)` and matching pop, with equivalent compiler guarantees where required, or hide the representation behind constructor and accessor functions so callers never instantiate it. Do not depend on packing inherited from unrelated engine headers.
-- Validation: Add C compile-time assertions for `sizeof` and every `offsetof` in the shared implementation and in paired D1 and D2 translation units after `pstypes.h`, plus header tests under default, pack-1, and pack-16 outer states that confirm the caller's state is preserved. Exercise every direct-command callback in real MSVC x64 D1 and D2 replays and repeat the standalone tests with both include orders. Require independent P1 verification before campaign closure.
-- Resolution: Pending
-
 ### BR-0231: P2 - Stop replay when direct-command policy fails
 
 - [ ] OPEN
@@ -13883,6 +13785,7 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0218): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/state_android_shared.c:L158-L180,L262-L281,L574-L611,L659-L693,L742-L750` in last-save publication and D2 secret-companion preparation
 - Additional evidence (R1-CHUNK-0218): The save generation has two more uncommitted publications. `state_android_write_save_metadata` rewrites `last_single.txt` or `last_coop.txt` immediately after the unchecked trailer appends, while the main save file is still open; the pointer writer truncates its prior file directly and ignores both write and close results. A failed body, trailer, flush, or close can therefore leave the load menu pointing at a failed new generation, and a pointer failure can leave a truncated or stale advertisement after a nominal save. For D2 single-player autosaves, `state_android_autosave_prepare_slot` first deletes the target slot's existing secret companion, then copies live `secret.sgc` before attempting the core save. It returns no status, and a copy failure is checked only by `Assert`, which is absent in release builds. The caller proceeds to report success for a complete core file even when its companion is missing or partial; conversely, later core-save failure has already destroyed or replaced the old slot's companion. Restore treats companion absence as authoritative and deletes live `secret.sgc`, which changes whether the saved secret level is considered destroyed. These are the same incomplete-generation publication root as the unchecked required trailers, not separate findings.
 - Additional validation (R1-CHUNK-0218): Extend the transaction fault matrix to last-save pointer open, short write, close, and replacement, plus D2 companion delete, source-open, allocation, read, write, close, and publication and a subsequent core-save failure. Seed a prior core save, pointer, and secret companion with distinct hashes. Require every failed generation to preserve all three prior artifacts and the prior secret-revisit semantics, and require success to publish the matching core, companion-presence state, metadata trailers, and pointer only after every staged artifact closes successfully.
+- Remediation progress (2026-08-11): The paired Android manual-save entry points and cooperative autosave now route through a shared staged path writer. It writes the complete core and required trailers to a sibling stage, checks the paired save result and close, reopens and validates the Android trailer, and publishes with a backup/rollback replacement. Cooperative autosave returns failure without history publication or peer notification unless the local generation commits. Last-save pointers are now written through their own checked temporary replacement and only after the core publication; nested lifecycle-slot staging defers the pointer until the outer main/secret pair commits. Focused source-order tests and all-ABI Android assembly pass. The finding remains open because the core, D2 secret companion, and last-save pointer still lack one crash-atomic generation manifest: failure or process death after main/pair publication but before pointer publication can expose a new durable save with the prior pointer.
 - Resolution: Pending
 
 ### BR-0236: P2 - Report and roll back partial all-pilot preference writes
@@ -14114,23 +14017,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Run paired D1/D2 recording and optional replay tracing at the event and byte limits, one event beyond each limit, across repeated growth and rewind cycles, and with every allocation failure injected. Assert peak resident trace memory stays bounded, counters and retained events remain aligned, rewinds release or reuse only documented capacity, truncation is explicit and deterministic, failures reach the caller, and successful long traces still compare identically.
 - Resolution: Pending
 
-### BR-0248: P1 - Make the Android OpenSL audio lifecycle failure-safe
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: memory-safety/audio-lifecycle
-- Found by: R1-CHUNK-0137
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/SDL_androidaudio.c:L158-L231,L238-L389,L396-L432` in the callback, open, and close paths
-- Related: `android/app/src/main/cpp/CMakeLists.txt:L49-L100`, fetched SDL 1.2 `src/audio/SDL_audio.c` in `SDL_OpenAudio` and `SDL_AudioQuit`, `d1/arch/sdl/digi_mixer.c:L89-L148`, and `d2/arch/sdl/digi_mixer.c:L87-L146`
-- Evidence: Open checks only engine, output-mix, and player creation. It ignores engine, mix, and player `Realize`, every required `GetInterface`, callback registration, play-state, and initial `Enqueue` result, then immediately calls through the returned interface pointers. A recoverable interface failure can therefore become a null or invalid function-table dereference. Every checked failure after the first allocation returns directly without destroying earlier buffers or OpenSL objects. SDL stores `OpenAudio(...) + 1`; on `-1` this is zero, and its teardown calls the driver `CloseAudio` only when that field is nonzero, so the partial backend is never cleaned. An initial enqueue failure is also reported as successful open with no callback chain, while a callback enqueue failure merely increments a counter even though the configuration starts with one queued buffer and can therefore become permanently silent. Shutdown has a separate unsafe ordering: the custom callback locks `audio->mixer_lock`, but the fetched SDL 1.2 `SDL_AudioQuit` destroys that mutex before calling the backend close that stops and destroys the still-playing OpenSL player. The CMake patch parks the SDL thread but does not change this order, and the callback ignores SDL's `enabled` flag.
-- Trigger: Exhaust an audio allocation, make any OpenSL realization, interface, callback, play-state, or enqueue operation fail, or close SDL audio while an OpenSL buffer callback is beginning or waiting for the SDL mixer mutex
-- Impact: Audio initialization can crash through a null interface, leak buffers and native audio objects, or falsely succeed in a permanently silent state. Normal shutdown can let a callback lock a destroyed mutex or access backend state during teardown, causing a native use-after-free, deadlock, or intermittent exit, movie-transition, or audio-restart crash.
-- Expected: Backend open publishes success only after every required operation and initial buffer succeeds; every failure unwinds all owned state. Runtime queue failure reaches a defined recovery or terminal path, and shutdown prevents and drains callbacks before SDL destroys any lock or memory they can access.
-- Suggested fix: Build the complete OpenSL graph in local checked state, validate every result and required pointer, and use one idempotent cleanup path that SDL invokes even for a partial open. Treat initial enqueue failure as open failure and make runtime enqueue failure stop or rebuild the queue through a non-callback recovery path. Patch SDL teardown or provide a backend-owned callback gate and in-flight count so player stop and callback drain happen before mixer-lock destruction; only then destroy objects and free buffers.
-- Validation: Add injectable wrappers for every allocation and OpenSL operation, failing each step in turn and asserting a nonzero open result, reverse cleanup, no retained interface or buffer, and no success log. Fail initial and later enqueues and require explicit recovery or terminal status. Barrier callbacks before lock, while holding it, after mix, and before enqueue during repeated `Mix_CloseAudio`, movie audio switches, and process shutdown; under AddressSanitizer and ThreadSanitizer where available, require no use-after-free, race, deadlock, callback after drain, or leaked object.
-- Resolution: Pending
-
 ### BR-0250: P2 - Publish Android audio diagnostics without data races
 
 - [ ] OPEN
@@ -14203,23 +14089,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: A matching pilot is considered active only after its complete player-file read succeeds; failure must not be persisted or reported as ready and must follow an explicit safe fallback or abort path.
 - Suggested fix: Check `read_player_file` before `WriteConfigFile` and success publication. Prefer one validated load operation rather than a check-then-reopen sequence; decode into temporary configuration and commit only after complete read and close success. On failure, either restore the prior player state and abort startup resume with an actionable error, or deliberately load the save callsign fallback under a documented policy without persisting partial state.
 - Validation: Add paired D1 and D2 startup-resume tests that inject disappearance after selection plus open, early-read, late-read, truncation, replacement, and close failures. Assert no config write occurs, no default or partial `PlayerCfg` escapes, the log never reports `source=player_file` or ready, and the chosen abort or fallback leaves callsign, controls, progression, macros, and persisted configuration coherent. Retain coverage for successful matching-pilot load and the intentional no-matching-pilot save-header fallback.
-- Resolution: Pending
-
-### BR-0256: P1 - Track texture bindings per active texture unit
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/graphics-state
-- Found by: R1-CHUNK-0143
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/ogl_texture_android.c:L13-L28` in `android_ogl_bind_texture_2d`
-- Related: `android/app/src/main/cpp/shared/ogl_texture_android.h:L13-L23`, `d1/arch/ogl/ogl.c:L246-L253,L1404-L1442`, `d2/arch/ogl/ogl.c:L249-L256,L1413-L1451`, and `android/app/src/main/cpp/shared/merged_wall_debug.c:L787-L888`
-- Evidence: OpenGL ES maintains an independent `GL_TEXTURE_BINDING_2D` for every active texture unit, but the assigned helper accepts one shared `last_bound_tex` scalar and skips `glBindTexture` whenever the requested handle equals that scalar. Paired D1 and D2 inline the same cache policy. Their merged-wall renderer binds the bottom texture on unit 0, switches to unit 1 for the overlay and sometimes unit 2 for a mask, then returns to unit 0 without invalidating or partitioning the cache. After a non-super draw with bottom A and overlay B, unit 0 still contains A, unit 1 contains B, and the scalar contains B. If the next wall uses B as its bottom, the unit-0 bind is skipped even though unit 0 does not contain B; the shader samples stale A. The cached GPU texmerge path also calls the assigned helper on units 0 and 1 through the same scalar, so equal or repeated handles can produce the same false reuse there. Per-frame reset does not repair incorrect binds within the frame, and the reuse counter reports the skipped operation as an optimization.
-- Trigger: Render two merged-wall faces in one frame where a texture used as the first face's overlay is used as the next face's bottom, or render a cached texmerge whose unit transition requests a handle equal to the one most recently cached for another unit
-- Impact: Walls, doors, signs, transparency overlays, or cached merged surfaces can sample a previously bound texture instead of the requested one. This produces scene-order-dependent wrong or flickering geometry in both games and can hide or replace gameplay-relevant wall and door visuals while diagnostics falsely report a successful cached bind reuse.
-- Expected: A bind is skipped only when the requested target is already bound on the currently active texture unit; transitions among units cannot borrow another unit's cache entry.
-- Suggested fix: Replace the scalar with binding state indexed by texture unit, and route every engine and shared-helper bind plus each raw bind or deletion through one cache-aware API. Either pass the intended unit explicitly or query and validate `GL_ACTIVE_TEXTURE` at state-transition boundaries; invalidate all affected entries after bulk filter updates, texture deletion, context recreation, and external diagnostic binds. If the small optimization cannot be made complete, issue `glBindTexture` unconditionally in multitexture paths.
-- Validation: Add a GLES state test with distinct sentinel textures A, B, and C. Bind A on unit 0 and B on unit 1, return to unit 0, request B, and assert `GL_TEXTURE_BINDING_2D` becomes B rather than remaining A; repeat across unit 2, equal bottom/overlay handles, deletion, recreation, direct diagnostic binds, and cached texmerge. Render paired D1/D2 adjacent merged walls whose first overlay is the second bottom and compare captured pixels under multiple draw orders, requiring identical correct textures and per-unit reuse counters that advance only for true same-unit reuse.
 - Resolution: Pending
 
 ### BR-0257: P2 - Consume auto-host requests after terminal setup failures
@@ -14345,22 +14214,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Install and run debug and release builds under user 0, a secondary user, and a managed profile. Save distinct per-user bindings and thresholds, load new and existing D1 and D2 pilots, and assert each process reads only its own profile's file and introspection matches the launcher. Also vary application ID in a test build and verify no literal package path remains.
 - Resolution: Pending
 
-### BR-0265: P2 - Validate controller JSON before mutating live controls
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/error-handling
-- Found by: R1-CHUNK-0150
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/android_gamepad_config.cpp:L95-L207,L222-L238` in parsing and live publication
-- Related: `d1/main/playsave.c:L1285-L1297`, `d2/main/playsave.c:L1089-L1101`, `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L1988-L2004`, and `android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt:L201-L219`
-- Evidence: The only exception handler covers `json::parse`. Every later `get<int>()` for key-setting elements, control type, automap mode, and thresholds executes outside that handler. A syntactically valid value of the wrong JSON type therefore throws a nlohmann type exception, and an unrepresentable integer can throw during conversion. The function also writes directly into `PlayerCfg`, `joy_axis_button_deadzone`, and the axis mailbox as fields are visited, so an error in a later array element or threshold occurs after earlier live values changed. Both paired player-file readers call the `extern "C"` reload immediately before `kc_set_controls` and neither has a C++ exception handler, making a semantic config error terminate the game process rather than return the documented false result. Launcher bootstrap considers any parseable file with `version >= 4` current without validating this native schema, and supported debug automation can write arbitrary config contents directly.
-- Trigger: Restore or produce a parseable version-4 config such as one whose game-specific joystick array contains an integer followed by a string, whose `control_type` is an object, or whose later threshold cannot convert to `int`, then load a D1 or D2 pilot; the same state can be created by the supported debug `write_config` automation action
-- Impact: The game process can terminate during pilot load, or a future caller that catches the exception can observe a partially replaced control configuration. Because the launcher accepts the file's version, the bad state can persist across launches until the user resets or deletes controller configuration.
-- Expected: The entire versioned controller schema, exact game-specific array lengths, element types and ranges, control flags, and thresholds are validated into temporary storage before any engine or mailbox state changes; every invalid file returns false with one diagnostic and preserves the loaded pilot configuration.
-- Suggested fix: Wrap parse and semantic conversion in one fail-closed decoder, use checked accessors and explicit bounds for every field, require the compiled game's expected array sizes, and stage all decoded key settings, flags, and thresholds in local structures. Commit to `PlayerCfg` and the mailbox only after complete validation. Reuse the same schema validator in launcher bootstrap so a malformed current-version file is regenerated or surfaced before game launch.
-- Validation: Add paired native tests for missing, short, long, null, boolean, string, object, fractional, negative, huge, and mixed-type values at every field and at early, middle, and late array positions. Assert reload returns false without throwing, `PlayerCfg`, global deadzones, and mailbox snapshots remain byte-identical, and `kc_set_controls` runs only with the prior coherent state. Drive restored and automation-written malformed files through D1 and D2 process launch and require an actionable launcher result rather than termination; retain exact valid generated-config parity.
-- Resolution: Pending
 
 ### BR-0266: P1 - Bind touch join approval to the displayed requester and team
 
@@ -14490,23 +14343,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Render a known distinct activation and aim pair in software, desktop OpenGL, and Android OpenGL, capture the endpoint pixels, and assert that the line begins and ends outside the measured label rectangles with matching inset tolerance. Retain candidate and drawn-count assertions, and add a negative case whose projected separation is too short for two insets.
 - Resolution: Pending
 
-### BR-0275: P1 - Check every CD preview audio initialization step
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: resource-lifetime
-- Found by: R1-CHUNK-0159
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/cd_preview.c:L315-L418,L537-L548` in render-thread and OpenSL initialization
-- Related: `android/app/src/main/cpp/shared/cd_preview.c:L421-L439,L652-L660`, `android/app/src/main/cpp/jni_cd_preview.c:L16-L120`, archived BR-0030, and BR-0248
-- Evidence: Initialization checks only engine, output-mix, and player creation. It ignores every `Realize`, `GetInterface`, callback-registration, play-state, and initial `Enqueue` result, then immediately calls through the resulting engine, play, and buffer-queue interfaces. A failed interface acquisition can therefore become a null function-table dereference. Checked creation failures after the engine exists return without destroying prior objects. `render_thread_start` returns no result; when `pthread_create` fails it leaves `s_render_running` set and `cd_preview_start_common` still returns success with a playing OpenSL queue and no producer. Runtime callback `Enqueue` failure is also discarded, leaving no terminal status or recovery. Archived BR-0030 fixed this same failure pattern only in the independent MIDI preview, while the CD copy remains unchanged.
-- Trigger: Start a CD preview while OpenSL cannot realize an object, return a required interface, register the callback, change play state, or enqueue a buffer, or while native thread creation fails under resource pressure
-- Impact: A recoverable audio initialization failure can crash through a null interface, leak partial OpenSL objects, or be reported as successful playback that remains permanently silent. A later callback queue failure can silently terminate output while the launcher continues to report playing.
-- Expected: Start returns success only after every required audio object, interface, callback, initial buffer, play-state operation, and render thread is usable; every failure unwinds all partial state and publishes stopped status.
-- Suggested fix: Build the OpenSL object graph in local checked handles, validate every result and required pointer before use, publish globals only after complete success, and destroy partial objects in reverse order on one idempotent failure path. Make render-thread start return status and treat callback enqueue failure as an explicit terminal or recoverable event.
-- Validation: Inject failure at every OpenSL operation and at `pthread_create`, including null handles returned with nominal status, initial and runtime enqueue failure, and partial cleanup. Assert start returns false, no interface is dereferenced, no player, mix, engine, thread, callback, BIN handle, or playing state remains, and a subsequent ordinary start and stop succeeds.
-- Resolution: Pending
-
 ### BR-0276: P2 - Drain launcher preview audio before reporting completion
 
 - [ ] OPEN
@@ -14559,26 +14395,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: One host-owned cooperative scheduler emits at most one save per defined interval, resets from explicit session and level events, uses one clock, and advances the ring only after successful completion.
 - Suggested fix: Remove both caller-local schedules in favor of one shared cooperative autosave policy called from one paired frame location. Store its session, mission, level, last-attempt, and last-success state together, reset explicitly on lifecycle transitions, coalesce disconnect and periodic requests where appropriate, and coordinate success and retry semantics with BR-0235 and BR-0258.
 - Validation: Drive paired D1 and D2 with deterministic process and game clocks across fresh launch, delayed game entry, 29/30/31 seconds, multiple intervals, level reset, restore with nonzero game time, host migration, non-coop transitions, disconnect near a deadline, write failure, and recovery. Count save calls, broadcasts, slot changes, and history generations; require at most one admitted periodic save per interval, no double write in one frame, explicit reset behavior, full five-slot retention at the documented cadence, and no rotation on failure.
-- Resolution: Pending
-
-### BR-0279: P1 - Drain game music before dispatching completion
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/audio-lifecycle
-- Found by: R1-CHUNK-0163, R1-CHUNK-0207
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/digi_tsf_music.c:L261-L274,L288-L324,L394-L448,L460-L499,L539-L559` in producer EOF, ring consumption, and completion dispatch
-- Related: `android/app/src/main/cpp/shared/digi_tsf_music.c:L550-L647,L716-L731`, `d1/arch/sdl/jukebox.c:L219-L236,L239-L264`, `d2/arch/sdl/jukebox.c:L218-L235,L238-L262`, `d2/main/songs.c:L319-L323,L415-L426`, the replaced paired `digi_mixer_music.c:L94-L98`, and BR-0276
-- Evidence: Both non-looping renderers set `g_playing` to zero and `g_song_finished` to one as soon as the producer reaches source EOF. On Android the producer then writes its final generated chunk and exits, but the SDL callback reads the ring only while `g_playing` is nonzero, so it immediately emits silence and strands both that chunk and older queued PCM. The 262,144-sample ring intentionally holds about 2.73 seconds of stereo audio at 48 kHz. The replacement also does not preserve SDL_mixer's natural-finish callback contract: `tsf_dispatch_finished` is called only at the beginning of `mix_play_file`, and no game-frame poll or event invokes it after EOF. Therefore the D1 and D2 non-looping jukebox hooks cannot advance to their next track, and D2's original-order custom title hook cannot start the credits track. Starting some other song later dispatches the stale hook immediately before freeing that new request, creating delayed and context-dependent transitions.
-- Trigger: Let any non-looping MIDI, OGG, MP3, or FLAC song finish naturally on Android, especially a sequential or random jukebox track or D2 custom title track with original track order
-- Impact: Every naturally completed Android track can lose up to roughly its final 2.73 seconds. Non-looping jukebox playback stops after one entry instead of continuing, D2's configured title-to-credits transition never occurs, and a later unrelated play request can unexpectedly execute the stale prior hook.
-- Expected: Source EOF is distinct from audible completion; queued PCM drains completely, completion is published exactly once after the last sample, and the supplied hook runs promptly on a safe game-thread path before its playback state is replaced.
-- Suggested fix: Model producing, draining, completed, and explicitly stopped as distinct states. Let the audio callback drain the ring after producer EOF, atomically publish completion only when it consumes the final queued sample, and hand one generation-tagged completion event to a regular game-thread poll that invokes and clears the matching hook. Explicit stop and replacement should cancel the old generation without firing its hook.
-- Validation: Capture callback output for non-looping MIDI and each PCM format with tracks shorter than one ring, exactly one ring, and several rings, placing sentinel samples in the final seconds. Assert every generated final sample is delivered once, completion occurs after drain, sequential and random paired D1/D2 jukebox modes advance exactly once, D2 title transitions to credits, looping never dispatches, explicit stop truncates without dispatch, and replacing a completed or draining song cannot run a stale hook.
-- Additional location (R1-CHUNK-0207): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/rbaudio_bin.c:L1064-L1095,L1115-L1137,L1378-L1393` in Redbook producer EOF, callback gating, and completion dispatch
-- Additional evidence (R1-CHUNK-0207): The Redbook backend repeats the same producer-done-before-drain state transition. When `render_cd_frames` exhausts the requested range it clears `s_playing` and sets `s_song_finished`; the render thread can still publish its final chunk afterward, but the mixer callback reads the ring only while `s_playing` is true and therefore immediately zero-fills instead. Unlike the synth backend, Redbook does have a game-frame completion poll, so the hook runs promptly—but it runs before the queued tail is audible and can start a repeat or credits transition while up to the full 262,144-sample ring remains stranded.
-- Additional validation (R1-CHUNK-0207): Extend the callback-capture matrix to Redbook single-track and range playback at less than, exactly, and more than one ring of queued tail. Require every final sector sample to be delivered once before the paired repeat, title-to-credits, or range-completion hook runs, while explicit stop still truncates without dispatch.
 - Resolution: Pending
 
 ### BR-0280: P2 - Propagate game-music render-thread startup failure
@@ -14883,56 +14699,7 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: In paired D1 and D2, record and replay level one from a new game, a later level with carried score, primary and secondary weapons and ammunition, a level-start save with modified player state, and an elapsed or moved mid-level start. Assert the expected `start_mode`, exact frame-zero player-result parity, successful maintained state-trace comparison, and unchanged canonical `new_level` behavior only for truly fresh starts.
 - Resolution: Pending
 
-### BR-0297: P2 - Bound checkpoint start time before restoring the replay clock
 
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/input-validation
-- Found by: R1-CHUNK-0183
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/input_demo_replay.cpp:L247-L264,L490-L518` in checkpoint timing publication and final-time calculation
-- Related: `android/app/src/main/cpp/shared/input_demo_fixture.cpp:L99-L108,L474-L498,L605-L608`, `android/app/src/main/cpp/shared/input_demo_start_shared.c:L535-L573`, `d1/main/state.c:L2054-L2064`, `d2/main/state.c:L2729-L2739`, `d1/main/game.c:L498-L506`, and `d2/main/game.c:L525-L533`
-- Evidence: Checkpoint parsing accepts every JSON integer representable as `int64_t` for `start_gt`; validation requires only that the field exist. Replay copies that value unchanged into its session. Both native save restorers load the checkpoint's deliberately zeroed 32-bit game time and add `start_gt` to the signed 64-bit `GameTime64`, while the D1-in-D2 path performs a similar unchecked addition. `input_demo_replay_final_game_time64` also adds the accumulated frame duration to the same value without a checked boundary. A checkpoint with `start_gt=INT64_MAX` therefore loads successfully and restores the master clock to `INT64_MAX`; the first ordinary positive `FrameTime` in either game performs signed overflow in `GameTime64 += FrameTime`. Negative start times are accepted as well even though recorder-produced `GameTime64` is a nonnegative elapsed clock.
-- Trigger: Take any valid `save_checkpoint` input demo, change only its checkpoint record's `start_gt` to `9223372036854775807`, retain the valid embedded checkpoint bytes and their SHA-256, and replay it with an ordinary positive frame time in D1 or D2
-- Impact: A syntactically and cryptographically self-consistent demo drives undefined signed arithmetic in the central engine clock on its first simulated frame. Timer comparisons, weapon cooldowns, AI scheduling, effects, collision delays, terminal result time, and deterministic replay state can wrap or become nonsensical instead of the artifact being rejected before gameplay.
-- Expected: Checkpoint start time is within the nonnegative engine clock domain and every addition of restored time, translated checkpoint time, accumulated replay duration, or frame time is proven representable before session publication or simulation.
-- Suggested fix: Validate `start_gt >= 0` in the canonical checkpoint parser and use checked signed addition when combining it with translated save time and replay duration. During replay load, validate the complete timing envelope against admitted positive frame times and reject any artifact whose initial or final clock cannot fit `int64_t`; retain defensive checked handling at paired restore and game-clock boundaries.
-- Validation: Add fixture and full paired D1/D2 replay cases for `INT64_MIN`, -1, 0, ordinary elapsed time, `INT64_MAX - frame_time`, and `INT64_MAX`, plus translated D1 checkpoint time combinations and multiple-frame cumulative boundaries. Require invalid timing to fail before checkpoint restore or `GameProcessFrame`, no signed-overflow sanitizer report, exact final-time calculation for admitted boundaries, and unchanged replay of recorder-produced checkpoints.
-- Resolution: Pending
-
-### BR-0298: P2 - Fail malformed result fields without crossing the C exception boundary
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/error-handling
-- Found by: R1-CHUNK-0184
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/input_demo_result.cpp:L45-L183,L335-L390,L488-L516,L575-L590` in result and snapshot parsing
-- Related: `android/app/src/main/cpp/shared/input_demo_fixture.cpp:L1016-L1020,L1156-L1161`, `android/app/src/main/cpp/shared/input_demo_replay.cpp:L439-L458`, `android/app/src/main/cpp/shared/input_demo_result.h:L84-L116`, and `android/tests/test_input_demo_result.cpp:L45-L351`
-- Evidence: The two public text parsers catch only `json::parse`; all semantic conversion runs afterward outside that handler. Required metadata uses unchecked `get<int32_t>`, `get<uint32_t>`, and string `get_ref`, nested player and position fields use unchecked signed and unsigned narrowing conversions, level booleans use unchecked `get<bool>`, and `game_time64` is read the same way. A syntactically valid value of the wrong primitive type therefore throws a nlohmann type exception instead of returning false. These parsers are called while loading embedded replay results and per-frame snapshots, and the C-facing file reader calls them without any exception guard, so the exception crosses into paired C callers. Integer-domain checks are incomplete even when conversion does not throw: negative or oversized ammo values pass the integer-category test and narrow through `unsigned int` and then `uint16_t`, while lives, weapon IDs, hostages, flags, frame counts, and other fixed-width fields likewise accept modulo-narrowed values. Parsing writes directly into the caller's result as fields are visited, so a future outer catch would expose partial state.
-- Trigger: Replay a syntactically valid `.dximdemo` whose result trailer sets a required string or integer to the wrong JSON type, such as `"version":"2"` or `"game":2`; alternatively place a wrong-typed boolean in `level_summary`, a wrong-typed coordinate in a frame snapshot, or negative and over-65535 values in an ammo array
-- Impact: Opening a malformed or hand-edited input demo can terminate the native D1 or D2 process rather than return the advertised parse error. Values that happen to narrow silently can also alter the embedded oracle or per-frame expected state, producing misleading passes or mismatches instead of schema rejection.
-- Expected: Every result and snapshot field has an explicit JSON type and representable semantic domain, the complete object is validated into temporary storage before publication, and no malformed input can throw across the exported C API.
-- Suggested fix: Use shared checked scalar parsers for each signed, unsigned, boolean, and string field; reject negative unsigned inputs and values outside the exact destination width before conversion; validate string lengths rather than silently truncating; and wrap the complete semantic decode in a final exception guard. Parse into a local `input_demo_result` and assign the caller's output only after every root, nested, array, and domain check succeeds.
-- Validation: Add standalone result, fixture, and full paired replay cases for null, boolean, string, object, array, fractional, negative, signed-boundary, unsigned-boundary, and oversized values at every scalar field; ammo entries at -1, 0, 65535, 65536, and `UINT64_MAX`; short, exact, and overlong game and mission strings; and malformed early and late nested fields. Require a deterministic false result with a useful field error, byte-identical output on failure, no uncaught exception or process termination, exact valid-boundary round trips, and unchanged recorder-produced result comparison.
-- Resolution: Pending
-
-### BR-0299: P1 - Reject input-demo levels outside the loaded mission
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/memory-safety
-- Found by: R1-CHUNK-0186
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/input_demo_start_shared.c:L461-L491` in new-level replay startup
-- Related: `android/app/src/main/cpp/shared/input_demo_fixture.cpp:L501-L529,L767-L843`, `d1/main/gameseq.c:L591-L603,L676-L688,L764-L782`, `d2/main/gameseq.c:L835-L866,L979-L1000`, and `android/tests/test_input_demo_fixture.cpp:L230-L274`
-- Evidence: Metadata parsing accepts every JSON integer representable as `int` for `level`, and validation imposes no level condition at all. For `start_mode="new_level"`, shared startup loads the named mission and passes that untrusted value directly to `StartNewGame`. Both engines rely only on a debug `Assert` that the level is nonzero and lies between the loaded mission's `Last_secret_level` and `Last_level`; they then select `Level_names[level-1]` for nonnegative values or `Secret_level_names[-level-1]` for negative values. A zero level therefore reads one entry before `Level_names`, a positive value above the mission count reads past its end, and an excessively negative value reads past the secret array, with `INT_MIN` additionally making the negation itself unrepresentable. Release builds do not convert these invalid values into an ordinary replay error.
-- Trigger: Replay a structurally valid D1 or D2 `.dximdemo` with `start_mode="new_level"`, a loadable mission, and metadata `level` set to 0, `Last_level + 1`, `Last_secret_level - 1`, or `INT_MIN`
-- Impact: Opening a crafted or hand-edited local demo can terminate a debug build at the assertion or drive out-of-bounds reads and undefined signed arithmetic in a release build before gameplay begins. The invalid array value is then treated as a level filename pointer, so behavior can range from an uncontrolled load error to a native crash instead of a deterministic parse failure.
-- Expected: Replay validates that the requested level is one of the normal or secret levels declared by the successfully loaded mission before any engine startup or filename-array access.
-- Suggested fix: Reject level zero during canonical metadata validation, then, after loading the mission but before mutating new-game state, validate positive levels against `Last_level` and negative levels against `Last_secret_level` using comparisons that do not negate the untrusted value. Keep a defensive checked entry point around paired engine startup and unload the replay on failure.
-- Validation: Add fixture and paired full-start tests for `INT_MIN`, `Last_secret_level - 1`, `Last_secret_level`, -1, 0, 1, `Last_level`, `Last_level + 1`, and `INT_MAX` across missions with and without secret levels. Require invalid demos to fail before `StartNewGame`, filename selection, or game-state mutation under ASan/UBSan, and require every valid normal and secret boundary to retain existing replay behavior.
-- Resolution: Pending
 
 ### BR-0300: P2 - Remove or restore the dead D1-in-D2 level-start mode
 
@@ -14987,23 +14754,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add paired synthetic route snapshots with 511, 512, 513, and 1,000 same-color key targets plus 511, 512, 513, and more exit sides, placing the sole reachable target first, at the boundary, and last and reversing enumeration order. Require identical successful route semantics for every ordering within engine limits, explicit failure for any separately documented projection overflow, and matching automap, Guide-Bot, preview, headless, JNI, introspection, and automation output.
 - Resolution: Pending
 
-### BR-0303: P1 - Free cached merged-wall textures before clearing their owners
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: resource-lifetime/graphics
-- Found by: R1-CHUNK-0191
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/merged_wall_debug.c:L483-L507,L568-L581` in cached texmerge clearing and reset
-- Related: `android/app/src/main/cpp/shared/merged_wall_debug.c:L922-L960`, `d1/arch/ogl/ogl.c:L409-L501,L636-L705,L3590-L3608`, `d2/arch/ogl/ogl.c:L397-L510,L647-L716,L3698-L3716`, `d1/main/game.c:L756-L765`, `d2/main/game.c:L898-L907`, `d1/main/gameseq.c:L721-L741`, `d2/main/gameseq.c:L1853-L1858,L928-L938`, and `d1/include/internal.h:L9`
-- Evidence: Each completed cache entry owns a standalone texture obtained from the global `ogl_texture_list`; eviction and setup failure pass that pointer to `ogl_freetexture`, which deletes its GL handle, decrements the texture count, and resets the list slot. In contrast, `android_merged_wall_cached_texmerge_clear_cache` calls the generic clear loop, and that loop only resets each entry. Reset immediately assigns `entry->texture = NULL`, permanently discarding the only cache ownership pointer without deleting the GL object or resetting its list slot. The palette-invalidation path invokes this clear and then frees only parent `GameBitmaps`, which cannot reach the standalone merged outputs. Both level loading and ordinary `palette_restore` invoke palette invalidation during a live context, while multiplayer adds another clear after paging. A populated clear can therefore strand all 32 cache textures; repeated restores or level transitions accumulate GL memory and occupied entries in the fixed 20,000-slot texture list until a later whole-list smash happens to delete the handles.
-- Trigger: Populate the Android plain merged-wall cache by rendering at least one overlaid wall, then restore the saved palette or load another level without destroying the GL context; repeat after repopulating the cache
-- Impact: GPU texture memory and global texture-list capacity grow across ordinary in-process palette and level transitions. On long sessions or high-resolution texture packs this can cause GL allocation failures or driver out-of-memory behavior, and continued slot loss eventually terminates through `Error("OGL: texture list full!")`.
-- Expected: Every cache invalidation releases each owned output texture exactly once before forgetting the pointer, while whole-context teardown remains free of double deletion.
-- Suggested fix: Give the cache-clear lifecycle an explicit texture-free callback or paired OGL-owned wrapper, call `ogl_freetexture` for every non-null cached texture before resetting the entry, and define teardown ordering so the cache releases or relinquishes ownership before bulk texture-list reset/delete. Keep the generic entry-reset helper non-owning and use it only after ownership has been discharged.
-- Validation: Add a focused cache-lifetime test with a counting free callback for empty, partial, and full 32-entry caches, including repeated clears and reinitialization. On both D1 and D2 Android builds, instrument GL deletes, `r_texcount`, and occupied texture-list slots while repeatedly populating then invoking palette restore, level palette invalidation, multiplayer post-load clear, PNG smash, and full context smash; require no monotonic growth, one delete per owned texture, no double delete, and successful cache reuse afterward with stock and high-resolution textures.
-- Resolution: Pending
-
 ### BR-0304: P2 - Bind each merged-wall source before changing its wrap state
 
 - [ ] OPEN
@@ -15053,28 +14803,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Shared merged-wall source diagnostics have equivalent reachability at corresponding D1 and D2 stock, PNG, fallback, and native upload paths, or the API and advertised paired diagnostic are removed intentionally from both games.
 - Suggested fix: Restore the D1 calls at the same semantic points and with the same source labels and bit assignments as the retained D2 paths, accounting for D1's extra stock-path site documented by the extraction plan. Prefer moving the invocation to a genuinely shared upload boundary if that can preserve the exact source buffer and path identity without duplicating loader logic.
 - Validation: Add paired named-target runs for PNG palette, PNG RGB, PNG RGBA, stock fallback, and stock-native loads. Require D1 and D2 to emit the same bounded source-kind records and statistics for equivalent fixtures, prove non-target textures emit nothing, verify D1's extra stock site deliberately, and retain behavior across cache invalidation and reload. Keep BR-0226's separate orphaned upload-helper coverage distinct.
-- Resolution: Pending
-
-### BR-0307: P1 - Validate polygon counts before writing fixed render arrays
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: memory-safety/graphics
-- Found by: R1-CHUNK-0194, R1-CHUNK-0225, R1-CHUNK-0257
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/merged_wall_debug.c:L2258-L2284` in projected-point storage
-- Related: `android/app/src/main/cpp/shared/merged_wall_debug.c:L4886-L4912`, `d1/arch/ogl/ogl.c:L111,L1234-L1260,L1331-L1349`, `d2/arch/ogl/ogl.c:L114,L1244-L1270,L1341-L1359`, `d1/3d/interp.c:L42,L80,L185-L232`, and `d2/3d/interp.c:L42,L79,L448-L497`
-- Evidence: `merged_wall_store_projected_points` loops to caller-controlled `nv` and writes that many entries to every nonnull output without accepting a capacity. `android_merged_wall_log_cover` allocates three `MERGED_WALL_LOG_PT_COUNT` arrays of 16 elements and passes them to this helper before any count validation or snapshot/debug gate. Both paired `g3_draw_tmap` paths invoke the cover logger for every ordinary textured draw and accept up to 128 vertices. More directly, the inherited model interpreters define 25-entry polygon arrays, require only `nv < 25`, and pass valid textured model polygons with 17 through 24 vertices to `g3_draw_tmap`. Such a polygon therefore writes past all three cover arrays on the native stack even when no merged-wall snapshot is requested and even though the later face-matching loop may have nothing to inspect.
-- Additional location (R1-CHUNK-0225): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/3d/interp.c:L67-L70,L185-L232,L363-L418`, paired `d2/3d/interp.c:L66-L69,L448-L497,L627-L682`, and `android/app/src/main/cpp/shared/android_dxxerror.h:L5-L12`
-- Additional evidence (R1-CHUNK-0225): The branch adds `uvl_copy[MAX_POINTS_PER_POLY]` in both ordinary and morph textured-polygon paths, then passes the signed model `nv` directly to `memcpy`. The ordinary path has only `Assert(nv < 25)`; Android release assertions log but do not stop when `NDEBUG` removes `assert`, and neither morph path asserts the count at all. A model record with `nv >= 25` therefore overwrites the new stack array, while a negative count converts to a huge `size_t` copy. External POF data and embedded polymodel bytecode are loaded with a byte length but the draw API receives no end pointer and performs no runtime count rejection. This is the same missing polygon-count boundary as the 17-through-24 cover-array overflow, now with an earlier branch-added fixed-array sink.
-- Additional trigger and impact (R1-CHUNK-0225): Load or morph-render a custom or corrupted textured polymodel record whose signed vertex count is negative or at least 25. Before the draw helper and its cover logger run, the interpreter can perform an effectively unbounded or oversized copy into its native stack frame, causing immediate process termination or control-data corruption in release builds.
-- Additional suggested fix (R1-CHUNK-0225): Validate `nv` as an unsigned semantic count before every polygon body calculation, copy, allocation, point-index loop, or draw in both ordinary and morph interpreters; reject counts below three or at least `MAX_POINTS_PER_POLY` in release builds without relying on `Assert`. Pass the model-data end through recursive interpretation so the complete index and UVL payload is proven present before copying, then keep the cover logger's independent capacity check.
-- Additional validation (R1-CHUNK-0225): Feed paired D1/D2 ordinary and morph interpreters bounded model records with signed counts `-32768`, `-1`, `0`, `2`, `3`, `16`, `17`, `24`, `25`, and `32767`, plus truncated index and UVL payloads, under ASan, UBSan, and Android HWASan. Require valid counts to preserve exact fan UVs and lighting and every invalid or incomplete record to fail before `memcpy`, allocation, point lookup, diagnostics, or draw.
-- Trigger: Render a D1 or D2 polygon model containing a front-facing textured polygon with 17 through 24 vertices on Android
-- Impact: An otherwise admitted model polygon corrupts the cover logger's stack on every draw, potentially overwriting neighboring locals, saved control data, or stack protections and terminating the native process. Custom or replacement models can trigger the bug during normal gameplay without enabling diagnostics.
-- Expected: Optional diagnostics never reduce the renderer's supported polygon capacity or write beyond their fixed capture buffers; excess vertices are safely skipped, truncated with an explicit diagnostic status, or stored in capacity-matched storage.
-- Suggested fix: Add an explicit output capacity to `merged_wall_store_projected_points` and never write beyond it. In `android_merged_wall_log_cover`, reject or deliberately truncate counts above `MERGED_WALL_LOG_PT_COUNT` before any copy and ensure all later matching, event, UV, and color logic uses the captured count consistently. Prefer gating the complete cover diagnostic before any work when no tracked face, snapshot, or target needs it.
-- Validation: Add an instrumented shared-helper test and paired Android render fixtures with textured polygons of 0, 1, 3, 16, 17, 24, 25, 100, 128, and 129 vertices. Require supported counts to render without AddressSanitizer, HWASan, or stack-canary failure, diagnostic arrays to remain bounded, rejected engine counts to fail before access, and ordinary 3- and 4-vertex walls, rods, robots, and merged faces to retain their existing tracking and cover output with snapshots both off and on.
 - Resolution: Pending
 
 ### BR-0308: P2 - Compare crosshair probes in one coordinate space
@@ -15556,24 +15284,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Build debug, internal, and release APKs, inspect each merged manifest and network-security resource, and attempt all three allowed hosts with explicit `ws://`, scheme-less input, persisted resume state, reconnect, and the command API. Assert only the intentionally development-scoped APK can open plaintext and that every other build fails before requesting or sending a Play Games code or fallback credential; verify ordinary trusted `wss://` matchmaking still authenticates.
 - Resolution: Pending
 
-### BR-0344: P1 - Bound Android render resolutions before allocation
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/resource-exhaustion
-- Found by: R1-CHUNK-0226, R1-CHUNK-0259, R1-CHUNK-0385
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/arch/ogl/gr.c:L681-L728` and paired `d2/arch/ogl/gr.c:L685-L732` in Android mode admission and screen-canvas allocation
-- Related: `d1/main/menu.c:L950-L1046`, `d2/main/menu.c:L976-L1072`, `d1/main/config.c:L270-L273,L317-L318`, `d2/main/config.c:L287-L290,L338-L339`, `d1/arch/ogl/ogl.c:L2500-L2524`, paired `d2/arch/ogl/ogl.c:L2510-L2534`, `android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt:L7-L15`, `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt:L285-L332`, and `android/ai tool plans/overlay, menu, etc/ogl_render_resolution.md:L8-L45`
-- Evidence: The branch changes Android `gr_check_mode` from SDL validation to unconditional success because the dummy driver cannot validate the EGL render target. No Android replacement limit or allocation check is added. The normal Options screen remains reachable and exposes a custom 11-character resolution field; it parses both halves with `atoi`, rejects only values below 320 by 200, packs each into 16 bits, and calls `gr_set_mode`. Persistent `ResolutionX` and `ResolutionY` values follow the same minimum-only path at startup. Thus `60000x60000` is accepted and `gr_set_mode` passes unsigned `w*h`, 3,600,000,000 bytes, directly to `d_realloc` without preserving the old allocation or checking failure. Initialization then rounds both dimensions to 65,536 in `pow2ize` and computes `w*h*4` in signed `int` for two more allocations; that arithmetic exceeds `INT_MAX`, and subsequent texture-fill and upload paths use the returned buffers. The Android touch keyboard explicitly supports these `NM_TYPE_INPUT` fields. The paired D2 implementation is equivalent, and no resolution test exercises rejection or allocation boundaries.
-- Additional evidence (R1-CHUNK-0385): The launcher helper splits any supplied string at `x`, accepts every pair representable as signed `Int`, and writes both values to all root and game config files without minimum, maximum, pixel-budget, or display-option validation. Combined configuration import passes its untrusted `render_resolution` string directly into that helper after committing preferences, so `60000x60000` reaches the already identified startup allocation path without visiting the in-game menu and malformed negative or extreme values can be mirrored across every launch source.
-- Trigger: In either Android game, open Options, select `Screen resolution...`, choose custom values, enter `60000x60000` with the soft keyboard, and apply; alternatively launch with both persistent resolution fields set to 60000
-- Impact: A normal local setting can request multi-gigabyte native memory and invoke overflowing allocation-size arithmetic. Depending on allocator and compiler behavior, the game is terminated by allocation or EGL failure, or continues with a zero-sized or undersized render scratch buffer that later receives native writes, risking heap corruption.
-- Expected: Android accepts only explicitly supported render dimensions whose canvas, rounded scratch buffers, EGL geometry, viewport, and dependent products are representable and fit a documented device-aware memory budget; invalid config or menu input is rejected without changing live graphics state
-- Suggested fix: Replace the Android unconditional success with one centralized EGL render-mode policy that validates both dimensions, a documented maximum or pixel budget, power-of-two rounding, `GL_MAX_TEXTURE_SIZE` where applicable, and every allocation product using checked `size_t` arithmetic. Make `gr_set_mode` allocate into temporary pointers and retain the old mode on failure. Have both config loading and the in-game menu report rejection through that policy instead of relying on SDL dummy behavior.
-- Validation: Add paired D1/D2 Android tests for 319x199, 320x200, ordinary launcher choices, the exact documented maximum, maximum plus one, `20000x20000`, `60000x60000`, 16-bit truncation-shaped text, and malformed or negative config values through both startup config and the touch-operated menu. Under ASan, UBSan, and Android HWASan, assert invalid modes perform no oversized or zero-sized allocation, EGL reconfiguration, viewport change, or partial `Game_screen_mode` update; valid modes must recreate and render repeatedly without leaks or stale buffers.
-- Resolution: Pending
-
 ### BR-0345: P2 - Free closed game windows before nonlocal callback exit
 
 - [ ] OPEN
@@ -15692,29 +15402,6 @@ Append findings here in numeric order using the exact template in the process do
 - Suggested fix: Guard integer scaling with the Android platform symbol and retain the prior `GameCfg.TexFilt` integer-versus-floating behavior elsewhere, or introduce an explicit platform-independent font-scaling option with a compatibility-preserving desktop default. Keep D1 and D2 identical.
 - Validation: Add paired D1/D2 font-layout tests on Android and desktop OpenGL at 640x480, 1280x720, 1366x768, 1920x1080, and 2560x1440 with filtering off, bilinear, and trilinear plus `-gl_fixedfont`. Assert the intended platform-specific scale, matching measured and rendered glyph extents, stable menu hit bounds, no clipping, and preserved desktop fractional values at non-integral resolutions.
 - Resolution: Pending
-
-### BR-0354: P2 - Validate weapon runtime scalars before applying a save
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/input-validation
-- Found by: R1-CHUNK-0245, R1-CHUNK-0306, R1-CHUNK-0314
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/laser.c:L1134-L1162,L1553-L1613` and paired `d2/main/laser.c:L2648-L2674,L2696-L2795`
-- Related: `d1/main/state.c:L622-L715,L2443-L2444`, `d2/main/state.c:L840-L963,L3234-L3235`, `d1/main/game.c:L1341-L1364,L1436-L1460`, `d2/main/game.c:L1666-L1689,L1989-L2015`, and `android/app/src/main/cpp/jni_resume_save.cpp:L378-L399,L444-L497,L611-L656`
-- Evidence: The branch adds paired save serialization for live weapon globals and implements `laser_set_runtime_state` as unconditional copies. The D1 reader accepts arbitrary signed 32-bit fusion charge, spreadfire phase, missile-gun phase, and proximity-drop count; D2 additionally accepts arbitrary helix phase and smart-mine count. The writers can produce only a nonnegative bounded charge, boolean or masked phases, and mine counters in `0..3`, but neither reader nor setter checks those domains. A crafted current runtime footer can therefore set `Missile_gun`, `Proximity_dropped`, `Smartmines_dropped`, or `Helix_orientation` to `INT_MAX`; the next matching shot executes `++` on that value in paired weapon code, invoking signed-overflow undefined behavior instead of normalizing the phase. A crafted fusion charge above `INT_MAX / 4`, combined with the serialized nonzero auto-fire timer, reaches `bump_amount = Fusion_charge * 4` on the next applicable simulation tick in both games. Restore applies these values directly after the base world has already been mutated and returns no validation failure.
-- Trigger: Load, resume, transfer, rewind, or replay a current-version D1 or D2 save or checkpoint with a valid base body whose runtime footer sets a weapon phase or mine counter to `INT_MAX`, or sets a fusion charge above `INT_MAX / 4` while the auto-fire timer remains pending; then fire the corresponding weapon or advance one applicable fusion tick
-- Impact: Malformed local, cooperative, rewind, or input-demo state can force undefined signed arithmetic in the native game loop, producing platform-dependent weapon behavior, corrupted phase and ammunition accounting, sanitizer termination, or a process crash. Cooperative restore can distribute the same invalid runtime values to peers.
-- Expected: Serialized weapon state is proved to lie within the writer-reachable domain before any live global is changed, and impossible state rejects the complete restore without partial mutation.
-- Suggested fix: Parse the runtime footer into temporary storage and validate fusion charge and every phase, counter, and time field before calling a setter. Normalize only fields whose format explicitly defines modulo semantics; otherwise reject values outside the exact writer domain, make `laser_set_runtime_state` return failure, and propagate it through local, cooperative, rewind, and checkpoint restore. Combine this with the staged complete-footer validation required by BR-0350 and BR-0353.
-- Validation: Add paired D1/D2 current-save, cooperative-transfer, rewind, and input-demo cases for every weapon scalar at `INT_MIN`, -1, 0, each exact writer maximum, maximum plus one, `INT_MAX / 4`, `INT_MAX / 4 + 1`, and `INT_MAX`, including pending and inactive auto-fire timers. Require rejection before any live-state mutation, bounded completion, no signed overflow under UBSan, no crash under ASan, unchanged weapon and ammo state after failure, and successful round trips for valid fusion charging, alternating guns, spreadfire, helix, proximity mines, smart mines, and omega timing.
-- Additional location (R1-CHUNK-0314): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/state.c:L862-L863`, `d2/main/gamecntl.c:L293-L328`, and paired `d1/main/state.c:L643-L644` and `d1/main/gamecntl.c:L190-L217`
-- Additional evidence (R1-CHUNK-0314): The same runtime footer directly assigns serialized `Global_laser_firing_count` and `Global_missile_firing_count` before any validation or even D2's `secret_restore` early return. The global missile count is consumed whenever nonzero and then decremented. A saved `INT_MIN` therefore reaches `Global_missile_firing_count--` on the first applicable frame and invokes signed-overflow undefined behavior; a huge positive value repeatedly attempts secondary fire for an attacker-controlled number of frames. These counters are writer-reachable only as small nonnegative pending-fire counts, and live source retains the unchecked publication and decrement.
-- Additional trigger and impact (R1-CHUNK-0314): Restore a current paired save, cooperative transfer, rewind image, or input-demo checkpoint with the runtime global missile count set to `INT_MIN` or a huge positive value, then advance one weapon-processing frame. D2 additionally reaches the same path when returning from a secret level because these assignments escape the reader's explicit transient-state suppression. The malformed scalar can terminate under UBSan, produce platform-dependent arithmetic, or cause a prolonged stream of unintended firing attempts and ammunition or weapon-selection changes.
-- Additional suggested fix (R1-CHUNK-0314): Include both global firing counters in the same staged runtime-state structure and validate them against the exact nonnegative pending-fire domain before publication. Do not assign them on D2 secret restores when other transient weapon state is intentionally retained, and make invalid values reject the complete image.
-- Additional validation (R1-CHUNK-0314): Add paired counter cases at `INT_MIN`, -1, 0, every writer-reachable pending count, maximum plus one, and `INT_MAX` across ordinary, cooperative, rewind, checkpoint, and D2 secret-return restores. Advance weapon processing under UBSan and require invalid images to fail before mutation, no phantom fire or prolonged pending state, exact valid pending-shot round trips, and preservation of live secret-level firing state on return.
-- Resolution: Pending
-
 
 ### BR-0356: P1 - Complete an object resync before accepting play
 
@@ -15854,24 +15541,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add D2 gameplay and current-save tests with Missile view enabled and disabled, one and two overlapping qualifying missiles, guided small- and big-window modes, control release, a newer guided missile in a lower reused slot than an older released missile, target deletion, signature mismatch, slot reuse, local restore, rewind, cooperative transfer, replay, and headless execution. Assert exact `Missile_viewer` and `Guided_missile` identity and lifetime plus robot awareness and steering before and after each transition; require no wake for disabled ordinary missile view, no fallback jump after the selected missile ends, exact controlled-missile restoration, and identical simulation outcomes between rendered and headless runs for the same preference state.
 - Resolution: Pending
 
-### BR-0369: P1 - Give automap failure cleanup one owner
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: error-handling/memory-safety
-- Found by: R1-CHUNK-0279
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/automap.c:L1098-L1119,L1241-L1252` in automap close handling and Android background-PCX failure
-- Related: `d2/arch/sdl/window.c:L63-L102` and `d2/include/u_mem.h:L52`
-- Evidence: The new Android failure arm first frees `am->edges` and `am->drawingListBright`, then calls `window_close(automap_wind)`, then calls `d_free(am)` again. `window_close` is synchronous: it dispatches `EVENT_WINDOW_CLOSE` before returning. The automap handler receives the same `am` as window data, frees its bitmap and child arrays, and calls `d_free(am)`. Although `d_free` nulls the particular lvalue passed to it, nulling the handler's local `am` does not update the caller's local pointer. Control therefore returns to the failure arm with a dangling non-null `am`, and its final `d_free(am)` passes the already freed allocation to `free` a second time.
-- Trigger: On Android, enter the D2 automap when `MAP_BACKGROUND_FILENAME` is missing, corrupt, truncated, unreadable, or otherwise rejected by `pcx_read_bitmap`
-- Impact: The intended graceful asset-error path executes an invalid double free and can abort in allocator checks, corrupt the native heap, or crash later, so a damaged or incomplete game-data installation still terminates the game process instead of returning safely with a warning.
-- Expected: Exactly one owner releases the automap state and its children on every initialization failure, and closing its window cannot leave a second cleanup path holding a stale pointer.
-- Suggested fix: Let the registered `EVENT_WINDOW_CLOSE` handler own the initialized window data: after the warning, call `window_close(automap_wind)` and return without manually freeing the child arrays or `am`. If partial initialization requires distinct behavior, centralize cleanup in one idempotent helper and make window/data ownership explicit before invoking callbacks.
-- Validation: Add an injectable PCX-read failure test for missing, truncated, malformed, and allocation-failing backgrounds on Android. Open and close the automap repeatedly under ASan or HWASan and allocator diagnostics; require one window close, one release of every automap allocation, restoration of the game window and input/time state, no stale active pointer, no invalid free or leak, and successful automap entry after restoring a valid background.
-- Resolution: Pending
-
-
 ### BR-0371: P2 - Report actual D1-in-D2 robot kills
 
 - [ ] OPEN
@@ -15938,23 +15607,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Every active D1 effect slot carries one coherent, validated D1 metadata record, with each texture, bitmap, vclip, effect, and sound reference translated into the corresponding D2 runtime namespace; deactivation restores the complete saved D2 record.
 - Suggested fix: Stage each D1 `eclip`, validate its scalar domains and cross-table references, translate all texture, object-bitmap, vclip, effect, and sound references through explicit D1-to-runtime mappings, reset transient runtime fields deliberately, and publish the complete record atomically. Do not retain same-index D2 fields unless a documented field-specific compatibility policy proves equivalence.
 - Validation: Add paired D1 and D2 effect fixtures whose same-number records deliberately differ in every metadata field. During D1 activation, assert the complete translated D1 record, page all dependencies, tick ordinary and critical animations, destroy the surface, and verify the D1 explosion clip, size, sound, chained effect, final bitmap, and one-shot behavior. Transition back to D2 and require byte-equivalent restoration of every saved effect field; repeat across level and save-load boundaries.
-- Resolution: Pending
-
-### BR-0379: P2 - Honor the accepted D1 checkpoint version
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/api-data-format
-- Found by: R1-CHUNK-0291
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/d1_save_translate.c:L360-L414,L667-L745,L1019-L1125` in checkpoint version admission and unconditional AI and runtime decoding
-- Related: `d1/main/state.c:L85-L113,L311-L355,L622-L715,L1945-L2032,L2443-L2446`, `d1/main/ai.c:L3198-L3281,L3348-L3405`, `android/app/src/main/cpp/shared/input_demo_start_shared.c:L535-L585`, and `android/ai tool plans/input demo, replay, determinism/plan_d1_demo_d1_in_d2_replay_20260616.md:L1-L25`
-- Evidence: `d1_save_translate_read_checkpoint_start` explicitly accepts every D1 save version from 6 through 15 and stores the version, but neither `d1_save_translate_apply_checkpoint_objects` nor its AI and runtime helpers receive or consult it. The translator always reads the version-15 AI tail, including the point-path free cursor added in version 15 and awareness records added in version 8, then always reads the complete current runtime footer. The native D1 reader instead reads no awareness data before version 8, no runtime footer before version 8, no effect runtime before version 9, no AI-path runtime before version 10, no object signature before version 11, no FX RNG block before version 12, no secret-area block before version 14, and no point-path free cursor before version 15. Consequently a structurally valid accepted version 6 through 14 stream is interpreted at the wrong offsets. For example, a version-14 awareness count is consumed as the version-15 point cursor and the first event or believed-player bytes become a new count; later fields remain shifted even if those accidental values pass scalar bounds.
-- Trigger: Start D1-in-D2 replay from an input-demo checkpoint containing a structurally valid D1 save version 6 through 14 and a matching checkpoint size, digest, mission, and level
-- Impact: A checkpoint the translator explicitly admits can be rejected only after `StartNewGame`, object replacement, and partial world or AI publication, leaving the selected mission running in failed-replay state. If shifted bytes happen to satisfy the later count checks, unrelated save or trailer bytes can instead be published as allocator, RNG, timing, weapon, AI-path, or secret-area state, producing immediate replay divergence or delayed invalid behavior.
-- Expected: Version admission and decoding use one shared D1 save-format matrix. Every accepted historical version consumes exactly the sections written by that version and initializes later fields with the same legacy defaults and reconstruction used by the native D1 reader; unsupported versions fail before loading or mutating a game.
-- Suggested fix: Pass `start->version` through the full translation pipeline and mirror the native D1 AI and runtime gates, including legacy defaults, FX RNG fallback, effect reset, path reconstruction, and absent secret state. Prefer a version-described staging parser that validates the complete stream before `load_mission_by_name` or `StartNewGame`; if historical translation is not intended, narrow metadata admission to the exact supported version and reject it before game-state changes.
-- Validation: Generate valid little-endian and swapped D1 checkpoints for every version 6 through 15 with zero and populated awareness, effects, weapon fidelity, morph, path, FX RNG, and secret sections as applicable. Replay each through native D1 and D1-in-D2, compare decoded offsets and frame-zero state, and require unsupported variants to fail before mission or global mutation. Add truncation at every version-specific boundary and assert bounded rejection with unchanged prior state.
 - Resolution: Pending
 
 ### BR-0381: P2 - Keep Guide-Bot path parity probes observational
@@ -16042,23 +15694,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add D2 recording/replay fixtures with symmetric equal-dot robots, reversed render and object order, a rapid same-frame view change, a target spawned or revealed after the retained render list, rendered-list capacity pressure, slot reuse, and target deletion. Run visual, windowed-no-present, no-render, and headless profiles with original and Redux homing. Require identical initial target number and signature, missile state and trajectory, collision and damage, state and RNG traces, and final result across recording and every replay profile.
 - Resolution: Pending
 
-### BR-0387: P1 - Size Android advanced-netgame option arrays for every item
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: memory-safety/menu
-- Found by: R1-CHUNK-0307
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/net_udp.c:L4197-L4208,L4377-L4386` in `net_udp_more_game_options`, with paired `d1/main/net_udp.c:L4112-L4123,L4272-L4281`
-- Related: `d2/main/newmenu.c:L655-L679`, `d1/main/newmenu.c:L668-L692`, and live paired `d1/main/net_udp.c:L4430-L4598` and `d2/main/net_udp.c:L4511-L4700`
-- Evidence: The branch enlarges each fixed `newmenu_item` array by three for the new cross-platform FullDeathSpew, PlayerSpewNoExpire, and OriginalHoming entries, but Android appends a fourth new Coop QoL checkbox. In an Android tracker build, D2 constructs 55 items in `m[54]`; without the tracker it constructs 54 in `m[53]`. Paired D1 constructs 49 in `m[48]` or 48 in `m[47]`. Therefore the Coop QoL initialization writes `type`, `text`, and `value` through `m[SDL_arraysize(m)]`, one complete structure beyond the stack array. `Assert(opt <= SDL_arraysize(m))` runs only after that write and fails in assertion-enabled builds because `opt` is capacity plus one; with assertions disabled, the function passes that oversized count and pointer to `newmenu_do1`, whose menu constructor consumes the nonexistent final element. Live source increases every array by one but simultaneously appends another Android-only option, retaining the same one-element deficit.
-- Trigger: On an Android D1 or D2 host, open the multiplayer Advanced netgame options menu, with either tracker-enabled or tracker-disabled compilation
-- Impact: Opening an ordinary host settings menu deterministically corrupts adjacent stack storage. Assertion-enabled builds abort immediately after the write; release builds continue with an out-of-bounds menu item whose traversal, rendering, selection, and teardown can crash or misbehave according to the corrupted neighboring data.
-- Expected: Every compile-time feature combination allocates at least the exact number of initialized menu items, proves capacity before each write, and passes only an in-bounds initialized span to the menu subsystem.
-- Suggested fix: Derive the array capacity from named base, tracker, and Android item counts, or use a growable container or bounded append helper that checks capacity before writing and returns the final count. Replace the trailing `<=` assertion with pre-write checks and an equality assertion where the menu shape is fixed. Apply the same construction rule to paired D1 and D2, including future Android-only options.
-- Validation: Build paired D1 and D2 for Android with tracker on and off under ASan/HWASan and assertions both enabled and disabled. Open, scroll, toggle, accept, reopen, and cancel Advanced netgame options; require no assertion, out-of-bounds access, corrupt label, or invalid selection and verify every option round-trips. Add a compile-time or host unit test that enumerates each feature combination and requires constructed count to equal capacity, then repeat against live source with its additional duplicate-energy-and-shields item.
-- Resolution: Pending
-
 ### BR-0388: P2 - Carry stable client identity in join sequence packets
 
 - [ ] OPEN
@@ -16143,24 +15778,7 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Both advertised renderer selections configure and build all supported ABIs; OGL-only definitions, sources, includes, and libraries are applied only when their targets exist.
 - Suggested fix: Move both `arch_ogl` `INTROSPECT_ON` calls into their corresponding existing `if(OPENGL)` fixup blocks, or condition every OGL-only mutation on `TARGET ${DXX_TARGET_PREFIX}arch_ogl`. Keep `arch_sdl` introspection and the software surface path enabled independently, and centralize the paired fixup if practical so D1 and D2 cannot drift.
 - Validation: Configure and build debug and release variants with `useOpenGL=true` and `false` for arm64-v8a, armeabi-v7a, and x86_64; require no missing-target diagnostics, load each D1 and D2 library, run a headless or launcher startup smoke test, and in software mode render a palette sentinel that also exercises BR-0205's channel-order check. Add a configuration test that fails if either renderer option references a target excluded by that option.
-- Resolution: Pending
-
-### BR-0395: P1 - Preserve desktop executable names across target renames
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: build-release
-- Found by: R1-CHUNK-0323
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/CMakeLists.txt:L1-L5,L125-L151` in the D1 target rename and dependency graph, and `d1/main/CMakeLists.txt:L93-L97,L267-L269,L333` in standalone executable construction and installation
-- Related: paired `d2/CMakeLists.txt:L5-L9,L130-L157` and `d2/main/CMakeLists.txt:L104-L108,L278-L281,L405`; `contrib/packaging/linux/build_package.sh:L31-L49,L90-L92`; `contrib/packaging/macos/build_package.sh:L26-L50,L59-L60`; `contrib/packaging/windows/build_package.sh:L6-L30,L49-L50`; `.github/workflows/package-linux.yml:L28-L41`; `.github/workflows/package-macos.yml:L33-L46`; `.github/workflows/package-macos-arm.yml:L31-L44`; `.github/workflows/package-windows.yml:L46-L59`; `d1/arch/cocoa/Info.plist:L7-L10`; and `d1/d1x-redux.desktop:L2-L6`
-- Evidence: The branch renames both CMake game targets and constructs the non-Android executables directly as `dxx-redux-d1` and `dxx-redux-d2`. No target has an `OUTPUT_NAME` or other runtime-name override, so CMake emits those names; the maintained Windows graph and existing artifact confirm `buildd1/main/dxx-redux-d1.exe` and no `d1x-redux.exe`. All three packaging implementations still copy `buildd1/main/d1x-redux` or `.exe` and `buildd2/main/d2x-redux` or `.exe`. Their Linux and Windows scripts run with shell error tracing but not `set -e`, so the first missing copy can also be followed by packaging operations against absent executables; the macOS script likewise supplies the stale name to copy, dylibbundler, and codesign. The four maintained platform workflows build the renamed targets and immediately invoke those scripts. The macOS plist and Linux desktop entry also retain the legacy executable contract, demonstrating that the internal target rename was not intended to silently rename the shipped desktop programs.
-- Trigger: Dispatch any maintained Linux, Intel/ARM macOS, or MinGW Windows packaging workflow at the frozen head after its normal D1 and D2 CMake builds complete
-- Impact: Every desktop release pipeline fails to locate one or both built game executables and cannot produce a valid distributable artifact. Where a shell continues, it may create misleading partial package directories or archives before a later copy, dependency scan, bundling, or signing command fails. Direct desktop users and integration tooling that follow the documented `d1x-redux` or `d2x-redux` names also lose the established executable interface.
-- Expected: Internal CMake target names can coexist with Android's library names while standalone desktop builds continue to emit the executable basenames consumed by package scripts, plist and desktop metadata, documentation, and user automation, or every such consumer is updated atomically to one deliberate public rename.
-- Suggested fix: Keep the collision-free target identifiers, but under `NOT ANDROID` set their `OUTPUT_NAME` properties to `d1x-redux` and `d2x-redux`; alternatively update every package, install, desktop, plist, manifest, documentation, and automation consumer together. Make all package scripts fail fast and stage atomically so a missing executable cannot leave or upload a partial archive.
-- Validation: On Linux, Intel and ARM macOS, MSYS2/Clang Windows, and MSVC, configure clean standalone D1 and D2 builds and assert the exact intended executable basenames exist. Run all four packaging workflows or faithful offline fixture equivalents, require both games in each artifact, launch them through the packaged Linux desktop entry and macOS bundle metadata, inspect Windows dependency collection, and assert an intentionally missing executable stops before any final archive is published. Retain Android builds and load both `libdxx-redux-d1.so` and `libdxx-redux-d2.so` so preserving desktop names does not regress JNI library selection.
-- Resolution: Pending
+- Resolution: Partial 2026-08-11. Both unconditional `arch_ogl` mutations are now inside their paired `if(OPENGL)` blocks, and a regression check enforces that boundary. A real `:app:externalNativeBuildDebug -PuseOpenGL=false` run now configures successfully but later fails because Android shared merged-wall debug headers still include `GL/glew.h` in software mode and `d1/arch/sdl/gr.c` cannot resolve `SDL/SDL.h`. BR-0394 remains open until those separate software-path compile dependencies are removed and the paired ABI build completes.
 
 ### BR-0396: P2 - Register route snapshot and cache tests with CTest
 
@@ -16618,26 +16236,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Import and directly seed difficulty values at `Int.MIN_VALUE`, `-1`, `0`, `4`, `5`, and `Int.MAX_VALUE`, plus wrong JSON types and partially valid tuples; open both create dialogs after process recreation and require no exception, a documented repaired or rejected value, consistent re-export, and no mutation of unrelated valid defaults.
 - Resolution: Pending
 
-### BR-0426: P1 - Validate the selected mission level before creating or starting a host
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: memory-safety/input-validation
-- Found by: R1-CHUNK-0383
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/multiplayer/CreateGameDialog.kt:L237-L254,L426-L478` in level entry and create admission
-- Related: `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt:L704-L731`, `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt:L815-L858`, `android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c:L166-L191,L211-L213`, `d1/main/net_udp.c:L4583-L4595,L5579-L5588`, `d2/main/net_udp.c:L4689-L4701,L5693-L5702`, `d1/main/gameseq.c:L675-L688`, and `d2/main/gameseq.c:L812-L822`
-- Evidence: The level field retains arbitrary digit strings, converts any parseable value to `Int`, and enables Create for every value at least one; it never compares against the selected mission's `Last_level`. Both LAN and matchmaking callers preserve that value in lobby and launch state. Native auto-host loads the mission, assigns the unchecked value to `Netgame.levelnum`, and calls `net_udp_start_game` directly. The ordinary D1 and D2 network parameter callbacks contain explicit mission-range rejection, but auto-host never visits that menu, and its player-selection start paths call `StartNewLevel(Netgame.levelnum)` after the host presses the overlay start button or the expected player count joins. Paired level loaders assert the range and then derive a mission filename through level-indexed state; D2 directly evaluates `Level_names[level_num - 1]`, while D1's `get_level_file` consumes the same invalid number. Thus a normal user can type `999999` and carry it past the only Kotlin admission gate into a native assertion or out-of-range mission-level access.
-- Trigger: Select any ordinary mission, enter a positive level above that mission's last normal level, create the LAN host or matchmaking lobby, and press Start Game or let the configured player count trigger automatic start
-- Impact: The host game process can abort at the native range assertion or access mission level state out of bounds in assertion-disabled builds instead of starting the match. The invalid value is also advertised and persisted before failure, so invited peers and resume/create surfaces can participate in a lobby that cannot safely launch.
-- Expected: A host can create and start only a level proven to exist in the selected mission, and the native auto-host boundary independently rejects every invalid game, mode, difficulty, player count, mission, and level tuple before opening sockets or publishing a lobby.
-- Suggested fix: Resolve selected-mission metadata before enabling Create and constrain the UI to its normal-level range; invalidate or reset the level whenever game or mission changes. Add mandatory paired native checks immediately after mission loading and before copying parameters into `Netgame`, return a typed startup failure to the launcher, and retain the engine menu validation as another defense rather than the sole check in a bypassed path.
-- Validation: Exercise D1, D2, demo, D1-in-D2, and custom missions at zero, one, last level, last plus one, a missing intermediate level, `Int.MAX_VALUE`, and values stale from a prior mission; cover manual overlay start and automatic full-lobby start through LAN and matchmaking. Require invalid tuples to prevent lobby/start publication with an actionable UI error and require native direct callers to return safely without assertion, array access, socket/lobby residue, peer launch, or persisted invalid resume state.
-- Additional location (R1-CHUNK-0392): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/multiplayer/MissionPicker.kt:L39-L63,L70-L107,L113-L151` in mission metadata retention and selection projection
-- Additional evidence (R1-CHUNK-0392): Mission scanning parses and retains each descriptor's `levelCount`, but the picker returns only the filename and never exposes that range to host admission. If a persisted selected filename is absent from the current scan, the field still displays the raw filename and keeps it non-null instead of forcing a valid current selection. Thus both ordinary selection and a stale saved selection reach BR-0426's unchecked numeric level path without the metadata already available at the picker boundary.
-- Additional validation (R1-CHUNK-0392): Remove, rename, replace, or change the level count of the currently saved mission between launcher sessions, then exercise distinct mission ranges through both picker and restored-default paths. Require Create to remain disabled until a current descriptor-backed mission and in-range level are selected, with no stale filename publication.
-- Resolution: Pending
-
 ### BR-0427: P2 - Give durable player blocks a visible recovery path
 
 - [ ] OPEN
@@ -16655,54 +16253,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Block accepted, pending, removed, offline, duplicate-callsign, and already blocked accounts; reconnect and restart; enumerate the block list; cancel and confirm both dialogs; unblock under success, database failure, disconnect, concurrent request, and crossed block. Require exact durable state, no leaked presence while blocked, no optimistic false success, and the ability to re-establish a friendship only after explicit unblock.
 - Resolution: Pending
 
-### BR-0428: P1 - Reject non-finite touch-layout numbers before persistence
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/input-validation
-- Found by: R1-CHUNK-0384, R1-CHUNK-0391, R1-CHUNK-0459
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt:L133-L205,L214-L520` in touch-layout numeric parsing
-- Related: `android/app/src/main/java/com/dxxredux/app/TouchControl.kt:L823-L851`, `android/app/src/main/java/com/dxxredux/app/TouchLayoutSlotRepository.kt:L26-L37`, `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt:L133-L188`, and `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L3331-L3337`
-- Evidence: Every touch numeric field is converted with `JSONObject.getDouble` or `optDouble` and then narrowed to `Float`, without an `isFinite` or domain check. The bundled `org.json` implementation accepts JSON string values such as `"NaN"` and `"Infinity"` through those accessors, so a document such as `{"type":"touch_layout","globalOpacity":"NaN"}` returns a non-null, warning-free `TouchLayout`. Active-slot persistence immediately serializes that value with `JSONObject.put`; the same library rejects non-finite numbers with `JSONException`. Neither `saveActiveLayout` nor the import confirmation callback catches that failure, and the callback invokes import synchronously on the main thread. A JDK 21 JShell probe against the cached `org.json:json:20240303` jar reproduced both acceptance and serialization rejection.
-- Trigger: Select and confirm a touch-layout JSON whose `globalOpacity`, control coordinate, dimension, opacity, deadzone, scale, gyro value, or other floating field is the JSON string `"NaN"`, `"Infinity"`, or `"-Infinity"`
-- Impact: A syntactically valid selected configuration deterministically throws on the launcher main thread instead of returning an import result, terminating or destabilizing SetupActivity. The same unchecked model can fail later export or persistence paths if another caller retains it.
-- Expected: Imported numeric values are finite and within the domain required by each control before a `TouchLayout` is returned or any active slot is changed; malformed input produces a recoverable field-specific error.
-- Suggested fix: Centralize finite, range, and checked-conversion helpers for every touch and gyro numeric field, reject non-numeric strings rather than relying on coercive JSON accessors, and validate the complete staged layout before publication. Catch and report persistence failures without altering the selected generation, while retaining atomic storage as the final defense.
-- Validation: Import numeric JSON numbers and strings containing finite boundaries, values just outside every maintained domain, `NaN`, positive and negative infinity, overflow magnitudes, signed zero, and wrong types at every numeric field. Require rejection before file mutation, no main-thread exception, unchanged active layout and slots, actionable field paths, and successful round trips for valid finite layouts.
-- Additional location (R1-CHUNK-0459): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/TouchControl.kt:L39-L60,L66-L171,L229-L357,L367-L475,L509-L705,L724-L886` in raw model parsing, normalization, response math, and serialization
-- Additional evidence (R1-CHUNK-0459): The game-facing raw JSON codec independently narrows every floating field without finite or domain validation and passes response exponents directly to `applyResponseCurve`. Even finite but unsupported values can create invalid runtime output: exponent zero makes the S curve return 0.5 at full travel, while a negative exponent at center evaluates an infinite ratio and produces NaN. Stick, slider, and axis-region consumers then multiply and `coerceIn` that value, which does not repair NaN, before delivering it to the input mixer and native axis path. `normalizeStickExtremeAction` likewise uses `coerceIn` without rejecting NaN thresholds. Existing focused tests cover ordinary extreme-action thresholds but no response-curve boundaries or invalid numeric domains.
-- Additional validation (R1-CHUNK-0459): Parse and execute every response curve and normalized extreme action with finite maintained boundaries, zero, negative, excessive, NaN, and positive and negative infinity exponents, inputs, thresholds, releases, sensitivity, and geometry values. Require rejection or documented normalization before model publication, finite axis delivery within the maintained range, exact zero and full-travel endpoints, valid hysteresis, and unchanged prior active-layout bytes after every invalid import.
-- Resolution: Pending
-
-### BR-0430: P2 - Reject incomplete touch layouts instead of publishing warning-only partial parses
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0384, R1-CHUNK-0390, R1-CHUNK-0391
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt:L133-L210,L525-L587,L665-L677` in schema admission and warning-only element recovery
-- Related: `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt:L157-L188,L211-L237`, `android/app/src/main/java/com/dxxredux/app/TouchLayoutSlotRepository.kt:L26-L37`, and `android/app/src/main/java/com/dxxredux/app/TouchLayoutRepository.kt`
-- Evidence: The touch parser does not validate its top-level `type` or supported `version`; every missing or wrongly typed control array becomes an empty list, and `parseArraySafe` catches element errors and silently omits those controls while still returning a non-null layout. Binding and axis failures likewise return null fields or controls with only warnings. Standalone import saves that partial value and reports “imported successfully” followed by warnings; slot-array import accepts each non-null partial result, drops its parser warnings, and replaces the slot set if any slot survived. Consequently `{"type":"touch_layout"}` is a successful destructive import of an empty layout, while misspelled fields, unsupported future schemas, and individually damaged controls overwrite a valid generation with only the recognizable subset.
-- Trigger: Import a touch layout with omitted arrays, a future or unsupported version, a misspelled array key, unknown binding or axis names, or one malformed object among otherwise valid controls; use either standalone import or a combined slot export
-- Impact: The importer can silently delete controls, axes, or whole slot contents while claiming success. A user may lose the only usable touch controls and be unable to operate the game on a touch-only device; combined imports conceal even the warnings that could explain the loss.
-- Expected: Required schema structure, supported version, field domains, and every element are validated as one transaction; any lossy recovery requires explicit preview and opt-in and never masquerades as a successful faithful import.
-- Suggested fix: Define strict versioned schemas for touch layouts and slot exports, require the matching type and supported version, distinguish absent from invalid arrays, reject unknown or malformed required fields and unresolved bindings and axes, and accumulate path-specific errors without constructing a publishable generation. If a repair mode is desired, preview exact additions, drops, and defaults and require separate confirmation before an atomic replacement.
-- Validation: Cover empty objects, wrong and missing types, every historical and future version, absent and wrongly typed arrays, unknown and fallback binding names, malformed first, middle, and last controls, mixed valid and invalid slots, warning propagation, and files with no usable interaction control. Require strict import to preserve prior slots on every error, report all relevant field paths, never claim partial success, and round-trip every supported exported schema without loss.
-- Additional location (R1-CHUNK-0390): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/TouchBindings.kt:L261-L270,L334-L387` and `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt:L525-L567` in binding and axis domain admission
-- Additional evidence (R1-CHUNK-0390): The human-readable parser accepts every JSON number directly and the fallback forms `binding_N` and `axis_N` accept every parseable `Int`; none is checked against the maintained standard button, meta-action, Android keycode, or axis sets. Every value at least 1000 is classified as a meta action even when no such action exists. Other arbitrary buttons enter `InputMixer`, where MainActivity adds 100 and native input narrows the result to `Uint8` even when its range check failed; for example `binding_256` becomes event button 100 and can alias Fire Primary rather than being rejected. Invalid axes become retained mixer keys but have no supported native consumer. This is another direct consequence of BR-0430's missing field-domain validation, distinct from the radial type-loss finding below.
-- Additional validation (R1-CHUNK-0390): At every binding and axis field, import each maintained value plus gaps, negative values other than documented sentinels, 255, 256, meta-action gaps and one-past-last, `Int.MIN_VALUE`, and `Int.MAX_VALUE` in numeric and fallback-name forms. Require invalid domains to reject the complete layout before publication, no modulo-wrapped SDL event or unknown meta dispatch, no retained dead mixer entry, and exact round trips for valid standard actions, keycodes, meta actions, and axes.
-- Additional location (R1-CHUNK-0391): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt:L211-L240` and `android/app/src/main/java/com/dxxredux/app/TouchLayoutSlotRepository.kt:L138-L160` in combined slot-array admission and active-slot publication
-- Additional evidence (R1-CHUNK-0391): Combined import passes the exported active index unchanged after the slot parser silently compacts malformed entries. If slot 1 is malformed while slots 0, 2, and 3 are valid and exported slot 2 was active, the compacted list contains those entries at indices 0, 1, and 2 but the retained active index 2 now selects original slot 3. The importer replaces the complete slot set and active layout without reporting the dropped slot or changed selection. Controller slots repeat the same compaction policy, confirming that warning-only recovery also corrupts cross-element identity rather than merely dropping damaged content.
-- Additional validation (R1-CHUNK-0391): In combined touch and controller slot arrays, corrupt each slot before, at, and after the active slot while retaining valid neighbors with distinct names and bindings. Require any malformed slot to reject the generation, or an explicit repair preview to preserve source-to-output identity and remap the active slot to the same surviving source entry.
-- Additional location (R1-CHUNK-0462): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt:L2266-L2284` in independent floating-zone property sliders, with `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt:L422-L443,L898-L909` in runtime admission
-- Additional evidence (R1-CHUNK-0462): The direct editor path repeats the missing zone-domain invariant without any import. Left, right, top, and bottom are four independent 0 through 100 sliders, and each callback copies only its selected edge. Unlike the adjacent edge-drag helper, these callbacks do not preserve the two-percent minimum size or even require left at or below right and top at or below bottom. Setting Left above Right or Top above Bottom saves the reversed FloatingZone as a normal dirty layout. Both the editor and gameplay compute those endpoints unchanged, and gameplay admits a floating or mouse stick only when the pointer lies in `fzLeft..fzRight` and `fzTop..fzBottom`; a reversed Kotlin range is empty. Equality reduces admission to an effectively unusable line. The invalid generation is therefore authorable through supported UI and can disable the only steering stick on a touch-only layout.
-- Additional validation (R1-CHUNK-0462): Exercise each zone slider below, at, and across its opposite edge in both edit orders, including equality, the two-percent minimum, orientation changes, save, reload, raw and human-readable round trip, and D1/D2 launch. Require every intermediate and persisted zone to retain ordered minimum-size bounds, visible editor geometry, and a nonempty runtime hit region, with either coupled sliders, clamping, or explicit rejection rather than silent control loss.
-- Additional location (R1-CHUNK-0463): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt:L2786-L2803` in independent axis-region zone sliders, with `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt:L968-L975,L2435-L2449,L2648-L2692` in runtime geometry and pointer ownership
-- Additional evidence (R1-CHUNK-0463): The same editor-authored invalid-zone path applies independently to every axis region. Its Left, Top, Right, and Bottom sliders copy one edge at a time across the complete zero through 100 range without retaining order or the two-percent minimum enforced by edge dragging. Gameplay copies those endpoints directly, and both initial region admission and stick-to-region pointer stealing require membership in the resulting Kotlin ranges. Crossing either edge pair makes the range empty, so the saved region never activates or steals a pointer; equality reduces it to a line. An axis region can therefore appear configured while silently losing its assigned axis input after an ordinary supported edit.
-- Additional validation (R1-CHUNK-0463): Repeat the ordered-bound, equality, crossing, minimum-size, save, reload, orientation, D1, and D2 cases for axis regions. Require direct admission, stick-to-region stealing, region-to-stick return, editor drawing, and persisted geometry to use one ordered nonempty zone contract.
-- Resolution: Pending
 
 ### BR-0432: P2 - Reject an empty music-source launch instead of reporting ready
 
@@ -17000,23 +16550,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0528): Retain the pure policy cases as controls, then add view-level gesture tests with controlled provider generations and D1/D2 list replacement between every down, move, draw, and up boundary. Require one immutable action and pointer identity or explicit cancellation, no index substitution or exception, and no mutation of a replacement Autoselect generation without a fresh grab.
 - Resolution: Pending
 
-### BR-0449: P1 - Build pre-O foreground notifications with a supported constructor
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/platform-api
-- Found by: R1-CHUNK-0397
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerForegroundService.kt:L24-L39` in foreground notification construction
-- Related: `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerForegroundService.kt:L42-L67`, `android/app/src/main/java/com/dxxredux/app/MainActivity.kt:L779-L786,L2418-L2424`, `android/app/src/main/AndroidManifest.xml:L86-L93`, and `android/get_deps/tool_versions.conf:L43-L45`
-- Evidence: The maintained platform manifest declares `MIN_SDK=23`, and `start` deliberately uses the pre-O `startService` branch on API levels below 26. `onStartCommand` nevertheless unconditionally invokes `Notification.Builder(Context, String)`. The installed Android SDK API database marks that constructor `since="26"`; only `Notification.Builder(Context)` exists throughout API 23 through 25. `ensureChannel` is guarded, but the constructor immediately following it is not, so service startup on a supported pre-O device reaches a missing framework method before `startForeground`. Every multiplayer `MainActivity` starts this service, which runs in the default process that owns matchmaking and the UDP relay proxy.
-- Trigger: Install the app on Android 6.0, 7.0, or 7.1, then launch any LAN or online multiplayer game far enough for `MainActivity` to start `MultiplayerForegroundService`
-- Impact: The default app process fails service startup with a linkage error on every supported API 23 through 25 multiplayer launch. Online games lose the matchmaking socket and relay proxy they require, LAN coordination and diagnostics in that process are terminated, and the separate game activity cannot obtain the process-liveness guarantee the service was introduced to provide.
-- Expected: Every declared API level can create and promote the service using framework calls available on that level, with channels used only on API 26 and later.
-- Suggested fix: Construct with `Notification.Builder(this, CHANNEL_ID)` only inside the API-26 branch and use `Notification.Builder(this)` below 26, or use `NotificationCompat.Builder` with the same channel ID and tested fallback behavior. Keep channel creation and `startForegroundService` gating aligned with the constructor choice.
-- Validation: Add an API-level service test and emulator smoke on API 23, 25, 26, and the target SDK. Start both LAN and online game flows, require one valid ongoing notification and successful `startForeground` without `NoSuchMethodError`, verify the default process, matchmaking connection, and proxy remain alive, then leave the game and require service and notification cleanup.
-- Resolution: Pending
-
 ### BR-0450: P2 - Stop retaining unused peer identities in resume preferences
 
 - [ ] OPEN
@@ -17049,23 +16582,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Losing window focus, pausing or stopping the activity, canceling input, or disposing the modifier atomically ends synthetic repeat and clears its held direction; resume requires a fresh key-down before any movement.
 - Suggested fix: Bind the repeat state to both the current lifecycle owner and window-focus state, call one idempotent `stopRepeat` on pause, stop, focus loss, input cancellation, and disposal, and ensure the observer itself is removed on disposal. Prefer a shared launcher input-state owner if multiple modifiers can be active, and let lifecycle cancellation clear any grabbed navigation state that cannot safely survive suspension.
 - Validation: Add Compose or instrumentation coverage that begins repeat before and after the initial delay, then sends matching key-up, opposite key-down, focus loss, Home and resume, another activity or dialog window, disposal, and activity recreation. Exercise ordinary focus pages and a grabbed autoselect item; require movement only during one uninterrupted focused hold, no hidden or post-resume movement, a cleared coroutine and direction at every cancellation boundary, and normal fresh presses afterward.
-- Resolution: Pending
-
-### BR-0452: P2 - Verify the complete BinHex envelope before publishing its data fork
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0399, R1-CHUNK-0528
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/BinHexDecoder.kt:L17-L40,L43-L89` in `decodeDataFork`, `decodeSixBit`, and `decodeRle`
-- Related: `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L396-L464`, `android/app/src/test/java/com/dxxredux/app/BinHexDecoderTest.kt:L10-L35`, archived BR-0018, and RFC 1741 Appendix A at `https://www.rfc-editor.org/rfc/rfc1741.html#appendix-A`
-- Evidence: RFC 1741 defines a required identifying comment and colon-delimited stream whose decoded layout contains a filename length from 1 through 63, fixed metadata, data and resource lengths, and separate CRC words for the header, data fork, and resource fork. The decoder coerces a missing `BinHex 4.0` search result to offset zero and accepts the first two later colons, so the required comment is optional. After six-bit and RLE expansion it checks only that a computed header prefix and nonnegative data length appear to fit, then writes the selected bytes. It never validates the filename length domain, version, resource-fork span, terminal structure, residual encoded bits, or any of the three integrity words. Its sole focused fixture writes zero for the header CRC and all four post-data CRC bytes while the nonempty `demo-data` fork has a nonzero CRC, yet requires successful output. The length check also evaluates `dataStart + dataLen` as wrapping signed `Int` arithmetic, allowing a very large declared positive length to pass that predicate and fail only after the destination has been opened.
-- Trigger: Select an `.hqx` whose identifying comment is absent or misplaced, whose header, data, resource fork, or CRC is corrupted, whose six-bit tail is incomplete, or whose declared data length reaches signed addition boundaries
-- Impact: The launcher treats a malformed or transport-corrupted file as decoded BinHex, creates a purported StuffIt input without detecting which protected region failed, and can feed altered bytes to the native extractor or fail only after opening the staged output. Depending on the inner archive's independent checks, import can report a generic later failure or publish game files from bytes that the outer format explicitly marked invalid, defeating BinHex's error-detection contract and making damaged demo sources nondeterministic to diagnose.
-- Expected: A data fork is published only after the identifying envelope, complete decoded layout, header CRC, data CRC, resource span and CRC, length arithmetic, and terminal padding all validate exactly.
-- Suggested fix: Decode through a bounded cursor tied to the shared BR-0018 budget, require the exact comment and line-positioned delimiters, validate the filename and fixed fields, use checked `Long` span arithmetic, compute and compare each BinHex CRC before output creation, and reject nonzero residual bits or any bytes outside the declared terminal structure. Write the verified data fork to an owned temporary and atomically publish it only after all checks pass.
-- Validation: Add valid retail HQX controls and mutate every byte of the comment, delimiters, filename length, metadata, fork lengths, each CRC, resource fork, six-bit tail, and RLE boundary. Cover zero, exact-fit, one-past, `Int.MAX_VALUE`, truncated, trailing, and high-expansion cases; require a specific bounded failure before output publication for every malformed fixture and exact data-fork bytes for valid D1 and D2 demo archives.
 - Resolution: Pending
 
 ### BR-0454: P2 - Attach update callbacks to one request
@@ -17475,23 +16991,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add an Activity/Compose controller test that opens each of the four nested axis-button pickers and navigates, selects None and a function, cancels, and reopens using physical D-pad, both sticks, and A. Assert only the top dialog receives each edge, child closure restores parent navigation and focus, parent closure clears routing, and rapid open/close or recomposition never publishes a stale or null target.
 - Resolution: Pending
 
-### BR-0480: P1 - Commit legacy file-set migration only after verified transfer
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-loss
-- Found by: R1-CHUNK-0420
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/FileSetManager.kt:L211-L271,L282-L303` in startup migration and root sweeping
-- Related: `android/app/src/main/java/com/dxxredux/app/ImportLocationManager.kt:L91-L104,L140-L169,L174-L180,L228-L330`, `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L2181-L2187`, and `android/app/src/test/java/com/dxxredux/app/ImportLocationMigrateTest.kt:L61-L157`
-- Evidence: The v0-to-v1 migration attempts each legacy root file and `missions` directory with `renameTo`, but treats a destination collision and a false rename result identically to success: it advances `migration_version` to 1 without counting expected inputs or verifying destination bytes. SetupActivity then calls `sweepRootGameFiles` immediately, and that method trusts version 1 and deletes every remaining root game-data file and recursively deletes the remaining `missions` directory. The configured import root can explicitly be an SD card or removable volume, so a cross-filesystem rename is a supported ordinary state; a preexisting destination or partial prior attempt is another direct failure path. The v1-to-v2 migration likewise attempts to rename the complete old `filesDir/sets` tree, or only noncolliding child directories when the target exists, but advances version 2 even if cross-volume moves fail, a same-named target skips an entire legacy set, deletion is partial, or the target was never created. That permanently disables retries and leaves registered sets pointing at newly created empty target directories while their data remains stranded under the old root. The maintained tests cover the separate copy-and-byte-verify location migration and only assert which root FileSetManager chooses; none exercises either startup migration or the following sweep.
-- Trigger: Upgrade an installation containing root game files or `filesDir/sets` while the active import root is on removable storage, while a same-named target file or set already exists, after a partial prior move, or under any filesystem condition where `renameTo` returns false; then let SetupScreen perform its normal startup sequence
-- Impact: Unmoved root archives and missions can be recursively deleted on the same startup, including the only imported copy. Legacy named sets can instead disappear from the launcher and engine while remaining stranded and no longer eligible for automatic migration. A destination collision is resolved by silently discarding or hiding one side without comparing identity, recency, or completeness.
-- Expected: A migration version advances only after every selected source has been transferred and verified under an explicit collision policy; no cleanup deletes a source unless the committed destination is proven complete, and incomplete migrations remain retryable and visible.
-- Suggested fix: Reuse one staged copy-and-verify migration primitive across root files, manifests, directories, and complete set trees, with checked byte and entry inventories, free-space handling, an owned in-progress marker, and atomic publication. Define collision handling that verifies identical content or stops for user resolution instead of skipping a subtree. Commit the version only after the full generation succeeds, and restrict sweeping to individually recorded sources whose destination identity was verified.
-- Validation: Build upgrade fixtures for versions 0, 1, and partial 2 on same and distinct filesystems, with root files, nested missions, multiple named sets, manifests, empty and populated target roots, identical and differing collisions, removable-volume loss, insufficient space, false rename, short copy, process death, and restart at every boundary. Require exact preservation of all source bytes on failure, retry on the next startup, no sweep of unverified sources, one complete published generation on success, and correct D1/D2 launch visibility for every migrated set.
-- Resolution: Pending
-
 ### BR-0481: P2 - Treat loose secret levels as file-set game data
 
 - [ ] OPEN
@@ -17524,23 +17023,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Suspending steps complete a correlated, bounded handoff protocol: the exact callback generation acknowledges successful game start, every preflight or activation failure returns a reason and terminal FAIL, timeout clears only its own pending token, and later manual launches can never consume automation state from an unacknowledged step.
 - Suggested fix: Replace the Unit launch callback and ambient nullable token with a generation-bound suspendable handshake or explicit result channel. Publish a token only for the exact button and run generation, have `onLaunchGame` claim it atomically and report preflight/start success or failure, retain execution until acknowledgement within an immutable deadline, and clear the token on every failure, cancellation, replacement, timeout, and Activity teardown. For injected input, require dispatch acceptance and still wait for the callback rather than treating elapsed delay as launch success.
 - Validation: Exercise direct `enter_game` and each game-launching button through successful D1/D2 launches, missing data, preflight exceptions, invalid resume details, live-process stop success and failure, accessibility false and true-without-callback, rejected touch down or up, recomposition and button replacement, timeout, cancellation, Activity recreation, executor replacement, and a subsequent manual launch. Require exactly one correlated continuation or FAIL, no outer timeout, no stale pending token, no wrong-run cursor, and no later user action routed through expired automation.
-- Resolution: Pending
-
-### BR-0483: P2 - Preserve quoted payloads while removing JSON5 trailing commas
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/api-data-format
-- Found by: R1-CHUNK-0423
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt:L1158-L1185` in `stripJson5`
-- Related: `android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt:L66-L92,L136-L146,L201-L215` and archived BR-0177
-- Evidence: The scanner correctly tracks double-quoted strings while removing line comments, but trailing commas are removed afterward by `Regex(",\\s*([\\]})])")` over the complete transformed text with no string state. The regex therefore treats comma-plus-bracket or comma-plus-brace text inside a quoted value as syntax. An exact in-memory probe of that expression transformed the valid strict-JSON script payloads `content:"marker,}"` and `message:"array,]"` into `marker}` and `array]`; the transformed document remained valid and parsed, so execution receives altered values without any failure. The supported `write_config` action then persists the altered content and the script can reach terminal PASS. Archived BR-0177 fixed equivalent string-blind preprocessing in repository PowerShell readers, but its completed remediation did not replace this independent production parser, and the frozen-to-live delta leaves this method unchanged.
-- Trigger: Execute any launcher-owned script whose log message, assertion text, file content, label, path, or other quoted field contains a comma followed by optional whitespace and `}` or `]`; embedded JSON written through `write_config` naturally contains this pattern
-- Impact: Automation can write a different configuration from the script's declared bytes, compare or log altered values, select a different artifact label, or pass after exercising corrupted input. Tests intended to validate JSON-bearing configurations can therefore certify behavior for a payload they never requested, with no parse error or diagnostic showing the rewrite.
-- Expected: JSON5 syntax cleanup recognizes trailing commas only outside every supported quoted-string form and preserves all string code units exactly, or scripts are parsed directly by a maintained JSON5 parser without source rewriting.
-- Suggested fix: Replace the final regex with the same stateful pass that handles comments, tracking string and escape state while looking ahead to remove commas only before structural closers outside strings. Prefer one maintained JSON5-subset parser shared with the repository tooling fixed under BR-0177, and document whether single quotes, block comments, and unquoted keys are supported rather than approximating the format in separate runtimes.
-- Validation: Parse and execute launcher scripts containing comma-plus-brace and comma-plus-bracket strings with zero, spaces, tabs, and newlines; escaped quotes and backslashes around those sequences; URLs and comment markers; real trailing commas in nested arrays and objects; embedded JSON config content; malformed comments and strings; and the complete maintained corpus. Require byte-exact payload preservation, removal only of syntactic trailing commas, identical accepted syntax across launcher and native handoff, and no PASS after a rewritten value.
 - Resolution: Pending
 
 ### BR-0486: P1 - Refresh joined LAN player leases before host pruning
@@ -17960,25 +17442,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add instrumentation coverage with exact and containing labels in both node orders, including `Delete` versus `Delete All Recorded Demos`, `Add` versus `Add to Game`, and launch labels; exercise exact true and false, duplicate labels, case differences, recomposition between discovery and activation, disabled replacement, semantic-ID reuse, accessibility rejection, and touch fallback. Require exactly the resolved callback once or an explicit ambiguity or stale-target failure, never a different control, bulk mutation, continued false pass, or stale launch handoff.
 - Resolution: Pending
 
-### BR-0511: P2 - Reject ambiguous import filename collisions
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0451
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupDiscImport.kt:L37-L53,L223-L278` in GOG pair discovery and nested game-file hoisting
-- Related: `android/app/src/main/java/com/dxxredux/app/SetupDiscImport.kt:L114-L161,L189-L209`, `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt:L684-L819,L1220-L1338,L1696-L1768`, `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L195-L334,L469-L621`, and `android/app/src/test/java/com/dxxredux/app/DiscImportHoistTest.kt:L50-L75`
-- Evidence: GOG discovery collapses every `.gog` and `.inst` filename into case-folded basename maps with `associateBy`; same-key candidates silently replace one another according to unspecified `File.list()` order. It can therefore pair one arbitrary case variant with a CUE belonging to another variant and register that combination as a stable source. Disc postprocessing independently flattens every recognized nested game file to the set root. When a case-folded root collision exists, it deletes the nested file whenever the root is at least as large, but selects the nested file whenever it is larger, treating byte length alone as proof that one candidate is preferable without validating content, source role, version, or digest. The maintained focused test explicitly requires a larger nested `descent2.hog` to replace a smaller root `DESCENT2.HOG`, but has no equal-name ambiguity, byte identity, case-collision, or GOG-pair case. BR-0456 separately covers failure-safe publication after a candidate has been selected.
-- Trigger: Import disc or installer content containing root and nested recognized game files with the same case-folded basename but different bytes or sizes, or leave two case variants of one `.gog` or `.inst` basename in the active set before audio registration
-- Impact: Import can silently choose or register the wrong game or CD-audio bytes based on file length or filesystem enumeration order. A larger unrelated, corrupt, or older nested file can displace the intended root identity, and identical on-disk input can select a different GOG source across devices or directory generations.
-- Expected: Every logical game or GOG audio destination has one unambiguous validated source under a documented portable case policy; ambiguity fails before mutation and no identity is inferred from size or enumeration order.
-- Suggested fix: Precompute all root, nested, `.gog`, and `.inst` candidates by locale-independent normalized portable name before changing files. Reject multiple candidates for one logical destination unless a reviewed manifest defines an exact source and digest; validate GOG CUE-to-BIN pairing and do not infer precedence from size or enumeration order. Coordinate the later selected-file publication with BR-0456.
-- Validation: Permute directory order, case, nesting depth, equal and unequal sizes, equal and distinct bytes, paired and mismatched GOG variants, and known versus custom basenames. Require deterministic pre-mutation rejection of ambiguity or one manifest-selected identity and identical selection results across Android filesystems and locales; retain BR-0456's separate publication-failure matrix after selection.
-- Additional location (R1-CHUNK-0452): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt:L195-L334,L469-L621` in ZIP, nested SOW, 7z, and RAR basename flattening
-- Additional evidence (R1-CHUNK-0452): Each archive path flattens recognized logical paths to one lowercased leaf name in a shared destination without precomputing collisions. Duplicate ZIP or 7z entries overwrite according to archive order; nested SOW extraction can overwrite a retained ZIP path while duplicate suppression keeps the earlier result; and RAR tree walking sorts only by lowercased leaf name, leaving equal keys dependent on native extraction and filesystem enumeration order before `copyTo(overwrite = true)`. Distinct sources for one logical game filename are silently collapsed instead of rejected or selected by verified identity.
-- Additional validation (R1-CHUNK-0452): Build ZIP, SOW, 7z, and RAR inputs with duplicate leaves across directories, case variants, equal and unequal sizes, identical and distinct bytes, reordered entries, and permuted native output order. Require deterministic rejection before mutation or an explicitly manifest-selected digest, with exactly one immutable source and result record per logical destination.
-- Resolution: Pending
 
 ### BR-0514: P2 - Keep launcher downloads retryable after failure
 
@@ -18412,23 +17875,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0545): Exercise every shared health, stop, reset, readiness, diagnostic, and game-start helper with the intended primary alone, the secondary alone, both maintained emulators, a physical device, offline and unauthorized rows, and a pre-existing conflicting `ANDROID_SERIAL`. Require one explicitly selected and identity-validated serial to reach every ADB command, ambiguity and identity mismatch to fail before mutation, and no unselected device or system app to be stopped or changed.
 - Resolution: Pending
 
-### BR-0540: P1 - Rebuild only the AVD the launcher names
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/destructive-scope
-- Found by: R1-CHUNK-0476
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/Run-Emulator.ps1:L141-L173`
-- Related: `android/get_deps/helpers/create_light_avds.ps1:L27-L49`; `android/Run-Emulator.ps1:L27,L149-L168`
-- Evidence: The launcher asks whether to delete and rebuild singular emulator AVD `Nexus5X_Light_1` and labels the operation with that name. On confirmation it first force-stops every host process matching `qemu-system*` or `emulator*`, then calls `create_light_avds.ps1 -Force`. That helper loops over both `Nexus5X_Light_1` and `Nexus5X_Light_2`, and `-Force` deletes each AVD before recreating it. Thus rebuilding the named primary silently destroys the secondary AVD's complete data image as well and interrupts unrelated Android emulator processes.
-- Trigger: Keep state in `Nexus5X_Light_2` or run another project's emulator, then invoke `Run-Emulator.ps1 -Rebuild` or answer `y` to its singular rebuild prompt.
-- Impact: The secondary AVD's installed apps, test fixtures, configuration, and other local state are irreversibly deleted without being named in the confirmation, while every unrelated emulator/QEMU session is abruptly terminated and may lose in-flight state.
-- Expected: Confirmation names the exact destructive set, and rebuilding `Nexus5X_Light_1` stops and deletes only that AVD; no other AVD or process is affected.
-- Suggested fix: Add a single-AVD recreation parameter to the creator and pass `$AVD_NAME`. Identify and stop only the serial/process belonging to that AVD, avoid wildcard process termination, and require a separate explicit all-AVDs operation if both images are intentionally disposable.
-- Validation: Create sentinel state in both maintained AVDs and run an unrelated emulator process. Rebuild the primary and require a fresh primary, byte- or content-preserved secondary state, a live unrelated process, and no command targeting any unnamed AVD. Add a separate explicit all-AVDs test if that mode is retained.
-- Resolution: Pending
-
 ### BR-0541: P2 - Stop app launch when game-data provisioning fails
 
 - [ ] OPEN
@@ -18599,26 +18045,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Exercise omitted, blank, numeric, named if supported, whitespace, zero, negative, out-of-range, and misspelled values through both direct and orchestrated calls. Require only the three documented variants to reach Gradle and assert the exact task, signing configuration, BuildInfo type, output name, and upload input.
 - Resolution: Pending
 
-### BR-0548: P1 - Require the deployed Play artifact to match the selected AAB
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: build-release/artifact-identity
-- Found by: R1-CHUNK-0478, R1-CHUNK-0527
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/2_deploy-playstore.ps1:L61-L86,L208-L233,L307-L375`
-- Related: `android/0_upload_to_test.ps1:L120-L152`; `android/1_build-aab.ps1:L133-L151`
-- Evidence: The orchestrator builds and names one exact timestamped AAB but calls the deployer without `-AabPath`; the deployer independently chooses whichever debug, internal, or release file has the greatest `LastWriteTime`. More critically, when Play rejects the selected bytes because their version code has already been used, the script treats the rejection as a successful prior upload, extracts only the numeric version, opens a fresh edit, assigns that existing remote version to the selected track, commits it, and prints `Deployment successful`. It never proves that the already-uploaded bundle has the same bytes, variant, Git/build stamp, or signing identity as the local AAB that was just rejected.
-- Trigger: Rebuild changed or uncommitted source under a previously used version code and invoke the documented direct deploy flow, or run the orchestrator while another AAB has a later filesystem timestamp; select any track for promotion.
-- Impact: The command can commit and report a successful Play deployment while serving a different earlier artifact than the operator built and selected. A debug, internal, release, stale, or concurrently produced bundle can be promoted under the intended release's version label, invalidating release evidence and distributing the wrong product code.
-- Expected: One exact immutable AAB path and content identity flows from build through upload response and track commit; an upload rejection never becomes success unless the remote artifact is independently proven byte-for-byte equivalent under an authenticated identity contract.
-- Suggested fix: Have the build command return a structured artifact record containing canonical path, digest, variant, package, version code, and build stamp, and pass that exact path to deployment. Inspect the AAB before upload, accept only the expected package and variant, and treat `versionCode already used` as a hard conflict requiring a new code unless an API-derived remote identity can be matched exactly. Include the selected digest and returned version in the final report.
-- Validation: Seed build outputs with debug, internal, and release bundles having older, newer, equal, and future timestamps; run concurrent builds; and upload same-code same-byte and same-code different-byte fixtures. Require only the returned build artifact to be attempted, different bytes to fail without any track commit, equivalent reuse to require explicit verified identity, and the final Play track version and inspected bundle metadata to match the reported digest, variant, Git stamp, and version code.
-- Additional location (R1-CHUNK-0527): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/0_upload_to_test.ps1:L53-L116,L120-L152` in version selection and build-to-deploy handoff
-- Additional evidence (R1-CHUNK-0527): The wrapper queries only the requested track's maximum code and converts every query exception, including authentication expiry, permission, transport, server, malformed-response, and invalid-track failures, into `deployedCode = 0`. Play version codes identify bundles application-wide, not per track, so a code already present on another track or hidden by a failed query is retried. The child deployer's existing `already been used` branch then promotes that numeric remote version without comparing it to the just-built bytes, while the wrapper prints `Build and upload completed successfully`. This provides two ordinary automated routes into BR-0548's wrong-artifact success path in addition to newest-file selection.
-- Additional validation (R1-CHUNK-0527): Stub the track probe with empty, same-track, other-track-only, permission, timeout, server, malformed, and invalid-name outcomes, and seed same-code remote bundles with equal and different bytes. Require every non-authoritative query to fail before build or upload, compute uniqueness from an application-wide authoritative source, pass the exact built path and digest to deployment, and prohibit track mutation or success reporting for any unverified used code.
-- Resolution: Pending
-
 ### BR-0549: P2 - Keep signing passwords out of the bundletool process command line
 
 - [ ] OPEN
@@ -18634,23 +18060,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Release signing secrets are provided through a channel that does not place their values in process arguments, console output, persistent generic telemetry, or repository files with broader access than the protected credential source.
 - Suggested fix: Use bundletool's `file:` sources through uniquely owned, access-restricted temporary files with guaranteed `finally` cleanup, or a protected interactive/secret-provider channel. Avoid copying secrets into environment variables, validate file permissions, and rotate the keystore credentials if command-line collection may already have occurred.
 - Validation: Use sentinel passwords, capture process command lines and ordinary diagnostics during success, bundletool failure, cancellation, and concurrent installs, and require the sentinel never to appear. Verify the protected source is readable only by the intended account, is removed on every path, and still signs APKs whose certificate matches the expected key.
-- Resolution: Pending
-
-### BR-0550: P1 - Do not erase app data after an arbitrary install failure
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-loss
-- Found by: R1-CHUNK-0478
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/install-aab.ps1:L189-L203`
-- Related: `android/app/build.gradle:L279-L335`; `android/app/src/main/java/com/dxxredux/app/FileSetManager.kt`; `android/app/src/main/java/com/dxxredux/app/SaveExplorerBridge.kt`; `android/app/src/main/java/com/dxxredux/app/CustomAudioSetManager.kt`
-- Evidence: Any nonzero `adb install -r` result immediately runs `adb uninstall com.dxxredux.app` without classifying the failure, displaying the device response, asking for consent, backing up state, or offering a nondestructive exit. A signing mismatch between the script's release-signed universal APK and a commonly installed debug-signed package reaches this branch, but so do an offline or unauthorized device, insufficient storage, corrupt APK, incompatible device, ambiguous ADB target, transient transport error, and many other failures for which uninstall cannot repair the cause. A successful uninstall removes the package's private files and preferences before the second install is attempted.
-- Trigger: Keep saves, imported game files, mission extraction, custom audio, controller layouts, or other state under `com.dxxredux.app`, then run the installer with a different signing key or induce any first-install failure while uninstall remains able to reach the selected device.
-- Impact: The helper irreversibly deletes the app's complete private data set without warning, and the retry can still fail, leaving neither the application nor its user-created and imported state. A transient installation problem is converted into permanent local data loss.
-- Expected: Ordinary install failure is nondestructive. A signature mismatch is diagnosed precisely, and any uninstall or data reset requires a separate explicit switch or informed confirmation naming the package, target serial, affected data, and backup or export options.
-- Suggested fix: Capture and classify the exact ADB failure, stop for all nondestructive and unknown errors, and require an explicit `-ResetAppData` mode or interactive confirmation only for a proven signature incompatibility. Bind every command to one validated serial, offer or require export/backup of supported user data, check uninstall status, and never imply the retry preserves state.
-- Validation: Populate sentinel files and preferences, then exercise signature mismatch, offline, unauthorized, multiple-device, no-space, invalid-APK, version downgrade, transport failure, successful replacement, declined reset, and explicit reset. Require all default failures to preserve byte-identical package data, only confirmed reset to remove it on the named serial, and every exit to report the exact install and preservation outcome.
 - Resolution: Pending
 
 ### BR-0551: P2 - Scope automatic-variable lint suppression to intentional parameters
@@ -18670,22 +18079,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Run the pinned analyzer over the complete PowerShell tree with the rule enabled and require zero unsuppressed diagnostics. Test `Get-HomeDirectory` with present, absent, and blank `env:HOME` on Windows, Linux, and macOS and require the intended home fallback without exception; add a sentinel script assigning `$home` and require the standard quality wrapper to fail.
 - Resolution: Pending
 
-### BR-0552: P2 - Parse automation catalog JSON5 without rewriting quoted values
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/api-data-format
-- Found by: R1-CHUNK-0480
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/run_all_tests.ps1:L395-L441` in JSON5 catalog construction
-- Related: `android/helpers/test_helpers.ps1:L683-L684,L1567-L1580,L1613-L1628,L1645-L1651`; `android/tests/test_validate_automation_catalog.ps1:L50-L63`; archived BR-0177; BR-0483
-- Evidence: The runner passes every `test_*.json5` file to `Get-TestScriptInfo` before applying `-Filter`. That helper removes `//.*` and comma-before-closer patterns from the complete raw document without tracking quoted strings, then returns null on any parse error. An exact probe of the frozen expressions transformed the valid action value `"https://example.invalid/a"` into an unterminated `"https:` string, so the caller adds an invalid-catalog error and exits 1 even when the URL occurs outside `_info` or the requested filter selects another test. The same expressions silently changed the valid quoted metadata value `"marker,}"` to `"marker}"`, and the execution resolver repeats both lossy transformations on action payloads. All 78 frozen catalog files parse only because none currently contains a quoted URL; the catalog validator reuses the same parser and has no adversarial string fixture.
-- Trigger: Add or edit any standalone or support automation script so a quoted action, assertion, path, message, configuration payload, label, or metadata value contains `https://`, another literal `//`, or comma followed by optional whitespace and `}` or `]`; then invoke the aggregate runner, including with a filter for an unrelated test.
-- Impact: A legal test value can block the complete aggregate suite before any test runs, or be silently changed before classification and execution. The runner can therefore reject maintainable test definitions, execute different bytes than the source declares, and report results that do not validate the intended payload.
-- Expected: JSON5 comments and trailing commas are recognized only outside quoted strings, every accepted string code unit is preserved exactly, and catalog validation and execution use the same parser.
-- Suggested fix: Replace the regex preprocessing in the shared helpers with the maintained string-aware JSON5-subset parser introduced for archived BR-0177, or use one pinned JSON5 implementation. Parse each file once into a validated model shared by catalog classification, timeout/launcher inspection, resolution, and execution rather than independently rewriting it in several functions.
-- Validation: Add standalone and support scripts containing escaped quotes and backslashes, URLs, double-slash paths, literal comment markers, comma-plus-brace and comma-plus-bracket strings with varied whitespace, real comments and trailing commas, and malformed unterminated syntax. Require byte-exact values through catalog and execution, consistent diagnostics, current-corpus parity, and proof that an unrelated filter is unaffected by legal values in other scripts.
-- Resolution: Pending
 
 ### BR-0553: P2 - Fail an aggregate run whose requested filter matches no test
 
@@ -18937,26 +18330,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: In isolated Git Bash, WSL, native Linux, and macOS environments, resolve existing and missing drive roots and leaves, mixed slash forms, spaces, alternate drive letters, Unix paths, and invalid Windows paths. Require new WSL leaves under `/mnt/<drive>`, new MSYS leaves under `/<drive>`, no root-level stray directory, and successful end-to-end creation only at the configured volume.
 - Resolution: Pending
 
-### BR-0567: P1 - Honor root privilege in the Linux PowerShell bootstrap
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: compatibility/build-release
-- Found by: R1-CHUNK-0486, R1-CHUNK-0519
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/get_deps/helpers/get_powershell.sh:L23-L35,L72-L115,L169-L176`
-- Related: `android/get_deps/get_all.sh:L89-L101`; `android/get_deps/helpers/get_linux_build_prereqs.sh:L84-L109,L126-L223`; `android/ai tool plans/code management/plan_linux_dependency_bootstrap_20260525.md:L8-L16`
-- Evidence: The aggregate bootstrap's prerequisite helper explicitly supports `EUID=0` by invoking apt, dnf, or pacman directly, and its package lists do not install `sudo`. Immediately afterward, when `pwsh` is absent, `get_all.sh` invokes the assigned PowerShell helper. Both recognized Debian-family operations, both recognized RPM-family operations, and the preview-command shim unconditionally prefix their privileged commands with `sudo`; they never reuse the root-aware privilege policy. A minimal root Debian, Ubuntu, Fedora, or RHEL environment can therefore complete host prerequisite installation and then fail on `sudo: command not found` before PowerShell or any Android dependency is installed. Root execution is a maintained path in the preceding helper, not an inferred unsupported mode.
-- Trigger: Run `get_all.sh --no-prompt` as root in a minimal supported Debian/Ubuntu or Fedora/RHEL host or container where `pwsh` and `sudo` are initially absent.
-- Impact: The advertised one-shot fresh Linux bootstrap deterministically stops at PowerShell, so JDK, SDK, NDK, Gradle, emulator, formatter, build, and test setup never run on a supported privilege mode commonly used by containers and CI images.
-- Expected: Privileged package and symlink operations execute directly for root, use a usable sudo path for non-root callers, and fail before download with one actionable privilege diagnostic when neither route is available.
-- Suggested fix: Share the root-aware `install_with_privilege` policy with the PowerShell helper or add an equivalent command-array wrapper, including preview symlink creation. Do not assume the privilege escalator's name; distinguish root, interactive sudo, noninteractive sudo, and unavailable elevation consistently.
-- Validation: Use command-recording Debian and RPM fixtures as root without sudo, non-root with interactive and noninteractive sudo, and non-root without elevation. Exercise stable, preview, existing exact, package, and tarball paths; require the intended commands without a spurious sudo dependency, exact runtime verification, and no host mutation in dry-run fixtures.
-- Additional location (R1-CHUNK-0519): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/get_deps/README-ubuntu.md:L10-L16` in the one-shot bootstrap description and noninteractive-sudo workaround
-- Additional evidence (R1-CHUNK-0519): The guide tells a user whose shell cannot prompt for sudo to install only `get_linux_build_prereqs.sh` from a terminal and then use the aggregate flow. That prerequisite helper installs no PowerShell package. On the later noninteractive run it returns early once its package and command checks pass, after which `get_all.sh` sees missing `pwsh` and invokes `get_powershell.sh`. The recognized Ubuntu branch downloads a `.deb` and unconditionally runs both `sudo apt update` and `sudo apt install`; unlike the prerequisite helper, it checks neither a terminal nor `sudo -n`, offers no user-local tarball choice on Ubuntu, and provides no instruction to preinstall PowerShell during the terminal step. Therefore the documented workaround still stops at the next privileged step unless credentials happen to be cached or sudo is passwordless.
-- Additional validation (R1-CHUNK-0519): On a fresh Ubuntu fixture with host prerequisites present and `pwsh` absent, run the documented aggregate command without a controlling terminal under non-root accounts with expired credentials, cached credentials, passwordless sudo, and no sudo. Require either a complete explicit terminal-preparation command that installs every privileged prerequisite including the pinned PowerShell package, or an early actionable failure and supported user-local PowerShell path; the guide must not promise that host-prerequisite preinstallation alone makes the remaining flow noninteractive.
-- Resolution: Pending
-
 ### BR-0569: P2 - Align WSL formatter installation and lookup identities
 
 - [ ] OPEN
@@ -19161,23 +18534,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Test stable, LTS, beta, canary, staggered, reordered-page, missing-platform, and inconsistent metadata fixtures. Require the updater to choose one permitted record or decline, the installer directory's `Pkg.Revision` to equal `NDK_FULL_VERSION`, and Gradle to use that same path on every supported host.
 - Resolution: Pending
 
-### BR-0581: P1 - Reject remote version text that can execute when the manifest is sourced
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: security/supply-chain
-- Found by: R1-CHUNK-0489
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/get_deps/check-updates.ps1:L921-L950,L1151-L1156,L1178-L1380,L1458-L1473,L1627-L1636,L1670-L1789`
-- Related: `android/get_deps/tool_versions.conf`; every Bash helper that uses `source "$SCRIPT_DIR/../tool_versions.conf"`; `android/get_deps/get_all.sh:L17-L19`; BR-0157
-- Evidence: Latest values originate in remote Git tags, Maven/PyPI metadata, redirects, and scraped pages. The version parser extracts digits for ordering but returns the complete original string, and `Update-Conf` writes it unquoted and unescaped into a file deliberately sourced as Bash code. Git permits tag text containing `$` and parentheses: a focused `git check-ref-format 'refs/tags/v999$(Write-Output_PWNED)'` succeeded, and the updater normalizer retained `999$(Write-Output_PWNED)` as numeric version 999. A harmless Bash probe sourcing the equivalent assignment performs command substitution. Thus compromise of any queried tag namespace—or accepted hostile metadata with shell metacharacters—can turn a user selecting the visible update, especially `all`, into command execution as soon as immediate install-sync or any later dependency helper sources the manifest, before artifact digest validation can protect downloads.
-- Trigger: A queried upstream publishes or an attacker with tag/repository control injects a numerically newer tag such as `v999$(attacker_command)`, then a maintainer selects that row or all target updates and reaches any Bash dependency helper.
-- Impact: Remote metadata can execute arbitrary commands with the developer or CI account's permissions, modify the repository and dependency cache, steal credentials, or subvert subsequent builds. Manual version selection is not a safe code-review boundary because the table treats the string as a version and never identifies it as executable shell syntax.
-- Expected: Remote discovery data remains inert typed data through comparison, display, persistence, and consumption; only a narrow canonical version/commit grammar can enter the manifest, and sourcing configuration never executes stored values.
-- Suggested fix: Stop using an executable shell file as the shared data format; store versions and URLs in strict JSON/TOML or another parser-only format and pass values as data. Until migration, allowlist an exact grammar per key, reject every metacharacter or control character before display and write, quote with a proven shell serializer, validate commit fields as exact hex, and require reviewed authenticated metadata plus BR-0157 digests.
-- Validation: Feed Git, Maven, PyPI, redirect, and page fixtures containing `$()`, backticks, parameter expansion, separators, quotes, whitespace, newlines/entities, glob syntax, option prefixes, Unicode controls, huge components, and ordinary valid versions. Require rejection before selection or file mutation, byte-identical prior configuration, no command or network side effect when every helper reads accepted configuration, and normal updates for the complete allowlisted corpus.
-- Resolution: Pending
-
 ### BR-0582: P2 - Bound host mission-metadata subprocesses
 
 - [ ] OPEN
@@ -19341,23 +18697,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0494): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/emu_health.ps1:L225-L251,L296-L360,L367-L406` in restart cleanup and success classification
 - Additional evidence (R1-CHUNK-0494): The health restart suppresses every guest cleanup, `emu kill`, `Stop-Process`, and ADB-server failure and never verifies that the targeted instances stopped. Its later wait can select any surviving online emulator because no preferred serial is supplied, so a denied stop or retained peer can immediately satisfy the health probe and produce `RESTARTED_AND_HEALTHY` or `FORCE_RESTARTED_AND_HEALTHY` with exit 2 even when the requested AVD was neither stopped nor proven started. The false cleanup-success root therefore reaches a normal run-all recovery entry point, not only the dedicated stale-state helper.
 - Additional validation (R1-CHUNK-0494): Extend cleanup fault injection through `-Restart -Wait` and `-ForceRestart -Wait` with a surviving peer, denied stops, retained target, failed ADB-server command, launch crash, and missing requested serial. Require nonzero exact residual diagnostics and prohibit exit 2 until the requested AVD alone completes a verified old-generation-stop to new-generation-healthy transition.
-- Resolution: Pending
-
-### BR-0591: P2 - Reject ambiguous and non-standard JSON during normalization
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0492
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/normalize_json.py:L47-L51,L88-L107` in parse, serialize, and error handling
-- Related: `android/tests/test_mission_metadata_json_normalization.ps1:L16-L48`; `android/helpers/run_mission_zip_batch.ps1:L64-L99`; `android/helpers/regenerate_all_mission_metadata_host.ps1:L129-L159`; BR-0233
-- Evidence: Python's default `json.loads` accepts the non-standard constants `NaN`, `Infinity`, and `-Infinity`, and its object parser silently keeps only the last occurrence of a duplicate member. Default `json.dumps` also permits and re-emits those non-finite tokens. The normalizer supplies neither `parse_constant` nor `object_pairs_hook`, and catches only `JSONDecodeError`, so both cases return success. Read-only probes produced `{"x": NaN}` with exit 0 from `{"x":NaN}` and `{"x": 2}` with exit 0 from `{"x":1,"x":2}`. The maintained test checks only integer/float convergence and idempotence. Strict downstream JSON parsers can reject the non-finite output, while duplicate collapse silently chooses one of two conflicting schema values.
-- Trigger: Normalize stdin or a file containing a bare non-finite constant or duplicate object name, including a duplicated mission identity, index, path, distance, or position field
-- Impact: A command advertised as JSON normalization can bless and publish bytes that are not interoperable JSON, or silently change an ambiguous generated artifact's meaning, allowing malformed regression metadata to pass formatting gates and fail later or test the wrong value
-- Expected: Normalization accepts one unambiguous interoperable JSON value only: every number is finite and every object member name is unique before canonicalization or publication
-- Suggested fix: Pass a `parse_constant` callback that raises `JSONDecodeError` or a dedicated validation error, use an `object_pairs_hook` that rejects duplicate names at every depth, and serialize with `allow_nan=False`. Report file path and structural location without printing unbounded input, and retain BR-0233's atomic publication.
-- Validation: Add stdin, file, `--check`, and `--mission-metadata` cases for each non-finite spelling, duplicate keys at every nesting level and in both orders, escaped-equivalent names, huge finite boundary values, ordinary finite floats, and valid repeated names in separate objects. Require deterministic nonzero rejection without modification for ambiguous input and byte-stable success for the maintained corpus.
 - Resolution: Pending
 
 ### BR-0592: P2 - Count automation results without triggering errexit
@@ -19573,45 +18912,7 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Build process-inventory fixtures with one stale owner, one live owner, check-only tools, same-name unrelated commands, sibling-prefix clones, nested children, exited/reused PIDs, malformed locks, and mixed ages on Windows and Linux. Require only the exact abandoned generation to stop, every unrelated sentinel process to survive, ambiguous state to return nonzero without action, and no partial file write after verified cleanup.
 - Resolution: Pending
 
-### BR-0604: P1 - Restrict game-data cleanup to helper-owned files
 
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/destructive-scope
-- Found by: R1-CHUNK-0496, R1-CHUNK-0524
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/push_game_data.sh:L81-L98,L192-L236` in app-set and public-download cleanup
-- Related: `android/helpers/test_helpers.ps1:L2184-L2206`; `android/run_all_tests.ps1:L1550-L1574,L1611-L1633`; BR-0539
-- Evidence: A missing or empty local `data` or `download` directory only prints a note; cleanup still enumerates the default app set and the global `/sdcard/Download` directory and deletes every enumerated remote file absent locally. The tracked frozen tree contains only `.gitkeep` in both local roots, and the shared test helper invokes provisioning when either directory merely exists, so a fresh checkout is sufficient to treat every existing game file and every unrelated public download as stale. Downloads is not helper-owned storage, no manifest or provenance limits deletion, paths are whitespace-split, delete statuses are ignored, and ambient ADB selection can extend the damage to a physical device.
-- Trigger: Run aggregate fallback, Tier 3, the shared helper, or the script directly from a fresh checkout or any intentionally empty/missing local data root while the selected device has existing game files or ordinary personal files in Downloads
-- Impact: Provisioning irreversibly deletes previously installed game data and unrelated user downloads that were never created or owned by this repository, while reporting success even if only part of the destructive mirror completes
-- Expected: Empty or unavailable local input is non-destructive; cleanup removes only files carrying durable ownership from this exact provisioner and selected generation, never arbitrary contents of a shared public directory
-- Suggested fix: Replace directory-wide negative mirroring with an explicit versioned ownership manifest scoped to a dedicated repository subdirectory. Refuse cleanup when the local desired-state manifest is missing or invalid, require an explicit destructive-sync option for removals, bind it to a validated serial, and check and report every deletion.
-- Validation: Seed owned and unowned files in the default set and Downloads, including a fresh `.gitkeep` checkout, missing and empty roots, spaces, nested directories, physical and emulator targets, interrupted prior runs, and corrupt ownership metadata. Require all unowned sentinels to survive, only exact previously owned stale entries to be removed after explicit sync, and every ambiguity or deletion failure to stop nonzero.
-- Additional location (R1-CHUNK-0524): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data_to_copy_to_emulator/README.md:L1-L13` in the documented provisioning workflow and directory contract
-- Additional evidence (R1-CHUNK-0524): The user-facing guide describes the operation only as pushing local files, explicitly directs installers and disc images into the shared `/sdcard/Download/` destination, and tells maintainers to place files directly in the two ignored folders. It does not disclose that every invocation subsequently treats those local folders as authoritative mirrors and deletes all other default-set and public Download leaves, including unowned personal files. A maintainer following the documented happy path therefore reaches the P1 destructive cleanup without an explicit sync request, ownership warning, or stated removal scope.
-- Additional validation (R1-CHUNK-0524): After cleanup is restricted to durable helper ownership, document the exact additive versus explicit-sync behavior, selected-device requirement, ownership boundary, and non-destructive empty-input behavior. Add a documentation-command test or stubbed helper integration that follows both README folder examples with owned and unowned device sentinels and proves the default workflow preserves every unowned file.
-- Resolution: Pending
-
-### BR-0605: P2 - Verify game-data content before skipping replacement
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-freshness
-- Found by: R1-CHUNK-0496, R1-CHUNK-0560
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/helpers/push_game_data.sh:L125-L140` in unchanged-file detection
-- Related: `android/helpers/standard_game_data.ps1`; BR-0168
-- Evidence: Before transfer, the helper compares only local and remote byte counts and skips whenever they match. Equal size does not imply equal content; a read-only probe with different four-byte strings satisfied the exact predicate. Replacing a game archive, config, mission, or music file with a same-length revision therefore leaves the old app-private bytes in place, prints `unchanged`, increments no error, and provides no digest or post-copy verification. The repository's standard provisioner already uses SHA-256 identities for these inputs.
-- Trigger: Change any local desired game-data file to different bytes of the same length while a prior version with that leaf and length exists in the default app set, then provision again
-- Impact: The launcher or test run consumes stale data while setup claims the requested version is installed, invalidating reproduction, regression, and gameplay results in a way that ordinary size and success diagnostics cannot distinguish
-- Expected: Skipping proves content identity using the canonical desired digest, and every completed replacement verifies the committed device bytes before reporting success
-- Suggested fix: Build or reuse the standard SHA-256 manifest, compare a checked device-side digest for the selected destination, transfer through unique staging, verify the staged and final digest, and only then atomically replace or retain the old file. Treat unsupported digest tooling as an explicit failure or a checked full-copy path, never size equivalence.
-- Validation: Cover identical bytes, same-size different bytes, larger and smaller revisions, corrupted prior and staged content, digest-command failure, interrupted transfer, and concurrent replacement. Require only exact digest matches to skip and success only when final bytes match the requested manifest.
-- Additional location (R1-CHUNK-0560): `android/tests/test_gog_installer_d1_unified.ps1:L116-L125` and `android/tests/test_gog_installer_redbook_unified.ps1:L120-L129` in unchanged-installer admission
-- Additional evidence (R1-CHUNK-0560): The frozen wrappers skip pushing whenever the fixed remote path's byte count equals the selected local installer length, without comparing either content or a maintained installer digest. A same-length prior variant, corrupt partial generation or deliberately replaced file is announced as already correct and passed to the unified regression. Live replaces this exact branch with `Push-VerifiedDeviceFile`, independently confirming the frozen size-only identity gap.
-- Additional validation (R1-CHUNK-0560): Apply the existing same-size-different-content and interrupted-transfer matrix to every maintained EXE and PKG variant and `SkipPush`; require exact local-to-device digest identity before automation and make explicit reuse verify and report the retained generation rather than trusting a pathname.
-- Resolution: Pending
 
 ### BR-0606: P2 - Preserve game-data filename identity across device shell boundaries
 
@@ -19750,39 +19051,7 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0502): Round-trip quotes, backslashes, tabs, newlines, carriage returns, all JSON control characters, Unicode, literal comment markers, braces, commas, and escaped IDs through version generation and ordinary and forced disc replacement. Require exact typed values, one intended object per source, stable comments or comment-free generated data, strict full-schema parsing, and prior-asset preservation for every invalid input.
 - Resolution: Pending
 
-### BR-0617: P2 - Require a complete source set before forced version regeneration
 
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0502
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/hash_assets.ps1:L191-L204,L206-L271,L273-L345` in Force initialization, source discovery, and replacement
-- Related: `android/app/src/main/assets/known_versions.json5`; `game_data/extract_all_cds.ps1`; `game_data/extract_all_gog.ps1`; `game_data/extract_dos_demos.ps1`; `game_data/extract_mac_demos.ps1`; archived BR-0170; BR-0175; BR-0411
-- Evidence: `-Force` discards every existing in-memory entry before inspecting sources, but the four source roots are optional local or ignored extraction corpora with no expected-package manifest or minimum completeness rule. If any one file is found, the script writes a replacement containing only identities observed in that partial local checkout plus its small hard-coded alias set, permanently deleting all other maintained versions. A clean frozen checkout contains zero tracked admitted source files while the packaged asset contains 202 entries; that exact zero-source state exits zero and preserves the old file, but adding only one locally extracted asset crosses the predicate and replaces all 202 entries with the partial result while reporting a successful write.
-- Trigger: On a clean or partially provisioned checkout, extract or copy one supported asset into any scan root and run `hash_assets.ps1 -Force` without possessing every source distribution used by the maintained database
-- Impact: A routine forced refresh can silently erase most authoritative version identities, aliases, package labels, and mod base-version evidence. The resulting APK reports previously known retail, demo, Mac, expansion, and GOG files as unknown even though their reviewed database records were valid before the run.
-- Expected: A forced full regeneration proves that every required source package and declared alias has a complete validated generation, or fails without changing the prior database; focused subset refreshes preserve unrelated identities and are explicitly scoped.
-- Suggested fix: Define one machine-readable expected source and package manifest with source digests, required outputs, canonical labels, and alias relationships. Make full Force require and validate the complete manifest before replacement, and add a separate explicit subset-update mode that transactionally replaces only identities owned by selected sources. Fail zero, partial, duplicate, and unknown source sets before publication.
-- Validation: Start from the complete packaged database and run Force with zero files, one file, one package, mixed complete and missing packages, stale extraction caches, all required packages, and explicit subset selections. Require nonzero unchanged output for every incomplete full run, preservation of unrelated entries for subset updates, exact alias coverage, and byte-stable complete regeneration.
-- Resolution: Pending
-
-### BR-0618: P2 - Validate complete track manifests before publishing physical discs
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/data-integrity
-- Found by: R1-CHUNK-0502
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/hash_disc_tracks.ps1:L58-L96` in track-manifest admission
-- Related: `game_data/CD images/*/track_hashes.json`; `game_data/extract_all_cds.ps1`; `android/app/src/main/java/com/dxxredux/app/DiscIdentifier.kt:L60-L98,L104-L142`; archived BR-0042; archived BR-0046; archived BR-0047
-- Evidence: The merger accepts any JSON array, silently keeps only objects having non-null `track`, `type`, and `sha1`, and publishes the resulting list without validating a nonempty exact source set, positive unique track numbers, order, allowed types, lowercase 40-hex SHA-1 values, error fields, or agreement with the CUE/extraction result. It even reports the unfiltered `$tracks.Count` as the number published. Thus a partial manifest containing one valid record plus missing, error-only, duplicate, malformed, or unexpected records becomes an ordinary known disc. The frozen Mac manifests demonstrate that error-bearing records with SHA-1 are deliberately promoted, the false-status case archived in BR-0047; the broader admission rule also accepts arbitrary incomplete or conflicting identities.
-- Trigger: Force-merge a manifest after a partial extractor run, or supply an array with one valid track and another missing SHA-1, duplicate number, invalid type or digest, error field, unexpected track, or omitted expected track
-- Impact: The generator can replace a complete physical identity with a partial or contradictory one, make distinct media match the weakened prefix, or publish a malformed record that causes the all-or-nothing frozen database loader to discard every valid disc. Its success count conceals how many records were dropped.
-- Expected: Publication proves exact equality with one validated disc descriptor and complete extractor result: every expected track appears once with the declared type and valid digest, no error record is promotable, and no unexpected or omitted record exists.
-- Suggested fix: Reuse the exact CUE track-set and manifest validator from the fingerprint workflow, or consume one extraction completion manifest that binds descriptor, payload, tool, and output identities. Reject rather than filter malformed records, require a nonempty unique set, validate the complete prospective database schema, and preserve the prior disc on any mismatch.
-- Validation: Exercise empty, missing, duplicate, reordered, unexpected, error-bearing, invalid-number, invalid-type, invalid-hash, partial, and complete manifests against one- and multi-track CUE fixtures, including HFS and SOW summaries. Require exact nonzero rejection and prior-record preservation for every mismatch, truthful published counts, and unchanged identification for complete current media.
-- Resolution: Pending
 
 ### BR-0619: P3 - Map physical disc game identity explicitly
 
@@ -20124,23 +19393,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0510): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/mods/d2x-xl/convert_d2xxl_textures.ps1:L128-L339,L347-L400,L588-L616,L641-L855` in bitmap, fixed stage, and archive ownership
 - Additional evidence (R1-CHUNK-0510): Every texture conversion for one game recursively deletes and recreates the same `<system-temp>/dxx_tex_convert_<game>` directory, so concurrent direct or aggregate runs can erase each other's extracted sources and intermediates. There is no outer `try/finally`; extraction, fixup, split, inventory, output open, documentation, close, and cleanup exceptions retain the stage and can leave the public ZIP open. Inside `Read-TGA`, both `LockBits` lifetimes and the bitmap and mask objects are released only on ordinary control flow, while per-image catches intentionally continue after later failures. Truncation, allocation, marshal, save, resize, or entry exceptions can therefore accumulate locked GDI resources and stale intermediates through the remainder of a partial-success batch.
 - Additional validation (R1-CHUNK-0510): Barrier-run same-game direct and aggregate conversions from distinct source generations and inject failure or interruption at every stage deletion, extraction, TGA lock, pixel copy, unlock, split, bitmap save, resize, ETC2, ZIP entry, documentation, dispose, and cleanup boundary. Require private exclusive stage ownership, balanced bitmap and archive resources, no cross-run deletion or mixed payload, cleanup of only owned intermediates, and no public partial generation.
-- Resolution: Pending
-
-### BR-0635: P2 - Reject invalid WAV chunk spans before advancing
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/resource-exhaustion
-- Found by: R1-CHUNK-0508
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:game_data/mods/d2x-xl/convert_d2xxl_sounds.ps1:L65-L119` in RIFF chunk traversal and materialization
-- Related: `game_data/mods/d2x-xl/convert_d2xxl_sounds.ps1:L250-L305`; BR-0018; BR-0169; BR-0634
-- Evidence: The RIFF chunk length is an unsigned 32-bit field, but the parser reads it with signed `ToInt32` and validates neither nonnegativity, minimum `fmt ` length, payload containment, checked padded end, nor strict forward progress before reading fixed offsets, allocating a `byte[]`, copying, and updating `$pos`. A chunk size encoded as `0xfffffff8` becomes `-8`, so `$pos += 8 + $chunkSize` leaves the cursor unchanged and the loop rereads the same header forever. Other negative sizes move backward until an exception, while large positive `data` sizes allocate before proving that those bytes exist. The per-file catch cannot stop the exact nonprogress loop, and the aggregate supplies no deadline.
-- Trigger: Place a syntactically RIFF/WAVE file with an unknown chunk at offset 12 whose length is `0xfffffff8`, a truncated `fmt ` chunk, or a `data` length larger than the remaining file in the fixed D2X-XL source archive and start sound or aggregate conversion
-- Impact: One malformed source WAV can hang the maintenance process indefinitely, or drive avoidable large allocation and then become a silently omitted entry under BR-0169. The fixed expanded stage remains under BR-0634, no later pack is processed, and automation has no bounded failure result.
-- Expected: Every chunk header and padded payload forms one checked forward-moving span inside the declared RIFF and physical file bounds; unsupported or malformed files fail promptly with bounded memory and a nonzero complete conversion result.
-- Suggested fix: Read the length as `UInt32`, compute header, payload, and word-padding ends with checked wide arithmetic, require the next cursor to exceed the current cursor and remain within both RIFF and file extents, validate format-specific minimum sizes before field reads, and copy only after those checks. Stream or cap data rather than allocating from an unchecked declaration, and propagate the file failure through the batch result.
-- Validation: Cover zero, one, odd, `0xfffffff8`, `0xffffffff`, exact-end, one-past, truncated header, short `fmt `, oversized `data`, multiple data, unknown, and valid PCM chunks under a wall-clock timeout and memory ceiling. Require prompt deterministic rejection, no output entry or retained stage, final nonzero status, and bit-exact conversion for valid 8-, 16-, and 24-bit mono and stereo controls.
 - Resolution: Pending
 
 ### BR-0636: P2 - Reject colliding DXA entry mappings before repacking

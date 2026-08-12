@@ -4,8 +4,10 @@
 #include <string.h>
 
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 #include <nlohmann/json.hpp>
 
@@ -53,6 +55,62 @@ static bool input_demo_result_key_allowed(const std::string &key,
 	return false;
 }
 
+template <typename T>
+static bool input_demo_result_parse_integer(const nlohmann::json &value,
+                                            T *output, std::string *error,
+                                            const char *label)
+{
+	static_assert(std::is_integral<T>::value && !std::is_same<T, bool>::value,
+	              "integer parser requires a non-boolean integral type");
+	if (!output || (!value.is_number_integer() && !value.is_number_unsigned()))
+		return error ? (*error = std::string(label) + " must be an integer", false) : false;
+	if (value.is_number_unsigned()) {
+		const uint64_t parsed = value.get<uint64_t>();
+		if (parsed > static_cast<uint64_t>(std::numeric_limits<T>::max()))
+			return error ? (*error = std::string(label) + " is out of range", false) : false;
+		*output = static_cast<T>(parsed);
+		return true;
+	}
+	const int64_t parsed = value.get<int64_t>();
+	if (std::is_signed<T>::value) {
+		if (parsed < static_cast<int64_t>(std::numeric_limits<T>::min()) ||
+		    parsed > static_cast<int64_t>(std::numeric_limits<T>::max()))
+			return error ? (*error = std::string(label) + " is out of range", false) : false;
+	} else if (parsed < 0 ||
+	           static_cast<uint64_t>(parsed) >
+	               static_cast<uint64_t>(std::numeric_limits<T>::max())) {
+		return error ? (*error = std::string(label) +
+		                         (parsed < 0 ? " must be nonnegative" : " is out of range"),
+		                false)
+		             : false;
+	}
+	*output = static_cast<T>(parsed);
+	return true;
+}
+
+static bool input_demo_result_parse_bool(const nlohmann::json &value,
+                                         int32_t *output, std::string *error,
+                                         const char *label)
+{
+	if (!output || !value.is_boolean())
+		return error ? (*error = std::string(label) + " must be a boolean", false) : false;
+	*output = value.get<bool>() ? 1 : 0;
+	return true;
+}
+
+static bool input_demo_result_parse_string(const nlohmann::json &value,
+                                           char *output, size_t output_size,
+                                           std::string *error, const char *label)
+{
+	if (!output || !output_size || !value.is_string())
+		return error ? (*error = std::string(label) + " must be a string", false) : false;
+	const std::string &parsed = value.get_ref<const std::string &>();
+	if (parsed.size() >= output_size || parsed.find('\0') != std::string::npos)
+		return error ? (*error = std::string(label) + " is too long or contains NUL", false) : false;
+	memcpy(output, parsed.c_str(), parsed.size() + 1);
+	return true;
+}
+
 static bool input_demo_result_parse_ammo_array(const nlohmann::json &array,
                                                uint16_t *ammo, size_t ammo_count,
                                                std::string *error, const char *label)
@@ -62,9 +120,8 @@ static bool input_demo_result_parse_ammo_array(const nlohmann::json &array,
 	if (array.size() != ammo_count)
 		return error ? (*error = std::string(label) + " must have exactly " + std::to_string(ammo_count) + " entries", false) : false;
 	for (size_t i = 0; i != ammo_count; ++i) {
-		if (!array[i].is_number_integer() && !array[i].is_number_unsigned())
-			return error ? (*error = std::string(label) + " contains a non-integer ammo value", false) : false;
-		ammo[i] = (uint16_t) array[i].get<unsigned int>();
+		if (!input_demo_result_parse_integer(array[i], &ammo[i], error, label))
+			return false;
 	}
 	return true;
 }
@@ -86,24 +143,16 @@ static bool input_demo_result_parse_player(const nlohmann::json &player_json,
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
 			return error ? (*error = std::string("unknown player0 key: ") + it.key(), false) : false;
 	}
-	if (player_json.contains("energy"))
-		player->energy = player_json.at("energy").get<int32_t>();
-	if (player_json.contains("shields"))
-		player->shields = player_json.at("shields").get<int32_t>();
-	if (player_json.contains("score"))
-		player->score = player_json.at("score").get<int32_t>();
-	if (player_json.contains("lives"))
-		player->lives = player_json.at("lives").get<int16_t>();
-	if (player_json.contains("laser_level"))
-		player->laser_level = player_json.at("laser_level").get<int16_t>();
-	if (player_json.contains("primary_weapon"))
-		player->primary_weapon = player_json.at("primary_weapon").get<int16_t>();
-	if (player_json.contains("secondary_weapon"))
-		player->secondary_weapon = player_json.at("secondary_weapon").get<int16_t>();
-	if (player_json.contains("flags"))
-		player->flags = player_json.at("flags").get<uint32_t>();
-	if (player_json.contains("hostages"))
-		player->hostages = player_json.at("hostages").get<uint16_t>();
+	if ((player_json.contains("energy") && !input_demo_result_parse_integer(player_json.at("energy"), &player->energy, error, "player0.energy")) ||
+	    (player_json.contains("shields") && !input_demo_result_parse_integer(player_json.at("shields"), &player->shields, error, "player0.shields")) ||
+	    (player_json.contains("score") && !input_demo_result_parse_integer(player_json.at("score"), &player->score, error, "player0.score")) ||
+	    (player_json.contains("lives") && !input_demo_result_parse_integer(player_json.at("lives"), &player->lives, error, "player0.lives")) ||
+	    (player_json.contains("laser_level") && !input_demo_result_parse_integer(player_json.at("laser_level"), &player->laser_level, error, "player0.laser_level")) ||
+	    (player_json.contains("primary_weapon") && !input_demo_result_parse_integer(player_json.at("primary_weapon"), &player->primary_weapon, error, "player0.primary_weapon")) ||
+	    (player_json.contains("secondary_weapon") && !input_demo_result_parse_integer(player_json.at("secondary_weapon"), &player->secondary_weapon, error, "player0.secondary_weapon")) ||
+	    (player_json.contains("flags") && !input_demo_result_parse_integer(player_json.at("flags"), &player->flags, error, "player0.flags")) ||
+	    (player_json.contains("hostages") && !input_demo_result_parse_integer(player_json.at("hostages"), &player->hostages, error, "player0.hostages")))
+		return false;
 	if (player_json.contains("primary_ammo") && !input_demo_result_parse_ammo_array(
 	                                                player_json.at("primary_ammo"), player->primary_ammo, INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO, error, "player0.primary_ammo"))
 		return false;
@@ -130,18 +179,17 @@ static bool input_demo_result_parse_position(const nlohmann::json &position_json
 	if (!position_json.contains("segment") || !position_json.contains("x") || !position_json.contains("y") ||
 	    !position_json.contains("z"))
 		return error ? (*error = "position must include segment, x, y, and z", false) : false;
-	position->segment = position_json.at("segment").get<int32_t>();
-	position->x = position_json.at("x").get<int32_t>();
-	position->y = position_json.at("y").get<int32_t>();
-	position->z = position_json.at("z").get<int32_t>();
+	if (!input_demo_result_parse_integer(position_json.at("segment"), &position->segment, error, "position.segment") ||
+	    !input_demo_result_parse_integer(position_json.at("x"), &position->x, error, "position.x") ||
+	    !input_demo_result_parse_integer(position_json.at("y"), &position->y, error, "position.y") ||
+	    !input_demo_result_parse_integer(position_json.at("z"), &position->z, error, "position.z"))
+		return false;
 	if (position_json.contains("forward_x") || position_json.contains("forward_y") || position_json.contains("forward_z")) {
 		position->has_forward = 1;
-		if (position_json.contains("forward_x"))
-			position->fx = position_json.at("forward_x").get<int32_t>();
-		if (position_json.contains("forward_y"))
-			position->fy = position_json.at("forward_y").get<int32_t>();
-		if (position_json.contains("forward_z"))
-			position->fz = position_json.at("forward_z").get<int32_t>();
+		if ((position_json.contains("forward_x") && !input_demo_result_parse_integer(position_json.at("forward_x"), &position->fx, error, "position.forward_x")) ||
+		    (position_json.contains("forward_y") && !input_demo_result_parse_integer(position_json.at("forward_y"), &position->fy, error, "position.forward_y")) ||
+		    (position_json.contains("forward_z") && !input_demo_result_parse_integer(position_json.at("forward_z"), &position->fz, error, "position.forward_z")))
+			return false;
 	}
 	return true;
 }
@@ -163,18 +211,13 @@ static bool input_demo_result_parse_level_summary(const nlohmann::json &level_js
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
 			return error ? (*error = std::string("unknown level_summary key: ") + it.key(), false) : false;
 	}
-	if (level_json.contains("robots_alive"))
-		level->robots_alive = level_json.at("robots_alive").get<int32_t>();
-	if (level_json.contains("robots_killed"))
-		level->robots_killed = level_json.at("robots_killed").get<int32_t>();
-	if (level_json.contains("hostages_remaining"))
-		level->hostages_remaining = level_json.at("hostages_remaining").get<int32_t>();
-	if (level_json.contains("powerups_remaining"))
-		level->powerups_remaining = level_json.at("powerups_remaining").get<int32_t>();
-	if (level_json.contains("control_center_destroyed"))
-		level->control_center_destroyed = level_json.at("control_center_destroyed").get<bool>() ? 1 : 0;
-	if (level_json.contains("endlevel_completed"))
-		level->endlevel_completed = level_json.at("endlevel_completed").get<bool>() ? 1 : 0;
+	if ((level_json.contains("robots_alive") && !input_demo_result_parse_integer(level_json.at("robots_alive"), &level->robots_alive, error, "level_summary.robots_alive")) ||
+	    (level_json.contains("robots_killed") && !input_demo_result_parse_integer(level_json.at("robots_killed"), &level->robots_killed, error, "level_summary.robots_killed")) ||
+	    (level_json.contains("hostages_remaining") && !input_demo_result_parse_integer(level_json.at("hostages_remaining"), &level->hostages_remaining, error, "level_summary.hostages_remaining")) ||
+	    (level_json.contains("powerups_remaining") && !input_demo_result_parse_integer(level_json.at("powerups_remaining"), &level->powerups_remaining, error, "level_summary.powerups_remaining")) ||
+	    (level_json.contains("control_center_destroyed") && !input_demo_result_parse_bool(level_json.at("control_center_destroyed"), &level->control_center_destroyed, error, "level_summary.control_center_destroyed")) ||
+	    (level_json.contains("endlevel_completed") && !input_demo_result_parse_bool(level_json.at("endlevel_completed"), &level->endlevel_completed, error, "level_summary.endlevel_completed")))
+		return false;
 	return true;
 }
 
@@ -342,6 +385,7 @@ static bool input_demo_result_parse_json_object(const nlohmann::json &root,
 	const char *const *allowed_keys = require_metadata ? result_allowed_keys : snapshot_allowed_keys;
 	const size_t allowed_key_count = require_metadata ? sizeof(result_allowed_keys) / sizeof(result_allowed_keys[0])
 	                                                  : sizeof(snapshot_allowed_keys) / sizeof(snapshot_allowed_keys[0]);
+	input_demo_result parsed;
 
 	if (!root.is_object())
 		return error ? (*error = require_metadata ? "result root must be an object" : "snapshot root must be an object", false) : false;
@@ -354,28 +398,31 @@ static bool input_demo_result_parse_json_object(const nlohmann::json &root,
 		    !root.contains("difficulty") || !root.contains("frame_count"))
 			return error ? (*error = "result is missing one or more required keys: version, game, mission, level, difficulty, frame_count", false) : false;
 	}
-	input_demo_result_clear(result);
+	input_demo_result_clear(&parsed);
 	if (require_metadata) {
-		result->version = root.at("version").get<int32_t>();
-		snprintf(result->game, sizeof(result->game), "%s", root.at("game").get_ref<const std::string &>().c_str());
-		snprintf(result->mission, sizeof(result->mission), "%s", root.at("mission").get_ref<const std::string &>().c_str());
-		result->level = root.at("level").get<int32_t>();
-		result->difficulty = root.at("difficulty").get<int32_t>();
-		result->frame_count = root.at("frame_count").get<uint32_t>();
+		if (!input_demo_result_parse_integer(root.at("version"), &parsed.version, error, "version") ||
+		    !input_demo_result_parse_string(root.at("game"), parsed.game, sizeof(parsed.game), error, "game") ||
+		    !input_demo_result_parse_string(root.at("mission"), parsed.mission, sizeof(parsed.mission), error, "mission") ||
+		    !input_demo_result_parse_integer(root.at("level"), &parsed.level, error, "level") ||
+		    !input_demo_result_parse_integer(root.at("difficulty"), &parsed.difficulty, error, "difficulty") ||
+		    !input_demo_result_parse_integer(root.at("frame_count"), &parsed.frame_count, error, "frame_count"))
+			return false;
 	}
 	if (root.contains("terminal_exit") &&
-	    !input_demo_result_parse_terminal_exit(root.at("terminal_exit"), &result->terminal_exit, error))
+	    !input_demo_result_parse_terminal_exit(root.at("terminal_exit"), &parsed.terminal_exit, error))
 		return false;
 	if (root.contains("game_time64")) {
-		result->has_game_time64 = 1;
-		result->game_time64 = root.at("game_time64").get<int64_t>();
+		parsed.has_game_time64 = 1;
+		if (!input_demo_result_parse_integer(root.at("game_time64"), &parsed.game_time64, error, "game_time64"))
+			return false;
 	}
-	if (root.contains("player0") && !input_demo_result_parse_player(root.at("player0"), &result->player0, error))
+	if (root.contains("player0") && !input_demo_result_parse_player(root.at("player0"), &parsed.player0, error))
 		return false;
-	if (root.contains("position") && !input_demo_result_parse_position(root.at("position"), &result->position, error))
+	if (root.contains("position") && !input_demo_result_parse_position(root.at("position"), &parsed.position, error))
 		return false;
-	if (root.contains("level_summary") && !input_demo_result_parse_level_summary(root.at("level_summary"), &result->level_summary, error))
+	if (root.contains("level_summary") && !input_demo_result_parse_level_summary(root.at("level_summary"), &parsed.level_summary, error))
 		return false;
+	*result = parsed;
 	return true;
 }
 
@@ -495,10 +542,10 @@ bool input_demo_result_parse_json_text(const std::string &text,
 		return error ? (*error = "missing input demo result output", false) : false;
 	try {
 		root = nlohmann::json::parse(text);
+		return input_demo_result_parse_json_object(root, result, error, true);
 	} catch (const std::exception &ex) {
-		return error ? (*error = std::string("could not parse result json: ") + ex.what(), false) : false;
+		return error ? (*error = std::string("could not decode result json: ") + ex.what(), false) : false;
 	}
-	return input_demo_result_parse_json_object(root, result, error, true);
 }
 
 bool input_demo_result_parse_snapshot_json_text(const std::string &text,
@@ -511,10 +558,10 @@ bool input_demo_result_parse_snapshot_json_text(const std::string &text,
 		return error ? (*error = "missing input demo snapshot output", false) : false;
 	try {
 		root = nlohmann::json::parse(text);
+		return input_demo_result_parse_json_object(root, result, error, false);
 	} catch (const std::exception &ex) {
-		return error ? (*error = std::string("could not parse snapshot json: ") + ex.what(), false) : false;
+		return error ? (*error = std::string("could not decode snapshot json: ") + ex.what(), false) : false;
 	}
-	return input_demo_result_parse_json_object(root, result, error, false);
 }
 
 bool input_demo_result_to_json_text(const input_demo_result &result,

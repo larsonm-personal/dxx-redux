@@ -61,6 +61,7 @@ static int g_paused = 0;             /* 1 = playback is paused         */
 static int g_requested_paused = 0;   /* latest requested pause state   */
 static int g_loop = 0;               /* 1 = loop when reaching the end */
 static int g_song_finished = 0;      /* set by audio thread at end     */
+static int g_source_finished = 0;    /* producer EOF; ring may remain  */
 static int g_bg_paused = 0;          /* 1 = paused due to app background */
 #ifdef ANDROID
 static pthread_mutex_t g_background_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -314,8 +315,7 @@ static int render_frames(short *out, int frames)
 			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
 			               tsf_atomic_load_float(&g_gain_db));
 		} else {
-			tsf_atomic_store_int(&g_playing, 0);
-			tsf_atomic_store_int(&g_song_finished, 1);
+			tsf_atomic_store_int(&g_source_finished, 1);
 			tsf_reset(g_tsf);
 			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
 			               tsf_atomic_load_float(&g_gain_db));
@@ -341,8 +341,7 @@ static int pcm_render_frames(short *out, int frames)
 				g_pcm_pos = 0.0;
 				idx = 0;
 			} else {
-				tsf_atomic_store_int(&g_playing, 0);
-				tsf_atomic_store_int(&g_song_finished, 1);
+				tsf_atomic_store_int(&g_source_finished, 1);
 				break;
 			}
 		}
@@ -729,6 +728,13 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 		for (i = 0; i < got; i++)
 			out[i] = (short) (out[i] * volume);
 	}
+
+	/* Producer EOF is not audible completion.  Publish completion only
+	 * after this callback consumes the final queued sample. */
+	if (tsf_atomic_load_int(&g_source_finished) && rb_available() == 0) {
+		tsf_atomic_store_int(&g_playing, 0);
+		tsf_atomic_store_int(&g_song_finished, 1);
+	}
 }
 
 #else /* !ANDROID — desktop: render directly in callback */
@@ -783,6 +789,11 @@ static void tsf_dispatch_finished(void)
 			hook();
 		}
 	}
+}
+
+void mix_poll_music(void)
+{
+	tsf_dispatch_finished();
 }
 
 static int64_t music_read_physfs_chunk(void *context,
@@ -953,6 +964,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		g_loop = loop;
 		tsf_atomic_store_int(&g_requested_paused, 0);
 		tsf_atomic_store_int(&g_paused, 0);
+		tsf_atomic_store_int(&g_source_finished, 0);
 		tsf_atomic_store_int(&g_playing, 1);
 		g_finished_hook = hook_finished_track ? hook_finished_track : mix_free_music;
 
@@ -1045,6 +1057,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	g_loop = loop;
 	tsf_atomic_store_int(&g_requested_paused, 0);
 	tsf_atomic_store_int(&g_paused, 0);
+	tsf_atomic_store_int(&g_source_finished, 0);
 	tsf_atomic_store_int(&g_playing, 1);
 	g_finished_hook = hook_finished_track ? hook_finished_track : mix_free_music;
 
@@ -1078,6 +1091,7 @@ void mix_free_music(void)
 	tsf_atomic_store_int(&g_requested_paused, 0);
 	tsf_atomic_store_int(&g_paused, 0);
 	tsf_atomic_store_int(&g_song_finished, 0);
+	tsf_atomic_store_int(&g_source_finished, 0);
 
 	/* Clean up PCM state */
 	if (g_pcm_buf) {

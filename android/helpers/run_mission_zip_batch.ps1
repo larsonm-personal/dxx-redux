@@ -68,7 +68,7 @@ function ConvertTo-NormalizedJsonText {
     )
 
     $trimmed = $Text.Trim()
-    if (-not $trimmed) { return $Text }
+    if (-not $trimmed) { throw "JSON text is empty" }
     $formatterPath = Join-Path $helpersDir "normalize_json.py"
     if (-not (Test-Path -LiteralPath $formatterPath -PathType Leaf)) {
         throw "JSON formatter not found: $formatterPath"
@@ -106,9 +106,14 @@ function ConvertTo-NormalizedJsonText {
     try {
         $process.StandardInput.Write($trimmed)
         $process.StandardInput.Close()
-        $json = $process.StandardOutput.ReadToEnd()
-        $errorText = $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
+        $outputTask = $process.StandardOutput.ReadToEndAsync()
+        $errorTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(30000)) {
+            $process.Kill($true)
+            throw "JSON formatter timed out after 30 seconds"
+        }
+        $json = $outputTask.GetAwaiter().GetResult()
+        $errorText = $errorTask.GetAwaiter().GetResult()
         if ($process.ExitCode -ne 0) {
             throw "JSON formatter failed with exit code $($process.ExitCode): $errorText"
         }
@@ -448,11 +453,7 @@ function Get-MissionZipGameHint {
 
     $counts = @{ d1 = 0; d2 = 0; problems = @() }
     if ([IO.Path]::GetExtension($ZipPath).Equals(".7z", [StringComparison]::OrdinalIgnoreCase)) {
-        try {
-            Add-MissionZipGameHints -EntryNames (Get-MissionArchiveEntryNames -ArchivePath $ZipPath) -Counts $counts
-        } catch {
-            $counts.problems += "Could not inspect archive: $($_.Exception.Message)"
-        }
+        Add-MissionZipGameHints -EntryNames (Get-MissionArchiveEntryNames -ArchivePath $ZipPath) -Counts $counts
     } else {
         $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
         try {
@@ -685,16 +686,14 @@ foreach ($zip in $zips) {
     $resolvedScript = Join-Path $resolvedScriptDir "$label.json5"
     $deviceScriptName = "mission_zip_batch_current.json5"
     $regressionJsonPath = Get-MissionZipRegressionJsonPath -Zip $zip
-    $hash = (Get-FileHash -Algorithm SHA256 -Path $zip.FullName).Hash.ToLowerInvariant()
-    $gameHint = Get-MissionZipGameHint -ZipPath $zip.FullName
 
     $record = [ordered]@{
         zip = $zip.FullName
         name = $zip.Name
-        sha256 = $hash
-        size_bytes = $zip.Length
+        sha256 = ""
+        size_bytes = 0
         label = $label
-        game = $gameHint.Game
+        game = "unknown"
         status = "pending"
         metadata_json = $metadataPath
         regression_json = $regressionJsonPath
@@ -704,13 +703,45 @@ foreach ($zip in $zips) {
         introspect_json = "$artifactPrefix.introspect.json"
     }
 
-    Write-MissionZipBatchStart -Index $zipIndex -Total $zips.Count -Zip $zip -Game $gameHint.Game -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
-    if ($zip.Length -gt $LargeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $zip.Name)) {
-        Write-Status "SKIP large ZIP: $($zip.Name) ($([math]::Round($zip.Length / 1MB, 1)) MB)" "Yellow"
+    Write-MissionZipBatchStart -Index $zipIndex -Total $zips.Count -Zip $zip -Game "pending" -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
+    try {
+        $record["size_bytes"] = $zip.Length
+    } catch {
+        $record["status"] = "failed"
+        $record["reason"] = "Could not stat archive: $($_.Exception.Message)"
+        $results += [pscustomobject]$record
+        Write-MissionZipFailureJson -Path $metadataPath -Record $record
+        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        $runStopwatch.Stop()
+        Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
+        $consecutiveBaseDataFailures = 0
+        continue
+    }
+    if ($record["size_bytes"] -gt $LargeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $zip.Name)) {
+        Write-Status "SKIP large ZIP: $($zip.Name) ($([math]::Round($record["size_bytes"] / 1MB, 1)) MB)" "Yellow"
         $record["status"] = "skipped_large"
         $record["reason"] = "ZIP is larger than the configured batch limit"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
+        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        $runStopwatch.Stop()
+        Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
+        $consecutiveBaseDataFailures = 0
+        continue
+    }
+    try {
+        $record["sha256"] = (Get-FileHash -Algorithm SHA256 -Path $zip.FullName -ErrorAction Stop).Hash.ToLowerInvariant()
+        $gameHint = Get-MissionZipGameHint -ZipPath $zip.FullName
+        $record["game"] = $gameHint.Game
+    } catch {
+        $record["status"] = "failed"
+        $record["reason"] = "Archive preflight failed: $($_.Exception.Message)"
+        Write-Status "FAIL: $($zip.Name): $($record["reason"])" "Red"
+        $results += [pscustomobject]$record
+        Write-MissionZipFailureJson -Path $metadataPath -Record $record
+        if (-not $NoRegressionJson) {
+            Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
+        }
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
@@ -804,7 +835,13 @@ foreach ($zip in $zips) {
 
         $metadataSaved = $false
         if ($deviceHealthyAfterRun) {
-            $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath -MissionMetadata
+            try {
+                $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath -MissionMetadata
+            } catch {
+                $record["status"] = "failed"
+                $record["reason"] = "metadata JSON validation failed: $($_.Exception.Message)"
+                Write-Status "FAIL: $($zip.Name): $($record["reason"])" "Red"
+            }
         }
         if ($record["status"] -eq "passed") {
             if (-not $metadataSaved) {

@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 {
 	char cue_dir[1024];
 	char *cue_text;
-	cue_disc_t disc;
+	cue_disc_t disc, declared_disc;
 	long long bin_sizes[CUE_MAX_FILES];
 	int i, num_tracks;
 	int errors = 0;
@@ -293,6 +293,7 @@ int main(int argc, char *argv[])
 		free(cue_text);
 		return 1;
 	}
+	declared_disc = disc;
 
 	/* Get BIN file sizes and re-parse */
 	for (i = 0; i < disc.num_files; i++) {
@@ -311,6 +312,16 @@ int main(int argc, char *argv[])
 		num_tracks = cue_parse(cue_text, bin_sizes, nfiles, &disc);
 	}
 	free(cue_text);
+	if (num_tracks <= 0) {
+		fprintf(stderr, "ERROR: CUE track geometry exceeds its source files: %s\n", argv[1]);
+		for (i = 0; i < declared_disc.num_tracks; i++) {
+			const cue_track_info_t *declared = &declared_disc.tracks[i];
+			printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"invalid or incomplete track span\"}\n",
+			       declared->track_num,
+			       declared->type == CUE_TRACK_AUDIO ? "audio" : "data");
+		}
+		return 1;
+	}
 
 	fprintf(stderr, "Parsed %d tracks from %d file(s)\n", num_tracks, disc.num_files);
 

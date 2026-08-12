@@ -265,6 +265,10 @@ object TouchBindings {
     /** Check if a binding ID is a meta action (dispatched via NativeMetaActions). */
     fun isMetaAction(binding: Int): Boolean = binding >= META_ACTION_OFFSET
 
+    /** True only for a binding understood by the maintained touch runtime. */
+    fun isSupportedBinding(binding: Int): Boolean =
+        binding in BUTTON_LABELS || binding in ALL_META_BUTTON_LABELS || keycodeToName(binding) != null
+
     /** Reverse lookup: label string to meta action ID, or -1. */
     fun metaActionIdForLabel(label: String): Int =
         ALL_META_BUTTON_LABELS.entries.firstOrNull { it.value == label }?.key ?: -1
@@ -361,6 +365,9 @@ object TouchBindings {
 
     /** Convert an axis integer to a stable human-readable name. */
     fun axisToName(id: Int): String = AXIS_NAMES[id] ?: "axis_$id"
+
+    /** True only for an axis understood by nativeJoystickAxis. */
+    fun isSupportedAxis(axis: Int): Boolean = axis in AXIS_NAMES
 
     /** Convert a human-readable axis name back to its integer ID.
      *  Returns null if the name is not recognized. */

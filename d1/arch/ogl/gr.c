@@ -57,6 +57,7 @@
 
 #ifdef ANDROID
 #include "android_egl_surface.h"
+#include "android_render_resolution.h"
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -686,10 +687,9 @@ int gr_list_modes( u_int32_t gsmodes[] )
 int gr_check_mode(u_int32_t mode)
 {
 #ifdef ANDROID
-	/* The dummy SDL video driver rejects all modes; accept any
-	 * resolution on Android where EGL handles the real surface. */
-	(void)mode;
-	return 32;
+	/* SDL's dummy driver cannot validate EGL modes. Apply the Android
+	 * canvas and scratch-buffer budget before any allocation instead. */
+	return android_render_resolution_valid(SM_W(mode), SM_H(mode)) ? 32 : 0;
 #else
 	unsigned int w, h;
 
@@ -708,7 +708,8 @@ int gr_check_mode(u_int32_t mode)
 int gr_set_mode(u_int32_t mode)
 {
 	unsigned int w, h;
-	char *gr_bm_data;
+	unsigned char *gr_bm_data;
+	unsigned char *new_bm_data;
 
 	if (mode<=0)
 		return 0;
@@ -724,13 +725,18 @@ int gr_set_mode(u_int32_t mode)
 		Game_screen_mode=mode=SM(w,h);
 	}
 
-	gr_bm_data=(char *)grd_curscreen->sc_canvas.cv_bitmap.bm_data;//since we use realloc, we want to keep this pointer around.
+	gr_bm_data=grd_curscreen->sc_canvas.cv_bitmap.bm_data;//since we use realloc, we want to keep this pointer around.
+	new_bm_data = d_realloc(gr_bm_data, (size_t)w * (size_t)h);
+	if (!new_bm_data) {
+		con_printf(CON_URGENT,"Cannot allocate canvas for %ix%i\n",w,h);
+		return 1;
+	}
 	memset( grd_curscreen, 0, sizeof(grs_screen));
 	grd_curscreen->sc_mode = mode;
 	grd_curscreen->sc_w = w;
 	grd_curscreen->sc_h = h;
 	grd_curscreen->sc_aspect = fixdiv(grd_curscreen->sc_w*GameCfg.AspectX,grd_curscreen->sc_h*GameCfg.AspectY);
-	gr_init_canvas(&grd_curscreen->sc_canvas, d_realloc(gr_bm_data,w*h), BM_OGL, w, h);
+	gr_init_canvas(&grd_curscreen->sc_canvas, new_bm_data, BM_OGL, w, h);
 	gr_set_current_canvas(NULL);
 
 	sdl_video_flags = (sdl_video_flags & ~SDL_NOFRAME) | (GameCfg.BorderlessWindow ? SDL_NOFRAME : 0);

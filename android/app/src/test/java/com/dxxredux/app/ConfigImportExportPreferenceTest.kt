@@ -9,6 +9,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ConfigImportExportPreferenceTest {
+    private fun minimalCombinedConfig(): JSONObject =
+        JSONObject()
+            .put("type", "combined_config")
+            .put("version", 3)
+            .put("host_defaults", JSONObject().put("game", "d2"))
+
     @Test
     fun exportedPreferencesRoundTripWithDeclaredTypes() {
         for (booleanValue in listOf(false, true)) {
@@ -83,5 +89,31 @@ class ConfigImportExportPreferenceTest {
                 assertFalse(decoded.values.isNotEmpty())
             }
         }
+    }
+
+    @Test
+    fun combinedConfigRequiresSupportedVersionAndTypedSections() {
+        assertNull(ConfigImportExport.validateCombinedConfig(minimalCombinedConfig()))
+        for (version in listOf(null, 2, 4, "3")) {
+            val json = minimalCombinedConfig()
+            if (version == null) json.remove("version") else json.put("version", version)
+            assertTrue(ConfigImportExport.validateCombinedConfig(json)?.contains("version") == true)
+        }
+        for (json in listOf(
+            minimalCombinedConfig().put("touch_layout_slots", JSONObject()),
+            minimalCombinedConfig().put("controller_config_slots", JSONObject()),
+            minimalCombinedConfig().put("host_defaults", JSONArray()),
+        )) {
+            assertTrue(ConfigImportExport.validateCombinedConfig(json) != null)
+        }
+    }
+
+    @Test
+    fun combinedConfigRejectsWrongPreferenceAndHostFieldTypes() {
+        val preference =
+            minimalCombinedConfig().put("app_settings", JSONObject().put("touch_overlay_enabled", "true"))
+        val host = minimalCombinedConfig().put("host_defaults", JSONObject().put("max_players", "4"))
+        assertTrue(ConfigImportExport.validateCombinedConfig(preference)?.contains("touch_overlay_enabled") == true)
+        assertTrue(ConfigImportExport.validateCombinedConfig(host)?.contains("max_players") == true)
     }
 }

@@ -148,19 +148,32 @@ if (-not $Rebuild) {
 
 if ($Rebuild) {
     Write-Host "=== Rebuilding AVD ($AVD_NAME) ==="
-    # Kill running emulator first
-    $running = & $ADB devices 2>$null | Select-String "emulator-"
-    if ($running) {
-        Write-Host "Stopping running emulator"
-        & $ADB emu kill 2>$null
+    # Stop only the running instance backed by the AVD being rebuilt.
+    $targetSerial = $null
+    foreach ($deviceLine in @(& $ADB devices 2>$null)) {
+        if ($deviceLine -match '^(emulator-\d+)\s+device$') {
+            $serial = $Matches[1]
+            $reportedName = @(& $ADB -s $serial emu avd name 2>$null) |
+                Where-Object { $_ -and $_.Trim() -ne "OK" } |
+                Select-Object -First 1
+            if ($reportedName -and $reportedName.Trim() -eq $AVD_NAME) {
+                $targetSerial = $serial
+                break
+            }
+        }
+    }
+    if ($targetSerial) {
+        Write-Host "Stopping $AVD_NAME on $targetSerial"
+        & $ADB -s $targetSerial emu kill 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Failed to stop $AVD_NAME on $targetSerial" -ForegroundColor Red
+            exit 1
+        }
         Start-Sleep -Seconds 3
-        # Force-kill any lingering emulator/qemu processes
-        Get-Process -Name "qemu-system*", "emulator*" -ErrorAction SilentlyContinue | Stop-Process -Force
-        Start-Sleep -Seconds 2
     }
     $createScript = Join-Path $ScriptDir "get_deps\helpers\create_light_avds.ps1"
     if (Test-Path $createScript) {
-        & $createScript -Force
+        & $createScript -Force -AvdName $AVD_NAME
         if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: AVD recreation failed" -ForegroundColor Red
             exit 1

@@ -95,6 +95,7 @@ if(ANDROID)
     add_library(dxx-redux-d1 SHARED ${D1X_MAIN_SOURCES})
 else()
     add_executable(dxx-redux-d1 ${D1X_MAIN_SOURCES})
+    set_target_properties(dxx-redux-d1 PROPERTIES OUTPUT_NAME d1x-redux)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/arch/include ${PROJECT_SOURCE_DIR}/android/app/src/main/cpp/shared)

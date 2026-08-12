@@ -4516,9 +4516,9 @@ void net_udp_more_game_options ()
 	char HomingUpdateRateText[80];
 	
 #ifdef USE_TRACKER
-	newmenu_item m[55];
+	newmenu_item m[56];
 #else
-	newmenu_item m[54];
+	newmenu_item m[55];
 #endif
 
 	snprintf(packstring,sizeof(char)*4,"%d",Netgame.PacketsPerSec);
@@ -4690,10 +4690,13 @@ void net_udp_more_game_options ()
 
 #ifdef __ANDROID__
 	/* android port: coop QoL enhancements toggle */
+	Assert(opt < SDL_arraysize(m));
 	opt_coop_qol=opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Coop QoL (guidebot, arrows, warp)"; m[opt].value=(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) != 0; opt++;
+	Assert(opt < SDL_arraysize(m));
 	opt_duplicate_energy_shields=opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Energy and shields duplicated for each player"; m[opt].value=Netgame.DuplicateEnergyShields; opt++;
+	Assert(opt == SDL_arraysize(m));
 #endif
 
 	Assert(opt <= SDL_arraysize(m));

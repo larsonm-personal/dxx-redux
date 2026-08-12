@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "pstypes.h"
+#include "game.h"
 #include "mission.h"
 #include "multi.h"
 #include "net_udp.h"
@@ -169,6 +170,25 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
                       int full_death_spew,
                       int player_spew_no_expire)
 {
+	/* Load the requested mission */
+	if (mission == NULL || !load_mission_by_name((char *) mission)) {
+		net_udp_android_mpdiag("auto_host: mission '%s' not found", mission ? mission : "(null)");
+		return 0;
+	}
+	if (level_num < 1 || level_num > Last_level) {
+		net_udp_android_mpdiag("auto_host: level %d is outside mission '%s' range 1-%d",
+		                       level_num, mission, Last_level);
+		return 0;
+	}
+	if ((mode != NETGAME_ANARCHY && mode != NETGAME_COOPERATIVE) ||
+	    difficulty < 0 || difficulty >= NDL ||
+	    max_players < 2 || max_players > MAX_PLAYERS) {
+		net_udp_android_mpdiag("auto_host: invalid parameters mode=%d difficulty=%d max_players=%d",
+		                       mode, difficulty, max_players);
+		return 0;
+	}
+
+	/* Do not open or reset network state until the complete launch tuple is valid. */
 	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
 	net_udp_reset_connection_statuses();
@@ -178,12 +198,6 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 	net_udp_android_set_bind_loopback(0); /* host binds to INADDR_ANY for cross-device joins */
 
 	netgame_set_defaults();
-
-	/* Load the requested mission */
-	if (!load_mission_by_name((char *) mission)) {
-		net_udp_android_mpdiag("auto_host: mission '%s' not found", mission);
-		return 0;
-	}
 
 	/* Set game parameters */
 	Netgame.gamemode = mode;

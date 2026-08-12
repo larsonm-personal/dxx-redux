@@ -5,7 +5,11 @@
 # Settings: 1536 MB RAM, 1280x720 @ 320dpi, 2 cores, no cameras/gps/nfc/cell,
 #           4 GB SD card (for CD images), 8 GB data partition.
 
-param([switch]$Force)
+param(
+    [switch]$Force,
+    [ValidateSet("Nexus5X_Light_1", "Nexus5X_Light_2")]
+    [string]$AvdName
+)
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot))
@@ -29,8 +33,9 @@ $avds = @(
     @{ Name = "Nexus5X_Light_1"; Display = "Nexus 5X Light 1" },
     @{ Name = "Nexus5X_Light_2"; Display = "Nexus 5X Light 2" }
 )
+$selectedAvds = if ($AvdName) { @($avds | Where-Object { $_.Name -eq $AvdName }) } else { $avds }
 
-foreach ($avd in $avds) {
+foreach ($avd in $selectedAvds) {
     $name = $avd.Name
     Write-Host "--- Creating AVD: $name ---"
 
@@ -134,7 +139,11 @@ foreach ($avd in $avds) {
     Write-Host ""
 }
 
-Write-Host "=== All AVDs created ==="
+if ($AvdName) {
+    Write-Host "=== AVD created: $AvdName ==="
+} else {
+    Write-Host "=== All AVDs created ==="
+}
 Write-Host "Launch with:"
 Write-Host "  emulator -avd Nexus5X_Light_1 -no-snapshot-save -gpu host"
 Write-Host "  emulator -avd Nexus5X_Light_2 -no-snapshot-save -gpu host"

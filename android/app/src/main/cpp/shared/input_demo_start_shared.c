@@ -13,6 +13,7 @@
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_limits.h"
 #include "input_demo_replay.h"
 #include "input_demo_rng_mode.h"
 #include "input_demo_rng_trace.h"
@@ -534,6 +535,14 @@ static int input_demo_start_replay_new_level(
 	if (!load_mission_by_name(replay_context->mission_name)) {
 		printf("Input demo replay could not load mission: %s\n",
 		       replay_context->mission_name);
+		input_demo_replay_unload();
+		return 1;
+	}
+	if (!input_demo_level_in_mission(input_demo_replay_level(),
+	                                 Last_level,
+	                                 Last_secret_level)) {
+		printf("Input demo replay level %d is outside mission bounds %d..-1,1..%d\n",
+		       input_demo_replay_level(), Last_secret_level, Last_level);
 		input_demo_replay_unload();
 		return 1;
 	}

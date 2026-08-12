@@ -16,6 +16,58 @@ import java.io.FileWriter
 import java.util.Locale
 import java.util.Random
 
+internal fun stripLauncherJson5(text: String): String {
+    val withoutComments = StringBuilder(text.length)
+    var inString = false
+    var i = 0
+    while (i < text.length) {
+        val c = text[i]
+        if (inString) {
+            withoutComments.append(c)
+            if (c == '\\' && i + 1 < text.length) {
+                withoutComments.append(text[++i])
+            } else if (c == '"') {
+                inString = false
+            }
+        } else if (c == '"') {
+            inString = true
+            withoutComments.append(c)
+        } else if (c == '/' && i + 1 < text.length && text[i + 1] == '/') {
+            while (i < text.length && text[i] != '\n') i++
+            if (i < text.length) withoutComments.append('\n')
+        } else {
+            withoutComments.append(c)
+        }
+        i++
+    }
+
+    val cleaned = StringBuilder(withoutComments.length)
+    inString = false
+    i = 0
+    while (i < withoutComments.length) {
+        val c = withoutComments[i]
+        if (inString) {
+            cleaned.append(c)
+            if (c == '\\' && i + 1 < withoutComments.length) {
+                cleaned.append(withoutComments[++i])
+            } else if (c == '"') {
+                inString = false
+            }
+        } else if (c == '"') {
+            inString = true
+            cleaned.append(c)
+        } else if (c == ',') {
+            var next = i + 1
+            while (next < withoutComments.length && withoutComments[next].isWhitespace()) next++
+            if (next >= withoutComments.length || withoutComments[next] !in "]}") cleaned.append(c)
+        } else {
+            cleaned.append(c)
+        }
+        i++
+    }
+    return cleaned.toString()
+}
+
 /**
  * Executes JSON5 automation scripts in the launcher (SetupActivity) process.
  *
@@ -75,7 +127,7 @@ class LauncherScriptExecutor(
         startTimeMs = System.currentTimeMillis()
 
         val text = withContext(Dispatchers.IO) { File(path).readText() }
-        val cleaned = stripJson5(text)
+        val cleaned = stripLauncherJson5(text)
         steps = JSONArray(cleaned)
 
         // Build flat step list skipping _info blocks
@@ -1179,35 +1231,5 @@ class LauncherScriptExecutor(
     private fun removeStaleResult() {
         File(context.filesDir, "automation_result.json").delete()
         File(context.filesDir, "automation_result.json.tmp").delete()
-    }
-
-    /** Strip // line comments and trailing commas for JSON5 -> JSON conversion. */
-    private fun stripJson5(text: String): String {
-        val sb = StringBuilder(text.length)
-        var inString = false
-        var i = 0
-        while (i < text.length) {
-            val c = text[i]
-            if (inString) {
-                sb.append(c)
-                if (c == '\\' && i + 1 < text.length) {
-                    sb.append(text[++i])
-                } else if (c == '"') {
-                    inString = false
-                }
-            } else if (c == '"') {
-                inString = true
-                sb.append(c)
-            } else if (c == '/' && i + 1 < text.length && text[i + 1] == '/') {
-                // Skip to end of line
-                while (i < text.length && text[i] != '\n') i++
-                if (i < text.length) sb.append('\n')
-            } else {
-                sb.append(c)
-            }
-            i++
-        }
-        // Remove trailing commas before ] or }
-        return sb.toString().replace(Regex(",\\s*([\\]})])"), "$1")
     }
 }

@@ -15,5 +15,6 @@ void mix_pause_music();
 void mix_resume_music();
 void mix_pause_resume_music();
 void mix_free_music();
+void mix_poll_music(void);
 
 #endif

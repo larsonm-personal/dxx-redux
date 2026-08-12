@@ -166,6 +166,12 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     long long callback_start_us = androidaud_now_us();
     int play_count;
 
+    __atomic_add_fetch(&h->callback_inflight, 1, __ATOMIC_ACQ_REL);
+    if (!__atomic_load_n(&h->callback_enabled, __ATOMIC_ACQUIRE)) {
+        __atomic_sub_fetch(&h->callback_inflight, 1, __ATOMIC_ACQ_REL);
+        return;
+    }
+
     /* Fill with silence */
     SDL_memset(buf, audio->spec.silence, h->playlen);
 
@@ -179,7 +185,13 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     /* Re-enqueue for playback */
     SLresult r = (*h->playerBufferQueue)->Enqueue(
         h->playerBufferQueue, buf, h->playlen);
-    if (r != SL_RESULT_SUCCESS) g_enqueue_fail++;
+	if (r != SL_RESULT_SUCCESS) {
+		g_enqueue_fail++;
+		__atomic_store_n(&h->output_failed, 1, __ATOMIC_RELEASE);
+		__atomic_store_n(&h->callback_enabled, 0, __ATOMIC_RELEASE);
+		audio->enabled = 0;
+		g_player_play = NULL;
+	}
 
     h->next_buf = (buf_idx + 1) % NUM_BUFFERS;
     play_count = __atomic_add_fetch(&g_play_count, 1, __ATOMIC_RELAXED);
@@ -229,6 +241,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
                  g_audio_buf_frames);
         }
     }
+    __atomic_sub_fetch(&h->callback_inflight, 1, __ATOMIC_ACQ_REL);
 }
 
 void androidaud_background_pause(void)
@@ -251,6 +264,45 @@ void androidaud_background_resume(void)
 
 /* ── Driver implementation ─────────────────────────────────── */
 
+static void ANDROIDAUD_DestroyState(struct SDL_PrivateAudioData *h)
+{
+    __atomic_store_n(&h->callback_enabled, 0, __ATOMIC_RELEASE);
+    if (h->playerPlay)
+        (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_STOPPED);
+    if (h->playerBufferQueue)
+        (*h->playerBufferQueue)->Clear(h->playerBufferQueue);
+    while (__atomic_load_n(&h->callback_inflight, __ATOMIC_ACQUIRE) != 0)
+        SDL_Delay(1);
+
+    if (h->playerObject) {
+        (*h->playerObject)->Destroy(h->playerObject);
+        h->playerObject = NULL;
+        h->playerPlay = NULL;
+        h->playerBufferQueue = NULL;
+    }
+    if (h->outputMixObject) {
+        (*h->outputMixObject)->Destroy(h->outputMixObject);
+        h->outputMixObject = NULL;
+    }
+    if (h->engineObject) {
+        (*h->engineObject)->Destroy(h->engineObject);
+        h->engineObject = NULL;
+        h->engineEngine = NULL;
+    }
+    g_player_play = NULL;
+
+    if (h->mixbuf) {
+        SDL_FreeAudioMem(h->mixbuf);
+        h->mixbuf = NULL;
+    }
+    for (int i = 0; i < NUM_BUFFERS; i++) {
+        if (h->playbuf[i]) {
+            SDL_FreeAudioMem(h->playbuf[i]);
+            h->playbuf[i] = NULL;
+        }
+    }
+}
+
 static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
 {
     struct SDL_PrivateAudioData *h = this->hidden;
@@ -271,12 +323,15 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
 
     h->mixlen  = spec->size;
     h->playlen = spec->size;
+    __atomic_store_n(&h->callback_enabled, 0, __ATOMIC_RELEASE);
+    __atomic_store_n(&h->callback_inflight, 0, __ATOMIC_RELEASE);
+    __atomic_store_n(&h->output_failed, 0, __ATOMIC_RELEASE);
 
     /* Allocate mix buffer (needed by SDL_RunAudio even though it's parked) */
     h->mixbuf = (Uint8 *)SDL_AllocAudioMem(h->mixlen);
     if (!h->mixbuf) {
         LOGE("Failed to allocate mixbuf (%u bytes)", h->mixlen);
-        return -1;
+        goto fail;
     }
     SDL_memset(h->mixbuf, spec->silence, h->mixlen);
 
@@ -285,7 +340,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         h->playbuf[i] = (Uint8 *)SDL_AllocAudioMem(h->playlen);
         if (!h->playbuf[i]) {
             LOGE("Failed to allocate playbuf[%d]", i);
-            return -1;
+            goto fail;
         }
         SDL_memset(h->playbuf[i], spec->silence, h->playlen);
     }
@@ -308,21 +363,33 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
 
     /* ── Create OpenSL ES engine ─────────────────────────── */
     result = slCreateEngine(&h->engineObject, 0, NULL, 0, NULL, NULL);
-    if (result != SL_RESULT_SUCCESS) {
+    if (result != SL_RESULT_SUCCESS || !h->engineObject) {
         LOGE("slCreateEngine failed: %d", (int)result);
-        return -1;
+        goto fail;
     }
-    (*h->engineObject)->Realize(h->engineObject, SL_BOOLEAN_FALSE);
-    (*h->engineObject)->GetInterface(h->engineObject, SL_IID_ENGINE, &h->engineEngine);
+    result = (*h->engineObject)->Realize(h->engineObject, SL_BOOLEAN_FALSE);
+    if (result != SL_RESULT_SUCCESS) {
+        LOGE("Engine Realize failed: %d", (int)result);
+        goto fail;
+    }
+    result = (*h->engineObject)->GetInterface(h->engineObject, SL_IID_ENGINE, &h->engineEngine);
+    if (result != SL_RESULT_SUCCESS || !h->engineEngine) {
+        LOGE("Engine GetInterface failed: %d", (int)result);
+        goto fail;
+    }
 
     /* ── Create output mix ───────────────────────────────── */
     result = (*h->engineEngine)->CreateOutputMix(h->engineEngine,
                  &h->outputMixObject, 0, NULL, NULL);
-    if (result != SL_RESULT_SUCCESS) {
+    if (result != SL_RESULT_SUCCESS || !h->outputMixObject) {
         LOGE("CreateOutputMix failed: %d", (int)result);
-        return -1;
+        goto fail;
     }
-    (*h->outputMixObject)->Realize(h->outputMixObject, SL_BOOLEAN_FALSE);
+    result = (*h->outputMixObject)->Realize(h->outputMixObject, SL_BOOLEAN_FALSE);
+    if (result != SL_RESULT_SUCCESS) {
+        LOGE("Output mix Realize failed: %d", (int)result);
+        goto fail;
+    }
 
     /* ── Create buffer-queue audio player ────────────────── */
     SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {
@@ -357,9 +424,9 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
 
     result = (*h->engineEngine)->CreateAudioPlayer(h->engineEngine,
                  &h->playerObject, &audioSrc, &audioSnk, 2, ids, req);
-    if (result != SL_RESULT_SUCCESS) {
+    if (result != SL_RESULT_SUCCESS || !h->playerObject) {
         LOGE("CreateAudioPlayer failed: %d", (int)result);
-        return -1;
+        goto fail;
     }
     /* Set latency performance mode before Realize (API 26+). */
     {
@@ -378,21 +445,33 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         }
     }
 
-    (*h->playerObject)->Realize(h->playerObject, SL_BOOLEAN_FALSE);
+    result = (*h->playerObject)->Realize(h->playerObject, SL_BOOLEAN_FALSE);
+    if (result != SL_RESULT_SUCCESS) {
+        LOGE("Player Realize failed: %d", (int)result);
+        goto fail;
+    }
 
     /* Get play and buffer-queue interfaces */
-    (*h->playerObject)->GetInterface(h->playerObject, SL_IID_PLAY,
-                                     &h->playerPlay);
-    (*h->playerObject)->GetInterface(h->playerObject, SL_IID_BUFFERQUEUE,
-                                     &h->playerBufferQueue);
+    result = (*h->playerObject)->GetInterface(h->playerObject, SL_IID_PLAY,
+                                               &h->playerPlay);
+    if (result != SL_RESULT_SUCCESS || !h->playerPlay) {
+        LOGE("Player play interface failed: %d", (int)result);
+        goto fail;
+    }
+    result = (*h->playerObject)->GetInterface(h->playerObject, SL_IID_BUFFERQUEUE,
+                                               &h->playerBufferQueue);
+    if (result != SL_RESULT_SUCCESS || !h->playerBufferQueue) {
+        LOGE("Player buffer queue interface failed: %d", (int)result);
+        goto fail;
+    }
 
     /* Register callback */
-    (*h->playerBufferQueue)->RegisterCallback(h->playerBufferQueue,
-                                              bqPlayerCallback, this);
-    g_player_play = h->playerPlay;
-
-    /* Start playback */
-    (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_PLAYING);
+    result = (*h->playerBufferQueue)->RegisterCallback(h->playerBufferQueue,
+                                                        bqPlayerCallback, this);
+    if (result != SL_RESULT_SUCCESS) {
+        LOGE("Register buffer queue callback failed: %d", (int)result);
+        goto fail;
+    }
 
     /* Pre-enqueue silence to start the callback chain.
      * As each buffer finishes, bqPlayerCallback fires, mixes real audio
@@ -404,9 +483,21 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         initial_buffers = NUM_BUFFERS;
     }
     for (int i = 0; i < initial_buffers; i++) {
-        (*h->playerBufferQueue)->Enqueue(h->playerBufferQueue,
-                                         h->playbuf[i], h->playlen);
+        result = (*h->playerBufferQueue)->Enqueue(h->playerBufferQueue,
+                                                   h->playbuf[i], h->playlen);
+        if (result != SL_RESULT_SUCCESS) {
+            LOGE("Initial buffer enqueue failed: %d", (int)result);
+            goto fail;
+        }
     }
+
+    __atomic_store_n(&h->callback_enabled, 1, __ATOMIC_RELEASE);
+    result = (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_PLAYING);
+    if (result != SL_RESULT_SUCCESS) {
+        LOGE("Start playback failed: %d", (int)result);
+        goto fail;
+    }
+    g_player_play = h->playerPlay;
 
     LOGI("OpenSL ES audio ready (callback-driven): %d Hz, %d ch, "
          "%u samples/frame, playbuf=%u bytes, num_buffers=%d, initial_buffers=%d",
@@ -414,6 +505,11 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
          NUM_BUFFERS, initial_buffers);
 
     return 0;
+
+fail:
+    SDL_SetError("Android OpenSL audio initialization failed");
+    ANDROIDAUD_DestroyState(h);
+    return -1;
 }
 
 /* ── Stubs (SDL_RunAudio is parked; audio is callback-driven) ── */
@@ -433,36 +529,7 @@ static void ANDROIDAUD_CloseAudio(_THIS)
 
     LOGI("CloseAudio");
 
-    /* Destroy OpenSL ES objects in reverse order */
-    if (h->playerObject) {
-        g_player_play = NULL;
-        (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_STOPPED);
-        (*h->playerObject)->Destroy(h->playerObject);
-        h->playerObject     = NULL;
-        h->playerPlay       = NULL;
-        h->playerBufferQueue = NULL;
-    }
-    if (h->outputMixObject) {
-        (*h->outputMixObject)->Destroy(h->outputMixObject);
-        h->outputMixObject = NULL;
-    }
-    if (h->engineObject) {
-        (*h->engineObject)->Destroy(h->engineObject);
-        h->engineObject = NULL;
-        h->engineEngine = NULL;
-    }
-
-    /* Free buffers */
-    if (h->mixbuf) {
-        SDL_FreeAudioMem(h->mixbuf);
-        h->mixbuf = NULL;
-    }
-    for (int i = 0; i < NUM_BUFFERS; i++) {
-        if (h->playbuf[i]) {
-            SDL_FreeAudioMem(h->playbuf[i]);
-            h->playbuf[i] = NULL;
-        }
-    }
+    ANDROIDAUD_DestroyState(h);
 }
 
 /* ── Diagnostic accessors (called from game_introspect.cpp) ──────────── */

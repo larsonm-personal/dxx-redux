@@ -98,6 +98,8 @@ Write-RunNote "started" @(
 
 # -- Load tool_versions.conf --------------------------------------------------
 
+. (Join-Path $scriptDir "helpers/safe_conf_value.ps1")
+
 function Normalize-ConfValue($rawValue) {
     if ($null -eq $rawValue) { return $null }
 
@@ -1656,14 +1658,15 @@ if ($selectedTarget.Count -eq 0 -and $selectedInstall.Count -eq 0) {
 # -- Apply upgrades -----------------------------------------------------------
 
 function Update-Conf($key, $value) {
+    $assignment = Format-SafeToolConfAssignment -Key ([string]$key) -Value ([string]$value)
     $lines = Get-Content $confFile
     $found = [bool]($lines | Where-Object { $_ -match "^$key=" } | Select-Object -First 1)
     $lines = $lines | ForEach-Object {
         if ($_ -match "^$key=") {
-            "$key=$value"
+            $assignment
         } else { $_ }
     }
-    if (-not $found) { $lines += "$key=$value" }
+    if (-not $found) { $lines += $assignment }
     ($lines -join "`n") + "`n" | Set-Content $confFile -NoNewline
 }
 

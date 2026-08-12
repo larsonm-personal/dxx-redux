@@ -176,6 +176,27 @@ class ModManagerDetailsTest {
     }
 
     @Test
+    fun compatibilityRejectsPatchThatNativeConsumerCannotApply() {
+        val filesDir = createTempDirectory("mod-native-schema-patch").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val baseHam = File(setDir, "descent2.ham").apply { writeText("base-ham") }
+        val dxaFile = File(modsDir, "remove_patch.dxa")
+        writePatchDxa(
+            dxaFile,
+            "remove",
+            sha256(baseHam),
+            """[{"op":"remove","path":"/sections/sounds/1/Sound"}]""",
+        )
+        writeModManifest(filesDir, dxaFile.name to "Remove Patch")
+
+        val report = ModManager(filesDir).checkEnabledModCompatibility("d2", setDir)
+
+        assertFalse(report.ok)
+        assertTrue(report.toUserMessage().contains("unsupported JSON Patch operation 'remove'"))
+    }
+
+    @Test
     fun compatibilityAllowsSamePatchPathWhenWriteScopesDoNotOverlap() {
         val filesDir = createTempDirectory("mod-compatible-patches").toFile()
         val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
@@ -193,8 +214,8 @@ class ModManagerDetailsTest {
         val texturePatch =
             """
             [
-                {"op":"test","path":"/sections/wclips/9","value":{"Index":9,"PlayTime":104857,"OpenSound":1}},
-                {"op":"replace","path":"/sections/wclips/9","value":{"Index":9,"PlayTime":65536,"OpenSound":1}}
+                {"op":"test","path":"/sections/wclips/9/PlayTime","value":104857},
+                {"op":"replace","path":"/sections/wclips/9/PlayTime","value":65536}
             ]
             """.trimIndent()
         writePatchDxa(File(modsDir, "sound.dxa"), "sound", baseSha256, soundPatch)
@@ -232,8 +253,8 @@ class ModManagerDetailsTest {
         val secondPatch =
             """
             [
-                {"op":"test","path":"/sections/wclips/9","value":{"Index":9,"PlayTime":104857,"OpenSound":1}},
-                {"op":"replace","path":"/sections/wclips/9","value":{"Index":9,"PlayTime":65536,"OpenSound":1}}
+                {"op":"test","path":"/sections/wclips/9/PlayTime","value":104857},
+                {"op":"replace","path":"/sections/wclips/9/PlayTime","value":65536}
             ]
             """.trimIndent()
         writePatchDxa(File(modsDir, "first.dxa"), "first", baseSha256, firstPatch)
@@ -272,8 +293,8 @@ class ModManagerDetailsTest {
         val secondPatch =
             """
             [
-                {"op":"test","path":"/sections/wclips/9","value":{"Index":9,"PlayTime":104857,"OpenSound":1}},
-                {"op":"replace","path":"/sections/wclips/9","value":{"Index":9,"PlayTime":65536,"OpenSound":1}}
+                {"op":"test","path":"/sections/wclips/9/PlayTime","value":104857},
+                {"op":"replace","path":"/sections/wclips/9/PlayTime","value":65536}
             ]
             """.trimIndent()
         writePatchDxa(File(modsDir, "first.dxa"), "first", baseSha256, firstPatch)

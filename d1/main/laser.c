@@ -1150,13 +1150,28 @@ void laser_get_runtime_state(laser_runtime_state *state)
 	state->last_omega_fire_time = 0;
 }
 
+int laser_runtime_state_is_valid(const laser_runtime_state *state)
+{
+	return state && state->fusion_charge >= 0 && state->fusion_charge <= 4 * F1_0 &&
+	       (state->spreadfire_toggle == 0 || state->spreadfire_toggle == 1) &&
+	       state->missile_gun >= 0 &&
+	       state->proximity_dropped >= 0 && state->proximity_dropped < 4 &&
+	       state->helix_orientation == 0 && state->smartmines_dropped == 0;
+}
+
+int laser_pending_fire_count_is_valid(int count)
+{
+	return count >= 0 && count <= 127;
+}
+
 void laser_set_runtime_state(const laser_runtime_state *state)
 {
-	if (!state)
+	if (!laser_runtime_state_is_valid(state))
 		return;
 
 	Fusion_charge = state->fusion_charge;
 	Spreadfire_toggle = state->spreadfire_toggle;
+	/* Preserve legacy checkpoint diagnostics while new saves store only parity. */
 	Missile_gun = state->missile_gun;
 	Proximity_dropped = state->proximity_dropped;
 }
@@ -1585,7 +1600,7 @@ void do_missile_firing(int drop_bomb)
 		switch (weapon) {
 			case CONCUSSION_INDEX:
 				Laser_player_fire( ConsoleObject, CONCUSSION_ID, CONCUSSION_GUN+(Missile_gun & 1), 1, 0 , orient);
-				Missile_gun++;
+				Missile_gun = Missile_gun == INT_MAX ? 0 : Missile_gun + 1;
 
 				#ifdef NETWORK
 					if(Game_mode & GM_MULTI && Netgame.RespawnConcs && RespawningConcussions[Player_num] > 0 ) {
@@ -1610,7 +1625,7 @@ void do_missile_firing(int drop_bomb)
 
 			case HOMING_INDEX:
 				Laser_player_fire( ConsoleObject, HOMING_ID, HOMING_GUN+(Missile_gun & 1), 1, 0, orient );
-				Missile_gun++;
+				Missile_gun = Missile_gun == INT_MAX ? 0 : Missile_gun + 1;
 				#ifdef NETWORK
 				maybe_drop_net_powerup(POW_HOMING_AMMO_1);
 				#endif

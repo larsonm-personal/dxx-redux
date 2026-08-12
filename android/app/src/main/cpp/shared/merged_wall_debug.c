@@ -37,6 +37,7 @@ extern vms_vector Viewer_eye;
 void ogl_prog_set_tex2_current_matrix(const GLfloat *matrix, int super);
 void ogl_prog_set_tex2_debug_mode(int mode);
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
+void ogl_freetexture(struct _ogl_texture *texture);
 
 #define MERGED_WALL_LOG_PT_COUNT            16
 #define MERGED_WALL_TRACKED_FACE_MAX        32
@@ -483,13 +484,17 @@ void android_merged_wall_cached_texmerge_build_uvs(GLfloat *bottom_uv,
 
 void android_merged_wall_cached_texmerge_clear(
     struct merged_wall_cached_texmerge_entry *entries,
-    int count)
+    int count,
+    void (*free_texture)(struct _ogl_texture *))
 {
 	int i;
 	if (!entries || count <= 0)
 		return;
-	for (i = 0; i < count; ++i)
+	for (i = 0; i < count; ++i) {
+		if (entries[i].texture && free_texture)
+			free_texture(entries[i].texture);
 		android_merged_wall_cached_texmerge_reset_entry(&entries[i]);
+	}
 }
 
 void android_merged_wall_cached_texmerge_clear_cache(void)
@@ -504,7 +509,8 @@ void android_merged_wall_cached_texmerge_clear_cache(void)
 		                Game_mode,
 		                MERGED_WALL_CACHED_TEXMERGE_COUNT);
 	android_merged_wall_cached_texmerge_clear(g_merged_wall_cached_texmerge,
-	                                          MERGED_WALL_CACHED_TEXMERGE_COUNT);
+	                                          MERGED_WALL_CACHED_TEXMERGE_COUNT,
+	                                          ogl_freetexture);
 	g_merged_wall_cached_texmerge_initialized = 1;
 }
 
@@ -2261,12 +2267,13 @@ static int merged_wall_bbox_contains_point(float px, float py,
 }
 
 static int merged_wall_store_projected_points(const struct g3s_point **pointlist, int nv,
+                                              int capacity,
                                               int *pt_projected, float *pt_sx, float *pt_sy)
 {
 	int count = 0;
 	int i;
 
-	if (!pointlist || nv <= 0)
+	if (!pointlist || nv <= 0 || nv > capacity)
 		return 0;
 
 	for (i = 0; i < nv; i++) {
@@ -2869,6 +2876,7 @@ void android_merged_wall_probe_record_draw_face(grs_bitmap *bm,
 	                                          (candidate.projected_max_sy - candidate.projected_min_sy)
 	                                    : 0.0f;
 	candidate.projected_count = merged_wall_store_projected_points(pointlist, nv,
+	                                                               MERGED_WALL_LOG_PT_COUNT,
 	                                                               candidate.pt_projected,
 	                                                               candidate.pt_sx,
 	                                                               candidate.pt_sy);
@@ -4844,6 +4852,7 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	track->merged_bitmap = merged_bitmap;
 	track->merged_slot = merged_slot;
 	track->projected_count = merged_wall_store_projected_points(pointlist, nv,
+	                                                            MERGED_WALL_LOG_PT_COUNT,
 	                                                            track->pt_projected,
 	                                                            track->pt_sx,
 	                                                            track->pt_sy);
@@ -4907,7 +4916,10 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 	int i, ordered;
 
 	merged_wall_begin_frame_tracking();
+	if (nv <= 0 || nv > MERGED_WALL_LOG_PT_COUNT)
+		return;
 	cover_projected_count = merged_wall_store_projected_points(pointlist, nv,
+	                                                           MERGED_WALL_LOG_PT_COUNT,
 	                                                           cover_pt_projected,
 	                                                           cover_pt_sx,
 	                                                           cover_pt_sy);

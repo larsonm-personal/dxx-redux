@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.dpadTextFieldNavigation
 import com.dxxredux.app.tvFocusBorder
@@ -70,6 +71,8 @@ internal fun CreateGameDialog(
 ) {
     val context = LocalContext.current
     val defaults = remember { HostGameDefaults.load(context) }
+    val fileSetManager = remember { FileSetManager(context.filesDir) }
+    val activeSetDir = remember(fileSetManager) { fileSetManager.getSetDir(fileSetManager.getActive()) }
     var game by remember { mutableStateOf(defaults.game) }
     var mission by remember { mutableStateOf(defaults.mission) }
     var mode by remember { mutableStateOf(defaults.mode) }
@@ -83,6 +86,11 @@ internal fun CreateGameDialog(
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
     var restrictNonCoopFovToBase by remember { mutableStateOf(defaults.restrictNonCoopFovToBase) }
     var textEntryActive by remember { mutableStateOf(false) }
+    val availableMissions = remember(game, activeSetDir) { MissionScanner.scan(activeSetDir, game) }
+    val selectedMissionInfo =
+        remember(mission, availableMissions) {
+            resolveMissionSelection(availableMissions, mission)
+        }
     val dialogFocus = remember { FocusRequester() }
     val missionFocus = remember { FocusRequester() }
     val difficultyFocus = remember { FocusRequester() }
@@ -173,6 +181,7 @@ internal fun CreateGameDialog(
                             } else {
                                 OutlinedButton(onClick = {
                                     game = g
+                                    levelNumText = "1"
                                     val saved = HostGameDefaults.load(context)
                                     mission =
                                         if (saved.game == g) {
@@ -186,8 +195,11 @@ internal fun CreateGameDialog(
                     }
                     MissionPickerField(
                         selectedFilename = mission,
-                        game = game,
-                        onSelect = { mission = it },
+                        missions = availableMissions,
+                        onSelect = {
+                            mission = it.filename
+                            levelNumText = "1"
+                        },
                         modifier = Modifier.focusRequester(missionFocus),
                     )
                     // Mode selector
@@ -268,6 +280,25 @@ internal fun CreateGameDialog(
                                         down = optionsFocus
                                     }.dpadTextFieldNavigation(up = difficultyFocus, down = optionsFocus)
                                     .controllerTextEntryFocus { textEntryActive = it },
+                        )
+                    }
+                    if (selectedMissionInfo == null) {
+                        Text(
+                            "Select an installed mission.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    } else if (selectedMissionInfo.levelCount <= 0) {
+                        Text(
+                            "This mission does not declare a playable level list.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    } else {
+                        Text(
+                            "Available levels: 1-${selectedMissionInfo.levelCount}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     if (coopSaves.isNotEmpty()) {
@@ -508,7 +539,9 @@ internal fun CreateGameDialog(
                         restrictNonCoopFovToBase,
                     )
                 },
-                enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
+                enabled =
+                    selectedMissionLevelIsValid(selectedMissionInfo, levelNum) &&
+                        maxPlayers in 2..8,
                 modifier = Modifier.focusRequester(createFocus),
             ) {
                 Text(confirmLabel)

@@ -26,18 +26,17 @@ static void apply_bound_min_mag_filter(ogl_texture *texture, GLenum min_filter,
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle)
 {
-	if (!state || !state->last_bound_tex) {
-		glBindTexture(GL_TEXTURE_2D, handle);
-		return;
-	}
-
-	if (handle != *state->last_bound_tex) {
-		glBindTexture(GL_TEXTURE_2D, handle);
-		*state->last_bound_tex = handle;
+	/* GL_TEXTURE_BINDING_2D is scoped to the active texture unit.  The
+	 * legacy scalar cache has no unit identity, so it cannot safely skip a
+	 * bind after glActiveTexture transitions.  Keep the scalar diagnostic
+	 * value synchronized, but bind unconditionally until the caller owns a
+	 * per-unit cache. */
+	glBindTexture(GL_TEXTURE_2D, handle);
+	if (state) {
+		if (state->last_bound_tex)
+			*state->last_bound_tex = handle;
 		if (state->texbinds)
 			(*state->texbinds)++;
-	} else if (state->texbind_reuse) {
-		(*state->texbind_reuse)++;
 	}
 }
 

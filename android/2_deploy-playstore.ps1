@@ -2,7 +2,6 @@
 # deploy-playstore.ps1 -- Upload AAB to Google Play via the Developer API
 #
 # Usage:
-#   .\deploy-playstore.ps1                              # auto-finds latest AAB in build-outputs/
 #   .\deploy-playstore.ps1 -AabPath path\to\app.aab     # explicit AAB
 #   .\deploy-playstore.ps1 -CredentialsPath creds.json  # non-default credentials
 #   .\deploy-playstore.ps1 -TrackName internal                   # select track by name
@@ -58,32 +57,17 @@ Create one by following the instructions in play-store-credentials.sample.json
 $creds = Get-Content $CredentialsPath -Raw | ConvertFrom-Json
 Write-Host "Service account: $($creds.client_email)"
 
-# -- Locate AAB ------------------------------------------------------
+# -- Require one exact AAB ------------------------------------------
 if (-not $AabPath) {
-    # Find the newest AAB in build-outputs/
-    $outDir = Join-Path $PSScriptRoot "build-outputs"
-    if (Test-Path $outDir) {
-        $aab = Get-ChildItem "$outDir\*.aab" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    }
-    if (-not $aab) {
-        # Fall back to Gradle output
-        $releaseAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\release\app-release.aab"
-        $internalAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\internal\app-internal.aab"
-        $debugAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\debug\app-debug.aab"
-        if (Test-Path $releaseAab) { $aab = Get-Item $releaseAab }
-        elseif (Test-Path $internalAab) { $aab = Get-Item $internalAab }
-        elseif (Test-Path $debugAab) { $aab = Get-Item $debugAab }
-    }
-    if (-not $aab) {
-        Write-Error "No AAB found. Build one first with .\build-aab.ps1 or specify -AabPath"
-    }
-    $AabPath = $aab.FullName
+    Write-Error "-AabPath is required; deployment will not guess among build artifacts"
 }
 if (-not (Test-Path $AabPath)) {
     Write-Error "AAB file not found: $AabPath"
 }
 $aabSize = [math]::Round((Get-Item $AabPath).Length / 1MB, 1)
+$aabDigest = (Get-FileHash -LiteralPath $AabPath -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Host "AAB file: $AabPath ($aabSize MB)"
+Write-Host "SHA-256:  $aabDigest"
 Write-Host ""
 
 # ===================================================================
@@ -211,6 +195,13 @@ $uploadUrl = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3
 # Read the entire file into memory and upload via Invoke-WebRequest
 # (PS 5.1 doesn't have System.Net.Http.HttpClient loaded by default)
 $aabBytes = [System.IO.File]::ReadAllBytes($AabPath)
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+try {
+    $loadedDigest = ([BitConverter]::ToString($sha256.ComputeHash($aabBytes))).Replace("-", "").ToLowerInvariant()
+} finally {
+    $sha256.Dispose()
+}
+if ($loadedDigest -ne $aabDigest) { throw "AAB changed while it was being loaded; refusing deployment" }
 $alreadyUploaded = $false
 try {
     $uploadResp = Invoke-WebRequest -Uri $uploadUrl -Method POST -Headers $headers `
@@ -223,10 +214,7 @@ try {
     $errBody = $_.ErrorDetails.Message
     if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
     if ($errBody -match "already been used") {
-        # Extract the versionCode from the AAB filename or error message
-        if ($errBody -match "Version code (\d+)") { $versionCode = [int]$Matches[1] }
-        Write-Host "Version code $versionCode already uploaded -- skipping to promotion"
-        $alreadyUploaded = $true
+        Write-Error "Upload rejected because this version code has already been used. Remote bytes cannot be proven identical; build with a new version code. Details: $errBody"
     } else {
         Write-Error "Upload failed: $errBody`n$_"
     }
@@ -427,5 +415,6 @@ Write-Host "=== Deployment successful ==="
 Write-Host "  Package:     $PACKAGE"
 Write-Host "  Track:       $selectedTrack"
 Write-Host "  VersionCode: $versionCode"
+Write-Host "  SHA-256:     $aabDigest"
 Write-Host "  Status:      $releaseStatus"
 Write-Host ""

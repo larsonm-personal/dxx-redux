@@ -651,6 +651,20 @@ else()
     target_compile_options(test_physfsx_android_setup PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME physfsx_android_setup_tests COMMAND test_physfsx_android_setup)
+add_executable(
+    test_pilot_pref_transaction
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_pilot_pref_transaction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/pilot_pref_transaction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/playsave_transaction.c)
+target_include_directories(test_pilot_pref_transaction
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+if(MSVC)
+    target_compile_definitions(test_pilot_pref_transaction PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_options(test_pilot_pref_transaction PRIVATE /W4)
+else()
+    target_compile_options(test_pilot_pref_transaction PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME pilot_pref_transaction_tests COMMAND test_pilot_pref_transaction)
 set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # These executables use assert for both setup and verification. Keep assertions active when the host

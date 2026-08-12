@@ -47,6 +47,28 @@ class GraphicsConfigHelpersTest {
     }
 
     @Test
+    fun renderResolutionValidationProtectsMaintainedBudgetAndConfig() {
+        assertFalse(isSupportedAndroidRenderResolution(319, 200))
+        assertFalse(isSupportedAndroidRenderResolution(320, 199))
+        assertTrue(isSupportedAndroidRenderResolution(320, 200))
+        assertTrue(isSupportedAndroidRenderResolution(3840, 2160))
+        assertFalse(isSupportedAndroidRenderResolution(3841, 2160))
+        assertFalse(isSupportedAndroidRenderResolution(4096, 4096))
+        assertFalse(isSupportedAndroidRenderResolution(60000, 60000))
+        assertEquals(3840 to 2160, parseSupportedAndroidRenderResolution("3840x2160"))
+        assertEquals(null, parseSupportedAndroidRenderResolution("60000x60000"))
+
+        val root = tmp.newFolder("render-resolution")
+        val cfg = root.resolve("descent.cfg").apply { writeText("ResolutionX=640\nResolutionY=480\n") }
+        for (value in listOf("60000x60000", "-1x480", "640x480junk", "640X480", "640x")) {
+            assertFalse(updateDescentCfgResolution(root, value))
+            assertTrue(cfg.readText().contains("ResolutionX=640\nResolutionY=480"))
+        }
+        assertTrue(updateDescentCfgResolution(root, "1920x1080"))
+        assertTrue(cfg.readText().contains("ResolutionX=1920\nResolutionY=1080"))
+    }
+
+    @Test
     fun updateAllConfigFiles_writesReplacementMetacharactersLiterally() {
         val filesDir = filesDirWithConfigs()
         val values = listOf("\$9", "\$0", "\${name}", "\\", "foo\\bar", "\\\\")
@@ -137,7 +159,8 @@ class GraphicsConfigHelpersTest {
         val complete =
             applyGraphicsOptionSnapshot(listOf("gamma_level" to 4, "tex_filt" to 2, "msaa_level" to 4)) {
                 name,
-                _ ->
+                _,
+                ->
                 applied.add(name)
                 name != "tex_filt"
             }
@@ -190,7 +213,8 @@ class GraphicsConfigHelpersTest {
             AtomicFilePublication.writeUtf8Batch(listOf(root to "root-new", d1 to "d1-new")) {
                 index,
                 _,
-                _ ->
+                _,
+                ->
                 if (index == 1) error("injected second-target failure")
             }
             throw AssertionError("Expected injected publication failure")

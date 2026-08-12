@@ -394,7 +394,11 @@ object MissionZip {
             ).mapNotNull { mission ->
                 val stem = leafName(mission.path).substringBeforeLast('.').lowercase(Locale.US)
                 val missionDir = parentPath(mission.path)
-                val levelNames =
+                val requiredLevelNames =
+                    mission.levelNames
+                        .map { leafName(it).lowercase(Locale.US) }
+                        .toSet()
+                val referencedLevelNames =
                     (mission.levelNames + mission.secretLevelNames)
                         .map { leafName(it).lowercase(Locale.US) }
                         .toSet()
@@ -403,12 +407,12 @@ object MissionZip {
                         constituent.path.equals(mission.path, ignoreCase = true) ||
                             (
                                 parentPath(constituent.path).equals(missionDir, ignoreCase = true) &&
-                                    isMissionPayload(constituent, stem, levelNames)
+                                    isMissionPayload(constituent, stem, referencedLevelNames)
                             )
                     }
                 val directLevels =
                     inMissionDirectory
-                        .filter { it.name.lowercase(Locale.US) in levelNames }
+                        .filter { it.name.lowercase(Locale.US) in referencedLevelNames }
                         .map { it.name.lowercase(Locale.US) }
                         .toSet()
                 val archivedLevels =
@@ -416,7 +420,11 @@ object MissionZip {
                         .filter(::isMissionArchive)
                         .flatMap { it.archiveEntries.orEmpty() }
                         .toSet()
-                if (!(directLevels + archivedLevels).containsAll(levelNames)) return@mapNotNull null
+                // The paired engines admit missions with a missing optional secret
+                // level and report the failure only if that secret is selected.
+                // Every ordinary level must still be present before the launcher
+                // advertises the set as playable.
+                if (!(directLevels + archivedLevels).containsAll(requiredLevelNames)) return@mapNotNull null
                 MissionSet(mission, inMissionDirectory)
             }
 

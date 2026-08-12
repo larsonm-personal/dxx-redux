@@ -89,7 +89,7 @@ class TouchStickExtremeActionTest {
         val parsed = HumanReadableConfig.humanJsonToTouchLayout(json)
 
         assertEquals("Afterburner", actionJson.getString("binding"))
-        assertTrue(parsed.warnings.isEmpty())
+        assertTrue(parsed.warnings.toString(), parsed.warnings.isEmpty())
         assertEquals(TouchBindings.BTN_AFTERBURNER, parsed.value?.sticks?.single()?.extremeActions?.single()?.binding)
         assertEquals(StickExtremeDirection.POSITIVE, parsed.value?.sticks?.single()?.extremeActions?.single()?.direction)
     }

@@ -142,12 +142,15 @@ internal object ControllerConfigSlotRepository {
         slotsArray: JSONArray,
         activeIndex: Int,
     ): ConfigSlotSet<ControllerConfigState>? {
+        if (slotsArray.length() == 0 || activeIndex !in 0 until slotsArray.length()) return null
         val slots = mutableListOf<ConfigSlot<ControllerConfigState>>()
         for (slotIndex in 0 until slotsArray.length()) {
-            val slotObject = slotsArray.optJSONObject(slotIndex) ?: continue
-            val configObject = slotObject.optJSONObject("config") ?: continue
+            val slotObject = slotsArray.optJSONObject(slotIndex) ?: return null
+            val configObject = slotObject.optJSONObject("config") ?: return null
+            if (slotObject.has("name") && slotObject.opt("name") !is String) return null
             val parsed = controllerConfigStateFromHumanJson(configObject)
-            val config = parsed.value ?: continue
+            if (parsed.warnings.isNotEmpty()) return null
+            val config = parsed.value ?: return null
             val name =
                 if (slotIndex == 0) {
                     DEFAULT_CONFIG_SLOT_NAME
@@ -156,7 +159,6 @@ internal object ControllerConfigSlotRepository {
                 }
             slots.add(ConfigSlot(name, config))
         }
-        if (slots.isEmpty()) return null
         return normalizeSlotSet(ConfigSlotSet(activeIndex, slots), slots.first().value)
     }
 

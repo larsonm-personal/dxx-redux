@@ -12,7 +12,11 @@
 #include <cstring>
 #include <cstdio>
 #include <dirent.h>
+#include <string>
+#include <vector>
 #include <android/log.h>
+
+#include "shared/pilot_pref_transaction.h"
 
 extern "C" {
 #include "game.h"
@@ -94,16 +98,23 @@ static int find_matching_ext(const char *path,
 
 typedef int (*pilot_visitor_fn)(const char *path, void *ctx);
 
-static int for_each_pilot(const char *files_dir,
-                          const char *subdir,
-                          const char *ext,
-                          pilot_visitor_fn visitor,
-                          void *ctx)
+struct owned_patch_target {
+	std::string path;
+	pilot_visitor_fn visitor;
+	void *context;
+};
+
+static int append_pilots(const char *files_dir,
+                         const char *subdir,
+                         const char *ext,
+                         pilot_visitor_fn visitor,
+                         void *ctx,
+                         std::vector<owned_patch_target> &targets)
 {
 	char dir_path[512];
 	const char *subdirs[] = { "", "/Players" };
 	size_t ext_len = strlen(ext);
-	int total = 0;
+	const size_t initial_size = targets.size();
 
 	for (int d = 0; d < 2; d++) {
 		snprintf(dir_path, sizeof(dir_path), "%s/%s%s", files_dir, subdir, subdirs[d]);
@@ -114,14 +125,27 @@ static int for_each_pilot(const char *files_dir,
 			size_t nlen = strlen(ent->d_name);
 			if (nlen > ext_len && strcasecmp(ent->d_name + nlen - ext_len, ext) == 0) {
 				char path[512];
-				snprintf(path, sizeof(path), "%s/%s", dir_path, ent->d_name);
-				total += visitor(path, ctx);
+				const int written = snprintf(path, sizeof(path), "%s/%s", dir_path, ent->d_name);
+				if (written < 0 || static_cast<size_t>(written) >= sizeof(path)) {
+					closedir(dp);
+					return -1;
+				}
+				targets.push_back({ path, visitor, ctx });
 			}
 		}
 		closedir(dp);
 	}
 
-	return total;
+	return static_cast<int>(targets.size() - initial_size);
+}
+
+static int patch_pilots(std::vector<owned_patch_target> &owned_targets)
+{
+	std::vector<pilot_pref_patch_target> targets;
+	targets.reserve(owned_targets.size());
+	for (auto &target : owned_targets)
+		targets.push_back({ target.path.c_str(), target.visitor, target.context });
+	return pilot_pref_patch_transaction(targets.data(), targets.size());
 }
 
 static void read_engine_prefs(const char *files_dir,
@@ -293,7 +317,7 @@ static int write_cockpit_visitor(const char *path, void *ctx)
 	struct write_ctx *wc = (struct write_ctx *) ctx;
 	int cockpit_result = plx_write_cockpit_mode(path, wc->cockpit_mode);
 	int counts_result = plx_write_hud_prefs(path, wc->show_counts, wc->show_boss_health_bar);
-	return cockpit_result || counts_result;
+	return cockpit_result == 1 && counts_result == 1;
 }
 
 static int write_autolevel_visitor(const char *path, void *ctx)
@@ -347,6 +371,7 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	const char *files_dir;
 	struct write_ctx wc;
 	int total;
+	std::vector<owned_patch_target> targets;
 
 	if (!jfilesDir || !cockpit_mode_is_persistable((int) cockpitMode)) {
 		LOGI("nativeWriteEnginePrefs: rejected cockpit mode %d", (int) cockpitMode);
@@ -362,17 +387,17 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	wc.headlight_active_default = headlightActiveDefault ? 1 : 0;
 
 #ifdef DXX_BUILD_DESCENT_II
-	{
-		int plr_total = for_each_pilot(files_dir, "d2x-redux", ".plr", write_visitor, &wc);
-		int plx_total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_hud_counts_visitor, &wc);
-		total = (plr_total > plx_total) ? plr_total : plx_total;
-	}
+	if (append_pilots(files_dir, "d2x-redux", ".plr", write_visitor, &wc, targets) < 0 ||
+	    append_pilots(files_dir, "d2x-redux", ".plx", write_hud_counts_visitor, &wc, targets) < 0)
+		total = -1;
+	else
+		total = patch_pilots(targets);
 #else
-	{
-		int plx_total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_cockpit_visitor, &wc);
-		int plr_total = for_each_pilot(files_dir, "d1x-redux", ".plr", write_autolevel_visitor, &wc);
-		total = (plx_total > plr_total) ? plx_total : plr_total;
-	}
+	if (append_pilots(files_dir, "d1x-redux", ".plx", write_cockpit_visitor, &wc, targets) < 0 ||
+	    append_pilots(files_dir, "d1x-redux", ".plr", write_autolevel_visitor, &wc, targets) < 0)
+		total = -1;
+	else
+		total = patch_pilots(targets);
 #endif
 
 	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d counts=%d boss_health=%d headlight_default=%d patched=%d",
@@ -434,13 +459,17 @@ JNI_FUNC(nativeWriteOriginalHomingPrefs)(JNIEnv *env,
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	struct original_homing_write_ctx wc;
 	int total;
+	std::vector<owned_patch_target> targets;
 
 	wc.original_homing = originalHoming ? 1 : 0;
 #ifdef DXX_BUILD_DESCENT_II
-	total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_original_homing_visitor, &wc);
+	if (append_pilots(files_dir, "d2x-redux", ".plx", write_original_homing_visitor, &wc, targets) < 0)
 #else
-	total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_original_homing_visitor, &wc);
+	if (append_pilots(files_dir, "d1x-redux", ".plx", write_original_homing_visitor, &wc, targets) < 0)
 #endif
+		total = -1;
+	else
+		total = patch_pilots(targets);
 
 	LOGI("nativeWriteOriginalHomingPrefs: original_homing=%d patched=%d",
 	     wc.original_homing, total);
@@ -458,15 +487,19 @@ JNI_FUNC(nativeWriteVisualPrefs)(JNIEnv *env,
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	struct visual_write_ctx wc;
 	int total;
+	std::vector<owned_patch_target> targets;
 
 	wc.alpha_effects = alphaEffects ? 1 : 0;
 	wc.dynlight_color = dynlightColor ? 1 : 0;
 
 #ifdef DXX_BUILD_DESCENT_II
-	total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_visual_visitor, &wc);
+	if (append_pilots(files_dir, "d2x-redux", ".plx", write_visual_visitor, &wc, targets) < 0)
 #else
-	total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_visual_visitor, &wc);
+	if (append_pilots(files_dir, "d1x-redux", ".plx", write_visual_visitor, &wc, targets) < 0)
 #endif
+		total = -1;
+	else
+		total = patch_pilots(targets);
 
 	LOGI("nativeWriteVisualPrefs: alpha=%d dynlight=%d patched=%d", wc.alpha_effects, wc.dynlight_color, total);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
@@ -513,6 +546,7 @@ JNI_FUNC(nativeWriteMusicPrefs)(JNIEnv *env,
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	struct music_write_ctx wc;
 	int total;
+	std::vector<owned_patch_target> targets;
 
 	wc.source = (int) source;
 	wc.prefer_mission = preferMission ? 1 : 0;
@@ -520,10 +554,13 @@ JNI_FUNC(nativeWriteMusicPrefs)(JNIEnv *env,
 	wc.volume = (int) volume;
 
 #ifdef DXX_BUILD_DESCENT_II
-	total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_music_visitor, &wc);
+	if (append_pilots(files_dir, "d2x-redux", ".plx", write_music_visitor, &wc, targets) < 0)
 #else
-	total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_music_visitor, &wc);
+	if (append_pilots(files_dir, "d1x-redux", ".plx", write_music_visitor, &wc, targets) < 0)
 #endif
+		total = -1;
+	else
+		total = patch_pilots(targets);
 
 	LOGI("nativeWriteMusicPrefs: source=%d prefer=%d play_order=%d volume=%d patched=%d",
 	     wc.source, wc.prefer_mission, wc.play_order, wc.volume, total);

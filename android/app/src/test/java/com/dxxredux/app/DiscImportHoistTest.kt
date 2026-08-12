@@ -3,12 +3,29 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import kotlin.io.path.createTempDirectory
 
 class DiscImportHoistTest {
+    @Test
+    fun portableFilenameCollisionsAndGogPairsAreDeterministic() {
+        assertEquals(
+            "descent2.hog",
+            ambiguousLogicalImportName(listOf("root/DESCENT2.HOG", "nested/descent2.hog")),
+        )
+        assertEquals("groupa.pig", ambiguousLogicalImportName(listOf("a\\GROUPA.PIG", "b/groupa.pig")))
+        assertNull(ambiguousLogicalImportName(listOf("a/descent2.hog", "b/groupa.pig")))
+
+        val first = findGogPair(listOf("beta.inst", "alpha.gog", "alpha.inst", "beta.gog"))
+        val second = findGogPair(listOf("beta.gog", "alpha.inst", "beta.inst", "alpha.gog"))
+        assertEquals(first, second)
+        assertEquals("alpha", first?.baseName)
+        assertNull(findGogPair(listOf("DISC.GOG", "disc.gog", "DISC.INST")))
+    }
+
     @Test
     fun hoistsKnownGameFilesFromNestedCdFolders() {
         val setDir = createTempDirectory("disc-import-hoist").toFile()
@@ -57,7 +74,7 @@ class DiscImportHoistTest {
     }
 
     @Test
-    fun replacesSmallerRootGameFilesWithLargerNestedCopies() {
+    fun rejectsRootAndNestedCaseFoldedCollisionsBeforeMutation() {
         val setDir = createTempDirectory("disc-import-replace").toFile()
         File(setDir, "DESCENT2.HOG").writeBytes(byteArrayOf(1))
         val nestedDir = File(setDir, "d2data").apply { mkdirs() }
@@ -65,10 +82,10 @@ class DiscImportHoistTest {
 
         val hoisted = hoistNestedImportedGameFiles(setDir)
 
-        assertEquals(1, hoisted)
-        assertFalse(nestedFile.exists())
-        assertEquals(4, File(setDir, "DESCENT2.HOG").length())
-        assertFalse(nestedDir.exists())
+        assertEquals(-1, hoisted)
+        assertTrue(nestedFile.exists())
+        assertEquals(1, File(setDir, "DESCENT2.HOG").length())
+        assertTrue(nestedDir.exists())
     }
 
     @Test

@@ -104,6 +104,7 @@ static int s_num_bin_files = 0;
 static int s_playing = 0;
 static int s_paused = 0;
 static int s_output_enabled = 0;
+static int s_output_failed = 0;
 static pthread_mutex_t s_control_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_playback_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_ring_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -275,7 +276,11 @@ static void *render_thread_func(void *data)
 		int sleep_usec = 0;
 		int stop = 0;
 		pthread_mutex_lock(&s_playback_mutex);
-		if (!s_playing || s_paused) {
+		if (__atomic_load_n(&s_output_failed, __ATOMIC_ACQUIRE)) {
+			s_playing = 0;
+			s_paused = 0;
+			stop = 1;
+		} else if (!s_playing || s_paused) {
 			sleep_usec = 20000;
 		} else {
 			unsigned int space = RB_SAMPLES - rb_available();
@@ -298,14 +303,17 @@ static void *render_thread_func(void *data)
 	return NULL;
 }
 
-static void render_thread_start(void)
+static int render_thread_start(void)
 {
-	if (s_thread_created) return;
+	if (s_thread_created) return 1;
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
-	if (pthread_create(&s_render_tid, NULL, render_thread_func, NULL) == 0)
+	if (pthread_create(&s_render_tid, NULL, render_thread_func, NULL) == 0) {
 		s_thread_created = 1;
-	else
-		LOGE("Failed to create render thread");
+		return 1;
+	}
+	__atomic_store_n(&s_render_running, 0, __ATOMIC_SEQ_CST);
+	LOGE("Failed to create render thread");
+	return 0;
 }
 
 static void render_thread_stop(void)
@@ -342,7 +350,12 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 			__atomic_fetch_add(&s_output_frames, got / 2, __ATOMIC_RELAXED);
 	}
 
-	(*bq)->Enqueue(bq, buf, needed * sizeof(short));
+	SLresult r = (*bq)->Enqueue(bq, buf, needed * sizeof(short));
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Re-enqueue preview buffer: %d", (int) r);
+		__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+		__atomic_store_n(&s_output_failed, 1, __ATOMIC_RELEASE);
+	}
 	s_next_buf = (s_next_buf + 1) % NUM_BUFFERS;
 	pthread_mutex_unlock(&s_ring_reset_mutex);
 }
@@ -384,21 +397,39 @@ static int osl_init(int sample_rate)
 {
 	SLresult r;
 	int i;
+	SLObjectItf engine_obj = NULL;
+	SLEngineItf engine = NULL;
+	SLObjectItf outmix_obj = NULL;
+	SLObjectItf player_obj = NULL;
+	SLPlayItf player_play = NULL;
+	SLAndroidSimpleBufferQueueItf player_bq = NULL;
 
-	r = slCreateEngine(&s_engine_obj, 0, NULL, 0, NULL, NULL);
-	if (r != SL_RESULT_SUCCESS) {
+	r = slCreateEngine(&engine_obj, 0, NULL, 0, NULL, NULL);
+	if (r != SL_RESULT_SUCCESS || !engine_obj) {
 		LOGE("slCreateEngine: %d", (int) r);
-		return 0;
+		goto fail;
 	}
-	(*s_engine_obj)->Realize(s_engine_obj, SL_BOOLEAN_FALSE);
-	(*s_engine_obj)->GetInterface(s_engine_obj, SL_IID_ENGINE, &s_engine);
-
-	r = (*s_engine)->CreateOutputMix(s_engine, &s_outmix_obj, 0, NULL, NULL);
+	r = (*engine_obj)->Realize(engine_obj, SL_BOOLEAN_FALSE);
 	if (r != SL_RESULT_SUCCESS) {
-		LOGE("CreateOutputMix: %d", (int) r);
-		return 0;
+		LOGE("Realize engine: %d", (int) r);
+		goto fail;
 	}
-	(*s_outmix_obj)->Realize(s_outmix_obj, SL_BOOLEAN_FALSE);
+	r = (*engine_obj)->GetInterface(engine_obj, SL_IID_ENGINE, &engine);
+	if (r != SL_RESULT_SUCCESS || !engine) {
+		LOGE("Get engine interface: %d", (int) r);
+		goto fail;
+	}
+
+	r = (*engine)->CreateOutputMix(engine, &outmix_obj, 0, NULL, NULL);
+	if (r != SL_RESULT_SUCCESS || !outmix_obj) {
+		LOGE("CreateOutputMix: %d", (int) r);
+		goto fail;
+	}
+	r = (*outmix_obj)->Realize(outmix_obj, SL_BOOLEAN_FALSE);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Realize output mix: %d", (int) r);
+		goto fail;
+	}
 
 	SLDataLocator_AndroidSimpleBufferQueue loc_bq = {
 		SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, NUM_BUFFERS
@@ -411,34 +442,73 @@ static int osl_init(int sample_rate)
 		SL_BYTEORDER_LITTLEENDIAN
 	};
 	SLDataSource src = { &loc_bq, &fmt };
-	SLDataLocator_OutputMix loc_out = { SL_DATALOCATOR_OUTPUTMIX, s_outmix_obj };
+	SLDataLocator_OutputMix loc_out = { SL_DATALOCATOR_OUTPUTMIX, outmix_obj };
 	SLDataSink snk = { &loc_out, NULL };
 
 	const SLInterfaceID ids[1] = { SL_IID_BUFFERQUEUE };
 	const SLboolean req[1] = { SL_BOOLEAN_TRUE };
 
-	r = (*s_engine)->CreateAudioPlayer(s_engine, &s_player_obj,
-	                                   &src, &snk, 1, ids, req);
-	if (r != SL_RESULT_SUCCESS) {
+	r = (*engine)->CreateAudioPlayer(engine, &player_obj,
+	                                 &src, &snk, 1, ids, req);
+	if (r != SL_RESULT_SUCCESS || !player_obj) {
 		LOGE("CreateAudioPlayer: %d", (int) r);
-		return 0;
+		goto fail;
 	}
-	(*s_player_obj)->Realize(s_player_obj, SL_BOOLEAN_FALSE);
-	(*s_player_obj)->GetInterface(s_player_obj, SL_IID_PLAY, &s_player_play);
-	(*s_player_obj)->GetInterface(s_player_obj, SL_IID_BUFFERQUEUE, &s_player_bq);
-
-	(*s_player_bq)->RegisterCallback(s_player_bq, osl_callback, NULL);
-	(*s_player_play)->SetPlayState(s_player_play, SL_PLAYSTATE_PLAYING);
+	r = (*player_obj)->Realize(player_obj, SL_BOOLEAN_FALSE);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Realize audio player: %d", (int) r);
+		goto fail;
+	}
+	r = (*player_obj)->GetInterface(player_obj, SL_IID_PLAY, &player_play);
+	if (r != SL_RESULT_SUCCESS || !player_play) {
+		LOGE("Get play interface: %d", (int) r);
+		goto fail;
+	}
+	r = (*player_obj)->GetInterface(player_obj, SL_IID_BUFFERQUEUE, &player_bq);
+	if (r != SL_RESULT_SUCCESS || !player_bq) {
+		LOGE("Get buffer queue interface: %d", (int) r);
+		goto fail;
+	}
+	r = (*player_bq)->RegisterCallback(player_bq, osl_callback, NULL);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Register buffer queue callback: %d", (int) r);
+		goto fail;
+	}
 
 	/* Pre-enqueue silence to start the callback chain */
 	for (i = 0; i < NUM_BUFFERS; i++) {
 		memset(s_play_bufs[i], 0, sizeof(s_play_bufs[i]));
-		(*s_player_bq)->Enqueue(s_player_bq, s_play_bufs[i], BUF_FRAMES * 2 * sizeof(short));
+		r = (*player_bq)->Enqueue(player_bq, s_play_bufs[i], BUF_FRAMES * 2 * sizeof(short));
+		if (r != SL_RESULT_SUCCESS) {
+			LOGE("Enqueue initial buffer %d: %d", i, (int) r);
+			goto fail;
+		}
 	}
 	s_next_buf = 0;
+	r = (*player_play)->SetPlayState(player_play, SL_PLAYSTATE_PLAYING);
+	if (r != SL_RESULT_SUCCESS) {
+		LOGE("Start audio player: %d", (int) r);
+		goto fail;
+	}
+
+	s_engine_obj = engine_obj;
+	s_engine = engine;
+	s_outmix_obj = outmix_obj;
+	s_player_obj = player_obj;
+	s_player_play = player_play;
+	s_player_bq = player_bq;
 
 	LOGI("OpenSL ES ready: %d Hz stereo, %d frames/buf", sample_rate, BUF_FRAMES);
 	return 1;
+
+fail:
+	if (player_obj)
+		(*player_obj)->Destroy(player_obj);
+	if (outmix_obj)
+		(*outmix_obj)->Destroy(outmix_obj);
+	if (engine_obj)
+		(*engine_obj)->Destroy(engine_obj);
+	return 0;
 }
 
 static void osl_shutdown(void)
@@ -554,6 +624,7 @@ static int cd_preview_start_common(const char *cue_path,
 	s_output_frames = 0;
 	s_paused = 0;
 	s_playing = 1;
+	__atomic_store_n(&s_output_failed, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 	pthread_mutex_lock(&s_ring_reset_mutex);
 	rb_reset();
@@ -572,7 +643,11 @@ static int cd_preview_start_common(const char *cue_path,
 	}
 
 	/* Start render thread */
-	render_thread_start();
+	if (!render_thread_start()) {
+		LOGE("Preview render thread start failed");
+		cd_preview_stop_internal();
+		return 0;
+	}
 	__atomic_store_n(&s_output_enabled, 1, __ATOMIC_RELEASE);
 
 	return 1;

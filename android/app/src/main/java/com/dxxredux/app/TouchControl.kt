@@ -6,6 +6,78 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
 
+private val TOUCH_FLOAT_RANGES =
+    mapOf(
+        "x" to 0.0..100.0,
+        "y" to 0.0..100.0,
+        "left" to 0.0..100.0,
+        "top" to 0.0..100.0,
+        "right" to 0.0..100.0,
+        "bottom" to 0.0..100.0,
+        "size" to TouchBindings.MIN_SIZE.toDouble()..TouchBindings.MAX_SIZE.toDouble(),
+        "ringSize" to TouchBindings.MIN_SIZE.toDouble()..TouchBindings.MAX_SIZE.toDouble(),
+        "opacity" to TouchBindings.MIN_OPACITY.toDouble()..TouchBindings.MAX_OPACITY.toDouble(),
+        "globalOpacity" to TouchBindings.MIN_GLOBAL_OPACITY.toDouble()..TouchBindings.MAX_GLOBAL_OPACITY.toDouble(),
+        "sensitivity" to TouchBindings.MIN_SENSITIVITY.toDouble()..TouchBindings.MAX_SENSITIVITY.toDouble(),
+        "sensitivityX" to TouchBindings.MIN_SENSITIVITY.toDouble()..TouchBindings.MAX_SENSITIVITY.toDouble(),
+        "sensitivityY" to TouchBindings.MIN_SENSITIVITY.toDouble()..TouchBindings.MAX_SENSITIVITY.toDouble(),
+        "exponent" to TouchBindings.MIN_EXPONENT.toDouble()..TouchBindings.MAX_EXPONENT.toDouble(),
+        "mouseExponentialMax" to 1.0..10.0,
+        "threshold" to
+            TouchBindings.MIN_STICK_EXTREME_THRESHOLD.toDouble()..TouchBindings.MAX_STICK_EXTREME_THRESHOLD.toDouble(),
+        "releaseThreshold" to 0.5..2.45,
+        "swipeThreshold" to
+            TouchBindings.MIN_SWIPE_THRESHOLD.toDouble()..TouchBindings.MAX_SWIPE_THRESHOLD.toDouble(),
+        "stripDragSpanWidthPct" to 5.0..80.0,
+        "stripLabelAngleDeg" to -90.0..90.0,
+        "stripSelectedScale" to 1.0..3.0,
+        "stripCardScale" to MIN_SCROLL_STRIP_CARD_SCALE.toDouble()..MAX_SCROLL_STRIP_CARD_SCALE.toDouble(),
+        "maxAngle" to 0.1..1.57,
+        "maxAngleX" to 0.1..1.57,
+        "maxAngleY" to 0.1..1.57,
+        "maxAngleZ" to 0.1..1.57,
+    )
+private val TOUCH_UNBOUNDED_FLOAT_KEYS =
+    setOf("deadzone", "deadzoneX", "deadzoneY", "deadzoneZ", "refAzimuth", "refPitch", "refRoll")
+
+internal fun validateTouchLayoutJsonNumbers(root: JSONObject): String? {
+    val pending = ArrayDeque<Pair<String, Any>>()
+    pending.add("touch_layout" to root)
+    while (pending.isNotEmpty()) {
+        val (path, value) = pending.removeLast()
+        when (value) {
+            is JSONObject -> {
+                val keys = value.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    val child = value.get(key)
+                    val childPath = "$path.$key"
+                    val range = TOUCH_FLOAT_RANGES[key]
+                    if (range != null || key in TOUCH_UNBOUNDED_FLOAT_KEYS) {
+                        val number = child as? Number ?: return "$childPath must be a JSON number"
+                        val decoded = number.toDouble()
+                        if (!decoded.isFinite() || !decoded.toFloat().isFinite()) return "$childPath must be finite"
+                        if (range != null &&
+                            decoded !in range
+                        ) {
+                            return "$childPath is outside ${range.start}..${range.endInclusive}"
+                        }
+                    }
+                    if (child is JSONObject || child is JSONArray) pending.add(childPath to child)
+                }
+            }
+
+            is JSONArray -> {
+                for (index in 0 until value.length()) {
+                    val child = value.get(index)
+                    if (child is JSONObject || child is JSONArray) pending.add("$path[$index]" to child)
+                }
+            }
+        }
+    }
+    return null
+}
+
 // --- Enums ---
 
 enum class ResponseCurve { LINEAR, EXPONENTIAL, S_CURVE }
@@ -53,6 +125,11 @@ fun applyResponseCurve(
     curve: ResponseCurve,
     exponent: Float = 2f,
 ): Float {
+    if (!input.isFinite() || !exponent.isFinite() ||
+        exponent !in TouchBindings.MIN_EXPONENT..TouchBindings.MAX_EXPONENT
+    ) {
+        return 0f
+    }
     val clamped = input.coerceIn(-1f, 1f)
     return when (curve) {
         ResponseCurve.LINEAR -> {
@@ -180,6 +257,244 @@ internal fun normalizeStickExtremeAction(action: StickExtremeAction): StickExtre
                 threshold - TouchBindings.MIN_STICK_EXTREME_HYSTERESIS,
             )
     return action.copy(threshold = threshold, releaseThreshold = release)
+}
+
+private fun validateFloatingZone(
+    path: String,
+    zone: FloatingZone,
+): String? {
+    val values = listOf(zone.leftPct, zone.topPct, zone.rightPct, zone.bottomPct)
+    if (values.any { !it.isFinite() || it !in 0f..100f }) return "$path must stay within 0..100"
+    if (zone.leftPct >= zone.rightPct || zone.topPct >= zone.bottomPct) return "$path must have positive area"
+    return null
+}
+
+internal fun validateTouchLayoutDomains(layout: TouchLayout): String? {
+    if (layout.version !in MIN_SUPPORTED_TOUCH_LAYOUT_VERSION..CURRENT_TOUCH_LAYOUT_VERSION) {
+        return "touch_layout.version is unsupported"
+    }
+
+    fun binding(
+        path: String,
+        value: Int,
+        optional: Boolean = false,
+    ): String? {
+        if (optional && value == -1) return null
+        return if (TouchBindings.isSupportedBinding(value)) null else "$path is unsupported"
+    }
+
+    fun axis(
+        path: String,
+        value: Int,
+        optional: Boolean = false,
+    ): String? {
+        if (optional && value == -1) return null
+        return if (TouchBindings.isSupportedAxis(value)) null else "$path is unsupported"
+    }
+
+    fun base(
+        path: String,
+        x: Float,
+        y: Float,
+        size: Float,
+        opacity: Float,
+    ): String? {
+        if (!x.isFinite() || x !in 0f..100f || !y.isFinite() || y !in 0f..100f) return "$path position is invalid"
+        if (!size.isFinite() || size !in TouchBindings.MIN_SIZE..TouchBindings.MAX_SIZE) return "$path size is invalid"
+        if (!opacity.isFinite() ||
+            opacity !in TouchBindings.MIN_OPACITY..TouchBindings.MAX_OPACITY
+        ) {
+            return "$path opacity is invalid"
+        }
+        return null
+    }
+
+    fun response(
+        path: String,
+        exponent: Float,
+        sensitivity: Float,
+    ): String? {
+        if (!exponent.isFinite() ||
+            exponent !in TouchBindings.MIN_EXPONENT..TouchBindings.MAX_EXPONENT
+        ) {
+            return "$path exponent is invalid"
+        }
+        if (!sensitivity.isFinite() ||
+            sensitivity !in TouchBindings.MIN_SENSITIVITY..TouchBindings.MAX_SENSITIVITY
+        ) {
+            return "$path sensitivity is invalid"
+        }
+        return null
+    }
+
+    if (!layout.globalOpacity.isFinite() ||
+        layout.globalOpacity !in TouchBindings.MIN_GLOBAL_OPACITY..TouchBindings.MAX_GLOBAL_OPACITY
+    ) {
+        return "touch_layout.globalOpacity is invalid"
+    }
+    layout.sticks.forEachIndexed { index, stick ->
+        val path = "touch_layout.sticks[$index]"
+        axis("$path.axisX", stick.axisX)?.let { return it }
+        axis("$path.axisY", stick.axisY)?.let { return it }
+        if (stick.buttonMode) {
+            binding("$path.negXBinding", stick.negXBinding)?.let { return it }
+            binding("$path.posXBinding", stick.posXBinding)?.let { return it }
+            binding("$path.negYBinding", stick.negYBinding)?.let { return it }
+            binding("$path.posYBinding", stick.posYBinding)?.let { return it }
+        }
+        binding("$path.doubleTapBinding", stick.doubleTapBinding, optional = true)?.let { return it }
+        base(path, stick.xPct, stick.yPct, stick.sizeMult, stick.opacity)?.let { return it }
+        response(path, stick.exponent, stick.sensitivityX)?.let { return it }
+        if (!stick.sensitivityY.isFinite() ||
+            stick.sensitivityY !in TouchBindings.MIN_SENSITIVITY..TouchBindings.MAX_SENSITIVITY
+        ) {
+            return "$path sensitivityY is invalid"
+        }
+        if (stick.deadzone !in
+            TouchBindings.MIN_DEADZONE..TouchBindings.MAX_DEADZONE
+        ) {
+            return "$path deadzone is invalid"
+        }
+        if (!stick.mouseExponentialMax.isFinite() ||
+            stick.mouseExponentialMax !in 1f..10f
+        ) {
+            return "$path mouseExponentialMax is invalid"
+        }
+        validateFloatingZone("$path.floatingZone", stick.floatingZone)?.let { return it }
+        stick.extremeActions.forEachIndexed { actionIndex, action ->
+            binding("$path.extremeActions[$actionIndex].binding", action.binding)?.let { return it }
+            if (!action.threshold.isFinite() ||
+                action.threshold !in
+                TouchBindings.MIN_STICK_EXTREME_THRESHOLD..TouchBindings.MAX_STICK_EXTREME_THRESHOLD
+            ) {
+                return "$path.extremeActions[$actionIndex].threshold is invalid"
+            }
+            val releaseMaximum = action.threshold - TouchBindings.MIN_STICK_EXTREME_HYSTERESIS
+            val releaseRange = TouchBindings.MIN_STICK_EXTREME_RELEASE_THRESHOLD..releaseMaximum
+            val releaseThresholdValid =
+                action.releaseThreshold.isFinite() && action.releaseThreshold in releaseRange
+            if (!releaseThresholdValid) {
+                return "$path.extremeActions[$actionIndex].releaseThreshold is invalid"
+            }
+        }
+    }
+    layout.buttons.forEachIndexed { index, control ->
+        binding("touch_layout.buttons[$index].binding", control.binding)?.let { return it }
+        binding("touch_layout.buttons[$index].longPressBinding", control.longPressBinding, optional = true)?.let {
+            return it
+        }
+        base(
+            "touch_layout.buttons[$index]",
+            control.xPct,
+            control.yPct,
+            control.sizeMult,
+            control.opacity,
+        )?.let { return it }
+    }
+    layout.sliders.forEachIndexed { index, control ->
+        val path = "touch_layout.sliders[$index]"
+        axis("$path.axis", control.axis)?.let { return it }
+        base(path, control.xPct, control.yPct, control.sizeMult, control.opacity)?.let { return it }
+        response(path, control.exponent, control.sensitivity)?.let { return it }
+    }
+    layout.radialMenus.forEachIndexed { index, control ->
+        val path = "touch_layout.radialMenus[$index]"
+        control.segments.forEachIndexed { segmentIndex, segment ->
+            binding("$path.segments[$segmentIndex].binding", segment.binding)?.let { return it }
+        }
+        binding("$path.centerBinding", control.centerBinding, optional = true)?.let { return it }
+        base(path, control.xPct, control.yPct, control.sizeMult, control.opacity)?.let { return it }
+        if (!control.ringSizeMult.isFinite() ||
+            control.ringSizeMult !in TouchBindings.MIN_SIZE..TouchBindings.MAX_SIZE
+        ) {
+            return "$path ringSize is invalid"
+        }
+        if (!control.stripDragSpanWidthPct.isFinite() ||
+            control.stripDragSpanWidthPct !in 5f..80f
+        ) {
+            return "$path stripDragSpanWidthPct is invalid"
+        }
+        if (!control.stripLabelAngleDeg.isFinite() ||
+            control.stripLabelAngleDeg !in -90f..90f
+        ) {
+            return "$path stripLabelAngleDeg is invalid"
+        }
+        if (!control.stripSelectedScale.isFinite() ||
+            control.stripSelectedScale !in 1f..3f
+        ) {
+            return "$path stripSelectedScale is invalid"
+        }
+        if (!control.stripCardScale.isFinite() ||
+            control.stripCardScale !in MIN_SCROLL_STRIP_CARD_SCALE..MAX_SCROLL_STRIP_CARD_SCALE
+        ) {
+            return "$path stripCardScale is invalid"
+        }
+    }
+    layout.dpads.forEachIndexed { index, control ->
+        val path = "touch_layout.dpads[$index]"
+        binding("$path.up", control.upBinding)?.let { return it }
+        binding("$path.down", control.downBinding)?.let { return it }
+        binding("$path.left", control.leftBinding)?.let { return it }
+        binding("$path.right", control.rightBinding)?.let { return it }
+        base(path, control.xPct, control.yPct, control.sizeMult, control.opacity)?.let { return it }
+        if (!control.swipeThreshold.isFinite() ||
+            control.swipeThreshold !in TouchBindings.MIN_SWIPE_THRESHOLD..TouchBindings.MAX_SWIPE_THRESHOLD
+        ) {
+            return "$path swipeThreshold is invalid"
+        }
+    }
+    layout.diagnostics.forEachIndexed { index, control ->
+        base("touch_layout.diagnostics[$index]", control.xPct, control.yPct, control.sizeMult, control.opacity)?.let {
+            return it
+        }
+    }
+    layout.axisRegions.forEachIndexed { index, control ->
+        val path = "touch_layout.axisRegions[$index]"
+        axis("$path.axis", control.axis)?.let { return it }
+        validateFloatingZone("$path.zone", control.zone)?.let { return it }
+        response(path, control.exponent, control.sensitivity)?.let { return it }
+        if (!control.opacity.isFinite() ||
+            control.opacity !in TouchBindings.MIN_OPACITY..TouchBindings.MAX_OPACITY
+        ) {
+            return "$path opacity is invalid"
+        }
+    }
+    base(
+        "touch_layout.moreActions",
+        layout.moreActions.xPct,
+        layout.moreActions.yPct,
+        layout.moreActions.sizeMult,
+        layout.moreActions.opacity,
+    )?.let {
+        return it
+    }
+    val gyro = layout.gyro
+    axis("touch_layout.gyro.axisX", gyro.axisX)?.let { return it }
+    axis("touch_layout.gyro.axisY", gyro.axisY)?.let { return it }
+    axis("touch_layout.gyro.axisZ", gyro.axisZ, optional = true)?.let { return it }
+    for ((name, value) in listOf(
+        "deadzone" to gyro.deadzone,
+        "deadzoneX" to gyro.deadzoneX,
+        "deadzoneY" to gyro.deadzoneY,
+        "deadzoneZ" to gyro.deadzoneZ,
+    )) {
+        if (!value.isFinite() || value !in 0f..0.6f) return "touch_layout.gyro.$name is invalid"
+    }
+    for ((name, value) in listOf(
+        "maxAngleX" to gyro.maxAngleX,
+        "maxAngleY" to gyro.maxAngleY,
+        "maxAngleZ" to gyro.maxAngleZ,
+    )) {
+        if (!value.isFinite() || value !in 0.1f..1.57f) return "touch_layout.gyro.$name is invalid"
+    }
+    for ((name, value) in listOf(
+        "refAzimuth" to gyro.refAzimuth,
+        "refPitch" to gyro.refPitch,
+        "refRoll" to gyro.refRoll,
+    )) {
+        if (value != null && !value.isFinite()) return "touch_layout.gyro.$name must be finite"
+    }
+    return null
 }
 
 internal fun stickExtremeActionPressed(
@@ -900,6 +1215,8 @@ data class TouchLayout(
 
     companion object {
         fun fromJson(j: JSONObject): TouchLayout {
+            validateTouchLayoutJsonNumbers(j)?.let { throw IllegalArgumentException(it) }
+
             fun <T> parseArray(
                 key: String,
                 parse: (JSONObject) -> T,
@@ -907,28 +1224,36 @@ data class TouchLayout(
                 val arr = j.optJSONArray(key) ?: return emptyList()
                 return (0 until arr.length()).map { parse(arr.getJSONObject(it)) }
             }
-            return TouchLayout(
-                version = j.optInt("version", 1),
-                name = j.optString("name", "Default"),
-                globalOpacity = j.optDouble("globalOpacity", TouchBindings.DEFAULT_GLOBAL_OPACITY.toDouble()).toFloat(),
-                sticks = parseArray("sticks") { AnalogStickControl.fromJson(it) },
-                buttons = parseArray("buttons") { ButtonControl.fromJson(it) },
-                sliders = parseArray("sliders") { SliderControl.fromJson(it) },
-                radialMenus = parseArray("radialMenus") { RadialMenuControl.fromJson(it) },
-                dpads = parseArray("dpads") { DPadControl.fromJson(it) },
-                diagnostics = parseArray("diagnostics") { DiagnosticControl.fromJson(it) },
-                axisRegions = parseArray("axisRegions") { AxisRegionControl.fromJson(it) },
-                moreActions =
-                    if (j.has(
-                            "moreActions",
-                        )
-                    ) {
-                        MoreActionsControl.fromJson(j.getJSONObject("moreActions"))
-                    } else {
-                        MoreActionsControl()
-                    },
-                gyro = if (j.has("gyro")) GyroConfig.fromJson(j.getJSONObject("gyro")) else GyroConfig(),
-            )
+            val layout =
+                TouchLayout(
+                    version = j.optInt("version", 1),
+                    name = j.optString("name", "Default"),
+                    globalOpacity =
+                        j
+                            .optDouble(
+                                "globalOpacity",
+                                TouchBindings.DEFAULT_GLOBAL_OPACITY.toDouble(),
+                            ).toFloat(),
+                    sticks = parseArray("sticks") { AnalogStickControl.fromJson(it) },
+                    buttons = parseArray("buttons") { ButtonControl.fromJson(it) },
+                    sliders = parseArray("sliders") { SliderControl.fromJson(it) },
+                    radialMenus = parseArray("radialMenus") { RadialMenuControl.fromJson(it) },
+                    dpads = parseArray("dpads") { DPadControl.fromJson(it) },
+                    diagnostics = parseArray("diagnostics") { DiagnosticControl.fromJson(it) },
+                    axisRegions = parseArray("axisRegions") { AxisRegionControl.fromJson(it) },
+                    moreActions =
+                        if (j.has(
+                                "moreActions",
+                            )
+                        ) {
+                            MoreActionsControl.fromJson(j.getJSONObject("moreActions"))
+                        } else {
+                            MoreActionsControl()
+                        },
+                    gyro = if (j.has("gyro")) GyroConfig.fromJson(j.getJSONObject("gyro")) else GyroConfig(),
+                )
+            validateTouchLayoutDomains(layout)?.let { throw IllegalArgumentException(it) }
+            return layout
         }
     }
 }

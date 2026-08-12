@@ -24,6 +24,30 @@ $infoByPath = @{}
 $ownerClosureByName = @{}
 $failures = [System.Collections.Generic.List[string]]::new()
 
+$json5Probe = Join-Path ([IO.Path]::GetTempPath()) ("dxx-json5-catalog-" + [guid]::NewGuid().ToString('N') + '.json5')
+try {
+    @'
+[
+  { "_info": { "games": ["d1"], "marker": "marker,}", "vars": { "d1": { "URL": "https://example.invalid/a" } } } },
+  { "action": "write_config", "value": "https://example.invalid/a", }, // retained URL
+]
+'@ | Set-Content -LiteralPath $json5Probe -Encoding UTF8
+    $probeInfo = Get-TestScriptInfo -ScriptPath $json5Probe
+    $probeResolved = Resolve-TestScript -ScriptPath $json5Probe -GameId 'd1'
+    $probeParsed = Read-Json5File -Path $probeResolved
+    if ($probeInfo.marker -cne 'marker,}' -or
+        $probeParsed[0].value -cne 'https://example.invalid/a') {
+        $failures.Add('shared JSON5 catalog parsing rewrote quoted comment or trailing-comma text')
+    }
+} catch {
+    $failures.Add("shared JSON5 catalog parsing probe failed: $($_.Exception.Message)")
+} finally {
+    Remove-Item -LiteralPath $json5Probe -Force -ErrorAction SilentlyContinue
+    if ($probeResolved -and $probeResolved -ne $json5Probe) {
+        Remove-Item -LiteralPath $probeResolved -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-PowerShellDependencyClosureText {
     param([Parameter(Mandatory = $true)][System.IO.FileInfo]$RootFile)
 

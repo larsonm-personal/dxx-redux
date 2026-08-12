@@ -546,12 +546,16 @@ private fun OriginalVisualOptionsSection(
         detail = "Matches the pilot-backed in-game Transparency Effects option",
         enabled = hasPilotFile,
         onCheckedChange = {
-            alphaEffects = it
-            val count = NativePilotPreferences.writeVisualPrefsToAll(filesDir.absolutePath, alphaEffects, dynLightColor)
-            prefs.edit().putBoolean(PREF_GRAPHICS_ALPHA_EFFECTS, alphaEffects).apply()
-            bumpGraphicsSettingsGeneration(prefs)
-            hasPilotFile = count > 0
-            statusText = if (count > 0) "Saved to $count pilot file(s)" else "No pilot files found"
+            val count = NativePilotPreferences.writeVisualPrefsToAll(filesDir.absolutePath, it, dynLightColor)
+            if (count >= 0) {
+                alphaEffects = it
+                prefs.edit().putBoolean(PREF_GRAPHICS_ALPHA_EFFECTS, alphaEffects).apply()
+                bumpGraphicsSettingsGeneration(prefs)
+                hasPilotFile = count > 0
+                statusText = if (count > 0) "Saved to $count pilot file(s)" else "No pilot files found"
+            } else {
+                statusText = "Could not save; original pilot files were restored"
+            }
         },
     )
 
@@ -562,12 +566,16 @@ private fun OriginalVisualOptionsSection(
         detail = "Matches the pilot-backed in-game Colored Dynamic Light option",
         enabled = hasPilotFile,
         onCheckedChange = {
-            dynLightColor = it
-            val count = NativePilotPreferences.writeVisualPrefsToAll(filesDir.absolutePath, alphaEffects, dynLightColor)
-            prefs.edit().putBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, dynLightColor).apply()
-            bumpGraphicsSettingsGeneration(prefs)
-            hasPilotFile = count > 0
-            statusText = if (count > 0) "Saved to $count pilot file(s)" else "No pilot files found"
+            val count = NativePilotPreferences.writeVisualPrefsToAll(filesDir.absolutePath, alphaEffects, it)
+            if (count >= 0) {
+                dynLightColor = it
+                prefs.edit().putBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, dynLightColor).apply()
+                bumpGraphicsSettingsGeneration(prefs)
+                hasPilotFile = count > 0
+                statusText = if (count > 0) "Saved to $count pilot file(s)" else "No pilot files found"
+            } else {
+                statusText = "Could not save; original pilot files were restored"
+            }
         },
     )
 

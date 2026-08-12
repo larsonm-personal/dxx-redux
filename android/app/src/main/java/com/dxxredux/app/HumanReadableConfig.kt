@@ -133,6 +133,21 @@ object HumanReadableConfig {
     fun humanJsonToTouchLayout(json: JSONObject): ParseResult<TouchLayout> {
         val warnings = mutableListOf<String>()
         try {
+            if (json.optString("type", "") != "touch_layout") {
+                throw IllegalArgumentException("type must be touch_layout")
+            }
+            val version = json.opt("version")
+            if (version !is Int || version !in MIN_SUPPORTED_TOUCH_LAYOUT_VERSION..CURRENT_TOUCH_LAYOUT_VERSION) {
+                throw IllegalArgumentException(
+                    "version must be an integer in $MIN_SUPPORTED_TOUCH_LAYOUT_VERSION..$CURRENT_TOUCH_LAYOUT_VERSION",
+                )
+            }
+            for (key in listOf("sticks", "buttons", "sliders", "radialMenus", "dpads")) {
+                if (!json.has(key) || json.optJSONArray(key) == null) {
+                    throw IllegalArgumentException("$key must be an array")
+                }
+            }
+            validateTouchLayoutJsonNumbers(json)?.let { throw IllegalArgumentException(it) }
             val sticks =
                 parseArraySafe(json, "sticks", warnings) { j, w ->
                     parseStick(j, w)
@@ -185,7 +200,7 @@ object HumanReadableConfig {
                 }
             val layout =
                 TouchLayout(
-                    version = json.optInt("version", 1),
+                    version = version,
                     name = json.optString("name", "Imported"),
                     globalOpacity =
                         json
@@ -203,10 +218,18 @@ object HumanReadableConfig {
                     moreActions = moreActions,
                     gyro = gyro,
                 )
+            if (warnings.isNotEmpty()) {
+                throw IllegalArgumentException(warnings.joinToString("; "))
+            }
+            validateTouchLayoutDomains(layout)?.let { throw IllegalArgumentException(it) }
             return ParseResult(layout, warnings)
         } catch (e: Exception) {
             warnings.add("Failed to parse touch layout: ${e.message}")
-            Log.e(TAG, "Touch layout parse failed", e)
+            try {
+                Log.e(TAG, "Touch layout parse failed", e)
+            } catch (_: RuntimeException) {
+                // android.util.Log is unavailable in local JVM tests
+            }
             return ParseResult(null, warnings)
         }
     }
@@ -280,7 +303,7 @@ object HumanReadableConfig {
                 },
             doubleTapBinding =
                 if (j.has("doubleTapBinding")) {
-                    resolveBinding(j, "doubleTapBinding", warnings, "stick '$id'") ?: -1
+                    resolveBinding(j, "doubleTapBinding", warnings, "stick '$id'", allowNone = true) ?: -1
                 } else {
                     -1
                 },
@@ -332,7 +355,7 @@ object HumanReadableConfig {
         val binding = resolveBinding(j, "binding", warnings, "button '$id'") ?: return null
         val longPressBinding =
             if (j.has("longPressBinding")) {
-                resolveBinding(j, "longPressBinding", warnings, "button '$id' long press") ?: -1
+                resolveBinding(j, "longPressBinding", warnings, "button '$id' long press", allowNone = true) ?: -1
             } else {
                 -1
             }
@@ -408,7 +431,7 @@ object HumanReadableConfig {
         }
         val centerBinding =
             if (j.has("centerBinding")) {
-                resolveBinding(j, "centerBinding", warnings, "radial '$id' center") ?: -1
+                resolveBinding(j, "centerBinding", warnings, "radial '$id' center", allowNone = true) ?: -1
             } else {
                 -1
             }
@@ -491,7 +514,7 @@ object HumanReadableConfig {
                 ?: TouchBindings.AXIS_RIGHT_Y
         val axisZ =
             if (j.has("axisZ")) {
-                resolveAxis(j, "axisZ", warnings, "gyro") ?: -1
+                resolveAxis(j, "axisZ", warnings, "gyro", allowNone = true) ?: -1
             } else {
                 -1
             }
@@ -553,18 +576,36 @@ object HumanReadableConfig {
         key: String,
         warnings: MutableList<String>,
         context: String,
+        allowNone: Boolean = false,
     ): Int? {
         if (!j.has(key)) {
             warnings.add("$context: missing required field '$key'")
             return null
         }
         val raw = j.get(key)
-        if (raw is Int || raw is Long) return (raw as Number).toInt()
-        if (raw is Number) return raw.toInt()
+        if (raw is Int || raw is Long) {
+            val value = (raw as Number).toLong()
+            if (allowNone && value == -1L) return -1
+            if (value in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong() &&
+                TouchBindings.isSupportedBinding(value.toInt())
+            ) {
+                return value.toInt()
+            }
+            warnings.add("$context: unsupported binding '$value' for field '$key'")
+            return null
+        }
+        if (raw is Number) {
+            warnings.add("$context: field '$key' must be an integer or maintained binding name")
+            return null
+        }
         val name = raw.toString()
         val resolved = TouchBindings.nameToBinding(name)
         if (resolved == null) {
             warnings.add("$context: unknown binding name '$name' for field '$key'")
+        }
+        if (resolved != null && !TouchBindings.isSupportedBinding(resolved)) {
+            warnings.add("$context: unsupported binding '$resolved' for field '$key'")
+            return null
         }
         return resolved
     }
@@ -575,18 +616,36 @@ object HumanReadableConfig {
         key: String,
         warnings: MutableList<String>,
         context: String,
+        allowNone: Boolean = false,
     ): Int? {
         if (!j.has(key)) {
             warnings.add("$context: missing required field '$key'")
             return null
         }
         val raw = j.get(key)
-        if (raw is Int || raw is Long) return (raw as Number).toInt()
-        if (raw is Number) return raw.toInt()
+        if (raw is Int || raw is Long) {
+            val value = (raw as Number).toLong()
+            if (allowNone && value == -1L) return -1
+            if (value in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong() &&
+                TouchBindings.isSupportedAxis(value.toInt())
+            ) {
+                return value.toInt()
+            }
+            warnings.add("$context: unsupported axis '$value' for field '$key'")
+            return null
+        }
+        if (raw is Number) {
+            warnings.add("$context: field '$key' must be an integer or maintained axis name")
+            return null
+        }
         val name = raw.toString()
         val resolved = TouchBindings.nameToAxis(name)
         if (resolved == null) {
             warnings.add("$context: unknown axis name '$name' for field '$key'")
+        }
+        if (resolved != null && !TouchBindings.isSupportedAxis(resolved)) {
+            warnings.add("$context: unsupported axis '$resolved' for field '$key'")
+            return null
         }
         return resolved
     }

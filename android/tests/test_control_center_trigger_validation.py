@@ -23,6 +23,8 @@ def main() -> None:
             "void control_center_triggers_swap", 1
         )[0]
         assert "control_center_triggers_are_valid" in reader
+        assert "PHYSFS_read(fp, &value, sizeof(value), 1) != 1" in reader
+        assert "PHYSFS_eof(fp)" not in reader
         assert "return 0" in reader
         assert "control_center_triggers_are_valid(&ControlCenterTriggers" in read(
             f"{game}/main/newdemo.c"

@@ -479,6 +479,7 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	std::vector<input_demo_replay_frame> frames;
 	std::string replay_error;
 	int game;
+	int64_t replay_duration = 0;
 	size_t i;
 
 	if (!demo_path || !demo_path[0])
@@ -496,6 +497,13 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error(replay_error, error, error_size);
 	if (!apply_rng_records(rng_records, &frames, &replay_error))
 		return copy_error(replay_error, error, error_size);
+	for (i = 0; i != frames.size(); ++i) {
+		if (frames[i].frame_time <= 0)
+			return copy_error("replay frame time must be positive", error, error_size);
+		if (replay_duration > std::numeric_limits<int64_t>::max() - frames[i].frame_time)
+			return copy_error("replay duration exceeds the engine clock range", error, error_size);
+		replay_duration += frames[i].frame_time;
+	}
 	for (i = 0; i != demo.frames.size(); ++i) {
 		if (!demo.frames[i].has_state)
 			continue;
@@ -520,14 +528,21 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		reset_session();
 		return copy_error(replay_error, error, error_size);
 	}
+	if (g_input_demo_replay_session.has_checkpoint &&
+	    (g_input_demo_replay_session.checkpoint_start_gt >
+	         std::numeric_limits<int64_t>::max() - INT32_MAX ||
+	     g_input_demo_replay_session.checkpoint_start_gt >
+	         std::numeric_limits<int64_t>::max() - replay_duration)) {
+		reset_session();
+		return copy_error("checkpoint timing exceeds the engine clock range", error, error_size);
+	}
 	if (g_input_demo_replay_session.has_checkpoint)
 		load_legacy_fx_rng_seed_from_sidecar(demo_path, &g_input_demo_replay_session);
 	g_input_demo_replay_session.frames = frames;
 	g_input_demo_replay_session.frame_events.resize(frames.size());
 	for (i = 0; i != demo.frames.size() && i != g_input_demo_replay_session.frame_events.size(); ++i)
 		g_input_demo_replay_session.frame_events[i] = demo.frames[i].events;
-	for (i = 0; i != g_input_demo_replay_session.frames.size(); ++i)
-		g_input_demo_replay_session.final_game_time64 += g_input_demo_replay_session.frames[i].frame_time;
+	g_input_demo_replay_session.final_game_time64 = replay_duration;
 	return 1;
 }
 

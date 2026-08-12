@@ -482,10 +482,15 @@ internal fun SetupActivity.writeControllerOperationResult(
 
 /** Write a distinct controller layout used by the real-pilot JNI roundtrip test. */
 internal fun SetupActivity.writeControllerPatchFixture(game: String) {
-    val bindings = loadDefaultBindings(applicationContext).toMutableMap()
-    bindings["RS_X"] = "Slide L/R"
-    bindings["LS_X"] = "Turn L/R"
-    saveConfig(applicationContext, bindings, setOf("RS_X"), game)
+	val defaults = loadDefaultControllerConfig(applicationContext)
+	val bindings = defaults.bindings.toMutableMap()
+	bindings["RS_X"] = "Slide L/R"
+	bindings["LS_X"] = "Turn L/R"
+	ControllerConfigSlotRepository.saveActiveConfig(
+		applicationContext,
+		defaults.copy(bindings = bindings, inverts = setOf("RS_X")),
+		game,
+	)
 }
 
 private data class KcMeta(

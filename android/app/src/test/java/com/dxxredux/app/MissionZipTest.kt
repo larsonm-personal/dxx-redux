@@ -254,6 +254,26 @@ class MissionZipTest {
     }
 
     @Test
+    fun acceptsMissionWithAllOrdinaryLevelsAndMissingOptionalSecret() {
+        val zipFile = File.createTempFile("missing-secret-mission", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("pack.mn2"))
+            zip.write(
+                "name = Pack\nnum_levels = 1\nlevel01.rl2\nnum_secrets = 1\nmissing.rl2,1\n".toByteArray(),
+            )
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("pack.hog"))
+            zip.write(hogBytes("level01.rl2"))
+            zip.closeEntry()
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        assertEquals(listOf("level01.rl2"), scan.mission.levelNames)
+        assertEquals(listOf("missing.rl2"), scan.mission.secretLevelNames)
+    }
+
+    @Test
     fun acceptsDeclaredLevelsFromValidatedHogDxaOrLooseFiles() {
         val zipFile = File.createTempFile("combined-mission", ".zip")
         zipFile.deleteOnExit()

@@ -1,5 +1,7 @@
 package com.dxxredux.app
 
+import java.io.File
+
 /**
  * JNI wrapper for launcher-side engine preferences stored in pilot files.
  *
@@ -217,22 +219,62 @@ object NativePilotPreferences {
         headlightActiveDefault: Boolean = false,
     ): Int {
         if (!validCockpitMode(cockpitMode)) return -1
-        return nativeWriteEnginePrefsD1(
-            filesDir,
-            cockpitMode,
-            autoLeveling,
-            showRobotHostageCounts,
-            showBossHealthBar,
-            headlightActiveDefault,
-        ) +
-            nativeWriteEnginePrefsD2(
-                filesDir,
-                cockpitMode,
-                autoLeveling,
-                showRobotHostageCounts,
-                showBossHealthBar,
-                headlightActiveDefault,
-            )
+        return writePilotPreferencesToAll(
+            File(filesDir),
+            writeD1 = {
+                nativeWriteEnginePrefsD1(
+                    filesDir,
+                    cockpitMode,
+                    autoLeveling,
+                    showRobotHostageCounts,
+                    showBossHealthBar,
+                    headlightActiveDefault,
+                )
+            },
+            writeD2 = {
+                nativeWriteEnginePrefsD2(
+                    filesDir,
+                    cockpitMode,
+                    autoLeveling,
+                    showRobotHostageCounts,
+                    showBossHealthBar,
+                    headlightActiveDefault,
+                )
+            },
+        )
+    }
+
+    fun writeEngineAndHomingPrefsToAll(
+        filesDir: String,
+        cockpitMode: Int,
+        autoLeveling: Boolean,
+        showRobotHostageCounts: Boolean,
+        showBossHealthBar: Boolean,
+        headlightActiveDefault: Boolean,
+        originalHoming: Boolean?,
+    ): Int {
+        if (!validCockpitMode(cockpitMode)) return -1
+
+        fun writeGame(game: String): Int {
+            val engine =
+                writeEnginePrefs(
+                    game,
+                    filesDir,
+                    cockpitMode,
+                    autoLeveling,
+                    showRobotHostageCounts,
+                    showBossHealthBar,
+                    headlightActiveDefault,
+                )
+            if (engine < 0 || originalHoming == null) return engine
+            val homing = writeOriginalHomingPrefs(game, filesDir, originalHoming)
+            return if (homing < 0) -1 else maxOf(engine, homing)
+        }
+        return writePilotPreferencesToAll(
+            File(filesDir),
+            writeD1 = { writeGame("d1") },
+            writeD2 = { writeGame("d2") },
+        )
     }
 
     fun readVisualPrefs(
@@ -277,8 +319,11 @@ object NativePilotPreferences {
         filesDir: String,
         enabled: Boolean,
     ): Int =
-        nativeWriteOriginalHomingPrefsD1(filesDir, enabled) +
-            nativeWriteOriginalHomingPrefsD2(filesDir, enabled)
+        writePilotPreferencesToAll(
+            File(filesDir),
+            writeD1 = { nativeWriteOriginalHomingPrefsD1(filesDir, enabled) },
+            writeD2 = { nativeWriteOriginalHomingPrefsD2(filesDir, enabled) },
+        )
 
     fun readVisualPrefsForAll(
         preferredGame: String,
@@ -306,8 +351,11 @@ object NativePilotPreferences {
         alphaEffects: Boolean,
         dynLightColor: Boolean,
     ): Int =
-        nativeWriteVisualPrefsD1(filesDir, alphaEffects, dynLightColor) +
-            nativeWriteVisualPrefsD2(filesDir, alphaEffects, dynLightColor)
+        writePilotPreferencesToAll(
+            File(filesDir),
+            writeD1 = { nativeWriteVisualPrefsD1(filesDir, alphaEffects, dynLightColor) },
+            writeD2 = { nativeWriteVisualPrefsD2(filesDir, alphaEffects, dynLightColor) },
+        )
 
     fun readMusicPrefs(
         game: String,
@@ -356,19 +404,30 @@ object NativePilotPreferences {
         preferMissionSoundtrack: Boolean,
         playOrder: Int,
         volume: Int,
-    ): Int =
-        nativeWriteMusicPrefsD1(
-            filesDir,
-            musicSourceCode(source),
-            preferMissionSoundtrack,
-            playOrder.coerceIn(0, 2),
-            volume.coerceIn(0, 8),
-        ) +
-            nativeWriteMusicPrefsD2(
-                filesDir,
-                musicSourceCode(source),
-                preferMissionSoundtrack,
-                playOrder.coerceIn(0, 2),
-                volume.coerceIn(0, 8),
-            )
+    ): Int {
+        val sourceCode = musicSourceCode(source)
+        val validatedPlayOrder = playOrder.coerceIn(0, 2)
+        val validatedVolume = volume.coerceIn(0, 8)
+        return writePilotPreferencesToAll(
+            File(filesDir),
+            writeD1 = {
+                nativeWriteMusicPrefsD1(
+                    filesDir,
+                    sourceCode,
+                    preferMissionSoundtrack,
+                    validatedPlayOrder,
+                    validatedVolume,
+                )
+            },
+            writeD2 = {
+                nativeWriteMusicPrefsD2(
+                    filesDir,
+                    sourceCode,
+                    preferMissionSoundtrack,
+                    validatedPlayOrder,
+                    validatedVolume,
+                )
+            },
+        )
+    }
 }

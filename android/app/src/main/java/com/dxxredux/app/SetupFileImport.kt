@@ -18,6 +18,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 internal data class FoundFile(
@@ -44,12 +46,20 @@ internal data class ZipExtractionResult(
     val error: String? = null,
 )
 
+internal fun ambiguousLogicalImportName(paths: Collection<String>): String? =
+    paths
+        .groupBy { path -> path.substringAfterLast('/').substringAfterLast('\\').lowercase(Locale.ROOT) }
+        .toSortedMap()
+        .entries
+        .firstOrNull { it.value.size > 1 }
+        ?.key
+
 internal fun isDirectGameDataImportName(
     name: String,
     allGameFileNames: Set<String> = ALL_GAME_FILENAMES,
 ): Boolean =
     AndroidGameFileExtensions.hasGameExtension(name) ||
-        name.lowercase() in allGameFileNames
+        name.lowercase(Locale.ROOT) in allGameFileNames
 
 internal suspend fun scanTreeForImportUris(
     context: Context,
@@ -149,7 +159,7 @@ internal fun importFile(
     onProgress: (LauncherCopyProgress) -> Unit = {},
 ): Boolean =
     try {
-        val canonicalName = source.name.lowercase()
+        val canonicalName = source.name.lowercase(Locale.ROOT)
         val actualDestDir =
             if (canonicalName.endsWith(".dem")) {
                 File(destDir, "demos").also { it.mkdirs() }
@@ -205,6 +215,7 @@ internal suspend fun extractZipContents(
         tmpDir.mkdirs()
         val results = mutableListOf<ExtractedFile>()
         val sowFiles = mutableListOf<File>()
+        val logicalSources = mutableMapOf<String, String>()
         var foundAudio = false
         val audioExts = setOf("mp3", "ogg", "flac")
         val expectedDemoFiles =
@@ -224,12 +235,22 @@ internal suspend fun extractZipContents(
                 openZipInputStreamSkippingPreamble(raw).use { zis ->
                     var entry = zis.nextEntry
                     while (entry != null) {
-                        val name = entry.name.substringAfterLast('/').lowercase()
+                        val name = entry.name.substringAfterLast('/').lowercase(Locale.ROOT)
                         if (!entry.isDirectory && !foundAudio) {
                             val ext = name.substringAfterLast('.', "")
                             if (ext in audioExts) foundAudio = true
                         }
                         if (!entry.isDirectory && (shouldKeepGameFile(name) || name.endsWith(".sow"))) {
+                            if (shouldKeepGameFile(name)) {
+                                val prior = logicalSources.putIfAbsent(name, entry.name)
+                                if (prior != null) {
+                                    return@withContext ZipExtractionResult(
+                                        emptyList(),
+                                        foundAudio,
+                                        "Archive has colliding game-file outputs for $name: $prior, ${entry.name}",
+                                    )
+                                }
+                            }
                             val totalBytes = entry.size.takeIf { it > 0L } ?: 0L
                             kotlinx.coroutines.withContext(Dispatchers.Main) {
                                 onProgress(name, 0L, totalBytes)
@@ -295,22 +316,20 @@ internal suspend fun extractZipContents(
                 }
             }
             if (sowFiles.isNotEmpty()) {
-                val existingNames = results.map { it.name }.toMutableSet()
-                val tempFiles = tmpDir.listFiles()?.filter { it.isFile } ?: emptyList()
-                for (file in tempFiles) {
-                    val lowerName = file.name.lowercase()
-                    if (shouldKeepGameFile(lowerName) && lowerName !in existingNames) file.delete()
-                }
-                for (sowFile in sowFiles.sortedBy { it.name.lowercase() }) {
+                for (sowFile in sowFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
                     kotlinx.coroutines.withContext(Dispatchers.Main) {
                         onProgress(sowFile.name, 0L, sowFile.length())
+                    }
+                    val sowOutputDir = AtomicFilePublication.uniqueSibling(File(tmpDir, "sow-output"), "directory")
+                    if (!sowOutputDir.mkdirs()) {
+                        return@withContext ZipExtractionResult(results, foundAudio, "Could not stage ${sowFile.name}")
                     }
                     val count =
                         DiscImportBridge.extractSowFiles(
                             sowFile.absolutePath,
-                            tmpDir.absolutePath,
+                            sowOutputDir.absolutePath,
                             null,
-                            appendExisting = true,
+                            appendExisting = false,
                         )
                     if (count < 0) {
                         return@withContext ZipExtractionResult(
@@ -320,21 +339,28 @@ internal suspend fun extractZipContents(
                         )
                     }
                     Log.i("DXX-Setup", "Extracted $count file(s) from nested SOW ${sowFile.name}")
-                }
-                val extractedFiles = tmpDir.listFiles()?.filter { it.isFile } ?: emptyList()
-                for (file in extractedFiles.sortedBy { it.name.lowercase() }) {
-                    val lowerName = file.name.lowercase()
-                    if (!shouldKeepGameFile(lowerName) || lowerName in existingNames || file.length() <= 1L) continue
-                    val sha256 = AssetManifest.computeSha256(file)
-                    if (sha256 != null) {
-                        results.add(ExtractedFile(lowerName, file, sha256, file.length()))
-                        existingNames.add(lowerName)
-                        Log.i(
-                            "DXX-Setup",
-                            "Extracted from nested SOW: $lowerName (${file.length()} bytes, sha256=${sha256.take(
-                                16,
-                            )}...)",
-                        )
+                    val extractedFiles = sowOutputDir.listFiles()?.filter { it.isFile } ?: emptyList()
+                    for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
+                        val lowerName = file.name.lowercase(Locale.ROOT)
+                        if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
+                        val prior = logicalSources.putIfAbsent(lowerName, "${sowFile.name}:${file.name}")
+                        if (prior != null) {
+                            return@withContext ZipExtractionResult(
+                                emptyList(),
+                                foundAudio,
+                                "Nested SOW has colliding game-file output $lowerName with $prior",
+                            )
+                        }
+                        val sha256 = AssetManifest.computeSha256(file)
+                        if (sha256 != null) {
+                            results.add(ExtractedFile(lowerName, file, sha256, file.length()))
+                            Log.i(
+                                "DXX-Setup",
+                                "Extracted from nested SOW: $lowerName (${file.length()} bytes, sha256=${sha256.take(
+                                    16,
+                                )}...)",
+                            )
+                        }
                     }
                 }
             }
@@ -356,7 +382,7 @@ internal suspend fun matchDemoInstallerPackage(
     uri: Uri,
 ): DemoInstallerPackages.PackageInfo? {
     DemoInstallerPackages.matchByName(filename)?.let { return it }
-    val lowerName = filename.lowercase()
+    val lowerName = filename.lowercase(Locale.ROOT)
     if (!lowerName.endsWith(".zip") &&
         !lowerName.endsWith(".exe") &&
         !lowerName.endsWith(".sit") &&
@@ -403,14 +429,14 @@ internal suspend fun extractStuffitContents(
         tmpDir.mkdirs()
         val safeName =
             (archiveName ?: "archive")
-                .lowercase()
+                .lowercase(Locale.ROOT)
                 .replace(Regex("[^a-z0-9._-]"), "_")
         val workDir = File(tmpDir, ".sit_$safeName")
         if (workDir.exists()) workDir.deleteRecursively()
         workDir.mkdirs()
         val tmpArchive = File(workDir, ".tmp_sit_import")
         val results = mutableListOf<ExtractedFile>()
-        val isBinHex = archiveName?.lowercase()?.endsWith(".hqx") == true
+        val isBinHex = archiveName?.lowercase(Locale.ROOT)?.endsWith(".hqx") == true
         val expectedDemoFiles =
             archiveName
                 ?.let { DemoInstallerPackages.matchByName(it) }
@@ -459,8 +485,8 @@ internal suspend fun extractStuffitContents(
                 onProgress("Extracting StuffIt archive", tmpArchive.length(), tmpArchive.length())
             }
             val extractedFiles = workDir.listFiles()?.filter { it.isFile } ?: emptyList()
-            for (file in extractedFiles.sortedBy { it.name.lowercase() }) {
-                val lowerName = file.name.lowercase()
+            for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
+                val lowerName = file.name.lowercase(Locale.ROOT)
                 if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
                 val sha256 = AssetManifest.computeSha256(file)
                 if (sha256 != null) {
@@ -492,6 +518,7 @@ internal suspend fun extract7zContents(
     kotlinx.coroutines.withContext(Dispatchers.IO) {
         tmpDir.mkdirs()
         val results = mutableListOf<ExtractedFile>()
+        val logicalSources = mutableMapOf<String, String>()
         var foundAudio = false
         val audioExts = setOf("mp3", "ogg", "flac")
         val tmpArchive = File(tmpDir, ".tmp_7z_import")
@@ -509,12 +536,20 @@ internal suspend fun extract7zContents(
             SevenZFile.builder().setFile(tmpArchive).get().use { szf ->
                 var entry = szf.nextEntry
                 while (entry != null) {
-                    val name = entry.name.substringAfterLast('/').lowercase()
+                    val name = entry.name.substringAfterLast('/').lowercase(Locale.ROOT)
                     if (!entry.isDirectory && !foundAudio) {
                         val ext = name.substringAfterLast('.', "")
                         if (ext in audioExts) foundAudio = true
                     }
                     if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                        val prior = logicalSources.putIfAbsent(name, entry.name)
+                        if (prior != null) {
+                            return@withContext ZipExtractionResult(
+                                emptyList(),
+                                foundAudio,
+                                "Archive has colliding game-file outputs for $name: $prior, ${entry.name}",
+                            )
+                        }
                         val totalBytes = entry.size.takeIf { it > 0L } ?: 0L
                         kotlinx.coroutines.withContext(Dispatchers.Main) {
                             onProgress(name, 0L, totalBytes)
@@ -622,8 +657,18 @@ internal suspend fun extractRarContents(
                     .walkTopDown()
                     .filter { it.isFile && it != tmpArchive }
                     .toList()
-            for (file in extractedFiles.sortedBy { it.name.lowercase() }) {
-                val lowerName = file.name.lowercase()
+            ambiguousLogicalImportName(
+                extractedFiles
+                    .filter {
+                        it.name.lowercase(
+                            Locale.ROOT,
+                        ) in ALL_GAME_FILENAMES
+                    }.map { it.relativeTo(workDir).path },
+            )?.let { collision ->
+                throw IOException("RAR has colliding game-file outputs for $collision")
+            }
+            for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
+                val lowerName = file.name.lowercase(Locale.ROOT)
                 val ext = lowerName.substringAfterLast('.', "")
                 if (ext in audioExts) foundAudio = true
                 if (lowerName !in ALL_GAME_FILENAMES || file.length() <= 1L) continue

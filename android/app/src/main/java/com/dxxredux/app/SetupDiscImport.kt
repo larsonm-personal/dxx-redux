@@ -79,21 +79,33 @@ private const val D2_GOG_CUE_TEXT =
 
 internal fun findGogPair(dir: File): GogAudioPair? {
     val files = dir.list() ?: return null
+    return findGogPair(files.asList())
+}
+
+internal fun findGogPair(files: Collection<String>): GogAudioPair? {
+    if (hasAmbiguousGogAudioNames(files)) return null
     val gogByBase =
         files
             .filter { it.endsWith(".gog", ignoreCase = true) }
-            .associateBy { it.substringBeforeLast('.').lowercase(Locale.US) }
+            .groupBy { it.substringBeforeLast('.').lowercase(Locale.US) }
     val instByBase =
         files
             .filter { it.endsWith(".inst", ignoreCase = true) }
-            .associateBy { it.substringBeforeLast('.').lowercase(Locale.US) }
+            .groupBy { it.substringBeforeLast('.').lowercase(Locale.US) }
     val pairedBases = (gogByBase.keys intersect instByBase.keys)
     val base =
         pairedBases.firstOrNull { it == "descent_ii" } ?: pairedBases.sorted().firstOrNull() ?: return null
-    val gogName = gogByBase[base] ?: return null
-    val instName = instByBase[base] ?: return null
+    val gogName = gogByBase[base]?.singleOrNull() ?: return null
+    val instName = instByBase[base]?.singleOrNull() ?: return null
     return GogAudioPair(gogName.substringBeforeLast('.'), gogName, instName)
 }
+
+internal fun hasAmbiguousGogAudioNames(files: Collection<String>): Boolean =
+    files
+        .filter { it.endsWith(".gog", ignoreCase = true) || it.endsWith(".inst", ignoreCase = true) }
+        .groupBy { it.lowercase(Locale.ROOT) }
+        .values
+        .any { it.size > 1 }
 
 private fun findGogAudioBaseNames(
     files: Collection<String>,
@@ -170,6 +182,8 @@ internal fun buildGogAudioSource(
     setDir: File,
     context: Context? = null,
 ): AudioSourceManager.AudioSource? {
+    val existingNames = setDir.list()?.asList() ?: return null
+    if (hasAmbiguousGogAudioNames(existingNames)) return null
     ensureKnownGogCueFile(setDir)
     val pair = findGogPair(setDir) ?: return null
     val relDir = setDir.toRelativeString(filesDir)
@@ -257,7 +271,8 @@ internal fun postProcessImportedDiscFiles(
     progress: DiscImportBridge.ExtractProgress? = null,
 ): Int {
     val sowExtracted = extractSowArchives(setDir, progress)
-    hoistNestedImportedGameFiles(setDir)
+    if (sowExtracted < 0) return -1
+    if (hoistNestedImportedGameFiles(setDir) < 0) return -1
     return sowExtracted
 }
 
@@ -290,30 +305,22 @@ private fun moveImportedGameFileToRoot(
 internal fun hoistNestedImportedGameFiles(setDir: File): Int {
     if (!setDir.isDirectory) return 0
 
-    val rootFiles =
-        (setDir.listFiles() ?: emptyArray())
-            .filter { it.isFile }
-            .associateBy { it.name.lowercase() }
-            .toMutableMap()
+    val candidates =
+        setDir
+            .walkTopDown()
+            .filter { it.isFile && isDirectGameDataImportName(it.name.lowercase(Locale.US)) }
+            .toList()
+    if (candidates.groupBy { it.name.lowercase(Locale.US) }.values.any { it.size > 1 }) {
+        runCatching { Log.w("DXX-DiscImport", "Refusing to hoist ambiguous case-folded game filenames") }
+        return -1
+    }
     var hoisted = 0
 
-    setDir
-        .walkTopDown()
-        .filter { it.isFile && it.parentFile != setDir }
+    candidates
+        .filter { it.parentFile != setDir && it.length() > 1L }
         .forEach { file ->
-            val lowercaseName = file.name.lowercase()
-            if (!isDirectGameDataImportName(lowercaseName) || file.length() <= 1L) return@forEach
-
-            val existing = rootFiles[lowercaseName]
-            if (existing != null && existing.absolutePath == file.absolutePath) return@forEach
-            if (existing != null && existing.length() >= file.length()) {
-                file.delete()
-                return@forEach
-            }
-
-            val dest = existing ?: File(setDir, file.name)
+            val dest = File(setDir, file.name)
             if (moveImportedGameFileToRoot(file, dest)) {
-                rootFiles[lowercaseName] = dest
                 hoisted++
             } else {
                 runCatching {
@@ -415,14 +422,14 @@ internal fun <T> orderCueEntries(
 
     val entriesByName = mutableMapOf<String, java.util.ArrayDeque<T>>()
     for (entry in entries) {
-        val key = File(nameOf(entry)).name.lowercase()
+        val key = File(nameOf(entry)).name.lowercase(Locale.ROOT)
         entriesByName.getOrPut(key) { java.util.ArrayDeque() }.addLast(entry)
     }
 
     val orderedEntries = mutableListOf<T>()
     val missingNames = mutableListOf<String>()
     for (referencedName in referencedNames) {
-        val queue = entriesByName[referencedName.lowercase()]
+        val queue = entriesByName[referencedName.lowercase(Locale.ROOT)]
         if (queue == null || queue.isEmpty()) {
             missingNames.add(referencedName)
             continue
@@ -532,7 +539,7 @@ internal fun registerDiscAudioSourceFromPath(
         AudioSourceManager.AudioSource(
             id = id,
             cuePath = destCue.name,
-            binPaths = orderedBinFiles.map { it.name.lowercase() },
+            binPaths = orderedBinFiles.map { it.name.lowercase(Locale.ROOT) },
             discLabel = discLabel ?: File(cuePath).nameWithoutExtension,
             discId = discId ?: "unknown",
             trackCount = tracks.size,

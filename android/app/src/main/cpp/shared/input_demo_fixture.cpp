@@ -536,6 +536,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 		return fail(error, "checkpoint save_name is required");
 	if (!checkpoint.has_start_gt)
 		return fail(error, "checkpoint start_gt is required");
+	if (checkpoint.start_gt < 0)
+		return fail(error, "checkpoint start_gt must be nonnegative");
 	if (checkpoint.escort_state.valid &&
 	    checkpoint.escort_state.buddy_allowed_to_talk != 0 &&
 	    checkpoint.escort_state.buddy_allowed_to_talk != 1)
@@ -567,6 +569,8 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata arch is required");
 	if (metadata.difficulty < 0 || metadata.difficulty >= INPUT_DEMO_DIFFICULTY_LEVELS)
 		return fail(error, "metadata difficulty is out of range");
+	if (metadata.level == 0)
+		return fail(error, "metadata level must be nonzero");
 	if (metadata.start_mode != "new_level" && metadata.start_mode != "save_checkpoint")
 		return fail(error, "metadata start_mode must be new_level or save_checkpoint");
 	if (metadata.start_mode == "save_checkpoint" && metadata.start_save.empty())

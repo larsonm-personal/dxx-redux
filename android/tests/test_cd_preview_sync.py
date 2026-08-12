@@ -155,6 +155,82 @@ class CdPreviewSynchronizationTest(unittest.TestCase):
         self.assertFalse(seek_thread.is_alive())
         self.assertEqual(["new-silence-0", "new-silence-1"], queue)
 
+    def test_opensl_graph_is_checked_before_global_publication(self) -> None:
+        body = function_body(self.source, "osl_init")
+        require_order(
+            self,
+            body,
+            "r = slCreateEngine(&engine_obj",
+            "if (r != SL_RESULT_SUCCESS || !engine_obj)",
+            "(*engine_obj)->Realize",
+            "(*engine_obj)->GetInterface",
+            "if (r != SL_RESULT_SUCCESS || !engine)",
+            "(*engine)->CreateOutputMix",
+            "if (r != SL_RESULT_SUCCESS || !outmix_obj)",
+            "(*outmix_obj)->Realize",
+            "(*engine)->CreateAudioPlayer",
+            "if (r != SL_RESULT_SUCCESS || !player_obj)",
+            "(*player_obj)->Realize",
+            "SL_IID_PLAY",
+            "if (r != SL_RESULT_SUCCESS || !player_play)",
+            "SL_IID_BUFFERQUEUE",
+            "if (r != SL_RESULT_SUCCESS || !player_bq)",
+            "(*player_bq)->RegisterCallback",
+            "r = (*player_bq)->Enqueue",
+            "(*player_play)->SetPlayState",
+            "s_engine_obj = engine_obj",
+        )
+
+    def test_opensl_failure_unwinds_and_thread_failure_rejects_start(self) -> None:
+        init = function_body(self.source, "osl_init")
+        failure = init[init.index("fail:") :]
+        require_order(
+            self,
+            failure,
+            "(*player_obj)->Destroy(player_obj)",
+            "(*outmix_obj)->Destroy(outmix_obj)",
+            "(*engine_obj)->Destroy(engine_obj)",
+            "return 0",
+        )
+        thread_start = function_body(self.source, "render_thread_start")
+        require_order(
+            self,
+            thread_start,
+            "pthread_create",
+            "__atomic_store_n(&s_render_running, 0",
+            "return 0",
+        )
+        start = function_body(self.source, "cd_preview_start_common")
+        require_order(
+            self,
+            start,
+            "if (!osl_init(sample_rate))",
+            "return 0",
+            "if (!render_thread_start())",
+            "cd_preview_stop_internal()",
+            "return 0",
+            "return 1",
+        )
+
+    def test_runtime_enqueue_failure_reaches_terminal_state(self) -> None:
+        callback = function_body(self.source, "osl_callback")
+        require_order(
+            self,
+            callback,
+            "r = (*bq)->Enqueue",
+            "if (r != SL_RESULT_SUCCESS)",
+            "__atomic_store_n(&s_output_enabled, 0",
+            "__atomic_store_n(&s_output_failed, 1",
+        )
+        render = function_body(self.source, "render_thread_func")
+        require_order(
+            self,
+            render,
+            "__atomic_load_n(&s_output_failed",
+            "s_playing = 0",
+            "stop = 1",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

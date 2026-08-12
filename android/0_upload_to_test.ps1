@@ -79,13 +79,8 @@ try {
             -ContentType "application/json" -Body "{}" -TimeoutSec 30
         $editId = $edit.id
 
-        $deployedCode = 0
-        try {
-            $deployedCode = Get-TrackVersionCode -BaseUrl $baseUrl -EditId $editId `
-                -Headers $headers -TrackName $TrackName
-        } catch {
-            Write-Host "Could not query track '$TrackName' (new track?) -- using rev 0"
-        }
+        $deployedCode = Get-TrackVersionCode -BaseUrl $baseUrl -EditId $editId `
+            -Headers $headers -TrackName $TrackName
 
         # Delete the temporary edit
         try {
@@ -120,7 +115,9 @@ try {
     # Build the AAB
     Write-Host "Step 1: Building AAB..."
     Write-Host ""
-    & (Join-Path $PSScriptRoot "1_build-aab.ps1") -BuildType $BuildType -VersionCode $versionCode
+    $variantLabel = switch ($BuildType) { "1" { "debug" } "3" { "internal" } default { "release" } }
+    $artifactPath = Join-Path $PSScriptRoot "build-outputs\deploy-$variantLabel-v$versionCode-$([guid]::NewGuid().ToString('N')).aab"
+    & (Join-Path $PSScriptRoot "1_build-aab.ps1") -BuildType $BuildType -VersionCode $versionCode -OutputPath $artifactPath
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed with exit code $LASTEXITCODE"
     }
@@ -140,7 +137,7 @@ try {
     Write-Host ""
     Write-Host "Step 2: Uploading to Play Store..."
     Write-Host ""
-    & (Join-Path $PSScriptRoot "2_deploy-playstore.ps1") -TrackName $TrackName
+    & (Join-Path $PSScriptRoot "2_deploy-playstore.ps1") -TrackName $TrackName -AabPath $artifactPath
     if ($LASTEXITCODE -ne 0) {
         throw "Deploy failed with exit code $LASTEXITCODE"
     }

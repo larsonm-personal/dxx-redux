@@ -1174,6 +1174,7 @@ class ModManager(
             val operationName = operation.optString("op")
             val path = operation.optString("path")
             if (path.isBlank()) throw IllegalArgumentException("operation $index is missing path")
+            if (owner.patchPath == D2HamPatchSchema.PATH) D2HamPatchSchema.validate(operation)
             if (operationName == "test") {
                 testsByPath[path] = operation.opt("value")
                 continue

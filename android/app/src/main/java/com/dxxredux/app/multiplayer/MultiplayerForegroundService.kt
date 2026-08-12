@@ -64,9 +64,15 @@ class MultiplayerForegroundService : Service() {
                 return START_NOT_STICKY
             }
         }
+        val builder =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Notification.Builder(this, CHANNEL_ID)
+            } else {
+                @Suppress("DEPRECATION")
+                Notification.Builder(this)
+            }
         val notification =
-            Notification
-                .Builder(this, CHANNEL_ID)
+            builder
                 .setContentTitle("DXX-Redux Multiplayer")
                 .setContentText("Multiplayer game in progress")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)

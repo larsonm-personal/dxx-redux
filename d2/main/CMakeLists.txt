@@ -108,6 +108,7 @@ if(ANDROID)
     add_library(dxx-redux-d2 SHARED ${D2X_MAIN_SOURCES})
 else()
     add_executable(dxx-redux-d2 ${D2X_MAIN_SOURCES})
+    set_target_properties(dxx-redux-d2 PROPERTIES OUTPUT_NAME d2x-redux)
 endif()
 
 include_directories(../include ../arch/include ../../android/app/src/main/cpp/shared)

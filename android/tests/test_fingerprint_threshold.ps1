@@ -73,7 +73,7 @@ try {
     }
     $missingDb = Join-Path $testRoot 'missing-db.json'
     foreach ($threshold in @('0.40', '0.65')) {
-        $result = Invoke-Matcher -MatcherArguments @($missingDb, $threshold)
+        $result = Invoke-Matcher -MatcherArguments @($missingDb, $threshold, '0.10')
         if ($result.ExitCode -eq 0 -or $result.Output -notmatch 'Cannot open') {
             throw "Matcher did not accept strict threshold $threshold before checking the DB"
         }
@@ -83,7 +83,7 @@ try {
         throw 'Matcher accepted an omitted threshold'
     }
     foreach ($threshold in @('0.65junk', 'nan', 'inf', 'Infinity', '0', '1.01')) {
-        $result = Invoke-Matcher -MatcherArguments @($missingDb, $threshold)
+        $result = Invoke-Matcher -MatcherArguments @($missingDb, $threshold, '0.10')
         if ($result.ExitCode -eq 0 -or $result.Output -notmatch 'Invalid threshold') {
             throw "Matcher accepted invalid threshold: $threshold"
         }

@@ -139,12 +139,15 @@ internal object TouchLayoutSlotRepository {
         slotsArray: JSONArray,
         activeIndex: Int,
     ): ConfigSlotSet<TouchLayout>? {
+        if (slotsArray.length() == 0 || activeIndex !in 0 until slotsArray.length()) return null
         val slots = mutableListOf<ConfigSlot<TouchLayout>>()
         for (slotIndex in 0 until slotsArray.length()) {
-            val slotObject = slotsArray.optJSONObject(slotIndex) ?: continue
-            val layoutObject = slotObject.optJSONObject("layout") ?: continue
+            val slotObject = slotsArray.optJSONObject(slotIndex) ?: return null
+            val layoutObject = slotObject.optJSONObject("layout") ?: return null
+            if (slotObject.has("name") && slotObject.opt("name") !is String) return null
             val parsed = HumanReadableConfig.humanJsonToTouchLayout(layoutObject)
-            val layout = parsed.value?.let { TouchLayoutRepository.migrateForCurrentVersion(it) } ?: continue
+            if (parsed.warnings.isNotEmpty()) return null
+            val layout = parsed.value?.let { TouchLayoutRepository.migrateForCurrentVersion(it) } ?: return null
             val name =
                 if (slotIndex == 0) {
                     DEFAULT_CONFIG_SLOT_NAME
@@ -153,7 +156,6 @@ internal object TouchLayoutSlotRepository {
                 }
             slots.add(ConfigSlot(name, layout))
         }
-        if (slots.isEmpty()) return null
         return normalizeSlotSet(ConfigSlotSet(activeIndex, slots), slots.first().value)
     }
 

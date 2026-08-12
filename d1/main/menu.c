@@ -57,6 +57,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "songs.h"
 #ifdef ANDROID
+#include "android_render_resolution.h"
 #include "coop_save.h"
 #include "android_log.h"
 #endif
@@ -1010,14 +1011,23 @@ void change_res()
 	if (i == opt_cval) // set custom resolution and aspect
 	{
 		u_int32_t cmode = Game_screen_mode, casp = Game_screen_mode;
+		int custom_width, custom_height;
 
 		if (!strchr(crestext, 'x'))
 			return;
 
-		cmode = SM(atoi(crestext), atoi(strchr(crestext, 'x')+1));
-		if (SM_W(cmode) < 320 || SM_H(cmode) < 200) // oh oh - the resolution is too small. Revert!
+		custom_width = atoi(crestext);
+		custom_height = atoi(strchr(crestext, 'x')+1);
+		cmode = SM(custom_width, custom_height);
+		if (
+#ifdef ANDROID
+			!android_render_resolution_valid(custom_width, custom_height)
+#else
+			SM_W(cmode) < 320 || SM_H(cmode) < 200
+#endif
+		) // oh oh - the resolution is invalid. Revert!
 		{
-			nm_messagebox( TXT_WARNING, 1, "OK", "Entered resolution is too small.\nReverting ..." );
+			nm_messagebox( TXT_WARNING, 1, "OK", "Entered resolution is unsupported.\nReverting ..." );
 			cmode = new_mode;
 		}
 

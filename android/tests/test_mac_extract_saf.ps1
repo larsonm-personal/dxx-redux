@@ -39,6 +39,52 @@ function Invoke-SetupCommand {
     Adb -AdbArgs $args_ | Out-Null
 }
 
+function Send-FileToApp {
+    param(
+        [Parameter(Mandatory)][string]$LocalPath,
+        [Parameter(Mandatory)][string]$RemotePath,
+        [int]$Seconds = 180
+    )
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $script:ADB
+    foreach ($argument in @(
+        "exec-in", "run-as", $script:PACKAGE, "sh", "-c",
+        "cat > '$RemotePath'"
+    )) {
+        $startInfo.ArgumentList.Add($argument)
+    }
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    try {
+        $inputStream = [System.IO.File]::OpenRead($LocalPath)
+        try {
+            $inputStream.CopyTo($process.StandardInput.BaseStream)
+        } finally {
+            $inputStream.Dispose()
+            $process.StandardInput.Close()
+        }
+        if (-not $process.WaitForExit($Seconds * 1000)) {
+            try { $process.Kill() } catch {}
+            throw "ADB app-file staging timed out after ${Seconds}s: $LocalPath"
+        }
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) {
+            throw "ADB app-file staging failed for ${LocalPath}: $stderr $stdout"
+        }
+    } finally {
+        $process.Dispose()
+    }
+}
+
 function Get-UiDump {
     Adb-Timeout -AdbArgs @("shell", "uiautomator", "dump", "/sdcard/mac_extract_saf.xml") -Seconds 10 | Out-Null
     return Adb-Timeout -AdbArgs @("shell", "cat", "/sdcard/mac_extract_saf.xml") -Seconds 5
@@ -116,6 +162,20 @@ if ((Get-FileHash -LiteralPath $BinPath -Algorithm SHA256).Hash.ToLowerInvariant
 }
 
 Ensure-EmulatorHealthy
+$dfOutput = Adb-Timeout -AdbArgs @("shell", "df", "-k", "/data") -Seconds 5
+$dfLine = @($dfOutput -split "`r?`n" | Where-Object { $_ -match '^/dev/' }) | Select-Object -Last 1
+$dfFields = @($dfLine.Trim() -split '\s+')
+if ($dfFields.Count -ge 4 -and $dfFields[3] -match '^\d+$') {
+    $availableBytes = [long]$dfFields[3] * 1024
+    # The pipe-backed pass intentionally forces the production stager to hold
+    # one app-owned source plus one complete seekable staging copy.  Leave a
+    # fixed margin for extracted files and Android process/database activity.
+    $requiredBytes = 2 * (Get-Item -LiteralPath $BinPath).Length + 256MB
+    if ($availableBytes -lt $requiredBytes) {
+        Write-Host "RESULT: SKIP (Mac SAF extraction needs $requiredBytes free bytes; emulator has $availableBytes)"
+        exit 0
+    }
+}
 $exitCode = 1
 try {
     if (-not $SkipBuild) {
@@ -137,20 +197,13 @@ try {
     [IO.File]::WriteAllText($tmpCue, $cueText, [Text.Encoding]::ASCII)
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-rf", $providerDir) | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $providerDir) | Out-Null
-    Adb -AdbArgs @("push", $tmpCue, "/data/local/tmp/macplay.cue") -Seconds 30 | Out-Null
-    Adb -AdbArgs @("push", $BinPath, "/data/local/tmp/macplay.bin") -Seconds 120 | Out-Null
+    Send-FileToApp -LocalPath $tmpCue -RemotePath $deviceCue -Seconds 30
+    Send-FileToApp -LocalPath $BinPath -RemotePath $deviceBin -Seconds 180
     $sourceBinSize = (Get-Item -LiteralPath $BinPath).Length
-    $stagedBinSize = Adb-Timeout -AdbArgs @("shell", "stat", "-c", "%s", "/data/local/tmp/macplay.bin") -Seconds 5
-    if (-not ($stagedBinSize -match '^\d+$') -or [long]$stagedBinSize -ne $sourceBinSize) {
-        throw "MacPlay BIN push was incomplete: expected $sourceBinSize bytes, got $stagedBinSize"
-    }
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/macplay.cue", $deviceCue) | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/macplay.bin", $deviceBin) -Seconds 120 | Out-Null
     $providerBinSize = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "stat", "-c", "%s", $deviceBin) -Seconds 5
     if (-not ($providerBinSize -match '^\d+$') -or [long]$providerBinSize -ne $sourceBinSize) {
         throw "MacPlay BIN app staging was incomplete: expected $sourceBinSize bytes, got $providerBinSize"
     }
-    Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/macplay.cue", "/data/local/tmp/macplay.bin") | Out-Null
 
     Stop-AppAndWait
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null

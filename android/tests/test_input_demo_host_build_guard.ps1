@@ -15,6 +15,12 @@ function Assert-True {
 }
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$d1Executable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd1'
+$d2Executable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2'
+Assert-True ([IO.Path]::GetFileNameWithoutExtension($d1Executable) -eq 'd1x-redux') `
+    'D1 input-demo runs must use the public desktop executable name'
+Assert-True ([IO.Path]::GetFileNameWithoutExtension($d2Executable) -eq 'd2x-redux') `
+    'D2 input-demo runs must use the public desktop executable name'
 $testRoot = Join-Path $repoRoot 'temp\test_input_demo_host_build_guard'
 $caseRoot = Join-Path $testRoot ([guid]::NewGuid().ToString('N'))
 

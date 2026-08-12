@@ -1153,6 +1153,7 @@ void do_automap()
 	{
 		AUTOMAP_LOGE("automap window creation failed — out of memory");
 		Warning("Out of memory");
+		d_free(am);
 		return;
 	}
 
@@ -1170,12 +1171,10 @@ void do_automap()
 	if (!am->edges || !am->drawingListBright)
 	{
 		AUTOMAP_LOGE("edge allocation failed");
-		if (am->edges)
-			d_free(am->edges);
-		if (am->drawingListBright)
-			d_free(am->drawingListBright);
-
 		Warning("Out of memory");
+		/* window_close synchronously dispatches EVENT_WINDOW_CLOSE, whose
+		 * handler owns the automap and all child allocations. */
+		window_close(automap_wind);
 		return;
 	}
 	
@@ -1245,10 +1244,9 @@ void do_automap()
 		 * The Error() call would exit() the process, which looks like
 		 * a normal quit (restarts SetupActivity). */
 		Warning("Automap: cannot load %s: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
-		d_free(am->edges);
-		d_free(am->drawingListBright);
+		/* Closing is synchronous and the close handler is the sole owner of
+		 * the bitmap, child arrays, and automap allocation. */
 		window_close(automap_wind);
-		d_free(am);
 		return;
 #else
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));

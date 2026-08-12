@@ -4,6 +4,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $runnerPath = Join-Path $repoRoot 'game_data\run_all_cd_regressions.ps1'
 . $runnerPath
+. (Join-Path $repoRoot 'game_data\disc_track_manifest.ps1')
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -71,6 +72,39 @@ exit $($definition.ExitCode)
     Assert-True (($executed -join ',') -eq 'first,second') 'Runner should stop before the stage after a failure'
 } finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$manifestTemp = Join-Path $repoRoot 'android\temp\disc_track_manifest_test'
+Remove-Item -LiteralPath $manifestTemp -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $manifestTemp -Force | Out-Null
+try {
+    $cue = Join-Path $manifestTemp 'disc.cue'
+    @'
+FILE "disc.bin" BINARY
+  TRACK 01 MODE1/2352
+  TRACK 02 AUDIO
+'@ | Set-Content -LiteralPath $cue -Encoding UTF8
+    $valid = @(
+        [pscustomobject]@{ track = 2; type = 'audio'; sha1 = ('b' * 40) },
+        [pscustomobject]@{ track = 1; type = 'data'; sha1 = ('a' * 40) }
+    )
+    $manifest = @(Get-ValidatedDiscTrackManifest -Manifest $valid -CuePath $cue)
+    Assert-True ($manifest.Count -eq 2 -and $manifest[0].track -eq 1 -and $manifest[1].track -eq 2) `
+        'Valid manifest should be returned in physical track order'
+
+    foreach ($case in @(
+            @($valid[0]),
+            @($valid[0], $valid[0]),
+            @([pscustomobject]@{ track = 1; type = 'data'; sha1 = ('A' * 40) }, $valid[0]),
+            @([pscustomobject]@{ track = 1; type = 'audio'; sha1 = ('a' * 40) }, $valid[0]),
+            @([pscustomobject]@{ track = 1; type = 'data'; sha1 = ('a' * 40); error = 'failed' }, $valid[0])
+        )) {
+        $failed = $false
+        try { Get-ValidatedDiscTrackManifest -Manifest $case -CuePath $cue | Out-Null } catch { $failed = $true }
+        Assert-True $failed 'Invalid track manifest was accepted'
+    }
+} finally {
+    Remove-Item -LiteralPath $manifestTemp -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host 'CD regression runner tests passed' -ForegroundColor Green

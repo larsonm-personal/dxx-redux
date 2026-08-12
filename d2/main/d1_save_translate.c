@@ -26,7 +26,7 @@
 #include "vclip.h"
 
 #define D1_SAVE_VERSION 15
-#define D1_SAVE_COMPATIBLE_VERSION 6
+#define D1_SAVE_COMPATIBLE_VERSION D1_SAVE_VERSION
 #define D1_SAVE_DESC_LENGTH 20
 #define D1_SAVE_THUMBNAIL_W 100
 #define D1_SAVE_THUMBNAIL_H 50
@@ -770,11 +770,8 @@ static int d1_save_translate_validate_object(const object *obj, int object_count
 	                                          object_count)))
 		return 0;
 	if (obj->control_type == CT_AI &&
-	    ((obj->ctype.ai_info.hide_segment != -1 &&
-	      (obj->ctype.ai_info.hide_segment < 0 ||
-	       obj->ctype.ai_info.hide_segment > Highest_segment_index)) ||
-	     !d1_save_translate_object_index_valid(obj->ctype.ai_info.danger_laser_num,
-	                                          object_count)))
+	    !d1_save_translate_object_index_valid(obj->ctype.ai_info.danger_laser_num,
+	                                         object_count))
 		return 0;
 	if (obj->contains_count < -1 ||
 	    (obj->contains_count > 0 &&
@@ -803,42 +800,58 @@ static int d1_save_translate_validate_object_references(object *objects,
 	int i;
 	for (i = 0; i < object_count; i++) {
 		object *obj = &objects[i];
+		/* Original D1 saves can retain obsolete AI destinations and weapon
+		 * references after the referenced segment/object is gone.  D1 tolerated
+		 * these until the corresponding AI mode used them; translated state must
+		 * not publish those unsafe optional references into D2. */
+		if (obj->type == OBJ_ROBOT && obj->control_type == CT_AI) {
+			if (!d1_save_translate_object_index_valid(
+			        obj->ctype.ai_info.danger_laser_num, object_count)) {
+				obj->ctype.ai_info.danger_laser_num = -1;
+				obj->ctype.ai_info.danger_laser_signature = 0;
+			}
+		}
 		if (!d1_save_translate_validate_object(obj, object_count)) {
 			con_printf(CON_URGENT,
-			           "D1 checkpoint translation: invalid object %d type=%u id=%u control=%u movement=%u render=%u seg=%d attached=%d next=%d prev=%d model=%d vclip=%d contains=%d/%d/%d limits=%d/%d/%d/%d\n",
+			           "D1 checkpoint translation: invalid object %d type=%u id=%u control=%u movement=%u render=%u seg=%d attached=%d next=%d prev=%d model=%d vclip=%d contains=%d/%d/%d ai_hide=%d ai_danger=%d limits=%d/%d/%d/%d/%d\n",
 			           i, obj->type, obj->id, obj->control_type,
 			           obj->movement_type, obj->render_type, obj->segnum,
 			           obj->attached_obj, obj->next, obj->prev,
 			           obj->rtype.pobj_info.model_num,
 			           obj->rtype.vclip_info.vclip_num, obj->contains_type,
-			           obj->contains_id, obj->contains_count, MAX_OBJECT_TYPES,
-			           N_polygon_models, Num_vclips, MAX_PLAYERS);
+			           obj->contains_id, obj->contains_count,
+			           obj->ctype.ai_info.hide_segment,
+			           obj->ctype.ai_info.danger_laser_num, MAX_OBJECT_TYPES,
+			           N_robot_types, N_polygon_models, Num_vclips, MAX_PLAYERS);
 			return 0;
 		}
 		if ((obj->type == OBJ_PLAYER || obj->type == OBJ_COOP ||
 		     obj->type == OBJ_GHOST) && obj->render_type == RT_POLYOBJ) {
 			if (!Player_ship || Player_ship->model_num < 0 ||
-			    Player_ship->model_num >= N_polygon_models)
+			    Player_ship->model_num >= N_polygon_models) {
+				con_printf(CON_URGENT, "D1 checkpoint translation: invalid player model at object %d\n", i);
 				return 0;
+			}
 			obj->rtype.pobj_info.model_num = Player_ship->model_num;
 		} else if (obj->type == OBJ_ROBOT && obj->render_type == RT_POLYOBJ) {
 			int model_num = Robot_info[obj->id].model_num;
-			if (model_num < 0 || model_num >= N_polygon_models)
+			if (model_num < 0 || model_num >= N_polygon_models) {
+				con_printf(CON_URGENT, "D1 checkpoint translation: invalid robot model at object %d robot=%u model=%d limit=%d\n", i, obj->id, model_num, N_polygon_models);
 				return 0;
+			}
 			obj->rtype.pobj_info.model_num = model_num;
 		}
 		if (obj->type == OBJ_CNTRLCEN)
 			obj->id = 0;
-		if (obj->attached_obj != -1 && objects[obj->attached_obj].type == OBJ_NONE)
+		if (obj->attached_obj != -1 && objects[obj->attached_obj].type == OBJ_NONE) {
+			con_printf(CON_URGENT, "D1 checkpoint translation: stale attachment at object %d target=%d\n", i, obj->attached_obj);
 			return 0;
-		if (obj->control_type == CT_WEAPON && obj->ctype.laser_info.parent_num != -1 &&
-		    objects[obj->ctype.laser_info.parent_num].signature !=
-		        obj->ctype.laser_info.parent_signature)
-			return 0;
-		if (obj->control_type == CT_AI && obj->ctype.ai_info.danger_laser_num != -1 &&
-		    objects[obj->ctype.ai_info.danger_laser_num].signature !=
-		        obj->ctype.ai_info.danger_laser_signature)
-			return 0;
+		}
+		/* A valid parent slot with a stale signature is a normal orphaned D1
+		 * weapon state.  Consumers use the signature mismatch to avoid treating
+		 * the current occupant as the original parent. */
+		/* As with weapon parents, a valid danger-laser slot with a stale
+		 * signature is an inactive historical reference, not corruption. */
 	}
 	return 1;
 }
@@ -987,7 +1000,7 @@ static int d1_save_translate_read_d1_ai_state(
 }
 
 static int d1_save_translate_validate_d1_ai_state(
-	const d1_save_translate_ai_state *state, const object *objects,
+	d1_save_translate_ai_state *state, const object *objects,
 	int object_count)
 {
 	int i;
@@ -997,24 +1010,20 @@ static int d1_save_translate_validate_d1_ai_state(
 	    state->awareness_count < 0 ||
 	    state->awareness_count > D1_SAVE_MAX_AWARENESS_EVENTS)
 		return 0;
-	for (i = 0; i < object_count; i++) {
-		int goal_segment;
-		if (objects[i].type == OBJ_NONE || objects[i].control_type != CT_AI)
-			continue;
-		goal_segment = state->local_info[i].goal_segment;
-		if (goal_segment < -1 || goal_segment > Highest_segment_index)
-			return 0;
-	}
 	for (i = 0; i < state->point_seg_free_index; i++)
 		if (state->point_segs[i].segnum < 0 ||
-		    state->point_segs[i].segnum > Highest_segment_index)
+		    state->point_segs[i].segnum > Highest_segment_index) {
+			con_printf(CON_URGENT, "D1 checkpoint translation: invalid AI path point=%d seg=%d limit=%d\n", i, state->point_segs[i].segnum, Highest_segment_index);
 			return 0;
+		}
 	for (i = 0; i < state->awareness_count; i++)
 		if (state->awareness_events[i].segnum < 0 ||
 		    state->awareness_events[i].segnum > Highest_segment_index ||
 		    state->awareness_events[i].type < PA_NEARBY_ROBOT_FIRED ||
-		    state->awareness_events[i].type > PA_WEAPON_ROBOT_COLLISION)
+		    state->awareness_events[i].type > PA_WEAPON_ROBOT_COLLISION) {
+			con_printf(CON_URGENT, "D1 checkpoint translation: invalid awareness event=%d seg=%d type=%d\n", i, state->awareness_events[i].segnum, state->awareness_events[i].type);
 			return 0;
+		}
 	return 1;
 }
 
@@ -1572,7 +1581,10 @@ static int d1_save_translate_read_runtime_state(
 	if (state->ai_path_state.player_goal_segment < -1 ||
 	    state->ai_path_state.player_goal_segment > Highest_segment_index ||
 	    state->ai_path_state.player_path_length < 0 ||
-	    state->ai_path_state.player_path_length > MAX_POINT_SEGS)
+	    state->ai_path_state.player_path_length > MAX_POINT_SEGS ||
+	    !laser_pending_fire_count_is_valid(state->global_laser_firing_count) ||
+	    !laser_pending_fire_count_is_valid(state->global_missile_firing_count) ||
+	    !laser_runtime_state_is_valid(&state->laser_state))
 		return 0;
 	return 1;
 }
@@ -1625,42 +1637,21 @@ static int d1_save_translate_validate_runtime_ai_path(
 static int d1_save_translate_validate_checkpoint_object_links(
 	const object *objects, int object_count)
 {
-	int i, objnum, segnum;
-	ubyte seen[MAX_OBJECTS];
-	short heads[MAX_SEGMENTS];
-
-	memset(seen, 0, sizeof(seen));
-	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		heads[segnum] = -1;
+	int i;
 
 	for (i = 0; i < object_count; i++) {
 		const object *obj = &objects[i];
+		int cursor, steps;
 
 		if (obj->type == OBJ_NONE)
 			continue;
 		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
 			return 0;
-		if (obj->prev == -1) {
-			if (heads[obj->segnum] != -1)
-				return 0;
-			heads[obj->segnum] = (short)i;
-		}
-	}
-
-	for (i = 0; i < object_count; i++) {
-		const object *obj = &objects[i];
-
-		if (obj->type == OBJ_NONE)
-			continue;
-		segnum = obj->segnum;
-		if (obj->prev == -1) {
-			if (heads[segnum] != i)
-				return 0;
-		} else {
+		if (obj->prev != -1) {
 			if (obj->prev < 0 || obj->prev >= object_count)
 				return 0;
 			if (objects[obj->prev].type == OBJ_NONE ||
-			    objects[obj->prev].segnum != segnum ||
+			    objects[obj->prev].segnum != obj->segnum ||
 			    objects[obj->prev].next != i)
 				return 0;
 		}
@@ -1668,30 +1659,45 @@ static int d1_save_translate_validate_checkpoint_object_links(
 			if (obj->next < 0 || obj->next >= object_count)
 				return 0;
 			if (objects[obj->next].type == OBJ_NONE ||
-			    objects[obj->next].segnum != segnum ||
+			    objects[obj->next].segnum != obj->segnum ||
 			    objects[obj->next].prev != i)
 				return 0;
 		}
+
+		/* More than one historical list head in a segment is harmless: the
+		 * native loader used the last one.  A cycle is not harmless because
+		 * engine traversals would never terminate. */
+		cursor = i;
+		for (steps = 0; cursor != -1 && steps <= object_count; steps++)
+			cursor = objects[cursor].next;
+		if (cursor != -1)
+			return 0;
 	}
 
-	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		for (objnum = heads[segnum]; objnum != -1;
-		     objnum = objects[objnum].next) {
-			if (objnum < 0 || objnum >= object_count)
-				return 0;
-			if (seen[objnum])
-				return 0;
-			if (objects[objnum].type == OBJ_NONE ||
-			    objects[objnum].segnum != segnum)
-				return 0;
-			seen[objnum] = 1;
-		}
-
-	for (i = 0; i < object_count; i++)
-		if (objects[i].type != OBJ_NONE && !seen[i])
-			return 0;
-
 	return 1;
+}
+
+static void d1_save_translate_rebuild_checkpoint_object_links(
+	object *objects, int object_count)
+{
+	short heads[MAX_SEGMENTS];
+	int i;
+
+	for (i = 0; i <= Highest_segment_index; i++)
+		heads[i] = -1;
+	for (i = 0; i < object_count; i++) {
+		object *obj = &objects[i];
+		short previous_head;
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		previous_head = heads[obj->segnum];
+		obj->prev = -1;
+		obj->next = previous_head;
+		if (previous_head != -1)
+			objects[previous_head].prev = (short)i;
+		heads[obj->segnum] = (short)i;
+	}
 }
 
 static void d1_save_translate_commit_checkpoint_object_links(void)
@@ -1740,10 +1746,15 @@ int d1_save_translate_apply_checkpoint_objects(
 			goto fail;
 	failure = "object references";
 	if (!d1_save_translate_validate_object_references(translated_objects,
-	                                                 start->object_count) ||
-	    !d1_save_translate_validate_checkpoint_object_links(
-	        translated_objects, start->object_count))
+	                                                 start->object_count))
 		goto fail;
+	/* Match the native D1 restore: preserve a complete checkpoint link graph,
+	 * but rebuild legacy/stale next/prev links from safe segment membership. */
+	if (!d1_save_translate_validate_checkpoint_object_links(
+	        translated_objects, start->object_count)) {
+		d1_save_translate_rebuild_checkpoint_object_links(
+		    translated_objects, start->object_count);
+	}
 	failure = "world or AI decoding";
 	if (!d1_save_translate_read_d1_state_to_runtime(&reader, world, ai))
 		goto fail;

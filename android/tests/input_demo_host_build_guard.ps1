@@ -68,13 +68,13 @@ function Get-InputDemoExecutablePath {
 
     switch ($GameName) {
         'd1' {
-            return Join-RegressionPath $RepoRoot 'buildd1' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d1')[0])
+            return Join-RegressionPath $RepoRoot 'buildd1' 'main' ((Get-RegressionHostExecutableNames -BaseName 'd1x-redux')[0])
         }
         'd2' {
             if ($PreferHeadlessConsole) {
                 return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless')[0])
             }
-            return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2')[0])
+            return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'd2x-redux')[0])
         }
     }
 

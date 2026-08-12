@@ -80,22 +80,41 @@ function Read-WavData {
     $wave = [System.Text.Encoding]::ASCII.GetString($bytes, 8, 4)
     if ($wave -ne "WAVE") { throw "Not a WAVE file: $Path" }
 
+    $riffSize = [uint64][BitConverter]::ToUInt32($bytes, 4)
+    $riffEnd = 8L + [int64]$riffSize
+    if ($riffEnd -lt 12 -or $riffEnd -gt $bytes.LongLength) {
+        throw "Invalid RIFF extent: $Path"
+    }
+
     # Find fmt and data chunks
     $pos = 12
     $fmt = $null
     $dataBytes = $null
 
-    while ($pos -lt $bytes.Length - 8) {
+    while ($pos -lt $riffEnd) {
+        if ($riffEnd - $pos -lt 8) { throw "Truncated WAV chunk header: $Path" }
         $chunkId = [System.Text.Encoding]::ASCII.GetString($bytes, $pos, 4)
-        $chunkSize = [BitConverter]::ToInt32($bytes, $pos + 4)
+        $chunkSize = [uint64][BitConverter]::ToUInt32($bytes, $pos + 4)
+        $payloadStart = [int64]$pos + 8
+        if ($chunkSize -gt [uint64][int]::MaxValue) { throw "WAV chunk is too large: $Path" }
+        $payloadEnd = $payloadStart + [int64]$chunkSize
+        $nextPos = $payloadEnd + [int64]($chunkSize % 2)
+        if ($payloadEnd -lt $payloadStart -or $nextPos -le $pos -or $nextPos -gt $riffEnd) {
+            throw "Invalid WAV chunk extent: $Path"
+        }
 
         if ($chunkId -eq "fmt ") {
-            $audioFormat = [BitConverter]::ToUInt16($bytes, $pos + 8)
-            $numChannels = [BitConverter]::ToUInt16($bytes, $pos + 10)
-            $sampleRate = [BitConverter]::ToInt32($bytes, $pos + 12)
-            $bitsPerSample = [BitConverter]::ToUInt16($bytes, $pos + 22)
+            if ($fmt) { throw "Duplicate fmt chunk: $Path" }
+            if ($chunkSize -lt 16) { throw "WAV fmt chunk is too small: $Path" }
+            $audioFormat = [BitConverter]::ToUInt16($bytes, [int]$payloadStart)
+            $numChannels = [BitConverter]::ToUInt16($bytes, [int]$payloadStart + 2)
+            $sampleRate = [BitConverter]::ToInt32($bytes, [int]$payloadStart + 4)
+            $bitsPerSample = [BitConverter]::ToUInt16($bytes, [int]$payloadStart + 14)
 
             if ($audioFormat -ne 1) { throw "Not PCM format (format=$audioFormat): $Path" }
+            if ($numChannels -eq 0 -or $sampleRate -le 0 -or $bitsPerSample -notin @(8, 16, 24)) {
+                throw "Invalid PCM format fields: $Path"
+            }
 
             $fmt = @{
                 Channels = $numChannels
@@ -103,17 +122,18 @@ function Read-WavData {
                 BitsPerSample = $bitsPerSample
             }
         } elseif ($chunkId -eq "data") {
-            $dataBytes = New-Object byte[] $chunkSize
-            [Array]::Copy($bytes, $pos + 8, $dataBytes, 0, $chunkSize)
+            if ($null -ne $dataBytes) { throw "Duplicate data chunk: $Path" }
+            $dataBytes = New-Object byte[] ([int]$chunkSize)
+            [Array]::Copy($bytes, [int]$payloadStart, $dataBytes, 0, [int]$chunkSize)
         }
 
-        $pos += 8 + $chunkSize
-        # Chunks are word-aligned
-        if ($chunkSize % 2 -ne 0) { $pos++ }
+        $pos = $nextPos
     }
 
     if (-not $fmt) { throw "No fmt chunk found: $Path" }
-    if (-not $dataBytes) { throw "No data chunk found: $Path" }
+    if ($null -eq $dataBytes) { throw "No data chunk found: $Path" }
+    $frameSize = ([int]$fmt.BitsPerSample / 8) * [int]$fmt.Channels
+    if ($dataBytes.Length % $frameSize -ne 0) { throw "PCM data is not frame-aligned: $Path" }
 
     $fmt.Data = $dataBytes
     return $fmt
@@ -308,6 +328,8 @@ function Convert-GameSounds {
 }
 
 # ── Main ──
+
+if ($MyInvocation.InvocationName -eq ".") { return }
 
 if (-not (Test-Path $SevenZip)) {
     Write-Error "7-Zip not found at: $SevenZip"

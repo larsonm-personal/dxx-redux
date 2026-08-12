@@ -1,8 +1,11 @@
 package com.dxxredux.app
 
 import androidx.compose.ui.geometry.Offset
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -53,6 +56,16 @@ class TouchEditorZoneEdgeTest {
         assertEquals(20f, resized.topPct, 0.001f)
         assertEquals(30f, resized.rightPct, 0.001f)
         assertTrue(resized.bottomPct > zone.bottomPct)
+    }
+
+    @Test
+    fun absoluteSliderUpdatesCannotCrossOppositeEdges() {
+        val zone = FloatingZone(leftPct = 10f, topPct = 20f, rightPct = 30f, bottomPct = 50f)
+
+        assertEquals(28f, setFloatingZoneEdge(zone, FloatingZoneEdge.LEFT, 100f).leftPct, 0.001f)
+        assertEquals(12f, setFloatingZoneEdge(zone, FloatingZoneEdge.RIGHT, 0f).rightPct, 0.001f)
+        assertEquals(48f, setFloatingZoneEdge(zone, FloatingZoneEdge.TOP, 100f).topPct, 0.001f)
+        assertEquals(22f, setFloatingZoneEdge(zone, FloatingZoneEdge.BOTTOM, 0f).bottomPct, 0.001f)
     }
 
     @Test
@@ -169,5 +182,76 @@ class TouchEditorZoneEdgeTest {
         val hits = hitTestAll(layout, Offset(500f, 500f), canvasWidth = 1000f, canvasHeight = 1000f)
 
         assertEquals(listOf("button" to 0), hits)
+    }
+
+    private fun minimalHumanLayout(): JSONObject =
+        JSONObject()
+            .put("type", "touch_layout")
+            .put("version", 2)
+            .put("globalOpacity", 0.7)
+            .put("sticks", JSONArray())
+            .put("buttons", JSONArray())
+            .put("sliders", JSONArray())
+            .put("radialMenus", JSONArray())
+            .put("dpads", JSONArray())
+
+    @Test
+    fun touchLayoutRejectsInvalidNumericDomainsWithoutPartialResults() {
+        for (value in listOf("NaN", "Infinity", "-Infinity", "0.7", 0.19, 1.01, 1e100)) {
+            val result = HumanReadableConfig.humanJsonToTouchLayout(minimalHumanLayout().put("globalOpacity", value))
+            assertNull(result.value)
+        }
+        val button =
+            JSONObject()
+                .put("id", "fire")
+                .put("x", 50.0)
+                .put("y", "NaN")
+                .put("binding", "Fire Primary")
+        val result =
+            HumanReadableConfig.humanJsonToTouchLayout(
+                minimalHumanLayout().put("buttons", JSONArray().put(button)),
+            )
+        assertNull(result.value)
+        assertTrue(result.warnings.joinToString().contains("buttons[0].y"))
+    }
+
+    @Test
+    fun rawTouchCodecAndResponseMathRejectNonfiniteValues() {
+        assertTrue(runCatching { TouchLayout.fromJson(TouchLayout().toJson().put("globalOpacity", "NaN")) }.isFailure)
+        assertEquals(0f, applyResponseCurve(0.5f, ResponseCurve.S_CURVE, Float.NaN), 0f)
+        assertEquals(0f, applyResponseCurve(Float.POSITIVE_INFINITY, ResponseCurve.EXPONENTIAL, 2f), 0f)
+        assertTrue(applyResponseCurve(1f, ResponseCurve.S_CURVE, 2f).isFinite())
+    }
+
+    @Test
+    fun humanTouchLayoutRequiresCompleteKnownSchema() {
+        assertNull(HumanReadableConfig.humanJsonToTouchLayout(JSONObject()).value)
+        assertNull(
+            HumanReadableConfig
+                .humanJsonToTouchLayout(
+                    minimalHumanLayout().put("version", CURRENT_TOUCH_LAYOUT_VERSION + 1),
+                ).value,
+        )
+        assertNull(HumanReadableConfig.humanJsonToTouchLayout(minimalHumanLayout().apply { remove("buttons") }).value)
+
+        val button =
+            JSONObject()
+                .put("id", "fire")
+                .put("x", 50.0)
+                .put("y", 50.0)
+                .put("binding", 256)
+        assertNull(
+            HumanReadableConfig
+                .humanJsonToTouchLayout(
+                    minimalHumanLayout().put("buttons", JSONArray().put(button)),
+                ).value,
+        )
+        button.put("binding", "binding_256")
+        assertNull(
+            HumanReadableConfig
+                .humanJsonToTouchLayout(
+                    minimalHumanLayout().put("buttons", JSONArray().put(button)),
+                ).value,
+        )
     }
 }

@@ -55,6 +55,19 @@ object ConfigImportExport {
         val error: String? = null,
     )
 
+    private val COMBINED_SECTIONS =
+        setOf(
+            "touch_layout_slots",
+            "touch_layout",
+            "controller_config_slots",
+            "controller_config",
+            "autoselect_d1",
+            "autoselect_d2",
+            "app_settings",
+            "engine_prefs",
+            "host_defaults",
+        )
+
     internal fun exportPreferenceValues(allPrefs: Map<String, *>): JSONObject {
         val json = JSONObject()
         for (pref in EXPORTED_PREFERENCES) {
@@ -76,6 +89,147 @@ object ConfigImportExport {
             decoded[pref] = value
         }
         return DecodedPreferences(values = decoded)
+    }
+
+    private fun exactInt(
+        json: JSONObject,
+        key: String,
+    ): Int? = json.opt(key) as? Int
+
+    private fun validateSlotArray(
+        json: JSONObject,
+        arrayKey: String,
+        activeKey: String,
+        valueKey: String,
+        validateValue: (JSONObject) -> Boolean,
+    ): String? {
+        val slots = json.opt(arrayKey) as? org.json.JSONArray ?: return "$arrayKey must be an array"
+        if (slots.length() == 0) return "$arrayKey must not be empty"
+        for (index in 0 until slots.length()) {
+            val slot = slots.opt(index) as? JSONObject ?: return "$arrayKey[$index] must be an object"
+            if (slot.has("name") && slot.opt("name") !is String) return "$arrayKey[$index].name must be a string"
+            val value = slot.opt(valueKey) as? JSONObject ?: return "$arrayKey[$index].$valueKey must be an object"
+            if (!validateValue(value)) return "$arrayKey[$index].$valueKey is invalid"
+        }
+        val active = exactInt(json, activeKey) ?: return "$activeKey must be an integer"
+        if (active !in 0 until slots.length()) return "$activeKey is outside $arrayKey"
+        return null
+    }
+
+    internal fun validateCombinedConfig(json: JSONObject): String? {
+        if (json.opt("type") != "combined_config") return "type must be combined_config"
+        if (exactInt(json, "version") != COMBINED_CONFIG_VERSION) {
+            return "version must be $COMBINED_CONFIG_VERSION"
+        }
+        if (COMBINED_SECTIONS.none(json::has)) return "no recognizable sections"
+        if (json.has("touch_layout_slots") && json.has("touch_layout")) {
+            return "touch layout must use either slots or a single layout"
+        }
+        if (json.has("controller_config_slots") && json.has("controller_config")) {
+            return "controller config must use either slots or a single config"
+        }
+        if (json.has("touch_layout_slots")) {
+            validateSlotArray(
+                json,
+                "touch_layout_slots",
+                "active_touch_layout_slot",
+                "layout",
+            ) {
+                HumanReadableConfig.humanJsonToTouchLayout(it).let { result ->
+                    result.value != null &&
+                        result.warnings.isEmpty()
+                }
+            }?.let { return it }
+        } else if (json.has("touch_layout")) {
+            val layout = json.opt("touch_layout") as? JSONObject ?: return "touch_layout must be an object"
+            val parsed = HumanReadableConfig.humanJsonToTouchLayout(layout)
+            if (parsed.value == null || parsed.warnings.isNotEmpty()) return "touch_layout is invalid"
+        }
+        if (json.has("controller_config_slots")) {
+            validateSlotArray(
+                json,
+                "controller_config_slots",
+                "active_controller_config_slot",
+                "config",
+            ) {
+                controllerConfigStateFromHumanJson(it).let { result ->
+                    result.value != null && result.warnings.isEmpty()
+                }
+            }?.let { return it }
+        } else if (json.has("controller_config")) {
+            val config = json.opt("controller_config") as? JSONObject ?: return "controller_config must be an object"
+            val parsed = controllerConfigStateFromHumanJson(config)
+            if (parsed.value == null || parsed.warnings.isNotEmpty()) return "controller_config is invalid"
+        }
+        for (game in listOf("d1", "d2")) {
+            val key = "autoselect_$game"
+            if (!json.has(key)) continue
+            val values = json.opt(key) as? org.json.JSONArray ?: return "$key must be an array"
+            for (index in 0 until values.length()) {
+                if (values.opt(index) !is Int) return "$key[$index] must be an integer"
+            }
+        }
+        if (json.has("app_settings")) {
+            val settings = json.opt("app_settings") as? JSONObject ?: return "app_settings must be an object"
+            decodePreferenceValues(settings).error?.let { return it }
+            if (settings.has("render_resolution")) {
+                val resolution =
+                    settings.opt("render_resolution") as? String
+                        ?: return "app_settings.render_resolution must be a string"
+                if (parseSupportedAndroidRenderResolution(resolution) == null) {
+                    return "app_settings.render_resolution is unsupported"
+                }
+            }
+            if (settings.has("descent_cfg")) {
+                val cfg = settings.opt("descent_cfg") as? JSONObject ?: return "descent_cfg must be an object"
+                for (key in EXPORTED_CFG_KEYS) {
+                    if (cfg.has(key) && cfg.opt(key) !is String) return "descent_cfg.$key must be a string"
+                }
+            }
+        }
+        if (json.has("engine_prefs")) {
+            val prefs = json.opt("engine_prefs") as? JSONObject ?: return "engine_prefs must be an object"
+            for (game in listOf("d1", "d2")) {
+                if (!prefs.has(game)) continue
+                val gamePrefs = prefs.opt(game) as? JSONObject ?: return "engine_prefs.$game must be an object"
+                val cockpit =
+                    exactInt(gamePrefs, "cockpit_mode") ?: return "engine_prefs.$game.cockpit_mode must be an integer"
+                if (cockpit !in setOf(0, 2, 3)) return "engine_prefs.$game.cockpit_mode is invalid"
+                for (key in listOf(
+                    "auto_leveling",
+                    "show_robot_hostage_counts",
+                    "show_boss_health_bar",
+                    "headlight_active_default",
+                    "original_homing",
+                )) {
+                    if (gamePrefs.has(key) &&
+                        gamePrefs.opt(key) !is Boolean
+                    ) {
+                        return "engine_prefs.$game.$key must be Boolean"
+                    }
+                }
+                if (!gamePrefs.has("auto_leveling")) return "engine_prefs.$game.auto_leveling is required"
+            }
+        }
+        if (json.has("host_defaults")) {
+            val defaults = json.opt("host_defaults") as? JSONObject ?: return "host_defaults must be an object"
+            for (key in listOf("game", "mode", "mission_d1", "mission_d2")) {
+                if (defaults.has(key) && defaults.opt(key) !is String) return "host_defaults.$key must be a string"
+            }
+            for (key in listOf("difficulty", "level_num", "max_players")) {
+                if (defaults.has(key) && exactInt(defaults, key) == null) return "host_defaults.$key must be an integer"
+            }
+            for (key in listOf(
+                "coop_qol",
+                "duplicate_energy_shields",
+                "full_death_spew",
+                "player_spew_no_expire",
+                "clients_can_request_rewind",
+            )) {
+                if (defaults.has(key) && defaults.opt(key) !is Boolean) return "host_defaults.$key must be Boolean"
+            }
+        }
+        return null
     }
 
     // descent.cfg keys managed through the launcher UI
@@ -249,6 +403,30 @@ object ConfigImportExport {
         context: Context,
         json: JSONObject,
     ): String {
+        validateCombinedConfig(json)?.let { return "Combined config import failed: $it" }
+        for (game in listOf("d1", "d2")) {
+            val key = "autoselect_$game"
+            if (!json.has(key)) continue
+            val values = json.getJSONArray(key)
+            val primary =
+                NativeAutoselectPatcher
+                    .parseWeaponEntries(
+                        NativeAutoselectPatcher.getPrimaryWeaponEntries(game),
+                    ).keys
+            val secondary =
+                NativeAutoselectPatcher
+                    .parseWeaponEntries(
+                        NativeAutoselectPatcher.getSecondaryWeaponEntries(game),
+                    ).keys
+            if (values.length() != primary.size + secondary.size) {
+                return "Combined config import failed: $key has an invalid entry count"
+            }
+            val primaryValues = (0 until primary.size).map(values::getInt)
+            val secondaryValues = (primary.size until values.length()).map(values::getInt)
+            if (primaryValues.toSet() != primary || secondaryValues.toSet() != secondary) {
+                return "Combined config import failed: $key is not a weapon-order permutation"
+            }
+        }
         val results = mutableListOf<String>()
         if (json.has("touch_layout_slots")) {
             val imported =

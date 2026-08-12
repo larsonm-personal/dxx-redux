@@ -7,12 +7,27 @@ import java.io.File
 internal fun updateDescentCfgResolution(
     filesDir: File,
     resolution: String,
-) {
-    val parts = resolution.split("x")
-    val width = parts.getOrNull(0)?.toIntOrNull() ?: return
-    val height = parts.getOrNull(1)?.toIntOrNull() ?: return
+): Boolean {
+    val (width, height) = parseSupportedAndroidRenderResolution(resolution) ?: return false
     updateAllConfigFiles(filesDir, listOf("ResolutionX" to "$width", "ResolutionY" to "$height"))
+    return true
 }
+
+internal fun parseSupportedAndroidRenderResolution(resolution: String): Pair<Int, Int>? {
+    val match = Regex("([0-9]+)x([0-9]+)").matchEntire(resolution) ?: return null
+    val width = match.groupValues[1].toIntOrNull() ?: return null
+    val height = match.groupValues[2].toIntOrNull() ?: return null
+    return if (isSupportedAndroidRenderResolution(width, height)) width to height else null
+}
+
+// Keep these limits synchronized with shared/android_render_resolution.h.
+internal fun isSupportedAndroidRenderResolution(
+    width: Int,
+    height: Int,
+): Boolean =
+    width in 320..4096 &&
+        height in 200..4096 &&
+        width.toLong() * height.toLong() <= 3840L * 2160L
 
 internal fun readConfigValue(
     filesDir: File,

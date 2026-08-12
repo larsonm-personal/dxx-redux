@@ -364,22 +364,19 @@ fun EnginePreferencesPage(
                     }
                     Button(
                         onClick = {
-                            val engineCount =
-                                NativePilotPreferences.writeEnginePrefsToAll(
+                            val count =
+                                NativePilotPreferences.writeEngineAndHomingPrefsToAll(
                                     filesDir.absolutePath,
                                     cockpitMode,
                                     autoLeveling,
                                     showRobotHostageCounts,
                                     showBossHealthBar,
                                     !headlightOffByDefault,
-                                )
-                            val homingCount =
-                                NativePilotPreferences.writeOriginalHomingPrefsToAll(
-                                    filesDir.absolutePath,
                                     originalHoming,
                                 )
-                            val count = maxOf(engineCount, homingCount)
-                            if (count > 0) {
+                            if (count < 0) {
+                                statusMessage = "Could not save pilot preferences; original files were restored"
+                            } else if (count > 0) {
                                 savedCockpitMode = cockpitMode
                                 savedAutoLeveling = autoLeveling
                                 savedShowRobotHostageCounts = showRobotHostageCounts
@@ -487,17 +484,23 @@ fun EnginePreferencesPage(
 
                                     else -> prefs.getString("music_mode", "cd") ?: "cd"
                                 }
-                            prefs
-                                .edit()
-                                .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, checked)
-                                .apply()
-                            NativePilotPreferences.writeMusicPrefsToAll(
-                                filesDir.absolutePath,
-                                source,
-                                checked,
-                                musicData.playOrder,
-                                musicData.volume,
-                            )
+                            val count =
+                                NativePilotPreferences.writeMusicPrefsToAll(
+                                    filesDir.absolutePath,
+                                    source,
+                                    checked,
+                                    musicData.playOrder,
+                                    musicData.volume,
+                                )
+                            if (count >= 0) {
+                                prefs
+                                    .edit()
+                                    .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, checked)
+                                    .apply()
+                            } else {
+                                useMissionSoundtrackWhenAvailable = !checked
+                                statusMessage = "Could not save music preference; original files were restored"
+                            }
                         },
                         modifier = Modifier.tvFocusBorder(),
                     )

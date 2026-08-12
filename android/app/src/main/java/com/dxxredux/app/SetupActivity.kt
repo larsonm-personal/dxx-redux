@@ -558,32 +558,23 @@ class SetupActivity : ComponentActivity() {
                         val originalHoming = intent.getBooleanExtra("original_homing", false)
                         val hasOriginalHoming = intent.hasExtra("original_homing")
                         runIo {
-                            val engineCount =
-                                NativePilotPreferences.writeEnginePrefsToAll(
+                            val count =
+                                NativePilotPreferences.writeEngineAndHomingPrefsToAll(
                                     filesDir.absolutePath,
                                     cockpitMode,
                                     autoLeveling,
                                     showRobotHostageCounts,
                                     showBossHealthBar,
                                     headlightActiveDefault,
+                                    originalHoming.takeIf { hasOriginalHoming },
                                 )
-                            if (engineCount < 0) {
-                                Log.w("DXX-Setup", "write_engine_prefs: rejected invalid cockpit mode $cockpitMode")
+                            if (count < 0) {
+                                Log.w("DXX-Setup", "write_engine_prefs: write failed; original files restored")
                                 return@runIo
                             }
-                            val homingCount =
-                                if (hasOriginalHoming) {
-                                    NativePilotPreferences.writeOriginalHomingPrefsToAll(
-                                        filesDir.absolutePath,
-                                        originalHoming,
-                                    )
-                                } else {
-                                    0
-                                }
-                            val n = maxOf(engineCount, homingCount)
                             Log.i(
                                 "DXX-Setup",
-                                "write_engine_prefs: patched $n file(s) " +
+                                "write_engine_prefs: patched $count file(s) " +
                                     "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
                                     "show_counts=$showRobotHostageCounts " +
                                     "show_boss_health=$showBossHealthBar " +
@@ -2163,7 +2154,7 @@ class SetupActivity : ComponentActivity() {
         if (file.exists()) {
             try {
                 val json = org.json.JSONObject(file.readText())
-                if (json.optInt("version", 0) >= CONTROLLER_CONFIG_VERSION) return
+                if (isNativeControllerConfigValid(json)) return
             } catch (_: Exception) {
                 // corrupt, regenerate
             }
@@ -2805,6 +2796,10 @@ private fun SetupScreen(
             for (f in unhandledFiles) {
                 warnings.add("$f: file type not recognized")
             }
+            val directGameCollision = ambiguousLogicalImportName(gameUris.map { it.name })
+            if (directGameCollision != null) {
+                warnings.add("Selected files have colliding game-file output $directGameCollision")
+            }
             withContext(Dispatchers.Main) {
                 for (w in warnings) {
                     Toast.makeText(context, w, Toast.LENGTH_LONG).show()
@@ -2813,7 +2808,7 @@ private fun SetupScreen(
                 if (audioFileUris.isNotEmpty()) {
                     audioImportUris = audioFileUris
                 }
-                if (gameUris.isNotEmpty()) {
+                if (gameUris.isNotEmpty() && directGameCollision == null) {
                     scanResults = gameUris
                 }
                 if (cueUris.isNotEmpty() && binUris.isNotEmpty()) {
@@ -2979,6 +2974,10 @@ private fun SetupScreen(
                     allExtracted.addAll(result.files)
                     if (result.hadAudioFiles) anyAudio = true
                     if (result.error != null) archiveErrors.add("$arcName: ${result.error}")
+                }
+                ambiguousLogicalImportName(allExtracted.map { it.name })?.let { collision ->
+                    allExtracted.clear()
+                    archiveErrors.add("Selected archives have colliding game-file output $collision")
                 }
                 val fileHashes = allExtracted.associate { it.name to it.sha256 }
                 val pkgName = KnownVersions.identifyPackage(fileHashes)
@@ -4153,7 +4152,7 @@ private fun SetupScreen(
                                                             hashingFileIndex = i + 1
                                                             hashingFile = f.name
                                                             hashingProgress = 0f
-                                                            val canonicalName = f.name.lowercase()
+                                                            val canonicalName = f.name.lowercase(Locale.ROOT)
                                                             val destFile =
                                                                 if (canonicalName.endsWith(".dem")) {
                                                                     File(File(setDir, "demos"), canonicalName)

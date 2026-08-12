@@ -22,9 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.GameFileFormats
 import com.dxxredux.app.MissionZip
 import com.dxxredux.app.dpadTextFieldNavigation
@@ -49,23 +47,68 @@ object MissionScanner {
     )
 
     // -- mirrors d2/main/mission.h --
-    private val D2_BUILTINS =
-        listOf(
-            MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 30, isBuiltin = true),
-            MissionInfo("descent", "Descent: First Strike", levelCount = 27, isBuiltin = true),
-        )
+    private const val D2_SHAREWARE_HOG_SIZE = 2_292_566L
+    private const val D2_MAC_SHAREWARE_HOG_SIZE = 4_292_746L
+    private const val D2_OEM_HOG_SIZE = 6_132_957L
 
-    // -- mirrors d1/main/mission.h (D1_MISSION_FILENAME is "") --
-    private val D1_BUILTINS =
-        listOf(
-            MissionInfo("", "Descent: First Strike", levelCount = 27, isBuiltin = true),
-        )
+    private val D1_SHAREWARE_HOG_SIZES = setOf(2_339_773L, 2_365_676L)
+    private val D1_MAC_SHAREWARE_HOG_SIZES = setOf(3_370_339L, 3_387_843L)
+    private val D1_OEM_HOG_SIZES = setOf(4_492_107L, 4_494_862L)
+
+    internal fun builtins(
+        setDir: File,
+        game: String,
+    ): List<MissionInfo> {
+        val d1 = d1Builtin(setDir, if (game == "d2") "descent" else "")
+        if (game != "d2") return listOf(d1)
+
+        val full = File(setDir, "descent2.hog")
+        val demo = File(setDir, "d2demo.hog")
+        val d2 =
+            when {
+                full.isFile && full.length() == D2_OEM_HOG_SIZE -> {
+                    MissionInfo("d2", "D2 Destination: Quartzon", levelCount = 8, isBuiltin = true)
+                }
+
+                full.isFile -> {
+                    MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 24, isBuiltin = true)
+                }
+
+                demo.isFile && demo.length() == D2_MAC_SHAREWARE_HOG_SIZE -> {
+                    MissionInfo("d2demo", "Descent 2 Demo", levelCount = 4, isBuiltin = true)
+                }
+
+                demo.isFile && demo.length() == D2_SHAREWARE_HOG_SIZE -> {
+                    MissionInfo("d2demo", "Descent 2 Demo", levelCount = 3, isBuiltin = true)
+                }
+
+                else -> {
+                    MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 24, isBuiltin = true)
+                }
+            }
+        return listOf(d2, d1)
+    }
+
+    private fun d1Builtin(
+        setDir: File,
+        filename: String,
+    ): MissionInfo {
+        val size = File(setDir, "descent.hog").takeIf(File::isFile)?.length()
+        val (name, levels) =
+            when (size) {
+                in D1_SHAREWARE_HOG_SIZES -> "Descent Demo" to 7
+                in D1_MAC_SHAREWARE_HOG_SIZES -> "Descent Demo" to 3
+                in D1_OEM_HOG_SIZES -> "Destination Saturn" to 15
+                else -> "Descent: First Strike" to 27
+            }
+        return MissionInfo(filename, name, levelCount = levels, isBuiltin = true)
+    }
 
     fun scan(
         setDir: File,
         game: String,
     ): List<MissionInfo> {
-        val builtins = if (game == "d2") D2_BUILTINS else D1_BUILTINS
+        val builtins = builtins(setDir, game)
         val missions = builtins.toMutableList()
         val seen = builtins.map { it.filename.lowercase() }.toMutableSet()
 
@@ -112,20 +155,16 @@ object MissionScanner {
 @Composable
 fun MissionPickerField(
     selectedFilename: String?,
-    game: String,
-    onSelect: (String) -> Unit,
+    missions: List<MissionScanner.MissionInfo>,
+    onSelect: (MissionScanner.MissionInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val fsm = remember { FileSetManager(context.filesDir) }
-    val setDir = remember(fsm) { fsm.getSetDir(fsm.getActive()) }
-    val missions = remember(game, setDir) { MissionScanner.scan(setDir, game) }
     val displayText =
         remember(selectedFilename, missions) {
             if (selectedFilename == null) {
                 ""
             } else {
-                missions.find { it.filename == selectedFilename }?.displayName ?: selectedFilename
+                resolveMissionSelection(missions, selectedFilename)?.displayName ?: selectedFilename
             }
         }
 
@@ -159,7 +198,7 @@ fun MissionPickerField(
 @Composable
 private fun MissionPickerDialog(
     missions: List<MissionScanner.MissionInfo>,
-    onSelect: (String) -> Unit,
+    onSelect: (MissionScanner.MissionInfo) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var filter by remember { mutableStateOf("") }
@@ -206,7 +245,7 @@ private fun MissionPickerDialog(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .clickable { onSelect(m.filename) }
+                                    .clickable { onSelect(m) }
                                     .padding(vertical = 8.dp, horizontal = 4.dp),
                         ) {
                             Column {
@@ -238,3 +277,16 @@ private fun MissionPickerDialog(
         },
     )
 }
+
+internal fun resolveMissionSelection(
+    missions: List<MissionScanner.MissionInfo>,
+    selectedFilename: String?,
+): MissionScanner.MissionInfo? =
+    selectedFilename?.let { selected ->
+        missions.singleOrNull { it.filename.equals(selected, ignoreCase = true) }
+    }
+
+internal fun selectedMissionLevelIsValid(
+    mission: MissionScanner.MissionInfo?,
+    level: Int?,
+): Boolean = mission != null && mission.levelCount > 0 && level != null && level in 1..mission.levelCount

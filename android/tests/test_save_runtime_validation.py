@@ -10,6 +10,8 @@ D1_OBJECT = (REPO_ROOT / "d1/main/object.c").read_text(encoding="utf-8")
 D2_OBJECT = (REPO_ROOT / "d2/main/object.c").read_text(encoding="utf-8")
 D1_AI = (REPO_ROOT / "d1/main/ai.c").read_text(encoding="utf-8")
 D2_AI = (REPO_ROOT / "d2/main/ai.c").read_text(encoding="utf-8")
+D1_LASER = (REPO_ROOT / "d1/main/laser.c").read_text(encoding="utf-8")
+D2_LASER = (REPO_ROOT / "d2/main/laser.c").read_text(encoding="utf-8")
 D1_INPUT_DEMO = (REPO_ROOT / "d1/main/input_demo_hooks.c").read_text(encoding="utf-8")
 TRANSLATOR = (REPO_ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
 
@@ -145,6 +147,47 @@ class SaveRuntimeValidationTest(unittest.TestCase):
             apply_call = source.index("state_read_runtime_state(fp, swap", restore_call)
             self.assertLess(restore_call, apply_call)
 
+    def test_weapon_runtime_scalars_are_preflighted_before_publication(self) -> None:
+        for state_source, laser_source in (
+            (D1_STATE, D1_LASER),
+            (D2_STATE, D2_LASER),
+        ):
+            validator = function_body(state_source, "state_validate_runtime_state")
+            self.assertIn("laser_pending_fire_count_is_valid", validator)
+            self.assertIn("laser_runtime_state_is_valid", validator)
+            self.assertNotIn("state_runtime_skip(fp, 9 * sizeof(int))", validator)
+
+            scalar_validator = function_body(laser_source, "laser_runtime_state_is_valid")
+            for field in (
+                "fusion_charge >= 0",
+                "fusion_charge <= 4 * F1_0",
+                "spreadfire_toggle == 0",
+                "missile_gun >= 0",
+                "proximity_dropped >= 0",
+            ):
+                self.assertIn(field, scalar_validator)
+
+            setter = function_body(laser_source, "laser_set_runtime_state")
+            self.assertIn("Missile_gun = state->missile_gun", setter)
+            self.assertIn("Missile_gun == INT_MAX ? 0 : Missile_gun + 1", laser_source)
+
+            writer = function_body(state_source, "state_write_runtime_state")
+            self.assertIn("laser_state.missile_gun &= 1", writer)
+
+        d2_reader = function_body(D2_STATE, "state_read_runtime_state")
+        secret_return = d2_reader.index("if (secret_restore)")
+        global_publish = d2_reader.index(
+            "Global_laser_firing_count = global_laser_firing_count"
+        )
+        self.assertLess(secret_return, global_publish)
+
+        d2_laser_validator = function_body(D2_LASER, "laser_runtime_state_is_valid")
+        self.assertIn("helix_orientation >= 0", d2_laser_validator)
+        self.assertNotIn("helix_orientation <= LASER_HELIX_MASK", d2_laser_validator)
+        self.assertIn(
+            "Helix_orientation == INT_MAX ? 0 : Helix_orientation + 1", D2_LASER
+        )
+
     def test_variable_sections_are_bounded_before_iteration(self) -> None:
         for source in (D1_STATE, D2_STATE):
             morph = function_body(source, "state_validate_morph_runtime_state")
@@ -203,7 +246,8 @@ class SaveRuntimeValidationTest(unittest.TestCase):
         required_stuck = (
             "Objects[objnum].signature != signature",
             "wallnum >= Num_walls",
-            "return count == active",
+            "wallnum == -1",
+            "return 1",
         )
         for source in (D1_STATE, D2_STATE):
             morph = function_body(source, "state_validate_morph_runtime_state")
@@ -215,6 +259,11 @@ class SaveRuntimeValidationTest(unittest.TestCase):
                 self.assertIn(text, effects)
             for text in required_stuck:
                 self.assertIn(text, stuck)
+
+            stuck_reader = function_body(source, "state_read_stuck_object_state")
+            stuck_writer = function_body(source, "state_write_stuck_object_state")
+            self.assertIn("Num_stuck_objects = active", stuck_reader)
+            self.assertIn("Stuck_objects[i].wallnum != -1", stuck_writer)
 
     def test_checked_skip_rejects_truncation_without_wraparound(self) -> None:
         for source in (D1_STATE, D2_STATE):

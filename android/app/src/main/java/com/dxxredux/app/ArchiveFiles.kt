@@ -69,6 +69,10 @@ internal data class ArchiveOutputProjection(
     val isDirectory: Boolean,
 )
 
+internal class ArchiveOutputValidationException(
+    message: String,
+) : IllegalArgumentException(message)
+
 internal fun validateArchiveOutputProjections(
     projections: List<ArchiveOutputProjection>,
     label: String,
@@ -76,8 +80,8 @@ internal fun validateArchiveOutputProjections(
     val normalized =
         projections.map { projection ->
             val relativePath = canonicalArchiveRelativePath(projection.relativePath)
-            require(!relativePath.isNullOrBlank()) {
-                "$label has an invalid output path: ${projection.sourcePath}"
+            if (relativePath.isNullOrBlank()) {
+                throw ArchiveOutputValidationException("$label has an invalid output path: ${projection.sourcePath}")
             }
             projection.copy(relativePath = relativePath)
         }
@@ -89,7 +93,7 @@ internal fun validateArchiveOutputProjections(
         .firstOrNull()
         ?.let { collision ->
             val sources = collision.map { it.sourcePath }.sorted().joinToString(", ")
-            throw IllegalArgumentException("$label has colliding file outputs: $sources")
+            throw ArchiveOutputValidationException("$label has colliding file outputs: $sources")
         }
     val directoryKeys = mutableSetOf<String>()
     for (projection in normalized) {
@@ -104,7 +108,7 @@ internal fun validateArchiveOutputProjections(
         .sortedBy { archiveOutputKey(it.relativePath) }
         .firstOrNull { archiveOutputKey(it.relativePath) in directoryKeys }
         ?.let { collision ->
-            throw IllegalArgumentException(
+            throw ArchiveOutputValidationException(
                 "$label has a file and directory output collision: ${collision.sourcePath}",
             )
         }
@@ -269,6 +273,7 @@ internal fun extractRarArchiveToDirectory(
     runCatching {
         extractRarWithSevenZipBinding(archive, targetRoot)
     }.getOrElse { sevenZipError ->
+        if (sevenZipError is ArchiveOutputValidationException) throw sevenZipError
         targetRoot.deleteRecursively()
         targetRoot.mkdirs()
         runCatching {

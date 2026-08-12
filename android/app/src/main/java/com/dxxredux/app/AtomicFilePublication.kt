@@ -35,12 +35,17 @@ internal object AtomicFilePublication {
     fun writeUtf8Batch(
         updates: List<Pair<File, String>>,
         beforePublish: (Int, File, File) -> Unit = { _, _, _ -> },
+    ) = writeBytesBatch(updates.map { (file, text) -> file to text.toByteArray(Charsets.UTF_8) }, beforePublish)
+
+    fun writeBytesBatch(
+        updates: List<Pair<File, ByteArray>>,
+        beforePublish: (Int, File, File) -> Unit = { _, _, _ -> },
     ) = transaction {
         val distinctUpdates = updates.distinctBy { it.first.absolutePath }
         val staged = mutableListOf<BatchEntry>()
         var published = 0
         try {
-            for ((target, text) in distinctUpdates) {
+            for ((target, data) in distinctUpdates) {
                 target.parentFile?.mkdirs()
                 val temporary = uniqueSibling(target, "tmp")
                 val backup =
@@ -50,7 +55,7 @@ internal object AtomicFilePublication {
                         null
                     }
                 staged.add(BatchEntry(target, temporary, backup))
-                writeSynced(temporary, text.toByteArray(Charsets.UTF_8))
+                writeSynced(temporary, data)
                 if (backup != null) writeSynced(backup, target.readBytes())
             }
             for ((index, entry) in staged.withIndex()) {

@@ -16,6 +16,7 @@
 
 extern "C" {
 #include "android_save_meta.h"
+#include "android_save_set.h"
 #include "jni_string.h"
 }
 
@@ -376,6 +377,95 @@ static bool is_sentinel_callsign(const std::string &callsign)
 	return strcasecmp(callsign.c_str(), "coopsave") == 0;
 }
 
+static std::string normalized_save_path(std::string path)
+{
+	std::replace(path.begin(), path.end(), '\\', '/');
+	return path;
+}
+
+static std::string path_component_after(const std::string &path,
+                                        const std::string &marker)
+{
+	size_t start = path.find(marker);
+	size_t end;
+
+	if (start == std::string::npos)
+		return std::string();
+	start += marker.size();
+	end = path.find('/', start);
+	return path.substr(start, end == std::string::npos ? end : end - start);
+}
+
+static bool text_identity_matches(const std::string &path_value,
+                                  const char *meta_value,
+                                  const char *fallback)
+{
+	char normalized[32];
+	std::string metadata = sanitize_text(meta_value);
+
+	if (path_value.empty())
+		return false;
+	android_save_set_sanitize_component(normalized, sizeof(normalized),
+	                                    metadata.c_str(), fallback);
+	return strcasecmp(path_value.c_str(), normalized) == 0;
+}
+
+static bool save_kind_matches_slot(uint8_t save_kind, int slot)
+{
+	switch (save_kind) {
+		case ANDROID_SAVE_META_KIND_AUTO_PERIODIC:
+			return slot == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A ||
+			       slot == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_B;
+		case ANDROID_SAVE_META_KIND_AUTO_ABORT:
+			return slot == ANDROID_SAVE_META_SLOT_AUTO_ABORT;
+		case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
+			return slot == ANDROID_SAVE_META_SLOT_AUTO_PROGRESS;
+		case ANDROID_SAVE_META_KIND_AUTO_EXIT:
+			return slot == ANDROID_SAVE_META_SLOT_AUTO_EXIT;
+		case ANDROID_SAVE_META_KIND_AUTO_MINIMIZE:
+			return slot == ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE;
+		default:
+			return slot >= 0;
+	}
+}
+
+static const char *save_metadata_path_identity_error(const std::string &raw_path,
+                                                     const android_save_meta_disk &meta)
+{
+	std::string path = normalized_save_path(raw_path);
+	const char *expected_root = meta.game_id == ANDROID_SAVE_META_GAME_D1
+	                                ? "/d1x-redux/"
+	                                : "/d2x-redux/";
+	const char *other_root = meta.game_id == ANDROID_SAVE_META_GAME_D1
+	                             ? "/d2x-redux/"
+	                             : "/d1x-redux/";
+	bool single_scoped = path.find("/Players/save_sets/single/") != std::string::npos;
+	bool coop_scoped = path.find("/Players/save_sets/coop/") != std::string::npos;
+	bool coop_extension = save_path_is_coop(path.c_str());
+	std::string pilot;
+	std::string mission;
+
+	if (path.find(expected_root) == std::string::npos || path.find(other_root) != std::string::npos)
+		return "metadata_game_path_mismatch";
+	if ((single_scoped && coop_extension) || (coop_scoped && !coop_extension))
+		return "metadata_scope_extension_mismatch";
+	if (!save_kind_matches_slot(meta.save_kind, slot_from_path(path.c_str())))
+		return "metadata_save_kind_slot_mismatch";
+	if (single_scoped) {
+		pilot = path_component_after(path, "/Players/save_sets/single/");
+		mission = path_component_after(path, "/Players/save_sets/single/" + pilot + "/");
+	} else if (coop_scoped) {
+		mission = path_component_after(path, "/Players/save_sets/coop/");
+	} else if (!coop_extension) {
+		pilot = callsign_from_path(path.c_str());
+	}
+	if (!pilot.empty() && !text_identity_matches(pilot, meta.callsign, "player"))
+		return "metadata_pilot_path_mismatch";
+	if (!mission.empty() && !text_identity_matches(mission, meta.mission_name, "default"))
+		return "metadata_mission_path_mismatch";
+	return NULL;
+}
+
 static bool read_resume_candidate(const std::string &path,
                                   android_save_meta_candidate *out)
 {
@@ -383,6 +473,8 @@ static bool read_resume_candidate(const std::string &path,
 	std::string callsign;
 
 	if (!out || !android_save_meta_read_path(path.c_str(), &meta))
+		return false;
+	if (save_metadata_path_identity_error(path, meta) != NULL)
 		return false;
 	if (meta.wall_clock_unix_seconds == 0)
 		meta.wall_clock_unix_seconds = file_mtime_seconds(path.c_str());
@@ -624,6 +716,7 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 	bool loadable = read_resume_candidate(path, &candidate);
 	uint64_t modified = file_mtime_seconds(path.c_str());
 	const char *meta_error = meta_valid ? "" : save_meta_read_error(path.c_str());
+	const char *identity_error = meta_valid ? save_metadata_path_identity_error(path, meta) : NULL;
 	json out;
 
 	save_set_parts_from_relative(relative_path, &scope, &pilot, &mission);
@@ -714,7 +807,7 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 	out["loadable"] = loadable;
 	out["orphan"] = !meta_valid || !loadable;
 	out["orphan_reason"] =
-	    meta_valid ? (loadable ? "" : "not_loadable_from_launcher")
+	    meta_valid ? (loadable ? "" : (identity_error ? identity_error : "not_loadable_from_launcher"))
 	               : (have_preview ? meta_error : "legacy_save_header_invalid");
 	out["size_bytes"] = file_size_bytes(path.c_str());
 	out["modified_unix_seconds"] = modified;

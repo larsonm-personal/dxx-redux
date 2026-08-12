@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -546,6 +547,10 @@ static int expect_checkpoint_demo_file_output(void)
 		}
 	}
 	invalid = demo;
+	invalid.checkpoint.start_gt = -1;
+	if (input_demo_file_to_text(invalid, &text, &error))
+		return report_failure("negative checkpoint start time unexpectedly validated");
+	invalid = demo;
 	invalid.checkpoint.size = INPUT_DEMO_CHECKPOINT_MAX_BYTES;
 	if (!input_demo_file_to_text(invalid, &text, &error))
 		return report_failure_string(std::string("maximum checkpoint size failed: ") + error);
@@ -556,6 +561,32 @@ static int expect_checkpoint_demo_file_output(void)
 	invalid.checkpoint.data.assign(INPUT_DEMO_CHECKPOINT_MAX_ENCODED_BYTES + 1u, 'A');
 	if (input_demo_file_to_text(invalid, &text, &error))
 		return report_failure("oversized encoded checkpoint unexpectedly validated");
+	return 0;
+}
+
+static int expect_metadata_level_validation(void)
+{
+	input_demo_metadata metadata;
+	std::string error;
+	const int valid_values[] = { INT_MIN, -1, 1, INT_MAX };
+	size_t i;
+
+	for (i = 0; i != sizeof(valid_values) / sizeof(valid_values[0]); ++i) {
+		const std::string header =
+		    std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") +
+		    input_demo_test_game_name() +
+		    "\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":" +
+		    std::to_string(valid_values[i]) +
+		    ",\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1}";
+		if (!input_demo_metadata_parse_header_line(header, &metadata, &error))
+			return report_failure_string(std::string("nonzero metadata level failed: ") + error);
+	}
+	const std::string zero_header =
+	    std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") +
+	    input_demo_test_game_name() +
+	    "\",\"mission\":\"test\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":0,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1}";
+	if (input_demo_metadata_parse_header_line(zero_header, &metadata, &error))
+		return report_failure("zero metadata level unexpectedly validated");
 	return 0;
 }
 
@@ -570,6 +601,8 @@ int main(void)
 	if (expect_legacy_player_cfg_defaults_to_redux_homing())
 		return 1;
 	if (expect_metadata_difficulty_validation())
+		return 1;
+	if (expect_metadata_level_validation())
 		return 1;
 	if (expect_player_cfg_order_validation())
 		return 1;

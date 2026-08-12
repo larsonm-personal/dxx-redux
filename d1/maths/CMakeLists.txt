@@ -213,6 +213,8 @@ if(NOT ANDROID)
 
     add_executable(test_input_demo_replay
         ../../android/tests/test_input_demo_replay.cpp
+        ../../android/tests/test_input_demo_policy_pack1.c
+        ../../android/tests/test_input_demo_policy_pack16.c
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
         ../../android/app/src/main/cpp/shared/input_demo_codec.cpp

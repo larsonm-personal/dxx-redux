@@ -88,6 +88,34 @@ static int threshold_pct_to_playercfg_deadzone(int pct, int scale)
 	return value;
 }
 
+static bool json_int_in_range(const json &value, int minimum, int maximum,
+                              int *result)
+{
+	if (!result || !value.is_number_integer())
+		return false;
+	const int64_t parsed = value.get<int64_t>();
+	if (parsed < minimum || parsed > maximum)
+		return false;
+	*result = static_cast<int>(parsed);
+	return true;
+}
+
+static bool json_byte_array(const json &value, ubyte *output, size_t count,
+                            size_t maximum_count)
+{
+	if (!output || !value.is_array() || value.size() < count ||
+	    value.size() > maximum_count)
+		return false;
+	for (size_t index = 0; index < value.size(); ++index) {
+		int parsed;
+		if (!json_int_in_range(value[index], 0, 255, &parsed))
+			return false;
+		if (index < count)
+			output[index] = static_cast<ubyte>(parsed);
+	}
+	return true;
+}
+
 /*
  * Read controller_config.json and apply key_settings arrays + control type
  * into the current PlayerCfg.  Returns true if a config was loaded.
@@ -95,14 +123,22 @@ static int threshold_pct_to_playercfg_deadzone(int pct, int scale)
 static bool load_config_into_playercfg(void)
 {
 	std::ifstream ifs(CONFIG_PATH);
-	if (!ifs.is_open()) return false;
-
+	struct player_config staged;
+	int staged_axis_deadzone[6];
+	int axis_pct[6];
+	int control_type;
+	int automap_free_flight;
 	json cfg;
-	try {
-		cfg = json::parse(ifs);
-	} catch (...) {
+	const kconfig_android_layout *const layout = kconfig_android_get_layout(
+#ifdef DXX_BUILD_DESCENT_II
+	    KCONFIG_ANDROID_D2
+#else
+	    KCONFIG_ANDROID_D1
+#endif
+	);
+	if (!ifs.is_open())
 		return false;
-	}
+	staged = PlayerCfg;
 
 	/* Prefer game-specific byte array (D1/D2 have different kconfig indices) */
 #ifdef DXX_BUILD_DESCENT_II
@@ -110,100 +146,74 @@ static bool load_config_into_playercfg(void)
 #else
 	const char *joy_key = "key_settings_joystick_d1";
 #endif
-	/* Fall back to the old unqualified key for pre-existing configs */
-	if (!cfg.contains(joy_key) || !cfg[joy_key].is_array()) {
-		joy_key = "key_settings_joystick";
-	}
-	if (cfg.contains(joy_key) && cfg[joy_key].is_array()) {
-		auto &arr = cfg[joy_key];
-		for (size_t i = 0; i < arr.size() && i < MAX_CONTROLS; i++)
-			PlayerCfg.KeySettings[1][i] = (ubyte) arr[i].get<int>();
-	}
-	if (cfg.contains("key_settings_keyboard") && cfg["key_settings_keyboard"].is_array()) {
-		auto &arr = cfg["key_settings_keyboard"];
-		for (size_t i = 0; i < arr.size() && i < MAX_CONTROLS; i++)
-			PlayerCfg.KeySettings[0][i] = (ubyte) arr[i].get<int>();
-	}
-	if (cfg.contains("control_type"))
-		PlayerCfg.ControlType = (ubyte) cfg["control_type"].get<int>();
-	if (cfg.contains("automap_free_flight"))
-		PlayerCfg.AutomapFreeFlight = (ubyte) cfg["automap_free_flight"].get<int>();
+	static const struct {
+		const char *name;
+		int axis;
+	} axis_map[] = {
+		{ "LS_X", 0 },
+		{ "LS_Y", 1 },
+		{ "RS_X", 2 },
+		{ "RS_Y", 3 },
+		{ "LT", 4 },
+		{ "RT", 5 },
+	};
+	static const struct {
+		int keysettings_index;
+		int deadzone_index;
+		int scale;
+	} analog_deadzone_map[] = {
+		{ 15, 0, 8 },
+		{ 13, 1, 8 },
+		{ 17, 2, 8 },
+		{ 19, 3, 8 },
+		{ 21, 4, 8 },
+		{ 23, 5, 3 },
+	};
 
-	/* Per-axis thresholds for axis-to-button conversion.
-	 * JSON stores percentage (5-95), C uses 0-128 scale for axis-buttons
-	 * and PlayerCfg.JoystickDead[] for analog deadzones. */
-	if (cfg.contains("thresholds") && cfg["thresholds"].is_object()) {
-		static const struct {
-			const char *name;
-			int axis;
-		} axis_map[] = {
-			{ "LS_X", 0 },
-			{ "LS_Y", 1 },
-			{ "RS_X", 2 },
-			{ "RS_Y", 3 },
-			{ "LT", 4 },
-			{ "RT", 5 },
-		};
-		auto &thr = cfg["thresholds"];
-		int axis_pct[sizeof(axis_map) / sizeof(axis_map[0])];
-		memset(axis_pct, -1, sizeof(axis_pct));
-		for (size_t i = 0; i < sizeof(axis_map) / sizeof(axis_map[0]); i++) {
-			if (thr.contains(axis_map[i].name) && thr[axis_map[i].name].is_number()) {
-				int pct = clamp_threshold_pct(thr[axis_map[i].name].get<int>());
-				axis_pct[axis_map[i].axis] = pct;
-				joy_axis_button_deadzone[axis_map[i].axis] = threshold_pct_to_axis_button_deadzone(pct);
-				android_axis_mailbox_set_button_deadzone(
-				    axis_map[i].axis, joy_axis_button_deadzone[axis_map[i].axis]);
-				LOGI("threshold axis=%s pct=%d axisBtnDead=%d",
-				     axis_map[i].name,
-				     pct,
-				     joy_axis_button_deadzone[axis_map[i].axis]);
-				debug_log(DLOG_GAME,
-				          "[joy-map] threshold axis=%s pct=%d axisBtnDead=%d\n",
-				          axis_map[i].name,
-				          pct,
-				          joy_axis_button_deadzone[axis_map[i].axis]);
-			}
+	try {
+		int version;
+		cfg = json::parse(ifs);
+		if (!cfg.is_object() || !cfg.contains("version") ||
+		    !json_int_in_range(cfg["version"], 4, 4, &version) ||
+		    !cfg.contains(joy_key) ||
+		    !json_byte_array(cfg[joy_key], staged.KeySettings[1],
+		                     layout->joystick_size, layout->joystick_size) ||
+		    !cfg.contains("key_settings_keyboard") ||
+		    !json_byte_array(cfg["key_settings_keyboard"], staged.KeySettings[0],
+		                     layout->settings_size, KCONFIG_ANDROID_MAX_SETTINGS) ||
+		    !cfg.contains("control_type") ||
+		    !json_int_in_range(cfg["control_type"], 0, 3, &control_type) ||
+		    !cfg.contains("automap_free_flight") ||
+		    !json_int_in_range(cfg["automap_free_flight"], 0, 1, &automap_free_flight) ||
+		    !cfg.contains("thresholds") || !cfg["thresholds"].is_object())
+			return false;
+		staged.ControlType = static_cast<ubyte>(control_type);
+		staged.AutomapFreeFlight = static_cast<ubyte>(automap_free_flight);
+		for (size_t i = 0; i < sizeof(axis_map) / sizeof(axis_map[0]); ++i) {
+			int pct;
+			if (!cfg["thresholds"].contains(axis_map[i].name) ||
+			    !json_int_in_range(cfg["thresholds"][axis_map[i].name], 5, 95, &pct))
+				return false;
+			axis_pct[axis_map[i].axis] = pct;
+			staged_axis_deadzone[axis_map[i].axis] =
+			    threshold_pct_to_axis_button_deadzone(pct);
 		}
-
-		static const struct {
-			int keysettings_index;
-			int deadzone_index;
-			int scale;
-		} analog_deadzone_map[] = {
-			{ 15, 0, 8 },
-			{ 13, 1, 8 },
-			{ 17, 2, 8 },
-			{ 19, 3, 8 },
-			{ 21, 4, 8 },
-			{ 23, 5, 3 },
-		};
-		for (size_t i = 0; i < sizeof(analog_deadzone_map) / sizeof(analog_deadzone_map[0]); i++) {
-			int bound_axis = PlayerCfg.KeySettings[1][analog_deadzone_map[i].keysettings_index];
-			if (bound_axis < 0 || (size_t) bound_axis >= sizeof(axis_map) / sizeof(axis_map[0]))
-				continue;
-			if (axis_pct[bound_axis] < 0)
-				continue;
-			PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index] =
-			    threshold_pct_to_playercfg_deadzone(axis_pct[bound_axis], analog_deadzone_map[i].scale);
-			LOGI("analog deadzone kc=%d axis=%d pct=%d scale=%d playerCfgDead[%d]=%d",
-			     analog_deadzone_map[i].keysettings_index,
-			     bound_axis,
-			     axis_pct[bound_axis],
-			     analog_deadzone_map[i].scale,
-			     analog_deadzone_map[i].deadzone_index,
-			     PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index]);
-			debug_log(DLOG_GAME,
-			          "[joy-map] analog kc=%d axis=%d pct=%d scale=%d dead[%d]=%d\n",
-			          analog_deadzone_map[i].keysettings_index,
-			          bound_axis,
-			          axis_pct[bound_axis],
-			          analog_deadzone_map[i].scale,
-			          analog_deadzone_map[i].deadzone_index,
-			          PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index]);
+		for (size_t i = 0; i < sizeof(analog_deadzone_map) / sizeof(analog_deadzone_map[0]); ++i) {
+			const int bound_axis = staged.KeySettings[1][analog_deadzone_map[i].keysettings_index];
+			if (bound_axis >= 0 && bound_axis < 6)
+				staged.JoystickDead[analog_deadzone_map[i].deadzone_index] =
+				    threshold_pct_to_playercfg_deadzone(
+				        axis_pct[bound_axis], analog_deadzone_map[i].scale);
 		}
+	} catch (...) {
+		return false;
 	}
 
+	PlayerCfg = staged;
+	for (int axis = 0; axis < 6; ++axis) {
+		joy_axis_button_deadzone[axis] = staged_axis_deadzone[axis];
+		android_axis_mailbox_set_button_deadzone(axis, staged_axis_deadzone[axis]);
+	}
 	return true;
 }
 

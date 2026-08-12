@@ -13,6 +13,7 @@ $checkUpdates = Get-Content -LiteralPath $checkUpdatesPath -Raw
 $powerShellUpdater = Get-Content -LiteralPath $powerShellUpdaterPath -Raw
 $versions = Get-Content -LiteralPath $versionsPath -Raw
 $jdkUpdater = Get-Content -LiteralPath $jdkUpdaterPath -Raw
+. (Join-Path $repoRoot 'android/get_deps/helpers/safe_conf_value.ps1')
 
 function Assert-Matches($content, $pattern, $label) {
     if ($content -notmatch $pattern) {
@@ -43,5 +44,33 @@ Assert-Matches $powerShellUpdater 'active PowerShell 7 processes' `
     "explicit system updates warn about terminating active processes"
 Assert-Matches $powerShellUpdater 'Type INSTALL to continue' `
     "explicit system updates require confirmation unless forced"
+
+foreach ($case in @(
+        @{ Key = 'GRADLE_VERSION'; Value = '9.6.1' },
+        @{ Key = 'NDK_VERSION'; Value = 'r27d' },
+        @{ Key = 'MINIMP3_COMMIT'; Value = '853a0a171759f1ddba0de1442133a75912bbeffa' },
+        @{ Key = 'JDK_URL'; Value = 'https://api.adoptium.net/v3/binary/latest/21/ga?project=jdk&image_type=jdk' }
+    )) {
+    if (-not (Test-SafeToolConfValue -Key $case.Key -Value $case.Value)) {
+        throw "Valid value rejected: $($case.Key)=$($case.Value)"
+    }
+    if ((Format-SafeToolConfAssignment -Key $case.Key -Value $case.Value) -ne "$($case.Key)='$($case.Value)'") {
+        throw 'Safe tool configuration assignment was not single-quoted'
+    }
+}
+foreach ($value in @(
+        '999$(Write-Output_PWNED)', '999`Write-Output_PWNED`', '1.2.3;echo', '1.2.3|echo',
+        '1.2.3 value', "1.2.3`necho", '${HOME}', '../version', '-option'
+    )) {
+    if (Test-SafeToolConfValue -Key 'TEST_VERSION' -Value $value) {
+        throw "Unsafe value accepted: $value"
+    }
+}
+if (Test-SafeToolConfValue -Key 'TEST_URL' -Value 'http://example.com/tool.zip') {
+    throw 'Non-HTTPS URL accepted'
+}
+if (Test-SafeToolConfValue -Key 'TEST_COMMIT' -Value 'abc123') {
+    throw 'Short commit accepted'
+}
 
 Write-Host "All get_deps runtime update tests passed"

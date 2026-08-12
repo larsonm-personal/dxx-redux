@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -11,6 +12,28 @@ import java.io.File
 import java.io.IOException
 
 class LauncherFileCopyTest {
+    @Test
+    fun json5CleanerPreservesQuotedSyntaxAndRemovesOnlyStructuralExtras() {
+        val quoted = JSONObject(stripLauncherJson5("""{"content":"marker,}","url":"https://x//y",}"""))
+        assertEquals("marker,}", quoted.getString("content"))
+        assertEquals("https://x//y", quoted.getString("url"))
+
+        val commented =
+            JSONObject(
+                stripLauncherJson5(
+                    """
+                    {
+                      // comment
+                      "array": [1, 2, ],
+                      "nested": {"value": "escaped \\\" quote, }",},
+                    }
+                    """.trimIndent(),
+                ),
+            )
+        assertEquals(2, commented.getJSONArray("array").length())
+        assertEquals("escaped \\\" quote, }", commented.getJSONObject("nested").getString("value"))
+    }
+
     @Test
     fun copyStream_reportsProgressAndCopiesAllBytes() {
         val inputBytes = ByteArray(2 * 1024 * 1024 + 17) { (it and 0xff).toByte() }

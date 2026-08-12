@@ -14,6 +14,7 @@ $ScriptDir = $PSScriptRoot
 $CdImgDir  = Join-Path $ScriptDir "CD images"
 $Json5Path = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.json5"
 . (Join-Path $ScriptDir "..\android\helpers\fingerprint_source_identity.ps1")
+. (Join-Path $ScriptDir "disc_track_manifest.ps1")
 
 if (-not (Test-Path $Json5Path)) {
     Write-Error "known_discs.json5 not found: $Json5Path"
@@ -88,19 +89,12 @@ foreach ($folder in $folders) {
         $replaced += $meta.Id
     }
 
-    $tracks = Get-Content $hashFile -Raw -Encoding UTF8 | ConvertFrom-Json
-
-    # Filter out SOW entries (they have "sow" key, not track/type/sha1)
-    $trackEntries = @()
-    foreach ($t in $tracks) {
-        if ($null -ne $t.track -and $null -ne $t.type -and $null -ne $t.sha1) {
-            $trackEntry = [ordered]@{ track = $t.track; type = $t.type; sha1 = $t.sha1 }
-            if ($null -ne $t.PSObject.Properties['source_format'] -and $t.source_format) {
-                $trackEntry.source_format = $t.source_format
-            }
-            $trackEntries += $trackEntry
-        }
+    $tracks = @(Get-Content $hashFile -Raw -Encoding UTF8 | ConvertFrom-Json)
+    $cueFiles = @(Get-ChildItem -LiteralPath $folder.FullName -Filter '*.cue' -File)
+    if ($cueFiles.Count -ne 1) {
+        throw "Disc source must contain exactly one CUE descriptor: $($folder.FullName)"
     }
+    $trackEntries = @(Get-ValidatedDiscTrackManifest -Manifest $tracks -CuePath $cueFiles[0].FullName)
 
     $newDiscs += [ordered]@{
         id     = $meta.Id
@@ -108,7 +102,7 @@ foreach ($folder in $folders) {
         game   = $meta.Game
         tracks = $trackEntries
     }
-    Write-Host "  NEW: $($meta.Id) ($($tracks.Count) tracks)" -ForegroundColor Green
+    Write-Host "  NEW: $($meta.Id) ($($trackEntries.Count) tracks)" -ForegroundColor Green
 }
 
 if ($newDiscs.Count -eq 0) {

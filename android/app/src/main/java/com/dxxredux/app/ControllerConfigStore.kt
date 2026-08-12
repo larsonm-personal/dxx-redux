@@ -70,6 +70,7 @@ internal fun loadDefaultControllerConfig(context: Context): ControllerConfigStat
 
 private const val D1_JOY_SETTINGS_SIZE = 50
 private const val D2_JOY_SETTINGS_SIZE = 56
+private const val D2_KEY_SETTINGS_SIZE = 60
 
 internal fun buildJoySettingsArray(
     result: JoyPairsResult,
@@ -96,6 +97,38 @@ private const val CONFIG_FILENAME = "controller_config.json"
 // Bump when the config format changes to force regeneration from defaults.
 // SetupActivity.writeDefaultControllerConfig checks this on startup.
 internal const val CONTROLLER_CONFIG_VERSION = 4
+
+internal fun isNativeControllerConfigValid(json: JSONObject): Boolean {
+    fun exactInt(value: Any?): Int? =
+        when (value) {
+            is Int -> value
+            is Long -> value.takeIf { it in Int.MIN_VALUE..Int.MAX_VALUE }?.toInt()
+            else -> null
+        }
+
+    fun byteArray(
+        name: String,
+        minimumSize: Int,
+        maximumSize: Int = minimumSize,
+    ): Boolean {
+        val array = json.optJSONArray(name) ?: return false
+        if (array.length() !in minimumSize..maximumSize) return false
+        return (0 until array.length()).all { index ->
+            exactInt(array.opt(index))?.let { it in 0..255 } == true
+        }
+    }
+
+    if (exactInt(json.opt("version")) != CONTROLLER_CONFIG_VERSION) return false
+    if (exactInt(json.opt("control_type"))?.let { it in 0..3 } != true) return false
+    if (exactInt(json.opt("automap_free_flight"))?.let { it in 0..1 } != true) return false
+    if (!byteArray("key_settings_joystick_d1", D1_JOY_SETTINGS_SIZE)) return false
+    if (!byteArray("key_settings_joystick_d2", D2_JOY_SETTINGS_SIZE)) return false
+    if (!byteArray("key_settings_keyboard", D1_JOY_SETTINGS_SIZE, D2_KEY_SETTINGS_SIZE)) return false
+    val thresholds = json.optJSONObject("thresholds") ?: return false
+    return listOf("LS_X", "LS_Y", "RS_X", "RS_Y", "LT", "RT").all { axis ->
+        exactInt(thresholds.opt(axis))?.let { it in 5..95 } == true
+    }
+}
 
 private const val VIRTUAL_AXIS_BASE = 8
 

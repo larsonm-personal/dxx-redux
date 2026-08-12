@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct playsave_file_patch {
 	size_t offset;
 	const void *data;
@@ -22,6 +26,10 @@ enum playsave_transaction_test_failure {
 };
 #ifdef PLAYSAVE_TRANSACTION_TESTING
 void playsave_transaction_set_test_failure(int failure);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

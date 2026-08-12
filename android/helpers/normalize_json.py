@@ -20,6 +20,19 @@ MISSION_METADATA_FLOAT_FIELDS = {
 MISSION_METADATA_POSITION_FIELDS = {"activation_pos", "aim_pos", "label_pos"}
 
 
+def reject_json_constant(token: str) -> object:
+    raise ValueError(f"non-finite JSON number is not allowed: {token}")
+
+
+def unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object member: {key!r}")
+        result[key] = value
+    return result
+
+
 def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object:
     """Restore the numeric types defined by the checked-in metadata schema.
 
@@ -58,10 +71,25 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
 
 
 def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False) -> str:
-    value = json.loads(text)
+    value = json.loads(
+        text,
+        parse_constant=reject_json_constant,
+        object_pairs_hook=unique_json_object,
+    )
     if mission_metadata:
+        if not isinstance(value, (dict, list)):
+            raise ValueError("mission metadata root must be an object or array")
         value = canonicalize_mission_metadata(value)
-    return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=sort_keys) + "\n"
+    return (
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=sort_keys,
+            allow_nan=False,
+        )
+        + "\n"
+    )
 
 
 def read_file(path: pathlib.Path) -> str:
@@ -114,8 +142,14 @@ def main() -> int:
         if args.check:
             print("--check requires at least one file", file=sys.stderr)
             return 2
-        sys.stdout.write(format_json_text(sys.stdin.read(), args.sort_keys, args.mission_metadata))
-        return 0
+        try:
+            sys.stdout.write(
+                format_json_text(sys.stdin.read(), args.sort_keys, args.mission_metadata)
+            )
+            return 0
+        except (json.JSONDecodeError, ValueError) as error:
+            print(f"stdin: JSON validation error: {error}", file=sys.stderr)
+            return 1
 
     result = 0
     for path in args.files:
@@ -126,6 +160,9 @@ def main() -> int:
             result = 1
         except json.JSONDecodeError as error:
             print(f"{path}: JSON parse error: {error}", file=sys.stderr)
+            result = 1
+        except ValueError as error:
+            print(f"{path}: JSON validation error: {error}", file=sys.stderr)
             result = 1
     return result
 

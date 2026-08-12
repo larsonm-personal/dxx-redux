@@ -553,15 +553,24 @@ extern int reactor_read_n(reactor *r, int n, PHYSFS_file *fp)
 extern int control_center_triggers_read_n(control_center_triggers *cct, int n, PHYSFS_file *fp)
 {
 	int i;
+	short value;
 
 	for (i = 0; i < n; i++)
 	{
-		cct->num_links = PHYSFSX_readShort(fp);
-		for (unsigned j = 0; j < MAX_CONTROLCEN_LINKS; j++)
-			cct->seg[j] = PHYSFSX_readShort(fp);
-		for (unsigned j = 0; j < MAX_CONTROLCEN_LINKS; j++)
-			cct->side[j] = PHYSFSX_readShort(fp);
-		if (PHYSFS_eof(fp) || !control_center_triggers_are_valid(cct, Highest_segment_index))
+		if (PHYSFS_read(fp, &value, sizeof(value), 1) != 1)
+			return 0;
+		cct->num_links = INTEL_SHORT(value);
+		for (unsigned j = 0; j < MAX_CONTROLCEN_LINKS; j++) {
+			if (PHYSFS_read(fp, &value, sizeof(value), 1) != 1)
+				return 0;
+			cct->seg[j] = INTEL_SHORT(value);
+		}
+		for (unsigned j = 0; j < MAX_CONTROLCEN_LINKS; j++) {
+			if (PHYSFS_read(fp, &value, sizeof(value), 1) != 1)
+				return 0;
+			cct->side[j] = INTEL_SHORT(value);
+		}
+		if (!control_center_triggers_are_valid(cct, Highest_segment_index))
 			return 0;
 		cct++;
 	}

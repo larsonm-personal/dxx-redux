@@ -33,6 +33,7 @@
 #include "gameseg.h"
 #include "hudmsg.h"
 #include "mission.h"
+#include "physfsx.h"
 #include "timer.h"
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -764,9 +765,6 @@ int coop_autosave(void)
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: auto-saving to slot %d: %s\n",
 	              slot, desc);
 
-	if (multi_i_am_master())
-		multi_send_save_game(slot, autosave_game_id, desc);
-
 	{
 		uint saved_game_id = state_game_id;
 		char saved_callsign[CALLSIGN_LEN + 1];
@@ -776,11 +774,21 @@ int coop_autosave(void)
 		strncpy(Players[Player_num].callsign, COOP_AUTOSAVE_CALLSIGN, CALLSIGN_LEN + 1);
 
 		stop_time();
-		state_save_all_sub(filename, desc);
+		if (!state_android_save_to_path(filename, desc,
+		                                ANDROID_SAVE_META_KIND_MANUAL, 0)) {
+			state_game_id = saved_game_id;
+			memcpy(Players[Player_num].callsign, saved_callsign,
+			       CALLSIGN_LEN + 1);
+			COOP_SAVE_LOG(CON_URGENT,
+			              "coop_save: auto-save failed for slot %d\n", slot);
+			return 0;
+		}
 
 		state_game_id = saved_game_id;
 		memcpy(Players[Player_num].callsign, saved_callsign, CALLSIGN_LEN + 1);
 	}
+	if (multi_i_am_master())
+		multi_send_save_game(slot, autosave_game_id, desc);
 
 	coop_write_autosave_history(slot, N_players);
 
@@ -954,9 +962,45 @@ static void coop_append_other_slots(char *buf, int *off, int buf_size,
 	}
 }
 
-#define COOP_PROGRESS_INV_TAG 0x43505249
-#define COOP_PROGRESS_INV_VER 1
-#define COOP_PROGRESS_INV_HDR 18
+#define COOP_PROGRESS_INV_TAG    0x43505249
+#define COOP_PROGRESS_INV_VER    2
+#define COOP_PROGRESS_INV_V1_HDR 18
+#define COOP_PROGRESS_INV_V2_HDR 22
+
+static uint32_t coop_progress_inventory_checksum(const void *data, size_t size)
+{
+	const unsigned char *bytes = data;
+	uint32_t hash = 2166136261u;
+	size_t i;
+
+	for (i = 0; i < size; ++i) {
+		hash ^= bytes[i];
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+static int coop_progress_inventory_publish(const char *temporary,
+                                           const char *filename)
+{
+	char backup[PATH_MAX];
+	int had_prior;
+
+	if (snprintf(backup, sizeof(backup), "%s.bak", filename) >= (int) sizeof(backup))
+		return 0;
+	PHYSFS_delete(backup);
+	had_prior = PHYSFSX_exists(filename, 0);
+	if (had_prior && !PHYSFSX_rename(filename, backup))
+		return 0;
+	if (!PHYSFSX_rename(temporary, filename)) {
+		if (had_prior)
+			PHYSFSX_rename(backup, filename);
+		return 0;
+	}
+	if (had_prior)
+		PHYSFS_delete(backup);
+	return 1;
+}
 
 static void coop_write_progress_inventory(void)
 {
@@ -972,16 +1016,22 @@ static void coop_write_progress_inventory(void)
 static void coop_write_progress_inventory_file(const char *filename)
 {
 	PHYSFS_file *fp;
-	coop_player_record rec;
+	coop_player_record records[MAX_PLAYERS];
 	uint32_t tag = COOP_PROGRESS_INV_TAG;
 	uint16_t ver = COOP_PROGRESS_INV_VER;
+	uint32_t checksum;
 	int16_t level = (int16_t) Current_level_num;
 	uint8_t num = 0;
 	char mission[9];
+	char temporary[PATH_MAX];
 	int i;
+	int write_ok = 1;
 
 	state_android_ensure_parent_dirs_for_path(filename);
-	fp = PHYSFS_openWrite(filename);
+	if (snprintf(temporary, sizeof(temporary), "%s.tmp", filename) >= (int) sizeof(temporary))
+		return;
+	PHYSFS_delete(temporary);
+	fp = PHYSFS_openWrite(temporary);
 	if (!fp) {
 		con_printf(CON_URGENT, "coop_save: failed to write progress inventory\n");
 		return;
@@ -990,24 +1040,27 @@ static void coop_write_progress_inventory_file(const char *filename)
 	memset(mission, 0, sizeof(mission));
 	strncpy(mission, Current_mission_filename, 8);
 
-	for (i = 0; i < N_players; i++)
-		if (Players[i].connected == CONNECT_PLAYING)
-			num++;
-
-	PHYSFS_write(fp, &tag, 4, 1);
-	PHYSFS_write(fp, &ver, 2, 1);
-	PHYSFS_write(fp, mission, 9, 1);
-	PHYSFS_write(fp, &level, 2, 1);
-	PHYSFS_write(fp, &num, 1, 1);
-
 	for (i = 0; i < N_players; i++) {
 		if (Players[i].connected != CONNECT_PLAYING)
 			continue;
-		coop_snapshot_player(i, &rec);
-		PHYSFS_write(fp, &rec, sizeof(rec), 1);
+		coop_snapshot_player(i, &records[num]);
+		num++;
 	}
-
-	PHYSFS_close(fp);
+	checksum = coop_progress_inventory_checksum(records, (size_t) num * sizeof(records[0]));
+	write_ok = write_ok && PHYSFS_write(fp, &tag, 4, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, &ver, 2, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, mission, 9, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, &level, 2, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, &num, 1, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, &checksum, 4, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, records, sizeof(records[0]), num) == num;
+	write_ok = write_ok && PHYSFS_flush(fp);
+	write_ok = PHYSFS_close(fp) && write_ok;
+	if (!write_ok || !coop_progress_inventory_publish(temporary, filename)) {
+		PHYSFS_delete(temporary);
+		con_printf(CON_URGENT, "coop_save: failed to publish progress inventory\n");
+		return;
+	}
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: wrote progress inventory (L%d, %d players)\n",
 	              Current_level_num, num);
 }
@@ -1020,18 +1073,21 @@ int coop_load_progress_inventory(void)
 	char scoped_inventory[PATH_MAX];
 	uint32_t tag;
 	uint16_t ver;
+	uint32_t checksum = 0;
 	char mission[9];
 	int16_t level;
 	uint8_t num;
-	coop_player_record rec;
+	coop_player_record records[MAX_PLAYERS];
+	PHYSFS_sint64 expected_length;
 	int i;
+	int j;
+	int host_record = -1;
 	const char *host_callsign;
 	const char *host_client_id;
 	int host_restored = 0;
 
 	if (coop_progress_restore_attempted_level == Current_level_num)
 		return 0;
-	coop_progress_restore_attempted_level = Current_level_num;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
@@ -1052,7 +1108,7 @@ int coop_load_progress_inventory(void)
 		PHYSFS_close(fp);
 		return 0;
 	}
-	if (PHYSFS_read(fp, &ver, 2, 1) != 1 || ver != COOP_PROGRESS_INV_VER) {
+	if (PHYSFS_read(fp, &ver, 2, 1) != 1 || (ver != 1 && ver != COOP_PROGRESS_INV_VER)) {
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -1068,17 +1124,29 @@ int coop_load_progress_inventory(void)
 		PHYSFS_close(fp);
 		return 0;
 	}
+	if (ver >= 2 && PHYSFS_read(fp, &checksum, 4, 1) != 1) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	expected_length = (ver == 1 ? COOP_PROGRESS_INV_V1_HDR : COOP_PROGRESS_INV_V2_HDR) +
+	                  (PHYSFS_sint64) num * sizeof(records[0]);
+	if (PHYSFS_fileLength(fp) != expected_length ||
+	    PHYSFS_read(fp, records, sizeof(records[0]), num) != num ||
+	    (ver >= 2 && checksum != coop_progress_inventory_checksum(records, (size_t) num * sizeof(records[0])))) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (!PHYSFS_close(fp))
+		return 0;
 
 	if (strncasecmp(mission, Current_mission_filename, 8) != 0) {
 		COOP_SAVE_LOG(CON_NORMAL, "coop_save: progress inventory mission mismatch ('%s' vs '%s')\n",
 		              mission, Current_mission_filename);
-		PHYSFS_close(fp);
 		return 0;
 	}
 	if (level != Current_level_num - 1) {
 		COOP_SAVE_LOG(CON_NORMAL, "coop_save: progress inventory level mismatch (L%d vs current L%d)\n",
 		              level, Current_level_num);
-		PHYSFS_close(fp);
 		return 0;
 	}
 
@@ -1086,26 +1154,36 @@ int coop_load_progress_inventory(void)
 	host_client_id = Netgame.players[Player_num].client_id;
 
 	for (i = 0; i < num; i++) {
-		if (PHYSFS_read(fp, &rec, sizeof(rec), 1) != 1)
-			break;
-
-		if (!host_restored &&
-		    ((host_client_id[0] && strncmp(rec.client_id, host_client_id, COOP_CLIENT_ID_LEN) == 0) ||
-		     strncasecmp(rec.callsign, host_callsign, COOP_CALLSIGN_LEN) == 0)) {
-			coop_apply_record_to_player(Player_num, &rec, 0);
-			host_restored = 1;
-			continue;
+		if (!memchr(records[i].callsign, '\0', sizeof(records[i].callsign)) ||
+		    !memchr(records[i].client_id, '\0', sizeof(records[i].client_id)) ||
+		    records[i].original_slot >= MAX_PLAYERS)
+			return 0;
+		for (j = 0; j < i; ++j) {
+			if (strncasecmp(records[i].callsign, records[j].callsign, COOP_CALLSIGN_LEN) == 0 ||
+			    (records[i].client_id[0] && records[j].client_id[0] &&
+			     strncmp(records[i].client_id, records[j].client_id, COOP_CLIENT_ID_LEN) == 0))
+				return 0;
 		}
-
-		if (coop_num_absent < COOP_MAX_REMEMBERED_PLAYERS) {
-			rec.was_connected = 0;
-			memcpy(&coop_absent_list[coop_num_absent], &rec, sizeof(rec));
-			coop_absent_source_levels[coop_num_absent] = level;
-			coop_num_absent++;
+		if ((host_client_id[0] && strncmp(records[i].client_id, host_client_id, COOP_CLIENT_ID_LEN) == 0) ||
+		    strncasecmp(records[i].callsign, host_callsign, COOP_CALLSIGN_LEN) == 0) {
+			if (host_record >= 0)
+				return 0;
+			host_record = i;
 		}
 	}
-
-	PHYSFS_close(fp);
+	if (host_record < 0 || coop_num_absent + num - 1 > COOP_MAX_REMEMBERED_PLAYERS)
+		return 0;
+	coop_apply_record_to_player(Player_num, &records[host_record], 0);
+	host_restored = 1;
+	for (i = 0; i < num; ++i) {
+		if (i == host_record)
+			continue;
+		records[i].was_connected = 0;
+		memcpy(&coop_absent_list[coop_num_absent], &records[i], sizeof(records[i]));
+		coop_absent_source_levels[coop_num_absent] = level;
+		coop_num_absent++;
+	}
+	coop_progress_restore_attempted_level = Current_level_num;
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded progress inventory (L%d, %d records, host_restored=%d, %d absent)\n",
 	              level, (int) num, host_restored, coop_num_absent);
 	return 1;

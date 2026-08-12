@@ -338,6 +338,67 @@ static int expect_snapshot_round_trip_and_compare(void)
 	return 0;
 }
 
+static int expect_malformed_values_rejected_transactionally(void)
+{
+	const std::string valid_prefix =
+		"{\"version\":2,\"game\":\"d2\",\"mission\":\"d2\","
+		"\"level\":1,\"difficulty\":2,\"frame_count\":3";
+	const std::string ammo_prefix =
+		valid_prefix + ",\"player0\":{\"primary_ammo\":[";
+	input_demo_result result;
+	std::string error;
+
+	input_demo_result_clear(&result);
+	result.level = 77;
+	if (input_demo_result_parse_json_text(
+	        "{\"version\":\"2\",\"game\":\"d2\",\"mission\":\"d2\","
+	        "\"level\":1,\"difficulty\":2,\"frame_count\":3}",
+	        &result, &error))
+		return report_failure("result parser accepted a string version");
+	if (result.level != 77)
+		return report_failure("failed result parse modified the destination");
+
+	std::string ammo_values;
+	for (unsigned i = 0; i != 16; ++i) {
+		if (i)
+			ammo_values += ',';
+		ammo_values += i == 15 ? "65536" : "0";
+	}
+	if (input_demo_result_parse_json_text(
+	        ammo_prefix + ammo_values + "]}}", &result, &error))
+		return report_failure("result parser accepted overflowing ammo");
+
+	ammo_values.clear();
+	for (unsigned i = 0; i != 16; ++i) {
+		if (i)
+			ammo_values += ',';
+		ammo_values += i == 15 ? "-1" : "0";
+	}
+	if (input_demo_result_parse_json_text(
+	        ammo_prefix + ammo_values + "]}}", &result, &error))
+		return report_failure("result parser accepted negative ammo");
+
+	if (input_demo_result_parse_json_text(
+	        valid_prefix +
+	            ",\"level_summary\":{\"control_center_destroyed\":1}}",
+	        &result, &error))
+		return report_failure("result parser accepted a numeric boolean");
+
+	const std::string long_game(64, 'g');
+	if (input_demo_result_parse_json_text(
+	        "{\"version\":2,\"game\":\"" + long_game +
+	            "\",\"mission\":\"d2\",\"level\":1,\"difficulty\":2,"
+	            "\"frame_count\":3}",
+	        &result, &error))
+		return report_failure("result parser accepted a truncated game name");
+
+	if (input_demo_result_parse_snapshot_json_text(
+	        "{\"position\":{\"segment\":0,\"x\":0,\"y\":0,\"z\":1.5}}",
+	        &result, &error))
+		return report_failure("snapshot parser accepted a fractional position");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_result_writer())
@@ -345,6 +406,8 @@ int main(void)
 	if (expect_result_compare())
 		return 1;
 	if (expect_snapshot_round_trip_and_compare())
+		return 1;
+	if (expect_malformed_values_rejected_transactionally())
 		return 1;
 	puts("PASS");
 	return 0;

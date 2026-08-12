@@ -7,6 +7,8 @@ import java.io.File
 
 internal const val DEFAULT_TOUCH_PRESET_NAME = "Advanced"
 internal const val CONTROLLER_MENU_TOUCH_PRESET_NAME = "Controller Menus"
+internal const val MIN_SUPPORTED_TOUCH_LAYOUT_VERSION = 1
+internal const val CURRENT_TOUCH_LAYOUT_VERSION = 10
 
 internal fun defaultTouchPresetName(hasTouchscreen: Boolean): String =
     if (hasTouchscreen) DEFAULT_TOUCH_PRESET_NAME else CONTROLLER_MENU_TOUCH_PRESET_NAME
@@ -27,7 +29,6 @@ internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 10
     private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
@@ -123,8 +124,8 @@ object TouchLayoutRepository {
                     radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredSlice(it) },
                 )
         }
-        if (migrated.version >= CURRENT_VERSION) return migrated
-        return migrated.copy(version = CURRENT_VERSION)
+        if (migrated.version >= CURRENT_TOUCH_LAYOUT_VERSION) return migrated
+        return migrated.copy(version = CURRENT_TOUCH_LAYOUT_VERSION)
     }
 
     private fun migrateLegacyCheatsButton(button: ButtonControl): ButtonControl? {

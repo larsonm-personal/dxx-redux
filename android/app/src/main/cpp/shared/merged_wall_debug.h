@@ -86,7 +86,8 @@ void android_merged_wall_cached_texmerge_build_uvs(
     int orient);
 void android_merged_wall_cached_texmerge_clear(
     struct merged_wall_cached_texmerge_entry *entries,
-    int count);
+    int count,
+    void (*free_texture)(struct _ogl_texture *));
 void android_merged_wall_cached_texmerge_clear_cache(void);
 int android_merged_wall_cached_texmerge_choose_size(
     const struct _ogl_texture *bottom_tex,

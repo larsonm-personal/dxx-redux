@@ -13,6 +13,23 @@ source "$SCRIPT_DIR/resolve_dep_base.sh"
 TMPDIR_LOCAL="$(create_temp_dir pwsh-bootstrap)"
 trap 'rm -rf "$TMPDIR_LOCAL"' EXIT
 
+privilege_available() {
+    [[ $EUID -eq 0 ]] \
+        || { command -v sudo >/dev/null 2>&1 && { [[ -t 0 ]] || sudo -n true 2>/dev/null; }; }
+}
+
+run_with_privilege() {
+    if [[ $EUID -eq 0 ]]; then
+        "$@"
+    elif command -v sudo >/dev/null 2>&1 && { [[ -t 0 ]] || sudo -n true 2>/dev/null; }; then
+        sudo "$@"
+    else
+        echo "ERROR: PowerShell installation needs root or usable sudo" >&2
+        echo "Run this helper from a terminal with sudo, or use a distro with the user-local tarball path" >&2
+        return 1
+    fi
+}
+
 get_powershell_package_name() {
     case "$POWERSHELL_VERSION" in
     *preview* | *rc*) echo "powershell-preview" ;;
@@ -27,7 +44,7 @@ ensure_pwsh_command() {
 
     if command -v pwsh-preview >/dev/null 2>&1; then
         echo "Creating /usr/local/bin/pwsh -> pwsh-preview so repo scripts can use pwsh"
-        sudo ln -sf "$(command -v pwsh-preview)" /usr/local/bin/pwsh
+        run_with_privilege ln -sf "$(command -v pwsh-preview)" /usr/local/bin/pwsh
         hash -r
         return 0
     fi
@@ -73,6 +90,10 @@ install_deb() {
     local package_name="$1"
     local deb_file="$TMPDIR_LOCAL/powershell.deb"
     local asset_url
+    privilege_available || {
+        echo "ERROR: installing the PowerShell package needs root or usable sudo" >&2
+        return 1
+    }
     asset_url="$(find_github_powershell_asset_url "/${package_name}_.+\\.deb_amd64\\.deb$")"
     if [ -z "$asset_url" ]; then
         echo "ERROR: could not find a .deb asset for PowerShell $POWERSHELL_VERSION" >&2
@@ -82,10 +103,10 @@ install_deb() {
     echo "Downloading PowerShell $POWERSHELL_VERSION .deb"
     download_file "$deb_file" "$asset_url"
     if command -v apt >/dev/null 2>&1; then
-        sudo apt update
-        sudo apt install -y "$deb_file"
+        run_with_privilege apt update
+        run_with_privilege apt install -y "$deb_file"
     else
-        sudo dpkg -i "$deb_file"
+        run_with_privilege dpkg -i "$deb_file"
     fi
 }
 
@@ -93,6 +114,10 @@ install_rpm() {
     local package_name="$1"
     local rpm_file="$TMPDIR_LOCAL/powershell.rpm"
     local asset_url
+    privilege_available || {
+        echo "ERROR: installing the PowerShell package needs root or usable sudo" >&2
+        return 1
+    }
     asset_url="$(find_github_powershell_asset_url "/${package_name}-.+\\.rh\\.x86_64\\.rpm$")"
     if [ -z "$asset_url" ]; then
         asset_url="$(find_github_powershell_asset_url "/${package_name}-.+\\.x86_64\\.rpm$")"
@@ -105,9 +130,9 @@ install_rpm() {
     echo "Downloading PowerShell $POWERSHELL_VERSION .rpm"
     download_file "$rpm_file" "$asset_url"
     if command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y "$rpm_file"
+        run_with_privilege dnf install -y "$rpm_file"
     elif command -v yum >/dev/null 2>&1; then
-        sudo yum install -y "$rpm_file"
+        run_with_privilege yum install -y "$rpm_file"
     else
         echo "ERROR: no supported rpm installer found" >&2
         exit 1
@@ -131,9 +156,9 @@ install_tarball() {
     tar -xzf "$archive_file" -C "$install_dir"
     chmod +x "$install_dir/pwsh"
 
-    if command -v sudo >/dev/null 2>&1; then
+    if privilege_available; then
         echo "Creating /usr/local/bin/pwsh -> $install_dir/pwsh"
-        sudo ln -sf "$install_dir/pwsh" /usr/local/bin/pwsh
+        run_with_privilege ln -sf "$install_dir/pwsh" /usr/local/bin/pwsh
     else
         mkdir -p "$HOME/.local/bin"
         ln -sf "$install_dir/pwsh" "$HOME/.local/bin/pwsh"

@@ -144,6 +144,18 @@ internal fun resizeFloatingZone(
         }
     }
 
+internal fun setFloatingZoneEdge(
+    zone: FloatingZone,
+    edge: FloatingZoneEdge,
+    valuePct: Float,
+): FloatingZone =
+    when (edge) {
+        FloatingZoneEdge.LEFT -> resizeFloatingZone(zone, edge, valuePct - zone.leftPct, 0f)
+        FloatingZoneEdge.TOP -> resizeFloatingZone(zone, edge, 0f, valuePct - zone.topPct)
+        FloatingZoneEdge.RIGHT -> resizeFloatingZone(zone, edge, valuePct - zone.rightPct, 0f)
+        FloatingZoneEdge.BOTTOM -> resizeFloatingZone(zone, edge, 0f, valuePct - zone.bottomPct)
+    }
+
 private fun resolveEditorSelection(
     type: String?,
     index: Int,
@@ -2473,18 +2485,18 @@ private fun StickPropertiesPanel(
         val fz = stick.floatingZone
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledSlider("Left %", fz.leftPct, 0f, 100f, Modifier.weight(1f)) {
-                onUpdate(stick.copy(floatingZone = fz.copy(leftPct = it)))
+                onUpdate(stick.copy(floatingZone = setFloatingZoneEdge(fz, FloatingZoneEdge.LEFT, it)))
             }
             LabeledSlider("Right %", fz.rightPct, 0f, 100f, Modifier.weight(1f)) {
-                onUpdate(stick.copy(floatingZone = fz.copy(rightPct = it)))
+                onUpdate(stick.copy(floatingZone = setFloatingZoneEdge(fz, FloatingZoneEdge.RIGHT, it)))
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledSlider("Top %", fz.topPct, 0f, 100f, Modifier.weight(1f)) {
-                onUpdate(stick.copy(floatingZone = fz.copy(topPct = it)))
+                onUpdate(stick.copy(floatingZone = setFloatingZoneEdge(fz, FloatingZoneEdge.TOP, it)))
             }
             LabeledSlider("Bottom %", fz.bottomPct, 0f, 100f, Modifier.weight(1f)) {
-                onUpdate(stick.copy(floatingZone = fz.copy(bottomPct = it)))
+                onUpdate(stick.copy(floatingZone = setFloatingZoneEdge(fz, FloatingZoneEdge.BOTTOM, it)))
             }
         }
     }
@@ -3084,18 +3096,18 @@ private fun AxisRegionPropertiesPanel(
     Text("Zone (% of screen)", color = Color.Gray, fontSize = 11.sp)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         LabeledSlider("Left", region.zone.leftPct, 0f, 100f, Modifier.weight(1f)) {
-            onUpdate(region.copy(zone = region.zone.copy(leftPct = it)))
+            onUpdate(region.copy(zone = setFloatingZoneEdge(region.zone, FloatingZoneEdge.LEFT, it)))
         }
         LabeledSlider("Top", region.zone.topPct, 0f, 100f, Modifier.weight(1f)) {
-            onUpdate(region.copy(zone = region.zone.copy(topPct = it)))
+            onUpdate(region.copy(zone = setFloatingZoneEdge(region.zone, FloatingZoneEdge.TOP, it)))
         }
     }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         LabeledSlider("Right", region.zone.rightPct, 0f, 100f, Modifier.weight(1f)) {
-            onUpdate(region.copy(zone = region.zone.copy(rightPct = it)))
+            onUpdate(region.copy(zone = setFloatingZoneEdge(region.zone, FloatingZoneEdge.RIGHT, it)))
         }
         LabeledSlider("Bottom", region.zone.bottomPct, 0f, 100f, Modifier.weight(1f)) {
-            onUpdate(region.copy(zone = region.zone.copy(bottomPct = it)))
+            onUpdate(region.copy(zone = setFloatingZoneEdge(region.zone, FloatingZoneEdge.BOTTOM, it)))
         }
     }
 

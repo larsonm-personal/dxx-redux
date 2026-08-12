@@ -5,6 +5,8 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
+import java.security.MessageDigest
 
 /**
  * Manages multiple file sets — named collections of game data files.
@@ -219,30 +221,35 @@ class FileSetManager(
         if (currentVersion < 1) {
             val defaultDir = getSetDir(DEFAULT_SET) // creates dir via mkdirs()
             var movedCount = 0
+            var migrationComplete = true
             val files = filesDir.listFiles() ?: emptyArray()
             for (file in files) {
                 if (file.isDirectory) {
                     if (file.name.lowercase() in GAME_DATA_DIRS) {
                         val dest = File(defaultDir, file.name)
-                        if (!dest.exists() && file.renameTo(dest)) movedCount++
+                        if (transferVerified(file, dest)) movedCount++ else migrationComplete = false
                     }
                     continue
                 }
                 if (GameFileFormats.isSetGameData(file.name)) {
                     val dest = File(defaultDir, file.name)
-                    if (!dest.exists() && file.renameTo(dest)) movedCount++
+                    if (transferVerified(file, dest)) movedCount++ else migrationComplete = false
                 }
             }
             for (name in listOf(".asset_manifest.json", ".saf_manifest.json")) {
                 val src = File(filesDir, name)
                 if (src.exists()) {
                     val dest = File(defaultDir, name)
-                    if (!dest.exists()) src.renameTo(dest)
+                    if (!transferVerified(src, dest)) migrationComplete = false
                 }
+            }
+            if (!migrationComplete) {
+                migrationLog("Default-set migration incomplete; retaining migration version 0 for retry", error = true)
+                return
             }
             config.put("migration_version", 1)
             saveConfig(config)
-            Log.i(TAG, "Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
+            migrationLog("Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
         }
 
         // v1 -> v2: when sets/ used to live at filesDir/sets/ and now lives
@@ -252,22 +259,110 @@ class FileSetManager(
             val legacy = File(filesDir, "sets")
             val target = File(importRoot, "sets")
             if (legacy.exists() && legacy.absolutePath != target.absolutePath) {
-                target.parentFile?.mkdirs()
-                if (!target.exists() && legacy.renameTo(target)) {
-                    Log.i(TAG, "Relocated sets/ from ${legacy.absolutePath} to ${target.absolutePath}")
-                } else if (target.exists()) {
-                    // Both exist -- merge legacy entries that aren't already present.
-                    var merged = 0
-                    for (child in legacy.listFiles() ?: emptyArray()) {
-                        val dest = File(target, child.name)
-                        if (!dest.exists() && child.renameTo(dest)) merged++
-                    }
-                    Log.i(TAG, "Merged $merged legacy set dir(s) into ${target.absolutePath}")
-                    if ((legacy.listFiles()?.size ?: 0) == 0) legacy.delete()
+                if (!transferVerified(legacy, target)) {
+                    migrationLog("Set-root migration incomplete; retaining migration version 1 for retry", error = true)
+                    return
                 }
+                migrationLog("Verified sets/ transfer from ${legacy.absolutePath} to ${target.absolutePath}")
             }
             config.put("migration_version", 2)
             saveConfig(config)
+        }
+    }
+
+    /**
+     * Copy one file or tree into [destination], verify every file, and only then remove its source.
+     * Existing identical entries are accepted; a differing file collision stops the migration.
+     * Completed children may remain published after a later failure, but retries are safe because
+     * their source and destination bytes compare identically.
+     */
+    private fun transferVerified(
+        source: File,
+        destination: File,
+    ): Boolean {
+        if (!source.exists()) return true
+        if (source.isDirectory) {
+            if (destination.exists() && !destination.isDirectory) return false
+            if (!destination.exists() && !destination.mkdirs()) return false
+            val children = source.listFiles() ?: return false
+            for (child in children) {
+                if (!transferVerified(child, File(destination, child.name))) return false
+            }
+            if (source.listFiles()?.isEmpty() == true && !source.delete()) {
+                migrationLog("Verified migration left empty source directory ${source.absolutePath}")
+            }
+            return true
+        }
+        if (!source.isFile) return false
+        if (destination.exists()) {
+            if (!destination.isFile || !filesMatch(source, destination)) return false
+            if (!source.delete()) migrationLog("Verified migration left duplicate source ${source.absolutePath}")
+            return true
+        }
+
+        val parent = destination.parentFile ?: return false
+        if (!parent.exists() && !parent.mkdirs()) return false
+        val temporary = File(parent, ".${destination.name}.migration.tmp")
+        if (temporary.exists() && !temporary.deleteRecursively()) return false
+        return try {
+            source.inputStream().use { input ->
+                FileOutputStream(temporary).use { output ->
+                    input.copyTo(output)
+                    output.fd.sync()
+                }
+            }
+            temporary.setLastModified(source.lastModified())
+            if (!filesMatch(source, temporary) || !temporary.renameTo(destination)) {
+                temporary.delete()
+                false
+            } else if (!filesMatch(source, destination)) {
+                destination.delete()
+                false
+            } else {
+                if (!source.delete()) migrationLog("Verified migration left duplicate source ${source.absolutePath}")
+                true
+            }
+        } catch (e: Exception) {
+            migrationLog("Verified migration failed for ${source.absolutePath}: ${e.message}", error = true)
+            temporary.delete()
+            false
+        }
+    }
+
+    private fun filesMatch(
+        first: File,
+        second: File,
+    ): Boolean {
+        if (first.length() != second.length()) return false
+        return try {
+            MessageDigest.isEqual(sha256(first), sha256(second))
+        } catch (e: Exception) {
+            migrationLog("Could not verify migrated file: ${e.message}", error = true)
+            false
+        }
+    }
+
+    private fun sha256(file: File): ByteArray {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                if (count > 0) digest.update(buffer, 0, count)
+            }
+        }
+        return digest.digest()
+    }
+
+    private fun migrationLog(
+        message: String,
+        error: Boolean = false,
+    ) {
+        try {
+            if (error) Log.e(TAG, message) else Log.i(TAG, message)
+        } catch (_: RuntimeException) {
+            // android.util.Log is an unimplemented stub in local JVM tests.
         }
     }
 

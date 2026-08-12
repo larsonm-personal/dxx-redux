@@ -2155,7 +2155,7 @@ void do_laser_firing_player(void)
 			}
 
 			if (Players[Player_num].primary_weapon == HELIX_INDEX) {
-				Helix_orientation++;
+				Helix_orientation = Helix_orientation == INT_MAX ? 0 : Helix_orientation + 1;
 				flags |= ((Helix_orientation & LASER_HELIX_MASK) << LASER_HELIX_SHIFT);
 			}
 
@@ -2654,18 +2654,34 @@ void laser_get_runtime_state(laser_runtime_state *state)
 	state->spreadfire_toggle = Spreadfire_toggle;
 	state->missile_gun = Missile_gun;
 	state->proximity_dropped = Proximity_dropped;
-	state->helix_orientation = Helix_orientation;
+	state->helix_orientation = Helix_orientation & LASER_HELIX_MASK;
 	state->smartmines_dropped = Smartmines_dropped;
 	state->last_omega_fire_time = Last_omega_fire_time;
 }
 
+int laser_runtime_state_is_valid(const laser_runtime_state *state)
+{
+	return state && state->fusion_charge >= 0 && state->fusion_charge <= 4 * F1_0 &&
+	       (state->spreadfire_toggle == 0 || state->spreadfire_toggle == 1) &&
+	       state->missile_gun >= 0 &&
+	       state->proximity_dropped >= 0 && state->proximity_dropped < 4 &&
+	       state->helix_orientation >= 0 &&
+	       state->smartmines_dropped >= 0 && state->smartmines_dropped < 4;
+}
+
+int laser_pending_fire_count_is_valid(int count)
+{
+	return count >= 0 && count <= 127;
+}
+
 void laser_set_runtime_state(const laser_runtime_state *state)
 {
-	if (!state)
+	if (!laser_runtime_state_is_valid(state))
 		return;
 
 	Fusion_charge = state->fusion_charge;
 	Spreadfire_toggle = state->spreadfire_toggle;
+	/* Preserve legacy checkpoint diagnostics while new saves store only parity. */
 	Missile_gun = state->missile_gun;
 	Proximity_dropped = state->proximity_dropped;
 	Helix_orientation = state->helix_orientation;
@@ -2753,7 +2769,7 @@ void do_missile_firing(int drop_bomb)
 
 		if (weapon_gun==4) {		//alternate left/right
 			weapon_gun += (gun_flag = (Missile_gun & 1));
-			Missile_gun++;
+			Missile_gun = Missile_gun == INT_MAX ? 0 : Missile_gun + 1;
 		}
 
 		if (rng_probe) {

@@ -30,8 +30,20 @@
 - [x] Audit duplicated native test stubs against authoritative engine headers
 - [x] Remove unnecessary stubs or document the smallest unavoidable test seam
 - [x] Rebuild affected native tests and run diff validation
+- [ ] Fix BR-0438 by validating a complete combined configuration before publication
+- [x] Fix BR-0428 by rejecting non-finite touch-layout numbers before persistence
+- [x] Fix BR-0299 by rejecting input-demo levels outside the loaded mission
+- [x] Fix BR-0307 by validating polygon counts before fixed-array writes
+- [x] Fix BR-0635 by validating complete WAV chunk spans before advancement
+- [x] Fix BR-0452 by validating the complete BinHex envelope before publication
+- [x] Fix BR-0483 without rewriting quoted JSON5 payloads
+- [ ] Fix BR-0493 by validating launcher patches against the native schema
+- [x] Fix BR-0354 by validating weapon runtime scalars before save publication
+- [x] Fix BR-0379 by enforcing the accepted D1 checkpoint version
 
 ## Current status
+
+Eight of the nine requested remaining parser and format fixes are complete and archived: BR-0428, BR-0299, BR-0307, BR-0635, BR-0452, BR-0483, BR-0354, and BR-0379. Focused JVM, Python, PowerShell, and native fixture tests pass, as do the full Android JVM suite, paired Windows D1/D2 builds, and the Android debug build. BR-0493 now rejects the native-incompatible verbs, missing values, malformed paths, unsupported sections and fields, static index ceilings, row shapes, scalar types, and simple ranges, but remains open until launcher validation shares the native consumer's live table counts and complete semantic ranges. BR-0438's semantic preflight remains complete, while cross-file and SharedPreferences publication still needs one staged transaction before archival. Network and deferred architectural findings remain out of scope.
 
 The native rewind test no longer carries duplicate `vecmat.h`, `pstypes.h`, `physfs.h`, or `byteswap.h` stubs. Its focused core-only compile excludes unexercised engine serialization helpers, while CMake supplies the pinned PhysFS 3.2.0 public header and normal D1/D2 builds continue to use their authoritative engine headers. The focused MSVC build, test, scoped quality checks, and diff validation passed.
 

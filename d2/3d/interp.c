@@ -408,6 +408,8 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 			case OP_FLATPOLY: {
 				int nv = w(p+2);
 
+				if (nv < 3 || nv >= MAX_POINTS_PER_POLY)
+					return 0;
 				Assert( nv < MAX_POINTS_PER_POLY );
 				g3_poly_faces_considered++;
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
@@ -450,6 +452,8 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 				g3s_uvl *uvl_list;
 				g3s_uvl uvl_copy[MAX_POINTS_PER_POLY];
 
+				if (nv < 3 || nv >= MAX_POINTS_PER_POLY)
+					return 0;
 				Assert( nv < MAX_POINTS_PER_POLY );
 				g3_poly_faces_considered++;
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
@@ -601,6 +605,8 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 				int nv = w(p+2);
 				int i,ntris;
 
+				if (nv < 3 || nv >= MAX_POINTS_PER_POLY)
+					return 0;
 				gr_setcolor(gr_find_closest_color_15bpp(w(p + 28)));
 				
 				for (i=0;i<2;i++)
@@ -629,6 +635,8 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 				g3s_uvl morph_uvls[3];
 				int i,ntris;
 
+				if (nv < 3 || nv >= MAX_POINTS_PER_POLY)
+					return 0;
 				//calculate light from surface normal
 				if (glow_num < 0) //no glow
 				{

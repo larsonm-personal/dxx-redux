@@ -4,7 +4,8 @@
 #   If -Aab is omitted, uses the newest .aab in build-outputs/ or app/build/outputs/bundle/
 
 param(
-    [string]$Aab
+    [string]$Aab,
+    [switch]$ResetAppData
 )
 
 $ErrorActionPreference = "Stop"
@@ -191,12 +192,31 @@ $adbExe = Join-Path $DEP_BASE "android-sdk\platform-tools\adb.exe"
 if (-not (Test-Path $adbExe)) { Write-Error "adb not found at $adbExe"; exit 1 }
 Write-Host ""
 Write-Host "Installing APK via adb..."
-& $adbExe install -r $apkOut
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Install failed -- uninstalling existing package and retrying..."
-    & $adbExe uninstall com.dxxredux.app
-    & $adbExe install $apkOut
-    if ($LASTEXITCODE -ne 0) { throw "adb install failed" }
+$installOutput = @(& $adbExe install -r $apkOut 2>&1)
+$installExitCode = $LASTEXITCODE
+$installOutput | ForEach-Object { Write-Host $_ }
+if ($installExitCode -ne 0) {
+    $installText = $installOutput -join "`n"
+    $signatureMismatch = $installText -match 'INSTALL_FAILED_UPDATE_INCOMPATIBLE'
+    if (-not $ResetAppData) {
+        throw "adb install failed; existing app data was preserved. If this is a confirmed signing-key mismatch, rerun with -ResetAppData to explicitly uninstall the existing package."
+    }
+    if (-not $signatureMismatch) {
+        throw "adb install failed for a reason other than a signing-key mismatch; existing app data was preserved despite -ResetAppData."
+    }
+
+    Write-Warning "Confirmed signing-key mismatch. -ResetAppData authorizes uninstalling com.dxxredux.app and permanently deleting its private data."
+    $uninstallOutput = @(& $adbExe uninstall com.dxxredux.app 2>&1)
+    $uninstallExitCode = $LASTEXITCODE
+    $uninstallOutput | ForEach-Object { Write-Host $_ }
+    if ($uninstallExitCode -ne 0) {
+        throw "adb uninstall failed; installation was not retried"
+    }
+
+    $retryOutput = @(& $adbExe install $apkOut 2>&1)
+    $retryExitCode = $LASTEXITCODE
+    $retryOutput | ForEach-Object { Write-Host $_ }
+    if ($retryExitCode -ne 0) { throw "adb install failed after the explicitly authorized reset" }
 }
 
 Write-Host ""

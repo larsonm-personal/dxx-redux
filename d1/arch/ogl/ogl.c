@@ -248,11 +248,9 @@ extern int r_mwall_cache_hits;
 extern int r_mwall_cache_misses;
 static GLuint ogl_last_bound_tex = 0;
 #define OGL_BINDTEXTURE(a) do { \
-	if ((GLuint)(a) != ogl_last_bound_tex) { \
-		glBindTexture(GL_TEXTURE_2D, a); \
-		ogl_last_bound_tex = (a); \
-		r_texbinds++; \
-	} else { r_texbind_reuse++; } \
+	glBindTexture(GL_TEXTURE_2D, a); \
+	ogl_last_bound_tex = (a); \
+	r_texbinds++; \
 } while(0)
 #else
 #define OGL_BINDTEXTURE(a) glBindTexture(GL_TEXTURE_2D, a);
@@ -2523,19 +2521,29 @@ GLubyte *texbuf = NULL;
 // Allocate the pixel buffers 'pixels' and 'texbuf' based on current screen resolution
 void ogl_init_pixel_buffers(int w, int h)
 {
+	GLubyte *new_pixels;
+	GLubyte *new_texbuf;
+	size_t pixels_size;
+	size_t texbuf_size;
+
 	w = pow2ize(w);	// convert to OpenGL texture size
 	h = pow2ize(h);
+	pixels_size = (size_t)w * (size_t)h * 4u;
+	texbuf_size = (size_t)max(w, ogl_max_texture_size) * (size_t)max(h, ogl_max_texture_size) * 4u;
+	new_pixels = d_malloc(pixels_size);
+	new_texbuf = d_malloc(texbuf_size);
+	if ((new_pixels == NULL) || (new_texbuf == NULL)) {
+		d_free(new_pixels);
+		d_free(new_texbuf);
+		Error("Not enough memory for current resolution");
+	}
 
 	if (pixels)
 		d_free(pixels);
-	pixels = d_malloc(w*h*4);
-
 	if (texbuf)
 		d_free(texbuf);
-	texbuf = d_malloc(max(w, ogl_max_texture_size)*max(h, ogl_max_texture_size)*4);
-
-	if ((pixels == NULL) || (texbuf == NULL))
-		Error("Not enough memory for current resolution");
+	pixels = new_pixels;
+	texbuf = new_texbuf;
 }
 
 void ogl_close_pixel_buffers(void)

@@ -156,29 +156,44 @@ static int state_android_read_last_save_set(int coop, char *pilot,
 	return pilot[0] && mission[0];
 }
 
-static void state_android_write_last_save_set(int coop, const char *pilot,
-                                              const char *mission)
+static int state_android_publish_single_file(const char *temporary,
+                                             const char *filename);
+
+static int state_android_write_last_save_set(int coop, const char *pilot,
+                                             const char *mission)
 {
 	char filename[PATH_MAX];
+	char temporary[PATH_MAX];
 	char buf[128];
 	PHYSFS_file *fp;
 	int len;
+	int write_ok;
 
 	if (!pilot || !pilot[0])
-		return;
+		return 0;
 	if (!mission || !mission[0])
 		mission = "default";
 	if (!state_android_last_save_set_path(filename, sizeof(filename), coop))
-		return;
+		return 0;
+	if (snprintf(temporary, sizeof(temporary), "%s.tmp", filename) >=
+	    (int) sizeof(temporary))
+		return 0;
 	state_android_ensure_parent_dirs_for_path(filename);
 	len = snprintf(buf, sizeof(buf), "%s\n%s\n", pilot, mission);
 	if (len <= 0 || len >= (int) sizeof(buf))
-		return;
-	fp = PHYSFS_openWrite(filename);
+		return 0;
+	PHYSFS_delete(temporary);
+	fp = PHYSFS_openWrite(temporary);
 	if (!fp)
-		return;
-	PHYSFS_writeBytes(fp, buf, (PHYSFS_uint64) len);
-	PHYSFS_close(fp);
+		return 0;
+	write_ok = PHYSFS_writeBytes(fp, buf, (PHYSFS_uint64) len) == len &&
+	           PHYSFS_flush(fp);
+	write_ok = PHYSFS_close(fp) && write_ok;
+	if (!write_ok || !state_android_publish_single_file(temporary, filename)) {
+		PHYSFS_delete(temporary);
+		return 0;
+	}
+	return 1;
 }
 
 int state_android_build_save_filename(char *filename, size_t filename_size,
@@ -281,6 +296,30 @@ static int state_android_pair_delete(void *context, const char *path)
 }
 #endif
 
+static int state_android_publish_single_file(const char *temporary,
+                                             const char *filename)
+{
+	char backup[PATH_MAX];
+	int had_prior;
+
+	if (!temporary || !filename ||
+	    snprintf(backup, sizeof(backup), "%s.bak", filename) >=
+	        (int) sizeof(backup))
+		return 0;
+	PHYSFS_delete(backup);
+	had_prior = PHYSFSX_exists(filename, 0);
+	if (had_prior && !PHYSFSX_rename(filename, backup))
+		return 0;
+	if (!PHYSFSX_rename(temporary, filename)) {
+		if (had_prior)
+			PHYSFSX_rename(backup, filename);
+		return 0;
+	}
+	if (had_prior)
+		PHYSFS_delete(backup);
+	return 1;
+}
+
 static int state_android_publish_save_slot(const char *temp_filename,
                                            const char *filename, int slotnum)
 {
@@ -335,7 +374,7 @@ static int state_android_publish_save_slot(const char *temp_filename,
 	return 1;
 #else
 	(void) slotnum;
-	return PHYSFSX_rename(temp_filename, filename);
+	return state_android_publish_single_file(temp_filename, filename);
 #endif
 }
 
@@ -351,6 +390,7 @@ static uint32_t state_time_to_seconds(fix time_value, sbyte hours_value)
 static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
 static rewind_memory_buffer *g_state_android_memory_write_buffer = NULL;
 static const rewind_memory_buffer *g_state_android_memory_read_buffer = NULL;
+static int g_state_android_defer_last_save_set = 0;
 int g_android_save_blank_thumbnail = 0;
 
 typedef struct state_android_periodic_autosave_state {
@@ -680,9 +720,6 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_save_meta_apply_cached_thumbnail(&android_params);
 	if (!android_save_meta_write_physfs(physfs_fp, &android_params))
 		return 0;
-	state_android_write_last_save_set(
-	    (Game_mode & GM_MULTI_COOP) ? 1 : 0, Players[Player_num].callsign,
-	    mission_filename);
 	return 1;
 }
 
@@ -712,6 +749,7 @@ int state_android_save_to_path(const char *filename, const char *desc,
 {
 	int result;
 	char save_filename[PATH_MAX];
+	char staged_filename[PATH_MAX];
 	char save_desc[STATE_ANDROID_DESC_LENGTH + 1];
 	int prev_kind = g_android_save_meta_kind;
 	int prev_blank = g_android_save_blank_thumbnail;
@@ -725,7 +763,28 @@ int state_android_save_to_path(const char *filename, const char *desc,
 	android_save_meta_clear_cached_thumbnail();
 	g_android_save_meta_kind = save_kind;
 	g_android_save_blank_thumbnail = blank_thumbnail ? 1 : 0;
-	result = state_save_all_sub(save_filename, save_desc);
+	if (g_state_android_memory_write_buffer) {
+		result = state_save_all_sub(save_filename, save_desc);
+	} else if (snprintf(staged_filename, sizeof(staged_filename), "%s.stage",
+	                    save_filename) >= (int) sizeof(staged_filename)) {
+		result = 0;
+	} else {
+		PHYSFS_delete(staged_filename);
+		result = state_save_all_sub(staged_filename, save_desc);
+		if (result && !state_android_validate_save_path(staged_filename, save_kind))
+			result = 0;
+		if (result &&
+		    !state_android_publish_single_file(staged_filename, save_filename))
+			result = 0;
+		if (result && !g_state_android_defer_last_save_set &&
+		    !state_android_write_last_save_set(
+		        (Game_mode & GM_MULTI_COOP) ? 1 : 0,
+		        Players[Player_num].callsign,
+		        state_android_current_mission_filename_or_default()))
+			result = 0;
+		if (!result)
+			PHYSFS_delete(staged_filename);
+	}
 	g_android_save_meta_kind = prev_kind;
 	g_android_save_blank_thumbnail = prev_blank;
 	android_save_meta_clear_cached_thumbnail();
@@ -823,6 +882,7 @@ static int state_android_save_to_slot_internal(int slotnum, const char *desc,
 	char filename[PATH_MAX];
 #ifdef ANDROID
 	char temp_filename[PATH_MAX];
+	int previous_defer_last_save_set;
 #endif
 
 	android_repair_player_callsign_for_autosave(state_android_game_label());
@@ -841,8 +901,11 @@ static int state_android_save_to_slot_internal(int slotnum, const char *desc,
 		return 0;
 	}
 	PHYSFS_delete(temp_filename);
+	previous_defer_last_save_set = g_state_android_defer_last_save_set;
+	g_state_android_defer_last_save_set = 1;
 	result = state_android_save_to_path(temp_filename, desc, save_kind,
 	                                    blank_thumbnail);
+	g_state_android_defer_last_save_set = previous_defer_last_save_set;
 	if (result && !state_android_validate_save_path(temp_filename, save_kind)) {
 		debug_log(DLOG_GAME, "autosave failed: %s slot %d temporary save validation",
 		          state_android_game_label(), slotnum);
@@ -852,6 +915,10 @@ static int state_android_save_to_slot_internal(int slotnum, const char *desc,
 	    !state_android_publish_save_slot(temp_filename, filename, slotnum)) {
 		result = 0;
 	}
+	if (result && !state_android_write_last_save_set(
+	                  0, Players[Player_num].callsign,
+	                  state_android_current_mission_filename_or_default()))
+		result = 0;
 	if (!result)
 		PHYSFS_delete(temp_filename);
 #else

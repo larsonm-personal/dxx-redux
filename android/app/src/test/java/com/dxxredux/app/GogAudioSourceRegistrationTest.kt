@@ -51,4 +51,9 @@ class GogAudioSourceRegistrationTest {
         assertEquals(8, source.audioTrackCount)
         assertEquals((2..9).toList(), source.audioTrackNumbers)
     }
+
+    @Test
+    fun rejectsCaseFoldedGogPairCollisions() {
+        assertNull(findGogPair(listOf("DISC.GOG", "disc.gog", "DISC.INST")))
+    }
 }

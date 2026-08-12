@@ -113,6 +113,26 @@ if(_park_found EQUAL -1)
     set(_audio_c_dirty TRUE)
 endif()
 
+# The Android backend callback uses SDL's mixer lock. Close and drain the backend before SDL
+# destroys that lock or any callback-visible device state.
+string(FIND "${_audio_c}" "Android backend closes before mixer lock destruction"
+            _android_close_found)
+if(_android_close_found EQUAL -1)
+    string(
+        REPLACE
+            "\t\tif ( audio->mixer_lock != NULL ) {\n\t\t\tSDL_DestroyMutex(audio->mixer_lock);\n\t\t}\n\t\tif ( audio->fake_stream != NULL ) {"
+            "#ifdef __ANDROID__\n\t\t/* Android backend closes before mixer lock destruction. */\n\t\tif ( audio->opened ) {\n\t\t\taudio->CloseAudio(audio);\n\t\t\taudio->opened = 0;\n\t\t}\n#endif\n\t\tif ( audio->mixer_lock != NULL ) {\n\t\t\tSDL_DestroyMutex(audio->mixer_lock);\n\t\t}\n\t\tif ( audio->fake_stream != NULL ) {"
+            _audio_c
+            "${_audio_c}")
+    string(
+        REPLACE
+            "\t\tif ( audio->opened ) {\n\t\t\taudio->CloseAudio(audio);\n\t\t\taudio->opened = 0;\n\t\t}\n\t\t/* Free the driver data */"
+            "#ifndef __ANDROID__\n\t\tif ( audio->opened ) {\n\t\t\taudio->CloseAudio(audio);\n\t\t\taudio->opened = 0;\n\t\t}\n#endif\n\t\t/* Free the driver data */"
+            _audio_c
+            "${_audio_c}")
+    set(_audio_c_dirty TRUE)
+endif()
+
 if(_audio_c_dirty)
     file(WRITE "${sdl12_SOURCE_DIR}/src/audio/SDL_audio.c" "${_audio_c}")
 endif()
@@ -560,6 +580,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pilot_pref_transaction.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
@@ -646,7 +667,6 @@ target_include_directories(
 
 target_compile_definitions(dxx-redux-d1 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE INTROSPECT_ON)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # Replace SDL_mixer's music with TinySoundFont, same as D2
@@ -663,7 +683,8 @@ target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ANDROID)
 target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 
 if(OPENGL)
-    target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
+    target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG
+                                                                    INTROSPECT_ON)
     target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv3)
     target_sources(
         ${DXX_TARGET_PREFIX}arch_ogl
@@ -717,6 +738,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pilot_pref_transaction.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
@@ -807,7 +829,6 @@ target_include_directories(
 target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(dxx-redux-d2 PRIVATE DXX_BUILD_DESCENT_II)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE INTROSPECT_ON)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # Replace SDL_mixer's Timidity-based music with TinySoundFont MIDI synth. digi_mixer_music.c is
@@ -828,7 +849,8 @@ target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 # OpenGL ES 3.0: link EGL + GLESv3 into the arch_ogl static library, and add Android-specific
 # include paths + GLES3 shim.
 if(OPENGL)
-    target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
+    target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG
+                                                                    INTROSPECT_ON)
     target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv3)
     target_sources(
         ${DXX_TARGET_PREFIX}arch_ogl

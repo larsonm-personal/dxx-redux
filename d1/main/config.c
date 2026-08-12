@@ -34,6 +34,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "physfsx.h"
 #ifdef ANDROID
+#include "android_render_resolution.h"
 #include "playsave.h"
 #include "coop_save.h"
 #include "render.h"
@@ -314,7 +315,13 @@ int ReadConfigFile()
 	if ( GameCfg.DigiVolume > 8 ) GameCfg.DigiVolume = 8;
 	if ( GameCfg.MusicVolume > 8 ) GameCfg.MusicVolume = 8;
 
-	if (GameCfg.ResolutionX >= 320 && GameCfg.ResolutionY >= 200)
+	if (
+#ifdef ANDROID
+		android_render_resolution_valid(GameCfg.ResolutionX, GameCfg.ResolutionY)
+#else
+		GameCfg.ResolutionX >= 320 && GameCfg.ResolutionY >= 200
+#endif
+	)
 		Game_screen_mode = SM(GameCfg.ResolutionX,GameCfg.ResolutionY);
 
 #ifdef ANDROID

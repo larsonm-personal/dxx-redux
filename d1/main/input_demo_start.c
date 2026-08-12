@@ -52,6 +52,7 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		sizeof(replay_error)))
 	{
 		printf("Input demo replay load failed: %s\n", replay_error);
+		con_printf(CON_URGENT, "Input demo replay load failed: %s\n", replay_error);
 		return 1;
 	}
 	INPUT_DEMO_CRUMB_V("input_demo: replay load ok start_mode=%s mission=%s level=%d",

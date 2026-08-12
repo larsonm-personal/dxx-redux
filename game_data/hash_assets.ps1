@@ -22,6 +22,7 @@ $ExtractDir = Join-Path $ScriptDir "extracted"
 $CdImgDir = Join-Path $ScriptDir "CD images"
 $DemoDir = Join-Path $ScriptDir "demo installers"
 $GogDir = Join-Path $RepoRoot "game_data_to_copy_to_emulator"
+. (Join-Path $RepoRoot "android\helpers\atomic_text_file.ps1")
 
 $GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".msn", ".dem", ".gog", ".inst")
 $MinFileSize = 2  # Skip 1-byte extraction stubs
@@ -159,7 +160,9 @@ function Write-Json5Versions([string]$path, $versions) {
 
     $lines += "  ]"
     $lines += "}"
-    $lines -join "`n" | Set-Content -NoNewline $path -Encoding UTF8
+    $text = $lines -join "`n"
+    $null = (ConvertFrom-Json5WithComments $text | ConvertFrom-Json -ErrorAction Stop)
+    Write-Utf8NoBomTextAtomically -Path $path -Text $text
 }
 
 # -- Scan directories -------------------------------------------------
@@ -176,6 +179,7 @@ function Resolve-Version([string]$folderName, [string]$filename, [string]$source
     }
     $label = $VersionMap[$folderName]
     if (-not $label) {
+        if ($Force) { throw "Force regeneration found an undeclared source folder: $folderName" }
         Write-Warning "No version mapping for folder: $folderName"
         return $folderName
     }
@@ -188,16 +192,18 @@ function Resolve-Version([string]$folderName, [string]$filename, [string]$source
 
 # -- Main -------------------------------------------------------------
 
+$baseline = Read-Json5Versions $Json5File
 if ($Force) {
+    if ($baseline.Count -eq 0) { throw "Force regeneration requires a nonempty maintained known_versions baseline" }
     Write-Host "Force mode: clearing existing entries, will regenerate all"
     $existing = @()
     $existingSet = @{}
 } else {
     Write-Host "Loading existing known_versions.json5..."
-    $existing = Read-Json5Versions $Json5File
+    $existing = $baseline
     $existingSet = @{}
     foreach ($e in $existing) {
-        $key = "$($e.file.ToLower())|$($e.sha256.ToLower())"
+        $key = "$($e.file.ToLowerInvariant())|$($e.sha256.ToLowerInvariant())|$($e.version)"
         $existingSet[$key] = $e.version
     }
     Write-Host "  $($existing.Count) existing entries"
@@ -266,6 +272,9 @@ if (Test-Path $CdImgDir) {
 }
 
 if ($allFiles.Count -eq 0) {
+    if ($Force) {
+        throw "Force regeneration requires a complete source set; no game asset files were found"
+    }
     Write-Host "`nNo game asset files found to hash"
     exit 0
 }
@@ -282,7 +291,7 @@ foreach ($item in $allFiles) {
     $version = Resolve-Version $item.FolderName $filename $item.Source
 
     $sha256 = (Get-FileHash -Path $f.FullName -Algorithm SHA256).Hash.ToLower()
-    $key = "$filename|$sha256"
+    $key = "$filename|$sha256|$version"
 
     if ($existingSet.ContainsKey($key)) {
         $skipped++
@@ -326,7 +335,7 @@ $directImportEntries = @(
     @{ File = "descent.pig"; Sha256 = "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"; Version = "D1 Demo v1.4" }
 )
 foreach ($entry in $directImportEntries) {
-    $key = "$($entry.File)|$($entry.Sha256)"
+    $key = "$($entry.File)|$($entry.Sha256)|$($entry.Version)"
     if (-not $existingSet.ContainsKey($key)) {
         $newEntries += [PSCustomObject]@{ file = $entry.File; sha256 = $entry.Sha256; version = $entry.Version }
         $existingSet[$key] = $entry.Version
@@ -338,6 +347,24 @@ foreach ($entry in $directImportEntries) {
 # Merge and write
 if ($newEntries.Count -gt 0) {
     $merged = @($existing) + @($newEntries)
+    if ($Force) {
+        $generatedTriples = @{}
+        foreach ($entry in $merged) {
+            $key = "$($entry.file.ToLowerInvariant())|$($entry.sha256.ToLowerInvariant())|$($entry.version)"
+            if ($generatedTriples.ContainsKey($key)) { throw "Force regeneration produced duplicate entry: $key" }
+            $generatedTriples[$key] = $true
+        }
+        $missing = @(
+            foreach ($entry in $baseline) {
+                $key = "$($entry.file.ToLowerInvariant())|$($entry.sha256.ToLowerInvariant())|$($entry.version)"
+                if (-not $generatedTriples.ContainsKey($key)) { $key }
+            }
+        )
+        if ($missing.Count -gt 0) {
+            $preview = ($missing | Select-Object -First 5) -join ", "
+            throw "Force regeneration source set is incomplete; missing $($missing.Count) maintained identities: $preview"
+        }
+    }
     Write-Json5Versions $Json5File $merged
     Write-Host "`nWrote $($merged.Count) entries to known_versions.json5"
 } else {

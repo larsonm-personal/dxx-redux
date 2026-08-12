@@ -62,9 +62,9 @@
      "args": {"game": "${GAME}"}, "post_delay_ms": 1000},
     {"action": "setup_command", "command": "patch_pilots", "post_delay_ms": 1000},
 
-    // Keep a valid-version config for launch preflight, but omit settings so
-    // android_apply_gamepad_defaults cannot hide a broken pilot-file patch.
-    {"action": "write_config", "file": "controller_config.json", "content": "{\"version\":4}\n"},
+    // Keep the complete patch fixture in place.  Launch preflight deliberately
+    // repairs incomplete native configs, so malformed JSON is not a supported
+    // mechanism for suppressing the live-config application.
     {"action": "enter_game", "game": "${GAME}"},
 
     // -- Phase 3: Read settings back from the real pilot --
