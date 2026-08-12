@@ -60,15 +60,14 @@ class AcceptJoinButtonView(
     ) {
         super.onSizeChanged(w, h, oldW, oldH)
         val unit = min(w, h) * 0.05f
-        val pillW = unit * 8f
-        val pillH = unit * 1.4f
+        val buttonBounds = TopEdgeActionButtonLayout.acceptJoin(w, h)
+        val pillH = buttonBounds.bottom - buttonBounds.top
         cornerRadius = pillH / 2f
-        // Position above center to avoid conflicting with bottom controls
         bounds.set(
-            w / 2f - pillW / 2f,
-            h * 0.35f - pillH / 2f,
-            w / 2f + pillW / 2f,
-            h * 0.35f + pillH / 2f,
+            buttonBounds.left,
+            buttonBounds.top,
+            buttonBounds.right,
+            buttonBounds.bottom,
         )
         textPaint.textSize = pillH * 0.40f
         borderPaint.strokeWidth = unit * 0.06f

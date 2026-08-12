@@ -38,7 +38,9 @@ object TouchLayoutRepository {
         if (!file.exists()) return defaultLayout(context)
         return try {
             migrateForCurrentVersion(TouchLayout.fromJson(JSONObject(file.readText())))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Stored touch layout is invalid; leaving it unchanged and using the bundled default", e)
+            runCatching { LauncherDebugLog.log("Stored touch layout could not be loaded: ${e.message}") }
             defaultLayout(context)
         }
     }

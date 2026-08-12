@@ -1,12 +1,14 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import kotlin.math.min
 
 internal object TouchLayoutSlotRepository {
+    private const val TAG = "TouchLayoutSlotRepository"
     private const val FILENAME = "touch_layout_slots.json"
     private const val TYPE = "touch_layout_slots"
     private const val VERSION = 1
@@ -17,7 +19,9 @@ internal object TouchLayoutSlotRepository {
             try {
                 val loaded = slotSetFromStorageJson(JSONObject(file.readText()))
                 if (loaded != null) return loaded
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e(TAG, "Stored touch layout slots are invalid; leaving them unchanged", e)
+                runCatching { LauncherDebugLog.log("Stored touch layout slots could not be loaded: ${e.message}") }
             }
         }
         return ConfigSlotSet(0, listOf(ConfigSlot(DEFAULT_CONFIG_SLOT_NAME, TouchLayoutRepository.load(context))))

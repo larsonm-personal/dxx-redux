@@ -26,6 +26,17 @@ class TouchEditorZoneEdgeTest {
     }
 
     @Test
+    fun defaultReticlePreviewStaysCenteredAndUsesShortScreenDimension() {
+        val landscape = defaultReticlePreviewGeometry(width = 1920f, height = 1080f)
+        val portrait = defaultReticlePreviewGeometry(width = 1080f, height = 1920f)
+
+        assertEquals(Offset(960f, 540f), landscape.center)
+        assertEquals(Offset(540f, 960f), portrait.center)
+        assertEquals(4.5f, landscape.unit, 0.001f)
+        assertEquals(landscape.unit, portrait.unit, 0.001f)
+    }
+
+    @Test
     fun resizingFloatingZoneClampsToMinimumWidthAndBounds() {
         val zone = FloatingZone(leftPct = 10f, topPct = 20f, rightPct = 30f, bottomPct = 50f)
 
@@ -289,5 +300,96 @@ class TouchEditorZoneEdgeTest {
                 ?.single()
                 ?.bindingType,
         )
+    }
+
+    @Test
+    fun persistedCrossedAndCollapsedZonesAreNormalizedWithoutLosingControls() {
+        val raw =
+            TouchLayout(
+                sticks =
+                    listOf(
+                        AnalogStickControl(
+                            id = "move",
+                            xPct = 20f,
+                            yPct = 80f,
+                            axisX = TouchBindings.AXIS_LEFT_X,
+                            axisY = TouchBindings.AXIS_LEFT_Y,
+                            floatingZone = FloatingZone(leftPct = 80f, topPct = 40f, rightPct = 20f, bottomPct = 40f),
+                        ),
+                    ),
+            ).toJson()
+
+        val parsed = TouchLayout.fromJson(raw)
+        val zone = parsed.sticks.single().floatingZone
+
+        assertEquals(20f, zone.leftPct, 0.001f)
+        assertEquals(80f, zone.rightPct, 0.001f)
+        assertEquals(MIN_TOUCH_ZONE_SIZE_PCT, zone.bottomPct - zone.topPct, 0.001f)
+        assertEquals("move", parsed.sticks.single().id)
+    }
+
+    @Test
+    fun appSerializedFloatMaximumsRoundTrip() {
+        val layout =
+            TouchLayout(
+                sticks =
+                    listOf(
+                        AnalogStickControl(
+                            id = "move",
+                            xPct = 20f,
+                            yPct = 80f,
+                            axisX = TouchBindings.AXIS_LEFT_X,
+                            axisY = TouchBindings.AXIS_LEFT_Y,
+                            extremeActions =
+                                listOf(
+                                    StickExtremeAction(
+                                        threshold = TouchBindings.MAX_STICK_EXTREME_THRESHOLD,
+                                        releaseThreshold = 2.45f,
+                                    ),
+                                ),
+                        ),
+                    ),
+                gyro =
+                    GyroConfig(
+                        maxAngleX = 1.57f,
+                        maxAngleY = 1.57f,
+                        maxAngleZ = 1.57f,
+                    ),
+            )
+
+        val parsed = TouchLayout.fromJson(layout.toJson())
+
+        assertEquals(1.57f, parsed.gyro.maxAngleX, 0f)
+        assertEquals(1.57f, parsed.gyro.maxAngleY, 0f)
+        assertEquals(1.57f, parsed.gyro.maxAngleZ, 0f)
+        assertEquals(2.45f, parsed.sticks.single().extremeActions.single().releaseThreshold, 0f)
+    }
+
+    @Test
+    fun storedSlotWithCrossedZoneRepairsInsteadOfRejectingWholeSet() {
+        val layout =
+            TouchLayout(
+                axisRegions =
+                    listOf(
+                        AxisRegionControl(
+                            id = "throttle",
+                            zone = FloatingZone(leftPct = 90f, topPct = 75f, rightPct = 70f, bottomPct = 25f),
+                        ),
+                    ),
+            )
+        val slots =
+            JSONArray().put(
+                JSONObject()
+                    .put("name", DEFAULT_CONFIG_SLOT_NAME)
+                    .put("layout", HumanReadableConfig.touchLayoutToHumanJson(layout)),
+            )
+
+        val parsed = TouchLayoutSlotRepository.fromExportJsonArray(slots, activeIndex = 0)
+        val zone = parsed?.activeSlot?.value?.axisRegions?.single()?.zone
+
+        assertEquals(70f, zone?.leftPct ?: -1f, 0.001f)
+        assertEquals(90f, zone?.rightPct ?: -1f, 0.001f)
+        assertEquals(25f, zone?.topPct ?: -1f, 0.001f)
+        assertEquals(75f, zone?.bottomPct ?: -1f, 0.001f)
     }
 }

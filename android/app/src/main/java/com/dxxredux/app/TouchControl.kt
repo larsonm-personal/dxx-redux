@@ -25,17 +25,17 @@ private val TOUCH_FLOAT_RANGES =
         "mouseExponentialMax" to 1.0..10.0,
         "threshold" to
             TouchBindings.MIN_STICK_EXTREME_THRESHOLD.toDouble()..TouchBindings.MAX_STICK_EXTREME_THRESHOLD.toDouble(),
-        "releaseThreshold" to 0.5..2.45,
+        "releaseThreshold" to 0.5f.toDouble()..2.45f.toDouble(),
         "swipeThreshold" to
             TouchBindings.MIN_SWIPE_THRESHOLD.toDouble()..TouchBindings.MAX_SWIPE_THRESHOLD.toDouble(),
         "stripDragSpanWidthPct" to 5.0..80.0,
         "stripLabelAngleDeg" to -90.0..90.0,
         "stripSelectedScale" to 1.0..3.0,
         "stripCardScale" to MIN_SCROLL_STRIP_CARD_SCALE.toDouble()..MAX_SCROLL_STRIP_CARD_SCALE.toDouble(),
-        "maxAngle" to 0.1..1.57,
-        "maxAngleX" to 0.1..1.57,
-        "maxAngleY" to 0.1..1.57,
-        "maxAngleZ" to 0.1..1.57,
+        "maxAngle" to 0.1f.toDouble()..1.57f.toDouble(),
+        "maxAngleX" to 0.1f.toDouble()..1.57f.toDouble(),
+        "maxAngleY" to 0.1f.toDouble()..1.57f.toDouble(),
+        "maxAngleZ" to 0.1f.toDouble()..1.57f.toDouble(),
     )
 private val TOUCH_UNBOUNDED_FLOAT_KEYS =
     setOf("deadzone", "deadzoneX", "deadzoneY", "deadzoneZ", "refAzimuth", "refPitch", "refRoll")
@@ -151,6 +151,25 @@ fun applyResponseCurve(
 
 // --- Control data classes ---
 
+internal const val MIN_TOUCH_ZONE_SIZE_PCT = 2f
+
+internal fun normalizeFloatingZone(zone: FloatingZone): FloatingZone {
+    fun orderedSpan(
+        first: Float,
+        second: Float,
+    ): Pair<Float, Float> {
+        val low = minOf(first, second).coerceIn(0f, 100f)
+        val high = maxOf(first, second).coerceIn(0f, 100f)
+        if (high - low >= MIN_TOUCH_ZONE_SIZE_PCT) return low to high
+        val start = ((low + high - MIN_TOUCH_ZONE_SIZE_PCT) / 2f).coerceIn(0f, 100f - MIN_TOUCH_ZONE_SIZE_PCT)
+        return start to start + MIN_TOUCH_ZONE_SIZE_PCT
+    }
+
+    val (left, right) = orderedSpan(zone.leftPct, zone.rightPct)
+    val (top, bottom) = orderedSpan(zone.topPct, zone.bottomPct)
+    return FloatingZone(left, top, right, bottom)
+}
+
 data class FloatingZone(
     val leftPct: Float = 0f,
     val topPct: Float = 0f,
@@ -167,11 +186,13 @@ data class FloatingZone(
 
     companion object {
         fun fromJson(j: JSONObject) =
-            FloatingZone(
-                j.optDouble("left", 0.0).toFloat(),
-                j.optDouble("top", 0.0).toFloat(),
-                j.optDouble("right", 50.0).toFloat(),
-                j.optDouble("bottom", 100.0).toFloat(),
+            normalizeFloatingZone(
+                FloatingZone(
+                    j.optDouble("left", 0.0).toFloat(),
+                    j.optDouble("top", 0.0).toFloat(),
+                    j.optDouble("right", 50.0).toFloat(),
+                    j.optDouble("bottom", 100.0).toFloat(),
+                ),
             )
     }
 }

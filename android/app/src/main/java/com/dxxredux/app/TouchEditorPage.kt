@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
@@ -73,10 +74,11 @@ private val cSelected = Color(0xFF2196F3)
 private val cGrid = Color(0x22FFFFFF)
 private val cBackground = Color(0xFF1A1A1A)
 private val cCollisionWarn = Color(0xCCFF5722.toInt())
+private val cReticleBright = Color(0xFF20FF20)
+private val cReticleDark = Color(0x99408040)
 private const val SELECTED_TYPE_STICK_ZONE_EDGE = "stickZoneEdge"
 private const val SELECTED_TYPE_AXIS_REGION_EDGE = "axisRegionEdge"
 private const val SELECTED_TYPE_MORE_ACTIONS = "moreActions"
-private const val MIN_RESIZABLE_ZONE_SIZE_PCT = 2f
 private const val TOUCH_EDITOR_TOOLBAR_ACTION_COUNT = 9
 private const val TOUCH_EDITOR_TOOLBAR_SAVE_INDEX = 8
 
@@ -115,12 +117,26 @@ internal fun decodeFloatingZoneEdgeSelection(selectionIndex: Int): Pair<Int, Flo
 
 internal fun defaultTouchEditorEdgeHitSlopPx(buttonRadius: Float): Float = max(buttonRadius * 0.3f, 12f)
 
+internal data class DefaultReticlePreviewGeometry(
+    val center: Offset,
+    val unit: Float,
+)
+
+internal fun defaultReticlePreviewGeometry(
+    width: Float,
+    height: Float,
+): DefaultReticlePreviewGeometry =
+    DefaultReticlePreviewGeometry(
+        center = Offset(width / 2f, height / 2f),
+        unit = min(width, height) / 240f,
+    )
+
 internal fun resizeFloatingZone(
     zone: FloatingZone,
     edge: FloatingZoneEdge,
     dxPct: Float,
     dyPct: Float,
-    minSizePct: Float = MIN_RESIZABLE_ZONE_SIZE_PCT,
+    minSizePct: Float = MIN_TOUCH_ZONE_SIZE_PCT,
 ): FloatingZone =
     when (edge) {
         FloatingZoneEdge.LEFT -> {
@@ -849,6 +865,7 @@ fun TouchEditorPage(
                 canvasWidth = size.width
                 canvasHeight = size.height
                 drawGrid(this)
+                drawDefaultReticlePreview(this)
                 drawAllControls(
                     this,
                     layout,
@@ -1092,9 +1109,51 @@ private fun drawGrid(scope: DrawScope) {
         scope.drawLine(cGrid, Offset(x, 0f), Offset(x, h))
         scope.drawLine(cGrid, Offset(0f, y), Offset(w, y))
     }
-    // Center crosshair
-    scope.drawLine(Color(0x44FFFFFF), Offset(w / 2, 0f), Offset(w / 2, h), strokeWidth = 1.5f)
-    scope.drawLine(Color(0x44FFFFFF), Offset(0f, h / 2), Offset(w, h / 2), strokeWidth = 1.5f)
+}
+
+/** Launcher-drawn approximation of the shared D1/D2 default reticle */
+private fun drawDefaultReticlePreview(scope: DrawScope) {
+    val (center, unit) = defaultReticlePreviewGeometry(scope.size.width, scope.size.height)
+    val strokeWidth = max(1.5f, unit * 0.55f)
+
+    fun point(
+        x: Float,
+        y: Float,
+    ) = Offset(center.x + x * unit, center.y - y * unit)
+
+    fun bar(
+        color: Color,
+        first: Offset,
+        second: Offset,
+        third: Offset,
+        fourth: Offset,
+    ) {
+        val path =
+            Path().apply {
+                moveTo(first.x, first.y)
+                lineTo(second.x, second.y)
+                lineTo(third.x, third.y)
+                lineTo(fourth.x, fourth.y)
+                close()
+            }
+        scope.drawPath(path, color)
+    }
+
+    // Center brackets
+    scope.drawLine(cReticleBright, point(-4f, 2f), point(-2f, 0f), strokeWidth)
+    scope.drawLine(cReticleBright, point(-3f, -4f), point(-2f, -3f), strokeWidth)
+    scope.drawLine(cReticleBright, point(4f, 2f), point(2f, 0f), strokeWidth)
+    scope.drawLine(cReticleBright, point(3f, -4f), point(2f, -3f), strokeWidth)
+
+    // Primary weapon bars
+    bar(cReticleBright, point(-5.5f, -5f), point(-6.5f, -7.5f), point(-10f, -7f), point(-10f, -8.7f))
+    bar(cReticleDark, point(-10f, -7f), point(-10f, -8.7f), point(-15f, -8.5f), point(-15f, -9.5f))
+    bar(cReticleBright, point(5.5f, -5f), point(6.5f, -7.5f), point(10f, -7f), point(10f, -8.7f))
+    bar(cReticleDark, point(10f, -7f), point(10f, -8.7f), point(15f, -8.5f), point(15f, -9.5f))
+
+    // Secondary weapon indicators
+    scope.drawCircle(cReticleBright, 2f * unit, point(-10f, -2f), style = Stroke(strokeWidth))
+    scope.drawCircle(cReticleDark, 2f * unit, point(10f, -2f), style = Stroke(strokeWidth))
 }
 
 private fun drawAllControls(

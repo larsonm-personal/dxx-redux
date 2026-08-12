@@ -99,11 +99,9 @@ class WarpButtonOverlay(
         oldH: Int,
     ) {
         super.onSizeChanged(w, h, oldW, oldH)
-        val btnW = w * 0.18f
-        val btnH = h * 0.08f
-        val margin = w * 0.02f
-        // Position: left side, vertically centered
-        btnRect.set(margin, h * 0.45f, margin + btnW, h * 0.45f + btnH)
+        val buttonBounds = TopEdgeActionButtonLayout.warp(w, h)
+        val btnH = buttonBounds.bottom - buttonBounds.top
+        btnRect.set(buttonBounds.left, buttonBounds.top, buttonBounds.right, buttonBounds.bottom)
         textPaint.textSize = btnH * 0.35f
         subTextPaint.textSize = btnH * 0.25f
         borderPaint.strokeWidth = btnH * 0.03f
