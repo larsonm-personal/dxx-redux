@@ -95,4 +95,16 @@ class AudioSourceManagerPersistenceTest {
         }
         assertEquals(setOf(tree), collectPersistedPermissionUrisToRelease(listOf(tree), removedUris, retainedUris))
     }
+
+    @Test
+    fun emptyPlaylistGenerationPreservesLastPublishedPlaylist() {
+        val filesDir = File("build/test-audiosrc-preserve-playlist").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val playlist = File(filesDir, "audio_playlist.json")
+        playlist.writeText("last-good\n")
+
+        assertEquals(false, AudioSourceManager(filesDir).writePlaylist())
+        assertEquals("last-good\n", playlist.readText())
+    }
 }

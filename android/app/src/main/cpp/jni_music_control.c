@@ -48,10 +48,26 @@ typedef struct android_music_command {
 } android_music_command;
 
 enum { MUSIC_COMMAND_CAPACITY = 64 };
+enum { MUSIC_SNAPSHOT_REDBOOK_TRACKS = 100,
+	   MUSIC_SNAPSHOT_TRACK_NAME_BYTES = 128 };
 static pthread_mutex_t g_music_control_mutex = PTHREAD_MUTEX_INITIALIZER;
 static android_music_command g_music_commands[MUSIC_COMMAND_CAPACITY];
 static unsigned int g_music_command_read;
 static unsigned int g_music_command_count;
+static pthread_mutex_t g_music_snapshot_mutex = PTHREAD_MUTEX_INITIALIZER;
+static char *g_music_snapshot_overlay;
+static size_t g_music_snapshot_overlay_capacity;
+static char *g_music_snapshot_tracks;
+static char g_music_snapshot_current_info[256];
+static char g_music_snapshot_track_names[MUSIC_SNAPSHOT_REDBOOK_TRACKS + 1][MUSIC_SNAPSHOT_TRACK_NAME_BYTES];
+static unsigned char g_music_snapshot_audio_tracks[MUSIC_SNAPSHOT_REDBOOK_TRACKS + 1];
+static int g_music_snapshot_current_track;
+static int g_music_snapshot_audio_track_count;
+static int g_music_snapshot_total_tracks;
+static int g_music_snapshot_music_type;
+static int g_music_snapshot_track_list_key = -1;
+
+static void music_publish_snapshot(void);
 
 static int music_enqueue(android_music_command_type type, int value, int auxiliary)
 {
@@ -188,9 +204,9 @@ static void music_save_config(void)
 int android_music_control_apply_pending(void)
 {
 	android_music_command command;
-	if (!music_dequeue(&command))
-		return 0;
-	do {
+	int applied = 0;
+	while (music_dequeue(&command)) {
+		applied = 1;
 		switch (command.type) {
 			case MUSIC_COMMAND_SOURCE:
 				GameCfg.MusicType = command.value;
@@ -204,10 +220,15 @@ int android_music_control_apply_pending(void)
 			case MUSIC_COMMAND_PREFER_MISSION:
 				android_music_set_prefer_mission_soundtrack(command.value);
 				break;
-			case MUSIC_COMMAND_PLAY_ORDER:
+			case MUSIC_COMMAND_PLAY_ORDER: {
+				const int old_order = GameCfg.CMLevelMusicPlayOrder;
 				GameCfg.CMLevelMusicPlayOrder = command.value;
 				music_save_config();
+				if (Game_wind && old_order != command.value &&
+				    command.value == MUSIC_CM_PLAYORDER_LEVEL)
+					music_replay_current();
 				break;
+			}
 			case MUSIC_COMMAND_VOLUME:
 				GameCfg.MusicVolume = (ubyte) command.value;
 				songs_set_volume(GameCfg.MusicVolume);
@@ -218,8 +239,9 @@ int android_music_control_apply_pending(void)
 				else songs_resume();
 				break;
 		}
-	} while (music_dequeue(&command));
-	return 1;
+	}
+	music_publish_snapshot();
+	return applied;
 }
 
 JNIEXPORT jint JNICALL
@@ -245,36 +267,66 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetTrackName(
     JNIEnv *env, jobject thiz, jint track)
 {
-	const char *name = RBAGetTrackName(track);
-	return dxx_jni_string_from_utf8(env, name ? name : "");
+	char name[MUSIC_SNAPSHOT_TRACK_NAME_BYTES] = "";
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	if (track >= 0 && track <= MUSIC_SNAPSHOT_REDBOOK_TRACKS)
+		snprintf(name, sizeof(name), "%s", g_music_snapshot_track_names[track]);
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+	return dxx_jni_string_from_utf8(env, name);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCurrentTrackNum(
     JNIEnv *env, jobject thiz)
 {
-	return RBAGetTrackNum();
+	int value;
+	(void) env;
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	value = g_music_snapshot_current_track;
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+	return value;
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetNumAudioTracks(
     JNIEnv *env, jobject thiz)
 {
-	return RBAGetNumAudioTracks();
+	int value;
+	(void) env;
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	value = g_music_snapshot_audio_track_count;
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+	return value;
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetTotalTracks(
     JNIEnv *env, jobject thiz)
 {
-	return RBAGetNumberOfTracks();
+	int value;
+	(void) env;
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	value = g_music_snapshot_total_tracks;
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+	return value;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsAudioTrack(
     JNIEnv *env, jobject thiz, jint track)
 {
-	return RBAIsAudioTrack(track) ? JNI_TRUE : JNI_FALSE;
+	int value = 0;
+	(void) env;
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	if (track >= 0 && track <= MUSIC_SNAPSHOT_REDBOOK_TRACKS)
+		value = g_music_snapshot_audio_tracks[track];
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+	return value ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -286,15 +338,11 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCurrentTrackInfo(
     JNIEnv *env, jobject thiz)
 {
-	int type = 0, track = 0, total = 0;
-	char name[128] = "";
 	char buf[256];
-
-	if (songs_get_track_info(&type, &track, &total, name, sizeof(name)) == 0) {
-		snprintf(buf, sizeof(buf), "%d|%d|%d|%s", type, track, total, name);
-	} else {
-		buf[0] = '\0';
-	}
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	snprintf(buf, sizeof(buf), "%s", g_music_snapshot_current_info);
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
 	return dxx_jni_string_from_utf8(env, buf);
 }
 
@@ -303,7 +351,13 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetMusicType(
     JNIEnv *env, jobject thiz)
 {
-	return GameCfg.MusicType;
+	int value;
+	(void) env;
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	value = g_music_snapshot_music_type;
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+	return value;
 }
 
 static char *music_alloc_track_list(size_t *out_length)
@@ -324,58 +378,101 @@ static char *music_alloc_track_list(size_t *out_length)
 	return buffer;
 }
 
-JNIEXPORT jstring JNICALL
-Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
-    JNIEnv *env, jobject thiz)
+static void music_publish_snapshot(void)
 {
 	int type = 0, track = -1, total = 0;
+	int redbook_total;
+	int i;
+	int track_list_key;
 	char name[128] = "";
 	char escaped_name[256];
+	char current_info[256] = "";
+	char *tracks = NULL;
 	size_t tracks_length = 0;
-	char *tracks = music_alloc_track_list(&tracks_length);
-	const size_t buf_size = tracks_length + 1024;
-	char *buf = tracks ? (char *) malloc(buf_size) : NULL;
+	size_t required;
 	int written;
-	jstring result;
-	(void) thiz;
-
-	if (!tracks || !buf) {
-		free(tracks);
-		free(buf);
-		return (*env)->NewStringUTF(env, "{}");
-	}
 
 	if (songs_get_track_info(&type, &track, &total, name, sizeof(name)) != 0) {
 		type = GameCfg.MusicType;
 		track = -1;
 		total = 0;
 		name[0] = '\0';
+	} else {
+		snprintf(current_info, sizeof(current_info), "%d|%d|%d|%s", type, track, total, name);
+	}
+	track_list_key = type * 1000 + total;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	if (!g_music_snapshot_tracks || g_music_snapshot_track_list_key != track_list_key) {
+		pthread_mutex_unlock(&g_music_snapshot_mutex);
+		tracks = music_alloc_track_list(&tracks_length);
+		pthread_mutex_lock(&g_music_snapshot_mutex);
+		if (tracks) {
+			free(g_music_snapshot_tracks);
+			g_music_snapshot_tracks = tracks;
+			g_music_snapshot_track_list_key = track_list_key;
+		}
+	}
+	if (!g_music_snapshot_tracks) {
+		g_music_snapshot_tracks = (char *) malloc(3);
+		if (g_music_snapshot_tracks)
+			memcpy(g_music_snapshot_tracks, "[]", 3);
+	}
+	redbook_total = RBAGetNumberOfTracks();
+	if (redbook_total < 0)
+		redbook_total = 0;
+	if (redbook_total > MUSIC_SNAPSHOT_REDBOOK_TRACKS)
+		redbook_total = MUSIC_SNAPSHOT_REDBOOK_TRACKS;
+	memset(g_music_snapshot_track_names, 0, sizeof(g_music_snapshot_track_names));
+	memset(g_music_snapshot_audio_tracks, 0, sizeof(g_music_snapshot_audio_tracks));
+	for (i = 1; i <= redbook_total; ++i) {
+		const char *track_name = RBAGetTrackName(i);
+		if (track_name)
+			snprintf(g_music_snapshot_track_names[i], MUSIC_SNAPSHOT_TRACK_NAME_BYTES, "%s", track_name);
+		g_music_snapshot_audio_tracks[i] = RBAIsAudioTrack(i) ? 1 : 0;
 	}
 	music_json_escape(name, escaped_name, sizeof(escaped_name));
-	written = snprintf(buf, buf_size,
-	                   "{\"musicType\":%d,\"source\":\"%s\",\"preferMissionSoundtrack\":%d,"
-	                   "\"playOrder\":%d,\"oneTrackPerLevel\":%d,\"volume\":%d,"
-	                   "\"paused\":%d,\"currentTrack\":%d,\"totalTracks\":%d,"
-	                   "\"currentName\":\"%s\",\"tracks\":%s}",
-	                   type,
-	                   music_current_source(),
-	                   android_music_get_prefer_mission_soundtrack(),
-	                   GameCfg.CMLevelMusicPlayOrder,
-	                   GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL,
-	                   GameCfg.MusicVolume,
-	                   music_is_paused(),
-	                   track,
-	                   total,
-	                   escaped_name,
-	                   tracks);
-	if (written < 0 || (size_t) written >= buf_size) {
-		free(tracks);
-		free(buf);
-		return (*env)->NewStringUTF(env, "{}");
+	required = strlen(g_music_snapshot_tracks) + 1024;
+	if (required > g_music_snapshot_overlay_capacity) {
+		char *next = (char *) realloc(g_music_snapshot_overlay, required);
+		if (next) {
+			g_music_snapshot_overlay = next;
+			g_music_snapshot_overlay_capacity = required;
+		}
 	}
-	result = dxx_jni_string_from_utf8(env, buf);
-	free(tracks);
-	free(buf);
+	if (g_music_snapshot_overlay) {
+		written = snprintf(g_music_snapshot_overlay, g_music_snapshot_overlay_capacity,
+		                   "{\"musicType\":%d,\"source\":\"%s\",\"preferMissionSoundtrack\":%d,"
+		                   "\"playOrder\":%d,\"oneTrackPerLevel\":%d,\"volume\":%d,"
+		                   "\"paused\":%d,\"currentTrack\":%d,\"totalTracks\":%d,"
+		                   "\"currentName\":\"%s\",\"tracks\":%s}",
+		                   type, music_current_source(), android_music_get_prefer_mission_soundtrack(),
+		                   GameCfg.CMLevelMusicPlayOrder,
+		                   GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL,
+		                   GameCfg.MusicVolume, music_is_paused(), track, total, escaped_name,
+		                   g_music_snapshot_tracks);
+		if (written < 0 || (size_t) written >= g_music_snapshot_overlay_capacity)
+			g_music_snapshot_overlay[0] = '\0';
+	}
+	snprintf(g_music_snapshot_current_info, sizeof(g_music_snapshot_current_info), "%s", current_info);
+	g_music_snapshot_current_track = RBAGetTrackNum();
+	g_music_snapshot_audio_track_count = RBAGetNumAudioTracks();
+	g_music_snapshot_total_tracks = redbook_total;
+	g_music_snapshot_music_type = GameCfg.MusicType;
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
+    JNIEnv *env, jobject thiz)
+{
+	jstring result;
+	(void) thiz;
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	result = dxx_jni_string_from_utf8(env,
+	                                  g_music_snapshot_overlay && g_music_snapshot_overlay[0]
+	                                      ? g_music_snapshot_overlay
+	                                      : "{}");
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
 	return result;
 }
 
@@ -473,12 +570,10 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetTrackList(
     JNIEnv *env, jobject thiz)
 {
-	char *buf = music_alloc_track_list(NULL);
 	jstring result;
 	(void) thiz;
-	if (!buf)
-		return (*env)->NewStringUTF(env, "[]");
-	result = dxx_jni_string_from_utf8(env, buf);
-	free(buf);
+	pthread_mutex_lock(&g_music_snapshot_mutex);
+	result = dxx_jni_string_from_utf8(env, g_music_snapshot_tracks ? g_music_snapshot_tracks : "[]");
+	pthread_mutex_unlock(&g_music_snapshot_mutex);
 	return result;
 }

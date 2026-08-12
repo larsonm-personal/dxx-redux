@@ -17,6 +17,13 @@ if ($helperSource -notmatch 'return \(Adb-Dev-Timeout -Serial \$Serial -AdbArgs 
 if ($helperSource -notmatch 'Adb-Timeout -AdbArgs "start-server" -Seconds 10') {
     throw 'ADB server restart is not bounded'
 }
+if ($helperSource -notmatch '\$proc\.Kill\(\$true\)' -or
+    $helperSource -notmatch '\$proc\.StandardOutput\.Close\(\)') {
+    throw 'Timed-out ADB process trees and redirected pipes are not cleaned up'
+}
+if ($helperSource -notmatch 'PASS \(file-based after process exit') {
+    throw 'Launcher monitoring does not consume a terminal result before process-exit failure'
+}
 
 $matchingResult = '{"result":"PASS","run_id":"run-a"}' | ConvertFrom-Json
 $otherResult = '{"result":"PASS","run_id":"run-b"}' | ConvertFrom-Json

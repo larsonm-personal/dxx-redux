@@ -51,8 +51,21 @@ static int playsave_replace_path(const char *temporary_path,
 	if (playsave_should_fail(PLAYSAVE_TRANSACTION_FAIL_REPLACE))
 		return 0;
 #ifdef _WIN32
-	return MoveFileExA(temporary_path, path,
-	                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+	{
+		unsigned int attempt;
+		for (attempt = 0; attempt < 5; ++attempt) {
+			DWORD error;
+			if (MoveFileExA(temporary_path, path,
+			                MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+				return 1;
+			error = GetLastError();
+			if (error != ERROR_ACCESS_DENIED && error != ERROR_SHARING_VIOLATION &&
+			    error != ERROR_LOCK_VIOLATION)
+				break;
+			Sleep(10u << attempt);
+		}
+		return 0;
+	}
 #else
 	return rename(temporary_path, path) == 0;
 #endif

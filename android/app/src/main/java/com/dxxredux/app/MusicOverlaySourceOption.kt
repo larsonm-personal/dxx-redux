@@ -16,7 +16,7 @@ internal fun musicOverlaySourceOptions(
         if (ModManager(filesDir).hasEnabledMissionZipSoundtrack(game)) {
             add(MusicOverlaySourceOption("mission", "Mission zip"))
         }
-        if (CustomAudioSetManager(filesDir).getEnabledSets().any { it.files.isNotEmpty() }) {
+        if (CustomAudioSetManager(filesDir).hasUsableTrack { uri -> canAccessUri(uri, true) }) {
             add(MusicOverlaySourceOption("files", "Files"))
         }
         val cdSources = AudioSourceManager(filesDir).getEnabledSources()

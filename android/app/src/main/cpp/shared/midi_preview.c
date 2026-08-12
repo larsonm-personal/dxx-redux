@@ -103,6 +103,9 @@ static struct midi_seek_timeline s_timeline;
 static volatile int s_playing = 0;
 static volatile int s_paused = 0;
 static volatile int s_output_enabled = 0;
+static volatile int s_seek_target_ms = -1;
+static volatile int s_position_snapshot_ms = 0;
+static volatile int s_duration_snapshot_ms = 0;
 static double s_playback_msec = 0.0;
 static int s_duration_ms = 0;
 static int s_output_rate = 48000;
@@ -241,10 +244,136 @@ static int render_midi_frames(short *out, int frames)
 
 	/* Song ended */
 	if (!s_timeline.event && rendered < frames) {
-		s_playing = 0;
+		__atomic_store_n(&s_playing, 0, __ATOMIC_RELEASE);
 		__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 	}
 	return rendered;
+}
+
+struct approximate_seek_channel {
+	unsigned char key_down[128];
+	unsigned char sounding[128];
+	unsigned char velocity[128];
+	unsigned char sustain;
+};
+
+static void publish_playback_state(void)
+{
+	int position_ms = (int) s_playback_msec;
+
+	if (position_ms > s_duration_ms) position_ms = s_duration_ms;
+	__atomic_store_n(&s_position_snapshot_ms, position_ms, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_duration_snapshot_ms, s_duration_ms, __ATOMIC_RELEASE);
+}
+
+static void approximate_note_off(struct approximate_seek_channel *channel, int key)
+{
+	channel->key_down[key] = 0;
+	if (!channel->sustain)
+		channel->sounding[key] = 0;
+}
+
+static void approximate_control_change(struct approximate_seek_channel *channel,
+                                       int control, int value)
+{
+	int key;
+
+	if (control == 64) {
+		channel->sustain = value >= 64;
+		if (!channel->sustain)
+			for (key = 0; key < 128; key++)
+				if (!channel->key_down[key])
+					channel->sounding[key] = 0;
+	} else if (control == 120) {
+		memset(channel->key_down, 0, sizeof(channel->key_down));
+		memset(channel->sounding, 0, sizeof(channel->sounding));
+	} else if (control == 121) {
+		channel->sustain = 0;
+		for (key = 0; key < 128; key++)
+			if (!channel->key_down[key])
+				channel->sounding[key] = 0;
+	} else if (control == 123) {
+		memset(channel->key_down, 0, sizeof(channel->key_down));
+		if (!channel->sustain)
+			memset(channel->sounding, 0, sizeof(channel->sounding));
+	}
+}
+
+/*
+ * Rebuild logical MIDI state without rendering the intervening PCM. Notes
+ * sounding across the target restart their envelopes, which is acceptable for
+ * a launcher preview and keeps seek work proportional to MIDI events instead
+ * of elapsed audio frames.
+ */
+static void approximate_seek(int target_ms)
+{
+	struct approximate_seek_channel channels[16] = { 0 };
+	tml_message *message = s_midi;
+	int channel;
+	int events = 0;
+	int key;
+	int notes = 0;
+
+	tsf_reset(s_tsf);
+	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
+	tsf_set_max_voices(s_tsf, s_max_voices);
+	while (message && message->time <= (unsigned int) target_ms) {
+		channel = (unsigned char) message->channel;
+		if (channel < 16) {
+			struct approximate_seek_channel *seek_channel = &channels[channel];
+			key = (unsigned char) message->key;
+			switch (message->type) {
+				case TML_NOTE_ON:
+					if ((unsigned char) message->velocity) {
+						seek_channel->key_down[key] = 1;
+						seek_channel->sounding[key] = 1;
+						seek_channel->velocity[key] = (unsigned char) message->velocity;
+					} else {
+						approximate_note_off(seek_channel, key);
+					}
+					break;
+				case TML_NOTE_OFF:
+					approximate_note_off(seek_channel, key);
+					break;
+				case TML_PROGRAM_CHANGE:
+					tsf_channel_set_presetnumber(s_tsf, channel,
+					                             (unsigned char) message->program,
+					                             channel == 9);
+					break;
+				case TML_CONTROL_CHANGE: {
+					int control = (unsigned char) message->control;
+					int value = (unsigned char) message->control_value;
+					approximate_control_change(seek_channel, control, value);
+					tsf_channel_midi_control(s_tsf, channel, control, value);
+					break;
+				}
+				case TML_PITCH_BEND:
+					tsf_channel_set_pitchwheel(s_tsf, channel, message->pitch_bend);
+					break;
+				default:
+					break;
+			}
+		}
+		message = message->next;
+		events++;
+	}
+	for (channel = 0; channel < 16; channel++)
+		for (key = 0; key < 128; key++)
+			if (channels[channel].sounding[key]) {
+				tsf_channel_note_on(s_tsf, channel, key,
+				                    channels[channel].velocity[key] / 127.0f);
+				notes++;
+			}
+
+	reset_midi_timeline();
+	s_timeline.event = message;
+	s_timeline.frame = midi_seek_timeline_frame_for_ms(target_ms, s_output_rate);
+	s_playback_msec = target_ms;
+	pthread_mutex_lock(&s_ring_reset_mutex);
+	rb_reset();
+	pthread_mutex_unlock(&s_ring_reset_mutex);
+	LOGI("Approximate seek complete: target=%dms events=%d notes=%d",
+	     target_ms, events, notes);
 }
 
 /* ── Render thread ───────────────────────────────────────────────────── */
@@ -261,7 +390,15 @@ static void *render_thread_func(void *data)
 		int sleep_usec = 0;
 		int stop = 0;
 		pthread_mutex_lock(&s_playback_mutex);
-		if (!s_playing || s_paused) {
+		{
+			int target_ms = __atomic_exchange_n(&s_seek_target_ms, -1, __ATOMIC_ACQ_REL);
+			if (target_ms >= 0 && s_midi && s_tsf) {
+				approximate_seek(target_ms);
+				publish_playback_state();
+			}
+		}
+		if (!__atomic_load_n(&s_playing, __ATOMIC_ACQUIRE) ||
+		    __atomic_load_n(&s_paused, __ATOMIC_ACQUIRE)) {
 			sleep_usec = 20000;
 		} else {
 			unsigned int space = RB_SAMPLES - rb_available();
@@ -271,15 +408,17 @@ static void *render_thread_func(void *data)
 				int got = render_midi_frames(buf, CHUNK);
 				if (got > 0)
 					rb_write(buf, got * 2);
-				stop = !s_playing;
+				stop = !__atomic_load_n(&s_playing, __ATOMIC_ACQUIRE);
 			}
 		}
+		publish_playback_state();
 		pthread_mutex_unlock(&s_playback_mutex);
 
 		if (stop) break;
 		if (sleep_usec) usleep((useconds_t) sleep_usec);
 	}
 
+	__atomic_store_n(&s_render_running, 0, __ATOMIC_SEQ_CST);
 	LOGI("MIDI preview render thread exiting");
 	return NULL;
 }
@@ -568,8 +707,8 @@ int midi_preview_start(const unsigned char *data, int len,
 	pthread_mutex_lock(&s_playback_mutex);
 	s_playback_msec = 0.0;
 	s_output_rate = sample_rate;
-	s_paused = 0;
-	s_playing = 1;
+	__atomic_store_n(&s_paused, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_playing, 1, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 1, __ATOMIC_RELEASE);
 
 	/* Configure TSF */
@@ -577,6 +716,8 @@ int midi_preview_start(const unsigned char *data, int len,
 	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	tsf_set_max_voices(s_tsf, s_max_voices);
 	reset_midi_timeline();
+	__atomic_store_n(&s_seek_target_ms, -1, __ATOMIC_RELEASE);
+	publish_playback_state();
 	pthread_mutex_unlock(&s_playback_mutex);
 
 	LOGI("Starting MIDI playback (%d bytes, duration=%dms, rate=%d)",
@@ -602,9 +743,11 @@ int midi_preview_start(const unsigned char *data, int len,
 static void midi_preview_stop_internal(void)
 {
 	pthread_mutex_lock(&s_playback_mutex);
-	s_playing = 0;
-	s_paused = 0;
+	__atomic_store_n(&s_playing, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_paused, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_seek_target_ms, -1, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
+	publish_playback_state();
 	pthread_mutex_unlock(&s_playback_mutex);
 	render_thread_stop();
 	osl_shutdown();
@@ -623,6 +766,7 @@ static void midi_preview_stop_internal(void)
 	rb_reset();
 	s_duration_ms = 0;
 	s_playback_msec = 0.0;
+	publish_playback_state();
 	pthread_mutex_unlock(&s_playback_mutex);
 }
 
@@ -636,89 +780,49 @@ void midi_preview_stop(void)
 void midi_preview_pause(void)
 {
 	pthread_mutex_lock(&s_control_mutex);
-	pthread_mutex_lock(&s_playback_mutex);
-	s_paused = 1;
+	__atomic_store_n(&s_paused, 1, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
-	pthread_mutex_unlock(&s_playback_mutex);
 	pthread_mutex_unlock(&s_control_mutex);
 }
 
 void midi_preview_resume(void)
 {
+	int playing;
 	pthread_mutex_lock(&s_control_mutex);
-	pthread_mutex_lock(&s_playback_mutex);
-	s_paused = 0;
-	__atomic_store_n(&s_output_enabled, s_playing ? 1 : 0, __ATOMIC_RELEASE);
-	pthread_mutex_unlock(&s_playback_mutex);
+	playing = __atomic_load_n(&s_playing, __ATOMIC_ACQUIRE);
+	__atomic_store_n(&s_paused, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_output_enabled, playing, __ATOMIC_RELEASE);
 	pthread_mutex_unlock(&s_control_mutex);
 }
 
 int midi_preview_seek(float fraction)
 {
-	enum { SEEK_BLOCK = 2048 };
-	short seek_buffer[SEEK_BLOCK * 2];
-	uint64_t target_frame;
-	int prefill_frames = 0;
-	int result = 0;
+	int target_ms;
 	pthread_mutex_lock(&s_control_mutex);
-	pthread_mutex_lock(&s_playback_mutex);
-	if ((!s_playing && !s_paused) || !s_midi || !s_midi_buf)
-		goto done;
+	if (!__atomic_load_n(&s_render_running, __ATOMIC_ACQUIRE) ||
+	    !s_midi || !s_midi_buf) {
+		pthread_mutex_unlock(&s_control_mutex);
+		return 0;
+	}
 	if (fraction < 0.0f) fraction = 0.0f;
 	if (fraction > 1.0f) fraction = 1.0f;
-
-	double target_ms = fraction * s_duration_ms;
-
-	/* Reset synth and replay from start to target position */
-	tsf_reset(s_tsf);
-	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
-	tsf_set_max_voices(s_tsf, s_max_voices);
-
-	reset_midi_timeline();
-	s_playback_msec = 0.0;
-	target_frame = midi_seek_timeline_frame_for_ms(target_ms, s_output_rate);
-	if (!midi_seek_timeline_reconstruct(&s_timeline, target_frame,
-	                                    seek_buffer, SEEK_BLOCK,
-	                                    &prefill_frames))
-		goto done;
-	if (s_volume < 0.99f) {
-		int i;
-		for (i = 0; i < prefill_frames * 2; i++)
-			seek_buffer[i] = (short) (seek_buffer[i] * s_volume);
-	}
-	s_playback_msec = target_ms;
-	pthread_mutex_lock(&s_ring_reset_mutex);
-	rb_reset();
-	if (prefill_frames > 0)
-		rb_write(seek_buffer, prefill_frames * 2);
-	pthread_mutex_unlock(&s_ring_reset_mutex);
-	result = 1;
-
-done:
-	pthread_mutex_unlock(&s_playback_mutex);
+	target_ms = (int) (fraction * s_duration_ms);
+	__atomic_store_n(&s_position_snapshot_ms, target_ms, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_seek_target_ms, target_ms, __ATOMIC_RELEASE);
 	pthread_mutex_unlock(&s_control_mutex);
-	return result;
+	return 1;
 }
 
 int midi_preview_get_state(int *out_position_ms, int *out_duration_ms)
 {
-	int state;
-	pthread_mutex_lock(&s_control_mutex);
-	pthread_mutex_lock(&s_playback_mutex);
-	if (out_position_ms) {
-		int pos = (int) s_playback_msec;
-		if (pos > s_duration_ms) pos = s_duration_ms;
-		*out_position_ms = pos;
-	}
-	if (out_duration_ms) *out_duration_ms = s_duration_ms;
+	int playing = __atomic_load_n(&s_playing, __ATOMIC_ACQUIRE);
+	int paused = __atomic_load_n(&s_paused, __ATOMIC_ACQUIRE);
 
-	if (s_playing && !s_paused)
-		state = MDP_PLAYING;
-	else if (s_paused)
-		state = MDP_PAUSED;
-	else
-		state = MDP_STOPPED;
-	pthread_mutex_unlock(&s_playback_mutex);
-	pthread_mutex_unlock(&s_control_mutex);
-	return state;
+	if (out_position_ms)
+		*out_position_ms = __atomic_load_n(&s_position_snapshot_ms, __ATOMIC_ACQUIRE);
+	if (out_duration_ms)
+		*out_duration_ms = __atomic_load_n(&s_duration_snapshot_ms, __ATOMIC_ACQUIRE);
+	if (playing && !paused) return MDP_PLAYING;
+	if (paused) return MDP_PAUSED;
+	return MDP_STOPPED;
 }

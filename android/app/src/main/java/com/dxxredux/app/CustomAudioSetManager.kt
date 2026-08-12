@@ -66,6 +66,14 @@ class CustomAudioSetManager(
 
     fun getEnabledSets(): List<AudioSet> = sets.filter { it.enabled }.sortedBy { it.order }
 
+    fun hasUsableTrack(canAccessUri: (String) -> Boolean = { false }): Boolean =
+        getEnabledSets().any { set ->
+            set.files.any { name ->
+                val uri = set.referencedUris[name]
+                if (uri != null) canAccessUri(uri) else File(setDir(set.id), name).isFile
+            }
+        }
+
     fun addSet(set: AudioSet) {
         sets.removeAll { it.id == set.id }
         sets.add(set)
@@ -189,8 +197,6 @@ class CustomAudioSetManager(
             }
         }
         if (allFiles.isEmpty()) {
-            File(filesDir, PLAYLIST_FILE).delete()
-            File(filesDir, NAMES_FILE).delete()
             return null
         }
         // No global sort -- sets are sequential in their configured order,
@@ -215,7 +221,7 @@ class CustomAudioSetManager(
             }
         }
         val namesText = nameRecords.takeIf { it.isNotEmpty() }?.let(MusicNameSidecar::encode)
-        File(filesDir, PLAYLIST_FILE).writeText(m3u.toString())
+        AtomicFilePublication.writeUtf8(File(filesDir, PLAYLIST_FILE), m3u.toString())
         if (namesText != null) {
             AtomicFilePublication.writeUtf8(File(filesDir, NAMES_FILE), namesText)
         } else {

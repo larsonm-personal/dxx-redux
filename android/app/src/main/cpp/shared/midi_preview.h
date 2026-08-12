@@ -10,10 +10,11 @@
  *
  * Thread model (same as cd_preview.c):
  *   - Main thread: JNI calls (init/start/stop/pause/seek/get_state)
- *   - Render thread: advances MIDI timeline, renders TSF -> ring buffer
+ *   - Render thread: applies queued seeks, advances MIDI, renders TSF -> ring
  *   - OpenSL ES callback: reads ring buffer, outputs audio
- * Control calls are serialized, and mutable playback state is protected by
- * one mutex shared with rendering. The callback never waits for that mutex
+ * Control calls are serialized, mutable synth state is protected by one mutex
+ * shared with rendering, while pause flags and state queries are atomic. The
+ * callback never waits for the synth mutex
  */
 
 #ifndef MIDI_PREVIEW_H
@@ -47,15 +48,15 @@ void midi_preview_pause(void);
 void midi_preview_resume(void);
 
 /*
- * Seek to a fractional position (0.0-1.0).
- * MIDI seek requires re-rendering from start, which is fast for
- * typical Descent tracks (2-4 minutes).
- * Returns 1 on success, 0 if not playing.
+ * Queue an approximate seek on the render thread. Channel state and sounding
+ * notes are reconstructed without rendering intervening PCM, so notes that
+ * span the seek point restart their envelopes.
+ * Returns 1 when the request is accepted, 0 if not playing.
  */
 int midi_preview_seek(float fraction);
 
 /*
- * Query current playback state.
+ * Query the latest nonblocking playback-state snapshot.
  * Returns MDP_PLAYING, MDP_PAUSED, or MDP_STOPPED.
  */
 int midi_preview_get_state(int *out_position_ms, int *out_duration_ms);

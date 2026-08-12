@@ -495,7 +495,7 @@ fun EnginePreferencesPage(
                                     "midi",
                                     -> musicData.source
 
-                                    else -> prefs.getString("music_mode", "cd") ?: "cd"
+                                    else -> prefs.getString("music_mode", "midi") ?: "midi"
                                 }
                             val count =
                                 NativePilotPreferences.writeMusicPrefsToAll(

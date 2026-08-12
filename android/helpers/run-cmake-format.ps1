@@ -20,6 +20,7 @@ $repoRoot = Split-Path $androidRoot
 $inScopeGlobs = @(
     "android\app\src\main\cpp\CMakeLists.txt",
     "android\app\src\main\cpp\extract\CMakeLists.txt",
+    "android\tests\CMakeLists.txt",
     "cmake\*.cmake",
     "android\tools\etc2tool\CMakeLists.txt"
 )

@@ -66,7 +66,17 @@ function Adb-Timeout {
         $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
         $stderrTask = $proc.StandardError.ReadToEndAsync()
         if (-not $proc.WaitForExit($Seconds * 1000)) {
-            try { $proc.Kill() } catch {}
+            try {
+                $proc.Kill($true)
+                $proc.WaitForExit(5000) | Out-Null
+            } catch {
+                try { $proc.Kill() } catch {}
+            }
+
+            # Closing redirected streams unblocks ReadToEndAsync even when a
+            # platform tool leaves an inherited pipe handle open after exit.
+            try { $proc.StandardOutput.Close() } catch {}
+            try { $proc.StandardError.Close() } catch {}
             return $null
         }
         # Process exited; wait for async reads to finish (already done since process exited)
@@ -1530,6 +1540,34 @@ function Watch-AutomationResult {
                 return $false
             }
             if ($IsLauncherScript -and -not (Test-AppAutomationProcessRunning)) {
+                # A launcher script may intentionally finish both activities.
+                # Consume its durable terminal result before diagnosing the
+                # now-absent processes as a premature exit.
+                $terminalJson = Adb-Timeout -AdbArgs @(
+                    "shell", "run-as", $script:PACKAGE, "cat", "files/automation_result.json"
+                ) -Seconds 3
+                if ($terminalJson -and $terminalJson -match '"result"') {
+                    try {
+                        $terminalResult = $terminalJson | ConvertFrom-Json
+                        if (Test-AutomationResultRunId -Result $terminalResult -ExpectedRunId $ExpectedRunId) {
+                            if ($terminalResult.result -eq "PASS") {
+                                Write-Status "PASS (file-based after process exit, $($terminalResult.steps_completed)/$($terminalResult.total_steps) steps)" "Green"
+                                $finished = $true
+                                $passed = $true
+                                continue
+                            }
+                            if ($terminalResult.result -eq "FAIL") {
+                                $reason = if ($terminalResult.reason) { $terminalResult.reason } else { "unknown" }
+                                Write-Status "FAIL after process exit: $reason" "Red"
+                                $finished = $true
+                                $passed = $false
+                                continue
+                            }
+                        }
+                    } catch {
+                        # Preserve the premature-exit diagnostic below.
+                    }
+                }
                 Write-Status "FAIL: Launcher and game processes exited before automation produced a result (after ${elapsed}s)" "Red"
                 Write-DeviceFailureDiagnostics -Reason "launcher and game processes exited during automation after ${elapsed}s"
                 return $false

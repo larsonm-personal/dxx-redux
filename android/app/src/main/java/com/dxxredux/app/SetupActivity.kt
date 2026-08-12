@@ -420,7 +420,7 @@ class SetupActivity : ComponentActivity() {
             val pilotMusic = NativePilotPreferences.readMusicPrefsForAll(game, filesDir.absolutePath)
             val requestedMusicMode =
                 pilotMusic.source.takeIf { pilotMusic.hasPilotFile && it in setOf("cd", "files", "midi") }
-                    ?: getSharedPreferences("dxx_prefs", MODE_PRIVATE).getString("music_mode", "cd")
+                    ?: getSharedPreferences("dxx_prefs", MODE_PRIVATE).getString("music_mode", "midi")
             val cdPlaylistReady = audioSourceManager.writePlaylist(contentResolver)
             if (requestedMusicMode == "cd" && !cdPlaylistReady) {
                 return "CD Audio is selected, but no enabled readable CD source is available"
@@ -910,6 +910,22 @@ class SetupActivity : ComponentActivity() {
                     "music_midi_stop" -> {
                         MidiPreviewBridge.stop()
                         Log.i("DXX-Setup", "music_midi_stop: stopped")
+                    }
+
+                    "music_midi_seek" -> {
+                        val fraction = intent.getFloatExtra("fraction", 0f)
+                        val accepted = MidiPreviewBridge.seek(fraction)
+                        Log.i("DXX-Setup", "music_midi_seek: fraction=$fraction accepted=$accepted")
+                    }
+
+                    "music_midi_pause" -> {
+                        MidiPreviewBridge.pause()
+                        Log.i("DXX-Setup", "music_midi_pause: paused")
+                    }
+
+                    "music_midi_resume" -> {
+                        MidiPreviewBridge.resume()
+                        Log.i("DXX-Setup", "music_midi_resume: resumed")
                     }
 
                     "music_cd_play" -> {

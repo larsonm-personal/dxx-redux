@@ -77,7 +77,7 @@ if ($step[0].seg -eq $step[0].opens[0].seg) {
 # These firing positions require crossing ordinary, visible doors which are
 # unlocked, require no key, and therefore open when hit by a player weapon.
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 2 -Trigger 17 -Segment 65
-Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 11 -Trigger 10 -Segment 201
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 11 -Trigger 10 -Segment 476
 
 # Preferring keys over a transparent shortcut must not replace a calculated
 # objective with the planner's unresolved-trigger fallback

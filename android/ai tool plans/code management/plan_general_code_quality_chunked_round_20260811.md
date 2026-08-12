@@ -49,11 +49,11 @@
 ## First 30 deterministic coverage tranche
 
 - [x] Count `GQ1-CHUNK-0001` as already completed and normalized
-- [-] Process `GQ1-CHUNK-0002` through `GQ1-CHUNK-0030` with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
-- [ ] Normalize every raw report in strict chunk-ID order before later workers use its findings for deduplication
-- [ ] Create one non-partial `GQC-*` record per completed chunk, including explicit clean results
-- [ ] Reconcile observations, finding and investigation IDs, duplicate links, queue counts, and remediation candidates after Chunk 0030
-- [ ] Verify all 30 queue rows are terminal, no survey worker remains active, reports are ASCII/no-BOM, and campaign files pass `git diff --check`
+- [x] Process `GQ1-CHUNK-0002` through `GQ1-CHUNK-0030` with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
+- [x] Normalize every raw report in strict chunk-ID order before later workers use its findings for deduplication
+- [x] Create one non-partial `GQC-*` record per completed chunk, including explicit clean results
+- [x] Reconcile observations, finding and investigation IDs, duplicate links, queue counts, and remediation candidates after Chunk 0030
+- [x] Verify all 30 queue rows are terminal, no survey worker remains active, reports are ASCII/no-BOM, and campaign files pass `git diff --check`
 
 ## Initial hypotheses to verify
 

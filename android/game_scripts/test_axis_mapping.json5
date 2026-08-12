@@ -39,7 +39,7 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_default_config",
-     "when": "d2", "post_delay_ms": 1000},
+     "post_delay_ms": 1000},
     {"action": "enter_game", "game": "d1", "when": "d1"},
     {"action": "enter_game", "game": "d2", "when": "d2"},
 

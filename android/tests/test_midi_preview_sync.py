@@ -48,36 +48,74 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             "pthread_mutex_unlock(&s_playback_mutex)",
         )
 
-    def test_seek_is_an_ordered_control_and_playback_transaction(self) -> None:
+    def test_seek_queues_without_waiting_for_render_or_synth(self) -> None:
         body = function_body(self.source, "midi_preview_seek")
         require_order(
             self,
             body,
             "pthread_mutex_lock(&s_control_mutex)",
-            "pthread_mutex_lock(&s_playback_mutex)",
-            "tsf_reset(s_tsf)",
-            "midi_seek_timeline_reconstruct(&s_timeline, target_frame",
-            "s_playback_msec = target_ms",
-            "pthread_mutex_lock(&s_ring_reset_mutex)",
-            "rb_reset()",
-            "rb_write(seek_buffer, prefill_frames * 2)",
-            "pthread_mutex_unlock(&s_ring_reset_mutex)",
-            "pthread_mutex_unlock(&s_playback_mutex)",
+            "target_ms = (int) (fraction * s_duration_ms)",
+            "__atomic_store_n(&s_position_snapshot_ms, target_ms",
+            "__atomic_store_n(&s_seek_target_ms, target_ms",
             "pthread_mutex_unlock(&s_control_mutex)",
         )
+        self.assertNotIn("pthread_mutex_lock(&s_playback_mutex)", body)
+        self.assertNotIn("tsf_render", body)
+        self.assertNotIn("midi_seek_timeline_reconstruct", body)
 
-    def test_state_snapshot_uses_the_same_lock_order(self) -> None:
+    def test_state_snapshot_is_nonblocking(self) -> None:
         body = function_body(self.source, "midi_preview_get_state")
         require_order(
             self,
             body,
-            "pthread_mutex_lock(&s_control_mutex)",
-            "pthread_mutex_lock(&s_playback_mutex)",
-            "s_playback_msec",
-            "s_duration_ms",
-            "pthread_mutex_unlock(&s_playback_mutex)",
-            "pthread_mutex_unlock(&s_control_mutex)",
+            "__atomic_load_n(&s_playing",
+            "__atomic_load_n(&s_paused",
+            "__atomic_load_n(&s_position_snapshot_ms",
+            "__atomic_load_n(&s_duration_snapshot_ms",
         )
+        self.assertNotIn("pthread_mutex_lock", body)
+
+    def test_pause_and_resume_do_not_wait_for_rendering(self) -> None:
+        pause_body = function_body(self.source, "midi_preview_pause")
+        resume_body = function_body(self.source, "midi_preview_resume")
+        self.assertIn("__atomic_store_n(&s_paused, 1", pause_body)
+        self.assertIn("__atomic_store_n(&s_output_enabled, 0", pause_body)
+        self.assertIn("__atomic_store_n(&s_paused, 0", resume_body)
+        self.assertNotIn("pthread_mutex_lock(&s_playback_mutex)", pause_body)
+        self.assertNotIn("pthread_mutex_lock(&s_playback_mutex)", resume_body)
+
+    def test_render_thread_applies_latest_queued_seek(self) -> None:
+        body = function_body(self.source, "render_thread_func")
+        require_order(
+            self,
+            body,
+            "pthread_mutex_lock(&s_playback_mutex)",
+            "__atomic_exchange_n(&s_seek_target_ms, -1",
+            "approximate_seek(target_ms)",
+            "render_midi_frames(buf, CHUNK)",
+            "pthread_mutex_unlock(&s_playback_mutex)",
+        )
+
+    def test_approximate_seek_replays_events_without_rendering_pcm(self) -> None:
+        body = function_body(self.source, "approximate_seek")
+        require_order(
+            self,
+            body,
+            "tsf_reset(s_tsf)",
+            "while (message && message->time <= (unsigned int) target_ms)",
+            "case TML_NOTE_ON",
+            "case TML_NOTE_OFF",
+            "case TML_PROGRAM_CHANGE",
+            "case TML_CONTROL_CHANGE",
+            "case TML_PITCH_BEND",
+            "tsf_channel_note_on(s_tsf",
+            "reset_midi_timeline()",
+            "s_timeline.event = message",
+            "s_timeline.frame = midi_seek_timeline_frame_for_ms",
+            "rb_reset()",
+        )
+        self.assertNotIn("tsf_render", body)
+        self.assertNotIn("midi_seek_timeline_reconstruct", body)
 
     def test_audio_callback_never_blocks_on_seek_or_render(self) -> None:
         body = function_body(self.source, "osl_callback")
@@ -97,7 +135,7 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             self,
             body,
             "pthread_mutex_lock(&s_playback_mutex)",
-            "s_playing = 0",
+            "__atomic_store_n(&s_playing, 0",
             "pthread_mutex_unlock(&s_playback_mutex)",
             "render_thread_stop()",
             "osl_shutdown()",
@@ -114,7 +152,6 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             "midi_preview_pause",
             "midi_preview_resume",
             "midi_preview_seek",
-            "midi_preview_get_state",
         ):
             body = function_body(self.source, name)
             self.assertIn("pthread_mutex_lock(&s_control_mutex)", body)

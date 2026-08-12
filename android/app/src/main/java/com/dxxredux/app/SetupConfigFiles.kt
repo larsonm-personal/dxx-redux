@@ -200,7 +200,7 @@ internal fun resolveMusicLaunchPolicy(
     missionHasSoundtrack: Boolean,
     useMissionSoundtrackWhenAvailable: Boolean,
 ): MusicLaunchPolicy {
-    val mode = musicMode ?: "cd"
+    val mode = musicMode ?: "midi"
     val useMissionZipSoundtrack =
         musicTypeOverride == null &&
             useMissionSoundtrackWhenAvailable &&
@@ -212,7 +212,7 @@ internal fun resolveMusicLaunchPolicy(
             mode == "midi" -> MUSIC_TYPE_BUILTIN.toString()
             mode == "cd" -> MUSIC_TYPE_REDBOOK.toString()
             mode == "files" -> MUSIC_TYPE_CUSTOM.toString()
-            else -> MUSIC_TYPE_REDBOOK.toString()
+            else -> MUSIC_TYPE_BUILTIN.toString()
         }
 
     return MusicLaunchPolicy(
@@ -249,7 +249,7 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
                 else -> "midi"
             }
         } else {
-            prefs.getString("music_mode", "cd") ?: "cd"
+            prefs.getString("music_mode", "midi") ?: "midi"
         }
     val useMissionSoundtrack =
         if (pilotMusic.hasPilotFile) {

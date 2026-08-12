@@ -740,7 +740,12 @@ class MusicControlPanel(
     private fun setSource(source: String) {
         val a = activity ?: return
         if (source == "files") {
-            CustomAudioSetManager(a.filesDir).writeM3U(a)
+            if (CustomAudioSetManager(a.filesDir).writeM3U(a) == null) {
+                Toast.makeText(a, "No readable custom audio files", Toast.LENGTH_LONG).show()
+                refreshSourceOptions()
+                invalidate()
+                return
+            }
         }
         if (source == "cd") {
             try {

@@ -420,10 +420,8 @@ class AudioSourceManager(
         val playlistFile = File(filesDir, PLAYLIST_FILE)
         val enabled = getEnabledSources()
         if (enabled.isEmpty()) {
-            playlistFile.delete()
             return false
         }
-        playlistFile.delete()
         requireAudioPlaylistCapacity(enabled)
         val activeSetDir = activeSetDirOrNull()
 

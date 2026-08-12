@@ -19,15 +19,3 @@ include_directories(../include ../arch/include ../main)
 find_package(SDL)
 find_package(PhysFS)
 target_include_directories(${DXX_TARGET_PREFIX}misc PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
-
-if(NOT ANDROID)
-    enable_testing()
-    add_executable(test_args_defaults ../../android/tests/test_args_defaults.c)
-    target_compile_definitions(test_args_defaults PRIVATE DXX_ARGS_TEST_D2=1)
-    target_link_libraries(test_args_defaults PRIVATE
-        ${DXX_TARGET_PREFIX}misc
-        ${DXX_TARGET_PREFIX}mem
-        ${SDL_LIBRARY}
-        ${PHYSFS_LIBRARY})
-    add_test(NAME test_args_defaults COMMAND test_args_defaults)
-endif()

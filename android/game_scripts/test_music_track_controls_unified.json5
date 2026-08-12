@@ -39,6 +39,24 @@
         "music_preview.midi.position_ms": {"gt": 1000},
         "music_preview.midi.duration_ms": {"gt": 1000}
     }},
+    {"action": "setup_command", "when": "d2", "command": "music_midi_seek",
+     "args": {"fraction": 0.75}, "post_delay_ms": 250},
+    {"action": "assert", "when": "d2", "expect": {
+        "music_preview.midi.state": "playing",
+        "music_preview.midi.position_ms": {"gt": 130000}
+    }},
+    {"action": "setup_command", "when": "d2",
+     "command": "music_midi_pause", "post_delay_ms": 100},
+    {"action": "assert", "when": "d2", "expect": {
+        "music_preview.midi.state": "paused",
+        "music_preview.midi.position_ms": {"gt": 130000}
+    }},
+    {"action": "setup_command", "when": "d2",
+     "command": "music_midi_resume", "post_delay_ms": 100},
+    {"action": "assert", "when": "d2", "expect": {
+        "music_preview.midi.state": "playing",
+        "music_preview.midi.position_ms": {"gt": 130000}
+    }},
     {"action": "setup_command", "when": "d2",
      "command": "music_midi_stop", "post_delay_ms": 500},
     {"action": "assert", "when": "d2",

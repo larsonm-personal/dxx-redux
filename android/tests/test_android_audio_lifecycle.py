@@ -7,6 +7,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SOURCE = (REPO_ROOT / "android/app/src/main/cpp/SDL_androidaudio.c").read_text(encoding="utf-8")
 CMAKE = (REPO_ROOT / "android/app/src/main/cpp/CMakeLists.txt").read_text(encoding="utf-8")
 MUSIC = (REPO_ROOT / "android/app/src/main/cpp/shared/digi_tsf_music.c").read_text(encoding="utf-8")
+MUSIC_CONTROL = (REPO_ROOT / "android/app/src/main/cpp/jni_music_control.c").read_text(
+    encoding="utf-8"
+)
 
 
 def function_body(source: str, name: str) -> str:
@@ -125,6 +128,32 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
         for game in ("d1", "d2"):
             event = (REPO_ROOT / game / "arch/sdl/event.c").read_text(encoding="utf-8")
             self.assertIn("mix_poll_music();", event)
+
+    def test_music_overlay_uses_engine_published_snapshots(self) -> None:
+        publish = function_body(MUSIC_CONTROL, "music_publish_snapshot")
+        apply = function_body(MUSIC_CONTROL, "android_music_control_apply_pending")
+        self.assertIn("music_publish_snapshot();", apply)
+        for query in (
+            "nativeGetTrackName",
+            "nativeGetCurrentTrackNum",
+            "nativeGetNumAudioTracks",
+            "nativeGetTotalTracks",
+            "nativeIsAudioTrack",
+            "nativeGetCurrentTrackInfo",
+            "nativeGetMusicType",
+            "nativeGetMusicOverlayState",
+            "nativeGetTrackList",
+        ):
+            body = function_body(
+                MUSIC_CONTROL, f"Java_com_dxxredux_app_MainActivity_{query}"
+            )
+            self.assertIn("pthread_mutex_lock(&g_music_snapshot_mutex)", body)
+            self.assertNotIn("songs_get_", body)
+            self.assertNotIn("RBAGet", body)
+            self.assertNotIn("RBAIs", body)
+        self.assertIn("songs_get_track_info", publish)
+        self.assertIn("music_alloc_track_list", publish)
+        self.assertIn("RBAGetTrackName", publish)
 
 
 if __name__ == "__main__":

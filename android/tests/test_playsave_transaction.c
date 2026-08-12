@@ -93,12 +93,15 @@ int main(void)
 	large = (unsigned char *)malloc(65537);
 	expect(large != NULL, "allocate large fixture");
 	if (large) {
-		for (i = 0; i < 65537; i++)
-			large[i] = (unsigned char)(i * 31u);
-		expect(playsave_atomic_replace_file(test_path, large, 65537),
-		       "large atomic replacement succeeds");
-		expect(file_equals(large, 65537),
-		       "large replacement is not truncated");
+		unsigned int iteration;
+		for (iteration = 0; iteration < 20; ++iteration) {
+			for (i = 0; i < 65537; i++)
+				large[i] = (unsigned char)(i * 31u + iteration);
+			expect(playsave_atomic_replace_file(test_path, large, 65537),
+			       "large atomic replacement succeeds");
+			expect(file_equals(large, 65537),
+			       "large replacement is not truncated");
+		}
 		free(large);
 	}
 

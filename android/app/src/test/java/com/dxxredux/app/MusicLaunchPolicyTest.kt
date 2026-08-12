@@ -102,4 +102,21 @@ class MusicLaunchPolicyTest {
         assertTrue(cd.useCdTrackOrder)
         assertTrue(files.useCustomAudioFiles)
     }
+
+    @Test
+    fun missingOrUnknownModeUsesPlayableMidiDefault() {
+        for (mode in listOf(null, "unknown")) {
+            val policy =
+                resolveMusicLaunchPolicy(
+                    musicMode = mode,
+                    musicTypeOverride = null,
+                    missionHasSoundtrack = false,
+                    useMissionSoundtrackWhenAvailable = true,
+                )
+
+            assertEquals("1", policy.musicType)
+            assertFalse(policy.useCdTrackOrder)
+            assertFalse(policy.useCustomAudioFiles)
+        }
+    }
 }

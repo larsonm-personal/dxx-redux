@@ -2,7 +2,9 @@ package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class CustomAudioSetManagerTest {
     @Test
@@ -42,5 +44,24 @@ class CustomAudioSetManagerTest {
             )
 
         assertNull(remaining)
+    }
+
+    @Test
+    fun failedPlaylistGenerationPreservesLastPublishedPlaylist() {
+        val filesDir = File("build/test-custom-audio-preserve").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val playlist = File(filesDir, CustomAudioSetManager.PLAYLIST_FILE)
+        val names = File(filesDir, CustomAudioSetManager.NAMES_FILE)
+        playlist.writeText("last-good\n")
+        names.writeText("last-good-names\n")
+        CustomAudioSetManager(filesDir).addSet(
+            CustomAudioSetManager.AudioSet("missing", "Missing", listOf("missing.ogg")),
+        )
+
+        assertNull(CustomAudioSetManager(filesDir).writeM3U())
+        assertEquals("last-good\n", playlist.readText())
+        assertEquals("last-good-names\n", names.readText())
+        assertTrue(playlist.isFile)
     }
 }

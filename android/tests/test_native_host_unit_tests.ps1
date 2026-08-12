@@ -32,14 +32,13 @@ function Invoke-NativeCTest {
 
     $buildDirName = if ($GameName -eq 'd1') { 'buildd1' } else { 'buildd2' }
     $buildDir = Join-Path $repoRoot $buildDirName
-    $testDir = Join-Path $buildDir 'maths'
-    if (-not (Test-Path -LiteralPath (Join-Path $testDir 'CTestTestfile.cmake'))) {
-        throw "CTest metadata not found for $GameName in $testDir"
+    if (-not (Test-Path -LiteralPath (Join-Path $buildDir 'CTestTestfile.cmake'))) {
+        throw "CTest metadata not found for $GameName in $buildDir"
     }
 
     Write-Host ""
     Write-Host "Running native CTest suite for $GameName"
-    ctest --test-dir $testDir -C $Configuration --output-on-failure
+    ctest --test-dir $buildDir -C $Configuration --output-on-failure
     if ($LASTEXITCODE -ne 0) {
         throw "CTest failed for $GameName with exit code $LASTEXITCODE"
     }

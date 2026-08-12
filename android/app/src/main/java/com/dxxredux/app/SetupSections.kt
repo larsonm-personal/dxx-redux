@@ -2088,18 +2088,23 @@ internal fun MusicInfoSection(
         audioSources = loaded.second
     }
     val hasCdAudio = audioSources.any { it.enabled }
-    val hasCustomAudio = CustomAudioSetManager(filesDir).getEnabledSets().any { it.files.isNotEmpty() }
+    val hasCustomAudio =
+        CustomAudioSetManager(filesDir).hasUsableTrack { uri ->
+            runCatching {
+                context.contentResolver.openFileDescriptor(android.net.Uri.parse(uri), "r")?.use { true } ?: false
+            }.getOrDefault(false)
+        }
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
 
     val prefs = context.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
-    val musicMode = prefs.getString("music_mode", "cd") ?: "cd"
+    val musicMode = prefs.getString("music_mode", "midi") ?: "midi"
     val modeLabel =
         when (musicMode) {
             "midi" -> "MIDI"
             "cd" -> "CD Audio"
             "files" -> "Audio Files"
-            else -> "CD Audio"
+            else -> "MIDI"
         }
 
     val musicReady =

@@ -4,6 +4,10 @@
 cmake_minimum_required (VERSION 3.21)
 project(dxx-redux-d1 VERSION 1.1)
 
+if(NOT ANDROID)
+    include(CTest)
+endif()
+
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../android/app/src/main/cpp/shared)
 
 option(OPENGL "Build with OpenGL support [default: ON]" ON)
@@ -149,4 +153,12 @@ if(EDITOR)
     add_subdirectory(editor)
     add_subdirectory(ui)
     add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}editor ${DXX_TARGET_PREFIX}ui)
+endif()
+
+if(BUILD_TESTING AND NOT ANDROID)
+    set(DXX_TEST_GAME d1)
+    add_subdirectory(
+        "${CMAKE_CURRENT_LIST_DIR}/../android/tests"
+        "${CMAKE_CURRENT_BINARY_DIR}/tests"
+        )
 endif()

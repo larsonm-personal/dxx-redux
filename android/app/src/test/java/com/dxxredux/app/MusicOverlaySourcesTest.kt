@@ -26,6 +26,10 @@ class MusicOverlaySourcesTest {
                 enabled = true,
             ),
         )
+        File(filesDir, "${CustomAudioSetManager.MUSIC_DIR}/custom/track.ogg").apply {
+            parentFile?.mkdirs()
+            writeText("audio")
+        }
         File(filesDir, "audio_sources.json").writeText(
             """
             {
@@ -66,6 +70,19 @@ class MusicOverlaySourcesTest {
             {"sources":[{"id":"cd","cue":"missing.cue","bins":["missing.bin"],"label":"Disc",
             "disc_id":"unknown","track_count":101,"audio_track_count":100,"legacy_disc_id":0,"enabled":true}]}
             """.trimIndent(),
+        )
+
+        assertEquals(
+            listOf(MusicOverlaySourceOption("midi", "Base game MIDI")),
+            musicOverlaySourceOptions(filesDir, "d2"),
+        )
+    }
+
+    @Test
+    fun missingCustomTrackIsNotAdvertised() {
+        val filesDir = freshDir("build/test-music-overlay-missing-custom")
+        CustomAudioSetManager(filesDir).addSet(
+            CustomAudioSetManager.AudioSet("custom", "Custom", listOf("missing.ogg")),
         )
 
         assertEquals(

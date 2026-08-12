@@ -678,6 +678,10 @@ class LauncherScriptExecutor(
             .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             .edit()
             .clear()
+            // A reset has no guaranteed CD or custom-audio registry. Keep the
+            // next ordinary launch self-contained; source-specific scripts
+            // explicitly select CD or files after registering their inputs.
+            .putString("music_mode", "midi")
             .commit()
         context
             .getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE)
