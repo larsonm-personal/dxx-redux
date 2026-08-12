@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include <android/log.h>
 
 #include "songs.h"
@@ -29,9 +30,59 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 extern int tsf_music_get_paused(void);
-static volatile int g_music_source_state = 0; /* 0 idle, 1 queued, 2 applying */
-static volatile int g_music_source_type = MUSIC_TYPE_REDBOOK;
-static volatile int g_music_source_prefer_mission = 0;
+typedef enum android_music_command_type {
+	MUSIC_COMMAND_SOURCE,
+	MUSIC_COMMAND_NEXT,
+	MUSIC_COMMAND_PREVIOUS,
+	MUSIC_COMMAND_TRACK,
+	MUSIC_COMMAND_PREFER_MISSION,
+	MUSIC_COMMAND_PLAY_ORDER,
+	MUSIC_COMMAND_VOLUME,
+	MUSIC_COMMAND_PAUSE
+} android_music_command_type;
+
+typedef struct android_music_command {
+	android_music_command_type type;
+	int value;
+	int auxiliary;
+} android_music_command;
+
+enum { MUSIC_COMMAND_CAPACITY = 64 };
+static pthread_mutex_t g_music_control_mutex = PTHREAD_MUTEX_INITIALIZER;
+static android_music_command g_music_commands[MUSIC_COMMAND_CAPACITY];
+static unsigned int g_music_command_read;
+static unsigned int g_music_command_count;
+
+static int music_enqueue(android_music_command_type type, int value, int auxiliary)
+{
+	unsigned int slot;
+	pthread_mutex_lock(&g_music_control_mutex);
+	if (g_music_command_count == MUSIC_COMMAND_CAPACITY) {
+		pthread_mutex_unlock(&g_music_control_mutex);
+		return 0;
+	}
+	slot = (g_music_command_read + g_music_command_count) % MUSIC_COMMAND_CAPACITY;
+	g_music_commands[slot].type = type;
+	g_music_commands[slot].value = value;
+	g_music_commands[slot].auxiliary = auxiliary;
+	++g_music_command_count;
+	pthread_mutex_unlock(&g_music_control_mutex);
+	return 1;
+}
+
+static int music_dequeue(android_music_command *command)
+{
+	pthread_mutex_lock(&g_music_control_mutex);
+	if (!g_music_command_count) {
+		pthread_mutex_unlock(&g_music_control_mutex);
+		return 0;
+	}
+	*command = g_music_commands[g_music_command_read];
+	g_music_command_read = (g_music_command_read + 1) % MUSIC_COMMAND_CAPACITY;
+	--g_music_command_count;
+	pthread_mutex_unlock(&g_music_control_mutex);
+	return 1;
+}
 
 static int music_clamp(int value, int min_value, int max_value)
 {
@@ -136,53 +187,58 @@ static void music_save_config(void)
 
 int android_music_control_apply_pending(void)
 {
-	int new_type;
-	int prefer_mission;
-
-	if (!g_music_source_state)
+	android_music_command command;
+	if (!music_dequeue(&command))
 		return 0;
-
-	new_type = g_music_source_type;
-	prefer_mission = g_music_source_prefer_mission;
-	g_music_source_state = 2;
-
-	crash_breadcrumb_v("music source apply: type=%d prefer=%d game_wind=%d level=%d",
-	                   new_type,
-	                   prefer_mission,
-	                   Game_wind ? 1 : 0,
-	                   Current_level_num);
-	debug_log(DLOG_GAME,
-	          "music source apply: type=%d prefer_mission=%d game_wind=%d level=%d",
-	          new_type,
-	          prefer_mission,
-	          Game_wind ? 1 : 0,
-	          Current_level_num);
-	GameCfg.MusicType = new_type;
-	android_music_set_prefer_mission_soundtrack(prefer_mission);
-	music_save_config();
-	music_replay_current();
-	debug_log(DLOG_GAME, "music source apply complete: type=%d", GameCfg.MusicType);
-	g_music_source_state = 0;
+	do {
+		switch (command.type) {
+			case MUSIC_COMMAND_SOURCE:
+				GameCfg.MusicType = command.value;
+				android_music_set_prefer_mission_soundtrack(command.auxiliary);
+				music_save_config();
+				music_replay_current();
+				break;
+			case MUSIC_COMMAND_NEXT: songs_next_track(); break;
+			case MUSIC_COMMAND_PREVIOUS: songs_prev_track(); break;
+			case MUSIC_COMMAND_TRACK: songs_play_specific_track(command.value); break;
+			case MUSIC_COMMAND_PREFER_MISSION:
+				android_music_set_prefer_mission_soundtrack(command.value);
+				break;
+			case MUSIC_COMMAND_PLAY_ORDER:
+				GameCfg.CMLevelMusicPlayOrder = command.value;
+				music_save_config();
+				break;
+			case MUSIC_COMMAND_VOLUME:
+				GameCfg.MusicVolume = (ubyte) command.value;
+				songs_set_volume(GameCfg.MusicVolume);
+				music_save_config();
+				break;
+			case MUSIC_COMMAND_PAUSE:
+				if (command.value) songs_pause();
+				else songs_resume();
+				break;
+		}
+	} while (music_dequeue(&command));
 	return 1;
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeNextTrack(JNIEnv *env, jobject thiz)
 {
-	return songs_next_track();
+	return music_enqueue(MUSIC_COMMAND_NEXT, 0, 0);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativePrevTrack(JNIEnv *env, jobject thiz)
 {
-	return songs_prev_track();
+	return music_enqueue(MUSIC_COMMAND_PREVIOUS, 0, 0);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativePlaySpecificTrack(
     JNIEnv *env, jobject thiz, jint track)
 {
-	return songs_play_specific_track(track);
+	return music_enqueue(MUSIC_COMMAND_TRACK, track, 0);
 }
 
 JNIEXPORT jstring JNICALL
@@ -326,9 +382,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsMusicSourceChangePending(JNIEnv *env, jobject thiz)
 {
+	int pending;
 	(void) env;
 	(void) thiz;
-	return g_music_source_state ? JNI_TRUE : JNI_FALSE;
+	pthread_mutex_lock(&g_music_control_mutex);
+	pending = g_music_command_count != 0;
+	pthread_mutex_unlock(&g_music_control_mutex);
+	return pending ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL
@@ -337,7 +397,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetMissionSoundtrackPreference(
 {
 	(void) env;
 	(void) thiz;
-	android_music_set_prefer_mission_soundtrack(enabled ? 1 : 0);
+	music_enqueue(MUSIC_COMMAND_PREFER_MISSION, enabled ? 1 : 0, 0);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -371,9 +431,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
 	snprintf(src_copy, sizeof(src_copy), "%s", src);
 	free(src);
 
-	g_music_source_type = new_type;
-	g_music_source_prefer_mission = prefer_mission;
-	g_music_source_state = 1;
+	if (!music_enqueue(MUSIC_COMMAND_SOURCE, new_type, prefer_mission))
+		return JNI_FALSE;
 	crash_breadcrumb_v("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
 	LOGI("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
 	debug_log(DLOG_GAME, "music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
@@ -385,16 +444,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicOneTrackPerLevel(
     JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	int play_order = enabled ? MUSIC_CM_PLAYORDER_LEVEL : MUSIC_CM_PLAYORDER_CONT;
-	int was_level = GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL;
 	(void) env;
 	(void) thiz;
-	if (GameCfg.CMLevelMusicPlayOrder == play_order)
-		return JNI_TRUE;
-	GameCfg.CMLevelMusicPlayOrder = play_order;
-	music_save_config();
-	if (Game_wind && enabled && !was_level)
-		music_replay_current();
-	return JNI_TRUE;
+	return music_enqueue(MUSIC_COMMAND_PLAY_ORDER, play_order, 0) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
@@ -403,32 +455,17 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicVolume(
 {
 	(void) env;
 	(void) thiz;
-	GameCfg.MusicVolume = (ubyte) music_clamp(volume, 0, 8);
-	songs_set_volume(GameCfg.MusicVolume);
-	music_save_config();
-	return GameCfg.MusicVolume;
+	volume = music_clamp(volume, 0, 8);
+	return music_enqueue(MUSIC_COMMAND_VOLUME, volume, 0) ? volume : -1;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetMusicPaused(
     JNIEnv *env, jobject thiz, jboolean paused)
 {
-	int redbook_status;
 	(void) env;
 	(void) thiz;
-	if (GameCfg.MusicType == MUSIC_TYPE_REDBOOK) {
-		redbook_status = RBAPeekPlayStatus();
-		if ((paused && redbook_status != 1) || (!paused && redbook_status != -1))
-			return JNI_FALSE;
-	}
-	if (paused)
-		songs_pause();
-	else
-		songs_resume();
-	if (GameCfg.MusicType == MUSIC_TYPE_BUILTIN ||
-	    GameCfg.MusicType == MUSIC_TYPE_CUSTOM)
-		return JNI_TRUE;
-	return music_is_paused() == (paused ? 1 : 0) ? JNI_TRUE : JNI_FALSE;
+	return music_enqueue(MUSIC_COMMAND_PAUSE, paused ? 1 : 0, 0) ? JNI_TRUE : JNI_FALSE;
 }
 
 /* Returns JSON array of playable tracks for the track picker popup. */

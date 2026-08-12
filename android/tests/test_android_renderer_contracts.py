@@ -99,6 +99,8 @@ class AndroidRendererContractsTest(unittest.TestCase):
         body = shared[start:end]
         self.assertIn('static const char *exts[] = { ".png", ".jpg", ".tga" };', body)
         self.assertLess(body.index("png_attempts++"), body.index("for (ei = 0; ei < 3; ei++)"))
+        self.assertLess(body.index("android_ogl_texture_filename("), body.index("read_png("))
+        self.assertIn("continue;", body[body.index("android_ogl_texture_filename(") : body.index("read_png(")])
         self.assertLess(body.index("png_slot_us[slot]"), body.index("png_hit_slot = slot"))
         self.assertLess(body.index("png_ext_us[ei]"), body.index("png_hit_ext = ei"))
         self.assertIn("clock_gettime(CLOCK_MONOTONIC, ts);", shared)
@@ -114,6 +116,7 @@ class AndroidRendererContractsTest(unittest.TestCase):
             self.assertNotIn("static int ogl_read_texture_with_extensions", source)
             self.assertNotIn("static void android_profile_texture_lookup_note_ktx2", source)
             self.assertIn("android_ogl_read_texture_with_extensions", source)
+            self.assertIn("sizeof(filename)", source)
             self.assertIn("clock_gettime(CLOCK_MONOTONIC, ts);", source)
             self.assertIn("(end->tv_sec - start->tv_sec) * 1000000", source)
             self.assertIn("(end->tv_nsec - start->tv_nsec) / 1000", source)

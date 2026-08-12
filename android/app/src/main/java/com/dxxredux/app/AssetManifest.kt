@@ -136,7 +136,7 @@ class AssetManifest(
             }
             json.put(obj)
         }
-        manifestFile.writeText(json.toString(2))
+        AtomicFilePublication.writeUtf8(manifestFile, json.toString(2))
     }
 
     /**
@@ -148,20 +148,19 @@ class AssetManifest(
         sha256: String,
         sizeBytes: Long,
         sourceUri: String? = null,
-    ): AssetEntry {
-        val entries = load().toMutableList()
-        val lowerName = portableGameFilenameIdentity(filename)
-        val versionName = KnownVersions.lookup(lowerName, sha256)
-        val now = System.currentTimeMillis()
-
-        val entry =
-            AssetEntry(lowerName, sha256.lowercase(java.util.Locale.ROOT), sizeBytes, now, versionName, sourceUri)
-        entries.removeAll { it.filename == lowerName }
-        entries.add(entry)
-
-        save(entries)
-        return entry
-    }
+    ): AssetEntry =
+        AtomicFilePublication.transaction {
+            val entries = load().toMutableList()
+            val lowerName = portableGameFilenameIdentity(filename)
+            val versionName = KnownVersions.lookup(lowerName, sha256)
+            val now = System.currentTimeMillis()
+            val entry =
+                AssetEntry(lowerName, sha256.lowercase(java.util.Locale.ROOT), sizeBytes, now, versionName, sourceUri)
+            entries.removeAll { it.filename == lowerName }
+            entries.add(entry)
+            save(entries)
+            entry
+        }
 
     /**
      * Look up a manifest entry by filename (case-insensitive).
@@ -173,39 +172,42 @@ class AssetManifest(
      * Remove a manifest entry by filename (case-insensitive).
      */
     fun remove(filename: String) {
-        val entries = load().toMutableList()
-        entries.removeAll { it.filename == portableGameFilenameIdentity(filename) }
-        save(entries)
+        AtomicFilePublication.transaction {
+            val entries = load().toMutableList()
+            entries.removeAll { it.filename == portableGameFilenameIdentity(filename) }
+            save(entries)
+        }
     }
 
     /**
      * Remove manifest entries whose files no longer exist on disk.
      * Returns list of pruned filenames for user notification.
      */
-    fun pruneStaleEntries(): List<String> {
-        val entries = load()
-        val stale = entries.filter { findDiskFile(it.filename) == null }
-        if (stale.isEmpty()) return emptyList()
-        LauncherDebugLog.log(
-            "asset-manifest prune start manifest=${manifestFile.absolutePath} stale_count=${stale.size}",
-        )
-        for (entry in stale.sortedBy { it.filename }) {
-            val file = findDiskFile(entry.filename) ?: File(filesDir, entry.filename)
+    fun pruneStaleEntries(): List<String> =
+        AtomicFilePublication.transaction {
+            val entries = load()
+            val stale = entries.filter { findDiskFile(it.filename) == null }
+            if (stale.isEmpty()) return@transaction emptyList()
             LauncherDebugLog.log(
-                "asset-manifest stale filename=${entry.filename} path=${file.absolutePath} exists=${file.exists()} manifest_size=${entry.sizeBytes} source_uri=${entry.sourceUri ?: "-"} version=${entry.versionName ?: "-"}",
+                "asset-manifest prune start manifest=${manifestFile.absolutePath} stale_count=${stale.size}",
             )
+            for (entry in stale.sortedBy { it.filename }) {
+                val file = findDiskFile(entry.filename) ?: File(filesDir, entry.filename)
+                LauncherDebugLog.log(
+                    "asset-manifest stale filename=${entry.filename} path=${file.absolutePath} exists=${file.exists()} manifest_size=${entry.sizeBytes} source_uri=${entry.sourceUri ?: "-"} version=${entry.versionName ?: "-"}",
+                )
+            }
+            val pruned = stale.map { it.filename }
+            val kept = entries.filterNot { findDiskFile(it.filename) == null }
+            save(kept)
+            LauncherDebugLog.log(
+                "asset-manifest prune complete manifest=${manifestFile.absolutePath} kept_count=${kept.size}",
+            )
+            for (name in pruned) {
+                Log.i("AssetManifest", "Pruned stale entry: $name")
+            }
+            pruned
         }
-        val pruned = stale.map { it.filename }
-        val kept = entries.filterNot { findDiskFile(it.filename) == null }
-        save(kept)
-        LauncherDebugLog.log(
-            "asset-manifest prune complete manifest=${manifestFile.absolutePath} kept_count=${kept.size}",
-        )
-        for (name in pruned) {
-            Log.i("AssetManifest", "Pruned stale entry: $name")
-        }
-        return pruned
-    }
 
     /**
      * Find files on disk that have no manifest entry or whose size has changed,

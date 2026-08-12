@@ -9,6 +9,7 @@
 #include "android_log.h"
 #include "console.h"
 #include "ogl_texture_android.h"
+#include "ogl_texture_filename.h"
 #include "pngfile.h"
 
 static void android_ogl_texture_clock_now(struct timespec *ts)
@@ -25,7 +26,8 @@ static int android_ogl_texture_elapsed_us(const struct timespec *start,
 
 int android_ogl_read_texture_with_extensions(
     char *filename, const char *basename, png_data *pdata,
-    struct android_profile_texture_lookup_metrics *lookup, int slot)
+    struct android_profile_texture_lookup_metrics *lookup, int slot,
+    size_t filename_capacity)
 {
 	static const char *exts[] = { ".png", ".jpg", ".tga" };
 	int ei;
@@ -38,7 +40,9 @@ int android_ogl_read_texture_with_extensions(
 		int loaded;
 		long long elapsed_us;
 
-		sprintf(filename, "%s%s", basename, exts[ei]);
+		if (!android_ogl_texture_filename(filename, filename_capacity, basename,
+		                                  exts[ei]))
+			continue;
 		android_ogl_texture_clock_now(&stage_start);
 		loaded = read_png(filename, pdata);
 		android_ogl_texture_clock_now(&stage_end);

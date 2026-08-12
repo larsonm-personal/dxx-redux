@@ -253,6 +253,8 @@ static int extract_progress_cb(const char *current_file,
 	                                         (jlong) bytes_done,
 	                                         (jlong) bytes_total);
 	(*ctx->env)->DeleteLocalRef(ctx->env, jfile);
+	if ((*ctx->env)->ExceptionCheck(ctx->env))
+		return 1;
 	return (int) cancel;
 }
 

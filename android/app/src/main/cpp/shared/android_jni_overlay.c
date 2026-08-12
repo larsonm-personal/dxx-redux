@@ -13,20 +13,32 @@ extern jobject g_activity;
 
 static void call_java_string_method(const char *method_name, const char *text)
 {
-	JNIEnv *env;
+	JNIEnv *env = NULL;
+	jclass cls = NULL;
+	jstring jstr = NULL;
 	int attached = 0;
-	if (!g_jvm || !g_activity) return;
-	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
-		(*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
+	if (!g_jvm || !g_activity || !method_name || !text) return;
+	const jint get_env = (*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6);
+	if (get_env == JNI_EDETACHED) {
+		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK)
+			return;
 		attached = 1;
+	} else if (get_env != JNI_OK) {
+		return;
 	}
-	jclass cls = (*env)->GetObjectClass(env, g_activity);
-	jmethodID mid = (*env)->GetMethodID(env, cls, method_name, "(Ljava/lang/String;)V");
-	if (mid) {
-		jstring jstr = (*env)->NewStringUTF(env, text);
-		(*env)->CallVoidMethod(env, g_activity, mid, jstr);
-		(*env)->DeleteLocalRef(env, jstr);
+	cls = (*env)->GetObjectClass(env, g_activity);
+	if (cls) {
+		jmethodID mid = (*env)->GetMethodID(env, cls, method_name, "(Ljava/lang/String;)V");
+		jstr = mid ? (*env)->NewStringUTF(env, text) : NULL;
+		if (mid && jstr)
+			(*env)->CallVoidMethod(env, g_activity, mid, jstr);
 	}
+	if ((*env)->ExceptionCheck(env)) {
+		(*env)->ExceptionDescribe(env);
+		(*env)->ExceptionClear(env);
+	}
+	if (jstr) (*env)->DeleteLocalRef(env, jstr);
+	if (cls) (*env)->DeleteLocalRef(env, cls);
 	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
 }
 

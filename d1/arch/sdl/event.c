@@ -229,6 +229,7 @@ void event_process(void)
 	                                    Game_wind != NULL,
 	                                    wind == Game_wind,
 	                                    (Game_mode & GM_MULTI) != 0);
+	android_overlay_game_tick();
 #endif
 	timer_update();
 

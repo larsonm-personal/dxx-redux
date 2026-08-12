@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.media.AudioManager
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * JNI bridge for CD audio preview playback in the launcher.
@@ -15,6 +16,10 @@ object CdPreviewBridge {
     const val STATE_STOPPED = 0
     const val STATE_PLAYING = 1
     const val STATE_PAUSED = -1
+    private val lifecycleLock = Any()
+    private val requestedGeneration = AtomicLong()
+
+    fun reserveStart(): Long = requestedGeneration.incrementAndGet()
 
     init {
         System.loadLibrary("dxx-redux-d2")
@@ -45,14 +50,30 @@ object CdPreviewBridge {
         cuePath: String,
         audioTrack: Int,
         sampleRate: Int,
-    ): Boolean = nativeStart(binPath, cuePath, audioTrack, sampleRate)
+    ): Boolean = startReserved(reserveStart(), binPath, cuePath, audioTrack, sampleRate)
+
+    fun startReserved(
+        generation: Long,
+        binPath: String,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = runReserved(generation) { nativeStart(binPath, cuePath, audioTrack, sampleRate) }
 
     fun startMulti(
         binPaths: List<String>,
         cuePath: String,
         audioTrack: Int,
         sampleRate: Int,
-    ): Boolean = nativeStartMulti(binPaths.toTypedArray(), cuePath, audioTrack, sampleRate)
+    ): Boolean = startMultiReserved(reserveStart(), binPaths, cuePath, audioTrack, sampleRate)
+
+    fun startMultiReserved(
+        generation: Long,
+        binPaths: List<String>,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = runReserved(generation) { nativeStartMulti(binPaths.toTypedArray(), cuePath, audioTrack, sampleRate) }
 
     /**
      * Start preview using a file descriptor for the BIN file.
@@ -63,25 +84,53 @@ object CdPreviewBridge {
         cuePath: String,
         audioTrack: Int,
         sampleRate: Int,
-    ): Boolean = nativeStartFd(fd, cuePath, audioTrack, sampleRate)
+    ): Boolean = startFdReserved(reserveStart(), fd, cuePath, audioTrack, sampleRate)
+
+    fun startFdReserved(
+        generation: Long,
+        fd: Int,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = runReserved(generation) { nativeStartFd(fd, cuePath, audioTrack, sampleRate) }
 
     fun startMultiFd(
         fds: IntArray,
         cuePath: String,
         audioTrack: Int,
         sampleRate: Int,
-    ): Boolean = nativeStartMultiFd(fds, cuePath, audioTrack, sampleRate)
+    ): Boolean = startMultiFdReserved(reserveStart(), fds, cuePath, audioTrack, sampleRate)
 
-    fun stop() = nativeStop()
+    fun startMultiFdReserved(
+        generation: Long,
+        fds: IntArray,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = runReserved(generation) { nativeStartMultiFd(fds, cuePath, audioTrack, sampleRate) }
 
-    fun pause() = nativePause()
+    private fun runReserved(
+        generation: Long,
+        start: () -> Boolean,
+    ): Boolean =
+        synchronized(lifecycleLock) {
+            generation == requestedGeneration.get() && start()
+        }
 
-    fun resume() = nativeResume()
+    fun stop() =
+        synchronized(lifecycleLock) {
+            requestedGeneration.incrementAndGet()
+            nativeStop()
+        }
 
-    fun seek(fraction: Float): Boolean = nativeSeek(fraction)
+    fun pause() = synchronized(lifecycleLock) { nativePause() }
+
+    fun resume() = synchronized(lifecycleLock) { nativeResume() }
+
+    fun seek(fraction: Float): Boolean = synchronized(lifecycleLock) { nativeSeek(fraction) }
 
     fun getState(): PlaybackState {
-        val raw = nativeGetState()
+        val raw = synchronized(lifecycleLock) { nativeGetState() }
         val parts = raw.split("|")
         if (parts.size != 3) return PlaybackState(STATE_STOPPED, 0, 0)
         return PlaybackState(

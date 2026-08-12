@@ -931,8 +931,10 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 			break;
 		}
 
-		if (progress)
-			progress(basename, 0, (long long) entry.filesize, user_data);
+		if (progress && progress(basename, 0, (long long) entry.filesize, user_data)) {
+			ret = DXX_EXTRACT_CANCELLED;
+			break;
+		}
 
 		/* Open output file */
 		FILE *fp = fopen(out_path, "wb");
@@ -961,9 +963,12 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 			file_crc = crc32(file_crc, buf, (uInt) got);
 			remaining -= (uint64_t) got;
 
-			if (progress)
-				progress(basename, (long long) (entry.filesize - remaining),
-				         (long long) entry.filesize, user_data);
+			if (progress && progress(basename, (long long) (entry.filesize - remaining),
+			                         (long long) entry.filesize, user_data)) {
+				ok = 0;
+				ret = DXX_EXTRACT_CANCELLED;
+				break;
+			}
 		}
 		if (fclose(fp) != 0)
 			ok = 0;
@@ -986,7 +991,8 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 	if (ret >= 0 && (!dxx_extract_ratio_allowed(scanned_bytes, arc->scripts_length) ||
 	                 output_bytes > arc->output_bytes))
 		return -1;
-	return (ret < 0) ? -1 : extracted;
+	return ret == DXX_EXTRACT_CANCELLED ? DXX_EXTRACT_CANCELLED : (ret < 0) ? -1
+	                                                                        : extracted;
 }
 
 void pkg_close(pkg_archive_t *arc)

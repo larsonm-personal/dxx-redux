@@ -947,7 +947,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		if (progress) {
 			if (progress(filename, bytes_done, (long long) total_bytes, user_data)) {
 				fclose(fp);
-				return -1;
+				return DXX_EXTRACT_CANCELLED;
 			}
 		}
 

@@ -58,6 +58,18 @@ class AssetManifestTest {
     }
 
     @Test
+    fun independentlyLoadedWritersPreserveBothUpdates() {
+        val setDir = createTempDirectory("asset-manifest-two-writers").toFile()
+        val first = AssetManifest(setDir)
+        val second = AssetManifest(setDir)
+
+        first.upsert("descent.hog", "aa", 1)
+        second.upsert("descent.pig", "bb", 2)
+
+        assertEquals(setOf("descent.hog", "descent.pig"), AssetManifest(setDir).load().map { it.filename }.toSet())
+    }
+
+    @Test
     fun portableIdentityIsStableAndRepairsTurkishFoldedDiskNames() {
         val previous = Locale.getDefault()
         val setDir = createTempDirectory("asset-manifest-turkish").toFile()

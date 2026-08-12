@@ -121,8 +121,7 @@ typedef struct {
 
 /* -- Progress callback (same signature as iso/sow modules) ------ */
 /*
- * Reports compressed-input progress. The return value is currently ignored,
- * so this callback is informational and cannot cancel extraction.
+ * Reports compressed-input progress. A nonzero return cancels extraction.
  */
 typedef int (*inno_progress_fn)(const char *current_file,
                                 long long bytes_done,

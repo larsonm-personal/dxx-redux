@@ -260,7 +260,7 @@ internal fun extractSowArchives(
     for (sow in sowFiles) {
         val outputDir = File(sow).parentFile?.absolutePath ?: setDir.absolutePath
         val extracted = DiscImportBridge.extractSowFiles(sow, outputDir, progress)
-        if (extracted < 0) return -1
+        if (extracted < 0) return extracted
         sowExtracted += extracted
     }
     return sowExtracted
@@ -271,7 +271,7 @@ internal fun postProcessImportedDiscFiles(
     progress: DiscImportBridge.ExtractProgress? = null,
 ): Int {
     val sowExtracted = extractSowArchives(setDir, progress)
-    if (sowExtracted < 0) return -1
+    if (sowExtracted < 0) return sowExtracted
     if (hoistNestedImportedGameFiles(setDir) < 0) return -1
     return sowExtracted
 }
@@ -754,7 +754,9 @@ internal fun extractPickedCueDataTracks(
                             trackProgress,
                         )
                     val mac =
-                        if (iso > 0) {
+                        if (iso == DiscImportBridge.EXTRACT_CANCELLED) {
+                            DiscImportBridge.EXTRACT_CANCELLED
+                        } else if (iso > 0) {
                             0
                         } else if (track.sectorMode == DiscImportBridge.CUE_SECTOR_MODE1_2352) {
                             postUpdate { onStatus("Trying Mac HFS track ${track.trackNum}...") }
@@ -1011,7 +1013,9 @@ internal fun importDiscImageFromPath(
                         progress,
                     )
                 val mac =
-                    if (iso > 0) {
+                    if (iso == DiscImportBridge.EXTRACT_CANCELLED) {
+                        DiscImportBridge.EXTRACT_CANCELLED
+                    } else if (iso > 0) {
                         0
                     } else if (track.sectorMode == DiscImportBridge.CUE_SECTOR_MODE1_2352) {
                         DiscImportBridge.extractMacFiles(

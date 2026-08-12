@@ -77,13 +77,14 @@ fun MidiBytesPreviewDialog(
 
     fun togglePlayback() {
         if (!playing) {
+            val generation = MidiPreviewBridge.reserveStart()
             scope.launch(Dispatchers.IO) {
                 val data = loadBytes()
                 if (data == null) {
                     loadError = "Could not read $trackName"
                     return@launch
                 }
-                if (MidiPreviewBridge.start(data, isHmp, sampleRate)) {
+                if (MidiPreviewBridge.startReserved(generation, data, isHmp, sampleRate)) {
                     playing = true
                     loadError = null
                 } else {

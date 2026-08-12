@@ -155,7 +155,20 @@ fun EnginePreferencesPage(
                 .apply()
         }
         hasPilotFile = data.hasPilotFile
-        statusMessage = if (data.hasPilotFile) "" else "No pilot files found - showing defaults"
+        statusMessage =
+            when {
+                !data.hasPilotFile -> {
+                    "No pilot files found - showing defaults"
+                }
+
+                data.hasPotentialConflicts -> {
+                    "Multiple pilots exist. Shown values come from one pilot; saving applies these values to all pilots"
+                }
+
+                else -> {
+                    ""
+                }
+            }
     }
 
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)

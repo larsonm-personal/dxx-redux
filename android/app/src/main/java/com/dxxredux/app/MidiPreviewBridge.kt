@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.media.AudioManager
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * JNI bridge for MIDI/HMP preview playback in the launcher.
@@ -13,6 +14,10 @@ object MidiPreviewBridge {
     const val STATE_STOPPED = 0
     const val STATE_PLAYING = 1
     const val STATE_PAUSED = -1
+    private val lifecycleLock = Any()
+    private val requestedGeneration = AtomicLong()
+
+    fun reserveStart(): Long = requestedGeneration.incrementAndGet()
 
     init {
         System.loadLibrary("dxx-redux-d2")
@@ -43,21 +48,35 @@ object MidiPreviewBridge {
         data: ByteArray,
         isHmp: Boolean,
         sampleRate: Int,
+    ): Boolean = startReserved(reserveStart(), data, isHmp, sampleRate)
+
+    fun startReserved(
+        generation: Long,
+        data: ByteArray,
+        isHmp: Boolean,
+        sampleRate: Int,
     ): Boolean =
-        synchronized(MidiEnumerationBridge.nativeDataLock) {
-            nativeStart(data, isHmp, sampleRate)
+        synchronized(lifecycleLock) {
+            if (generation != requestedGeneration.get()) return@synchronized false
+            synchronized(MidiEnumerationBridge.nativeDataLock) {
+                nativeStart(data, isHmp, sampleRate)
+            }
         }
 
-    fun stop() = nativeStop()
+    fun stop() =
+        synchronized(lifecycleLock) {
+            requestedGeneration.incrementAndGet()
+            nativeStop()
+        }
 
-    fun pause() = nativePause()
+    fun pause() = synchronized(lifecycleLock) { nativePause() }
 
-    fun resume() = nativeResume()
+    fun resume() = synchronized(lifecycleLock) { nativeResume() }
 
-    fun seek(fraction: Float): Boolean = nativeSeek(fraction)
+    fun seek(fraction: Float): Boolean = synchronized(lifecycleLock) { nativeSeek(fraction) }
 
     fun getState(): PlaybackState {
-        val raw = nativeGetState()
+        val raw = synchronized(lifecycleLock) { nativeGetState() }
         val parts = raw.split("|")
         if (parts.size != 3) return PlaybackState(STATE_STOPPED, 0, 0)
         return PlaybackState(

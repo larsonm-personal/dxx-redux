@@ -16,17 +16,20 @@ object NativePilotPreferences {
         val showRobotHostageCounts: Boolean,
         val showBossHealthBar: Boolean,
         val headlightActiveDefault: Boolean,
+        val hasPotentialConflicts: Boolean = false,
     )
 
     data class VisualPrefs(
         val hasPilotFile: Boolean,
         val alphaEffects: Boolean,
         val dynLightColor: Boolean,
+        val hasPotentialConflicts: Boolean = false,
     )
 
     data class OriginalHomingPrefs(
         val hasPilotFile: Boolean,
         val enabled: Boolean,
+        val hasPotentialConflicts: Boolean = false,
     )
 
     data class MusicPrefs(
@@ -35,6 +38,7 @@ object NativePilotPreferences {
         val preferMissionSoundtrack: Boolean,
         val playOrder: Int,
         val volume: Int,
+        val hasPotentialConflicts: Boolean = false,
     )
 
     init {
@@ -167,6 +171,7 @@ object NativePilotPreferences {
         filesDir: String,
     ): EnginePrefs =
         decodeEnginePrefs(if (game == "d1") nativeReadEnginePrefsD1(filesDir) else nativeReadEnginePrefsD2(filesDir))
+            .copy(hasPotentialConflicts = hasMultiplePilotIdentities(game, filesDir))
 
     fun readEnginePrefsForAll(
         preferredGame: String,
@@ -178,6 +183,22 @@ object NativePilotPreferences {
     }
 
     private fun validCockpitMode(mode: Int): Boolean = mode == 0 || mode == 2 || mode == 3
+
+    private fun hasMultiplePilotIdentities(
+        game: String,
+        filesDir: String,
+    ): Boolean {
+        val gameDir = File(filesDir, if (game == "d1") "d1x-redux" else "d2x-redux")
+        val identities =
+            sequenceOf(gameDir, File(gameDir, "Players"))
+                .flatMap { it.listFiles().orEmpty().asSequence() }
+                .filter { it.isFile && it.extension.lowercase() in setOf("plr", "plx") }
+                .map { it.nameWithoutExtension.lowercase() }
+                .distinct()
+                .take(2)
+                .count()
+        return identities > 1
+    }
 
     fun writeEnginePrefs(
         game: String,

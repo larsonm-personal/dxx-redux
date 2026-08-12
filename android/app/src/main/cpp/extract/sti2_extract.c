@@ -2397,7 +2397,7 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 		bytes_done += written;
 		extracted++;
 		if (progress && progress(name, bytes_done, bytes_total, user_data) != 0)
-			return -1;
+			return DXX_EXTRACT_CANCELLED;
 	}
 
 	return extracted;

@@ -470,6 +470,16 @@ add_executable(test_gles3_shim_array_sources
 target_include_directories(test_gles3_shim_array_sources
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME gles3_shim_array_source_tests COMMAND test_gles3_shim_array_sources)
+add_executable(
+    test_ogl_texture_filename ${CMAKE_CURRENT_SOURCE_DIR}/test/test_ogl_texture_filename.c
+                              ${CMAKE_CURRENT_SOURCE_DIR}/../shared/ogl_texture_filename.c)
+target_include_directories(test_ogl_texture_filename PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+if(MSVC)
+    target_compile_options(test_ogl_texture_filename PRIVATE /W4)
+else()
+    target_compile_options(test_ogl_texture_filename PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME ogl_texture_filename_tests COMMAND test_ogl_texture_filename)
 add_executable(test_rgba8888 ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_rgba8888.c)
 target_include_directories(test_rgba8888 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME rgba8888_tests COMMAND test_rgba8888)

@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdatomic.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
@@ -47,7 +49,18 @@ AAssetManager *g_asset_manager = NULL;
  * the user presses Home (backgrounding the game) and then taps "Launch"
  * in the launcher, which starts a second MainActivity+thread in the same
  * process.  The static flag survives across Activity instances. */
-static volatile int g_game_running = 0;
+enum android_engine_state {
+	ANDROID_ENGINE_IDLE,
+	ANDROID_ENGINE_RUNNING,
+	ANDROID_ENGINE_TERMINATING
+};
+static atomic_int g_engine_state = ATOMIC_VAR_INIT(ANDROID_ENGINE_IDLE);
+
+static int android_engine_admit(void)
+{
+	int expected = ANDROID_ENGINE_IDLE;
+	return atomic_compare_exchange_strong(&g_engine_state, &expected, ANDROID_ENGINE_RUNNING);
+}
 
 static char *android_consume_activity_string(JNIEnv *env, jobject activity, const char *method_name)
 {
@@ -106,7 +119,7 @@ static void android_log_startup_argv(const char *phase, int argc, char **argv,
 	          "jni startup %s: argc=%d input_demo_replay=%s resume_save=%s resume_callsign=%s game_running=%d",
 	          phase, argc, android_log_value(input_demo_replay_path),
 	          android_log_value(resume_save_path), android_log_value(resume_callsign),
-	          g_game_running);
+	          atomic_load(&g_engine_state) != ANDROID_ENGINE_IDLE);
 	for (i = 0; i < argc; i++)
 		debug_log(DLOG_GAME, "jni startup argv[%d]=%s", i,
 		          i == 0 ? "<PHYSFS_AndroidInit>" : android_log_value(argv[i]));
@@ -116,7 +129,7 @@ static void android_log_startup_argv(const char *phase, int argc, char **argv,
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsGameRunning(JNIEnv *env, jclass cls)
 {
-	return (jboolean) g_game_running;
+	return (jboolean) (atomic_load(&g_engine_state) != ANDROID_ENGINE_IDLE);
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
@@ -143,7 +156,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	 * This prevents the double-launch SIGSEGV that occurs when a second
 	 * Activity starts in the :game process while the first is still alive
 	 * (e.g. user presses Home then taps "Launch" in the launcher). */
-	if (g_game_running) {
+	if (!android_engine_admit()) {
 		LOGE("startGame() called while game already running -- aborting to avoid crash");
 		debug_log(DLOG_GAME, "jni startup rejected: startGame called while native game is already running");
 		/* Finish this redundant Activity so the user sees the running game. */
@@ -153,12 +166,14 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 			(*env)->CallVoidMethod(env, thiz, mid);
 		return;
 	}
-	g_game_running = 1;
-
 	LOGI("Starting D2X-Redux game engine...");
 
 	/* Cache a global reference to the Activity for C→Java callbacks. */
 	g_activity = (*env)->NewGlobalRef(env, thiz);
+	if (!g_activity) {
+		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
+		return;
+	}
 
 	/* Cache AAssetManager for native asset access (soundfont loading etc.) */
 	{
@@ -278,7 +293,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	free(resume_callsign);
 	free(pilot_callsign);
 
-	g_game_running = 0;
+	atomic_store(&g_engine_state, ANDROID_ENGINE_TERMINATING);
 
 	/* Engine has exited (user quit or fatal error).
 	 * Call Activity.finish() so the activity closes instead of freezing
@@ -289,9 +304,6 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	if (mid) {
 		(*env)->CallVoidMethod(env, g_activity, mid);
 	}
-
-	(*env)->DeleteGlobalRef(env, g_activity);
-	g_activity = NULL;
 
 	/*
 	 * Kill the process so the next launch starts with clean native state.
@@ -321,10 +333,24 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 	int result;
 	const char *error;
 
-	if (g_game_running || !jrequest_path || !jdata_dir)
+	if (!jrequest_path || !jdata_dir)
 		return;
-	g_game_running = 1;
+	if (!android_engine_admit()) {
+		jclass cls = (*env)->GetObjectClass(env, thiz);
+		jmethodID finished = (*env)->GetMethodID(
+		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
+		jstring error = (*env)->NewStringUTF(env, "Another native engine is already running");
+		if (finished && error)
+			(*env)->CallVoidMethod(env, thiz, finished, error);
+		if (error)
+			(*env)->DeleteLocalRef(env, error);
+		return;
+	}
 	g_activity = (*env)->NewGlobalRef(env, thiz);
+	if (!g_activity) {
+		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
+		return;
+	}
 	dxx_jni_string_to_utf8(env, jrequest_path, &request_path);
 	if (request_path)
 		dxx_jni_string_to_utf8(env, jdata_dir, &data_dir);
@@ -335,7 +361,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 			(*env)->DeleteGlobalRef(env, g_activity);
 			g_activity = NULL;
 		}
-		g_game_running = 0;
+		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
 		return;
 	}
 	setenv("SDL_VIDEODRIVER", "dummy", 1);
@@ -367,11 +393,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 	free(request_path);
 	free(data_dir);
 	unsetenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR");
-	g_game_running = 0;
-	if (g_activity) {
-		(*env)->DeleteGlobalRef(env, g_activity);
-		g_activity = NULL;
-	}
+	atomic_store(&g_engine_state, ANDROID_ENGINE_TERMINATING);
 	{
 		jclass process_cls = (*env)->FindClass(env, "android/os/Process");
 		jmethodID my_pid = (*env)->GetStaticMethodID(env, process_cls, "myPid", "()I");
@@ -392,7 +414,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 void android_finish_and_exit(const char *message)
 {
 	LOGE("android_finish_and_exit: fatal error, cleaning up");
-	g_game_running = 0;
+	atomic_store(&g_engine_state, ANDROID_ENGINE_TERMINATING);
 
 	if (g_jvm && g_activity) {
 		JNIEnv *env = NULL;
@@ -483,6 +505,66 @@ extern ubyte Primary_last_was_super[MAX_PRIMARY_WEAPONS];
 extern ubyte Secondary_last_was_super[MAX_SECONDARY_WEAPONS];
 #endif
 
+enum {
+	ANDROID_WEAPON_STATE_SIZE = 59,
+	ANDROID_MARKER_STATE_SIZE = 9,
+	ANDROID_MP_PING_STATE_SIZE = 10,
+	ANDROID_MP_PACKET_STATE_SIZE = 18,
+	ANDROID_NETGAME_STATE_SIZE = 5,
+	ANDROID_COOP_ROBOT_STATE_SIZE = 5 + 2 * MAX_PLAYERS,
+	ANDROID_TEAMMATE_STATE_SIZE = 3 + 5 * MAX_PLAYERS,
+	ANDROID_VIDEO_STATE_SIZE = 39,
+	ANDROID_WARP_STATE_SIZE = 2
+};
+
+typedef struct android_overlay_snapshot {
+	jint weapon[ANDROID_WEAPON_STATE_SIZE];
+	jint marker[ANDROID_MARKER_STATE_SIZE];
+	jint pings[ANDROID_MP_PING_STATE_SIZE];
+	jint packets[ANDROID_MP_PACKET_STATE_SIZE];
+	jint netgame[ANDROID_NETGAME_STATE_SIZE];
+	jint coop_robot[ANDROID_COOP_ROBOT_STATE_SIZE];
+	jint teammate[ANDROID_TEAMMATE_STATE_SIZE];
+	jint video[ANDROID_VIDEO_STATE_SIZE];
+	jint warp[ANDROID_WARP_STATE_SIZE];
+	char warp_target[CALLSIGN_LEN + 1];
+} android_overlay_snapshot;
+
+static pthread_mutex_t g_android_overlay_snapshot_mutex = PTHREAD_MUTEX_INITIALIZER;
+static android_overlay_snapshot g_android_overlay_snapshot;
+static atomic_int g_android_warp_execute_requested = ATOMIC_VAR_INIT(0);
+static atomic_uint g_android_warp_cycle_requests = ATOMIC_VAR_INIT(0);
+
+static jintArray android_overlay_copy_array(JNIEnv *env, const jint *source, jsize size)
+{
+	jintArray result = (*env)->NewIntArray(env, size);
+	if (!result)
+		return NULL;
+	pthread_mutex_lock(&g_android_overlay_snapshot_mutex);
+	(*env)->SetIntArrayRegion(env, result, 0, size, source);
+	pthread_mutex_unlock(&g_android_overlay_snapshot_mutex);
+	return result;
+}
+
+static int android_overlay_peek_bomb(int player_num)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	int bomb;
+	if (Game_mode & GM_HOARD)
+		return SMART_MINE_INDEX;
+	bomb = Secondary_last_was_super[PROXIMITY_INDEX] ? SMART_MINE_INDEX
+	                                                 : PROXIMITY_INDEX;
+	if (Players[player_num].secondary_ammo[bomb] == 0 &&
+	    Players[player_num].secondary_ammo[SMART_MINE_INDEX +
+	                                       PROXIMITY_INDEX - bomb] != 0)
+		bomb = SMART_MINE_INDEX + PROXIMITY_INDEX - bomb;
+	return bomb;
+#else
+	(void) player_num;
+	return PROXIMITY_INDEX;
+#endif
+}
+
 /* Shared constant: PLAYER_FLAGS_AMMO_RACK = 128 (duplicated in WeaponState.kt, D2 only) */
 /* Array layout: [0]=priFlags, [1]=secFlags, [2]=playerFlags,
  *   [3..12]=priAmmo, [13..22]=secAmmo, [23..32]=priMax, [33..42]=secMax,
@@ -494,54 +576,9 @@ extern ubyte Secondary_last_was_super[MAX_SECONDARY_WEAPONS];
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thiz)
 {
-	extern int Player_num;
-
-	enum { WS_PRIMARY_PAIR_SLOTS = 5,
-		   WS_SECONDARY_PAIR_SLOTS = 5,
-		   WS_SIZE = 59 };
-	jint buf[WS_SIZE];
-	memset(buf, 0, sizeof(buf));
-
-	buf[0] = (jint) Players[Player_num].primary_weapon_flags;
-	buf[1] = (jint) Players[Player_num].secondary_weapon_flags;
-	buf[2] = (jint) Players[Player_num].flags;
-
-#ifdef DXX_BUILD_DESCENT_II
-	int has_rack = (Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK) ? 1 : 0;
-#else
-	int has_rack = 0;
-#endif
-	int rack_mult = has_rack ? 2 : 1;
-
-	int i;
-	for (i = 0; i < MAX_PRIMARY_WEAPONS; i++) {
-		buf[3 + i] = (jint) Players[Player_num].primary_ammo[i];
-		buf[23 + i] = (jint) (Primary_ammo_max[i] * rack_mult);
-	}
-	for (i = 0; i < MAX_SECONDARY_WEAPONS; i++) {
-		buf[13 + i] = (jint) Players[Player_num].secondary_ammo[i];
-		buf[33 + i] = (jint) (Secondary_ammo_max[i] * rack_mult);
-	}
-
-	buf[43] = (jint) Players[Player_num].primary_weapon;
-	buf[44] = (jint) Players[Player_num].secondary_weapon;
-	buf[45] = (jint) which_bomb();
-	buf[46] = (jint) Players[Player_num].laser_level;
-#ifdef DXX_BUILD_DESCENT_II
-	for (i = 0; i < WS_PRIMARY_PAIR_SLOTS && i < MAX_PRIMARY_WEAPONS; i++)
-		buf[47 + i] = (jint) Primary_last_was_super[i];
-	for (i = 0; i < WS_SECONDARY_PAIR_SLOTS && i < MAX_SECONDARY_WEAPONS; i++)
-		buf[47 + WS_PRIMARY_PAIR_SLOTS + i] = (jint) Secondary_last_was_super[i];
-#endif
-	buf[57] = (jint) (Players[Player_num].energy / F1_0);
-#ifdef DXX_BUILD_DESCENT_II
-	buf[58] = (jint) ((Players[Player_num].afterburner_charge * 100) / F1_0);
-#endif
-
-	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, WS_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.weapon,
+	                                  ANDROID_WEAPON_STATE_SIZE);
 }
 
 /* Shared constants duplicated in AutomapTouchPolicy.kt:
@@ -551,34 +588,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetAutomapMarkerState(JNIEnv *env, jobject thiz)
 {
-	enum { MARKER_STATE_SIZE = 9,
-		   D2_MARKER_OBJECT_COUNT = 16,
-		   MARKER_SLOT_UNAVAILABLE = -1,
-		   MARKER_SLOT_FREE = 0,
-		   MARKER_SLOT_PLACED = 1 };
-	jint buf[MARKER_STATE_SIZE];
-	int i;
-
-	for (i = 0; i < MARKER_STATE_SIZE; i++)
-		buf[i] = MARKER_SLOT_UNAVAILABLE;
-
-#ifdef DXX_BUILD_DESCENT_II
-	{
-		extern int Game_mode;
-		extern int Player_num;
-		int max_slots = (Game_mode & GM_MULTI) ? 2 : MARKER_STATE_SIZE;
-		for (i = 0; i < max_slots; i++) {
-			int marker_num = (Player_num * 2) + i;
-			if (marker_num >= 0 && marker_num < D2_MARKER_OBJECT_COUNT)
-				buf[i] = (MarkerObject[marker_num] == -1) ? MARKER_SLOT_FREE : MARKER_SLOT_PLACED;
-		}
-	}
-#endif
-
-	jintArray result = (*env)->NewIntArray(env, MARKER_STATE_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, MARKER_STATE_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.marker,
+	                                  ANDROID_MARKER_STATE_SIZE);
 }
 
 #ifdef INTROSPECT_ON
@@ -1005,25 +1017,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPings(JNIEnv *env, jobject thiz)
 {
-	extern int Player_num;
-	extern int N_players;
-
-	enum { MP_SIZE = 10 }; /* 2 header + 8 player slots */
-	jint buf[MP_SIZE];
-	memset(buf, 0, sizeof(buf));
-
-	buf[0] = (jint) N_players;
-	buf[1] = (jint) Player_num;
-
-	int i;
-	for (i = 0; i < MAX_PLAYERS; i++) {
-		buf[2 + i] = (jint) Netgame.players[i].ping;
-	}
-
-	jintArray result = (*env)->NewIntArray(env, MP_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, MP_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.pings,
+	                                  ANDROID_MP_PING_STATE_SIZE);
 }
 
 /* -- Multiplayer packet stats for network stats overlay --------
@@ -1038,26 +1034,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPings(JNIEnv *env, jobjec
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPacketStats(JNIEnv *env, jobject thiz)
 {
-	extern int UDP_num_sendto;
-	extern int UDP_num_recvfrom;
-
-	enum { PS_SIZE = 18 }; /* 2 header + 8 loss + 8 rx_loss */
-	jint buf[PS_SIZE];
-	memset(buf, 0, sizeof(buf));
-
-	buf[0] = (jint) UDP_num_sendto;
-	buf[1] = (jint) UDP_num_recvfrom;
-
-	int i;
-	for (i = 0; i < MAX_PLAYERS; i++) {
-		buf[2 + i] = (jint) Netgame.players[i].loss;
-		buf[10 + i] = (jint) Netgame.players[i].rx_loss;
-	}
-
-	jintArray result = (*env)->NewIntArray(env, PS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, PS_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.packets,
+	                                  ANDROID_MP_PACKET_STATE_SIZE);
 }
 
 /* -- Netgame state query for matchmaking game-state updates --------
@@ -1076,20 +1055,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPacketStats(JNIEnv *env, 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject thiz)
 {
-	extern int Game_mode;
-	enum { NGS_SIZE = 5 };
-	jint buf[NGS_SIZE];
-
-	buf[0] = (jint) Netgame.game_status;
-	buf[1] = (jint) Netgame.numconnected;
-	buf[2] = (jint) Netgame.max_numplayers;
-	buf[3] = (jint) Netgame.levelnum;
-	buf[4] = (jint) Game_mode;
-
-	jintArray result = (*env)->NewIntArray(env, NGS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, NGS_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.netgame,
+	                                  ANDROID_NETGAME_STATE_SIZE);
 }
 
 /* ── Coop robot kill stats for coop QoL overlay ──────────────────
@@ -1110,42 +1078,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject th
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCoopRobotStats(JNIEnv *env, jobject thiz)
 {
-	extern int Player_num;
-	extern int N_players;
-	extern int Game_mode;
-
-	enum { CS_SIZE = 5 + 2 * MAX_PLAYERS }; /* 5 header + 16 per-player */
-	jint buf[CS_SIZE];
-	memset(buf, 0, sizeof(buf));
-
-	if (!(Game_mode & GM_MULTI_COOP)) {
-		/* Not in coop -- return zeros */
-		jintArray result = (*env)->NewIntArray(env, CS_SIZE);
-		if (result)
-			(*env)->SetIntArrayRegion(env, result, 0, CS_SIZE, buf);
-		return result;
-	}
-
-	int total_killed = 0;
-	int i;
-	for (i = 0; i < MAX_PLAYERS; i++)
-		total_killed += Coop_kill_stats[i].robots_killed;
-
-	buf[0] = (jint) total_killed;
-	buf[1] = (jint) Players[Player_num].num_robots_level;
-	buf[2] = (jint) Coop_total_robot_score;
-	buf[3] = (jint) N_players;
-	buf[4] = (jint) Player_num;
-
-	for (i = 0; i < MAX_PLAYERS; i++) {
-		buf[5 + i * 2] = (jint) Coop_kill_stats[i].robots_killed;
-		buf[5 + i * 2 + 1] = (jint) Coop_kill_stats[i].score_earned;
-	}
-
-	jintArray result = (*env)->NewIntArray(env, CS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, CS_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.coop_robot,
+	                                  ANDROID_COOP_ROBOT_STATE_SIZE);
 }
 
 /* ── Teammate status for coop QoL overlay ──────────────────
@@ -1165,34 +1100,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetCoopRobotStats(JNIEnv *env, jobject 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject thiz)
 {
-	extern int Player_num;
-	extern int N_players;
-	extern int Game_mode;
-
-	enum { TS_FIELDS = 5 };
-	enum { TS_SIZE = 3 + TS_FIELDS * MAX_PLAYERS };
-	jint buf[TS_SIZE];
-	memset(buf, 0, sizeof(buf));
-
-	buf[0] = (jint) N_players;
-	buf[1] = (jint) Player_num;
-	buf[2] = (jint) Game_mode;
-
-	int i;
-	for (i = 0; i < MAX_PLAYERS; i++) {
-		int base = 3 + i * TS_FIELDS;
-		buf[base] = (jint) Players[i].connected;
-		/* Convert fix shields/energy to integer value (0-200 range) */
-		buf[base + 1] = (jint) (Players[i].shields / F1_0);
-		buf[base + 2] = (jint) (Players[i].energy / F1_0);
-		buf[base + 3] = (jint) Players[i].secondary_weapon;
-		buf[base + 4] = (jint) Players[i].secondary_ammo[Players[i].secondary_weapon];
-	}
-
-	jintArray result = (*env)->NewIntArray(env, TS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, TS_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.teammate,
+	                                  ANDROID_TEAMMATE_STATE_SIZE);
 }
 
 /* ── Video stats query for video info overlay ──────────────────
@@ -1236,6 +1146,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz)
 {
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.video,
+	                                  ANDROID_VIDEO_STATE_SIZE);
+}
+
+static void android_overlay_capture_video(jint *buf)
+{
 	extern int g_current_fps;
 	extern int g_frame_time_us, g_frame_time_avg_us, g_frame_time_max_us;
 #ifdef OGL
@@ -1266,9 +1183,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern unsigned int grd_curscreen_w(void);
 	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 39 };
-	jint buf[VS_SIZE];
-	memset(buf, 0, sizeof(buf));
+	memset(buf, 0, sizeof(jint) * ANDROID_VIDEO_STATE_SIZE);
 
 	buf[0] = (jint) g_current_fps;
 
@@ -1338,11 +1253,6 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[12] = (jint) g_frame_time_avg_us;
 	buf[13] = (jint) g_frame_time_max_us;
 #endif
-
-	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, VS_SIZE, buf);
-	return result;
 }
 
 /* ── Coop warp-to-player status + trigger ──────────────────────
@@ -1360,43 +1270,148 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpStatus(JNIEnv *env, jobject thiz)
 {
-	enum { WS_SIZE = 2 };
-	jint buf[WS_SIZE];
-	memset(buf, 0, sizeof(buf));
-
-	coop_warp_status st;
-	coop_warp_get_status(&st);
-
-	buf[0] = (jint) st.available;
-	buf[1] = (jint) st.target_pnum;
-
-	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
-	if (result)
-		(*env)->SetIntArrayRegion(env, result, 0, WS_SIZE, buf);
-	return result;
+	(void) thiz;
+	return android_overlay_copy_array(env, g_android_overlay_snapshot.warp,
+	                                  ANDROID_WARP_STATE_SIZE);
 }
 
 JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpTargetName(JNIEnv *env, jobject thiz)
 {
-	coop_warp_status st;
-	coop_warp_get_status(&st);
-
-	if (st.available)
-		return dxx_jni_string_from_utf8(env, st.target_callsign);
-	return (*env)->NewStringUTF(env, "");
+	char callsign[CALLSIGN_LEN + 1];
+	(void) thiz;
+	pthread_mutex_lock(&g_android_overlay_snapshot_mutex);
+	snprintf(callsign, sizeof(callsign), "%s", g_android_overlay_snapshot.warp_target);
+	pthread_mutex_unlock(&g_android_overlay_snapshot_mutex);
+	return dxx_jni_string_from_utf8(env, callsign);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeCoopWarpExecute(JNIEnv *env, jobject thiz)
 {
-	return (jint) coop_warp_execute();
+	(void) env;
+	(void) thiz;
+	atomic_store_explicit(&g_android_warp_execute_requested, 1, memory_order_release);
+	android_lifecycle_actions_request_wake();
+	return 1;
 }
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeCoopWarpCycleTarget(JNIEnv *env, jobject thiz)
 {
-	coop_warp_cycle_target();
+	(void) env;
+	(void) thiz;
+	atomic_fetch_add_explicit(&g_android_warp_cycle_requests, 1, memory_order_release);
+	android_lifecycle_actions_request_wake();
+}
+
+void android_overlay_game_tick(void)
+{
+	android_overlay_snapshot next;
+	coop_warp_status warp;
+	unsigned int cycle_count;
+	int i;
+	int player_num = Player_num;
+	int rack_mult = 1;
+
+	cycle_count = atomic_exchange_explicit(&g_android_warp_cycle_requests, 0,
+	                                       memory_order_acq_rel);
+	while (cycle_count--)
+		coop_warp_cycle_target();
+	if (atomic_exchange_explicit(&g_android_warp_execute_requested, 0,
+	                             memory_order_acq_rel))
+		coop_warp_execute();
+
+	memset(&next, 0, sizeof(next));
+	for (i = 0; i < ANDROID_MARKER_STATE_SIZE; ++i)
+		next.marker[i] = -1;
+	if (player_num >= 0 && player_num < MAX_PLAYERS) {
+#ifdef DXX_BUILD_DESCENT_II
+		rack_mult = (Players[player_num].flags & PLAYER_FLAGS_AMMO_RACK) ? 2 : 1;
+#endif
+		next.weapon[0] = Players[player_num].primary_weapon_flags;
+		next.weapon[1] = Players[player_num].secondary_weapon_flags;
+		next.weapon[2] = Players[player_num].flags;
+		for (i = 0; i < MAX_PRIMARY_WEAPONS; ++i) {
+			next.weapon[3 + i] = Players[player_num].primary_ammo[i];
+			next.weapon[23 + i] = Primary_ammo_max[i] * rack_mult;
+		}
+		for (i = 0; i < MAX_SECONDARY_WEAPONS; ++i) {
+			next.weapon[13 + i] = Players[player_num].secondary_ammo[i];
+			next.weapon[33 + i] = Secondary_ammo_max[i] * rack_mult;
+		}
+		next.weapon[43] = Players[player_num].primary_weapon;
+		next.weapon[44] = Players[player_num].secondary_weapon;
+		next.weapon[45] = android_overlay_peek_bomb(player_num);
+		next.weapon[46] = Players[player_num].laser_level;
+		next.weapon[57] = Players[player_num].energy / F1_0;
+#ifdef DXX_BUILD_DESCENT_II
+		for (i = 0; i < 5 && i < MAX_PRIMARY_WEAPONS; ++i)
+			next.weapon[47 + i] = Primary_last_was_super[i];
+		for (i = 0; i < 5 && i < MAX_SECONDARY_WEAPONS; ++i)
+			next.weapon[52 + i] = Secondary_last_was_super[i];
+		next.weapon[58] = (Players[player_num].afterburner_charge * 100) / F1_0;
+		{
+			int max_slots = (Game_mode & GM_MULTI) ? 2 : ANDROID_MARKER_STATE_SIZE;
+			for (i = 0; i < max_slots; ++i) {
+				int marker_num = player_num * 2 + i;
+				if (marker_num >= 0 && marker_num < 16)
+					next.marker[i] = MarkerObject[marker_num] == -1 ? 0 : 1;
+			}
+		}
+#endif
+	}
+
+	next.pings[0] = N_players;
+	next.pings[1] = player_num;
+	next.netgame[0] = Netgame.game_status;
+	next.netgame[1] = Netgame.numconnected;
+	next.netgame[2] = Netgame.max_numplayers;
+	next.netgame[3] = Netgame.levelnum;
+	next.netgame[4] = Game_mode;
+	next.teammate[0] = N_players;
+	next.teammate[1] = player_num;
+	next.teammate[2] = Game_mode;
+	{
+		extern int UDP_num_sendto;
+		extern int UDP_num_recvfrom;
+		next.packets[0] = UDP_num_sendto;
+		next.packets[1] = UDP_num_recvfrom;
+	}
+	for (i = 0; i < MAX_PLAYERS; ++i) {
+		int base = 3 + i * 5;
+		int secondary = Players[i].secondary_weapon;
+		next.pings[2 + i] = Netgame.players[i].ping;
+		next.packets[2 + i] = Netgame.players[i].loss;
+		next.packets[10 + i] = Netgame.players[i].rx_loss;
+		next.teammate[base] = Players[i].connected;
+		next.teammate[base + 1] = Players[i].shields / F1_0;
+		next.teammate[base + 2] = Players[i].energy / F1_0;
+		next.teammate[base + 3] = secondary;
+		if (secondary >= 0 && secondary < MAX_SECONDARY_WEAPONS)
+			next.teammate[base + 4] = Players[i].secondary_ammo[secondary];
+	}
+	if ((Game_mode & GM_MULTI_COOP) && player_num >= 0 && player_num < MAX_PLAYERS) {
+		for (i = 0; i < MAX_PLAYERS; ++i) {
+			next.coop_robot[0] += Coop_kill_stats[i].robots_killed;
+			next.coop_robot[5 + i * 2] = Coop_kill_stats[i].robots_killed;
+			next.coop_robot[6 + i * 2] = Coop_kill_stats[i].score_earned;
+		}
+		next.coop_robot[1] = Players[player_num].num_robots_level;
+		next.coop_robot[2] = Coop_total_robot_score;
+		next.coop_robot[3] = N_players;
+		next.coop_robot[4] = player_num;
+	}
+	android_overlay_capture_video(next.video);
+	coop_warp_get_status(&warp);
+	next.warp[0] = warp.available;
+	next.warp[1] = warp.target_pnum;
+	if (warp.available)
+		snprintf(next.warp_target, sizeof(next.warp_target), "%s", warp.target_callsign);
+
+	pthread_mutex_lock(&g_android_overlay_snapshot_mutex);
+	g_android_overlay_snapshot = next;
+	pthread_mutex_unlock(&g_android_overlay_snapshot_mutex);
 }
 
 /* -- Host migration notification --

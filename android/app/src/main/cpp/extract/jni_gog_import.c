@@ -14,6 +14,7 @@
 #include <android/log.h>
 
 #include "inno_reader.h"
+#include "extract_limits.h"
 #include "pkg_reader.h"
 #include "game_file_extensions.h"
 #include "jni_string.h"
@@ -264,6 +265,7 @@ typedef struct {
 	jmethodID on_progress;
 	long long total_bytes;     /* sum of all files to extract */
 	long long completed_bytes; /* bytes for fully extracted files */
+	int cancelled;
 } gog_extract_ctx_t;
 
 static int gog_progress_cb(const char *current_file,
@@ -272,6 +274,7 @@ static int gog_progress_cb(const char *current_file,
 {
 	gog_extract_ctx_t *ctx = (gog_extract_ctx_t *) user_data;
 	if (!ctx->callback) return 0;
+	if (ctx->cancelled) return 1;
 
 	/* Report overall progress: completed files + current file progress */
 	long long overall_done = ctx->completed_bytes + bytes_done;
@@ -285,6 +288,11 @@ static int gog_progress_cb(const char *current_file,
 	                                         (jlong) overall_done,
 	                                         (jlong) overall_total);
 	(*ctx->env)->DeleteLocalRef(ctx->env, jfile);
+	if ((*ctx->env)->ExceptionCheck(ctx->env)) {
+		ctx->cancelled = 1;
+		return 1;
+	}
+	if (cancel) ctx->cancelled = 1;
 	return (int) cancel;
 }
 
@@ -297,7 +305,7 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 		LOGE("Colliding Inno output basenames");
 		return -1;
 	}
-	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0 };
+	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0, 0 };
 	if (progress) {
 		ctx.callback = progress;
 		jclass cls = (*env)->GetObjectClass(env, progress);
@@ -334,8 +342,13 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 			              file_comp_size,
 			              arc->files[i].gog_galaxy ? 1 : 0);
 		}
-		if (inno_extract_file(arc, (int) i, out_path,
-		                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
+		const int file_result = inno_extract_file(arc, (int) i, out_path,
+		                                          progress ? gog_progress_cb : NULL, &ctx);
+		if (ctx.cancelled) {
+			remove(out_path);
+			return DXX_EXTRACT_CANCELLED;
+		}
+		if (file_result == 0) {
 			extracted++;
 			if (is_audio) {
 				launcher_logf(env,
@@ -380,7 +393,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 	}
 
 	/* Set up progress callback */
-	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0 };
+	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0, 0 };
 	if (progress) {
 		ctx.callback = progress;
 		jclass cls = (*env)->GetObjectClass(env, progress);

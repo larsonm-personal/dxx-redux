@@ -27,6 +27,7 @@ internal fun parseGogFileList(raw: Array<String>): List<GogImportBridge.GogFile>
  * the GOG installer import flow in SetupActivity.
  */
 object GogImportBridge {
+    const val EXTRACT_CANCELLED = -3
     private const val TAG = "DXX-GogImport"
 
     init {

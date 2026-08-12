@@ -3373,23 +3373,27 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	}
 
 	if (progress) {
-		progress(fe->destination, 0,
-		         (long long) de->chunk_compressed_size, user_data);
+		if (progress(fe->destination, 0,
+		             (long long) de->chunk_compressed_size, user_data))
+			return DXX_EXTRACT_CANCELLED;
 	}
 
 	if (!fe->gog_galaxy &&
 	    (de->chunk_compressed_size >= INNO_STREAM_DIRECT_THRESHOLD ||
 	     de->file_size >= INNO_STREAM_DIRECT_THRESHOLD)) {
 		size_t written = 0;
-		if (extract_regular_file_streamed(arc, fe, de, output_path,
-		                                  progress, user_data,
-		                                  &written) < 0) {
-			return -1;
+		const int stream_result = extract_regular_file_streamed(
+		    arc, fe, de, output_path, progress, user_data, &written);
+		if (stream_result < 0) {
+			return stream_result;
 		}
 		if (progress) {
-			progress(fe->destination,
-			         (long long) de->chunk_compressed_size,
-			         (long long) de->chunk_compressed_size, user_data);
+			if (progress(fe->destination,
+			             (long long) de->chunk_compressed_size,
+			             (long long) de->chunk_compressed_size, user_data)) {
+				remove_output_path(output_path);
+				return DXX_EXTRACT_CANCELLED;
+			}
 		}
 		arc->extracted_bytes = extracted_after;
 		arc->extracted_files++;
@@ -3398,10 +3402,10 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 
 	if (fe->gog_galaxy) {
 		size_t written = 0;
-		if (extract_gog_galaxy_file_streamed(arc, fe, de, output_path,
-		                                     progress, user_data,
-		                                     &written) < 0) {
-			return -1;
+		const int stream_result = extract_gog_galaxy_file_streamed(
+		    arc, fe, de, output_path, progress, user_data, &written);
+		if (stream_result < 0) {
+			return stream_result;
 		}
 		if (written != output_size) {
 			INNO_LOG("GOG Galaxy measured size changed for %s: expected %llu got %zu",
@@ -3412,9 +3416,12 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 			return -1;
 		}
 		if (progress) {
-			progress(fe->destination,
-			         (long long) de->chunk_compressed_size,
-			         (long long) de->chunk_compressed_size, user_data);
+			if (progress(fe->destination,
+			             (long long) de->chunk_compressed_size,
+			             (long long) de->chunk_compressed_size, user_data)) {
+				remove_output_path(output_path);
+				return DXX_EXTRACT_CANCELLED;
+			}
 		}
 		arc->extracted_bytes = extracted_after;
 		arc->extracted_files++;
@@ -3464,9 +3471,9 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	size_t last_progress_written = 0;
 	{
 		while (written < file_len) {
-			size_t chunk = file_len - written;
-			if (chunk > 262144) chunk = 262144;
-			size_t n = fwrite(file_data + written, 1, chunk, out);
+			size_t write_chunk = file_len - written;
+			if (write_chunk > 262144) write_chunk = 262144;
+			size_t n = fwrite(file_data + written, 1, write_chunk, out);
 			if (n == 0) break;
 			written += n;
 			if (progress && !de->chunk_compressed &&
@@ -3474,8 +3481,14 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 				long long done = (long long) written;
 				if (done > (long long) de->chunk_compressed_size)
 					done = (long long) de->chunk_compressed_size;
-				progress(fe->destination, done,
-				         (long long) de->chunk_compressed_size, user_data);
+				if (progress(fe->destination, done,
+				             (long long) de->chunk_compressed_size, user_data)) {
+					fclose(out);
+					remove_output_path(temporary_path);
+					free(temporary_path);
+					free(chunk);
+					return DXX_EXTRACT_CANCELLED;
+				}
 				last_progress_written = written;
 			}
 		}
@@ -3499,9 +3512,12 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	free(temporary_path);
 
 	if (progress) {
-		progress(fe->destination,
-		         (long long) de->chunk_compressed_size,
-		         (long long) de->chunk_compressed_size, user_data);
+		if (progress(fe->destination,
+		             (long long) de->chunk_compressed_size,
+		             (long long) de->chunk_compressed_size, user_data)) {
+			remove_output_path(output_path);
+			return DXX_EXTRACT_CANCELLED;
+		}
 	}
 	arc->extracted_bytes = extracted_after;
 	arc->extracted_files++;

@@ -74,19 +74,21 @@ class FileSetManager(
      * Set the active file set. The name must refer to an existing set.
      */
     fun setActive(name: String) {
-        val config = loadConfig()
-        val sets = config.optJSONArray("sets") ?: JSONArray()
-        val exists =
-            (0 until sets.length()).any {
-                sets.getJSONObject(it).getString("name") == name
-            } ||
-                name == DEFAULT_SET
-        if (!exists) {
-            Log.w(TAG, "Cannot activate unknown set: $name")
-            return
+        AtomicFilePublication.transaction {
+            val config = loadConfig()
+            val sets = config.optJSONArray("sets") ?: JSONArray()
+            val exists =
+                (0 until sets.length()).any {
+                    sets.getJSONObject(it).getString("name") == name
+                } ||
+                    name == DEFAULT_SET
+            if (!exists) {
+                Log.w(TAG, "Cannot activate unknown set: $name")
+                return@transaction
+            }
+            config.put("active", name)
+            saveConfig(config)
         }
-        config.put("active", name)
-        saveConfig(config)
     }
 
     /**
@@ -96,26 +98,27 @@ class FileSetManager(
     fun createSet(
         name: String,
         source: String? = null,
-    ): File {
-        validateSetName(name)
-        val config = loadConfig()
-        val sets = config.optJSONArray("sets") ?: JSONArray()
-        for (i in 0 until sets.length()) {
-            if (sets.getJSONObject(i).getString("name").equals(name, ignoreCase = true)) {
-                throw IllegalArgumentException("Set '$name' already exists")
+    ): File =
+        AtomicFilePublication.transaction {
+            validateSetName(name)
+            val config = loadConfig()
+            val sets = config.optJSONArray("sets") ?: JSONArray()
+            for (i in 0 until sets.length()) {
+                if (sets.getJSONObject(i).getString("name").equals(name, ignoreCase = true)) {
+                    throw IllegalArgumentException("Set '$name' already exists")
+                }
             }
+            val dir = getSetDir(name)
+            dir.mkdirs()
+            val obj = JSONObject()
+            obj.put("name", name)
+            obj.put("createdAt", System.currentTimeMillis())
+            if (source != null) obj.put("source", source)
+            sets.put(obj)
+            config.put("sets", sets)
+            saveConfig(config)
+            dir
         }
-        val dir = getSetDir(name)
-        dir.mkdirs()
-        val obj = JSONObject()
-        obj.put("name", name)
-        obj.put("createdAt", System.currentTimeMillis())
-        if (source != null) obj.put("source", source)
-        sets.put(obj)
-        config.put("sets", sets)
-        saveConfig(config)
-        return dir
-    }
 
     /**
      * Delete a named set. Cannot delete "default".
@@ -126,21 +129,21 @@ class FileSetManager(
             Log.w(TAG, "Cannot delete default set")
             return
         }
-        val config = loadConfig()
-        val sets = config.optJSONArray("sets") ?: return
-        val newSets = JSONArray()
-        for (i in 0 until sets.length()) {
-            val obj = sets.getJSONObject(i)
-            if (obj.getString("name") != name) newSets.put(obj)
+        AtomicFilePublication.transaction {
+            val config = loadConfig()
+            val sets = config.optJSONArray("sets") ?: return@transaction
+            val newSets = JSONArray()
+            for (i in 0 until sets.length()) {
+                val obj = sets.getJSONObject(i)
+                if (obj.getString("name") != name) newSets.put(obj)
+            }
+            config.put("sets", newSets)
+            if (config.optString("active") == name) config.put("active", DEFAULT_SET)
+            saveConfig(config)
+            val dir = File(setsDir, name)
+            if (dir.exists()) dir.deleteRecursively()
+            NativeTextureLookupCache.clear()
         }
-        config.put("sets", newSets)
-        if (config.optString("active") == name) {
-            config.put("active", DEFAULT_SET)
-        }
-        saveConfig(config)
-        val dir = File(setsDir, name)
-        if (dir.exists()) dir.deleteRecursively()
-        NativeTextureLookupCache.clear()
     }
 
     /**
@@ -174,11 +177,11 @@ class FileSetManager(
      */
     fun writeActiveSetPath() {
         val path = getSetDir(getActive()).absolutePath
-        for (game in arrayOf("d2x-redux", "d1x-redux")) {
-            val dir = File(filesDir, game)
-            dir.mkdirs()
-            File(dir, ".active_set_path").writeText(path)
-        }
+        AtomicFilePublication.writeUtf8Batch(
+            arrayOf("d2x-redux", "d1x-redux").map { game ->
+                File(filesDir, "$game/.active_set_path") to path
+            },
+        )
         NativeTextureLookupCache.clear()
     }
 
@@ -199,7 +202,7 @@ class FileSetManager(
         }
 
     private fun saveConfig(config: JSONObject) {
-        configFile.writeText(config.toString(2))
+        AtomicFilePublication.writeUtf8(configFile, config.toString(2))
     }
 
     /**

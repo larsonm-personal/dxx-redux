@@ -10,6 +10,7 @@ import java.io.File
  * the CD image import flow in SetupActivity.
  */
 object DiscImportBridge {
+    const val EXTRACT_CANCELLED = -3
     private const val TAG = "DXX-DiscImport"
 
     const val CUE_SECTOR_AUDIO = 0

@@ -290,20 +290,24 @@ class ModManager(
                 return
             }
         }
-        mods =
-            mods
-                .map {
-                    if (it.filename == filename) it.copy(enabled = enabled) else it
-                }.toMutableList()
-        save()
+        updateManifest {
+            mods =
+                mods
+                    .map {
+                        if (it.filename == filename) it.copy(enabled = enabled) else it
+                    }.toMutableList()
+            save()
+        }
     }
 
     fun deleteMod(filename: String) {
-        File(modsDir, filename).delete()
-        MissionZipMusicNames.deleteCacheFile(filesDir, filename)
-        MissionZipExtractionStore(filesDir).removeOwner(filename)
-        mods.removeAll { it.filename == filename }
-        save()
+        updateManifest {
+            File(modsDir, filename).delete()
+            MissionZipMusicNames.deleteCacheFile(filesDir, filename)
+            MissionZipExtractionStore(filesDir).removeOwner(filename)
+            mods.removeAll { it.filename == filename }
+            save()
+        }
         logInfo("Deleted mod: $filename")
     }
 
@@ -610,38 +614,42 @@ class ModManager(
 
     /** Reorder: swap item at [index] with the one above it */
     fun moveUp(index: Int) {
-        val sorted = mods.sortedBy { it.order }.toMutableList()
-        if (index <= 0 || index >= sorted.size) return
-        val orderA = sorted[index - 1].order
-        val orderB = sorted[index].order
-        mods =
-            mods
-                .map { m ->
-                    when (m.filename) {
-                        sorted[index].filename -> m.copy(order = orderA)
-                        sorted[index - 1].filename -> m.copy(order = orderB)
-                        else -> m
-                    }
-                }.toMutableList()
-        save()
+        updateManifest {
+            val sorted = mods.sortedBy { it.order }.toMutableList()
+            if (index <= 0 || index >= sorted.size) return@updateManifest
+            val orderA = sorted[index - 1].order
+            val orderB = sorted[index].order
+            mods =
+                mods
+                    .map { m ->
+                        when (m.filename) {
+                            sorted[index].filename -> m.copy(order = orderA)
+                            sorted[index - 1].filename -> m.copy(order = orderB)
+                            else -> m
+                        }
+                    }.toMutableList()
+            save()
+        }
     }
 
     /** Reorder: swap item at [index] with the one below it */
     fun moveDown(index: Int) {
-        val sorted = mods.sortedBy { it.order }.toMutableList()
-        if (index < 0 || index >= sorted.size - 1) return
-        val orderA = sorted[index].order
-        val orderB = sorted[index + 1].order
-        mods =
-            mods
-                .map { m ->
-                    when (m.filename) {
-                        sorted[index].filename -> m.copy(order = orderB)
-                        sorted[index + 1].filename -> m.copy(order = orderA)
-                        else -> m
-                    }
-                }.toMutableList()
-        save()
+        updateManifest {
+            val sorted = mods.sortedBy { it.order }.toMutableList()
+            if (index < 0 || index >= sorted.size - 1) return@updateManifest
+            val orderA = sorted[index].order
+            val orderB = sorted[index + 1].order
+            mods =
+                mods
+                    .map { m ->
+                        when (m.filename) {
+                            sorted[index].filename -> m.copy(order = orderB)
+                            sorted[index + 1].filename -> m.copy(order = orderA)
+                            else -> m
+                        }
+                    }.toMutableList()
+            save()
+        }
     }
 
     /**
@@ -1899,8 +1907,14 @@ class ModManager(
                 },
             )
         }
-        manifestFile.writeText(JSONObject().put("mods", arr).toString(2))
+        AtomicFilePublication.writeUtf8(manifestFile, JSONObject().put("mods", arr).toString(2))
     }
+
+    private fun <T> updateManifest(block: () -> T): T =
+        AtomicFilePublication.transaction {
+            load()
+            block()
+        }
 
     private fun logInfo(message: String) {
         try {

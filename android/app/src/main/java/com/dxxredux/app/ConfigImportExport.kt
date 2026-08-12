@@ -427,77 +427,130 @@ object ConfigImportExport {
                 return "Combined config import failed: $key is not a weapon-order permutation"
             }
         }
-        val results = mutableListOf<String>()
-        if (json.has("touch_layout_slots")) {
-            val imported =
-                TouchLayoutSlotRepository.fromExportJsonArray(
-                    json.getJSONArray("touch_layout_slots"),
-                    json.optInt("active_touch_layout_slot", 0),
-                )
-            if (imported != null) {
-                val saved = TouchLayoutSlotRepository.replaceSlots(context, imported)
-                results.add("Touch layout slots: imported ${saved.slots.size} slot(s)")
-            } else {
-                results.add("Touch layout slots import failed")
+        return runCombinedImportTransaction(context) {
+            val results = mutableListOf<String>()
+            if (json.has("touch_layout_slots")) {
+                val imported =
+                    TouchLayoutSlotRepository.fromExportJsonArray(
+                        json.getJSONArray("touch_layout_slots"),
+                        json.optInt("active_touch_layout_slot", 0),
+                    )
+                if (imported != null) {
+                    val saved = TouchLayoutSlotRepository.replaceSlots(context, imported)
+                    results.add("Touch layout slots: imported ${saved.slots.size} slot(s)")
+                } else {
+                    results.add("Touch layout slots import failed")
+                }
+            } else if (json.has("touch_layout")) {
+                results.add(importTouchLayout(context, json.getJSONObject("touch_layout")))
             }
-        } else if (json.has("touch_layout")) {
-            results.add(importTouchLayout(context, json.getJSONObject("touch_layout")))
-        }
-        if (json.has("controller_config_slots")) {
-            val imported =
-                ControllerConfigSlotRepository.fromExportJsonArray(
-                    json.getJSONArray("controller_config_slots"),
-                    json.optInt("active_controller_config_slot", 0),
-                )
-            if (imported != null) {
-                val saved = ControllerConfigSlotRepository.replaceSlots(context, imported)
-                results.add("Controller config slots: imported ${saved.slots.size} slot(s)")
-            } else {
-                results.add("Controller config slots import failed")
+            if (json.has("controller_config_slots")) {
+                val imported =
+                    ControllerConfigSlotRepository.fromExportJsonArray(
+                        json.getJSONArray("controller_config_slots"),
+                        json.optInt("active_controller_config_slot", 0),
+                    )
+                if (imported != null) {
+                    val saved = ControllerConfigSlotRepository.replaceSlots(context, imported)
+                    results.add("Controller config slots: imported ${saved.slots.size} slot(s)")
+                } else {
+                    results.add("Controller config slots import failed")
+                }
+            } else if (json.has("controller_config")) {
+                results.add(importControllerConfig(context, json.getJSONObject("controller_config")))
             }
-        } else if (json.has("controller_config")) {
-            results.add(importControllerConfig(context, json.getJSONObject("controller_config")))
-        }
-        // Autoselect ordering
-        val filesDir = context.filesDir.absolutePath
-        for (game in listOf("d1", "d2")) {
-            val key = "autoselect_$game"
-            if (json.has(key)) {
-                try {
-                    val arr = json.getJSONArray(key)
-                    val primEntries = NativeAutoselectPatcher.getPrimaryWeaponEntries(game)
-                    val secEntries = NativeAutoselectPatcher.getSecondaryWeaponEntries(game)
-                    val primLen = primEntries.size / 2
-                    val secLen = secEntries.size / 2
-                    if (arr.length() == primLen + secLen) {
-                        val prim = IntArray(primLen) { arr.getInt(it) }
-                        val sec = IntArray(secLen) { arr.getInt(primLen + it) }
-                        val count = NativeAutoselectPatcher.writeAutoselect(game, filesDir, prim, sec)
-                        if (count >= 0) {
-                            results.add("Autoselect ($game): patched $count file(s)")
+            // Autoselect ordering
+            val filesDir = context.filesDir.absolutePath
+            for (game in listOf("d1", "d2")) {
+                val key = "autoselect_$game"
+                if (json.has(key)) {
+                    try {
+                        val arr = json.getJSONArray(key)
+                        val primEntries = NativeAutoselectPatcher.getPrimaryWeaponEntries(game)
+                        val secEntries = NativeAutoselectPatcher.getSecondaryWeaponEntries(game)
+                        val primLen = primEntries.size / 2
+                        val secLen = secEntries.size / 2
+                        if (arr.length() == primLen + secLen) {
+                            val prim = IntArray(primLen) { arr.getInt(it) }
+                            val sec = IntArray(secLen) { arr.getInt(primLen + it) }
+                            val count = NativeAutoselectPatcher.writeAutoselect(game, filesDir, prim, sec)
+                            if (count >= 0) {
+                                results.add("Autoselect ($game): patched $count file(s)")
+                            } else {
+                                results.add("Autoselect ($game) import failed: invalid weapon order")
+                            }
                         } else {
-                            results.add("Autoselect ($game) import failed: invalid weapon order")
+                            results.add("Autoselect ($game) import failed: invalid entry count")
                         }
-                    } else {
-                        results.add("Autoselect ($game) import failed: invalid entry count")
+                    } catch (e: Exception) {
+                        results.add("Autoselect ($game) import failed: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    results.add("Autoselect ($game) import failed: ${e.message}")
                 }
             }
+            // App settings: SharedPreferences + descent.cfg
+            if (json.has("app_settings")) {
+                results.add(importAppSettings(context, json.getJSONObject("app_settings")))
+            }
+            if (json.has("engine_prefs")) {
+                results.add(importEnginePrefs(context, json.getJSONObject("engine_prefs")))
+            }
+            if (json.has("host_defaults")) {
+                results.add(importHostDefaults(context, json.getJSONObject("host_defaults")))
+            }
+            if (results.isEmpty()) return@runCombinedImportTransaction "Combined config had no recognizable sections."
+            val summary = results.joinToString("\n")
+            check(!summary.contains("failed", ignoreCase = true)) { summary }
+            summary
         }
-        // App settings: SharedPreferences + descent.cfg
-        if (json.has("app_settings")) {
-            results.add(importAppSettings(context, json.getJSONObject("app_settings")))
+    }
+
+    private fun runCombinedImportTransaction(
+        context: Context,
+        import: () -> String,
+    ): String =
+        AtomicFilePublication.transaction {
+            val files = combinedImportFiles(context.filesDir)
+            val originals = files.filter(File::isFile).associateWith(File::readBytes)
+            val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+            val originalPrefs = prefs.all.toMap()
+            try {
+                import()
+            } catch (failure: Throwable) {
+                files.filter { it !in originals && it.exists() }.forEach(File::delete)
+                AtomicFilePublication.writeBytesBatch(originals.entries.map { it.key to it.value })
+                val editor = prefs.edit().clear()
+                for ((key, value) in originalPrefs) {
+                    when (value) {
+                        is Boolean -> editor.putBoolean(key, value)
+                        is Int -> editor.putInt(key, value)
+                        is Long -> editor.putLong(key, value)
+                        is Float -> editor.putFloat(key, value)
+                        is String -> editor.putString(key, value)
+                        is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+                    }
+                }
+                check(editor.commit()) { "Could not restore preferences after failed combined import" }
+                "Combined config import failed: ${failure.message ?: failure.javaClass.simpleName}"
+            }
         }
-        if (json.has("engine_prefs")) {
-            results.add(importEnginePrefs(context, json.getJSONObject("engine_prefs")))
-        }
-        if (json.has("host_defaults")) {
-            results.add(importHostDefaults(context, json.getJSONObject("host_defaults")))
-        }
-        if (results.isEmpty()) return "Combined config had no recognizable sections."
-        return results.joinToString("\n")
+
+    private fun combinedImportFiles(filesDir: File): Set<File> {
+        val fixedNames =
+            setOf(
+                "touch_layout.json",
+                "touch_layout_slots.json",
+                "controller_config.json",
+                "controller_config_slots.json",
+                "descent.cfg",
+            )
+        val existing =
+            filesDir
+                .walkTopDown()
+                .filter { file ->
+                    file.isFile && (file.name in fixedNames || file.extension.lowercase() in setOf("plr", "plx"))
+                }.toSet()
+        val directories = listOf("", "d1x-redux", "d2x-redux", "d1x-redux/Players", "d2x-redux/Players")
+        return existing + directories.flatMap { dir -> fixedNames.map { File(filesDir, "$dir/$it") } }
     }
 
     // ── App settings ───────────────────────────────────────────────────────
@@ -518,7 +571,7 @@ object ConfigImportExport {
             }
             count++
         }
-        editor.apply()
+        check(editor.commit()) { "Could not persist app settings" }
 
         // descent.cfg graphics settings
         if (json.has("descent_cfg")) {

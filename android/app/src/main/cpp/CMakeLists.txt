@@ -373,15 +373,10 @@ add_library(
     ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools/kiss_fftr.c
     # Bundled avresample (resampler from libav, included with Chromaprint)
     ${chromaprint_SOURCE_DIR}/src/avresample/resample2.c)
-# Generate config.h that Chromaprint expects
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config")
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config/config.h"
-     "#ifndef CHROMAPRINT_CONFIG_H\n" "#define CHROMAPRINT_CONFIG_H\n" "#define HAVE_ROUND 1\n"
-     "#define USE_KISSFFT 1\n" "#endif\n")
 target_include_directories(
     chromaprint
     PUBLIC ${chromaprint_SOURCE_DIR}/src
-    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/chromaprint_android
             ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft
             ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools)
 target_compile_definitions(chromaprint PRIVATE HAVE_CONFIG_H)
@@ -657,6 +652,7 @@ if(OPENGL)
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_filename.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_viewport_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_debug.c)
 endif()
@@ -825,6 +821,7 @@ if(OPENGL)
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_filename.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_viewport_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_debug.c)
 endif()

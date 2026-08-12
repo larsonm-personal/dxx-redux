@@ -867,6 +867,7 @@ class SetupActivity : ComponentActivity() {
                     "music_midi_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
+                        val generation = MidiPreviewBridge.reserveStart()
                         runIo midiPlay@{
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
@@ -895,7 +896,7 @@ class SetupActivity : ComponentActivity() {
                             }
                             val isHmp = portableGameFilenameIdentity(track.filename).endsWith(".hmp")
                             val sr = MidiPreviewBridge.getNativeSampleRate(this@SetupActivity)
-                            if (MidiPreviewBridge.start(data, isHmp, sr)) {
+                            if (MidiPreviewBridge.startReserved(generation, data, isHmp, sr)) {
                                 Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
                             } else {
                                 Log.e(
@@ -914,6 +915,7 @@ class SetupActivity : ComponentActivity() {
                     "music_cd_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
+                        val generation = CdPreviewBridge.reserveStart()
                         runIo cdPlay@{
                             val srcManager = AudioSourceManager(filesDir)
                             val sources = srcManager.getEnabledSources()
@@ -932,9 +934,21 @@ class SetupActivity : ComponentActivity() {
                             val ok =
                                 if (localBinPaths != null) {
                                     if (localBinPaths.size == 1) {
-                                        CdPreviewBridge.start(localBinPaths.first(), cuePath, trkIdx, sr)
+                                        CdPreviewBridge.startReserved(
+                                            generation,
+                                            localBinPaths.first(),
+                                            cuePath,
+                                            trkIdx,
+                                            sr,
+                                        )
                                     } else {
-                                        CdPreviewBridge.startMulti(localBinPaths, cuePath, trkIdx, sr)
+                                        CdPreviewBridge.startMultiReserved(
+                                            generation,
+                                            localBinPaths,
+                                            cuePath,
+                                            trkIdx,
+                                            sr,
+                                        )
                                     }
                                 } else if (safBinUris.isNotEmpty()) {
                                     val openedPfds = mutableListOf<android.os.ParcelFileDescriptor>()
@@ -947,9 +961,16 @@ class SetupActivity : ComponentActivity() {
                                             openedPfds.add(pfd)
                                         }
                                         if (openedPfds.size == 1) {
-                                            CdPreviewBridge.startFd(openedPfds.first().fd, cuePath, trkIdx, sr)
+                                            CdPreviewBridge.startFdReserved(
+                                                generation,
+                                                openedPfds.first().fd,
+                                                cuePath,
+                                                trkIdx,
+                                                sr,
+                                            )
                                         } else {
-                                            CdPreviewBridge.startMultiFd(
+                                            CdPreviewBridge.startMultiFdReserved(
+                                                generation,
                                                 openedPfds.map { it.fd }.toIntArray(),
                                                 cuePath,
                                                 trkIdx,
@@ -3587,21 +3608,22 @@ private fun SetupScreen(
                             audioImportBytes = 0L
                             audioImportTotal = 0L
                             scope.launch {
-                                val imported = importAudioFiles(
-                                    context,
-                                    filesDir,
-                                    audioCustomMgr,
-                                    newName,
-                                    uris,
-                                    targetSetId,
-                                    copyToStorage,
-                                ) { label, copied, total ->
-                                    mainHandler.post {
-                                        audioImportLabel = label
-                                        audioImportBytes = copied
-                                        audioImportTotal = total
+                                val imported =
+                                    importAudioFiles(
+                                        context,
+                                        filesDir,
+                                        audioCustomMgr,
+                                        newName,
+                                        uris,
+                                        targetSetId,
+                                        copyToStorage,
+                                    ) { label, copied, total ->
+                                        mainHandler.post {
+                                            audioImportLabel = label
+                                            audioImportBytes = copied
+                                            audioImportTotal = total
+                                        }
                                     }
-                                }
                                 audioImporting = false
                                 audioImportLabel = ""
                                 audioImportBytes = 0L

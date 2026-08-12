@@ -195,6 +195,7 @@ class AudioSourceManager(
     )
 
     private var sources: MutableList<AudioSource> = mutableListOf()
+    private var loadedRegistryBytes: ByteArray? = null
 
     init {
         load()
@@ -208,10 +209,13 @@ class AudioSourceManager(
 
     /** Add a new audio source */
     fun addSource(source: AudioSource) {
-        // Remove any existing source with the same id
-        sources.removeAll { it.id == source.id }
-        sources.add(source)
-        save()
+        AtomicFilePublication.transaction {
+            reloadIfChanged()
+            // Remove any existing source with the same id
+            sources.removeAll { it.id == source.id }
+            sources.add(source)
+            save()
+        }
         Log.i(TAG, "Added source: ${source.discLabel} (${source.audioTrackCount} audio tracks)")
     }
 
@@ -229,14 +233,19 @@ class AudioSourceManager(
         id: String,
         revokePermissions: (removedTrackedUris: Collection<String>, retainedTrackedUris: Collection<String>) -> Unit,
     ) {
-        val source = sources.firstOrNull { it.id == id } ?: return
-        val removedTrackedUris = source.trackedSafUris()
-        val retainedTrackedUris = sources.filterNot { it.id == id }.flatMap { it.trackedSafUris() }
-        releaseSourceResources(source)
-        sources.removeAll { it.id == id }
-        pruneOrphanedGeneratedMergedFiles()
-        save()
-        revokePermissions(removedTrackedUris, retainedTrackedUris)
+        val permissions =
+            AtomicFilePublication.transaction {
+                reloadIfChanged()
+                val source = sources.firstOrNull { it.id == id } ?: return@transaction null
+                val removedTrackedUris = source.trackedSafUris()
+                val retainedTrackedUris = sources.filterNot { it.id == id }.flatMap { it.trackedSafUris() }
+                releaseSourceResources(source)
+                sources.removeAll { it.id == id }
+                pruneOrphanedGeneratedMergedFiles()
+                save()
+                removedTrackedUris to retainedTrackedUris
+            } ?: return
+        revokePermissions(permissions.first, permissions.second)
     }
 
     fun getManagedInternalArtifactPaths(): Set<String> = getManagedInternalArtifactPaths(filesDir, sources)
@@ -246,13 +255,17 @@ class AudioSourceManager(
         retainedTrackedUris: Collection<String> = emptyList(),
     ) {
         val removedTrackedUris =
-            sources.flatMap { it.trackedSafUris() }
-        closeActivePfds()
-        sources.forEach(::releaseSourceResources)
-        sources.clear()
-        pruneOrphanedGeneratedMergedFiles()
-        File(filesDir, SOURCES_FILE).delete()
-        File(filesDir, PLAYLIST_FILE).delete()
+            AtomicFilePublication.transaction {
+                reloadIfChanged()
+                val removed = sources.flatMap { it.trackedSafUris() }
+                closeActivePfds()
+                sources.forEach(::releaseSourceResources)
+                sources.clear()
+                pruneOrphanedGeneratedMergedFiles()
+                File(filesDir, SOURCES_FILE).delete()
+                File(filesDir, PLAYLIST_FILE).delete()
+                removed
+            }
         context?.let {
             revokeUnusedPersistedReadPermissions(it, removedTrackedUris, retainedTrackedUris)
         }
@@ -336,53 +349,61 @@ class AudioSourceManager(
      * (GOG extraction may produce different case than what was stored).
      * Returns list of pruned source labels for user notification.
      */
-    fun pruneMissingSources(setDir: File? = null): List<String> {
-        val activeSetDir = setDir ?: activeSetDirOrNull()
-        val pruned = mutableListOf<String>()
-        val toRemove =
-            sources.filter { src ->
-                val binContentUris = src.binContentUriList()
-                if (binContentUris.any { !isLocalCdContentPath(it) }) return@filter false
-                val allFiles =
-                    if (binContentUris.isNotEmpty()) {
-                        binContentUris + src.cuePath
-                    } else {
-                        src.binPaths + src.cuePath
+    fun pruneMissingSources(setDir: File? = null): List<String> =
+        AtomicFilePublication.transaction {
+            reloadIfChanged()
+            val activeSetDir = setDir ?: activeSetDirOrNull()
+            val pruned = mutableListOf<String>()
+            val toRemove =
+                sources.filter { src ->
+                    val binContentUris = src.binContentUriList()
+                    if (binContentUris.any { !isLocalCdContentPath(it) }) return@filter false
+                    val allFiles =
+                        if (binContentUris.isNotEmpty()) {
+                            binContentUris + src.cuePath
+                        } else {
+                            src.binPaths + src.cuePath
+                        }
+                    allFiles.any { name ->
+                        resolveExistingFile(name, activeSetDir) == null
                     }
-                allFiles.any { name ->
-                    resolveExistingFile(name, activeSetDir) == null
                 }
+            for (src in toRemove) {
+                pruned.add(src.discLabel)
+                Log.i(TAG, "Pruning stale source: ${src.discLabel} (${src.id})")
             }
-        for (src in toRemove) {
-            pruned.add(src.discLabel)
-            Log.i(TAG, "Pruning stale source: ${src.discLabel} (${src.id})")
+            if (toRemove.isNotEmpty()) {
+                sources.removeAll(toRemove.toSet())
+                save()
+            }
+            pruned
         }
-        if (toRemove.isNotEmpty()) {
-            sources.removeAll(toRemove.toSet())
-            save()
-        }
-        return pruned
-    }
 
     /** Toggle enabled state */
     fun setEnabled(
         id: String,
         enabled: Boolean,
     ) {
-        sources.replaceAll {
-            if (it.id == id) it.copy(enabled = enabled) else it
+        AtomicFilePublication.transaction {
+            reloadIfChanged()
+            sources.replaceAll {
+                if (it.id == id) it.copy(enabled = enabled) else it
+            }
+            save()
         }
-        save()
     }
 
     /** Update ordering */
     fun reorder(orderedIds: List<String>) {
-        orderedIds.forEachIndexed { index, id ->
-            sources.replaceAll {
-                if (it.id == id) it.copy(order = index) else it
+        AtomicFilePublication.transaction {
+            reloadIfChanged()
+            orderedIds.forEachIndexed { index, id ->
+                sources.replaceAll {
+                    if (it.id == id) it.copy(order = index) else it
+                }
             }
+            save()
         }
-        save()
     }
 
     /**
@@ -429,7 +450,7 @@ class AudioSourceManager(
         }
         json.put("sources", arr)
 
-        playlistFile.writeText(json.toString(2))
+        AtomicFilePublication.writeUtf8(playlistFile, json.toString(2))
         Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources (${activePfds.size} SAF fds)")
         return true
     }
@@ -550,6 +571,7 @@ class AudioSourceManager(
 
     private fun load() {
         val file = File(filesDir, SOURCES_FILE)
+        loadedRegistryBytes = file.takeIf(File::isFile)?.readBytes()
         if (!file.exists()) {
             sources = mutableListOf()
             return
@@ -638,6 +660,13 @@ class AudioSourceManager(
             arr.put(obj)
         }
         json.put("sources", arr)
-        File(filesDir, SOURCES_FILE).writeText(json.toString(2))
+        val text = json.toString(2)
+        AtomicFilePublication.writeUtf8(File(filesDir, SOURCES_FILE), text)
+        loadedRegistryBytes = text.toByteArray(Charsets.UTF_8)
+    }
+
+    private fun reloadIfChanged() {
+        val current = File(filesDir, SOURCES_FILE).takeIf(File::isFile)?.readBytes()
+        if (!java.util.Arrays.equals(current, loadedRegistryBytes)) load()
     }
 }

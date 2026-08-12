@@ -273,7 +273,7 @@ static int extract_hfs_matching_files(hfs_catalog_t *catalog,
 		done_bytes += written;
 		extracted++;
 		if (progress && progress(name, done_bytes, (long long) total_bytes, user_data) != 0)
-			return -1;
+			return DXX_EXTRACT_CANCELLED;
 	}
 
 	return extracted;
@@ -298,6 +298,10 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
 
 	extracted = extract_sti2_from_hfs(catalog, output_dir, sti2_extensions,
 	                                  progress, user_data);
+	if (extracted == DXX_EXTRACT_CANCELLED) {
+		hfs_catalog_close(catalog);
+		return extracted;
+	}
 	if (extracted == -2) {
 		extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
 		                                       progress, user_data);
@@ -305,7 +309,10 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
 		fallback_extracted =
 		    extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
 		                               progress, user_data);
-		if (fallback_extracted < 0)
+		if (fallback_extracted == DXX_EXTRACT_CANCELLED) {
+			hfs_catalog_close(catalog);
+			return fallback_extracted;
+		} else if (fallback_extracted < 0)
 			extracted = -1;
 		else
 			extracted += fallback_extracted;

@@ -902,7 +902,7 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 						close(out_fd);
 						remove(out_path);
 						ISO_LOG("Extraction cancelled by user");
-						return -1;
+						return DXX_EXTRACT_CANCELLED;
 					}
 				}
 			}

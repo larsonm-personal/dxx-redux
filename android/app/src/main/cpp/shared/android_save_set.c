@@ -6,6 +6,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef PATH_MAX
+#ifdef _MAX_PATH
+#define PATH_MAX _MAX_PATH
+#else
+#define PATH_MAX 4096
+#endif
+#endif
+
 static const char *android_save_set_root(int use_players_dir)
 {
 	return use_players_dir ? ANDROID_SAVE_SET_ROOT_PLAYERS

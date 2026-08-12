@@ -3274,7 +3274,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			if (have_prefixed_bitmapname) {
 				android_perf_clock_now(&stage_start);
 				png_loaded = android_ogl_read_texture_with_extensions(filename, prefixed_bitmapname, &pdata,
-					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX);
+					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX, sizeof(filename));
 				android_perf_clock_now(&stage_end);
 				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
 				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);
@@ -3286,7 +3286,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			if (!png_loaded) {
 				android_perf_clock_now(&stage_start);
 				png_loaded = android_ogl_read_texture_with_extensions(filename, bitmapname, &pdata,
-					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE);
+					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE, sizeof(filename));
 				android_perf_clock_now(&stage_end);
 				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
 				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);

@@ -21,6 +21,7 @@ param(
     [string]$Runner = 'auto',
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
+    [string]$SandboxSuffix,
     [switch]$ListOnly,
     [string]$StateLogPath,
     [switch]$TraceState,
@@ -1484,7 +1485,11 @@ if ($useHeadlessConsole) {
 } else {
     Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $config.Name -ExecutablePath $config.Exe -BuildBeforeRun:$BuildBeforeRun -RequireFreshBuild:$RequireFreshBuild
 }
-$sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
+$sandboxName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)
+if ($SandboxSuffix) {
+    $sandboxName = "${sandboxName}__${SandboxSuffix}"
+}
+$sandbox = New-LaunchSandbox -Config $config -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
 $actualResultDirectory = Join-Path $sandbox.Directory 'results'
 if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
     New-Item -ItemType Directory -Path $actualResultDirectory -Force | Out-Null

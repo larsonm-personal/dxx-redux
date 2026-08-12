@@ -18,6 +18,7 @@
 #define DXX_EXTRACT_MAX_ENTRIES        4096U
 #define DXX_EXTRACT_MAX_RATIO          1000ULL
 #define DXX_EXTRACT_FREE_HEADROOM      (50ULL * 1024ULL * 1024ULL)
+#define DXX_EXTRACT_CANCELLED          (-3)
 
 static inline int dxx_extract_add_bytes(uint64_t *total, uint64_t value, uint64_t limit)
 {

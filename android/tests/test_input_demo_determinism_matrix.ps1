@@ -199,7 +199,8 @@ foreach ($fixture in $fixtures) {
             '-DemoPath', $fixture.DemoPath,
             '-Game', $fixture.Game,
             '-TimeoutSeconds', [string]$TimeoutSeconds,
-            '-StateLogPath', $statePath
+            '-StateLogPath', $statePath,
+            '-SandboxSuffix', ("matrix_{0}_{1}" -f $timestamp, $safeVariant)
         )
         $arguments += $variant.Args
 

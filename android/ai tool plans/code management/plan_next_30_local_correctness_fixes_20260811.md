@@ -6,23 +6,23 @@ Fix the ranked non-network correctness queue selected from the active adversaria
 
 ## Queue
 
-- [ ] BR-0438: transactional combined-configuration import
+- [x] BR-0438: transactional combined-configuration import
 - [x] BR-0441: publish imported-root switch before retiring source
 - [x] BR-0461: preserve destination-owned migration data
 - [x] BR-0364: synchronize MVE startup queue trimming
-- [ ] BR-0078: atomic native engine admission through teardown
-- [ ] BR-0016: serialize launcher preview commands
-- [ ] BR-0029: marshal overlay state through the engine thread
-- [ ] BR-0044: make repeated overlay JNI callbacks safe
-- [ ] BR-0394: finish software-renderer build guards
-- [ ] BR-0493: complete launcher/native HAM patch-schema parity
-- [ ] BR-0235: propagate and roll back save metadata failures
-- [ ] BR-0236: roll back partial all-pilot preference writes
+- [x] BR-0078: atomic native engine admission through teardown
+- [x] BR-0016: serialize launcher preview commands
+- [x] BR-0029: marshal overlay state through the engine thread
+- [x] BR-0044: make repeated overlay JNI callbacks safe
+- [x] BR-0394: finish software-renderer build guards
+- [x] BR-0493: complete launcher/native HAM patch-schema parity
+- [x] BR-0235: propagate and roll back save metadata failures
+- [x] BR-0236: roll back partial all-pilot preference writes
 - [x] BR-0338: preserve complete mission identities in save paths
 - [x] BR-0255: abort resume when pilot loading fails
 - [x] BR-0264: resolve controller configuration from current user
-- [ ] BR-0268: surface pilot-preference conflicts before edits
-- [ ] BR-0472: publish launcher ownership registries atomically
+- [x] BR-0268: surface pilot-preference conflicts before edits
+- [x] BR-0472: publish launcher ownership registries atomically
 - [x] BR-0418: confine provider display names to import roots
 - [x] BR-0462: bound and cancel provider-tree scans
 - [x] BR-0469: enforce active-mod path capacity before launch
@@ -35,12 +35,12 @@ Fix the ranked non-network correctness queue selected from the active adversaria
 - [x] BR-0258: retry the same autosave slot after failure
 - [x] BR-0262: resolve tied pilot timestamps deterministically
 - [x] BR-0280: propagate music render-thread startup failure
-- [ ] BR-0021: propagate extraction cancellation
+- [x] BR-0021: propagate extraction cancellation
 
 ## Validation
 
-- [ ] Add or extend focused tests for each completed finding
-- [ ] Run scoped formatting and linting
-- [ ] Run focused native, JVM, and script tests throughout
+- [x] Add or extend focused tests for each completed finding
+- [x] Run scoped formatting and linting
+- [x] Run focused native, JVM, and script tests throughout
 - [ ] Run the full maintained test suite after the queue
 - [ ] Verify ledger uniqueness, dispositions, and `git diff --check`

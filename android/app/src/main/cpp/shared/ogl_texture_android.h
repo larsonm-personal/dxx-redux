@@ -3,6 +3,8 @@
 
 #ifdef ANDROID
 
+#include <stddef.h>
+
 #include "android_profile.h"
 #include "ogl_init.h"
 #include "pngfile.h"
@@ -70,7 +72,8 @@ void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfi
                                android_ogl_loadtexture_fn loadtexture);
 int android_ogl_read_texture_with_extensions(
     char *filename, const char *basename, png_data *pdata,
-    struct android_profile_texture_lookup_metrics *lookup, int slot);
+    struct android_profile_texture_lookup_metrics *lookup, int slot,
+    size_t filename_capacity);
 
 #endif
 

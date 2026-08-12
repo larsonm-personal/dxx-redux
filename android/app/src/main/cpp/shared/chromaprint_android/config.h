@@ -1,0 +1,7 @@
+#ifndef CHROMAPRINT_CONFIG_H
+#define CHROMAPRINT_CONFIG_H
+
+#define HAVE_ROUND 1
+#define USE_KISSFFT 1
+
+#endif
