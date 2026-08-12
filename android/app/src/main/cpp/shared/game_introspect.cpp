@@ -58,8 +58,10 @@ extern "C" {
 #include "multi.h"
 #include "songs.h"
 #include "songs_android_shared.h"
+#ifdef OGL
 #include "ogl_init.h"
 #include "ogl_msaa_android.h"
+#endif
 #include "piggy.h"
 #include "textures.h"
 #include "wall.h"
@@ -90,8 +92,10 @@ extern int r_hires_loaded;
 #endif
 
 /* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
+#ifdef OGL
 extern "C" int ogl_get_egl_recreate_count(void);
 extern "C" unsigned long long ogl_get_egl_window_generation(void);
+#endif
 extern "C" int androidaud_get_play_count(void);
 
 static int Framebuffer_probe_width;
@@ -111,6 +115,7 @@ static int Framebuffer_probe_map_max_channel;
 
 extern "C" void game_introspect_sample_framebuffer(int width, int height)
 {
+#ifdef OGL
 	if (width <= 0 || height <= 0)
 		return;
 	std::vector<unsigned char> pixels((size_t) width * (size_t) height * 4u);
@@ -165,6 +170,10 @@ extern "C" void game_introspect_sample_framebuffer(int width, int height)
 				Framebuffer_probe_max_y = y;
 		}
 	}
+#else
+	(void) width;
+	(void) height;
+#endif
 }
 
 /* -- Android intro tracking globals (defined in android_input.c) -- */
@@ -1498,8 +1507,13 @@ extern "C" char *game_introspect_get_state(void)
 		}
 	}
 
+#ifdef OGL
 	j["egl_recreate_count"] = ogl_get_egl_recreate_count();
 	j["egl_window_generation"] = ogl_get_egl_window_generation();
+#else
+	j["egl_recreate_count"] = 0;
+	j["egl_window_generation"] = 0;
+#endif
 
 	/* -- Android lifecycle and dormant-work diagnostics -------- */
 	{
@@ -2125,6 +2139,7 @@ extern "C" char *game_introspect_get_state(void)
 #else
 		j["headlight_active_default"] = false;
 #endif
+		#ifdef OGL
 		{
 			android_ogl_msaa_diagnostics msaa = {};
 			json diagnostics;
@@ -2145,6 +2160,11 @@ extern "C" char *game_introspect_get_state(void)
 			diagnostics["resolve_count"] = msaa.resolve_count;
 			j["msaa"] = std::move(diagnostics);
 		}
+		#else
+		j["msaa_samples"] = 0;
+		j["msaa_max_samples"] = 0;
+		j["msaa_fbo_bound"] = false;
+		#endif
 		{
 			auto &rja = j["raw_joy_axis"];
 			for (int a = 0; a < 8; a++)
@@ -2164,6 +2184,7 @@ extern "C" char *game_introspect_get_state(void)
 	}
 
 	/* -- Player & position (only meaningful when a level is loaded) -- */
+	#ifdef OGL
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
@@ -2283,6 +2304,7 @@ extern "C" char *game_introspect_get_state(void)
 		tex["max_hires_h"] = max_h;
 		j["hires_textures"] = tex;
 	}
+	#endif
 
 	/* -- Framebuffer pixel sample (center + 4x4 grid average) -------- */
 	{

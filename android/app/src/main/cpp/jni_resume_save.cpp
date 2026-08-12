@@ -11,6 +11,7 @@
 #include <vector>
 #include <strings.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <nlohmann/json.hpp>
 
@@ -648,6 +649,9 @@ static std::string game_name_from_relative(const std::string &relative_path)
 	return std::string();
 }
 
+static bool select_newest_resume_save(const std::vector<std::string> &paths,
+	                                  android_save_meta_candidate *out);
+
 static void save_set_parts_from_relative(const std::string &relative_path,
                                          std::string *scope,
                                          std::string *pilot,
@@ -680,6 +684,110 @@ static void save_set_parts_from_relative(const std::string &relative_path,
 		if (mission)
 			*mission = parts[4];
 	}
+}
+
+static bool directory_has_save_slots(const std::string &path)
+{
+	std::vector<std::string> paths;
+
+	collect_save_paths_recursive(path.c_str(), 0, &paths);
+	return !paths.empty();
+}
+
+static std::string parent_path(const std::string &path)
+{
+	size_t slash = path.find_last_of('/');
+
+	return slash == std::string::npos ? std::string() : path.substr(0, slash);
+}
+
+static bool publish_last_save_set(const char *files_dir, const std::string &game,
+	                              const std::string &scope,
+	                              const std::string &pilot,
+	                              const std::string &mission)
+{
+	std::string root = std::string(files_dir) + "/" + game +
+	                   "/Players/save_sets";
+	std::string path = root + "/last_" + scope + ".txt";
+	std::string temporary = path + ".tmp";
+	std::string contents = pilot + "\n" + mission + "\n";
+	FILE *file;
+	bool ok;
+
+	if (pilot.empty() || mission.empty())
+		return unlink(path.c_str()) == 0 || errno == ENOENT;
+	file = fopen(temporary.c_str(), "wb");
+	if (!file)
+		return false;
+	ok = fwrite(contents.data(), 1, contents.size(), file) == contents.size() &&
+	     fflush(file) == 0 && fsync(fileno(file)) == 0;
+	ok = fclose(file) == 0 && ok;
+	if (!ok || rename(temporary.c_str(), path.c_str()) != 0) {
+		unlink(temporary.c_str());
+		return false;
+	}
+	return true;
+}
+
+static bool last_save_set_matches(const char *files_dir, const std::string &game,
+	                              const std::string &scope,
+	                              const std::string &pilot,
+	                              const std::string &mission)
+{
+	std::string path = std::string(files_dir) + "/" + game +
+	                   "/Players/save_sets/last_" + scope + ".txt";
+	char value[128];
+	FILE *file = fopen(path.c_str(), "rb");
+	size_t length;
+
+	if (!file)
+		return false;
+	length = fread(value, 1, sizeof(value) - 1u, file);
+	if (ferror(file) || !feof(file)) {
+		fclose(file);
+		return false;
+	}
+	fclose(file);
+	value[length] = '\0';
+	return std::string(value) == pilot + "\n" + mission + "\n";
+}
+
+static bool repair_deleted_save_set(const char *files_dir,
+	                                const std::string &deleted_path)
+{
+	std::string relative = relative_to_files_dir(files_dir, deleted_path.c_str());
+	std::string game = game_name_from_relative(relative);
+	std::string scope;
+	std::string pilot;
+	std::string mission;
+	std::string set_dir = parent_path(deleted_path);
+	std::vector<std::string> paths;
+	android_save_meta_candidate candidate;
+
+	save_set_parts_from_relative(relative, &scope, &pilot, &mission);
+	if (game.empty() || scope.empty() || directory_has_save_slots(set_dir))
+		return true;
+	if (rmdir(set_dir.c_str()) != 0 && errno != ENOENT)
+		return false;
+	if (!last_save_set_matches(files_dir, game + "x-redux", scope, pilot, mission))
+		return true;
+
+	collect_save_paths(files_dir, (game + "x-redux").c_str(), &paths);
+	paths.erase(std::remove_if(paths.begin(), paths.end(), [&](const std::string &path) {
+		std::string candidate_scope;
+		save_set_parts_from_relative(relative_to_files_dir(files_dir, path.c_str()),
+		                             &candidate_scope, nullptr, nullptr);
+		return candidate_scope != scope;
+	}), paths.end());
+	if (!select_newest_resume_save(paths, &candidate))
+		return publish_last_save_set(files_dir, game + "x-redux", scope, "", "");
+
+	std::string fallback_pilot;
+	std::string fallback_mission;
+	save_set_parts_from_relative(relative_to_files_dir(files_dir, candidate.path),
+	                             nullptr, &fallback_pilot, &fallback_mission);
+	return publish_last_save_set(files_dir, game + "x-redux", scope,
+	                             fallback_pilot, fallback_mission);
 }
 
 static bool path_is_under_game_root(const char *files_dir, const char *path)
@@ -996,6 +1104,11 @@ Java_com_dxxredux_app_SaveExplorerBridge_nativeDeleteSaveSlot(JNIEnv *env,
 	if (remove(path) != 0) {
 		out["deleted"] = false;
 		out["reason"] = errno == ENOENT ? "already_deleted" : "delete_failed";
+		goto done;
+	}
+	if (!repair_deleted_save_set(files_dir, path)) {
+		out["deleted"] = true;
+		out["reason"] = "save_set_cleanup_failed";
 		goto done;
 	}
 	out["deleted"] = true;

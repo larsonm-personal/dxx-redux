@@ -62,6 +62,27 @@ class StatePersistenceContractsTest(unittest.TestCase):
         self.assertIn("if (host_record < 0", body)
         self.assertIn("strncasecmp(records[i].callsign, records[j].callsign", body)
 
+    def test_coop_restore_reapplies_player_spew_no_expire_policy(self) -> None:
+        start = self.coop.index("int coop_restore_player_spew_lifetimes(void)")
+        body = self.coop[start : self.coop.index("\n}\n", start) + 3]
+        for token in (
+            "Game_mode & GM_MULTI_COOP",
+            "Netgame.PlayerSpewNoExpire",
+            "obj->type != OBJ_POWERUP",
+            "obj->flags & OF_PLAYER_DROPPED",
+            "obj->lifeleft == IMMORTAL_TIME",
+            "obj->lifeleft = IMMORTAL_TIME",
+        ):
+            self.assertIn(token, body)
+
+        for game in ("d1", "d2"):
+            source = (ROOT / game / "main/state.c").read_text(encoding="utf-8")
+            metadata = source.index("if (have_coop_meta)")
+            restore = source.index("coop_restore_player_spew_lifetimes()", metadata)
+            missing_metadata = source.index("else if (Game_mode & GM_MULTI_COOP)", metadata)
+            self.assertLess(metadata, restore)
+            self.assertLess(restore, missing_metadata)
+
     def test_d1_translation_accepts_only_its_decoded_layout(self) -> None:
         source = (ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
         self.assertEqual("D1_SAVE_VERSION", re.search(r"#define D1_SAVE_COMPATIBLE_VERSION\s+(\S+)", source).group(1))

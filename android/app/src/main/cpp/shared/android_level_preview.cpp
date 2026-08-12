@@ -28,9 +28,12 @@ extern "C" {
 #include "kconfig.h"
 #include "mission.h"
 #include "object.h"
+#ifdef OGL
 #include "ogl_init.h"
+#endif
 #include "physfsx.h"
 #include "playsave.h"
+#include "palette.h"
 #include "player.h"
 #include "screens.h"
 #include "secretarea.h"

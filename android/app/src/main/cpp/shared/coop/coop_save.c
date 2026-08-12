@@ -135,6 +135,30 @@ void coop_normalize_restored_netgame_players(const char *game_name)
 		        game_name, live_count, Netgame.numplayers,
 		        Netgame.max_numplayers, Netgame.numconnected);
 }
+
+int coop_restore_player_spew_lifetimes(void)
+{
+	int restored = 0;
+	int i;
+
+	if (!(Game_mode & GM_MULTI_COOP) || !Netgame.PlayerSpewNoExpire)
+		return 0;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		if (obj->type != OBJ_POWERUP ||
+		    !(obj->flags & OF_PLAYER_DROPPED) ||
+		    obj->lifeleft == IMMORTAL_TIME)
+			continue;
+		obj->lifeleft = IMMORTAL_TIME;
+		restored++;
+	}
+
+	if (restored)
+		COOPLOG("coop restore made %d player-spew powerups immortal", restored);
+	return restored;
+}
 #endif
 
 #ifdef ANDROID

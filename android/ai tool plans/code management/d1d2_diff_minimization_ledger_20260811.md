@@ -72,6 +72,19 @@ Comparison: `upstream/main` at `6e76c5d8dafd02dc32a1c6312ce9440dc95b1aca` to the
 
 The seven-path and deletion-count differences between the views include upstream movement after the branch split. Use the branch-attribution view to decide whether the branch caused a change and the integration-pressure view to measure current merge cost
 
+## Survey generation 2: external HEAD advance during Chunk 002
+
+- New HEAD: `34ed94767d2a2dbca3e07dd1ba672be467cfb3f1`
+- Target tip remains: `upstream/main` at `6e76c5d8dafd02dc32a1c6312ce9440dc95b1aca`
+- Merge base remains: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- The external commit advanced HEAD while the Chunk 002 worker was validating. It contains both accepted diff-minimization chunks plus unrelated pre-existing and concurrent work. The worker did not create the commit, and this ledger does not attribute the unrelated paths to either chunk
+- Stable HEAD branch-attribution view: 318 inherited modified paths at `+36164/-4360`, plus 37 branch-added sinks at `+16246/-0`
+- Stable HEAD integration-pressure view: 325 inherited modified paths at `+36323/-5056`, plus 37 branch-added sinks at `+16246/-0`
+- Net stable-HEAD movement from generation 1: 160 fewer inherited additions and one more inherited deletion. The two accepted chunks account for 175 isolated inherited additions removed; their paired native-test registrations and concurrent changes to `d1/arch/sdl/gr.c` and `d2/libmve/mveplay.c` explain why the whole-generation metric is not the sum of chunk reductions
+- D1/D2 paths changed between generation heads: the paired OGL sources, paired render sources, paired maths CMake test registrations, `d1/arch/sdl/gr.c`, and `d2/libmve/mveplay.c`
+- Immediately after the head advance, concurrent work added one live line to each of `d1/main/state.c` and `d2/main/state.c`. The live-worktree integration-pressure view therefore became `+36325/-5056` for inherited paths while branch-added sinks remained `+16246/-0`. These state paths and their adjacent Android coop/save/test changes are outside campaign ownership
+- Chunk 003 anchors are unaffected and remain eligible after root acceptance, but the single-writer rule prohibits dispatch while another product writer is actively changing the shared worktree
+
 ## Survey evidence
 
 - Current top-100 integration-pressure report: `temp/d1d2_diff_summary.txt`
@@ -94,7 +107,7 @@ The seven-path and deletion-count differences between the views include upstream
 | ID | State | Rank | Scope | Expected inherited reduction | Risk | Prerequisite | Result |
 |---|---|---:|---|---:|---|---|---|
 | `DMR1-CHUNK-001` | `DONE` | 1 | Paired OGL lookup and profiling helpers | 84-90 | Low-medium | Typed callback and API-size gate | 95 inherited additions removed; focused contracts and configured builds green |
-| `DMR1-CHUNK-002` | `ACTIVE` | 2 | Paired main-view FOV policy | 70-82 | Low-medium | Chunk 001 accepted; no frame-orchestration movement | Boundary gate passed; implementation active |
+| `DMR1-CHUNK-002` | `DONE` | 2 | Paired main-view FOV policy | 70-82 | Low-medium | Chunk 001 accepted; no frame-orchestration movement | 80 inherited additions removed; focused policy and configured builds green |
 | `DMR1-CHUNK-003` | `TODO` | 3 | Paired debug texture-overlay drawing | 60-64 | Low | Chunk 002 accepted | Pending |
 | `DMR1-CHUNK-004` | `TODO` | 4 | Paired virtual-gamepad registration | 100-125 | Medium | Batch 1 green; adapter no more than about 40-45 lines | Pending |
 | `DMR1-CHUNK-005` | `TODO` | 5 | Paired scene-object profiler scan | 52-56 | Low-medium | Batch 1 green; no second scan or allocation | Pending |
@@ -239,7 +252,17 @@ The initial full-diff survey assigns the live surface as follows. `DMR1-AUDIT-00
 
 ### DMR1-CHUNK-002 completion
 
-- Status: `ACTIVE`
+- Status: `DONE`
 - Worker: `gpt-5.6-sol`, medium reasoning
 - Boundary decision: Gate passed before product edits. The paired sources contain identical 51-line Android blocks at the survey anchors. The movable seam is the two FOV state variables plus clamping, base-zoom mapping, and four existing engine-facing accessors, while the visual-only flag, zoom override, active override selection, render-list storage, endlevel gate, and two-pass orchestration remain local. The shared API needs the four existing accessor declarations plus one typed `int32_t` mapping declaration that accepts base zoom as data, with no callback or game-local adapter. This five-function boundary is materially smaller than the duplicated policy bodies and does not expose render internals
 - Before metrics: integration pressure against `upstream/main`: D1 `+279/-28`, D2 `+431/-28`; the allowed paths had no pre-existing worktree changes at claim time
+- Inherited paths: `d1/main/render.c`, `d2/main/render.c`
+- Destination and support paths: `android/app/src/main/cpp/shared/android_render_fov.c`, `android/app/src/main/cpp/shared/android_render_fov.h`, the two relevant entries in `android/app/src/main/cpp/CMakeLists.txt`, focused `android/tests/test_android_render_fov.c`, and its minimum registrations in `d1/maths/CMakeLists.txt` and `d2/maths/CMakeLists.txt`. Existing `d1/main/render.h` and `d2/main/render.h` ABI declarations remained unchanged
+- After metrics: integration pressure against `upstream/main`: D1 `+239/-28`, D2 `+391/-28`. The isolated inherited-file delta is D1 `+4/-44` and D2 `+4/-44`. The new shared implementation is 45 lines, its header is 12 lines, the focused test is 53 lines, Android target wiring gained 2 lines, and each native test runner gained 6 lines
+- Isolated inherited reduction: 80 additions, 40 from each inherited renderer. Both renderers replace the duplicated policy body with one guarded include and pass `Render_zoom` to the shared mapping call
+- Behavior and ownership preserved: FOV 0 keeps the caller-provided base zoom; 100, 110, and 120 still map to 43940, 52658, and 63858; every other value still clamps to 0. Locking still normalizes any nonzero input, suppresses only the effective FOV, and preserves the stored preference for unlock. `Android_visual_only_render_pass`, `Android_render_zoom_override`, active override selection, render-list capture and restoration, D2 `Window_rendered_data` and `window_num`, the endlevel gate, and two-pass ordering remain local and unchanged. No callback table or render-private structure was introduced
+- Validation: the registered `test_android_render_fov` CTest passed independently in both D1 and D2 builds, covering 0/100/110/120 mappings, negative and unsupported clamping, nonzero lock normalization, persisted preference, unlock, and base zoom passthrough. Both Windows game executable targets and both FOV test targets compiled and linked successfully; isolated target rebuilds reported no remaining work. The full `run-windows-build.ps1` invocation for each game stopped only on the pre-existing dirty `android_save_set.c` test target because `PATH_MAX` is undefined, after the requested game and FOV targets had linked. With JDK 21, `:app:externalNativeBuildDebug` passed D1/D2 configuration and native builds for `arm64-v8a`, `armeabi-v7a`, and `x86_64`. One scoped `android/run-code-quality.ps1 -Fix` pass covered all touched paths and passed clang-format, UTF-8 BOM checks, Android CMake formatting, and cmake-lint; inherited D1/D2 files were excluded by the wrapper as designed. Scoped commit and final worktree `git diff --check` both passed
+- Limitations: No focused FOV render-smoke or automation fixture existed under `android/game_scripts`, `android/tests`, or `android/helpers`, so no emulator render smoke was run. The host policy fixture and D1/D2 Windows links cover the extracted policy and ABI, while all configured Android ABI links cover its renderer integration. The umbrella Windows build remains red only because of the unrelated concurrent `android_save_set.c` compile failure described above
+- Out-of-scope worktree check: Initial and final status and the complete scoped diff were audited. This worker did not edit, format, revert, stage, delete, or otherwise change any out-of-scope dirty path. During validation, external orchestration advanced `HEAD` from `0498798fc927581626c3f5978e219c68e64990c0` to `34ed94767d2a2dbca3e07dd1ba672be467cfb3f1` and committed the chunk together with pre-existing and concurrent work; the chunk paths are present and clean at the new head. The final live dirty paths are `plan_next_30_local_correctness_fixes_20260811.md`, `LanDiscoveryTab.kt`, `android/outstanding_bugs.md`, `lan_game_result_first_20260811.md`, and `plan_coop_save_death_spew_lifetime_20260811.md`; none was touched by this worker. No out-of-scope dirty path changed because of this chunk
+- Residual and rerank: DMR1-CHUNK-003 is the next eligible item. Its prerequisite is satisfied, and this chunk moved no frame orchestration
+- Root acceptance: accepted after review of the scoped implementation and source-list/test wiring, independent confirmation of D1 `+239/-28` and D2 `+391/-28` against `upstream/main`, and a clean scoped `git diff --check`. The focused D1/D2 CTest, game-target links, configured Android ABI links, and the unrelated umbrella Windows failure are recorded precisely. The concurrent HEAD advance and subsequent D1/D2 state edits are isolated in survey generation 2 above

@@ -2760,6 +2760,7 @@ RetryObjectLoading:
 			/* Repopulate the absent player list so returning players get inventory back */
 			if (Game_mode & GM_MULTI_COOP)
 				coop_load_absent_from_metadata(&coop_meta);
+			coop_restore_player_spew_lifetimes();
 		} else if (Game_mode & GM_MULTI_COOP) {
 			con_printf(CON_URGENT,
 				"coop_save: unsupported or missing coop metadata\n");

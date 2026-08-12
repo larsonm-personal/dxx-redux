@@ -158,6 +158,10 @@ int coop_take_absent_player_with_level(const char *callsign,
  * Called after state_restore_all_sub() loads a coop save. */
 void coop_load_absent_from_metadata(const coop_save_metadata *meta);
 
+/* Reapply the live no-expire policy to player death spew loaded from a
+ * cooperative save. Returns the number of corrected powerups. */
+int coop_restore_player_spew_lifetimes(void);
+
 /* --- auto-save (Phase 3) --- */
 
 /* Trigger a coop auto-save to slot COOP_AUTOSAVE_SLOT.

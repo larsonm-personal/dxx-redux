@@ -418,7 +418,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 			g3_draw_tmap(nv,pointlist,uvl_copy,dyn_light,bm);
 		}
 
-#ifdef ANDROID
+#if defined(ANDROID) && defined(OGL)
 	/* Debug texture labels for texmerge'd faces. bm2==NULL means texmerge
 	 * merged both textures into a 64x64 bitmap, so g3_draw_tmap can't label
 	 * either (the merged bitmap isn't in GameBitmaps[]). Look up both

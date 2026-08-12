@@ -3,6 +3,8 @@
 
 #ifdef ANDROID
 
+#ifdef OGL
+
 #include "3d.h"
 #include "debug_tex_overlay.h"
 #include "gr.h"
@@ -265,6 +267,40 @@ void android_merged_wall_sample_snapshot_framebuffer(
     int screen_w, int screen_h,
     volatile int *sample_r, volatile int *sample_g, volatile int *sample_b, volatile int *sample_a,
     volatile int *avg_r, volatile int *avg_g, volatile int *avg_b, volatile int *avg_a);
+
+#else
+
+#include "debug_tex_overlay.h"
+
+struct segment;
+
+struct merged_wall_texmerge_owner {
+	int first_seg;
+	int first_side;
+	int first_face;
+	int last_seg;
+	int last_side;
+	int last_face;
+	int creation_frame;
+	int last_use_frame;
+};
+
+extern volatile int g_merged_wall_force_two_pass;
+
+void android_merged_wall_texmerge_owner_reset(struct merged_wall_texmerge_owner *owner);
+void android_merged_wall_texmerge_owner_note(struct merged_wall_texmerge_owner *owner);
+void android_merged_wall_log_texmerge_owner(const char *event, int slot,
+	int tmap_bottom, int tmap_top, grs_bitmap *bottom_bmp,
+	grs_bitmap *top_bmp, int orient,
+	const struct merged_wall_texmerge_owner *owner);
+void android_merged_wall_cached_texmerge_clear_cache(void);
+void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,
+	int tmap1, int tmap2, int wid_flags, int nv, int face_index);
+void android_merged_wall_clear_draw_face_context(void);
+void android_merged_wall_log_face(struct segment *segp, int sidenum, int tmap1,
+	int tmap2, int wid_flags, float dot, int nv, int face_index);
+
+#endif /* OGL */
 
 #endif /* ANDROID */
 

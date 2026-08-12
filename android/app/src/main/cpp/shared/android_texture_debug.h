@@ -5,7 +5,6 @@
 
 #include "3d.h"
 #include "gr.h"
-#include "ogl_init.h"
 
 #ifdef __cplusplus
 extern "C" {

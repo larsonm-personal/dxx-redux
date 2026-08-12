@@ -444,6 +444,34 @@ private fun LanDiscoveryView(
                 .fillMaxSize()
                 .showControllerFocusOnDpad(actionFocus, focusTarget),
     ) {
+        // -- Discovered lobbies --
+        // Keep results first so the common single-game LAN path is immediately joinable
+        if (isDiscovering) {
+            item {
+                Text(
+                    "Scanning for LAN games...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Local Network Games (${discoveredLobbies.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+
+            if (discoveredLobbies.isNotEmpty()) {
+                items(
+                    discoveredLobbies,
+                    key = { it.announce.lobbyId },
+                ) { lobby ->
+                    LanLobbyCard(lobby, callsign, onJoinInGame = onLaunchGame)
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
+        }
+
         if (!isLandscape && !isHosting) {
             item {
                 Row(
@@ -747,33 +775,6 @@ private fun LanDiscoveryView(
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(8.dp))
-            }
-        }
-
-        // -- Discovered lobbies --
-        if (isDiscovering) {
-            item {
-                Text(
-                    "Scanning for LAN games...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Local Network Games (${discoveredLobbies.size})",
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Spacer(Modifier.height(4.dp))
-            }
-
-            if (discoveredLobbies.isNotEmpty()) {
-                items(
-                    discoveredLobbies,
-                    key = { it.announce.lobbyId },
-                ) { lobby ->
-                    LanLobbyCard(lobby, callsign, onJoinInGame = onLaunchGame)
-                    Spacer(Modifier.height(4.dp))
-                }
             }
         }
 

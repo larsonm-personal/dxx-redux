@@ -765,6 +765,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		}
 	} else if (strcmp(name, "gfx_mode") == 0)
 		gles3_shim_debug_mode = (int) value;
+#ifdef OGL
 	else if (strcmp(name, "aniso_level") == 0) {
 		extern int ogl_aniso_level;
 		extern volatile int g_aniso_pending_apply;
@@ -775,7 +776,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		extern volatile int g_msaa_pending_apply;
 		ogl_msaa_samples = (int) value;
 		g_msaa_pending_apply = 1;
-	} else
+	}
+#endif
+	else
 		LOGE("nativeSetDebugFlag: unknown flag '%s'", name);
 	free(name);
 }
@@ -1227,12 +1230,15 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
  * android port: video diagnostics overlay
  */
 #include "piggy.h"
+#ifdef OGL
 #include "ogl_init.h"
+#endif
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz)
 {
 	extern int g_current_fps;
 	extern int g_frame_time_us, g_frame_time_avg_us, g_frame_time_max_us;
+#ifdef OGL
 	extern int r_texbinds, r_texbind_reuse;
 	extern int r_polyc, r_tpolyc;
 	extern int r_shader_switches, r_mask_draws;
@@ -1254,6 +1260,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern int g_cache_upload_ms;
 	extern int g_cache_mask_ms;
 	int ogl_get_texture_bytes(void);
+#endif
 	int android_surface_get_display_width(void);
 	int android_surface_get_display_height(void);
 	extern unsigned int grd_curscreen_w(void);
@@ -1261,10 +1268,12 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 
 	enum { VS_SIZE = 39 };
 	jint buf[VS_SIZE];
+	memset(buf, 0, sizeof(buf));
 
 	buf[0] = (jint) g_current_fps;
 
 	/* Count hi-res textures (same logic as game_introspect.cpp) */
+#ifdef OGL
 	int total = 0, replaced = 0, max_w = 0, max_h = 0;
 	for (int i = 0; i < Num_bitmap_files; i++) {
 		ogl_texture *t = GameBitmaps[i].gltexture;
@@ -1320,6 +1329,15 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[36] = (jint) g_cache_png_read_ms;
 	buf[37] = (jint) g_cache_upload_ms;
 	buf[38] = (jint) g_cache_mask_ms;
+#else
+	buf[7] = (jint) grd_curscreen_w();
+	buf[8] = (jint) grd_curscreen_h();
+	buf[9] = (jint) android_surface_get_display_width();
+	buf[10] = (jint) android_surface_get_display_height();
+	buf[11] = (jint) g_frame_time_us;
+	buf[12] = (jint) g_frame_time_avg_us;
+	buf[13] = (jint) g_frame_time_max_us;
+#endif
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

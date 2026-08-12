@@ -18,7 +18,7 @@ Fix the ranked non-network correctness queue selected from the active adversaria
 - [ ] BR-0493: complete launcher/native HAM patch-schema parity
 - [ ] BR-0235: propagate and roll back save metadata failures
 - [ ] BR-0236: roll back partial all-pilot preference writes
-- [ ] BR-0338: preserve complete mission identities in save paths
+- [x] BR-0338: preserve complete mission identities in save paths
 - [x] BR-0255: abort resume when pilot loading fails
 - [x] BR-0264: resolve controller configuration from current user
 - [ ] BR-0268: surface pilot-preference conflicts before edits
@@ -30,7 +30,7 @@ Fix the ranked non-network correctness queue selected from the active adversaria
 - [x] BR-0442: canonicalize game filenames independently of locale
 - [x] BR-0481: classify loose secret levels as file-set data
 - [x] BR-0436: preserve radial binding types through import
-- [ ] BR-0417: repair last-save selection after deletion
+- [x] BR-0417: repair last-save selection after deletion
 - [x] BR-0432: reject empty music-source launches
 - [x] BR-0258: retry the same autosave slot after failure
 - [x] BR-0262: resolve tied pilot timestamps deterministically
