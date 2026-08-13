@@ -2508,29 +2508,21 @@ class MainActivity :
             nativeSetIntrospectPath(filesDir.absolutePath + "/introspect.json")
             nativeSetAutomationPath(filesDir.absolutePath)
 
-            val filter = IntentFilter("com.dxxredux.INTROSPECT")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(introspectReceiver, filter, RECEIVER_EXPORTED)
-            } else {
-                @Suppress("UnspecifiedRegisterReceiverFlag")
-                registerReceiver(introspectReceiver, filter)
-            }
-
-            val automateFilter = IntentFilter("com.dxxredux.AUTOMATE")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(automateReceiver, automateFilter, RECEIVER_EXPORTED)
-            } else {
-                @Suppress("UnspecifiedRegisterReceiverFlag")
-                registerReceiver(automateReceiver, automateFilter)
-            }
-
-            val cmdFilter = IntentFilter("com.dxxredux.GAME_COMMAND")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(gameCommandReceiver, cmdFilter, RECEIVER_EXPORTED)
-            } else {
-                @Suppress("UnspecifiedRegisterReceiverFlag")
-                registerReceiver(gameCommandReceiver, cmdFilter)
-            }
+            DynamicReceiverPolicy.registerDebugExternal(
+                this,
+                introspectReceiver,
+                IntentFilter("com.dxxredux.INTROSPECT"),
+            )
+            DynamicReceiverPolicy.registerDebugExternal(
+                this,
+                automateReceiver,
+                IntentFilter("com.dxxredux.AUTOMATE"),
+            )
+            DynamicReceiverPolicy.registerDebugExternal(
+                this,
+                gameCommandReceiver,
+                IntentFilter("com.dxxredux.GAME_COMMAND"),
+            )
         }
     }
 

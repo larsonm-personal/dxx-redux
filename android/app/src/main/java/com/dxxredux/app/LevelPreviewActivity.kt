@@ -329,13 +329,8 @@ abstract class LevelPreviewActivity :
                 addAction(ACTION_INTROSPECT)
                 addAction(ACTION_COMMAND)
             }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(debugReceiver, filter, RECEIVER_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(debugReceiver, filter)
-        }
-        debugReceiverRegistered = true
+        debugReceiverRegistered =
+            DynamicReceiverPolicy.registerDebugExternal(this, debugReceiver, filter)
     }
 
     private fun requestPresentationProbe() {

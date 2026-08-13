@@ -1935,47 +1935,36 @@ class SetupActivity : ComponentActivity() {
         // Edge-to-edge: draw behind system bars, Compose handles insets
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Register introspection receiver
-        val filter = IntentFilter("com.dxxredux.SETUP_INTROSPECT")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(introspectReceiver, filter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(introspectReceiver, filter)
-        }
+        // These actions also have package-scoped senders in the game and launcher processes
+        DynamicReceiverPolicy.registerAppInternalOrDebugExternal(
+            this,
+            introspectReceiver,
+            IntentFilter("com.dxxredux.SETUP_INTROSPECT"),
+        )
+        DynamicReceiverPolicy.registerAppInternalOrDebugExternal(
+            this,
+            commandReceiver,
+            IntentFilter("com.dxxredux.SETUP_COMMAND"),
+        )
 
-        // Register command receiver
-        val cmdFilter = IntentFilter("com.dxxredux.SETUP_COMMAND")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(commandReceiver, cmdFilter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(commandReceiver, cmdFilter)
-        }
+        // Test automation remains externally reachable only in debuggable builds
+        DynamicReceiverPolicy.registerDebugExternal(
+            this,
+            mpCommandReceiver,
+            IntentFilter("com.dxxredux.MP_COMMAND"),
+        )
+        DynamicReceiverPolicy.registerDebugExternal(
+            this,
+            automateSetupReceiver,
+            IntentFilter("com.dxxredux.SETUP_AUTOMATE"),
+        )
 
-        // Register multiplayer command receiver
-        val mpFilter = IntentFilter("com.dxxredux.MP_COMMAND")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(mpCommandReceiver, mpFilter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(mpCommandReceiver, mpFilter)
-        }
-
-        // Register host migration receiver (coop host takeover)
-        val hmFilter = IntentFilter("com.dxxredux.HOST_MIGRATION")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(hostMigrationReceiver, hmFilter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(hostMigrationReceiver, hmFilter)
-        }
-
-        // Register automation receiver (debug only)
-        if (BuildConfig.DEBUG) {
-            val autoFilter = IntentFilter("com.dxxredux.SETUP_AUTOMATE")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(automateSetupReceiver, autoFilter, RECEIVER_EXPORTED)
-            } else {
-                registerReceiver(automateSetupReceiver, autoFilter)
-            }
-        }
+        // Host migration is sent only by this application's game process
+        DynamicReceiverPolicy.registerAppInternal(
+            this,
+            hostMigrationReceiver,
+            IntentFilter("com.dxxredux.HOST_MIGRATION"),
+        )
 
         gameRunningFlag = hasReturnableGameActivity()
         val filesDir = filesDir
@@ -2361,16 +2350,18 @@ class SetupActivity : ComponentActivity() {
         } catch (_: Exception) {
         }
         try {
-            unregisterReceiver(mpCommandReceiver)
-        } catch (_: Exception) {
-        }
-        try {
             unregisterReceiver(hostMigrationReceiver)
         } catch (_: Exception) {
         }
-        try {
-            unregisterReceiver(automateSetupReceiver)
-        } catch (_: Exception) {
+        if (BuildConfig.DEBUG) {
+            try {
+                unregisterReceiver(mpCommandReceiver)
+            } catch (_: Exception) {
+            }
+            try {
+                unregisterReceiver(automateSetupReceiver)
+            } catch (_: Exception) {
+            }
         }
         super.onDestroy()
     }

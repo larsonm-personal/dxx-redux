@@ -11261,7 +11261,7 @@ Append findings here in numeric order using the exact template in the process do
 
 ### BR-0005: P1 - Keep launcher command broadcasts private in release builds
 
-- [ ] OPEN
+- [x] FIXED
 - Type: defect
 - Confidence: high
 - Category: security
@@ -11277,7 +11277,7 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Production cross-process commands accept broadcasts only from this app's UID; ADB automation and introspection exposure exists only in debug builds with an explicit test boundary
 - Suggested fix: Register production same-app actions such as host migration with `RECEIVER_NOT_EXPORTED`, move ADB-only command, multiplayer-control, and introspection receivers behind `BuildConfig.DEBUG`, and use debug-only exported registration only where the shell test harness requires it. If any production external integration is intentional, protect a narrowly scoped receiver with a signature permission and validate every command separately
 - Validation: From a separately signed test app, attempt every release action and assert no receiver invocation, file mutation, activity launch, or network change; confirm same-app `:game` to launcher notifications still work; then verify the documented ADB commands remain available only in a debug APK
-- Resolution: Pending
+- Resolution: Fixed by `GQR-0006` on 2026-08-12. `DynamicReceiverPolicy` is now the only dynamic registration owner in the app package. Release setup command and introspection receivers are app-internal, host migration is always app-internal, and multiplayer/setup/game/preview automation receivers register externally only in debug builds. The complete launcher unit suite, debug and release compilation, all-ABI debug APK, and debug ADB introspection passed. No inherited D1/D2 file changed.
 
 ### BR-0006: P2 - Refresh operational documentation after tool and source migrations
 

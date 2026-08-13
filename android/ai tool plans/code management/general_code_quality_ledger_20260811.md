@@ -102,7 +102,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `DONE` | `GQF-0174` | Move secret-area serialization into its adapter |
 | 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `DONE` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
 | 9 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0024` | `DONE` | `GQF-0037` | Route SAF URI strings through strict standard-UTF-8 JNI conversion |
-| 10 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0006` | `TODO` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests |
+| 10 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0006` | `DONE` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests |
 | 11 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0011` | `TODO` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition |
 | 12 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0034` | `TODO` | `GQF-0047` | Enforce physical ISO output containment |
 | 13 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0038` | `TODO` | `GQF-0051` | Enforce one peak-live-memory budget for STi2 method 15 |
@@ -5903,7 +5903,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0002` | `OPEN` | P1/high | pr-hygiene | `game_data_to_copy_to_emulator/debuglog_20260520_211753.txt` | An 18.6 MB runtime debug log is tracked. Remove it, preserve no private data, and prevent recurrence |
 | `GQF-0003` | `OPEN` | P2/high | pr-hygiene | `android/test_output.txt`, `android/build_output.txt` | Stale transcripts are tracked as source. Remove or replace with reproducible test evidence and ignore policy |
 | `GQF-0004` | `OPEN` | P3/high | pr-hygiene | Root `.tmp`, `test.txt`, `d1_d2_ogl_diff.txt` | Scratch artifacts create review and whitespace noise. Classify, remove, and prevent recurrence without deleting maintained fixtures |
-| `GQF-0005` | `OPEN` | P1/high | security | `SetupActivity.kt:registerAutomationReceivers` | Modern registrations use `RECEIVER_EXPORTED` without a visible permission for command and introspection surfaces. Constrain exposure and test intended automation access. Live BR-0005 |
+| `GQF-0005` | `FIXED` | P1/high | security | `DynamicReceiverPolicy.kt` | `GQR-0006` centralizes dynamic receiver exposure. Release setup command and introspection are app-internal, host migration is always app-internal, and ADB-only setup, multiplayer, game, and preview receivers register only in debug builds. Live BR-0005 is fixed |
 | `GQF-0006` | `FIXED` | P1/high | correctness/bounds | `ogl_texture_android.c:android_ogl_read_texture_with_extensions` | `GQR-0001` added an explicit capacity contract and portable checked filename builder. Oversized candidates are rejected without modifying the destination or calling `read_png`; the final API adds zero inherited lines |
 | `GQF-0007` | `FIXED` | P1/high | correctness/bounds | `ogl_texture_android.c:android_ogl_load_dxa_mask` | DXA mask construction now uses the existing checked shared filename builder. A complete basename, `_mask.png`, and NUL must fit before any write or `read_png` call; exact-fit and one-byte-over runtime cases are covered |
 | `GQF-0008` | `OPEN` | P2/high | test-gap/false-pass | `android/tests/test_hud_layout.c` | All behavioral checks use standard `assert` and disappear under `NDEBUG`. Make the registered optimized target retain its oracle. Live BR-0662 |
@@ -6811,7 +6811,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0003` | `TODO` | `GQF-0008` | Restore always-active HUD layout test oracles | Confirm paired CMake configuration |
 | `GQR-0004` | `TODO` | `GQF-0009` | Restore always-active escort policy test oracles | D2-only focused target |
 | `GQR-0005` | `TODO` | `GQF-0001` through `GQF-0004` | Remove tracked runtime/scratch artifacts and establish narrow recurrence policy | Exact target and provenance audit before deletion |
-| `GQR-0006` | `TODO` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests | Requires manifest/receiver and automation caller review |
+| `GQR-0006` | `DONE` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests | Central policy, full launcher unit suite, debug/release compilation, all-ABI debug APK, and debug ADB introspection passed |
 | `GQR-0007` | `TODO` | `GQF-0011` | Replace ambiguous optional menu selection with stable semantics | Requires focused automation reproduction |
 | `GQR-0008` | `TODO` | `GQF-0012` | Pin NAT testbed base image reproducibly | Requires selected digest and testbed build |
 | `GQR-0009` | `TODO` | `GQF-0016` | Limit compiler-process cleanup to owned children | Requires Windows script fixture or process-ownership test |
@@ -7031,6 +7031,16 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Platform validation: the final `run-windows-build.ps1 -Target both` rebuilt and linked D1, D2 and headless variants after the rewind boundary correction. With JDK 21, `:app:externalNativeBuildDebug` rebuilt `arm64-v8a`, `armeabi-v7a` and `x86_64` without changed-path warnings. Scoped quality and final `git diff --check` passed
 - Non-goals: state validation size checks, old-version admission, unrelated checkpoint fields and scanner policy remain unchanged
 
+### GQR-0006 terminal claim
+
+- Status: `DONE`; linked `GQF-0005` and adversarial `BR-0005` are `FIXED`. Historical impact remains 56 (`32/0/10/10/4`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began at `5f3a4f7685edfcfec6a775b0eaedd0f246a61512` with a clean worktree. The durable plan was created before product edits
+- Root-cause fix: new `DynamicReceiverPolicy.kt` is the only owner of dynamic receiver registration in the app package. It uses AndroidX compatibility registration on every supported API. `SETUP_COMMAND` and `SETUP_INTROSPECT` remain available to package-scoped senders but become `RECEIVER_NOT_EXPORTED` in release. `HOST_MIGRATION` is always `RECEIVER_NOT_EXPORTED`. `MP_COMMAND`, `SETUP_AUTOMATE`, game introspection/automation/commands, and level-preview debug commands register as exported only when `BuildConfig.DEBUG` is true
+- Compatibility: the game-process skip-intro preference broadcast, launcher-script setup broadcasts, and game-process host-migration broadcast retain their package-scoped paths. Existing ADB automation retains the exported debug boundary. Release builds expose no automation-only registration and no permissionless external command surface
+- Diff scope: product changes are three branch-added Activity paths plus new branch-added policy and unit-test paths. Existing-file numstat is `+54/-76`; the new policy and test are 44 and 33 lines. No D1/D2 or other inherited game file changed, so original-file impact is zero
+- Validation: the focused `DynamicReceiverPolicyTest` and complete `:app:testDebugUnitTest` suite passed. `:app:assembleDebug` built the APK and native libraries for `arm64-v8a`, `armeabi-v7a`, and `x86_64`; `:app:compileReleaseKotlin` and `:app:processReleaseMainManifest` passed. On emulator-5554, a package-targeted external ADB `SETUP_INTROSPECT` broadcast produced a fresh `setup_introspect.json`. The merged manifest contains none of the dynamic action strings. Scoped ktlint/BOM checks and `git diff --check` passed
+- Validation boundary: a separately signed hostile release test application was not introduced. Release rejection is delegated to the platform's `RECEIVER_NOT_EXPORTED` contract and covered by the unit-tested release flag selection. This project defines no `testReleaseUnitTest` task, so release validation used `compileReleaseKotlin`, release manifest processing, and the pure `debug = false` unit case. Windows D1/D2 validation was not rerun because no native, build-system, or inherited game path changed
+
 ### GQR-0001 live claim
 
 - Claimed: 2026-08-11 by one fresh `gpt-5.6-sol` worker at medium reasoning effort with no inherited turns
@@ -7044,6 +7054,11 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0006 / GQF-0005 completion
+
+- Status: `DONE`; `GQF-0005` and adversarial `BR-0005` are `FIXED`
+- Result: one AndroidX-backed policy makes production command and migration receivers app-internal and omits automation-only registrations from release while retaining exported ADB access in debug. The full launcher unit suite, debug APK and all native ABIs, release Kotlin and manifest processing, emulator ADB introspection, scoped quality, and final repository audits passed with zero inherited-game-file impact
 
 ### 2026-08-12: GQR-0161 / GQF-0174 completion
 
