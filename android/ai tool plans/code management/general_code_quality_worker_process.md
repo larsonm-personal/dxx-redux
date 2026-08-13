@@ -107,6 +107,26 @@ The canonical writer records one `GQD-*` diff-minimization decision per weighted
 
 Read-only survey shards may run concurrently when their assigned inbox outputs and frozen scopes are disjoint. Every shard still belongs to only one fresh worker. They must not use mutable live files as evidence while a product writer is active
 
+### Impact rating rubric
+
+Every terminal coverage chunk receives one confirmed impact rating from 0 through 100. The rating describes the highest-impact live canonical fix supported by that chunk; it does not make the coverage chunk itself an implementation unit. Duplicate and extension observations inherit the canonical owner's rating and are marked reference-only, so the same root is dispatched once
+
+Add the five components without hidden multipliers:
+
+| Component | Range | Anchors |
+|---|---:|---|
+| `H` user/release harm | 0-35 | 35 P0 or release-stopping loss; 32 P1 security, crash, corruption, unbounded exhaustion, or major false success; 23 P2 material correctness/reliability; 12 P3 test, maintenance, diagnostic, documentation, or hygiene; 0 no live defect |
+| `M` original-file merge payoff | 0-35 | 35 at least 150 removable inherited lines or at least 8 removable hunks; 28 for 75-149 lines or 5-7 hunks; 21 for 30-74 lines or 2-4 hunks; 12 for 10-29 lines or one complete hunk; 5 for 1-9 lines without a complete hunk; 0 for no base-existing/original reduction, including movement only among branch-added files |
+| `B` breadth/exposure | 0-10 | 10 remote, release-wide, all-install, or core pipeline; 7 common subsystem or paired games; 4 focused feature/workflow; 2 narrow test/build/docs-only; 0 no actionable work |
+| `C` evidence confidence | 0-10 | 10 high with a concrete trigger and owner; 6 medium; 3 bounded investigation; 0 clean, rejected, or unsupported |
+| `R` remediation readiness | 0-10 | 10 exact local edit with a maintained focused oracle and no blocker; 7 clear fix with moderate platform validation; 4 broad, cross-platform, or prerequisite-heavy; 0 blocked, speculative, already completed, or without a standalone action |
+
+Use bands `80-100 IMMEDIATE`, `65-79 HIGH`, `50-64 MEDIUM-HIGH`, `35-49 MEDIUM`, `20-34 LOW`, and `0-19 REFERENCE`. Sort ties by `H`, then `M`, `C`, `R`, and coverage ID, all descending except the final ID. A clean chunk, a retain/no-effect decision with no live quality owner, and an already completed fix score zero. A chunk with several observations uses the maximum live owner score, not their sum
+
+The raw worker report must include `Provisional impact rating: <score> (H/M/B/C/R = ...); proposed owner: <ID or none>; rationale: <one line>`. The canonical writer confirms or replaces that proposal only after admission and deduplication. New owners receive one primary ranking row; later duplicates and extensions receive reference rows with the same score. Recalculate affected rows when severity, confidence, measured inherited payoff, prerequisites, or lifecycle state changes
+
+Remediation scheduling preserves the user-set 80/20 objective: within each ten eligible product chunks, take eight from the descending diff-minimization/DMR1 score lane and two from the descending general-quality score lane. Borrow an unused slot only when its lane has no eligible work. Prerequisite and overlap constraints can defer an item, but must not silently change its impact score
+
 ## Finding admission and normalization
 
 A single canonical-ledger writer imports each complete inbox report into `general_code_quality_evidence_ledger_20260811.md`, verifies its digest, removes the imported inbox fragment, and then normalizes observations in coverage-ID and local-observation order. Each raw observation becomes one of:
@@ -196,7 +216,7 @@ The root conversation:
 1. Freezes generations and maintains the canonical queue
 2. Assigns read-only survey shards, imports their complete reports into the durable evidence ledger, and performs single-writer normalization
 3. Verifies scope fingerprints, explicit coverage, admission, deduplication, and ID uniqueness
-4. Ranks supported findings by severity, locality, confidence, prerequisites, and testability
+4. Confirms `H/M/B/C/R` ratings, publishes the descending canonical-owner order, and ranks within the 80/20 remediation lanes
 5. Dispatches exactly one fresh product worker for the first eligible remediation chunk
 6. Performs read-only diff, scope, metrics, and validation acceptance after each worker
 7. Returns incomplete work to the same worker and retires it only at terminal state
@@ -207,13 +227,13 @@ The root conversation:
 Survey:
 
 ```text
-Survey exactly <GQ-COVERAGE-ID> read-only using gpt-5.6-sol at medium effort. Read the repository instructions, general quality process, active and done ledgers, durable evidence ledger, generation manifest, and assigned frozen scope. Allocate roughly 80 percent of effort to frozen diff attribution and inherited-file minimization, and 20 percent to general quality. Inspect the assigned ranges plus necessary callers, callees, tests, paired D1/D2 files, owners, and interfaces. Produce the mandatory diff-minimization assessment with a measured CANDIDATE, RETAIN, NO_INHERITED_EFFECT, or DEFER disposition before quality observations. Do not edit product code or canonical ledgers. Write one raw survey result to the assigned tracked evidence-inbox path with concrete observations, explicit clean dimensions, commands, gaps, and scope fingerprint. Stop after this unit
+Survey exactly <GQ-COVERAGE-ID> read-only using gpt-5.6-sol at medium effort. Read the repository instructions, general quality process, active and done ledgers, durable evidence ledger, generation manifest, and assigned frozen scope. Allocate roughly 80 percent of effort to frozen diff attribution and inherited-file minimization, and 20 percent to general quality. Inspect the assigned ranges plus necessary callers, callees, tests, paired D1/D2 files, owners, and interfaces. Produce the mandatory diff-minimization assessment with a measured CANDIDATE, RETAIN, NO_INHERITED_EFFECT, or DEFER disposition before quality observations. Apply the impact rubric and record a provisional 0-100 score, H/M/B/C/R components, proposed canonical owner, and one-line rationale. Do not edit product code or canonical ledgers. Write one raw survey result to the assigned tracked evidence-inbox path with concrete observations, explicit clean dimensions, commands, gaps, and scope fingerprint. Stop after this unit
 ```
 
 Normalization:
 
 ```text
-Import exactly the pending inbox reports into the durable evidence ledger, verify their SHA-256 markers, and remove only successfully imported inbox fragments. Normalize them in deterministic coverage-ID order as the sole canonical-ledger writer. Record one `GQD-*` minimization decision per weighted unit before normalizing secondary quality observations. Apply the admission standard and search both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup records, and earlier generations for duplicates or regrowth. Assign stable IDs only after deduplication. Create atomic findings or investigations and one explicit coverage record per unit. Do not edit product code or form unrelated remediation batches
+Import exactly the pending inbox reports into the durable evidence ledger, verify their SHA-256 markers, and remove only successfully imported inbox fragments. Normalize them in deterministic coverage-ID order as the sole canonical-ledger writer. Record one `GQD-*` minimization decision per weighted unit before normalizing secondary quality observations. Apply the admission standard and search both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup records, and earlier generations for duplicates or regrowth. Assign stable IDs only after deduplication. Confirm or replace each provisional H/M/B/C/R rating, bind duplicate rows to the same canonical owner score, and update the durable descending ranking. Create atomic findings or investigations and one explicit coverage record per unit. Do not edit product code or form unrelated remediation batches
 ```
 
 Remediation:

@@ -79,11 +79,19 @@
 ## Diff-minimization-weighted second 30-chunk tranche
 
 - [x] Continue the 80 percent diff-minimization and 20 percent general-quality protocol for `GQ1-CHUNK-0138` through `GQ1-CHUNK-0167`
-- [-] Process all 30 chunks with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
-- [ ] Normalize one durable `GQD-*` decision and one `GQC-*` coverage record per chunk, plus only deduplicated secondary findings
-- [ ] Reconcile actionable minimization candidates against DMR1, the first weighted tranche, and existing GQ/adversarial owners
-- [ ] Report candidate, retained, deferred, and no-effect counts with named inherited paths and estimated inherited-line/hunk reduction
-- [ ] Verify all 30 reports are imported exactly once, no inbox or weighted temp report remains, no worker is active, and campaign files pass tracked ASCII/BOM and `git diff --check` audits
+- [x] Process all 30 chunks with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
+- [x] Normalize one durable `GQD-*` decision and one `GQC-*` coverage record per chunk, plus only deduplicated secondary findings
+- [x] Reconcile actionable minimization candidates against DMR1, the first weighted tranche, and existing GQ/adversarial owners
+- [x] Report candidate, retained, deferred, and no-effect counts with named inherited paths and estimated inherited-line/hunk reduction
+- [x] Verify all 30 reports are imported exactly once, no inbox or weighted temp report remains, no worker is active, and campaign files pass tracked ASCII/BOM and `git diff --check` audits
+
+## Impact scoring and remediation ordering
+
+- [x] Define a reproducible 0-100 impact rubric that prioritizes user/security/data-loss risk, original-file merge-pressure reduction, breadth, confidence, and implementation readiness
+- [x] Score every terminal `GQ1-CHUNK-*` coverage unit by its highest-impact canonical fix owner, assigning explicit low scores to clean, duplicate-only, retained, or no-effect units
+- [x] Add a durable descending ranking with score components, canonical owner, and concise rationale without duplicating remediation ownership
+- [x] Require future survey workers to recommend a provisional score and the canonical writer to confirm or replace it during normalization
+- [x] Reconcile score counts and ties, verify every terminal chunk appears exactly once, and run ASCII/BOM plus `git diff --check` audits
 
 ## Initial hypotheses to verify
 
