@@ -222,13 +222,9 @@ int window_is_modal(window *wind)
 }
 
 #ifdef INTROSPECT_ON
-void *window_get_data(window *wind)
+void game_window_introspect_read(window *wind, game_window_introspect_snapshot *snapshot)
 {
-	return wind->data;
-}
-
-int (*window_get_callback(window *wind))(window *, d_event *, void *)
-{
-	return wind->w_callback;
+	snapshot->data = wind->data;
+	snapshot->callback = wind->w_callback;
 }
 #endif

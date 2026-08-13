@@ -247,6 +247,18 @@ static int test_absent_selection_uses_optional_fallbacks(void)
 	return 1;
 }
 
+static int test_game_directory_is_parameterized(void)
+{
+	char d1_path[PHYSFSX_ANDROID_PATH_MAX];
+	physfsx_android_setup_result result;
+	CHECK(reset_fixture(0, 0, 0));
+	CHECK(physfsx_android_setup_search_paths("d1x-redux", &mock_ops, &result));
+	snprintf(d1_path, sizeof(d1_path), "%sd1x-redux/", test_root);
+	CHECK(strcmp(current_write_dir, d1_path) == 0);
+	CHECK(strcmp(mount_paths[0], d1_path) == 0);
+	return 1;
+}
+
 int main(void)
 {
 	CHECK(test_nominal_order());
@@ -255,6 +267,7 @@ int main(void)
 	CHECK(test_saf_manifest_failure_rolls_back_selected_content());
 	CHECK(test_required_setup_failures_abort());
 	CHECK(test_absent_selection_uses_optional_fallbacks());
+	CHECK(test_game_directory_is_parameterized());
 	printf("physfsx_android_setup tests passed\n");
 	return 0;
 }

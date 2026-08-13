@@ -756,41 +756,18 @@ void newmenu_set_rval(newmenu *menu, int rval)
 }
 
 #ifdef INTROSPECT_ON
-const char *newmenu_get_title(newmenu *menu)
+void game_menu_introspect_read(newmenu *menu, game_menu_introspect_snapshot *snapshot)
 {
-	return menu->title;
-}
-
-const char *newmenu_get_subtitle(newmenu *menu)
-{
-	return menu->subtitle;
-}
-
-int newmenu_get_scroll_offset(newmenu *menu)
-{
-	return menu->scroll_offset;
-}
-
-int newmenu_get_is_scroll_box(newmenu *menu)
-{
-	return menu->is_scroll_box;
-}
-
-int newmenu_get_android_wrapped_text(newmenu *menu)
-{
+	snapshot->title = menu->title;
+	snapshot->subtitle = menu->subtitle;
+	snapshot->scroll_offset = menu->scroll_offset;
+	snapshot->is_scroll_box = menu->is_scroll_box;
 #ifdef ANDROID
-	return menu->android_readable_tiny;
+	snapshot->android_wrapped_text = menu->android_readable_tiny;
+	snapshot->android_original_nitems = menu->android_original_items ? menu->android_original_nitems : menu->nitems;
 #else
-	return 0;
-#endif
-}
-
-int newmenu_get_android_original_nitems(newmenu *menu)
-{
-#ifdef ANDROID
-	return menu->android_original_items ? menu->android_original_nitems : menu->nitems;
-#else
-	return menu->nitems;
+	snapshot->android_wrapped_text = 0;
+	snapshot->android_original_nitems = menu->nitems;
 #endif
 }
 #endif
@@ -2595,7 +2572,7 @@ int listbox_get_citem(listbox *lb)
 }
 
 #ifdef INTROSPECT_ON
-const char *listbox_get_title(listbox *lb)
+const char *game_listbox_introspect_read_title(listbox *lb)
 {
 	return lb->title;
 }

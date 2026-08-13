@@ -112,14 +112,7 @@ int newmenu_get_nitems(newmenu *menu);
 int newmenu_get_citem(newmenu *menu);
 struct window *newmenu_get_window(newmenu *menu);
 void newmenu_set_rval(newmenu *menu, int rval);
-#ifdef INTROSPECT_ON
-const char *newmenu_get_title(newmenu *menu);
-const char *newmenu_get_subtitle(newmenu *menu);
-int newmenu_get_scroll_offset(newmenu *menu);
-int newmenu_get_is_scroll_box(newmenu *menu);
-int newmenu_get_android_wrapped_text(newmenu *menu);
-int newmenu_get_android_original_nitems(newmenu *menu);
-#endif
+#include "game_menu_introspect_accessors.h"
 void nm_draw_background(int x1, int y1, int x2, int y2);
 void nm_restore_background(int x, int y, int w, int h);
 
@@ -150,9 +143,6 @@ extern char **listbox_get_items(listbox *lb);
 extern int listbox_get_nitems(listbox *lb);
 extern int listbox_get_citem(listbox *lb);
 struct window *listbox_get_window(listbox *lb);
-#ifdef INTROSPECT_ON
-extern const char *listbox_get_title(listbox *lb);
-#endif
 extern void listbox_delete_item(listbox *lb, int item);
 
 extern listbox *newmenu_listbox(char *title, int nitems, char *items[], int allow_abort_flag, int (*listbox_callback)(listbox *lb, d_event *event, void *userdata), void *userdata);

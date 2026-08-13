@@ -609,6 +609,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_menu_introspect_accessors.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
@@ -669,9 +671,9 @@ target_include_directories(
 
 target_compile_definitions(dxx-redux-d1 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
-target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE
-                           ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/shared
-                           ${D2_SRC}/arch/include)
+target_include_directories(
+    ${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/shared ${D2_SRC}/arch/include)
 
 # Replace SDL_mixer's music with TinySoundFont, same as D2
 get_target_property(_d1_arch_sdl_sources ${DXX_TARGET_PREFIX}arch_sdl SOURCES)
@@ -711,7 +713,8 @@ else()
     set_property(TARGET dxx-redux-d1 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 if(NOT OPENGL)
-    target_sources(dxx-redux-d1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/software_renderer_debug.c)
+    target_sources(dxx-redux-d1
+                   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/software_renderer_debug.c)
 endif()
 
 # ──────────────────────────────────────────────────────────────
@@ -778,6 +781,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_menu_introspect_accessors.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
@@ -842,8 +847,8 @@ target_include_directories(
 target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(dxx-redux-d2 PRIVATE DXX_BUILD_DESCENT_II)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
-target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE
-                           ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/shared)
+target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                                                ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # Replace SDL_mixer's Timidity-based music with TinySoundFont MIDI synth. digi_mixer_music.c is
 # already compiled into arch_sdl by the D2 CMakeLists; we remove it and add our TSF-based
@@ -878,7 +883,8 @@ if(OPENGL)
     target_include_directories(${DXX_TARGET_PREFIX}xmodel PRIVATE ${PHYSFS_INCLUDE_DIR})
 endif() # OPENGL
 if(NOT OPENGL)
-    target_sources(dxx-redux-d2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/software_renderer_debug.c)
+    target_sources(dxx-redux-d2
+                   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/software_renderer_debug.c)
 endif()
 
 # nlohmann/json — used by the introspection/automation C++ files

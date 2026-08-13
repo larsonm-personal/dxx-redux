@@ -41,24 +41,11 @@ void PHYSFSX_init(int argc, char *argv[])
 #endif
 	
 #ifdef ANDROID
-	if (!PHYSFS_init(argv[0]))
-		Error("PhysicsFS initialization failed: %s", PHYSFS_getLastError());
-#else
-	PHYSFS_init(argv[0]);
-#endif
-	PHYSFS_permitSymbolicLinks(1);
-
-#ifdef ANDROID
-	{
-		physfsx_android_setup_result setup_result;
-		if (!physfsx_android_init_search_paths("d1x-redux", &setup_result))
-			Error("Android content setup failed during %s for %s: %s",
-			      setup_result.operation, setup_result.path, setup_result.detail);
-	}
-	InitArgsAndroid(argc, argv);
+	physfsx_android_init(argc, argv, "d1x-redux");
 	return;
 #endif
-
+	PHYSFS_init(argv[0]);
+	PHYSFS_permitSymbolicLinks(1);
 	base_dir = strdup(PHYSFS_getBaseDir());
 	
 #ifdef __unix__

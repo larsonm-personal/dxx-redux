@@ -101,6 +101,44 @@
 - [x] Validate CMake formatting/lint, exact target properties, option combinations, Windows D1/D2 headless builds, and focused metadata/replay fixtures where available
 - [x] Review the worker patch, correct any scope or parity defect with the same worker, and close the ledger items only after final acceptance
 
+## GQR-0143 ranked remediation
+
+- [x] Freeze the eight-path live accessor boundary and claim `GQR-0143` / `GQF-0156` for one fresh `gpt-5.6-sol` medium worker
+- [x] Move only the identical introspection accessor definitions and declarations into narrow branch-added owners, retaining private layouts and APIs
+- [x] Measure the isolated inherited paths, hunks, and lines before and after and reject any callback table, public-layout expansion, or cosmetic movement
+- [x] Validate source contracts, D1/D2 Windows builds, Android `INTROSPECT_ON` builds, and focused menu introspection/automation behavior
+- [x] Review and correct the worker patch with the same worker, then close the ledger items only after final acceptance
+
+Completion: after the regular-source follow-up, the eight inherited paths contain narrow opaque-layout snapshot adapters and public-header includes. The isolated inherited delta is `+30/-112`, a net reduction of 82 lines; the eight-path upstream view falls from `+2686/-262` to `+2604/-262`, also reducing branch-attributed additions by 82. The ordinary shared `.c` files own the nine public accessors, and no private layout is moved, mirrored, or exported
+
+## GQR-0143 regular source follow-up
+
+- [x] Audit why the initial extraction required type-complete `.inc` fragments and compare ordinary `.h`/`.c` alternatives
+- [x] Replace every introspection `.inc` with regular shared headers and sources without moving or mirroring private engine layouts
+- [x] Keep narrow opaque-type snapshot adapters in the paired owning translation units and preserve the existing public accessor API
+- [x] Register shared sources only in branch-added Android build ownership and update focused contracts
+- [x] Re-run focused tests, Windows D1/D2 builds, Android ABIs, scoped quality, and exact inherited-diff accounting
+
+Completion: removed all three `.inc` files and replaced them with `game_menu_introspect_accessors.h/.c` and `game_window_introspect_accessors.h/.c`. The paired private-layout owners now populate small snapshots; the ordinary shared sources implement the unchanged public accessor API. Focused contracts, Windows D1/D2, both headless targets, and all three Android ABIs passed. The final 82-line inherited reduction is smaller than the fragment-based result by design, because private layouts remain solely in their original translation units
+
+## GQR-0142 ranked remediation
+
+- [x] Select rank 3 from the durable impact order and verify its paired PhysFS scope is disjoint from active rank-2 product edits
+- [x] Claim `GQR-0142` / `GQF-0155` for one fresh `gpt-5.6-sol` medium worker and freeze the live inherited/shared boundary
+- [x] Extend the existing branch-added PhysFS shared owner while preserving per-game directory setup and desktop behavior
+- [x] Validate exact behavior, paired Windows builds, Android ABIs, focused tests, scoped quality, and inherited diff reduction
+- [x] Root-review metrics, scope, validation, and terminal ledger state
+
+Completion: the paired inherited Android PhysFS initialization surface fell from 40 lines across six hunks to 14 lines across four hunks, exactly removing 26 inherited lines and two hunks. The shared owner now preserves checked PhysFS initialization, symbolic-link setup, search-path diagnostics, Android argument initialization, and order; D1/D2 retain only their game-directory calls. Focused source and runtime contracts, paired Windows builds, all configured Android ABIs, scoped quality, whitespace, and encoding audits passed
+
+## GQR-0156 ranked remediation
+
+- [x] Select rank 4 from the durable impact order and verify the paired Redbook headers are clean and disjoint from active work
+- [ ] Claim `GQR-0156` / `GQF-0169` for one fresh `gpt-5.6-sol` medium worker and freeze exact declarations and consumers
+- [ ] Move the identical Android-only declaration block into one conventional branch-added shared header
+- [ ] Replace each inherited block with one include while preserving platform guards, C linkage, types, and API parity
+- [ ] Validate focused contracts, Windows D1/D2, Android ABIs, scoped quality, exact metrics, and terminal records
+
 ## Initial hypotheses to verify
 
 - The first survey searched primarily for paired D1/D2 duplicate bodies large enough to extract, rather than applying the reusable general cleanup rubric
