@@ -497,6 +497,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
@@ -669,6 +670,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c

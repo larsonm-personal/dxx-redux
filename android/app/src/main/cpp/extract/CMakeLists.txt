@@ -78,6 +78,7 @@ set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c
     ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c
@@ -88,7 +89,7 @@ set(EXTRACT_SOURCES
 add_executable(
     test_cue_iso
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cue_iso.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(test_cue_iso PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_cue_iso PRIVATE ISO9660_READER_TESTING)
 if(MSVC)

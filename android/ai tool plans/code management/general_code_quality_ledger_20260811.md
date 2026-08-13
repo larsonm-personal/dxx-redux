@@ -104,7 +104,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 9 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0024` | `DONE` | `GQF-0037` | Route SAF URI strings through strict standard-UTF-8 JNI conversion |
 | 10 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0006` | `DONE` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests |
 | 11 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0011` | `DONE` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition |
-| 12 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0034` | `TODO` | `GQF-0047` | Enforce physical ISO output containment |
+| 12 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0034` | `DONE` | `GQF-0047` | Enforce physical ISO output containment |
 | 13 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0038` | `TODO` | `GQF-0051` | Enforce one peak-live-memory budget for STi2 method 15 |
 | 14 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0042` | `TODO` | `GQF-0055` | Require route proof before every reconnect state mutation |
 | 15 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0043` | `TODO` | `GQF-0056` | Version and domain-separate reconnect transcripts/generations |
@@ -5945,7 +5945,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0044` | `OPEN` | P2/high | correctness/storage/api-contract | PKG no-audio free-space admission | Native free-space checking reserves the audio-inclusive manifest even when audio is skipped, rejecting devices with enough space for every requested output. Compute selected publication bytes separately while retaining full integrity/work budgets |
 | `GQF-0045` | `OPEN` | P2/high | correctness/diagnostics/ui | PKG JNI progress aggregation | PKG callbacks are per-file, but JNI cumulative totals remain zero, so overall progress reaches 100 percent then resets with a changing denominator. Publish one stable selected total and monotonic cumulative done across files and audio modes |
 | `GQF-0046` | `OPEN` | P2/high | correctness/publication/resource-lifetime | Direct PKG and standalone ISO extraction APIs/callers | Incomplete closure/regrowth linked archived `BR-0020`: later/terminal failures leave earlier final-path outputs and can destroy prior bytes. Require transaction-owned staging/atomic publication or an explicit staging-only API contract honored by every maintained caller |
-| `GQF-0047` | `OPEN` | P1/high | security/path-containment/symlink-race | ISO output directory traversal and final opens | Incomplete physical-containment remediation of archived `BR-0061`: lexical safe paths still follow intermediate/final symlinks, junctions or replacement races. Walk/create relative to canonical owned directory handles, reject reparse/link objects and test outside sentinels |
+| `GQF-0047` | `FIXED` | P1/high | security/path-containment/symlink-race | ISO output directory traversal and final opens | ISO extraction now walks and creates beneath held physical directory handles, rejects root/intermediate/final reparse or symlink identities, rejects multi-link final files, writes only through the verified opened identity, and removes failures by that identity. Windows junction/final-link and Android POSIX symlink outside-sentinel fixtures passed |
 | `GQF-0048` | `OPEN` | P2/high | correctness/data-integrity/input-validation | ISO normalized destination identities | Case folding, version suffix removal and trailing-dot trimming can collapse distinct files/directories; record order silently selects bytes. Precompute a portable map and apply explicit version/collision policy independent of order |
 | `GQF-0049` | `OPEN` | P2/high | compatibility/parser-correctness/data-integrity | ISO extended-attribute and interleaved records | Reader accepts nonzero layout fields but reads data contiguously from unadjusted LBA, silently corrupting valid files. Implement checked layouts or reject them explicitly before catalog publication, with raw/CUE boundary fixtures |
 | `GQF-0050` | `OPEN` | P2/high | compatibility/parser-correctness | ISO volume descriptor discovery | Reader requires a PVD at sector 16 instead of scanning the bounded descriptor sequence through its terminator, rejecting valid boot-record-first images. Implement explicit sequence scanning and missing/duplicate/bad descriptor tests |
@@ -6839,7 +6839,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0031` | `TODO` | `GQF-0044` | Align PKG no-audio free-space checks with selected outputs | Preserve full stream integrity budgets and test storage thresholds around both totals |
 | `GQR-0032` | `TODO` | `GQF-0045` | Make PKG JNI progress stable and cumulative | Test unequal multi-file and audio-filtered callback sequences |
 | `GQR-0033` | `TODO` | `GQF-0046` | Make direct PKG and standalone ISO publication transactional | Coordinate shared staging contract while preserving launcher CUE transaction behavior |
-| `GQR-0034` | `TODO` | `GQF-0047` | Enforce physical ISO output containment | Requires POSIX symlink and Windows reparse/race fixtures and exact owned-root policy |
+| `GQR-0034` | `DONE` | `GQF-0047` | Enforce physical ISO output containment | Handle-relative POSIX/Windows owner, Windows reparse/link and Android symlink sentinels, focused/full host extraction, and all Android ABI builds passed |
 | `GQR-0035` | `TODO` | `GQF-0048` | Define ISO normalized version/collision semantics | Preflight exact portable destination map before any writes |
 | `GQR-0036` | `TODO` | `GQF-0049` | Implement or explicitly reject ISO extended/interleaved layouts | Prefer narrow fail-closed support decision with valid/malformed fixtures |
 | `GQR-0037` | `TODO` | `GQF-0050` | Scan ISO volume descriptor sequences correctly | Bound scan and test boot-first, duplicates, missing terminator and ordinary images |
@@ -7031,6 +7031,18 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Platform validation: the final `run-windows-build.ps1 -Target both` rebuilt and linked D1, D2 and headless variants after the rewind boundary correction. With JDK 21, `:app:externalNativeBuildDebug` rebuilt `arm64-v8a`, `armeabi-v7a` and `x86_64` without changed-path warnings. Scoped quality and final `git diff --check` passed
 - Non-goals: state validation size checks, old-version admission, unrelated checkpoint fields and scanner policy remain unchanged
 
+### GQR-0034 terminal claim
+
+- Status: `DONE`; `GQF-0047` is `FIXED`. Historical impact remains 56 (`32/0/10/10/4`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began at `35df421938dafaf5bce41a6843479f25b95ac234`. The only pre-existing dirty path was an unrelated performance-study plan, which remained untouched
+- Root-cause fix: new paired `physical_output_file.c/.h` owns the complete physical output lifetime. ISO extraction passes its already validated relative path to this owner instead of creating parent pathnames and opening a concatenated final pathname. Writes occur only through the descriptor or handle whose physical identity passed validation; cancellation and transfer failure remove that exact opened identity
+- POSIX boundary: the owner opens the existing root with `O_DIRECTORY | O_NOFOLLOW`, creates and opens every child with `mkdirat`/`openat` relative to held parent descriptors, and keeps the final parent descriptor through output lifetime. The final leaf uses `O_NOFOLLOW | O_NONBLOCK`, must be one ordinary regular-file link, and is truncated only after `fstat`; cleanup uses `unlinkat` relative to the held parent
+- Windows boundary: the owner opens the root itself with `FILE_FLAG_OPEN_REPARSE_POINT`, then resolves each component with root-relative `NtCreateFile` against held directory handles. Every root, child, and leaf is checked for reparse attributes and expected directory/file type. Final files must have one link and are truncated only through the checked handle; failure cleanup uses `FileDispositionInfo` on that handle. Intermediate handles and final opens retain sharing needed by ordinary callers without re-resolving checked parent pathnames
+- Adversarial validation: `test_cue_iso` now drives the real standalone ISO extraction API through an intermediate directory link and final file link/alias, seeds the external destination with known bytes, requires extraction failure, and checks the sentinel remains byte-for-byte unchanged. Windows used a real mount-point junction fallback because symbolic-link privilege was unavailable and used a final hard-link alias; both passed. The NDK-built same test ran on emulator-5554 and passed actual POSIX intermediate and final symlink cases. Ordinary nested raw/standalone extraction and all prior lexical containment tests remain green
+- Platform validation: focused Windows `cue_iso_tests` passed 76/76. The complete extract-host project compiled and 40 of 40 runnable suites passed, including maintained proprietary-media oracles. `graphics_config_transaction_tests` was excluded because its known unrelated executable hangs idle. The new POSIX owner compiled warning-free under NDK Clang with `-Wall -Wextra -Werror`; `:app:externalNativeBuildDebug` built D1/D2 for `arm64-v8a`, `armeabi-v7a`, and `x86_64`
+- Diff scope: all product, test, and build changes are branch-owned Android extraction paths plus the durable plan and ledger. The old lexical join remains for bounded diagnostics, while 59 lines of pathname directory/open/cleanup logic leave `iso9660_reader.c` and ten call-site lines select the physical owner. No D1/D2 original file changed, so inherited-game-file impact is zero
+- Quality: scoped clang-format, CMake format/lint, BOM checks, final focused rerun, ASCII checks on new files, and `git diff --check` passed
+
 ### GQR-0011 terminal claim
 
 - Status: `DONE`; `GQF-0024` is `FIXED`. Historical impact remains 56 (`32/0/10/10/4`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
@@ -7065,6 +7077,12 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0034 / GQF-0047 completion
+
+- Status: `DONE`; `GQF-0047` is `FIXED`
+- Result: ISO output creation now remains relative to held physical directory identities and rejects root, intermediate, and final link/reparse aliases before truncation. Windows junction/final-link and Android POSIX symlink outside-sentinel fixtures pass, as do 76 focused tests, 40 runnable extraction suites, and all Android ABIs, with zero D1/D2 changes
+- Limitation: the unrelated existing `graphics_config_transaction_tests` executable remains excluded because it hangs idle
 
 ### 2026-08-12: GQR-0011 / GQF-0024 completion
 

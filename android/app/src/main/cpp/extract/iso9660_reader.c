@@ -21,30 +21,18 @@
 
 #ifdef _WIN32
 #include <io.h>
-#include <fcntl.h>
-#include <direct.h>
 #define read(fd, buf, n) _read(fd, buf, (unsigned int) (n))
 #define lseek            _lseek
 #define close            _close
-#define mkdir(d, m)      _mkdir(d)
-#define open             _open
-#define O_RDONLY         _O_RDONLY
-#define O_WRONLY         _O_WRONLY
-#define O_CREAT          _O_CREAT
-#define O_TRUNC          _O_TRUNC
-#define O_BINARY         _O_BINARY
 #define strcasecmp       _stricmp
-/* write() already available via _write */
-#define write(fd, buf, n) _write(fd, buf, (unsigned int) (n))
 #else
 #include <unistd.h>
-#include <fcntl.h>
-#define O_BINARY 0
 #endif
 
 #include "iso9660_reader.h"
 
 #include "extract_limits.h"
+#include "physical_output_file.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -211,30 +199,6 @@ static int parse_directory_record(const unsigned char *record,
 	out->name_len = (unsigned char) name_len;
 	out->record_len = (unsigned char) record_len;
 	return 0;
-}
-
-/* Ensure a directory exists, creating parents as needed */
-static int mkdirs(const char *path)
-{
-	char tmp[ISO_PATH_LEN * 2];
-	char *p;
-	size_t len;
-
-	len = strlen(path);
-	if (len >= sizeof(tmp))
-		return -1;
-	memcpy(tmp, path, len + 1);
-	len = strlen(tmp);
-	if (len > 0 && tmp[len - 1] == '/') tmp[len - 1] = '\0';
-
-	for (p = tmp + 1; *p; p++) {
-		if (*p == '/') {
-			*p = '\0';
-			mkdir(tmp, 0755);
-			*p = '/';
-		}
-	}
-	return mkdir(tmp, 0755);
 }
 
 static int iso_name_byte_is_reserved(unsigned char c)
@@ -828,7 +792,7 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 	for (i = 0; i < file_list->num_files; i++) {
 		const iso_file_entry_t *entry = &file_list->files[i];
 		char out_path[ISO_PATH_LEN * 2];
-		int out_fd;
+		dxx_physical_output_file_t output_file;
 		int file_ok = 1;
 
 		/* Skip directories stored in the listing (created on demand) */
@@ -842,22 +806,9 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 		                     entry->path) < 0)
 			return -1;
 
-		/* Ensure parent directory exists */
-		{
-			char dir_path[ISO_PATH_LEN * 2];
-			char *last_slash;
-			strncpy(dir_path, out_path, sizeof(dir_path) - 1);
-			dir_path[sizeof(dir_path) - 1] = '\0';
-			last_slash = strrchr(dir_path, '/');
-			if (last_slash) {
-				*last_slash = '\0';
-				mkdirs(dir_path);
-			}
-		}
-
-		/* Open output file */
-		out_fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
-		if (out_fd < 0) {
+		/* Walk from an owned root handle and reject every filesystem link */
+		if (dxx_physical_output_open(&output_file, output_dir,
+		                             entry->path) < 0) {
 			ISO_LOG("Failed to create %s: %s", out_path, strerror(errno));
 			return -1;
 		}
@@ -884,7 +835,8 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 					break;
 				}
 
-				if (write(out_fd, sector, to_write) != to_write) {
+				if (dxx_physical_output_write(&output_file, sector,
+				                              (size_t) to_write) < 0) {
 					ISO_LOG("Write error for %s: %s", entry->path,
 					        strerror(errno));
 					file_ok = 0;
@@ -899,8 +851,7 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 				if (progress) {
 					if (progress(entry->path, done_bytes, total_bytes,
 					             user_data) != 0) {
-						close(out_fd);
-						remove(out_path);
+						dxx_physical_output_abort(&output_file);
 						ISO_LOG("Extraction cancelled by user");
 						return DXX_EXTRACT_CANCELLED;
 					}
@@ -910,10 +861,10 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 				break;
 		}
 
-		if (close(out_fd) < 0)
+		if (file_ok && dxx_physical_output_finish(&output_file) < 0)
 			file_ok = 0;
 		if (!file_ok) {
-			remove(out_path);
+			dxx_physical_output_abort(&output_file);
 			return -1;
 		}
 		extracted++;

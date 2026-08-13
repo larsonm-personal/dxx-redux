@@ -23,15 +23,35 @@
 #include <io.h>
 #include <fcntl.h>
 #include <direct.h>
+#include <process.h>
+#include <windows.h>
+#include <winioctl.h>
+#ifndef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+#define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE 0x2
+#endif
+typedef struct {
+	ULONG tag;
+	USHORT data_length;
+	USHORT reserved;
+	USHORT substitute_offset;
+	USHORT substitute_length;
+	USHORT print_offset;
+	USHORT print_length;
+	WCHAR path[1];
+} dxx_mount_point_reparse_data_t;
 #define mkdir_p(d)     _mkdir(d)
 #define open_bin(path) _open(path, _O_RDONLY | _O_BINARY)
 #define close_fd(fd)   _close(fd)
+#define test_getpid()  _getpid()
+#define remove_dir(d)  _rmdir(d)
 #else
 #include <fcntl.h>
 #include <unistd.h>
 #define mkdir_p(d)     mkdir(d, 0755)
 #define open_bin(path) open(path, O_RDONLY)
 #define close_fd(fd)   close(fd)
+#define test_getpid()  getpid()
+#define remove_dir(d)  rmdir(d)
 #endif
 
 #include "cue_parser.h"
@@ -65,6 +85,125 @@ static int tests_passed = 0;
 #define USER_DATA_SIZE 2048
 
 static const char *TEST_DIR = "test_fixtures";
+
+static int make_absolute_path(char *output, size_t output_size,
+                              const char *path)
+{
+#ifdef _WIN32
+	return _fullpath(output, path, output_size) ? 0 : -1;
+#else
+	(void) output_size;
+	return realpath(path, output) ? 0 : -1;
+#endif
+}
+
+static int create_test_link(const char *link_path, const char *target_path,
+                            int directory)
+{
+	char absolute_target[512];
+	if (make_absolute_path(absolute_target, sizeof(absolute_target),
+	                       target_path) < 0)
+		return -1;
+#ifdef _WIN32
+	if (CreateSymbolicLinkA(
+	        link_path, absolute_target,
+	        (directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) |
+	            SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE))
+		return 0;
+	if (!directory)
+		return CreateHardLinkA(link_path, absolute_target, NULL) ? 0 : -1;
+	{
+		unsigned char storage[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+		dxx_mount_point_reparse_data_t *reparse =
+		    (dxx_mount_point_reparse_data_t *) storage;
+		wchar_t target[512];
+		wchar_t substitute[516];
+		DWORD returned;
+		HANDLE handle;
+		USHORT substitute_bytes;
+		USHORT print_bytes;
+		int target_length = MultiByteToWideChar(
+		    CP_UTF8, MB_ERR_INVALID_CHARS, absolute_target, -1,
+		    target, 512);
+		if (target_length <= 1 ||
+		    swprintf(substitute, 516, L"\\??\\%ls", target) < 0 ||
+		    !CreateDirectoryA(link_path, NULL))
+			return -1;
+		memset(storage, 0, sizeof(storage));
+		substitute_bytes = (USHORT) (wcslen(substitute) * sizeof(wchar_t));
+		print_bytes = (USHORT) ((target_length - 1) * sizeof(wchar_t));
+		reparse->tag = IO_REPARSE_TAG_MOUNT_POINT;
+		reparse->substitute_offset = 0;
+		reparse->substitute_length = substitute_bytes;
+		reparse->print_offset = substitute_bytes + sizeof(wchar_t);
+		reparse->print_length = print_bytes;
+		memcpy(reparse->path, substitute,
+		       substitute_bytes + sizeof(wchar_t));
+		memcpy((unsigned char *) reparse->path + reparse->print_offset,
+		       target, print_bytes + sizeof(wchar_t));
+		reparse->data_length =
+		    (USHORT) (8 + substitute_bytes + sizeof(wchar_t) +
+		              print_bytes + sizeof(wchar_t));
+		handle = CreateFileA(
+		    link_path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+		    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		if (handle == INVALID_HANDLE_VALUE ||
+		    !DeviceIoControl(handle, FSCTL_SET_REPARSE_POINT, reparse,
+		                     reparse->data_length + 8,
+		                     NULL, 0, &returned, NULL)) {
+			if (handle != INVALID_HANDLE_VALUE)
+				CloseHandle(handle);
+			RemoveDirectoryA(link_path);
+			return -1;
+		}
+		CloseHandle(handle);
+		return 0;
+	}
+#else
+	(void) directory;
+	return symlink(absolute_target, link_path);
+#endif
+}
+
+static void remove_test_link(const char *path, int directory)
+{
+#ifdef _WIN32
+	if (directory)
+		RemoveDirectoryA(path);
+	else
+		DeleteFileA(path);
+#else
+	(void) directory;
+	unlink(path);
+#endif
+}
+
+static int file_has_exact_bytes(const char *path, const char *expected)
+{
+	char bytes[64];
+	FILE *file = fopen(path, "rb");
+	size_t expected_size = strlen(expected);
+	size_t actual_size;
+	if (!file)
+		return 0;
+	actual_size = fread(bytes, 1, sizeof(bytes), file);
+	if (fclose(file) != 0)
+		return 0;
+	return actual_size == expected_size &&
+	       memcmp(bytes, expected, expected_size) == 0;
+}
+
+static int write_exact_file(const char *path, const void *data, size_t size)
+{
+	FILE *file = fopen(path, "wb");
+	int result;
+	if (!file)
+		return -1;
+	result = fwrite(data, 1, size, file) == size ? 0 : -1;
+	if (fclose(file) != 0)
+		result = -1;
+	return result;
+}
 
 /* Build a raw Mode 1 sector with sync, header, user data (no real ECC). */
 static void build_mode1_sector(unsigned char *out,
@@ -1923,6 +2062,123 @@ static void test_iso_name_containment(void)
 	PASS();
 }
 
+static void test_iso_physical_containment(void)
+{
+	static const char sentinel_bytes[] = "outside sentinel";
+	static const char *extensions[] = { "hog", NULL };
+	char source_path[512];
+	char outside_dir[512];
+	char outside_path[512];
+	char output_dir[512];
+	char missions_path[512];
+	char visible_path[512];
+	int sectors;
+	int process_id = (int) test_getpid();
+	unsigned char *raw = build_iso_with_subdir(
+	    "MISSIONS", "VISIBLE.HOG", (const unsigned char *) "root", 4,
+	    "NESTED.HOG;1", (const unsigned char *) "nested", 6, &sectors);
+	unsigned char *image = convert_raw_iso(raw, sectors);
+	iso_file_list_t list;
+	int fd;
+	int listed;
+	int result;
+	free(raw);
+
+	snprintf(source_path, sizeof(source_path),
+	         "%s/physical_source_%d.iso", TEST_DIR, process_id);
+	if (write_exact_file(source_path, image,
+	                     (size_t) sectors * USER_DATA_SIZE) < 0) {
+		free(image);
+		TEST(iso_physical_links_rejected);
+		FAIL("cannot write physical containment source");
+		return;
+	}
+	free(image);
+	fd = open_bin(source_path);
+	listed = iso_list_image_files(fd, &list);
+	if (listed < 0) {
+		close_fd(fd);
+		TEST(iso_physical_links_rejected);
+		FAIL("cannot list physical containment source");
+		return;
+	}
+
+	TEST(iso_intermediate_directory_link_rejected);
+	snprintf(outside_dir, sizeof(outside_dir),
+	         "%s/physical_outside_dir_%d", TEST_DIR, process_id);
+	snprintf(outside_path, sizeof(outside_path), "%s/nested.hog", outside_dir);
+	snprintf(output_dir, sizeof(output_dir), "%s/physical_root_dir_%d",
+	         TEST_DIR, process_id);
+	snprintf(missions_path, sizeof(missions_path), "%s/missions", output_dir);
+	snprintf(visible_path, sizeof(visible_path), "%s/visible.hog", output_dir);
+	mkdir_p(outside_dir);
+	mkdir_p(output_dir);
+	if (write_exact_file(outside_path, sentinel_bytes,
+	                     sizeof(sentinel_bytes) - 1) < 0 ||
+	    create_test_link(missions_path, outside_dir, 1) != 0) {
+		close_fd(fd);
+		FAIL("cannot create intermediate link fixture");
+		return;
+	}
+	result = iso_extract_image_files(fd, &list, output_dir, extensions, NULL,
+	                                 NULL);
+	if (result != -1 || !file_has_exact_bytes(outside_path, sentinel_bytes)) {
+		close_fd(fd);
+		FAIL("intermediate link escaped physical output root");
+		return;
+	}
+	remove_test_link(missions_path, 1);
+	remove(visible_path);
+	remove(outside_path);
+	remove_dir(output_dir);
+	remove_dir(outside_dir);
+	PASS();
+
+	TEST(iso_final_file_link_rejected);
+	snprintf(outside_dir, sizeof(outside_dir),
+	         "%s/physical_outside_file_%d", TEST_DIR, process_id);
+	snprintf(outside_path, sizeof(outside_path), "%s/sentinel.hog", outside_dir);
+	snprintf(output_dir, sizeof(output_dir), "%s/physical_root_file_%d",
+	         TEST_DIR, process_id);
+	snprintf(missions_path, sizeof(missions_path), "%s/missions", output_dir);
+	snprintf(visible_path, sizeof(visible_path), "%s/visible.hog", output_dir);
+	mkdir_p(outside_dir);
+	mkdir_p(output_dir);
+	mkdir_p(missions_path);
+	if (write_exact_file(outside_path, sentinel_bytes,
+	                     sizeof(sentinel_bytes) - 1) < 0) {
+		close_fd(fd);
+		FAIL("cannot create final link sentinel");
+		return;
+	}
+	{
+		char link_path[512];
+		snprintf(link_path, sizeof(link_path), "%s/nested.hog", missions_path);
+		if (create_test_link(link_path, outside_path, 0) != 0) {
+			close_fd(fd);
+			FAIL("cannot create final file link fixture");
+			return;
+		}
+		result = iso_extract_image_files(fd, &list, output_dir, extensions,
+		                                 NULL, NULL);
+		if (result != -1 ||
+		    !file_has_exact_bytes(outside_path, sentinel_bytes)) {
+			close_fd(fd);
+			FAIL("final link escaped physical output root");
+			return;
+		}
+		remove_test_link(link_path, 0);
+	}
+	close_fd(fd);
+	remove(visible_path);
+	remove(outside_path);
+	remove(source_path);
+	remove_dir(missions_path);
+	remove_dir(output_dir);
+	remove_dir(outside_dir);
+	PASS();
+}
+
 static void test_iso_cycle_safe_traversal(void)
 {
 	TEST(iso_directory_cycles_and_invalid_spans_fail_closed);
@@ -3410,6 +3666,7 @@ int main(int argc, char *argv[])
 	test_iso_reader();
 	test_iso_directory_record_bounds();
 	test_iso_name_containment();
+	test_iso_physical_containment();
 	test_iso_cycle_safe_traversal();
 	test_iso_multi_extent_files();
 	test_iso_extraction();
