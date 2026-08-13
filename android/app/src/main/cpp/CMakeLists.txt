@@ -15,20 +15,13 @@ if(POLICY CMP0169)
 endif()
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE) # PhysFS 3.2 compat
 
-include(FetchContent)
+set(DXX_DEPENDENCY_CACHE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../.cxx/dependency-cache")
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/dxx-verified-dependencies.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-build-metadata.cmake)
 
 get_filename_component(DXX_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
 set(DXX_DEPENDENCY_MANIFEST "${DXX_PROJECT_ROOT}/android/get_deps/tool_versions.conf")
-function(dxx_android_dependency_value key output)
-    file(STRINGS "${DXX_DEPENDENCY_MANIFEST}" value REGEX "^${key}=" LIMIT_COUNT 1)
-    if(NOT value)
-        message(FATAL_ERROR "${key} is missing from ${DXX_DEPENDENCY_MANIFEST}")
-    endif()
-    string(REGEX REPLACE "^[^=]+=" "" value "${value}")
-    set(${output} "${value}" PARENT_SCOPE)
-endfunction()
 
 # ──────────────────────────────────────────────────────────────
 # Compiler warnings
@@ -63,8 +56,7 @@ endif()
 # ──────────────────────────────────────────────────────────────
 # 1. SDL 1.2  (no cmake build — we compile it ourselves)
 # ──────────────────────────────────────────────────────────────
-FetchContent_Declare(
-    sdl12 URL https://github.com/libsdl-org/SDL-1.2/archive/refs/tags/release-1.2.15.tar.gz)
+dxx_verified_fetchcontent_declare(sdl12 SDL12)
 FetchContent_Populate(sdl12)
 
 # Install our Android-specific SDL_config.h
@@ -232,8 +224,7 @@ target_compile_options(SDL12 PRIVATE -w) # suppress all warnings for third-party
 # ──────────────────────────────────────────────────────────────
 # 1b. SDL_mixer 1.2  (SFX mixing only — MIDI handled by TSF)
 # ──────────────────────────────────────────────────────────────
-FetchContent_Declare(sdl_mixer12 GIT_REPOSITORY https://github.com/arbruijn/SDL_mixer-1.2-cmake
-                     GIT_TAG master GIT_SHALLOW TRUE)
+dxx_verified_fetchcontent_declare(sdl_mixer12 SDL_MIXER12)
 FetchContent_Populate(sdl_mixer12)
 
 set(SDLMIXER_DIR ${sdl_mixer12_SOURCE_DIR})
@@ -265,30 +256,9 @@ target_compile_options(SDL_mixer PRIVATE -w) # suppress warnings for third-party
 # ──────────────────────────────────────────────────────────────
 # 2a. TinySoundFont  (tsf.h + tml.h — MIDI synth, header-only)
 # ──────────────────────────────────────────────────────────────
-set(_TSF_DIR "${CMAKE_CURRENT_BINARY_DIR}/tinysoundfont")
-file(MAKE_DIRECTORY "${_TSF_DIR}")
-dxx_android_dependency_value(TINYSOUNDFONT_COMMIT TINYSOUNDFONT_COMMIT)
-set(_TSF_VERSION_FILE "${_TSF_DIR}/commit.txt")
-set(_TSF_INSTALLED_COMMIT "")
-if(EXISTS "${_TSF_VERSION_FILE}")
-    file(READ "${_TSF_VERSION_FILE}" _TSF_INSTALLED_COMMIT)
-    string(STRIP "${_TSF_INSTALLED_COMMIT}" _TSF_INSTALLED_COMMIT)
-endif()
-if(NOT _TSF_INSTALLED_COMMIT STREQUAL TINYSOUNDFONT_COMMIT OR NOT EXISTS "${_TSF_DIR}/tsf.h"
-   OR NOT EXISTS "${_TSF_DIR}/tml.h")
-    foreach(_TSF_HEADER IN ITEMS tsf.h tml.h)
-        file(
-            DOWNLOAD
-            "https://raw.githubusercontent.com/schellingb/TinySoundFont/${TINYSOUNDFONT_COMMIT}/${_TSF_HEADER}"
-            "${_TSF_DIR}/${_TSF_HEADER}"
-            STATUS _TSF_DOWNLOAD_STATUS)
-        list(GET _TSF_DOWNLOAD_STATUS 0 _TSF_DOWNLOAD_CODE)
-        if(NOT _TSF_DOWNLOAD_CODE EQUAL 0)
-            message(FATAL_ERROR "Failed to download pinned ${_TSF_HEADER}: ${_TSF_DOWNLOAD_STATUS}")
-        endif()
-    endforeach()
-    file(WRITE "${_TSF_VERSION_FILE}" "${TINYSOUNDFONT_COMMIT}\n")
-endif()
+dxx_verified_fetchcontent_declare(tinysoundfont TINYSOUNDFONT)
+FetchContent_Populate(tinysoundfont)
+set(_TSF_DIR "${tinysoundfont_SOURCE_DIR}")
 
 # ──────────────────────────────────────────────────────────────
 # 2b. GM Soundfont — downloaded by Gradle (downloadSoundfont task) into app/src/main/assets/gm.sf2
@@ -298,8 +268,7 @@ endif()
 # ──────────────────────────────────────────────────────────────
 # 2c. nlohmann/json  (header-only, debug/introspection builds only)
 # ──────────────────────────────────────────────────────────────
-FetchContent_Declare(nlohmann_json GIT_REPOSITORY https://github.com/nlohmann/json.git
-                     GIT_TAG v3.11.3 GIT_SHALLOW TRUE)
+dxx_verified_fetchcontent_declare(nlohmann_json NLOHMANN_JSON)
 set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
 set(JSON_Install OFF CACHE BOOL "" FORCE)
 set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
@@ -314,17 +283,13 @@ set(PHYSFS_BUILD_TEST OFF CACHE BOOL "" FORCE)
 set(PHYSFS_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(PHYSFS_TARGETNAME_UNINSTALL "physfs_uninstall" CACHE STRING "" FORCE)
 
-FetchContent_Declare(physfs
-                     URL https://github.com/icculus/physfs/archive/refs/tags/release-3.2.0.tar.gz)
+dxx_verified_fetchcontent_declare(physfs PHYSFS)
 FetchContent_MakeAvailable(physfs)
 
 # ──────────────────────────────────────────────────────────────
 # 3b. LZMA SDK  (for InnoSetup/GOG decompression)
 # ──────────────────────────────────────────────────────────────
-FetchContent_Declare(
-    lzma_sdk GIT_REPOSITORY https://github.com/jljusten/LZMA-SDK.git
-    GIT_TAG 781863cdf592da3e97420f50de5dac056ad352a5 # 18.05
-    GIT_SHALLOW TRUE)
+dxx_verified_fetchcontent_declare(lzma_sdk LZMA_SDK)
 FetchContent_GetProperties(lzma_sdk)
 if(NOT lzma_sdk_POPULATED)
     FetchContent_Populate(lzma_sdk)
@@ -340,8 +305,7 @@ target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST)
 # ──────────────────────────────────────────────────────────────
 # 3b-ii. Chromaprint  (audio fingerprinting, uses bundled KissFFT)
 # ──────────────────────────────────────────────────────────────
-FetchContent_Declare(chromaprint
-                     URL https://github.com/acoustid/chromaprint/archive/refs/tags/v1.5.1.tar.gz)
+dxx_verified_fetchcontent_declare(chromaprint CHROMAPRINT_ANDROID)
 FetchContent_GetProperties(chromaprint)
 if(NOT chromaprint_POPULATED)
     FetchContent_Populate(chromaprint)
@@ -387,61 +351,11 @@ target_compile_options(chromaprint PRIVATE -w)
 # ──────────────────────────────────────────────────────────────
 set(_DECODERS_DIR "${CMAKE_CURRENT_BINARY_DIR}/pcm_decoders")
 file(MAKE_DIRECTORY "${_DECODERS_DIR}")
-
-if(NOT EXISTS "${_DECODERS_DIR}/minimp3.h")
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/lieff/minimp3/afb604c06bc8beb145fecd42c0ceb5bda8795144/minimp3.h"
-        "${_DECODERS_DIR}/minimp3.h")
-endif()
-if(NOT EXISTS "${_DECODERS_DIR}/minimp3_ex.h")
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/lieff/minimp3/afb604c06bc8beb145fecd42c0ceb5bda8795144/minimp3_ex.h"
-        "${_DECODERS_DIR}/minimp3_ex.h")
-endif()
-set(_stb_vorbis_need_dl TRUE)
-if(EXISTS "${_DECODERS_DIR}/stb_vorbis.c")
-    file(SIZE "${_DECODERS_DIR}/stb_vorbis.c" _stb_vorbis_size)
-    if(_stb_vorbis_size GREATER 0)
-        set(_stb_vorbis_need_dl FALSE)
-    endif()
-endif()
-if(_stb_vorbis_need_dl)
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/nothings/stb/1ee679ca2ef753a528db5ba6801e1067b40481b8/stb_vorbis.c"
-        "${_DECODERS_DIR}/stb_vorbis.c"
-        STATUS _stb_dl_status)
-    list(GET _stb_dl_status 0 _stb_dl_code)
-    if(NOT _stb_dl_code EQUAL 0)
-        message(FATAL_ERROR "Failed to download stb_vorbis.c: ${_stb_dl_status}")
-    endif()
-endif()
-if(NOT EXISTS "${_DECODERS_DIR}/dr_flac.h")
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/mackron/dr_libs/da35f9d6c7374a95353fd1df1d394d44ab66cf01/dr_flac.h"
-        "${_DECODERS_DIR}/dr_flac.h")
-endif()
-set(_stb_image_need_dl TRUE)
-if(EXISTS "${_DECODERS_DIR}/stb_image.h")
-    file(SIZE "${_DECODERS_DIR}/stb_image.h" _stb_image_size)
-    if(_stb_image_size GREATER 0)
-        set(_stb_image_need_dl FALSE)
-    endif()
-endif()
-if(_stb_image_need_dl)
-    file(
-        DOWNLOAD
-        "https://raw.githubusercontent.com/nothings/stb/013ac3beddff3dbffafd5177e7972067cd2b5083/stb_image.h"
-        "${_DECODERS_DIR}/stb_image.h"
-        STATUS _stb_img_dl_status)
-    list(GET _stb_img_dl_status 0 _stb_img_dl_code)
-    if(NOT _stb_img_dl_code EQUAL 0)
-        message(FATAL_ERROR "Failed to download stb_image.h: ${_stb_img_dl_status}")
-    endif()
-endif()
+dxx_verified_source(MINIMP3 "${_DECODERS_DIR}/minimp3.h")
+dxx_verified_source(MINIMP3_EX "${_DECODERS_DIR}/minimp3_ex.h")
+dxx_verified_source(STB_VORBIS "${_DECODERS_DIR}/stb_vorbis.c")
+dxx_verified_source(DR_FLAC "${_DECODERS_DIR}/dr_flac.h")
+dxx_verified_source(STB_IMAGE "${_DECODERS_DIR}/stb_image.h")
 
 # ──────────────────────────────────────────────────────────────
 # 3b-iv. KTX-Software  (KTX2 texture container reader, read-only static)
@@ -455,8 +369,7 @@ set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_VK_UPLOAD OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_LOADTEST_APPS OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(ktx_software GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
-                     GIT_TAG v4.4.2 GIT_SHALLOW TRUE)
+dxx_verified_fetchcontent_declare(ktx_software KTX_SOFTWARE)
 FetchContent_MakeAvailable(ktx_software)
 
 # ──────────────────────────────────────────────────────────────

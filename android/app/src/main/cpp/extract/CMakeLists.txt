@@ -9,19 +9,11 @@
 cmake_minimum_required(VERSION 3.16)
 project(dxx-extract-tests C CXX)
 
-include(FetchContent)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/dxx-verified-dependencies.cmake)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(DXX_DEPENDENCY_MANIFEST
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../get_deps/tool_versions.conf")
-function(dxx_dependency_value key output)
-    file(STRINGS "${DXX_DEPENDENCY_MANIFEST}" value REGEX "^${key}=" LIMIT_COUNT 1)
-    if(NOT value)
-        message(FATAL_ERROR "${key} is missing from ${DXX_DEPENDENCY_MANIFEST}")
-    endif()
-    string(REGEX REPLACE "^[^=]+=" "" value "${value}")
-    set(${output} "${value}" PARENT_SCOPE)
-endfunction()
 
 # On MSVC, prevent windows.h min/max macros and enable M_PI
 if(MSVC)
@@ -29,10 +21,7 @@ if(MSVC)
 endif()
 
 # ── LZMA SDK (for InnoSetup decompression) ───────────────────────────
-FetchContent_Declare(
-    lzma_sdk GIT_REPOSITORY https://github.com/jljusten/LZMA-SDK.git
-    GIT_TAG 781863cdf592da3e97420f50de5dac056ad352a5 # 18.05
-    GIT_SHALLOW TRUE)
+dxx_verified_fetchcontent_declare(lzma_sdk LZMA_SDK)
 FetchContent_GetProperties(lzma_sdk)
 if(NOT lzma_sdk_POPULATED)
     FetchContent_Populate(lzma_sdk)
@@ -46,8 +35,7 @@ target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
 target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST) # single-threaded
 
 # ── zlib (for InnoSetup decompression) ────────────────────────────────
-FetchContent_Declare(zlib_dep GIT_REPOSITORY https://github.com/madler/zlib.git
-                     GIT_TAG 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf)
+dxx_verified_fetchcontent_declare(zlib_dep ZLIB)
 set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(zlib_dep)
 
@@ -60,8 +48,7 @@ endif()
 
 # ── nlohmann/json (header-only for manifest-driven desktop tests) ─────
 if(NOT TARGET nlohmann_json::nlohmann_json)
-    FetchContent_Declare(nlohmann_json GIT_REPOSITORY https://github.com/nlohmann/json.git
-                         GIT_TAG 9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03)
+    dxx_verified_fetchcontent_declare(nlohmann_json NLOHMANN_JSON)
     set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
     set(JSON_Install OFF CACHE BOOL "" FORCE)
     set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
@@ -70,17 +57,14 @@ endif()
 
 # The rewind wrapper test supplies controlled PHYSFS function implementations, but it must compile
 # against the same public declarations as the application.
-FetchContent_Declare(physfs_test_headers
-                     URL https://github.com/icculus/physfs/archive/refs/tags/release-3.2.0.tar.gz)
+dxx_verified_fetchcontent_declare(physfs_test_headers PHYSFS)
 FetchContent_GetProperties(physfs_test_headers)
 if(NOT physfs_test_headers_POPULATED)
     FetchContent_Populate(physfs_test_headers)
 endif()
 
 # ── StuffIt corpus (desktop regression only) ─────────────────────────
-FetchContent_Declare(
-    stuffit_test_files GIT_REPOSITORY https://github.com/ssokolow/stuffit-test-files.git
-    GIT_TAG b523c64337867aee5cc07ad3a6bbfc8e06e4b3c0 GIT_SHALLOW TRUE)
+dxx_verified_fetchcontent_declare(stuffit_test_files STUFFIT_TEST_FILES)
 FetchContent_GetProperties(stuffit_test_files)
 if(NOT stuffit_test_files_POPULATED)
     FetchContent_Populate(stuffit_test_files)
@@ -263,14 +247,7 @@ add_test(NAME gog_fd_tests COMMAND test_gog_fd "${GOG_D1_INSTALLER}" "${GOG_D2_I
 add_test(NAME pkg_toc_bound_tests COMMAND test_pkg_toc_bounds)
 
 # ── Chromaprint (audio fingerprinting, uses bundled KissFFT) ─────────
-dxx_dependency_value(CHROMAPRINT_URL CHROMAPRINT_URL)
-dxx_dependency_value(CHROMAPRINT_SHA256 CHROMAPRINT_SHA256)
-FetchContent_Declare(
-    chromaprint
-    URL "${CHROMAPRINT_URL}"
-    URL_HASH "SHA256=${CHROMAPRINT_SHA256}"
-    TLS_VERIFY ON
-    TIMEOUT 60)
+dxx_verified_fetchcontent_declare(chromaprint CHROMAPRINT)
 FetchContent_GetProperties(chromaprint)
 if(NOT chromaprint_POPULATED)
     FetchContent_Populate(chromaprint)
@@ -320,38 +297,10 @@ endif()
 set(_DECODERS_DIR "${CMAKE_CURRENT_BINARY_DIR}/pcm_decoders")
 file(MAKE_DIRECTORY "${_DECODERS_DIR}")
 
-function(dxx_download_verified_source filename url sha256)
-    set(destination "${_DECODERS_DIR}/${filename}")
-    if(EXISTS "${destination}")
-        file(SHA256 "${destination}" actual_sha256)
-        if(NOT actual_sha256 STREQUAL sha256)
-            message(
-                FATAL_ERROR
-                    "Cached ${filename} SHA-256 mismatch: expected ${sha256}, got ${actual_sha256}")
-        endif()
-        return()
-    endif()
-    file(
-        DOWNLOAD "${url}" "${destination}"
-        EXPECTED_HASH "SHA256=${sha256}"
-        TLS_VERIFY ON
-        TIMEOUT 60
-        STATUS download_status)
-    list(GET download_status 0 download_code)
-    if(NOT download_code EQUAL 0)
-        file(REMOVE "${destination}")
-        message(FATAL_ERROR "Failed to download ${filename}: ${download_status}")
-    endif()
-endfunction()
-
-foreach(dependency MINIMP3 MINIMP3_EX STB_VORBIS DR_FLAC)
-    dxx_dependency_value(${dependency}_URL ${dependency}_URL)
-    dxx_dependency_value(${dependency}_SHA256 ${dependency}_SHA256)
-endforeach()
-dxx_download_verified_source(minimp3.h "${MINIMP3_URL}" "${MINIMP3_SHA256}")
-dxx_download_verified_source(minimp3_ex.h "${MINIMP3_EX_URL}" "${MINIMP3_EX_SHA256}")
-dxx_download_verified_source(stb_vorbis.c "${STB_VORBIS_URL}" "${STB_VORBIS_SHA256}")
-dxx_download_verified_source(dr_flac.h "${DR_FLAC_URL}" "${DR_FLAC_SHA256}")
+dxx_verified_source(MINIMP3 "${_DECODERS_DIR}/minimp3.h")
+dxx_verified_source(MINIMP3_EX "${_DECODERS_DIR}/minimp3_ex.h")
+dxx_verified_source(STB_VORBIS "${_DECODERS_DIR}/stb_vorbis.c")
+dxx_verified_source(DR_FLAC "${_DECODERS_DIR}/dr_flac.h")
 
 set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
 
@@ -488,11 +437,7 @@ add_executable(test_merged_wall_geometry_hit
 target_include_directories(test_merged_wall_geometry_hit
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME merged_wall_geometry_hit_tests COMMAND test_merged_wall_geometry_hit)
-dxx_dependency_value(TINYSOUNDFONT_COMMIT TINYSOUNDFONT_COMMIT)
-FetchContent_Declare(
-    tinysoundfont_test
-    URL https://github.com/schellingb/TinySoundFont/archive/${TINYSOUNDFONT_COMMIT}.tar.gz
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+dxx_verified_fetchcontent_declare(tinysoundfont_test TINYSOUNDFONT)
 FetchContent_GetProperties(tinysoundfont_test)
 if(NOT tinysoundfont_test_POPULATED)
     FetchContent_Populate(tinysoundfont_test)

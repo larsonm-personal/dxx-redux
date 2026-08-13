@@ -103,7 +103,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `DONE` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
 | 9 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0024` | `DONE` | `GQF-0037` | Route SAF URI strings through strict standard-UTF-8 JNI conversion |
 | 10 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0006` | `DONE` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests |
-| 11 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0011` | `TODO` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition |
+| 11 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0011` | `DONE` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition |
 | 12 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0034` | `TODO` | `GQF-0047` | Enforce physical ISO output containment |
 | 13 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0038` | `TODO` | `GQF-0051` | Enforce one peak-live-memory budget for STi2 method 15 |
 | 14 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0042` | `TODO` | `GQF-0055` | Require route proof before every reconnect state mutation |
@@ -5922,7 +5922,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0021` | `OPEN` | P2/medium | correctness/overflow | `ogl_texture_android.c:android_ogl_texture_elapsed_us` | Microseconds narrow to signed `int` before callers widen them. Preserve 64-bit elapsed accounting and test boundary math |
 | `GQF-0022` | `OPEN` | P2/high | test-gap/data-format | `android_resume_pilot.c` save callsign boundary | `strcpy` relies on the state reader's size/NUL contract. Add malformed-save tests proving both games enforce NUL termination and engine limits before deciding whether code changes are needed |
 | `GQF-0023` | `OPEN` | P2/medium | test-gap/api-data-format | `net_udp_android_autonet_shared.c` Netgame fields | Unbounded copies rely on upstream constants and imported metadata constraints. Add compile-time layout assertions plus rejection/truncation tests before altering wire-visible behavior |
-| `GQF-0024` | `OPEN` | P1/high | security/supply-chain | `android/app/src/main/cpp/CMakeLists.txt` production dependency fetches | Regrowth or incomplete remediation of archived `BR-0157`: production fetches include mutable refs or content without repository-owned hashes, explicit TLS verification, and cache-byte revalidation. Reuse one verified manifest/helper, pin immutable identities, validate every cached byte, and test hostile bodies and offline reuse across Android ABIs |
+| `GQF-0024` | `FIXED` | P1/high | security/supply-chain | Android production and matching host native dependency fetches | One repository-owned helper now resolves immutable manifest URL/SHA-256 pairs, rehashes cached bytes before every reuse, locks concurrent cache population, verifies TLS downloads before atomic publication, and supports offline reuse. Hostile bodies, corrupt cache entries, changed pins, production owner coverage, Windows D1/D2, the extract-host compile, and all Android ABIs passed |
 | `GQF-0025` | `OPEN` | P2/high | test-gap/partial-migration | `android/run_quick_tests.ps1:90-102` | Test consolidation deleted `test_launcher_graphics_debug_prefs.json5` and `test_menu_scale_d2.json5`, but the quick catalog still dispatches both. Replace them with current unified coverage or remove redundant rows, add catalog-integrity validation, and execute the full quick suite |
 | `GQF-0026` | `OPEN` | P3/high | maintainability/abandoned-compatibility | `FileSetManager.kt`, startup migration call, and `FileSetMigrationTest.kt` | The pre-release launcher still negotiates and tests two legacy file layouts despite the repository reset/no-backward-compatibility policy. Remove obsolete migration/cleanup state or explicitly change policy with a version matrix and retirement milestone |
 | `GQF-0027` | `OPEN` | P3/high | api-data-format/partial-migration | `AudioSourceManager.kt` persistence and focused test | Every save still emits obsolete scalar `bin_content_uri` beside current plural `bin_content_uris`, preserving conflicting representations. Keep one current schema or define a bounded read-time migration that stops writing the old field |
@@ -6816,7 +6816,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0008` | `TODO` | `GQF-0012` | Pin NAT testbed base image reproducibly | Requires selected digest and testbed build |
 | `GQR-0009` | `TODO` | `GQF-0016` | Limit compiler-process cleanup to owned children | Requires Windows script fixture or process-ownership test |
 | `GQR-0010` | `DEFERRED` | `GQF-0019` | Evaluate paired ETC2 self-test extraction | Link to DMR1 and wait for current graphics writer overlap to clear |
-| `GQR-0011` | `TODO` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition | Audit all production fetches against the existing verified extraction pattern; requires hostile-cache and disconnected-reuse tests |
+| `GQR-0011` | `DONE` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition | Central manifest/helper, hostile-cache and disconnected-reuse tests, Windows D1/D2, extract-host compile, and all Android ABIs passed |
 | `GQR-0012` | `TODO` | `GQF-0025` | Repair quick-test catalog migration and add target-resolution coverage | Determine whether unified rows replace or subsume both deleted entries before editing |
 | `GQR-0013` | `TODO` | `GQF-0026` | Remove unsupported launcher file-layout migration state | Reconfirm pre-release reset policy and current producer paths; preserve current-layout behavior |
 | `GQR-0014` | `TODO` | `GQF-0027` | Finish audio URI persistence schema migration | Test zero, one, multiple, legacy-only, and conflicting URI records |
@@ -7031,6 +7031,17 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Platform validation: the final `run-windows-build.ps1 -Target both` rebuilt and linked D1, D2 and headless variants after the rewind boundary correction. With JDK 21, `:app:externalNativeBuildDebug` rebuilt `arm64-v8a`, `armeabi-v7a` and `x86_64` without changed-path warnings. Scoped quality and final `git diff --check` passed
 - Non-goals: state validation size checks, old-version admission, unrelated checkpoint fields and scanner policy remain unchanged
 
+### GQR-0011 terminal claim
+
+- Status: `DONE`; `GQF-0024` is `FIXED`. Historical impact remains 56 (`32/0/10/10/4`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began at `5f3a4f7685edfcfec6a775b0eaedd0f246a61512`. Product scope was disjoint from the completed GQR-0006 work present at claim time; an unrelated performance-plan file remained untouched
+- Root-cause fix: new `cmake/dxx-verified-dependencies.cmake` is the common acquisition owner for production Android, extraction-host tests, and input-demo codec dependencies. It resolves repository-owned manifest URL/SHA-256 pairs, names cache objects by digest, locks per dependency during population, rehashes every existing cache object, downloads through TLS with `EXPECTED_HASH`, removes rejected temporary bodies, and atomically renames accepted bytes before FetchContent extraction or source copying
+- Dependency boundary: SDL 1.2, SDL_mixer 1.2, TinySoundFont, nlohmann/json, PhysicsFS, LZMA SDK, zlib, Chromaprint, KTX-Software, PicoSHA2, cpp-base64, the StuffIt corpus, minimp3, stb_vorbis, dr_flac, and stb_image now have explicit reviewed URL/SHA-256 identities in `tool_versions.conf`. Production no longer contains direct Git acquisition, mutable `master`, raw unverified downloads, or existence-only cache admission. Android retains Chromaprint 1.5.1 because its existing source list requires that release's bundled KissFFT layout; extraction tooling retains its existing 1.6.0 identity
+- Focused validation: `python -m unittest android.tests.test_verified_native_dependencies` passed three tests covering complete production manifest ownership, hostile response rejection, corrupt cached-byte rejection, changed-pin acceptance only with matching bytes, and disconnected reuse after the source disappears. A final source audit found no direct Git repository, direct HTTP URL declaration, mutable branch, or local `file(DOWNLOAD)` path in the production owners. Scoped CMake formatting/lint, BOM lint, `git diff --check`, and final focused reruns passed
+- Platform validation: `run-windows-build.ps1 -Target both` configured, compiled, and linked full D1/D2 game and headless targets through the verified input-demo dependencies. The extract-host CMake project configured and compiled every target through the same verified helper. With JDK 21, `:app:assembleDebug` configured, compiled, linked, and packaged production native code for `arm64-v8a`, `armeabi-v7a`, and `x86_64`; a post-format rerun passed for all three ABIs
+- Diff scope: changes are limited to branch-owned Android/CMake dependency owners, the central manifest, a new helper, a new focused Python test, this ledger, and the durable plan. No D1/D2 source changed, so inherited-game-file impact is zero. The production CMake owner shrank substantially by replacing repeated acquisition branches with the shared contract
+- Validation limitation: the configured extract CTest suite was stopped after the unrelated existing `test_graphics_config_transaction` executable remained idle with near-zero CPU for more than ten minutes. This occurred after the complete extract project compiled successfully and does not exercise dependency acquisition; dependency-specific tests and both platform build paths are green
+
 ### GQR-0006 terminal claim
 
 - Status: `DONE`; linked `GQF-0005` and adversarial `BR-0005` are `FIXED`. Historical impact remains 56 (`32/0/10/10/4`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
@@ -7054,6 +7065,12 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0011 / GQF-0024 completion
+
+- Status: `DONE`; `GQF-0024` is `FIXED`
+- Result: one repository-owned verified-download/cache helper and reviewed manifest now own production Android and matching host native dependency bytes. Hostile response, corrupt cache, changed pin, and disconnected reuse tests passed, as did Windows D1/D2, the complete extract-host compile, and all Android ABIs, with zero inherited-game-file changes
+- Limitation: the unrelated existing `test_graphics_config_transaction` executable stalled the extract CTest suite after its complete compile
 
 ### 2026-08-12: GQR-0006 / GQF-0005 completion
 
