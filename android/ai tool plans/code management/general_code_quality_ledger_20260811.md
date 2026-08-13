@@ -82,18 +82,18 @@ The two completed DMR1 remediation chunks remain linked separately and removed 1
 
 ## Impact-ranked remediation order
 
-This snapshot rates all 163 formed `GQR-*` product-fix chunks. It is the implementation order within the process's 80/20 lanes, not an effort estimate. A score is the maximum live finding-owner score in the remediation chunk; completed work is zero. Prerequisites and active-writer overlap can delay dispatch without changing impact
+This snapshot rates all 163 formed `GQR-*` product-fix chunks. It is the implementation order within the process's 80/20 lanes, not an effort estimate. A score is the maximum finding-owner score in the remediation chunk. Completed work retains its confirmed score for historical comparison but is skipped during dispatch. Prerequisites and active-writer overlap can delay dispatch without changing impact
 
 At this snapshot, the first ten-slot 80/20 dispatch tranche is:
 
-- Diff-minimization lane: `GQR-0162`, `GQR-0143`, `GQR-0142`, `GQR-0156`, `GQR-0157`, `DMR1-CHUNK-003`, `GQR-0159`, `GQR-0161`
+- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143`, `GQR-0142`, `GQR-0156`, `GQR-0157`, `DMR1-CHUNK-003`, `GQR-0159`, `GQR-0161`
 - General-quality lane: `GQR-0002`, `GQR-0024`
 
 Each lane is descending by score and the documented tie-breakers. Run the live overlap/prerequisite audit before claiming a row
 
 | Rank | Score | Band | H/M/B/C/R | Fix | State | Leading finding | Scope |
 |---:|---:|---|---|---|---|---|---|
-| 1 | 82 | IMMEDIATE | 23/35/7/10/7 | `GQR-0162` | `TODO` | `GQF-0175` | Extract paired headless CMake target policy |
+| 1 | 82 | IMMEDIATE | 23/35/7/10/7 | `GQR-0162` | `DONE` | `GQF-0175` | Extract paired headless CMake target policy |
 | 2 | 75 | HIGH | 23/28/7/10/7 | `GQR-0143` | `TODO` | `GQF-0156` | Consolidate paired menu/window debug accessors |
 | 3 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0142` | `TODO` | `GQF-0155` | Finish paired Android PhysFS init extraction |
 | 4 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0156` | `TODO` | `GQF-0169` | Consolidate paired Redbook Android declarations |
@@ -6073,7 +6073,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0172` | `OPEN` | P3/high | diff-minimization/ownership | Residual paired Android mixer init logging | After the major C10 extraction, paired inherited mixer files still duplicate Android log macros, query locals and success/failure messages. Let the branch-added diagnostics owner query the actual spec and log it, retaining only requested rate, buffer frames and one call per game; estimated reduction 48 inherited lines |
 | `GQF-0173` | `OPEN` | P1/high | correctness/resource-lifetime/concurrency | Android SDL callback entry and teardown | Regrowth/incomplete closure of archived `BR-0248`: the OpenSL callback dereferences callback-visible device and buffer state before incrementing its in-flight counter, so teardown can observe zero, destroy/free state, then let the callback resume into freed objects. Establish lifetime ownership before any dereference and serialize player publication, background calls and destruction under the same protocol |
 | `GQF-0174` | `OPEN` | P3/high | diff-minimization/ownership | Paired secret-area save serialization helpers | `d1/main/state.c` and `d2/main/state.c` duplicate secret-area runtime write/read bodies that depend only on the branch-added adapter's state and PhysicsFS boundary. Move the definitions to the existing per-game-compiled adapter and remove about 40 inherited additions across two hunks, preserving byte layout, swapping, count fallback and save ordering |
-| `GQF-0175` | `OPEN` | P2/high | diff-minimization/build-ownership | Paired headless executable target construction | Two inherited main CMake files carry 185 lines of substantially shared headless metadata/replay target policy. Move source lists, definitions, include/link policy and optional platform handling to a branch-added CMake module, retaining explicit game identity and D2-specific differences; estimated reduction 169-177 inherited lines across two hunks |
+| `GQF-0175` | `FIXED` | P2/high | diff-minimization/build-ownership | Paired headless executable target construction | Shared construction now lives in `cmake/dxx-headless-targets.cmake`; the two inherited blocks retain explicit source-list ownership and compact D1/D2 invocations, reducing their attributable footprint from 185 to 30 lines while preserving exact generated target properties |
 | `GQF-0176` | `OPEN` | P3/high | maintainability/dead-code | Orphaned `native-lib.cpp` JNI skeleton | The unregistered 16-line skeleton duplicates the live `helloFromNative` symbol in `jni_main.c` and has no build consumer. Delete it, retain the production JNI owner, and verify no generated/source inventory references the orphan and both Android game targets link |
 
 ## Investigations
@@ -6967,7 +6967,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics | Narrow the shared logger API, remove paired raw-log/query residue, preserve requested-rate/buffer fields and exact messages, then run diagnostic tests, both games and Android ABIs |
 | `GQR-0160` | `TODO` | `GQF-0173` | Make SDL audio callback lifetime entry-safe | Acquire lifetime ownership before any callback dereference; serialize player publication, pause/resume and teardown; barrier-test close/reopen, enqueue failure and callback entry under race instrumentation |
 | `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter | Relocate the paired writer/reader bodies and declarations, preserve exact D1/D2 save bytes, version ordering, swapped reads and count-mismatch fallback, then run focused scanner/save and Windows builds |
-| `GQR-0162` | `TODO` | `GQF-0175` | Extract paired headless CMake target policy | Add a branch-owned module with explicit per-game inputs, compare exact target properties before/after, configure/build D1 metadata and D2 replay/metadata across option combinations on Windows and Linux, and run fixtures |
+| `GQR-0162` | `DONE` | `GQF-0175` | Extract paired headless CMake target policy | Root correction accepted in worker scope: exact normalized CMake File API properties match frozen HEAD for all three targets; Windows default and option-matrix validation plus maintained metadata/replay fixtures passed, with Linux/Apple execution unavailable on this Windows host |
 | `GQR-0163` | `TODO` | `GQF-0176` | Remove the orphan JNI skeleton | Delete `native-lib.cpp`, verify inventories have no reference, link both Android game targets and prove `helloFromNative` resolves through `jni_main.c` |
 
 ### GQR-0001 live claim
@@ -6983,6 +6983,16 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0162 / GQF-0175 completion
+
+- Status: `DONE`; `GQF-0175` is `FIXED`
+- Live boundary: HEAD `67d57e1ebd0362763643b819a528ea359da42c44`; overlap `SAFE_DISJOINT`. Pre-edit SHA-256 was `2E8A46EF501241E00AF8B9064064C0F3B4C3D1E9E8702B5E61AA4CA054CBD7EC` for D1 CMake and `9F749D94F283FFAC0F539F2E707D092EC266F6B2335F920FC55B5AF0CEB2B457` for D2 CMake; the module was absent. Concurrent ledger and plan edits were the same-root claim and were preserved
+- Root-cause fix: new `cmake/dxx-headless-targets.cmake` owns common non-Android executable construction. D1/D2 retain `D1X_MAIN_SOURCES`/`D2X_MAIN_SOURCES` derivatives and explicit calls naming each target, entry point, D2 definition, D2 `libmve`, and metadata-only game include. Call-site scope still resolves `vers_id.c` and conditional `net_udp.c`; codec dependencies and build metadata remain applied once per target
+- Inherited metrics: attributable target blocks fell from D1 62 plus D2 123 lines (185 total in two logical construction hunks) to D1 11 plus D2 19 lines (30 total), a 155-line reduction. Isolated Git numstat is D1 `+5/-56`, D2 `+12/-116`, total `+17/-172`; zero-context presentation splits retained entry-point lines into seven display hunks but changes the same two original construction blocks
+- Exact parity: frozen-HEAD and live CMake File API codemodel projections matched byte-for-byte after root normalization for ordered sources, definitions, includes, compile fragments and link fragments, plus target name/type/output. SHA-256 values were D1 metadata `5A574F09A778D11F58EEEE4CF0C7980B9D863E27AF0149711668A1895549162F`, D2 replay `4E16E4EF136C51D29A6ED2A2F40A64F8C825E033620E66C85240F971210091E7`, and D2 metadata `16D79FF83A80F317AADBF9773E31B9DC6B1BB1314A80AD74EEDC0998E11172FA`
+- Validation: scoped `cmake-format --check`, `cmake-lint`, and `git diff --check` passed. `run-windows-build.ps1 -Target both` configured and built the full D1/D2 trees with `OPENGL=ON`, `SDLMIXER=ON`, `UDP=ON`, including all three headless targets. D1 metadata also built with OpenGL/mixer disabled and UDP enabled; both D2 targets built with OpenGL disabled and mixer/UDP enabled. Both games configured with all three options disabled. Maintained secret-area metadata baselines matched at D1 181 and D2 234 records, and D2 level-10 headless replay passed 774 frames
+- Limitations: Linux and Apple execution was unavailable on the Windows host; the unchanged module conditionals retain the exact `arch_x11` and `arch_cocoa` links. Building with `UDP=OFF` reaches an inherited global-`NETWORK` `_sockaddr` compile failure in D1, and building D2 with `SDLMIXER=OFF` reaches inherited undeclared `mve_audio_resample_needed`/`mve_audio_output_frame_size` symbols in `libmve`; both matrices configured successfully and neither failure is caused by the extracted target policy
 
 ### 2026-08-11: GQR-0001 / GQF-0006 completion
 

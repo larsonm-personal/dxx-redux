@@ -93,6 +93,14 @@
 - [x] Require future survey workers to recommend a provisional score and the canonical writer to confirm or replace it during normalization
 - [x] Reconcile score counts and ties, verify every terminal chunk appears exactly once, and run ASCII/BOM plus `git diff --check` audits
 
+## GQR-0162 ranked remediation
+
+- [x] Freeze the live overlap boundary and claim `GQR-0162` / `GQF-0175` for one fresh `gpt-5.6-sol` medium worker
+- [x] Extract shared headless target construction into a branch-added CMake module while preserving explicit D1/D2 differences
+- [x] Measure inherited-file paths, hunks, and lines before and after, rejecting any ownership inversion or non-material result
+- [x] Validate CMake formatting/lint, exact target properties, option combinations, Windows D1/D2 headless builds, and focused metadata/replay fixtures where available
+- [x] Review the worker patch, correct any scope or parity defect with the same worker, and close the ledger items only after final acceptance
+
 ## Initial hypotheses to verify
 
 - The first survey searched primarily for paired D1/D2 duplicate bodies large enough to extract, rather than applying the reusable general cleanup rubric
