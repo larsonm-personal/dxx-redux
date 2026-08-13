@@ -59,6 +59,6 @@ unsigned long RBAGetDiscID();
 // List the tracks on the CD
 void RBAList(void);
 
-#include "rbaudio_android.h"
+#include "rbaudio_bin.h"
 
 #endif

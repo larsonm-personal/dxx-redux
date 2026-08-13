@@ -1,5 +1,5 @@
-#ifndef RBAUDIO_ANDROID_H
-#define RBAUDIO_ANDROID_H
+#ifndef RBAUDIO_BIN_H
+#define RBAUDIO_BIN_H
 
 /* Track control (multi-source support) */
 int RBANextTrack(void);

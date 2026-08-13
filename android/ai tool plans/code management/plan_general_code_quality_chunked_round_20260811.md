@@ -139,7 +139,7 @@ Completion: the paired inherited Android PhysFS initialization surface fell from
 - [x] Replace each inherited block with one include while preserving platform guards, C linkage, types, and API parity
 - [x] Validate focused contracts, Windows D1/D2, Android ABIs, scoped quality, exact metrics, and terminal records
 
-Completion: `rbaudio_android.h` is the sole conventional declaration owner, and each inherited game header retains one include at the original declaration position. Against the campaign merge base, the paired inherited headers fall from 22 additions to four additions, an exact 18-line reduction; the isolated edit is `+2/-20`. Focused C/C++ contracts, D1/D2 Windows builds, all three Android ABIs, scoped quality and final audits passed. The maintained SAF Redbook automation stopped before playback at its pilot-menu navigation step, so it did not add runtime evidence beyond the successful compile/link boundary
+Completion: `rbaudio_bin.h` matches its `rbaudio_bin.c` implementation owner, and each inherited game header retains one include at the original declaration position. Against the campaign merge base, the paired inherited headers fall from 22 additions to four additions, an exact 18-line reduction; the isolated edit is `+2/-20`. Focused C/C++ contracts, D1/D2 Windows builds, all three Android ABIs, scoped quality and final audits passed. The maintained SAF Redbook automation stopped before playback at its pilot-menu navigation step, so it did not add runtime evidence beyond the successful compile/link boundary
 
 ## Initial hypotheses to verify
 

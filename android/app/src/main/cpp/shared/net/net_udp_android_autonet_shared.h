@@ -1,5 +1,5 @@
-#ifndef DXX_ANDROID_SHARED_NET_UDP_AUTONET_SHARED_H
-#define DXX_ANDROID_SHARED_NET_UDP_AUTONET_SHARED_H
+#ifndef DXX_ANDROID_SHARED_NET_UDP_ANDROID_AUTONET_SHARED_H
+#define DXX_ANDROID_SHARED_NET_UDP_ANDROID_AUTONET_SHARED_H
 
 int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
 int net_udp_auto_host(int my_port, const char *mission, int mode,

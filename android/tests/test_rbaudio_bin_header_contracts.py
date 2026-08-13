@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SHARED = REPO / "android/app/src/main/cpp/shared"
-HEADER = SHARED / "rbaudio_android.h"
+HEADER = SHARED / "rbaudio_bin.h"
 DECLARATIONS = (
     "int RBANextTrack(void);",
     "int RBAPrevTrack(void);",
@@ -22,7 +22,7 @@ DECLARATIONS = (
 )
 
 
-class RbaudioAndroidHeaderContractsTest(unittest.TestCase):
+class RbaudioBinHeaderContractsTest(unittest.TestCase):
     @staticmethod
     def _compiler(language: str) -> str:
         executable = "clang" if language == "c" else "clang++"
@@ -49,16 +49,17 @@ class RbaudioAndroidHeaderContractsTest(unittest.TestCase):
 
     def test_shared_header_is_the_only_declaration_owner(self) -> None:
         shared = HEADER.read_text(encoding="utf-8")
-        self.assertIn("#ifndef RBAUDIO_ANDROID_H", shared)
-        self.assertIn("#define RBAUDIO_ANDROID_H", shared)
+        self.assertIn("#ifndef RBAUDIO_BIN_H", shared)
+        self.assertIn("#define RBAUDIO_BIN_H", shared)
         self.assertNotIn("#ifdef ANDROID", shared)
+        self.assertFalse((SHARED / "rbaudio_android.h").exists())
         self.assertEqual(list(SHARED.glob("*rbaudio*.inc")), [])
         for declaration in DECLARATIONS:
             self.assertEqual(shared.count(declaration), 1)
 
         for game in ("d1", "d2"):
             inherited = (REPO / game / "include/rbaudio.h").read_text(encoding="utf-8")
-            self.assertEqual(inherited.count('#include "rbaudio_android.h"'), 1)
+            self.assertEqual(inherited.count('#include "rbaudio_bin.h"'), 1)
             for declaration in DECLARATIONS:
                 self.assertNotIn(declaration, inherited)
 
