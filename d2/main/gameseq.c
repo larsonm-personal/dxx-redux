@@ -110,6 +110,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_save.h"
 #include "coop_warp.h"
 #include "android_log.h"
+#include "android_profile.h"
 #include "merged_wall_debug.h"
 #endif
 #ifdef EDITOR
@@ -842,6 +843,11 @@ void LoadLevel(int level_num,int page_in_textures)
 	player save_player;
 	int load_ret;
 	const int skip_level_presentation = newdemo_dump_active() || GameArg.SysInputDemoNoRender;
+#ifdef __ANDROID__
+	struct android_profile_level_load_metrics load_profile = { 0 };
+	const long long load_profile_start_us = android_profile_monotonic_us();
+	long long load_profile_phase_us = load_profile_start_us;
+#endif
 
 	save_player = Players[Player_num];
 
@@ -878,6 +884,7 @@ void LoadLevel(int level_num,int page_in_textures)
 
 #ifdef ANDROID
 	level_overlay_notify(level_num, Current_level_name);
+	load_profile.file_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 
 	if (!skip_level_presentation)
@@ -890,7 +897,14 @@ void LoadLevel(int level_num,int page_in_textures)
 		timer_delay(F1_0);
 #endif
 
+#ifdef __ANDROID__
+	load_profile.presentation_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+#endif
+
 	load_endlevel_data(level_num);
+#ifdef __ANDROID__
+	load_profile.endlevel_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+#endif
 
 	d1_custom_remove();
 	if (EMULATING_D1) {
@@ -916,6 +930,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	}
 #ifdef ANDROID
 	gameseq_log_multiplayer_texture_state("after-bitmap-replacements", level_name);
+	load_profile.replacements_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 
 	load_level_robots(level_num);
@@ -923,6 +938,7 @@ void LoadLevel(int level_num,int page_in_textures)
 		d1_in_d2_apply_robot_assets(1);
 #ifdef ANDROID
 	gameseq_log_multiplayer_texture_state("after-robots", level_name);
+	load_profile.robots_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 
 	if ( page_in_textures && !skip_level_presentation ) {
@@ -931,6 +947,10 @@ void LoadLevel(int level_num,int page_in_textures)
 		ogl_cache_level_textures();
 #endif
 	}
+
+#ifdef __ANDROID__
+	load_profile.textures_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+#endif
 
 #ifdef ANDROID
 	if (Game_mode & GM_MULTI) {
@@ -949,14 +969,31 @@ void LoadLevel(int level_num,int page_in_textures)
 	reset_network_objects();
 #endif
 
+#ifdef __ANDROID__
+	load_profile.network_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+#endif
+
 	Players[Player_num] = save_player;
 
 	set_sound_sources();
+#ifdef __ANDROID__
+	load_profile.sound_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+#endif
 
 	songs_play_level_song( Current_level_num, 0 );
+#ifdef __ANDROID__
+	load_profile.music_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+#endif
 
 	if (!skip_level_presentation)
 		gr_palette_load(gr_palette);		//actually load the palette
+
+#ifdef __ANDROID__
+	load_profile.finish_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+	load_profile.total_us = load_profile_phase_us - load_profile_start_us;
+	android_profile_log_level_load("d2", Current_level_num, level_name,
+	                               Game_mode, &load_profile);
+#endif
 
 //	WIN(HideCursorW());
 }
@@ -1752,6 +1789,10 @@ extern int BigWindowSwitch;
 void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 {
 #ifdef __ANDROID__
+	struct android_profile_level_init_metrics init_profile = { 0 };
+	const long long init_profile_start_us = android_profile_monotonic_us();
+	long long init_profile_before_load_us;
+	long long init_profile_after_load_us;
 	coop_powerup_duplication_reset();
 	if (Game_mode & GM_MULTI_COOP) {
 		COOPLOG("StartNewLevelSub begin: game=d2 requested=%d current=%d page=%d players=%d master=%d",
@@ -1786,7 +1827,13 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 		newdemo_record_start_frame(FrameTime );
 	}
 
+#ifdef __ANDROID__
+	init_profile_before_load_us = android_profile_monotonic_us();
+#endif
 	LoadLevel(level_num,page_in_textures);
+#ifdef __ANDROID__
+	init_profile_after_load_us = android_profile_monotonic_us();
+#endif
 
 #ifdef __ANDROID__
 	if (Game_mode & GM_MULTI_COOP) {
@@ -1818,7 +1865,13 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 			crash_breadcrumb_v("d2 coop level sync begin level=%d", Current_level_num);
 		}
 #endif
+#ifdef __ANDROID__
+		const long long sync_start_us = android_profile_monotonic_us();
+#endif
 		level_sync_result = multi_level_sync(); // After calling this, Player_num is set
+#ifdef __ANDROID__
+		init_profile.network_sync_us = android_profile_monotonic_us() - sync_start_us;
+#endif
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP) {
 			COOPLOG("StartNewLevelSub sync done: game=d2 level=%d result=%d player=%d players=%d",
@@ -1986,6 +2039,13 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 		game();
 	}
 #ifdef __ANDROID__
+	init_profile.total_us = android_profile_monotonic_us() - init_profile_start_us;
+	init_profile.pre_load_us = init_profile_before_load_us - init_profile_start_us;
+	init_profile.load_us = init_profile_after_load_us - init_profile_before_load_us;
+	init_profile.post_load_us = init_profile.total_us - init_profile.pre_load_us -
+	                            init_profile.load_us - init_profile.network_sync_us;
+	android_profile_log_level_init("d2", level_num, Current_level_num,
+	                               Game_mode, &init_profile);
 	if (Game_mode & GM_MULTI_COOP) {
 		COOPLOG("StartNewLevelSub ready: game=d2 level=%d player=%d objects=%d game_window=%d",
 		        Current_level_num, Player_num, Highest_object_index + 1,

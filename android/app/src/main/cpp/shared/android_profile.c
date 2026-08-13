@@ -199,6 +199,57 @@ static long long android_profile_now_us(void)
 	return (long long) ts.tv_sec * 1000000LL + (long long) ts.tv_nsec / 1000LL;
 }
 
+long long android_profile_monotonic_us(void)
+{
+	return android_profile_now_us();
+}
+
+long long android_profile_take_elapsed_us(long long *last_us)
+{
+	const long long now_us = android_profile_now_us();
+	const long long elapsed_us = now_us - *last_us;
+	*last_us = now_us;
+	return elapsed_us;
+}
+
+void android_profile_log_level_load(
+    const char *game, int level, const char *file, int game_mode,
+    const struct android_profile_level_load_metrics *metrics)
+{
+	debug_log_force(
+	    DLOG_PROFILING,
+	    "loadprof_v=1 type=level_load game=%s level=%d file='%s' mode=0x%x total_us=%lld file_us=%lld presentation_us=%lld endlevel_us=%lld replacements_us=%lld robots_us=%lld textures_us=%lld network_us=%lld sound_us=%lld music_us=%lld finish_us=%lld",
+	    game, level, file ? file : "", game_mode, metrics->total_us,
+	    metrics->file_us, metrics->presentation_us, metrics->endlevel_us,
+	    metrics->replacements_us, metrics->robots_us, metrics->textures_us,
+	    metrics->network_us, metrics->sound_us, metrics->music_us,
+	    metrics->finish_us);
+}
+
+void android_profile_log_level_init(
+    const char *game, int requested_level, int current_level, int game_mode,
+    const struct android_profile_level_init_metrics *metrics)
+{
+	debug_log_force(
+	    DLOG_PROFILING,
+	    "loadprof_v=1 type=level_init game=%s requested=%d current=%d mode=0x%x total_us=%lld pre_load_us=%lld load_us=%lld network_sync_us=%lld post_load_us=%lld",
+	    game, requested_level, current_level, game_mode, metrics->total_us,
+	    metrics->pre_load_us, metrics->load_us, metrics->network_sync_us,
+	    metrics->post_load_us);
+}
+
+void android_profile_log_restore(
+    const char *game, int level, const char *file, int game_mode,
+    int had_game_window, const struct android_profile_restore_metrics *metrics)
+{
+	debug_log_force(
+	    DLOG_PROFILING,
+	    "loadprof_v=1 type=restore game=%s level=%d file='%s' mode=0x%x had_game_window=%d total_us=%lld pre_level_us=%lld level_init_us=%lld state_data_us=%lld finalize_us=%lld",
+	    game, level, file ? file : "", game_mode, had_game_window,
+	    metrics->total_us, metrics->pre_level_us, metrics->level_init_us,
+	    metrics->state_data_us, metrics->finalize_us);
+}
+
 static long long android_profile_now_ms(void)
 {
 	return android_profile_read_clock_ms(CLOCK_MONOTONIC);

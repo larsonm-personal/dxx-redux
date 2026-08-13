@@ -38,9 +38,50 @@ struct android_profile_texture_lookup_metrics {
 	long long png_ext_us[ANDROID_PROFILE_TEXTURE_LOOKUP_EXT_COUNT];
 };
 
+struct android_profile_level_load_metrics {
+	long long total_us;
+	long long file_us;
+	long long presentation_us;
+	long long endlevel_us;
+	long long replacements_us;
+	long long robots_us;
+	long long textures_us;
+	long long network_us;
+	long long sound_us;
+	long long music_us;
+	long long finish_us;
+};
+
+struct android_profile_level_init_metrics {
+	long long total_us;
+	long long pre_load_us;
+	long long load_us;
+	long long network_sync_us;
+	long long post_load_us;
+};
+
+struct android_profile_restore_metrics {
+	long long total_us;
+	long long pre_level_us;
+	long long level_init_us;
+	long long state_data_us;
+	long long finalize_us;
+};
+
 void android_profile_texture_lookup_note_ktx2(
     struct android_profile_texture_lookup_metrics *lookup, int slot,
     long long elapsed_us, int loaded);
+long long android_profile_monotonic_us(void);
+long long android_profile_take_elapsed_us(long long *last_us);
+void android_profile_log_level_load(
+    const char *game, int level, const char *file, int game_mode,
+    const struct android_profile_level_load_metrics *metrics);
+void android_profile_log_level_init(
+    const char *game, int requested_level, int current_level, int game_mode,
+    const struct android_profile_level_init_metrics *metrics);
+void android_profile_log_restore(
+    const char *game, int level, const char *file, int game_mode,
+    int had_game_window, const struct android_profile_restore_metrics *metrics);
 void android_profile_frame_begin(const char *game, unsigned int frame_id);
 void android_profile_set_frame_context(int level, int viewer_segment);
 void android_profile_set_frame_pacing(int max_fps, int vsync);

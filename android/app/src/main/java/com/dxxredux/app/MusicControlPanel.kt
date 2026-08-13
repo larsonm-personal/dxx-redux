@@ -120,12 +120,7 @@ class MusicControlPanel(
         refreshState()
     }
 
-    override fun onDetachedFromWindow() {
-        removeCallbacks(sourceRefreshRunnable)
-        super.onDetachedFromWindow()
-    }
-
-    private fun refreshState() {
+    internal fun refreshState() {
         val a = activity ?: return
         state =
             runCatching {
@@ -785,18 +780,15 @@ class MusicControlPanel(
         edit.apply()
         if (a.nativeSetMusicSource(source)) {
             onStateChanged()
-            scheduleSourceRefresh()
         }
     }
 
     private fun setOneTrackPerLevel(enabled: Boolean) {
-        activity?.nativeSetMusicOneTrackPerLevel(enabled)
-        afterNativeChange()
+        afterNativeChange(activity?.nativeSetMusicOneTrackPerLevel(enabled) == true)
     }
 
     private fun setVolume(volume: Int) {
-        activity?.nativeSetMusicVolume(volume.coerceIn(0, 8))
-        afterNativeChange()
+        afterNativeChange((activity?.nativeSetMusicVolume(volume.coerceIn(0, 8)) ?: -1) >= 0)
     }
 
     private fun setVolumeFromTouch(py: Float) {
@@ -813,44 +805,11 @@ class MusicControlPanel(
     }
 
     private fun playTrack(track: Int) {
-        activity?.nativePlaySpecificTrack(track)
-        afterNativeChange()
+        afterNativeChange((activity?.nativePlaySpecificTrack(track) ?: 0) != 0)
     }
 
-    private fun afterNativeChange() {
-        refreshState()
-        onStateChanged()
-    }
-
-    private val sourceRefreshRunnable =
-        object : Runnable {
-            private var remainingRefreshes = 0
-
-            fun start() {
-                remainingRefreshes = 40
-                this@MusicControlPanel.removeCallbacks(this)
-                this@MusicControlPanel.postDelayed(this, 120L)
-            }
-
-            override fun run() {
-                if (activity?.nativeIsMusicSourceChangePending() == true) {
-                    remainingRefreshes--
-                    if (remainingRefreshes > 0) {
-                        this@MusicControlPanel.postDelayed(this, 120L)
-                    } else {
-                        Log.w("DXX-MusicPanel", "Music source change still pending after refresh window")
-                        refreshState()
-                        onStateChanged()
-                    }
-                    return
-                }
-                refreshState()
-                onStateChanged()
-            }
-        }
-
-    private fun scheduleSourceRefresh() {
-        sourceRefreshRunnable.start()
+    private fun afterNativeChange(queued: Boolean) {
+        if (queued) onStateChanged()
     }
 
     private fun ensureFocusedTrackVisible() {

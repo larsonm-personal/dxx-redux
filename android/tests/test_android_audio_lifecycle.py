@@ -10,6 +10,12 @@ MUSIC = (REPO_ROOT / "android/app/src/main/cpp/shared/digi_tsf_music.c").read_te
 MUSIC_CONTROL = (REPO_ROOT / "android/app/src/main/cpp/jni_music_control.c").read_text(
     encoding="utf-8"
 )
+MAIN_ACTIVITY = (
+    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MainActivity.kt"
+).read_text(encoding="utf-8")
+MUSIC_PANEL = (
+    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt"
+).read_text(encoding="utf-8")
 
 
 def function_body(source: str, name: str) -> str:
@@ -26,6 +32,22 @@ def function_body(source: str, name: str) -> str:
             if depth == 0:
                 return source[start + 1 : index]
     raise AssertionError(f"unterminated function {name}")
+
+
+def kotlin_function_body(source: str, name: str) -> str:
+    match = re.search(rf"\bfun\s+{name}\s*\([^)]*\)[^={{]*\{{", source, re.DOTALL)
+    if not match:
+        raise AssertionError(f"missing Kotlin function {name}")
+    start = match.end() - 1
+    depth = 0
+    for index in range(start, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start + 1 : index]
+    raise AssertionError(f"unterminated Kotlin function {name}")
 
 
 def require_order(test: unittest.TestCase, text: str, *needles: str) -> None:
@@ -154,6 +176,42 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
         self.assertIn("songs_get_track_info", publish)
         self.assertIn("music_alloc_track_list", publish)
         self.assertIn("RBAGetTrackName", publish)
+
+    def test_music_command_refresh_waits_for_published_snapshot(self) -> None:
+        dequeue = function_body(MUSIC_CONTROL, "music_dequeue")
+        apply = function_body(MUSIC_CONTROL, "android_music_control_apply_pending")
+        pending = function_body(
+            MUSIC_CONTROL,
+            "Java_com_dxxredux_app_MainActivity_nativeIsMusicSourceChangePending",
+        )
+        self.assertIn("g_music_command_applying = 1;", dequeue)
+        require_order(
+            self,
+            apply,
+            "music_publish_snapshot();",
+            "g_music_command_applying = 0;",
+        )
+        self.assertIn("g_music_command_count != 0 || g_music_command_applying", pending)
+        self.assertIn("g_music_snapshot_current_track = track;", MUSIC_CONTROL)
+
+        panel_play = kotlin_function_body(MUSIC_PANEL, "playTrack")
+        panel_after_change = kotlin_function_body(MUSIC_PANEL, "afterNativeChange")
+        self.assertIn("nativePlaySpecificTrack(track)", panel_play)
+        self.assertIn("afterNativeChange", panel_play)
+        self.assertIn("if (queued) onStateChanged()", panel_after_change)
+        self.assertNotIn("refreshState()", panel_after_change)
+        self.assertNotIn("sourceRefreshRunnable", MUSIC_PANEL)
+
+        schedule = kotlin_function_body(MAIN_ACTIVITY, "scheduleMusicStateRefresh")
+        self.assertIn("postDelayed(musicStateRefreshRunnable", schedule)
+        self.assertRegex(
+            MAIN_ACTIVITY,
+            r"nativePrevTrack\(\) != 0\) scheduleMusicStateRefresh\(\)",
+        )
+        self.assertRegex(
+            MAIN_ACTIVITY,
+            r"nativeNextTrack\(\) != 0\) scheduleMusicStateRefresh\(\)",
+        )
 
 
 if __name__ == "__main__":

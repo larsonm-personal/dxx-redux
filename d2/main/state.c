@@ -86,6 +86,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop/coop_restore_remap.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
+#include "android_profile.h"
 #include "config.h"
 #endif
 
@@ -2860,6 +2861,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	fix64	old_gametime = GameTime64;
 	short TempTmapNum[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 	short TempTmapNum2[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+#ifdef __ANDROID__
+	struct android_profile_restore_metrics restore_profile = { 0 };
+	const long long restore_profile_start_us = android_profile_monotonic_us();
+	const int restore_profile_had_game_window = Game_wind != NULL;
+	long long restore_profile_before_level_us;
+	long long restore_profile_after_level_us;
+	long long restore_profile_after_state_us;
+#endif
 
 #ifdef __ANDROID__
 	debug_log(DLOG_GAME,
@@ -3048,12 +3057,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 	{
 #ifdef __ANDROID__
+		restore_profile_before_level_us = android_profile_monotonic_us();
 		if (Game_mode & GM_MULTI_COOP)
 			COOPLOG("restore StartNewLevelSub begin: game=d2 saved_level=%d current_before=%d net_before=%d",
 			        current_level, Current_level_num, Netgame.levelnum);
 #endif
 		StartNewLevelSub(current_level, 1, secret_restore);
 #ifdef __ANDROID__
+		restore_profile_after_level_us = android_profile_monotonic_us();
 		if (Game_mode & GM_MULTI_COOP)
 			COOPLOG("restore StartNewLevelSub done: game=d2 saved_level=%d current_after=%d net_after=%d player_num=%d",
 			        current_level, Current_level_num, Netgame.levelnum,
@@ -3607,6 +3618,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 	PHYSFS_close(fp);
 	#ifdef __ANDROID__
+	restore_profile_after_state_us = android_profile_monotonic_us();
+	#endif
+	#ifdef __ANDROID__
 	{
 		int64_t collision_delay_last_play_time = 0;
 
@@ -3635,6 +3649,17 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		if (!window_is_visible(Game_wind))
 			window_set_visible(Game_wind, 1);
 	reset_time();
+
+	#ifdef __ANDROID__
+	restore_profile.total_us = android_profile_monotonic_us() - restore_profile_start_us;
+	restore_profile.pre_level_us = restore_profile_before_level_us - restore_profile_start_us;
+	restore_profile.level_init_us = restore_profile_after_level_us - restore_profile_before_level_us;
+	restore_profile.state_data_us = restore_profile_after_state_us - restore_profile_after_level_us;
+	restore_profile.finalize_us = restore_profile.total_us - restore_profile.pre_level_us -
+	                              restore_profile.level_init_us - restore_profile.state_data_us;
+	android_profile_log_restore("d2", Current_level_num, filename, Game_mode,
+	                            restore_profile_had_game_window, &restore_profile);
+	#endif
 
 	return 1;
 }

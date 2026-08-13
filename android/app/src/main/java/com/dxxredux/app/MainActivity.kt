@@ -608,6 +608,25 @@ class MainActivity :
     private var keyboardImeVisible = false
     private var imeNavigationDispatchDepth = 0
     private var lastTrackNum = -1 // for detecting track changes in polling
+    private var remainingMusicStateRefreshes = 0
+    private val musicStateRefreshRunnable =
+        object : Runnable {
+            override fun run() {
+                val pending =
+                    try {
+                        nativeIsMusicSourceChangePending()
+                    } catch (_: Exception) {
+                        false
+                    }
+                if (pending && --remainingMusicStateRefreshes > 0) {
+                    window.decorView.postDelayed(this, 120L)
+                    return
+                }
+                if (pending) Log.w("DXX-MusicCtrl", "Music command still pending after refresh window")
+                musicPanel?.refreshState()
+                updateTrackLabel()
+            }
+        }
     private var gyroManager: GyroInputManager? = null
     private var gyroRuntimeState = gyroRuntimeStateFromConfig(GyroConfig())
     private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
@@ -1337,12 +1356,10 @@ class MainActivity :
         }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.prevTrackCallback = {
-            nativePrevTrack()
-            updateTrackLabel()
+            if (nativePrevTrack() != 0) scheduleMusicStateRefresh()
         }
         touchOverlay.nextTrackCallback = {
-            nativeNextTrack()
-            updateTrackLabel()
+            if (nativeNextTrack() != 0) scheduleMusicStateRefresh()
         }
         touchOverlay.musicPanelCallback = { showMusicPanel() }
         touchOverlay.tapPassthroughCallback = {
@@ -2518,6 +2535,7 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        window.decorView.removeCallbacks(musicStateRefreshRunnable)
         startupScope.cancel()
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()
@@ -3620,6 +3638,12 @@ class MainActivity :
     }
 
     // ── Music overlay helpers ─────────────────────────────────
+    private fun scheduleMusicStateRefresh() {
+        remainingMusicStateRefreshes = 40
+        window.decorView.removeCallbacks(musicStateRefreshRunnable)
+        window.decorView.postDelayed(musicStateRefreshRunnable, 120L)
+    }
+
     private fun pollTrackLabel() {
         try {
             val trackNum = nativeGetCurrentTrackNum()
@@ -3677,7 +3701,7 @@ class MainActivity :
                 musicPanel = null
                 syncAdminTrayPause(touchOverlay.isAdminTrayOpen())
             }, {
-                updateTrackLabel()
+                scheduleMusicStateRefresh()
             })
         musicPanel = panel
         val frame = gameSurfaceView.parent as? FrameLayout ?: return

@@ -17,11 +17,14 @@ Hundreds of coverage units are expected. Hundreds of fixes are not assumed. Clea
 
 - Plan: `plan_general_code_quality_chunked_round_20260811.md`
 - Active ledger: `general_code_quality_ledger_20260811.md`
+- Detailed evidence ledger: `general_code_quality_evidence_ledger_20260811.md`
 - Done archive: `general_code_quality_ledger.done.md`
 - D1/D2 extraction subtrack: `d1d2_diff_minimization_ledger_20260811.md`
-- Generated manifests and worker outputs: `temp/general_code_quality_20260811/`
+- Durable worker inbox: `general_code_quality_inbox/`
+- Evidence importer: `android/helpers/update-general-quality-evidence-ledger.ps1`
+- Generated manifests and non-authoritative historical outputs: `temp/general_code_quality_20260811/`
 
-The active ledger is the only canonical writer-owned progress file. Generated manifests and survey outputs are evidence, not alternate ledgers
+The active ledger is the only canonical writer-owned progress file. The evidence ledger is the canonical detailed record. The inbox is a disjoint worker staging area whose complete reports are imported by the single writer before normalization. Ignored `temp/` content is never authoritative
 
 ## Scope and review domains
 
@@ -76,15 +79,15 @@ Survey workers are read-only. Every coverage unit uses a fresh `gpt-5.6-sol` wor
 3. Inspect every assigned range or path plus enclosing functions, relevant callers and callees, tests, owners, paired D1/D2 code, and interfaces
 4. Apply all applicable general review and reusable cleanup dimensions
 5. Search the adversarial active and done ledgers, DMR1, earlier cleanup plans, and earlier GQ generations for duplicates, prior fixes, incomplete work, or regrowth
-6. Write one raw result to the assigned `temp/general_code_quality_20260811/` path
+6. Write one raw result to the assigned tracked `android/ai tool plans/code management/general_code_quality_inbox/` path
 7. Record exact scope and context checked, commands, atomic observations, explicit clean dimensions, evidence gaps, and scope fingerprint
 8. Stop without editing product code or a canonical ledger
 
-Read-only survey shards may run concurrently when their assigned outputs and frozen scopes are disjoint. Every shard still belongs to only one fresh worker. They must not use mutable live files as evidence while a product writer is active
+Read-only survey shards may run concurrently when their assigned inbox outputs and frozen scopes are disjoint. Every shard still belongs to only one fresh worker. They must not use mutable live files as evidence while a product writer is active
 
 ## Finding admission and normalization
 
-A single canonical-ledger writer imports raw outputs in coverage-ID then local-observation order. Each raw observation becomes one of:
+A single canonical-ledger writer imports each complete inbox report into `general_code_quality_evidence_ledger_20260811.md`, verifies its digest, removes the imported inbox fragment, and then normalizes observations in coverage-ID and local-observation order. Each raw observation becomes one of:
 
 - `GQF-*`: supported finding
 - `GQI-*`: bounded investigation because essential evidence is missing
@@ -169,7 +172,7 @@ Finding lifecycle is `OPEN`, `PLANNED`, `REMEDIATING`, `VERIFYING`, then `FIXED`
 The root conversation:
 
 1. Freezes generations and maintains the canonical queue
-2. Assigns read-only survey shards and single-writer normalization
+2. Assigns read-only survey shards, imports their complete reports into the durable evidence ledger, and performs single-writer normalization
 3. Verifies scope fingerprints, explicit coverage, admission, deduplication, and ID uniqueness
 4. Ranks supported findings by severity, locality, confidence, prerequisites, and testability
 5. Dispatches exactly one fresh product worker for the first eligible remediation chunk
@@ -182,13 +185,13 @@ The root conversation:
 Survey:
 
 ```text
-Survey exactly <GQ-COVERAGE-ID> read-only using gpt-5.6-sol at medium effort. Read the repository instructions, general quality process, active and done ledgers, generation manifest, and assigned frozen scope. Inspect the assigned ranges plus necessary callers, callees, tests, paired D1/D2 files, owners, and interfaces. Apply the full general-quality and reusable-cleanup rubric. Do not edit product code or canonical ledgers. Write one raw survey result to the assigned temp path with concrete observations, explicit clean dimensions, commands, gaps, and scope fingerprint. Stop after this unit
+Survey exactly <GQ-COVERAGE-ID> read-only using gpt-5.6-sol at medium effort. Read the repository instructions, general quality process, active and done ledgers, durable evidence ledger, generation manifest, and assigned frozen scope. Inspect the assigned ranges plus necessary callers, callees, tests, paired D1/D2 files, owners, and interfaces. Apply the full general-quality and reusable-cleanup rubric. Do not edit product code or canonical ledgers. Write one raw survey result to the assigned tracked evidence-inbox path with concrete observations, explicit clean dimensions, commands, gaps, and scope fingerprint. Stop after this unit
 ```
 
 Normalization:
 
 ```text
-Normalize exactly the pending raw outputs in deterministic coverage-ID order as the sole canonical-ledger writer. Apply the admission standard and search both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup records, and earlier generations for duplicates or regrowth. Assign stable IDs only after deduplication. Create atomic findings or investigations and one explicit coverage record per unit. Do not edit product code or form unrelated remediation batches
+Import exactly the pending inbox reports into the durable evidence ledger, verify their SHA-256 markers, and remove only successfully imported inbox fragments. Normalize them in deterministic coverage-ID order as the sole canonical-ledger writer. Apply the admission standard and search both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup records, and earlier generations for duplicates or regrowth. Assign stable IDs only after deduplication. Create atomic findings or investigations and one explicit coverage record per unit. Do not edit product code or form unrelated remediation batches
 ```
 
 Remediation:
@@ -203,6 +206,7 @@ The campaign closes only when:
 
 - Every final-head changed path maps to current or explicitly superseded non-partial coverage
 - Every coverage unit and sweep is terminal with an explicit `GQC-*` record
+- Every completed worker report is present in the tracked evidence ledger with its SHA-256 import marker
 - Every raw observation has a normalization action
 - Every finding and investigation is terminal or explicitly deferred with owner, reason, accepted risk, and recheck trigger
 - Every completed remediation has root acceptance and exact validation

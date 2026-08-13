@@ -55,6 +55,16 @@
 - [x] Reconcile observations, finding and investigation IDs, duplicate links, queue counts, and remediation candidates after Chunk 0030
 - [x] Verify all 30 queue rows are terminal, no survey worker remains active, reports are ASCII/no-BOM, and campaign files pass `git diff --check`
 
+## Next 100 deterministic coverage tranche
+
+- [x] Migrate the three audits, three preflights, and `GQ1-CHUNK-0001` through `GQ1-CHUNK-0039` from ignored `temp/` reports into one tracked SHA-256-provenance evidence ledger
+- [x] Change the worker process so new reports enter a tracked inbox and become terminal only after single-writer import into the durable evidence ledger
+- [-] Process `GQ1-CHUNK-0031` through `GQ1-CHUNK-0130` with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
+- [ ] Normalize every raw report in strict chunk-ID order before later workers use its findings for deduplication
+- [ ] Create one non-partial `GQC-*` record per completed chunk, including explicit clean results
+- [ ] Reconcile observations, finding and investigation IDs, duplicate links, queue counts, and remediation candidates after Chunk 0130
+- [ ] Verify all 100 queue rows are terminal, no survey worker remains active, reports are ASCII/no-BOM, and campaign files pass `git diff --check`
+
 ## Initial hypotheses to verify
 
 - The first survey searched primarily for paired D1/D2 duplicate bodies large enough to extract, rather than applying the reusable general cleanup rubric

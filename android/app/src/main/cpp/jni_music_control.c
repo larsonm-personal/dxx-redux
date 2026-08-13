@@ -54,6 +54,7 @@ static pthread_mutex_t g_music_control_mutex = PTHREAD_MUTEX_INITIALIZER;
 static android_music_command g_music_commands[MUSIC_COMMAND_CAPACITY];
 static unsigned int g_music_command_read;
 static unsigned int g_music_command_count;
+static int g_music_command_applying;
 static pthread_mutex_t g_music_snapshot_mutex = PTHREAD_MUTEX_INITIALIZER;
 static char *g_music_snapshot_overlay;
 static size_t g_music_snapshot_overlay_capacity;
@@ -96,6 +97,7 @@ static int music_dequeue(android_music_command *command)
 	*command = g_music_commands[g_music_command_read];
 	g_music_command_read = (g_music_command_read + 1) % MUSIC_COMMAND_CAPACITY;
 	--g_music_command_count;
+	g_music_command_applying = 1;
 	pthread_mutex_unlock(&g_music_control_mutex);
 	return 1;
 }
@@ -241,6 +243,9 @@ int android_music_control_apply_pending(void)
 		}
 	}
 	music_publish_snapshot();
+	pthread_mutex_lock(&g_music_control_mutex);
+	g_music_command_applying = 0;
+	pthread_mutex_unlock(&g_music_control_mutex);
 	return applied;
 }
 
@@ -454,7 +459,7 @@ static void music_publish_snapshot(void)
 			g_music_snapshot_overlay[0] = '\0';
 	}
 	snprintf(g_music_snapshot_current_info, sizeof(g_music_snapshot_current_info), "%s", current_info);
-	g_music_snapshot_current_track = RBAGetTrackNum();
+	g_music_snapshot_current_track = track;
 	g_music_snapshot_audio_track_count = RBAGetNumAudioTracks();
 	g_music_snapshot_total_tracks = redbook_total;
 	g_music_snapshot_music_type = GameCfg.MusicType;
@@ -483,7 +488,7 @@ Java_com_dxxredux_app_MainActivity_nativeIsMusicSourceChangePending(JNIEnv *env,
 	(void) env;
 	(void) thiz;
 	pthread_mutex_lock(&g_music_control_mutex);
-	pending = g_music_command_count != 0;
+	pending = g_music_command_count != 0 || g_music_command_applying;
 	pthread_mutex_unlock(&g_music_control_mutex);
 	return pending ? JNI_TRUE : JNI_FALSE;
 }
