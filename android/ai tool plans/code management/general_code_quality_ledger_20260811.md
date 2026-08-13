@@ -86,7 +86,7 @@ This snapshot rates all 163 formed `GQR-*` product-fix chunks. It is the impleme
 
 At this snapshot, the first ten-slot 80/20 dispatch tranche is:
 
-- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143` (`DONE`), `GQR-0142` (`DONE`), `GQR-0156` (`DONE`), `GQR-0157` (`DONE`), `DMR1-CHUNK-003`, `GQR-0159` (`DONE`), `GQR-0161`
+- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143` (`DONE`), `GQR-0142` (`DONE`), `GQR-0156` (`DONE`), `GQR-0157` (`DONE`), `DMR1-CHUNK-003`, `GQR-0159` (`DONE`), `GQR-0161` (`DONE`)
 - General-quality lane: `GQR-0002`, `GQR-0024`
 
 Each lane is descending by score and the documented tie-breakers. Run the live overlap/prerequisite audit before claiming a row
@@ -99,7 +99,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 4 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations |
 | 5 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0157` | `DONE` | `GQF-0170` | Finish shared HMP wrapper extraction |
 | 6 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0159` | `DONE` | `GQF-0172` | Consolidate Android mixer init diagnostics |
-| 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter |
+| 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `DONE` | `GQF-0174` | Move secret-area serialization into its adapter |
 | 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `TODO` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
 | 9 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0024` | `TODO` | `GQF-0037` | Route SAF URI strings through strict standard-UTF-8 JNI conversion |
 | 10 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0006` | `TODO` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests |
@@ -6072,7 +6072,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0171` | `OPEN` | P3/high | diff-minimization/dead-code | Unused paired input-demo FP environment includes | Four inherited D1/D2 gameplay/hook paths include `input_demo_fp_env.h` but use none of its declarations. Remove those lines and verify paired builds; retain the necessary FP environment calls at their current local owners |
 | `GQF-0172` | `FIXED` | P3/high | diff-minimization/ownership | Residual paired Android mixer init logging | The branch-added diagnostics owner now queries the actual SDL_mixer spec and owns the exact success and failure log formats. Each inherited game retains only requested-rate/buffer inputs and compact success/failure calls, removing 46 inherited additions while preserving initialization behavior |
 | `GQF-0173` | `OPEN` | P1/high | correctness/resource-lifetime/concurrency | Android SDL callback entry and teardown | Regrowth/incomplete closure of archived `BR-0248`: the OpenSL callback dereferences callback-visible device and buffer state before incrementing its in-flight counter, so teardown can observe zero, destroy/free state, then let the callback resume into freed objects. Establish lifetime ownership before any dereference and serialize player publication, background calls and destruction under the same protocol |
-| `GQF-0174` | `OPEN` | P3/high | diff-minimization/ownership | Paired secret-area save serialization helpers | `d1/main/state.c` and `d2/main/state.c` duplicate secret-area runtime write/read bodies that depend only on the branch-added adapter's state and PhysicsFS boundary. Move the definitions to the existing per-game-compiled adapter and remove about 40 inherited additions across two hunks, preserving byte layout, swapping, count fallback and save ordering |
+| `GQF-0174` | `FIXED` | P3/high | diff-minimization/ownership | Shared secret-area adapter and interface | The per-game-compiled adapter owns writer/reader bodies and selects rewind-memory or PhysicsFS operations through the existing abstraction. Its matching shared header is the sole interface owner. Paired state files retain only ordered calls and both branch-added D1/D2 header copies are removed, reducing the inherited-tree branch footprint by 122 lines while preserving byte layout, swapping, count fallback and all include sites |
 | `GQF-0175` | `FIXED` | P2/high | diff-minimization/build-ownership | Paired headless executable target construction | Shared construction now lives in `cmake/dxx-headless-targets.cmake`; the two inherited blocks retain explicit source-list ownership and compact D1/D2 invocations, reducing their attributable footprint from 185 to 30 lines while preserving exact generated target properties |
 | `GQF-0176` | `OPEN` | P3/high | maintainability/dead-code | Orphaned `native-lib.cpp` JNI skeleton | The unregistered 16-line skeleton duplicates the live `helloFromNative` symbol in `jni_main.c` and has no build consumer. Delete it, retain the production JNI owner, and verify no generated/source inventory references the orphan and both Android game targets link |
 
@@ -6966,7 +6966,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0158` | `TODO` | `GQF-0171` | Remove unused paired FP environment includes | Delete the four unconsumed inherited includes and run focused input-demo tests plus paired D1/D2 Windows and Android builds |
 | `GQR-0159` | `DONE` | `GQF-0172` | Consolidate Android mixer init diagnostics | Shared diagnostics now own actual-spec queries and exact raw/detailed messages; focused ownership contracts, Windows D1/D2 and all configured Android ABIs passed with 46 inherited lines removed |
 | `GQR-0160` | `TODO` | `GQF-0173` | Make SDL audio callback lifetime entry-safe | Acquire lifetime ownership before any callback dereference; serialize player publication, pause/resume and teardown; barrier-test close/reopen, enqueue failure and callback entry under race instrumentation |
-| `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter | Relocate the paired writer/reader bodies and declarations, preserve exact D1/D2 save bytes, version ordering, swapped reads and count-mismatch fallback, then run focused scanner/save and Windows builds |
+| `GQR-0161` | `DONE` | `GQF-0174` | Move secret-area serialization and interface into its adapter | The shared C/header pair preserves rewind/PhysicsFS ownership, exact layout, version ordering, swapped reads, fallback and unchanged include spelling; 28 focused contracts, Windows D1/D2 and all Android ABIs passed with 38 original-file lines plus both 42-line branch-added D1/D2 headers removed |
 | `GQR-0162` | `DONE` | `GQF-0175` | Extract paired headless CMake target policy | Root correction accepted in worker scope: exact normalized CMake File API properties match frozen HEAD for all three targets; Windows default and option-matrix validation plus maintained metadata/replay fixtures passed, with Linux/Apple execution unavailable on this Windows host |
 | `GQR-0163` | `TODO` | `GQF-0176` | Remove the orphan JNI skeleton | Delete `native-lib.cpp`, verify inventories have no reference, link both Android game targets and prove `helloFromNative` resolves through `jni_main.c` |
 
@@ -7020,6 +7020,17 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Platform validation: `run-windows-build.ps1 -Target both` configured, built and linked full D1 and D2 trees. With JDK 21, `:app:externalNativeBuildDebug` built `arm64-v8a`, `armeabi-v7a` and `x86_64`. Scoped code quality and `git diff --check` passed
 - Non-goals: mixer open/close ordering, native-rate selection, sample conversion, SFX latency probes and the separate open `GQF-0173` callback-lifetime problem are unchanged
 
+### GQR-0161 completion
+
+- Status: `DONE`; linked `GQF-0174` is `FIXED`. Historical impact remains 57 (`12/21/7/10/7`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began at `4891e3dd6decae1e679eaa2a18ea923ab7a5b3f4` with a clean product scope. The only initial worktree path was this chunk's new durable plan; no unrelated change was modified
+- Boundary: the per-game-compiled `secretarea.c` now owns the runtime writer and reader. A platform-selected `rewind_file` API preserves Android memory-backed checkpoint and PhysicsFS behavior; local helpers select `rewind_file_*` only when the wrapper is active and ordinary PhysicsFS operations otherwise. The byte-identical, branch-added D1/D2 `secretarea.h` files were then replaced by the matching `android/app/src/main/cpp/shared/secretarea.h`; all consumers retain their existing include spelling and resolve it through established shared include paths. The first Android build exposed and rejected a raw-PhysicsFS pointer boundary; the corrected build is warning-free for all changed paths
+- Exact behavior: the writer still emits host-format `int total` followed immediately by exactly `SECRET_AREA_MAX_GENERATED` found bytes, using zeros when no state exists. The reader still applies `swap` to the total, reads the fixed array, restores it only on matching totals and otherwise derives found state from `Automap_visited` through `Highest_segment_index + 1`. State version gates and effect-before-secret ordering are unchanged
+- Exact metrics against campaign merge base `fb555eec75e1ed12c8348805ab335afb4c721b06`: D1 `state.c` falls from `+1545/-173` to `+1526/-173`; D2 falls from `+2086/-107` to `+2067/-107`. The isolated state edit is `+2/-21` per path, an exact 38-line original-file reduction. Deleting the two 42-line branch-added headers removes another 84 lines and both paths from the inherited trees, for 122 inherited-tree lines removed. One 45-line shared header replaces them, so the consolidation itself reduces duplicated authored source by 39 lines
+- Focused validation: `python -m unittest android.tests.test_native_file_naming_contracts android.tests.test_secret_area_serialization_contracts android.tests.test_save_runtime_validation android.tests.test_state_persistence_contracts` passed 28 tests. The contracts enforce the one-to-one shared C/header pair, reject return of either D1/D2 header copy, and preserve exact field order and width, version gates, swapped read, automap fallback and absence of inherited bodies
+- Platform validation: the final `run-windows-build.ps1 -Target both` rebuilt and linked D1, D2 and headless variants after the rewind boundary correction. With JDK 21, `:app:externalNativeBuildDebug` rebuilt `arm64-v8a`, `armeabi-v7a` and `x86_64` without changed-path warnings. Scoped quality and final `git diff --check` passed
+- Non-goals: state validation size checks, old-version admission, unrelated checkpoint fields and scanner policy remain unchanged
+
 ### GQR-0001 live claim
 
 - Claimed: 2026-08-11 by one fresh `gpt-5.6-sol` worker at medium reasoning effort with no inherited turns
@@ -7033,6 +7044,11 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0161 / GQF-0174 completion
+
+- Status: `DONE`; `GQF-0174` is `FIXED`
+- Result: secret-area runtime serialization and its interface now have one shared C/header owner with the rewind/PhysicsFS abstraction preserved. Paired original state additions fall by 38 lines and both 42-line branch-added D1/D2 header paths are removed, a 122-line inherited-tree reduction; 28 focused contracts, Windows D1/D2, all Android ABIs, scoped quality and final repository audits passed
 
 ### 2026-08-12: GQR-0159 / GQF-0172 completion
 

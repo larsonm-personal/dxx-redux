@@ -22,11 +22,7 @@ class NativeFileNamingContractsTest(unittest.TestCase):
             ),
             (
                 "android/app/src/main/cpp/shared/secretarea.c",
-                "d1/main/secretarea.h",
-            ),
-            (
-                "android/app/src/main/cpp/shared/secretarea.c",
-                "d2/main/secretarea.h",
+                "android/app/src/main/cpp/shared/secretarea.h",
             ),
             (
                 "android/app/src/main/cpp/shared/pngfile.c",
@@ -51,6 +47,8 @@ class NativeFileNamingContractsTest(unittest.TestCase):
             "android/app/src/main/cpp/jni_music_control.c",
             "android/app/src/main/cpp/jni_udp_reconnect.c",
             "android/app/src/main/cpp/shared/secret_area_game_adapter.c",
+            "d1/main/secretarea.h",
+            "d2/main/secretarea.h",
             "android/app/src/main/cpp/shared/pngfile_stb.c",
         )
         for relative in old_paths:

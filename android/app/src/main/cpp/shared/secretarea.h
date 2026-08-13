@@ -6,6 +6,7 @@
 #include "route_planner_c.h"
 #include "route_analysis_cache.h"
 #include "secret_area_scan.h"
+#include "rewind_file.h"
 
 void secret_area_rescan_current_level(void);
 void level_metadata_rescan_current_level(void);
@@ -32,6 +33,8 @@ int level_metadata_get_live_route_snapshot(route_snapshot_summary *summary);
 int secret_area_note_segment_entered(int segnum);
 void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count);
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);
+void secret_area_write_runtime_state(rewind_file *fp);
+void secret_area_read_runtime_state(rewind_file *fp, int swap);
 int secret_area_get_reveal_unfound(void);
 void secret_area_set_reveal_unfound(int reveal);
 int level_metadata_get_objective_mode(void);

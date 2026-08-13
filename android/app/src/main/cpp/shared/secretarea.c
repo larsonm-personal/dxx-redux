@@ -16,6 +16,7 @@
 #include "level_metadata_scan.h"
 #include "object.h"
 #include "player.h"
+#include "physfsx.h"
 #include "polyobj.h"
 #include "powerup.h"
 #include "robot.h"
@@ -29,8 +30,6 @@
 #include "weapon.h"
 #ifdef __ANDROID__
 #include "android_native_build_info.h"
-#include "physfs.h"
-#include "physfsx.h"
 #include <unistd.h>
 #endif
 #ifdef DXX_BUILD_DESCENT_II
@@ -2520,6 +2519,58 @@ void secret_area_restore_saved_found(int saved_total, const unsigned char *found
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count)
 {
 	secret_area_restore_found_from_visited(&Secret_area_state, visited, visited_count);
+}
+
+static PHYSFS_sint64 secret_area_runtime_write(
+    rewind_file *fp, const void *data, PHYSFS_uint32 size, PHYSFS_uint32 count)
+{
+#if REWIND_FILE_USES_WRAPPER
+	return rewind_file_write(fp, data, size, count);
+#else
+	return PHYSFS_write(fp, data, size, count);
+#endif
+}
+
+static PHYSFS_sint64 secret_area_runtime_read(
+    rewind_file *fp, void *data, PHYSFS_uint32 size, PHYSFS_uint32 count)
+{
+#if REWIND_FILE_USES_WRAPPER
+	return rewind_file_read(fp, data, size, count);
+#else
+	return PHYSFS_read(fp, data, size, count);
+#endif
+}
+
+static int secret_area_runtime_read_sxe32(rewind_file *fp, int swap)
+{
+#if REWIND_FILE_USES_WRAPPER
+	return rewind_file_read_sxe32(fp, swap);
+#else
+	return PHYSFSX_readSXE32(fp, swap);
+#endif
+}
+
+void secret_area_write_runtime_state(rewind_file *fp)
+{
+	unsigned char empty_found[SECRET_AREA_MAX_GENERATED] = { 0 };
+	int total = secret_area_total(&Secret_area_state);
+
+	secret_area_runtime_write(fp, &total, sizeof(total), 1);
+	secret_area_runtime_write(fp,
+	                          total > 0 ? Secret_area_state.found : empty_found,
+	                          sizeof(empty_found[0]), SECRET_AREA_MAX_GENERATED);
+}
+
+void secret_area_read_runtime_state(rewind_file *fp, int swap)
+{
+	unsigned char found[SECRET_AREA_MAX_GENERATED] = { 0 };
+	int saved_total = secret_area_runtime_read_sxe32(fp, swap);
+
+	secret_area_runtime_read(fp, found, sizeof(found[0]),
+	                         SECRET_AREA_MAX_GENERATED);
+	secret_area_restore_saved_found(saved_total, found,
+	                                SECRET_AREA_MAX_GENERATED, Automap_visited,
+	                                Highest_segment_index + 1);
 }
 
 int secret_area_get_reveal_unfound(void)

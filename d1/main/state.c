@@ -542,25 +542,6 @@ static void state_read_controlcen_runtime_state(PHYSFS_file *fp, int swap)
 	controlcen_death_silence = PHYSFSX_readSXE32(fp, swap);
 }
 
-static void state_write_secret_area_runtime_state(PHYSFS_file *fp)
-{
-	const secret_area_state *state = secret_area_get_state();
-	unsigned char empty_found[SECRET_AREA_MAX_GENERATED] = {0};
-	int total = secret_area_total(state);
-
-	PHYSFS_write(fp, &total, sizeof(total), 1);
-	PHYSFS_write(fp, state && total > 0 ? state->found : empty_found, sizeof(empty_found[0]), SECRET_AREA_MAX_GENERATED);
-}
-
-static void state_read_secret_area_runtime_state(PHYSFS_file *fp, int swap)
-{
-	unsigned char found[SECRET_AREA_MAX_GENERATED] = {0};
-	int saved_total = PHYSFSX_readSXE32(fp, swap);
-
-	PHYSFS_read(fp, found, sizeof(found[0]), SECRET_AREA_MAX_GENERATED);
-	secret_area_restore_saved_found(saved_total, found, SECRET_AREA_MAX_GENERATED, Automap_visited, Highest_segment_index + 1);
-}
-
 static void state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
@@ -621,7 +602,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &ai_path_state.player_following_path_flag, sizeof(ai_path_state.player_following_path_flag), 1);
 	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
-	state_write_secret_area_runtime_state(fp);
+	secret_area_write_runtime_state(fp);
 }
 
 #define STATE_PHYSICS_INFO_DISK_BYTES ((size_t)(5 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
@@ -955,7 +936,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		ai_path_set_runtime_state(&ai_path_state);
 	laser_set_runtime_state(&laser_state);
 	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION)
-		state_read_secret_area_runtime_state(fp, swap);
+		secret_area_read_runtime_state(fp, swap);
 }
 
 static int state_thumbnail_has_palette(int version)
