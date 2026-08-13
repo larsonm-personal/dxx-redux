@@ -100,7 +100,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 5 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0157` | `DONE` | `GQF-0170` | Finish shared HMP wrapper extraction |
 | 6 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0159` | `DONE` | `GQF-0172` | Consolidate Android mixer init diagnostics |
 | 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `DONE` | `GQF-0174` | Move secret-area serialization into its adapter |
-| 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `TODO` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
+| 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `DONE` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
 | 9 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0024` | `TODO` | `GQF-0037` | Route SAF URI strings through strict standard-UTF-8 JNI conversion |
 | 10 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0006` | `TODO` | `GQF-0005` | Constrain exported automation receivers without breaking intended tests |
 | 11 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQR-0011` | `TODO` | `GQF-0024` | Unify and cryptographically verify production Android dependency acquisition |
@@ -5905,7 +5905,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0004` | `OPEN` | P3/high | pr-hygiene | Root `.tmp`, `test.txt`, `d1_d2_ogl_diff.txt` | Scratch artifacts create review and whitespace noise. Classify, remove, and prevent recurrence without deleting maintained fixtures |
 | `GQF-0005` | `OPEN` | P1/high | security | `SetupActivity.kt:registerAutomationReceivers` | Modern registrations use `RECEIVER_EXPORTED` without a visible permission for command and introspection surfaces. Constrain exposure and test intended automation access. Live BR-0005 |
 | `GQF-0006` | `FIXED` | P1/high | correctness/bounds | `ogl_texture_android.c:android_ogl_read_texture_with_extensions` | `GQR-0001` added an explicit capacity contract and portable checked filename builder. Oversized candidates are rejected without modifying the destination or calling `read_png`; the final API adds zero inherited lines |
-| `GQF-0007` | `OPEN` | P1/high | correctness/bounds | `ogl_texture_android.c:android_ogl_load_dxa_mask` | A fixed 256-byte stack name receives unbounded `_mask.png` formatting. Use checked construction and boundary coverage |
+| `GQF-0007` | `FIXED` | P1/high | correctness/bounds | `ogl_texture_android.c:android_ogl_load_dxa_mask` | DXA mask construction now uses the existing checked shared filename builder. A complete basename, `_mask.png`, and NUL must fit before any write or `read_png` call; exact-fit and one-byte-over runtime cases are covered |
 | `GQF-0008` | `OPEN` | P2/high | test-gap/false-pass | `android/tests/test_hud_layout.c` | All behavioral checks use standard `assert` and disappear under `NDEBUG`. Make the registered optimized target retain its oracle. Live BR-0662 |
 | `GQF-0009` | `OPEN` | P2/high | test-gap/false-pass | `android/tests/test_escort_exit_policy.c` | Four policy assertions disappear in optimized registered builds. Replace with always-active checks and prove failure behavior |
 | `GQF-0010` | `OPEN` | P3/high | maintainability/dead-code | `ActiveGamesTab.kt:ActiveGamesTab` | Symbol search finds no production caller; the live UI uses `ActiveGameCard` directly. Remove or restore one clear owner. Live BR-0673 |
@@ -6807,7 +6807,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | ID | State | Finding links | Scope | Prerequisite or hold |
 |---|---|---|---|---|
 | `GQR-0001` | `DONE` | `GQF-0006` | Add a capacity-aware shared texture extension lookup and exact boundary tests | Root correction accepted in worker scope: all five inherited calls retain their original two-line shape, D1 is `+2/-2`, D2 is `+3/-3`, and focused/platform validation is recorded below |
-| `GQR-0002` | `TODO` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage | Same OGL owner, but separate call path and acceptance test |
+| `GQR-0002` | `DONE` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage | Existing shared builder reused; rejection precedes lookup and preserves the destination. Focused runtime/source contracts, Windows D1/D2, and all Android ABIs passed with zero inherited-file edits |
 | `GQR-0003` | `TODO` | `GQF-0008` | Restore always-active HUD layout test oracles | Confirm paired CMake configuration |
 | `GQR-0004` | `TODO` | `GQF-0009` | Restore always-active escort policy test oracles | D2-only focused target |
 | `GQR-0005` | `TODO` | `GQF-0001` through `GQF-0004` | Remove tracked runtime/scratch artifacts and establish narrow recurrence policy | Exact target and provenance audit before deletion |
@@ -7089,6 +7089,17 @@ Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a
 - Quality and audit: the initial mixed scoped quality pass covered all ten product/test/build paths and passed clang-format, BOM lint, cmake-format, and cmake-lint. A correction-scoped pass covered the shared declaration/implementation, source contract, and paired inherited calls; inherited sources remained excluded by policy. Final scoped `git diff --check` passed. The full final status retained the unrelated launcher/import/native dirty paths and concurrent unrelated changes; this worker did not edit, format, revert, stage, or delete them. The final chunk paths are exactly the seven allowed existing paths, three allowed new paths, and this active ledger
 - Non-goals preserved: `GQF-0007` DXA mask construction, `GQF-0020` texture byte accounting, `GQF-0021` elapsed accounting, and all unrelated formatting or cleanup remain open and unchanged
 - Root acceptance: reviewed every scoped diff and new file after the correction; independently reran all six renderer contract tests and the focused host test executable; confirmed scoped `git diff --check`; verified only five inherited lines are substituted (`d1` `+2/-2`, `d2` `+3/-3`) with zero inherited line-count growth; accepted the recorded Android umbrella limitation because corrected affected objects compiled for every configured ABI
+
+### 2026-08-12: GQR-0002 / GQF-0007 completion
+
+- Status: `DONE`; `GQF-0007` is `FIXED`. Historical impact remains 56 (`32/0/7/10/7`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began and ended at HEAD `52ca652d58ea70e62e1f28ee24e2455194be11e1` with a clean product scope. Only the durable plan was added before product edits
+- Root-cause fix: `android_ogl_load_dxa_mask` now calls the existing `android_ogl_texture_filename` helper with `sizeof(maskname)` and `_mask.png`. The helper checks the complete basename, suffix, and terminating NUL before writing. Rejection logs the source name and returns before `read_png`; no truncated or partial candidate can be queried
+- Boundary behavior: a 246-byte basename produces the exact 255-character filename accepted by the 256-byte buffer. A 247-byte basename is rejected and leaves the destination unchanged. Ordinary names retain the exact `<bitmapname>_mask.png` lookup. Existing null/empty argument guards, not-found logging, PNG conversion, texture upload, and memory cleanup are unchanged
+- Diff scope: three branch-added Android/test paths changed: `shared/ogl_texture_android.c`, `extract/test/test_ogl_texture_filename.c`, and `test_android_renderer_contracts.py`. Isolated numstat is `+42/-1`. No D1/D2 or other inherited path changed, so inherited diff impact is exactly zero
+- Focused validation: `python -m unittest android.tests.test_android_renderer_contracts` passed seven tests. The configured MSVC `test_ogl_texture_filename` target rebuilt and `ctest -R '^ogl_texture_filename_tests$'` passed, including ordinary DXA naming, exact capacity, one-byte-over rejection with unchanged output, and the pre-existing general filename boundaries
+- Platform validation: `run-windows-build.ps1 -Target both` configured, compiled, and linked full D1/D2 game and headless targets. With JDK 21, `:app:externalNativeBuildDebug` built both Android games for `arm64-v8a`, `armeabi-v7a`, and `x86_64` with no new warnings
+- Quality and audit: scoped `run-code-quality.ps1 -Fix` passed clang-format and BOM checks; final focused tests were rerun after formatting. `git diff --check`, ASCII/no-BOM inspection, allowed-path audit, and clean build-artifact exclusion passed
 
 ## Campaign closure
 

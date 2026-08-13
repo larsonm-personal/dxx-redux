@@ -365,7 +365,11 @@ void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfi
 	if (!bitmapname || !bitmapname[0] || !bm || !loadtexture)
 		return;
 
-	sprintf(maskname, "%s_mask.png", bitmapname);
+	if (!android_ogl_texture_filename(maskname, sizeof(maskname), bitmapname,
+	                                  "_mask.png")) {
+		debug_log(DLOG_TEXTURE, "Mask name too long: %s", bitmapname);
+		return;
+	}
 	loaded = read_png(maskname, &mdata);
 	if (!loaded) {
 		debug_log(DLOG_TEXTURE, "Mask not found: %s", maskname);

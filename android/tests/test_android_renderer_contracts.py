@@ -121,6 +121,20 @@ class AndroidRendererContractsTest(unittest.TestCase):
             self.assertIn("(end->tv_sec - start->tv_sec) * 1000000", source)
             self.assertIn("(end->tv_nsec - start->tv_nsec) / 1000", source)
 
+    def test_dxa_mask_name_is_checked_before_png_lookup(self) -> None:
+        shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(
+            encoding="utf-8"
+        )
+        start = shared.index("void android_ogl_load_dxa_mask(")
+        body = shared[start : shared.index("\n#endif", start)]
+        construction = body.index("android_ogl_texture_filename(")
+        lookup = body.index("read_png(")
+        self.assertLess(construction, lookup)
+        self.assertIn("maskname, sizeof(maskname), bitmapname", body)
+        self.assertIn('"_mask.png"', body)
+        self.assertIn("return;", body[construction:lookup])
+        self.assertNotIn("sprintf(", body)
+
 
 if __name__ == "__main__":
     unittest.main()
