@@ -13,9 +13,6 @@
 #include "u_mem.h"
 #include "console.h"
 #include "timer.h"
-#ifdef __ANDROID__
-#include "hmp_android_shared.h"
-#endif
 
 #ifdef WORDS_BIGENDIAN
 #define MIDIINT(x) (x)
@@ -779,12 +776,3 @@ void hmp2mid(char *hmp_name, unsigned char **midbuf, unsigned int *midlen)
 
 	hmp_close(hmp);
 }
-
-#ifdef __ANDROID__
-int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
-                unsigned char **out_midi, int *out_len)
-{
-	return hmp_android_convert_mem(hmp_data, hmp_len, out_midi, out_len,
-	                               tempo, sizeof(tempo));
-}
-#endif

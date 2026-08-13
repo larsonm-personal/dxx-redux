@@ -17,6 +17,11 @@
 #define HMP_MIDI_SHORT(x) SWAPSHORT(x)
 #endif
 
+static const unsigned char hmp_midi_tempo_track[] = {
+	'M', 'T', 'r', 'k', 0, 0, 0, 11, 0, 0xff,
+	0x51, 3, 0x18, 0x80, 0, 0, 0xff, 0x2f, 0
+};
+
 static uint32_t hmp_read_le32(const unsigned char *p)
 {
 	return (uint32_t) p[0] | ((uint32_t) p[1] << 8) |
@@ -201,7 +206,7 @@ static int hmp_android_convert_track(const unsigned char *data, size_t size,
 	return 1;
 }
 
-int hmp_android_convert_mem(
+static int hmp_android_convert_mem(
     const unsigned char *hmp_data, int hmp_len,
     unsigned char **out_midi, int *out_len,
     const unsigned char *tempo_track, unsigned int tempo_track_len)
@@ -271,4 +276,12 @@ fail:
 	if (midbuf)
 		d_free(midbuf);
 	return 0;
+}
+
+int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
+                unsigned char **out_midi, int *out_len)
+{
+	return hmp_android_convert_mem(hmp_data, hmp_len, out_midi, out_len,
+	                               hmp_midi_tempo_track,
+	                               sizeof(hmp_midi_tempo_track));
 }

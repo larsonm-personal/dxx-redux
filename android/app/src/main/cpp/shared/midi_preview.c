@@ -5,8 +5,8 @@
  * lock-free ring buffer.  Renders MIDI via TinySoundFont (TSF) +
  * TinyMidiLoader (TML).
  *
- * HMP -> MIDI conversion reuses hmp2mid_mem() from d2/misc/hmp.c
- * (and d1/misc/hmp.c), which parses HMP from a memory buffer.
+ * HMP -> MIDI conversion reuses shared hmp2mid_mem(), which parses HMP
+ * from a memory buffer.
  */
 
 #include "midi_preview.h"

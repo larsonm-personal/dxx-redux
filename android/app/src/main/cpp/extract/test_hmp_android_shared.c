@@ -8,11 +8,6 @@
 
 static int allocation_count;
 static int fail_allocation = -1;
-static const unsigned char tempo_track[] = {
-	'M', 'T', 'r', 'k', 0, 0, 0, 11, 0, 0xff,
-	0x51, 3, 0x18, 0x80, 0, 0, 0xff, 0x2f, 0
-};
-
 static int should_fail_allocation(void)
 {
 	return fail_allocation >= 0 && allocation_count++ == fail_allocation;
@@ -97,8 +92,7 @@ static unsigned char *make_hmp(const unsigned char *track, size_t track_len,
 static int convert(const unsigned char *hmp, size_t hmp_len,
                    unsigned char **midi, int *midi_len)
 {
-	return hmp_android_convert_mem(hmp, (int) hmp_len, midi, midi_len,
-	                               tempo_track, sizeof(tempo_track));
+	return hmp2mid_mem(hmp, (int) hmp_len, midi, midi_len);
 }
 
 static int expect_track_result(const char *name, const unsigned char *track,
@@ -139,6 +133,13 @@ int main(void)
 	static const unsigned char valid[] = {
 		0x80, 0x90, 60, 64, 0x80, 0xff, 0x2f, 0
 	};
+	static const unsigned char expected_midi[] = {
+		'M', 'T', 'h', 'd', 0, 0, 0, 6, 0, 1, 0, 2, 0, 0xc0,
+		'M', 'T', 'r', 'k', 0, 0, 0, 11, 0, 0xff, 0x51, 3,
+		0x18, 0x80, 0, 0, 0xff, 0x2f, 0,
+		'M', 'T', 'r', 'k', 0, 0, 0, 8,
+		0, 0x90, 60, 64, 0, 0xff, 0x2f, 0
+	};
 	size_t hmp_len;
 	unsigned char *hmp, *midi;
 	int midi_len, failure;
@@ -146,6 +147,19 @@ int main(void)
 	if (!expect_track_result("valid", valid, sizeof(valid), 1) ||
 	    !expect_track_result("empty", valid, 0, 0))
 		return 1;
+	hmp = make_hmp(valid, sizeof(valid), 2, &hmp_len);
+	midi = NULL;
+	midi_len = 0;
+	if (!hmp || !convert(hmp, hmp_len, &midi, &midi_len) ||
+	    midi_len != (int) sizeof(expected_midi) ||
+	    memcmp(midi, expected_midi, sizeof(expected_midi)) != 0) {
+		fprintf(stderr, "public wrapper emitted unexpected MIDI bytes\n");
+		free(midi);
+		free(hmp);
+		return 1;
+	}
+	free(midi);
+	free(hmp);
 	EXPECT_REJECT("event missing after delta", 0x80);
 	EXPECT_REJECT("unterminated delta", 0x00);
 	EXPECT_REJECT("oversized delta", 0, 0, 0, 0, 0x80);

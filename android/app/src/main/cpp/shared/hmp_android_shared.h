@@ -3,11 +3,6 @@
 #ifndef HMP_ANDROID_SHARED_H
 #define HMP_ANDROID_SHARED_H
 
-int hmp_android_convert_mem(
-    const unsigned char *hmp_data, int hmp_len,
-    unsigned char **out_midi, int *out_len,
-    const unsigned char *tempo_track, unsigned int tempo_track_len);
-
 /* On success, the caller owns *out_midi and must release it with d_free(). */
 int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
                 unsigned char **out_midi, int *out_len);

@@ -86,7 +86,7 @@ This snapshot rates all 163 formed `GQR-*` product-fix chunks. It is the impleme
 
 At this snapshot, the first ten-slot 80/20 dispatch tranche is:
 
-- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143`, `GQR-0142`, `GQR-0156`, `GQR-0157`, `DMR1-CHUNK-003`, `GQR-0159`, `GQR-0161`
+- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143` (`DONE`), `GQR-0142` (`DONE`), `GQR-0156` (`DONE`), `GQR-0157` (`DONE`), `DMR1-CHUNK-003`, `GQR-0159`, `GQR-0161`
 - General-quality lane: `GQR-0002`, `GQR-0024`
 
 Each lane is descending by score and the documented tie-breakers. Run the live overlap/prerequisite audit before claiming a row
@@ -97,7 +97,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 2 | 75 | HIGH | 23/28/7/10/7 | `GQR-0143` | `DONE` | `GQF-0156` | Consolidate paired menu/window debug accessors |
 | 3 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0142` | `DONE` | `GQF-0155` | Finish paired Android PhysFS init extraction |
 | 4 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations |
-| 5 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0157` | `TODO` | `GQF-0170` | Finish shared HMP wrapper extraction |
+| 5 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0157` | `DONE` | `GQF-0170` | Finish shared HMP wrapper extraction |
 | 6 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics |
 | 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter |
 | 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `TODO` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
@@ -6068,7 +6068,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0167` | `OPEN` | P2/high | correctness/audio-lifecycle/test-gap | Shared TSF/PCM producer completion ordering | Regrowth of archived `BR-0279`: non-looping producers publish source-finished before `render_thread_func` release-publishes their final ring write. A callback can drain the old ring, declare completion, stop the generation, and strand up to 2,048 final frames. Publish the final write and EOF as one ordered transaction and add barrier-controlled MIDI/PCM race coverage |
 | `GQF-0168` | `OPEN` | P2/high | performance/resource-exhaustion | Replay current-frame direct-command acquisition | Direct-command policy first parses every event to count commands, then requests each index through a getter that reparses from event zero. A frame with `n` commands performs `n + n(n+1)/2` JSON parses, and no per-frame event-count boundary exists within the 128 MiB whole-file limit. Decode once into a bounded typed batch and preserve validate-before-apply behavior |
 | `GQF-0169` | `FIXED` | P3/high | diff-minimization/ownership | Paired Redbook Android extension declarations | One conventional branch-added header now owns the exact type-complete declarations. Each inherited header retains one include, reducing the merge-base additions from 22 to four, an exact 18-line inherited reduction |
-| `GQF-0170` | `OPEN` | P3/high | diff-minimization/ownership | Paired HMP Android wrapper residue | `d1/misc/hmp.c` and `d2/misc/hmp.c` retain identical include/wrapper residue solely to pass the same 19-byte tempo sequence into the now-complete bounded shared converter. Implement `hmp2mid_mem` in the branch-added shared owner and remove 24 inherited additions across four hunks while preserving allocator/linkage families |
+| `GQF-0170` | `FIXED` | P3/high | diff-minimization/ownership | Paired HMP Android wrapper residue | The branch-added shared converter now owns `hmp2mid_mem` and its canonical 19-byte tempo track. Removing the paired includes and wrappers restores both inherited HMP files exactly to merge-base content, eliminating 24 additions and four hunks while preserving allocator and link ownership |
 | `GQF-0171` | `OPEN` | P3/high | diff-minimization/dead-code | Unused paired input-demo FP environment includes | Four inherited D1/D2 gameplay/hook paths include `input_demo_fp_env.h` but use none of its declarations. Remove those lines and verify paired builds; retain the necessary FP environment calls at their current local owners |
 | `GQF-0172` | `OPEN` | P3/high | diff-minimization/ownership | Residual paired Android mixer init logging | After the major C10 extraction, paired inherited mixer files still duplicate Android log macros, query locals and success/failure messages. Let the branch-added diagnostics owner query the actual spec and log it, retaining only requested rate, buffer frames and one call per game; estimated reduction 48 inherited lines |
 | `GQF-0173` | `OPEN` | P1/high | correctness/resource-lifetime/concurrency | Android SDL callback entry and teardown | Regrowth/incomplete closure of archived `BR-0248`: the OpenSL callback dereferences callback-visible device and buffer state before incrementing its in-flight counter, so teardown can observe zero, destroy/free state, then let the callback resume into freed objects. Establish lifetime ownership before any dereference and serialize player publication, background calls and destruction under the same protocol |
@@ -6962,7 +6962,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0154` | `TODO` | `GQF-0167` | Publish final audio samples before producer completion | Make final ring write and source-finished one ordered producer transaction; barrier-test MIDI and PCM tail delivery, exact one-shot completion, replacement and explicit stop |
 | `GQR-0155` | `TODO` | `GQF-0168` | Decode replay direct commands once per frame | Add a bounded typed batch or one-pass acquisition API, preserve validate-before-apply, and mutation-test linear parse counts plus maximum and over-limit batches in both games |
 | `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations | One conventional shared header owns all eight declarations; paired includes, exact C/C++ signatures, Windows D1/D2 and all configured Android ABI links passed with 18 inherited lines removed |
-| `GQR-0157` | `TODO` | `GQF-0170` | Finish shared HMP wrapper extraction | Implement the public wrapper and identical tempo data in the shared owner, remove paired includes/wrappers, and sequence exact successful MIDI-byte coverage with `GQR-0131` plus D1/D2 Windows/Android builds |
+| `GQR-0157` | `DONE` | `GQF-0170` | Finish shared HMP wrapper extraction | The shared owner now implements the public wrapper with canonical tempo data; exact successful MIDI bytes, focused failure paths, Windows D1/D2, and all configured Android ABIs passed with zero remaining inherited HMP diff |
 | `GQR-0158` | `TODO` | `GQF-0171` | Remove unused paired FP environment includes | Delete the four unconsumed inherited includes and run focused input-demo tests plus paired D1/D2 Windows and Android builds |
 | `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics | Narrow the shared logger API, remove paired raw-log/query residue, preserve requested-rate/buffer fields and exact messages, then run diagnostic tests, both games and Android ABIs |
 | `GQR-0160` | `TODO` | `GQF-0173` | Make SDL audio callback lifetime entry-safe | Acquire lifetime ownership before any callback dereference; serialize player publication, pause/resume and teardown; barrier-test close/reopen, enqueue failure and callback entry under race instrumentation |
@@ -7000,6 +7000,16 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Validation: `python -m unittest android.tests.test_rbaudio_bin_header_contracts` passed three tests, including exact C and C++ signature compilation through both game headers with `-Werror`, single-owner/include checks and production-consumer checks. `run-windows-build.ps1 -Target both` built and linked D1, D2 and their headless targets. With JDK 21, `:app:externalNativeBuildDebug` built both game targets for `arm64-v8a`, `armeabi-v7a` and `x86_64`. Scoped code quality passed for the new header and focused test
 - Limitation: maintained `test_saf_redbook.ps1` ran on `emulator-5554` but stopped before Redbook playback at step 21 because the automation remained on the pilot list and could not select `New game`. This pre-playback navigation failure is unrelated to the declaration-only boundary and provides no additional runtime evidence; compile and link parity remain the primary behavior proof
 
+### GQR-0157 completion
+
+- Status: `DONE`; linked `GQF-0170` is `FIXED`. Historical impact remains 57 (`12/21/7/10/7`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began at `5701fcd2866689d7f8103e07dc7a51558197832b` with a clean product scope. The only initial worktree path was this chunk's new durable plan; no unrelated product changes were present or modified
+- Boundary: `android/app/src/main/cpp/shared/hmp_android_shared.c` now owns the public `hmp2mid_mem` symbol and the canonical 19-byte tempo track. Its parameterized converter is private to that translation unit. Existing callers, allocation through `d_malloc`/`d_realloc`/`d_free`, `hmp_close` linkage, output ownership, original per-game file converter and its tempo arrays remain unchanged
+- Exact metrics against campaign merge base `fb555eec75e1ed12c8348805ab335afb4c721b06`: before, paired `d1/misc/hmp.c` and `d2/misc/hmp.c` each carried 12 additions in two hunks, 24 additions/four hunks total. After, both paths are byte-equivalent to merge base with empty numstat and zero hunks, an exact 24-line/four-hunk inherited reduction
+- Focused validation: `hmp_android_shared_tests` built with MSVC and passed through CTest. The maintained test now calls the public wrapper and compares all 49 emitted MIDI bytes, including header, division, canonical tempo event, track length and converted payload; malformed-input and allocation-failure coverage continues through the same API
+- Platform validation: `run-windows-build.ps1 -Target both` configured, built and linked the full D1 and D2 trees. With JDK 21, `:app:externalNativeBuildDebug` built `arm64-v8a`, `armeabi-v7a` and `x86_64`. Scoped code quality and final `git diff --check` passed
+- Scope audit: changed product/test paths are the shared HMP source/header, its focused host test, and a corrected ownership comment in `midi_preview.c`; paired inherited files contain no remaining branch diff. `GQR-0131` remains independently open for any broader production-wrapper validation beyond this exact shared public API oracle
+
 ### GQR-0001 live claim
 
 - Claimed: 2026-08-11 by one fresh `gpt-5.6-sol` worker at medium reasoning effort with no inherited turns
@@ -7013,6 +7023,11 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0157 / GQF-0170 completion
+
+- Status: `DONE`; `GQF-0170` is `FIXED`
+- Result: the branch-added shared HMP owner now provides the public wrapper and canonical tempo track. Both inherited HMP files are identical to merge base, removing 24 additions across four hunks; exact-byte host coverage, Windows D1/D2, all Android ABIs, scoped quality and final repository audits passed
 
 ### 2026-08-12: GQR-0156 / GQF-0169 completion
 
