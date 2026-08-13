@@ -96,7 +96,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 1 | 82 | IMMEDIATE | 23/35/7/10/7 | `GQR-0162` | `DONE` | `GQF-0175` | Extract paired headless CMake target policy |
 | 2 | 75 | HIGH | 23/28/7/10/7 | `GQR-0143` | `DONE` | `GQF-0156` | Consolidate paired menu/window debug accessors |
 | 3 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0142` | `DONE` | `GQF-0155` | Finish paired Android PhysFS init extraction |
-| 4 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0156` | `TODO` | `GQF-0169` | Consolidate paired Redbook Android declarations |
+| 4 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations |
 | 5 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0157` | `TODO` | `GQF-0170` | Finish shared HMP wrapper extraction |
 | 6 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics |
 | 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter |
@@ -6067,7 +6067,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0166` | `OPEN` | P3/high | documentation/api-data-format/configuration | Matchmaking server exhaustive configuration template | The template claims to show every optional field and default but omits supported `max_connections` and `force_relay`. Add both with exact defaults/purpose and enforce schema-to-template parity or explicitly document a reviewed subset |
 | `GQF-0167` | `OPEN` | P2/high | correctness/audio-lifecycle/test-gap | Shared TSF/PCM producer completion ordering | Regrowth of archived `BR-0279`: non-looping producers publish source-finished before `render_thread_func` release-publishes their final ring write. A callback can drain the old ring, declare completion, stop the generation, and strand up to 2,048 final frames. Publish the final write and EOF as one ordered transaction and add barrier-controlled MIDI/PCM race coverage |
 | `GQF-0168` | `OPEN` | P2/high | performance/resource-exhaustion | Replay current-frame direct-command acquisition | Direct-command policy first parses every event to count commands, then requests each index through a getter that reparses from event zero. A frame with `n` commands performs `n + n(n+1)/2` JSON parses, and no per-frame event-count boundary exists within the 128 MiB whole-file limit. Decode once into a bounded typed batch and preserve validate-before-apply behavior |
-| `GQF-0169` | `OPEN` | P3/high | diff-minimization/ownership | Paired Redbook Android extension declarations | `d1/include/rbaudio.h` and `d2/include/rbaudio.h` each carry the same 11-line Android-only extension block. Move the type-complete declarations to one branch-added shared header, retain one include per inherited owner, and validate paired Windows/Android API parity |
+| `GQF-0169` | `FIXED` | P3/high | diff-minimization/ownership | Paired Redbook Android extension declarations | One conventional branch-added header now owns the exact type-complete declarations. Each inherited header retains one include, reducing the merge-base additions from 22 to four, an exact 18-line inherited reduction |
 | `GQF-0170` | `OPEN` | P3/high | diff-minimization/ownership | Paired HMP Android wrapper residue | `d1/misc/hmp.c` and `d2/misc/hmp.c` retain identical include/wrapper residue solely to pass the same 19-byte tempo sequence into the now-complete bounded shared converter. Implement `hmp2mid_mem` in the branch-added shared owner and remove 24 inherited additions across four hunks while preserving allocator/linkage families |
 | `GQF-0171` | `OPEN` | P3/high | diff-minimization/dead-code | Unused paired input-demo FP environment includes | Four inherited D1/D2 gameplay/hook paths include `input_demo_fp_env.h` but use none of its declarations. Remove those lines and verify paired builds; retain the necessary FP environment calls at their current local owners |
 | `GQF-0172` | `OPEN` | P3/high | diff-minimization/ownership | Residual paired Android mixer init logging | After the major C10 extraction, paired inherited mixer files still duplicate Android log macros, query locals and success/failure messages. Let the branch-added diagnostics owner query the actual spec and log it, retaining only requested rate, buffer frames and one call per game; estimated reduction 48 inherited lines |
@@ -6961,7 +6961,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0153` | `TODO` | `GQF-0166` | Complete and guard the server configuration template | Add `max_connections` and `force_relay`, then require exact agreement between accepted file keys and the claimed exhaustive template |
 | `GQR-0154` | `TODO` | `GQF-0167` | Publish final audio samples before producer completion | Make final ring write and source-finished one ordered producer transaction; barrier-test MIDI and PCM tail delivery, exact one-shot completion, replacement and explicit stop |
 | `GQR-0155` | `TODO` | `GQF-0168` | Decode replay direct commands once per frame | Add a bounded typed batch or one-pass acquisition API, preserve validate-before-apply, and mutation-test linear parse counts plus maximum and over-limit batches in both games |
-| `GQR-0156` | `TODO` | `GQF-0169` | Consolidate paired Redbook Android declarations | Add one branch-owned type-complete shared header, replace each 11-line inherited block with one include, and validate D1/D2 Windows plus Android ABI API parity |
+| `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations | One conventional shared header owns all eight declarations; paired includes, exact C/C++ signatures, Windows D1/D2 and all configured Android ABI links passed with 18 inherited lines removed |
 | `GQR-0157` | `TODO` | `GQF-0170` | Finish shared HMP wrapper extraction | Implement the public wrapper and identical tempo data in the shared owner, remove paired includes/wrappers, and sequence exact successful MIDI-byte coverage with `GQR-0131` plus D1/D2 Windows/Android builds |
 | `GQR-0158` | `TODO` | `GQF-0171` | Remove unused paired FP environment includes | Delete the four unconsumed inherited includes and run focused input-demo tests plus paired D1/D2 Windows and Android builds |
 | `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics | Narrow the shared logger API, remove paired raw-log/query residue, preserve requested-rate/buffer fields and exact messages, then run diagnostic tests, both games and Android ABIs |
@@ -6991,6 +6991,15 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Limitations: platform builds emitted pre-existing unrelated inherited warnings. The focused automation used the available provisioned emulator and proprietary game-data dependencies, so there is no emulator prerequisite gap. No Linux or Apple build was run because the requested paired Windows and Android validation covered the moved C include boundary on this Windows host
 - Out-of-scope audit: the two ordinary shared sources are registered only in the branch-added Android CMake owner for both game targets. No inherited build file, unrelated accessor, or policy was edited. Build and emulator artifacts remain ignored. Final ASCII/no-BOM, focused test rerun, `git diff --check`, exact numstat, allowed-path and worktree audits are recorded in the terminal validation
 
+### GQR-0156 completion
+
+- Status: `DONE`; linked `GQF-0169` is `FIXED`. Historical impact remains 57 (`12/21/7/10/7`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: claim began at `339a101b5fbdcbea79989168c0378af985c0cdbe` and continued at `bbedca85805246879ce7d31d69f54ce5edddd3fc` after a user-owned cleanup commit landed. This was `DRIFT_SAFE_EXTERNAL_COMMIT`: it committed the already validated GQR-0142/GQR-0143 work, did not overlap the clean paired Redbook headers, and was preserved without reset, checkout, clean, stash or commit by this worker
+- Boundary: new conventional `android/app/src/main/cpp/shared/rbaudio_android.h` is the sole owner of the exact eight type-complete track-control declarations. D1 and D2 each retain one `#include "rbaudio_android.h"` at the former block position. Existing unconditional visibility, C and C++ linkage context, function-pointer types, include ordering, consumers and non-Android behavior are unchanged. No `.inc`, generated include, layout mirror, source wrapper or CMake edit was added
+- Exact metrics against campaign merge base `fb555eec75e1ed12c8348805ab335afb4c721b06`: before, each inherited header had 11 additions in one hunk, 22 additions/two hunks total. After, each has two additions in one hunk, four additions/two hunks total, an exact 18-line reduction. The isolated worktree edit is `+1/-10` per header, `+2/-20` total. This corrects the historical estimate of 22 removed inherited lines; the estimate counted blank/context lines, and Git still presents one replacement hunk per header
+- Validation: `python -m unittest android.tests.test_rbaudio_android_header_contracts` passed three tests, including exact C and C++ signature compilation through both game headers with `-Werror`, single-owner/include checks and production-consumer checks. `run-windows-build.ps1 -Target both` built and linked D1, D2 and their headless targets. With JDK 21, `:app:externalNativeBuildDebug` built both game targets for `arm64-v8a`, `armeabi-v7a` and `x86_64`. Scoped code quality passed for the new header and focused test
+- Limitation: maintained `test_saf_redbook.ps1` ran on `emulator-5554` but stopped before Redbook playback at step 21 because the automation remained on the pilot list and could not select `New game`. This pre-playback navigation failure is unrelated to the declaration-only boundary and provides no additional runtime evidence; compile and link parity remain the primary behavior proof
+
 ### GQR-0001 live claim
 
 - Claimed: 2026-08-11 by one fresh `gpt-5.6-sol` worker at medium reasoning effort with no inherited turns
@@ -7004,6 +7013,12 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0156 / GQF-0169 completion
+
+- Status: `DONE`; `GQF-0169` is `FIXED`
+- Result: one conventional shared header replaces the paired declaration blocks with one include per inherited header. Exact merge-base additions fall from 22 to four, reducing inherited additions by 18; focused C/C++ contracts, Windows D1/D2, all Android ABIs, scoped quality and final repository audits passed
+- Limitation: the maintained SAF Redbook automation failed at pre-playback pilot-menu navigation and did not exercise the runtime playback path
 
 ### 2026-08-12: GQR-0162 / GQF-0175 completion
 
