@@ -10467,3 +10467,5764 @@ android/app/src/main/java/com/dxxredux/app/multiplayer/PlayGamesAuth.kt|L1-L102|
 </details>
 
 <!-- END IMPORT: GQ1-CHUNK-0063 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0064 frozen survey SHA256:e83e75b32c61f3d801adf2455ef4690469be73bc9d670431d24efcc4bb9ff5bb -->
+
+## GQ1-CHUNK-0064 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0064.md`
+- Imported SHA-256: `e83e75b32c61f3d801adf2455ef4690469be73bc9d670431d24efcc4bb9ff5bb`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0064 frozen survey
+
+Outcome: CLEAN. All 9 assigned frozen lines were reviewed with Android manifest, legacy backup policy, SharedPreferences identity owner, multiplayer consumers, test discovery, packaging, history, and prior-review context. The file is the Android 12+ portion of the completed `BR-0414` repair and remains consistent with that archived acceptance boundary. No new finding, investigation, evidence extension, or regrowth was established. No product source, canonical ledger, existing report, test, fixture, build output, device state, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `android/app/src/main/res/xml/data_extraction_rules.xml` L1-L9, all 9 lines reviewed
+- Frozen blob: `751e399844376ddf4da39bf6d7828acfd262f2e4`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+android/app/src/main/res/xml/data_extraction_rules.xml|L1-L9|751e399844376ddf4da39bf6d7828acfd262f2e4
+```
+
+- Scope-manifest byte count: 102
+- Git blob SHA-1 of the exact manifest bytes: `9836b72c9a20eab08e252267e19c38852e98ee6e`
+- SHA-256 of the exact manifest bytes: `41fe2ddae5149608064414ed0f988bcc6e93e223f8c47677b4e910e91b04f364`
+- The assigned path is branch-added relative to the review base and was introduced by commit `4aec9b85dfa3a693d60a72deacf97abbce042a66`
+- The dirty live worktree was not used as product authority. Unrelated concurrent edits were preserved
+
+## Context and ownership inspected
+
+- Complete frozen `data_extraction_rules.xml`, including its root schema, cloud-backup section, device-transfer section, SharedPreferences domain, and exact excluded filename
+- Frozen `AndroidManifest.xml` application declaration, its `allowBackup`, `dataExtractionRules`, and `fullBackupContent` attributes, and target/compile configuration ownership
+- Frozen `backup_rules.xml` legacy policy and parity of its exclusion with the Android 12+ cloud and transfer exclusions
+- Frozen `ClientIdentity.kt` preference-name constant, first-use generation, synchronized cache ownership, and synchronous persistence before publication
+- Frozen multiplayer and cooperative consumers of the installation UUID sufficiently to confirm why the value is device-local rather than user-authored transferable state
+- Frozen `test_client_identity_backup.ps1`, including manifest references, exact exclusion counts, preference-name parity, synchronous write assertion, and serialized generation assertion
+- Frozen `run_all_tests.ps1` discovery of every `android/tests/test_*.ps1`, which includes the focused policy test without a separate hard-coded registration
+- Introduction commit and parent state, showing that the modern and legacy rules, manifest references, identity persistence repair, duplicate lobby admission defense, native one-to-one restore defense, and focused tests landed together
+- Current and done GQ ledgers, durable evidence ledger, current and done adversarial ledgers, DMR1, and prior cleanup plans for path, identity, backup, device-transfer, and historical-owner duplicates
+
+## Historical reconciliation
+
+### GQ1-CHUNK-0064-HIST-001 - HISTORICAL-CLOSED: BR-0414 modern backup exclusion remains intact
+
+- Historical owner: archived `BR-0414`, P2/high correctness/identity
+- Frozen locations: `data_extraction_rules.xml:L1-L9`; `AndroidManifest.xml:L19-L24`; `backup_rules.xml:L1-L4`; `ClientIdentity.kt:L16-L35`; `test_client_identity_backup.ps1:L1-L49`
+- Evidence: the application explicitly enables backup and names both policy resources. The modern resource excludes exactly the `client_identity.xml` SharedPreferences file from both cloud backup and device transfer. The legacy resource excludes the same file from full backup. `ClientIdentity.PREFS_NAME` remains `client_identity`, so Android's on-disk preference filename matches both exclusions. If no transferred identity is present, generation remains synchronized and the new UUID is committed successfully before it is cached or returned
+- Historical match: `BR-0414` already owns the exact backup-enabled application, device-local UUID, duplicate-installation trigger, multiplayer restore impact, dual-policy fix, defense-in-depth behavior, and validation boundary. The frozen resource is the resolved artifact named by that owner, not regrowth or a distinct symptom
+- Disposition recommendation: retain `BR-0414` as historical closed evidence. Create no new `GQF`, `GQI`, remediation chunk, or evidence extension
+
+## Explicit clean dimensions
+
+- Correctness and API contract: the XML has one valid `data-extraction-rules` root, one cloud policy, one device-transfer policy, and the intended exclusion under each. The excluded domain and relative filename agree with the sole SharedPreferences owner
+- Version compatibility: the manifest supplies the modern API-31+ policy and the legacy full-backup policy together. Older supported Android versions do not depend on parsing the modern resource to receive the identity exclusion
+- Data ownership: only the generated device-local multiplayer UUID is excluded. No broad root, files, databases, user-authored saves, launcher settings, or game data are excluded by this resource, preserving ordinary migration behavior
+- Defense in depth: absence after restore has a deterministic generation path whose preference write is checked before publication. Frozen lobby and cooperative fixes additionally reject or consume duplicate identities safely, matching the archived owner without shifting policy into the XML
+- Test quality and discovery: the focused PowerShell test parses both XML policies, checks both manifest references, requires exactly one matching exclusion per applicable section, and ties the resource filename to `PREFS_NAME`. The general test runner automatically discovers the script by its `test_*.ps1` name
+- Packaging and build ownership: the resource is under `src/main/res/xml`, is referenced by the main application manifest, and the archived fix validation records packaged manifest/resource inspection across the supported Android build. No product flavor or alternate main manifest was found that bypasses the reference
+- Security and privacy: the policy prevents cross-device cloning of the offline installation identifier while retaining normal backup for unrelated data. The XML contains no secret, endpoint, account identifier, permission, exported component, or externally writable path
+- Resource lifetime, concurrency, and performance: the declarative nine-line resource creates no runtime handle, allocation loop, thread, mutable state, or size-dependent work. Identity generation concurrency remains serialized in its Kotlin owner
+- Maintainability and duplication: the necessary legacy and modern policy forms are structurally parallel and intentionally reference one preference filename. The focused test makes their duplicated constant relationship explicit and executable
+- Diff minimization and hygiene: the file is branch-added, so it adds no inherited D1/D2 diff. The frozen file and assigned diff pass `git diff --check`; content is printable ASCII, has no BOM, and has one final newline
+
+## Evidence gaps and limitations
+
+- No live Android cloud restore, device-to-device transfer, two-device multiplayer restore, emulator, physical device, Gradle build, or APK inspection was rerun for this read-only frozen survey. Archived `BR-0414` explicitly records policy and packaged-resource validation while preserving the real-transport gap
+- Static repository evidence cannot prove behavior of every vendor backup transport. The platform policy is explicit and both transport sections are covered, so no repository-local defect or bounded investigation follows from that external variability
+- The focused test verifies policy shape and ownership but does not simulate Android Backup Manager transport. That missing system integration is already recorded in `BR-0414` and does not show regrowth in this frozen resource
+
+## Commands and methods
+
+- Read `.github/copilot-instructions.md` and the complete general quality worker process
+- Used `git cat-file`, `git ls-tree`, `git show`, `git diff`, `git log --follow`, and `git grep` against the exact frozen base and head for assigned identity, every assigned line, manifest and Gradle ownership, legacy parity, preference ownership, consumers, tests, discovery, and introduction history
+- Used `rg` across active and done GQ ledgers, the durable evidence ledger, active and done adversarial ledgers, DMR1, and prior cleanup plans for path, filename, backup trigger, device-transfer trigger, and root-cause deduplication
+- Calculated Git blob SHA-1 and SHA-256 in memory over the exact LF-terminated one-row scope manifest
+- Traced the static policy chain from the application declaration through version-specific resources to the SharedPreferences filename and missing-value generation behavior
+- Ran frozen-object `git diff --check` for the assigned file
+
+## Normalization recommendation
+
+- Record historical reconciliation item 001 as `HISTORICAL-CLOSED` under archived `BR-0414`; create no new finding, investigation, evidence extension, or remediation chunk
+- Record one `GQC` outcome of `CLEAN` for deterministic assigned coverage, citing the complete scope, context, explicit clean dimensions, and retained real-transport validation gap above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0064 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0065 raw survey SHA256:4fce3fa43931aa74915dd96263d10a7879e48caac2bfadd8f3748f7f8b94a0b7 -->
+
+## GQ1-CHUNK-0065 raw survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0065.md`
+- Imported SHA-256: `4fce3fa43931aa74915dd96263d10a7879e48caac2bfadd8f3748f7f8b94a0b7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0065 raw survey
+
+## Outcome
+
+ISSUES. All 271 assigned frozen lines in `server/src/bin/nat_sim.rs` and
+`server/src/config.rs` were reviewed with their startup, authentication, TLS,
+admin, relay, STUN, proof-of-work, deployment, history, tests, and prior-review
+context. The assigned configuration code still supplies direct evidence for
+open `BR-0106`, `BR-0107`, and `BR-0108`, with `BR-0107` and `BR-0108` already
+summarized by `GQF-0014`. No distinct new root survived deduplication. The NAT
+runner's frozen revision now propagates `start_nat` failure, and its remaining
+permissive command-line behavior does not meet the finding threshold. No
+product file, canonical ledger, plan, temporary report, fixture, or other inbox
+report was edited.
+
+## Frozen scope and fingerprint
+
+- Coverage ID: `GQ1-CHUNK-0065`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `34ed94767d2a2dbca3e07dd1ba672be467cfb3f1`
+- Frozen base is an ancestor of the frozen head: yes
+- Assigned paths and ranges: `server/src/bin/nat_sim.rs` L1-L51 and
+  `server/src/config.rs` L1-L220, all 271 lines reviewed
+- Frozen head blobs: `b8c76ce9a0f133f108f7a02ebc22ed11ed5420c5` and
+  `49763308ac4db31dfde5dfce7d5626464eeaded0`
+- Frozen base state: both paths absent
+- Scope manifest: two ASCII records with one final LF
+- Scope manifest byte count: 144
+- Scope SHA-256:
+  `74bdffb3db0486c02320bb2683dc472751470105bcf75cc9d1aef9a1e541e37f`
+
+```text
+server/src/bin/nat_sim.rs|L1-L51|b8c76ce9a0f133f108f7a02ebc22ed11ed5420c5
+server/src/config.rs|L1-L220|49763308ac4db31dfde5dfce7d5626464eeaded0
+```
+
+All product, caller, test, deployment, and history evidence came from the
+frozen Git objects or named historical objects. Live `HEAD` was
+`4c459fd0f9dec9f9a5badb5c29dfcf1cf4084801`; mutable worktree product content
+was not used as evidence.
+
+## Context inspected
+
+- Complete assigned implementations, their history through the frozen head,
+  and the five-line NAT-runner delta after adversarial frozen commit
+  `c01d8fe4686c63d931b1e543a6305bbafaa944a9`
+- Frozen `server/src/main.rs`, `lib.rs`, `tls.rs`, `http_api.rs`, `pow.rs`,
+  `ws_handler.rs`, `stun.rs`, and `nat_sim.rs`, including every effective
+  configuration consumer and listener-start boundary
+- Frozen production/default/LAN configuration samples, deployment helper,
+  server template, Cargo binary registration, integration configuration, and
+  NAT simulator tests
+- Environment-over-file precedence, JSON5 decoding, default listener/database
+  identity, Google credentials, explicit verification bypass, admin token,
+  TLS path pairing, relay and STUN advertisement, resource caps, and forced
+  relay selection
+- Active and done general-quality ledgers, active and done adversarial ledgers,
+  DMR1, prior cleanup plans, `R1-CHUNK-0050`, and exact owners `GQF-0014`,
+  `BR-0106`, `BR-0107`, and `BR-0108`
+
+## Atomic observations
+
+### GQ1-CHUNK-0065-OBS-001 - EXTENDS BR-0106 and GQF-0014: absent Google client ID enables trust-the-client authentication
+
+- Proposed normalization: EXTENDS open `BR-0106` and the configuration surface
+  summarized by `GQF-0014`; no new ID
+- Severity/confidence/category: P1, high, security/authentication/configuration
+- Assigned evidence: `ServerConfig::load` resolves `GOOGLE_CLIENT_ID` and
+  `GOOGLE_CLIENT_SECRET` independently to empty strings at L164-L169. It also
+  defaults `skip_gpgs_verify` to false, but that does not fail closed.
+- Consumer evidence: the frozen GPGS branch in `ws_handler.rs` skips token
+  verification when either `skip_gpgs_verify` is true or
+  `google_client_id.is_empty()`. It then uses the client token itself as the
+  stable identity key, creates or finds that player, and completes ordinary
+  authentication. Missing credentials therefore activate an undocumented
+  second bypass even though the explicit bypass flag is false.
+- Trigger and impact: start from fileless defaults, omit the client ID, or lose
+  it through the OBS-002 fallback, then authenticate with an attacker-selected
+  GPGS token. A remote client can mint identities, evade bans with new tokens,
+  or impersonate a known token while an operator may believe verification is
+  enabled.
+- Fix and validation boundary: explicitly configure enabled authentication
+  methods before binding. Require complete credentials for GPGS, reject GPGS
+  messages when it is disabled, and isolate any development bypass behind a
+  conspicuous loopback-safe mode. Test both credentials, each missing member,
+  keypair-only mode, explicit development mode, malformed configuration, and
+  arbitrary versus verified tokens.
+
+### GQ1-CHUNK-0065-OBS-002 - EXTENDS GQF-0014 and BR-0107: broken requested configuration becomes a public default service
+
+- Proposed normalization: EXTENDS open `GQF-0014` and `BR-0107`; no new ID
+- Severity/confidence/category: P1, high, security/configuration
+- Assigned evidence: L94-L111 treats every read error, including an explicitly
+  named missing file, permission failure, and directory path, as an empty
+  optional configuration. JSON5 parse failure prints a warning and does the
+  same. `#[serde(default)]` has no unknown-field denial, so misspelled fields
+  are also silently omitted. Invalid numeric environment values at L128-L144
+  silently select hardcoded limits, while boolean environment parsing accepts
+  only exact `true` and silently maps every other value to false.
+- Consumer evidence: the fallback binds WebSocket, HTTP, relay, and both STUN
+  addresses to all interfaces, selects a relative new database, clears TLS and
+  Google credentials, and continues into database creation and listener
+  startup. The blank Google ID reaches OBS-001. No focused test invokes
+  `ServerConfig::load`; integration tests construct the struct directly.
+- Trigger and impact: misspell `CONFIG_FILE`, run under the wrong directory,
+  deny access, truncate JSON5, misspell a field, or provide an invalid resource
+  value. The process can launch a materially different public plaintext
+  service with a different database, limits, and authentication policy while
+  reporting only a warning or nothing.
+- Fix and validation boundary: return a typed load/validation error, distinguish
+  an explicitly selected file from a deliberate safe development preset, deny
+  unknown fields, reject invalid environment values, and complete cross-field
+  validation before opening the database or any listener. Cover absent
+  implicit and explicit files, all I/O classes, malformed and unknown JSON5,
+  invalid Unicode environment values, invalid booleans/numbers, precedence,
+  and proof that failure binds no port and creates no database.
+
+### GQ1-CHUNK-0065-OBS-003 - EXTENDS GQF-0014 and BR-0108: one-sided TLS configuration silently serves plaintext
+
+- Proposed normalization: EXTENDS open `GQF-0014` and `BR-0108`; no new ID
+- Severity/confidence/category: P1, high, security/transport/configuration
+- Assigned evidence: L173-L174 resolves certificate and key paths separately
+  with independent empty defaults and performs no pair validation.
+- Consumer evidence: frozen `tls::load_rustls_config` returns `Ok(None)` when
+  either path is empty, so `main` continues with a plain WebSocket listener.
+  The earlier startup event reports `tls=true` from the certificate path alone,
+  allowing a present certificate and absent key to log contradictory transport
+  state before downgrade.
+- Trigger and impact: omit, misspell, empty-override, or lose either member of
+  an intended TLS pair. A directly exposed server accepts identity, lobby,
+  address, chat, and session traffic without the transport protection the
+  operator configured.
+- Fix and validation boundary: validate both-empty as deliberate proxy mode and
+  both-present as native TLS before listener startup; reject every one-sided
+  pair and report the validated effective mode. Test missing, empty, unreadable,
+  malformed, mismatched, and valid pairs plus both-empty proxy operation.
+
+## Explicit clean dimensions
+
+- NAT runner: the four documented NAT names map to the intended enum values;
+  omitted type defaults to full-cone; unknown supplied values exit nonzero; the
+  frozen revision propagates NAT startup failure and aborts both owned handles
+  after Ctrl-C. Its library listeners are loopback-only. Missing option values,
+  unrelated arguments, ignored signal-registration failure, and the STUN
+  helper's loopback `unwrap` remain manual-tool diagnostics below admission
+  threshold and overlap the later complete NAT simulator coverage.
+- Address parsing: every effective `SocketAddr` is parsed before construction
+  and malformed addresses stop startup rather than selecting another address.
+- Admin authentication: an empty admin token disables mutations with service
+  unavailable, and configured tokens use a constant-time content comparison.
+  Separate admin binding has one typed optional address.
+- Resource and feature switches: max connection and relay values are parsed as
+  `usize`; zero is explicitly documented as unlimited. Proof-of-work zero is a
+  documented operator choice. False-like malformed bypass and force-relay
+  values do not enable those modes. Invalid-value diagnostics and fail-closed
+  policy remain OBS-002.
+- TLS parsing after a complete pair: unreadable PEM, empty certificate chains,
+  missing keys, malformed material, and certificate/key mismatch return errors
+  that terminate startup. Only pair admission is OBS-003.
+- Secret handling and logging: the assigned loader does not print credential or
+  admin-token values, and the structured startup fields expose only capability
+  state and nonsecret addresses/paths. `ServerConfig` does not derive `Debug`.
+- Ownership and portability: the assigned Rust code is branch-added server
+  code, uses typed socket addresses and owned strings, and introduces no D1/D2
+  fork or inherited-file merge pressure.
+- Deduplication: `R1-CHUNK-0050` reviewed the same roots and admitted exactly
+  `BR-0106` through `BR-0108`. The later frozen NAT-runner error-propagation
+  delta does not change them. No regrowth or fourth root was identified.
+
+## Evidence gaps and limits
+
+- This was a frozen-object read-only survey. No server build, Cargo test,
+  listener probe, TLS handshake, hostile configuration run, external Google
+  request, NAT session, sanitizer, dependency audit, or deployment was run.
+- No frozen focused loader tests exist. Prior adversarial `cargo test` results
+  are corroboration only and did not exercise the loader failure matrix.
+- Environment behavior for non-Unicode values and platform-specific file
+  permission errors was traced statically but not executed on Windows or Unix.
+- `server/src/nat_sim.rs` and its tests have their own later deterministic
+  chunks and rechecks. Context inspection here does not claim that coverage.
+
+## Commands and validation context
+
+- Read the required repository instructions and complete general-quality
+  process, then resolved the exact two-path batch from the canonical ledger
+- Used `git rev-parse`, `git cat-file`, `git merge-base --is-ancestor`,
+  `git show`, `git diff`, `git log`, and frozen `git grep` for ancestry, tree,
+  blobs, base absence, assigned text, history, consumers, configuration samples,
+  deployment, and tests
+- Used `rg` across both GQ ledgers, both adversarial ledgers, DMR1, prior plans,
+  and completion records for configuration, authentication, TLS, NAT, argument,
+  signal, and test-coverage duplicates
+- Computed the scope SHA-256 in memory over the exact 144 ASCII manifest bytes
+- Inspected live status only to identify unrelated ownership. No mutable product
+  file supplied evidence and no formatter, generator, build, test, network, or
+  device workflow ran
+
+## Normalization recommendation
+
+1. Normalize OBS-001 as an evidence extension of open `BR-0106` and link it to
+   the current configuration summary `GQF-0014` without allocating a new ID.
+2. Normalize OBS-002 as an evidence extension of `GQF-0014` and open `BR-0107`,
+   including the absence of loader-boundary tests and unknown-field rejection.
+3. Normalize OBS-003 as an evidence extension of `GQF-0014` and open `BR-0108`.
+4. Record this chunk as `ISSUES`, not `PARTIAL`: every assigned frozen line and
+   necessary frozen context was reviewed, and dynamic execution is an explicit
+   validation gap rather than missing static coverage.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0065 raw survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0066 frozen survey SHA256:b78c32da68a92d54f089b77a087a4fcb9a601e4798a798f1e762342793cd3dae -->
+
+## GQ1-CHUNK-0066 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0066.md`
+- Imported SHA-256: `b78c32da68a92d54f089b77a087a4fcb9a601e4798a798f1e762342793cd3dae`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0066 frozen survey
+
+Outcome: ISSUES. All 146 assigned frozen lines were reviewed with listener ownership, request framing, address authorization, IPv4 and IPv6 behavior, TLS configuration, certificate and key parsing, startup, caller, test, history, and prior-review context. The actionable observations are duplicates of open `BR-0149`, `BR-0136`, `BR-0128`, `BR-0108`, and `BR-0405`. Both assigned blobs are byte-for-byte identical to the blobs reviewed by the adversarial campaign, so this report adds deterministic coverage but no new finding or evidence extension. No product source, canonical ledger, existing report, test, fixture, build output, device state, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/stun.rs` L1-L107, all 107 lines reviewed
+- Assigned file: `server/src/tls.rs` L1-L39, all 39 lines reviewed
+- Frozen `server/src/stun.rs` blob: `0b3f7f767762f8e56c60e06be0620dd29558d3d0`
+- Frozen `server/src/tls.rs` blob: `88110ab512bf5c8f661a606bbb45981b60ec33d2`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/stun.rs|L1-L107|0b3f7f767762f8e56c60e06be0620dd29558d3d0
+server/src/tls.rs|L1-L39|88110ab512bf5c8f661a606bbb45981b60ec33d2
+```
+
+- Scope-manifest byte count: 134
+- Git blob SHA-1 of the exact manifest bytes: `f1f137303e43a56a74d0545fd21948f428d420f3`
+- SHA-256 of the exact manifest bytes: `146adf8705e13a607b59a8873d1eb098ebdb3c037e26d2a8d137c40341073a2a`
+- Both assigned files are branch-added relative to the review base
+- Adversarial review head `c01d8fe4686c63d931b1e543a6305bbafaa944a9` contains the same two assigned blobs, so no product delta exists between the evidence behind the cited `BR` findings and this assigned object
+- The dirty live worktree was not used as product authority. Its unrelated concurrent edits were preserved
+
+## Context and ownership inspected
+
+- Complete frozen `stun.rs`, including socket bind, detached task ownership, receive loop, source-IP admission, STUN header checks, IPv4-only mapped-address construction, send handling, and diagnostics
+- Complete frozen `tls.rs`, including disabled-mode selection, complete-file reads, PEM certificate and private-key parsing, Rustls configuration, and error propagation
+- Frozen `main.rs` TLS initialization and required HTTP, admin, relay, STUN, and WebSocket listener startup and supervision
+- Frozen `lib.rs` allowlist ownership plus `ws_handler.rs` authentication acquisition and disconnect release of shared-IP references
+- Frozen production configuration, nginx topology, proxy-address handling, public STUN advertisement, and TLS path pairing
+- Frozen Android STUN discovery and response-decoding consumers plus the NAT simulator's separate STUN implementation
+- Frozen server integration tests for allowlist lifecycle, allowlisted response, non-allowlisted denial, and TLS/startup behavior
+- Complete assigned-file histories and the absence of assigned-file changes after adversarial head `c01d8fe...`
+- Current and done GQ ledgers, durable evidence ledger, current and done adversarial ledgers, DMR1, prior server/networking plans, and earlier cleanup records
+- Deduplication owners included `BR-0149`, `BR-0136`, `BR-0128`, `BR-0108`, `BR-0405`, `BR-0114`, and `BR-0127`, plus current `GQF-0014` and queued `GQ1-RECHECK-0020`, `GQ1-RECHECK-0029`, and `GQ1-RECHECK-0030`
+
+## Atomic observations
+
+### GQ1-CHUNK-0066-OBS-001 - DUPLICATE: shared-IP STUN authorization release is not atomic
+
+- Severity/confidence/category: P2, high, concurrency/security
+- Frozen locations: `server/src/stun.rs:L41-L56`; owner mutation in `server/src/ws_handler.rs:L666-L677,L1204-L1209`; lifecycle test in `server/tests/integration.rs:L2651-L2681`
+- Evidence: authentication increments the `DashMap<IpAddr, usize>` entry, while disconnect separately reads the count and later removes or decrements it. Concurrent final releases can retain a zero-valued key, and a release racing a new acquisition can remove the new owner's key. The STUN loop authorizes with `contains_key`, so zero retention grants service without a live owner and stale removal denies a live owner
+- Trigger: disconnect two authenticated clients sharing one public IP concurrently, or overlap the last disconnect with a new authentication from the same IP
+- Impact: STUN authorization can survive all owners or disappear while an owner remains, producing an authorization-policy bypass or ordinary traversal failure
+- Deduplication: exact duplicate of open `BR-0149`, whose recorded location, race interleavings, impact, generation-safe fix boundary, and concurrency validation already cover this observation. `BR-0127` owns the prerequisite connection-generation lifecycle. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0066-OBS-002 - DUPLICATE: advertised STUN accepts IPv6 configuration but silently drops IPv6 clients
+
+- Severity/confidence/category: P2, high, compatibility/networking
+- Frozen locations: `server/src/stun.rs:L24-L38,L41-L105`; address configuration in `server/src/config.rs`; candidate handling in `server/src/ws_handler.rs`; Android STUN consumer
+- Evidence: configuration and the allowlist use family-neutral `SocketAddr` and `IpAddr`, but the request loop continues for every non-IPv4 source and constructs only family 0x01 with four address bytes. The server can therefore bind and advertise an IPv6 listener that never answers authenticated IPv6 clients, while adjacent candidate formatting and Android decoding also lack end-to-end IPv6 support
+- Trigger: configure an IPv6 or dual-stack STUN listener and connect through a native IPv6 or IPv4-mapped path
+- Impact: traversal is advertised but silently fails, causing avoidable relay fallback or multiplayer connection failure
+- Deduplication: exact duplicate of open `BR-0136`, which already owns the server, candidate, Android, protocol, and validation boundary. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0066-OBS-003 - DUPLICATE: STUN listener success and lifetime are detached from server supervision
+
+- Severity/confidence/category: P1, high, build-release/resource-lifetime
+- Frozen locations: `server/src/stun.rs:L24-L38`; startup in `server/src/main.rs:L115-L140` and the later listener join boundary
+- Evidence: `stun::run` binds, spawns the actual receive loop, and immediately returns success. `main` itself spawns a wrapper around each call, so the retained handles complete after bind instead of owning the listeners. A receive-loop failure or panic is therefore detached from required-service supervision, and the startup banner can race before both binds have succeeded
+- Trigger: make a configured STUN bind or receive task fail, or let a detached listener panic after startup
+- Impact: the process can remain apparently healthy and advertise traversal while one or both STUN endpoints are absent
+- Deduplication: exact duplicate of open `BR-0128`, whose listener inventory, atomic startup, task ownership, failure propagation, and validation matrix already include both STUN listeners. Current `GQ1-RECHECK-0030` separately owns a later live-head recheck. No new `GQF` is warranted
+
+### GQ1-CHUNK-0066-OBS-004 - DUPLICATE: partial TLS path configuration silently disables native TLS
+
+- Severity/confidence/category: P1, high, security/configuration
+- Frozen locations: `server/src/tls.rs:L6-L13`; configuration and startup in `server/src/config.rs` and `server/src/main.rs:L69-L86`
+- Evidence: the loader returns `Ok(None)` when either path is empty, so a configured certificate with a missing key path, or the reverse, is treated as intentional plaintext rather than a configuration error. Startup then logs that TLS is not configured and serves plain WebSocket traffic
+- Trigger: omit or mistype exactly one of the TLS certificate and private-key paths in a native-TLS deployment
+- Impact: an operator can believe TLS was configured while the listener serves plaintext
+- Deduplication: exact duplicate of open `BR-0108`, currently represented in this campaign by `GQF-0014`. That root already owns fail-closed TLS pairing and configuration validation. No additional finding or evidence extension is warranted
+
+### GQ1-CHUNK-0066-OBS-005 - DUPLICATE: the production STUN response test does not validate the complete mapped endpoint
+
+- Severity/confidence/category: P2, high, test-gap/protocol
+- Frozen locations: response construction in `server/src/stun.rs:L78-L104`; oracle in `server/tests/integration.rs:L2683-L2727`
+- Evidence: the production-listener test checks response type, magic, transaction ID, attribute type, and decoded port, but not the message or datagram length, attribute length, reserved byte, address family, or decoded address. Constant, zero, un-XORed, truncated, or wrongly framed address output can therefore remain green
+- Trigger: regress mapped-address bytes, family, or framing while retaining the currently asserted header and port fields
+- Impact: required server tests can pass while clients learn an unusable reflexive address and fall back or fail
+- Deduplication: exact duplicate of open `BR-0405`, whose independent decoder, mutation tests, and complete protocol-validation boundary already cover this test gap. No new `GQF` or evidence extension is warranted
+
+## Explicit clean dimensions
+
+- STUN memory and request cost: the receive buffer is fixed at 512 bytes, short datagrams are rejected before indexing, response allocation is fixed at 32 bytes, and no request-controlled allocation, recursion, collection growth, or payload amplification loop exists in the assigned implementation
+- STUN ordinary IPv4 construction: accepted requests check binding type and magic before echoing the 12-byte transaction ID; the IPv4 address and port use the RFC 5389 XOR inputs; output attribute and message sizes are internally consistent for the implemented family
+- Authorization order: the source-IP allowlist check precedes response parsing and construction. Address derivation uses the UDP source endpoint rather than an attacker-provided mapped field. Proxy identity and reference-lifetime defects remain with `BR-0114`, `BR-0127`, and `BR-0149`
+- Datagram safety: nonbinding types and wrong magic values are ignored, non-IPv4 values are dropped without indexing a four-byte address, and send errors do not panic the receive task. Unsupported IPv6 behavior remains the owned compatibility defect `BR-0136`
+- TLS parsing and secret handling: certificate and key bytes are not logged; read, PEM parse, empty-certificate, missing-key, and Rustls certificate/key mismatch failures propagate to fatal startup when both paths are nonempty
+- TLS defaults: `rustls::ServerConfig::builder()` supplies maintained safe protocol and cipher defaults, and `.with_no_client_auth()` is consistent with the server's application-layer authentication rather than an accidental client-certificate bypass
+- API ownership: STUN and TLS implementation details are isolated in branch-added Rust modules. They do not duplicate D1/D2 game logic or increase inherited-file diff pressure
+- Compatibility and hygiene: both files are branch-added, use printable ASCII, have no BOM, end with one newline, and their frozen diff passes `git diff --check`
+- Dead code and naming: both exported entry points have frozen callers, module names match their ownership, constants correspond to the fields they construct, and no stale alias or unreachable compatibility branch was found
+- Diagnostics: bind and certificate failures carry endpoint or path context through their callers without exposing key material. Broader listener-failure supervision remains `BR-0128`
+
+## Evidence gaps and limitations
+
+- No live sockets, IPv6 host, proxy deployment, certificate files, malformed-packet fuzzer, Rust build, Clippy run, server test, or TLS handshake was executed. This was frozen-object read-only analysis
+- The STUN request parser does not enforce the request header's declared message length or parse attributes. For the maintained zero-attribute binding client, the fixed bounded response, and the IP allowlist, no concrete impact independent of the existing STUN protocol and test owners was established, so this was not promoted
+- Repeated `recv_from` errors are logged and retried without delay. No reproducible persistent Tokio UDP receive-error state independent of `BR-0128`'s listener supervision boundary was established, so this was retained as a review gap rather than a finding
+- TLS files are read completely into memory. They are operator-selected local configuration rather than network-controlled input, and no repository workflow selects untrusted certificate paths; no independently actionable resource-exhaustion trigger was established
+- Shared-NAT address authorization intentionally grants the STUN responder to every process behind an authenticated public IP. The existing design documents IP-wide authorization, and the bounded response exposes only the querying socket's own reflexive endpoint. This policy was not treated as a new identity-bypass finding
+- Current `GQ1-RECHECK-0020`, `GQ1-RECHECK-0029`, and `GQ1-RECHECK-0030` remain separate live-head rechecks for trusted proxy identity, connection generations, and listener supervision. This frozen same-blob coverage does not claim those queue items
+
+## Commands and methods
+
+- Read `.github/copilot-instructions.md` and the complete general quality worker process
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git log --follow`, `git merge-base`, and `git grep` against the exact frozen base and head for identity, all assigned lines, history, callers, configuration, tests, and consumers
+- Used `rg` across active and done GQ ledgers, the durable evidence ledger, active and done adversarial ledgers, DMR1, and prior server/networking and cleanup plans for path, symbol, trigger, and root-cause deduplication
+- Compared both assigned blobs between adversarial head `c01d8fe...` and survey head `7877ad30...`; there is no delta
+- Calculated Git blob SHA-1 and SHA-256 in memory over the exact LF-terminated scope manifest
+- Traced static control flow from configuration through TLS loading and listener startup, and from WebSocket authentication through IP reference acquisition, STUN request authorization, response construction, and disconnect release
+- Ran frozen-object `git diff --check` for both assigned files
+
+## Normalization recommendation
+
+- Normalize observation 001 as an exact duplicate of open `BR-0149`
+- Normalize observation 002 as an exact duplicate of open `BR-0136`
+- Normalize observation 003 as an exact duplicate of open `BR-0128`
+- Normalize observation 004 as an exact duplicate of open `BR-0108` and current `GQF-0014`
+- Normalize observation 005 as an exact duplicate of open `BR-0405`
+- Create no new `GQF`, `GQI`, evidence extension, or remediation chunk
+- Record one `GQC` outcome of `ISSUES` for deterministic assigned coverage, citing these duplicate owners and the explicit clean dimensions above
+- Leave the current recheck queue items pending for their separately assigned live-head reconciliation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0066 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0067 frozen survey SHA256:15860a2730ef1caa40ffaaa513b69047900e0ac40f3c7a06c8f219fd4da0860a -->
+
+## GQ1-CHUNK-0067 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0067.md`
+- Imported SHA-256: `15860a2730ef1caa40ffaaa513b69047900e0ac40f3c7a06c8f219fd4da0860a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0067 frozen survey
+
+Outcome: ISSUES. All 591 assigned frozen lines were reviewed with authentication, proof-of-work, protocol-schema, Rust/Android parity, message-handler, database, lobby, ICE, test, history, and prior-review context. The actionable observations are duplicates of open `BR-0113`, `BR-0143`, `BR-0115`, `BR-0116`, `BR-0119`, `BR-0120`, `BR-0155`, and `BR-0090`. Both assigned blobs are byte-for-byte identical to the blobs reviewed by the adversarial campaign, so this report adds deterministic coverage but no new finding or evidence extension. No product source, canonical ledger, existing report, test, fixture, build output, device state, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/pow.rs` L1-L139, all 139 lines reviewed
+- Assigned file: `server/src/protocol.rs` L1-L452, all 452 lines reviewed
+- Frozen `server/src/pow.rs` blob: `265e9c9cca1d35dbc653bdfde568e14965c64039`
+- Frozen `server/src/protocol.rs` blob: `41a5b095974188aedc284f0e79dde4dfc8fc5dda`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/pow.rs|L1-L139|265e9c9cca1d35dbc653bdfde568e14965c64039
+server/src/protocol.rs|L1-L452|41a5b095974188aedc284f0e79dde4dfc8fc5dda
+```
+
+- Scope-manifest byte count: 139
+- Git blob SHA-1 of the exact manifest bytes: `dcf81fc0d0c04fbc44904626dc1ce0ddbdeeab90`
+- SHA-256 of the exact manifest bytes: `e69e1daeceba69e22ff43bf07ce216ca19c97d516511e87fbc1267f4acf0e385`
+- Both assigned files are branch-added relative to the review base
+- Adversarial review head `c01d8fe4686c63d931b1e543a6305bbafaa944a9` contains the same two assigned blobs, so no product delta exists between the evidence behind the cited `BR` findings and this assigned object
+- The dirty live worktree was not used as product authority. Its unrelated concurrent edits were preserved
+
+## Context and ownership inspected
+
+- Complete frozen `pow.rs`, including challenge entropy and encoding, SHA-256 proof verification, leading-zero counting, Ed25519 key and signature decoding, signature verification, textual public-key hashing, and all local unit tests
+- Complete frozen `protocol.rs`, including protocol-version constants, every client and server message variant, defaults, serde tagging, JSON game-info ownership, all supporting records, numeric widths, optionality, and collection/string surfaces
+- Frozen `ws_handler.rs` authentication, challenge issuance and consumption, public-key lookup, signed transcript construction, message parsing, game-info limits, ICE storage and expansion, file-hash routing, match-result persistence, friend messages, and late-join output
+- Frozen `db.rs`, `lobby.rs`, `rate_limit.rs`, and server integration tests relevant to identity, account registration, match persistence, message budgets, protocol versions, candidates, and proof-of-work
+- Frozen Android `NetworkConstants.kt`, `NetworkProtocol.kt`, and `MatchmakingService.kt` for protocol-one constants, field and variant parity, numeric representations, keypair fallback, proof-of-work handling, server-message decoding, and active client producers
+- Complete assigned-file history, branch-addition diffs, frozen callers and consumers, and the absence of assigned-file changes after adversarial head `c01d8fe...`
+- Current and done GQ ledgers, durable evidence ledger, current and done adversarial ledgers, DMR1, prior networking plans, and earlier cleanup records
+- Deduplication owners included `BR-0090`, `BR-0113`, `BR-0115`, `BR-0116`, `BR-0119`, `BR-0120`, `BR-0143`, `BR-0155`, and `BR-0404`, plus current `GQF-0015`
+
+## Atomic observations
+
+### GQ1-CHUNK-0067-OBS-001 - DUPLICATE: equivalent public-key text creates distinct account identities
+
+- Severity/confidence/category: P2, high, security/identity
+- Frozen locations: `server/src/pow.rs:L38-L76`; authentication use in `server/src/ws_handler.rs:L385-L535`
+- Evidence: signature verification hex-decodes a public key before use, so lower-, upper-, and mixed-case hex strings represent the same Ed25519 key. `hash_pubkey` instead hashes the original string bytes. Changing only letter case therefore creates a different database identity and player record for the same cryptographic key
+- Trigger: authenticate one key using multiple valid hex case encodings
+- Impact: stable player, friend, and ban identity fragments under a representation detail and duplicate persistent accounts are admitted
+- Deduplication: exact duplicate of open `BR-0113`, which already owns canonical decoded-key identity, migration policy, and the equivalent-encoding validation matrix. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0067-OBS-002 - DUPLICATE: keypair signatures lack a fresh challenge and audience
+
+- Severity/confidence/category: P1, high, security/authentication
+- Frozen locations: signed-message contract in `server/src/protocol.rs:L21-L42` and verification helper in `server/src/pow.rs:L35-L68`; authentication flow in `server/src/ws_handler.rs:L385-L535`
+- Evidence: the declared signature authenticates only `callsign:timestamp`. It contains no server nonce, audience, protocol version, authentication method, canonical key, or connection binding. A captured valid authentication remains replayable within the symmetric timestamp window and can cross deployments that know the same key
+- Trigger: replay a captured signed Authenticate payload before its timestamp window closes, including against another deployment where that key exists
+- Impact: possession of one recent wire payload can impersonate the player without possessing the private key and bypass returning-key proof-of-work
+- Deduplication: exact duplicate of open `BR-0143`, which already owns the single-use nonce, versioned transcript, audience binding, atomic consumption, and replay validation boundary. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0067-OBS-003 - DUPLICATE: the protocol schema admits unbounded strings and vectors
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion
+- Frozen locations: `server/src/protocol.rs:L18-L160,L343-L357,L398-L402`; parsing and handlers in `server/src/ws_handler.rs`
+- Evidence: only serialized `game_info` has an explicit limit. Authentication values, lobby codes, candidate strings and vectors, connection details, file-hash records, match results, friend names, chat, and proof-of-work strings have no semantic byte or count budgets. They are owned after WebSocket buffering and JSON decoding and can then be cloned, sorted, hashed, serialized, logged, or persisted
+- Trigger: submit a near-transport-limit valid or malformed message with one large string or collection and repeat within the message-rate allowance
+- Impact: remote clients can amplify memory, CPU, outbound-queue, logging, and database work before handler-specific rejection
+- Deduplication: exact duplicate of open `BR-0115`, summarized by current `GQF-0015`. Its transport, field, collection, cost-throttle, and Android parity boundary already covers every assigned unbounded field. No new finding or extension is warranted
+
+### GQ1-CHUNK-0067-OBS-004 - DUPLICATE: ICE candidates are untyped, unbounded probe instructions
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion/networking
+- Frozen locations: `server/src/protocol.rs:L98-L104,L222-L230,L325-L338,L398-L411`; candidate consumers in `server/src/ws_handler.rs`
+- Evidence: candidate types and endpoints are ordinary strings and candidate collections have no count limit. Handlers retain and clone them, generate Cartesian candidate pairs, and forward attacker-selected addresses for Android DNS resolution and UDP probes without a typed endpoint or destination policy
+- Trigger: submit many candidates or endpoints naming loopback, LAN, multicast, hostname, invalid, duplicate, or third-party destinations in normal or late-join flows
+- Impact: server allocation and sorting amplify superlinearly and peers can be induced to resolve or probe arbitrary destinations
+- Deduplication: exact duplicate of open `BR-0116`, also summarized by current `GQF-0015`. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0067-OBS-005 - DUPLICATE: future protocol versions are accepted as current
+
+- Severity/confidence/category: P2, high, compatibility/protocol-versioning
+- Frozen locations: `server/src/protocol.rs:L5-L14,L21-L42`; authentication range check in `server/src/ws_handler.rs`
+- Evidence: the schema distinguishes `CURRENT_PROTOCOL` from `MIN_CLIENT_PROTOCOL`, but the handler rejects only values below the minimum. A client claiming protocol 2 through `u32::MAX` is processed as protocol 1 without capability negotiation
+- Trigger: connect a future breaking-schema client to the protocol-one server
+- Impact: incompatible clients authenticate and enter stateful flows before fields are ignored or old semantics are applied, causing late or silent interoperability failures
+- Deduplication: exact duplicate of open `BR-0119`, whose explicit supported range and negotiation validation already cover this contract. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0067-OBS-006 - DUPLICATE: match completion trusts a custom host and is not transactional
+
+- Severity/confidence/category: P2, high, correctness/data-integrity
+- Frozen locations: `server/src/protocol.rs:L125-L131,L257-L258,L350-L357`; handler in `server/src/ws_handler.rs:L2315-L2382`
+- Evidence: the official Android schema has no match-result producer, while a custom host can supply the complete roster and statistics without proving equality to authoritative lobby state. Match and per-player writes are separate, errors are discarded, and success plus lobby deletion follows incomplete persistence
+- Trigger: complete an official game, submit fabricated, duplicate, foreign, stale, or partial results as a custom host, or inject a database failure between writes
+- Impact: ordinary matches are absent, fabricated participation can be stored, and partial records are acknowledged while retry state is destroyed
+- Deduplication: exact duplicate of open `BR-0120`, which owns the generation-scoped official-client protocol, authoritative roster, transaction, idempotency, and failure-preservation boundary. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0067-OBS-007 - DUPLICATE: file-hash compatibility protocol is dormant and misleading
+
+- Severity/confidence/category: P3, high, maintainability/protocol
+- Frozen locations: `server/src/protocol.rs:L119-L120,L343-L348`; handler in `server/src/ws_handler.rs:L2243-L2278`; absent Android producer and typed receiver
+- Evidence: the server accepts `FILE_HASHES`, but the maintained Android schema has no entry type or sender. Host submissions are discarded, while member submissions are embedded as JSON inside a human-readable generic error that the official client does not compare
+- Trigger: attempt the documented compatibility flow with official clients or a custom host/member
+- Impact: the apparent integrity feature performs no supported comparison, expands attack and maintenance surface, and can mislead reviewers about game-file verification
+- Deduplication: exact duplicate of open `BR-0155`, which already owns removal or completion, authoritative checksum scope, typed messages, and end-to-end tests. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0067-OBS-008 - DUPLICATE: the supported Android client cannot use keypair proof-of-work authentication
+
+- Severity/confidence/category: P1, high, compatibility/authentication
+- Frozen locations: server fields and variant in `server/src/protocol.rs:L21-L42,L152-L159,L181-L185`; missing peer schema in Android `NetworkProtocol.kt` and behavior in `MatchmakingService.kt`
+- Evidence: the server requires public-key, timestamp, signature, challenge, and solution fields for its non-Google authentication path. The maintained Android Authenticate model has none of the keypair fields, defines no `POW_SOLUTION` message, and only logs a received challenge
+- Trigger: use matchmaking where Play Games authentication is absent, unavailable, denied, delayed, or fails
+- Impact: the nominal production fallback is unreachable for official clients, so otherwise supported users cannot authenticate
+- Deduplication: exact duplicate of open `BR-0090`, whose Android key persistence, schema, signing, challenge solution, secure fallback selection, and end-to-end validation already cover this parity failure. No new `GQF` or evidence extension is warranted
+
+## Explicit clean dimensions
+
+- Cryptographic primitives: challenge bytes come from `rand::random`, proof digesting uses SHA-256, signature parsing enforces exact decoded lengths, invalid compressed Ed25519 keys fail closed, and verification uses the maintained `ed25519-dalek` verifier rather than custom arithmetic
+- Bounds and arithmetic inside helpers: leading-zero counting is linear in the fixed 32-byte digest used by proof verification, stops at the first nonzero byte, and cannot exceed the slice bit length. Exact 32- and 64-byte checks precede the two `try_into().unwrap()` calls, so malformed lengths do not panic
+- Secret handling: neither private material nor signatures are logged. Invalid-key diagnostics are generic and do not disclose accepted credentials. Public keys are intentionally public, though their canonical identity remains `BR-0113`
+- Serde ownership: client variants use one internally tagged `type` discriminator; malformed UUIDs and numeric overflows fail deserialization; server records derive only the directions needed; absent optional authentication and lobby fields have explicit defaults
+- Protocol-one ordinary parity: Rust and Android protocol constants both equal one, active message names and ordinary small UUID, Boolean, string, list, nullable, and numeric representations agree. Known missing keypair, file-hash, and match-result variants remain assigned defects rather than an unrecorded mismatch
+- Game-info size measurement: serialization produces UTF-8 JSON and `.len()` measures bytes, matching the documented byte ceiling. Shape and semantic validation consequences are already under `BR-0115`
+- API and diff minimization: both files are branch-added and isolate matchmaking cryptography and wire types from D1/D2 inherited sources. No original-file modification, paired-game divergence, or duplicated engine-format owner is introduced here
+- Hygiene and portability: assigned text is printable ASCII without a BOM, ends with one newline, and the frozen diff passes `git diff --check`. Rust integer widths are explicit at the wire boundary and no platform-sized value is serialized
+- Dead code and naming: helper and supporting-type names describe their protocol roles and all cryptographic helpers have frozen callers or focused tests. Dormant protocol variants are already owned by `BR-0155`, `BR-0120`, and the version-warning portion of `BR-0119`
+- Local tests: unit coverage exercises ordinary proof verification, leading-zero boundaries, a low-difficulty solution, signature success and wrong-message failure, and hash shape. The probabilistic bad-proof integration defect remains separately owned by `BR-0404`
+
+## Evidence gaps and limitations
+
+- This was frozen-object static review. No Cargo build, Clippy, Rust tests, server integration suite, sanitizer, fuzzer, network listener, database, proxy, Android build, emulator, or multiplayer session was run
+- The cryptographic dependency versions and transitive implementation were not independently audited in this chunk. Dependency and supply-chain coverage belongs to later mechanical and sweep units
+- `verify_pow` accepts difficulty values above 256 by returning false for every solution. The configured difficulty is an operator-controlled `u8`; no repository configuration or client-controlled route to an impossible production value independent of configuration validation owners was established, so this was not promoted
+- `hash_pubkey` hashes textual bytes rather than decoded bytes. The concrete equivalent-encoding defect is fully owned by `BR-0113`; broader database migration behavior was not executed
+- The unit proof search has a finite 100,000-attempt cap and a random challenge. At difficulty 8 its miss probability is negligible, and it is distinct from the repeatedly reproducible 1/256 false-negative fixture already owned by `BR-0404`; no second test finding was created
+- Rust and Android schemas were compared for active protocol-one paths, but the later deterministic Android file chunk and interface sweep retain their own complete coverage obligations. Context inspection here does not claim those units
+- Handler correctness beyond what was necessary to establish or deduplicate assigned-schema observations belongs to later `ws_handler.rs` chunks. This report does not claim full line coverage of that file
+
+## Commands and methods
+
+- Read `.github/copilot-instructions.md` and the complete general quality worker process
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git log`, `git ls-tree`, `git merge-base`, and frozen `git grep` against the exact base and head for identity, all assigned lines, history, callers, handlers, tests, and client consumers
+- Used `rg` across active and done GQ ledgers, the durable evidence ledger, active and done adversarial ledgers, DMR1, networking plans, and prior cleanup records for path, symbol, trigger, schema, and root-cause deduplication
+- Compared both assigned blobs between adversarial head `c01d8fe...` and survey head `7877ad30...`; there is no delta
+- Calculated Git blob SHA-1 and SHA-256 in memory over the exact LF-terminated scope manifest
+- Traced static control and data flow through challenge creation, signature verification, key hashing, database lookup, transport deserialization, field handling, lobby and candidate publication, match persistence, and Android decoding
+- Ran frozen-object `git diff --check` for both assigned files
+- Inspected live status only to identify unrelated ownership. No mutable product file supplied evidence and no formatter, generator, build, test, network, database, or device workflow ran
+
+## Normalization recommendation
+
+- Normalize observation 001 as an exact duplicate of open `BR-0113`
+- Normalize observation 002 as an exact duplicate of open `BR-0143`
+- Normalize observation 003 as an exact duplicate of open `BR-0115` and current `GQF-0015`
+- Normalize observation 004 as an exact duplicate of open `BR-0116` and current `GQF-0015`
+- Normalize observation 005 as an exact duplicate of open `BR-0119`
+- Normalize observation 006 as an exact duplicate of open `BR-0120`
+- Normalize observation 007 as an exact duplicate of open `BR-0155`
+- Normalize observation 008 as an exact duplicate of open `BR-0090`
+- Create no new `GQF`, `GQI`, evidence extension, or remediation chunk
+- Record one `GQC` outcome of `ISSUES` for deterministic assigned coverage, citing these duplicate owners and the explicit clean dimensions above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0067 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0068 frozen survey SHA256:9b3fc3c9a5402dfc0adf7c9be7a5476a8b141703de3fb3de13ecf3bf4542321a -->
+
+## GQ1-CHUNK-0068 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0068.md`
+- Imported SHA-256: `9b3fc3c9a5402dfc0adf7c9be7a5476a8b141703de3fb3de13ecf3bf4542321a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0068 frozen survey
+
+Outcome: ISSUES. All 555 assigned frozen lines were reviewed with their database, WebSocket, configuration, listener, client, test, dependency, history, and durable-review context. Six primary defects remain exact duplicates of open adversarial findings. This report also extends `BR-0135` with an exact status-schema projection error and gives `BR-0125` sharper panic evidence at the external-response boundary. No independent new root cause survived deduplication. No product source, canonical ledger, existing report, test, fixture, build output, device state, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/friends.rs` L1-L121, all 121 lines reviewed
+- Assigned file: `server/src/http_api.rs` L1-L313, all 313 lines reviewed
+- Assigned file: `server/src/identity.rs` L1-L121, all 121 lines reviewed
+- Frozen `server/src/friends.rs` blob: `9484ca70fafc785337621b52fd04249d02aef2e4`
+- Frozen `server/src/http_api.rs` blob: `fc2e9e98b1277aca6e0eb9a5e2442372af5b2376`
+- Frozen `server/src/identity.rs` blob: `5c4657ca2413b424831e26b95bbc5ed598e47bed`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/friends.rs|L1-L121|9484ca70fafc785337621b52fd04249d02aef2e4
+server/src/http_api.rs|L1-L313|fc2e9e98b1277aca6e0eb9a5e2442372af5b2376
+server/src/identity.rs|L1-L121|5c4657ca2413b424831e26b95bbc5ed598e47bed
+```
+
+- Scope-manifest byte count: 215
+- Git blob SHA-1 of the exact manifest bytes: `fb281650115a73fddf0311148989725d7c3efecc`
+- SHA-256 of the exact manifest bytes: `772a79665c7ae352926c8c0cee73896f2109aa6715e5309aa173d8f045be32cd`
+- All three assigned files are branch-added relative to the review base
+- Adversarial review head `c01d8fe4686c63d931b1e543a6305bbafaa944a9` contains the same three assigned blobs. The cited adversarial evidence and this frozen assignment therefore inspect identical product bytes
+- The dirty live worktree was not used as product authority. Its unrelated concurrent edits were preserved
+
+## Context and ownership inspected
+
+- Complete frozen friend request, persistence, notification, list enrichment, status, presence, and game-detail construction
+- Frozen player and friendship schema, callsign updates and lookup, pending, accepted, removed, and blocked transitions, and database error propagation
+- Frozen WebSocket friend request, accept, remove, block, list, direct-message, and friend-game join handlers
+- Frozen lobby and session presence ownership, joinability, lobby-code and verified-only gates, terminal transitions, and stale cleanup
+- Complete public, combined, and admin-only HTTP routers; listener startup; status, simple status, health, and stub endpoints; request authentication; ban and unban control flow
+- Frozen live-stat counters, snapshot semantics, database aggregate queries, ban storage and authentication enforcement, current sessions, and listener topology
+- Complete Google authorization-code exchange and player lookup, Reqwest client construction and response consumption, WebSocket authentication caller, connection limits, and failure limiting
+- Frozen Rust and Android protocol models, Android friend UI/service consumers, server integration tests, deployment configuration, and complete assigned-file histories
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, prior cleanup records, and queued server rechecks
+- Deduplication owners included `BR-0121` through `BR-0126`, `BR-0135`, `BR-0139`, `BR-0150`, `BR-0392`, and `BR-0642`
+
+## Atomic observations
+
+### GQ1-CHUNK-0068-OBS-001 - DUPLICATE: callsign lookup can persist and notify different friend targets
+
+- Severity/confidence/category: P2, high, correctness/identity
+- Frozen locations: `server/src/friends.rs:L11-L62`; `server/src/db.rs:L172-L201`; `server/src/ws_handler.rs:L2384-L2415`
+- Evidence: callsigns change on authentication and are not unique. `handle_friend_request` performs one unordered `LIMIT 1` lookup and persists that UUID, then its caller independently repeats the callsign lookup to choose the notification recipient. Duplicate callsigns or a rename between reads can select a different account, and the requester receives no stable target acknowledgement
+- Trigger and impact: send a request while duplicate callsigns exist or the selected account renames. The stored friendship can belong to one account while another receives the notification, enabling impersonation and unverifiable social state
+- Deduplication: exact duplicate of open `BR-0122`, including its stable-identifier boundary and concurrency validation. No new `GQF` is warranted
+
+### GQ1-CHUNK-0068-OBS-002 - DUPLICATE: friend-list disclosure ignores relationship authorization and trusts stale presence
+
+- Severity/confidence/category: P1, high, security/authorization and correctness/state-lifetime
+- Frozen locations: `server/src/friends.rs:L65-L120`; `server/src/ws_handler.rs:L2418-L2515`; lobby transitions in `server/src/ws_handler.rs` and `server/src/stats.rs`
+- Evidence: `get_friends` returns every directed row, including pending and blocked rows, and `build_friend_list` enriches each with live presence and game details. Friend-game join separately bypasses lobby codes without proving an accepted, nonblocked relationship. The details are derived from a denormalized session presence snapshot that several lobby transitions fail to update, so even authorized rows can expose contradictory or obsolete lobby state
+- Trigger and impact: retain a pending or asymmetric blocked row, join by a learned player UUID, or query after host departure, EndGame, roster update, match completion, or stale cleanup. An unauthorized observer can learn activity or bypass a code, while legitimate friends receive stale join information
+- Deduplication: the authorization and disclosure root is an exact duplicate of open `BR-0121`; stale presence projection is an exact duplicate of open `BR-0150`. No new `GQF` is warranted
+
+### GQ1-CHUNK-0068-OBS-003 - DUPLICATE: a successful ban does not revoke the active session
+
+- Severity/confidence/category: P1, high, security/access-control
+- Frozen locations: `server/src/http_api.rs:L242-L275`; authentication checks in `server/src/ws_handler.rs`; session, lobby, relay, and STUN owners
+- Evidence: `admin_ban` only inserts the durable ban row. Ban checks occur during authentication, and the endpoint neither closes the current connection nor removes its session, lobby, relay, or STUN capabilities
+- Trigger and impact: ban an already authenticated player. The endpoint reports success while that player continues privileged multiplayer actions until disconnect
+- Deduplication: exact duplicate of open `BR-0123`, including its generation-safe revocation and idempotent cleanup boundary. No new `GQF` is warranted
+
+### GQ1-CHUNK-0068-OBS-004 - DUPLICATE: unbounded ban hours wrap or panic before persistence
+
+- Severity/confidence/category: P2, high, correctness/input-validation
+- Frozen locations: `server/src/http_api.rs:L235-L274`; ban expiry predicate in `server/src/db.rs:L295-L303`
+- Evidence: JSON accepts any `u64`, casts it to `i64`, constructs `chrono::Duration::hours`, and adds it to the current time without policy or checked arithmetic. Values above `i64::MAX` wrap negative, while sufficiently large converted values can panic in Chrono
+- Trigger and impact: submit an authenticated extreme `duration_hours`. The request can create an already expired ban or abort rather than apply the intended moderation action
+- Deduplication: exact duplicate of open `BR-0124`. No new `GQF` is warranted
+
+### GQ1-CHUNK-0068-OBS-005 - DUPLICATE: public status has no request or response-cost budget
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion
+- Frozen locations: `server/src/http_api.rs:L17-L79,L113-L168`; database aggregates in `server/src/db.rs:L468-L479`
+- Evidence: the unauthenticated listener has no connection, concurrency, request-rate, header, body-time, or slow-reader bound. Each full status request walks and clones every lobby, copies bounded but potentially large game metadata, looks up sessions, allocates and serializes the response, and runs two synchronous SQLite queries behind the shared database mutex
+- Trigger and impact: issue concurrent full-status requests or retain slow HTTP clients at maximum lobby population. Cheap public traffic amplifies into repeated global work, allocations, bandwidth, tasks, and database contention
+- Deduplication: exact duplicate of open `BR-0126`; synchronous SQLite ownership also remains open `BR-0139`. No new `GQF` is warranted
+
+### GQ1-CHUNK-0068-OBS-006 - EXTENDS BR-0135: status labels game and lobby counts as player counts
+
+- Severity/confidence/category: P2, high, correctness/observability
+- Frozen locations: `server/src/http_api.rs:L92-L105,L113-L167`; counter definitions in `server/src/stats.rs:L9-L69`
+- Evidence: `ServerStats.current_in_game` increments once per game start, not once per participating player, and `current_lobbies` increments once per lobby. `status` nevertheless serializes those values as `players.in_game = snap.in_game` and `players.in_lobbies = snap.lobbies`. At the same time, `lobbies.count` also receives `snap.lobbies`, confirming that `players.in_lobbies` is a duplicate lobby count rather than a player count. The focused HTTP test asserts only that `players` and `lobbies` objects exist
+- Trigger and impact: create a lobby with two or more players or start any multiplayer game. Public monitoring reports one in-lobby or in-game player for the whole lobby/game, so dashboards and capacity decisions consume semantically false values even when the underlying counters have not drifted
+- Historical reconciliation: open `BR-0135` already owns truthful live and peak statistics and cites this HTTP projection, but its evidence emphasizes counter drift, underflow, rollover, persistence, and restart. This exact schema-to-counter mismatch strengthens that existing root and validation boundary rather than requiring a separate owner
+- Suggested boundary and validation: either rename fields to the entities actually counted or derive player counts from one authoritative generation-safe roster snapshot. Test empty, one-lobby/many-player, multiple-lobby, started, ended, disconnected, and cleanup states and assert response field names, values, `games.len()`, and aggregate counters agree
+
+### GQ1-CHUNK-0068-OBS-007 - DUPLICATE: external identity verification has unbounded lifetime, concurrency, and body size
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion
+- Frozen locations: `server/src/identity.rs:L30-L121`; caller in `server/src/ws_handler.rs:L475-L500`
+- Evidence: every authentication builds a new Reqwest client and awaits two external calls without connect, request, or whole-flow deadlines, concurrency admission, pooled reuse, or response-byte caps. Non-success bodies use unbounded `text`, while successful bodies use unbounded `json`; each pending public WebSocket remains occupied throughout
+- Trigger and impact: repeat authentication while DNS, TLS, Google, or a response body stalls or streams. Pending connections and outbound resources can fill server capacity indefinitely during provider degradation
+- Deduplication: exact duplicate of open `BR-0125`. No new `GQF` is warranted
+
+### GQ1-CHUNK-0068-OBS-008 - EXTENDS BR-0125: UTF-8 byte slicing can panic while logging provider errors
+
+- Severity/confidence/category: P2, medium, correctness/diagnostics
+- Frozen locations: `server/src/identity.rs:L59-L65,L97-L103`
+- Evidence: both non-success branches first decode the complete body to a Rust `String`, then log `&body[..body.len().min(200)]`. Rust string slicing requires a character boundary. Any response longer than 200 bytes whose byte offset 200 lies inside a multibyte code point panics before the intended `VerifyResult::Failed` is returned. This is independent of JSON validity and affects both Google endpoints
+- Trigger and impact: a provider, test proxy, localized error path, or compromised upstream returns an error body with a multibyte code point crossing byte 200. The authentication task panics and loses the bounded typed failure and diagnostic; a systematic response can abort every GPGS attempt
+- Historical reconciliation: `BR-0125` already owns bounded and malformed provider responses, failure classification, and external-request containment, so this is a concrete extension of its response-consumption evidence. Normalization may split the unsafe diagnostic slice only if the remediation owner cannot remove it within the same bounded-response parser
+- Suggested boundary and validation: read through the common capped response path, truncate on a valid character boundary or log a safely escaped byte prefix, and never consume an unbounded error body merely for diagnostics. Test every boundary around byte 200 with ASCII, two-, three-, and four-byte UTF-8, invalid wire bytes, oversized bodies, and both non-success endpoints; require no panic, no secret echo, bounded memory, and one typed failure
+
+## Explicit clean dimensions
+
+- Friend request basics: self-requests are rejected, lookup database failures return a typed error, and the callsign-search limiter is consulted before lookup. The remaining identity ambiguity and authorization state machine are owned by `BR-0122` and `BR-0121`
+- Friend-list allocation: the vector is preallocated to the database row count, there is no recursive traversal, and lobby detail cloning is bounded by the existing game-info protocol limit. Global database and protocol abuse budgets remain with `BR-0139`, `BR-0140`, and `BR-0115`
+- Admin authentication: an empty configured token fails closed; malformed and missing Authorization values reject; configured equal-length tokens use a byte loop without data-dependent early exit; malformed UUIDs return 400; ordinary permanent and practical finite bans match the database expiry predicate
+- Router separation: setting a separate admin listen address removes mutation routes from the public router and installs them only on the admin router. Listener atomicity and fail-closed configuration remain separately owned by `BR-0128` and `BR-0106`
+- Constant-cost probes: `/api/v1/status/simple` and the current health payload do not enumerate lobbies or allocate request-dependent collections. The health endpoint is only liveness, not a complete dependency-readiness contract
+- Identity happy path: both external responses require HTTP success before typed deserialization; bearer authentication is used only for the player lookup; client secret, authorization code, access token, and raw success bodies are not logged
+- API and data ownership: the three files are branch-added Rust modules. They do not duplicate D1/D2 game logic or increase inherited-file diff pressure
+- Compatibility and hygiene: all assigned files are printable ASCII, have no BOM, end with a newline, and the frozen assigned diff passes `git diff --check`; exported entry points have frozen callers and no stale compatibility aliases were found
+- Historical dependency and disclosure owners: the vulnerable frozen Rustls graph remains `BR-0392`, and public disclosure of GPGS data flow remains `BR-0642`; neither is duplicated as an implementation finding here
+
+## Evidence gaps and limitations
+
+- No live Google request, HTTP load test, database fault injection, server build, Clippy run, server test, proxy deployment, socket exercise, or dynamic panic harness was run. This was frozen-object read-only analysis
+- The UTF-8 panic trigger is certain for a constructed Rust `String`, but occurrence in Google's current production error bodies was not dynamically established. Its confidence is medium and it is recommended as evidence for the broader open provider-response owner
+- Admin bearer scheme matching is case-sensitive even though authentication schemes are generally case-insensitive. Maintained clients and deployment tooling use canonical `Bearer`, and no independent operational failure above the admission threshold was established
+- Database error strings are returned by authenticated admin mutations. No secret-bearing current database error was proven, and the endpoint already requires the operator token, so this remains a hardening note
+- Offline `last_seen` is always the literal `unknown` despite a database timestamp. Prior exact-scope review treated this as an incomplete display feature, and no stronger current behavioral contract was found
+- `constant_time_eq` returns early on unequal lengths. Token length is not the secret value and exact-length candidates still receive the constant byte loop; no practical independent authentication break was established
+- Current `GQ1-RECHECK-0024` through `GQ1-RECHECK-0028` remain separate live-head rechecks. Same-blob frozen coverage does not claim those queue items or later product changes
+
+## Commands and methods
+
+- Read `AGENTS.md`, `.github/copilot-instructions.md`, and the complete general quality worker process
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git log --follow`, `git grep`, and bounded numbered projections against the exact frozen base and head
+- Inspected every assigned line and traced friend, admin, status, ban, Google identity, session, lobby, database, configuration, protocol, Android consumer, and focused test control flow
+- Used `rg` across active and done GQ ledgers, the durable evidence ledger, active and done adversarial ledgers, DMR1, and prior server/networking and cleanup plans for path, symbol, trigger, and root-cause deduplication
+- Compared all three assigned blobs between adversarial head `c01d8fe...` and survey head `7877ad30...`; there is no delta
+- Calculated Git blob SHA-1 and SHA-256 in memory over the exact LF-terminated scope manifest
+- Ran frozen-object `git diff --check` for all three assigned files
+
+## Normalization recommendation
+
+- Normalize observation 001 as an exact duplicate of open `BR-0122`
+- Normalize observation 002 as exact duplicates of open `BR-0121` and `BR-0150`
+- Normalize observation 003 as an exact duplicate of open `BR-0123`
+- Normalize observation 004 as an exact duplicate of open `BR-0124`
+- Normalize observation 005 as an exact duplicate of open `BR-0126`, with `BR-0139` retained as the database-owner dependency
+- Normalize observation 006 as an evidence extension of open `BR-0135`
+- Normalize observation 007 as an exact duplicate of open `BR-0125`
+- Normalize observation 008 as an evidence extension of open `BR-0125`, splitting only if remediation boundaries require an independent unsafe-slicing finding
+- Create no new `GQI`. Create no new `GQF` unless the single-writer normalization concludes observation 008 cannot remain under `BR-0125`
+- Record one `GQC` outcome of `ISSUES` for deterministic assigned coverage, citing the duplicate and extended owners and the explicit clean dimensions above
+- Leave the current live-head recheck queue pending for separately assigned reconciliation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0068 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0069 frozen survey SHA256:de21ae251cc58b8022c4689cef46fd24f767351a5a1a660ab603228f8c2bb756 -->
+
+## GQ1-CHUNK-0069 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0069.md`
+- Imported SHA-256: `de21ae251cc58b8022c4689cef46fd24f767351a5a1a660ab603228f8c2bb756`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0069 frozen survey
+
+Outcome: ISSUES. All 445 assigned frozen lines were reviewed with shared-state ownership, lobby invariants and state transitions, admission callers, listener startup and lifetime, logging retention, Android protocol consumers, tests, history, and prior-review context. The five actionable observations are exact duplicates of open `BR-0127` through `BR-0131`. All three assigned blobs are byte-for-byte identical to the blobs reviewed by the adversarial campaign, so this report adds deterministic coverage but no new finding or evidence extension. No product source, canonical ledger, existing report, test, fixture, build output, device state, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/lib.rs` L1-L47, all 47 lines reviewed
+- Assigned file: `server/src/lobby.rs` L1-L231, all 231 lines reviewed
+- Assigned file: `server/src/main.rs` L1-L167, all 167 lines reviewed
+- Frozen `server/src/lib.rs` blob: `2bfa0e438cc312ce5c0e2a2d6f07cdc4492c950d`
+- Frozen `server/src/lobby.rs` blob: `272af31d11aa3cf5130eded6e2c3fa32c0a8cfaf`
+- Frozen `server/src/main.rs` blob: `86e388f3d98b01d1f15066197bae3844ff7e5eea`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/lib.rs|L1-L47|2bfa0e438cc312ce5c0e2a2d6f07cdc4492c950d
+server/src/lobby.rs|L1-L231|272af31d11aa3cf5130eded6e2c3fa32c0a8cfaf
+server/src/main.rs|L1-L167|86e388f3d98b01d1f15066197bae3844ff7e5eea
+```
+
+- Scope-manifest byte count: 203
+- Git blob SHA-1 of the exact manifest bytes: `c2c0f104eb1184fb1b82b5f5251094e5e0cd3d60`
+- SHA-256 of the exact manifest bytes: `e0d86016ae4030f63f1bd466b2009a901c3ad12d9a328fb69ca717835a2d7b03`
+- All three assigned files are branch-added relative to the review base
+- Adversarial review head `c01d8fe4686c63d931b1e543a6305bbafaa944a9` contains the same three assigned blobs, so no product delta exists between the evidence behind the cited `BR` findings and this assigned object
+- The dirty live worktree was not used as product authority. Its unrelated concurrent edits were preserved
+
+## Context and ownership inspected
+
+- Complete frozen `lib.rs`, including module publication, all shared map and database owners, rate limiter and STUN allowlist ownership, and `build_state` construction and error propagation
+- Complete frozen `lobby.rs`, including every state and presence variant, serialized player and connection fields, constructor initialization, capacity, joinability, kick admission, insertion, removal, runtime state, and JSON string projection
+- Complete frozen `main.rs`, including configuration, logging, database and TLS initialization, HTTP and admin HTTP startup, relay and STUN startup, periodic maintenance, blocking WebSocket ownership, failure logging, and shutdown aborts
+- Frozen `ws_handler.rs`, `friends.rs`, `http_api.rs`, `stats.rs`, `relay.rs`, `stun.rs`, and `tls.rs` callers and owners for session generations, lobby listing and mutation, presence, cleanup, counters, allowlisting, listener tasks, and service health
+- Frozen Android matchmaking consumers for lobby listing, friend join, active-game join, roster updates, and errors
+- Frozen server integration coverage for stable identity, lobby creation and join, mid-game state, friend join, listener behavior, STUN authorization, and database construction
+- Production configuration and deployment ownership for listener requirements, health, systemd restart behavior, JSON file logging, and reverse-proxy topology
+- Complete assigned-file histories and the absence of assigned-blob changes after adversarial head `c01d8fe...`
+- Current and done GQ ledgers, durable evidence ledger, current and done adversarial ledgers, DMR1, prior server/networking plans, and earlier cleanup records
+- Deduplication owners included open `BR-0127`, `BR-0128`, `BR-0129`, `BR-0130`, and `BR-0131`, plus queued `GQ1-RECHECK-0029`, `GQ1-RECHECK-0030`, and `GQ1-RECHECK-0031`
+
+## Atomic observations
+
+### GQ1-CHUNK-0069-OBS-001 - DUPLICATE: the player-keyed session registry has no connection-generation ownership
+
+- Severity/confidence/category: P1, high, concurrency/security
+- Frozen locations: `server/src/lib.rs:L20-L30`; acquisition, replacement, and cleanup in `server/src/ws_handler.rs:L239-L251,L285-L677,L1179-L1211`
+- Evidence: the advertised connection cap checks the authenticated player-keyed `sessions` map before upgrade, so unauthenticated sockets consume no slot and concurrent checks are not atomic. Authentication blindly replaces a stable player's entry and can repeat on one socket, while disconnect removes by player ID without proving that the entry belongs to that socket generation. Counters, lobby ownership, senders, and STUN references therefore do not share one exact connection owner
+- Trigger: retain many unauthenticated upgrades, authenticate twice on one socket, or overlap two sockets using the same stable identity and disconnect them in either order
+- Impact: an old connection can mutate or remove a replacement, connection limits and counters drift, STUN ownership becomes stale, and lobby hosts or members can be removed by the wrong socket
+- Deduplication: exact duplicate of open `BR-0127`, which already owns accepted-socket permits, single authentication, generation-specific replacement and cleanup, counter and allowlist invariants, and the required race matrix. Queued `GQ1-RECHECK-0029` separately owns a later live-head recheck. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0069-OBS-002 - DUPLICATE: required listeners are detached from one atomic service supervisor
+
+- Severity/confidence/category: P1, high, build-release/resource-lifetime
+- Frozen locations: `server/src/main.rs:L87-L167`; runner ownership in `server/src/http_api.rs`, `server/src/relay.rs`, `server/src/stun.rs`, and `server/src/ws_handler.rs`
+- Evidence: HTTP, optional admin HTTP, relay, and STUN are spawned as tasks whose errors are logged and converted to successful task completion; no supervisor changes readiness or process status when they return. WebSocket failure is also logged before `main` aborts the other tasks and returns normally. Startup can announce STUN before binds finish, `/health` can remain healthy after a required sibling dies, and the supplied `Restart=on-failure` service does not restart a zero-status WebSocket exit
+- Trigger: occupy any configured listener port, inject a post-start listener failure or panic, or make the WebSocket listener exit unexpectedly
+- Impact: deployment can report a healthy partial service with moderation, relay, or traversal absent, or can stop matchmaking without the configured restart policy engaging
+- Deduplication: exact duplicate of open `BR-0128`, which already owns pre-binding, readiness, required-versus-optional policy, task supervision, coordinated shutdown, nonzero failure, and deployment validation. Queued `GQ1-RECHECK-0030` separately owns a later live-head recheck. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0069-OBS-003 - DUPLICATE: lobby eligibility checks and insertion are not one atomic transition
+
+- Severity/confidence/category: P2, high, correctness/state-machine
+- Frozen locations: `server/src/lobby.rs:L160-L212`; listing and mutation in `server/src/friends.rs`, `server/src/http_api.rs`, and `server/src/ws_handler.rs:L50-L145,L1436-L1539,L2455-L2547`
+- Evidence: `is_joinable` requires fresh host state and `NETSTAT_PLAYING` for an in-game join, and `can_join` adds the kick check, but ordinary `JOIN_LOBBY` ultimately calls `add_player`, whose InGame rule checks only state, fullness, and duplication. Friend join checks kick, verification, joinability, and insertion through separate map acquisitions. Listing, authorization, and final-slot mutation can therefore disagree or race
+- Trigger: join an InGame lobby with stale or non-playing host state, race a kick or state transition with friend admission, or race concurrent clients for the last slot
+- Impact: unsafe or stale late joins can enter while advertised joins fail, producing stuck membership, contradictory eligibility, and divergent server and engine rosters
+- Deduplication: exact duplicate of open `BR-0129`, whose authoritative `try_join` transition, typed reasons, listing projection, code and friend authorization, and race validation already cover the complete root. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0069-OBS-004 - DUPLICATE: friend join mutates the lobby before Android sends a second ordinary join
+
+- Severity/confidence/category: P2, high, compatibility/protocol
+- Frozen locations: duplicate rejection in `server/src/lobby.rs:L191-L211`; friend admission in `server/src/ws_handler.rs:L2455-L2563`; Android response handling in `MatchmakingService.kt`
+- Evidence: the server's friend-join handler performs insertion, changes the caller's session, returns success, and broadcasts the roster. Android interprets success as lobby discovery and sends `JOIN_LOBBY` for the same identity. `add_player` then rejects the duplicate, or a coded lobby rejects the missing code first, leaving success followed by a contradictory error and an extra rate-limited action
+- Trigger: use the Android friend flow to join any waiting or active coded or uncoded lobby
+- Impact: UI and error state contradict actual membership, a redundant request consumes rate budget, and future duplicate or implicit-leave changes can turn the protocol mismatch into a destructive transition
+- Deduplication: exact duplicate of open `BR-0130`, which already owns selecting one mutation owner and complete Android-to-server validation. Its dependency on the atomic transition in `BR-0129` is already recorded. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0069-OBS-005 - DUPLICATE: daily file logging rotates names but has no storage-retention bound
+
+- Severity/confidence/category: P2, high, resource-lifetime/operations
+- Frozen locations: `server/src/main.rs:L11-L45`; production `log_dir` and deployment logging configuration
+- Evidence: `tracing_appender::rolling::daily` creates daily JSON files but this construction does not set the dependency's available maximum file count. The repository supplies no logrotate, byte quota, age cleanup, or disk reserve, while systemd also retains console output in journald and public clients can trigger many logged failures
+- Trigger: run the production deployment over time or sustain invalid authentication, lobby, relay, and network events within or across request limits
+- Impact: the extra JSON log copy grows without bound until it consumes the service filesystem and interferes with SQLite, deployment, or the host
+- Deduplication: exact duplicate of open `BR-0131`, which already owns file count, total bytes, reserve, monitoring, duplicate journald policy, and rotation-boundary validation. Queued `GQ1-RECHECK-0031` separately owns a later live-head recheck. No new `GQF` or evidence extension is warranted
+
+## Explicit clean dimensions
+
+- State construction: `build_state` propagates database-open and schema errors, initializes every shared collection and counter owner once, and returns one `Arc<ServerState>` used consistently by frozen listeners and tests
+- Lobby initialization: `Lobby::new` initializes all persistent and runtime fields, inserts exactly one host, clones the host callsign intentionally, uses UUID v4 identifiers, and uses monotonic `Instant` values for staleness and transition timing
+- Ordinary capacity safety: maintained creation validates the engine-supported small player range before constructing a lobby, so `usize` to `u8` player-count conversion does not truncate in reachable state. `is_full` and duplicate checks prevent ordinary overfill absent the separately owned split-transition defect
+- Removal and retained sets: player removal also clears pending late-join membership. The kick handler's retained UUID set is capped by the maintained handler, and no unbounded per-player collection growth originates in the assigned file
+- Data exposure: invite codes and kicked-player identities are not serialized through `LobbyPlayer`; public lobby and active-game projections select explicit fields. Startup logs endpoint and feature configuration but not TLS private-key bytes, database contents, lobby codes, or identity tokens
+- Parsing and panics: the assigned lobby helpers use checked JSON access and do not index attacker-controlled arrays, unwrap attacker-controlled values, recurse, or perform fallible numeric parsing. `game_info_str` intentionally projects missing or non-string fields to an empty display value; admission validation of the original JSON remains in its protocol owner
+- Resource ownership: the file-appender guard is retained for process lifetime, and disabled file logging avoids constructing the writer. The missing retention bound remains the separately owned `BR-0131`
+- Compatibility: plain WebSocket behind the supplied TLS reverse proxy and direct native TLS are intentional deployment modes. TLS pairing and configuration fallbacks are owned by other findings, not a new defect in this chunk
+- API and diff minimization: all three files are branch-added Rust owners and do not modify inherited D1/D2 files or duplicate game-engine format logic
+- Hygiene: all three frozen files use printable ASCII, have no BOM, end with one newline, and their frozen diff passes `git diff --check`. Exported methods and fields have frozen consumers; no stale compatibility alias, commented-out implementation, or unreachable branch was found
+- Naming and maintainability: module names match their domains, lobby state and connection-type names correspond to wire projections, and the compact shared-state aggregate avoids wrapper-only abstractions. The known atomicity roots are ownership defects rather than style-only concerns
+- Test positives: frozen integration tests cover ordinary database construction, stable identity reconnect after orderly close, basic lobby creation and join, in-game updates, friend admission's server half, STUN allowlist lifecycle, and HTTP status projection. Their missing race and end-to-end cases are already part of the duplicate owners' validation requirements
+
+## Evidence gaps and limitations
+
+- No server process, socket bind, systemd instance, reverse proxy, log rotation boundary, disk quota, Rust build, Clippy run, or test suite was executed. This was frozen-object read-only analysis
+- `Lobby::add_player` returns only `bool`, which loses rejection detail. That weakness is part of `BR-0129`'s typed atomic transition rather than an independent maintainability finding
+- `Presence::Offline` is not constructed by the frozen server path, but it expresses the public presence domain and is matched by shared projection code. No obsolete wire behavior or maintenance failure was established
+- `created_at` and `created_at_instant` intentionally serve wall-clock display and monotonic expiry roles. Their duplication is not redundant state with conflicting mutation paths
+- `runtime_player_count` is host-reported and can disagree with the server vector. Existing protocol and host-authority findings own trust and projection consequences; no new root local to the assigned data structure was established
+- Aborting listener tasks does not await their completion or explicitly flush every asynchronous owner. This is already inside `BR-0128`'s coordinated shutdown boundary, not a separate finding
+- Current `GQ1-RECHECK-0029`, `GQ1-RECHECK-0030`, and `GQ1-RECHECK-0031` remain separate live-head rechecks. This frozen same-blob coverage does not claim or complete them
+
+## Commands and methods
+
+- Read `.github/copilot-instructions.md` and the complete general quality worker process
+- Used `git rev-parse`, `git show`, `git diff`, `git log`, and `git grep` against the exact frozen base and head for assigned identity, all lines, history, callers, configurations, tests, consumers, and deployment paths
+- Used `rg` across active and done GQ ledgers, the durable evidence ledger, active and done adversarial ledgers, DMR1, and prior server/networking and cleanup plans for path, symbol, trigger, remediation-class, and root-cause deduplication
+- Compared all three assigned blobs between adversarial head `c01d8fe...` and survey head `7877ad30...`; there is no delta
+- Calculated Git blob SHA-1 and SHA-256 in memory over the exact LF-terminated scope manifest
+- Traced static control flow from service configuration through shared-state construction and each listener, from authentication through session replacement and disconnect, and from lobby listing through ordinary and friend admission and Android response handling
+- Ran frozen-object `git diff --check` for all three assigned files
+- Inspected live status only to preserve unrelated ownership. No mutable product file supplied evidence and no formatter, generator, build, test, network, or device workflow ran
+
+## Normalization recommendation
+
+1. Normalize OBS-001 as an exact duplicate of open `BR-0127`
+2. Normalize OBS-002 as an exact duplicate of open `BR-0128`
+3. Normalize OBS-003 as an exact duplicate of open `BR-0129`
+4. Normalize OBS-004 as an exact duplicate of open `BR-0130`
+5. Normalize OBS-005 as an exact duplicate of open `BR-0131`
+6. Record this chunk as `ISSUES`, not `PARTIAL`: every assigned frozen line and necessary frozen context was reviewed, and dynamic execution is an explicit validation gap rather than missing static coverage
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0069 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0070 frozen survey SHA256:447c14858096f08bd7d1673fec1f29991cee78e9d5170cfac134f31c82e1bcf2 -->
+
+## GQ1-CHUNK-0070 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0070.md`
+- Imported SHA-256: `447c14858096f08bd7d1673fec1f29991cee78e9d5170cfac134f31c82e1bcf2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0070 frozen survey
+
+Outcome: ISSUES. All 495 assigned frozen lines were reviewed with WebSocket admission, authentication, relay allocation and packet consumers, lobby transitions, periodic cleanup, public statistics, tests, history, and prior-review context. The seven actionable observations are exact duplicates of open `BR-0114`, `BR-0117`, `BR-0118`, `BR-0132`, `BR-0133`, `BR-0134`, and `BR-0135`. All three assigned blobs are byte-for-byte identical to the blobs reviewed by the adversarial campaign, so this report adds deterministic coverage but no new finding or evidence extension. No product source, canonical ledger, existing report, test, fixture, build output, device state, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/rate_limit.rs` L1-L143, all 143 lines reviewed
+- Assigned file: `server/src/relay.rs` L1-L167, all 167 lines reviewed
+- Assigned file: `server/src/stats.rs` L1-L185, all 185 lines reviewed
+- Frozen `server/src/rate_limit.rs` blob: `30eebf9e1406d5972dc2d3367270e81a74d676a8`
+- Frozen `server/src/relay.rs` blob: `4ec01f4ac434182734c117a393bc0da1d122f9c7`
+- Frozen `server/src/stats.rs` blob: `25c16a3ebc157246a5a61e1839d5c10042c315b0`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/rate_limit.rs|L1-L143|30eebf9e1406d5972dc2d3367270e81a74d676a8
+server/src/relay.rs|L1-L167|4ec01f4ac434182734c117a393bc0da1d122f9c7
+server/src/stats.rs|L1-L185|25c16a3ebc157246a5a61e1839d5c10042c315b0
+```
+
+- Scope-manifest byte count: 212
+- Git blob SHA-1 of the exact manifest bytes: `1a11303c079de8c135d68270dff6aacbe6410918`
+- SHA-256 of the exact manifest bytes: `94ed35327349ed50aab73f090e21715f11c2ec33e19fd54a69b5dcbbb127b7c6`
+- The review base contains none of the three paths; the frozen diff adds exactly 143, 167, and 185 lines
+- Adversarial review head `c01d8fe4686c63d931b1e543a6305bbafaa944a9` contains the same three assigned blobs, so no product delta exists between the evidence behind the cited `BR` findings and this assigned object
+- The dirty live worktree was not used as product authority. Its unrelated concurrent edits were preserved
+
+## Context and ownership inspected
+
+- Complete frozen `rate_limit.rs`, including every key class, window and threshold, deque pruning, accepted-event insertion, and stale-key cleanup
+- Frozen WebSocket upgrade, pre-auth session, authenticated action, callsign, direct-message, lobby-list, lobby-create, and lobby-join call sites
+- Complete frozen `relay.rs`, including session identity, source recognition, rebinding and learning, destination selection, packet construction, diagnostics, send failure, and absolute-age cleanup
+- Frozen relay allocation in `ws_handler.rs`, including candidate-derived initial endpoints, exact lobby slots, allowed-IP construction, truncated token allocation, global capacity checks, start rollback, late join, and terminal lobby paths
+- Complete frozen `stats.rs`, including every atomic counter, peak handling, snapshot persistence, periodic task scheduling, stale-lobby scan and commit, session mutation, notification, and counter updates
+- Frozen `lobby.rs` state and monotonic timestamp ownership plus every relevant `ws_handler.rs` connect, disconnect, create, start, update, end, leave, kick, match-complete, and cleanup transition
+- Frozen `http_api.rs` status projection and `db.rs` player-count snapshot consumer
+- Frozen server integration coverage for ordinary authentication, rate-limited actions, lobby lifecycle, relay allocation and age cleanup, STUN allowlisting, status shape, and adjacent NAT behavior
+- Complete assigned-file histories and the absence of assigned-file changes after adversarial head `c01d8fe...`
+- Current and done GQ ledgers, durable evidence ledger, current and done adversarial ledgers, DMR1, and prior server/networking cleanup records
+- Deduplication owners included queued rechecks `GQ1-RECHECK-0020` through `GQ1-RECHECK-0022` and `GQ1-RECHECK-0032`, plus exact open findings `BR-0114`, `BR-0117`, `BR-0118`, and `BR-0132` through `BR-0135`
+
+## Atomic observations
+
+### GQ1-CHUNK-0070-OBS-001 - DUPLICATE: proxy peer address defeats per-client limiting
+
+- Severity/confidence/category: P1, high, compatibility/networking/security
+- Frozen locations: `server/src/rate_limit.rs:L13-L17,L52-L58`; consumer in `server/src/ws_handler.rs:L239-L253`; production nginx topology
+- Evidence: connection and declared authentication-failure maps use the TCP peer IP. The repository's production nginx topology terminates the public connection and forwards client-address headers, but the handler uses only Axum `ConnectInfo`, making unrelated remote clients share the loopback limiter identity and the same downstream session IP
+- Trigger: use the documented nginx deployment with four or more independent remote clients inside one minute
+- Impact: unrelated users are globally throttled, while the same wrong identity also breaks candidate and STUN ownership
+- Deduplication: exact duplicate of open `BR-0114`. Its trusted-proxy boundary, spoof-resistance requirements, downstream address owners, and validation matrix fully cover this root. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0070-OBS-002 - DUPLICATE: declared authentication-failure limiter has no caller
+
+- Severity/confidence/category: P2, high, security/rate-limiting/maintainability
+- Frozen locations: `server/src/rate_limit.rs:L14-L17,L56-L58`; authentication branches in `server/src/ws_handler.rs`
+- Evidence: `record_auth_fail` is the only API for `ip_auth_fails`, and frozen-tree caller search finds no invocation. Invalid Google, keypair, proof-of-work, callsign, version, and malformed authentication paths therefore never consume the documented five-failures-per-hour budget
+- Trigger: reconnect after each failed authentication and continue across successive connection-rate windows
+- Impact: attackers can repeatedly execute authentication parsing, signature, proof-of-work, and external verification paths despite the stricter policy claimed by the limiter
+- Deduplication: exact duplicate of open `BR-0117`, including centralized failure accounting and before-expensive-work validation. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0070-OBS-003 - DUPLICATE: stale limiter cleanup can delete a concurrent fresh event
+
+- Severity/confidence/category: P2, high, concurrency/security
+- Frozen locations: `server/src/rate_limit.rs:L108-L142`; periodic caller in `server/src/stats.rs:L90-L119`
+- Evidence: cleanup collects stale keys while holding iteration guards, releases them, then unconditionally removes each copied key. A concurrent check can refresh a collected entry before removal, after which cleanup deletes the fresh timestamp and restores the full quota
+- Trigger: synchronize an accepted request between stale-key collection and removal for the same key
+- Impact: rate enforcement resets nondeterministically at cleanup boundaries
+- Deduplication: exact duplicate of open `BR-0118`, whose atomic recheck and barrier-test boundary fully covers this interleaving. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0070-OBS-004 - DUPLICATE: relay rebinding does not authenticate an exact endpoint slot
+
+- Severity/confidence/category: P1, high, security/protocol-authentication/correctness
+- Frozen locations: `server/src/relay.rs:L13-L23,L85-L145`; allocation in `server/src/ws_handler.rs:L1106-L1172`
+- Evidence: a relay pair stores actual lobby slot keys but keeps only `expected_players = 2`; unknown-source inference iterates slots 0 and 1. It authorizes only a session-wide IP set, fails open when that set is empty, and lets attacker-selected destination influence which registered slot is overwritten. Pairs containing later lobby slots are mislabeled, while either participant or a same-IP process can claim the peer after a source-port change
+- Trigger: allocate a pair involving slot 2 or higher, use an empty-address late-join allocation, or send from a new port while selecting the opposite destination
+- Impact: packets can be attributed to or redirected through the wrong player, enabling injection, hijack, and denial of service
+- Deduplication: exact duplicate of open `BR-0132`, including the complete server and Android credential, slot, generation, and packet-validation boundary. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0070-OBS-005 - DUPLICATE: relay resources are not owned by the game generation
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion/resource-lifetime
+- Frozen locations: `server/src/relay.rs:L10-L54,L63-L166`; allocation and lifecycle callers in `server/src/ws_handler.rs`
+- Evidence: relay sessions retain no lobby, game, player, or connection generation, no owner index, no last activity, and no traffic budget. Normal game end, lobby removal, kick, and disconnect cannot release the corresponding tokens. Sessions instead survive for an absolute two hours, at which point active games are also cut off. Capacity admission is a non-atomic length check followed by insertion, and accepted UDP forwarding has no packet or byte throttle
+- Trigger: repeatedly start and abandon relay games, retain a legitimate game beyond two hours, race allocation at the cap, or flood a known token
+- Impact: dead sessions deny relay capacity, active sessions expire incoherently, races exceed the configured cap, and packet floods consume allocator, CPU, log, and network capacity
+- Deduplication: exact duplicate of open `BR-0133`, whose owner index, idempotent transition, atomic reservation, immediate release, activity lifetime, and traffic-budget boundary fully cover this root. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0070-OBS-006 - DUPLICATE: stale lobby decisions commit against a newer state generation
+
+- Severity/confidence/category: P1, high, concurrency/state-machine/correctness
+- Frozen locations: `server/src/stats.rs:L124-L184`; state and timestamp owners in `server/src/lobby.rs` and `server/src/ws_handler.rs`
+- Evidence: cleanup snapshots lobby IDs, releases guards, and later removes or reverts by ID without comparing the observed generation and timestamp. Removal does not recheck state or even condition later counter and session mutations on successful exact removal. A newly Starting lobby also falls back to the lobby's original creation instant, so a lobby that waited more than five minutes can expire before its first state update
+- Trigger: start an old Waiting lobby near a cleanup tick, refresh or end a stale-looking game between scan and commit, replace/remove it concurrently, or begin another holepunch round after the prior round is queued
+- Impact: cleanup can delete or revert current state, notify and detach the wrong players, and double-decrement counters
+- Deduplication: exact duplicate of open `BR-0134`, whose state-entry timestamp, generation-aware conditional mutation, and deterministic race validation fully cover this root. No new `GQF` or evidence extension is warranted
+
+### GQ1-CHUNK-0070-OBS-007 - DUPLICATE: manually paired statistics wrap and publish false semantics
+
+- Severity/confidence/category: P2, high, correctness/observability/maintainability
+- Frozen locations: `server/src/stats.rs:L8-L109,L169-L183`; transition callers in `server/src/ws_handler.rs`; HTTP and database consumers
+- Evidence: live counters are wrapping `AtomicU32` increments and decrements without entity ownership, transition preconditions, or zero guards. Duplicate starts, authentication replacement, or cleanup races can overcount or wrap zero to `u32::MAX`. Daily peak reset has no caller, all-time peak is not restored after restart, snapshot write errors are ignored, and HTTP fields label game and lobby counts as player counts
+- Trigger: repeat or race connect, start, end, removal, and cleanup; cross midnight; restart after a recorded peak; or force snapshot persistence failure
+- Impact: public and persisted operational statistics can report billions, use false field semantics, fail to roll daily, and forget all-time history
+- Deduplication: exact duplicate of open `BR-0135`. The current GQ evidence ledger already records the HTTP field-semantic consequence. No new `GQF` or evidence extension is warranted
+
+## Explicit clean dimensions
+
+- Rate-limiter local bounds: each accepted-event deque is bounded by its small threshold, timestamps use monotonic `Instant`, expired front entries are pruned before admission, and every declared map is included in periodic cleanup. The identity, missing auth caller, and cleanup race remain the duplicate observations above
+- Relay packet parsing: the fixed 2048-byte receive buffer bounds input, packets shorter than the five-byte header are rejected before indexing, unknown tokens and unknown destinations are dropped, known exact source addresses retain their mapped slot, and forwarding copies at most the received datagram. Authentication, ownership, lifetime, and rate controls remain `BR-0132` and `BR-0133`
+- Relay ordinary cleanup mechanics: absolute-age comparison uses monotonic time and `DashMap::retain`, and the focused cleanup test covers one old and one fresh entry. The chosen absolute lifetime and missing game ownership remain `BR-0133`
+- Statistics data-race safety: atomic scalar access and DashMap guards avoid an immediate Rust data race or iterator invalidation. Snapshot construction is allocation-light, periodic schedules are bounded, and lobby staleness uses monotonic instants. Logical transition and generation correctness remain `BR-0134` and `BR-0135`
+- Holepunch ordinary path: queued reversion rechecks that the current enum is still `Holepunching` before mutation and clears its timestamp. It does not establish round identity, which remains within `BR-0134`
+- Failure handling: relay bind errors propagate, receive errors are diagnosed and retried, unknown and malformed datagrams are rejected, and send failures are observable. Existing listener-supervision and logging owners cover broader service behavior
+- Compatibility and diff minimization: all assigned code is branch-added relative to the review base, uses typed Rust network and time primitives, and adds no D1/D2 inherited-file merge pressure
+- Tests: ordinary server tests cover authentication, action rate limits, lobby creation and transitions, relay assignment structure, absolute-age relay cleanup, STUN allowlisting, and status response shape. They do not cover the hostile, race, multi-slot, lifecycle, peak, or counter cases already specified by the duplicate owners
+
+## Evidence gaps and limits
+
+- This was a frozen-object read-only survey. No Cargo build, test, Clippy, Rustfmt, sanitizer, packet flood, proxy deployment, paused-time run, barrier race, multi-client relay exchange, external authentication call, database failure injection, or long-duration service run was executed
+- The UDP relay loop is not factored for direct packet-level unit testing, and frozen integration coverage constructs sessions and checks age cleanup without sending hostile or ordinary relay datagrams
+- The exact runtime cost and exploitability of packet and log floods were not benchmarked; the absent admission controls and owner relationships are statically explicit and already owned by `BR-0133`
+- Recheck units exist for several historical roots. This deterministic chunk confirms the frozen object only and does not claim live-head remediation status
+- Later deterministic chunks own `db.rs`, the remaining `ws_handler.rs` ranges, integration tests, deployment material, Android networking consumers, and cross-file server sweeps. Their context was inspected only as needed and is not claimed as completed coverage here
+
+## Commands and validation context
+
+- Read the required repository instructions and complete general-quality process, then resolved the exact three-path batch from the canonical ledger
+- Used `git cat-file`, `git merge-base --is-ancestor`, `git ls-tree`, `git show`, `git diff`, `git log --follow`, and frozen `git grep` for object validity, ancestry, blobs, base absence, assigned text, histories, callers, transitions, configuration, and tests
+- Used `rg` and bounded reads across both GQ ledgers, the durable evidence ledger, both adversarial ledgers, DMR1, and prior networking records for limiter, relay, cleanup, counter, peak, lifecycle, and test duplicates
+- Computed the scope SHA-256 and Git blob SHA-1 in memory over the exact 212-byte manifest
+- Inspected live status only for the assigned inbox path to avoid overwriting another worker. No mutable product file supplied evidence and no formatter, generator, build, test, network, or device workflow ran
+
+## Normalization recommendation
+
+1. Normalize OBS-001 through OBS-003 as exact duplicates of open `BR-0114`, `BR-0117`, and `BR-0118` respectively, without allocating new IDs or evidence extensions.
+2. Normalize OBS-004 through OBS-007 as exact duplicates of open `BR-0132`, `BR-0133`, `BR-0134`, and `BR-0135` respectively, without allocating new IDs or evidence extensions.
+3. Record this chunk as `ISSUES`, not `PARTIAL`: every assigned frozen line and necessary frozen context was reviewed, and dynamic execution is an explicit validation gap rather than missing static coverage.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0070 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0071 frozen survey SHA256:4d4510d6d159aab1c4c1633c7d36f351d345b5d6008342d32dcc69e8df49468f -->
+
+## GQ1-CHUNK-0071 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0071.md`
+- Imported SHA-256: `4d4510d6d159aab1c4c1633c7d36f351d345b5d6008342d32dcc69e8df49468f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0071 frozen survey
+
+Outcome: ISSUES. All 532 assigned frozen lines were reviewed with every database caller, the protocol types, focused integration tests, server configuration and deployment context, the complete file history, and current and historical finding owners. The database still exhibits the six risks already owned by BR-0137 through BR-0142 and supplies concrete database-layer evidence for BR-0113, BR-0120, BR-0121, BR-0122, BR-0123, BR-0124, and BR-0135. No distinct new root survived deduplication. No product code, canonical ledger, temporary report, test artifact, build output, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/db.rs` L1-L532, all 532 lines reviewed
+- Frozen blob: `960416b46a52c8fc9896553200deeec094e80f08`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/db.rs|L1-L532|960416b46a52c8fc9896553200deeec094e80f08
+```
+
+- Scope-manifest byte count: 66
+- Git blob SHA-1 of the exact manifest bytes: `93f78c9d616efcfd9266992a0a0ab141a2f60fe6`
+- SHA-256 of the exact manifest bytes: `35380210f45ff3d238356f059abe3d28f27bc81902f41f49f6dd1afa0ab72d8f`
+- The file is branch-added relative to the review base and has one frozen creation commit, `85be7784`
+- The mutable worktree was not used as product authority. Concurrent work was preserved
+
+## Context and ownership inspected
+
+- Complete frozen `server/src/db.rs`, including schema creation, UUID conversion, player and identity registration, bans, directed friend state, match persistence, statistics, connection events, and moderation writes
+- Frozen callers in `identity.rs`, `friends.rs`, `http_api.rs`, `stats.rs`, and `ws_handler.rs`; protocol types in `protocol.rs`; state ownership in `lib.rs`; configuration and production deployment context
+- Focused database and WebSocket integration tests, especially permanent bans, match inserts, friend CRUD, snapshots, authentication, and friend operations
+- The file's complete history and frozen addition diff
+- Current GQ plan, process, active and done ledgers, durable evidence ledger, adversarial active and done ledgers, DMR1 records, and prior cleanup plans for duplicate and regrowth ownership
+- Deduplication owners included BR-0113, BR-0120 through BR-0124, BR-0135, and BR-0137 through BR-0142
+
+## Atomic observations
+
+### GQ1-CHUNK-0071-OBS-001 - DUPLICATE BR-0137: ban lookup failures remain allow decisions
+
+- Severity/confidence/category: P1, high, security/access-control
+- Frozen locations: `db.rs:L295-L303`; callers `ws_handler.rs:L430-L445,L504-L521,L564-L583`
+- Evidence: `is_banned` preserves SQLite errors in its return type, but all three authentication routes call `unwrap_or(false)`. Corruption, I/O failure, malformed stored UUID text, schema drift, or another query error therefore produces the same decision as a verified absent ban.
+- Trigger and impact: make the ban query fail during any authentication route; an identity is admitted when moderation state cannot be established.
+- Fix and validation boundary: keep the three-state decision through one shared authentication authorization path and fail closed or retry on storage error. Inject read, schema, and malformed-value failures on all routes.
+- Deduplication: exact current evidence for open BR-0137. Do not create a new GQF root.
+
+### GQ1-CHUNK-0071-OBS-002 - DUPLICATE BR-0138: ban expiry uses incompatible textual time forms
+
+- Severity/confidence/category: P2, high, correctness/access-control
+- Frozen locations: `db.rs:L153-L158,L295-L303,L505-L520`; producer `http_api.rs:L235-L264`
+- Evidence: the HTTP producer stores an RFC 3339 form containing `T` and `Z`, while the query compares it lexically with SQLite `datetime('now')`, whose form contains a space and no zone suffix. Same-day elapsed expiries can remain lexically greater until the UTC date changes.
+- Trigger and impact: authenticate after a finite ban's instant but on the same UTC day; access remains denied beyond the operator-selected duration.
+- Fix and validation boundary: store and compare one canonical instant representation, migrate existing values, and test before, at, and after the exact boundary across dates.
+- Deduplication: exact current evidence for open BR-0138. BR-0124 separately owns hostile duration construction.
+
+### GQ1-CHUNK-0071-OBS-003 - DUPLICATE BR-0139: synchronous SQLite and one standard mutex block async workers
+
+- Severity/confidence/category: P1, high, concurrency/resource-exhaustion
+- Frozen locations: `db.rs:L64-L81,L172-L528`; inline callers across Axum, Tokio WebSocket, and periodic stats tasks
+- Evidence: every operation locks one `std::sync::Mutex<Connection>` and performs synchronous prepare, query, transaction, WAL, and filesystem work inline. Public traffic can queue operating-system threads behind a stalled holder, and the API has no bounded database queue, blocking executor ownership, deadline, or overload response.
+- Trigger and impact: overlap authentication, friends, results, status, moderation, and snapshots while a write, checkpoint, or filesystem operation stalls; unrelated socket, timer, cleanup, and health work can lose runtime capacity.
+- Fix and validation boundary: use a bounded database actor or blocking pool with typed async operations, queue limits, deadlines, and latency telemetry. Load-test contention and storage stalls without starving runtime timers.
+- Deduplication: exact current evidence for open BR-0139.
+
+### GQ1-CHUNK-0071-OBS-004 - DUPLICATE BR-0140: client-driven persistent tables have no retention or byte budget
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion
+- Frozen locations: `db.rs:L84-L164,L207-L293,L408-L500`
+- Evidence: player and keypair rows have no lifecycle, connection events append on ordinary sessions, match and match-player rows append on completion, and five-minute snapshots append indefinitely. No table has age or row retention, a byte quota, a disk reserve, bounded cleanup, or write shedding.
+- Trigger and impact: sustain identity creation, reconnects, matches, or ordinary long-term operation until the database or WAL consumes its filesystem; authentication, moderation, friendship, statistics, and recovery then share the failure.
+- Fix and validation boundary: define per-table lifecycle and byte budgets, cap abusive durable identity creation, perform bounded maintenance and checkpointing, reserve recovery space, and shed noncritical telemetry first.
+- Deduplication: exact current evidence for open BR-0140. BR-0131 owns the independent file-log retention root.
+
+### GQ1-CHUNK-0071-OBS-005 - DUPLICATE BR-0141 and extension of BR-0113: keypair registration is split and representation-bound
+
+- Severity/confidence/category: P2, high, correctness/data-integrity/identity
+- Frozen locations: `db.rs:L249-L293`; callers `ws_handler.rs:L428-L474,L539-L590`; key derivation `pow.rs:L36-L75`
+- Evidence: lookup precedes registration, and registration autocommits the player insert before inserting the keypair mapping. A second-statement failure leaves a player whose unique synthetic GPGS value prevents clean retry. The stored mapping and synthetic identity both use a hash derived upstream from noncanonical public-key text, so equivalent accepted hex encodings can create different durable players.
+- Trigger and impact: fail between inserts, race valid first registrations, or vary only accepted key hex case; registration can be poisoned or one cryptographic identity can fragment into multiple friend and ban identities.
+- Fix and validation boundary: canonicalize decoded key bytes and combine lookup, both inserts, conflict resolution, and winner reread in one immediate transaction. Inject every statement failure and concurrent equivalent encodings.
+- Deduplication: transactionality is exact BR-0141; representation identity extends BR-0113. Do not create a third root.
+
+### GQ1-CHUNK-0071-OBS-006 - DUPLICATE BR-0142: moderation has no durable audit write
+
+- Severity/confidence/category: P2, high, security/auditability
+- Frozen locations: `db.rs:L146-L151,L503-L528`; HTTP moderation callers
+- Evidence: schema creation declares `admin_log`, but the API exposes no insert and frozen reference search finds no writer. Ban and unban mutate only `bans`; ordinary tracing does not preserve actor, request source, correlation, prior value, or durable outcome.
+- Trigger and impact: investigate a moderation transition after logs rotate or multiple requests overlap; the promised queryable attribution record does not exist.
+- Fix and validation boundary: define a bounded audit event and commit each successful state transition with its audit row in one transaction, with attributable credentials, redaction, access control, retention, and failure-path tests.
+- Deduplication: exact current evidence for open BR-0142.
+
+### GQ1-CHUNK-0071-OBS-007 - EXTENDS BR-0120: database API cannot atomically record a complete match
+
+- Severity/confidence/category: P2, high, correctness/data-integrity
+- Frozen locations: `db.rs:L408-L445`; caller `ws_handler.rs:L2315-L2382`
+- Evidence: the only persistence API exposes separate autocommitted parent and per-player inserts. The caller ignores every result, removes the lobby, and acknowledges success. A parent failure makes every child fail its foreign key; a later child failure retains an incomplete match; retries have neither an idempotency key nor an intact live lobby. Database constraints enforce only parent existence and unique `(match_id, player_id)`, not authoritative roster membership.
+- Trigger and impact: inject any statement failure or send an untrusted, duplicate, omitted, or foreign host-supplied roster; statistics can contain fabricated or partial history while the client receives success and cannot retry.
+- Fix and validation boundary: expose one transaction-sized operation accepting a validated authoritative snapshot and commit it before cleanup and acknowledgement. Test rollback at every statement, idempotent replay, exact roster equality, and official-client completion.
+- Deduplication: this is the database-layer mechanism already included in open BR-0120, not a new root.
+
+### GQ1-CHUNK-0071-OBS-008 - EXTENDS BR-0121 and BR-0122: directed friend rows lack transition and identity invariants
+
+- Severity/confidence/category: P1, high, security/authorization and correctness/identity
+- Frozen locations: `db.rs:L193-L205,L305-L403`; callers `friends.rs:L11-L118` and `ws_handler.rs:L2385-L2559`
+- Evidence: callsigns are mutable and nonunique, yet lookup selects an arbitrary matching row with `LIMIT 1` and no ordering. `accept_friend` does not require its pending-row update to affect one row before inserting a reverse accepted row. `INSERT OR IGNORE` and `INSERT OR REPLACE` hide rejected or overwritten transitions, block only one direction, and the handlers discard mutation results. `get_friends` returns pending, accepted, and blocked rows alike for presence enrichment.
+- Trigger and impact: target a duplicate callsign, accept without a request, block an existing relation, or inject a database error; relationships can bind the wrong identity, be forged, leak presence, preserve the opposite edge, or be reported as successful when no intended transition committed.
+- Fix and validation boundary: use stable IDs, model allowed state transitions explicitly, require exact affected-row counts, update both relevant edges atomically, filter disclosure by accepted state and block policy, and return typed acknowledgements and failures.
+- Deduplication: arbitrary callsign identity is BR-0122 and state authorization is BR-0121. This observation adds no independent database root.
+
+## Explicit clean dimensions
+
+- Construction and SQL safety: database open, WAL selection, foreign-key enabling, and schema failures propagate. Every dynamic value uses rusqlite parameters; no SQL injection site was found.
+- In-process data-race safety: one connection is consistently held behind one mutex. GPGS lookup and creation keep the same guard across the check and insert, so concurrent in-process GPGS creation does not form a split race. BR-0139 concerns blocking placement and capacity, not unsynchronized connection use.
+- UUID storage: writes use canonical hyphenated UUID text and reads parse through `Uuid::parse_str`, rejecting malformed stored identities rather than silently substituting another value.
+- Ordinary foreign-key ownership: friends, bans, keypair identities, and match players reference existing parent rows with foreign keys enabled. Match parent/children transactional completeness remains BR-0120.
+- Numeric widths: current `u32` durations, counts, kills, and deaths fit SQLite signed 64-bit INTEGER. SQL `COUNT(*)` is nonnegative for these tables, so the ordinary `i64` to `u64` result conversion does not alter valid values.
+- Friendship CRUD mechanics: ordinary request, accept, list, and removal with two existing distinct players succeeds under the focused positive test, and acceptance wraps its two normal writes in a transaction. Authorization and transition preconditions remain BR-0121.
+- Ban CRUD mechanics: permanent ban insertion, lookup, and removal have a focused positive in-memory test. Finite-time representation and storage-error policy remain BR-0138 and BR-0137.
+- Match CRUD mechanics: ordinary direct parent then player insertion preserves foreign-key order and has a positive database test. End-to-end authority and atomicity remain BR-0120.
+- Statistics queries: totals use SQL counts rather than loading rows, and the periodic snapshot shape is fixed-size. Counter truth and ignored snapshot failures remain BR-0135; history retention remains BR-0140.
+- SQL statement lifetime and ordinary cleanup: prepared statements and row iterators are scoped to each guard, errors propagate from database methods, and explicit transactions roll back on drop when commit is not reached.
+- Portability and dependency ownership: the module uses stable Rust and pinned rusqlite with bundled SQLite. No platform-specific path arithmetic, ABI boundary, unsafe block, or manual allocation appears in the assigned code.
+- Diff minimization: this branch-added server module does not increase the inherited D1 or D2 diff. Its defects belong in server-owned files and tests.
+
+## Evidence gaps and limitations
+
+- No server build, test, sanitizer, corrupt-database run, concurrent load test, WAL checkpoint test, disk-pressure test, or failure injection was run because this was a frozen-object read-only survey.
+- SQLite mutex poisoning was inspected. Ordinary fallible rusqlite paths return errors rather than panic while holding the lock; no concrete reachable panic distinct from existing resource and failure-policy owners justified a finding.
+- `CREATE TABLE IF NOT EXISTS` has no versioned migration framework. The frozen repository contains only the initial schema and no prior deployed schema transition, so there is no concrete current incompatibility to admit. Treat upgrade migration as an interface-sweep and release-readiness gap until a second schema exists.
+- Status, result, mission, and event text columns have no CHECK constraints. Their exposed producer validation, protocol message limits, trust model, and persistence amplification are already owned by BR-0120, BR-0121, BR-0126, and BR-0140; no separate corrupt consumer was established here.
+- `player_count_history.timestamp` has second precision and is a primary key. The maintained producer runs every five minutes; a restart or manual second insert can fail, but ignored snapshot failure and observability are already within BR-0135 and no additional product behavior was proven.
+- Live source may have moved after the frozen head. Remediation must reread current files and create delta coverage for semantic drift.
+
+## Commands and methods
+
+- `Get-Content -Raw .github/copilot-instructions.md` and the complete general-quality process for repository and campaign rules
+- `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git log --follow`, and `git grep` for frozen identity, all assigned lines, history, callers, schemas, tests, and producer/consumer traces
+- `rg` across the current and done GQ ledgers, durable evidence ledger, current and done adversarial ledgers, DMR1, source, tests, configuration, deployment files, and prior plans for deduplication
+- In-memory Git blob SHA-1 and SHA-256 calculation for the exact scope manifest
+- Static traces of authentication to player creation and ban checks; proof-of-work to key identity rows; friend request through directed transitions and presence projection; match completion through parent/child persistence and acknowledgement; periodic statistics through snapshot storage; and moderation request through ban state and absent audit publication
+
+## Normalization recommendation
+
+- Record the unit as `ISSUES` because all six database-specific adversarial findings remain structurally present.
+- Normalize observations 001 through 006 as duplicates or current evidence extensions of BR-0137 through BR-0142 in order.
+- Attach observation 007 to BR-0120 and observation 008 to BR-0121 and BR-0122. Cross-link BR-0113, BR-0123, BR-0124, and BR-0135 from the relevant database evidence without creating new roots.
+- Admit no new `GQF-*` or `GQI-*` from this unit. Retain schema migration, hostile-runtime failure injection, and load behavior as explicit gaps for the later interface, concurrency, server-security, and release sweeps.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0071 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0072 raw survey SHA256:ae28fa0a87b0b658a690eeb4ebc8f0fffed2ac8623e87ccbc2198483d2a4a443 -->
+
+## GQ1-CHUNK-0072 raw survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0072.md`
+- Imported SHA-256: `ae28fa0a87b0b658a690eeb4ebc8f0fffed2ac8623e87ccbc2198483d2a4a443`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0072 raw survey
+
+## Outcome
+
+ISSUES. All 475 assigned frozen lines in `server/src/nat_sim.rs` were reviewed, together with the complete NAT simulator tests, standalone runner, crate registration, maintained design plan, history, prior adversarial findings, current GQ rechecks, and relevant server and Android STUN context. Four observations extend or reproduce existing open findings. One additional resource-bound candidate distinguishes unbounded growth during a live simulator from the already recorded failure to stop resources when the handle is dropped. The post-adversarial sequential-port change closes reservation races and wraparound for its 32-port pool, but it does not report runtime pool exhaustion. No product, canonical ledger, plan, fixture, temporary file, or existing report was edited.
+
+## Frozen scope and fingerprint
+
+- Coverage ID: `GQ1-CHUNK-0072`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `34ed94767d2a2dbca3e07dd1ba672be467cfb3f1`
+- Frozen base is an ancestor of the frozen head: yes
+- Assigned path and range: `server/src/nat_sim.rs` L1-L475, all 475 lines reviewed
+- Frozen head blob: `82a64184e3471943b9dedf54cbf7b54d7c1c1f17`
+- Frozen base state: path absent
+- Scope manifest: one ASCII record with one final LF
+- Scope manifest byte count: 71
+- Scope SHA-256: `cd8257f16ff3963d3a1b969fc90799b7e05f3205ff53ff7454cc6b0fac4bd809`
+
+```text
+server/src/nat_sim.rs|L1-L475|82a64184e3471943b9dedf54cbf7b54d7c1c1f17
+```
+
+All product, caller, test, and history evidence below came from the frozen Git objects or named historical objects. Mutable worktree product content was not used as evidence.
+
+## Context inspected
+
+- Complete frozen `server/src/nat_sim.rs`, including NAT-type contracts, mapping identity, task ownership, sequential-port reservation, outbound and inbound loops, filtering, the mini STUN responder, and the STUN client helper
+- Complete frozen `server/tests/nat_sim_tests.rs`, including ordinary mapping, filtering, direct-exchange, sequential-port, tiny-packet, and nominal multi-client cases
+- Frozen `server/src/bin/nat_sim.rs`, `server/src/lib.rs`, `server/Cargo.toml`, `server/run_nat_tests.ps1`, and `android/ai tool plans/networking/plan.NAT_SIMULATOR.md`
+- Frozen server STUN ownership and Android STUN response context needed to distinguish the simulator-only helper from production traversal behavior
+- Complete history through introducing commit `56e97446` and sequential-reservation fix `8868b50a`, plus the exact delta from adversarial freeze `c01d8fe4` to the assigned frozen head
+- Active and done general-quality ledgers, durable evidence ledger, active and done adversarial ledgers, DMR1, and prior cleanup records
+- Existing owners `BR-0109`, `BR-0110`, `BR-0111`, `BR-0112`, `BR-0136`, `BR-0401`, `BR-0405`, and `BR-0406`, plus `GQ1-RECHECK-0015` through `GQ1-RECHECK-0018`
+
+## Atomic observations
+
+### GQ1-CHUNK-0072-OBS-001 - EXTENDS BR-0109: shutdown remains best-effort and new reservations increase leaked socket ownership
+
+- Proposed normalization: EXTENDS `BR-0109`; no new ID.
+- Severity/confidence/category: P2, high, resource-lifetime/concurrency/test-infrastructure
+- Assigned evidence: `NatSimHandle` owns only an `Arc<Mutex<Vec<JoinHandle<()>>>>` at L68-L85. It has no `Drop` implementation or awaited shutdown, and `abort` silently does nothing when `try_lock` loses the race with L230. The main task owns the same task vector that contains its own handle at L109-L124. `StunServerHandle` at L315-L325 also relies on callers reaching explicit `abort`. The post-review sequential change additionally stores up to 32 already-bound sockets in `NatState` at L53-L54 and L127-L181, so dropping a simulator without successful cancellation now retains the reserved pool as well as active mappings and tasks. Receive errors in the main NAT and STUN loops are converted into unconditional retries at L192-L195 and L335-L339, preventing a persistent error from supervising either task to a terminal failure.
+- Trigger: drop either handle on an assertion, `?`, cancellation, or replacement path; call `NatSimHandle::abort` while a mapping task is being appended; or encounter a persistent receive error in either forever loop.
+- Impact: detached tasks retain state, sockets, reserved port ranges, and runtime work. Later tests can fail to bind requested ports, receive leaked traffic, accumulate tasks and descriptors, or spin on an unrecoverable receive failure.
+- Historical relation: the ownership and best-effort lock are the exact open `BR-0109` root. The 32-socket reservation and repeated-error behavior materially broaden its retained-resource and supervision evidence after the adversarial freeze; they do not justify a duplicate lifecycle finding.
+- Fix boundary: use one cancellation-aware supervisor that owns and drains all child tasks, expose an awaited idempotent shutdown, implement unconditional abort-on-drop fallback for both handles, and make permanent receive failures terminate with observable status. Ensure sequential reservations are released before shutdown completes.
+- Focused coverage: drop, cancellation, panic, and explicit shutdown before traffic and while creating mappings; force task-vector contention and receive failure; repeatedly rebind the internal, external, STUN, and explicit sequential ports; assert every task and socket reaches baseline.
+
+### GQ1-CHUNK-0072-OBS-002 - DUPLICATE BR-0110: mapping identity and return routing still ignore the internal client
+
+- Proposed normalization: DUPLICATE or evidence refresh for `BR-0110`; no new ID.
+- Severity/confidence/category: P2, high, correctness/test-infrastructure
+- Assigned evidence: `mapping_key` accepts `src` but names it `_src` and returns either the literal `default` or a destination-only string at L57-L65. `NatState` has one `internal_client_addr` at L51-L52, every outbound packet overwrites it at L205-L207, and every inbound mapping sends to that single last sender at L282-L297. The frozen multi-client test still documents shared behavior and checks only equal external IPs rather than distinct ports, allowlists, and reply owners.
+- Trigger: send from two internal UDP sockets through one simulator, then deliver a reply for the first mapping after the second client has sent any packet.
+- Impact: clients share mappings and filtering state, and inbound traffic for an earlier client is delivered to the most recent sender. A shared simulator cannot represent the per-internal-endpoint contract documented by the enum and plan.
+- Historical relation: this is the exact open `BR-0110` control-flow and test-oracle root. The sequential reservation change did not alter it.
+- Fix boundary: use a typed key containing the internal source for every NAT mode, retain the return address on each `PortMapping`, and remove global last-sender state.
+- Focused coverage: interleave two and many clients across all four NAT modes and same or different destinations; prove distinct required mappings, independent allowlists, and no cross-client delivery.
+
+### GQ1-CHUNK-0072-OBS-003 - DUPLICATE BR-0111: declared STUN attribute bodies are still sliced without complete bounds
+
+- Proposed normalization: DUPLICATE or evidence refresh for `BR-0111`; no new ID.
+- Severity/confidence/category: P2, high, correctness/input-validation
+- Assigned evidence: the helper derives `attr_end` from the untrusted message length at L450-L453 but does not require that boundary to fit the datagram. For a matching XOR-MAPPED-ADDRESS header it accepts any declared length at least eight, then slices `stun_data[pos + 4..pos + 4 + attr_len]` at L454-L457 without proving that the value fits either the declared body or received bytes. A STUN endpoint sees the random transaction ID in the request and can return a matching truncated response.
+- Trigger: return a matching-type, magic, and transaction response whose message or XOR-MAPPED-ADDRESS length extends beyond the UDP payload.
+- Impact: network-controlled test data panics the async caller instead of producing `None`, aborting or destabilizing the traversal scenario that is meant to exercise malformed network behavior.
+- Historical relation: this is the exact open `BR-0111` server-simulator location. The post-review port change did not touch the parser.
+- Fix boundary: reject declared bodies beyond the datagram, use checked arithmetic for complete and padded attribute ends, require the exact supported family layout, and access only checked slices.
+- Focused coverage: truncate at every header and value byte, overdeclare message and attribute lengths, omit padding, reorder unknown attributes, and fuzz matching transactions; require typed rejection without panic.
+
+### GQ1-CHUNK-0072-OBS-004 - EXTENDS BR-0112: reserved ports fix collision and wrap, but exhaustion becomes an unreported packet drop
+
+- Proposed normalization: EXTENDS and narrows `BR-0112`; record the collision and wrap portions as repaired at the assigned frozen head, but keep the finding open for runtime exhaustion and its missing status path.
+- Severity/confidence/category: P2, high, correctness/test-reliability/error-handling
+- Assigned evidence: L127-L181 now reserves a complete 32-socket contiguous range at startup, uses checked addition, drops partial attempts, and returns explicit startup errors. This closes the original probe-and-release collision and `u16` wrap mechanisms. At L210-L215, however, the 33rd distinct symmetric-sequential destination only logs `capacity exhausted` inside the detached outbound task and drops the packet. `start_nat` has already succeeded, the caller has no error/status channel, and no existing test consumes all 32 mappings or verifies the 33rd outcome.
+- Trigger: send through one symmetric-sequential simulator to 33 distinct destination endpoints.
+- Impact: the client observes only a later receive timeout and cannot distinguish a simulator capacity failure from the network behavior under test. A traversal test can therefore report the wrong NAT outcome or become a nondiagnostic flake even though startup claimed success.
+- Historical relation: `BR-0112` explicitly required mapping-through-exhaustion coverage and either exact ports or an immediate typed error with no background timeout. The frozen change satisfies reservation and range validation but not that remaining acceptance boundary.
+- Fix boundary: define the mapping budget in the public contract and return runtime allocation or exhaustion through an observable channel, or provision the complete scenario budget before startup and reject an insufficient configuration. Do not silently drop a structurally valid internal packet because the helper exhausted its own pool.
+- Focused coverage: create exactly 31, 32, and 33 destination mappings for explicit and automatic ranges; assert exact monotonic ports through capacity and an immediate deterministic exhaustion result with no task panic or receive timeout.
+
+### GQ1-CHUNK-0072-OBS-005 - NEW candidate: live symmetric mappings and port-restricted allowlists grow without a bound or expiry
+
+- Proposed normalization: NEW P2/high resource-bound finding unless canonical normalization intentionally broadens `BR-0109` from shutdown ownership to live-state admission. Keep this distinct from Docker proxy `BR-0561`, which concerns a separate implementation and network exposure.
+- Severity/confidence/category: P2, high, resource-lifetime/performance/test-reliability
+- Assigned evidence: every previously unseen symmetric destination creates a bound UDP socket, one forever inbound task, a `HashMap` entry, and a retained join handle at L209-L239. There is no mapping count, idle expiry, removal path, or failed-send eviction. Nonsequential symmetric mode has no 32-entry ceiling and uses `UdpSocket::bind(...).await.unwrap()` at L217-L219, so descriptor or port exhaustion panics the sole outbound task. Full-cone and port-restricted mappings also append every unique destination to `allowed_remotes` at L240-L244, even though full-cone inbound never consults that vector; lookup and filtering are linear at L278-L280. All of this state remains until successful whole-simulator shutdown.
+- Trigger: a test client, malformed scenario generator, or accidental loop sends through one live simulator to many distinct IPv4 destination/port pairs. Port-restricted mode grows one vector; symmetric mode grows sockets, tasks, mappings, and handles until OS allocation fails.
+- Impact: one in-process scenario can consume descriptors, ephemeral ports, heap, scheduler tasks, and increasing lookup time, then silently lose its outbound loop to an unwrap panic. Subsequent tests in the same runtime can fail or time out for reasons unrelated to the behavior they intended to validate.
+- Deduplication: `BR-0109` owns failure to stop already-owned resources when the handle is dropped or shutdown races. This observation instead concerns missing admission, expiry, and failure propagation while the handle is alive. `BR-0561` applies to the Python Docker NAT proxy, not this Rust module. Prior sweeps cited `BR-0109` generically for NAT resource lifetime, so the canonical writer should choose one explicit owner and avoid parallel remediation.
+- Fix boundary: define per-mode mapping and allowlist budgets, avoid recording allowlists for full-cone mode, expire or explicitly clear idle mappings and their tasks, make allocation failure observable without panic, and expose counts for deterministic tests.
+- Focused coverage: send to the exact limit and one beyond it for every NAT mode, churn and reuse destinations, advance idle expiry, inject bind failure, and assert bounded sockets, tasks, mappings, allowlist entries, lookup work, and deterministic error reporting.
+
+## Explicit clean dimensions
+
+- Sequential startup reservation: checked arithmetic rejects wrapping explicit ranges, all 32 sockets are retained before success, a partial explicit or automatic attempt releases its sockets, automatic search is bounded to 128 attempts, and startup propagates bind and address errors. Runtime exhaustion remains OBS-004.
+- Ordinary single-client semantics: the four NAT modes choose stable or endpoint-dependent mappings as documented for one internal client; full-cone accepts any IPv4 source, restricted modes compare complete source endpoint pairs, and the normal outbound and inbound payload headers are encoded consistently. Multi-client ownership remains OBS-002.
+- Packet framing and memory safety outside STUN attributes: internal packets shorter than six bytes are rejected before header indexing, both UDP receive buffers bound retained payload memory, response capacity is derived from the bounded payload, and IPv6 external sources are rejected before producing an IPv4 header. Oversized UDP datagrams can be truncated by the fixed test proxy, but maintained traversal payloads stay below that boundary and no separate current trigger was established.
+- Mini STUN ordinary path: it binds only loopback, rejects short headers, wrong request types, wrong magic, and non-IPv4 senders, copies the complete 96-bit transaction ID, and constructs a fixed 32-byte IPv4 XOR-MAPPED-ADDRESS response with internally consistent lengths. Complete response-oracle coverage remains `BR-0405`; end-to-end traversal remains `BR-0406`.
+- STUN client ordinary path: the helper constructs a valid zero-attribute binding request, supports only the module's documented IPv4 header, applies a two-second receive deadline, and validates response type, magic, and transaction ID before decoding a complete ordinary IPv4 response. Malformed attribute bounds remain OBS-003 and end-to-end IPv6 remains `BR-0136`.
+- Concurrency and locks: inbound sends occur after releasing the state mutex, outbound external sends occur after releasing it, and no reverse state-to-task lock cycle beyond the shutdown race in OBS-001 was established. Mapping creation does hold state across socket bind and task-vector acquisition, but current callers cannot submit another internal packet until the single outbound loop advances, so no distinct deadlock root was admitted.
+- Errors and diagnostics: startup reservation errors are typed and outbound send failures are logged. Silent exhaustion, task receive supervision, bind panic, and ignored inbound/STUN send results are covered by the observations above or existing lifecycle owners rather than split into symptom findings.
+- API and duplication: the simulator is new server test infrastructure with one crate module and one standalone wrapper; no inherited D1/D2 file or cross-language ABI is changed. NAT-type selection and crate registration match the maintained names and callers.
+- History and tests: the frozen sequential tests cover ordinary adjacency, an occupied explicit first port, and explicit wrap rejection. Existing tests cover nominal full-cone, restricted, symmetric, tiny-packet, and direct-exchange behavior. Their known multi-client false oracle, malformed STUN omission, shutdown gaps, exhaustion omission, and missing promised end-to-end matrix retain the listed owners.
+
+## Evidence gaps and limits
+
+- No product build, test executable, network listener, descriptor-exhaustion run, forced bind or receive failure, timeout stress, sanitizer, emulator, Docker tier, or external request was run because this was a frozen-object read-only survey.
+- The 32nd and 33rd sequential mappings, large nonsequential mapping sets, large restricted allowlists, drop/abort races, persistent UDP errors, and malformed STUN corpus were not executed. Their control flow and ownership were traced statically.
+- The intended maximum scenario size is not declared outside the hard-coded sequential capacity. If an external orchestrator guarantees fewer than 32 destinations and one client per simulator, that narrows ordinary exposure but does not make the public helper's silent failure and resource contracts explicit.
+- Context outside the assigned file was inspected only for callers, tests, design, deduplication, and ownership. This report claims deterministic coverage only for `server/src/nat_sim.rs` L1-L475.
+
+## Commands and validation context
+
+- Read the required repository instructions, complete general-quality worker process, active and done GQ ledgers, durable evidence ledger, adversarial ledgers, DMR1, and maintained NAT plan
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git show`, `git diff`, `git log`, `git grep`, and `git hash-object` to confirm frozen ancestry, tree, blob, absent base path, complete assigned source, history, tests, callers, and the post-adversarial sequential delta
+- Used `rg`, `Get-Content`, and line-numbered frozen-object output to trace mapping, socket, task, filtering, STUN, test, finding, recheck, and remediation ownership and to search for duplicates
+- Computed the exact one-record scope SHA-256 over 71 ASCII bytes with one final LF
+- Used `git status --short` only to identify unrelated mutable ownership. No mutable product file supplied evidence and no formatter, generator, build, test, network, Docker, or device workflow ran
+
+## Normalization recommendation
+
+1. Extend `BR-0109` with OBS-001, explicitly recording the new retained sequential socket pool and receive-loop supervision behavior.
+2. Record OBS-002 and OBS-003 as duplicate evidence refreshes for `BR-0110` and `BR-0111`.
+3. Narrow `BR-0112` using OBS-004: mark collision reservation and wraparound repaired at the frozen head, but keep its runtime-exhaustion acceptance open.
+4. Admit OBS-005 as one new live-state resource-bound finding if `BR-0109` remains scoped to shutdown ownership. Otherwise extend `BR-0109` with a separate admission/expiry acceptance section and create no duplicate remediation.
+5. Record this chunk as `ISSUES`, not `PARTIAL`: every assigned frozen line and necessary frozen context was reviewed, and all unexecuted dynamic cases are explicit validation gaps rather than missing static coverage.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0072 raw survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0073 frozen survey SHA256:bbc6ec4719d4d253175dd1dfe6c705958def79c065740b2eb969561f144cd5d9 -->
+
+## GQ1-CHUNK-0073 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0073.md`
+- Imported SHA-256: `bbc6ec4719d4d253175dd1dfe6c705958def79c065740b2eb969561f144cd5d9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0073 frozen survey
+
+## Outcome
+
+ISSUES. All 600 assigned frozen lines in `server/src/ws_handler.rs` were reviewed with the complete enclosing connection cleanup and authentication completion functions, protocol and authentication owners, focused integration tests, history, and prior review records. The assigned blob is unchanged from adversarial review `R1-CHUNK-0057`. Thirteen observations reproduce established open roots, including one already represented by `GQF-0015`; no distinct new root was found. No product code, canonical ledger, plan, temporary file, or existing report was edited.
+
+## Frozen scope and fingerprint
+
+- Coverage ID: `GQ1-CHUNK-0073`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen base is an ancestor of the frozen head: yes
+- Assigned path and range: `server/src/ws_handler.rs` L1-L600, all 600 lines reviewed
+- Frozen head blob: `f51b839ca5f61a87eaac3c9b5601944276f04434`
+- Frozen base state: path absent
+- Scope manifest: one ASCII record with one final LF
+- Scope manifest byte count: 74
+- Scope SHA-256: `0ef43e1129a08f841f945dd6a6ef31083eb3076c9ea18549bd6262fd9ef3b474`
+
+```text
+server/src/ws_handler.rs|L1-L600|f51b839ca5f61a87eaac3c9b5601944276f04434
+```
+
+All product, caller, test, and history evidence came from frozen Git objects or named historical objects. Mutable worktree product content was not used as evidence.
+
+## Context inspected
+
+- Complete assigned L1-L600, plus disconnect cleanup through L688 and `complete_auth` through its complete welcome and persistence path
+- Frozen `server/src/protocol.rs`, `pow.rs`, `identity.rs`, `db.rs`, `rate_limit.rs`, `lobby.rs`, `lib.rs`, `stats.rs`, and relevant `server/tests/integration.rs`
+- Frozen server configuration, deployment proxy configuration, Android protocol and callsign contracts, and maintained networking plans where required to establish cross-owner behavior
+- History through the introducing server commits and the exact comparison from adversarial freeze `c01d8fe4686c63d931b1e543a6305bbafaa944a9` to the assigned frozen head; the assigned file has no delta
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans
+- Existing owners `BR-0113`, `BR-0115`, `BR-0117`, `BR-0119`, `BR-0125`, `BR-0127`, `BR-0137`, `BR-0141`, and `BR-0143` through `BR-0147`, plus `GQF-0015` and GQ server rechecks
+
+## Atomic observations
+
+### GQ1-CHUNK-0073-OBS-001 - DUPLICATE BR-0147: active-game age and capped membership are not game-generation based
+
+- Proposed normalization: DUPLICATE `BR-0147`; no new ID.
+- Severity/confidence/category: P2, high, correctness/observability
+- Evidence and trigger: L115-L145 computes `duration_secs` from lobby creation, not game start, and applies `take(20)` to unordered `DashMap` iteration. A long-waiting lobby starts with a false game age, while more than 20 live games produce an unstable subset.
+- Impact and boundary: Public status and Android late-join discovery show misleading age and nondeterministic membership. Store a per-generation start instant, sort by a documented stable key before truncation, and test delayed starts and 19/20/21-game boundaries.
+
+### GQ1-CHUNK-0073-OBS-002 - DUPLICATE BR-0127: connection capacity and session cleanup lack socket-generation ownership
+
+- Proposed normalization: DUPLICATE `BR-0127`; no new ID.
+- Severity/confidence/category: P1, high, concurrency/security/resource-lifetime
+- Evidence and trigger: L241-L252 caps `sessions.len()`, which counts authenticated player identities rather than accepted sockets and is checked non-atomically before upgrade. L345-L600 accepts repeated authentication on one connection. `complete_auth` replaces a player-keyed sender without a connection generation, while L616-L680 later removes by player ID alone. Many pre-auth sockets, repeated auth, or overlapping stable-identity sockets exceed capacity and let stale cleanup remove a replacement.
+- Impact and boundary: Sessions, lobbies, counters, STUN references, and message routing can drift or be owned by the wrong connection. Acquire one socket permit before upgrade, allow one terminal authentication, and compare connection generations during replacement and cleanup.
+
+### GQ1-CHUNK-0073-OBS-003 - DUPLICATE BR-0144: outbound failure does not terminate the connection owner
+
+- Proposed normalization: DUPLICATE `BR-0144`; no new ID.
+- Severity/confidence/category: P1, high, concurrency/resource-lifetime/protocol
+- Evidence and trigger: L24-L34 returns `TrySendError`, but all sends discard it. L265-L289 ends only the writer after channel closure, write error, or timeout; L304-L614 never selects writer completion. A client that stops reading can fill the 256-message queue or kill the writer, then keep sending inbound frames.
+- Impact and boundary: Ordered state silently disappears while an unreachable client retains and mutates shared resources. Supervise both halves with one cancellation path and treat queue saturation and writer failure as terminal, with generation-safe exact-once cleanup.
+
+### GQ1-CHUNK-0073-OBS-004 - DUPLICATE GQF-0015 and BR-0115: large frames and authentication fields reach allocation and parsing first
+
+- Proposed normalization: DUPLICATE `GQF-0015`, whose historical owner is `BR-0115`; no new ID.
+- Severity/confidence/category: P1, high, security/resource-exhaustion
+- Evidence and trigger: L236-L253 leaves Axum frame and message defaults intact. L315-L343 accepts a complete owned text frame and deserializes it before semantic budgets. Authentication strings, PoW strings, and later vectors have no shared byte or element limits. A few allowed pre-auth messages can therefore allocate and parse near-default maximum frames before rate or field rejection.
+- Impact and boundary: Remote clients can amplify heap and CPU use and retain large protocol values. Set transport ceilings and shared per-variant field and collection budgets before expensive authentication, hashing, cloning, persistence, or forwarding.
+
+### GQ1-CHUNK-0073-OBS-005 - DUPLICATE BR-0117: the declared authentication-failure limiter remains disconnected
+
+- Proposed normalization: DUPLICATE `BR-0117`; no new ID.
+- Severity/confidence/category: P2, high, security/rate-limiting
+- Evidence and trigger: Every failure at L357-L583 sends rejection or closes the connection without consulting or recording the rate limiter's `ip_auth_fails` state. Reconnecting across the short upgrade window repeatedly reaches signature, PoW, database, and external-provider work.
+- Impact and boundary: The documented five-failures-per-hour control is inactive and expensive authentication remains repeatable. Centralize failure accounting and check cooldown before expensive work across all authentication branches.
+
+### GQ1-CHUNK-0073-OBS-006 - DUPLICATE BR-0119: future protocol versions are accepted as current
+
+- Proposed normalization: DUPLICATE `BR-0119`; no new ID.
+- Severity/confidence/category: P2, high, compatibility/protocol-versioning
+- Evidence and trigger: L357-L371 rejects only values below `MIN_CLIENT_PROTOCOL`; `CURRENT_PROTOCOL + 1` through `u32::MAX` continue under protocol-1 semantics. Tests cover only the lower bound.
+- Impact and boundary: A future breaking client can appear authenticated and fail after state mutation or silently use old semantics. Enforce the documented compatible range or negotiate explicit capabilities and test both boundaries.
+
+### GQ1-CHUNK-0073-OBS-007 - DUPLICATE BR-0145: server callsigns exceed the engine and Android identity contract
+
+- Proposed normalization: DUPLICATE `BR-0145`; no new ID.
+- Severity/confidence/category: P2, high, correctness/protocol-contract
+- Evidence and trigger: L373-L383 accepts 1 to 20 printable ASCII bytes, while both engines carry eight bytes and Android applies a narrower eight-character rule with reserved names. Custom clients can submit long, punctuation-bearing, reserved, duplicate, or equal-prefix names.
+- Impact and boundary: Server, lobby, friend, save, resume, and native-game identity can disagree or become ambiguous. Define one canonical shared contract and reject nonrepresentable or ambiguous names before persistence.
+
+### GQ1-CHUNK-0073-OBS-008 - DUPLICATE BR-0143: known-key proofs are replayable across connections and audiences
+
+- Proposed normalization: DUPLICATE `BR-0143`; no new ID.
+- Severity/confidence/category: P1, high, security/authentication/replay
+- Evidence and trigger: L406-L450 verifies only `callsign:timestamp`, accepts timestamps up to 120 seconds in either direction, and neither issues nor consumes a server nonce. A captured proof can be replayed on another connection and compatible server during the window.
+- Impact and boundary: A recently observed message substitutes for current private-key possession. Sign and atomically consume one versioned, audience-bound, connection-fresh challenge transcript and bind new-key PoW to it.
+
+### GQ1-CHUNK-0073-OBS-009 - DUPLICATE BR-0113: keypair identity hashes text rather than canonical key bytes
+
+- Proposed normalization: DUPLICATE `BR-0113`; no new ID.
+- Severity/confidence/category: P2, high, correctness/security/identity
+- Evidence and trigger: L418-L428 verifies a decoded Ed25519 key and then hashes the caller's original hexadecimal string. `pow::hash_pubkey` hashes text bytes, so upper- and lower-case encodings of the same key produce different durable identities.
+- Impact and boundary: One private key can register multiple accounts and evade identity-level state such as bans. Decode once, validate once, derive identity from canonical 32-byte key material, and test representational aliases and concurrent registration.
+
+### GQ1-CHUNK-0073-OBS-010 - DUPLICATE BR-0146: known-key rename persistence failure is ignored
+
+- Proposed normalization: DUPLICATE `BR-0146`; no new ID.
+- Severity/confidence/category: P2, high, correctness/error-handling
+- Evidence and trigger: L441-L449 discards `find_or_create_player_by_gpgs` and completes authentication using the requested callsign. If the rename write fails, the live session publishes a name the database did not commit.
+- Impact and boundary: Lobby and friend views, history, and later reconnects disagree. Complete authentication from one committed player record or retain and report the old name when persistence fails.
+
+### GQ1-CHUNK-0073-OBS-011 - DUPLICATE BR-0137: ban lookup errors remain allow decisions in every authentication path
+
+- Proposed normalization: DUPLICATE `BR-0137`; no new ID.
+- Severity/confidence/category: P1, high, security/access-control
+- Evidence and trigger: L434, L515, and L579 call `is_banned(...).unwrap_or(false)`. Any SQLite error is converted to unbanned for known-key, GPGS, and newly registered keypair identities.
+- Impact and boundary: Moderation fails open exactly when durable state is unavailable. Distinguish banned, unbanned, and storage failure and permit authentication only after an authoritative unbanned result.
+
+### GQ1-CHUNK-0073-OBS-012 - DUPLICATE BR-0125: GPGS verification has no complete time, body, or concurrency budget
+
+- Proposed normalization: DUPLICATE `BR-0125`; no new ID.
+- Severity/confidence/category: P1, high, security/resource-exhaustion/external-service
+- Evidence and trigger: L475-L500 awaits `identity::verify_gpgs_token` inline. Its frozen owner creates a new Reqwest client per attempt, sets no connect or total deadline, reads bodies without a byte limit, and has no shared concurrency gate. A stalled provider keeps accepted sockets and outbound resources alive.
+- Impact and boundary: Provider degradation can become public-server exhaustion. Reuse a hardened client, bound connect, request, whole-flow, body, and concurrency costs, and integrate the repaired pre-work abuse limiter.
+
+### GQ1-CHUNK-0073-OBS-013 - DUPLICATE BR-0141: new-key registration is split from lookup and is not recoverable atomically
+
+- Proposed normalization: DUPLICATE `BR-0141`; no new ID.
+- Severity/confidence/category: P2, high, correctness/transactionality/concurrency
+- Evidence and trigger: L430-L465 checks absence before issuing PoW; L564-L577 later calls the database's two-row registration API. Concurrent valid solutions race, and a failure between player creation and key mapping leaves an orphan that can poison retry.
+- Impact and boundary: One valid key can receive inconsistent registration results or become unable to register after a transient failure. Combine canonical lookup, player creation, and key binding in one conflict-aware transaction that returns the winning stable identity.
+
+## Explicit clean dimensions
+
+- WebSocket transport ordinary path: TLS and plain listeners propagate bind and serve errors, TLS handshake failures are confined to the connection task, sends have a ten-second deadline, reads have a 120-second inactivity deadline, non-text frames do not enter JSON parsing, and the application channel bounds queued message count. Ownership after writer failure remains OBS-003.
+- Message admission basics: malformed JSON receives a typed error, non-authentication messages before authentication are rejected, UUID and integer decoding uses Serde domain types, callsigns reject empty and non-ASCII values, and too-old protocol versions are rejected before identity work. Size, future-version, and canonical callsign gaps remain OBS-004, OBS-006, and OBS-007.
+- Keypair ordinary cryptography: required public key, timestamp, and signature fields are checked, Ed25519 verification precedes database lookup, stale timestamps and invalid signatures fail, random PoW challenges are generated for unknown keys, challenge equality is checked, and invalid solutions fail. Freshness, canonical identity, and registration ownership remain OBS-008, OBS-009, and OBS-013.
+- GPGS ordinary path: production configuration performs provider verification, an unsuccessful verification does not create a player session, and database player creation failure returns an internal failure. External request budgets and fail-closed ban reads remain OBS-012 and OBS-011.
+- Output projection: lobby updates clone bounded player-domain fields, waiting and in-game states are distinguished, and active-game enumeration filters stale non-active state. Accurate start generations and deterministic capped order remain OBS-001.
+- Concurrency and locks: the assigned range does not hold a DashMap guard across an `await`; broadcasts use bounded nonblocking sends; and ordinary single-generation cleanup awaits the writer after dropping the last local sender. Cross-generation ownership and writer cancellation remain OBS-002 and OBS-003.
+- Portability and diff minimization: this branch-added Rust module does not modify inherited D1 or D2 files, uses stable Rust library types, and introduces no cross-language ABI in the assigned range. Shared callsign and protocol constants still require the existing contract owners rather than another implementation copy.
+- Tests: nominal authentication, too-old version rejection, unauthenticated-message rejection, bans, keypair success/failure, and stable-player reconnect paths exist. They do not cover the adversarial boundaries named above, and the unchanged assigned blob does not close any listed historical owner.
+
+## Evidence gaps and limits
+
+- No server build, test, network listener, external identity request, database fault injection, memory measurement, race scheduler, sanitizer, or hostile client was run because this was a frozen-object read-only survey.
+- Queue saturation, writer failure, future version, large frame, repeated auth, overlapping identity, ban-query error, provider stall, key representation alias, registration rollback, and more-than-20-game cases were traced statically rather than executed.
+- Context outside the assigned range was inspected only for enclosing ownership, callers, tests, cross-layer contracts, and deduplication. This report claims deterministic coverage only for `server/src/ws_handler.rs` L1-L600.
+
+## Commands and validation context
+
+- Read the required repository instructions, complete GQ worker process, active and done GQ ledgers, durable evidence ledger, active and done adversarial ledgers, DMR1, and relevant networking and cleanup records
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git show`, `git diff`, `git log`, and `git grep` to confirm frozen ancestry, tree, blob, absent base path, complete assigned source, enclosing ownership, tests, history, and the zero delta from adversarial freeze
+- Used `rg` and line-numbered frozen-object inspection to trace every observation through protocol, authentication, database, limiter, session, statistics, Android, and test owners and to search for duplicates
+- Computed the exact one-record scope SHA-256 over 74 ASCII bytes with one final LF
+- Used `git status --short` only to identify unrelated mutable ownership. No mutable product file supplied evidence and no formatter, build, test, network, database, external service, or device workflow ran
+
+## Normalization recommendation
+
+1. Normalize OBS-004 to existing `GQF-0015` and its historical owner `BR-0115`.
+2. Normalize OBS-001 through OBS-003 and OBS-005 through OBS-013 as duplicate or evidence refresh for their named `BR` owners.
+3. Admit no new `GQF` or `GQI` from this unit. Create one `ISSUES` coverage record naming the thirteen historical relationships and the explicit clean dimensions above.
+
+## Stop statement
+
+Stopped after exactly `GQ1-CHUNK-0073`. The only created path is this assigned tracked inbox report.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0073 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0074 survey report SHA256:a71e70e63a55385c1179f6cfeefc48b31b6b7d530df5639054a6f1f8ffcaa2f6 -->
+
+## GQ1-CHUNK-0074 survey report imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0074.md`
+- Imported SHA-256: `a71e70e63a55385c1179f6cfeefc48b31b6b7d530df5639054a6f1f8ffcaa2f6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0074 survey report
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0074`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `server/src/ws_handler.rs:L601-L1200`
+- Frozen file blob: `f51b839ca5f61a87eaac3c9b5601944276f04434`
+- Scope status: complete. Every assigned line was inspected from the frozen Git object. Later callers, protocol models, Android consumers, tests, and historical ledgers were inspected only as context
+
+## Context checked
+
+- Disconnect cleanup, lobby dissolution, session and STUN-allowlist ownership
+- Candidate address selection, private-subnet classification, connection-type inference, connection-info publication, predicted and observed candidate generation, candidate-pair construction, and relay allocation
+- Authentication completion through the beginning of session publication
+- `StartGame`, ordinary and late-join STUN/result handling, `PeerAssignment`, Android peer-address consumption, and the complete focused helper tests later in `ws_handler.rs`
+- Protocol `ConnectionCandidate`, `CandidatePair`, and `PeerAssignment` schemas; lobby connection state; Android `ConnectivityChecker`, `MatchmakingService`, and `StunClient` consumers
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, and earlier networking cleanup records for duplicate and regrowth checks
+
+## Atomic observations
+
+### GQ1-CHUNK-0074-OBS-001: Predicted-hole-punch launch discards the selected predicted endpoint
+
+- Proposed disposition: `EXTENDS` open `BR-0148`; also supplies concrete production evidence for the test boundary in `BR-0406`
+- Severity/confidence: P1/high
+- Category: correctness/networking/state-association
+- Location: `server/src/ws_handler.rs:L701-L729,L809-L842,L1073-L1103`, with launch callers at `L1717-L1767` and result handling at `L2046-L2072`
+- Evidence: `determine_connection_type` returns `PredictedHolepunch` when the relevant symmetric peer has any `predicted` candidate. `best_candidate_addr_for_type`, however, has no `PredictedHolepunch` arm. Its default arm chooses `srflx`, then `observed`, then `host`, and never chooses a `predicted` candidate. The connectivity result reports only `winning_candidate_type`, not the exact winning candidate address. At launch, the server recomputes the type and feeds the other peer's candidates through this helper, so even a successful predicted probe is published in `PeerAssignment.addr` as the first server-reflexive or observed address instead of the endpoint that succeeded. Android parses that published address and installs it as the proxy's real peer endpoint
+- Trigger: Give a symmetric-NAT player both its ordinary server-reflexive candidate and a generated or client-supplied predicted candidate, complete connectivity with `winning_candidate_type = "predicted"`, and start the game
+- Impact: The route proven by connectivity checking is discarded at the launch boundary. Symmetric-NAT peers can receive the already-unsuitable reflexive endpoint, partition at game start, or fall back inconsistently even though the advertised predicted-hole-punch check succeeded
+- Expected: Connectivity state retains the exact winning endpoint for the exact player pair and generation, and launch publishes that endpoint. At minimum, predicted routing must select a validated predicted candidate rather than a different candidate class
+- Suggested validation: Exercise a pair whose reflexive endpoint cannot pass but whose predicted endpoint does; assert the exact successful address reaches both ordinary and late-join `PeerAssignment` messages. Include multiple candidates of the same type so type-only association cannot pass
+- Deduplication: `BR-0148` already owns loss of pair and generation identity in connectivity results and launch decisions. This is a concrete address-identity consequence of that root, not a second umbrella finding. `BR-0406` already asks the NAT harness to prove predicted selection but does not record this production mechanism
+
+### GQ1-CHUNK-0074-OBS-002: Sequential-port prediction accepts nonsequential samples
+
+- Proposed disposition: `NEW`
+- Severity/confidence: P2/high
+- Category: correctness/networking/algorithm
+- Location: `server/src/ws_handler.rs:L951-L1010`
+- Evidence: The predictor sorts all server-reflexive ports, computes `(maximum - minimum) / (count - 1)`, and accepts that integer quotient when it is 1 through 10. It never checks each adjacent delta, rejects duplicate samples, or proves that division was exact. For example, ports `40000, 40001, 40020` yield an accepted step of 10 even though their adjacent deltas are 1 and 19; the function then advertises `40030` and `40040` as predictions. A set such as `40000, 40000, 40010` similarly produces an invented step of 5. Once these candidates exist, `determine_connection_type` treats their mere presence as evidence for `PredictedHolepunch`
+- Trigger: A symmetric NAT produces three or more observations on the same public IP with uneven allocation gaps or duplicate observed ports while the average endpoint spread divided by `n - 1` falls in 1 through 10
+- Impact: The server advertises unsupported future ports and changes relay-versus-predicted routing based on fabricated sequence evidence. Clients spend their bounded probe window on wrong endpoints, and game startup can select a predicted path that was never justified
+- Expected: Prediction is enabled only by a defined minimum set of distinct samples whose ordered adjacent deltas satisfy one explicit stable-sequence policy. Ambiguous or inconsistent samples remain relay candidates
+- Suggested fix: Sort and deduplicate typed endpoints, calculate every adjacent delta, require a consistent positive step under an explicit tolerance and sample-count policy, and keep prediction subordinate to exact per-pair connectivity confirmation
+- Suggested validation: Cover two-sample policy, three or more equal gaps, uneven gaps with an in-range average, duplicate ports, reordering, wrap boundaries, mixed IPs, and one mutated outlier. Assert inconsistent evidence produces no predicted candidate and cannot change the connection type
+- Deduplication: `BR-0116` owns untrusted candidate validation and amplification, not the server's inference over otherwise valid bounded reflexive endpoints. `BR-0406` owns false-positive test coverage and mentions predicted-port outcomes, but does not describe this arithmetic defect. No matching root was found in either GQ ledger, either adversarial ledger, DMR1, or prior cleanup records
+
+## Existing-root evidence and clean dimensions
+
+- Disconnect cleanup at `L616-L681` reproduces the already-open generation ownership, counter, STUN release, and stale presence roots in `BR-0127`, `BR-0135`, `BR-0149`, and `BR-0150`; no new cleanup root was created
+- Ignored outbound send failures and split writer ownership remain `BR-0144`
+- Arbitrary candidate types, endpoint strings, counts, cloning, Cartesian expansion, and probe destinations remain `BR-0116`
+- IPv6 splitting and malformed observed-address formatting remain `BR-0136`
+- Relay capacity reservation, token lifetime, ownership, and cleanup remain `BR-0133`
+- Within those existing roots, malformed address text is handled without a panic in the assigned helpers; candidate priority sorting is deterministic for a fixed bounded input; relay token collision detection rejects an occupied token after bounded retries; empty relay configuration returns without publication; ordinary IPv4 observed-candidate deduplication and loopback suppression match their focused tests
+- No additional actionable resource-lifetime, memory-safety, Rust panic, authentication-boundary, portability, warning, dead-code, naming, or inherited-file diff-minimization defect survived the assigned trace
+
+## Evidence gaps
+
+- No live NAT, relay, IPv6, Android process, or server deployment was run because this is a frozen-object read-only survey
+- Existing unit tests exercise ordinary IPv4 selection and observed candidates but do not call `generate_predicted_candidates` directly, retain an exact winning candidate address, or prove predicted endpoint publication at launch
+- The current active queue assigns later `ws_handler.rs` ranges separately. They were followed only through the callers needed to establish these observations and were not dispositioned wholesale here
+
+## Commands and verification
+
+- Read repository instructions and the complete general-quality process, active and done GQ ledgers, durable evidence ledger, active and done adversarial ledgers, and DMR1 ledger
+- Used `git cat-file`, `git merge-base`, `git rev-parse`, `git show`, `git diff`, `git log`, and `git grep` against the frozen objects
+- Used `rg` for historical deduplication across durable ledgers and prior networking records
+- Verified the assigned path is a branch-added 2,951-line file and the assigned frozen blob is `f51b839ca5f61a87eaac3c9b5601944276f04434`
+- `git diff --check` for the frozen path completed without errors
+- Product code, canonical ledgers, generated evidence, and ignored temporary files were not edited
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Normalize observation 001 as an evidence extension of `BR-0148`, cross-linked to `BR-0406`
+- Admit observation 002 as one new supported finding if the canonical writer confirms no intervening earlier inbox report owns the same predictor arithmetic root
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0074`
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0074 survey report -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0075 frozen survey SHA256:4fbba2e8d401d215ccb829ccfc69c2dbde185832620eb639766d54c5a999af79 -->
+
+## GQ1-CHUNK-0075 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0075.md`
+- Imported SHA-256: `4fbba2e8d401d215ccb829ccfc69c2dbde185832620eb639766d54c5a999af79`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0075 frozen survey
+
+Outcome: ISSUES, all duplicate or evidence extensions. All 600 assigned frozen lines were reviewed with the enclosing handler, lobby model, relay and statistics owners, Android callers, focused integration tests, history, and durable GQ and adversarial records. The frozen source is byte-identical to the source previously reviewed by adversarial chunk R1-CHUNK-0059. No new finding or investigation survived deduplication. No product source, canonical ledger, other inbox report, temporary report, test artifact, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/ws_handler.rs` L1201-L1800, all 600 lines reviewed
+- Frozen blob: `f51b839ca5f61a87eaac3c9b5601944276f04434`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/ws_handler.rs|L1201-L1800|f51b839ca5f61a87eaac3c9b5601944276f04434
+```
+
+- Scope-manifest byte count: 78
+- Git blob SHA-1 of the exact manifest bytes: `bad8b24c14b62a12d801d3094bf76b0c13994a3b`
+- SHA-256 of the exact manifest bytes: `48c5833dded4e5415890fd91adf9a8cd911197424686e6a834787f066378313a`
+- The assigned file is branch-added relative to the review base
+- `git diff c01d8fe4686c63d931b1e543a6305bbafaa944a9 7877ad30d05887b8e19869ed4c50075e41e2f88e -- server/src/ws_handler.rs server/src/lobby.rs server/tests/integration.rs` is empty. The assigned frozen implementation and its principal model and tests are unchanged from the adversarial review snapshot
+- The mutable live worktree was not used as product authority. Concurrent changes were preserved
+
+## Context and ownership inspected
+
+- Complete frozen `handle_authenticated_message`, including CreateLobby, ListLobbies, UpdateGameInfo, UpdateGameState, EndGame, JoinLobby, LeaveLobby, Ready, and the complete enclosing StartGame transition beyond the assigned boundary
+- Authentication completion, disconnect cleanup, lobby-list projection, connection-type inference, relay allocation and later relay cleanup, late join, kick, match completion, and friend-join paths needed to establish state ownership
+- Complete frozen `server/src/lobby.rs`, `server/src/relay.rs`, `server/src/stats.rs`, relevant protocol structures, configuration limits, and rate-limit behavior
+- Android lobby controls, ready and start policy, game-state reporting, relay-assignment consumption, return/end behavior, and friend-game admission callers
+- Frozen integration coverage for lobby creation, join, leave, readiness, start, repeated identities, relay allocation, STUN lifecycle, friend join, and active-game projection
+- Complete relevant history and the byte-identical adversarial R1-CHUNK-0054, R1-CHUNK-0055, R1-CHUNK-0058, R1-CHUNK-0059, and R1-CHUNK-0060 records
+- Durable GQ evidence and active/done GQ, adversarial, and DMR1 ledgers for root-cause and remediation-owner deduplication
+
+## Atomic observations
+
+### GQ1-CHUNK-0075-OBS-001 - DUPLICATE of BR-0151: lobby replacement and host departure are non-atomic
+
+- Severity/confidence/category: P1, high, correctness/state-machine
+- Frozen locations: `ws_handler.rs:L1269-L1334,L1436-L1568`; related friend join later in the file
+- Evidence: CreateLobby inserts a new lobby and overwrites the session pointer without removing an existing membership. JoinLobby removes the source membership before proving destination existence, code, verification, capacity, and insertion. Explicit host leave removes the host as an ordinary member and can retain a lobby whose immutable host ID is absent. These are three manifestations of the exact membership-replacement and host-departure root already recorded in BR-0151.
+- Trigger and impact: create while joined, attempt a rejected cross-lobby join, or have a host leave a nonempty lobby. The player can become a ghost member, lose a valid source membership, or strand a hostless lobby.
+- Deduplication: BR-0151 names these exact frozen locations, transitions, triggers, and one generation-aware atomic replacement boundary. The source has not changed since that finding. Do not create another GQ finding or remediation.
+
+### GQ1-CHUNK-0075-OBS-002 - DUPLICATE of BR-0129: ordinary join bypasses the authoritative joinability predicate
+
+- Severity/confidence/category: P2, high, correctness/state-machine
+- Frozen locations: `ws_handler.rs:L1436-L1539`; `lobby.rs` admission helpers
+- Evidence: JoinLobby separately checks kick, code, and verified-only state, then calls an insertion helper whose in-game rule is weaker than `is_joinable`. The checks and insertion are not one admission decision, so advertised eligibility and actual mutation disagree and mutable restrictions can change between guards.
+- Trigger and impact: join a Starting, stale, or host-not-playing in-game lobby, or race admission with a restriction/state change. Clients can be rejected from advertised states or admitted into an unsafe stale game.
+- Deduplication: BR-0129 already owns these exact ordinary-join locations, the friend-join equivalent, the atomic predicate, and the listing-to-mutation test matrix. No current change creates a distinct root.
+
+### GQ1-CHUNK-0075-OBS-003 - DUPLICATE of BR-0150: lobby and session presence diverge across runtime and end transitions
+
+- Severity/confidence/category: P2, high, correctness/state-lifetime
+- Frozen locations: `ws_handler.rs:L1350-L1430`, especially UpdateGameState and EndGame
+- Evidence: UpdateGameState updates lobby runtime count, level, and status without refreshing the copied InGame presence details. EndGame resets the lobby to Waiting and clears runtime state but leaves every member's session presence as InGame. Friend-list projection trusts those session copies.
+- Trigger and impact: update the in-game roster/state or end a game and request friend presence before another session transition. Observers receive stale game details or an InGame state for a Waiting lobby.
+- Deduplication: BR-0150 explicitly records both assigned transitions and the same denormalized-presence root. It already defines the derivation or centralized-transition fix and exact observer validation.
+
+### GQ1-CHUNK-0075-OBS-004 - DUPLICATE of BR-0152, with BR-0133 and BR-0135 overlap: StartGame has no authoritative precondition or idempotence gate
+
+- Severity/confidence/category: P2, high, correctness/state-machine; P1 resource consequences remain under BR-0133
+- Frozen locations: `ws_handler.rs:L1586-L1611` and relay planning through L1800
+- Evidence: after checking host identity, StartGame overwrites any current state with Starting and increments the game counter without requiring Waiting, at least two players, all members ready, completed pair connectivity, or a fresh game generation. A repeated request repeats relay planning and statistics mutation. The integration start test intentionally succeeds without Ready messages.
+- Trigger and impact: a host sends StartGame alone, with an unready member, from Starting or InGame, or repeatedly. Clients can launch from invalid state, while repeated starts allocate ownerless relay sessions and drift counters.
+- Deduplication: BR-0152 owns missing roster, readiness, connectivity, and state admission. BR-0133 owns repeat-start relay capacity and lifecycle. BR-0135 owns repeated counter mutation. The repair must coordinate those owners rather than add a second finding.
+
+### GQ1-CHUNK-0075-OBS-005 - DUPLICATE of BR-0133: fallback relay allocation failure can still publish an unusable game
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion and correctness
+- Frozen locations: `ws_handler.rs:L1623-L1703,L1710-L1800` plus the remainder of assignment construction
+- Evidence: the initial pair-planning pass detects allocation failure only for pairs already classified as Relay. In the later per-player pass, a nominally direct pair whose selected address is empty is downgraded to Relay and allocation is attempted, but failure does not set `relay_limit_hit`, abort, or roll back. If relay is not configured, the path can also retain an empty destination. The handler can therefore send relay assignments with no token or usable address after committing Starting.
+- Trigger and impact: make connection classification nominally direct while its winning address is absent, then exhaust relay capacity or omit relay configuration. Players receive a game launch that cannot transport peer traffic, and any partial tokens remain tied to the broader weak lifetime.
+- Deduplication: BR-0133 explicitly includes unusable-allocation rollback, partial failure, repeat start, owner binding, and atomic reservation for this range. Its suggested fix and validation already require complete reservation before publication and one typed rollback failure.
+
+### GQ1-CHUNK-0075-OBS-006 - DUPLICATE of BR-0115: retained lobby/runtime text lacks semantic byte budgets
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion/input-bounds
+- Frozen locations: `ws_handler.rs:L1269-L1312,L1350-L1384`; protocol CreateLobby and UpdateGameState fields
+- Evidence: game and serialized game_info have local caps, but lobby_code and runtime current_level/game_status rely only on the much larger transport frame ceiling before being retained or projected. Large values are JSON-decoded and owned before handler checks, and some are repeatedly cloned or serialized through lobby and friend/status messages.
+- Trigger and impact: an authenticated client sends maximum transport-sized lobby-code or runtime strings within its allowed request cadence. This expands decode, retained state, response construction, and fanout work beyond the intended small lobby metadata.
+- Deduplication: BR-0115 already names lobby codes and status strings, the pre-handler buffering root, the missing semantic byte/count budgets, and the transport plus per-field validation boundary. There is no narrower independent repair here.
+
+## Explicit clean dimensions
+
+- Host authorization: only the current session's lobby host can update game info, runtime state, end, or start the game. Non-host calls cannot reach those mutations. State and membership atomicity defects remain under the observations above.
+- Basic lobby field limits: max_players is constrained to 2 through 8, the game identifier is capped at 32 bytes for ASCII-compatible content, and serialized game_info is capped at the maintained 5 KiB threshold before retention. Broader transport and uncapped fields remain BR-0115.
+- Game-info mutability: UpdateGameInfo requires the current host and Waiting state, so accepted game metadata cannot be rewritten after start through this message.
+- Ordinary join and leave bookkeeping: on a successful ordinary join, the session pointer and InLobby presence are updated; ordinary non-host explicit leave clears both and removes the member. Cross-lobby rollback and host policy remain BR-0151.
+- Relay pair indexing: fixed two-to-eight-player loops keep `usize` and `u8` slot conversion safe, skip self, canonicalize each unordered pair, and use matching peer destination slots. Exact endpoint authentication remains BR-0132 and pair-specific connectivity state remains BR-0148.
+- Initial relay-cap rollback: when an already-relay-classified pair hits the cap during the first pass, the lobby returns to Waiting and every token accumulated by that attempt is removed before launch messages. The later fallback hole is OBS-005/BR-0133.
+- Bounded local work: the O(n squared) start planning is bounded by eight lobby members. Per-player assignment vectors reserve from the same bound. No integer or allocation amplification independent of existing transport and relay findings survives.
+- Rate limiting: lobby create, list, and join requests consult their dedicated authenticated-player limiters before their principal expensive mutation. Authentication and global transport abuse remain their prior owners.
+- Rust memory safety and guard use in the assigned transition: no unsafe block, unchecked array index beyond the bounded roster loops, or await while holding the assigned lobby guard was found. Cross-map atomicity is a state consistency problem, not a Rust memory-safety defect. The later same-map DashMap reacquisition defect remains BR-0153.
+- Diagnostics and secrets: assigned logs use player and lobby UUIDs and nonsecret state labels; they do not format lobby codes, auth tokens, relay tokens, or message bodies. Relay-token logging elsewhere remains BR-0132's extension.
+- D1/D2 and platform scope: this server-only state machine has one shared implementation and no paired inherited engine edit requirement. Android consumption and policy were checked as interface context.
+- Maintainability: the repeated connection-type and relay-choice blocks are lengthy, but their demonstrated divergence and rollback consequence are already part of BR-0133. A style-only duplicate extraction would not meet independent finding admission.
+
+## Evidence gaps and limitations
+
+- No build, test, load test, sanitizer, network simulation, or emulator run was performed because this was a frozen-object read-only survey. The byte-identical adversarial review recorded a timeout-bounded server test pass, but historical execution is context rather than fresh validation.
+- Exact interleavings for lobby replacement and admission need barriers or an actor-style state-machine harness. Existing positive integration tests do not prove rollback or generation behavior.
+- The review did not measure retained heap or outbound amplification for maximum transport-sized lobby/status fields. BR-0115 already owns that quantitative validation gap.
+- Relay capacity failure during the later empty-direct fallback was established statically from control flow. A focused fixture needs deterministic candidate classification and injected allocation exhaustion.
+- Complete_auth begins before the assigned line range. Its welcome sends, session-generation ownership, and STUN reference acquisition were inspected only as necessary context and remain BR-0127, BR-0144, and BR-0149 rather than new observations.
+- Later late-join, kick, match-result, chat, and friend handlers were inspected only for ownership and deduplication. Their independent defects remain with R1-CHUNK-0060 and later records.
+
+## Commands and methods
+
+- `Get-Content -Raw .github/copilot-instructions.md` and complete process/ledger reads for repository and campaign rules
+- `git show`, `git rev-parse`, `git diff`, `git log`, and `git hash-object` for frozen source, range context, ancestry-era comparison, and scope identity
+- `rg` across active and done GQ and adversarial ledgers, durable evidence, prior reports, source, protocol, lobby model, Android callers, plans, and tests for deduplication and ownership
+- Static traces of session to lobby create/join/leave, authoritative lobby state to copied presence, host start through relay reservation and per-player publication, relay failure rollback, and Android readiness/start behavior
+- In-memory SHA-256 plus Git blob hashing of the exact one-row manifest. The temporary system file used only for `git hash-object` was removed immediately and was outside the repository
+
+## Normalization recommendation
+
+- Import this report as one `ISSUES` coverage record with six duplicate observations and no new GQF, GQI, or GQR ID.
+- Map OBS-001 to BR-0151, OBS-002 to BR-0129, OBS-003 to BR-0150, OBS-004 to BR-0152 plus BR-0133 and BR-0135, OBS-005 to BR-0133, and OBS-006 to BR-0115.
+- Preserve BR-0132, BR-0134, BR-0148, and BR-0149 as inspected contextual owners without claiming new evidence.
+- Do not split cleanup-only findings for ignored bounded sends, repeated relay-choice syntax, or silent non-host state updates. Their concrete consequences are already owned by BR-0144, BR-0133, and the documented authorization behavior.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0075 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0076 frozen survey SHA256:b780d29391d3eaddc2ac0da1694fdbec70a511862818f3a7ee458a614790020f -->
+
+## GQ1-CHUNK-0076 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0076.md`
+- Imported SHA-256: `b780d29391d3eaddc2ac0da1694fdbec70a511862818f3a7ee458a614790020f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0076 frozen survey
+
+Outcome: ISSUES, all exact duplicates or evidence refreshes. All 600 assigned frozen lines were reviewed with the enclosing authenticated-message handler, lobby and relay owners, database writes, Android consumers, focused server tests, history, and durable GQ and adversarial records. The frozen source and its principal context are byte-identical to the source reviewed by adversarial chunk R1-CHUNK-0060. No new finding or investigation survived deduplication. No product source, canonical ledger, other inbox report, temporary report, test artifact, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/ws_handler.rs` L1801-L2400, all 600 lines reviewed
+- Frozen blob: `f51b839ca5f61a87eaac3c9b5601944276f04434`
+- Scope manifest, UTF-8 with LF and one final LF:
+
+```text
+server/src/ws_handler.rs|L1801-L2400|f51b839ca5f61a87eaac3c9b5601944276f04434
+```
+
+- Scope-manifest byte count: 78
+- Git blob SHA-1 of the exact manifest bytes: `06eff62af7fa6996b86afe085aedd032bce6a13a`
+- SHA-256 of the exact manifest bytes: `a050c3be661a188cf6238144d1f52849c86c2feeade163ff47720f7a6897d01e`
+- The assigned file is branch-added relative to the review base
+- `git diff c01d8fe4686c63d931b1e543a6305bbafaa944a9 7877ad30d05887b8e19869ed4c50075e41e2f88e -- server/src/ws_handler.rs` is empty. The assigned frozen implementation is unchanged from the adversarial review snapshot
+- The mutable live worktree was not used as product authority. Concurrent changes were preserved
+
+## Context and ownership inspected
+
+- Complete assigned range, including final normal-start assignment publication; normal and late-join STUN ingestion; candidate distribution and expansion; connectivity result and update handling; late-join relay assignment and launch; file-hash forwarding; kick; match-result persistence and cleanup; and the friend-request prefix at the range boundary
+- Enclosing frozen authentication and disconnect ownership, earlier lobby creation, admission, start and relay planning, and later friend and message handlers needed to establish state and guard ownership
+- Complete relevant `server/src/lobby.rs`, protocol types and limits, relay allocation, statistics transitions, database match writes, WebSocket frame admission, and outbound channel behavior
+- Android candidate discovery, connectivity probing and reporting, late-join launch and proxy assignment, kick caller, generic error handling, end-game behavior, and protocol schema
+- Frozen integration coverage for STUN, connectivity, start, kick, match database methods, friend presence, and the absence of end-to-end file-hash, late-join, and match-result protocol tests
+- Source history and the byte-identical adversarial R1-CHUNK-0052, R1-CHUNK-0058, R1-CHUNK-0060, and related completion records
+- Durable GQ evidence and active and done GQ, adversarial, DMR1, prior cleanup, and next-30 records for root-cause and remediation-owner deduplication
+
+## Atomic observations
+
+### GQ1-CHUNK-0076-OBS-001 - DUPLICATE of BR-0116: ICE input and Cartesian expansion remain unbounded
+
+- Severity/confidence/category: P1, high, security/resource-exhaustion
+- Frozen locations: `ws_handler.rs:L1875-L2043`; related protocol candidate fields and Android probe consumers
+- Evidence: `StunResult` accepts an arbitrary candidate vector, clones and expands it, retains it in the lobby, clones it once per peer, and for late join constructs and sorts the complete joiner-by-host Cartesian product. Candidate types and address strings are not constrained to canonical safe endpoints before clients receive probe instructions.
+- Trigger and impact: submit large, duplicate, malformed, or attacker-selected candidate lists in a normal or in-progress lobby. Server allocations and outbound copies grow superlinearly, while peers can be instructed to resolve and probe arbitrary UDP destinations.
+- Deduplication: BR-0116 names these exact frozen locations, amplification stages, client sink, trigger classes, and bounded typed admission repair. GQF-0015 owns the earlier aggregate frame and field-budget layer. No separate GQ finding or remediation is warranted.
+
+### GQ1-CHUNK-0076-OBS-002 - DUPLICATE of BR-0148: connectivity state is player-wide rather than pair- and generation-specific
+
+- Severity/confidence/category: P1, high, correctness/networking
+- Frozen locations: `ws_handler.rs:L1931-L2240`, especially L2049-L2076 and L2212-L2237
+- Evidence: `ConnectivityOk` and `ConnectivityUpdate` accept a `peer_id` but store the method on only the reporting `LobbyPlayer`. Late-join completion removes a player-wide pending flag without proving that the reported peer is the host, that the pair was offered, or that the result belongs to the current admission generation. An existing in-game non-host can resubmit candidates and enter the pending set.
+- Trigger and impact: use three or more peers with mixed routes, send a forged or stale result, or have an existing member resubmit STUN and report success for an arbitrary peer. One pair can overwrite another pair's route or complete and relaunch an unrelated late join.
+- Deduplication: BR-0148 already owns the complete normal and late-join pair-state root, fair probe scheduling, validation boundary, and generation matrix. The assigned lines refresh but do not broaden that owner.
+
+### GQ1-CHUNK-0076-OBS-003 - DUPLICATE of BR-0153: successful late join reacquires the same DashMap key while its read guard is live
+
+- Severity/confidence/category: P1, high, concurrency/resource-lifetime
+- Frozen locations: `ws_handler.rs:L2055-L2200`
+- Evidence: the outer `state.sessions.get(&player_id)` read guard remains live through late-join completion. After dropping the lobby guard, the path calls `state.sessions.get_mut(&player_id)` on the same map and key. DashMap documents this pattern as potentially deadlocking. Other session-to-lobby paths also oppose lobby-to-session transitions.
+- Trigger and impact: complete an ordinary late join through `ConnectivityOk`, or interleave connectivity with disconnect, kick, cleanup, or friend operations. A request can deadlock a Tokio worker and concurrent cycles can stop unrelated service work.
+- Deduplication: BR-0153 records this exact guard lifetime and line range, the wider lock-order consequence, and the snapshot-then-commit repair. The dedicated GQ recheck remains the correct follow-up owner.
+
+### GQ1-CHUNK-0076-OBS-004 - DUPLICATE of BR-0155: file-hash reporting is a dormant untyped protocol surface
+
+- Severity/confidence/category: P3, high, maintainability/api-data-format
+- Frozen locations: `ws_handler.rs:L2243-L2278`; related Rust and Android protocol definitions
+- Evidence: host hash submissions are discarded. Member submissions are tunneled to the host as JSON text inside a generic `Error` message, while the official Android protocol has no hash-entry request model, typed receipt, comparison, or mismatch policy. The supported client therefore performs none of the comparison promised by the comments.
+- Trigger and impact: run an official-client match or have a custom client submit hashes. No compatibility decision occurs, and hostile data enters an untyped logging or display surface under a misleading public contract.
+- Deduplication: BR-0155 owns removal versus complete typed implementation, its relationship to the engine checksum, semantic limits, and schema-parity validation. No new cleanup root remains.
+
+### GQ1-CHUNK-0076-OBS-005 - DUPLICATE of BR-0154: kick authorization does not bind the target to the sender's lobby
+
+- Severity/confidence/category: P1, high, security/authorization
+- Frozen locations: `ws_handler.rs:L2282-L2311`
+- Evidence: the handler proves only that the sender hosts the sender's current lobby. It does not require the target in that lobby before notifying the arbitrary target and clearing that target session's lobby and presence. It also removes members after the 100-entry kick set is full without retaining their ban.
+- Trigger and impact: host one lobby and submit a known UUID belonging to another lobby, oneself, an offline identity, or a valid member at the ban-cap boundary. The request can detach an unrelated live session while leaving ghost membership, or permit a kicked member to rejoin.
+- Deduplication: BR-0154 names the exact authorization gap, capacity edge, generation race, atomic transition, and validation matrix. No distinct current finding should be created.
+
+### GQ1-CHUNK-0076-OBS-006 - DUPLICATE of BR-0120: match completion trusts client history and acknowledges failed partial writes
+
+- Severity/confidence/category: P2, high, correctness/data-integrity
+- Frozen locations: `ws_handler.rs:L2315-L2382`; `db.rs` match and player inserts; Android end-game caller
+- Evidence: only host identity is checked. The host supplies the entire roster and statistics without comparison to lobby membership, bounded uniqueness, or generation. Aggregate and player rows are inserted separately, every result is discarded, and the lobby is removed before an unconditional acknowledgement. The official Android client sends only `EndGame`, so normal matches do not reach this path.
+- Trigger and impact: complete an official match, submit omitted, duplicate, foreign, fabricated, repeated, or oversized player results, or inject any database failure. History can be absent, fabricated, or partial while the server reports success and destroys retry state.
+- Deduplication: BR-0120 records this exact protocol and transaction root, official-client absence, authoritative roster requirement, idempotence, and injected-failure matrix. Synchronous database execution remains BR-0139 rather than a new observation.
+
+### GQ1-CHUNK-0076-OBS-007 - DUPLICATE of BR-0150: match and late-join transitions leave copied presence stale
+
+- Severity/confidence/category: P2, high, correctness/state-lifetime
+- Frozen locations: `ws_handler.rs:L2177-L2192,L2315-L2382`; related friend-presence projection
+- Evidence: late-join completion refreshes only the joiner's copied presence even though the authoritative lobby count changed. Match completion removes the lobby without clearing any member session's `lobby_id` or copied InGame presence. Friend projection later trusts those session fields.
+- Trigger and impact: complete a late join or submit a match result, then query friend presence before affected sessions disconnect or enter another lobby. Observers can receive an obsolete player count or InGame details for a removed lobby.
+- Deduplication: BR-0150 already includes both assigned transitions, the same denormalized-presence root, authoritative derivation repair, and transition-by-transition observer validation.
+
+## Explicit clean dimensions
+
+- Normal game-start assignments: within the assigned tail, roster size is bounded to eight, slot conversions fit `u8`, self is skipped, unordered relay pair indexes are canonical, and peer and relay-destination slots match in both directions. Broader start preconditions and relay lifetime remain BR-0152 and BR-0133.
+- Basic authorization: only the current lobby host reaches kick and match-result mutation. The kick target-membership defect is OBS-005, and match data authority is OBS-006.
+- Ordinary STUN publication: candidates are attached only to the authenticated session's current lobby, and peer fanout excludes the sender. Missing semantic validation and generation ownership remain BR-0116, BR-0127, and BR-0148.
+- Rust memory safety: no unsafe block, unchecked roster index beyond the fixed lobby bound, arithmetic overflow, or panic reachable from ordinary bounded roster values was found. Candidate resource growth and DashMap deadlock are logical and resource-safety defects rather than memory corruption.
+- Guard release around sends: the STUN path drops its lobby write guard before candidate and connectivity sends. The same-key late-join reacquisition remains OBS-003, and ignored outbound errors remain BR-0144.
+- File-hash routing: a non-host submission is forwarded only to the current lobby host; it is not broadcast to unrelated sessions. The missing typed end-to-end feature remains OBS-004.
+- Match role check: a non-host cannot submit a result for the named lobby. Roster authority, transactionality, and lifecycle defects remain OBS-006 and OBS-007.
+- Diagnostics and secrets: assigned logs include player and lobby UUIDs, method labels, counts, and RTT, but do not print relay tokens, lobby codes, authentication credentials, file hashes, or complete candidate payloads. Attacker-controlled method and detail strings are structured fields rather than format strings.
+- D1/D2 and platform scope: this server-only implementation is shared and creates no paired inherited-engine diff. Both Android and native multiplayer consumers were checked as interface context.
+- Cleanup and maintainability: repeated connection-method parsing and relay assignment are verbose, but their demonstrated correctness consequences are already owned by BR-0148 and BR-0133. Style-only extraction does not meet independent finding admission.
+
+## Evidence gaps and limitations
+
+- No build, test, load test, sanitizer, network simulation, database fault injection, or emulator run was performed because this was a frozen-object read-only survey. The byte-identical adversarial completion recorded a 55-second-guarded pass of all 102 then-current server tests; that historical run is context, not fresh validation.
+- Existing positive integration tests do not exercise a real late join, candidate count and destination boundaries, cross-lobby kick, kicked-set capacity, file hashes, match-result protocol completion, database failure, or exact presence after terminal transitions.
+- Exact DashMap and lobby-generation interleavings need barriered timeout tests or a serialized lobby state-machine harness. Static guard lifetime proves the same-key hazard but does not quantify worker-pool exhaustion.
+- Candidate amplification was established from complete control and data flow. No heap, queue, DNS, UDP, or Compose measurement was repeated.
+- The friend-request branch begins inside the assigned boundary but continues in GQ1-CHUNK-0077. Its complete social authorization behavior was inspected only as necessary context and remains under BR-0121, BR-0122, BR-0130, and BR-0153.
+
+## Commands and methods
+
+- Complete repository instruction and general quality process reads, plus relevant active and done ledger, durable evidence, generation, DMR1, prior cleanup, and next-30 records
+- `git cat-file`, `git ls-tree`, `git merge-base`, `git diff`, `git show`, `git log --follow`, `git grep`, and `rg` for frozen identity, source and history, callers, consumers, tests, prior findings, and deduplication
+- Line-numbered frozen review of every assigned line in three 200-line segments plus enclosing state transitions and complete relevant lobby, protocol, relay, database, statistics, Android, and test context
+- Static traces of candidate input to retained and Cartesian state to client probes; pair report to player-wide state and late-join completion; session read guard to same-key mutation; host kick to arbitrary target session; and match report to split database writes, lobby removal, acknowledgement, and stale presence
+- In-memory SHA-256 and Git blob hashing of the exact one-row scope manifest, with no temporary repository file
+
+## Normalization recommendation
+
+- Import this report as one `ISSUES` coverage record with seven duplicate or evidence-refresh observations and no new GQF, GQI, or GQR ID.
+- Map OBS-001 to BR-0116 and GQF-0015 context, OBS-002 to BR-0148, OBS-003 to BR-0153, OBS-004 to BR-0155, OBS-005 to BR-0154, OBS-006 to BR-0120, and OBS-007 to BR-0150.
+- Preserve BR-0127, BR-0132, BR-0133, BR-0134, BR-0135, BR-0139, BR-0144, and BR-0152 as inspected contextual owners without claiming new evidence.
+- Do not split cleanup-only findings for ignored bounded sends, repeated method parsing, relay-assignment syntax, or comments. Their concrete consequences are already owned by the existing records.
+
+Stopped after exactly `GQ1-CHUNK-0076`. The only created path is this assigned tracked inbox report.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0076 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0077 frozen survey SHA256:9ff6cbb6118edd2c89d07bc35bccb78acbbede66470e3f4928527797c48da205 -->
+
+## GQ1-CHUNK-0077 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0077.md`
+- Imported SHA-256: `9ff6cbb6118edd2c89d07bc35bccb78acbbede66470e3f4928527797c48da205`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0077 frozen survey
+
+Outcome: ISSUES, all duplicate or evidence extensions. All 551 assigned frozen lines were reviewed with the complete social handlers, database and protocol contracts, lobby admission, Android callers, candidate helpers, focused tests, history, and durable GQ and adversarial records. The frozen implementation and its principal context are byte-identical to the source previously reviewed by adversarial chunk `R1-CHUNK-0061`. No new finding or investigation survived deduplication. No product source, canonical ledger, other inbox report, temporary report, test artifact, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file: `server/src/ws_handler.rs` L2401-L2951, all 551 lines reviewed
+- Frozen blob: `f51b839ca5f61a87eaac3c9b5601944276f04434`
+- Scope manifest, ASCII with LF and one final LF:
+
+```text
+server/src/ws_handler.rs|L2401-L2951|f51b839ca5f61a87eaac3c9b5601944276f04434
+```
+
+- Scope-manifest byte count: 78
+- Git blob SHA-1 of the exact manifest bytes: `074c87b4bf6615432603217847e4fb3f66196cf3`
+- SHA-256 of the exact manifest bytes: `3412c168e73b3dc2c1dd274d7aadcfc76996f3b5f5ed111dc829dfdb65ebde12`
+- The frozen base is an ancestor of the frozen review head, and the assigned file is branch-added relative to the base
+- `git diff c01d8fe4686c63d931b1e543a6305bbafaa944a9 7877ad30d05887b8e19869ed4c50075e41e2f88e -- server/src/ws_handler.rs server/src/friends.rs server/src/db.rs server/src/protocol.rs server/tests/integration.rs` is empty. The assigned implementation and principal context are unchanged from the adversarial review snapshot
+- The mutable live worktree was not used as product authority. Concurrent changes were preserved
+
+## Context and ownership inspected
+
+- Every assigned line, including friend-request notification, accept, remove, block, list, friend-game admission, direct messaging, and all local connection-selection tests
+- Complete frozen `server/src/friends.rs` and the friendship operations in `server/src/db.rs`, including callsign resolution, pending and accepted row direction, blocking, removal, list projection, and database failure behavior
+- Frozen social and connection schemas in `server/src/protocol.rs`, session presence and lobby models, ordinary lobby admission, disconnect and broadcast helpers, and the candidate-generation and connection-type helpers defined earlier in `ws_handler.rs`
+- Android friend mutation, list, join, chat fanout, response, and lobby-state consumers in `MatchmakingService.kt` and their protocol model
+- Frozen integration coverage for friend request, acceptance, removal, blocking, presence, friend-game joining, messaging, lobby membership, and connectivity, plus the assigned unit tests for IPv4 private ranges, NAT classification, candidate preference, observed generation, and priority
+- Complete relevant file history, the byte-identical adversarial `R1-CHUNK-0061` record, and the owners `BR-0116`, `BR-0121`, `BR-0122`, `BR-0129`, `BR-0130`, `BR-0136`, `BR-0145`, `BR-0148`, `BR-0150`, `BR-0151`, `BR-0153`, and `BR-0156`
+- Active and done GQ and adversarial ledgers, durable GQ evidence, DMR1, and prior cleanup plans for root-cause and remediation-owner deduplication
+
+## Atomic observations
+
+### GQ1-CHUNK-0077-OBS-001 - EXTENDS BR-0122 and BR-0145: friend request persistence and notification resolve a nonunique callsign independently
+
+- Severity/confidence/category at owner: P2, high, correctness/identity/protocol-contract
+- Frozen locations: `ws_handler.rs:L2385-L2415`; `friends.rs:L11-L63`; `db.rs` player lookup and authentication identity updates
+- Evidence: `handle_friend_request` resolves `target_callsign`, persists the request to that UUID, and returns only the requester's identity. The caller then performs a second `find_player_by_callsign` and uses that independently selected UUID for the live notification. Callsigns are mutable and nonunique, and the query uses `LIMIT 1` without a stable ordering. Duplicate callsigns or a rename between the two reads can therefore persist a request for one account while notifying another. The requester receives no stable target identity or typed success acknowledgement.
+- Trigger and impact: create duplicate visible callsigns or rename during a request. The relationship can attach to an arbitrary account, the notification can reach a different account, and the requester cannot verify which identity was selected.
+- Deduplication: `BR-0122` already owns this exact callsign-to-two-lookups root and the stable player-ID repair. `BR-0145` owns the broader cross-layer callsign contract and uniqueness failure. Preserve this assigned caller evidence without creating another finding or remediation.
+
+### GQ1-CHUNK-0077-OBS-002 - EXTENDS BR-0121: social mutations and disclosure do not enforce one fail-closed relationship state machine
+
+- Severity/confidence/category at owner: P1, high, security/authorization/data-integrity
+- Frozen locations: `ws_handler.rs:L2418-L2563,L2588-L2612`; `friends.rs:L65-L120`; `db.rs:L305-L403`
+- Evidence: FriendAccept ignores whether a reciprocal pending row existed and ignores every database result before logging and notifying the named UUID. FriendRemove and FriendBlock likewise report or behave as success after discarded database failures. Blocking replaces only the caller's directed row, leaving the reverse pending or accepted row intact. FriendList enriches every returned row, including pending or blocked states, with current presence and game details. JoinFriendGame never proves an accepted, nonblocked relationship. SendMessage converts a block-query database failure into `false` and delivers the message. These are all manifestations of the existing non-atomic, fail-open social authorization root.
+- Trigger and impact: submit unsolicited accept, block or remove under a database fault, retain the reverse friendship row, list pending or blocked entries, friend-join with a known UUID, or fault the block query. An authenticated client can forge social state, disclose presence, bypass coded-lobby access, or deliver blocked traffic while failure is logged or exposed as success.
+- Deduplication: `BR-0121` names these exact handlers, database transitions, disclosure, friend join, message block lookup, typed acknowledgement gap, and atomic validation matrix. This range strengthens its assigned handler trace but does not define a second root.
+
+### GQ1-CHUNK-0077-OBS-003 - DUPLICATE of BR-0129 and BR-0151: friend-game admission is split across guards and overwrites prior membership
+
+- Severity/confidence/category at owners: P2/P1, high, correctness/state-machine and concurrency
+- Frozen locations: `ws_handler.rs:L2455-L2540`; `lobby.rs` joinability and insertion operations
+- Evidence: friend-game admission separately reads the friend's session, kicked set, verified-only flag, caller verification, and joinability, then reacquires the lobby mutably for insertion. Every mutable predicate can change before insertion. On success, it overwrites the caller session's lobby pointer and presence without detaching or validating any prior hosted or joined lobby. Broadcast then projects the newly selected lobby while the old lobby can retain a ghost member.
+- Trigger and impact: race a kick, state, capacity, or verification transition, or friend-join while already hosting or joined. Admission can violate the current restriction, overrun a final-slot race, or leave one session represented in multiple lobbies.
+- Deduplication: `BR-0129` owns the one atomic admission predicate for ordinary and friend join. `BR-0151` owns atomic lobby replacement and the exact friend-join multiple-membership path. Their generation-aware transition and validation boundaries already cover this evidence.
+
+### GQ1-CHUNK-0077-OBS-004 - DUPLICATE of BR-0130: server and Android both mutate the same friend join
+
+- Severity/confidence/category: P2, high, compatibility/protocol
+- Frozen locations: `ws_handler.rs:L2517-L2540`; Android friend-join response handling in `MatchmakingService.kt`
+- Evidence: the server's successful JoinFriendGame path inserts the player, updates the session, responds with the lobby ID, and broadcasts the roster. Android interprets the success response as lookup-only and immediately sends JoinLobby for the same lobby. The second mutation is rejected as a duplicate or, for a coded lobby, as missing the code that friend authorization was meant to bypass.
+- Trigger and impact: use the maintained Android friend-join action for any coded or uncoded lobby. A successful admission produces a contradictory error and consumes a second admission/rate event.
+- Deduplication: `BR-0130` already owns this exact two-owner protocol mutation and the choice between completed admission and a single-use authorization grant. No new GQ owner is warranted.
+
+### GQ1-CHUNK-0077-OBS-005 - EXTENDS BR-0153: friend join retains a lobby guard while broadcasting through the sessions map
+
+- Severity/confidence/category at owner: P1, high, concurrency/resource-lifetime
+- Frozen locations: `ws_handler.rs:L2538-L2540`; `broadcast_lobby_update`; concurrent disconnect, cleanup, and social paths
+- Evidence: after insertion, `if let Some(lobby) = state.lobbies.get(&lobby_id)` retains a DashMap lobby read guard while `broadcast_lobby_update(&lobby, state)` enters the sessions map and sends. Other paths acquire session state before lobby state. This supplies the later friend-join instance of the cross-map lock-order pattern, alongside the same-map late-join guard reacquisition already proved by the owner.
+- Trigger and impact: overlap friend join and broadcast with disconnect, cleanup, kick, or another state transition taking session and lobby shards in the opposite order. Tokio workers can stall in a lock cycle and stop serving unrelated clients.
+- Deduplication: `BR-0153` explicitly records the friend-join guard and broadcast path as part of one no-nested-DashMap-guard ownership rule. Keep this evidence under that owner.
+
+### GQ1-CHUNK-0077-OBS-006 - DUPLICATE of BR-0156, with BR-0121 overlap: target-addressed direct messages implement unauthorised partial lobby chat
+
+- Severity/confidence/category: P2, high, security/authorization/correctness
+- Frozen locations: `ws_handler.rs:L2566-L2613`; Android chat fanout and receipt handling
+- Evidence: SendMessage validates only the authenticated sender, one per-sender rate window, text shape, and the target's block row. It never requires a current accepted friendship or common lobby/game generation. Android implements one lobby message by sending one request per roster member, so the five-request window rejects later recipients in ordinary larger lobbies. Received payloads contain no lobby generation and are appended to the current lobby chat.
+- Trigger and impact: send to any known online UUID outside the sender's lobby, or send ordinary lobby chat to enough members to cross the per-target request budget. Unrelated users can receive injected chat, and legitimate messages reach only a prefix of the roster while the sender sees local success.
+- Deduplication: `BR-0156` owns the exact direct-message authorization and client-fanout root plus the server-side lobby-broadcast replacement. `BR-0121` owns fail-closed block authorization. Do not split the handler into another finding.
+
+### GQ1-CHUNK-0077-OBS-007 - EXTENDS BR-0136 and BR-0116: assigned candidate tests codify only IPv4 and do not close untyped candidate amplification
+
+- Severity/confidence/category at owners: P2/P1, high, compatibility/networking and security/input-bounds
+- Frozen locations: `ws_handler.rs:L2645-L2951`; helpers at L690-L1103
+- Evidence: every assigned address fixture is dotted IPv4. The production helpers still split candidate endpoints on `':'`, generate unbracketed observed IPv6 endpoints, and parse private subnets as four dotted octets, while IPv6 WebSocket and listener addresses are accepted elsewhere. Observed generation also preserves duplicate host ports as duplicate candidates, and the priority tests use trusted short type strings rather than exercising the protocol's arbitrary candidate types, endpoints, counts, and Cartesian pair expansion.
+- Trigger and impact: authenticate over IPv6 or submit bracketed IPv6, duplicate host candidates, arbitrary types, or boundary candidate sets. IPv6 routes are malformed or misclassified, while duplicate or attacker-shaped candidates can amplify pair construction and outbound probe work despite the green helper suite.
+- Deduplication: `BR-0136` owns end-to-end IPv6 support or explicit rejection, including these exact helpers and missing test family. `BR-0116` owns candidate validation, count, destination, type, and Cartesian amplification. `BR-0148` separately owns per-pair result completion, which these local helper tests do not exercise.
+
+## Explicit clean dimensions
+
+- Friend-request local admission: the rate limiter runs before callsign search; an absent target and database lookup or insertion failure return an error; self-friending is rejected. Stable identity and typed success remain OBS-001.
+- Removal shape: absent database faults, RemoveFriend deletes both directed rows. The broader atomic social transition and acknowledgement contract remains OBS-002/BR-0121.
+- Message text: direct-message text is limited to 200 bytes and printable ASCII plus space before delivery. Sender UUID and callsign come from the authenticated session rather than client-supplied identity. Authorization and fanout remain OBS-006.
+- Block privacy: on a successful database query, a blocked sender receives the same MessageSent response and no delivery, avoiding direct disclosure of block state. Database faults remain fail-open under OBS-002.
+- Friend-join basic restrictions: the path checks the current kicked set and verified-only requirement, and `add_player` enforces basic capacity and duplicate membership for the destination. Atomicity, relationship authorization, source ownership, and protocol duplication remain OBS-002 through OBS-004.
+- Rust memory safety: no unsafe block, unchecked array indexing, integer narrowing, or unbounded recursion occurs in the assigned range. Shared-state defects are authorization and lock/state ownership issues, not Rust memory corruption.
+- Candidate helper determinism: for a fixed bounded IPv4 input, address preference and pair priority are deterministic, malformed dotted IPv4 text fails without panic, no-candidate classification reaches relay, and observed generation suppresses loopback and an exact matching srflx endpoint. Broader validation and IPv6 remain OBS-007.
+- Unit-test intent: the assigned tests cover ordinary IPv4 private-range branches, common NAT classifications, empty candidates, UPnP preference, observed generation and deduplication, and relative candidate priority. They do not claim end-to-end authorization, lobby generation, pair completion, or IPv6 coverage.
+- Resource lifetime and diagnostics: assigned values are owned Rust data with automatic cleanup; social logs contain UUIDs but not auth, session, lobby-code, or relay secrets. Synchronous SQLite work remains `BR-0139`, and ignored outbound sends remain `BR-0144` rather than new roots here.
+- D1/D2 and diff minimization: this is one branch-added shared server implementation. None of the existing owners requires expanding the inherited D1 or D2 diff; protocol/client changes belong in branch-owned server and Android files.
+
+## Evidence gaps and limitations
+
+- No fresh build, test, load test, database fault injection, concurrency stress, network simulation, server process, or emulator run was performed because this unit is frozen-object and read-only. The byte-identical adversarial review recorded a timeout-bounded server test pass, but that historical run is context rather than fresh validation.
+- Exact accept/block/remove interleavings require transaction barriers and injected SQLite prepare, query, write, and commit failures. Existing positive tests establish ordinary flow but do not prove fail-closed authorization.
+- The lock-cycle evidence follows the documented DashMap guard lifetime and opposing acquisition paths statically. A small-worker Tokio stress test should establish bounded completion after remediation.
+- IPv6, shared-public-IP, subnet, carrier-NAT, duplicate-candidate, and candidate-count matrices need real or simulated endpoints. This report does not claim that the local IPv4 helpers establish route reachability.
+- The earlier handler ranges remain separate coverage units. They were inspected only as needed for social, lobby, candidate, and deduplication ownership.
+
+## Commands and methods
+
+- Complete repository instruction and general-quality process reads
+- `git show`, `git rev-parse`, `git cat-file`, `git diff`, `git log --follow`, and ancestry checks for frozen source, exact context, history, and snapshot identity
+- `rg` across active and done GQ and adversarial ledgers, durable GQ evidence, DMR1, prior plans, protocol, database, server tests, and Android callers for deduplication and owner boundaries
+- Line-numbered frozen traces for callsign to friendship row to notification, social mutation to database and Android state, friend presence and admission, lobby guard to session broadcast, direct message to Android fanout, and candidate generation to connection classification and tests
+- In-memory ASCII SHA-256 and Git-blob SHA-1 calculation for the exact one-row scope manifest
+- Static correctness, security, resource, concurrency, performance, compatibility, portability, warning, diagnostics, API/data-format, duplication, maintainability, test-quality, and inherited-diff review. No product mutation, canonical-ledger edit, temp-file write, build, device, or external fetch was performed
+
+## Normalization recommendation
+
+1. Normalize OBS-001 only as evidence extending `BR-0122` and `BR-0145`.
+2. Normalize OBS-002 only as evidence extending `BR-0121`.
+3. Normalize OBS-003 as duplicate evidence for `BR-0129` and `BR-0151`.
+4. Normalize OBS-004 as an exact duplicate of `BR-0130`.
+5. Normalize OBS-005 only as evidence extending `BR-0153`.
+6. Normalize OBS-006 as an exact duplicate of `BR-0156`, with block-failure ownership retained by `BR-0121`.
+7. Normalize OBS-007 only as evidence extending `BR-0136` and `BR-0116`; retain per-pair completion under `BR-0148`.
+8. Create one `ISSUES` coverage record for `GQ1-CHUNK-0077`. Add no new finding, investigation, or remediation chunk.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0077 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0078 frozen survey SHA256:fe141b94ecce49c1087276408c5d3422df9915b3733e59f667a4eb26f190632a -->
+
+## GQ1-CHUNK-0078 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0078.md`
+- Imported SHA-256: `fe141b94ecce49c1087276408c5d3422df9915b3733e59f667a4eb26f190632a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0078 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0078`
+- Outcome: `CLEAN`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/app/src/main/cpp/extract/.gitignore:L1-L1`
+- Frozen file blob and scope fingerprint: `32f3e1d7f50777b0dac0569fa7c5f4596310d2d5`
+- Scope status: complete. The exact frozen line, the rule's addition and complete history, generated-path producers, build and test consumers, cleanup behavior, ignore matching, provenance, and durable historical records were inspected
+
+## Frozen scope
+
+The file is absent at the frozen base and contains one line at the frozen head:
+
+```gitignore
+test_fixtures/
+```
+
+The path was added in commit `6cff4cd033b45cb781722865b4e233ab3427c724` and has no later history through the frozen head. The frozen blob matches the live worktree blob, but all review conclusions use the frozen Git object
+
+## Context checked
+
+- `android/app/src/main/cpp/extract/test_cue_iso.c`, especially its fixed relative `TEST_DIR = "test_fixtures"`, generated BIN/CUE inputs, extraction outputs, directory creation, and aggregate execution
+- `android/app/src/main/cpp/extract/CMakeLists.txt`, including `cue_iso_tests` registration and its extraction-source working directory
+- `android/tests/test_cue_iso.ps1` and `android/helpers/run_cue_iso_tests.sh`, including build ownership, CTest invocation, and recursive cleanup of the exact generated directory
+- Frozen repository-wide exact-name references and the absence of tracked content below `android/app/src/main/cpp/extract/test_fixtures/`
+- Git ignore semantics for a descendant probe and the adding commit's extraction-test intent
+- Active and done general-quality ledgers, durable general-quality evidence, active and done adversarial ledgers, DMR1, and prior cleanup records for duplicates, regrowth, and fixture provenance
+
+## Existing-root reconciliation
+
+- The fixed source-tree fixture location, cross-run mutation/deletion risk, stale-fixture acceptance, failure and interruption residue, and missing run deadlines are already owned in detail by open `BR-0160`. The ignore rule makes ordinary generated residue nonpublishable, but it does not isolate runs or make cleanup reliable. No separate root is created by the rule itself
+- Historical `R1-CHUNK-0062` already reviewed this exact line with the extraction CMake graph and concluded that it is narrowly scoped to generated extraction fixtures. The current frozen object is byte-identical to that reviewed rule, so this survey confirms that conclusion rather than reopening it
+- Open `BR-0001` owns publication cleanup and records that generated extraction outputs should be removed and ignored or moved to test-owned temporary storage. This local rule is consistent with that direction and does not hide the separate intentional tracked baselines under repository-level `android/test_fixtures/`
+- Open `BR-0002` owns the broader upstream patch-series and artifact-selection problem. A one-line local generated-output exclusion does not add another PR composition root
+
+## Explicit clean dimensions
+
+- Correctness and scope: Git resolves the slash-terminated, unanchored pattern relative to this `.gitignore` directory, so it ignores the intended descendant directory at `android/app/src/main/cpp/extract/test_fixtures/` and does not affect the distinct tracked `android/test_fixtures/` corpus
+- Producer and consumer agreement: the C test names the exact `test_fixtures` directory, CTest runs it from the extraction source directory, and both maintained platform wrappers target the same directory for cleanup. The spelling and path ownership are internally consistent
+- Provenance and reproducibility: the ignored directory contains synthetic run outputs generated by source-controlled test builders. The frozen tree tracks no file below this ignored location and repository-wide frozen search found no consumer that expects durable content there
+- PR hygiene: the rule prevents its intended generated bytes from appearing as ordinary untracked changes. It is much narrower than a file-extension wildcard and does not suppress source, manifests, committed test data, or adjacent extractor files
+- Portability: forward-slash directory syntax is valid Git ignore syntax on supported hosts and `git check-ignore` confirms the expected match on Windows
+- Security and privacy: the rule does not admit data into an application package, alter extraction input handling, or conceal a known durable secret location. Generated-content trust and stale reuse remain part of `BR-0160`
+- Maintainability and naming: the single rule directly matches the existing producer contract. Adding comments or a broader abstraction would not improve ownership enough to justify more branch diff
+- Diff minimization: the file is branch-added, contains only the necessary local exclusion, and requires no inherited D1 or D2 modification
+- Warnings, build, API/data format, concurrency, resource lifetime, and performance: the rule has no compiled interface or runtime behavior. Applicable runner concurrency and cleanup defects are already fully represented by `BR-0160`
+
+No new supported finding, bounded investigation, regrowth, or evidence extension beyond the already complete `BR-0160`, `BR-0001`, and historical `R1-CHUNK-0062` records survived this review
+
+## Evidence gaps
+
+- No test suite was executed because this was a frozen-object, read-only survey of ignore policy. Dynamic test-run isolation and cleanup failure cases belong to `BR-0160` and are not needed to establish this rule's matching semantics
+- The live branch has advanced beyond the frozen head. Any later change to the rule, producer directory, test working directory, or cleanup ownership requires delta-generation coverage
+- Later deterministic chunks separately own the full CMake file, `test_cue_iso.c`, and test runners. They were inspected here only far enough to establish the ignore contract
+
+## Commands and verification
+
+- Read repository instructions and the complete general-quality worker process
+- Read the active and done general-quality ledgers, durable evidence ledger, active and done adversarial ledgers, DMR1 references, and prior fixture-cleanup records
+- Used `git show`, `git diff`, `git log --follow`, `git ls-tree`, `git grep`, `git check-ignore`, `git hash-object`, and `rg` against the frozen scope and necessary context
+- Confirmed the assigned path is a one-line branch addition, the frozen blob is `32f3e1d7f50777b0dac0569fa7c5f4596310d2d5`, and the base has no copy of the path
+- Confirmed `git diff --check` reports no error for the assigned frozen path
+- Product code, canonical ledgers, generated evidence, and ignored temporary files were not edited
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `CLEAN` coverage record for `GQ1-CHUNK-0078`
+- Retain `BR-0160`, `BR-0001`, and `BR-0002` as the existing owners without adding or extending a finding from this clean rule
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0078 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0079 frozen survey SHA256:b835f14a87d98b4b47b36257bd1604784b79a84fdb832c4bbd6e99861656c630 -->
+
+## GQ1-CHUNK-0079 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0079.md`
+- Imported SHA-256: `b835f14a87d98b4b47b36257bd1604784b79a84fdb832c4bbd6e99861656c630`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0079 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0079`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/app/src/main/cpp/extract/CMakeLists.txt:L1-L600`
+- Frozen file blob and scope fingerprint: `47992190e8edccf31ac9c21985029434b8f44b31`
+- Scope status: complete. All assigned frozen lines, the remainder needed to resolve target registration and assertion policy, complete file history, dependency manifest, direct suite runners, target sources, and relevant quality and adversarial records were inspected
+
+The file is a 681-line branch addition relative to the frozen base. Live `HEAD` is `4c459fd0f9dec9f9a5badb5c29dfcf1cf4084801`, and its file blob has advanced to `764858e8abbb8cdc0ba9bc9263bc486fc9991783`; all conclusions below use only the frozen Git object and frozen owners
+
+## Context checked
+
+- Every dependency declaration and acquisition path in the assigned range, including LZMA SDK, zlib, nlohmann/json, PhysFS test headers, StuffIt corpus, Chromaprint, single-file decoders, and TinySoundFont
+- All extraction, parser, fingerprint, shared-native, and test targets declared through line 600, plus lines 601-681 only to resolve CTest registration and the directory-wide Release assertion policy
+- `android/get_deps/tool_versions.conf` dependency identities consumed by `dxx_dependency_value`
+- The frozen GOG fixture test, StuffIt demo-oracle script, SOW real-media script, and their ignored or fetched fixture ownership
+- Direct native suite entry points and aggregate references, including `android/tests/test_cue_iso.ps1`, `android/helpers/run_cue_iso_tests.sh`, `android/run_all_tests.ps1`, and `android/run_quick_tests.ps1`
+- Complete history of the CMake file, especially the dependency-integrity remediation and the later TinySoundFont timeline-test addition in `b2d88ca5f8e990b78e073788995d2b93666815f4`
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans for duplicate, regrowth, and historical-root reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0079-OBS-001: TinySoundFont archive timestamps can suppress the rebuild after a dependency update
+
+- Severity/confidence: `P2/high`
+- Category: `build-release/incremental-correctness`
+- Normalization recommendation: `NEW`
+- Location: `android/app/src/main/cpp/extract/CMakeLists.txt:L481-L500` in TinySoundFont acquisition and the `test_midi_seek_timeline` target
+- Trigger: Configure and build the host suite, change `TINYSOUNDFONT_COMMIT` to another reviewed commit whose archived header timestamps predate the existing `tsf_impl.c` object, then reconfigure and build in the same build directory
+- Evidence: The target compiles repository-owned `tsf_impl.c`, whose behavior is supplied by the fetched TinySoundFont header, but the FetchContent declaration explicitly sets `DOWNLOAD_EXTRACT_TIMESTAMP TRUE`. CMake 3.31's own `ExternalProject` documentation says this preserves timestamps from the archive and warns that, when the URL changes, dependent targets may not rebuild even though they should. The documented safe default is false, which gives extracted inputs the extraction time. No target-level dependency identity, generated stamp input, forced clean rebuild, or regression proves that changing the manifest commit recompiles the timeline target. The option was added with the test on 2026-08-08, after the earlier frozen CMake review
+- Minimum-version detail: `DOWNLOAD_EXTRACT_TIMESTAMP` was added in CMake 3.24, while this project advertises 3.16. Local CMake 3.22.1 documentation does not recognize the option. On those supported versions the requested behavior has no documented contract, adding a second version-dependent incremental-build state. The actionable root is the explicit stale timestamp policy, not merely use of a newer spelling
+- Impact: A dependency update can leave `test_midi_seek_timeline` executing an object compiled against the previous TinySoundFont while the configured source tree and central manifest name the new commit. The test can pass against stale dependency code, and clean and incremental host suites can test different implementations
+- Expected: A reviewed dependency identity change invalidates every object that includes or compiles that dependency, independent of archive-internal dates and supported CMake version. The build result must agree with the configured manifest generation
+- Suggested fix: Remove `DOWNLOAD_EXTRACT_TIMESTAMP TRUE` or set it to false, raise and enforce the minimum CMake version only if a newer option is actually required, and make the dependency identity an explicit build input if needed. Keep dependency bytes cryptographically verified as required by `GQF-0024`
+- Validation: Build once, switch between two pinned TinySoundFont commits with deliberately older and newer archive mtimes in the same build directory, and require recompilation plus a changed embedded identity or controlled behavior. Compare the result with a clean build under the minimum and current supported CMake versions, then seed a stale object and prove it cannot satisfy the updated build
+- Deduplication: No existing GQ, adversarial, DMR1, or cleanup item records this CMake archive-timestamp invalidation root. `BR-0557` covers undeclared Gradle task inputs for `gm.sf2`, and archived `BR-0157` plus `GQF-0024` cover remote-byte identity; neither owns whether an accepted TinySoundFont generation recompiles this host target
+
+### GQ1-CHUNK-0079-OBS-002: Two test-only dependency fetches remain unauthenticated
+
+- Severity/confidence: `P1/high` existing-root evidence
+- Category: `security/supply-chain`
+- Normalization recommendation: `EXTENDS GQF-0024`, linked to archived `BR-0157`; do not allocate a duplicate finding
+- Location: `android/app/src/main/cpp/extract/CMakeLists.txt:L71-L78,L481-L489`
+- Trigger: Configure the host extraction suite with a modified PhysFS release response, a modified TinySoundFont commit-archive response, or a retained fetched source tree whose pathname remains acceptable
+- Evidence: `physfs_test_headers` fetches the `release-3.2.0` archive without `URL_HASH`, explicit `TLS_VERIFY`, timeout, or cached-byte revalidation. `tinysoundfont_test` interpolates a full commit into its archive URL but likewise supplies no repository-owned archive digest, explicit TLS verification, timeout, or cache revalidation. Both remote source trees enter compilation through include paths. In contrast, this same file obtains Chromaprint and each decoder URL and SHA-256 from the central manifest and rejects altered cache bytes. The frozen durable evidence for `GQF-0024` already establishes incomplete Android dependency verification as regrowth of archived `BR-0157`; these later host-test paths are the same remote-source admission root and should broaden its complete fix boundary
+- Impact: A network, endpoint, proxy, or writable-cache substitution can compile unreviewed native declarations or implementation into routine developer test executables, giving those bytes host-account execution and allowing test results to differ by cache history
+- Expected: Every remotely compiled archive has a reviewed immutable identity plus repository-owned digest, explicit TLS and timeout policy, failed-download cleanup, and cached-byte revalidation before configure or compilation
+- Suggested fix: Put PhysFS and TinySoundFont archive URLs and SHA-256 values in the central dependency manifest and consume them through one verified FetchContent helper shared with production. Revalidate existing cache content and retain the commit identifiers as provenance rather than as the only integrity control
+- Deduplication: This is a direct extension of open `GQF-0024`, not a second supply-chain finding. Archived `BR-0157` claimed all CMake remote source was fixed, while these additions and the existing production evidence show that acceptance boundary remains incomplete
+
+### GQ1-CHUNK-0079-OBS-003: The audio-enumeration regression target is built but never registered
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `test-gap/regression-registration`
+- Normalization recommendation: `EXTENDS GQF-0068`; do not allocate a duplicate finding
+- Location: `android/app/src/main/cpp/extract/CMakeLists.txt:L378-L404` and complete-file CTest registration
+- Evidence: `test_fingerprint_audio_enumeration` is compiled from the production CLI sources with `FINGERPRINT_AUDIO_TESTING`, but no `add_test` registers it anywhere in the complete 681-line file. The maintained PowerShell enumeration regression is also absent from aggregate execution. This is the exact build-graph side of `GQF-0068`, which already records that enumeration coverage can regress while routine native suites remain green
+- Impact: Merely building the special target provides no behavior oracle. Link and compilation can succeed while link, reparse-point, special-file, ordering, or traversal behavior regresses without a failing standard test run
+- Expected and fix: Register one portable, timeout-bounded test that actually executes the enumeration assertions, or invoke the maintained regression from an owning aggregate. Seed a production regression and prove the normal suite fails
+
+### GQ1-CHUNK-0079-OBS-004: Proprietary-fixture absence is still counted as passing extraction coverage
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `test-gap/false-pass`
+- Normalization recommendation: `EXTENDS BR-0158`; do not allocate a duplicate finding
+- Location: `android/app/src/main/cpp/extract/CMakeLists.txt:L184-L204,L221-L229,L256-L263` and the registered fixture consumers
+- Evidence: The SOW real-media registration now uses `SKIP_REGULAR_EXPRESSION`, which is positive remediation evidence for archived `BR-0024`. The neighboring GOG test still registers two ignored proprietary installers unconditionally, while its helper treats each absent file as success. The StuffIt demo-oracle registration likewise runs a script that returns success when its oracle is absent, when CMake is below 3.19, or when every ignored demo archive is absent. CTest has no skip property or return-code mapping for those two tests. These mechanisms and fixtures are already the precise evidence and acceptance boundary of open `BR-0158`
+- Impact: A clean checkout can report passed GOG and StuffIt integration tests after executing no corresponding real-media assertion, obscuring parser and extraction regressions
+- Expected and fix: Retain an explicit optional-fixture profile with genuine CTest skip accounting, fail when required coverage is requested but absent, and keep fixture-independent valid parser coverage mandatory. Require at least one identified fixture assertion before a test can pass
+
+### GQ1-CHUNK-0079-OBS-005: The mandatory StuffIt corpus still bypasses the production parser
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `test-gap/false-pass`
+- Normalization recommendation: `DUPLICATE BR-0182`; do not allocate a new finding
+- Location: `android/app/src/main/cpp/extract/CMakeLists.txt:L148-L157`
+- Evidence: The registered `test_stuffit_corpus` target links `test_stuffit_corpus.cpp` only with `sti2_extract.c`; it does not link `stuffit_extract.c`. The test-local SIT5 parser therefore constructs entries and drives the low-level decoder without executing the production archive parser and high-level filtering, path, callback, or result contract. Open `BR-0182` already names this exact target construction and the false coverage it produces
+- Impact, expected, and fix: Preserve `BR-0182` as the sole owner. Route the pinned corpus through the production parser and high-level extraction seam, verify complete outputs, and mutation-test the parser fields that currently differ from the test-local implementation
+
+## Explicit clean dimensions
+
+- Dependency identity where implemented: LZMA SDK, zlib, nlohmann/json, and the StuffIt corpus use fixed commits. Chromaprint and the single-file decoders use central manifest URLs and SHA-256 values, explicit TLS verification, bounded downloads, status checks, failed-download cleanup, and cache revalidation
+- Target ownership: extraction and fingerprint executables include the expected repository sources and link their LZMA, zlib, Chromaprint, JSON, and thread dependencies. No missing link owner or obvious duplicate-symbol target survived tracing
+- Assertion policy: the directory-wide final target pass applies `/UNDEBUG` or `-UNDEBUG` to every `test_*` target, including targets declared after line 600, so Release and RelWithDebInfo do not silently remove their `assert` oracles
+- SOW registration: synthetic Huffman and integrity tests are registered, and absent real-media fixtures are explicitly surfaced to CTest through a skip regular expression. This preserves the archived `BR-0024` remediation
+- CTest wiring outside recorded gaps: declared parser, extraction, JSON, fingerprint, graphics, MIDI, SAF, save, and shared-native tests each have a corresponding registration. The unregistered audio-enumeration owner remains observation 003
+- Platform wiring: MSVC-only definitions and stack sizing are gated, Unix math and thread libraries are selected where needed, and target paths remain source- or binary-directory rooted rather than process-current-directory dependent
+- Warnings: repository test targets added later in the file generally use `/W4` or `-Wall -Wextra`, often with `-Werror`; third-party Chromaprint warnings are intentionally isolated. Inconsistent warning strength on older host targets did not establish a concrete distinct defect in this read-only pass
+- Diff minimization: this branch-added host-test build file centralizes new test wiring without modifying inherited D1 or D2 build files
+
+## Evidence gaps
+
+- No configure, dependency download, compilation, or CTest execution was performed because this worker is restricted to the frozen Git object and one tracked report output
+- The TinySoundFont stale-object trigger was established from the frozen build graph, option history, and local primary CMake 3.31 documentation. A two-generation incremental build remains the required dynamic proof
+- Local CMake 3.22.1 documentation confirms that `DOWNLOAD_EXTRACT_TIMESTAMP` is not a documented option there; this survey did not create a scratch project to characterize that old parser's treatment of the unknown token
+- Proprietary GOG, SOW, and StuffIt media were not opened or executed. Existing adversarial evidence owns their exact false-pass probes and oracle behavior
+- The live file has post-frozen changes and requires delta-generation coverage; those bytes were not used to revise frozen conclusions
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-code-quality worker process
+- Used `git show`, `git diff`, `git log`, `git blame`, `git rev-parse`, `git hash-object`, and `git status` against the frozen commits and assigned path
+- Used `rg` and targeted ledger excerpts to reconcile `GQF-0024`, `GQF-0068`, archived `BR-0024`, archived `BR-0157`, open `BR-0158`, open `BR-0182`, and related build and fixture records
+- Confirmed the frozen file is a 681-line branch addition and its frozen blob is `47992190e8edccf31ac9c21985029434b8f44b31`
+- Queried local primary CMake 3.31.6 `ExternalProject` documentation, which states that `DOWNLOAD_EXTRACT_TIMESTAMP TRUE` can prevent dependent rebuilds after URL changes and recommends false; confirmed the option is absent from local CMake 3.22.1 module documentation and was added in 3.24
+- Product code, canonical ledgers, existing evidence, temporary files, dependency caches, build trees, network state, and other inbox reports were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0079`
+- Admit observation 001 as one new P2/high build-release finding with a focused incremental dependency-update remediation chunk
+- Extend `GQF-0024` and archived `BR-0157` with observation 002 rather than allocating a duplicate supply-chain finding
+- Extend `GQF-0068` with observation 003 and `BR-0158` with observation 004
+- Record observation 005 as a duplicate of `BR-0182`
+- Preserve the SOW real-media skip and directory-wide Release assertion policy as positive closed verification
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0079 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0080 frozen survey SHA256:713c0173079d86ef9408d1e1b2c0683881d3fcddbb1c57b5e3f2270f5b2d5a6c -->
+
+## GQ1-CHUNK-0080 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0080.md`
+- Imported SHA-256: `713c0173079d86ef9408d1e1b2c0683881d3fcddbb1c57b5e3f2270f5b2d5a6c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0080 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0080`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/app/src/main/cpp/extract/CMakeLists.txt:L601-L681`
+- Frozen file blob: `47992190e8edccf31ac9c21985029434b8f44b31`
+- Assigned-range SHA-256, using LF and a final LF: `8737a4b41b19f995798ce20217c22b4e675588977423be58417ff6b559513bcb`
+- Scope status: complete. All 81 assigned lines were read from the frozen Git object. The registered targets, complete test sources, directly compiled implementations and headers, CTest behavior, warning policy, histories, and relevant historical owners were inspected
+
+The path is absent at the frozen base and has 681 added lines at the frozen head. Review conclusions use the frozen object even though the live path has since changed
+
+## Context checked
+
+- The complete frozen sources for `test_classic_demo_wall_validation`, `test_music_decode_limits`, `test_bounded_music_read`, `test_hog_midi_catalog`, `test_android_audio_format`, `test_physfsx_android_setup`, and `test_pilot_pref_transaction`
+- The directly included validation headers plus `physfsx_android_setup.c/.h`, `pilot_pref_transaction.cpp/.h`, and `playsave_transaction.c/.h`
+- The standalone extraction project's test enablement, target inventory, target-name CTest resolution, output directory, dependency declarations, and the earlier target definitions affected by the final `test_*` assertion loop
+- Addition commits `0144d241`, `2a9afb2d`, `0498798f`, and `e448d249`, plus complete path history and blame for the assigned range
+- The active and done general-quality ledgers, durable evidence ledger, active and done adversarial ledgers, DMR1, reusable cleanup guidance, warning-cleanup plans, and next-30 plans for duplicate, regrowth, and incomplete-fix evidence
+
+## Atomic observations
+
+### GQ1-CHUNK-0080-OBS-001: the registered PhysicsFS setup test leaks every fixture generation and can reuse stale state after PID recycling
+
+- Severity/confidence: P2/high
+- Category: test-gap/resource-lifetime/test-isolation
+- Assigned mechanism: `CMakeLists.txt:L643-L653` registers `physfsx_android_setup_tests` as an ordinary member of the extraction CTest suite
+- Context location: `test_physfsx_android_setup.c:L124-L157,L160-L247,L250-L260`
+- Evidence: each `reset_fixture` creates a root named from the environment temporary directory, process ID, and the next unseeded `rand()` value. One executable run calls it ten times, creates the root, `d2x-redux`, and `selected` directories, and may create `.active_set_path`, `.saf_manifest.json`, and `.active_mod_paths`. The source contains no file or directory cleanup on success or failure, and no wrapper or CMake property owns those generated roots
+- Trigger: run the registered test repeatedly. Every run leaves ten roots and at least thirty directories in the system temporary directory. Once an operating system reuses a PID, the deterministic unseeded random sequence recreates the same ten names, accepts `EEXIST`, and consumes prior files. In particular, the nominal `with_active == 0` case can encounter an old `.active_set_path` from the same sequence position and fail its fallback assertions for stale-state reasons
+- Impact: routine host validation grows unbounded temporary residue and can eventually produce a nondeterministic false failure whose outcome depends on an earlier process with the recycled PID. Failure paths retain the same residue and there is no durable ownership marker that makes scavenging safe
+- Expected: each invocation owns one collision-resistant temporary root and removes it on success and all ordinary failure exits. Existing roots must not be accepted as fresh fixtures
+- Narrow fix and validation: create one run-unique root with an atomic platform temporary-directory primitive, record every child below it, and use a cleanup epilogue or small fixture owner so all test returns remove only that root. Preseed the deterministic legacy names and simulate PID reuse, then require the test to ignore them, pass, and leave no new residue after both success and injected failures
+- Deduplication: this is best normalized as an extension of open `BR-0160`, not a new finding. `BR-0160` already owns isolation, bounded execution, and cleanup for the same registered extraction suite, but its recorded fixture scope is the CUE/ISO source-tree directory. This observation extends that owner to the later branch-added PhysicsFS system-temp fixtures and supplies the distinct deterministic PID-reuse trigger
+
+### GQ1-CHUNK-0080-OBS-002: the new multi-pilot transaction test exercises only process-live callback rollback and leaves the existing grouped-publication root unresolved
+
+- Severity/confidence: P2/high
+- Category: test-gap/data-integrity
+- Assigned mechanism: `CMakeLists.txt:L654-L667` builds and registers `test_pilot_pref_transaction` with the production `pilot_pref_transaction.cpp` and `playsave_transaction.c`
+- Context location: `test_pilot_pref_transaction.cpp:L39-L67`, `pilot_pref_transaction.cpp:L22-L82`, and `playsave_transaction.c:L61-L144`
+- Evidence: the negative test has two files, lets the second callback fully replace its target and then return failure, and checks that both old byte strings are restored before checking an ordinary two-file success. It cannot terminate between publications, inject failure while restoring an original, interleave a concurrent writer, detect generation replacement, or exercise the launcher aggregation that spans fields, pilots, counterparts, and games. The production helper retains originals only in process memory and publishes each patch immediately; restoration is another independent replacement
+- Trigger and impact: process death after any publication, a rollback replacement failure, or a concurrent update can still expose a mixed preference generation or overwrite a newer file even though this newly registered host test passes. The test is useful evidence for ordinary rollback but is not an all-or-none or crash-atomic oracle
+- Expected: the existing complete target set is staged against one observed generation, publication is recoverable across interruption, concurrent replacement is detected, rollback failure is surfaced with exact identity, and the test matrix covers first, middle, and last publication plus process-death recovery
+- Deduplication: exact extension of open `BR-0236`. That finding already records immediate per-file publication, PID-only temporary ownership, missing generation checks, rollback limitations, and the required grouped fault and concurrency matrix. Do not create a new GQ finding; attach this later test target as positive ordinary-rollback evidence and as confirmation that the required crash, rollback-failure, and concurrency cases remain absent
+
+## Explicit clean dimensions
+
+- Build graph and portability: every assigned target names an existing frozen source, uses a matching include directory, and has a unique executable and CTest name. The C and C++ linkage for the pilot transaction target is coherent, and target-name `add_test` commands resolve to the corresponding executables on supported CMake versions
+- Warning configuration: all assigned targets use MSVC `/W4`; every non-MSVC target except `test_physfsx_android_setup` uses `-Wall -Wextra -Werror`. The PhysicsFS target uses `-Wall -Wextra` and therefore does not prove warnings are fatal, but static review did not establish a distinct maintained-platform warning. Consistent with earlier GQ normalization, missing warning-as-error alone is retained as a coverage gap rather than promoted without an actual warning
+- Release-test oracle: the final directory-target loop is after every target definition and appends `/UNDEBUG` or `-UNDEBUG` to each target whose name begins with `test_`. This keeps legacy assert-based setup and checks active in Release. Applying it to newer tests that do not use `assert` is harmless, and no executable that should receive the option is defined after the loop
+- Test registration: testing is enabled at the standalone extraction project root. Each assigned executable has one `add_test`, and the target inventory loop does not create or omit registrations
+- Correctness and API shape: the focused limit, exact-read, wall-record, HOG catalog, and audio-format tests exercise meaningful boundary behavior against the same inline owners used by production. The PhysicsFS setup test covers mount ordering and rollback for ordinary injected operation failures. The pilot test's supported ordinary rollback behavior is correctly asserted within the narrower limits recorded above
+- Dependency and supply-chain scope: no assigned line declares, downloads, updates, or links a new external dependency. The directly relevant owners use the already configured standalone project dependencies, so no new pin, provenance, network, or license defect originates in this range
+- Diagnostics and resources: target creation and CTest naming provide ordinary failure exit status. The HOG and pilot tests remove their fixed working-directory files on their success paths; their failure cleanup limitations belong to their later deterministic source chunks. No source owner, generated artifact, or external process is created by the CMake tail itself
+- Concurrency, security, performance, D1/D2 parity, and diff minimization: the range is branch-added host-test wiring and does not modify inherited D1 or D2 files, Android runtime state, privileges, package contents, or hot paths. Apart from the two existing-root extensions above, no distinct concurrency, attacker-input, runtime-resource, ABI, platform, or merge-pressure defect survived tracing
+- Formatting: the frozen assigned diff passes `git diff --check`. The report is printable ASCII and does not copy the non-ASCII decorative comments found earlier in the CMake file
+
+## Evidence gaps
+
+- No configure, compiler, CTest, sanitizer, fault-injection, or PID-reuse run was performed. The shell has no `cmake` command on `PATH`, and a live build would not be authoritative for the changed frozen CMake blob. The two observations follow from frozen registration, control flow, deterministic naming, and absence of cleanup or durable transaction state
+- The non-MSVC PhysicsFS target does not use `-Werror`; no retained frozen warning log establishes whether it emitted a warning under every supported compiler
+- No process-death harness, concurrent writer harness, or rollback-replacement failure injection exists for the pilot transaction target. Those are already demanded by `BR-0236`
+- The live CMake file differs from the frozen blob. Its changes were excluded; closure or a delta generation must review them
+- Later deterministic chunks own the complete test sources and may attach further evidence. They should deduplicate the fixture leak to `BR-0160` and the grouped transaction limits to `BR-0236`
+
+## Commands and verification
+
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git show`, `git diff`, `git diff --check`, `git log --follow`, `git blame`, `git grep`, `rg`, `Get-Content`, and `Select-String`
+- Confirmed both frozen objects are commits, the base is an ancestor of the head, the assigned path is absent at base, the frozen head blob is `47992190e8edccf31ac9c21985029434b8f44b31`, and the file's frozen diff is `681` additions and no deletions
+- Read every assigned line and computed the assigned-range SHA-256 without writing an intermediate file
+- Product files, plans, canonical ledgers, existing reports, generated evidence, build outputs, and ignored temporary files were not edited
+
+## Normalization recommendation
+
+- Import this complete report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0080`
+- Normalize `GQ1-CHUNK-0080-OBS-001` as `EXTENDS BR-0160`, adding the registered PhysicsFS fixture roots, ten-roots-per-run residue, and deterministic PID-reuse stale-state trigger
+- Normalize `GQ1-CHUNK-0080-OBS-002` as `EXTENDS BR-0236`, recording what the later host target proves and the crash, rollback-failure, generation, and concurrency matrix it still omits
+- Assign no new `GQF-*` or `GQI-*` ID from this unit
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0080 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0081 frozen survey SHA256:393529e7796e36157ae1e2116a995abb18404e4b0343a982cd416498d3c399ba -->
+
+## GQ1-CHUNK-0081 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0081.md`
+- Imported SHA-256: `393529e7796e36157ae1e2116a995abb18404e4b0343a982cd416498d3c399ba`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0081 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0081`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/get_deps/helpers/get_7zip.ps1:L1-L95`
+- Frozen file blob and scope fingerprint: `e5ed2a0cb748a96dd573bc7672469d4b540ceac3`
+- Scope status: complete. All 95 frozen lines, the complete file history, dependency manifest and verification helper, direct callers, maintained verification coverage, prior Linux-compatibility plan, and relevant quality and adversarial records were inspected
+
+The file is a 95-line branch addition relative to the frozen base. The live worktree file hashes to the same Git blob, but conclusions below use the frozen Git object
+
+## Context checked
+
+- `android/helpers/verified_dependencies.ps1`, including strict config parsing and file SHA-256 validation
+- `android/get_deps/helpers/Get-DepPlatform.ps1`, including host detection and dependency-base creation
+- `android/get_deps/tool_versions.conf:L188-L196`, including the pinned package, bootstrap, and executable hashes
+- Direct frozen callers in `get_imagemagick.ps1`, `run_mission_zip_batch.ps1`, `regenerate_all_mission_metadata_host.ps1`, `fingerprint_mission_zip_music.ps1`, and `fingerprint_music_packs.ps1`
+- `android/tests/test_download_verification.ps1`, which checks verified dependency contracts but does not execute the 7-Zip installer transaction
+- Complete history of the helper, especially `341c93f9816884bb2efc0bf1d7eb47604c7be5a8` and the security and publication rewrite in `300394f6cfd371260f0bd13f0c148a9327c721f9`
+- `plan_get_deps_linux_compatibility_20260524.md`, including its completed Linux host-tool behavior and explicit 7-Zip portability contract
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans for duplicate and historical-root reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0081-OBS-001: The verification rewrite regressed maintained non-Windows 7-Zip workflows
+
+- Severity/confidence: `P2/high`
+- Category: `compatibility/tooling`
+- Normalization recommendation: `EXTENDS BR-0174`
+- Location: `android/get_deps/helpers/get_7zip.ps1:L31-L35` in host gating, with direct portable callers such as `android/helpers/regenerate_all_mission_metadata_host.ps1:L43-L50`
+- Trigger: Run any direct caller on Linux or macOS, including the host metadata generator, while a usable native `7z`, `7zz`, or `7za` is installed
+- Evidence: The earlier helper searched native `7zz`, `7z`, and `7za` commands on non-Windows hosts. The completed Linux compatibility plan explicitly records that behavior and requires the helper to return an extensionless host tool rather than download `7zr.exe`. Commit `300394f6cfd371260f0bd13f0c148a9327c721f9` removed that path while adding digest verification and now terminates for every non-Windows host before checking for a usable tool. The direct callers retain `pwsh` entry points, platform-neutral path construction, or native host executable selection and do not preflight or classify 7-Zip as an optional Windows-only phase. Thus a supported host metadata or fingerprint workflow now fails solely at this helper even when its required native archive tool is present
+- Impact: Linux and macOS developers cannot run the affected metadata and fingerprint workflows through their maintained entry points. The failure also contradicts the completed portability plan, making tool support depend on an undocumented security-remediation regression
+- Expected: Supported non-Windows workflows resolve a platform-correct, policy-compliant 7-Zip executable, or their owning entry points explicitly document and test a bounded optional unsupported result. Restoring arbitrary PATH trust without an accepted identity policy would reopen archived `BR-0157`
+- Suggested fix: Prefer a repository-pinned platform-specific 7-Zip package and executable identity for supported hosts, using the same download, digest, staging, and cache revalidation contract as Windows. If non-Windows execution is intentionally unsupported, gate and document each portable caller before work begins and provide a stable optional-skip contract instead of leaving cross-platform host workflows unusable
+- Deduplication: This is not a new supply-chain finding because archived `BR-0157` owns executable identity. It extends open `BR-0174`, whose root is portable extraction entry points that cannot resolve a supported platform-correct reference extractor. The exact `get_7zip.ps1` regression and its metadata callers are not currently named in that finding
+
+### GQ1-CHUNK-0081-OBS-002: The frozen helper materially satisfies its part of BR-0159, but lacks the recorded fault-injection evidence
+
+- Severity/confidence: `P2/high` historical recheck evidence
+- Category: `build-release/correctness/test-gap`
+- Normalization recommendation: `EXTENDS BR-0159 with remediation evidence; do not allocate a new finding`
+- Location: `android/get_deps/helpers/get_7zip.ps1:L45-L95`
+- Evidence: The frozen rewrite uses per-operation archive, bootstrap, staging, and backup paths; obtains a per-version exclusive lock; verifies the bootstrap before executing it; verifies the archive before extraction; checks the native extractor exit; verifies staged `7za.exe`; moves an existing generation aside only after staging succeeds; restores it when publication fails; and verifies every non-forced cache hit. These directly address BR-0159's original stale-file, shared-path, unchecked-exit, partial-publication, and forced-replacement mechanisms. The exact executable SHA-256 is at least as strong as parsing its version for the single-file `7za.exe` consumer contract
+- Remaining evidence gap: The maintained `test_download_verification.ps1` checks hash primitives and source-contract strings, but does not exercise this installer. No frozen test injects bootstrap or package download failures, extractor exits, partial staged output, access denial during either move, forced replacement over a valid cache, or two synchronized callers. The active BR-0159 validation matrix explicitly requires those cases, and the broader multi-installer finding and update-discovery portion remain open outside this chunk
+- Impact: Static inspection supports narrowing BR-0159's product-code ownership for this helper, but the campaign cannot claim its 7-Zip transaction independently verified against the recorded failure and race matrix
+- Suggested disposition: Record this implementation as remediation evidence on BR-0159, retain the existing validation requirement, and close only the helper-specific portion after a focused offline transaction test proves rollback, cleanup, cache admission, and deterministic concurrent behavior. Do not create a separate test-gap finding because the missing matrix is already part of BR-0159's acceptance boundary
+
+## Explicit clean dimensions
+
+- Supply chain: both downloads use HTTPS and are accepted only after repository-pinned SHA-256 checks. The unversioned bootstrap is verified before first execution, the package is verified before extraction, and cached and staged executables are reverified
+- Publication and idempotence: unique staging avoids mixed generations; non-forced valid caches return without network access; the lock-side cache recheck handles a generation published between preflight and lock acquisition; forced replacement retains a rollback generation until the new tree is published
+- Failure handling and cleanup: native extraction status is checked, PowerShell failures terminate under `Stop`, the lock is disposed in `finally`, and unique download and staging residue is removed on every ordinary terminating path
+- Data and path ownership: config, dependency base, final directory, staging, backup, and lock paths have one clear owner. Literal-path operations are used for transaction moves and cleanup
+- Diagnostics: download, cache, installation, hash mismatch, missing file, unsupported host, and extractor exit failures identify the failing dependency or phase without exposing credentials
+- Security boundary: the helper extracts only a repository-pinned upstream archive with a verified repository-pinned extractor. It does not process attacker-selected archive paths or publish unverified bytes
+- API behavior: success emits one resolved executable path on the success stream; progress uses the host stream, so callers that capture pipeline output receive the verified path rather than status text
+- Maintainability and diff minimization: verification is delegated to the shared dependency helper, version identities remain in the central manifest, and the branch-added helper does not require inherited D1 or D2 changes
+- Static quality: the frozen blob parses sufficiently for PSScriptAnalyzer. Its only warnings are the three intentional interactive `Write-Host` progress lines, which are not actionable defects in this command-line installer
+
+## Evidence gaps
+
+- No network download or executable launch was performed in this read-only frozen survey
+- No filesystem fault injection, process interruption, or synchronized concurrency test was run. Those cases remain the explicit BR-0159 acceptance gap
+- Package completeness beyond `7za.exe` was not independently enumerated. The helper's consumers require the standalone console executable, whose exact staged digest is checked
+- The live branch has advanced beyond the frozen head. Later changes to the helper, dependency manifest, verifier, callers, or tests require delta-generation coverage
+- Other installers and update-discovery logic covered by BR-0159 were inspected only far enough to deduplicate this helper's observations
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-code-quality worker process
+- Used `git show`, `git diff`, `git grep`, `git log`, `git rev-parse`, `git hash-object`, and `git status` against the frozen commits and assigned path
+- Used `rg` and targeted ledger excerpts to reconcile `BR-0157`, `BR-0159`, `BR-0174`, `GQ1-RECHECK-0041`, prior cleanup plans, and existing coverage
+- Confirmed the frozen path is a 95-line addition and its frozen blob is `e5ed2a0cb748a96dd573bc7672469d4b540ceac3`
+- Confirmed the live worktree copy has the same blob, while avoiding it as review evidence
+- Ran PSScriptAnalyzer read-only on that identical copy; only intentional `PSAvoidUsingWriteHost` warnings were emitted
+- Product code, canonical ledgers, existing evidence, ignored temporary files, dependencies, network state, and tool caches were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0081`
+- Extend `BR-0174` with `GQ1-CHUNK-0081-OBS-001`; do not allocate a duplicate compatibility finding
+- Add `GQ1-CHUNK-0081-OBS-002` as implementation and remaining-validation evidence on `BR-0159`; do not allocate a duplicate test-gap finding
+- Keep archived `BR-0157` closed for the Windows helper path because all downloaded and cached executable bytes are pinned and revalidated. Any future non-Windows implementation must preserve that identity contract
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0081 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0082 frozen survey SHA256:fdf1e4018502130ba9873cbf8c473ccf838d7c9e9c62701235ce18bb69045092 -->
+
+## GQ1-CHUNK-0082 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0082.md`
+- Imported SHA-256: `fdf1e4018502130ba9873cbf8c473ccf838d7c9e9c62701235ce18bb69045092`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0082 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0082`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/helpers/run_mission_zip_batch.ps1:L601-L916` and `android/helpers/udp_relay.ps1:L1-L82`
+- Frozen blobs: mission batch `c6bf3b5c65ad61190b66683ed4887237ecd24103`; UDP relay `18e352ba1a06d9dc145d733d072a7224738e3dc7`
+- Normalized-LF assigned-range SHA-256: mission batch `4d6532e574f217746b1c4de78c359239aad1bb45a20db647d8ce22d937b8e7d5`; UDP relay `cbf1febab93f62209ec03be0445e15ceb7e6dc68a70faa66aab4975d3602e5a4`
+- Scope status: complete. Every assigned frozen line, enclosing helper control flow, direct callers, maintained source-contract and recovery tests, complete file history, prior review evidence, and relevant cleanup records were inspected
+
+Both files are branch additions relative to the frozen base. Their live worktree blobs match the frozen-head blobs, but all conclusions below use the frozen Git objects
+
+## Context checked
+
+- `android/helpers/run_mission_zip_batch.ps1:L1-L600`, including output ownership, labels, JSON normalization, app-private transfer, device reads, and recovery helpers needed to resolve the assigned loop
+- `android/helpers/test_helpers.ps1`, especially `Adb`, `Adb-Timeout`, emulator-health checks, `Stop-AppAndWait`, app-process checks, and `Watch-AutomationResult`
+- `android/helpers/mission_zip_batch_recovery.ps1` and `android/tests/test_mission_zip_batch_recovery.ps1`, including bounded preparation retry and classified recovery reasons
+- `android/tests/test_regression_tool_contracts.py`, `android/tests/test_mission_zip_batch.ps1`, `android/helpers/regenerate_all_mission_metadata.ps1`, and both maintained mission ZIP automation templates
+- `android/tests/test_lan.ps1`, including emulator redirection, loopback relay launch, child ownership, and host/join sequencing
+- Complete histories of both assigned files and the post-adversarial changes through frozen head, especially recovery commit `2c89ee335114a07d78cd2f775e9493936ed6464f` and strict JSON-gate commit `0498798fc927581626c3f5978e219c68e64990c0`
+- Active and done general-quality ledgers, durable general-quality evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans for duplicate, regrowth, and historical-fix reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0082-OBS-001: Diagnostic artifact capture can still abort the batch outside item containment
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/resource-lifetime/diagnostics`
+- Normalization recommendation: `REGROWTH of archived BR-0161`; create a generation-specific finding linked to BR-0161 rather than reopening or reusing the archived ID
+- Location: `android/helpers/run_mission_zip_batch.ps1:L827-L875`, especially unchecked `Save-AppTextFile` calls at L863-L866, result append at L868, recovery at L872-L874, and final batch summary and app stop at L888-L915
+- Trigger: Keep the emulator healthy but publish malformed `mission_zip_import_<label>.json` or `automation_result.json`; make Python or the JSON normalizer unavailable; deny, fill, or remove an artifact output directory during capture; or make an atomic artifact write fail. Equivalent local write failures in failure JSON, regression publication, JSONL append, or result reporting reach the same uncontained finalization boundary
+- Evidence: `$ErrorActionPreference` is `Stop`. `Save-AppTextFile` treats `.json` destinations as mandatory normalized JSON and propagates parse, process, and atomic-write exceptions. The main item has a `try/catch/finally`, but the four diagnostic captures execute inside that `finally` without local catches. In PowerShell an exception thrown by a `finally` block escapes the completed `catch`; a focused in-memory probe threw `primary` in the protected block and `diagnostic` in `finally`, and the outer caller observed only `diagnostic` while the statement after `finally` did not execute. Here such an exception occurs before `$results +=`, `summary.jsonl`, stopwatch/result reporting, and requested emulator recovery. It escapes the whole loop, so later archives, `summary.json`, `failed_zips.txt`, the truthful final exit calculation, and the only terminal `Stop-AppAndWait` are all skipped. The current source-contract tests assert preflight ordering and metadata rejection but do not inject any capture or finalization failure
+- Historical reconciliation: BR-0161 required every fallible per-item operation, including recoverable artifact capture, to produce one failed record and continue, and its validation explicitly named local artifact-write failure. Its 2026-08-11 resolution states that device work remains inside the existing per-item boundary. Strict metadata capture is now caught and converted to an item failure, but the neighboring diagnostic captures remain in the escaping `finally`, so the archived acceptance boundary is not satisfied. This is current regrowth/incomplete-fix evidence, not a stylistic request
+- Impact: One malformed diagnostic or local output failure omits the current and all later selected archives from durable results, suppresses final summaries, can leave the launcher or game process running, and replaces the original automation outcome with an incidental capture exception. Full metadata regeneration can terminate without the per-source accounting required to determine what was published
+- Expected: Every selected archive reaches exactly one durable item disposition even when optional diagnostics fail. Capture failures are recorded without masking the primary result, later items continue when the device remains usable, final summaries describe all attempted and unattempted sources, and batch-owned app state is stopped on every exit
+- Suggested fix: Move result construction and fallible capture behind one explicit item-finalization function that catches each artifact independently, distinguishes required metadata from optional diagnostics, preserves the primary reason, appends the record once, and decides whether continuation is safe. Wrap the overall device-owning run in an outer `try/finally` that always stops the app and attempts final summary publication without masking the primary exception
+- Validation: Inject malformed JSON, missing Python, formatter timeout, unwritable metadata/import/artifact/summary destinations, full disk, output removal, failed recovery, and cancellation at each finalization statement in a good-failing-good sequence. Require one record per selected input, exact primary and secondary diagnostics, continuation where safe, nonzero final status, complete or explicitly incomplete summary metadata, and app teardown on every path
+
+### GQ1-CHUNK-0082-OBS-002: A batch with only policy-skipped archives still exits successfully
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `test-gap/false-pass`
+- Normalization recommendation: `DUPLICATE BR-0162`; do not allocate a new finding
+- Location: `android/helpers/run_mission_zip_batch.ps1:L637-L646,L720-L761,L888-L916`
+- Evidence: No-match selection fails, but a nonempty selection containing only large, mixed, or unknown archives yields only `skipped*` records. Final status tests only `$failed.Count`, so zero passes and zero automation executions exit 0. `MaxZips` still applies before eligibility classification, and the dedicated sample and full regeneration callers still rely on this exit status
+- Deduplication: Open BR-0162 records the same trigger, control flow, impact, and minimum-pass acceptance boundary, including the mission batch and regeneration caller. This frozen review confirms it remains present and adds no distinct root
+
+### GQ1-CHUNK-0082-OBS-003: The UDP relay still accepts and forwards packets from arbitrary learned endpoints
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `security/test-correctness`
+- Normalization recommendation: `DUPLICATE BR-0164`; do not allocate a new finding
+- Location: `android/helpers/udp_relay.ps1:L15-L77`
+- Evidence: The standalone default still binds `0.0.0.0`; the first datagram becomes `$emu2Addr`; every other endpoint is treated as host traffic; and `$emu1RedirAddr` is assigned but never used as an admission check. The maintained LAN caller narrows bind to loopback but supplies no joiner identity or nonce. A third local endpoint can therefore inject toward the joiner after both legitimate peers are learned, while a reachable remote endpoint can claim a role under the standalone default
+- Deduplication: Open BR-0164 already contains the exact three-socket proof, network exposure, role-claim trigger, impact, peer-admission fix, and spoofing validation. The frozen UDP blob is unchanged from that reviewed behavior
+
+### GQ1-CHUNK-0082-OBS-004: Mission batch artifact identity and app-private staging remain non-unique
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `correctness/reproducibility/resource-lifetime`
+- Normalization recommendation: `DUPLICATE BR-0167 and BR-0168`; do not allocate a new finding
+- Location: `android/helpers/run_mission_zip_batch.ps1:L627-L646,L681-L704,L732-L775,L868-L890`, with helper context at L50-L55 and L536-L577
+- Evidence: An explicit existing output directory is still accepted and `summary.jsonl` is appended. Per-archive paths remain derived from extension-blind `BaseName` or lossy lowercase labels, so distinct selected names can alias artifacts and regression destinations. Device transfer still stages at predictable `/data/local/tmp/<leaf>` paths and performs cleanup only after successful copy, without per-run ownership or a bounded push/copy transaction
+- Deduplication: BR-0167 owns run and archive artifact collisions, including reused output directories and label/basename aliases. BR-0168 owns predictable device staging, missing cleanup on failure, unbounded transfer, and concurrent overwrite. The assigned loop confirms both roots remain reachable but supplies no separate defect
+
+## Explicit clean dimensions
+
+- Archive selection and accounting: matching files are deterministically sorted and deduplicated by full path. No-match selection fails explicitly. Each attempted non-skipped archive receives source size and SHA-256 fields, and post-audit stat, hash, ZIP, and 7z preflight failures become failed item records rather than unclassified skips
+- Size policy: the configured large-archive gate runs before hashing and archive inspection. Large-file allowlisting is explicit and case-insensitive through PowerShell wildcard semantics
+- JSON publication: required mission metadata is strictly parsed and normalized before atomic local and regression publication. Its validation exception is locally converted to a failed item, so malformed metadata cannot be credited as a pass or overwrite a prior valid regression file
+- Automation and recovery: preparation retry is finite at two attempts; emulator recovery has a configurable consecutive cap; setup readiness is bounded; automation watching has finite health and progress budgets; and consecutive base-data failures stop the batch after two item failures
+- Result status: an automation pass without required metadata is changed to failure. Ordinary failed records produce nonzero final status and a named failure summary. The remaining zero-pass false success is exactly BR-0162
+- Device path construction: assigned call sites derive labels from filenames and use fixed relative app-private destinations; no direct attacker-controlled shell fragment was established beyond the already owned collision and staging roots. Template substitutions are JSON-escaped in the enclosing helper
+- UDP resource lifetime: receive polling times out once per second, ordinary socket exceptions propagate, and the socket closes in `finally` when the relay process exits. Parent-process leaks belong to BR-0163. Empty UDP datagrams yield a null diagnostic byte in ordinary PowerShell rather than crashing the routing loop
+- UDP performance and diagnostics: packet logging is throttled after the first 200 datagrams. Endpoint and direction messages are adequate for intended manual debugging once BR-0164 supplies trustworthy peer classification
+- Portability and static quality: both frozen scripts parse with no PowerShell parser errors. PSScriptAnalyzer reported only existing interactive `Write-Host`, naming, and script-definition false-positive unused-parameter warnings; none established a separate runtime defect. The frozen assigned diff passes `git diff --check`
+- Diff minimization and parity: both helpers are branch-added Android tooling. They introduce no inherited D1 or D2 modification and no D1/D2 asymmetry
+
+## Evidence gaps and limitations
+
+- No emulator, APK, proprietary mission corpus, LAN pair, or live network was exercised. The new BR-0161 regrowth evidence follows deterministically from frozen exception control flow and the exact normalizer/write contracts; BR-0164 retains the prior three-socket dynamic proof
+- Filesystem, formatter, disk-full, ADB, recovery, interruption, and synchronized-run fault matrices were not executed. They remain required validation for BR-0161, BR-0167, and BR-0168
+- No new UDP spoof probe was run because the frozen blob is identical to the one already proved vulnerable under BR-0164
+- Later deterministic chunks separately own the first 600 mission-batch lines, recovery helper, test wrappers, and LAN runner. They were inspected only far enough to resolve this chunk and must deduplicate against the owners above
+- Live HEAD has advanced beyond the campaign snapshot. Although both assigned worktree blobs currently match the frozen blobs, later caller or interface changes require closure or delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality worker process, active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1 references, and targeted cleanup records
+- Used `git cat-file`, `git show`, `git diff`, `git diff --check`, `git log --follow`, `git blame`, `git grep`, `git ls-tree`, `git hash-object`, and `rg` against the frozen objects and required owners
+- Confirmed both frozen objects are commits, both assigned files are absent at the frozen base, their frozen blobs match the stated IDs, and their live worktree blobs currently match without using live content as authoritative evidence
+- Read all 398 assigned lines and computed the two assigned-range SHA-256 values in memory without creating an intermediate file
+- Parsed both complete frozen scripts with `System.Management.Automation.Language.Parser` with zero errors and ran PSScriptAnalyzer read-only through `-ScriptDefinition`
+- Ran a focused in-memory PowerShell exception probe confirming that an exception in `finally` escapes the paired `catch`, masks the earlier exception, and skips following statements
+- Product files, canonical ledgers, existing reports, generated evidence, build outputs, emulator state, network listeners, and ignored temporary files were not edited
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0082`
+- Normalize `GQ1-CHUNK-0082-OBS-001` as current generation regrowth of archived `BR-0161` and allocate a new linked `GQF-*` because the archived fix did not satisfy its per-item artifact-failure and continuation acceptance boundary
+- Normalize `GQ1-CHUNK-0082-OBS-002` as exact duplicate confirmation of open `BR-0162`
+- Normalize `GQ1-CHUNK-0082-OBS-003` as exact duplicate confirmation of open `BR-0164`
+- Normalize `GQ1-CHUNK-0082-OBS-004` as exact duplicate confirmation of open `BR-0167` and `BR-0168`
+- Do not allocate a separate finding for style warnings, LAN parent child-process cleanup, or historical collision and staging symptoms
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0082 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0083 frozen survey SHA256:83f4414ce84fdf655fa837e6c7f0d35aa8cf1dac7742dfc9921f80540cee743e -->
+
+## GQ1-CHUNK-0083 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0083.md`
+- Imported SHA-256: `83f4414ce84fdf655fa837e6c7f0d35aa8cf1dac7742dfc9921f80540cee743e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0083 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0083`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/helpers/bounded_extraction.ps1:L1-L468`; `android/helpers/extract_hfs_machfs.py:L1-L96`; `android/helpers/mission_zip_batch_recovery.ps1:L1-L33`
+- Frozen file blob fingerprints: `bounded_extraction.ps1` = `ec6a2bcd819d23de521e4bb14e38646c4da3e0f5`; `extract_hfs_machfs.py` = `330ea52565352f933b82475e072adb6bc8510c80`; `mission_zip_batch_recovery.ps1` = `32af9aed32477e6d4301eec02726496bd7b8b177`
+- Scope status: complete. All 597 assigned frozen lines, complete file histories, direct callers, focused tests, extraction and recovery plans, and relevant current and historical ledger records were inspected
+
+All three files are branch additions relative to the frozen base. Their live worktree copies hash to the same Git blobs, but the observations below use the frozen Git objects
+
+## Context checked
+
+- Every frozen caller of `Invoke-BoundedExtractor`, `Publish-ExtractionDirectory`, the completion-manifest helpers, `Resolve-DiscExtractionSource`, and `Expand-BoundedZipArchive`
+- `game_data/extract_mac_cd.ps1`, including verified Python and machfs acquisition, HFS image construction, the direct Python invocation, StuffIt discovery, final game-file selection, manifest creation, sibling publication, and cleanup
+- `android/helpers/run_mission_zip_batch.ps1:L740-L840`, including preparation retry, automation retry, recovery classification, result publication, and emulator-health handling
+- `android/tests/test_bounded_extraction.ps1`, `android/tests/test_extraction_cache_provenance.ps1`, `android/tests/test_extraction_publication.ps1`, `android/tests/test_extract_hfs_machfs.py`, and `android/tests/test_mission_zip_batch_recovery.ps1`
+- Complete histories of the three assigned additions, especially extraction hardening commits `e9d53c8faad89e977d9d6ee7d34180d20770fe64`, `d3b4c8a9eed3db4eaea3d2f417358e31a1c82aad`, and `300394f6cfd371260f0bd13f0c148a9327c721f9`
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and prior extraction and emulator-recovery plans for duplicate, remediation, and regrowth reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0083-OBS-001: The bounded child helper executes an arbitrary PATH-selected Python runtime
+
+- Severity/confidence: `P1/high`
+- Category: `security/supply-chain/tool-identity`
+- Normalization recommendation: `REGROWTH linked to archived BR-0157; allocate one current GQF unless an existing open owner is broadened`
+- Location: `android/helpers/bounded_extraction.ps1:L15-L21,L38`, reached by the frozen GOG, CD, mission-ZIP, and music-fingerprint callers
+- Trigger: Place a same-named `python` executable earlier on `PATH`, use a Python 2 or Windows Store alias there, or mutate the selected host runtime, then run a routine extraction or fingerprint workflow that calls `Invoke-BoundedExtractor`
+- Evidence: The helper resolves the first `python` command and executes its `.Source` without checking a repository-owned version, digest, installation root, or even that it is Python 3. It falls back to `py -3` only when no `python` command exists. The child wrapper constrains the extractor that Python launches, but those constraints begin only after the selected Python process is already executing with the developer account and checkout access. Several maintained callers use this shared helper directly. Archived `BR-0157` explicitly covered the same PATH-shadowed Python trust mechanism in the legacy Mac oracle and was closed after that oracle moved to a repository-pinned Python; the shared helper reintroduces the mechanism independently
+- Impact: A PATH shadow or altered runtime executes arbitrary native or script code during ordinary local extraction, metadata, or fingerprint generation, with access to proprietary inputs and writable repository state. Benign Python 2 or app-alias selection instead makes a helper that claims a Python 3 contract fail late and opaquely
+- Expected: The helper receives or resolves one repository-pinned, verified Python 3 runtime before execution on each supported host, and rejects an unverified or wrong-version command before running it
+- Suggested fix: Accept a verified Python path from the owning workflow or central verified-dependency resolver, bind its version and executable identity in the dependency manifest, and keep the `py -3` or PATH route only behind an explicit accepted system-tool policy with version and identity validation. Add PATH-shadow, cache-mutation, Python-2, app-alias, and verified-offline tests
+- Deduplication: This is the same tool-identity root as archived `BR-0157`, not a separate generic executable-trust concern. The current active GQ ledger has regrowth owners for other dependency fetches but does not name `Invoke-BoundedExtractor` or this PATH-selected Python execution
+
+### GQ1-CHUNK-0083-OBS-002: HFS catalog parsing still has no wall-clock or work boundary
+
+- Severity/confidence: `P2/high`
+- Category: `security/resource-exhaustion/performance/cancellation`
+- Normalization recommendation: `REGROWTH or EXTENDS archived BR-0018 and current GQF-0072, depending on whether cross-implementation HFS work budgets share one owner`
+- Location: `android/helpers/extract_hfs_machfs.py:L81-L91`, with the direct production invocation at `game_data/extract_mac_cd.ps1:L318-L323`
+- Trigger: Run the legacy Mac oracle on an admitted HFS image whose machfs parse or catalog traversal performs excessive decoder, sorting, ancestry, or recursive work without exceeding the 800 MiB image, 4,096 emitted-entry, 512 MiB per-file, or 2 GiB emitted-byte ceilings
+- Evidence: The Python process reads the complete admitted image, calls `machfs.Volume.read`, sorts each folder, recursively walks the resulting hierarchy, and obtains each complete `obj.data`. `ExtractionBudget.reserve` charges only objects after machfs has parsed the volume and only recognized folders or files as they are visited. It has no elapsed-time, parser-record, ancestry, recursion-depth, decode-work, cancellation, or peak-live-memory counter. The caller invokes this Python program directly, unlike `unar`, which is routed through the bounded subprocess wrapper with a 300-second deadline and child-tree termination. Therefore the recorded byte and emitted-entry ceilings cannot stop a malformed or adversarial catalog parser that stalls or amplifies work before `reserve`
+- Impact: A local or replaced CD image can indefinitely occupy an automated oracle or consume disproportionate CPU and memory, preventing the campaign or test batch from reaching a bounded failed-item result. Termination is left to an operator and ordinary cleanup runs only after control returns to PowerShell
+- Expected: HFS parsing and traversal run inside a killable attempt-owned subprocess deadline and enforce a shared parser, recursion, entry, output, and peak-memory work budget before expensive materialization
+- Suggested fix: Invoke the verified HFS helper through the bounded child supervisor, pass cancellation and diagnostic ceilings, and add machfs-side depth and work counters where the external parser exposes traversal. Exercise malformed or synthetic catalogs just below and above time, depth, record, emitted-entry, memory, and output limits, proving child-tree termination and cleanup
+- Deduplication: Archived `BR-0018` originally named missing HFS work and wall-clock ceilings, but its remediation record mentions a wall-clock ceiling only for `unar`; the frozen HFS Python call remains direct. Current `GQF-0072` owns analogous catalog-metadata and ancestry amplification in the native HFS reader. Normalization should either broaden that HFS work-budget root across both implementations or create a linked current regrowth finding rather than treating the historical closure as a waiver
+
+### GQ1-CHUNK-0083-OBS-003: HFS names can collide at the host filesystem before final publication
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/data-integrity/portability/path-identity`
+- Normalization recommendation: `EXTENDS GQF-0040`
+- Location: `android/helpers/extract_hfs_machfs.py:L33-L45,L48-L63`
+- Trigger: On Windows, extract an HFS folder containing distinct catalog children such as `File` and `file`, canonically equivalent Unicode spellings, a trailing-dot or trailing-space alias, or a reserved-device spelling. On other host filesystems, use names that normalize to one native identity
+- Evidence: `checked_child_path` rejects empty, dot, separator, rooted, drive-qualified, and escaping names, but it does not construct a portable normalized identity set or reject Windows device, trailing-dot, trailing-space, colon, control-character, case-fold, or Unicode-normalization aliases. `extract_folder` then opens each nonempty file with `wb` in sorted HFS-name order. On a case-insensitive host, the second distinct catalog entry can reopen and silently replace the first path; other Windows aliases fail partway after earlier outputs were already materialized. The focused Python test covers traversal components and basic budgets but no portable collision matrix
+- Impact: The oracle tree can contain bytes from only one of multiple distinct source entries, selected by host filesystem and catalog sort behavior. Downstream StuffIt discovery and final game-file collection then operate on a lossy tree, so regression-source output can differ across supported hosts or silently fingerprint the wrong payload
+- Expected: Precompute and validate one portable destination identity for every child before writing the folder, reject collisions and unsupported native names deterministically, and publish no partial tree on failure
+- Suggested fix: Share the repository's portable archive-name policy, normalize Unicode and host case consistently, reject device and trailing aliases, and preflight each folder or complete catalog before opening outputs. Test case, normalization, trailing-dot/space, device, colon/control, and ordinary distinct names on Windows and a case-sensitive host
+- Deduplication: `GQF-0040` already owns flattened HFS loose-file projection where case aliases and lossy names select incumbent bytes. This observation extends that root to the earlier machfs materialization stage; allocating a second collision finding would split one portable-identity defect by pipeline phase
+
+### GQ1-CHUNK-0083-OBS-004: Valid zero-length HFS files are silently omitted
+
+- Severity/confidence: `P3/high`
+- Category: `correctness/data-integrity/compatibility`
+- Normalization recommendation: `NEW GQF`
+- Location: `android/helpers/extract_hfs_machfs.py:L56-L63`
+- Trigger: Extract an HFS volume containing a valid zero-length file, including an empty game descriptor or an empty file whose presence is part of the oracle inventory
+- Evidence: The helper reserves the entry and then returns to the loop when `data` is false, before opening `child_path`. The catalog entry therefore consumes the count budget but has no filesystem representation. The completion message remains unconditional, and the downstream extraction manifest can only inventory files that exist, so it cannot distinguish deliberate omission from a complete source projection. `test_extract_hfs_machfs.py` covers one nonempty file and budget failures but has no empty-file assertion
+- Impact: The legacy oracle silently changes the source tree's file-presence semantics and can miss a requested empty asset or descriptor. Provenance and completion validation can then certify the lossy output because the omitted name never enters the generated inventory
+- Expected: Materialize a regular zero-byte file for every admitted zero-length HFS file and include it in the same collision, entry, publication, and manifest policy as nonempty files
+- Suggested fix: Open the checked destination with exclusive or transaction-owned creation even when `len(data) == 0`, and add nested empty-file, collision, manifest, and known-media regression coverage
+- Deduplication: Existing `GQF-0092` concerns allocator-dependent zero-length SOW extraction and is a different implementation and mechanism. Archived `BR-0020` covers failed or partial requested extraction generally but does not record the HFS helper intentionally dropping successful empty catalog entries
+
+## Explicit clean dimensions
+
+- ZIP path safety: the bounded ZIP helper rejects absolute, drive, UNC, backslash, empty, dot, parent, control, reserved-device, trailing-dot/space, alternate-stream, duplicate, case-colliding, and file-versus-child destinations before extraction. It rejects a nonempty, non-directory, or reparse-point root and rechecks every intermediate directory before use
+- ZIP resource bounds: declared and actual per-entry and aggregate output, entry count, compression ratio, free-space headroom, and elapsed extraction time are checked with subtractive or overflow-resistant arithmetic. Streams and archive handles are disposed on success and failure, and failure removes the attempt output
+- External child supervision after Python admission: `Invoke-BoundedExtractor` passes explicit time, output, diagnostic, file, and byte bounds to the dedicated supervisor and returns its exact exit status and bounded diagnostic records
+- Completion identity: source and tool identities use SHA-256, manifests include deterministic relative names, sizes, and hashes, cache admission compares exact provenance and complete actual inventory, and corrupt or stale manifests fail closed
+- Publication: staging and destination must be existing siblings. The old destination is retained under a unique rollback identity until staging has moved into place, and ordinary publication failure restores it
+- CUE selection: the helper requires one deterministic descriptor, checks referenced files remain lexically within the descriptor directory, verifies they exist, rejects divergent CUE-plus-ISO descriptions, and returns a stable source set for provenance
+- HFS lexical containment: empty, dot, separator, NUL, rooted, and drive-qualified catalog components are rejected, and real paths must remain strictly beneath the extraction root before directory creation or file writes
+- Recovery bounds: preparation and automation retries are finite, recovery failures propagate, persistent infrastructure failures stop at the configured attempt count, and focused tests cover transient, persistent, process-exit, and nonrecoverable preparation cases
+- Diagnostics and error propagation: extraction limit messages identify the violated category; invalid manifests return false instead of becoming cache hits; child exit status is preserved; retry rethrows the original nonrecoverable or terminal preparation exception
+- Portability and maintainability: path separators and case comparison are selected explicitly where ZIP behavior differs by host; shared extraction, publication, provenance, and retry functions avoid duplicating those contracts across callers; the assigned branch additions do not modify inherited D1 or D2 files
+- Static quality: both assigned PowerShell files parse with zero AST errors, the Python file parses through `ast.parse`, and the frozen assigned diff has no whitespace errors
+
+## Evidence gaps
+
+- No archive, HFS image, external executable, network request, emulator, or filesystem-mutating test was run because this is a read-only frozen survey and those suites create output or alter device state
+- No hostile machfs parser corpus, timeout injection, process-tree termination, low-memory run, case-insensitive non-Windows filesystem, Unicode-normalization filesystem, or concurrent path-replacement test was available in the assigned focused coverage
+- The exact internal allocation and malformed-catalog behavior of pinned machfs was not dynamically profiled. Observation 002 relies on the explicit absence of a supervising deadline and pre-parse work accounting, not on a claim that one particular retail image currently hangs
+- CUE source symlink and hard-link identity was inspected but not admitted separately: maintained sources are local operator-selected media, and this chunk did not establish a distinct branch-caused outside-root publication impact beyond existing tool and path-identity owners
+- `Publish-ExtractionDirectory` rollback under access denial, process interruption, and rollback-move failure remains untested here. Static control flow preserves the backup on the examined ordinary failure paths, so the missing fault matrix alone was not admitted as another finding
+- The recovery predicate includes a broad `closed` substring. That can cause a bounded extra emulator recovery for an unrelated message, but this survey did not establish a maintained deterministic product-error string or false final result, so it remains a test and typing gap rather than an admitted observation
+- Later changes to any assigned helper, its verified runtime acquisition, callers, or tests require delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-code-quality worker process
+- Used `git cat-file`, `git merge-base --is-ancestor`, `git show`, `git diff`, `git diff --check`, `git grep`, `git log`, `git rev-parse`, `git hash-object`, and `git status` against the frozen commits and assigned paths
+- Used `rg`, `Get-Content`, and targeted ledger excerpts to reconcile archived `BR-0018`, `BR-0019`, `BR-0020`, `BR-0157`, current `GQF-0040`, `GQF-0072`, `GQF-0092`, prior extraction remediations, and existing coverage
+- Confirmed the assigned paths are additions totaling 597 lines and their frozen blobs are exactly the fingerprints recorded above
+- Confirmed all three live worktree copies are frozen-identical while excluding mutable copies as substantive evidence
+- Parsed both identical PowerShell files with `System.Management.Automation.Language.Parser` with zero errors and parsed the identical Python file in memory with `ast.parse`; these checks created no output files
+- Product code, tests, canonical ledgers, existing evidence, ignored temporary files, dependencies, network state, archives, tool caches, and device state were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0083`
+- Normalize `GQ1-CHUNK-0083-OBS-001` as current regrowth linked to archived `BR-0157`, unless an existing open supply-chain owner is explicitly broadened to include the shared PATH-selected Python runtime
+- Normalize `GQ1-CHUNK-0083-OBS-002` as incomplete remediation of archived `BR-0018`; broaden `GQF-0072` only if one remediation will own work and cancellation budgets for both native and machfs HFS parsers
+- Extend `GQF-0040` with `GQ1-CHUNK-0083-OBS-003`; do not allocate a duplicate portable HFS collision finding
+- Admit `GQ1-CHUNK-0083-OBS-004` as one new low-severity HFS data-integrity finding, distinct from allocator-dependent SOW empty-output behavior
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0083 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0084 frozen survey SHA256:e09f1896939cabec7ecc860875e5eff3763df87f61b6f0833b579533d768e3c7 -->
+
+## GQ1-CHUNK-0084 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0084.md`
+- Imported SHA-256: `e09f1896939cabec7ecc860875e5eff3763df87f61b6f0833b579533d768e3c7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0084 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0084`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/helpers/playstore-auth.ps1:L1-L151`; `android/helpers/run_bounded_extractor.py:L1-L153`; `android/helpers/run_cue_iso_tests.sh:L1-L32`
+- Frozen blobs: Play Store helper `55093f0009812abd2e4ff0ac38297ef9a2637e4c`; bounded extractor `68a7d7f274c2fc50afde9e41823418cccea61719`; CUE/ISO runner `569196018531326dcaa52cc4ffb74b19577198e5`
+- Full-blob SHA-256: Play Store helper `5e803e138c135cb713daac58702060568d88de2382bc179463b8ab9af198ae90`; bounded extractor `1597d55471c41c218bbe8a8d56c3fca003ac7daa3e4b1874c8e48e9a974622b5`; CUE/ISO runner `920ab0ccb4d8d25f4e920b5292facc5a91f3bc5fd5335ab2c5353a086e6f6c63`
+- Scope status: complete. Every assigned frozen line, enclosing control flow, direct callers, focused tests, build registration, complete file history, and relevant prior review and cleanup records were inspected
+
+All three files are branch additions relative to the frozen base. Their live worktree blobs match the frozen-head blobs, but the conclusions below use frozen Git objects as authority
+
+## Context checked
+
+- `android/0_upload_to_test.ps1` and `android/2_deploy-playstore.ps1`, including credential loading, token use, temporary edit creation, track lookup, upload, commit, and error propagation
+- `android/play-store-credentials.sample.json`, the ignored real credential names, and the prior PKCS#1 versus PKCS#8 import proof
+- `android/helpers/bounded_extraction.ps1`, especially its in-process ZIP path and the external-extractor command wrapper
+- `game_data/extract_mac_cd.ps1`, especially the `unar` launch through `run_bounded_extractor.py`, output enumeration, and publication of selected game files
+- `android/tests/test_run_bounded_extractor.py`, including its bounded success, output-size, file-count, diagnostic, timeout, and transient-file cases
+- `android/app/src/main/cpp/extract/CMakeLists.txt`, the extraction tests it registers, their fixed working directory, and the absence of CTest timeout properties
+- `android/tests/test_cue_iso.ps1`, the paired Windows runner, and the shared build and fixture paths
+- Complete histories of the three assigned files, including the bounded-extractor introduction in `e9d53c8faad89e977d9d6ee7d34180d20770fe64`, its transient-file adjustment in `6c2f77580f2f969841fff46135837875f013829d`, and the CUE runner's original `100644` mode in `4a19643e1a9854fa2d6b9f6544b5955596928f8b`
+- Active and done general-quality ledgers, durable general-quality evidence, active and done adversarial ledgers, DMR1, and prior script, warning, extraction, release, and test cleanup plans for duplicates, historical fixes, and regrowth
+
+## Atomic observations
+
+### GQ1-CHUNK-0084-OBS-001: A successful extractor parent can leave an unbounded descendant after the wrapper returns
+
+- Severity/confidence: `P1/high`
+- Category: `security/resource-exhaustion/resource-lifetime/correctness`
+- Normalization recommendation: `REGROWTH or incomplete closure of archived BR-0018`; allocate a generation-specific `GQF-*` linked to BR-0018 rather than reopening or reusing the archived ID
+- Location: `android/helpers/run_bounded_extractor.py:L43-L61,L64-L123`, especially the `poll()` loop, failure-only `stop_process_tree`, five-second output-thread join, final snapshot, and return of only the original process status
+- Trigger: Run an extractor command that starts a child in the inherited process group or Windows process tree, then lets its original parent exit zero while the child continues. The child may retain stdout, close stdout and continue writing beneath `output_dir`, or delay its output until after the wrapper's final tree measurement
+- Evidence: `start_new_session` gives the original POSIX child a process group, but `stop_process_tree` is called only when the wrapper itself records a failure while that original child is still running. The supervision loop ends immediately when `process.poll()` observes the original parent exit. If a descendant retains the stdout pipe, `output_thread.join(timeout=5)` can time out and the wrapper closes a pipe still owned by the reader; no failure is assigned and no process-group termination follows. If the descendant closes stdout first, the join completes, but the helper performs only one final `measure_tree`, returns the exited parent's zero status, and has no retained watcher to enforce the time, file, byte, diagnostic, or free-space budgets afterward. On Windows, `taskkill /T` is likewise never invoked on this success-parent path, and after the parent disappears a later PID-only tree lookup would not provide durable ownership. The focused tests launch only one Python process and do not cover a parent that exits before a descendant
+- Historical reconciliation: Archived BR-0018 required explicit aggregate-output, resource, and cancellation budgets for untrusted extraction and its validation required bounded failure without retained temporary output. Its resolution introduced this wrapper as part of the external extraction boundary. A child that outlives the supervised parent restores unlimited time and output after a reported success, so the terminal acceptance boundary is not met for this path
+- Impact: A crafted or compromised external extractor, or an extractor implementation that delegates work, can make the caller accept success while work continues indefinitely, fills storage, modifies output after validation, or keeps inherited handles and diagnostics alive. `extract_mac_cd.ps1` can enumerate or publish a transient generation and later have it changed by the escaped process
+- Expected: Completion means the complete owned process tree is quiescent and reaped before final validation and return. No descendant can continue producing output after a success or failure result, and every owned handle and output reader has a deterministic terminal state
+- Suggested fix: Supervise an owned job or equivalent durable process-group identity rather than only the original PID. Treat parent exit with live descendants or an open inherited output channel as incomplete, enforce the original deadline and budgets until the complete tree is quiescent, terminate and reap the whole tree on every nonterminal or failure path, and only then perform final output validation and return the exact root result
+- Validation: Add helpers whose parent exits 0 or nonzero before descendants that retain or close stdout, write immediately or after the final snapshot, exceed every limit, ignore ordinary termination, and fork more descendants. Exercise Windows and POSIX, requiring a bounded result, no surviving process or writer, no post-result output changes, exact diagnostics, and complete handle disposal
+
+### GQ1-CHUNK-0084-OBS-002: Link and special-file outputs bypass the extractor's containment and byte contracts
+
+- Severity/confidence: `P1/high`
+- Category: `security/archive-safety/resource-exhaustion/correctness`
+- Normalization recommendation: `REGROWTH or incomplete closure of archived BR-0018`; keep it as a separate atomic root from observation 001 because output identity validation and process-tree lifetime require different fixes and tests
+- Location: `android/helpers/run_bounded_extractor.py:L15-L40,L98-L122`; consumer at `game_data/extract_mac_cd.ps1:L350-L444`
+- Trigger: Have the external extractor create `output_dir` as a link or reparse alias, place a symlink to an external regular file under it, place a directory link or another non-regular node in it, or replace a measured regular output with one of those identities before consumption
+- Evidence: `measure_tree` accepts any path for which `os.path.isdir(root)` follows to true. `os.walk(..., followlinks=False)` prevents recursive traversal through descendant directory links, but it does not establish that the root is an owned physical directory, reject directory links, or inspect directories as outputs. For entries in `names`, `os.lstat` counts only the link object's small metadata size; it never requires a regular file, verifies containment of the referenced object, records stable file identity, or retains a descriptor through later use. Consequently a link to an arbitrarily large or external file can pass `max_file_bytes` and `max_total_bytes`, and non-regular outputs can pass with small reported sizes. The Mac caller later recursively selects file-like outputs by extension and copies them from pathnames, after the wrapper has released all ownership and without a matching regular-file, containment, identity, or size recheck. The tests create only ordinary files and do not cover root aliases, symlinks, reparse points, hard-link identity, FIFOs or device-like nodes, or replacement between measurement and use
+- Historical reconciliation: BR-0018 required actual output-byte and free-space enforcement for untrusted extraction. Measuring the link rather than the bytes later consumed is not that contract. Related archive path defenses elsewhere in the repository reject reparse nodes and use owned roots, but they do not protect this external `unar` output boundary
+- Impact: A malicious archive or extractor can make bounded extraction consume or publish bytes outside its private generation, bypass the configured per-file and aggregate limits, block a later reader on a non-regular object, or change the accepted object after validation. At minimum this defeats the resource-exhaustion fix; depending on tool behavior and host permissions, it can also expose or copy unrelated local data whose leaf name has a selected game extension
+- Expected: The output root is a newly owned, non-link physical directory, every admitted descendant is a contained regular file with stable identity, actual bytes are charged to the budget, and the exact validated objects remain bound through consumption or atomic publication
+- Suggested fix: Create and retain the private output root before launch, reject root and descendant links, reparse points, non-regular nodes, hard-link aliasing outside the generation where detectable, and containment or identity changes. Prefer walking through owned directory handles and passing a validated manifest or retained handles to the consumer. Recheck actual size and identity immediately before atomic publication and remove the owned generation on rejection
+- Validation: Cover root and descendant POSIX symlinks, Windows junctions and file reparse points, hard links, FIFOs, sockets or device-like nodes where supported, link targets below and above each byte limit, target replacement after measurement, and ordinary files at exact limits. Require rejection before consumption, no read or write outside the private root, bounded completion, and cleanup of only owned paths
+
+### GQ1-CHUNK-0084-OBS-003: CUE/ISO failure cleanup, timeout, and run isolation remain broken
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `test-gap/resource-lifetime/reproducibility`
+- Normalization recommendation: `EXTENDS BR-0160`; do not allocate a new finding
+- Location: `android/helpers/run_cue_iso_tests.sh:L8-L32`, with current registration context in `android/app/src/main/cpp/extract/CMakeLists.txt`
+- Evidence: The script enables `set -e`, invokes `ctest`, and only afterward assigns `rc=$?` and removes the shared source-tree fixture directory. A focused in-memory Bash probe of the same control flow returned 1 without reaching its cleanup command. The current CTest registrations still have no timeout properties, and both platform runners still reuse `android/tests/build` and the same extraction-source `test_fixtures` tree. Thus nonzero CTest status, interruption, hangs, and overlapping invocations retain the exact failure, deadline, and cross-run deletion paths recorded by BR-0160
+- Deduplication: Open BR-0160 names this exact file and lines, contains the same `set -e` proof, fixed build and fixture paths, missing deadline, impact, cleanup-trap fix, isolation boundary, and validation matrix. Current CMake-tail coverage in GQ1-CHUNK-0080 independently extended the same owner. This unit adds confirmation from the complete wrapper but no distinct root
+
+### GQ1-CHUNK-0084-OBS-004: The Play Store helper still advertises but cannot import PKCS#1 credentials
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `correctness/deployment/documentation`
+- Normalization recommendation: `DUPLICATE BR-0007`; do not allocate a new finding
+- Location: `android/helpers/playstore-auth.ps1:L34-L70,L94-L114`, with the advertised envelope in `android/play-store-credentials.sample.json`
+- Evidence: The helper strips both `BEGIN PRIVATE KEY` and `BEGIN RSA PRIVATE KEY`, but both the modern `ImportPkcs8PrivateKey` branch and the manual fallback expect a PKCS#8 `PrivateKeyInfo` wrapper. Both upload entry points parse the sample-shaped object and use this helper. The assigned frozen blobs are unchanged from the prior generated-key proof in which PKCS#1 failed and PKCS#8 passed
+- Deduplication: Open BR-0007 already owns the exact sample/helper format mismatch, trigger, impact, key-format detection choice, cross-PowerShell fix, and offline generated-key test. This review found no second auth failure requiring a new owner
+
+### GQ1-CHUNK-0084-OBS-005: The documented POSIX CUE/ISO entry point is not executable in a fresh checkout
+
+- Severity/confidence: `P2/high`
+- Category: `build-release/portability/documentation`
+- Normalization recommendation: `NEW`; allocate one `GQF-*` unless normalization merges it into a broader repository-wide shell-mode owner discovered by another coverage unit
+- Location: frozen tree mode for `android/helpers/run_cue_iso_tests.sh`, plus its usage at L4
+- Trigger: Clone or check out the frozen tree on Linux or macOS and invoke the script using its documented `./android/helpers/run_cue_iso_tests.sh` command
+- Evidence: `git ls-tree` records mode `100644`, and its adding commit created it with that mode. The file's own only usage example executes the pathname directly rather than through `bash`. Git preserves the non-executable mode on POSIX, so the documented command fails with permission denied before syntax, configure, build, CTest, or cleanup runs. No frozen caller invokes it through an explicit shell, and repository history demonstrates that executable modes can be represented where intended
+- Impact: The maintained Linux/macOS host entry point cannot run as documented from a normal checkout, preventing the advertised extraction test workflow and making platform verification depend on undocumented invocation changes
+- Expected: A documented direct shell entry point has executable mode in the repository, or its maintained documentation and callers consistently invoke a deliberately non-executable implementation through `bash`
+- Suggested fix: Commit mode `100755` for this intended entry point and add a checkout-mode assertion for maintained executable scripts, or change the usage contract to an explicit `bash -- ./android/helpers/run_cue_iso_tests.sh` command and apply that policy consistently
+- Validation: In a fresh POSIX checkout, assert the tree mode and run the documented command through a stubbed or focused test path, requiring that execution reaches the wrapper and preserves its eventual test status. Retain shell syntax and ShellCheck validation
+
+## Explicit clean dimensions
+
+- Play Store credential exposure: both real credential filenames are ignored; the frozen helper does not log the private key, unsigned JWT, signed assertion, access token, or response body. It sends the assertion only to the credential object's token URI, and the maintained service-account workflow supplies that object locally
+- Play Store status propagation: network calls use finite 30-second timeouts and terminating errors flow into the upload wrappers' failure paths. Empty access tokens are rejected by both callers. Track version enumeration considers all releases and returns zero explicitly when none exist
+- Play Store cryptography: the supported PKCS#8 path signs RS256 with SHA-256 and PKCS#1 v1.5 padding, uses UTC epoch claims and a one-hour expiry, and base64url-encodes without padding. No algorithm downgrade or token logging path was found. ASN.1 strictness and RSA disposal would benefit from hardening, but no separate maintained exploit or material long-lived leak survived the admission threshold beyond BR-0007
+- Bounded-extractor ordinary path: arguments require positive limits; stdout and stderr are merged and drained concurrently; retained diagnostics are capped; ordinary root-process timeout or observed budget failure calls process-tree termination; final ordinary-file measurement catches output produced before a quiescent single process exits; and the root process's nonzero status is returned unchanged when no wrapper-level limit failed
+- Bounded-extractor arithmetic: Python integers avoid byte-total overflow, `lstat` avoids following file links during measurement itself, and vanished transient names are handled without converting a normal atomic publication race into failure. These strengths do not establish the physical identity or complete-tree lifetime contracts in observations 001 and 002
+- CUE/ISO ordinary status: configure and build failures terminate nonzero under `set -e`, successful CTest status is returned as zero, and the wrapper asks CTest to print failing test output. The failure-path defect is exactly BR-0160
+- Static portability: the frozen PowerShell parses with zero parser errors, the Python module parses through `ast`, and the Bash script passes `bash -n`. The assigned frozen diff passes `git diff --check`
+- Diff minimization and parity: all three files are branch-added Android tooling. They introduce no inherited D1 or D2 changes and no paired-engine asymmetry
+
+## Evidence gaps and limitations
+
+- No service-account network request, Play Store edit, upload, real credential file, or private key was used. BR-0007 relies on the prior in-memory generated-key proof against the unchanged helper
+- No external `unar`, hostile archive, proprietary Mac media, child-fork fixture, symlink or reparse fixture, disk-pressure test, process-tree termination, or output publication was run. Observations 001 and 002 follow from frozen control flow and filesystem/process semantics; their cross-platform fault matrices remain required remediation validation
+- No native configure, compile, or CTest run was performed because live execution would validate mutable post-freeze source and build state rather than the assigned frozen blobs. BR-0160 already has the focused `set -e` proof and current frozen registration trace
+- The later deterministic test chunks own `android/tests/test_run_bounded_extractor.py` and `android/tests/test_cue_iso.ps1`; they were inspected only as context and must deduplicate test-specific observations against the roots above
+- Live HEAD has advanced beyond the campaign snapshot. The assigned worktree blobs currently match the frozen blobs, but later caller or interface changes require closure reconciliation or delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality worker process, active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1 references, and targeted extraction, release, warning, script, and test cleanup records
+- Used `git rev-parse`, `git ls-tree`, `git cat-file`, `git show`, `git diff`, `git diff --check`, `git log --follow`, `git grep`, `git hash-object`, `rg`, and `sha256sum` against the frozen objects and required owners
+- Confirmed the frozen commits, all three branch-added blobs, full assigned line counts, unchanged live blob identities, original shell mode, complete histories, direct callers, focused tests, and existing finding ownership
+- Parsed the complete frozen PowerShell definition with the PowerShell AST parser, the Python definition with `ast.parse`, and the shell definition with `bash -n`; all passed
+- Ran a focused no-file Bash `set -e` probe confirming that a failing command exits before the subsequent status capture and cleanup statements
+- Product files, canonical ledgers, existing reports, ignored temporary files, build outputs, credentials, network state, processes, emulator state, and external tools were not edited or invoked
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0084`
+- Normalize observations 001 and 002 as separate current-generation regrowth or incomplete-closure findings linked to archived `BR-0018`; allocate generation-specific `GQF-*` owners because one concerns complete process-tree lifetime and the other concerns physical output identity and containment
+- Normalize observation 003 as an evidence extension of open `BR-0160`
+- Normalize observation 004 as an exact duplicate of open `BR-0007`
+- Normalize observation 005 as a new portability finding unless a broader exact shell-entry-mode owner is admitted first
+- Do not allocate separate findings for ASN.1 parser hardening, short-lived RSA disposal, formatter preferences, or test gaps already inside BR-0007, BR-0018, and BR-0160
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0084 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0085 frozen survey SHA256:ac2c6eb1e4c9bc97d15c09cdcb4ca9aa44479f602d3f1bb5243eedb4316c2871 -->
+
+## GQ1-CHUNK-0085 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0085.md`
+- Imported SHA-256: `ac2c6eb1e4c9bc97d15c09cdcb4ca9aa44479f602d3f1bb5243eedb4316c2871`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0085 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0085`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/helpers/run_mission_zip_batch.ps1:L1-L600`
+- Frozen file blob: `c6bf3b5c65ad61190b66683ed4887237ecd24103`
+- Assigned-range SHA-256, using LF and one final LF: `b92aa357d621bbe5990c1fe6ef836e4af23515c3bf07c46235587dbd626400b3`
+- Scope status: complete. All 600 assigned frozen lines were read, and lines 601-916 were read as context to resolve selection, item status, retry, artifact, cleanup, and final-exit behavior
+
+The path is absent at the frozen base and is a 916-line branch addition at the frozen head. All conclusions use the frozen Git object rather than the mutable worktree.
+
+## Context checked
+
+- Complete frozen control flow from parameters and output setup through JSON normalization, archive classification, template generation, ADB staging, per-archive execution, recovery, artifact capture, summary publication, and exit status
+- Frozen `test_helpers.ps1` contracts for bounded ADB execution, verified device transfer, emulator health, application supervision, setup readiness, automation-result watching, and state reset
+- Frozen `bounded_extraction.ps1` and `run_bounded_extractor.py` child-process, diagnostic, output, and timeout ceilings
+- Frozen `mission_zip_batch_recovery.ps1`, both maintained mission-batch JSON5 templates, `test_mission_zip_batch.ps1`, `test_regression_tool_contracts.py`, and the full metadata-regeneration wrapper
+- Complete history of the assigned file and the post-adversarial changes that implemented archive budgets, strict JSON normalization, item-local preflight containment, and emulator recovery
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans for duplicate and regrowth reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0085-OBS-001: Nested ZIP inspection errors still become policy skips instead of failed inputs
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/test-gap/false-pass`
+- Normalization recommendation: `REGROWTH from archived BR-0161`; allocate one current GQ finding linked to the historical item
+- Location: `android/helpers/run_mission_zip_batch.ps1:L384-L409,L451-L485` in nested ZIP inspection and hint-result construction, with status consumption at L751-L761
+- Trigger: Select an otherwise readable outer ZIP whose mission content is contained in a corrupt, truncated, over-budget, or unreadable nested `.zip`, especially one with no direct top-level D1 or D2 hints
+- Evidence: `Add-ZipMissionGameHints` catches every exception opening, copying, parsing, or recursively inspecting a nested ZIP and appends text to `Counts.problems`, but does not propagate failure. `Get-MissionZipGameHint` gives the `unknown` branch priority over `Counts.problems`, returning only `ZIP contains no D1/D2 mission descriptor or level hints`. The caller records every non-D1/D2 result as `skipped_unknown_game`, not `failed`. An in-memory probe built a valid outer ZIP containing the bytes `not a zip` as `nested.zip`; the exact frozen function returned D1 score 0, D2 score 0, and one `Central Directory corrupt` problem. The surrounding frozen branches therefore deterministically classify that inspection failure as an unknown-game skip. If direct hints coexist with the broken nested archive, the function returns D1 or D2 and merely places the problem in the informational reason while automation proceeds.
+- Historical reconciliation: archived `BR-0161` required inspection failures, including nested-archive errors, to be failed items and its resolution claims this boundary was fixed. The outer ZIP and 7z top-level errors were repaired, but this nested catch preserves the same false-skip root cause. No current GQ finding or evidence report records this remaining branch.
+- Impact: A malformed or resource-limit-rejected nested mission archive can be counted as an allowed skip, and the batch can exit zero without testing or regenerating that selected input. Mixed direct and nested content can proceed after incomplete classification, so summaries do not distinguish an intentionally unsupported archive from a failed inspection.
+- Expected: A parser, budget, I/O, or timeout failure during any archive layer produces a failed item with the bounded diagnostic. `unknown` is reserved for a complete successful inspection that found no supported hints.
+- Suggested fix: Return a structured inspection result that separates scores from parser status, or let nested inspection exceptions reach the item-local preflight catch. Preserve optional handling only for explicitly unsupported nested layouts, not corrupt or over-budget content.
+- Validation: Cover good outer/bad nested/good ordering; corrupt, over-entry, over-byte, over-ratio, timeout, and depth cases; direct D1 hints plus a bad nested ZIP; and a valid descriptor-less archive. Assert exactly one record per selected source, failures remain nonzero and do not stop later inputs, and only completely inspected descriptor-less inputs receive an expected policy skip.
+
+### GQ1-CHUNK-0085-OBS-002: The standard entry point remains tied to one developer checkout
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `compatibility/path-safety`
+- Normalization recommendation: `DUPLICATE BR-0165`; add the literal-path detail as evidence without allocating another finding
+- Location: `android/helpers/run_mission_zip_batch.ps1:L4-L6,L21-L39`, with selection at L616-L633
+- Evidence: `ZipDir` still defaults to `C:\local\dxx-redux\game_data\mission_files` even though repository and Android roots are derived from the script location. The maintained sample omits `ZipDir`, exactly matching open `BR-0165`. In addition, the explicit directory is checked and enumerated with wildcard-aware `Test-Path` and `Get-ChildItem -Path` rather than literal-path operations, so a valid external or cloned path containing wildcard metacharacters does not retain exact identity.
+- Impact, expected, and fix: Preserve `BR-0165` as sole owner. Derive the omitted default from the repository, resolve and validate it once as a literal directory, and retain explicit external-path overrides under spaces and wildcard metacharacters.
+
+### GQ1-CHUNK-0085-OBS-003: Run and archive output identities remain collision-prone
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `correctness/reproducibility`
+- Normalization recommendation: `DUPLICATE BR-0167`
+- Location: `android/helpers/run_mission_zip_batch.ps1:L36-L55,L183-L203,L512-L534`, with artifact consumers at L681-L704
+- Evidence: Default runs still use second-resolution directory names, explicit nonempty output directories are accepted, and labels still lowercase an extensionless stem while collapsing punctuation and whitespace. Regression destinations remain extension-blind basenames. These are the exact run-generation and per-source alias mechanisms in open `BR-0167`; the frozen changes do not preflight or reject collisions.
+- Impact, expected, and fix: Keep `BR-0167` as sole owner. Require fresh exclusive run ownership or a validated resume generation, and derive injective source keys that include extension and stable source identity before writing any artifact or regression destination.
+
+### GQ1-CHUNK-0085-OBS-004: ADB staging is still shared, unbounded, and incompletely cleaned
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `resource-lifetime/test-correctness`
+- Normalization recommendation: `DUPLICATE BR-0168`
+- Location: `android/helpers/run_mission_zip_batch.ps1:L536-L577` in `Push-AppPrivateFile`
+- Evidence: Each transfer still stages at predictable `/data/local/tmp/$deviceLeaf`; raw `adb push`, shell copy, and removal calls do not use the available bounded helper; copy failure throws before removal; cleanup is not in `finally` and is unchecked; and no size or digest verifies the app-private destination. These are the exact concurrency, hang, residue, and wrong-source mechanisms in open `BR-0168`.
+- Impact, expected, and fix: Keep `BR-0168` as sole owner. Use unique per-run staging, bounded child-tree execution, verified destination identity, and checked best-effort cleanup on every success, failure, timeout, retry, and interruption path.
+
+## Explicit clean dimensions
+
+- Archive budgets: top-level ZIP inspection now enforces 4096 entries, 512 MiB per entry, 2 GiB aggregate expanded bytes, a 1000:1 ratio, a 300-second work limit, 100 MiB nested materialization, and bounded nesting. 7z listing uses the bounded process helper, a 120-second deadline, a 1 MiB diagnostic ceiling, a unique host directory, and cleanup in `finally`. These are positive remediation evidence for archived `BR-0018`; observation 001 concerns error disposition, not missing ceilings.
+- JSON integrity: empty or malformed JSON, unavailable Python, formatter nonzero exit, and formatter timeout propagate as errors. Output and regression JSON publication use the same-directory atomic writer after canonicalization. This preserves archived `BR-0166` and strict-normalizer remediation.
+- Process capture: JSON formatter stdout and stderr are drained asynchronously, the child has a 30-second deadline, and its tree is killed on timeout. 7z listing also has bounded combined diagnostics and child-tree termination.
+- Template safety: every repository-controlled placeholder is JSON string escaped before substitution. D1/D2 button and confirmation mappings agree with the maintained templates.
+- Archive resource ownership: outer ZIP, nested ZIP, nested entry stream, memory stream, hash object owners in the called helpers, and temporary 7z listing directory have ordinary-path disposal or cleanup boundaries.
+- Item containment: stat, hashing, and top-level archive preflight failures become failed records and continue to later sources. A reported automation pass without metadata is changed to failure, and normalized regression publication occurs only after successful metadata capture.
+- Device recovery: setup preparation retry is finite, emulator recovery is capped, base data is reprovisioned and verified after recovery, and the consecutive recovery counter resets after successful preparation. Full tail behavior remains context for the next deterministic range.
+- Diagnostics and determinism: archive ordering is deterministic; records include source path, size, hash when available, game, status, and output paths; failure reasons are bounded before JSON publication; and ordinary failed records produce nonzero final status. Zero-pass/all-skip acceptance remains the already open `BR-0162` tail owner rather than a new observation here.
+- Static quality and diff minimization: the frozen script parses and passes repository-configured PSScriptAnalyzer with no findings. It is branch-added and does not modify inherited D1 or D2 files.
+
+## Evidence gaps
+
+- No emulator, APK installation, mission archive corpus, network download, or app automation was run. The frozen object is authoritative and this worker was restricted to read-only survey plus one report.
+- The nested-error trigger was dynamically exercised in memory through the exact frozen `Add-ZipMissionGameHints` AST, but the complete batch was not run because that requires writing artifacts, provisioning dependencies, and mutating emulator state. The subsequent classification and skip branches are direct frozen control flow.
+- No ADB hang, disconnect, concurrent staging, filesystem collision, formatter fault injection, or process interruption was performed. Open BR-0167 and BR-0168 retain those dynamic validation matrices.
+- Lines 601-916 were context only and belong to the next deterministic coverage chunk. No separate tail finding was admitted from this unit.
+- The live branch has advanced beyond the frozen head. Later product changes require delta-generation coverage and were not used to change frozen conclusions.
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-code-quality worker process
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git log --follow`, and `git status` against the frozen commits and assigned path
+- Used `rg` and targeted ledger excerpts to reconcile archived `BR-0018`, archived `BR-0161`, archived `BR-0166`, open `BR-0162`, open `BR-0165`, open `BR-0167`, open `BR-0168`, and their existing recheck rows
+- Parsed the exact frozen script in memory and ran repository-configured PSScriptAnalyzer against its script definition; both checks passed
+- Invoked only the exact frozen `Add-ZipMissionGameHints` function in memory against a generated in-memory outer ZIP with a corrupt nested ZIP, confirming one suppressed inspection problem and zero game scores without writing a fixture
+- Confirmed the frozen path is absent at base, has 916 additions at head, and has blob `c6bf3b5c65ad61190b66683ed4887237ecd24103`
+- Product files, plans, canonical ledgers, existing evidence, temporary files, dependency caches, build trees, network state, and emulator state were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0085`
+- Normalize observation 001 as current `REGROWTH` of archived `BR-0161`, allocate one new GQ finding linked to that historical item, and form a focused remediation chunk for nested inspection error disposition and tests
+- Record observation 002 as `DUPLICATE BR-0165`, with its literal-path evidence attached to that owner
+- Record observation 003 as `DUPLICATE BR-0167` and observation 004 as `DUPLICATE BR-0168`
+- Preserve archived `BR-0018` and `BR-0166` as positive remediation evidence for bounded inspection and mandatory atomic JSON normalization
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0085 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0086 frozen survey SHA256:fa0949b053f4ea9136eb21d3afcea57991a0afc1e58ebe2c8d98a01742b5d778 -->
+
+## GQ1-CHUNK-0086 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0086.md`
+- Imported SHA-256: `fa0949b053f4ea9136eb21d3afcea57991a0afc1e58ebe2c8d98a01742b5d778`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0086 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0086`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `game_data/extract_all_cds.ps1:L1-L225` and `game_data/extract_all_gog.ps1:L1-L237`
+- Frozen blobs: CD batch `634aa90f76dbba1075f605d9c7f4cfff49969344`; GOG batch `2fb1c6d539c0ea893f9bed8ab567b782c36bc946`
+- Normalized-LF assigned-file SHA-256: CD batch `3ccbb3d4f32bb5baee4497819c35434da6657b1431634a95d19cfbf27f9bfff7`; GOG batch `1e97373d8f8fb9a6c6d71ea5a51764b7377c7ef31f575da1a8ba021687493a46`
+- Scope status: complete. Every assigned frozen line, enclosing helper control flow, native extractor result contract, direct recovery and game-data callers, focused tests, complete file history, and relevant prior review records were inspected
+
+Both assigned files are branch additions relative to the frozen base. All conclusions below use the frozen Git objects
+
+## Context checked
+
+- `android/helpers/bounded_extraction.ps1`, especially bounded child execution, source and tool provenance, cache validation, and sibling-directory publication and rollback
+- `android/helpers/run_bounded_extractor.py`, including child timeout, process-tree termination, diagnostic limits, output limits, and exit propagation
+- `android/helpers/test_env.ps1`, including host and build-tool resolution
+- `android/app/src/main/cpp/extract/extract_cd.c` and `extract_gog.c`, including JSON and diagnostic output, selected-file behavior, empty and partial extraction, and final exit status
+- `android/tests/test_extract_all_cds_batch.ps1`, `test_extract_all_gog_batch.ps1`, `test_bounded_extraction.ps1`, `test_extraction_cache_provenance.ps1`, and `test_extraction_publication.ps1`
+- `android/tests/extract_regression_spec_helpers.ps1`, `android/helpers/test_helpers.ps1`, `android/tests/input_demo_game_data.ps1`, `game_data/generate_regression_specs.ps1`, and `game_data/run_all_cd_regressions.ps1`
+- Complete histories of both assigned additions, including the extraction-hardening and audit-fix commits through the frozen head
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and targeted prior cleanup plans for duplicate, remediation, and regrowth reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0086-OBS-001: Concurrent batch invocations can remove another completed extraction generation
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/concurrency/resource-lifetime/data-integrity`
+- Normalization recommendation: `NEW GQF`, unless normalization broadens an existing publication-concurrency owner to this exact shared helper and both assigned callers
+- Location: `game_data/extract_all_cds.ps1:L107-L194` and `game_data/extract_all_gog.ps1:L128-L180`, with the shared publication transaction in `android/helpers/bounded_extraction.ps1:L44-L75`
+- Trigger: Run two CD batches for the same media folder, or two GOG batches for the same installer basename, concurrently when the destination already exists or while one invocation is publishing it
+- Evidence: Each assigned script creates a unique staging directory, but neither takes a per-destination lock or coalesces a same-source attempt before calling `Publish-ExtractionDirectory`. That helper computes a unique backup but determines `$hadDestination` and performs destination moves without synchronization. In one valid interleaving, A moves the old destination to A's backup; B observes no destination and therefore records no backup; A moves its completed staging directory into the destination; B's staging move fails because A's destination now exists; B's catch then recursively removes that destination and has no backup to restore. A later deletes its old backup on its nominal success path. The result can be no published extraction even though A completed its transaction, and the scripts can then hash missing or changing output, report misleading per-item errors, or allow another run to observe a transient generation. The focused publication tests exercise sequential replacement and rollback but contain no barriered same-destination publishers
+- Impact: Concurrent maintenance, test recovery, or metadata workflows can destroy the prior valid cache and another invocation's completed replacement, lose proprietary extraction work, produce nondeterministic batch results, and leave the top-level CD hash report or GOG result report inconsistent with the reusable directory
+- Expected: Publication of one extraction destination has a single process-wide or cross-process owner. Concurrent identical work either coalesces or serializes, distinct generations never delete each other's destination or backup, and every failed publisher preserves the last complete generation
+- Suggested fix: Add a per-canonical-destination cross-process lock or generation-aware atomic publication protocol around destination admission, replacement, rollback, and backup retirement. Revalidate source and destination state after acquiring ownership, and remove only staging and rollback identities created by the current attempt
+- Validation: Barrier-synchronize two publishers at each existence check and move with absent and preexisting destinations, same and different staged bytes, one failing move, cancellation, and cleanup failure. Require one complete declared winner, preservation of the old generation until a replacement commits, no deletion by the losing attempt, exact manifest and top-level hash consistency, and no residue except explicitly diagnosed owned recovery state
+- Deduplication: Archived `BR-0020` fixed incomplete native extraction and sequential transactional replacement, but its recorded acceptance does not provide same-destination writer serialization. `BR-0180`, `BR-0233`, and the extraction-store concurrency records concern different sidecars or owners and do not name this shared publication helper. The current GQ ledger contains no matching extraction-publication concurrency owner
+
+### GQ1-CHUNK-0086-OBS-002: The GOG batch still returns success after recorded extraction failures
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `test-gap/false-pass`
+- Normalization recommendation: `EXTENDS open BR-0169`; do not allocate a new finding
+- Location: `game_data/extract_all_gog.ps1:L128-L180,L226-L237`
+- Trigger: Make `extract_gog` return nonzero, let it return success with an empty staging directory, or leave a requested installer without a usable extracted directory
+- Evidence: These paths increment `$totalErrors` and the summary prints the nonzero count, but the script writes `gog_extraction_results.json` and reaches end-of-file without `exit 1` or a terminating error. A child PowerShell therefore reports success. The CD batch now explicitly exits 1 when `$failures` is nonempty, so the original CD half of BR-0169 is fixed at the frozen head; the GOG half remains. `test_extract_all_gog_batch.ps1` covers only same-basename preflight failure and does not exercise child failure, empty success, mixed inputs, or aggregate exit status. `Invoke-GameDataExtractionScript` and the input-demo resolver launch this script as a child and use or discard that false status while attempting follow-on index resolution
+- Impact: Automated game-data recovery can continue after missing GOG outputs, a maintainer or CI job can receive a green command with an explicit red error total, and later index or regression failures obscure the extraction root cause
+- Expected: The complete summary remains available, but any failed requested installer makes the final process status nonzero; only complete extraction or a provenance-validated cache counts as success
+- Suggested fix: End with an explicit nonzero status when `$totalErrors` is positive and make every selected installer contribute exactly one success, valid-cache, or failure disposition. Extend the focused batch test through a child PowerShell process
+- Deduplication: Open `BR-0169` records the exact GOG counter, fallthrough, callers, impact, expected contract, and validation matrix. This observation narrows its current status by confirming that the frozen CD path is repaired while GOG remains live
+
+### GQ1-CHUNK-0086-OBS-003: A normal GOG build still force-terminates every host compiler process named cl
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `concurrency/build-release/resource-lifetime`
+- Normalization recommendation: `DUPLICATE GQF-0016 and open BR-0171`; do not allocate a new finding
+- Location: `game_data/extract_all_gog.ps1:L45-L48`
+- Trigger: Run the GOG batch without `-SkipBuild` while Visual Studio, another repository, CI, or another branch workflow has an active `cl.exe`
+- Evidence: The pre-build path executes `Get-Process cl | Stop-Process -Force` without checking parentage, command line, build directory, age, lock ownership, or liveness. It therefore cannot distinguish an abandoned compiler from unrelated active work. The assigned script retains the exact behavior already recorded in the open adversarial finding and current GQ owner
+- Impact: Routine extraction can nondeterministically fail unrelated builds and leave their outputs partial while hiding the actual cause behind compiler or build-system diagnostics
+- Expected: The batch controls only children or process trees it created. Any orphan cleanup uses a recorded, identity-validated owner and remains separate from normal build startup
+- Deduplication: `GQF-0016` is the current general-quality owner and links the exact assigned path to open `BR-0171`; no additional root or acceptance boundary was found
+
+## Explicit clean dimensions
+
+- Input discovery: CD folders and GOG installers are deterministically sorted. CD source resolution requires one unambiguous CUE or ISO contract and includes every CUE-referenced payload in provenance. GOG rejects extensionless basename collisions before creating output
+- Path safety: assigned scripts construct staging and final paths from enumerated local filesystem objects, use literal-path operations for destructive staging cleanup, and give each attempt a UUID staging identity. CUE lexical containment is enforced by the shared source resolver. No shell-command interpolation or attacker-controlled command string was found
+- Child execution: both native extractors run through the bounded supervisor with finite time, diagnostic, file-count, per-file, and aggregate-byte limits and process-tree termination. Exact child exit status is captured. The direct GOG status fallthrough remains observation 002
+- Transactionality in a single-writer run: each extraction is completed in a sibling staging directory, receives a provenance and output manifest, and replaces a prior directory only after extraction succeeds. Ordinary sequential move failure attempts rollback. CD track JSON is bound inside the manifested directory before publication and the top-level copy uses a unique temporary sibling
+- Cache identity and reproducibility: cache admission binds SHA-256 identities for every source, the extractor binary, the assigned script, and the shared helper plus a policy version and complete output inventory. Corrupt, stale, changed-tool, changed-source, and incomplete manifests fail closed. This satisfies archived BR-0170 for the assigned paths
+- Result validation: CD rejects nonzero child status, no JSON records, no staged files, malformed JSON, explicit native error records, and zero-file HFS success, continues to report other folders, and exits nonzero on any recorded failure. GOG rejects nonzero status and empty newly staged output before publication, although its final aggregate status remains BR-0169
+- Cleanup: UUID staging directories are removed in `finally` after ordinary failure or publication. Cleanup is scoped beneath the enumerated media or installer owner and suppresses only cleanup errors. No global temporary directory is used by the assigned extraction attempts
+- Portability: path joining and executable discovery use shared host-aware helpers where executable suffix and CMake layout differ. Both complete frozen PowerShell files parse with zero AST errors. The frozen assigned diff has no whitespace errors
+- Diagnostics: per-source names, selected CD descriptor, bounded child output, failure details, counts, and successful or skipped identities are reported. Native error JSON is surfaced by the CD path rather than credited as success
+- Tests: focused tests cover CD single-track array behavior, native error records, missing sources, aggregate CD failure status, GOG basename collision rejection, provenance invalidation, resource limits, and sequential publication rollback. The concurrency and GOG aggregate gaps are explicitly captured above
+- Diff minimization and parity: both assigned files are branch-added game-data tooling and introduce no inherited 1996-source changes or D1/D2 asymmetry
+
+## Evidence gaps and limitations
+
+- No proprietary CD image or GOG installer, native build, extractor, filesystem fault, synchronized publication race, or process-termination fixture was run. The findings follow from frozen control flow and exact helper semantics; their stated fault and race matrices remain remediation validation
+- No low-disk, access-denial, delayed-close, abrupt-process-death, symlink-swap, or cross-volume publication test was available in the focused suites
+- Existing media inventories were not treated as authoritative because they are mutable and proprietary. Frozen source selection and provenance behavior was established from code and maintained fixtures
+- The assigned batch scripts rely on the shared bounded supervisor and native extractor completeness contracts. Those owners were read as required context but remain separate coverage units for defects inside their implementations
+- The empty-CD-directory policy differs from GOG's explicit no-installer failure. Prior BR-0169 validation already calls for an empty-corpus decision; without a declared requirement this survey did not admit the asymmetry separately
+- Live HEAD may have advanced beyond the campaign snapshot. Any later script, helper, caller, or test change requires closure or delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-code-quality worker process
+- Used `git cat-file`, `git show`, `git diff`, `git diff --check`, `git grep`, `git log`, `git rev-parse`, and `rg` against the frozen commits and relevant owners
+- Confirmed both frozen objects are commits, both assigned files are absent at the frozen base, and their frozen blobs match the recorded IDs
+- Read all 462 assigned lines and computed normalized-LF SHA-256 fingerprints in memory without creating an intermediate file
+- Parsed both complete frozen PowerShell scripts in memory with `System.Management.Automation.Language.Parser`; both reported zero syntax errors
+- Traced discovery through provenance, bounded execution, staging, manifest publication, hashing, reporting, final status, and every maintained direct caller named above
+- Reconciled archived `BR-0020` and `BR-0170`, open `BR-0169` and `BR-0171`, current `GQF-0016`, and nearby publication findings before recommending IDs
+- Product files, plans, canonical ledgers, existing reports, ignored temporary files, source media, generated results, build outputs, processes, and device state were not edited
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0086`
+- Admit `GQ1-CHUNK-0086-OBS-001` as one new same-destination extraction-publication concurrency finding unless the canonical writer identifies an existing owner whose acceptance boundary explicitly covers `Publish-ExtractionDirectory`
+- Extend open `BR-0169` with `GQ1-CHUNK-0086-OBS-002`, recording that the CD batch is fixed at the frozen head while the GOG batch still returns false success
+- Normalize `GQ1-CHUNK-0086-OBS-003` as an exact duplicate confirmation of current `GQF-0016` and open `BR-0171`
+- Do not allocate separate findings for the empty-CD policy, static style, ordinary sequential publication, or bounded-extractor implementation concerns owned by other chunks
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0086 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0087 frozen survey SHA256:f30cf0c923c480f1ae7f5705e262d00b4691f0fc02ebdac31fa3a5365b0371ac -->
+
+## GQ1-CHUNK-0087 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0087.md`
+- Imported SHA-256: `f30cf0c923c480f1ae7f5705e262d00b4691f0fc02ebdac31fa3a5365b0371ac`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0087 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0087`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `game_data/extract_dos_demos.ps1:L1-L283`
+- Frozen file blob: `c711ab20ed89279d22208e082912abeffadb2a15`
+- Assigned-range SHA-256, using LF and one final LF: `dd9198d9d7cc5438767c08757a89b00bc06f478bafcc26d65bfb2c88a50dd341`
+- Scope status: complete. All 283 assigned frozen lines were read, together with the extraction, dependency, publication, package-model, version-generator, test, documentation, and history context needed to resolve their contracts
+
+The path is absent at the frozen base and is a 283-line branch addition at the frozen head. All conclusions use frozen Git objects, not mutable worktree copies.
+
+## Context checked
+
+- Complete source-to-output flow: package table, source selection and digest admission, cache identity, bounded ZIP expansion, installer selection, generated DOS input and configuration, DOSBox-X launch, polling, termination, output selection, staging, manifest creation, publication, cleanup, reporting, and final status
+- Frozen `android/helpers/bounded_extraction.ps1` blob `ec6a2bcd819d23de521e4bb14e38646c4da3e0f5`, including ZIP containment and budgets, completion-manifest validation, and replacement publication
+- Frozen `android/helpers/verified_dependencies.ps1` blob `402aaefa4447c05a88962f4d3ab84f6229bb476c`, including configuration parsing and cached DOSBox-X SHA-256 verification
+- Frozen production package owner `DemoInstallerPackages.kt` blob `15cd27b57f12452ccf1b21e165699067ef4d002b`, the installer README blob `8225e61f95ae955e5fe6b70c340250938ea3c254`, and downstream `hash_assets.ps1` blob `35bb1e6b8e20248bbb4d24be29505a10ff25db51`
+- Frozen bounded-extraction, provenance, publication, and dependency-verification tests, plus complete assigned-file history and blame
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans for duplicate, historical-fix, and regrowth reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0087-OBS-001: A missing configured package still does not affect final status
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `test-gap/false-pass`
+- Normalization recommendation: `EXTENDS BR-0169`; retain that open finding as the sole owner
+- Location: `game_data/extract_dos_demos.ps1:L91-L101,L281-L283`
+- Trigger: Omit any one or all four configured DOS demo archives, including a clean checkout where ignored proprietary inputs were never provisioned
+- Evidence: The missing-path branch prints `Zip not found, skipping` and immediately continues without incrementing `$failures`. Missing installers, zero outputs, incomplete expected sets, and collisions do increment the counter, and the tail now exits 1 when that counter is nonzero. Consequently the exact missing-source path omitted from that repair still reaches `Done` and exits zero. This is the same warning-only configured-item mechanism already recorded in open `BR-0169`, whose original additional evidence names missing DOS archives explicitly.
+- Impact: A caller or maintainer can receive a successful reference-extraction command while every requested oracle package, or an arbitrary subset, is absent and no corresponding output was checked or produced
+- Expected and fix: Define whether the no-argument package list is required or optional. Required missing packages must become failed item records and a nonzero aggregate status; optional input needs an explicit selection interface and a distinct intentional-skip result rather than silent success
+- Validation: Exercise zero, one, mixed, and all packages present, both with valid caches and extraction work. Require one outcome per selected or policy-required package and zero status only when every required item is valid
+
+### GQ1-CHUNK-0087-OBS-002: Name-only first-generation admission can bless incomplete installer output
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/data-integrity/generated-cache`
+- Normalization recommendation: `REGROWTH or incomplete remediation of archived BR-0020`; allocate a current GQ finding linked to the historical item unless normalization finds a newer owner
+- Location: `game_data/extract_dos_demos.ps1:L149-L150,L169-L175,L188-L227,L229-L267`
+- Trigger: Have `INSTALL.EXE` create every configured basename but leave one required file truncated or otherwise wrong, then let DOSBox-X exit zero, or let all required sizes remain unchanged for two polls before later installer work would have completed
+- Evidence: `RUNINST.BAT` invokes the installer but does not capture or propagate its DOS error level, and the generated autoexec unconditionally proceeds to `EXIT`. The host accepts either two size-stable polls or a zero DOSBox-X process exit as installer completion. Publication then requires only that each expected case-folded basename exists and that no allowed basename collides. It does not compare required sizes, hashes, formats, or a reviewed output manifest before writing a new `.extraction-complete.json`; that manifest records and thereafter authenticates whatever bytes this first run happened to publish. The completion-manifest helper detects later mutation but cannot prove the initial generated bytes. Archived `BR-0020` specifically required exact manifests and hashes for this script and was closed after required-name, staging, and completion-manifest work, but the frozen path still lacks an independent first-generation content boundary.
+- Impact: A disk, installer, automation, or premature-completion failure that leaves all expected filenames can become a durable reusable cache and later feed version-database or reference-oracle generation as if extraction had succeeded
+- Expected: Success proves the complete reviewed output contract for the exact package and tool generation. At minimum record and validate authoritative required sizes and hashes where those outputs are stable; otherwise parse each required format and require an explicit installer completion signal that cannot be confused with DOSBox shell exit
+- Suggested fix: Move the four duplicated package definitions to one maintained manifest containing package identity, expected outputs, and reviewed output identities or validators. Make the DOS batch persist the installer error level in an owned status file, wait for process termination before scanning, validate every required result, then create the completion manifest and publish
+- Validation: Inject installer exits, DOSBox exits, disk-full and short-output cases, zero-length and same-size-wrong-byte required files, temporary size plateaus, and extra allowed files. Assert no invalid first generation is published or reusable while every known package reproduces its reviewed output identity
+
+### GQ1-CHUNK-0087-OBS-003: Process stop and final publication are not one exclusive transaction
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `resource-lifetime/concurrency/correctness`
+- Normalization recommendation: `EXTENDS BR-0173`; retain that open finding as sole owner and add the repaired and remaining boundaries
+- Location: `game_data/extract_dos_demos.ps1:L214-L227,L259-L277`, with `android/helpers/bounded_extraction.ps1` in `Publish-ExtractionDirectory`
+- Trigger: Delay DOSBox-X termination beyond the fixed one-second sleep, or run two same-package extractor invocations so their independent staging generations publish to the same output directory concurrently
+- Evidence: After a stable result or deadline, the script calls `Kill()` and sleeps one second but does not call `WaitForExit()` before recursively scanning and copying the mounted target. The guaranteed wait occurs only in `finally`, after validation and publication, so the output generation can be read while the owned process is still live. Temporary directories are now GUID-owned and final cleanup waits and disposes, which is positive remediation evidence for `BR-0173`, but publication has no same-destination lock or generation recheck. In the shared helper, publisher A can move the destination to backup A; publisher B can then observe no destination and move staging B into place; A's failed staging move catches, removes B's successfully published destination, and restores its old backup. B can return success even though A has replaced its generation. The focused publication test is sequential and cannot observe this interleaving.
+- Impact: A slow terminating process can race output enumeration or copying, and concurrent invocations can delete a generation after its owner reported success, restore stale bytes, or fail nondeterministically despite disjoint private staging
+- Expected and fix: Wait for confirmed owned-process-tree termination before any scan, and serialize publication by canonical destination with a generation check. A successful publisher must leave its exact complete manifest at the destination; failure must preserve the exact prior generation without deleting another writer's commit
+- Validation: Delay and fail process termination while continuing writes, then barrier-race two byte-distinct same-package publishers at every destination move and rollback boundary. Require no live writer during scanning, no cross-run deletion, exact reported generation identity, and deterministic prior-generation preservation
+
+### GQ1-CHUNK-0087-OBS-004: The portable entry point remains a Windows-only late failure
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `compatibility/tooling`
+- Normalization recommendation: `DUPLICATE BR-0174`
+- Location: `game_data/extract_dos_demos.ps1:L1,L25-L28,L183-L186`
+- Evidence: The script still advertises a host-independent `pwsh` shebang, resolves only `dosbox-x.exe`, and unconditionally supplies `Start-Process -WindowStyle Minimized`. It has no early supported-host check or native executable/launch policy. This is the exact unresolved DOS-demo location and mechanism in open `BR-0174`.
+- Impact, expected, and fix: Keep `BR-0174` as sole owner. Resolve a verified host-native tool and launch contract, or fail immediately with a documented optional Windows-only status before dependency lookup
+
+### GQ1-CHUNK-0087-OBS-005: DOS package policy still has multiple manually synchronized owners
+
+- Severity/confidence: `P2/high` existing-root evidence
+- Category: `maintainability/api-data-format`
+- Normalization recommendation: `EXTENDS BR-0175`; retain that open finding as sole owner
+- Location: `game_data/extract_dos_demos.ps1:L39-L76`, with `DemoInstallerPackages.kt:L13-L78`, the installer README package table, and `hash_assets.ps1` version mappings
+- Evidence: Package filename, SHA-256, and expected output names are separately encoded in PowerShell, Kotlin, and documentation, while version labels and output-folder aliases live in Kotlin, the README, and `hash_assets.ps1`. The frozen PowerShell and Kotlin values currently agree for all four DOS inputs, including `D2DEMO.DEM`, but there is no generated comparison test or shared machine-readable owner. Open `BR-0175` already requires one shared package model because the missing `d2demo10_extracted` mapping demonstrates actual drift; this script remains another manual owner of the same policy.
+- Impact, expected, and fix: Do not allocate a new finding. Extend `BR-0175` to make the shared manifest drive both the reference extractor and production package matching, with tests that compare exact names, hashes, required outputs, canonical labels, and output ownership
+
+## Explicit clean dimensions
+
+- Source and tool identity: all four source packages carry fixed SHA-256 values and are checked before parsing. DOSBox-X is resolved from pinned configuration and rehashed on every use. Provenance includes source, DOSBox-X, this script, the shared extraction helper, and policy version.
+- Cache integrity after publication: completion-manifest reuse compares exact provenance, file count, case-folded relative names, sizes, and SHA-256 values. Missing, added, or modified cached files force extraction. Observation 002 concerns admission of the first generated bytes, not later mutation detection.
+- Archive safety: bounded ZIP extraction preflights entry count, per-entry and aggregate bytes, expansion ratio, free space, path containment, portable unsafe names, normalized duplicates, file/child conflicts, and reparse points. Streams and archives are disposed, time and write budgets are enforced, and failed extraction removes the owned destination.
+- Temporary ownership and cleanup: each package workspace and final staging directory use GUID identities. The package body has `try/finally`; ordinary final cleanup stops, waits for, and disposes the retained process handle before recursively removing only its GUID workspace. Observation 003 records the pre-publication wait and shared destination gaps that remain.
+- Output selection: expected-file comparison is case-insensitive, every D2 package requires HOG, PIG, HAM, and DEM, basename collisions are rejected, and output replacement uses sibling staging with rollback for an ordinary single writer.
+- Path construction: package filenames and generated batch/configuration content are fixed reviewed values; archive member names pass the strict bounded extractor before they influence installer discovery. DOSBox mount paths and the configuration path are quoted.
+- Diagnostics and status: missing installer, zero output, incomplete expected set, collision, and unsuccessful process cases increment `$failures`; processing continues to later packages; a nonzero counter produces explicit exit 1. Observation 001 is the one remaining configured missing-source branch.
+- Static quality and diff minimization: the exact frozen script has zero PowerShell AST errors. Repository-configured PSScriptAnalyzer reports only 12 `PSAvoidUsingWriteHost` style warnings, which are not admitted as findings. The file is branch-added and changes no inherited D1 or D2 source.
+
+## Evidence gaps
+
+- DOSBox-X and the proprietary demo installers were not executed. The configured dependency executable and ignored archive corpus are not part of the frozen Git tree, and this worker was restricted to frozen read-only review plus one report.
+- No disk-full, short-write, delayed-kill, child-tree, interruption, or concurrent-publication fault was injected. Observations 002 and 003 follow direct frozen control flow and retain focused dynamic validation requirements.
+- The current local ignored package and extracted-output inventory was not used as authoritative evidence. Prior adversarial review had verified the then-present package hashes and ordinary outputs; this survey records only frozen tracked contracts.
+- The shared publisher is relevant callee context, not part of the assigned line range. Its generic callers require their own coverage; this observation is limited to how the assigned script relies on it.
+- Live `HEAD` and the worktree contain changes beyond the frozen head. The assigned path and checked product/test context showed no frozen-to-live diff, but unrelated live changes were not used to alter frozen conclusions.
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-code-quality worker process, the active and done GQ ledgers, the durable evidence ledger, both adversarial ledgers, DMR1, and relevant prior cleanup plans
+- Used `git rev-parse`, `git show`, `git diff`, `git log --follow`, `git blame`, `git grep`, `git ls-tree`, `git status`, and `rg` against the frozen commits and named context
+- Confirmed the frozen path is absent at base, is exactly 283 added lines at head, and has blob `c711ab20ed89279d22208e082912abeffadb2a15`
+- Parsed the exact frozen script in memory with the PowerShell AST parser and ran repository-configured PSScriptAnalyzer against that script definition
+- Reconciled archived `BR-0018`, `BR-0020`, `BR-0157`, `BR-0170`, and `BR-0172`, plus open `BR-0169`, `BR-0173`, `BR-0174`, and `BR-0175`
+- Product files, plans, canonical ledgers, existing evidence, temporary files, package data, dependency caches, build trees, network state, and emulator state were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0087`
+- Normalize observation 001 as `EXTENDS BR-0169`
+- Normalize observation 002 as current `REGROWTH` or incomplete remediation of archived `BR-0020`; allocate one current GQ finding linked to that history unless a newer canonical owner is found
+- Normalize observation 003 as `EXTENDS BR-0173`, recording both positive unique-workspace remediation and the remaining pre-publication wait and destination-transaction gaps
+- Normalize observation 004 as `DUPLICATE BR-0174` and observation 005 as `EXTENDS BR-0175`
+- Preserve archived `BR-0018`, `BR-0157`, `BR-0170`, and `BR-0172` as positive remediation evidence for budgets, identity, cache provenance, and path confinement
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0087 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0088 frozen survey SHA256:c3fb0e47990e7bdd2409023b3c9438c0451fd8fc9d0d06e3217ad1b5dd07dd6d -->
+
+## GQ1-CHUNK-0088 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0088.md`
+- Imported SHA-256: `c3fb0e47990e7bdd2409023b3c9438c0451fd8fc9d0d06e3217ad1b5dd07dd6d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0088 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0088`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `game_data/extract_mac_cd.ps1:L1-L468`
+- Frozen file blob: `3114cf94afc236521cd4a450e8cacce94fc4933d`
+- Exact one-row scope manifest: `game_data/extract_mac_cd.ps1|L1-L468|3114cf94afc236521cd4a450e8cacce94fc4933d` plus LF
+- Scope-manifest byte count: 78
+- Scope-manifest Git blob SHA-1: `85896b35c12b485d1f99627833609cb5a0426814`
+- Scope-manifest SHA-256: `8a86c10525fd321b4eeac1d43bb5eb0f5fb28c2eeea0070130bbd9ac0feea797`
+- Scope status: complete. Every assigned frozen line, complete file history, direct owner, shared extraction helpers, CUE parser and geometry contracts, focused helper tests, and relevant current and historical review records were inspected
+
+The file is a 468-line branch addition relative to the frozen base. Its live worktree copy hashes to the same Git blob, but all conclusions below use the frozen Git object
+
+## Context checked
+
+- `android/helpers/bounded_extraction.ps1`, including CUE source resolution, source and tool identity, completion manifests, sibling staging publication, rollback, and the bounded ZIP and child entry points
+- `android/helpers/extract_hfs_machfs.py`, `run_verified_python.py`, and `run_bounded_extractor.py`, including HFS name and output budgets, interpreter isolation, child supervision, output inventory, and known process-tree limits
+- `android/get_deps/helpers/get_mac_oracle_tools.ps1`, `android/helpers/verified_dependencies.ps1`, and `android/get_deps/tool_versions.conf`, including pinned embedded Python, machfs, and unar identities
+- The frozen native CUE parser and ISO geometry consumers, including explicit `MODE1/2352`, `MODE1/2048`, and `MODE2/2352` stride and payload-offset handling and strict MSF validation
+- `game_data/extract_all_cds.ps1`, the current desktop extraction owner that supersedes this script for normal use, plus regression-spec and asset consumers of `data_tracks`
+- `android/tests/test_bounded_extraction.ps1`, `test_extraction_cache_provenance.ps1`, `test_extraction_publication.ps1`, `test_extract_hfs_machfs.py`, and CUE parser and geometry coverage
+- Complete history of the assigned addition, especially `e9d53c8faad89e977d9d6ee7d34180d20770fe64`, `d3b4c8a9eed3db4eaea3d2f417358e31a1c82aad`, `300394f6cfd371260f0bd13f0c148a9327c721f9`, and `490a2d5f876d4e395bf998c39a47909e51176306`
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, parser cleanup plans, script cleanup records, and prior extraction plans for duplicate, regrowth, and historical-fix reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0088-OBS-001: The legacy parser still reads Mode 2 sectors with Mode 1 geometry
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/data-integrity/compatibility/parser-geometry`
+- Normalization recommendation: `REGROWTH linked to archived BR-0184; allocate one current GQF unless normalization broadens an existing geometry owner`
+- Location: `game_data/extract_mac_cd.ps1:L145-L166,L181-L199`
+- Trigger: Supply a CUE whose selected data track is `MODE2/2352`, or any unsupported token containing `MODE`
+- Evidence: The script admits the first track whose mode matches the substring `MODE`. It distinguishes only exact `MODE1/2048`; every other admitted token receives a 2,352-byte stride and the raw-copy loop always writes 2,048 bytes beginning at offset 16. A Mode 2 Form 1 payload begins at offset 24, so eight bytes of subheader are included and the final eight payload bytes are omitted. Unknown formats such as `MODE2/2336` are also treated as 2,352/+16 rather than rejected. The frozen shared parser, corrected under `BR-0184`, uses explicit formats and 2,352/+24 for `MODE2/2352`, and rejects unknown modes. This branch-added oracle bypasses that corrected owner
+- Impact: A CUE accepted by the script can produce a corrupted raw data image, fail HFS/APM recognition, or certify output derived from the wrong sector bytes. The reference oracle can therefore disagree with the maintained extractor for the same declared-supported source
+- Expected: Reuse one validated shared CUE geometry result, or accept only explicitly implemented formats. `MODE2/2352` must use +24 and unsupported tokens must fail before source copying
+- Suggested fix: Replace the inline mode classifier with a shared typed parser or a small exact format table carrying stride and payload offset. Add byte-distinct raw-copy and HFS-oracle tests for every accepted geometry plus unknown and Mode 2 Form 2 rejection
+- Deduplication: Archived `BR-0184` is the exact sector-mode root, but its frozen resolution did not modify this legacy parser. This is current branch regrowth or incomplete acceptance, not a new generic parsing concern
+
+### GQ1-CHUNK-0088-OBS-002: A second narrower CUE parser can select a different source than provenance validated
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/parser-lexing/source-identity/maintainability`
+- Normalization recommendation: `EXTENDS GQF-0063`
+- Location: `game_data/extract_mac_cd.ps1:L73-L78,L95-L107,L125-L164`
+- Trigger: Use an unquoted `FILE disc.bin BINARY` directive accepted by `Get-CueReferencedFiles`, a multi-file CUE, or a CUE where the first BINARY file is not the file owning the first data track
+- Evidence: `Resolve-DiscExtractionSource` first accepts quoted or unquoted anchored FILE records and returns all referenced payloads for provenance. The script then reparses the same text with an unanchored regex that accepts only a quoted BINARY record and chooses its first match. Its track loop does not retain FILE ownership at all: it collects every TRACK and INDEX across the document, chooses the first mode-like track, and computes its end from the next greater track number even when that track belongs to another file whose INDEX timeline restarted. Thus a source set can pass the shared resolver and then either fail the narrower parser or read track geometry from one FILE against bytes from another
+- Impact: Valid supported names fail unnecessarily, while multi-file inputs can copy or hash the wrong BIN region under a completion manifest that lists the whole different source set. Behavior depends on duplicated grammar and document layout instead of the authoritative parser result
+- Expected: CUE selection, source ownership, sector geometry, and provenance come from one complete parse. Every selected track retains its exact referenced file and same-file next-track boundary
+- Suggested fix: Delete the inline FILE/TRACK/INDEX parser and consume the shared typed parser output. At minimum make the accepted grammar identical, retain FILE association, reject unsupported multiplicity, and add quoted, unquoted, multi-file, mixed-file, and comment-confusion fixtures
+- Deduplication: `GQF-0063` already owns divergent CUE FILE grammar and the need to share native identities with source ordering. This script adds another concrete consumer and should not receive a duplicate grammar finding
+
+### GQ1-CHUNK-0088-OBS-003: Missing and invalid INDEX values are converted into usable sector positions
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/parser-validation/arithmetic`
+- Normalization recommendation: `REGROWTH linked to archived BR-0183; allocate a current GQF only if the existing CUE-validation owner cannot be broadened`
+- Location: `game_data/extract_mac_cd.ps1:L125-L168`
+- Trigger: Omit `INDEX 01` from the selected data track, duplicate it, or provide out-of-range MSF fields such as `00:00:75`
+- Evidence: Each track initializes `Index` to null. The script never requires a selected data-track index, and PowerShell numeric coercion lets null participate as sector zero. The regex accepts arbitrary digit counts and computes `m * 60 * 75 + s * 75 + f` without requiring seconds below 60, frames below 75, one unique index, or an increasing same-file range. Duplicates silently replace the earlier value. The shared parser fixed under `BR-0183` rejects missing, duplicate, malformed, and out-of-range values before sector arithmetic
+- Impact: Malformed media descriptions can be treated as a different valid byte range, causing wrong data extraction or misleading downstream APM/HFS errors instead of one deterministic CUE rejection
+- Expected: Require exactly one valid INDEX 01 for every selected track, enforce canonical MSF bounds and checked arithmetic, and reject nonincreasing same-file ranges before opening output
+- Suggested fix: Reuse the shared validated parser. If the oracle must remain standalone, centralize one strict MSF helper and test missing, duplicate, overflow, field-boundary, and nonincreasing ranges
+- Deduplication: This is the same validation root as archived `BR-0183`, but this separate branch-added parser retains the pre-fix mechanism
+
+### GQ1-CHUNK-0088-OBS-004: Source hashes and extracted bytes are not bound to one media generation
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/data-integrity/reproducibility/source-transaction`
+- Normalization recommendation: `EXTENDS GQF-0069`
+- Location: `game_data/extract_mac_cd.ps1:L73-L88,L97-L107,L128-L164,L183-L218`
+- Trigger: Replace or mutate the CUE or BIN after `Get-ExtractionPathIdentity` hashes it but before or during the later CUE reads and BIN copy
+- Evidence: Provenance hashes every path first, closes those reads, and then the script independently rereads the CUE twice, obtains BIN size by path, and opens the BIN for the sector loop. No retained descriptor, source generation token, pre-publication identity recheck, or copy-time digest proves those later bytes equal the hashed generation. A same-size replacement can preserve all range admission while making the published files derive from new or mixed bytes under the earlier SHA-256 identity
+- Impact: The completion manifest can certify output as belonging to a source generation that did not produce it. Later regression comparison or cache reuse then treats a mixed oracle as reproducible evidence
+- Expected: Open and bind one immutable CUE/BIN generation before output creation, derive sizes and geometry from retained identities, and prove the complete copied bytes belong to those identities before publication
+- Suggested fix: Stage and hash the bounded source set once, or retain no-share descriptors with platform identity checks through parsing and copy. Recheck exact identity before manifest publication and test same-size replacement, in-place mutation, and CUE/BIN swaps at each boundary
+- Deduplication: `GQF-0069` already owns the identical reopened-BIN generation defect in CD fingerprinting. Broaden that source-transaction root across the legacy extraction oracle rather than splitting by output type
+
+### GQ1-CHUNK-0088-OBS-005: The free-space admission omits several simultaneous bounded generations
+
+- Severity/confidence: `P2/high`
+- Category: `security/resource-exhaustion/storage/attempt-budget`
+- Normalization recommendation: `EXTENDS GQF-0061 and archived BR-0018`
+- Location: `game_data/extract_mac_cd.ps1:L30-L37,L280-L285,L291-L319,L356-L388,L396-L451`
+- Trigger: Use an admitted image whose HFS tree and StuffIt output approach their separate 2 GiB limits and whose selected game files approach both source totals on a volume near the preflight threshold
+- Evidence: The only aggregate preflight runs after the raw image already exists and requires `rawDataBytes + hfsPartSize + MaxTotalBytes + headroom` free. Later stages simultaneously retain the raw image, HFS image, up to 2 GiB of materialized HFS files, up to another 2 GiB of unar output, and a flattened publication copy that can contain selected files from both trees. The single `MaxTotalBytes` term therefore does not cover all live generations. Final `Copy-Item` calls have no shared byte counter or periodic headroom check, so they can consume the remaining volume even though each earlier extractor stayed within its local ceiling
+- Impact: One local or replaced CD can fill the host volume, fail cleanup or unrelated work, and leave the operator without the headroom promised by the completed resource-hardening record. The prior `data_tracks` generation is preserved, but host storage is not bounded by the admitted attempt budget
+- Expected: One attempt-owned peak-live disk budget covers raw, HFS image, HFS materialization, nested extraction, final staging, rollback, diagnostics, and cleanup headroom, with ongoing checks during every copy
+- Suggested fix: Compute conservative simultaneous phase totals with checked arithmetic, release intermediates as soon as safe, carry one shared remaining-byte budget across both extractors and publication, and stream or move selected owned files instead of making avoidable copies. Test exact threshold, both-source maximum, low-space during final copy, and cleanup denial
+- Deduplication: `GQF-0061` is the current regrowth owner for per-track and nested extraction budgets resetting instead of sharing one complete CD-attempt budget. This is the legacy oracle manifestation of that same root
+
+### GQ1-CHUNK-0088-OBS-006: Cache provenance omits the bounded supervisor implementation
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/cache-freshness/reproducibility/tool-identity`
+- Normalization recommendation: `REGROWTH linked to archived BR-0170; allocate one current GQF unless an existing extraction-provenance owner is broadened`
+- Location: `game_data/extract_mac_cd.ps1:L75-L88,L368-L376,L450-L451`
+- Trigger: Change `android/helpers/run_bounded_extractor.py` in a way that affects argument forwarding, accepted outputs, termination, limits, or publication safety, then rerun without `-Force` against an otherwise unchanged completed cache
+- Evidence: The provenance includes embedded Python, the machfs tree, unar, `run_verified_python.py`, `extract_hfs_machfs.py`, this script, and the automatically added `bounded_extraction.ps1`. The script later executes `run_bounded_extractor.py` directly, but never adds that file's identity. `Test-ExtractionCompletionManifest` therefore accepts the prior generation after this active extractor/supervisor implementation changes. Archived `BR-0170` required exact extractor and dependency identities and its resolution claims that contract for Mac oracle output, so the omitted executed helper is incomplete acceptance rather than a style preference
+- Impact: A fixed extraction, output-validation, or child-lifetime policy can be bypassed indefinitely by a stale cache whose manifest claims current tool provenance. Oracle bytes and safety guarantees can depend on an unrecorded code generation
+- Expected: Every executable script or binary that can affect admitted bytes or success belongs to the provenance generation, or one central policy identity transitively and verifiably covers it
+- Suggested fix: Add `run_bounded_extractor.py` to the tool identities or derive a reviewed transitive helper manifest. Add a focused cache test that changes each executable helper identity independently and requires re-extraction or explicit rejection
+- Deduplication: Archived `BR-0170` owns extraction-cache identity, while `GQF-0030` concerns fingerprint artifact provenance. Normalization should link the historical owner and create a current regrowth finding only if no active extraction-cache finding already covers all executed helpers
+
+### GQ1-CHUNK-0088-OBS-007: Temporary directory, streams, and subprocesses still lack attempt ownership
+
+- Severity/confidence: `P2/high`
+- Category: `resource-lifetime/concurrency/filesystem-safety`
+- Normalization recommendation: `DUPLICATE BR-0173; add current frozen evidence only`
+- Location: `game_data/extract_mac_cd.ps1:L113-L119,L181-L218,L225-L229,L293-L307,L318-L323,L340-L380,L454-L463`
+- Trigger: Run two invocations for the same CD, seed `_mac_extract_temp` with an unowned sentinel, inject an exception after a stream open, stall a child, interrupt execution, or make cleanup fail
+- Evidence: Every invocation recursively deletes the same predictable `<CdFolder>/_mac_extract_temp` before proving ownership. Streams rely on later explicit `Close()` rather than local `finally` or disposal, and the synchronous child calls expose no attempt-owned cancellation or child-tree handle. An exception before a close can leave Windows handles that make the outer recursive cleanup throw and mask the primary error. Concurrent runs can erase and replace each other's raw image, HFS tree, and unar output
+- Impact: Runs can corrupt each other's oracle generation, destroy an unowned directory, retain proprietary staging bytes or child processes, and replace the actionable failure with cleanup noise
+- Expected: Every attempt owns a unique private workspace, all streams use guaranteed disposal, and subprocesses are supervised and terminated as an owned tree on success, failure, timeout, and interruption. Cleanup preserves the primary diagnostic and reports retained residue
+- Suggested fix: Use exclusive cryptographically unique sibling or system-temporary roots with ownership markers and `try/finally` per handle. Route both children through one owned process-tree supervisor and make cleanup errors secondary structured diagnostics
+- Deduplication: Open `BR-0173` already names these exact Mac oracle lines and mechanisms. No new finding should be allocated
+
+### GQ1-CHUNK-0088-OBS-008: Direct HFS execution remains outside the bounded cancellation owner
+
+- Severity/confidence: `P2/high`
+- Category: `security/resource-exhaustion/performance/cancellation`
+- Normalization recommendation: `EXTENDS GQF-0072; duplicate evidence from GQ1-CHUNK-0083-OBS-002`
+- Location: `game_data/extract_mac_cd.ps1:L312-L323`
+- Trigger: Supply an admitted HFS image that stalls or amplifies machfs parsing or traversal without exceeding emitted entry and byte ceilings
+- Evidence: The verified Python HFS helper is invoked directly. Unlike unar, it has no wall-clock supervisor, parser-record or ancestry work counter, recursion-depth ceiling, or owned cancellation path before machfs parsing and materialization. This exact caller was already traced by chunk 0083
+- Impact: An automated oracle can consume unbounded CPU or remain stuck until an operator terminates it, with cleanup deferred while the synchronous child retains control
+- Expected: Run HFS parsing inside a killable attempt-owned deadline and carry bounded parser, traversal, recursion, output, memory, and diagnostic work through the helper
+- Suggested fix: Use the admitted bounded supervisor with verified Python, add machfs-side work counters where possible, and test timeout, depth, malformed-catalog, and child-tree cleanup boundaries
+- Deduplication: `GQ1-CHUNK-0083-OBS-002` already extends `GQF-0072` with this exact direct caller. Record corroboration only
+
+### GQ1-CHUNK-0088-OBS-009: Flattening and installer selection remain order- and host-dependent
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/data-integrity/portability/path-identity`
+- Normalization recommendation: `EXTENDS GQF-0040`
+- Location: `game_data/extract_mac_cd.ps1:L329-L354,L390-L447`
+- Trigger: Present multiple STi2/SIT candidates, nested game files sharing a basename, case or Unicode aliases, wildcard-bearing host-valid names, or multiple extensionless `Descent` candidates
+- Evidence: Fallback installer discovery takes the first recursively enumerated magic match without sorting or rejecting ambiguity. Unar game files are checked by lowercase basename, but HFS files use non-literal `Test-Path` and `Copy-Item`, do not consult `publishedNames` before copying, and intentionally let any unar basename win without comparing bytes. On a case-sensitive host, distinct HFS case aliases can both be published; on a case-insensitive host the second is suppressed or rejected depending on whether an unar name exists. Executable selection concatenates unsorted unar and HFS candidates and takes the first match. The helper-level portable-name gap is already recorded in chunk 0083
+- Impact: The same HFS catalog can select a different installer, executable, or flattened payload across hosts and enumeration order, or silently omit one source entry while still publishing a valid completion manifest
+- Expected: Preflight all candidates using one portable normalized identity, reject ambiguous source and destination mappings before copying, and allow precedence only when an explicit policy verifies the selected payload
+- Suggested fix: Inventory and sort the complete catalog, require one recognized installer identity, use literal operations, normalize case and Unicode plus platform aliases, and reject every duplicate unless a documented byte-equality rule resolves it. Cover multiple installers, nested basename collisions, case, normalization, wildcard, device, trailing alias, and executable duplicates
+- Deduplication: `GQF-0040` already owns order-dependent flattened HFS/STi2 basename selection and portable aliases. This script supplies direct oracle-stage evidence, not a new collision root
+
+### GQ1-CHUNK-0088-OBS-010: The portable entry point resolves only the Windows unar executable
+
+- Severity/confidence: `P2/high`
+- Category: `compatibility/tooling`
+- Normalization recommendation: `DUPLICATE BR-0174; add current frozen evidence only`
+- Location: `game_data/extract_mac_cd.ps1:L1,L15-L20,L46-L49`
+- Trigger: Invoke the `pwsh` script on Linux or macOS after installing the supported native `unar` command
+- Evidence: The script advertises a portable shebang but asks the verified dependency resolver for the literal relative path `unar.exe`. The maintained non-Windows dependency flow accepts native `unar` without creating that Windows filename. This exact mismatch is already recorded in `BR-0174`
+- Impact: A documented reference-oracle workflow fails before inspecting media on a host where its required native tool is installed, obscuring support and preventing cross-host oracle comparison
+- Expected: Resolve a platform-correct verified executable or fail immediately with a documented optional unsupported-host status
+- Suggested fix: Centralize platform-aware tool identity and executable naming while preserving archived supply-chain verification, and test Windows, Linux, macOS, WSL, and Git Bash entry behavior
+- Deduplication: Open `BR-0174` names this exact script and unar resolution path. No new finding should be allocated
+
+### GQ1-CHUNK-0088-OBS-011: Successful bounded parents can leave descendants outside the completion boundary
+
+- Severity/confidence: `P1/high`
+- Category: `security/resource-exhaustion/process-lifetime`
+- Normalization recommendation: `EXTENDS GQF-0127; duplicate mechanism from GQ1-CHUNK-0084-OBS-001`
+- Location: `game_data/extract_mac_cd.ps1:L368-L381`, through `android/helpers/run_bounded_extractor.py`
+- Trigger: Make unar spawn a descendant that retains output or continues work after the direct parent exits successfully
+- Evidence: This caller invokes the bounded supervisor directly and treats its zero status as complete. Chunk 0084 established that the supervisor can return success after the parent exits without proving the full descendant tree is gone. The Mac script then inventories and copies output, publishes a completion manifest, and begins recursive cleanup while a descendant may still mutate or hold the same paths
+- Impact: Post-success mutation can race inventory and publication, a descendant can retain proprietary files or consume resources, and cleanup may fail after a reported successful extraction
+- Expected: The complete process tree is quiescent and terminated or intentionally transferred before output validation and publication begin
+- Suggested fix: Extend the shared supervisor acceptance boundary to success as well as failure and timeout, and test descendants that outlive successful parents while holding and mutating output files
+- Deduplication: `GQF-0127` already owns this exact bounded-supervisor process-tree root. Add the Mac oracle as another affected caller only
+
+## Explicit clean dimensions
+
+- Tool provenance where recorded: embedded Python, the complete machfs tree, unar, the Python isolation runner, the HFS helper, this script, and the shared PowerShell helper use SHA-256 identities. Installation and cache helpers verify pinned dependency bytes before execution
+- Source discovery: the shared resolver requires one CUE and no ISO for this legacy path, sorts descriptors, inventories every referenced payload, rejects lexical escapes and missing references, and includes those files in source provenance
+- Numeric confinement: selected raw output and HFS partition size have explicit upper bounds; partition offset and size are checked against the copied data image with subtractive arithmetic; copy loops detect short reads
+- HFS lexical safety and local budgets: the Python helper rejects empty, dot, rooted, separator, NUL, drive-qualified, and escaping components and applies image, emitted-entry, per-file, aggregate-output, and free-headroom ceilings. Remaining portable aliases and work cancellation are recorded above
+- Unar bounds: input-dependent output is capped by entry, per-file, aggregate-byte, expansion-ratio, diagnostic-byte, and 300-second parent-process ceilings. Nonzero status prevents publication
+- Transactional publication: selected files are copied into a unique sibling staging directory, a complete manifest records sizes and SHA-256 values, and the shared publisher retains the prior destination under a unique rollback name until the new directory has moved into place
+- Failure preservation: no completion manifest is written until at least one selected file exists and all preceding synchronous stages returned success. The outer `finally` attempts to remove both temporary and unpublished staging paths; the fixed workspace and cleanup-diagnostic defects are explicitly owned above
+- Output collision handling that is effective: unar files with case-insensitive duplicate basenames fail before a second copy, and the final manifest inventories every published regular file. Cross-source, HFS-only, and portable alias gaps remain `GQF-0040`
+- Diagnostics: stage messages identify CUE, BIN, selected geometry, partition, child phase, copy phase, and cleanup. Short reads and child failures stop instead of being reported as successful completion
+- Maintainability and diff minimization: normal extraction is delegated to branch-added `extract_cd`; this legacy oracle and all reviewed helpers are outside inherited D1 and D2 sources. The assigned addition does not increase upstream merge pressure in 1996-original files
+- Static quality: the frozen diff has no whitespace errors; the identical live blob parses with zero PowerShell AST errors. PSScriptAnalyzer reports only intentional `PSAvoidUsingWriteHost` warnings, which are not admitted as findings
+
+## Evidence gaps
+
+- No proprietary Mac CUE/BIN image, HFS volume, unar package execution, network request, or filesystem-mutating test was run during this read-only frozen survey
+- No direct maintained test invokes the complete legacy script with synthetic Mode 1/2048, Mode 1/2352, Mode 2/2352, multi-file, missing-index, source-mutation, collision, or low-space fixtures. Shared helper and native parser tests do not prove this duplicated parser
+- No synchronized same-CD run, stream fault injection, cleanup denial, child descendant, process interruption, symlink or reparse replacement, case-insensitive non-Windows filesystem, or Unicode-normalization filesystem was available
+- The pinned machfs parser was not dynamically profiled against hostile catalogs. HFS work observations rely on the absence of an owning deadline and pre-parse work accounting, not a claim that a particular retail image hangs
+- APM layouts with non-512-byte map-entry placement and uncommon HFS partition maps were not tested. The current corpus behavior is unavailable, so those compatibility questions were not promoted without stronger evidence
+- The exact current retail oracle outputs could not be compared with native `extract_cd` output because mutable local media was intentionally not read. Known-byte parity remains required validation for any remediation
+- The live branch has advanced beyond the frozen head. The assigned live file still matches the frozen blob, but later helper, dependency, parser, test, or consumer changes require delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-code-quality process, the active and done GQ ledgers, durable evidence, and the frozen queue and mechanical manifest context
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git diff --check`, `git log --follow`, `git blame`, `git grep`, `git hash-object`, and `git status` against the frozen commits and assigned path
+- Used `rg`, `Get-Content`, and targeted ledger excerpts to reconcile `BR-0018`, `BR-0170`, `BR-0173`, `BR-0174`, `BR-0183`, `BR-0184`, `GQF-0040`, `GQF-0061`, `GQF-0063`, `GQF-0069`, `GQF-0072`, `GQF-0127`, prior cleanup plans, and existing coverage
+- Inspected every assigned line in numbered frozen ranges and traced shared CUE, provenance, bounded extraction, HFS, publication, dependency, consumer, and test control flow
+- Calculated the exact scope-manifest Git blob SHA-1 and SHA-256 in memory and confirmed the assigned frozen and live file blobs are both `3114cf94afc236521cd4a450e8cacce94fc4933d`
+- Parsed the identical live blob through the PowerShell AST with zero errors and ran PSScriptAnalyzer read-only. Only the expected interactive `Write-Host` warnings were emitted
+- Product code, plans, canonical ledgers, existing reports, ignored temporary files, dependencies, media, tool caches, and network state were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0088`
+- Normalize OBS-001 as current `BR-0184` geometry regrowth and OBS-006 as current `BR-0170` provenance regrowth, allocating generation-specific findings only after the active-ledger duplicate search
+- Extend `GQF-0063` with OBS-002, archived `BR-0183` with OBS-003, `GQF-0069` with OBS-004, `GQF-0061` with OBS-005, `GQF-0072` with OBS-008, `GQF-0040` with OBS-009, `GQF-0127` with OBS-011
+- Record OBS-007 as an exact duplicate or evidence extension of `BR-0173` and OBS-010 as an exact duplicate or evidence extension of `BR-0174`; allocate no duplicate IDs
+- Retain the explicit no-direct-oracle-test and no-real-media gaps as remediation requirements rather than creating a generic test-gap finding
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0088 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0089 frozen survey SHA256:faf967a321fadee9ff27fb55d95316323785f1631bb993573985e11c446da364 -->
+
+## GQ1-CHUNK-0089 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0089.md`
+- Imported SHA-256: `faf967a321fadee9ff27fb55d95316323785f1631bb993573985e11c446da364`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0089 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0089`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned scope: `game_data/extract_mac_demos.ps1:L1-L213`
+- Frozen blob: `0065a42d13bb9e4a13a84138eb542e60526ad748`
+- Normalized-LF assigned-file SHA-256: `375a78f84e89a113ca9929dbfb7918732da9d9bceaabcf18bc3a8e64b9ed7828`
+- Frozen base state: path absent
+- Scope status: complete. Every assigned frozen line, both extraction phases, cache and publication helpers, dependency resolution, oracle producer and consumer, direct documentation, tests, complete history, and relevant prior review owners were inspected
+
+The assigned file is a branch addition relative to the frozen base. All conclusions below use frozen Git objects rather than the mutable worktree
+
+## Context checked
+
+- `android/helpers/bounded_extraction.ps1`, especially `Invoke-BoundedExtractor`, provenance construction, completion-manifest validation, and sibling-directory publication
+- `android/helpers/run_bounded_extractor.py`, including timeout, diagnostic, file-count, per-file, aggregate-byte, free-space, and process-tree behavior
+- `android/helpers/verified_dependencies.ps1`, `android/get_deps/helpers/get_unar.sh`, and `android/get_deps/tool_versions.conf` for unar acquisition, executable identity, and host contracts
+- `game_data/demo installers/README.md` and `mac_stuffit_oracles.json`, including all six maintained archive identities, the three oracle-enabled sources, output inventories, and complete file history
+- `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake`, `test_stuffit_direct.c`, native CMake registration, and the separate StuffIt corpus tests
+- `android/tests/test_download_verification.ps1`, `test_extraction_cache_provenance.ps1`, `test_extraction_publication.ps1`, and the absence of a focused Mac-demo script lifecycle test
+- Complete history of the assigned addition through dependency verification, audit extraction fixes, provenance binding, and transactional directory publication
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and targeted extraction and cleanup plans for duplicate, regrowth, and remediation reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0089-OBS-001: Both unar phases bypass the repository's bounded child supervisor
+
+- Severity/confidence: `P2/high`
+- Category: `build-release/process-lifetime/resource-exhaustion/diagnostics`
+- Normalization recommendation: `NEW GQF` for the Mac-demo external-process boundary, linked to incomplete archived `BR-0018`, unless the canonical writer broadens an existing current bounded-child owner to this exact caller
+- Location: `game_data/extract_mac_demos.ps1:L75-L84,L131-L149`; unused bounded helper loaded at L21; bounded implementation in `android/helpers/bounded_extraction.ps1:L3-L43`
+- Trigger: Let the verified unar process stall, retain descendants, flood diagnostics, or continue expanding because of a tool defect, filesystem wait, antivirus interaction, resource exhaustion, or interruption during either the outer archive or nested installer phase
+- Evidence: `Invoke-UnarExtract` creates the destination and invokes `& $UnarExe ... | Out-Host` synchronously. It checks `$LASTEXITCODE` only after the process returns. There is no finite wall-clock deadline, diagnostic cap, process-tree ownership, file-count, per-file, aggregate-output, free-space, or cancellation boundary. The script already dot-sources `bounded_extraction.ps1`, whose `Invoke-BoundedExtractor` supplies those controls, but never calls it. The assigned archives and executable are pinned by SHA-256, so this is not an arbitrary-input or PATH-shadowing claim; it is a concrete missing lifecycle boundary around a maintained external tool. The neighboring Mac CD workflow was explicitly moved through the bounded supervisor when archived `BR-0018` was closed, while this caller remained direct
+- Impact: One stalled or runaway extraction can occupy the maintenance process indefinitely, fill the host temporary volume, retain child work after the intended attempt, prevent later configured installers and the final result from being reported, and bypass the cleanup at L198. The user receives no bounded failure record or capped diagnostic tail
+- Expected: Both outer and nested extraction calls run through one checked attempt-owned supervisor with a finite deadline, bounded output and diagnostics, complete child-tree termination, and exact nonzero propagation. Cleanup runs after every terminal outcome
+- Suggested fix: Route `Invoke-UnarExtract` through the shared bounded helper with explicit Mac-demo limits derived from the maintained packages, and couple its result to the unique-attempt cleanup in observation 002. Validate the complete child tree before scanning or publishing output
+- Validation: Stub verified unar behavior for ordinary success, exits 1 and 7, hangs before and after partial output, diagnostic floods, entry and byte limit crossings, low space, and parent-exits-child-continues. Require bounded nonzero completion, no surviving child, no publication, preserved prior cache and oracle, capped actionable diagnostics, and no owned residue
+- Deduplication: Archived `BR-0018` recorded and repaired the analogous unbounded unar path in `extract_mac_cd.ps1`, but its Mac-demo additions did not include chunk 0070 and its recorded remediation did not change this direct caller. Current `GQF-0127` concerns descendants escaping from the bounded supervisor after a successful parent; it does not cover a caller that bypasses that supervisor entirely
+
+### GQ1-CHUNK-0089-OBS-002: Predictable temporary ownership and missing finally remain exact BR-0173 evidence
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `resource-lifetime/concurrency/data-integrity`
+- Normalization recommendation: `EXTENDS open BR-0173`; do not allocate a new finding
+- Location: `game_data/extract_mac_demos.ps1:L122-L149,L173-L198`
+- Trigger: Run two invocations for the same installer concurrently, interrupt or throw during either extraction, scanning, copy, hashing, manifest writing, publication, or cleanup, or hold an extracted file open
+- Evidence: Every invocation maps one sanitized basename to the same `%TEMP%\dxx_mac_demo_<name>` tree and recursively deletes that tree before work. There is no per-installer `try/finally`. Unar, copy, hash, manifest, and publication exceptions bypass L198, and ordinary cleanup suppresses all errors. The final sibling staging directory is UUID-owned, but an exception after L173 and before successful publication also leaves that staging generation behind. Concurrent runs can erase or consume each other's source and nested trees before the unique publication stage is reached
+- Impact: Runs can mix or delete another attempt's extracted bytes, retain proprietary installer contents and abandoned staging, derive an oracle from cross-run data, and make later failures nondeterministic
+- Expected: Each invocation owns a collision-free private temporary root and a unique sibling staging root, cleans only its identities in `finally`, diagnoses cleanup failure, and never deletes or publishes another run's bytes
+- Validation: Use barrier-synchronized ordinary and `-WriteOracle` invocations, interruption and injected failure after every lifecycle phase, locked files, and cleanup denial. Require no cross-run deletion or mixed oracle data, preservation of prior outputs, checked cleanup, and named recoverable residue only when cleanup cannot complete
+- Deduplication: Open `BR-0173` already names this exact script, fixed temporary naming, missing `try/finally`, lines, impact, and acceptance boundary
+
+### GQ1-CHUNK-0089-OBS-003: Missing configured archives and incomplete oracle refresh still return success
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `test-gap/false-pass/diagnostics`
+- Normalization recommendation: `EXTENDS open BR-0169`; record the narrowed frozen behavior rather than allocate a new finding
+- Location: `game_data/extract_mac_demos.ps1:L96-L105,L201-L213`
+- Trigger: Omit any configured archive in ordinary mode, or omit any oracle-enabled archive while invoking `-WriteOracle`
+- Evidence: The missing-archive branch warns and continues but does not increment `$failures`. In `-WriteOracle` mode it appends an oracle-enabled missing source to `$OracleFailures`, which preserves the prior oracle at L202-L204, but the final exit checks only `$failures`. Thus both an ordinary incomplete configured batch and an explicitly incomplete oracle refresh print `Done` and exit zero. The post-audit script now increments `$failures` for missing nested installers, zero files, and missing expected files, so those older BR-0169 cases are repaired; source absence and the rejected incomplete-refresh result remain false successes. The warning at L203 also says no oracle archives were extracted even when some succeeded and one failed
+- Impact: Automation or a maintainer can treat an incomplete requested corpus or rejected oracle refresh as successful, omit expected caches, and lose the actual failed-item state behind a green process result
+- Expected: The script declares whether absent optional packages are valid skips. Every required configured package or required oracle record receives one success, valid skip, or failure disposition, and any rejected refresh returns nonzero while preserving the previous oracle
+- Validation: Run empty, one-missing, oracle-missing, complete, valid-cache, Force, and mixed good-bad-good matrices through a child PowerShell process. Assert exact item counts, accurate summary text, prior-oracle preservation, and status zero only for declared successful states
+- Deduplication: Open `BR-0169` already owns the Mac-demo aggregate-status contract. This observation narrows it to the two paths still live after `$failures` and final `exit 1` were added
+
+### GQ1-CHUNK-0089-OBS-004: The portable entry point still resolves only unar.exe
+
+- Severity/confidence: `P2/high` existing-root confirmation
+- Category: `compatibility/tooling`
+- Normalization recommendation: `DUPLICATE open BR-0174`; do not allocate a new finding
+- Location: `game_data/extract_mac_demos.ps1:L1-L5,L24-L26`; installer behavior in `android/get_deps/helpers/get_unar.sh`
+- Trigger: Follow the script's `pwsh` shebang and documented Bash dependency setup on native Linux or another non-Windows host
+- Evidence: The script always requests relative path `unar.exe` from the repository dependency directory. The frozen Bash helper accepts native PATH `unar` and `lsar` on Linux without producing that `.exe` cache. A successfully satisfied native prerequisite therefore remains invisible to the PowerShell consumer. There is no early supported-host gate or platform-aware executable naming
+- Impact: The documented oracle workflow fails late as a missing dependency on hosts where its own setup helper reported success, obscuring platform support and preventing reproducible cross-host use
+- Expected: Resolve and verify the supported host-native executable or reject unsupported hosts immediately with one documented optional-tool status and alternative
+- Validation: Exercise Windows, native Linux, macOS, WSL, and Git Bash dependency setup plus script entry. Require the correct verified executable on supported hosts or an immediate stable unsupported result without downloading or resolving an unusable foreign binary
+- Deduplication: Open `BR-0174` records this exact assigned path, helper mismatch, trigger, and validation matrix
+
+### GQ1-CHUNK-0089-OBS-005: The frozen tracked oracle predates and bypasses the claimed provenance schema
+
+- Severity/confidence: `P2/high` regrowth or incomplete historical closure
+- Category: `test-gap/provenance/supply-chain/data-integrity`
+- Normalization recommendation: `REGROWTH archived BR-0170`, linked archived `BR-0157` and open `BR-0182`; allocate a current GQ finding only if no current oracle-provenance owner already has this exact acceptance boundary
+- Location: producer `game_data/extract_mac_demos.ps1:L183-L191`; tracked oracle `game_data/demo installers/mac_stuffit_oracles.json:L1-L85`; consumer `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake:L20-L104`
+- Trigger: Run the native oracle test against the frozen tracked oracle, or refresh the oracle and assume the newly emitted source, tool, and policy fields are enforced by that consumer
+- Evidence: The producer now emits `archive_sha256`, an `oracle_tool` object containing exact executable identity, and `policy`. The frozen tracked oracle was last changed on 2026-05-24, before those fields were added, and contains only each archive basename plus the string `"unar"`. The CMake consumer reads only `archive` and each file's name, size, and digest; it neither requires nor compares source digest, tool identity, or policy. It also hashes no current archive before applying the expected outputs. Therefore the frozen test still accepts an oracle whose provenance cannot satisfy the archived BR-0170 closure claim, and even a refreshed richer record would have its new provenance ignored. The current local values may be correct, but the durable evidence cannot establish which authenticated source/tool/policy generation produced them
+- Impact: Stale or historically unverified external-tool output can remain regression truth while the test reports matching product output, and changes to source, extractor identity, or policy do not invalidate the accepted oracle generation
+- Expected: The tracked oracle uses one versioned schema binding every record to reviewed archive SHA-256, exact external tool identity, generation policy, and complete expected inventory. The native consumer validates every required provenance field and exact archive set before using output hashes as truth
+- Suggested fix: Regenerate the tracked oracle only through the verified producer after observation 001 and 002 lifecycle fixes, version its schema, and make the CMake test reject legacy or mismatched provenance and incomplete archive or output sets. Keep missing proprietary media as an explicit skip/fail policy separate from schema validity
+- Validation: Mutate or omit every source, tool, policy, archive-set, and output-inventory field; feed legacy and current schemas; replace same-name source bytes; and use complete known controls. Require legacy, incomplete, and mismatched evidence to be non-passing and complete authenticated generations to reproduce byte-identically
+- Deduplication: Archived `BR-0170` claimed Mac oracle provenance was fixed, while archived `BR-0157` owns unverified external tools defining expected hashes. Open `BR-0182` owns the incomplete production-parser oracle inventory. Adversarial chunk 0370 already identified the frozen legacy schema as those existing roots; the post-frozen producer change without a corresponding tracked-oracle or consumer update makes this an incomplete closure rather than a distinct schema preference
+
+### GQ1-CHUNK-0089-OBS-006: Oracle replacement is direct and not crash-safe
+
+- Severity/confidence: `P2/high` existing-root extension
+- Category: `correctness/output-integrity/concurrency`
+- Normalization recommendation: `EXTENDS open BR-0233`; do not allocate a new finding unless the canonical writer keeps tracked oracle publishers in a separate current owner
+- Location: `game_data/extract_mac_demos.ps1:L201-L207`
+- Trigger: Interrupt, exhaust storage, fail a delayed write or close, or overlap two complete `-WriteOracle` invocations after in-memory serialization but during final-file replacement
+- Evidence: After logical completeness checks, the producer passes the canonical tracked oracle directly to `Set-Content`. It does not use an attempt-owned sibling, explicitly verify flush and close, parse and validate the durable bytes, atomically replace the prior file, or serialize competing publishers. A failed write can truncate the only prior valid oracle, and two valid generations can race at the same final path. Directory publication is transactional, but the more important checked-in oracle publication does not use that helper or an equivalent file transaction
+- Impact: A failed or overlapping maintenance run can destroy the last complete tracked oracle or expose a partial JSON document to a build and test, despite all source archives and extracted trees remaining available
+- Expected: Serialize and schema-validate the complete replacement, write and checked-close a unique sibling, atomically replace only after validation, preserve prior bytes on every failure, and establish one final-path owner
+- Validation: Preseed a valid oracle, inject open, partial-write, flush, close, disk-full, interruption, validation, and replace failures, and barrier-run two distinct generations. Require byte-identical prior content on every failure, one complete validated winner, no mixed document, and no owned residue
+- Deduplication: Open `BR-0233` owns direct final-path publication for generated metadata and has already been extended to multiple PowerShell `Set-Content` publishers. This is another exact tracked-oracle instance of the same root
+
+## Explicit clean dimensions
+
+- Package identity: all six configured archive names have maintained literal SHA-256 values, and every present source is checked before extraction. The current values match the documented package table. No arbitrary same-name replacement can reach unar
+- Tool identity: `Resolve-DxxVerifiedDependencyExecutable` resolves the repository-configured unar cache and rechecks its executable SHA-256 before use. The script does not trust a PATH-selected archive executable on its supported frozen path. Cross-host resolution remains observation 004
+- Cache identity: a reusable output must match source, exact unar, assigned script, shared helper, policy, and complete recursive output inventory. Force and oracle modes deliberately bypass reuse. Changed or damaged output fails manifest validation
+- Output selection and collision safety: game-file discovery is restricted to the maintained extension list, source files are sorted, basenames are compared case-insensitively, every configured expected basename is required, and any duplicate basename rejects publication. Copy targets use discovered leaves only, so source directory structure cannot escape the staging root
+- Single-writer directory transaction: output is copied into a UUID sibling staging directory, receives its completion manifest, and replaces the old directory through the shared rollback helper only after extraction and expected-file validation. Same-destination publication concurrency is covered independently by current `GQF-0130`; this script's local final staging name is not predictable
+- Failure propagation after extraction: nonzero unar status throws once the child returns. Missing nested installer, zero game files, missing expected files, and basename collision increment `$failures`; incomplete trees are not published. Remaining false-success paths are observation 003
+- Oracle logical admission: `-WriteOracle` records only explicitly oracle-enabled packages and preserves the prior file when no oracle archive succeeds or any enabled archive records a handled missing/incomplete outcome. The durable schema and physical publication gaps are observations 005 and 006
+- Hashing and diagnostics: source and copied-file SHA-256 values are computed through platform APIs. Package names, extraction phases, discovered file names and sizes, cache hits, missing expected names, output destinations, and aggregate completion are reported. No shell-evaluated command string or unquoted user argument construction was found
+- Native consumer basics: when a listed archive exists, CMake runs the direct extractor once, rejects a nonzero result, and requires every listed output's exact size and SHA-256. Malformed JSON and an empty record set fail. Optional-media false passing and exact full-inventory coverage remain open `BR-0158` and `BR-0182`
+- Syntax, style, and inherited diff: the complete frozen PowerShell parses with zero AST errors, and the frozen assigned diff passes `git diff --check`. The file is branch-added game-data tooling and changes no inherited 1996 source or paired D1/D2 implementation
+
+## Evidence gaps and limitations
+
+- Proprietary demo archives and cached unar were not executed or modified. Existing media was not treated as authoritative mutable evidence. Control flow, fixed identities, tracked oracle history, and consumer behavior were established from frozen Git objects
+- No external-process hang, diagnostic flood, descendant, low-space, interruption, filesystem fault, concurrent invocation, or cleanup-denial fixture was run. Those are the remediation validation boundaries for observations 001, 002, and 006
+- The current tracked oracle's file hashes were previously checked against locally available trees in adversarial chunk 0370. This survey does not dispute their current values; observation 005 concerns missing durable provenance and consumer enforcement
+- The shared bounded supervisor has its own current descendant-escape finding `GQF-0127`. Routing this script through it would still require that separate fix for complete process-tree acceptance
+- `Publish-ExtractionDirectory` has current same-destination concurrency owner `GQF-0130`. This report does not duplicate that helper-level race, although a complete remediation must coordinate final output ownership
+- Live HEAD may have advanced beyond the campaign snapshot. Any later change to this script, dependency resolver, bounded supervisor, oracle, consumer, or tests requires closure or delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-code-quality worker process
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff`, `git diff --check`, `git grep`, `git log --follow`, `git ls-tree`, `rg`, and PowerShell in-memory parsing and hashing against the frozen objects
+- Confirmed both frozen objects are commits, the frozen base lacks the assigned path, the frozen head tree and assigned blob match the recorded IDs, and the assigned source covers L1-L213 including blank lines
+- Computed the normalized-LF assigned-file SHA-256 in memory without creating an intermediate file
+- Parsed the complete frozen PowerShell with `System.Management.Automation.Language.Parser`; it reported zero syntax errors
+- Traced both unar calls through source and tool verification, temporary output, selection, expected-file checks, hashing, completion manifest, directory publication, oracle construction, canonical oracle write, native consumer, and aggregate exit
+- Reconciled archived `BR-0018`, `BR-0020`, `BR-0157`, and `BR-0170`; open `BR-0158`, `BR-0169`, `BR-0173`, `BR-0174`, `BR-0182`, and `BR-0233`; and current `GQF-0127` and `GQF-0130` before recommending normalization
+- Product files, plans, canonical ledgers, existing reports, ignored temporary files, source media, generated data, build outputs, processes, and device state were not edited
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0089`
+- Admit observation 001 as one current bounded-process finding linked to incomplete archived `BR-0018`, unless an existing current owner is intentionally broadened to the direct Mac-demo unar caller
+- Extend open `BR-0173` with observation 002 and open `BR-0169` with the narrowed still-live source-absence and rejected-refresh behavior in observation 003
+- Normalize observation 004 as an exact duplicate of open `BR-0174`
+- Normalize observation 005 as regrowth or incomplete closure of archived `BR-0170`, linked archived `BR-0157` and open `BR-0182`; do not create parallel provenance findings for the producer, tracked oracle, and consumer
+- Extend open `BR-0233` with observation 006, or the current canonical generated-publication owner selected by the single writer
+- Do not allocate separate findings for current oracle hash values, case-insensitive output collisions, sequential directory rollback, cache manifests, style-only output ordering, optional fixture policy already owned by `BR-0158`, full-inventory coverage already owned by `BR-0182`, bounded-supervisor internals owned by `GQF-0127`, or shared publication concurrency owned by `GQF-0130`
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0089 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0090 frozen survey SHA256:c23784c54db32382500b183925077a6802bc755add5a636b6427a1c0b2e7de4c -->
+
+## GQ1-CHUNK-0090 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0090.md`
+- Imported SHA-256: `c23784c54db32382500b183925077a6802bc755add5a636b6427a1c0b2e7de4c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0090 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0090`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `game_data/fingerprint_mission_zip_music.ps1:L1-L600`
+- Frozen blob: `263d71cc3f32d70f8fd411f89141968781624fbe`
+- Full-file normalized-LF SHA-256: `d20696a06db793bfddfa0de56a7ad6094ef1f52597a75bee811a56921602a984`
+- Assigned-range normalized-LF SHA-256: `760418a89b10aeec80e8089056c09fc8151ec8873f5283a1fd912edf7890616f`
+- Scope status: complete. Every assigned frozen line, the complete 958-line owner, nested extraction and publication tail, direct helpers, focused tests, consumers, history, and relevant earlier review records were inspected
+
+The assigned file is a branch addition relative to the frozen base. All conclusions below use frozen Git objects as authority
+
+## Context checked
+
+- The complete `fingerprint_mission_zip_music.ps1` flow, including ZIP preambles, ZIP/DXA/HOG/7z/RAR nesting, extraction accounting, temporary ownership, filename and source mapping, strict tracklists, AcoustID transport, native fingerprint invocation, exact result validation, staged publication, cache identity, aggregate status, and optional database update
+- `android/helpers/bounded_extraction.ps1` and `android/helpers/run_bounded_extractor.py`, including external-tool process, diagnostic, file, byte, time, link, and publication boundaries
+- `android/helpers/fingerprint_audio_results.ps1`, `android/helpers/acoustid_title_match.ps1`, and `android/helpers/json5.ps1`
+- `android/tests/test_fingerprint_mission_zip_budgets.ps1`, `test_json5_and_tracklist_parsing.ps1`, `test_acoustid_regeneration.ps1`, and `test_extraction_cache_provenance.ps1`
+- All seven frozen mission tracklists, their 69 rows, and the downstream album database generation and mission fingerprint consumers
+- Complete file history through the frozen head, including the extraction-budget, strict JSON, dependency, cache-identity, native-result, build-freshness, and publication repairs
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and prior cleanup plans for duplicate, historical-fix, and regrowth reconciliation
+
+## Atomic observations
+
+### GQ1-CHUNK-0090-OBS-001: Nested ZIP and DXA recursion has no explicit depth or stack budget
+
+- Severity/confidence: `P2/high`
+- Category: `security/resource-exhaustion/stack/work-budget`
+- Normalization recommendation: `REGROWTH or incomplete closure of archived BR-0018`; allocate a generation-specific finding unless normalization identifies an existing open nested-archive stack owner with this exact script in its acceptance boundary
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L317-L383`, especially recursive `Extract-ZipAudio` calls at L364-L370; budget definitions and charging at L33-L38,L40-L96
+- Trigger: Supply a mission ZIP containing a long chain of one nested `.zip` or `.dxa` member per container. Each member can be small enough to remain beneath the per-entry, per-container, aggregate-live-byte, ratio, entry-count, and wall-clock ceilings while the PowerShell function recursively retains one call frame and open parent `ZipArchive` for every level
+- Evidence: `Extract-ZipAudio` directly calls itself for every nested ZIP or DXA and carries no depth parameter, iterative worklist, or stack ceiling. The shared entry count eventually rejects the 4,097th entry, but it permits thousands of recursive frames. Each parent archive remains live until its child returns because disposal is in the outer `finally`. The tests cover one nested level, high ratio, aggregate container bytes, truncated HOG headers, and temporary-byte release, but contain no exact-depth or deep-chain fixture. An entry-count ceiling is not a safe stack ceiling, and PowerShell can terminate from stack exhaustion before reaching the declared entry limit or returning the per-mission failure that the outer loop expects
+- Historical reconciliation: Archived `BR-0018` named unbounded recursive archive work in this script and required bounded failure for adversarial nesting. Its closure added byte, entry, ratio, time, child-process, and publication defenses, but the frozen implementation and focused regression still omit recursion depth and stack ownership. This is incomplete root acceptance, not an unrelated style concern
+- Impact: A small locally supplied mission archive can exhaust the maintenance PowerShell process stack, retain a large chain of archive and file handles, terminate the complete fingerprint batch without its normal per-item diagnostic and cleanup path, and prevent reproducible processing of later missions
+- Expected: Nested container work is iterative or has an explicit conservative depth bound charged to one attempt context, and every over-depth input fails as one bounded mission result with all owned archives and temporary files released
+- Suggested fix: Replace recursive container traversal with an explicit bounded worklist, or carry and enforce a reviewed maximum nesting depth well below host stack limits. Charge each container, retained archive, and temporary payload to one attempt-owned work and live-resource budget, and retain the existing byte, entry, ratio, and time checks
+- Validation: Generate exact-limit and one-over ZIP/DXA chains, mixed ZIP/HOG/7z/RAR nesting, many shallow siblings, early malformed children, and interruption at each depth. Require bounded failure without process termination, no leaked handles or temporary files, continued processing according to batch policy, and unchanged ordinary nested results on supported PowerShell hosts
+
+### GQ1-CHUNK-0090-OBS-002: Mission 7z and RAR consumption extends the unsafe extractor-output identity root
+
+- Severity/confidence: `P1/high` existing-root extension
+- Category: `security/filesystem-safety/privacy/resource-accounting`
+- Normalization recommendation: `EXTENDS GQF-0128`; do not allocate a duplicate finding
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L386-L469`, with external extraction at L425-L469 and shared measurement in `android/helpers/run_bounded_extractor.py:L15-L40,L64-L123`
+- Trigger: Have 7-Zip or tar produce a symlink, reparse point, hard link, FIFO, device-like node, or path identity replaced after the bounded runner measures it, with an audio or nested-container suffix admitted by `Extract-DirectoryAudio`
+- Evidence: The bounded runner charges `lstat` metadata and does not reject unsupported output identities or bind regular contained files through later consumption. After it returns, `Extract-DirectoryAudio` uses recursive pathname enumeration, trusts `FileInfo.Length`, and opens admitted audio or nested containers by pathname. A small link can therefore lead this script to copy, fingerprint, recurse into, or derive source metadata from external or uncharged bytes. The script's own `Copy-BoundedStream` limits bytes after an audio path is opened, but that does not restore physical containment, privacy, stable source identity, or safe handling of blocking special files. The focused mission-budget tests use only ordinary ZIP-created files
+- Deduplication: Open `GQF-0128` already owns external extractor link and special-file output containment and accounting in the same shared runner. This chunk supplies a second maintained consumer and a privacy-sensitive effect because copied external audio can be fingerprinted and optionally submitted to AcoustID. The root fix remains rejection and stable physical containment at the shared extractor boundary
+- Impact: In addition to bypassing extraction accounting or blocking the batch, an unsafe output identity can cause unrelated local audio bytes to be copied into a generated album, summarized in checked-in metadata, or sent as a derived fingerprint to a third-party service when AcoustID lookup is enabled
+- Expected: External extraction yields only stable, contained, owned regular files. The exact validated identities and actual bytes remain bound through this consumer, and unsupported nodes fail before any read, recursion, fingerprint, or network request
+- Suggested fix: Complete `GQF-0128` in the shared runner and pass a validated manifest or retained identity to consumers. Make this script consume only those validated regular identities, recheck before open/publication, and test that rejected nodes cannot reach fingerprinting or AcoustID
+- Validation: Add POSIX links, hard links, FIFOs and device-like nodes plus Windows file reparse points and junctions, including outside-root audio and nested archives, post-measurement replacement, exact byte limits, and an instrumented no-network assertion. Require rejection, no outside read, no fingerprint child launch, and owned cleanup
+
+### GQ1-CHUNK-0090-OBS-003: Conflicting tracklist selectors are silently resolved by first-row order
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/api-data-format/generated-data/reproducibility`
+- Normalization recommendation: `NEW`, unless a current typed tracklist-schema owner is broadened to this producer and its exact selector conflict policy
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L523-L561`, especially `Add-TracklistKey` at L523-L529 and `Read-MissionTracklist` at L532-L561
+- Trigger: Add two valid JSON tracklist rows whose case-insensitive `filename`, `source_path`, `original_name`, explicit `slot`, or derived `level` selector is the same but whose titles differ. The same issue occurs when one row's explicit slot conflicts with another row's derived `levelN` slot
+- Evidence: `Add-TracklistKey` lowercases each selector and inserts it only when absent. A later duplicate is ignored without comparing its title, recording ambiguity, or failing schema validation. `Read-MissionTracklist` validates only the root schema string; rows without names are skipped, selector types are string-coerced, and no requirement establishes a unique mapping. `Get-TracklistName` later searches selectors in a fixed precedence order and publishes the silently selected title. Array reordering can therefore change generated album labels while every command reports success. The focused parsing test proves string preservation and current schema names but does not exercise duplicate or cross-kind logical selectors. All seven frozen tracklists and 69 current rows are nonconflicting, so the current corpus does not disprove the admitted public input failure
+- Historical reconciliation: Archived `BR-0177` repaired lossy JSON preprocessing but explicitly called for schema validation after parsing. Its closure tests strict syntax and string preservation, not selector uniqueness or row completeness. `GQF-0034` owns generated fingerprint cache validation, and `GQF-0035` owns AcoustID candidate selection; neither owns deterministic admission of curated tracklist mappings
+- Impact: A maintained tracklist edit can silently assign the wrong title to one or more mission tracks, make checked-in album metadata and the packaged database depend on row order, and conceal the conflict behind a successful deterministic-looking regeneration
+- Expected: The schema defines required row fields and one unambiguous case policy. Every logical selector maps to exactly one title, conflicting duplicates fail with both row identities, and exact duplicates are either rejected or deliberately deduplicated without order dependence
+- Suggested fix: Add one typed tracklist validator before lookup construction. Require a nonempty title and at least one valid selector per row, normalize each selector under the documented portable policy, reject conflicting mappings including explicit-versus-derived slot collisions, and share the validator with normalization tests
+- Validation: Cover exact duplicates, case-only duplicates, different-title conflicts for each selector kind, explicit/derived slot conflicts, empty names, selector-free rows, wrong types, reordered arrays, and the seven current tracklists. Require conflicts to fail before extraction or publication and ordinary outputs to remain byte-stable
+
+## Explicit clean dimensions
+
+- Frozen identity and syntax: the assigned path is a 958-line branch addition with the recorded blob and normalized-LF fingerprints. The complete frozen script parses with zero PowerShell AST errors
+- Archive byte controls: direct ZIP and HOG reads use bounded streaming, checked actual and declared byte totals, per-entry and aggregate ceilings, ratio checks, a wall-clock ceiling during copies, periodic free-space headroom, exact HOG member lengths, and disposal on ordinary success and exception paths. The missing recursion depth remains observation 001
+- ZIP path handling: ZIP and HOG internal names become source metadata and sanitized flat output leaves rather than filesystem-relative destinations. ZIP entry lengths are preflighted before extraction and output name collisions receive deterministic numeric suffixes within one run
+- External execution: 7-Zip is resolved through the verified dependency helper; external extractors receive bounded time, diagnostics, file, and byte settings and nonzero exits fail. Shared runtime identity, descendant, and unsafe-output gaps remain owned by `GQF-0125`, `GQF-0127`, and `GQF-0128`
+- Source and cache identity: the complete tail computes both SHA-1 and SHA-256, requires source name plus both exact digests and `complete: true` for reuse, validates exact native result filenames, and stages a new generation before publication. Broader tool, decoder, extractor, schema, and policy identity remains open `GQF-0030`
+- Native result admission: returned filenames must match the exact extracted source-map set with no missing, duplicate, unexpected, error, empty fingerprint, or nonpositive-duration record before sidecar publication
+- AcoustID control flow: requests are HTTPS POSTs, the API key stays in the request body and is not logged, pacing and retries are finite, cached metadata is retained on failed refresh, and absent configuration disables lookup. Candidate evidence and deterministic selection remains `GQF-0035`
+- JSON handling: strict tracklist parsing and string-aware JSON5 parsing preserve URLs, slashes, quotes, comment markers, and trailing-comma strings. Output strings use `ConvertTo-Json` escaping and UTF-8 without BOM. Selector schema ambiguity remains observation 003
+- Transactionality and cleanup: new fingerprint generations use UUID sibling work directories, remove attempt-owned staging on failure, and publish only after exact fingerprint validation. Same-destination publication serialization remains open `GQF-0130`; cache content validation remains `GQF-0034`
+- Diagnostics and status: per-mission errors are retained and printed, later missions continue after ordinary item failure, any recorded failure exits nonzero, and the optional database updater propagates a nonzero child result
+- Portability and diff minimization: path operations use .NET and PowerShell host APIs, the assigned work is isolated to branch-added tooling, and it modifies no inherited D1 or D2 source
+
+## Evidence gaps and limitations
+
+- No source archive, external extractor, native fingerprint executable, AcoustID request, build, database rewrite, or filesystem-mutating test was run because this is a read-only frozen survey
+- The exact deep nesting at which a particular PowerShell host exhausts its stack was not executed. Observation 001 relies on direct unbounded recursion with an entry ceiling far above a safe call-depth contract, not on one host-specific threshold
+- Link, reparse, hard-link, FIFO, device, path-replacement, and outside-root privacy triggers were not created. Their shared runner mechanism is already established by `GQF-0128`; this report traces the additional mission-fingerprint consumer and impact
+- Current tracklists were parsed from frozen objects: seven files, 69 named rows, no conflicting populated selectors. No conflicting file was written or run because the missing rejection follows directly from `Add-TracklistKey` and current corpus cleanliness is recorded separately
+- Network timeout, TLS failure, API-key redaction at lower .NET diagnostic layers, and server-side retry headers were not dynamically tested. No additional finding was admitted without a demonstrated maintained failure beyond existing AcoustID provenance ownership
+- The live branch may differ from the frozen head. Any later script, helper, test, dependency, or consumer change requires closure or delta-generation coverage
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-code-quality worker process, the active and done general-quality ledgers, durable evidence, adversarial ledgers, DMR1, and targeted cleanup records
+- Used `git cat-file`, `git ls-tree`, `git rev-parse`, `git show`, `git diff`, `git log --follow`, and `rg` against the frozen commits, assigned owner, helpers, tests, consumers, and histories
+- Confirmed both frozen objects are commits, the assigned path is absent at the base and added at the head, and the head blob is exactly `263d71cc3f32d70f8fd411f89141968781624fbe`
+- Computed the full-file and assigned-range normalized-LF SHA-256 values in memory and parsed the complete frozen PowerShell text with zero AST errors
+- Inspected all 958 frozen lines, all seven frozen tracklists, 69 named tracklist rows, and the focused mission budget and JSON/tracklist tests without creating an intermediate file
+- Reconciled archived `BR-0018`, `BR-0020`, `BR-0157`, `BR-0177`, `BR-0180`, current `GQF-0030`, `GQF-0034`, `GQF-0035`, `GQF-0125`, `GQF-0127`, `GQF-0128`, and `GQF-0130` before recommending normalization
+- Product files, plans, canonical ledgers, existing reports, ignored temporary files, source media, generated sidecars, build outputs, dependency caches, processes, network state, and device state were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0090`
+- Normalize observation 001 as generation-specific regrowth or incomplete remediation linked to archived `BR-0018`, unless an existing open nested-archive stack owner is explicitly broadened to this script and exact depth boundary
+- Extend `GQF-0128` with observation 002 and its mission-audio privacy and AcoustID evidence; do not allocate a duplicate unsafe-output finding
+- Admit observation 003 as one new typed tracklist-admission and reproducibility finding unless normalization broadens a current owner whose acceptance boundary includes selector uniqueness, row completeness, and order independence
+- Do not allocate additional findings for the already owned generator identity, cache validation, AcoustID selection, bounded-runner runtime, descendant lifetime, same-destination publication, or ordinary strict-JSON and native-result paths
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0090 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0091 frozen survey SHA256:c985eb225e1d9befca489235f43d920fcfe853ba4bba18c6ecd180483970ce15 -->
+
+## GQ1-CHUNK-0091 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0091.md`
+- Imported SHA-256: `c985eb225e1d9befca489235f43d920fcfe853ba4bba18c6ecd180483970ce15`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0091 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0091`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Base is an ancestor of head: yes
+- Assigned scope: `game_data/fingerprint_mission_zip_music.ps1:L601-L958`
+- Frozen blob: `263d71cc3f32d70f8fd411f89141968781624fbe`
+- Full-file normalized-LF SHA-256: `d20696a06db793bfddfa0de56a7ad6094ef1f52597a75bee811a56921602a984`
+- Assigned-range normalized-LF SHA-256: `37a25a2db65399189da5859727a43a94c70f0ff4b40d8cb33bd2a402a038fa13`
+- Scope status: complete. Every assigned frozen line and enough preceding extraction, helper, test, caller, consumer, history, and review context were inspected
+
+The assigned file is a 958-line branch addition relative to the frozen base. Frozen Git objects, not mutable product files, are the evidence authority
+
+## Context checked
+
+- The complete assigned AcoustID response, metadata reuse, serialization, cache admission, tool build, archive enumeration, generation, publication, cleanup, status, and optional database-update flow
+- Preceding archive-budget, source-map, extraction, tracklist, JSON5, and AcoustID setup needed to trace the assigned tail
+- `android/helpers/fingerprint_audio_results.ps1`, `bounded_extraction.ps1`, `acoustid_title_match.ps1`, and `json5.ps1`
+- `android/tests/test_acoustid_regeneration.ps1`, `test_extraction_cache_provenance.ps1`, `test_fingerprint_manifest_publication.ps1`, `test_fingerprint_mission_zip_budgets.ps1`, and `test_json5_and_tracklist_parsing.ps1`
+- `game_data/update_all_fingerprints.ps1`, `update_known_discs_albums.ps1`, checked-in mission sidecars, and the native fingerprint tool's result contract
+- Complete file history through the frozen head and the relevant active/done general-quality, adversarial, DMR1, AcoustID, fingerprint-publication, regeneration, and earlier cleanup records
+- The adjacent `GQ1-CHUNK-0090` durable report so this range does not duplicate its nested-depth, extractor-output, or tracklist-schema observations
+
+## Atomic observations
+
+### GQ1-CHUNK-0091-OBS-001: A successful no-audio regeneration leaves the prior audio generation authoritative
+
+- Severity/confidence: `P2/high`
+- Category: `correctness/data-integrity/cache-invalidation`
+- Normalization recommendation: `NEW`, unless normalization explicitly broadens `GQF-0034` from malformed cache admission to removal of a formerly valid generation after a verified source transition
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L824-L884`, especially source mismatch at L844-L863 and the zero-audio branch at L880-L884; downstream `game_data/update_known_discs_albums.ps1` discovers every retained album sidecar
+- Trigger: First publish a valid album for one mission archive. Replace that same pathname with a different archive that contains no supported OGG, MP3, or FLAC member, or change extraction policy so the current source legitimately yields no admitted audio, then rerun without deleting the prior output directory
+- Evidence: The new source digests fail `Test-MissionFingerprintCacheIdentity`, so the script correctly extracts the current archive into a unique work directory. When extraction returns zero, it removes only that new work directory, increments `processed`, and continues. It never removes, supersedes, quarantines, or marks the already existing `$albumDir`. That directory still contains the old audio and a `chromaprint_info.json5` whose source hashes describe the previous archive. The database updater scans retained sidecars independently and does not compare them with current mission archives. The focused publication test starts from an empty mission output, exercises partial failure, success, incomplete-marker regeneration, and safe skip, but never transitions a previously audio-bearing source to a successful no-audio generation
+- Impact: A completed regeneration can report that the current archive has no audio while retaining and later packaging the previous archive's tracks as if they were still maintained output. The source and derived database silently disagree, and repeated runs converge on the stale album rather than the verified empty result
+- Expected: A verified current generation with no audio has an explicit transactional disposition. It either atomically retires the prior derived album, publishes a source-bound empty tombstone excluded by consumers, or fails under a documented preservation policy. It cannot report success while leaving the prior source generation authoritative
+- Suggested fix: Represent the no-audio outcome in the same source-bound generation transaction as nonempty output. Validate the current source and complete extraction, then atomically retire or replace the prior album with an explicit schema-valid empty outcome that the database consumer understands. Preserve the prior album on extraction or publication failure, not after a successful empty result
+- Validation: Publish generation A with two tracks, then replace the same source with generation B containing zero supported audio and run ordinary, Force, selected-Zip, and UpdateDatabase paths. Also inject extraction and publication failures around the transition. Require B's successful empty result to remove A from packaged identity, every failed B attempt to preserve A byte-for-byte, and retries to converge without stale tracks or orphaned generation directories
+
+### GQ1-CHUNK-0091-OBS-002: Native mission fingerprinting has no deadline or owned process-tree cancellation
+
+- Severity/confidence: `P2/high`
+- Category: `resource-lifetime/test-tool/availability`
+- Normalization recommendation: `NEW`, unless an existing general child-process owner is broadened to this exact native fingerprint invocation and its per-mission continuation contract
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L873-L910`, especially `Start-Process ... -Wait -PassThru` at L892-L896; the declared `$MaxArchiveSeconds` extraction budget is initialized at L873 but checked only by preceding extraction code
+- Trigger: Make `fingerprint_audio` hang while opening or decoding one admitted file, or substitute the supported explicit `FingerprintExePath` with a child that never exits or spawns a descendant that retains the redirected streams
+- Evidence: The parent launches the native tool with synchronous `Start-Process -Wait` and supplies no deadline, cancellation hook, process-tree ownership token, or `finally` that stops and waits for the child. The five-minute archive deadline governs extraction and is not consulted after extraction returns. The outer per-archive catch cannot run until `Start-Process` completes or throws, so it cannot record the failed item, clean the unique work directory, or continue later missions while the child remains live. Focused publication tests use fake children that exit immediately; budget tests stop before this production tail. No maintained test covers a hung child, descendant-held redirection, interruption, or confirmed process cleanup
+- Impact: One malformed audio input or faulty tool can hang the complete maintenance batch indefinitely, retain extracted proprietary audio and redirected output in the work directory, prevent later archives and the final status from being processed, and leave a child or descendant running after caller cancellation
+- Expected: Each native invocation is supervised as an attempt-owned process tree with a documented finite deadline, bounded captured diagnostics, cancellation and interruption handling, confirmed termination and handle disposal, and cleanup that preserves the primary failure before the batch applies its continuation policy
+- Suggested fix: Use one shared bounded child-process supervisor that owns a unique process generation, drains both streams, enforces a per-mission deadline, terminates and waits for the complete owned tree on timeout or cancellation, and reports bounded diagnostics. Put staging cleanup in an outer `finally` that cannot delete another run's resources
+- Validation: Use fake tools that succeed, fail, hang before output, emit partial output then hang, spawn a stream-holding descendant, ignore ordinary termination, and exit during cancellation. Require a bounded nonzero item result, complete owned-tree termination and handle disposal, removal or attributable retention of only that attempt's work directory, preservation of prior published output, and continued processing of later missions where policy permits
+
+### GQ1-CHUNK-0091-OBS-003: Cache-only AcoustID enrichment still truncates the public sidecar in place
+
+- Severity/confidence: `P2/high` existing-root extension
+- Category: `correctness/concurrency/transactionality`
+- Normalization recommendation: `EXTENDS BR-0180`; link the same-destination concurrency portion to `GQF-0130` without allocating a duplicate finding
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L837-L862`, especially direct `Write-ChromaprintInfo -Path $infoFile` at L856-L858, contrasted with unique staged generation and `Publish-ExtractionDirectory` at L866-L928
+- Trigger: Run a normal non-SkipAcoustId update against a source-matching cached sidecar and interrupt or inject a write/storage failure, or run two enrichment calls for the same archive concurrently
+- Evidence: Fresh fingerprint generation uses a unique sibling work directory and directory publication, but the matching-cache branch rewrites the canonical `chromaprint_info.json5` directly through `File.WriteAllText`. That call opens the final path for replacement without a unique sibling, validation of the serialized replacement, checked atomic swap, or per-destination serialization. On failure `$workDir` is still null, so the catch has no staged generation to clean or prior generation to restore. Concurrent writers can each enrich an old snapshot and race direct replacement. The focused AcoustID test proves only a successful direct write to a new temporary pathname, and the publication test does not exercise cache enrichment failure or concurrency
+- Impact: An optional metadata refresh can corrupt or lose the only valid mission sidecar, expose a partial document to the database generator, or let a stale concurrent enrichment overwrite newer fields even though no source or fingerprint regeneration was required
+- Expected: Metadata-only enrichment uses the same complete serialized, parsed, checked, destination-serialized atomic publication boundary as full generation and preserves the prior valid sidecar on every failure
+- Suggested fix: Serialize and validate a complete replacement in a unique same-directory file, flush and close it, then atomically replace the sidecar under canonical destination ownership. Merge against the latest valid generation inside that transaction or reject generation drift
+- Validation: Preseed a valid sidecar and inject open, partial write, flush, close, disk-full, interruption, parse-validation, and replace failures plus two barriered enrichers with distinct results. Require byte-identical preservation on failure, one complete correlated winner on success, no lost newer fields, and no orphaned staging file
+
+### GQ1-CHUNK-0091-OBS-004: Supported mission archive names still collide by extensionless basename
+
+- Severity/confidence: `P2/high` exact duplicate
+- Category: `correctness/data-integrity/portability`
+- Normalization recommendation: `DUPLICATE BR-0179`; retain this frozen-head verification and allocate no new finding
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L810-L827`, with basename selection at L813-L815 and output identity at L824-L827
+- Trigger and evidence: The script admits ZIP, 7z, and RAR together, allows `-Zip` to match `BaseName`, and derives both album label and directory only from `BaseName`. Therefore `same.zip`, `same.7z`, and `same.rar`, plus case-only variants on a case-sensitive host, remain ambiguous or map to the same durable output. No frozen-head preflight rejects the collision or gives each complete source identity a distinct output key
+- Impact, expected, fix, and validation: These remain exactly owned by open `BR-0179`. Preflight under an explicit portable comparison policy, reject ambiguous selectors or derive distinct deterministic source-bound identities, and verify same-basename and case-only fixtures in reversed orders on Windows and Linux
+
+### GQ1-CHUNK-0091-OBS-005: The advertised portable script still resolves only a Windows multi-config fingerprint executable
+
+- Severity/confidence: `P2/high` exact duplicate
+- Category: `compatibility/tooling`
+- Normalization recommendation: `DUPLICATE BR-0174`; retain this frozen-head verification and allocate no new finding
+- Location: `game_data/fingerprint_mission_zip_music.ps1:L776-L789`, with the default executable fixed earlier at `android/tests/build/Release/fingerprint_audio.exe`
+- Trigger and evidence: On native Linux or macOS, configure and build the portable CMake target with a single-config generator. The script still checks only the Windows `.exe` under the `Release` subdirectory and therefore rejects a valid native `fingerprint_audio` target. This is the exact mission-helper extension already recorded under `BR-0174`
+- Impact, expected, fix, and validation: Keep ownership under `BR-0174`. Resolve executable suffix and single- versus multi-config layout by host and generator, or reject unsupported hosts immediately, then test supported Windows, Linux, and macOS configurations
+
+## Explicit clean dimensions
+
+- Frozen identity and syntax: both commits and ancestry were confirmed, the path is an addition with the recorded blob, every assigned line was read, and the complete frozen script has zero PowerShell AST parse errors
+- Source identity: each processed source receives lowercase SHA-1 and SHA-256 values, and cache reuse requires exact source name plus both hashes and strict `complete: true`. Broader generator identity remains owned by `GQF-0030`, and track-schema completeness remains owned by `GQF-0034`
+- Native-result admission: nonzero child exit, absent output, malformed JSON, duplicate, missing, unexpected, blank-fingerprint, and nonpositive-duration results fail before a newly fingerprinted generation is published
+- Fresh-generation publication: nonempty generations use a UUID sibling work directory, remove the nested extraction temp in `finally`, validate exact expected names, write the sidecar inside staging, and call the shared directory publisher only after complete fingerprint and metadata construction. Shared same-destination races remain `GQF-0130`; the cache-only bypass is observation 003
+- Batch status: per-archive exceptions are accumulated, ordinary failures do not suppress later items, any recorded failure exits 1 before optional database update, and a nonzero database child result is propagated under terminating error policy. This preserves the repaired part of `BR-0169`
+- AcoustID request basics: requests use HTTPS POST, do not print the API key or fingerprint, pace starts, cap retry count and exponential sleep, retain fingerprint-matching cached metadata after an unusable refresh, and disable requests when configuration is absent. Candidate score, identity, ambiguity, and persisted evidence remain `GQF-0035`; external privacy disclosure remains under `BR-0642`
+- Serialization: strings flow through `Escape-JsonString`, output is UTF-8 without BOM, root and track fields have stable ordering, and source hashes and complete state are explicit. Missing final schema and content validation remains `GQF-0034`
+- Cleanup confinement: ordinary fresh-generation failures remove only the UUID work directory through a literal path, and temporary extraction and redirected native output are inside that attempt-owned directory. Timeout and interruption cleanup is the gap in observation 002
+- Secrets and repository exposure: configuration is read from the ignored local AcoustID config path; no key value is embedded in the frozen script or checked-in sidecars, and warning paths do not interpolate it
+- Diff minimization: the complete owner is branch-added tooling and does not modify inherited 1996 D1 or D2 files
+
+## Evidence gaps and limitations
+
+- No source archive, native fingerprint executable, CMake build, AcoustID request, generated album, database update, or filesystem fault was executed because this is a frozen-object read-only survey
+- The no-audio transition was proven by direct control flow. A mutable archive/output fixture was not created, and the database impact was traced through its frozen sidecar discovery rather than by rewriting packaged data
+- No child was intentionally hung or interrupted. Observation 002 rests on the unconditional synchronous wait, absent deadline/cancellation path, and absent focused test, not on a host-specific measured hang duration
+- No disk-full, close-failure, concurrent-writer, same-basename archive, or cross-host executable-layout fixture was run. The latter two mechanisms are already established by `BR-0179` and `BR-0174`; this report records their persistence at the frozen head
+- `WebClient` transport timeout defaults, localized exception messages, retry headers, response-size limits, TLS behavior, and disposal under a large live request corpus were not dynamically established. No separate transport finding was admitted without that evidence
+- The live branch may differ from the frozen head. Any later product, helper, test, generated-sidecar, or caller change requires delta-generation coverage before remediation acceptance
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality process, campaign snapshot and queue, relevant active and done GQ/adversarial/DMR1 records, durable evidence, prior AcoustID/fingerprint/regeneration plans, and the adjacent chunk report
+- Used `git cat-file`, `git rev-parse`, `git merge-base`, `git show`, `git diff`, `git grep`, `git log --follow`, `rg`, `Get-Content`, and `Select-String` against frozen source, helpers, tests, callers, consumers, histories, and deduplication owners
+- Confirmed the frozen head path has 958 lines, blob `263d71cc3f32d70f8fd411f89141968781624fbe`, full normalized-LF SHA-256 `d20696a06db793bfddfa0de56a7ad6094ef1f52597a75bee811a56921602a984`, and assigned-range normalized-LF SHA-256 `37a25a2db65399189da5859727a43a94c70f0ff4b40d8cb33bd2a402a038fa13`
+- Parsed the complete frozen script in memory with the PowerShell AST parser and found zero syntax errors
+- Reconciled `GQF-0030`, `GQF-0034`, `GQF-0035`, `GQF-0130`, `BR-0169`, `BR-0174`, `BR-0179`, `BR-0180`, `BR-0413`, `BR-0642`, and the three observations from `GQ1-CHUNK-0090`
+- Product files, plans, canonical ledgers, existing reports, ignored temporary files, source media, generated sidecars, build outputs, dependency caches, network state, processes, and devices were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0091`
+- Admit observation 001 as one new stale-derived-generation finding unless `GQF-0034` is deliberately broadened to own successful no-audio source transitions and downstream retirement
+- Admit observation 002 as one new bounded native-child lifetime finding unless an existing process supervisor owner is broadened to this invocation and its complete timeout, cancellation, tree cleanup, and continuation boundary
+- Extend `BR-0180` with observation 003 and link its concurrent destination evidence to `GQF-0130`; do not allocate a second atomic-publication finding
+- Normalize observations 004 and 005 as exact frozen-head duplicates of `BR-0179` and `BR-0174`
+- Do not allocate additional findings for already owned generator identity, cache schema, AcoustID candidate selection, external privacy disclosure, fresh-directory publication races, nested extraction depth, external extractor output identity, or tracklist selector validation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0091 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0092 frozen survey SHA256:51af8a08e089a885bb321bde720dcf3d2ea2fc6e7608ff5f75e2e6ad995f6f5f -->
+
+## GQ1-CHUNK-0092 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0092.md`
+- Imported SHA-256: `51af8a08e089a885bb321bde720dcf3d2ea2fc6e7608ff5f75e2e6ad995f6f5f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0092 frozen survey
+
+Outcome: ISSUES. All 56 assigned lines were reviewed against the complete frozen Inno reader and header, extraction limits, native and documentation tests, direct consumers, implementation history, and existing quality owners. The capability matrix is broadly accurate, but its absolute outside-range rejection statement inherits the already-open signed version-arithmetic defect, while the focused documentation test verifies that unsafe gate text rather than executing archive admission boundaries. Its BZip2 and executable-filter rejection claims also retain the already-open behavioral-test and caller-visibility gap. No product source, canonical ledger, plan, existing report, temporary finding file, test fixture, build output, or runtime state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Ancestry: the frozen base is an ancestor of the frozen head
+- Assigned path and range: `android/app/src/main/cpp/extract/INNO_READER_CAPABILITIES.md` L1-L56, all lines reviewed
+- Base identity: path absent at the frozen base
+- Head Git blob: `a38a59ddb2f9305e49594f150f298cd82a86d021`
+- Frozen change shape: added file, 56 insertions and 0 deletions
+- Context checked: complete frozen `inno_reader.c`, `inno_reader.h`, `extract_limits.h`, `test_gog_fd.c`, `test_inno_capability_docs.py`, extraction CMake registration, Windows native-suite wrapper, focused remediation plan, three-file history, and active/done GQ, adversarial, and D1/D2 ledgers
+- Worktree boundary: the report path was absent before this review; unrelated live modifications were observed and not read as frozen evidence or changed
+
+## Atomic observations
+
+### GQ1-CHUNK-0092-OBS-001 - EXTENDS GQF-0078: the documented outside-range rejection guarantee is not protected by overflow-free admission
+
+- Severity/confidence/category: P1, high, documentation/security/parser-validation/test-gap
+- Frozen locations: `INNO_READER_CAPABILITIES.md:L13-L19`; `inno_reader.c:L1062-L1137,L2513-L2520`; `test_inno_capability_docs.py:L25-L30`
+- Evidence: the matrix states that every version before 5.3.0 or after 5.6.99 is rejected before entry-table parsing. The parser accepts each decimal component independently through `INT_MAX`, then computes `major * 10000 + minor * 100 + patch` in signed `int` arithmetic before the range test. Those individually accepted components can overflow, so the implementation does not establish the matrix's universal rejection boundary. The documentation test only searches for the literal unsafe gate expression and matching prose; it does not open complete archives at large-component boundaries or run under undefined-behavior instrumentation. It can therefore stay green while preserving both the defect and the overstated capability claim.
+- Trigger: present a syntactically accepted 64-byte Inno version ID with one or more components large enough to overflow the weighted encoding, then continue through `inno_open` or `inno_open_fd`.
+- Impact: malformed untrusted installer metadata reaches undefined behavior before the documented fail-closed version decision. Depending on compiler and optimization, the claimed outside-range rejection is not a reliable security or compatibility boundary, and the maintained consistency test falsely blesses its source spelling.
+- Fix boundary: use direct tuple comparison or checked unsigned encoding before every layout selection, then make the capability test execute complete-open lower, upper, just-outside, `INT_MAX`, and overflow-producing tuples rather than checking the gate text. Keep the matrix statement only after behavior proves it.
+- Focused validation: open faithful minimal installers for 5.3.0, 5.6.99, adjacent unsupported tuples, large individual components, and weighted-overflow combinations under ordinary optimized builds and UBSan where available. Require deterministic rejection before metadata decompression for every unsupported tuple and retained acceptance for valid boundaries.
+- Deduplication: this is direct documentation and test evidence for open `GQF-0078` and its planned `GQR-0065`, not a new parser root. GQ1 chunks 0030 and 0031 already established the arithmetic defect; this chunk adds that the maintained capability contract and its consistency oracle currently encode the unsafe boundary.
+
+### GQ1-CHUNK-0092-OBS-002 - EXTENDS GQF-0018: unsupported compression and filter claims lack behavior-level contract coverage
+
+- Severity/confidence/category: P2, medium, compatibility/capability/test-gap
+- Frozen locations: `INNO_READER_CAPABILITIES.md:L27-L33,L48-L56`; `test_inno_capability_docs.py:L32-L45`; `inno_reader.c:L2412-L2420,L3332-L3355`
+- Evidence: the matrix promises that BZip2 chunks and executable call-instruction filters are rejected. Frozen control flow does fail these cases, but the focused consistency test proves BZip2 only by finding one diagnostic string and proves no executable-filter rejection path at all. It does not construct either flag/method, call `inno_extract_file`, or assert failure before final output publication, progress/accounting mutation, and caller-visible success. The maintenance checklist asks for a parser or extraction fixture when a capability changes, but the existing oracle cannot detect a regression that retains the searched strings while bypassing or moving the rejection.
+- Trigger: change compression/filter dispatch so a BZip2 or `call_instruction_optimized` entry reaches output work or is reported as an ordinary extraction failure while leaving the present enum, diagnostic, and prose strings intact.
+- Impact: the maintained capability statement and its named consistency test can report success even when unsupported input is no longer rejected at the documented boundary. Native and launcher callers also lack a typed pre-extraction capability result, the visibility half already recorded by the existing owner.
+- Fix boundary: use the existing `GQF-0018` remediation boundary. Add direct synthetic BZip2 and call-filter extraction cases that assert deterministic rejection, no final or temporary publication, no progress/accounting mutation, and stable typed capability reporting to maintained callers or UI. Retain lightweight prose linkage only as a secondary documentation check.
+- Focused validation: run each unsupported feature through path and duplicated-descriptor archives, buffered and streaming thresholds where applicable, preexisting destination preservation, callback/accounting sentinels, and caller presentation. Mutate the implementation in a test proof so a retained diagnostic alone cannot keep the suite green.
+- Deduplication: open `GQF-0018` already says these runtime paths have diagnostic-only testing and need fail-closed transactional proof plus caller/UI visibility. This observation extends its exact documentation-oracle evidence and must not receive another finding ID.
+
+## Explicit clean dimensions
+
+- Provenance and licensing: the matrix accurately describes the focused innoextract-derived implementation, retained zlib-style notice, lack of Boost, and non-replacement scope. Source and header link back to the maintained matrix while marking the historical preambles as superseded.
+- Verified-versus-intended versions: the matrix distinguishes the intended Unicode 5.3.0 through 5.6.99 gate from faithful 5.3.8/5.3.9 transition fixtures and real 5.5.7/5.6.2 installers. It explicitly leaves non-Unicode support unverified and does not promote the complete accepted range to tested support. Observation 001 concerns unsafe outside-range admission, not that distinction.
+- Implemented compression: stored, zlib, LZMA1, and LZMA2 each have frozen buffered or streaming implementation paths. Header metadata supports stored blocks and CRC-prefixed LZMA1 decoding. No contradictory current capability row was found.
+- Checksums and publication: version layout selects MD5 before 5.3.9 and SHA-1 afterward. Regular and Galaxy extraction validate the format-appropriate byte stream before committing attempt-owned temporary output. Existing native checksum and corruption cases support this row.
+- Encryption boundary: parsed `chunk_encrypted` state is retained and `inno_extract_file` rejects it before range work, progress, payload access, decoder allocation, or output creation. Native cases exercise stored, zlib, LZMA1, and LZMA2 encryption rejection with an unencrypted control.
+- Galaxy scope: the row narrowly says the inner zlib stream is used only for entries identified by the current heuristic; it does not promise complete multipart assembly. The discarded multipart-count defect remains separately owned by `GQF-0079`.
+- API ownership: successful path and descriptor opens return the file count, archive lifetime ends in `inno_close`, and `inno_open_fd` duplicates the caller descriptor. Direct native fixture handling confirms separate caller/archive closure on ordinary paths.
+- Callback semantics: the document accurately warns that progress is compressed-input-oriented, informational, and non-cancelling. Discarded callback return values remain live `BR-0021`; the matrix does not falsely claim cancellation.
+- Limits and portability: the matrix points to the shared limits header without promising that every peak or cumulative-work boundary is already complete. Open Inno memory, repeated-work, source-generation, and path-identity findings retain their own implementation owners and were not duplicated as documentation findings.
+- Maintenance linkage: the checklist identifies the matrix, public header, focused documentation test, behavior fixture, scoped quality, and the aggregate native CTest wrapper as coordinated owners. `android/tests/test_cue_iso.ps1` configures the extraction CMake tree and runs registered `gog_fd_tests`, so that command is relevant rather than a CUE-only false reference.
+
+## Evidence gaps and limitations
+
+- No build, Python test, CTest run, sanitizer, emulator, proprietary-installer parse, or generated malformed archive was run because this was a frozen-object read-only survey. Historical passing results were used only as context.
+- Signed-overflow behavior is intentionally not predicted for a particular compiler. Observation 001 rests on undefined behavior occurring before the promised decision and reuses the already-admitted `GQF-0078` root.
+- Current frozen control flow rejects BZip2 and executable filters, so observation 002 is a regression-oracle and capability-visibility gap, not a claim of present successful extraction.
+- The real installers establish two Unicode versions, not every version-dependent layout in the intended range. The matrix says this explicitly; broader fixture coverage remains an evidence gap rather than a new finding.
+- Non-Unicode decoding, multipart Galaxy assembly, peak-live memory, cumulative decoder work, cancellation, Unicode output identity, analysis-to-extraction binding, and complete caller error taxonomy retain their existing GQ or BR owners.
+- The generated campaign manifest was not present as a separate tracked file. Frozen identities, ancestry, scope row, path/blob inventory, and generation settings were confirmed from Git and the canonical campaign artifacts available to the worker.
+
+## Commands and methods
+
+- `Get-Content -Raw` for repository instructions, the complete general-quality process, active and done ledgers, and the durable evidence ledger
+- `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git show`, `git diff`, `git log --follow`, `git grep`, and `git status --short` for frozen objects, exact assigned contents, history, context, and dirty-worktree ownership
+- `rg` across active and done GQ ledgers, active and done adversarial ledgers, DMR1, prior cleanup plans, durable imported evidence, source, headers, tests, build registration, and focused remediation history for durable deduplication
+- Line-numbered frozen traces from version text through component parsing, weighted encoding, admission, and metadata decompression; from feature flags and compression methods through rejection, progress, output staging, checksum, and commit; and from documentation assertions through CTest registration
+- `git diff --check` and byte-level report validation after writing the single allowed inbox artifact
+
+## Normalization recommendation
+
+- Normalize observation 001 as `EXTENDS GQF-0078`, adding the maintained capability statement and its text-only consistency oracle to `GQR-0065` acceptance. Do not create a parallel documentation finding.
+- Normalize observation 002 as `EXTENDS GQF-0018`, adding direct BZip2 and executable-filter behavioral rejection tests plus typed caller visibility. Do not create a parallel test-gap finding.
+- Retain callback cancellation under live `BR-0021`, Galaxy multipart assembly under `GQF-0079`, and other Inno parser, memory, transaction, path, and generation issues under their existing owners without ID inflation.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0092 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0093 frozen survey SHA256:2126c4ea920dd0c0efab4f228fd2be3ef44dc864c0297fe34ec54c26e2a503b9 -->
+
+## GQ1-CHUNK-0093 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0093.md`
+- Imported SHA-256: `2126c4ea920dd0c0efab4f228fd2be3ef44dc864c0297fe34ec54c26e2a503b9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0093 frozen survey
+
+Outcome: ISSUES. All 572 assigned lines across eleven paths were reviewed against the frozen production StuffIt extractor, low-level decoder, UTF codec, SAF parser and archive consumer, native CMake registration, corpus driver, generators, callers, focused history, and durable quality records. The maintained fixtures contain useful pinned hashes and the small standalone tests are strong at their stated narrow boundaries. The StuffIt suite nevertheless retains the already-open optional-media false pass and production-seam oracle gaps, the SAF string assertion leaves part of the already-open strict JNI encoding boundary unproved, and the assigned CMake test module remains outside the repository quality-tool scope. No new root cause was found. No product source, canonical ledger, plan, existing report, temporary file, fixture, build output, or runtime state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen objects: both object names resolve as commits, and the assigned paths are present as the eleven blobs listed below
+- Scope fingerprint: SHA-256 `4340c7e3d7377c9c55986f07e788c0dd3128244078de9027cb200f80cf9b203a` over the sorted assigned `path<TAB>head-blob<LF>` records
+- `test_stuffit_demo_oracles.cmake` L1-L107: blob `a1d15616baa42c76e74bbe57e77f0cb986bf6497`
+- `test_stuffit_direct.c` L1-L25: blob `601c828c8561a5d0cc0b18017029d1790beae8df`
+- `test_stuffit_malformed.c` L1-L135: blob `3af87fb2162e766307deb8fffe2a645045651e0e`
+- `test_utf8_codec.c` L1-L99: blob `e150db73cc65cd171b209ea4d4f6bd353d6cbf66`
+- Six complete `test/data/stuffit_manifests/*.json` files: blobs `50580dac29ca0369ef843856898a17fe1846fea8`, `17b71e8a161c4a0b372eb540230f09d4b30f0040`, `dc15b108914a41f0d330faa0ca4c2a05ba5f28ba`, `49faef4d626993fc4d666973603178d8a7612ce3`, `e7ac014074b69a8901e0db6dc66aba1fa5803801`, and `2dc3df7b27d94a5236aa9734a1bd4e449b83a681`
+- `shared/test_saf_manifest_parser.c` L1-L85: blob `eb0127b82d68191b505030ccc9fa9f68ffeb9f1a`
+- Frozen change shape: every assigned path is added relative to the frozen base, totaling 572 insertions and no deletions
+- Context checked: complete frozen `stuffit_extract.c/.h`, relevant `sti2_extract` extraction seam, `test_stuffit_corpus.cpp`, `utf8_codec.c/.h`, `jni_string.c`, `saf_manifest_parser.c/.h`, `physfs_archiver_saf.c`, extraction `CMakeLists.txt`, StuffIt manifest generator and pinned corpus acquisition, four-file history, and active/done GQ, adversarial, and DMR1 ledgers
+- Worktree boundary: the assigned frozen blobs, not mutable live copies, supplied evidence. Only this previously absent inbox report was written
+
+## Atomic observations
+
+### GQ1-CHUNK-0093-OBS-001 - EXTENDS BR-0158: absent StuffIt media is still reported as a passing CTest
+
+- Severity/confidence/category: P2, high, test-gap/false-pass
+- Frozen locations: `test_stuffit_demo_oracles.cmake:L14-L21,L53-L66,L102-L107`; extraction `CMakeLists.txt:L217-L229`
+- Evidence: the registered `stuffit_demo_oracle_tests` returns success when the tracked oracle is absent, when CMake is older than 3.19, and when every ignored proprietary archive is absent. In the last case it reaches `checked_count == 0`, prints a status message, and exits normally. CTest supplies neither a skip return code nor a required-media profile, so all three no-assertion paths are credited as PASS. The direct executable returning success for a nonnegative zero-file extraction makes this particularly dependent on the wrapper's expected-file checks, which never run without present media.
+- Trigger: configure CMake 3.16 through 3.18, remove the oracle, or run an ordinary clean checkout containing the tracked oracle but none of the ignored demo installers.
+- Impact: an all-green extraction suite can execute no production high-level StuffIt success path, allowing parser, filtering, nested-archive, callback, and publication regressions to escape behind a passing test count.
+- Fix boundary: retain this under open `BR-0158`. Give optional media an explicit CTest skip outcome, make requested/release media absence fail, and retain a mandatory distributable production-path fixture.
+- Focused validation: run clean, partial, complete, old-CMake, ordinary, and required-media profiles; assert exact pass/skip/fail counts, at least one checked file for PASS, and nonzero failure for any explicitly required missing source.
+- Deduplication: `BR-0158` names this exact CMake module, all three skip conditions, the lack of `SKIP_RETURN_CODE`, and the required fixture profiles. This is current frozen confirmation, not a new finding.
+
+### GQ1-CHUNK-0093-OBS-002 - EXTENDS BR-0182: the available StuffIt oracles do not prove the complete production extraction contract
+
+- Severity/confidence/category: P2, high, test-gap/production-seam/oracle-completeness
+- Frozen locations: `test_stuffit_demo_oracles.cmake:L23-L99`; `test_stuffit_direct.c:L13-L25`; `test_stuffit_malformed.c:L105-L133`; six assigned manifests in full; `test_stuffit_corpus.cpp` corpus arrays and manifest-driven tests; extraction `CMakeLists.txt:L148-L229`
+- Evidence: the mandatory six-archive corpus links only `sti2_extract.c`, reimplements SIT5 recognition/listing, and feeds manifest-derived offsets into the low-level decoder. Its complete manifests therefore do not exercise production `stuffit_extract`. The only high-level driver is the optional direct CLI. When media is present, its CMake oracle verifies each named expected file's size and SHA-256, but never compares the complete produced inventory, callback sequence, or returned count. Extra matching files, basename-collision behavior, or changed filtering can pass while all expected subset members remain. The malformed executable does call the production listing seam, but only varies the first-entry offset over the 48 truncated-header positions in a fixed 100-byte archive; it does not close the corpus gap for recognition, optional headers, resource metadata, parent/child ordering, encryption, nested STi, filtering, cancellation, result count, or failure residue.
+- Trigger: regress production SIT5 field handling or traversal while leaving the duplicate corpus parser intact, or make production extraction emit an additional wrong matching file while preserving the expected subset.
+- Impact: mandatory tests can remain green while real demo import rejects valid archives, extracts the wrong inventory, or changes high-level selection and result behavior. Optional media cannot serve as the sole production-path oracle, and even its present form is not inventory-complete.
+- Fix boundary: use open `BR-0182`. Route the pinned corpus through the production high-level seam, compare an exact normalized output inventory including absence of extras, sizes and hashes, assert callbacks/result counts, and add focused synthetic malformed and unsupported cases rather than maintaining a second parser.
+- Focused validation: mutation-test production signature, header/comment/resource offsets, parent traversal, encryption, nested STi, extension filtering, basename collisions, callback cancellation, return counts, cleanup, and an injected extra output. Require every mutation to fail mandatory clean-checkout coverage.
+- Deduplication: `BR-0182` already owns the duplicate corpus parser, missing high-level production seam, exact-inventory requirement, malformed production mutations, callback/result behavior, and relationship to `BR-0158`. The assigned manifests and narrow malformed test extend its evidence only.
+
+### GQ1-CHUNK-0093-OBS-003 - EXTENDS GQF-0037: the SAF parser test does not assert its decoded Unicode filename or malformed raw UTF-8 boundary
+
+- Severity/confidence/category: P1, medium, compatibility/JNI-boundary/test-gap
+- Frozen locations: `shared/test_saf_manifest_parser.c:L19-L33,L51-L78`; `shared/saf_manifest_parser.c` string decoder; `shared/jni_string.c`; `test_utf8_codec.c:L13-L91`
+- Evidence: the valid SAF fixture contains an escaped snowman in `filename`, but the assertions check only `content_uri` and `size_bytes`; a regression in escaped BMP filename decoding can pass. The invalid schema table covers malformed JSON escapes and isolated UTF-16 surrogates but no malformed unescaped UTF-8 byte sequence, while `parse_json_string` copies any raw byte at or above 0x20 without validating standard UTF-8. The standalone codec test does directly cover a BMP scalar, a non-BMP surrogate pair, overlong encodings, UTF-8 surrogate encoding, truncation, out-of-range scalars, and capacity failures, so this is not a new codec defect. It is missing end-to-end proof that manifest-decoded filename and URI bytes satisfy the strict standard-UTF-8 contract before later native/JNI use.
+- Trigger: break JSON Unicode-escape decoding, admit malformed raw UTF-8 in a SAF field, or change the manifest-to-native/JNI bridge while the tested URI remains ASCII.
+- Impact: the maintained parser suite can stay green while non-ASCII provider names or URIs decode incorrectly or fail at the later JNI boundary. That is part of the already-open cross-language encoding compatibility root.
+- Fix boundary: keep this under `GQF-0037` and `GQR-0024`. Assert exact decoded BMP and non-BMP filenames and URIs, reject representative malformed raw UTF-8 at manifest admission or the single typed bridge boundary, and run CheckJNI round trips for escaped and raw standard UTF-8.
+- Focused validation: cover exact raw and escaped BMP/non-BMP equality, embedded null policy, isolated/paired surrogates, overlong sequences, stray continuations, truncation, maximum scalar, out-of-range scalar, Java round trips, and exception-free cleanup on rejection.
+- Deduplication: `GQF-0037` already requires raw/escaped BMP/non-BMP and malformed CheckJNI coverage for SAF URI strings. This observation adds the precise focused-test false-negative and must not receive another finding ID.
+
+### GQ1-CHUNK-0093-OBS-004 - DUPLICATE BR-0597: the StuffIt CMake oracle module is omitted from quality-tool discovery
+
+- Severity/confidence/category: P2, high, test-gap/tooling
+- Frozen location: `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake:L1-L107`
+- Evidence: this assigned branch-owned CMake module is registered and behaviorally significant, but the frozen CMake formatting and lint helpers' fixed inventories omit it. Passing this exact path to the prescribed scoped quality flow is reduced to a no-file success rather than formatting or linting it.
+- Trigger: change the module and run scoped or full repository quality validation.
+- Impact: maintainers receive a green quality result without this active CMake test oracle being read by its language tools.
+- Fix boundary and validation: use `BR-0597`'s shared language include/exclude manifest and explicit-path rejection/coverage tests. Require this exact module to be presented once to both applicable CMake checks.
+- Deduplication: open `BR-0597` explicitly lists this exact file and mechanism. No new owner is appropriate.
+
+## Explicit clean dimensions
+
+- StuffIt manifest provenance: all six records declare schema 3, the pinned unar package URL and archive SHA-256, and independently pinned unar/lsar executable SHA-256 identities. The generator verifies executable bytes before use, and the native consumer rejects mismatched provenance constants. The test corpus is acquired at a full Git commit. No mutable tool or unpinned corpus identity was found in these assigned fixtures.
+- Fixture consistency: the six manifest names match the fixed corpus arrays. Five ordinary archives cover methods 0 and 15, directory and resource records as applicable; the separate 4.5 archive supplies method 13 records. Every non-directory record has an explicit size, SHA-256, method, archive offset, and compressed length.
+- Oracle strength within its subset: when a demo archive and record are present, the CMake module treats extractor failure, missing expected output, size mismatch, and SHA-256 mismatch as fatal. It extracts each named archive once into a clean work directory and lowercases digests before comparison.
+- Direct driver status: argument errors fail, negative production extraction fails, and ordinary progress diagnostics do not affect product behavior. Returning success for zero extraction is acceptable for a generic filtered CLI, provided the owning wrapper distinguishes an unexercised test as required by observation 001.
+- Malformed boundary safety: the guarded allocation places the 100-byte fixture immediately before an inaccessible page on Windows and POSIX platforms with anonymous mapping support. The loop checks every offset whose fixed 48-byte entry header would cross the archive end. Allocation and protection failures fail the test, and mapped resources are released on the ordinary path.
+- UTF codec core cases: the assigned test proves ASCII/BMP/non-BMP round trip, explicit embedded-null policy, isolated and mismatched UTF-16 surrogates, representative malformed/overlong/truncated UTF-8, out-of-range Unicode, and both output-capacity directions. Buffers and expected lengths are bounded and platform-neutral.
+- SAF JSON/schema cases: the assigned test proves empty and nonempty manifests, escaped quote/backslash/slash and BMP input, `INT64_MAX`, rejection of every truncated prefix, missing/extra/duplicate fields, negative/leading-zero/fractional/overflow sizes, case-insensitive duplicate filenames, bad escapes, isolated surrogate, and escaped NUL. Parsed manifests are freed on all successful helper paths.
+- Registration and warning posture: `test_saf_manifest_parser` uses strict warnings on MSVC and non-MSVC; assertion-disabling release modes are countered for `test_*` targets. The StuffIt and UTF executables are registered with CTest, and no assert-only setup exists in the assigned sources.
+- Cleanup and portability: the CMake oracle recreates its owned work root, quotes process paths, captures child output for failure diagnostics, and uses CMake-native size/hash operations. Test code has explicit Windows and POSIX allocation branches and does not leak on its normal or reported failure paths.
+- Diagnostics: every assigned standalone C test returns nonzero on accumulated failure and prints the failed condition or malformed offset. The CMake oracle names archive and expected member on failures and includes child stdout/stderr when extraction fails.
+
+## Evidence gaps and limitations
+
+- No build, CTest, sanitizer, CMake-version matrix, proprietary-media extraction, corpus fetch, generator run, emulator, or CheckJNI execution was performed because this worker reviewed immutable frozen Git objects read-only. Existing runtime claims were used only for deduplication context.
+- The ignored demo installers and fetched corpus bytes are not stored in the frozen tree. Their identities and expected outputs were traced through pinned acquisition, tracked manifests, and consumers, but their bytes were not independently rehashed in this review.
+- The anonymous-map fallback uses ordinary heap allocation on unusual POSIX targets without `MAP_ANONYMOUS` or `MAP_ANON`; this weakens crash-based over-read detection there, but the exact fixed-header range still asserts rejection. No separate portability finding was admitted without evidence that a supported host takes that branch.
+- The raw SAF parser currently copies malformed non-ASCII bytes, but current production generation is dormant under `BR-0084` and later strict JNI conversion can reject some uses. Observation 003 is therefore an extension of the existing encoding/test boundary, not a separate present exploit claim.
+- Extra-output and high-level StuffIt mutations were not executed. Observation 002 follows directly from the oracle comparing only named members and the mandatory target omitting production `stuffit_extract.c`.
+- The campaign generation manifest is represented in the canonical ledger rather than a separate tracked manifest file. Frozen object existence, exact queue scope, per-path blobs, change shape, and aggregate scope fingerprint were independently confirmed.
+
+## Commands and methods
+
+- `Get-Content -Raw` for `AGENTS.md`-directed repository instructions, the complete general-quality process, active and done ledgers, and representative imported evidence report structure
+- `git cat-file`, `git ls-tree`, `git rev-parse`, `git show`, `git diff --numstat`, `git log -p`, and `git grep` for frozen object validation, all assigned contents, exact blob identities, history, CTest registration, production callers, and fixture consumers
+- `rg` across active/done GQ ledgers, active/done adversarial ledgers, DMR1, prior cleanup records, and durable evidence for `BR-0158`, `BR-0182`, `BR-0597`, `GQF-0037`, and adjacent StuffIt/SAF roots
+- Line-by-line control-flow traces from CMake preconditions through record parsing, extraction, member checks and terminal count; from malformed fixture construction through guarded allocation and the production test seam; from UTF input through codec/JNI conversion; and from SAF JSON strings through parser, archive, and JNI ownership
+- PowerShell SHA-256 calculation over the sorted path/blob scope inventory
+- `git diff --check` plus byte-level checks for ASCII, BOM, NUL, trailing whitespace, and final LF after writing the single allowed inbox report
+
+## Normalization recommendation
+
+- Normalize observation 001 as `EXTENDS BR-0158`, with no new finding or remediation chunk.
+- Normalize observation 002 as `EXTENDS BR-0182`, attaching exact-output-inventory, callback/result-count, extra-output mutation, and the narrow malformed-test boundary to its existing acceptance criteria.
+- Normalize observation 003 as `EXTENDS GQF-0037` and planned `GQR-0024`, adding exact SAF decoded-field assertions and malformed raw UTF-8 admission coverage. Do not create a parallel encoding or parser finding.
+- Normalize observation 004 as `DUPLICATE BR-0597`.
+- Record the coverage outcome as `ISSUES`. The report contains no supported new root cause and recommends no new `GQF`, `GQI`, or `GQR` identifier.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0093 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0094 frozen survey SHA256:ce1ba01064d0d96b8ad3453183417608e905f41022509d5f0034ef8b70cfdc5b -->
+
+## GQ1-CHUNK-0094 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0094.md`
+- Imported SHA-256: `ce1ba01064d0d96b8ad3453183417608e905f41022509d5f0034ef8b70cfdc5b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0094 frozen survey
+
+Outcome: ISSUES. All 448 assigned lines were reviewed against the complete frozen Inno PE-resource path, graphics configuration transaction implementation and caller, extraction build registration, relevant tests, history, and durable review owners. Two previously unrecorded transaction failure-path defects survive in production context, while the PE and optional-installer gaps extend existing owners. No product source, canonical ledger, plan, existing report, temporary finding file, fixture, build output, or runtime state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Ancestry: the frozen base is an ancestor of the frozen head
+- Assigned path and range: `android/app/src/main/cpp/extract/test_gog_fd.c` L1201-L1467, 267 lines
+- Frozen blob: `709636b0f423e17b0033b29e3518a89716f17896`
+- Full normalized-LF SHA-256: `8e194ea26fd516877c9b60355f5bbd1cac5aea9cd8dad6c7068879001d308a10`
+- Assigned-range normalized-LF SHA-256: `d4b8ee4e5fb0a94438553a4b8722a75d6939add8101dd51f304d3e0278f71260`
+- Assigned path and range: `android/app/src/main/cpp/extract/test_graphics_config_transaction.c` L1-L181, all 181 lines
+- Frozen blob: `44a141a69bc6ed3e8baef7f9a97a0418344645a9`
+- Full and assigned-range normalized-LF SHA-256: `de41ac0a7b8450cdbfa497d10a2ae2382c4ee1c5cc70a4a279ffa91f25f69d85`
+- Both paths are additions relative to the frozen base and are byte-identical in the live worktree
+- Exact scope manifest, with one LF after each row:
+
+```text
+android/app/src/main/cpp/extract/test_gog_fd.c|L1201-L1467|709636b0f423e17b0033b29e3518a89716f17896
+android/app/src/main/cpp/extract/test_graphics_config_transaction.c|L1-L181|44a141a69bc6ed3e8baef7f9a97a0418344645a9
+```
+- Scope-manifest byte count: 217
+- Scope-manifest Git blob SHA-1: `70d47de354cce2451b3c40c45406469daf8faa3b`
+- Scope-manifest SHA-256: `e9aa88e34a87ef149a51b9591f8ee021a35d118c738dc5a4d35bdad28ef0bd89`
+
+## Context checked
+
+- Every assigned line, enclosing helpers, `main` functions, cleanup, fixture setup, result aggregation, and diagnostic paths
+- `inno_reader.c` PE file-span, resource-view, name, directory, entry, RVA mapping, resource 11111 traversal, offset-table consumption, archive-open fallback, descriptor duplication, extraction, and close paths, plus `inno_reader.h`
+- `graphics_config_transaction.c` and `.h`, including read, transform, unique staging, backup creation, publication, parent-directory sync, rollback, cleanup, typed results, and all test-only failure seams
+- `android_graphics_options.c` root/D1/D2 target discovery, process mutex, typed failure logging, and graphics-setting callers
+- `extract/CMakeLists.txt` target construction, CTest registration, real proprietary fixture paths, and the final directory-wide `-UNDEBUG` or `/UNDEBUG` rule for every `test_` target
+- Frozen file history, blame, archived `BR-0052`, `BR-0158`, `BR-0200`, live `GQF-0075`, active/done general-quality and adversarial ledgers, DMR1, and prior cleanup/test plans
+
+## Atomic observations
+
+### GQ1-CHUNK-0094-OBS-001: Failed rollback deletes the only retained original backup
+
+- Severity/confidence: `P1/high`
+- Category: `correctness/data-loss/transactionality`
+- Normalization recommendation: `REGROWTH` or incomplete-fix extension of archived `BR-0200`; admit one current finding because its claimed rollback preservation boundary is not met
+- Location: production context `android/app/src/main/cpp/shared/graphics_config_transaction.c:L326-L344,L384-L404`; missing oracle seam in assigned `test_graphics_config_transaction.c:L109-L134`
+- Trigger: Publish at least one target, then make a later target replacement or parent-directory sync fail so rollback begins, and make restoration of an already-published target's `.bak` fail. A storage I/O error, path-type interference, permission transition, or concurrent process mutation can provide the second failure
+- Evidence: `rollback_published` leaves `item->backup_path` populated when `replace_path(backup, public)` fails and returns false. `graphics_config_patch_files` converts this to `GRAPHICS_CONFIG_TRANSACTION_ROLLBACK_FAILED` and jumps to `done`. `cleanup_staged` then unconditionally calls `remove(staged[i].backup_path)` for every nonempty backup path. The public target remains the newly published generation, while the function deliberately deletes the only complete copy of the prior generation that failed to restore. The test seam passes `inject_failure=0` for rollback replacement, exposes no rollback-restore failure selector, and asserts only ordinary successful rollback after an injected forward replacement failure. It therefore cannot reach `ROLLBACK_FAILED` or detect backup destruction. Archived `BR-0200` says failures preserve or restore prior files and explicitly claims rollback coverage, but no durable owner records this failure-after-failure path
+- Impact: A transaction already reporting rollback failure also destroys its recoverable old config. Root, D1, and D2 files can be left at mixed generations with no retained backup, turning a transient restore failure into permanent loss of unrelated configuration lines
+- Expected: A failed restore never deletes its owned prior-generation backup. Return the exact rollback failure and retain an attributable recovery path, or complete a verified alternate restore before cleanup. Cleanup may remove only backups proven restored or superseded
+- Suggested fix: Track backup ownership and restoration state separately. Clear or delete a backup only after verified restoration or successful transaction completion; on rollback failure, preserve it under a deterministic recovery contract and report its path safely. Add a phase-specific rollback-restore injection instead of bypassing injection for rollback
+- Validation: Inject a later forward replacement and parent-sync failure, then fail restoration for the first, middle, and last existing target and deletion for newly created targets. Require `ROLLBACK_FAILED`, exact prior bytes either restored or retained in a documented recovery file, no deletion of the only old generation, no unrelated artifact removal, actionable diagnostics, and a successful retry
+
+### GQ1-CHUNK-0094-OBS-002: A failed parent-directory fsync leaks its descriptor
+
+- Severity/confidence: `P2/high`
+- Category: `resource-lifetime/error-path`
+- Normalization recommendation: `NEW`, unless observation 001 is deliberately broadened into one graphics transaction failure-path remediation with separate acceptance checks
+- Location: production context `android/app/src/main/cpp/shared/graphics_config_transaction.c:L299-L323,L341-L342,L394-L400`; assigned test `test_graphics_config_transaction.c:L125-L134`
+- Trigger: Make `fsync` on a target's parent directory return an error during forward durability checking or during rollback, then repeat graphics-setting persistence
+- Evidence: POSIX `sync_parent_directory` computes `ok = fsync(fd) == 0 && close(fd) == 0`. C short-circuit evaluation skips `close(fd)` whenever `fsync` fails. Forward sync then enters rollback, whose own parent sync can encounter the same path, so one failed transaction can leak multiple directory descriptors. Repeated persistence under a persistent filesystem error accumulates them. The test `GRAPHICS_CONFIG_TRANSACTION_FAIL_SYNC` is consulted only inside `write_private_file` for the staged regular-file descriptor; there is no parent-directory sync seam, descriptor-count assertion, or injected rollback sync failure. No existing ledger owner records this exact descriptor leak
+- Impact: Repeated setting attempts during a storage fault can exhaust the process descriptor table, causing unrelated config, asset, save, log, and archive opens to fail after the original graphics operation has already returned a typed error
+- Expected: The directory descriptor is closed exactly once regardless of the fsync result, while the primary sync failure remains the reported cause and a close failure is retained when it is the only failure
+- Suggested fix: Store the fsync result, call `close` unconditionally, then combine results without short-circuiting cleanup. Add a parent-sync test seam or injectable I/O table and track open/close balance through forward and rollback failures
+- Validation: Force parent fsync failure on each target during forward sync and rollback, repeat beyond the process soft descriptor limit under a tracking wrapper, and require stable descriptor count, exact typed status, prior-generation handling consistent with observation 001, and a later successful transaction
+
+### GQ1-CHUNK-0094-OBS-003: The PE boundary fixture stops before the owned short-leaf consumption defect
+
+- Severity/confidence: `P2/high` existing-root extension
+- Category: `test-gap/parser-validation/structural-bounds`
+- Normalization recommendation: `EXTENDS GQF-0075`; allocate no duplicate finding
+- Location: assigned `test_gog_fd.c:L1206-L1383`, especially the direct `inno_test_find_pe_resource_11111` call at L1276-L1285 and data-size mutations at L1357-L1361; production `inno_reader.c:L650-L767,L2443-L2491`
+- Trigger and evidence: The synthetic PE cases call only the resource locator and assert its returned file offset. The fixture declares a 12-byte leaf and the negative case changes it to 13 bytes so it crosses the 100-byte resource section. No case declares a positive leaf shorter than the offset table while placing readable adjacent bytes after it, then calls `inno_open_fd` or the offset-table consumer. As already established by `GQF-0075`, production returns only the offset and later reads the complete layout without retaining the leaf bound. The current test can remain green while that consumer borrows adjacent bytes
+- Impact, expected, fix, and validation: Keep ownership under `GQF-0075` and `GQR-0062`. Carry the leaf extent into exact layout-specific parsing and add short, exact, oversized, and adjacent-readable PE32/PE32+ fixtures through complete archive admission. Require short leaves to fail without fallback borrowing, exact valid leaves to pass, and no publication or leaked descriptor
+
+### GQ1-CHUNK-0094-OBS-004: Missing proprietary GOG installers still count as a passing test
+
+- Severity/confidence: `P2/high` exact duplicate
+- Category: `test-gap/false-pass/fixture-policy`
+- Normalization recommendation: `DUPLICATE BR-0158`; retain frozen-head evidence and allocate no new finding
+- Location: assigned `test_gog_fd.c:L1385-L1437,L1464-L1465` and `extract/CMakeLists.txt` GOG fixture registration
+- Trigger and evidence: `check_installer` prints `skip missing fixture` and returns zero for each unavailable ignored installer. `main` has no required-fixture count, dedicated skip result, or distinction from passing synthetic coverage, while CTest always registers the two fixed local paths. This is the exact GOG behavior already owned by open `BR-0158`
+- Impact, expected, fix, and validation: Preserve ownership under `BR-0158`. Use an explicit optional/required fixture profile and CTest skip accounting, retain mandatory distributable synthetic behavior coverage, record fixture identity, and prove clean, partial, complete, and corrupted-media result counts
+
+## Explicit clean dimensions
+
+- Frozen identity and scope: both commits and ancestry were confirmed, both assigned paths are branch additions with recorded blobs, every assigned line was read, and live copies match the frozen blobs
+- Optimized-build oracle retention: although both assigned tests use standard `assert`, the extraction CMake directory enumerates every `test_` target after construction and applies `-UNDEBUG` or `/UNDEBUG`. Their assertions therefore remain active in Release and RelWithDebInfo; this is not another `BR-0662` instance
+- PE fixture arithmetic: PE32 and PE32+, late resource sections, zero through 23-byte directories, entry-count overflow, invalid name spans, truncated and cyclic directories, directory-boundary data entries, section crossings, oversized declarations, virtual/raw wrapping, and excessive section count exercise the locator's current bounded traversal. Observation 003 is the later lost-leaf contract, not a defect in those asserted locator outcomes
+- PE cleanup and portability: each helper closes the opened descriptor and removes its fixed fixture path on ordinary result paths. The production descriptor API duplicates caller ownership, and archive close owns the duplicate. Integer widths and Windows/POSIX open/close mappings in the inspected path are explicit
+- GOG real-fixture checks when present: the helper requires archive open, output-name validity, exact total game counts, exact D1 Galaxy count, required filenames, and regular plus Galaxy checksum extraction before success, then closes the archive. Optional absence remains observation 004
+- Graphics transform basics: the test covers 32,766, 32,767, 32,768, and 65,537-byte files, long lines, duplicate keys, absent keys within existing files, unterminated final lines, exact unrelated-byte preservation, over-limit rejection, all three existing targets, and every forward replacement index
+- Graphics staging basics: production uses exclusive uniquely suffixed sibling files, checks write, flush, regular-file sync, close, replace, and ordinary parent sync, and reports typed errors. The Android owner serializes maintained callers with a process mutex and logs the key plus typed result
+- Failure preservation before publication: read, allocation, temporary write, flush, regular-file sync, close, and forward replacement failures covered by the current seam leave the three test targets byte-identical. The unreachable backup-stage, parent-sync, rollback-restore, and newly-created-target failure phases remain gaps associated with observations 001 and 002 and archived `BR-0200`
+- Diagnostics: GOG boundary failures include a case label; installer failures include path or missing filename; graphics production callers log typed transaction results. Rollback recovery-path diagnostics need the remediation in observation 001
+- Diff minimization: all assigned tests and both production owners are branch-added Android code. No inherited D1 or D2 source change is suggested
+
+## Evidence gaps and limitations
+
+- No build, CTest run, proprietary installer, filesystem fault, concurrent writer, descriptor-exhaustion loop, sanitizer, emulator, or device operation was run because this was a frozen-object read-only survey. Direct control flow establishes observations 001 and 002 without mutating storage
+- Actual Android internal storage normally supports parent-directory fsync. Observation 002 concerns the explicit error path and repeated faults, not ordinary successful persistence
+- A second restore failure is inherently exceptional, but the code's unconditional backup deletion is deterministic once it occurs. No claim is made about its frequency
+- The assigned graphics test does not exercise a truly absent target, phase-specific backup write/flush/sync/close failure, parent sync failure, rollback restoration failure, cleanup failure, invalid API arguments, competing process, or crash point. Those omissions were not split into extra findings where they merely reinforce observations 001/002 or archived `BR-0200`
+- The assigned GOG tail depends on earlier helpers reviewed by chunks 0106 and 0107. This review traced their relevant production calls but did not duplicate their full line-by-line coverage
+- Generated campaign data was available through the canonical scope row and mechanical manifest rather than a separate tracked generation-manifest file
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality worker process, campaign ledger and queue context, relevant active/done GQ and adversarial records, DMR1 references, durable evidence, and historical remediation records
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git show`, `git diff`, `git blame`, `git log --follow`, `git grep`, `git hash-object`, `git status --short`, `rg`, and `Get-Content` against frozen source, production owners, callers, tests, build registration, history, and deduplication records
+- Confirmed 448 assigned lines, exact blobs and normalized-LF hashes, both added-file change shapes, frozen/live identity, and no frozen-scope whitespace error
+- Traced the rollback failure and parent-sync failure paths statement by statement and compared every test failure selector with every production `should_fail` call and non-injected rollback call
+- Product files, plans, canonical ledgers, existing reports, ignored temporary files, fixtures, builds, processes, and devices were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0094`
+- Admit observation 001 as current `BR-0200` regrowth or incomplete remediation for rollback-failure data preservation
+- Admit observation 002 as one new resource-lifetime finding, or couple it narrowly to the same graphics transaction failure-path remediation while preserving a separate acceptance check
+- Extend `GQF-0075` with observation 003 and keep its existing `GQR-0062` ownership
+- Normalize observation 004 as an exact duplicate of `BR-0158`
+- Do not allocate findings for assert removal, ordinary PE traversal, descriptor duplication, successful graphics staging, or already-owned optional-fixture policy
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0094 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0095 frozen survey SHA256:05d55d1c5a96516c238279d780a7688658db252d4e8472f8cc2fbb71873b305f -->
+
+## GQ1-CHUNK-0095 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0095.md`
+- Imported SHA-256: `05d55d1c5a96516c238279d780a7688658db252d4e8472f8cc2fbb71873b305f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0095 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0095`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Exact assigned scope:
+  - `android/app/src/main/cpp/extract/test_cue_iso.c:L3001-L3426`
+  - `android/app/src/main/cpp/extract/test_extract_limits.c:L1-L51`
+- The assigned paths are branch additions relative to the frozen base
+- Product code, plans, canonical ledgers, existing reports, generated fixtures, build output, and ignored temporary files were not changed
+
+## Frozen fingerprints
+
+- `test_cue_iso.c` frozen blob: `31f625d2c2fe23351755c8fa4f5a7f63787bcc2c`, 98,233 bytes
+- `test_cue_iso.c:L3001-L3426` LF-normalized range SHA-256: `7bd0d0d4fe6b7b7aec8f36c9473908af8586253bca0ad5328a029e2c4a8139d9`
+- `test_extract_limits.c` frozen blob: `7172be14221a5f92ce510425a377c80bf27a2233`, 2,060 bytes
+- `test_extract_limits.c:L1-L51` LF-normalized range SHA-256: `fdfd99ac8c6bcea2434d7194fee819995201daba47fcce07f0f03420b7abb8cb`
+- Both named frozen objects resolve as commits, and both assigned paths are absent at the frozen base
+
+## Scope and context inspected
+
+- Every assigned line, including ISO name normalization, invalid-PVD rejection, extension filtering, zero-directory exclusion, CUE-to-ISO round trip, sector-count rejection, suite registration, and all extraction-limit assertions
+- The complete enclosing test helpers and harness, including `TEST`, `PASS`, `FAIL`, `TEST_DIR`, ISO builders, fixed fixture names, file creation, descriptor ownership, and the maintained Windows and POSIX suite wrappers
+- Frozen `iso9660_reader.c/.h`, including list initialization and failure behavior, extension matching, file-list validation, per-entry and aggregate byte admission, free-space admission, output creation, cancellation, short read/write handling, and the raw-track and standalone-image public seams
+- Frozen `cue_parser.c/.h` around MSF conversion, source-size geometry, full-disc rejection, and the production fields consumed by the round-trip test
+- Complete frozen `extract_limits.h`, all frozen native call sites of its arithmetic, ratio, memory, and free-space helpers, CMake target registration, and representative parser-specific limit tests
+- Introduction and repair history for both assigned files, frozen blame for all assigned lines, and current GQ, adversarial active/done, DMR1, prior cleanup, and durable-evidence records used for deduplication
+
+## Atomic observations
+
+### GQ1-CHUNK-0095-OBS-001: both extension-filter tests can pass without proving their named filter contracts
+
+- Severity/confidence: P2/high
+- Category: test-gap/false-pass/correctness
+- Assigned location: `test_cue_iso.c:L3071-L3134`
+- Production context: `iso9660_reader.c` initializes an output list to empty before reading, returns an error on a read or PVD failure, and treats a null extension list as admission of every file
+- Evidence: `iso_extract_filter_rejects` ignores the return from `iso_list_files` at L3087. If listing regresses to a failure after initialization, the list is empty; `iso_extract_files` then legitimately returns zero, and the test reports `PASS` even though no valid `README.TXT` was ever listed or presented to the filter. The companion null-filter case also ignores listing status and uses only one `DATA.BIN` entry, then accepts any positive extraction count without checking the output path or bytes. A regression that treats a null filter as a BIN-only allowlist therefore still passes, as does a wrong-path or wrong-content extraction that reports a positive count
+- Trigger: make the valid ISO listing return `-1` after zeroing the list, or change null-filter matching to admit only `bin`; the named tests retain their successful assertions
+- Impact: the suite can remain green while extension filtering becomes unreachable on valid input or while the public null-filter contract narrows silently. These APIs are used by native extraction callers, so this removes regression protection at a production seam rather than merely weakening a helper assertion
+- Expected: first require a successful listing with exact expected entries. Use one image containing at least two unlike file extensions, extract through rejecting, selective, and null filters into a clean run-owned directory, and assert exact count, exact output set, absence of rejected files, and output bytes
+- Deduplication: searches of both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup plans, and the durable evidence ledger found no existing owner for these two self-fulfilling extension-filter oracles. `BR-0160` owns fixture isolation, cleanup, and timeout behavior, not this in-process input and assertion weakness. Normalize as one new finding
+
+### GQ1-CHUNK-0095-OBS-002: the round-trip content oracle can consume an interrupted prior run's fixed output
+
+- Severity/confidence: P2/high
+- Category: test-gap/reproducibility/false-pass
+- Assigned location: `test_cue_iso.c:L3235-L3344`, especially L3311-L3341
+- Runner context: `TEST_DIR` is the source-tree-relative fixed `test_fixtures` directory; both maintained wrappers remove it only after CTest returns
+- Evidence: the round-trip test creates `test_fixtures/roundtrip_out` but never removes the fixed `descent2.hog` before extraction. Its final oracle accepts the static string `DESCENT2 DATA PAYLOAD`. If an earlier process is interrupted after writing that file, a later defective extractor that reports one extracted file without replacing the output can satisfy both the count check and the byte comparison from stale state. The Windows and POSIX wrapper cleanup occurs too late to prevent this preexisting-input case
+- Trigger: leave the exact output from an interrupted run, then substitute or regress the extraction seam so it returns one without publishing the new file
+- Impact: a production extraction regression can pass depending on source-tree residue, and parallel or interrupted suite runs can make the result order-dependent
+- Expected: give each invocation a collision-resistant owned fixture root, require it not to preexist, remove it on success and all ordinary failures, and verify publication generation or pre-remove the exact output before invoking the extractor. Add a preseeded stale-output case and an interrupted-run case
+- Deduplication: this is a direct evidence extension of open `BR-0160`, which already owns this suite's fixed source-tree fixtures, stale acceptance, cross-run isolation, interruption cleanup, and deadlines. Do not allocate a parallel GQ finding
+
+## Explicit clean dimensions
+
+- CUE boundary oracles: the two assigned sector-count cases now require complete-disc rejection and an empty returned disc for a track beyond EOF and for descending track starts. They no longer accept partial geometry
+- ISO name and malformed-PVD behavior: the name tests require the exact normalized path, and invalid PVD checks the negative listing status. These assertions fail rather than pass on an empty listing
+- Zero-directory exclusion: the test requires the visible file in the listing, rejects any `zero` subtree spelling, requires exactly one extracted file, removes the two exact output candidates before extraction, and rejects creation of the hidden output
+- Round-trip production parity: the test uses parsed sector stride and user-data offset with the track-aware list and extraction APIs, checks track count, types, data-sector count, list success, exact extracted count, output existence, length, and bytes. Its remaining generation-isolation problem is OBS-002
+- Limit arithmetic: `dxx_extract_add_bytes` uses subtractive checked admission and preserves the total on failure; ratio admission correctly handles zero compressed input and the exact 1000:1 boundary without multiplication overflow; two-term memory admission is subtractive. The focused test checks exact and one-over numeric cases without allocating policy-sized buffers
+- Resource lifetime: assigned successful and asserted failure paths close opened descriptors and streams and free generated images. The zero-directory and round-trip error branches close descriptors before returning
+- Build and platform registration: both targets are compiled from the production headers and sources they exercise and are registered with CTest. The raw ISO tests use binary mode on Windows and ordinary POSIX descriptors elsewhere
+- Diagnostics and exit status: each assigned subtest increments the aggregate counter before execution, failures do not increment passes, and `main` returns nonzero unless every registered subtest passes. `test_extract_limits` accumulates every failed expectation and returns nonzero
+- Diff minimization and ownership: both test files are branch-added under the Android extraction owner. No D1 or D2 inherited file is changed by this coverage
+
+## Evidence gaps
+
+- No build or test was executed because this worker reviewed frozen Git objects read-only and did not create or reuse mutable fixture/build state
+- `test_extract_limits.c` covers only numeric exact/one-over cases. It does not exercise null totals, non-unit ratio remainders, arbitrary limits, `UINT64_MAX`, or the zero-expanded ratio case
+- More materially, the focused limit test does not call `dxx_extract_has_free_space` and cannot exercise existing-parent fallback, 50 MiB headroom, query failure, long paths, POSIX mount identity, Windows drive-relative/absolute/UNC identity, or available-space boundaries. This repeats the already-recorded coverage gap for open `GQF-0062`; it is not a new product root
+- A direct helper unit cannot prove that multiple extraction calls share one attempt-owned aggregate. No assigned test composes multiple near-limit tracks or nested extractors, which is already required by open `GQF-0061` and archived `BR-0018`
+- The assigned ISO fixtures are synthetic raw Mode 1 sectors. Real-media parity and standalone-image variants are covered in other deterministic chunks and corpus suites, not by every assigned subtest
+- The live branch may differ from the frozen blobs. Any later test or production change requires delta-generation review
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-quality worker process
+- Used `git cat-file`, `git show`, `git ls-tree`, `git diff --name-status`, `git blame`, `git log --follow`, `git grep`, and `rg` against the frozen objects and repository records
+- Traced assigned assertions into frozen `cue_parser`, `iso9660_reader`, `extract_limits`, CMake registration, both maintained platform wrappers, and all limit-helper callers
+- Searched active and done GQ and adversarial ledgers, DMR1, prior cleanup plans, and durable evidence for the observation keys and historical owners
+- Computed both assigned-range SHA-256 values from the exact frozen lines joined with LF and terminated with LF
+- Performed report-only encoding, whitespace, and scoped diff checks after creation
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0095`
+- Normalize OBS-001 as one new P2/high test-gap finding for the paired extension-filter false-pass root
+- Normalize OBS-002 as `EXTENDS BR-0160` without a new ID
+- Attach the explicit limit-test gaps as validation evidence to existing `GQF-0061` and `GQF-0062`, linked to archived `BR-0018`, without creating a generic missing-tests finding
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0095 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0096 raw survey SHA256:77aa84913f43c2b8f4b7c673bc316e8cc9c15e897ed50c61023746c18a0c2d71 -->
+
+## GQ1-CHUNK-0096 raw survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0096.md`
+- Imported SHA-256: `77aa84913f43c2b8f4b7c673bc316e8cc9c15e897ed50c61023746c18a0c2d71`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0096 raw survey
+
+## Outcome
+
+ISSUES. All 160 assigned frozen lines were reviewed with the complete enclosing tests, production parsers and extractors, CMake registration, callers, history, and existing finding owners. The PKG tail supplies direct evidence that two already-open PKG repair boundaries still lack adversarial tests, and the standalone SOW CLI remains the exact historical BR-0024 weak-oracle artifact. The registered Huffman and integrity suites preserve the BR-0024 repair and no distinct new root was found in the SOW test files.
+
+No product source, canonical ledger, existing report, build output, fixture, temporary file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Coverage ID: `GQ1-CHUNK-0096`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Merge base of the frozen objects: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Base state: all three paths are absent, so all assigned files are branch additions
+- Assigned scope: `test_pkg_toc_bounds.c` L601-L665, `test_sow_direct.c` L1-L23, and `test_sow_huffman.c` L1-L72, 160 lines total
+- Frozen blobs: PKG test `09383ac456410f8d56d14bf317f4987a4fed3fec`; direct SOW CLI `9a0b042668d5a8b9f091b0e75f6fcd94e8b6c4b0`; Huffman test `134d3f4ac00ebef1ea56949ce421a20698e50093`
+- Scope fingerprint algorithm: SHA-256 over the following UTF-8 records joined with LF and no final LF
+- Scope SHA-256: `fb3f8b1b12d59966086448364d73e10db20b45a203c2f45926e00e8ed8e4f07a`
+
+```text
+android/app/src/main/cpp/extract/test_pkg_toc_bounds.c|L601-L665|09383ac456410f8d56d14bf317f4987a4fed3fec
+android/app/src/main/cpp/extract/test_sow_direct.c|L1-L23|9a0b042668d5a8b9f091b0e75f6fcd94e8b6c4b0
+android/app/src/main/cpp/extract/test_sow_huffman.c|L1-L72|134d3f4ac00ebef1ea56949ce421a20698e50093
+```
+
+All product, test, caller, and build evidence came from the frozen Git objects. Mutable files were used only for repository instructions, campaign records, prior evidence, and worktree ownership checks.
+
+## Commands and context checked
+
+- Read `.github/copilot-instructions.md`, the complete general-quality worker process, the active GQ snapshot and exact queue assignment, the GQ done archive, and relevant durable evidence
+- Confirmed both frozen commits, merge base, frozen tree, added-file status, file lengths, blob IDs, and the exact scope fingerprint with `git cat-file`, `git merge-base`, `git diff`, `git ls-tree`, `git rev-parse`, and in-memory SHA-256
+- Inspected every assigned line with line-numbered `git show`, plus all 665 lines of `test_pkg_toc_bounds.c`, its fixture builders, `pkg_reader.c`, `pkg_reader.h`, extraction limits, CMake target and CTest registration, JNI and host callers, and relevant history
+- Inspected all of `test_sow_direct.c` and `test_sow_huffman.c`, the complete frozen `sow_extract.c` and public header, the registered `test_sow_integrity.c` and real-media oracle, CMake wiring, JNI and host callers, and relevant history
+- Searched both GQ ledgers, the durable evidence ledger, both adversarial ledgers, DMR1, and prior code-management plans for PKG scope parsing, source-generation identity, publication rollback, SOW Huffman, weak oracles, fixture availability, and test registration
+- Reconciled open `GQF-0046`, `GQF-0090`, and `GQF-0091`, archived `BR-0024`, and their earlier coverage evidence
+- Did not execute the frozen tests because this shard is a read-only frozen review, the worktree contains concurrent unrelated changes, and every observation below is established by deterministic test-to-production control flow
+
+## Atomic observations
+
+### GQ1-CHUNK-0096-OBS-001 - EXTENDS GQF-0090: the wrong-scope PKG test misses non-file wrappers
+
+- Severity/confidence/category: P2, high, test-gap/parser-correctness/api-data-format
+- Assigned evidence: `test_pkg_toc_bounds.c` L589-L595 builds a negative TOC with `package.pkg` and the Scripts record in separate top-level `file` elements. It therefore proves that the parser does not cross a sibling `file` boundary, but it never moves `name`, `data`, `encoding`, `offset`, `size`, or `length` below an arbitrary non-`file` wrapper.
+- Production mechanism: `pkg_reader.c` L194-L247 skips nested `file` elements but performs substring searches through other descendants. `xar_find_scripts` can consequently accept fields that are not direct children of the reviewed XAR records. This is the exact open `GQF-0090` incomplete direct-field boundary.
+- Trigger: wrap an otherwise valid direct `package.pkg` name or one selected Scripts metadata field in one or more non-`file` elements while keeping the bounded gzip/CPIO member valid.
+- Impact: the focused suite remains green while malformed wrong-depth XAR metadata is accepted and used to select package bytes.
+- Fix and test direction: retain ownership in `GQF-0090`. Add one valid control and one fixture for every selected field at direct depth, one wrapper deep, and multiple wrappers deep, including duplicate direct and nested decoys. Require failure before heap access for every wrong-depth case.
+- Deduplication: this is an evidence extension to open `GQF-0090`, already derived from GQ1-CHUNK-0038. Allocate no new finding.
+
+### GQ1-CHUNK-0096-OBS-002 - EXTENDS GQF-0091 and GQF-0046: PKG extraction tests do not exercise a same-CRC source replacement or terminal rollback
+
+- Severity/confidence/category: P2, high, test-gap/source-integrity/publication
+- Assigned evidence: the only extraction mutation at `test_pkg_toc_bounds.c` L542-L544 flips the saved per-file CRC in the in-memory manifest, calls extraction, and checks only the return value. The malformed and trailing-member cases at L601-L635 call `run_xar_fixture`, whose oracle ends after `pkg_open`; they never mutate the source after a successful scan and then enter the write pass. `run_xar_extraction` unconditionally removes its known output during cleanup, so it also does not assert that failure itself leaves no output.
+- Production mechanism: open `GQF-0091` records that equal-length distinct bytes with equal IEEE CRC32 preserve the frozen source manifest. Open `GQF-0046` records that a later extraction or whole-stream failure can leave earlier final-path outputs published. A stored-manifest-bit flip exercises neither mechanism: it is detected at the current file and the product removes that current output.
+- Trigger: analyze source generation A, replace it before extraction with a same-layout generation B whose changed equal-length payload has the same CRC32, or arrange a post-write terminal mismatch after at least one completed selected file.
+- Impact: the focused extraction assertion can remain green while the analyzed generation is not cryptographically bound and while terminal failure leaves an earlier output behind.
+- Fix and test direction: retain source identity ownership in `GQF-0091` and transaction ownership in `GQF-0046`. Add a deterministic same-length CRC32 collision pair through the public scan/extract seam, plus a multi-file post-write terminal mismatch. Assert rejection before publication and exact absence of every attempt-owned output while preserving any prior generation.
+- Deduplication: both mechanisms and acceptance boundaries are already open. Allocate no new finding.
+
+### GQ1-CHUNK-0096-OBS-003 - HISTORICAL-CLOSED duplicate: `test_sow_direct` remains a weak CLI but registered suites own the assertions
+
+- Severity/confidence/category: P3, high, test-gap/diagnostics
+- Assigned evidence: `test_sow_direct.c` L12-L23 accepts any nonnegative extraction count, including zero, and performs no inventory, size, hash, append-order, cleanup, or progress assertion. A fourth argument other than exact `--append` is silently treated as overwrite mode. The executable itself is not registered as a standalone CTest assertion target.
+- Historical ownership: this is the exact weak-oracle and registration root archived as `BR-0024`. Its repair deliberately retained the CLI as a real-media driver while registering `sow_huffman_tests`, `sow_integrity_tests`, and `sow_real_media_tests` with explicit fixture skip reporting.
+- Current evidence: `test_sow_huffman.c` invokes every named case, accumulates every failure into the process exit, and is registered with `SOW_EXTRACT_TESTING`. `test_sow_integrity.c` exercises the public extractor for stored and compressed success, corruption, bounds, scan behavior, cancellation, and cleanup. The real-media script supplies exact retail and split counts and hashes when its proprietary fixtures exist.
+- Recommendation: record this observation as historical-closed evidence for `BR-0024`. Do not turn the helper CLI into a duplicate general-purpose assertion suite. If argument diagnostics are tightened later, reject every unknown optional argument, but that cleanup does not justify a new finding.
+
+## Explicit clean dimensions
+
+- Assigned PKG completion cases: incomplete CPIO, duplicate trailer, corrupt gzip footer, concatenated members, compressed trailing bytes, wrong Scripts scope, invalid decimal offset, physical span mismatch, encoding mismatch, and bounded zero padding all reach explicit negative or positive oracles. Every allocated test buffer is released at the shared cleanup label, including the corruption copy.
+- PKG production seam parity: the assigned completion cases enter `pkg_open` rather than a mock parser. The ordinary extraction control enters `pkg_extract_all`, verifies the exact one-byte output, and checks a manifest mismatch. CMake compiles the production `pkg_reader.c`, enables only narrow test hooks for lower-level TOC checks, links zlib, and registers the target with CTest.
+- Huffman oracle strength: the test covers a degenerate table, an exactly complete table containing 16-bit codes, every invalid length from 17 through 255, an oversized symbol count, an oversized decoded count, an invalid degenerate selector, an unterminated unary extension, and decode-block failure propagation. Every failed expectation makes the process return nonzero.
+- Huffman production seam parity: the hooks directly initialize the same production `huff_make_table`, `read_pt_len`, and `arj_decode_block` state. The full extractor integrity test separately proves a valid compressed literal and malformed compressed input through the public API, while real-media hashes exercise ordinary decoder trees.
+- Bounds and memory: assigned SOW arrays fit every tested symbol count; invalid `nchar == 512` is rejected before tree use; code lengths are byte-sized; no test-owned allocation or descriptor exists in the Huffman test. Prior source review established production bit exhaustion, node limits, ring indices, and decoded-output caps.
+- Resource cleanup: the PKG corruption buffer and all nine dynamic fixture buffers are freed on normal and early-cleanup paths. Fixture files and the known output path are removed, archive handles close after successful opens, and the SOW tests hold no resources beyond process lifetime.
+- Portability and build: all three files are branch-added, so they add no inherited D1/D2 diff. CMake builds the same production sources for the host tests, registers the assertion suites, and marks missing proprietary SOW media as an explicit CTest skip. Assigned code uses the repository's existing Windows/POSIX directory abstraction and ordinary C99 constructs already required by these targets.
+- Fixture identity: PKG and Huffman fixtures are generated deterministically in process and need no external provenance. The separate SOW real-media oracle checks exact known counts and hashes, so the direct CLI's permissive exit is not used as its final oracle.
+- Diagnostics: assertion failures name source line and condition in PKG, name the violated invariant in Huffman, and flow to nonzero exit. The direct CLI reports usage, progress, extraction count, and extraction failure, while its intentionally limited assertion role remains documented by BR-0024 history and CMake wiring.
+
+## Evidence gaps
+
+- No frozen executable was built or run, no sanitizer or allocation-failure injection was used, and no proprietary PKG or SOW media was opened in this shard.
+- The exact cleanup behavior of all 567 lines of `test_sow_integrity.c` belongs to GQ1-CHUNK-0111. It was read here only to establish production-seam and historical BR-0024 context.
+- The first 600 lines of `test_pkg_toc_bounds.c` belong to GQ1-CHUNK-0110. They were read here as enclosing fixture and oracle context, not claimed as non-partial coverage by this chunk.
+- Filesystem fault injection could still reveal fixture cleanup limitations, but no concrete false pass distinct from existing source-integrity and publication owners was established.
+- The current worktree is ahead of the frozen survey and contains unrelated user and campaign edits. No mutable product content was used to replace frozen evidence.
+
+## Normalization recommendation
+
+- Normalize OBS-001 only as an evidence and test-gap extension to open `GQF-0090`
+- Normalize OBS-002 only as evidence and missing-test extensions to open `GQF-0091` and `GQF-0046`
+- Normalize OBS-003 as `HISTORICAL-CLOSED` or `DUPLICATE` of archived `BR-0024`, with positive evidence that its registered Huffman, integrity, and real-media repair remains present
+- Allocate no new `GQF-*` or `GQI-*` ID from this report
+- Record the coverage outcome as `ISSUES` because current open PKG owners receive concrete assigned test-gap evidence, while recording the SOW dimensions as clean or historical-closed
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0096 raw survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0097 frozen survey SHA256:bae1e464b6a9dcc7e7d57b5096c5d98c4d701f1614381603e6d9ea13c2075581 -->
+
+## GQ1-CHUNK-0097 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0097.md`
+- Imported SHA-256: `bae1e464b6a9dcc7e7d57b5096c5d98c4d701f1614381603e6d9ea13c2075581`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0097 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0097`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: all 436 frozen lines in `test_hmp_android_shared.c`, `test_hmp_stubs/hmp.h`, `test_hmp_stubs/u_mem.h`, `test_json_writer.cpp`, and `test_pilot_pref_transaction.cpp`
+- Combined scope SHA-256, with ordered `PATH <path>` headers, LF line endings, and a final LF per file: `c06ee370ef31a5a942f271474c1e801dc14c382ad05c52bef208891f872a74f8`
+- Scope status: complete. Every assigned line was read from the frozen Git objects, together with production implementations, callers, build registration, paired D1/D2 interfaces, history, and earlier review owners
+
+All five paths are branch additions absent at the frozen base and are unchanged in the live worktree relative to the frozen head.
+
+## Frozen fingerprints
+
+| Path | Frozen blob | File SHA-256 with LF and final LF |
+|---|---|---|
+| `android/app/src/main/cpp/extract/test_hmp_android_shared.c` | `b8875bfaa7dfd3b8d9a10501b6e1c02f4afc889c` | `6ad46adb56ade3c3a80ceea6dcec32017e02360275f8c2fdf6a632cad07b28f9` |
+| `android/app/src/main/cpp/extract/test_hmp_stubs/hmp.h` | `401c468ec39f3583eb41429f235662a8112b3637` | `7d012a12579a257013d5cf30bbea15e391e9f0dfb7d315d3e5ef958cf5a6afda` |
+| `android/app/src/main/cpp/extract/test_hmp_stubs/u_mem.h` | `26543bbba58b61e30fb43a74414d14add2f23df3` | `265463caec588bcec432a1dcba30d7cd622af03be1d12123ddf9c7d77f6e681a` |
+| `android/app/src/main/cpp/extract/test_json_writer.cpp` | `7ee08aa83c5bae26748ff5bd025847a03f8205a9` | `be073523558e273c7ee98a868439ffb4666992c5dd2b827603ed1bb47023e3e2` |
+| `android/app/src/main/cpp/extract/test_pilot_pref_transaction.cpp` | `1586d5487df38018678bdfc185f98ca29b8627d9` | `fea55a0e6c5455e1004d0ad8d4e209985a1d3cf3054326904b256804729a3ab6` |
+
+## Context checked
+
+- Complete frozen `hmp_android_shared.c/.h`, the D1 and D2 `hmp.c` wrappers, their actual `hmp.h` and `u_mem.h` contracts, the production `hmp_close` implementations, and the extraction CMake target and warning registration
+- Complete frozen `json_writer.c/.h`, every frozen native caller, the extraction CMake target, and current `GQF-0054` evidence about unchecked output and flush failures
+- Complete frozen `pilot_pref_transaction.cpp/.h`, `playsave_transaction.c/.h`, the Android pilot preference aggregation caller, its CMake target, and the earlier `GQ1-CHUNK-0080-OBS-002` transaction-test review
+- Addition commits `7563c6de`, `9eddb6cf`, and `0498798f`, relevant frozen histories, archived `BR-0198`, open `BR-0236`, both general-quality ledgers, both adversarial ledgers, DMR1, and the durable evidence ledger for duplicate and incomplete-validation ownership
+
+## Atomic observations
+
+### GQ1-CHUNK-0097-OBS-001: every successful HMP case has a return-code-only oracle that accepts null, empty, or corrupted MIDI
+
+- Severity/confidence: P2/high
+- Category: test-gap/correctness/production-seam-parity
+- Location: `test_hmp_android_shared.c:L97-L127,L139-L179,L221-L240`, `test_hmp_stubs/hmp.h:L17-L28`, and `test_hmp_stubs/u_mem.h:L6-L14`
+- Production context: `hmp_android_shared.c:L204-L266`, paired `d1/misc/hmp.c:L784-L790`, paired `d2/misc/hmp.c:L783-L789`, and paired real `hmp.h:L46-L78`
+- Evidence: `expect_track_result` compares only `result` when `expected` is true. It does not require `midi` to be nonnull, require `midi_len` to be positive, parse the MIDI, or compare any byte. The maximum-track test has the same success-only check, and the allocation sweep stops at the first successful return without validating its output. A converter mutation that returns `1` while leaving the initialized `midi` sentinel and negative length unchanged would even reach `free((void *)1)`, while a mutation that publishes `NULL, 0` or corrupts the `MThd`, track count, division, tempo track, track-length fields, reversed delta encoding, status bytes, or payload can pass every nominal success assertion. The single synthetic valid track therefore proves only that the current function returns success
+- Seam evidence: the test directly compiles the shared implementation against a substitute `hmp_file` whose `hmp_track` omits `loop`, `cur`, `left`, `cur_time`, and `loop_start`, and whose `hmp_file` omits the fields between `trks` and `tempo` plus all trailing state. It supplies a replacement `hmp_close` and allocation macros and never invokes either real D1/D2 `hmp2mid_mem` wrapper or its real tempo bytes. This is useful deterministic allocation injection, but it is not the paired production seam required by archived `BR-0198` validation
+- Trigger: regress any successful-output construction step while leaving malformed-input rejection and the final return value unchanged, or break a D1/D2 wrapper, real header interaction, tempo array, or allocator/free integration that the stub target bypasses
+- Impact: the registered host suite can stay green while Android produces invalid or empty MIDI for valid HMP music. This can silently reopen valid-media playback regressions without contradicting the extensive malformed-input corpus
+- Expected: every successful case requires owned nonempty output and validates the complete MIDI structure and exact expected bytes or a trusted parse/hash oracle. At least one paired D1 and D2 target must compile through the production wrapper, real headers, tempo data, and ownership path; allocation injection can remain in a lower-level shared-core target
+- Narrow fix and validation: add an exact small synthetic MIDI oracle covering header, format, track count, division, tempo track, delta conversion, status handling, payload, lengths, and end-of-track. Add a multi-track case and a retained valid HMP fixture hash when licensing permits. Compile and run paired D1/D2 wrapper tests with real headers and ownership, retain the malformed and allocation-failure corpus, and ensure a deliberate null/empty success and one-byte corruption each fail the test
+- Deduplication: archived `BR-0198` fixed the memory-safety root but its validation explicitly required paired D1/D2 conversion and valid retail HMP hashes; the resolution records only a synthetic valid control and says retail media and independent P1 verification were unavailable. No active GQ finding owns this concrete success-oracle false pass. Normalize as a new test-quality finding linked to archived `BR-0198`, not as regrowth of the fixed bounds defect
+
+### GQ1-CHUNK-0097-OBS-002: the JSON test has no failing-stream oracle for the existing unchecked-output finding
+
+- Severity/confidence: P3/high
+- Category: test-gap/diagnostics/error-propagation
+- Location: `test_json_writer.cpp:L10-L30,L38-L74` and `json_writer.c:L38-L77`
+- Evidence: the helper uses a healthy `tmpfile`, checks successful writer, flush, seek, and read operations, and thoroughly parses the resulting string. It cannot inject a failed opening quote, escape, UTF-8 block, closing quote, delayed flush, or terminal stream error. Consequently it supplies no regression boundary for propagating the writer's checked `-1` result through its native producers
+- Deduplication: exact evidence extension of open `GQF-0054`, whose durable evidence already states that the strict JSON test covers successful escaping and parsing only while callers discard writer and terminal stream failures. Do not create a new finding or remediation chunk
+
+### GQ1-CHUNK-0097-OBS-003: the pilot transaction test confirms ordinary live rollback but not the existing recoverability boundary
+
+- Severity/confidence: P2/high
+- Category: test-gap/data-integrity/test-isolation
+- Location: `test_pilot_pref_transaction.cpp:L13-L21,L34-L40,L43-L68` and `pilot_pref_transaction.cpp:L19-L81`
+- Evidence: the negative case lets the second callback overwrite its file and then report failure, after which both old strings are checked. It cannot terminate between publications, fail an original restore, detect a concurrent generation replacement, or exercise the complete Android aggregation. Its two fixed working-directory filenames can also collide between simultaneous executable instances, and every early return leaves one or both fixtures behind. The ordinary rollback and success assertions themselves are meaningful
+- Deduplication: exact evidence extension of `GQ1-CHUNK-0080-OBS-002` and open `BR-0236`, which already own immediate per-file publication, process-death recovery, rollback failure, generation checks, concurrent writers, and the missing grouped fault matrix. The fixed-name isolation detail belongs with that same required concurrency harness rather than a separate finding
+
+## Explicit clean dimensions
+
+- HMP malformed boundaries: the assigned corpus covers empty input, truncated delta and every channel-event width, malformed meta length and payload, missing or malformed end-of-track, zero and maximum track counts, declared-length extremes, null publication on rejection, and sequential allocation failures. The failure-result assertions are direct and do not use `assert`
+- HMP resource behavior: all ordinary test-owned HMP and returned MIDI buffers are released on the exercised paths. Production failure paths close parsed tracks and free partial MIDI. Leak detection under an instrumented allocator or sanitizer remains an evidence gap
+- JSON success semantics: the test parses the output with an independent strict JSON implementation and checks exact decoded text, quotes, backslashes, controls, valid UTF-8 preservation, deterministic malformed-byte encoding, and null input. No successful-content false pass was found
+- Pilot ordinary semantics: the two-file callback-failure case checks restoration of both original byte strings, and the success case checks both replacements and the returned target count. The production target compiles the same transaction and atomic-replace implementations used by Android
+- Build and portability: all three executables are registered with CTest. HMP uses `/W4` or `-Wall -Wextra`; pilot uses `/W4` or `-Wall -Wextra -Werror`; JSON uses the standalone project's configured C++ and pinned nlohmann target. No assigned path modifies inherited D1/D2 files or adds runtime dependencies
+- Crash, concurrency, and security: these are host unit tests with no network, privilege, package, or hot-path behavior. No distinct security defect survived beyond archived `BR-0198`; transaction interruption and concurrency remain under `BR-0236`
+- Diagnostics: HMP rejection cases name the failed case and allocation index, JSON reports caught exceptions, and pilot uses distinct exit codes. Pilot's codes do not name the failing phase or file, which is a maintainability limitation but not a separate admission-worthy defect
+- Diff minimization and formatting: all assigned paths are new branch-owned test files. The frozen scoped diff passes `git diff --check`
+
+## Evidence gaps
+
+- No configure, compile, CTest, sanitizer, Android playback, valid retail HMP, concurrent pilot writer, process-death, restore-failure, or output-failure injection was run. `cmake` is not on this shell's `PATH`, and a live build would not strengthen the frozen success-oracle control-flow proof
+- No licensed valid retail HMP fixture is present in the reviewed context. Observation 001 does not assume one exists; the exact synthetic MIDI oracle is independently sufficient to close the false-pass root
+- The HMP allocation sweep demonstrates null-output failure handling but does not count outstanding allocations, so leak freedom was not dynamically established
+- JSON embedded NUL has no representable contract through the current C-string API. This is an API boundary, not an omitted test for promised behavior
+- Live production and build context can move after the frozen head. Closure needs a delta review if any relevant caller, wrapper, fixture, or target changes
+
+## Commands and verification
+
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git show`, `git diff`, `git diff --check`, `git log`, `git grep`, `git hash-object`, `rg`, `Get-Content`, `Get-ChildItem`, and in-memory SHA-256 calculation
+- Confirmed both frozen objects are commits, the base is an ancestor of the head, all five assigned paths are absent at base, and their frozen diff is 436 additions and no deletions
+- Read all assigned lines and the complete relevant production owners from frozen Git objects. Confirmed every assigned live blob still equals its frozen blob
+- No product source, plan, canonical ledger, existing report, ignored temporary file, build output, fixture, or external state was changed
+
+## Normalization recommendation
+
+- Import this complete report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0097`
+- Normalize observation 001 as one new P2/high test-gap finding linked to archived `BR-0198`; form one remediation chunk for an exact successful-output oracle plus paired real-wrapper seam coverage
+- Normalize observation 002 as `EXTENDS GQF-0054` with no new ID
+- Normalize observation 003 as `EXTENDS BR-0236` and duplicate evidence of `GQ1-CHUNK-0080-OBS-002`, with no new ID
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0097 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0098 frozen survey SHA256:d1ea96ece89f8924412cb398bef1c38e5ae1a85947291004cfeea5cdb2c730e6 -->
+
+## GQ1-CHUNK-0098 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0098.md`
+- Imported SHA-256: `d1ea96ece89f8924412cb398bef1c38e5ae1a85947291004cfeea5cdb2c730e6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0098 frozen survey
+
+Outcome: ISSUES. All 328 assigned frozen lines were reviewed with the complete CD read contract and both host consumers, the shared Chromaprint database implementation and header, JNI and Kotlin callers, CMake registration, focused tests, history, and prior findings. Invalid threshold reconfiguration still leaves an already loaded database matchable at a zero threshold, and the assigned test stops after proving that reload is rejected. The incomplete-read CLI fixture exercises geometry rejection before either CLI opens or reads the BIN, so it does not cover the mid-read failure promised by the historical repair. No product file, plan, canonical ledger, existing report, fixture, build output, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Merge base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- All assigned paths are branch additions relative to the frozen base
+- Scope manifest, with one final LF:
+
+```text
+android/app/src/main/cpp/extract/test_android_stubs/android/log.h|L1-L17|e8683f5e25d4a8032cb71b17ffd274157168b0d3
+android/app/src/main/cpp/extract/test_cd_incomplete_read.cmake|L1-L25|3f4ae6a61610c4757a869aba87f5d69a8131ba89
+android/app/src/main/cpp/extract/test_cd_read_contract.c|L1-L46|7cb5a422b6f981765fca7f314f2c062268588ce3
+android/app/src/main/cpp/extract/test_chromaprint_db_concurrency.cpp|L1-L105|26b6af17a186cd6506ed93e08227e78d2e4b3167
+android/app/src/main/cpp/extract/test_chromaprint_db_config.c|L1-L135|e6a41e5d2ba20777706ca3d4b9cca0363296b304
+```
+
+- Manifest length: 558 ASCII bytes
+- Manifest SHA-256: `51ffd6783c667f9e43c8eb728cd5289be0529d4fd48656b1dfe4f09b901ec017`
+- Manifest Git blob ID: `2b9854de68b4a59682fcc6eb758b2274e786ec72`
+- Evidence came from frozen Git objects. Mutable product files were not used as source evidence
+
+## Process and prior ownership checked
+
+- Read `AGENTS.md`, `.github/copilot-instructions.md`, `general_code_quality_worker_process.md`, the current general-quality plan, the active and done GQ ledgers, the durable evidence ledger, both adversarial ledgers, and DMR1
+- Archived `BR-0038` owns strict threshold configuration and says invalid configuration fails closed. Archived `BR-0046` owns incomplete CD reads. Archived `BR-0075` owns database synchronization. Archived `BR-0039` owns transactional database admission, and archived `BR-0040` owns symmetric duration filtering
+- `GQF-0069` owns the remaining host BIN source-generation race between sizing and later per-track opens. No current record describes matching an already loaded database after threshold invalidation
+- Earlier GQ1 Chunk 0026 reviewed the fingerprint CLI implementation and these tests as context, but did not assign the tests themselves or record the two oracle gaps below
+
+## Context inspected
+
+- Complete assigned test files and their complete frozen history through the July 27, July 31, August 3, and August 10 adversarial repairs
+- `cd_read_contract.c/.h`, including exact bounded file loading, changed-length detection, span arithmetic, and output initialization
+- The relevant complete CUE sizing, geometry rejection, per-track open, seek, sector-read, hash, fingerprint, diagnostic, and exit paths in `extract_cd.c` and `fingerprint_cd.c`
+- Complete `chromaprint_db.c/.h`, including threshold and tolerance configuration, strict staged JSON admission, decode and allocation cleanup, entry replacement, offset scoring, ambiguity, match-result ownership, count, free, and mutex coverage
+- JNI threshold/load/match boundaries and Kotlin's synchronized database initialization and private configuration call
+- `extract/CMakeLists.txt`, including target sources, host Android-log seam, warning settings, CTest registration, thread linkage, and the directory-wide `-UNDEBUG` or `/UNDEBUG` protection for assertion-based tests
+- Fingerprint host tests, configuration tests, aggregate registration, archived remediation validation, and GQ1 source-review evidence
+
+## Atomic observations
+
+### GQ1-CHUNK-0098-OBS-001: Invalid threshold reconfiguration does not disable matching against the loaded database
+
+- Provisional disposition: `REGROWTH/EXTENDS archived BR-0038`; normalization should decide whether the historical root needs a generation-specific active finding
+- Suggested priority/confidence/category: P2/high, `correctness/configuration/fail-closed`
+- Frozen locations: assigned `test_chromaprint_db_config.c:L113-L132`; production `shared/chromaprint_db.c:L46-L57,L231-L287`; contract `shared/chromaprint_db.h:L59-L62`; JNI `jni_fingerprint.c:L30-L44`
+- Evidence: after publishing a one-entry database and proving a match at L113-L117, the test passes `NAN` to `chromaprint_db_set_threshold` at L130 and verifies only that a later database load returns `-1`. The setter sets `s_match_threshold` to `0.0f` and clears `s_match_threshold_configured`, but retains `s_entries` and `s_entry_count`. `chromaprint_db_match` checks the entry count but never the configured flag, and accepts `best_score >= s_match_threshold`. An identical or merely positive-scoring query therefore still returns the stale entry after the setter explicitly reported failure, now against threshold zero
+- Trigger: load a valid database, call the public native setter with NaN, infinity, zero, or another rejected value, then match without first replacing or freeing the database
+- Impact: the native fail-closed state claimed by BR-0038 can instead admit stale matches using the same unsafe zero threshold that repair removed. Current Kotlin normally configures before its first load and keeps the JNI setter private, which narrows the ordinary app trigger, but the public C contract, JNI export, direct native test surface, and future reconfiguration path remain internally inconsistent
+- Historical relation: BR-0038's resolution says the native database clears configuration when the setter rejects a value and that native tests cover NaN and infinity. The assigned test covers rejection of a subsequent load, but not rejection of a subsequent match against already published state
+- Recommended fix: make matching require `s_match_threshold_configured`, or atomically clear the published database when invalid configuration is supplied. State the retained-entry policy explicitly. Extend the native test to load and match one known record, reject each invalid threshold, then require no match until a valid threshold is restored or a new database is loaded
+- Focused validation: exercise NaN, positive and negative infinity, zero, negative, and greater-than-one values after a successful load, with identical and low-score queries. Require failure to expose no match at threshold zero, preserve documented ownership, remain race-safe with concurrent readers, and restore ordinary matching only through the documented recovery sequence
+
+### GQ1-CHUNK-0098-OBS-002: The incomplete-read CLI fixture never reaches either CLI's short-read branch
+
+- Provisional disposition: `EXTENDS archived BR-0046 and current GQF-0069`; this is a focused historical-validation and source-race coverage gap, not a duplicate production finding
+- Suggested priority/confidence/category: P3/high, `test-gap/io-fault-injection`
+- Frozen locations: assigned `test_cd_incomplete_read.cmake:L1-L23`; production `extract_cd.c:L452-L479,L497-L545` and `fingerprint_cd.c:L298-L324,L343-L405`; shared span check `cd_read_contract.c:L50-L64`
+- Evidence: the fixture creates a one-byte BIN and a CUE declaring one audio track at sector zero. Both CLIs stat that one byte and reparse the CUE with the known size. Geometry is rejected at `cue_parse` or the checked span before `open_bin`, `lseek`, and the sector loop. The test therefore proves invalid pre-existing geometry yields nonzero exit, an audio-typed error record, and no SHA-1, but it cannot fail if the post-validation `read_fd` branches regress to publishing a partial hash. The test name and BR-0046 closure summary describe incomplete reads more broadly than the executed path
+- Trigger missed by the oracle: validate a complete BIN span, then truncate, replace, or fault the source after sizing and before or during `read_fd`; a transient or injected read error has the same uncovered sink
+- Impact: the exact branches that prevent partial hash or fingerprint publication after a successful preflight can regress while this maintained CTest remains green. This is also the failure boundary needed to validate `GQF-0069` remediation against source mutation rather than only static undersizing
+- Historical relation: BR-0046 explicitly requested BIN truncation between stat and read plus mid-hash and mid-audio errors. Its resolution records an incomplete-audio-image fixture, which is this preflight rejection. Chunk 0026 later established the still-open size/open source-generation race as `GQF-0069`
+- Recommended fix: add a narrow injectable read/open seam to both CLIs or a deterministic harness around their shared exact-track reader. Validate a full-sized source first, then force EOF or EIO at the first, middle, and final sector and force source replacement between size discovery and owned open. Keep the existing undersized geometry case as a separate preflight test
+- Focused validation: for both CLIs, assert nonzero exit, declared audio type, no SHA-1 or Chromaprint, no promotable partial record, closed descriptors, and stable diagnostics for first-sector, mid-track, and final-sector short reads, seek failure, and same-size replacement. Run the fault matrix under ASan or an equivalent checked allocator where available
+
+## Clean dimensions
+
+- Oracle strength: the explicit `CHECK` test does not depend on `assert`; assertion-based Chromaprint tests are protected from Release `NDEBUG` by the frozen CMake target loop. Successful match metadata, confidence, ambiguity status, order reversal, transactional rejection, long UTF-8 metadata, and deep-copy lifetime across reload are checked precisely
+- Concurrency and lifetime: the stress test uses atomic start and failure flags, joins every worker, races two loaders/configurers/frees with six readers/count queries, verifies only complete generation names, frees every successful result, and finishes with eight readers against one stable generation. Production uses one mutex over all relevant global state and returns owned match copies
+- CD correctness: exact bounded file success, over-limit rejection, missing-file rejection, valid 2352- and 2048-byte spans, invalid starts, zero and oversized spans, and invalid stride are covered. The CLI fixture checks both tools, nonzero status, absence of a published SHA-1, and retention of the declared audio type
+- ABI and portability: the Android log seam provides the priority constants and variadic signature used by the production owner; CMake links the real Chromaprint and JSON dependencies plus platform threads, quotes executable and path arguments, and uses a target-local build directory for the CLI fixture
+- Resource cleanup: generated JSON, encoded fingerprints, returned matches, database entries, threads, file handles, and successful test-directory artifacts have visible owners and ordinary cleanup. Failed strict database loads preserve the prior complete generation
+- Diagnostics: native test failures identify the failed expression; CLI failures retain the tool path, captured output, captured error, track type, and partial-hash condition. Suppressed Android logs are not used as a test oracle
+- Diff minimization and ownership: every assigned file is branch-added test support. No inherited D1 or D2 file is touched, and production configuration and parsing remain in native owners rather than duplicated into the tests
+
+## Evidence gaps and limitations
+
+- This was a frozen read-only survey. No host build, CTest, Android build, emulator run, repeated stress run, sanitizer, allocator fault, or disk I/O fault was executed
+- The concurrency stress has no ThreadSanitizer run in this environment and no deterministic hook proving every intended internal interleaving. Its final stable-generation phase does provide a strong ordinary ownership oracle
+- The host Android-log stub lacks the real header's printf-format annotation, so the host target does not independently check production log argument formatting. Maintained Android compilation supplies the real header, and no concrete frozen format mismatch was found
+- No allocation-failure seam exercises staged JSON decode and match-result copy cleanup. Static ownership was clean, and archived BR-0039 owns strict transactional admission
+- The CD unit test does not exercise a CUE file changing length between `ftell` and `fread`; the source-generation and mid-read gaps remain covered by OBS-002 and `GQF-0069`
+
+## Commands and validation
+
+- `git cat-file`, `git merge-base`, `git rev-parse`, `git ls-tree`, `git show`, `git diff --stat`, `git diff --check`, `git log`, and `git status --short` confirmed frozen objects, ancestry, trees, additions, blobs, history, whitespace, and mutable-worktree exclusion
+- Numbered `git show 7877ad30...:<path>` projections covered every assigned line and cited frozen implementation, header, caller, CMake, and test location
+- `git grep`, `rg`, `Select-String`, and bounded ledger reads traced API calls, test registration, historical remediation, duplicate ownership, prior cleanup, and active GQ findings
+- In-memory ASCII and SHA-256 framing verified the exact ordered scope manifest
+- Static source-to-oracle tracing proved OBS-001 through setter state, retained entries, and the threshold comparison, and OBS-002 through CUE sizing and geometry rejection before each per-sector read loop
+
+## Normalization recommendation
+
+1. Treat OBS-001 as regrowth or incomplete closure of archived `BR-0038`. Admit a generation-specific finding if the campaign requires current ownership for the executable public native contract; do not create an unrelated new threshold-policy root
+2. Attach OBS-002 as validation evidence to archived `BR-0046` and current `GQF-0069`. If test gaps receive independent ownership, use one narrow test-remediation chunk shared with the source-snapshot fix rather than duplicating the production finding
+3. Record one non-partial `ISSUES` coverage result for exactly `GQ1-CHUNK-0098`
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0098 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0099 frozen survey SHA256:86b991feb21b01686861d05e5a8af6db5341773ff2d0b55bd58053857ec7c6e7 -->
+
+## GQ1-CHUNK-0099 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0099.md`
+- Imported SHA-256: `86b991feb21b01686861d05e5a8af6db5341773ff2d0b55bd58053857ec7c6e7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0099 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0099`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/app/src/main/cpp/extract/test_cue_iso.c:L1-L600`
+- Scope status: complete. Every assigned line was read from the frozen Git object, including the function beginning at L598 and its continuation, together with the remaining test consumers, production CUE and ISO implementations, callers, build and runner registration, history, and durable review owners
+
+The assigned file is a branch addition absent at the frozen base. Its frozen blob is unchanged at live `HEAD` and in the worktree.
+
+## Frozen fingerprints
+
+| Item | Value |
+|---|---|
+| Frozen blob | `31f625d2c2fe23351755c8fa4f5a7f63787bcc2c` |
+| Frozen blob size | 98,233 bytes |
+| Frozen file lines | 3,426 |
+| L1-L600 SHA-256, LF normalized with final LF | `9c031f1be49e7787999126bbf615ad874822421e5ee851b4a958c539a61389c8` |
+| Frozen diff | 3,426 additions, 0 deletions |
+
+## Context checked
+
+- Complete frozen `cue_parser.c/.h` and `iso9660_reader.c/.h`, including sector geometry, bounded directory-record parsing, traversal, multi-extent assembly, catalog limits, listing, extraction, and test-only extent helpers
+- Every frozen consumer of the assigned fixture builders and the continuation ranges through `main`, including raw-track and standalone-image cases, record bounds, hostile names, capacity, cycles, traversal budgets, nested directories, extraction, filters, and the CUE-to-ISO round trip
+- Frozen extraction `CMakeLists.txt`, CTest registration and working directory, the Windows and POSIX CUE/ISO runners, and the fixed source-tree `test_fixtures` ownership and cleanup path
+- Complete file history, the post-adversarial builder expansion, prior `R1-CHUNK-0077` through `R1-CHUNK-0080` coverage, open `BR-0160`, archived ISO parser findings, active GQ findings, `GQ1-CHUNK-0095-OBS-002`, DMR1, earlier cleanup plans, and the durable evidence ledger
+
+## Atomic observations
+
+### GQ1-CHUNK-0099-OBS-001: fixed fixture generations and unchecked builder setup remain under BR-0160
+
+- Severity/confidence: P2/high, existing-root extension
+- Category: test-gap/resource-lifetime/test-isolation/false-pass
+- Assigned location: `test_cue_iso.c:L67,L191-L204,L346-L376,L397-L418,L421-L519,L569-L595`
+- Runner context: `CMakeLists.txt:L197-L198`, `android/tests/test_cue_iso.ps1`, and `android/helpers/run_cue_iso_tests.sh`
+- Evidence: all assigned on-disk record-bound cases still write the fixed source-relative names `test_fixtures/record_bounds.iso` and `test_fixtures/record_bounds.bin`. Other builders in this range allocate with `calloc` or `malloc` and immediately dereference the result, and `build_minimal_iso_image` immediately copies from both allocations without checking either. The later callers depend on those builders and on the same fixed `TEST_DIR`; `main` ignores failure to create that directory. The newer `list_iso_record_test_image` correctly detects open, short-write, and close failure, which narrows the old problem, but it neither owns a unique generation nor makes allocation and directory setup failures counted test cases. A concurrent process can replace the fixed file between close and reopen, while allocation or directory failure can crash or omit work rather than produce the named deterministic failure
+- Trigger: run two CUE/ISO test processes concurrently, replace one fixed record-bounds path between publication and reopen, deny fixture-directory creation, or inject failure into a builder allocation
+- Impact: a registered run can consume another generation or stale source-tree bytes, fail nondeterministically, crash outside the intended case diagnostic, or omit cases while relying only on dynamically reached `TEST`/`PASS` counts. A green run does not prove exclusive consumption of the fixture bytes it built
+- Expected: every run owns a unique fixture root and build state or fails fast under one cross-platform lock; setup failures become counted failures; fixture publication and reopen are generation-bound; and a fixed expected-case invariant prevents omitted tests from passing
+- Narrow fix and validation: retain ownership in open `BR-0160`. Pass a run-owned fixture root to the executable, make builders return checked status, validate allocation, directory creation, complete write, close, and reopen identity, and enforce an independently maintained exact case count. Race two runs and inject each setup failure while pre-seeding stale valid bytes; require exact nonzero propagation, no cross-run substitution, bounded cleanup, and unchanged normal fixture oracles
+- Deduplication: this is a direct evidence extension of `BR-0160`, including its prior `R1-CHUNK-0077` setup-generation evidence and `GQ1-CHUNK-0095-OBS-002` stale-output evidence. It is not a new product defect or remediation chunk
+
+## Explicit clean dimensions
+
+- Fixture format and production seam parity: raw Mode 1 fixtures use 2,352-byte sectors with the 2,048-byte payload at offset 16, standalone images copy exactly those payloads, and the geometry wrapper supports the three production layouts. Directory records populate the little-endian fields consumed by the frozen reader, and `set_iso_record_u32` supplies both byte orders for mutation fixtures
+- Record construction and bounds: ordinary assigned names and records fit the 2,048-byte directory sector, extents and payloads fit their allocated images, generated catalog sectors stop before record overflow, and the file-count helper verifies that it emitted the requested number of entries before returning
+- Oracle strength: later consumers require success or rejection at the public listing and extraction seams for raw and standalone inputs, exact names/counts at the reviewed boundaries, and exact payload bytes in representative extraction and round-trip cases. The separate extension-filter weakness remains `GQF-0143`; shared generation ownership remains observation 001
+- Malformed and boundary coverage: the assigned builders feed short records, identifier boundaries and padding, sector-crossing records, root-record bounds, unsafe names, exact and excess catalog sizes, directory graph cycles and overlaps, unreadable and huge spans, depth and traversal budgets, and raw/standalone parity
+- Resource cleanup: ordinary consumer paths free generated images and close opened streams and descriptors. The scoped helper closes its stream on complete and short writes and closes the reader descriptor after listing. Failure injection, allocation accounting, interruption, and concurrent ownership remain evidence gaps under `BR-0160`
+- Portability and build: binary descriptors are used on Windows, POSIX uses ordinary `open`, the target compiles the production parser and reader directly, and CTest registers it with an explicit working directory. No dependency, inherited D1/D2 edit, or runtime interface is introduced by this test file
+- Diagnostics and assertions: behavioral checks use the always-active `TEST`, `FAIL`, and `PASS` mechanism rather than standard `assert`; `main` returns nonzero when a reached case fails. Missing fixed case-count enforcement remains part of `BR-0160`
+- Diff minimization and formatting: the assigned path is branch-added Android test code and does not modify a 1996-original file. The frozen scoped diff passes `git diff --check`
+
+## Evidence gaps
+
+- No configure, compile, CTest, sanitizer, low-memory run, injected I/O failure, concurrent runner, or interruption test was executed. The frozen executable writes shared source-tree fixtures, and `BR-0160` establishes that a live run is not isolated or cleanup-safe
+- No real optical media was used. This range owns synthetic structure and malformed-boundary fixtures; proprietary-media parity is covered by other maintained regression paths
+- The reader consumes little-endian ISO both-byte-order fields and does not independently compare the duplicate big-endian representation. The assigned fixtures match the implemented contract; standards-level duplicate-field validation was not treated as a new test defect in this range
+- Live code may move after the frozen head. Closure requires delta review if the builders, production reader, runners, or fixture root changes
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality process, the active and done GQ ledgers, the frozen queue row, and relevant durable evidence
+- Used `git cat-file`, `git rev-parse`, `git merge-base`, `git show`, `git diff`, `git diff --check`, `git log`, `git blame`, `git grep`, `git hash-object`, `rg`, and `Get-Content` against frozen Git objects and repository records
+- Confirmed both frozen objects are commits, the base is an ancestor of the head, the path is absent at the base, and frozen `HEAD`, live `HEAD`, and the worktree all resolve this path to the same blob
+- Read every assigned line plus the crossing function, all downstream builder consumers, relevant production implementations and callers, build registration, runners, history, and duplicate owners
+- No product source, plan, canonical ledger, existing report, ignored temporary file, build output, fixture, or external state was changed
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0099`
+- Normalize observation 001 as `EXTENDS BR-0160`, also linking `GQ1-CHUNK-0095-OBS-002`, without a new finding or remediation ID
+- Record the clean fixture-format, production-seam, malformed-boundary, ordinary cleanup, portability, diagnostics, and diff-minimization dimensions above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0099 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0100 frozen survey SHA256:5a3d7b5fe8207330966351fc5e5158189b72b2f520f9eaae7ca2a3eeeac5d068 -->
+
+## GQ1-CHUNK-0100 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0100.md`
+- Imported SHA-256: `5a3d7b5fe8207330966351fc5e5158189b72b2f520f9eaae7ca2a3eeeac5d068`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0100 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0100`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/app/src/main/cpp/extract/test_cue_iso.c:L601-L1200`
+- Scope status: complete. Every assigned line was read from the frozen Git object, including the crossing ISO graph builder from L598 and the following malformed-CUE cases needed to interpret the capacity oracles, together with production parser and reader seams, later fixture consumers, build and runner ownership, history, and durable duplicate owners
+
+The assigned file is a branch addition absent at the frozen base. Its frozen blob is unchanged at live `HEAD` and in the worktree.
+
+## Frozen fingerprints
+
+| Item | Value |
+|---|---|
+| Frozen blob | `31f625d2c2fe23351755c8fa4f5a7f63787bcc2c` |
+| Frozen blob size | 98,233 bytes |
+| Frozen file lines | 3,426 |
+| L601-L1200 SHA-256, LF normalized with final LF | `dd0921af67e54757f6d9c15d3bd158d6cd4ccf554f4814e193c7d3bfdba0f2a8` |
+| Frozen diff | 3,426 additions, 0 deletions |
+
+## Context checked
+
+- Complete frozen `cue_parser.c/.h`, including strict MSF conversion, track and file capacity admission, sector layout publication, atomic parse failure, and the extraction, fingerprint, JNI, preview, and paired D1/D2 Redbook consumers
+- Frozen `iso9660_reader.c/.h` source geometry, directory traversal, active-extent and overlap checks, sector and depth budgets, catalog publication, multi-extent assembly, extraction, and test-only size helpers
+- Every consumer of the assigned graph, sector-budget, depth, multi-extent, extent-count, BIN writer, and CUE fixture-reader helpers, including later raw-track and standalone-image assertions and the complete round-trip case
+- Frozen extraction `CMakeLists.txt`, CTest working-directory registration, Windows and POSIX suite wrappers, fixed source-tree fixture ownership, complete file history, prior `R1-CHUNK-0077` through `R1-CHUNK-0080` coverage, adjacent `GQ1-CHUNK-0099`, active and archived CUE/ISO/test owners, DMR1, earlier cleanup plans, and the durable evidence ledger
+
+## Atomic observations
+
+### GQ1-CHUNK-0100-OBS-001: unchecked fixed-path fixture setup remains under BR-0160
+
+- Severity/confidence: P2/high, existing-root extension
+- Category: test-gap/test-isolation/false-pass/resource-lifetime
+- Assigned location: `test_cue_iso.c:L891-L985`, especially `write_test_bin`, `read_cue_data_file`, and their fixed `TEST_DIR` paths
+- Consumer and runner context: `test_cue_iso.c:L2408-L2788,L3235-L3345`, `CMakeLists.txt:L197-L198`, `android/tests/test_cue_iso.ps1`, and `android/helpers/run_cue_iso_tests.sh`
+- Evidence: `write_test_bin` reports an open failure but returns `void`, ignores both `fwrite` results and `fclose`, and lets the round-trip test continue to reopen the fixed `test_fixtures/roundtrip.bin`. If open fails while a prior valid generation remains, that stale generation can satisfy the later parser, listing, extraction, and byte-content checks. `read_cue_data_file` similarly trusts `fseek`, `ftell`, `malloc`, and `fread` before parsing fixed committed input. The later multi-extent cases improved their own write and close checks, but the assigned older helpers do not bind setup success and bytes to the current run. Both platform runners share and recursively remove the same source-tree fixture root
+- Trigger: pre-seed a valid `roundtrip.bin`, then deny or race its replacement; inject a short write or close failure; run two suite instances concurrently; or inject seek, allocation, or short-read failure while loading a committed CUE fixture
+- Impact: the suite can consume another or stale generation, crash outside the named assertion, or produce nondeterministic diagnostics. In the stale-open case, a reached integration case can pass without proving that its current setup produced the consumed source bytes
+- Expected: one run-owned fixture root or a cross-platform exclusive owner; checked setup status for directory creation, allocation, seek, complete read/write, close, and reopen identity; and immediate counted failure before any stale artifact can be consumed
+- Narrow fix and validation: retain ownership in open `BR-0160`. Make fixture helpers return checked status, use unique per-run paths, remove only run-owned artifacts, and seed stale valid bytes while injecting every setup failure. Race two runs and require deterministic nonzero results, no cross-generation consumption, and bounded cleanup
+- Deduplication: direct extension of open `BR-0160`, prior `R1-CHUNK-0077` through `R1-CHUNK-0080`, `GQ1-CHUNK-0095-OBS-002`, and adjacent `GQ1-CHUNK-0099-OBS-001`. Do not create a new finding or remediation ID
+
+### GQ1-CHUNK-0100-OBS-002: two never-used fixture helpers and their header remain in the branch-added test
+
+- Severity/confidence: P3/high
+- Category: maintainability/dead-code/warnings
+- Assigned location: `test_cue_iso.c:L933-L960`, with the related unused `<assert.h>` at L18
+- Evidence: frozen repository-wide symbol searches find `write_test_cue` and `read_test_file` only at their static definitions. No test group, fixture generator, production caller, build script, or later revision calls either helper. `<assert.h>` likewise has no `assert` use. Full file history shows the helpers were introduced together in `6cff4cd0` and no later revision ever established a consumer. Besides adding noise to an already 3,426-line combined suite, warning-enabled C compilers can diagnose the unused static functions, while `read_test_file` retains unchecked seek, length, allocation, and read paths that have no behavior to preserve
+- Trigger: build `test_cue_iso.c` with ordinary unused-function warnings enabled, or maintain the fixture layer while tracing actual setup ownership
+- Impact: branch-owned dead code adds warning and review surface and presents unsafe I/O code as a reusable pattern even though the maintained suite has no call path to it
+- Expected: branch-added tests retain only used helpers and includes, or a named test consumes a helper with checked error semantics
+- Narrow fix and validation: delete both unused static functions and `<assert.h>`, then compile the focused target with supported warning flags and run the isolated CUE/ISO suite. If a future case needs this behavior, add one checked helper at that time instead of preserving the unused versions
+- Deduplication: no `write_test_cue`, `read_test_file`, or equivalent test-local dead-code owner was found in the active or done GQ ledgers, active or done adversarial ledgers, DMR1, earlier cleanup plans, or imported evidence. Recommend `NEW`
+
+## Explicit clean dimensions
+
+- ISO graph fixture parity: both raw Mode 1 and standalone images reach the same production source geometry. Self and ancestor cycles, repeated and overlapping directory extents, unreadable, huge, and wrapping child spans are independently mutated and later required to fail atomically with an empty catalog
+- Traversal boundaries: the sector-budget fixture exceeds the production traversal budget without exceeding its allocated image; depth fixtures assert the exact admitted 15-child path and atomic rejection at 16 children in both source layouts
+- Multi-extent construction and oracles: valid two- and three-section chains preserve identifiers, alignment, ordering, complete size, exact boundary bytes, and final payload. Malformed name, termination, directory, alignment, arithmetic, overlap, range, and exact/excess 512-extent cases are later checked at the production listing or extraction seam
+- CUE oracle strength: ordinary single-file parsing checks all three track starts and derived sector counts, types, title capture, and file count. The multi-file case checks exact file ownership and lengths. Later format-specific tests cover sector mode, stride, and user-data offset
+- Capacity and malformed boundaries: exact 100-track admission checks canaries, count, and the last stored identity; the 101st accepted directive must clear both track and file counts while preserving canaries. These assertions directly protect the archived `BR-0013` repair and use always-active test macros rather than `assert`
+- Resource cleanup: assigned builders and their ordinary consumers release image allocations, files, and descriptors on examined success paths. The multi-extent consumers check complete source writes and close results. Allocation, setup, and failure-path gaps remain observation 001 rather than a separate production leak
+- Portability and build: raw files use binary descriptors on Windows, standalone and raw geometry share the production reader, and the CTest target compiles the production parser and reader directly. No dependency or 1996-original D1/D2 file is changed by this branch-added test
+- Diagnostics: named cases report a specific failure message and `main` returns nonzero when a reached case fails. The missing independent expected-case invariant and shared runner lifetime remain owned by `BR-0160`
+- Diff hygiene: the frozen scoped diff passes `git diff --check`. Non-ASCII decorative comments are existing branch formatting and were not promoted to a standalone finding under the admission rule
+
+## Evidence gaps
+
+- No configure, compile, CTest, sanitizer, low-memory, injected-I/O, interruption, or concurrent-run test was executed. The frozen executable writes shared source-tree fixtures, and open `BR-0160` establishes that a live run is not isolated or cleanup-safe
+- `clang` is unavailable in the worker environment, so observation 002's warning behavior was not demonstrated locally. Frozen definition-only symbol searches and complete history establish that the code is unreachable regardless of compiler diagnostics
+- No real optical media was used. The assigned builders cover synthetic parser geometry and boundary behavior; proprietary-media identity and end-to-end launcher coverage remain in their existing owners
+- Live code may move after the frozen head. Closure requires delta review if the test, production parser/reader, runners, or fixture root changes
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality process, both GQ ledgers, the durable evidence ledger, the active and done adversarial ledgers, DMR1, relevant cleanup plans, and the frozen queue manifest
+- Used `git cat-file`, `git rev-parse`, `git merge-base`, `git show`, `git diff`, `git diff --check`, `git log --follow`, `git log -S`, `git blame`, `git grep`, `git hash-object`, `rg`, `Select-String`, and line-numbered frozen inspection
+- Confirmed both frozen objects, base ancestry, base absence of the assigned path, frozen blob identity, frozen/live/worktree equality, exact line count and size, and the normalized assigned-range digest
+- Read all assigned lines, the crossing builder, all helper consumers, complete CUE production code, relevant ISO production seams, build registration, runners, history, and duplicate owners
+- No product source, plan, canonical ledger, existing report, ignored temporary file, build output, fixture, or external state was changed
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one explicit `ISSUES` coverage record for `GQ1-CHUNK-0100`
+- Normalize observation 001 as `EXTENDS BR-0160`, linking the adjacent and prior fixture-owner observations without a new finding or remediation ID
+- Normalize observation 002 as one new P3/high branch-owned maintainability finding and one small remediation chunk limited to deleting the two unused helpers and unused header, with focused warning-enabled compile and isolated suite validation
+- Record the clean ISO geometry, cycle, budget, depth, multi-extent, CUE capacity, ordinary cleanup, portability, diagnostics, and diff-minimization dimensions above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0100 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0101 frozen survey SHA256:81a41fd9a88364da46f5dc8d7be5043e1c8cb3a2c2114768eacbc8b34a2fc62a -->
+
+## GQ1-CHUNK-0101 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0101.md`
+- Imported SHA-256: `81a41fd9a88364da46f5dc8d7be5043e1c8cb3a2c2114768eacbc8b34a2fc62a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0101 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0101`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Exact assigned scope: `android/app/src/main/cpp/extract/test_cue_iso.c:L1201-L1800`
+- The assigned path is a branch addition relative to the frozen base
+- Product code, plans, canonical ledgers, existing reports, generated fixtures, build output, and ignored temporary files were not changed
+
+## Frozen fingerprints
+
+- Frozen head blob: `31f625d2c2fe23351755c8fa4f5a7f63787bcc2c`
+- Frozen blob size: 98,233 bytes
+- `L1201-L1800` LF-normalized range SHA-256: `a515c32a27d622e187e10974c63aadd80d088941bc4c4b14e0e7d25e22a5781a`
+- Fingerprint method: UTF-8 bytes of the exact 600 frozen lines joined with LF and terminated with LF
+- Both named frozen objects resolve as commits, and the assigned path is absent from the frozen base tree
+
+## Scope and context inspected
+
+- Every assigned line, including malformed CUE rejection, ISO raw-track and standalone listing, all three admitted CUE sector geometries, invalid geometry, directory-record boundaries, unsafe identifier rejection, catalog capacity, and the beginning of extraction-time public-list revalidation
+- Enclosing fixture builders, `TEST`/`PASS`/`FAIL` accounting, fixed `TEST_DIR` ownership, remaining extraction and round-trip cases, and final suite registration
+- Frozen `cue_parser.c/.h`, including quoted `FILE` handling, required and unique `INDEX 01`, supported mode geometry, complete-disc failure, and known-source range calculation
+- Frozen `iso9660_reader.c/.h`, including source initialization, logical-sector reads, record decoding, identifier normalization, relative-path checks, output joining, traversal budgets, catalog admission, extraction revalidation, destination open/write/close, and raw plus standalone public APIs
+- Frozen extraction CMake and CTest registration, Windows and POSIX wrapper ownership, production CLI and JNI callers, and the August 10 repair history that added the current parser and geometry cases
+- Active and done general-quality records, active and done adversarial records, DMR1, earlier cleanup plans, and durable evidence used for deduplication
+
+## Atomic observations
+
+### GQ1-CHUNK-0101-OBS-001: ISO containment still admits Windows device basenames
+
+- Severity/confidence: P2/high
+- Category: compatibility/data-integrity/path-identity
+- Assigned location: `test_cue_iso.c:L1681-L1729`, especially the `unsafe_names` matrix
+- Production location: `iso9660_reader.c:L240-L280` in `iso_name_byte_is_reserved` and `clean_iso_name`, plus L812-L923 in extraction revalidation and publication
+- Evidence: The assigned matrix rejects separators, drive syntax, dot components, controls, high bytes, the JNI pipe delimiter, and trailing space, but it has no Windows device basename. The production predicate likewise rejects reserved characters only. An ISO identifier such as `NUL.HOG;1`, `CON.HOG;1`, `AUX.HOG;1`, or `COM1.HOG;1` therefore normalizes to an apparently safe relative component and is published in the file list. Windows reserves these device stems even when followed by an extension. The extraction path then passes `output_dir/nul.hog` or its peer to `_open`; depending on the device, that can fail as a host-only import error or open a device instead of a regular file. In the latter case the writes and close can succeed and `extracted` increments even though no game file was published. Android and ordinary POSIX hosts instead create a regular file, so the same accepted image has host-dependent output identity
+- Trigger: list and extract a raw-track or standalone ISO containing an extension-matching record whose final component is a Windows device stem, including a nested `NUL.HOG;1` or `COM1.HOG;1`
+- Impact: Windows host extraction can reject otherwise accepted media or report a successful extraction without a reusable regular output, while Android produces a different file set. This breaks the repository's cross-platform extraction contract and can let Windows-generated regression or metadata results diverge from device imports
+- Expected: Apply one explicit portable component policy before catalog publication and again at the public extraction boundary. Reject or collision-safely encode every reserved Windows device stem case-insensitively, including numeric `COM1` through `COM9` and `LPT1` through `LPT9`, with or without extensions and in nested paths. Tests should cover raw and standalone sources, case variants, extensions, nested names, exact near-misses, and regular-file existence after any reported success
+- Deduplication: Archived `BR-0061` owns this exact ISO name-containment boundary and its resolution states that Windows-reserved names are rejected, but the frozen implementation and assigned matrix do not enforce device basenames. This is incomplete closure or regrowth of `BR-0061`, not a new unrelated ISO-path root. Open `GQF-0080` records the same Windows namespace class for Inno destinations but has a different parser and output owner; link it for a shared policy if remediation centralizes portable component validation
+- Normalization recommendation: `REGROWTH or incomplete closure of archived BR-0061`; allocate one current `GQF-*` linked to `BR-0061`, unless the canonical writer deliberately broadens `GQF-0080` to own the shared cross-extractor Windows component policy
+
+### GQ1-CHUNK-0101-OBS-002: valid ISO setup can disappear from suite accounting
+
+- Severity/confidence: P2/high
+- Category: test-gap/false-pass/reproducibility
+- Assigned location: `test_cue_iso.c:L1334-L1355` before `TEST(iso_list_files_valid)`, and L1462-L1518 in fixed-name geometry fixtures
+- Runner context: the frozen CTest target runs in the extraction source directory and every invocation shares `test_fixtures`; suite success compares only dynamically reached `TEST` calls with `PASS` calls
+- Evidence: `test_iso_reader` allocates and writes `test_fixtures/test_iso.bin` before its first `TEST` declaration. If `fopen` fails, it prints a diagnostic and returns without incrementing `tests_run`; main can still report every dynamically reached case passed and exit zero. The write count and `fclose` result are also ignored. The new geometry loop improves its `fopen` and `fwrite` checks but still reuses fixed source-tree paths and ignores `fclose`; another run can replace or consume the same path between write, close, and reopen. There is no independent expected-case count to expose an omitted setup path
+- Trigger: deny or fail creation of `test_iso.bin`, inject a partial or close failure, interrupt after a fixed fixture is written, or run two native suites concurrently against the source-tree working directory
+- Impact: a green native suite need not prove that the named valid raw ISO cases ran or consumed the bytes generated by that invocation. A production listing or geometry regression can be hidden by omitted or substituted coverage
+- Expected: Create a unique invocation-owned fixture root before any counted case, make every setup failure a counted failure, check complete writes and closes, and require an independently maintained expected case count. Run CTest in an isolated binary-directory workspace or serialize all platform wrappers, with cleanup on success, failure, and interruption
+- Deduplication: Open `BR-0160` already owns the CUE/ISO suite's fixed source-tree fixtures, setup false passes, missing exact case count, cross-run collision, cleanup, and deadline. The assigned current-head lines extend that owner and do not warrant a parallel finding
+- Normalization recommendation: `EXTENDS BR-0160`; do not allocate a new finding
+
+## Explicit clean dimensions
+
+- Malformed CUE oracles: empty input returns no tracks, invalid MSF, duplicate or missing `INDEX 01`, past-EOF starts, and zero-sized known sources require full transactional rejection with zero returned files and tracks
+- Capacity boundaries: exact track and file capacities verify last-element ownership and guard words, while one-over cases require a completely cleared disc. The generated buffers are sufficient for the maintained limits
+- Geometry parity: listing covers 2048/0, 2352/16, and 2352/24 source layouts with byte placement that makes the selected payload offset observable. Invalid stride, offset, and negative start values are rejected before I/O. A later assigned range owns full Mode 2 extraction bytes
+- Record bounds: raw and standalone fixtures cover record lengths 1 through 33, exact and excessive identifier bounds, nonzero required padding, a record crossing the sector boundary, a short PVD root record, and a record beyond the declared directory size
+- Catalog boundaries: the assigned cases require exact 1,025-entry retail admission, exact `ISO_MAX_FILES` admission, and rejection one past capacity for both raw and standalone sources
+- Existing path containment: the matrix covers slash and backslash traversal, absolute and drive-like syntax, dot components, empty post-version names, protocol delimiters, controls, high bytes, and trailing spaces. Extraction revalidates a forged public list and rejects an outside write; OBS-001 is the remaining portable namespace gap found here
+- Resource lifetime: counted ordinary and asserted failure paths in the assigned record-bound and containment cases free generated images and close opened streams and descriptors. The fixed setup ownership and unchecked close weakness is recorded under OBS-002
+- Build and ownership: the test target compiles the same parser and reader production sources used by CLI and JNI callers, and all assigned code is branch-added under the Android extraction owner without inherited D1/D2 edits
+- Diagnostics: counted failures retain a named assertion and prevent aggregate success; parsing failures clear the published disc or list instead of returning partial metadata
+
+## Evidence gaps
+
+- No test executable was run because this worker reviewed frozen Git objects read-only and the registered suite mutates the shared source-tree fixture directory covered by `BR-0160`
+- Windows device behavior was established from the Windows filename namespace and the frozen `_open` publication path; no physical Windows extraction probe was run. Remediation should assert that a reported output is a regular file, not merely that open, write, and close returned success
+- The assigned unsafe-name test begins the extraction-time containment case at L1775, but its continuation and valid nested round trip fall in `GQ1-CHUNK-0102`; those lines were read as context and are not claimed as primary coverage here
+- Real media, injected allocation failures, sanitizer runs, filesystem case-fold collisions, concurrent file replacement, short native reads and writes, and free-space failure are not exercised by this assigned range
+- Unterminated quoted `FILE` input remains explicitly accepted with an empty filename at L1228-L1248. Earlier adversarial review assessed that behavior as a later caller failure without a separate admitted root cause, so it is retained as an evidence gap rather than duplicated as a new observation
+- The live worktree may differ from the frozen objects; any product or test movement requires delta-generation review
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-quality worker process
+- Used `git cat-file`, `git ls-tree`, `git show`, `git diff`, `git log --follow`, `git grep`, `rg`, and line-numbered frozen-object inspection
+- Traced assigned tests into frozen `cue_parser`, `iso9660_reader`, CMake/CTest registration, CLI and JNI callers, platform wrappers, repair history, and historical finding ownership
+- Searched both GQ ledgers, both adversarial ledgers, DMR1, earlier cleanup plans, and durable evidence for ISO device-name, containment, fixture-isolation, omitted-case, and malformed-CUE keys
+- Computed the assigned-range SHA-256 from the exact frozen lines joined with LF and terminated with LF
+- Performed report-only ASCII, BOM, NUL, trailing-whitespace, final-LF, and scoped diff checks after creation
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0101`
+- Normalize OBS-001 as incomplete closure or regrowth of archived `BR-0061`, linked to the cross-extractor namespace evidence in `GQF-0080`
+- Normalize OBS-002 as `EXTENDS BR-0160` without a new ID
+- Preserve the unterminated-quote note as a historical evidence gap unless a later coverage unit establishes a distinct consumer impact
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0101 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0102 frozen survey SHA256:81b012f613c45174ffd316b14d0e5f8b22585378b5c1927763093d5abd21bc3c -->
+
+## GQ1-CHUNK-0102 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0102.md`
+- Imported SHA-256: `81b012f613c45174ffd316b14d0e5f8b22585378b5c1927763093d5abd21bc3c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0102 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0102`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Exact assigned scope: `android/app/src/main/cpp/extract/test_cue_iso.c:L1801-L2400`
+- The assigned path is a branch addition relative to the frozen base
+- Product code, plans, canonical ledgers, existing reports, generated fixtures, build output, and ignored temporary files were not changed
+
+## Frozen fingerprints
+
+- Frozen head blob: `31f625d2c2fe23351755c8fa4f5a7f63787bcc2c`
+- Frozen blob size: 98,233 bytes
+- `L1801-L2400` LF-normalized range SHA-256: `7f79dad21f80588dd13b7ae6eda4a711712ab5ce9718bf693990337c6fd12f67`
+- Fingerprint method: UTF-8 bytes of the exact 600 frozen lines joined with LF and terminated with LF
+- Both named frozen objects resolve as commits, their merge base is the frozen base, and the assigned path is absent from the frozen base tree
+
+## Scope and context inspected
+
+- Every assigned line, including forged public-list containment, valid nested path listing and extraction, directory graph cycles and spans, traversal-sector and depth limits, valid and malformed multi-extent chains, extent-size and pool boundaries, raw and standalone extraction, Mode 2 geometry extraction, and mixed-success destination failure
+- Enclosing ISO fixture builders, fixed fixture-root ownership, `TEST`/`PASS`/`FAIL` accounting, suite registration, later extraction cases, and helper allocation, write, open, close, and cleanup behavior
+- Frozen `iso9660_reader.c/.h`, including source geometry, logical-sector reads, traversal budgets, path and extent revalidation, output accounting, output creation, read/write/close failures, progress cancellation, and all public listing and extraction variants
+- Frozen production CLI and JNI callers, including direct output ownership and the launcher transaction boundary, extraction CMake and CTest registration, Windows and POSIX wrappers, and history that enlarged ISO catalogs and added the MSVC stack override
+- Active and done general-quality ledgers, durable evidence, active and done adversarial ledgers, DMR1, and earlier cleanup plans for duplicate and regrowth ownership
+
+## Atomic observations
+
+### GQ1-CHUNK-0102-OBS-001: ISO tests retain the production-sized catalog on the stack
+
+- Severity/confidence: P2/high
+- Category: build-portability/test-gap/resource-lifetime/maintainability
+- Assigned location: `test_cue_iso.c:L1810,L1883,L1935,L1953,L1970,L2033,L2100,L2134,L2195,L2256,L2303,L2385`
+- Build and API context: `iso9660_reader.h:L19-L55` and `extract/CMakeLists.txt:L103-L112`
+- Evidence: `iso_file_list_t` embeds 4,096 276-byte file entries plus 4,096 8-byte extents and two counters, for 1,163,272 bytes before any function-frame overhead. The public header explicitly says this catalog must be heap allocated because it is too large for an Android native thread stack, and all production CLI and JNI owners use `iso_file_list_create` and `iso_file_list_destroy`. The assigned tests instead declare twelve complete catalogs as automatic locals. The catalog expansion commit separately added a 16 MiB MSVC linker stack override solely for `test_cue_iso`, proving that the test layout already exceeded the ordinary supported host stack rather than following the production owner. No equivalent reservation or constrained-stack assertion exists for non-MSVC generators, and the tests bypass allocation-failure and destroy ownership of the production API
+- Trigger: build or run the registered test with a supported non-MSVC host or test supervisor whose main-thread stack is below the roughly 1.11 MiB catalog frame, or remove the MSVC-only 16 MiB workaround while retaining the production-sized local
+- Impact: the registered suite can fail before an assertion on a host stack policy that production avoids by design. It also needs a compiler-specific build exception and cannot validate production catalog allocation failure or cleanup, so test and production resource ownership can drift while ordinary parser assertions remain green
+- Expected: use the public checked heap owner in the tests, fail the named case on allocation failure, destroy the catalog on every exit, and remove the target-specific stack reservation once no measured frame requires it. Run the suite with a deliberately constrained but supported stack and add allocation-failure coverage at the catalog boundary
+- Deduplication: `GQF-0094` concerns fixed STi2 catalogs in maintained production extraction and supplies a reusable low-stack validation pattern, but it does not own this CUE/ISO test target, its build workaround, or its production-seam bypass. Earlier ISO reviews discussed the former 512-entry catalog and did not cover the current 4,096-entry test frame. No exact current owner was found
+- Normalization recommendation: `NEW`; admit one `GQF-*` for the test target's production-sized stack catalogs and MSVC-only workaround, linked to `GQF-0094` for shared remediation technique
+
+### GQ1-CHUNK-0102-OBS-002: the mixed-failure oracle requires partial final-path publication
+
+- Severity/confidence: P2/high
+- Category: test-gap/correctness/publication
+- Assigned location: `test_cue_iso.c:L2347-L2398`
+- Production location: `iso9660_reader.c:L828-L923` in direct extraction publication
+- Evidence: The test creates a two-file ISO, makes the second destination a directory so its open fails, requires the API to return an error, and simultaneously requires the first final-path output to remain readable. The assertion is named `iso_mixed_success_destination_failure_is_error`, but its failure text says the operation did not fail closed. This oracle therefore protects error status while explicitly accepting and requiring a reusable partial output. The direct extractor writes each final destination with truncation before the whole request succeeds. Production launcher orchestration may place that direct API inside a wider transaction, but the public CLI and direct callers retain this weaker behavior
+- Trigger: extract two selected files where the first succeeds and a later destination open, source read, write, close, or cancellation fails
+- Impact: a future transactional repair of the direct API would break the test because removing or withholding the first output violates its current assertion. Until then, direct callers can receive an error beside reusable partial final-path state and can mistake residue for a complete generation
+- Expected: assert an error and no new or replaced final-path outputs after any later failure, with preservation of a preexisting complete generation. If the API is intentionally staging-only, encode that ownership in its contract and keep all maintained direct callers behind an atomic publisher
+- Deduplication: Open `GQF-0046` already owns direct PKG and standalone ISO final-path publication and links the incomplete closure of archived `BR-0020`. This assigned test is strong additional evidence that the partial-publication behavior is intentionally locked into the current oracle, not a separate root
+- Normalization recommendation: `EXTENDS GQF-0046` and archived `BR-0020`; do not allocate a new finding
+
+### GQ1-CHUNK-0102-OBS-003: extraction cases can consume stale shared inputs and outputs
+
+- Severity/confidence: P2/high
+- Category: test-gap/false-pass/reproducibility
+- Assigned location: `test_cue_iso.c:L1809-L1824,L1854-L1919,L2005-L2088,L2163-L2287,L2290-L2344`
+- Runner context: `extract/CMakeLists.txt:L197-L202`, the fixed `test_fixtures` working tree, and both platform wrappers
+- Evidence: The forged-list case does not check `open_bin`; an open failure produces the expected negative extraction result and absent outside file, so the case passes without exercising path validation. The basic raw extraction setup begins before its first `TEST`, dereferences an unchecked `fopen`, and ignores write and close status. Raw, standalone, and Mode 2 success cases reuse fixed output names without removing the expected leaf first. Directory creation results are generally ignored. A failed or concurrent setup can therefore crash, substitute old input, or let an output oracle inspect bytes from a prior run. The suite has no independent exact expected-case count to detect a return before a `TEST` declaration
+- Trigger: prepopulate the named fixture and output paths, inject reader-open, directory, partial-write, close, or removal failure, interrupt a previous run, or overlap two suite invocations
+- Impact: an exit-zero run need not prove that containment or extraction consumed and published the generation built by that invocation
+- Expected: use one invocation-owned fixture root, check every setup and cleanup operation, remove or atomically replace each expected output, make setup failure a counted failure, and enforce an independent exact case count under concurrent and injected-I/O tests
+- Deduplication: Open `BR-0160` already owns the CUE/ISO suite's fixed source-tree fixtures, setup false passes, stale outputs, missing exact count, cross-run collision, cleanup, and deadlines. The current assigned lines extend that owner
+- Normalization recommendation: `EXTENDS BR-0160`; do not allocate a new finding
+
+## Explicit clean dimensions
+
+- Path and caller-list validation: the forged `../escape.hog` list is rejected by both raw and standalone extractors without creating the tested outside leaf. Valid nested names preserve normalized path, size, file count, extracted count, and exact payload
+- Traversal bounds: self-cycle, parent-cycle, overlapping directory ranges, unreadable and wrapped child spans, excessive traversal sectors, exact depth, and one-over depth all require a cleared failed catalog in raw and standalone layouts
+- Multi-extent structure: two- and three-section success cases assert one logical file, exact extent count, exact aggregate size, section order, boundary bytes, final bytes, and extracted file size. Mismatched name, missing terminator, interrupted chain, directory continuation, misalignment, size overflow, overlap, and out-of-range sections fail without publishing a partial catalog
+- Multi-extent boundaries: exact `UINT_MAX` logical size and one-over overflow are separated, and exact plus one-over extent-pool cases verify complete rejection instead of truncation
+- Geometry parity: raw Mode 1, standalone 2,048-byte images, and Mode 2 2,352/24 extraction all reach the shared production reader and validate exact payload bytes. The assigned Mode 2 case makes its user-data offset observable
+- Basic output oracle strength: ordinary raw and standalone cases check extracted count, file existence, exact read length, and payload bytes. Multi-extent output additionally checks exact total length and every section boundary
+- Error status: the later destination-open failure returns negative rather than a positive partial count. OBS-002 records the separate retained-output contract defect
+- Ordinary resource cleanup: counted success and asserted failure paths close their opened descriptors and streams and free generated images. The shared fixture and large local-catalog ownership problems are isolated in OBS-001 and OBS-003
+- Production seam: the test links the same `iso9660_reader.c` used by CLI and JNI callers and exercises all three public geometry families. It does not mock parser or extractor behavior
+
+## Evidence gaps
+
+- No test executable was run because this worker reviewed frozen Git objects read-only and the registered suite mutates the shared source-tree fixture directory already owned by `BR-0160`
+- Stack size was derived exactly from the frozen public structures and C alignment, and the MSVC workaround was inspected. A low-stack POSIX execution and compiler frame-size report were not run
+- No injected allocator, short read, short write, close, free-space, cancellation, symlink, junction, replacement-race, or concurrent-run test exists in the assigned range
+- The assigned tests use synthetic ISO records rather than retail media. Synthetic bytes make the targeted geometry, traversal, and extent invariants observable, but do not establish uncommon valid ISO compatibility
+- Declared-volume containment remains `GQF-0088`, physical output containment remains `GQF-0047`, and direct publication remains `GQF-0046`; they were not duplicated here
+- The live worktree may differ from the frozen objects; any product, test, build, or fixture movement requires delta-generation review
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md` and the complete general-quality worker process
+- Used `git cat-file`, `git merge-base`, `git rev-parse`, `git show`, `git diff`, `git log --follow`, `git blame`, `git grep`, `rg`, and line-numbered frozen-object inspection
+- Traced all assigned tests into frozen ISO production code, public API ownership, CLI and JNI callers, CMake/CTest registration, platform wrappers, and relevant repair history
+- Searched both GQ ledgers, durable evidence, both adversarial ledgers, DMR1, and earlier cleanup plans for ISO extraction, stack catalog, fixture isolation, partial publication, and false-pass owners
+- Computed the exact frozen range SHA-256 in memory and calculated the frozen `iso_file_list_t` size from its aligned fixed-width members
+- Performed report-only ASCII, BOM, NUL, trailing-whitespace, final-LF, and scoped diff checks after creation
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one `ISSUES` coverage record for `GQ1-CHUNK-0102`
+- Admit OBS-001 as one new CUE/ISO test stack-ownership and portability finding, linked to `GQF-0094` only for the reusable low-stack remediation pattern
+- Normalize OBS-002 as `EXTENDS GQF-0046` and archived `BR-0020`
+- Normalize OBS-003 as `EXTENDS BR-0160`
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0102 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0103 frozen survey SHA256:cce136fa3b56a065d277084f8799c88b9fbfa65d315805812949cb9e313719dc -->
+
+## GQ1-CHUNK-0103 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0103.md`
+- Imported SHA-256: `cce136fa3b56a065d277084f8799c88b9fbfa65d315805812949cb9e313719dc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0103 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0103`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Exact assigned scope: `android/app/src/main/cpp/extract/test_cue_iso.c:L2401-L3000`
+- The assigned path is a branch addition relative to the frozen base
+- Product code, plans, canonical ledgers, existing reports, fixtures, build output, temporary files, and external state were not changed
+
+## Frozen fingerprints
+
+- Frozen base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen head blob: `31f625d2c2fe23351755c8fa4f5a7f63787bcc2c`
+- Frozen blob size: 98,233 bytes
+- Frozen path diff: 3,426 added lines and 0 deleted lines
+- `L2401-L3000` LF-normalized range SHA-256: `c84f74249b9cd56343b21457ab07f73500b987fbc52c188101966faab0b985a5`
+- Fingerprint method: UTF-8 bytes of the exact 600 frozen lines joined with LF and terminated with LF
+- Both named frozen objects resolve as commits, the base is an ancestor of the head, and the assigned path is absent from the frozen base tree
+
+## Scope and context inspected
+
+- Every assigned line, including all fourteen committed file-based CUE cases, inline supported and unsupported sector-mode checks, mixed-stride rejection, case and line-ending handling, capacity boundaries, complete MSF arithmetic boundaries, and the beginning of ISO name-cleaning coverage
+- The complete committed CUE fixture contents and the frozen fixture reader, assertion macros, remaining inline parser tests, continuation of ISO name cleaning, integration cases, exact suite call list, and aggregate exit status
+- The complete frozen `cue_parser.c/.h`, including physical-line handling, quoted-field parsing, file and track admission, mode geometry, unique `INDEX 01`, complete failure clearing, sector-count derivation, and capacity checks
+- Frozen native CLI, JNI, preview, runtime playback, HFS, and STi2 parser callers; Kotlin source ordering and publication were checked through the existing parser-owner evidence
+- Frozen extraction CMake and CTest registration, including source-directory working-directory ownership, plus Windows and POSIX wrapper ownership recorded by the existing fixture-isolation finding
+- File history through the August 10 parser repair, the active and done general-quality ledgers, durable evidence, both adversarial ledgers, DMR1, and prior cleanup plans for duplicate and regrowth ownership
+
+## Atomic observations
+
+### GQ1-CHUNK-0103-OBS-001: the maintained malformed-file oracle requires an unclosed FILE quote to succeed
+
+- Severity/confidence: P2/high
+- Category: test-gap/parser-correctness/source-identity
+- Assigned location: `test_cue_iso.c:L2685-L2703` and committed `test/data/bad_unclosed_quote.cue`
+- Production location: `cue_parser.c:L59-L74,L107-L121`
+- Evidence: the fixture is a physical `FILE "missing_close.bin BINARY` record followed by an otherwise valid track. The assigned assertion requires `cue_parse` to return one track and an empty filename. Production ignores the failed `extract_quoted` result, appends an authoritative empty file slot, binds the later track to it, and reports success. Thus the maintained test locks in the malformed grammar and wrong source-identity behavior rather than exposing it. Native CLI paths later join the empty name, while launcher ordering uses a stricter complete-line quoted-name regex and can associate selected source sizes or descriptors under a different file ordering
+- Trigger: import, fingerprint, preview, play, or extract a CUE containing an unclosed, empty, missing, or over-capacity quoted filename with a syntactically valid track after it
+- Impact: a green native suite certifies that malformed source records may become authoritative file indices, allowing native and Kotlin source identity to diverge and causing geometry, hashes, extraction, or playback to concern a different selected image
+- Expected: invert this fixture to require complete transactional rejection, add missing and empty quotes, unsupported or missing file types, exact filename capacity and one-over cases, and assert native/Kotlin source-order parity before source sizes or descriptors are associated
+- Deduplication: this is direct maintained-test evidence for open `GQF-0063`, whose admitted root and validation already cite these assigned lines and the malformed fixture. It is not a new parser root
+- Normalization recommendation: `EXTENDS GQF-0063`; do not allocate a new finding
+
+### GQ1-CHUNK-0103-OBS-002: assigned ISO name tests still trust unchecked shared fixture setup
+
+- Severity/confidence: P2/high
+- Category: test-gap/false-pass/resource-lifetime
+- Assigned location: `test_cue_iso.c:L2952-L3000`, continued through L3034
+- Build location: `extract/CMakeLists.txt:L197-L198`, which runs the target in the extraction source directory
+- Evidence: each name-cleaning case allocates an image, opens a fixed `test_fixtures/name_testN.bin`, writes it, closes it, reopens it by descriptor, and lists it without checking allocation, `fopen`, complete `fwrite`, `fclose`, descriptor open, or listing status. The cases share stable source-tree names across invocations. A failed open can be dereferenced, while partial, close, reopen, listing, or concurrent-replacement failure can inspect stale bytes or an uninitialized list. The final aggregate checks only dynamically reached `TEST` and `PASS` calls and has no independent expected-case count
+- Trigger: inject allocation, open, partial-write, close, descriptor-open, or list failure; prepopulate a passing same-name file; or overlap two suite runs in the shared source working directory
+- Impact: the suite can crash, consume a prior or competing generation, or produce misleading assertions without proving that the intended freshly generated ISO bytes reached the production reader
+- Expected: use one invocation-owned fixture root, check every allocation and I/O transition, make setup failure a counted failure, assert successful listing before inspecting the list, clean up on all exits, and require an independent exact case count under a bounded runner
+- Deduplication: open adversarial finding `BR-0160` already owns this exact CUE/ISO fixed-fixture, unchecked setup, stale-output, omitted-count, cleanup, timeout, and concurrent-run boundary. Its R1-CHUNK-0079 evidence specifically covers the equivalent name-cleaning range. No current GQ finding supersedes that owner
+- Normalization recommendation: `EXTENDS BR-0160`; do not allocate a new finding
+
+## Explicit clean dimensions
+
+- Ordinary CUE fixtures: the seven valid fixtures are present at the frozen head and exercise one data track, data plus audio, three files, nine tracks, pregap and `INDEX 00` coexistence, Mode 2 geometry, and leading spaces or tabs. Their supplied size arrays cover the asserted starts, and heap buffers are freed on every inspected return
+- Malformed CUE transactions: garbage MSF, missing `INDEX 01`, known-size past-EOF starts, empty input, backwards starts, unsupported and false-audio modes, and mixed strides require a zero-track result; the stronger cases also require both published counts to be cleared. OBS-001 is the deliberate malformed-file exception
+- Sector geometry: inline assertions observe the complete Mode 1/2048 tuple and file-based Mode 2/2352 tuple. Unsupported layouts fail completely, and a same-file transition between 2048-byte data and 2352-byte audio is rejected rather than deriving incoherent offsets
+- Capacity: exact `CUE_MAX_FILES` admission checks both counts and last file ownership; one-over requires a completely cleared disc. The 8,192-byte local buffers exceed the generated 50- and 51-record strings, each `snprintf` maintains termination, and track capacity remains above both cases
+- Arithmetic and boundary oracles: MSF cases cover zero, ordinary values, maximal second and frame fields, exact `INT_MAX`, one value above it, signs, trailing garbage, empty input, and null input. Frozen unsigned accumulation and widened sector arithmetic match these expected results without signed overflow
+- Portability: parser directives and modes are case-insensitive through the platform compatibility macros, CRLF is stripped without altering tokens, and the assigned ordinary ASCII fixtures have the same grammar on Windows and POSIX
+- Production seam parity: the test target compiles the same `cue_parser.c` used by host extraction, fingerprinting, JNI import, preview, playback, HFS, and STi2. Existing owners `GQF-0063` through `GQF-0066` retain the source-grammar, physical-line, track-identity, and embedded-NUL mismatches not re-admitted here
+- Failure clearing and lifetime: parser-side rejected modes, capacities, missing indexes, invalid MSF, and invalid geometry clear the complete fixed output and own no heap or handles. Assigned file-based fixture text is freed immediately after parse on success and rejection paths
+- Diagnostics: every dynamically reached assigned assertion has a stable case label and a specific failure message. Typed parser line and status diagnostics remain a known owner-adjacent enhancement rather than a distinct finding
+
+## Evidence gaps
+
+- No native executable was run because this worker reviewed frozen Git objects read-only and the registered suite mutates the shared source-tree fixture directory already owned by `BR-0160`
+- Exact native/Kotlin parity was traced through existing frozen parser-owner evidence rather than executing an Android import. `GQF-0063` through `GQF-0066` already require parity matrices at remediation
+- The assigned range does not test long physical lines, embedded NUL, duplicate or nonsequential track identities, overlong filenames, multibyte title truncation, device basenames, case-fold output collisions, injected allocation or I/O failure, or concurrent replacement. Those roots are owned by `GQF-0063` through `GQF-0066`, `GQF-0089`, the current ISO namespace evidence, and `BR-0160`
+- The name-cleaning function continues beyond the assigned range through L3034. Those lines were read as enclosing context; only L2952-L3000 is claimed as primary coverage
+- Real media, sanitizers, Windows device behavior, filesystem exhaustion, non-seekable input, and emulator playback were not exercised
+- The live worktree may differ from the frozen objects; any product, fixture, caller, or build movement requires delta-generation review
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality process and plan, the active and done GQ ledgers, and the frozen manifest row for this coverage unit
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git diff --numstat`, `git show`, `git log`, `git grep`, `rg`, and line-numbered frozen-object projections
+- Traced every assigned assertion into the frozen parser, committed CUE corpus, suite registration, fixture ownership, all parser caller classes, and current and historical finding owners
+- Searched both GQ ledgers, the durable evidence ledger, both adversarial ledgers, DMR1, and earlier cleanup plans for malformed FILE grammar, physical-line splitting, embedded NUL, track identity, CUE fixture isolation, stale setup, capacity, MSF, and name-cleaning duplicates
+- Computed the assigned-range SHA-256 in memory from the exact frozen lines joined with LF and terminated with LF
+- Performed report-only ASCII, BOM, NUL, trailing-whitespace, final-LF, and scoped diff checks after creation
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one non-partial `ISSUES` coverage record for `GQ1-CHUNK-0103`
+- Normalize OBS-001 as `EXTENDS GQF-0063` without a new finding
+- Normalize OBS-002 as `EXTENDS BR-0160` without a new finding
+- Preserve the missing malformed-input and failure-injection cases as validation evidence for their existing owners rather than inflating IDs
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0103 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0104 frozen survey SHA256:226409cb61acfb46cbf0eea44445d5db8e8b0680fbabfc613e9d8e6f5a6b92e7 -->
+
+## GQ1-CHUNK-0104 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0104.md`
+- Imported SHA-256: `226409cb61acfb46cbf0eea44445d5db8e8b0680fbabfc613e9d8e6f5a6b92e7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0104 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0104`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Exact assigned scope: `android/app/src/main/cpp/extract/test_fingerprint.c:L1-L559`
+- The assigned path is a branch addition relative to the frozen base
+- Product code, plans, canonical ledgers, existing reports, fixtures, build output, temporary files, and external state were not changed
+
+## Frozen fingerprints
+
+- Frozen base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen head blob: `ef4b2ad5567a64f68623ce02c006abcb27dc7591`
+- Frozen blob size: 18,811 bytes
+- Frozen path diff: 559 added lines and 0 deleted lines
+- `L1-L559` LF-normalized range SHA-256: `eaeab8ab15c995bd276c1c61eb1d1404ad0475bada33ee7c707edd55e44a47c2`
+- Fingerprint method: UTF-8 bytes of the exact 559 frozen lines joined with LF and terminated with LF
+- Both named frozen objects resolve as commits, the base is an ancestor of the head, and the assigned path is absent from the frozen base tree
+
+## Scope and context inspected
+
+- Every assigned line, including the mini test framework, raw and fpcalc fixture readers, direct Chromaprint comparisons, duration checks, complete-track stream parity, PCM result contract, real MP3 file and memory decoding, CD-sector wrapper, cleanup paths, suite call list, and aggregate result
+- Complete frozen `fingerprint_gen.c/.h`, including stream creation, checked feed chunking, duration arithmetic, result ownership, audio-file decode, and CD-sector conversion
+- Complete frozen `pcm_decoders.c/.h` and decoded-audio budget policy, including file and memory MP3, OGG, and FLAC paths, result validation, failure cleanup, and CD decode helpers
+- Frozen host `fingerprint_audio` and `fingerprint_cd`, JNI CD and file fingerprint callers, Kotlin bridge context, and runtime music consumer at the shared decoder boundary
+- Frozen extraction CMake construction, warning flags, fetched Chromaprint fixture path, CTest registration, and aggregate native runner context
+- Complete assigned file history through the original tests, bounded-prefix remediation and reversal, and decoder-contract audit repair
+- Active and done GQ ledgers, durable evidence, both adversarial ledgers, DMR1, and prior fingerprint and cleanup plans for false-pass, fixture, resource, registration, and provenance ownership
+
+## Atomic observations
+
+### GQ1-CHUNK-0104-OBS-001: the fpcalc parser and scorer can accept an incomplete fingerprint
+
+- Severity/confidence: P2/high
+- Category: test-gap/false-pass/oracle-completeness
+- Assigned location: `test_fingerprint.c:L113-L160,L397-L452`
+- Production seam: `fingerprint_from_audio_file` through the shared file decoder and Chromaprint generator
+- Evidence: `load_fpcalc_reference` does not require `strtoul` to advance, consume a complete token, or consume the complete line, and silently caps results at 512 entries. At the current reference newline it can repeatedly count a failed conversion until the cap. `fp_similarity` compares only the shorter prefix and accepts as few as five values; the test has no complete expected-length assertion. A candidate retaining a matching prefix while omitting tail fingerprint values can pass if its separately measured duration remains within 500 ms
+- Trigger: regress file decoding or fingerprint generation to omit a short tail, or supply a malformed, truncated, over-capacity, or partially numeric reference line
+- Impact: the only assigned cross-decoder known-answer oracle can stay green while production emits an incomplete fingerprint with reduced matching quality, and malformed oracle data can be certified instead of invalidating the test
+- Expected: parse exactly one complete bounded reference with progress and complete-consumption checks, assert its expected length, and compare complete arrays under a documented decoder-tolerance policy that rejects prefixes and extra tails
+- Deduplication: open adversarial `BR-0181` owns this exact assigned parser, similarity rule, trigger, impact, and validation matrix. The current GQ ledger has no superseding owner
+- Normalization recommendation: `DUPLICATE/EXTENDS BR-0181`; do not allocate a new finding
+
+### GQ1-CHUNK-0104-OBS-002: the CD-sector test never proves that the fingerprint represents the supplied bytes
+
+- Severity/confidence: P2/high
+- Category: test-gap/oracle-strength/production-seam-parity
+- Assigned location: `test_fingerprint.c:L463-L485`
+- Production location: `fingerprint_gen.c:L193-L200`; callers `fingerprint_cd.c` and `jni_fingerprint.c` use the stream API directly
+- Evidence: the case creates one deterministic 15-second byte buffer, calls `fingerprint_from_cd_sectors`, and checks only return code, duration, and nonempty encoding. It never compares the raw or encoded result with a direct Chromaprint feed, a known fingerprint, a stream result, or a deliberately different same-length buffer. A wrapper that ignores `sector_data`, feeds silence or stale bytes, uses an incorrect interleaved-sample offset, or otherwise emits any nonempty 15-second fingerprint can satisfy every assertion. The maintained production CLI and JNI paths do not call this wrapper, so the test also cannot establish parity with the actual CD stream callers
+- Trigger: change the CD wrapper's data pointer, frame stride, or byte-to-sample mapping while preserving a successful 15-second Chromaprint result, or let direct stream callers drift from wrapper policy
+- Impact: CD identity can be derived from the wrong audio while the focused native suite remains green, causing false disc matches and incorrect generated fingerprint artifacts
+- Expected: compare the wrapper result exactly with a direct 44.1 kHz stereo Chromaprint feed of the same sectors, prove one-bit or same-length alternate audio changes the output, and exercise the production CLI/JNI stream seam through a shared function or focused seam test
+- Deduplication: `BR-0048` and current `GQF-0058` own complete-track work, memory, and cancellation policy, not whether the CD test proves input-byte fidelity or direct-caller parity. `BR-0181` owns the separate MP3 reference oracle. No exact current or historical owner was found
+- Normalization recommendation: `NEW`, P2/high, test-gap/oracle-strength
+
+### GQ1-CHUNK-0104-OBS-003: raw fixture loading accepts short or malformed files as successful test input
+
+- Severity/confidence: P2/high
+- Category: test-gap/fixture-integrity/false-pass/portability
+- Assigned location: `test_fingerprint.c:L81-L110,L254-L387,L493-L527`
+- Evidence: `load_raw_file` ignores both `fseek` results, accepts negative or odd `ftell` sizes, converts the signed size to `malloc(size_t)`, ignores the exact `fread` count, and returns the declared size divided by two. The callers then pass that declared frame count into production and direct Chromaprint even if the allocation contains unread or partial bytes. The duration tests assert only expected declared file sizes before consuming the unchecked buffer, and the direct-API comparisons read the same buffer, so both sides can agree on uninitialized tail memory
+- Trigger: truncate or concurrently replace a fixture after measurement, inject a partial read or seek failure, provide an odd-length or non-seekable fixture, or encounter a platform I/O error after allocation
+- Impact: tests can compare two consumers of indeterminate or stale memory and report success, crash nondeterministically, or diagnose a production fingerprint failure when fixture acquisition failed. Results can differ across allocator and platform behavior
+- Expected: check seek, measurement, representability, even byte count, rewind, exact read, and close status; on any failure free and clear the output and count a fixture-setup failure. Bind the measured and read bytes to one owned handle and add short-read, odd-size, replacement, and I/O-failure tests
+- Deduplication: `BR-0158` owns optional or missing fixture green passes, but this registered suite returns failure when a raw file cannot be opened. `BR-0160` owns shared generated CUE/ISO fixture setup. No existing owner found for this helper accepting a partial physical read as complete raw PCM
+- Normalization recommendation: `NEW`, P2/high, test-gap/fixture-integrity
+
+### GQ1-CHUNK-0104-OBS-004: `ASSERT_EQ_INT` reevaluates failed expressions while printing diagnostics
+
+- Severity/confidence: P3/high
+- Category: test-infrastructure/diagnostic-side-effect
+- Assigned location: `test_fingerprint.c:L59-L67` and every `ASSERT_EQ_INT` call whose actual expression invokes production or decoder code
+- Evidence: the macro expands `(a) != (b)` and then casts and evaluates both `(a)` and `(b)` again in the failure message. Failed calls such as `fingerprint_from_pcm`, `fingerprint_stream_feed`, `fingerprint_stream_finish`, `pcm_decode_memory`, and `pcm_decode_result_status` therefore run twice. A retry can mutate a Chromaprint stream after its first failure, allocate or overwrite output, free or replace ownership in future implementations, or return a different code, so the printed value is not necessarily the value that caused the assertion. The cleanup path then observes twice-mutated state
+- Trigger: any asserted call returns an error, especially after partial stream consumption, partial result publication, allocation fault, or input-dependent decoder state
+- Impact: the failure path can obscure the original status, change resource ownership, introduce secondary corruption or leaks, and make fault-injection results nondeterministic exactly when diagnostics are needed
+- Expected: capture expected and actual once in type-appropriate temporaries before comparison and print those stable values. Add a counter-based oracle proving each assertion operand is evaluated once on success and failure
+- Deduplication: searches across both GQ ledgers, both adversarial ledgers, DMR1, evidence, and cleanup plans found no owner for double evaluation in this test framework
+- Normalization recommendation: `NEW`, P3/high, test-infrastructure/diagnostics
+
+## Explicit clean dimensions
+
+- Test registration and aggregate result: `test_fingerprint` is built from the same shared generator and decoder sources as production, is registered as `fingerprint_tests`, invokes all nine named cases, uses always-enabled custom checks, counts failures, and returns nonzero when any check fails
+- Ordinary production seam parity: mono and stereo raw fixtures compare the shared wrapper's exact encoded output against the direct Chromaprint API. The MP3 case exercises the real file decoder and real memory decoder, and checks the shared PCM publication contract after memory decoding
+- Complete-track policy regression: the 121-second mono case distinguishes 120 from 121 seconds, requires a longer raw fingerprint, feeds the complete input in irregular 997-frame chunks, and requires one-shot and streamed encoded equality. Its allocations and arithmetic are representable on current 32- and 64-bit targets
+- Duration units: mono and stereo raw cases independently establish per-channel frame units and exact 2,000 ms results. The stereo-as-mono negative case checks both fingerprint inequality and the expected doubled duration
+- PCM result contract: mono and stereo are accepted; 0, 3, 6, and 8 channels, zero sample rate, and retained frames beyond total frames are rejected. This directly retains the archived `BR-0061` repair, although null data, zero counts, overflow, decoded-byte budget, and output-clearing cases remain evidence gaps
+- Resource cleanup: every test initializes owned pointers and result structures, and ordinary and assertion-failure cleanup releases raw input, wrapper results, decoder output, file handles, direct Chromaprint strings, contexts, and stream objects. `fingerprint_free` and `pcm_decode_free` zero their public results
+- Checked production arithmetic: the inspected generator rejects null and zero input, invalid stream configuration, sample-count and accumulated-frame overflow, and unrepresentable duration. It chunks Chromaprint feeds to `INT_MAX` sample calls and cleans intermediate raw and encoded results on ordinary failures
+- Portability and warnings: the assigned test uses `_MSC_VER` and compiler-builtin popcount branches, CMake enables `/W3` or `-Wall`, and MSVC receives `_CRT_SECURE_NO_WARNINGS`. Path separators accepted by the host C runtime and current ASCII fetched-fixture names are portable across maintained Windows and POSIX runners
+- Diagnostics outside OBS-004: test names and assertion messages identify the failed contract and source line; missing command arguments and raw-file open failures produce actionable paths, and aggregate output distinguishes passed and failed counts
+
+## Evidence gaps
+
+- No native executable was run because this worker reviewed the authoritative frozen Git objects read-only; retained build artifacts may not correspond to the frozen head, and configuring the target can fetch dependencies or create build output
+- Allocation, Chromaprint, decoder, seek, read, close, and output-allocation failures were traced but not fault-injected. Sanitizers and leak checkers were not run
+- No OGG, FLAC, malformed MP3, unsupported extension, multichannel real file, decoded-budget boundary, empty audio, zero-frame stream, repeated finish, feed-after-finish, huge frame count, or duration-overflow case exists in the assigned file
+- The test consumes Chromaprint's fetched source-tree fixtures. Supply-chain and missing-fixture ownership remain `GQF-0024`, `BR-0157`, and `BR-0158`; this survey did not duplicate those roots
+- The test does not load JNI, exercise Kotlin database generation or matching, run the actual CD CLI, or validate the packaged fingerprint database. Those interfaces and owners were inspected only as context
+- The live worktree may differ from the frozen objects; any product, fixture, caller, build, or report movement requires delta-generation review
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality process and plan, the active and done GQ ledgers, and the frozen manifest row for this coverage unit
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git diff --numstat`, `git show`, `git log --follow`, `git grep`, `rg`, and line-numbered frozen-object projections
+- Traced every assigned helper and case into the frozen generator, decoder, CD and file callers, JNI and runtime consumers, CMake and CTest graph, aggregate runners, and relevant history
+- Searched both GQ ledgers, the durable evidence ledger, both adversarial ledgers, DMR1, and prior fingerprint and cleanup plans for fpcalc completeness, byte fidelity, fixture reads, assertion evaluation, resource ownership, complete-track policy, decoder contracts, test registration, and dependency provenance
+- Computed the assigned-range SHA-256 in memory from the exact frozen lines joined with LF and terminated with LF
+- Performed report-only ASCII, BOM, NUL, trailing-whitespace, final-LF, and scoped diff checks after creation
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Create one non-partial `ISSUES` coverage record for `GQ1-CHUNK-0104`
+- Normalize OBS-001 as `DUPLICATE/EXTENDS BR-0181` without a new finding
+- Admit OBS-002 as one new P2/high oracle-strength finding for missing CD input-byte and production-stream parity proof
+- Admit OBS-003 as one new P2/high fixture-integrity finding for unchecked raw PCM reads
+- Admit OBS-004 as one new P3/high test-infrastructure finding for assertion operand reevaluation
+- Preserve supply-chain, missing-fixture, complete-track resource, decoder-contract, and broader fingerprint database gaps under their existing owners
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0104 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0105 frozen survey SHA256:f5478786cc5df9e53cc64a9f6646b56d9623d6f85d9e4eeb32c387d32ff54d49 -->
+
+## GQ1-CHUNK-0105 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0105.md`
+- Imported SHA-256: `f5478786cc5df9e53cc64a9f6646b56d9623d6f85d9e4eeb32c387d32ff54d49`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0105 frozen survey
+
+Outcome: ISSUES. All 20 assigned lines were reviewed with the frozen implementation, header, direct native callers, CMake registration, Kotlin policy owner and parity test, paired D1/D2 format roles, history, and prior review records. The native test loses every behavioral oracle when `NDEBUG` is defined, extending the existing optimized-test false-pass owner. Its narrower extension-role coverage also confirms the already-recorded incomplete BR-0041 parity boundary; this is not a new root. No product file, plan, canonical ledger, existing report, generated output, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned file: `android/app/src/main/cpp/extract/test_game_file_extensions.c` L1-L20, 20 lines, frozen blob `04adb86ef579e7a4bf10e80d780b186c8bb44e2b`
+- Scope manifest: `android/app/src/main/cpp/extract/test_game_file_extensions.c|L1-L20|04adb86ef579e7a4bf10e80d780b186c8bb44e2b`
+- Git blob fingerprint of the LF-terminated scope manifest: `1d171e588ff060d67e0495139cb1385e06ef7f51`
+- SHA-256 of the UTF-8 scope manifest without a final LF: `1569095e0367efbab352a8e9485464b9cbe86e6c21df49acc7440886c0a8106b`
+- The assigned path is branch-added relative to the frozen base
+- Evidence came from frozen Git objects. Mutable worktree product files were not used as evidence
+
+## Process and deduplication context
+
+- Read `.github/copilot-instructions.md`, `general_code_quality_worker_process.md`, the active and done GQ ledgers, the durable GQ evidence ledger, the campaign plan, both adversarial ledgers, DMR1, and relevant prior cleanup plans
+- Process SHA-256: `ec03146ad66518f12d022d0f8ef88f14f6b0062b2efb6b9d6cc95d8a708d2b34`
+- Plan SHA-256: `7c2b77c6bb093df05a565738d21bfe2d7741a708262d596d68609eec0d40a266`
+- Active-ledger SHA-256 at review: `a5d8bdae71104d3dead12158c0549e8ecd89262c32f96b16589a8ddd351d47a4`
+- Done-ledger SHA-256 at review: `7a09d3b802451b7126b1a6810d4afa3681968acbb47e51508c706728aa8fa6cd`
+- Searches used the assigned path, target and CTest names, both called symbols, `assert`, `NDEBUG`, false-pass terminology, extension parity, and BR/GQ identifiers
+- Open `BR-0662` owns the same standard-`assert` optimized-build false-pass mechanism across registered native tests. Open `GQF-0008` and `GQF-0009` are current instances of that root
+- Archived `BR-0041`, extended by `GQ1-CHUNK-0020-OBS-003`, owns the incomplete exact extension-role ABI oracle, including dotted versus undotted table representation and duplicate visibility
+
+## Context inspected
+
+- The complete assigned `main`, all eight assertions, success output, includes, and return path
+- `game_file_extensions.c/.h`, including all four tables, final-dot matching, Windows `_stricmp`, POSIX `strcasecmp`, and C/C++ linkage
+- Direct helper consumers in `extract_gog.c`, `jni_gog_import.c`, `pkg_reader.c`, and `test_gog_fd.c`
+- The standalone extraction CMake project and exact `test_game_file_extensions` executable plus `game_file_extension_tests` registration
+- `GameFileFormats.kt` as authoritative role owner and `AndroidGameFileExtensionsTest.kt` as the mechanical Kotlin/native table comparison
+- D1 `.msn` and D2 `.mn2` descriptor roles, shared `.hog` and asset roles, and the fact that the Android extraction policy is shared rather than duplicated in inherited D1/D2 sources
+- Commit `a30faf0e08157ef4beda060ecc233141921cbb51`, which added this target as part of the BR-0041 repair, plus later frozen history and prior review evidence
+
+## Atomic observations
+
+### GQ1-CHUNK-0105-OBS-001: Release-family builds erase the complete native extension oracle
+
+- Provisional disposition: `EXTENDS BR-0662`; do not allocate a separate root without canonical reconciliation
+- Suggested priority/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen locations: `test_game_file_extensions.c:L1-L20`; `extract/CMakeLists.txt:L169-L172`
+- Evidence: every expected result is expressed through the standard C `assert` macro. Outside those assertions, `main` only prints `game file extension tests passed` and returns zero. The registered CMake target neither replaces the assertions with an always-active test check nor undefines `NDEBUG`. Release, RelWithDebInfo, MinSizeRel, or any caller-provided configuration defining `NDEBUG` therefore compiles out all eight helper calls and all eight result checks, yet the executable prints its success banner and CTest records success. Maintained extraction workflows explicitly use Release and MinSizeRel configurations elsewhere, so optimized standalone builds are an intended repository path rather than a hypothetical unsupported configuration
+- Trigger: change either helper or either table in a way that violates one of the eight advertised cases, then build and run `game_file_extension_tests` with `NDEBUG` defined
+- Impact: the only native behavior test added for the shared extraction extension helpers can report PASS without invoking either production function. A Kotlin source-parsing test provides separate table-set coverage, but it does not make this registered native executable truthful or exercise the C runtime comparison ABI
+- Deduplication: this is the same root mechanism and validation boundary as live `BR-0662`, whose accumulated locations already include several registered C/C++ tests erased by optimized flags. It is a new concrete affected target, not a new root cause
+- Recommended fix: convert the eight checks to the repository's always-enabled native test-check pattern with expression and line diagnostics, rather than changing production assertion policy. The success message must be reachable only after active checks in every configuration
+- Focused validation: build and run this target under Debug, Release, RelWithDebInfo, and MinSizeRel; deliberately invert each positive and negative case in turn and require a nonzero, case-identifying failure in every configuration, then restore the source and require focused CTest success
+
+### GQ1-CHUNK-0105-OBS-002: This native test does not close the exact four-role parity contract
+
+- Provisional disposition: `EXTENDS archived BR-0041` and `GQ1-CHUNK-0020-OBS-003`; no new finding
+- Suggested priority/confidence/category: P3/high, `test-gap/api-data-format/maintainability`
+- Frozen locations: `test_game_file_extensions.c:L8-L16`; `game_file_extensions.c:L13-L51`; `AndroidGameFileExtensionsTest.kt:L20-L53`
+- Evidence: the assigned test executes only the generic game-file and GOG-audio wrapper functions. It has one D2 `.mn2` example but no D1 `.msn` behavior case, and it does not execute the ISO/disc or Mac raw-extension table conventions at all. The complementary JVM parity test compares all four roles, but strips an optional leading dot and converts entries to sets. Together these tests still cannot detect copying the wrong dotted/undotted ABI between roles or introducing a duplicate table entry. This exact gap was already established by chunk 0020 as incomplete acceptance of archived BR-0041
+- Trigger: remove a required leading dot from a generic/GOG native entry, add a leading dot to an ISO/Mac entry, or duplicate an entry while retaining the same normalized set. The JVM parity test remains green, and this native target has no affected ISO/Mac oracle; under OBS-001's optimized configuration it has no oracle at all
+- Impact: an extension-policy maintenance edit can silently stop D1 or D2 assets from being selected by a native extraction caller despite the repair's claimed mechanical parity coverage
+- Recommended fix: keep this target's always-active behavior checks, add exact list uniqueness and dotted/undotted role-contract checks, and exercise representative D1 `.msn`, D2 `.mn2`, shared game/GOG, ISO raw extension, and Mac-only raw extension cases through the same calling conventions as production. Do not create duplicated D1/D2 tables
+- Focused validation: mutation-test one missing dot, one extra dot, one duplicate, D1-only and D2-only role removal, final-dot paths, mixed case, extensionless names, trailing dots, and backup suffixes. Require the responsible test to fail in every build configuration
+
+## Explicit clean dimensions
+
+- Current behavior: with assertions enabled, all eight expected results agree with the frozen helper implementation. Mixed-case paths are accepted, unrelated and extensionless names are rejected, and a recognized suffix followed by `.bak` is rejected because matching uses the final dot
+- Paired D1/D2 policy: the frozen generic native table includes `.msn` and `.mn2` alongside shared game assets. The extraction policy is owned once under Android and consumed for both games, so no inherited D1/D2 source divergence or merge-pressure increase is present in this file
+- Current Kotlin/native values: the frozen tables match authoritative Kotlin role membership after the documented representation conversion. No current missing D1/D2 role or wrong current value was established; OBS-002 concerns the regression oracle's blind spots
+- Bounds and lifetime: the assigned test allocates no dynamic memory, opens no resources, performs no indexing or arithmetic, and exits directly. The production helpers only scan NUL-terminated controlled strings and constant NULL-terminated tables on inspected call paths
+- Boundary behavior: empty strings, trailing dots, directory components containing dots, multiple-dot filenames, leading-dot filenames, and case variation follow the final-dot comparison consistently. No current caller supplies a null path, and the public header does not promise null acceptance
+- Portability: the assigned source is ISO C, includes only standard headers plus the guarded C-compatible project header, and is registered in a C/C++ CMake project. Production comparison selects `_stricmp` on Windows and `strcasecmp` on POSIX. No D1/D2 ABI, compiler-warning, or platform-specific defect was found beyond assertion policy
+- Diagnostics: when assertions are active, a failed expression receives the implementation's standard assertion diagnostic and nonzero termination. The lack of case-specific diagnostics is a maintainability limitation addressed by OBS-001's recommended test harness, not a separate behavior root
+- Scope and diff minimization: the test and policy owner are branch-added Android files. No change to any 1996-original D1/D2 file is needed for either recommendation
+
+## Evidence gaps and limits
+
+- No build or test was run because this was a frozen read-only survey and generating a build tree would inspect mutable post-freeze state. The `NDEBUG` result follows directly from the standard macro contract and the target's lack of an override
+- No mutation build was performed. Remediation should prove each check remains active by compiling optimized configurations and injecting controlled failures
+- Android package extraction, GOG/PKG import, ISO, HFS, and StuffIt flows were traced only to their extension-policy calls. Their parser, filesystem, transaction, and fixture behavior belongs to dedicated chunks
+- The frozen generation manifest directory was unavailable in this worktree. Frozen commits, trees, assigned blob, queue row, and deterministic scope fingerprints were independently confirmed
+- Null input was not executed and was not admitted as a finding because inspected production callers supply validated or parser-owned strings and the API documents no nullable contract
+
+## Commands and validation
+
+- `Get-Content -Raw .github/copilot-instructions.md` and `Get-Content -Raw android/ai tool plans/code management/general_code_quality_worker_process.md`
+- `git cat-file -t`, `git show -s --format=%T`, and `git merge-base --is-ancestor` for frozen object and ancestry confirmation
+- `git show`, `git diff --no-ext-diff`, `git ls-tree`, `git log`, and `git show --stat` for assigned content, blob, branch causation, and history
+- `git grep` across the frozen head for both helper symbols, the test target, CTest name, production callers, build/run references, and extension-policy ownership
+- `rg` across active/done GQ, active/done adversarial, DMR1, the durable evidence ledger, and earlier plans for duplicate roots and prior acceptance boundaries
+- `Get-FileHash -Algorithm SHA256` for process and ledger context, plus in-memory SHA-1/SHA-256 calculation for the scope manifest
+- No executable build, CTest, Gradle test, extraction, emulator, fixture generation, network operation, product mutation, or temp-file write was performed
+
+## Normalization recommendation
+
+- Create one non-partial `ISSUES` coverage record for `GQ1-CHUNK-0105`
+- Normalize OBS-001 as an evidence and affected-target extension of live `BR-0662`; if current GQ policy requires a GQ owner for every affected target, extend the existing false-pass remediation family rather than creating a distinct root
+- Normalize OBS-002 as an evidence extension of archived `BR-0041` and `GQ1-CHUNK-0020-OBS-003`; do not allocate a new finding or remediation root
+- Record all 20 assigned lines and the necessary frozen production, caller, CMake, Kotlin-owner, paired-role, history, and ledger context as complete. The unavailable generated manifest and unrun mutation builds are explicit validation gaps, not partial source coverage
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0105 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0106 frozen survey SHA256:24ba7735d1c81eead239aeb9d07465ba7b25d15de853714bd3537b1493707933 -->
+
+## GQ1-CHUNK-0106 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0106.md`
+- Imported SHA-256: `24ba7735d1c81eead239aeb9d07465ba7b25d15de853714bd3537b1493707933`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0106 frozen survey
+
+Outcome: ISSUES. All 600 assigned frozen lines were reviewed with their enclosing Galaxy test through L662, the remainder of the test program where assigned helpers are consumed, the exact production seams, build registration, callers, history, and existing quality owners. The assigned tests provide useful ordinary and malformed parser coverage, but they leave six already-owned high-value boundaries unprotected. No new root cause is recommended. No product source, plan, canonical ledger, existing report, ignored temporary file, fixture, build output, process, device, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen ancestry: confirmed that the review base is an ancestor of the review head
+- Assigned file and range: `android/app/src/main/cpp/extract/test_gog_fd.c` L1-L600, all 600 lines reviewed
+- Enclosing assigned-boundary function: `check_galaxy_metadata_pattern` through L662
+- Frozen file blob: `709636b0f423e17b0033b29e3518a89716f17896`
+- Exact assigned range SHA-256 after frozen LF normalization with one final LF: `a5eeb1f3c526d034df2d0f4f26d59d4423c740739501a6e36c28c2f48bdc5838`
+- Exact assigned range byte count under that normalization: 19,679
+- Scope manifest, UTF-8 without BOM and with one final LF:
+
+```text
+android/app/src/main/cpp/extract/test_gog_fd.c|L1-L600|709636b0f423e17b0033b29e3518a89716f17896
+```
+
+- Scope-manifest byte count: 96
+- Scope-manifest SHA-256: `5cc1b4cf3e9af4dc30b2a0af609d2e952359083922d30db2c933d58aa150b4f0`
+- The assigned file is a branch addition relative to the review base. Frozen change shape is +1,467/-0
+- Frozen context blobs: `inno_reader.c` `c3b36aa70c51d32c3fab3e24d74f8e5d8a75af63`; `inno_reader.h` `4907f46db25346c011176f51965bc5b520f84a74`; extraction `CMakeLists.txt` `47992190e8edccf31ac9c21985029434b8f44b31`
+- Live HEAD was `4c459fd0f9dec9f9a5badb5c29dfcf1cf4084801`. The assigned file had no frozen-to-live or worktree delta, but frozen Git objects remained the evidence authority
+
+## Context and ownership inspected
+
+- Every assigned helper, fixture builder, assertion, cleanup path, diagnostic, and boundary through L600, plus the enclosing Galaxy function through L662
+- All later uses of `contains_file`, `file_exists`, `file_equals`, the assigned test functions, and `main`, including real-installer handling and final result aggregation
+- Frozen production `inno_reader.c` version parsing and layout selection, UTF-16 conversion, destination validation, Galaxy callback parsing and file-catalog publication, metadata block decompression, data-entry parsing, output-name uniqueness, archive open, and test-only seams
+- Frozen public `inno_reader.h`, extraction `CMakeLists.txt`, `extract_gog.c`, `jni_gog_import.c`, and the maintained Inno capability and format documents
+- Complete file history and blame for the assigned range, including the July parser hardening and August Galaxy callback repair
+- General-quality process, active and done ledgers, durable prior evidence, active and done adversarial ledgers, DMR1, prior cleanup/test records, and relevant historical remediation plans
+- Existing owners reconciled before recommendation: `GQF-0076`, `GQF-0077`, `GQF-0078`, `GQF-0079`, `GQF-0080`, `GQF-0085`, archived `BR-0018`, `BR-0054`, `BR-0057`, `BR-0059`, and open `BR-0158`
+
+## Atomic observations
+
+### GQ1-CHUNK-0106-OBS-001 - Version bounds do not drive representable hostile components through archive admission
+
+- Severity/confidence/category: P1, high, test-gap/undefined-behavior/parser-validation
+- Normalization recommendation: `EXTENDS GQF-0078`; allocate no new finding
+- Frozen locations: assigned `test_gog_fd.c:L101-L205`; production `inno_reader.c:L538,L1062-L1189,L2503-L2520`
+- Trigger and evidence: `check_version_id_bounds` rejects the first decimal value above `INT_MAX`, but never supplies `INT_MAX`, `INT_MAX / 10000`, or another individually representable component whose later `major * 10000 + minor * 100 + patch` encoding overflows signed `int`. Its direct seam stops at `parse_version_string`, so it also never proves an unsupported tuple fails before metadata reads and archive mutation. This is the exact missing matrix already specified by open `GQF-0078`, whose production root was established by chunks 0030, 0031, and 0092
+- Impact and fix boundary: the maintained boundary suite can remain green while hostile accepted components still reach undefined behavior before the promised unsupported-version rejection. Retain ownership under `GQF-0078` and `GQR-0065`; add complete archive-open fixtures at policy and arithmetic boundaries and run an undefined-behavior configuration where available
+
+### GQ1-CHUNK-0106-OBS-002 - Raw header fixtures cannot detect incomplete metadata LZMA termination
+
+- Severity/confidence/category: P2, high, test-gap/data-integrity/parser-validation
+- Normalization recommendation: `EXTENDS GQF-0077`; allocate no new finding
+- Frozen locations: assigned `test_gog_fd.c:L316-L525`; test seams `inno_reader.c:L1986-L2051`; production metadata decoder `inno_reader.c:L882-L1057,L2522-L2575`
+- Trigger and evidence: `build_header_fixture`, `check_complete_file_catalog`, and `check_checksum_layout_transition` pass already decompressed byte arrays directly to `parse_header_stream1` or `parse_data_entries`. No test seam in the file reaches `decompress_block_stream`. Therefore truncation after a syntactically sufficient prefix, input exhaustion without an accepted terminal state, no progress, and accepted finish with trailing compressed input all bypass this matrix. Open `GQF-0077` owns the production decoder returning such partial or trailing-input metadata as success
+- Impact and fix boundary: parser-table assertions can all pass while malformed compressed setup metadata is admitted. Retain `GQF-0077` ownership and expose the production metadata block boundary for valid, truncated, no-progress, missing-marker, and trailing-byte fixtures for both setup streams
+
+### GQ1-CHUNK-0106-OBS-003 - Allocation injection covers only the catalog array, not the metadata peak
+
+- Severity/confidence/category: P1, high, test-gap/resource-exhaustion/memory-budget
+- Normalization recommendation: `EXTENDS GQF-0076`; allocate no new finding
+- Frozen locations: assigned `test_gog_fd.c:L389-L435`; production instrumentation `inno_reader.c:L101-L114,L1933-L1937`; metadata allocations `inno_reader.c:L903-L1057`
+- Trigger and evidence: the only assigned failure injection sets `inno_test_set_allocation_fail_after(0)` around `inno_test_parse_file_catalog`. The counter gates only `inno_calloc`, which owns the file-entry array. Metadata `malloc`, `realloc`, raw/stored buffers, and the LZMA SDK dictionary allocator are not charged or observable through this seam. Consequently the test cannot measure or deny the roughly 192 MiB simultaneous raw, output, and dictionary state already owned by `GQF-0076`
+- Impact and fix boundary: a catalog allocation failure is covered, but the documented aggregate native-memory policy can regress without a failing test. Retain `GQF-0076` and instrument one shared live-allocation budget across every metadata allocation, with exact and one-byte-over aggregate combinations and both setup streams
+
+### GQ1-CHUNK-0106-OBS-004 - The Galaxy test proves part-count parsing but not multipart ownership
+
+- Severity/confidence/category: P2, high, test-gap/compatibility/data-integrity
+- Normalization recommendation: `EXTENDS GQF-0079`; allocate no new finding
+- Frozen locations: assigned `test_gog_fd.c:L566-L662`, especially the accepted 24-part callback at L621-L623 and catalog assertions at L638-L660; production `inno_reader.c:L1348-L1406,L1778-L1793`
+- Trigger and evidence: the direct callback seam correctly returns `expected_parts`, including 24, but the catalog fixture checks only rewritten destination and the boolean Galaxy flag. The production catalog caller passes `NULL` for the parsed part count and retains no group, order, or assembly identity. No assigned fixture creates two parts or asserts one reconstructed output. Thus the test explicitly validates metadata that production immediately discards, exactly extending `GQF-0079`
+- Impact and fix boundary: a multipart callback can be accepted and the test can pass although extraction cannot bind or assemble its parts. Preserve `GQF-0079` ownership and require a typed multipart manifest plus complete-set, order, identity, hash, rollback, and final-byte tests
+
+### GQ1-CHUNK-0106-OBS-005 - Windows destination tests omit the namespace cases that remain unsafe
+
+- Severity/confidence/category: P2, high, test-gap/portability/path-identity
+- Normalization recommendation: `EXTENDS GQF-0080`; allocate no new finding
+- Frozen locations: assigned `test_gog_fd.c:L221-L313`; production `inno_reader.c:L1281-L1302,L3263-L3308` and Windows wide-path publication
+- Trigger and evidence: the assigned matrix covers malformed UTF-16, exact UTF-8 capacity, `?`, `|`, a component ending in dot, ASCII case-only duplicate basenames, and one distinct Unicode name. It does not cover reserved device components such as `NUL.HOG` or `COM1.HOG`, trailing-space/device variants, or distinct UTF-8 spellings that compare equal under the actual Windows wide-path case rules. The production validator rejects only a subset of component syntax and uniqueness folds ASCII only. Open `GQF-0080` already owns this incomplete namespace model
+- Impact and fix boundary: string-level tests can remain green while Windows rejects an admitted output or aliases two selected leaves. Retain `GQF-0080`; validate one platform-neutral canonical component identity against actual wide-path creation and collision behavior
+
+### GQ1-CHUNK-0106-OBS-006 - Output-name uniqueness has no ceiling-scale work oracle
+
+- Severity/confidence/category: P2, high, test-gap/resource-exhaustion/performance
+- Normalization recommendation: `EXTENDS GQF-0085`; allocate no new finding
+- Frozen locations: assigned `test_gog_fd.c:L288-L312,L389-L435`; production `inno_reader.c:L3273-L3308`
+- Trigger and evidence: uniqueness is exercised with exactly two short entries. The 4,096-entry catalog fixture proves parsing at the entry ceiling but never calls `inno_output_names_unique` on that archive, and it cannot construct maximum-length common-prefix basenames. Production compares every selected pair byte by byte, the exact multi-billion-comparison root owned by `GQF-0085`
+- Impact and fix boundary: ordinary collision behavior is protected, but worst-case admitted work is not. Retain `GQF-0085` and add a bounded-work oracle at 4,095, 4,096, and rejected 4,097 entries with long common prefixes, early/late collisions, cancellation, and ordinary controls
+
+## Explicit clean dimensions
+
+- Oracle retention: assigned checks use explicit failure counters and return values, not standard `assert`. The extraction CMake owner also removes `NDEBUG` for test targets, so optimized configurations do not erase these checks
+- Production seam parity: `inno_test_read_string`, destination validation, Galaxy callback parsing, version parsing, checksum layout, raw header parsing, raw data-entry parsing, entry-count admission, and location validation call the same internal production functions. The observations concern omitted outer boundaries, not divergent duplicate implementations
+- Version grammar coverage: empty components, missing separators, extra syntax, unsupported suffixes, component parse overflow, fixed-field termination, padding, Unicode suffix case, byte-59 through byte-62 endings, and the intentional 5.5.8 Unicode alias are asserted
+- UTF-16 and path basics: BMP and supplementary scalar preservation, malformed surrogate pairs, embedded NUL, odd byte count, exact capacity, over-capacity, common Windows-invalid punctuation, trailing-dot components, slash and backslash basenames, and ASCII case collisions are asserted
+- Catalog count and allocation basics: 512, 513, 1,024, and 4,096 entries must preserve the final destination; 4,097 is rejected; the catalog-array allocation failure is restored after the check; every fixture allocation is freed on the reviewed paths
+- Header and data layout basics: the 5.3.8 to 5.3.9 MD5/SHA-1 transition, password-digest alignment, two consecutive data records, selected offsets, sizes, compression, encryption, optimization flags, and unsigned location bounds are asserted
+- Galaxy callback grammar: function identity and case, spacing, exact hash shape, quoted escaping, part-count lower and upper bounds, destination traversal, trailing syntax, atomic destination publication, and ordinary callback preservation are covered at the parser/catalog layer
+- Assigned helper cleanup: opened `FILE` handles are closed, heap fixtures are freed after each check, allocation injection is reset, and the assigned range creates no filesystem artifact. Later fixed-name extraction files were reviewed as context and remain outside this range's ownership
+- Diagnostics: each major check emits a bounded failure message, version and Galaxy cases include the responsible value, and aggregate process status becomes nonzero on any assigned failure
+- Portability and diff minimization: fixed-width fixture writes are bytewise, Windows/POSIX descriptor mappings are explicit, the test and production owners are branch-added Android files, and no inherited D1 or D2 edit is suggested
+- Optional proprietary fixture absence remains the exact open `BR-0158` behavior already captured by GQ1-CHUNK-0094. This chunk adds no duplicate observation or owner for it
+
+## Evidence gaps and limitations
+
+- This was a frozen-object read-only survey. No build, CTest, proprietary installer, sanitizer, memory-limit harness, fault injection, benchmark, emulator, or device run was performed
+- The assigned range ends inside `check_galaxy_metadata_pattern`; its complete enclosing function through L662 was read. Later extraction, PE, and `main` code was inspected only as caller, helper-use, cleanup, registration, and deduplication context
+- No proprietary multipart Inno installer or Windows Unicode collision corpus is tracked in the frozen tree. Those gaps are part of the existing remediation acceptance boundaries, not a basis for new IDs
+- Exact CPU time for the 4,096-entry common-prefix uniqueness case was not measured. `GQF-0085` already established the deterministic pair and byte comparison count from frozen control flow
+- Actual signed-overflow optimizer behavior is not predicted. `GQF-0078` rests on the language-level undefined operation before admission, and the missing test boundary is independently visible
+- The campaign header and mechanical path list in the canonical ledger were the available generation manifest; no separate tracked frozen manifest was present
+
+## Commands and verification
+
+- Read `.github/copilot-instructions.md`, the complete general-quality worker process, active and done general-quality ledgers, relevant durable evidence, active and done adversarial records, DMR1, and prior cleanup/test plans
+- Used `git show`, `git diff`, `git rev-parse`, `git cat-file`, `git merge-base --is-ancestor`, `git grep`, `git log --follow`, `git blame`, `git status --short`, `rg`, `Get-Content`, and in-memory SHA-256 calculation
+- Confirmed frozen commit ancestry, branch-addition change shape, exact assigned and context blobs, all 600 assigned lines, complete enclosing function, later helper uses, build registration, production call parity, history, and deduplication ownership
+- No mutable live product file was used as frozen evidence. No product file, plan, canonical ledger, existing report, ignored temporary file, build tree, fixture, process, or device was modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into `general_code_quality_evidence_ledger_20260811.md` with its SHA-256 marker, then remove only this successfully imported inbox fragment
+- Record `GQ1-CHUNK-0106` as `ISSUES` with one explicit coverage record
+- Normalize observations 001 through 006 as evidence extensions of `GQF-0078`, `GQF-0077`, `GQF-0076`, `GQF-0079`, `GQF-0080`, and `GQF-0085`, respectively
+- Allocate no new finding, investigation, or remediation chunk from this report
+- Keep missing proprietary GOG fixture policy under the exact prior `BR-0158` evidence from GQ1-CHUNK-0094 rather than duplicating it here
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0106 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0107 frozen survey SHA256:f2bb27f1c9855cdf22df28a6f7758f2b0f79d0da0abb2648a77c602a228c2313 -->
+
+## GQ1-CHUNK-0107 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0107.md`
+- Imported SHA-256: `f2bb27f1c9855cdf22df28a6f7758f2b0f79d0da0abb2648a77c602a228c2313`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0107 frozen survey
+
+Outcome: ISSUES. All 600 assigned lines were reviewed with the enclosing test helpers and `main`, the complete frozen Inno extraction implementation and public contract, native build registration, real-fixture policy, file history, and durable review owners. The range provides useful checksum, Galaxy-filter, encrypted-entry, strict decoder-terminal, and chunk-boundary coverage. Four oracle gaps survived deduplication: the real-installer checksum helper can silently execute no checksum case, the LZMA1 trailing-data fixture writes uninitialized stack bytes into its input, the compressed encrypted-entry cases can fail on malformed compression even after an early-rejection regression, and the range matrix does not exercise the already-open valid high-offset or exact-capacity routing boundaries. No product source, plan, canonical ledger, existing report, temporary finding file, fixture, build output, or runtime state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Ancestry: the frozen base is an ancestor of the frozen head
+- Assigned path and range: `android/app/src/main/cpp/extract/test_gog_fd.c` L601-L1200, 600 lines
+- Frozen Git blob: `709636b0f423e17b0033b29e3518a89716f17896`
+- Base identity and change shape: the path is absent at the frozen base and is added with 1,467 insertions and no deletions
+- Full normalized-LF SHA-256: `8e194ea26fd516877c9b60355f5bbd1cac5aea9cd8dad6c7068879001d308a10`
+- Assigned-range normalized-LF SHA-256: `cf74e37b2bcb1703ce4d0a7a1dca538e6978afd203c4643edd9477d1cbb8e3f1`
+- Scope manifest: `android/app/src/main/cpp/extract/test_gog_fd.c|L601-L1200|709636b0f423e17b0033b29e3518a89716f17896` plus one LF
+- Scope-manifest byte count: 99
+- Scope-manifest SHA-256: `02cdcd2e308197dd2c82d7644f64bb04fe7e46e7579c8203aceba7c396ae434a`
+- The live assigned file hashes to the same blob, but all evidence was taken from the frozen object
+- Context checked: complete frozen `test_gog_fd.c`, `inno_reader.c`, `inno_reader.h`, `extract_limits.h`, `INNO_READER_CAPABILITIES.md`, extraction `CMakeLists.txt`, GOG CLI and JNI ownership, file history, active and done GQ ledgers, active and done adversarial ledgers, DMR1, and earlier imported evidence
+
+## Atomic observations
+
+### GQ1-CHUNK-0107-OBS-001 - EXTENDS archived BR-0034: the real-installer checksum oracle silently succeeds when it selects no entry
+
+- Severity/confidence/category: P2, high, test-gap/false-pass/data-integrity
+- Frozen locations: assigned `test_gog_fd.c:L664-L710`; caller context L1385-L1437,L1464-L1465; production checksum selection and enforcement in `inno_reader.c:L1886,L2708-L2889,L3190-L3214,L3311-L3461`
+- Evidence: `check_checksum_extraction` searches for the smallest selected game entry with the requested Galaxy classification and `INNO_CHECKSUM_SHA1`. If parsing loses every checksum type, file-to-data mapping rejects every candidate, a fixture changes classification, or a category simply has no qualifying member, `selected` remains `-1` and the helper returns success at L684. `check_installer` unconditionally calls the helper for both ordinary and Galaxy classes, but neither call reports whether it exercised an entry and their combined result does not require even one real checksum extraction. The D1 fixture deliberately expects all seven game entries to be Galaxy, so its ordinary call is known to take this success-without-execution path. D2 leaves its Galaxy count unchecked. The synthetic layout and manually constructed extraction cases cover pieces of the contract, but they do not make the claimed real-installer extraction evidence mandatory.
+- Trigger: regress real archive parsing so all selected data entries have no SHA-1 type or no valid data mapping, or change Galaxy classification so neither category presented to this helper contains the intended real entry, while the catalog names and counts used by `check_installer` still match.
+- Impact: the registered test can stay green without performing the valid extraction and one-bit checksum-corruption check that closed BR-0034. A parser-to-production integration regression can therefore remove real-fixture integrity evidence while the suite still reports success.
+- Fix boundary: make eligibility explicit per pinned fixture, return a distinct not-exercised result, and require an independently declared exact count or at least one qualifying real checksum case across the expected classes. Do not treat an expected-empty class as failure; encode it as fixture metadata and assert it separately.
+- Focused validation: run present D1 and D2 installers and require the declared regular/Galaxy eligible counts, then mutate parsed checksum type, data location, and Galaxy classification independently and prove each intended missing case fails. Retain the valid extraction, checksum-bit corruption, no-final-output, and archive cleanup checks.
+- Deduplication: archived `BR-0034` owns checksum enforcement and its resolution explicitly relies on successful real-installer extraction plus altered checksum metadata. This is incomplete oracle evidence for that closed boundary, not a second product checksum defect. `BR-0158` separately owns entirely absent proprietary fixtures.
+
+### GQ1-CHUNK-0107-OBS-002 - NEW: the LZMA1 trailing-data fixture publishes uninitialized stack bytes as compressed input
+
+- Severity/confidence/category: P3, high, test-quality/undefined-input/portability/diagnostics
+- Frozen locations: assigned `test_gog_fd.c:L1018-L1023`; fixture writer L906-L952; production decoder `inno_reader.c:L2130-L2167,L2255-L2331`
+- Evidence: `trailing` is declared as `sizeof(zlib_data) + 1`, or 129 bytes. The LZMA1 case initializes only the 40-byte `lzma1` vector and byte 40, then passes `sizeof(trailing)` instead of `sizeof(lzma1) + 1`. `run_buffered_decoder_case` writes all 129 bytes to the source file, so bytes 41 through 128 come from uninitialized automatic storage. The production path then reads all declared bytes into `comp_data` and offers the complete declared remainder to `LzmaDec_DecodeToBuf`. The named one-byte trailing-data oracle is therefore actually an 89-byte indeterminate-tail case.
+- Trigger: run the registered test under MemorySanitizer or a runtime/compiler that gives the uninitialized tail a different byte pattern, or investigate a decoder failure expecting the fixture to contain only the documented zero suffix.
+- Impact: sanitizer validation fails in test setup before proving production behavior, fixture bytes vary by stack history, and diagnostics describe a different boundary from the input supplied. This weakens reproducibility and can obscure whether strict terminal rejection is caused by the intended single trailing byte.
+- Fix boundary: size the input as `sizeof(lzma1) + 1`, or zero-initialize the full scratch and always pass the exact initialized length. Prefer immutable complete vectors for each decoder case and assert the written input length.
+- Focused validation: record the exact fixture SHA-256 across repeated debug, optimized, MSVC, Clang, and GCC runs; execute under MemorySanitizer where available; require the one-byte suffix to fail and the suffix-free control to pass without uninitialized-read diagnostics.
+- Deduplication: no active or archived GQ, adversarial, DMR1, prior cleanup, or imported-evidence owner was found for this exact `test_gog_fd` uninitialized-tail defect. Archived `BR-0059` owns production decoder terminal-state behavior, not construction of nondeterministic test input.
+
+### GQ1-CHUNK-0107-OBS-003 - EXTENDS archived BR-0058: compressed encrypted-entry cases can pass by decoder failure instead of early capability rejection
+
+- Severity/confidence/category: P2, medium, test-gap/false-pass/capability-boundary
+- Frozen locations: assigned `test_gog_fd.c:L838-L903`; production early guard `inno_reader.c:L3311-L3355`; archived `BR-0058`
+- Evidence: one source containing literal `secret` is reused for stored, zlib, LZMA1, and LZMA2 cases. It is a valid stored payload but is not a valid stream for any of the three compressed methods. The assertions observe return status, progress calls, final output, and aggregate accounting, but have no payload-read or decoder-initialization seam. If encrypted rejection were accidentally delayed until after method dispatch, or omitted only on compressed branches, those three cases could still return failure with zero progress and no output solely because their payload is malformed. Only the stored case proves that removing the common current guard entirely becomes visible.
+- Trigger: refactor capability checks into method-specific paths and allow an encrypted zlib or LZMA entry to reach validation, payload reading, allocation, or decoder initialization while preserving stored rejection.
+- Impact: the test and archived resolution can continue to claim all-method pre-payload rejection while unsupported encrypted compressed entries consume attacker-controlled work and produce misleading decoder errors before failing.
+- Fix boundary: give each compression method a complete valid compressed control with encryption off, then toggle only `chunk_encrypted` on the same bytes. Add a read/allocation/decoder seam or typed unsupported result that distinguishes early capability rejection from downstream malformed-data failure.
+- Focused validation: for stored, zlib, LZMA1, and LZMA2, require the unencrypted control to extract exact bytes, the encrypted twin to return one explicit unsupported result before any descriptor read, allocation, decoder, progress, accounting, temporary output, or final output, and parsed flag fixtures to reach the same path.
+- Deduplication: archived `BR-0058` already owns the product boundary and requires valid stored and each compressed-method fixtures with early rejection. Normalize this as incomplete validation evidence on that closed owner, with no new finding ID.
+
+### GQ1-CHUNK-0107-OBS-004 - EXTENDS GQF-0082: the range suite has no successful high-offset or exact-capacity routing oracle
+
+- Severity/confidence/category: P2, high, test-gap/compatibility/resource-policy
+- Frozen locations: assigned `test_gog_fd.c:L1081-L1200` plus enclosing cleanup L1201-L1204; production routing `inno_reader.c:L2100-L2161,L2178-L2252,L2908-L3180,L3375-L3397`; open `GQF-0082`
+- Evidence: the stored cases cover a small valid subrange and malformed arithmetic/physical spans. The only threshold-sized setup assigns `chunk_compressed_size = 64 MiB`, `file_offset = 64 MiB`, and `file_size = 1`, which is intentionally one byte outside a stored chunk and must fail during range validation. The compressed case covers a small zlib output whose requested range is one byte beyond decoded output. No case supplies a valid compressed solid chunk with both compressed input and selected file below 64 MiB but `file_offset + file_size` above the buffered live-memory ceiling, and no case ends valid zlib output exactly at the output cap. Those are the two concrete open `GQF-0082` failures, so this boundary suite remains green while they survive.
+- Trigger: extract a valid small file located after a large decoded solid prefix, or decode a valid zlib stream whose terminal byte fills the configured output capacity exactly.
+- Impact: valid supported installers can be rejected despite the named chunk-range coverage, and the remediation can regress at threshold equality without a focused production-seam oracle.
+- Fix boundary: keep ownership under `GQF-0082` and its remediation. Route on checked `file_offset + file_size`, test just below, at, and above every buffered/streaming threshold, and test valid zlib terminal state with output capacity exactly full before checking growth.
+- Focused validation: generate bounded compressible solid chunks with selected ranges at prefix and threshold boundaries for zlib, LZMA1, and LZMA2; assert exact output and checksum for valid cases and no publication for one-byte-invalid neighbors. Include 32-bit hosts or reduced test-only limits so the same arithmetic is exercised without a 128 MiB fixture.
+- Deduplication: `GQF-0082` already records both product roots and their missing boundary behavior. This observation extends its exact test acceptance and should not receive a new finding or remediation ID.
+
+## Explicit clean dimensions
+
+- Galaxy metadata tail: the assigned continuation rejects wrong callback names, missing or extra arguments, malformed hashes, nonnumeric and out-of-range part counts, traversal paths, trailing statements, and unterminated input. Valid case, spacing, case-insensitive function spelling, and doubled-quote decoding are checked, and file-entry publication is verified as atomic against an ordinary destination.
+- Checksum mechanics: once `check_checksum_extraction` selects an entry, it requires successful final output, flips one checksum bit, and requires failure with no final output. The synthetic Galaxy case verifies SHA-1 over inner compressed bytes before the Galaxy zlib filter and checks exact `hello` output, known and measured external sizes, mismatch rejection, descriptor closure, and cleanup. Observation 001 concerns the missing mandatory-selection oracle.
+- Decoder matrix: zlib, LZMA1, and LZMA2 have valid exact-output controls and negative cases for truncation after an early selected range, truncated solid prefixes, trailing bytes, malformed headers or properties, dictionary request, and no-progress input. Each negative helper requires both nonzero failure and no final output. Observation 002 is limited to the malformed LZMA1 trailing fixture length.
+- Encryption current behavior: production resolves the file-to-data mapping and rejects `chunk_encrypted` before compression selection, range checks, progress, budgets, payload reads, decoder setup, and output. The stored encrypted case plus unencrypted stored control meaningfully protects the common current guard. Observation 003 concerns method-specific proof quality, not evidence that frozen production currently decodes encrypted input.
+- Range arithmetic: high-bit and sentinel data locations, absent data arrays, exact small stored ranges, MD5 success and mismatch, addition wrap, chunk-offset wrap, physical source span, and decoded one-byte-over failure are asserted through the public extraction API. The helper checks no final output for every failure.
+- Resource cleanup: ordinary assigned helpers close each opened descriptor, restore mutated checksum bytes, and remove their fixed source and output files on the main completion paths. Archive-owned heap state is not allocated by the manually initialized cases. Fixed-name parallel invocation and injected `fopen`, `fwrite`, `fclose`, remove, and descriptor failures remain untested, but no ordinary-path leak was established in the assigned control flow.
+- Build and optimized oracles: `test_gog_fd` compiles the production `inno_reader.c`, links the same zlib and LZMA SDK libraries, defines only the narrow test seams, is registered with CTest, and receives the directory-wide `/UNDEBUG` or `-UNDEBUG` rule. The assigned range does not rely on `assert`, so its failure aggregation remains active independently.
+- Portability and diagnostics: the code uses explicit Windows/POSIX descriptor wrappers and fixed-width sizes, diagnostics identify the failing decoder/range case, and the assigned output paths are short ASCII names. Observation 002 is the one concrete portability/reproducibility defect.
+- Diff minimization: the assigned test and production Inno reader are branch-added Android extraction code. No inherited D1 or D2 source edit is implicated.
+
+## Evidence gaps and limitations
+
+- No build, CTest execution, proprietary installer parse, sanitizer, allocation or I/O failure injection, 32-bit run, emulator, or Android ABI build was run because this was a frozen-object read-only survey. Historical passing results were treated only as context.
+- The proprietary D1 and D2 installer bytes are ignored and were not inspected. Observation 001 follows from the helper's explicit `selected < 0` success path and the caller's lack of an exercised-count assertion, not from a claim about the current local media inventory.
+- Observation 002 does not claim that arbitrary stack bytes make the present ordinary CTest return success incorrectly. It establishes indeterminate fixture input, sanitizer failure, and mismatch between the named one-byte case and actual supplied bytes.
+- The frozen production path currently rejects encryption at the intended early common guard. Observation 003 is an oracle-strength extension of archived `BR-0058`, not product regrowth evidence.
+- Streaming success, cancellation, write and close failure, temporary-file collision, concurrent invocation, external-size publication, large solid-prefix routing, exact-capacity termination, repeated-decode work, and aggregate progress retain existing GQ or BR owners or remain explicit gaps. They were not split into duplicate findings here.
+- The campaign generation data is represented by the canonical queue and mechanical manifest rather than a separate tracked generation-manifest file. Frozen object identity, ancestry, scope, blob, hashes, and change shape were independently confirmed.
+
+## Commands and methods
+
+- Read `.github/copilot-instructions.md` and the complete `general_code_quality_worker_process.md`
+- Read the active and done GQ ledgers, durable evidence ledger, active and done adversarial ledgers, DMR1 references, and relevant prior cleanup/remediation records for durable deduplication
+- Used `git cat-file`, `git show`, `git ls-tree`, `git diff --numstat`, `git diff --summary`, `git merge-base --is-ancestor`, `git log --follow`, `git blame`, `git grep`, `git hash-object`, `git status --short`, and `rg` for frozen identity, every assigned line, enclosing context, history, consumers, build registration, and prior owners
+- Traced real installer selection through parsed files and data entries into checksum mutation and extraction; encrypted metadata through early rejection and method dispatch; synthetic bytes through file writing, descriptor reads, decoder terminal predicates, checksums, temporary publication, and cleanup; and chunk spans through validation, buffered/stream routing, decoder capacity, and result aggregation
+- Calculated normalized-LF SHA-256 values from the frozen blob and exact assigned range, then used scoped `git diff --check` and byte-level report checks after writing the single allowed inbox artifact
+
+## Normalization recommendation
+
+- Normalize observation 001 as `EXTENDS` archived `BR-0034`, adding a mandatory real-fixture eligible/exercised checksum count to its durable validation boundary. Do not allocate a parallel checksum or fixture-presence finding.
+- Admit observation 002 as one new P3 test-quality finding unless normalization finds a concurrent report that already owns the exact LZMA1 uninitialized-tail fixture. Its repair is local to `test_gog_fd.c` and should be validated with exact bytes plus MemorySanitizer where available.
+- Normalize observation 003 as `EXTENDS` archived `BR-0058`, requiring valid unencrypted compressed controls and an observable pre-payload unsupported result for all methods. Do not allocate a new encryption finding.
+- Normalize observation 004 as `EXTENDS GQF-0082` and its existing remediation acceptance. Do not create another solid-prefix or exact-capacity finding.
+- Record one explicit `ISSUES` coverage result for `GQ1-CHUNK-0107` with all 600 assigned lines and the clean dimensions above.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0107 frozen survey -->

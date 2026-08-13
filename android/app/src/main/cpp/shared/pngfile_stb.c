@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
+#include <time.h>
 #include <physfs.h>
 
 #include "pngfile.h"
@@ -237,6 +238,13 @@ static PHYSFS_EnumerateCallbackResult texture_lookup_walk_entry(void *data,
 		return PHYSFS_ENUM_STOP;
 	}
 	if (statbuf.filetype == PHYSFS_FILETYPE_DIRECTORY) {
+		/* Replacement lookups are either bare archive entries or paths below
+		 * textures/.  Do not recursively index unrelated mounted game data. */
+		if (!walk->current_depth &&
+		    !texture_lookup_path_equals_ci(leaf, "textures")) {
+			free(child_path);
+			return PHYSFS_ENUM_OK;
+		}
 		if (!texture_lookup_walk_push(walk, child_path, depth)) {
 			free(child_path);
 			return PHYSFS_ENUM_STOP;
@@ -254,9 +262,12 @@ static int texture_lookup_build_file_index(void)
 {
 	texture_lookup_walk walk = { 0 };
 	char *root = (char *) malloc(1u);
+	struct timespec start, end;
+	long long elapsed_us;
 
 	if (!root)
 		return 0;
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	root[0] = '\0';
 	if (!texture_lookup_walk_push(&walk, root, 0u)) {
 		free(root);
@@ -281,6 +292,13 @@ static int texture_lookup_build_file_index(void)
 		          "texture index rejected at '%s' from '%s': hierarchy exceeds safe limits or cannot be read",
 		          walk.failure_path, real_dir ? real_dir : "unknown mount");
 	}
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	elapsed_us = ((long long) end.tv_sec - (long long) start.tv_sec) * 1000000LL +
+	             ((long long) end.tv_nsec - (long long) start.tv_nsec) / 1000LL;
+	debug_log_force(DLOG_PROFILING,
+	                "loadprof_v=1 type=texture_index total_us=%lld visited=%u directories=%u indexed=%u result=%s",
+	                elapsed_us, walk.visited_entries, walk.discovered_directories,
+	                g_texture_lookup_file_index_count, walk.failed ? "failed" : "ok");
 	free(walk.directories);
 	return !walk.failed;
 }

@@ -19,6 +19,9 @@ def main() -> None:
     assert "ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES" in png
     assert "texture_lookup_build_file_index_recursive" not in loader
     assert "PHYSFS_enumerate(" in loader
+    assert 'texture_lookup_path_equals_ci(leaf, "textures")' in loader
+    assert "Do not recursively index unrelated mounted game data" in loader
+    assert "type=texture_index" in loader
     for limit in (
         "TEXTURE_LOOKUP_MAX_DEPTH",
         "TEXTURE_LOOKUP_MAX_ENTRIES",

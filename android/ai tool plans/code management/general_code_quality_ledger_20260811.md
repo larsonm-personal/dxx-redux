@@ -74,7 +74,7 @@ Evidence:
 
 Queue size is reported as a tuple rather than one ambiguous number:
 
-`819 total coverage calls / 66 completed issue records / 0 completed clean records / 4 open investigations / 119 open findings / 1 terminal finding / 107 remediation chunks (1 done)`
+`819 total coverage calls / 108 completed issue records / 2 completed clean records / 4 open investigations / 151 open findings / 1 terminal finding / 139 remediation chunks (1 done)`
 
 The two completed DMR1 remediation chunks remain linked separately and removed 175 isolated inherited additions
 
@@ -148,52 +148,52 @@ The two completed DMR1 remediation chunks remain linked separately and removed 1
 | GQ1-CHUNK-0061 | [x] DONE | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt` | L1-L600 | `GQC-0074`; added `GQF-0118`; extended three owners |
 | GQ1-CHUNK-0062 | [x] DONE | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/MissionZipMusicStageManager.kt` | L1-L571 | `GQC-0075`; added `GQF-0119`, `GQF-0120` |
 | GQ1-CHUNK-0063 | [x] DONE | source | critical | authored-source | `android/app/src/main/java/com/dxxredux/app/multiplayer/PlayGamesAuth.kt` | L1-L102 | `GQC-0076`; duplicate `BR-0090`, no new root |
-| GQ1-CHUNK-0064 | [-] ACTIVE | source | critical | authored-source | `android/app/src/main/res/xml/data_extraction_rules.xml` | L1-L9 | `general_code_quality_inbox/gq1_chunk_0064.md` |
-| GQ1-CHUNK-0065 | [-] ACTIVE | source | critical | authored-source | `2 related paths` | 271 review lines under server/src | `general_code_quality_inbox/gq1_chunk_0065.md` |
-| GQ1-CHUNK-0066 | [-] ACTIVE | source | critical | authored-source | `2 related paths` | 146 review lines under server/src | `general_code_quality_inbox/gq1_chunk_0066.md` |
-| GQ1-CHUNK-0067 | [ ] TODO | source | critical | authored-source | `2 related paths` | 591 review lines under server/src | - |
-| GQ1-CHUNK-0068 | [ ] TODO | source | critical | authored-source | `3 related paths` | 555 review lines under server/src | - |
-| GQ1-CHUNK-0069 | [ ] TODO | source | critical | authored-source | `3 related paths` | 445 review lines under server/src | - |
-| GQ1-CHUNK-0070 | [ ] TODO | source | critical | authored-source | `3 related paths` | 495 review lines under server/src | - |
-| GQ1-CHUNK-0071 | [ ] TODO | source | critical | authored-source | `server/src/db.rs` | L1-L532 | - |
-| GQ1-CHUNK-0072 | [ ] TODO | source | critical | authored-source | `server/src/nat_sim.rs` | L1-L475 | - |
-| GQ1-CHUNK-0073 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L1-L600 | - |
-| GQ1-CHUNK-0074 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L601-L1200 | - |
-| GQ1-CHUNK-0075 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L1201-L1800 | - |
-| GQ1-CHUNK-0076 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L1801-L2400 | - |
-| GQ1-CHUNK-0077 | [ ] TODO | source | critical | authored-source | `server/src/ws_handler.rs` | L2401-L2951 | - |
-| GQ1-CHUNK-0078 | [ ] TODO | source | critical | build-script | `android/app/src/main/cpp/extract/.gitignore` | L1-L1 | - |
-| GQ1-CHUNK-0079 | [ ] TODO | source | critical | build-script | `android/app/src/main/cpp/extract/CMakeLists.txt` | L1-L600 | - |
-| GQ1-CHUNK-0080 | [ ] TODO | source | critical | build-script | `android/app/src/main/cpp/extract/CMakeLists.txt` | L601-L681 | - |
-| GQ1-CHUNK-0081 | [ ] TODO | source | critical | build-script | `android/get_deps/helpers/get_7zip.ps1` | L1-L95 | - |
-| GQ1-CHUNK-0082 | [ ] TODO | source | critical | build-script | `2 related paths` | 398 review lines under android/helpers | - |
-| GQ1-CHUNK-0083 | [ ] TODO | source | critical | build-script | `3 related paths` | 597 review lines under android/helpers | - |
-| GQ1-CHUNK-0084 | [ ] TODO | source | critical | build-script | `3 related paths` | 336 review lines under android/helpers | - |
-| GQ1-CHUNK-0085 | [ ] TODO | source | critical | build-script | `android/helpers/run_mission_zip_batch.ps1` | L1-L600 | - |
-| GQ1-CHUNK-0086 | [ ] TODO | source | critical | build-script | `2 related paths` | 462 review lines under game_data | - |
-| GQ1-CHUNK-0087 | [ ] TODO | source | critical | build-script | `game_data/extract_dos_demos.ps1` | L1-L283 | - |
-| GQ1-CHUNK-0088 | [ ] TODO | source | critical | build-script | `game_data/extract_mac_cd.ps1` | L1-L468 | - |
-| GQ1-CHUNK-0089 | [ ] TODO | source | critical | build-script | `game_data/extract_mac_demos.ps1` | L1-L213 | - |
-| GQ1-CHUNK-0090 | [ ] TODO | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | - |
-| GQ1-CHUNK-0091 | [ ] TODO | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L601-L958 | - |
-| GQ1-CHUNK-0092 | [ ] TODO | source | critical | documentation | `android/app/src/main/cpp/extract/INNO_READER_CAPABILITIES.md` | L1-L56 | - |
-| GQ1-CHUNK-0093 | [ ] TODO | source | critical | test-source | `11 related paths` | 572 review lines under android/app/src/main/cpp | - |
-| GQ1-CHUNK-0094 | [ ] TODO | source | critical | test-source | `2 related paths` | 448 review lines under android/app/src/main/cpp | - |
-| GQ1-CHUNK-0095 | [ ] TODO | source | critical | test-source | `2 related paths` | 477 review lines under android/app/src/main/cpp | - |
-| GQ1-CHUNK-0096 | [ ] TODO | source | critical | test-source | `3 related paths` | 160 review lines under android/app/src/main/cpp | - |
-| GQ1-CHUNK-0097 | [ ] TODO | source | critical | test-source | `5 related paths` | 436 review lines under android/app/src/main/cpp | - |
-| GQ1-CHUNK-0098 | [ ] TODO | source | critical | test-source | `5 related paths` | 328 review lines under android/app/src/main/cpp | - |
-| GQ1-CHUNK-0099 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1-L600 | - |
-| GQ1-CHUNK-0100 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L601-L1200 | - |
-| GQ1-CHUNK-0101 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1201-L1800 | - |
-| GQ1-CHUNK-0102 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1801-L2400 | - |
-| GQ1-CHUNK-0103 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L2401-L3000 | - |
-| GQ1-CHUNK-0104 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_fingerprint.c` | L1-L559 | - |
-| GQ1-CHUNK-0105 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_game_file_extensions.c` | L1-L20 | - |
-| GQ1-CHUNK-0106 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_gog_fd.c` | L1-L600 | - |
-| GQ1-CHUNK-0107 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_gog_fd.c` | L601-L1200 | - |
-| GQ1-CHUNK-0108 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L1-L600 | - |
-| GQ1-CHUNK-0109 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L601-L1140 | - |
+| GQ1-CHUNK-0064 | [x] DONE | source | critical | authored-source | `android/app/src/main/res/xml/data_extraction_rules.xml` | L1-L9 | `GQC-0077`; clean, archived `BR-0414` remains closed |
+| GQ1-CHUNK-0065 | [x] DONE | source | critical | authored-source | `2 related paths` | 271 review lines under server/src | `GQC-0078`; extended `GQF-0014`, `BR-0106` through `BR-0108` |
+| GQ1-CHUNK-0066 | [x] DONE | source | critical | authored-source | `2 related paths` | 146 review lines under server/src | `GQC-0079`; five historical/current duplicates, no new root |
+| GQ1-CHUNK-0067 | [x] DONE | source | critical | authored-source | `2 related paths` | 591 review lines under server/src | `GQC-0080`; eight exact duplicates, no new root |
+| GQ1-CHUNK-0068 | [x] DONE | source | critical | authored-source | `3 related paths` | 555 review lines under server/src | `GQC-0081`; six duplicates, extended `BR-0135`, `BR-0125` |
+| GQ1-CHUNK-0069 | [x] DONE | source | critical | authored-source | `3 related paths` | 445 review lines under server/src | `GQC-0082`; duplicates `BR-0127` through `BR-0131` |
+| GQ1-CHUNK-0070 | [x] DONE | source | critical | authored-source | `3 related paths` | 495 review lines under server/src | `GQC-0083`; seven exact duplicates |
+| GQ1-CHUNK-0071 | [x] DONE | source | critical | authored-source | `server/src/db.rs` | L1-L532 | `GQC-0084`; six duplicates, four evidence extensions |
+| GQ1-CHUNK-0072 | [x] DONE | source | critical | authored-source | `server/src/nat_sim.rs` | L1-L475 | `GQC-0085`; added `GQF-0121`; extended `BR-0109`, `BR-0112`, two duplicates |
+| GQ1-CHUNK-0073 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L1-L600 | `GQC-0086`; 13 duplicates/evidence refreshes |
+| GQ1-CHUNK-0074 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L601-L1200 | `GQC-0087`; added `GQF-0122`; extended `BR-0148` |
+| GQ1-CHUNK-0075 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L1201-L1800 | `GQC-0088`; six duplicates/extensions, no new root |
+| GQ1-CHUNK-0076 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L1801-L2400 | `GQC-0089`; seven duplicates/evidence refreshes |
+| GQ1-CHUNK-0077 | [x] DONE | source | critical | authored-source | `server/src/ws_handler.rs` | L2401-L2951 | `GQC-0090`; seven duplicates/evidence extensions |
+| GQ1-CHUNK-0078 | [x] DONE | source | critical | build-script | `android/app/src/main/cpp/extract/.gitignore` | L1-L1 | `GQC-0091`; clean, historical owners reconciled |
+| GQ1-CHUNK-0079 | [x] DONE | source | critical | build-script | `android/app/src/main/cpp/extract/CMakeLists.txt` | L1-L600 | `GQC-0092`; added `GQF-0123`; extended `GQF-0024`, `GQF-0068`, `BR-0158` |
+| GQ1-CHUNK-0080 | [x] DONE | source | critical | build-script | `android/app/src/main/cpp/extract/CMakeLists.txt` | L601-L681 | `GQC-0093`; extended `BR-0160`, `BR-0236` |
+| GQ1-CHUNK-0081 | [x] DONE | source | critical | build-script | `android/get_deps/helpers/get_7zip.ps1` | L1-L95 | `GQC-0094`; extended `BR-0174`, `BR-0159` |
+| GQ1-CHUNK-0082 | [x] DONE | source | critical | build-script | `2 related paths` | 398 review lines under android/helpers | `GQC-0095`; added `GQF-0124`; duplicated four `BR-*` roots |
+| GQ1-CHUNK-0083 | [x] DONE | source | critical | build-script | `3 related paths` | 597 review lines under android/helpers | `GQC-0096`; added `GQF-0125`, `GQF-0126`; extended `GQF-0072`, `GQF-0040` |
+| GQ1-CHUNK-0084 | [x] DONE | source | critical | build-script | `3 related paths` | 336 review lines under android/helpers | `GQC-0097`; added `GQF-0127` through `GQF-0129`; extended `BR-0160`, duplicated `BR-0007` |
+| GQ1-CHUNK-0085 | [x] DONE | source | critical | build-script | `android/helpers/run_mission_zip_batch.ps1` | L1-L600 | `GQC-0098`; regrowth `BR-0161`, duplicated three roots |
+| GQ1-CHUNK-0086 | [x] DONE | source | critical | build-script | `2 related paths` | 462 review lines under game_data | `GQC-0099`; added `GQF-0130`; extended `BR-0169`, duplicated `GQF-0016` |
+| GQ1-CHUNK-0087 | [x] DONE | source | critical | build-script | `game_data/extract_dos_demos.ps1` | L1-L283 | `GQC-0100`; added `GQF-0131`; extended four owners |
+| GQ1-CHUNK-0088 | [x] DONE | source | critical | build-script | `game_data/extract_mac_cd.ps1` | L1-L468 | `GQC-0101`; added `GQF-0132` through `GQF-0134`; extended eight owners |
+| GQ1-CHUNK-0089 | [x] DONE | source | critical | build-script | `game_data/extract_mac_demos.ps1` | L1-L213 | `GQC-0102`; added `GQF-0135`, `GQF-0136`; extended four owners |
+| GQ1-CHUNK-0090 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L1-L600 | `GQC-0103`; added `GQF-0137`, `GQF-0138`; extended `GQF-0128` |
+| GQ1-CHUNK-0091 | [x] DONE | source | critical | build-script | `game_data/fingerprint_mission_zip_music.ps1` | L601-L958 | `GQC-0104`; added `GQF-0139`, `GQF-0140`; extended three owners |
+| GQ1-CHUNK-0092 | [x] DONE | source | critical | documentation | `android/app/src/main/cpp/extract/INNO_READER_CAPABILITIES.md` | L1-L56 | `GQC-0105`; extended `GQF-0078`, `GQF-0018` |
+| GQ1-CHUNK-0093 | [x] DONE | source | critical | test-source | `11 related paths` | 572 review lines under android/app/src/main/cpp | `GQC-0106`; extended three owners, duplicated `BR-0597` |
+| GQ1-CHUNK-0094 | [x] DONE | source | critical | test-source | `2 related paths` | 448 review lines under android/app/src/main/cpp | `GQC-0107`; added `GQF-0141`, `GQF-0142`; extended `GQF-0075`, duplicated `BR-0158` |
+| GQ1-CHUNK-0095 | [x] DONE | source | critical | test-source | `2 related paths` | 477 review lines under android/app/src/main/cpp | `GQC-0108`; added `GQF-0143`; extended `BR-0160`, `GQF-0061`, `GQF-0062` |
+| GQ1-CHUNK-0096 | [x] DONE | source | critical | test-source | `3 related paths` | 160 review lines under android/app/src/main/cpp | `GQC-0109`; extended `GQF-0090`, `GQF-0091`, `GQF-0046`; historical `BR-0024` closed |
+| GQ1-CHUNK-0097 | [x] DONE | source | critical | test-source | `5 related paths` | 436 review lines under android/app/src/main/cpp | `GQC-0110`; added `GQF-0144`; extended `GQF-0054`, `BR-0236` |
+| GQ1-CHUNK-0098 | [x] DONE | source | critical | test-source | `5 related paths` | 328 review lines under android/app/src/main/cpp | `GQC-0111`; added `GQF-0145`; extended `BR-0046`, `GQF-0069` |
+| GQ1-CHUNK-0099 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1-L600 | `GQC-0112`; extended `BR-0160` |
+| GQ1-CHUNK-0100 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L601-L1200 | `GQC-0113`; added `GQF-0146`; extended `BR-0160` |
+| GQ1-CHUNK-0101 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1201-L1800 | `GQC-0114`; added `GQF-0147`; extended `BR-0160` |
+| GQ1-CHUNK-0102 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L1801-L2400 | `GQC-0115`; added `GQF-0148`; extended `GQF-0046`, `BR-0160` |
+| GQ1-CHUNK-0103 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_cue_iso.c` | L2401-L3000 | `GQC-0116`; extended `GQF-0063`, `BR-0160` |
+| GQ1-CHUNK-0104 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_fingerprint.c` | L1-L559 | `GQC-0117`; added `GQF-0149` through `GQF-0151`; extended `BR-0181` |
+| GQ1-CHUNK-0105 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_game_file_extensions.c` | L1-L20 | `GQC-0118`; extended `BR-0662`, archived `BR-0041` |
+| GQ1-CHUNK-0106 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_gog_fd.c` | L1-L600 | `GQC-0119`; extended six current owners |
+| GQ1-CHUNK-0107 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_gog_fd.c` | L601-L1200 | `GQC-0120`; added `GQF-0152`; extended three owners |
+| GQ1-CHUNK-0108 | [-] ACTIVE | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L1-L600 | `general_code_quality_inbox/gq1_chunk_0108.md` |
+| GQ1-CHUNK-0109 | [-] ACTIVE | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L601-L1140 | `general_code_quality_inbox/gq1_chunk_0109.md` |
 | GQ1-CHUNK-0110 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` | L1-L600 | - |
 | GQ1-CHUNK-0111 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_sow_integrity.c` | L1-L567 | - |
 | GQ1-CHUNK-0112 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_sow_real_media.cmake` | L1-L77 | - |
@@ -5341,11 +5341,109 @@ Append one completion note for every finished queue item using the process templ
 - Normalization: chunks 0049 and 0050 extend existing UI/engine, automation, weapon, hosting and UTF-8 owners; chunk 0051 admits long mission identity `GQF-0096` and repeated main-thread traversal `GQF-0097`, and extends `BR-0082`
 - Evidence: `general_code_quality_evidence_ledger_20260811.md`
 
+### GQ1-CHUNK-0064 through GQ1-CHUNK-0066 completion
+
+- Workers/outcomes: three fresh read-only `gpt-5.6-sol` medium workers; `CLEAN`, `ISSUES`, `ISSUES`, normalized as `GQC-0077` through `GQC-0079`
+- Coverage: Android data-extraction policy and assigned server config/STUN/TLS paths plus consumers, tests, history and owners
+- Normalization: chunk 0064 is explicitly clean and verifies `BR-0414`; chunk 0065 extends `GQF-0014` and `BR-0106` through `BR-0108`; chunk 0066 duplicates five existing owners; no new finding or investigation
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0067 through GQ1-CHUNK-0069 completion
+
+- Workers/outcomes: three fresh read-only `gpt-5.6-sol` medium workers; all `ISSUES`, normalized as `GQC-0080` through `GQC-0082`
+- Coverage: assigned server PoW/protocol/status/auth/STUN/session paths plus tests, history and owners
+- Normalization: all observations deduplicate to existing adversarial/server owners except evidence extensions for `BR-0135` and `BR-0125`; no new finding, investigation, or remediation
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
 ### GQ1-CHUNK-0052 through GQ1-CHUNK-0054 completion
 
 - Workers/outcomes: three fresh read-only `gpt-5.6-sol` medium workers; all `ISSUES`, normalized as `GQC-0065` through `GQC-0067`
 - Coverage: resume-save tail, complete SAF archiver, and assigned ZIP import Kotlin paths plus callers/tests/history/owners
 - Normalization: admitted conditional-delete generation `GQF-0098`, SAF source generation `GQF-0099`, and ZIP staging/parser/budget/memory roots `GQF-0100` through `GQF-0104`; extended `BR-0417` and `GQF-0036`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0079 through GQ1-CHUNK-0081 completion
+
+- Workers/outcomes: three fresh read-only `gpt-5.6-sol` medium workers; all `ISSUES`, normalized as `GQC-0092` through `GQC-0094`
+- Coverage: complete extraction CMake build/test graph and verified 7-Zip helper plus dependency, caller, test, portability and history context
+- Normalization: chunk 0079 admitted TinySoundFont incremental rebuild identity `GQF-0123`, extended `GQF-0024`, `GQF-0068`, `BR-0158`, and duplicated `BR-0182`; chunk 0080 extended `BR-0160` and `BR-0236`; chunk 0081 extended `BR-0174` and recorded remediation evidence for `BR-0159`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0082 through GQ1-CHUNK-0084 completion
+
+- Workers/outcomes: three fresh read-only `gpt-5.6-sol` medium workers; all `ISSUES`, normalized as `GQC-0095` through `GQC-0097`
+- Coverage: mission batch tail/relay, bounded extraction/HFS recovery, Play Store auth, bounded child runner, and POSIX CUE/ISO entry point plus callers, tests and history
+- Normalization: admitted diagnostic-finally abort `GQF-0124`, PATH-selected Python identity `GQF-0125`, zero-length HFS omission `GQF-0126`, child-process-tree lifetime `GQF-0127`, link/special-file containment `GQF-0128`, and non-executable documented POSIX entry point `GQF-0129`; extended existing HFS, fixture isolation and historical owners without duplicate IDs
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0085 and GQ1-CHUNK-0086 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0098` and `GQC-0099`
+- Coverage: mission batch first 600 lines and bulk CD/GOG extraction scripts plus parser, publication, process, caller, test and history context
+- Normalization: chunk 0085 records regrowth of archived `BR-0161` and duplicates `BR-0165`, `BR-0167`, `BR-0168`; chunk 0086 admitted same-destination extraction publication race `GQF-0130`, extended `BR-0169`, and duplicated `GQF-0016`/`BR-0171`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0087 through GQ1-CHUNK-0090 completion
+
+- Workers/outcomes: four fresh read-only `gpt-5.6-sol` medium workers; all `ISSUES`, normalized as `GQC-0100` through `GQC-0103`
+- Coverage: DOS/Mac extraction workflows and mission music fingerprint generator first 600 lines plus parser, tool, publication, cache, test and history context
+- Normalization: admitted output semantic admission `GQF-0131`, legacy Mac CUE geometry and INDEX validation `GQF-0132`/`GQF-0133`, bounded-supervisor provenance `GQF-0134`, direct unbounded Mac-demo child phases `GQF-0135`, legacy oracle provenance `GQF-0136`, nested archive depth `GQF-0137`, and conflicting tracklist selector policy `GQF-0138`; remaining observations extend or duplicate current and historical owners
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0091 and GQ1-CHUNK-0092 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0104` and `GQC-0105`
+- Coverage: mission fingerprint generator tail and complete Inno capability matrix plus implementation, callers, tests and history
+- Normalization: admitted stale prior audio generation `GQF-0139` and unbounded native fingerprint process `GQF-0140`; extended `BR-0180`, `GQF-0130`, `GQF-0078`, and `GQF-0018`; duplicated `BR-0179` and `BR-0174`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0093 and GQ1-CHUNK-0094 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0106` and `GQC-0107`
+- Coverage: StuffIt/UTF-8/SAF manifest test batch, GOG descriptor tail and graphics transaction test plus production/build/history context
+- Normalization: chunk 0093 extends existing false-pass, production-seam and UTF-8 test owners; chunk 0094 admitted rollback backup loss `GQF-0141` and fsync failure descriptor leak `GQF-0142`, extended `GQF-0075`, and duplicated `BR-0158`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0095 and GQ1-CHUNK-0096 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0108` and `GQC-0109`
+- Coverage: CUE/ISO tail and extraction-limit tests plus PKG/SOW tests with production/build/history context
+- Normalization: chunk 0095 admitted extension-filter false-pass `GQF-0143` and extended `BR-0160`, `GQF-0061`, `GQF-0062`; chunk 0096 extended `GQF-0090`, `GQF-0091`, `GQF-0046` and verified archived `BR-0024` remains closed
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0097 and GQ1-CHUNK-0098 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0110` and `GQC-0111`
+- Coverage: HMP/JSON/pilot transaction tests and CD short-read/Chromaprint database tests plus production/build/history context
+- Normalization: admitted HMP output-oracle gap `GQF-0144` and invalid-threshold stale database state `GQF-0145`; extended `GQF-0054`, `BR-0236`, `BR-0046`, and `GQF-0069`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0099 and GQ1-CHUNK-0100 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0112` and `GQC-0113`
+- Coverage: first 1,200 CUE/ISO test lines plus production/build/history context
+- Normalization: both chunks extend `BR-0160` with fixed-path and unchecked fixture-generation evidence; chunk 0100 admitted unused CUE fixture helpers `GQF-0146`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0101 through GQ1-CHUNK-0103 completion
+
+- Workers/outcomes: three fresh read-only `gpt-5.6-sol` medium workers; all `ISSUES`, normalized as `GQC-0114` through `GQC-0116`
+- Coverage: CUE/ISO test lines 1,201-3,000 plus production/build/history context
+- Normalization: admitted Windows reserved-device component admission `GQF-0147` and production-sized test stack catalogs `GQF-0148`; extended `BR-0160`, `GQF-0046`, archived `BR-0020`, and `GQF-0063`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0104 and GQ1-CHUNK-0105 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0117` and `GQC-0118`
+- Coverage: complete fingerprint C test and shared game-extension contract test plus production/build/history context
+- Normalization: admitted fingerprint input-byte parity gap `GQF-0149`, raw PCM fixture integrity `GQF-0150`, and reevaluating assertion macro `GQF-0151`; extended `BR-0181`, `BR-0662`, and archived `BR-0041`
+- Evidence: `general_code_quality_evidence_ledger_20260811.md`
+
+### GQ1-CHUNK-0106 and GQ1-CHUNK-0107 completion
+
+- Workers/outcomes: two fresh read-only `gpt-5.6-sol` medium workers; both `ISSUES`, normalized as `GQC-0119` and `GQC-0120`
+- Coverage: GOG descriptor tests lines 1-1,200 plus production/build/history context
+- Normalization: chunk 0106 extends `GQF-0076` through `GQF-0080` and `GQF-0085`; chunk 0107 admitted uninitialized LZMA fixture tail `GQF-0152` and extended archived `BR-0034`, `BR-0058`, and current `GQF-0082`
 - Evidence: `general_code_quality_evidence_ledger_20260811.md`
 
 ## Findings
@@ -5474,6 +5572,38 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0118` | `OPEN` | P1/high | security/resource-exhaustion/catalog-budget | Nested mission music container catalogs | Incomplete `BR-0018`: per-container budget resets admit up to 4,096 containers each retaining up to 4,096 tracks. Carry one attempt-owned entry/work/memory budget through every nested container |
 | `GQF-0119` | `OPEN` | P1/high | security/resource-exhaustion/storage/compression | Streaming descriptor nested music budget | Streaming data-descriptor sizes become zero, negative compressed sizes disable ratio accounting, and inner DXA/HOG helpers get fresh budgets; MIDI can materialize up to 512 MiB. Preserve exact source sizes and one nested expansion budget |
 | `GQF-0120` | `OPEN` | P2/medium | correctness/resource-lifetime/cache | Music staging generation directory lease | Cleanup evicts generation directories while UI retains returned `File` paths for later/asynchronous preview. Introduce explicit leases or copy/own preview inputs before eviction |
+| `GQF-0121` | `OPEN` | P2/high | security/resource-exhaustion/concurrency | NAT simulator live symmetric mappings | Live mappings can create unbounded tasks/sockets and grow restricted allowlists without an aggregate concurrency/ownership ceiling. Add global/per-client caps, bounded allowlists, supervised lifetimes and teardown accounting |
+| `GQF-0122` | `OPEN` | P2/high | correctness/networking/prediction | Sequential-port prediction sample admission | Predictor accepts uneven or duplicate samples using only integer average spread, fabricates predicted endpoints and changes relay choice. Require a reviewed sequence model, unique ordered samples and conservative fallback |
+| `GQF-0123` | `OPEN` | P2/high | build-release/incremental-correctness | TinySoundFont dependency rebuild identity | Preserved archive timestamps can leave `test_midi_seek_timeline` using an object compiled against the previous pinned dependency after reconfigure. Use supported timestamp behavior or an explicit dependency-generation input and prove incremental and clean builds agree |
+| `GQF-0124` | `OPEN` | P2/high | correctness/failure-containment/observability | Mission batch diagnostic artifact capture | A diagnostic-copy exception inside item `finally` can abort result recording, remaining items, summaries, recovery and app cleanup. Make diagnostics best-effort within a bounded item outcome while preserving the primary failure |
+| `GQF-0125` | `OPEN` | P1/high | security/supply-chain/tool-identity | Bounded extraction Python runtime | The wrapper executes a PATH-selected Python interpreter without an accepted identity, regrowing archived `BR-0157`. Resolve a repository-owned or explicitly admitted runtime and test hostile PATH precedence |
+| `GQF-0126` | `OPEN` | P3/high | correctness/data-preservation/HFS | Zero-length HFS output files | The fallback silently omits valid zero-length HFS files. Publish empty regular files with the same checked identity and collision policy as nonempty entries |
+| `GQF-0127` | `OPEN` | P1/high | security/resource-exhaustion/process-lifetime | Bounded extractor descendant ownership | A successful extractor parent can return while leaving unbounded descendants alive. Supervise the complete process tree through success, failure and timeout, and prove no child survives |
+| `GQF-0128` | `OPEN` | P1/high | security/filesystem-safety/resource-accounting | Extractor link and special-file outputs | Links and special files can bypass physical containment and byte accounting. Reject unsupported entry types and verify physical containment plus actual output accounting before publication |
+| `GQF-0129` | `OPEN` | P2/high | build-release/portability/tooling | POSIX CUE/ISO test entry point | The documented shell entry point is not executable in a fresh checkout. Preserve executable mode or invoke it explicitly through a supported shell and add a checkout-level invocation oracle |
+| `GQF-0130` | `OPEN` | P2/high | correctness/concurrency/transactionality | Bulk extraction destination publication | Concurrent callers publishing the same destination can race backup/final moves, allowing the loser to delete the winner or the prior backup. Serialize by canonical destination and bind rollback to the owned generation |
+| `GQF-0131` | `OPEN` | P2/high | correctness/data-integrity/publication | DOS demo initial output admission | Name-only first-generation checks can bless incomplete or wrong required installer output. Validate required bytes and source-bound semantics before publishing a reusable generation |
+| `GQF-0132` | `OPEN` | P2/high | correctness/media-geometry/compatibility | Legacy Mac CD CUE sector geometry | A legacy parser reads Mode 2 or unknown sectors using Mode 1 geometry, regrowing archived `BR-0184`. Share the strict production geometry contract and fail unsupported layouts closed |
+| `GQF-0133` | `OPEN` | P2/high | correctness/input-validation/source-selection | Legacy Mac CD CUE INDEX fields | Missing or invalid INDEX values become usable sector positions, regrowing archived `BR-0183`. Require one strict complete INDEX 01 and bind it to the selected source |
+| `GQF-0134` | `OPEN` | P2/high | correctness/reproducibility/cache-provenance | Mac CD bounded-supervisor generation | Extraction cache provenance omits the bounded supervisor implementation. Include every helper and policy generation that can change accepted outputs |
+| `GQF-0135` | `OPEN` | P2/high | security/resource-exhaustion/process-supervision | Mac demo direct `unar` phases | Both external extraction phases bypass bounded child supervision. Apply process-tree time/work/output bounds and cancellation to every phase |
+| `GQF-0136` | `OPEN` | P2/high | correctness/reproducibility/oracle-provenance | Mac demo tracked oracle generation | A legacy tracked oracle predates the provenance schema and its consumer ignores provenance. Regenerate from verified sources and require schema/source/tool/policy identity before use |
+| `GQF-0137` | `OPEN` | P2/high | security/resource-exhaustion/stack | Mission music nested archive recursion | Nested ZIP/DXA traversal has no explicit depth or stack budget. Carry a single attempt-owned nesting ceiling and reject cycles or excessive depth |
+| `GQF-0138` | `OPEN` | P2/high | correctness/data-model/determinism | Mission music tracklist selector conflicts | Multiple matching selector rows are silently resolved by input order. Define uniqueness or deterministic precedence and reject ambiguous conflicting rows |
+| `GQF-0139` | `OPEN` | P2/high | correctness/cache-generation/data-integrity | Mission fingerprint no-audio transition | Successful regeneration of a source with no audio leaves the prior audio generation authoritative. Publish an explicit current empty generation or atomically retire the stale sidecar |
+| `GQF-0140` | `OPEN` | P2/high | resource-lifetime/process-supervision/cancellation | Native mission fingerprint invocation | Native fingerprinting has no deadline or owned process-tree cancellation. Bound each mission invocation and continue with an explicit per-item failure after complete teardown |
+| `GQF-0141` | `OPEN` | P1/high | correctness/data-integrity/transactionality | Graphics configuration rollback backup | A failed rollback deletes the only retained original backup, violating archived `BR-0200` preservation. Retain a recoverable original until replacement and durable rollback are independently proven |
+| `GQF-0142` | `OPEN` | P2/high | correctness/resource-lifetime/failure-path | Graphics transaction parent directory sync | Parent-directory `fsync` failure leaks its descriptor. Give every descriptor one cleanup owner and inject sync failure before each return boundary |
+| `GQF-0143` | `OPEN` | P2/high | test-gap/false-pass/parser-contract | CUE extension-filter tests | Reject-filter coverage can pass after a failed or empty listing, while null-filter coverage uses one BIN and checks only a positive count. Require successful listing plus exact accepted/rejected path identities across multiple extensions |
+| `GQF-0144` | `OPEN` | P2/high | test-gap/correctness/production-parity | HMP conversion success oracle | Successful cases assert only return status, allowing null, empty or corrupt MIDI, and bypass paired D1/D2 wrapper/header/tempo/ownership seams. Validate exact MIDI semantics through both production wrappers |
+| `GQF-0145` | `OPEN` | P2/high | correctness/state-lifetime/configuration | Chromaprint database invalid threshold reconfiguration | After a valid load, an invalid threshold leaves entries matchable at zero because matching ignores configuration validity. Fail closed or preserve the last complete valid generation atomically |
+| `GQF-0146` | `OPEN` | P3/high | maintainability/dead-code/test-source | CUE test fixture helpers | Two fixture helpers and their supporting assertion header are unused in the branch-added test. Remove them or give them an explicit oracle owner without increasing production scope |
+| `GQF-0147` | `OPEN` | P2/high | correctness/path-identity/portability | ISO Windows reserved device components | ISO output containment admits device basenames such as `NUL.HOG` and `COM1.HOG`, regrowing archived `BR-0061`. Apply one portable component-identity policy before publication |
+| `GQF-0148` | `OPEN` | P2/high | test-infrastructure/resource-lifetime/portability | CUE/ISO production-sized stack catalogs | Multiple automatic `iso_file_list_t` values each exceed 1 MiB, requiring an MSVC-only 16 MiB stack workaround and bypassing heap ownership seams. Use the production allocation/destroy contract on all platforms |
+| `GQF-0149` | `OPEN` | P2/high | test-gap/oracle-strength/production-parity | CD fingerprint input-byte contract | The sector test never proves the fingerprint represents supplied bytes or matches the production stream path. Change controlled input bytes and require exact, production-path-sensitive output behavior |
+| `GQF-0150` | `OPEN` | P2/high | test-gap/fixture-integrity/input-validation | Fingerprint raw PCM fixture loader | Short or malformed fixture files are accepted as successful test input. Require exact header/length/read completion and reject trailing or incomplete data before fingerprint assertions |
+| `GQF-0151` | `OPEN` | P3/high | test-infrastructure/diagnostics/side-effects | Fingerprint `ASSERT_EQ_INT` macro | Failed diagnostics reevaluate expressions, allowing side effects or changed values to obscure the original failure. Evaluate each operand once before comparison and printing |
+| `GQF-0152` | `OPEN` | P3/high | test-infrastructure/undefined-data/fixture-integrity | GOG LZMA1 trailing-data fixture | The fixture passes 129 bytes after initializing only 41, making results depend on uninitialized stack tail. Initialize the complete buffer and assert exact intended trailing-byte semantics |
 
 ## Investigations
 
@@ -5773,6 +5903,129 @@ Rows are append-only mappings from raw worker observations to canonical owners. 
 | `GQ1-CHUNK-0062-OBS-001` | `REGROWTH` | `GQF-0119`, linked `BR-0018` |
 | `GQ1-CHUNK-0062-OBS-002` | `NEW` | `GQF-0120` |
 | `GQ1-CHUNK-0063-OBS-001` | `DUPLICATE` | Open `BR-0090` |
+| `GQ1-CHUNK-0064-HIST-001` | `HISTORICAL-CLOSED` | Archived `BR-0414`; explicit clean coverage |
+| `GQ1-CHUNK-0065-OBS-001` | `EXTENDS` | `BR-0106`, `GQF-0014` |
+| `GQ1-CHUNK-0065-OBS-002` | `EXTENDS` | `GQF-0014`, `BR-0107` |
+| `GQ1-CHUNK-0065-OBS-003` | `EXTENDS` | `GQF-0014`, `BR-0108` |
+| `GQ1-CHUNK-0066` | `DUPLICATE` | `BR-0149`, `BR-0136`, `BR-0128`, `BR-0108`/`GQF-0014`, `BR-0405` |
+| `GQ1-CHUNK-0067` | `DUPLICATE` | `BR-0113`, `BR-0143`, `BR-0115`, `BR-0116`, `GQF-0015`, `BR-0119`, `BR-0120`, `BR-0155`, `BR-0090` |
+| `GQ1-CHUNK-0068` | `DUPLICATE/EXTENDS` | Duplicates `BR-0122`, `BR-0121`, `BR-0150`, `BR-0123`, `BR-0124`, `BR-0126`, `BR-0139`, `BR-0125`; extends `BR-0135`, `BR-0125` |
+| `GQ1-CHUNK-0069` | `DUPLICATE` | `BR-0127` through `BR-0131` |
+| `GQ1-CHUNK-0070` | `DUPLICATE` | `BR-0114`, `BR-0117`, `BR-0118`, `BR-0132` through `BR-0135` |
+| `GQ1-CHUNK-0071` | `DUPLICATE/EXTENDS` | Duplicates `BR-0137` through `BR-0142`; extends `BR-0113`, `BR-0120` through `BR-0122` |
+| `GQ1-CHUNK-0072-OBS-001` | `EXTENDS` | `BR-0109` |
+| `GQ1-CHUNK-0072-OBS-002` | `DUPLICATE` | `BR-0110` |
+| `GQ1-CHUNK-0072-OBS-003` | `DUPLICATE` | `BR-0111` |
+| `GQ1-CHUNK-0072-OBS-004` | `EXTENDS` | `BR-0112` |
+| `GQ1-CHUNK-0072-OBS-005` | `NEW` | `GQF-0121` |
+| `GQ1-CHUNK-0073` | `DUPLICATE` | `GQF-0015`, `BR-0113`, `BR-0115`, `BR-0117`, `BR-0119`, `BR-0125`, `BR-0127`, `BR-0137`, `BR-0141`, `BR-0143` through `BR-0147` |
+| `GQ1-CHUNK-0074-OBS-001` | `EXTENDS` | `BR-0148`, `BR-0406` |
+| `GQ1-CHUNK-0074-OBS-002` | `NEW` | `GQF-0122` |
+| `GQ1-CHUNK-0075` | `DUPLICATE` | `BR-0151`, `BR-0129`, `BR-0150`, `BR-0152`, `BR-0133`, `BR-0135`, `BR-0115` |
+| `GQ1-CHUNK-0076` | `DUPLICATE` | `BR-0116`, `GQF-0015`, `BR-0148`, `BR-0153` through `BR-0155`, `BR-0120`, `BR-0150` |
+| `GQ1-CHUNK-0077` | `DUPLICATE/EXTENDS` | Seven existing WebSocket/server owners; exact details retained in durable evidence ledger |
+| `GQ1-CHUNK-0078` | `HISTORICAL-CLOSED` | Clean ignore-policy coverage; reconciled `BR-0160`, `BR-0001`, `BR-0002` |
+| `GQ1-CHUNK-0079-OBS-001` | `NEW` | `GQF-0123` |
+| `GQ1-CHUNK-0079-OBS-002` | `EXTENDS` | `GQF-0024`, linked archived `BR-0157` |
+| `GQ1-CHUNK-0079-OBS-003` | `EXTENDS` | `GQF-0068` |
+| `GQ1-CHUNK-0079-OBS-004` | `EXTENDS` | `BR-0158` |
+| `GQ1-CHUNK-0079-OBS-005` | `DUPLICATE` | `BR-0182` |
+| `GQ1-CHUNK-0080-OBS-001` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0080-OBS-002` | `EXTENDS` | `BR-0236` |
+| `GQ1-CHUNK-0081-OBS-001` | `EXTENDS` | `BR-0174` |
+| `GQ1-CHUNK-0081-OBS-002` | `EXTENDS` | `BR-0159`; remediation evidence, no new owner |
+| `GQ1-CHUNK-0082-OBS-001` | `REGROWTH` | `GQF-0124`, linked archived `BR-0161` |
+| `GQ1-CHUNK-0082-OBS-002` | `DUPLICATE` | `BR-0162` |
+| `GQ1-CHUNK-0082-OBS-003` | `DUPLICATE` | `BR-0164` |
+| `GQ1-CHUNK-0082-OBS-004` | `DUPLICATE` | `BR-0167`, `BR-0168` |
+| `GQ1-CHUNK-0083-OBS-001` | `REGROWTH` | `GQF-0125`, linked archived `BR-0157` |
+| `GQ1-CHUNK-0083-OBS-002` | `EXTENDS` | `GQF-0072`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0083-OBS-003` | `EXTENDS` | `GQF-0040` |
+| `GQ1-CHUNK-0083-OBS-004` | `NEW` | `GQF-0126` |
+| `GQ1-CHUNK-0084-OBS-001` | `REGROWTH` | `GQF-0127`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0084-OBS-002` | `REGROWTH` | `GQF-0128`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0084-OBS-003` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0084-OBS-004` | `DUPLICATE` | `BR-0007` |
+| `GQ1-CHUNK-0084-OBS-005` | `NEW` | `GQF-0129` |
+| `GQ1-CHUNK-0085-OBS-001` | `REGROWTH` | Archived `BR-0161` |
+| `GQ1-CHUNK-0085-OBS-002` | `DUPLICATE/EXTENDS` | `BR-0165` |
+| `GQ1-CHUNK-0085-OBS-003` | `DUPLICATE` | `BR-0167` |
+| `GQ1-CHUNK-0085-OBS-004` | `DUPLICATE` | `BR-0168` |
+| `GQ1-CHUNK-0086-OBS-001` | `NEW` | `GQF-0130` |
+| `GQ1-CHUNK-0086-OBS-002` | `EXTENDS` | `BR-0169` |
+| `GQ1-CHUNK-0086-OBS-003` | `DUPLICATE` | `GQF-0016`, `BR-0171` |
+| `GQ1-CHUNK-0087-OBS-001` | `EXTENDS` | `BR-0169` |
+| `GQ1-CHUNK-0087-OBS-002` | `REGROWTH` | `GQF-0131`, linked archived `BR-0020` |
+| `GQ1-CHUNK-0087-OBS-003` | `EXTENDS` | `BR-0173` |
+| `GQ1-CHUNK-0087-OBS-004` | `DUPLICATE` | `BR-0174` |
+| `GQ1-CHUNK-0087-OBS-005` | `EXTENDS` | `BR-0175` |
+| `GQ1-CHUNK-0088-OBS-001` | `REGROWTH` | `GQF-0132`, linked archived `BR-0184` |
+| `GQ1-CHUNK-0088-OBS-002` | `EXTENDS` | `GQF-0063` |
+| `GQ1-CHUNK-0088-OBS-003` | `REGROWTH` | `GQF-0133`, linked archived `BR-0183` |
+| `GQ1-CHUNK-0088-OBS-004` | `EXTENDS` | `GQF-0069` |
+| `GQ1-CHUNK-0088-OBS-005` | `EXTENDS` | `GQF-0061`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0088-OBS-006` | `REGROWTH` | `GQF-0134`, linked archived `BR-0170` |
+| `GQ1-CHUNK-0088-OBS-007` | `DUPLICATE` | `BR-0173` |
+| `GQ1-CHUNK-0088-OBS-008` | `EXTENDS` | `GQF-0072` |
+| `GQ1-CHUNK-0088-OBS-009` | `EXTENDS` | `GQF-0040` |
+| `GQ1-CHUNK-0088-OBS-010` | `DUPLICATE` | `BR-0174` |
+| `GQ1-CHUNK-0088-OBS-011` | `EXTENDS` | `GQF-0127` |
+| `GQ1-CHUNK-0089-OBS-001` | `REGROWTH` | `GQF-0135`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0089-OBS-002` | `EXTENDS` | `BR-0173` |
+| `GQ1-CHUNK-0089-OBS-003` | `EXTENDS` | `BR-0169` |
+| `GQ1-CHUNK-0089-OBS-004` | `DUPLICATE` | `BR-0174` |
+| `GQ1-CHUNK-0089-OBS-005` | `REGROWTH` | `GQF-0136`, linked archived `BR-0170` |
+| `GQ1-CHUNK-0089-OBS-006` | `EXTENDS` | `BR-0233` |
+| `GQ1-CHUNK-0090-OBS-001` | `REGROWTH` | `GQF-0137`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0090-OBS-002` | `EXTENDS` | `GQF-0128` |
+| `GQ1-CHUNK-0090-OBS-003` | `NEW` | `GQF-0138` |
+| `GQ1-CHUNK-0091-OBS-001` | `NEW` | `GQF-0139` |
+| `GQ1-CHUNK-0091-OBS-002` | `NEW` | `GQF-0140` |
+| `GQ1-CHUNK-0091-OBS-003` | `EXTENDS` | `BR-0180`, linked `GQF-0130` |
+| `GQ1-CHUNK-0091-OBS-004` | `DUPLICATE` | `BR-0179` |
+| `GQ1-CHUNK-0091-OBS-005` | `DUPLICATE` | `BR-0174` |
+| `GQ1-CHUNK-0092-OBS-001` | `EXTENDS` | `GQF-0078` |
+| `GQ1-CHUNK-0092-OBS-002` | `EXTENDS` | `GQF-0018` |
+| `GQ1-CHUNK-0093-OBS-001` | `EXTENDS` | `BR-0158` |
+| `GQ1-CHUNK-0093-OBS-002` | `EXTENDS` | `BR-0182` |
+| `GQ1-CHUNK-0093-OBS-003` | `EXTENDS` | `GQF-0037`, `GQR-0024` |
+| `GQ1-CHUNK-0093-OBS-004` | `DUPLICATE` | `BR-0597` |
+| `GQ1-CHUNK-0094-OBS-001` | `REGROWTH` | `GQF-0141`, linked archived `BR-0200` |
+| `GQ1-CHUNK-0094-OBS-002` | `NEW` | `GQF-0142` |
+| `GQ1-CHUNK-0094-OBS-003` | `EXTENDS` | `GQF-0075` |
+| `GQ1-CHUNK-0094-OBS-004` | `DUPLICATE` | `BR-0158` |
+| `GQ1-CHUNK-0095-OBS-001` | `NEW` | `GQF-0143` |
+| `GQ1-CHUNK-0095-OBS-002` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0095-OBS-003` | `EXTENDS` | `GQF-0061`, `GQF-0062`, linked archived `BR-0018` |
+| `GQ1-CHUNK-0096-OBS-001` | `EXTENDS` | `GQF-0090` |
+| `GQ1-CHUNK-0096-OBS-002` | `EXTENDS` | `GQF-0091`, `GQF-0046` |
+| `GQ1-CHUNK-0096-OBS-003` | `HISTORICAL-CLOSED` | Archived `BR-0024` |
+| `GQ1-CHUNK-0097-OBS-001` | `NEW` | `GQF-0144`, linked archived `BR-0198` |
+| `GQ1-CHUNK-0097-OBS-002` | `EXTENDS` | `GQF-0054` |
+| `GQ1-CHUNK-0097-OBS-003` | `EXTENDS` | `BR-0236` |
+| `GQ1-CHUNK-0098-OBS-001` | `REGROWTH` | `GQF-0145`, linked archived `BR-0038` |
+| `GQ1-CHUNK-0098-OBS-002` | `EXTENDS` | `BR-0046`, `GQF-0069` |
+| `GQ1-CHUNK-0099-OBS-001` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0100-OBS-001` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0100-OBS-002` | `NEW` | `GQF-0146` |
+| `GQ1-CHUNK-0101-OBS-001` | `REGROWTH` | `GQF-0147`, linked archived `BR-0061` |
+| `GQ1-CHUNK-0101-OBS-002` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0102-OBS-001` | `NEW` | `GQF-0148`, linked `GQF-0094` |
+| `GQ1-CHUNK-0102-OBS-002` | `EXTENDS` | `GQF-0046`, linked archived `BR-0020` |
+| `GQ1-CHUNK-0102-OBS-003` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0103-OBS-001` | `EXTENDS` | `GQF-0063` |
+| `GQ1-CHUNK-0103-OBS-002` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0104-OBS-001` | `EXTENDS` | `BR-0181` |
+| `GQ1-CHUNK-0104-OBS-002` | `NEW` | `GQF-0149` |
+| `GQ1-CHUNK-0104-OBS-003` | `NEW` | `GQF-0150` |
+| `GQ1-CHUNK-0104-OBS-004` | `NEW` | `GQF-0151` |
+| `GQ1-CHUNK-0105-OBS-001` | `EXTENDS` | `BR-0662` |
+| `GQ1-CHUNK-0105-OBS-002` | `EXTENDS` | Archived `BR-0041` |
+| `GQ1-CHUNK-0106` | `EXTENDS` | `GQF-0076` through `GQF-0080`, `GQF-0085` |
+| `GQ1-CHUNK-0107-OBS-001` | `EXTENDS` | Archived `BR-0034` |
+| `GQ1-CHUNK-0107-OBS-002` | `NEW` | `GQF-0152` |
+| `GQ1-CHUNK-0107-OBS-003` | `EXTENDS` | Archived `BR-0058` |
+| `GQ1-CHUNK-0107-OBS-004` | `EXTENDS` | `GQF-0082` |
 
 ## Bootstrap coverage records
 
@@ -5856,6 +6109,50 @@ The broad live survey produced ten preliminary `PARTIAL` records. They establish
 | `GQC-0074` | `ISSUES` | `GQ1-CHUNK-0061` MissionZipMusic | Completed all lines plus nested container/source/stage/test context. Admitted `GQF-0118`; extended three owners |
 | `GQC-0075` | `ISSUES` | `GQ1-CHUNK-0062` music stage manager | Completed all lines plus stream/budget/cache/UI/test context. Admitted `GQF-0119`, `GQF-0120` |
 | `GQC-0076` | `ISSUES` | `GQ1-CHUNK-0063` PlayGamesAuth | Completed all lines plus caller/history context. Exact duplicate of `BR-0090`; no new root |
+| `GQC-0077` | `CLEAN` | `GQ1-CHUNK-0064` Android data extraction rules | Completed all lines plus manifest, legacy policy, identity owner, multiplayer, test, packaging and history context. Archived `BR-0414` remains closed |
+| `GQC-0078` | `ISSUES` | `GQ1-CHUNK-0065` server config and auth batch | Completed both paths plus config/auth/TLS/test context. Extended `GQF-0014`, `BR-0106` through `BR-0108`; no new root |
+| `GQC-0079` | `ISSUES` | `GQ1-CHUNK-0066` server STUN and TLS batch | Completed both paths plus listener/candidate/test context. Five exact duplicates; no new root |
+| `GQC-0080` | `ISSUES` | `GQ1-CHUNK-0067` server PoW/protocol batch | Completed both paths plus consumer/test/history context. Eight exact duplicates; no new root |
+| `GQC-0081` | `ISSUES` | `GQ1-CHUNK-0068` server status/auth batch | Completed three paths plus consumer/test/history context. Six duplicates and two evidence extensions; no new root |
+| `GQC-0082` | `ISSUES` | `GQ1-CHUNK-0069` server session batch | Completed three paths plus consumer/test/history context. Five exact duplicates; no new root |
+| `GQC-0083` | `ISSUES` | `GQ1-CHUNK-0070` server rate-limit/relay/stats batch | Completed three paths plus tests/history. Seven exact duplicates; no new root |
+| `GQC-0084` | `ISSUES` | `GQ1-CHUNK-0071` server database | Completed all lines plus callers/tests/history. Six duplicates and four evidence extensions; no new root |
+| `GQC-0085` | `ISSUES` | `GQ1-CHUNK-0072` NAT simulator | Completed all lines plus callers/tests/history. Admitted `GQF-0121`; extended two owners and duplicated two |
+| `GQC-0086` | `ISSUES` | `GQ1-CHUNK-0073` WebSocket handler first 600 lines | Completed assigned range plus model/tests/history. Thirteen duplicate/evidence-refresh observations; no new root |
+| `GQC-0087` | `ISSUES` | `GQ1-CHUNK-0074` WebSocket handler second 600 lines | Completed assigned range plus NAT/prediction/relay tests. Admitted `GQF-0122`; extended `BR-0148` |
+| `GQC-0088` | `ISSUES` | `GQ1-CHUNK-0075` WebSocket handler third 600 lines | Completed assigned range plus model/tests/history. Six duplicates/extensions; no new root |
+| `GQC-0089` | `ISSUES` | `GQ1-CHUNK-0076` WebSocket handler fourth 600 lines | Completed assigned range plus tests/history. Seven duplicate/evidence-refresh observations; no new root |
+| `GQC-0090` | `ISSUES` | `GQ1-CHUNK-0077` WebSocket handler tail | Completed assigned range plus tests/history. Seven duplicate/evidence-extension observations; no new root |
+| `GQC-0091` | `CLEAN` | `GQ1-CHUNK-0078` extraction `.gitignore` | Reviewed exact rule plus generated outputs, repository ignores, history and consumers. Rule is correctly scoped and historical owners reconcile |
+| `GQC-0092` | `ISSUES` | `GQ1-CHUNK-0079` extraction CMake first 600 lines | Completed assigned range plus complete registration and dependency context. Admitted `GQF-0123`; extended three owners and duplicated `BR-0182` |
+| `GQC-0093` | `ISSUES` | `GQ1-CHUNK-0080` extraction CMake tail | Completed assigned range plus registered target sources and tests. Extended `BR-0160` and `BR-0236`; no new root |
+| `GQC-0094` | `ISSUES` | `GQ1-CHUNK-0081` verified 7-Zip helper | Completed all lines plus callers, dependency manifest, tests and portability history. Extended `BR-0174` and `BR-0159`; no new root |
+| `GQC-0095` | `ISSUES` | `GQ1-CHUNK-0082` mission batch tail and UDP relay | Completed both paths plus callers/tests/history. Admitted `GQF-0124`; duplicated four existing roots |
+| `GQC-0096` | `ISSUES` | `GQ1-CHUNK-0083` bounded extraction and HFS recovery helpers | Completed three paths plus callers/tests/history. Admitted `GQF-0125`, `GQF-0126`; extended two owners |
+| `GQC-0097` | `ISSUES` | `GQ1-CHUNK-0084` auth and bounded test helpers | Completed three paths plus callers/tests/history. Admitted `GQF-0127` through `GQF-0129`; extended `BR-0160` and duplicated `BR-0007` |
+| `GQC-0098` | `ISSUES` | `GQ1-CHUNK-0085` mission batch first 600 lines | Completed assigned range plus tail, parsers, tests and history. Regrowth of `BR-0161`; duplicated three owners; no new root |
+| `GQC-0099` | `ISSUES` | `GQ1-CHUNK-0086` bulk CD/GOG extraction scripts | Completed both paths plus helpers/tests/history. Admitted `GQF-0130`; extended `BR-0169` and duplicated `GQF-0016`/`BR-0171` |
+| `GQC-0100` | `ISSUES` | `GQ1-CHUNK-0087` DOS demo extraction | Completed all lines plus helpers/tests/history. Admitted `GQF-0131`; extended four owners |
+| `GQC-0101` | `ISSUES` | `GQ1-CHUNK-0088` Mac CD extraction | Completed all lines plus parser/helper/test/history context. Admitted `GQF-0132` through `GQF-0134`; extended or duplicated eight owners |
+| `GQC-0102` | `ISSUES` | `GQ1-CHUNK-0089` Mac demo extraction | Completed all lines plus tools/oracles/tests/history. Admitted `GQF-0135`, `GQF-0136`; extended four owners |
+| `GQC-0103` | `ISSUES` | `GQ1-CHUNK-0090` mission music fingerprint first 600 lines | Completed assigned range plus tail, callers/tests/history. Admitted `GQF-0137`, `GQF-0138`; extended `GQF-0128` |
+| `GQC-0104` | `ISSUES` | `GQ1-CHUNK-0091` mission music fingerprint tail | Completed assigned range plus preceding logic, callers/tests/history. Admitted `GQF-0139`, `GQF-0140`; extended three owners and duplicated two |
+| `GQC-0105` | `ISSUES` | `GQ1-CHUNK-0092` Inno capability documentation | Completed all lines against implementation/tests/history. Extended `GQF-0078`, `GQF-0018`; no new root |
+| `GQC-0106` | `ISSUES` | `GQ1-CHUNK-0093` StuffIt/UTF-8/SAF test batch | Completed all paths plus production/build/history context. Extended three owners and duplicated `BR-0597`; no new root |
+| `GQC-0107` | `ISSUES` | `GQ1-CHUNK-0094` GOG and graphics transaction tests | Completed both ranges plus production/build/history. Admitted `GQF-0141`, `GQF-0142`; extended `GQF-0075` and duplicated `BR-0158` |
+| `GQC-0108` | `ISSUES` | `GQ1-CHUNK-0095` CUE/ISO tail and extraction-limit tests | Completed both ranges plus production/build/history. Admitted `GQF-0143`; extended three owners |
+| `GQC-0109` | `ISSUES` | `GQ1-CHUNK-0096` PKG and SOW test batch | Completed all ranges plus production/build/history. Extended three current owners and verified archived `BR-0024` remains closed |
+| `GQC-0110` | `ISSUES` | `GQ1-CHUNK-0097` HMP, JSON and pilot transaction tests | Completed all paths plus production/build/history. Admitted `GQF-0144`; extended `GQF-0054`, `BR-0236` |
+| `GQC-0111` | `ISSUES` | `GQ1-CHUNK-0098` CD read and Chromaprint database tests | Completed all paths plus production/build/history. Admitted `GQF-0145`; extended `BR-0046`, `GQF-0069` |
+| `GQC-0112` | `ISSUES` | `GQ1-CHUNK-0099` CUE/ISO test lines 1-600 | Completed assigned range plus production/build/history. Extended `BR-0160`; no new root |
+| `GQC-0113` | `ISSUES` | `GQ1-CHUNK-0100` CUE/ISO test lines 601-1200 | Completed assigned range plus production/build/history. Admitted `GQF-0146`; extended `BR-0160` |
+| `GQC-0114` | `ISSUES` | `GQ1-CHUNK-0101` CUE/ISO test lines 1201-1800 | Completed assigned range plus production/build/history. Admitted `GQF-0147`; extended `BR-0160` |
+| `GQC-0115` | `ISSUES` | `GQ1-CHUNK-0102` CUE/ISO test lines 1801-2400 | Completed assigned range plus production/build/history. Admitted `GQF-0148`; extended `GQF-0046`, `BR-0160` |
+| `GQC-0116` | `ISSUES` | `GQ1-CHUNK-0103` CUE/ISO test lines 2401-3000 | Completed assigned range plus production/build/history. Extended `GQF-0063`, `BR-0160`; no new root |
+| `GQC-0117` | `ISSUES` | `GQ1-CHUNK-0104` fingerprint C test | Completed all lines plus production/build/history. Admitted `GQF-0149` through `GQF-0151`; extended `BR-0181` |
+| `GQC-0118` | `ISSUES` | `GQ1-CHUNK-0105` shared game-extension test | Completed all lines plus shared/build/history context. Extended `BR-0662` and archived `BR-0041`; no new root |
+| `GQC-0119` | `ISSUES` | `GQ1-CHUNK-0106` GOG descriptor tests lines 1-600 | Completed assigned range plus production/build/history. Extended six current owners; no new root |
+| `GQC-0120` | `ISSUES` | `GQ1-CHUNK-0107` GOG descriptor tests lines 601-1200 | Completed assigned range plus production/build/history. Admitted `GQF-0152`; extended three owners |
 
 ## Initial remediation queue
 
@@ -5970,6 +6267,38 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0105` | `TODO` | `GQF-0118` | Carry one catalog budget through nested music containers | Stress maximum outer/inner combinations with bounded retention |
 | `GQR-0106` | `TODO` | `GQF-0119` | Preserve nested streaming size and expansion accounting | Test data descriptors, zero/negative metadata and large MIDI output |
 | `GQR-0107` | `TODO` | `GQF-0120` | Lease staged music generations across preview use | Cover asynchronous preview and cleanup concurrency |
+| `GQR-0108` | `TODO` | `GQF-0121` | Bound NAT simulator live mappings and tasks | Stress per-client/global caps, allowlists, socket pools and teardown |
+| `GQR-0109` | `TODO` | `GQF-0122` | Make sequential-port prediction conservative | Cover duplicate, uneven, reordered, wrap and insufficient sample sets |
+| `GQR-0110` | `TODO` | `GQF-0123` | Bind TinySoundFont updates to incremental rebuilds | Test two pinned generations with older/newer archive mtimes under minimum and current supported CMake, and compare incremental with clean output |
+| `GQR-0111` | `TODO` | `GQF-0124` | Contain mission-batch diagnostic capture failures | Inject every diagnostic I/O failure and require primary outcome, remaining items, summary, recovery and app cleanup |
+| `GQR-0112` | `TODO` | `GQF-0125` | Bind bounded extraction to an admitted Python runtime | Cover hostile PATH precedence, missing runtime and cross-platform resolution |
+| `GQR-0113` | `TODO` | `GQF-0126` | Preserve zero-length HFS files | Test empty files alongside normalization collisions and ordinary data forks |
+| `GQR-0114` | `TODO` | `GQF-0127` | Supervise bounded extractor process trees | Spawn descendants on success/failure/timeout and prove complete teardown |
+| `GQR-0115` | `TODO` | `GQF-0128` | Reject unsafe extractor output types | Cover symlinks, hard links, FIFOs/devices where supported, physical escape and byte-accounting bypass |
+| `GQR-0116` | `TODO` | `GQF-0129` | Make the POSIX CUE/ISO entry point executable | Validate direct documented invocation from a fresh checkout on supported POSIX hosts |
+| `GQR-0117` | `TODO` | `GQF-0130` | Serialize extraction publication by destination | Race two successful and failing callers and prove winner/backup generation ownership |
+| `GQR-0118` | `TODO` | `GQF-0131` | Validate DOS demo output before first publication | Test missing, truncated, swapped and wrong required payloads with prior-generation preservation |
+| `GQR-0119` | `TODO` | `GQF-0132` | Share strict CUE sector geometry with Mac extraction | Cover supported modes and reject unknown/inconsistent layouts |
+| `GQR-0120` | `TODO` | `GQF-0133` | Validate Mac extraction CUE INDEX fields | Cover missing, malformed, duplicate and out-of-order INDEX 01 records |
+| `GQR-0121` | `TODO` | `GQF-0134` | Bind Mac extraction cache to supervisor policy | Change helper/policy generations and require cache invalidation |
+| `GQR-0122` | `TODO` | `GQF-0135` | Bound every Mac demo external process | Exercise hang, descendant, output flood, cancellation and cleanup for both phases |
+| `GQR-0123` | `TODO` | `GQF-0136` | Regenerate and enforce Mac demo oracle provenance | Reject legacy/mismatched schema, source, tool, helper and policy generations |
+| `GQR-0124` | `TODO` | `GQF-0137` | Bound mission music archive nesting | Test exact/over depth, cycles and mixed ZIP/DXA chains |
+| `GQR-0125` | `TODO` | `GQF-0138` | Make tracklist selector conflicts explicit | Cover duplicate identical, duplicate conflicting, overlapping and reordered rows |
+| `GQR-0126` | `TODO` | `GQF-0139` | Retire stale audio generations on no-audio success | Transition audio-to-none and require current cache/UI state with atomic prior-generation handling |
+| `GQR-0127` | `TODO` | `GQF-0140` | Bound native mission fingerprint processes | Exercise parent and descendant hangs, cancellation, cleanup and continuation to later missions |
+| `GQR-0128` | `TODO` | `GQF-0141` | Preserve graphics transaction originals through rollback | Inject publication and rollback failure at every file and prove recoverable original ownership |
+| `GQR-0129` | `TODO` | `GQF-0142` | Close graphics transaction descriptors on sync failure | Inject parent-directory sync failures and audit descriptor counts on every exit |
+| `GQR-0130` | `TODO` | `GQF-0143` | Make CUE extension-filter tests exact | Require successful listing and exact identities for reject, null and mixed-extension cases |
+| `GQR-0131` | `TODO` | `GQF-0144` | Validate HMP output through production wrappers | Cover D1/D2 exact structure, tempo, payload ownership, null/empty/corrupt output and cleanup |
+| `GQR-0132` | `TODO` | `GQF-0145` | Make invalid fingerprint database configuration fail closed | Test valid-to-invalid transitions, matching, reload and concurrent readers |
+| `GQR-0133` | `TODO` | `GQF-0146` | Remove unused CUE test helpers | Preserve active fixture coverage and verify symbol reachability plus focused test build |
+| `GQR-0134` | `TODO` | `GQF-0147` | Reject reserved Windows ISO output components | Cover base and extension variants, case, trailing spaces/dots and ordinary near-matches |
+| `GQR-0135` | `TODO` | `GQF-0148` | Use production heap ownership in CUE/ISO tests | Remove platform stack workaround and run under constrained-stack hosts and sanitizers |
+| `GQR-0136` | `TODO` | `GQF-0149` | Prove fingerprint input-byte and stream parity | Mutate controlled sectors and compare exact direct and production streaming results |
+| `GQR-0137` | `TODO` | `GQF-0150` | Validate raw fingerprint fixtures exactly | Cover short header/payload, overflow, trailing bytes and read errors |
+| `GQR-0138` | `TODO` | `GQF-0151` | Make fingerprint assertions evaluate operands once | Add side-effect operands and preserve first observed values in diagnostics |
+| `GQR-0139` | `TODO` | `GQF-0152` | Initialize GOG LZMA trailing-data fixtures | Make intended prefix and trailing bytes explicit and run under memory sanitizers where available |
 
 ### GQR-0001 live claim
 
