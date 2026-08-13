@@ -86,7 +86,7 @@ This snapshot rates all 163 formed `GQR-*` product-fix chunks. It is the impleme
 
 At this snapshot, the first ten-slot 80/20 dispatch tranche is:
 
-- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143` (`DONE`), `GQR-0142` (`DONE`), `GQR-0156` (`DONE`), `GQR-0157` (`DONE`), `DMR1-CHUNK-003`, `GQR-0159`, `GQR-0161`
+- Diff-minimization lane: `GQR-0162` (`DONE`), `GQR-0143` (`DONE`), `GQR-0142` (`DONE`), `GQR-0156` (`DONE`), `GQR-0157` (`DONE`), `DMR1-CHUNK-003`, `GQR-0159` (`DONE`), `GQR-0161`
 - General-quality lane: `GQR-0002`, `GQR-0024`
 
 Each lane is descending by score and the documented tie-breakers. Run the live overlap/prerequisite audit before claiming a row
@@ -98,7 +98,7 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 3 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0142` | `DONE` | `GQF-0155` | Finish paired Android PhysFS init extraction |
 | 4 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations |
 | 5 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0157` | `DONE` | `GQF-0170` | Finish shared HMP wrapper extraction |
-| 6 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics |
+| 6 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0159` | `DONE` | `GQF-0172` | Consolidate Android mixer init diagnostics |
 | 7 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter |
 | 8 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0002` | `TODO` | `GQF-0007` | Bound DXA mask-name construction and add exact-boundary coverage |
 | 9 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0024` | `TODO` | `GQF-0037` | Route SAF URI strings through strict standard-UTF-8 JNI conversion |
@@ -6070,7 +6070,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0169` | `FIXED` | P3/high | diff-minimization/ownership | Paired Redbook Android extension declarations | One conventional branch-added header now owns the exact type-complete declarations. Each inherited header retains one include, reducing the merge-base additions from 22 to four, an exact 18-line inherited reduction |
 | `GQF-0170` | `FIXED` | P3/high | diff-minimization/ownership | Paired HMP Android wrapper residue | The branch-added shared converter now owns `hmp2mid_mem` and its canonical 19-byte tempo track. Removing the paired includes and wrappers restores both inherited HMP files exactly to merge-base content, eliminating 24 additions and four hunks while preserving allocator and link ownership |
 | `GQF-0171` | `OPEN` | P3/high | diff-minimization/dead-code | Unused paired input-demo FP environment includes | Four inherited D1/D2 gameplay/hook paths include `input_demo_fp_env.h` but use none of its declarations. Remove those lines and verify paired builds; retain the necessary FP environment calls at their current local owners |
-| `GQF-0172` | `OPEN` | P3/high | diff-minimization/ownership | Residual paired Android mixer init logging | After the major C10 extraction, paired inherited mixer files still duplicate Android log macros, query locals and success/failure messages. Let the branch-added diagnostics owner query the actual spec and log it, retaining only requested rate, buffer frames and one call per game; estimated reduction 48 inherited lines |
+| `GQF-0172` | `FIXED` | P3/high | diff-minimization/ownership | Residual paired Android mixer init logging | The branch-added diagnostics owner now queries the actual SDL_mixer spec and owns the exact success and failure log formats. Each inherited game retains only requested-rate/buffer inputs and compact success/failure calls, removing 46 inherited additions while preserving initialization behavior |
 | `GQF-0173` | `OPEN` | P1/high | correctness/resource-lifetime/concurrency | Android SDL callback entry and teardown | Regrowth/incomplete closure of archived `BR-0248`: the OpenSL callback dereferences callback-visible device and buffer state before incrementing its in-flight counter, so teardown can observe zero, destroy/free state, then let the callback resume into freed objects. Establish lifetime ownership before any dereference and serialize player publication, background calls and destruction under the same protocol |
 | `GQF-0174` | `OPEN` | P3/high | diff-minimization/ownership | Paired secret-area save serialization helpers | `d1/main/state.c` and `d2/main/state.c` duplicate secret-area runtime write/read bodies that depend only on the branch-added adapter's state and PhysicsFS boundary. Move the definitions to the existing per-game-compiled adapter and remove about 40 inherited additions across two hunks, preserving byte layout, swapping, count fallback and save ordering |
 | `GQF-0175` | `FIXED` | P2/high | diff-minimization/build-ownership | Paired headless executable target construction | Shared construction now lives in `cmake/dxx-headless-targets.cmake`; the two inherited blocks retain explicit source-list ownership and compact D1/D2 invocations, reducing their attributable footprint from 185 to 30 lines while preserving exact generated target properties |
@@ -6964,7 +6964,7 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0156` | `DONE` | `GQF-0169` | Consolidate paired Redbook Android declarations | One conventional shared header owns all eight declarations; paired includes, exact C/C++ signatures, Windows D1/D2 and all configured Android ABI links passed with 18 inherited lines removed |
 | `GQR-0157` | `DONE` | `GQF-0170` | Finish shared HMP wrapper extraction | The shared owner now implements the public wrapper with canonical tempo data; exact successful MIDI bytes, focused failure paths, Windows D1/D2, and all configured Android ABIs passed with zero remaining inherited HMP diff |
 | `GQR-0158` | `TODO` | `GQF-0171` | Remove unused paired FP environment includes | Delete the four unconsumed inherited includes and run focused input-demo tests plus paired D1/D2 Windows and Android builds |
-| `GQR-0159` | `TODO` | `GQF-0172` | Consolidate Android mixer init diagnostics | Narrow the shared logger API, remove paired raw-log/query residue, preserve requested-rate/buffer fields and exact messages, then run diagnostic tests, both games and Android ABIs |
+| `GQR-0159` | `DONE` | `GQF-0172` | Consolidate Android mixer init diagnostics | Shared diagnostics now own actual-spec queries and exact raw/detailed messages; focused ownership contracts, Windows D1/D2 and all configured Android ABIs passed with 46 inherited lines removed |
 | `GQR-0160` | `TODO` | `GQF-0173` | Make SDL audio callback lifetime entry-safe | Acquire lifetime ownership before any callback dereference; serialize player publication, pause/resume and teardown; barrier-test close/reopen, enqueue failure and callback entry under race instrumentation |
 | `GQR-0161` | `TODO` | `GQF-0174` | Move secret-area serialization into its adapter | Relocate the paired writer/reader bodies and declarations, preserve exact D1/D2 save bytes, version ordering, swapped reads and count-mismatch fallback, then run focused scanner/save and Windows builds |
 | `GQR-0162` | `DONE` | `GQF-0175` | Extract paired headless CMake target policy | Root correction accepted in worker scope: exact normalized CMake File API properties match frozen HEAD for all three targets; Windows default and option-matrix validation plus maintained metadata/replay fixtures passed, with Linux/Apple execution unavailable on this Windows host |
@@ -7010,6 +7010,16 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 - Platform validation: `run-windows-build.ps1 -Target both` configured, built and linked the full D1 and D2 trees. With JDK 21, `:app:externalNativeBuildDebug` built `arm64-v8a`, `armeabi-v7a` and `x86_64`. Scoped code quality and final `git diff --check` passed
 - Scope audit: changed product/test paths are the shared HMP source/header, its focused host test, and a corrected ownership comment in `midi_preview.c`; paired inherited files contain no remaining branch diff. `GQR-0131` remains independently open for any broader production-wrapper validation beyond this exact shared public API oracle
 
+### GQR-0159 completion
+
+- Status: `DONE`; linked `GQF-0172` is `FIXED`. Historical impact remains 57 (`12/21/7/10/7`, `MEDIUM-HIGH`) with terminal state removing it from dispatch
+- Live boundary: work began at `9b79b8de889ab1920a2d5b9216e4e508be6afbcb` with a clean product scope. The only initial worktree path was this chunk's new durable plan; no unrelated changes were modified
+- Boundary: `android_audio_diagnostics.c` now owns `Mix_QuerySpec`, the exact `Mix_OpenAudio ok: requested=...` raw message, the existing detailed `[audio] init: ...` message and the exact open-failure raw message. Its public init API accepts only requested rate and mixer buffer frames. D1 and D2 retain the existing `Mix_OpenAudio`, urgent console error, no-sound state, requested-rate selection, buffer size and one compact shared call per outcome
+- Exact metrics against campaign merge base `fb555eec75e1ed12c8348805ab335afb4c721b06`: D1 falls from `+87/-8` to `+64/-8`; D2 falls from `+84/-9` to `+61/-9`. The isolated paired worktree edit is `+8/-54`, an exact 46-line reduction in inherited branch additions. The survey's 48-line estimate counted two presentation lines that remain necessary for the paired failure calls
+- Focused validation: `python -m unittest android.tests.test_android_mixer_diagnostics_contracts` passed two tests. The contracts require the narrow declarations, one shared actual-spec query, exact success/failure format strings and detailed fields, prohibit inherited raw Android logging/query locals, and require paired requested-rate/buffer calls
+- Platform validation: `run-windows-build.ps1 -Target both` configured, built and linked full D1 and D2 trees. With JDK 21, `:app:externalNativeBuildDebug` built `arm64-v8a`, `armeabi-v7a` and `x86_64`. Scoped code quality and `git diff --check` passed
+- Non-goals: mixer open/close ordering, native-rate selection, sample conversion, SFX latency probes and the separate open `GQF-0173` callback-lifetime problem are unchanged
+
 ### GQR-0001 live claim
 
 - Claimed: 2026-08-11 by one fresh `gpt-5.6-sol` worker at medium reasoning effort with no inherited turns
@@ -7023,6 +7033,11 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 ## Disposition log
 
 Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a duplicate. Include evidence and the deciding person or call
+
+### 2026-08-12: GQR-0159 / GQF-0172 completion
+
+- Status: `DONE`; `GQF-0172` is `FIXED`
+- Result: actual SDL_mixer queries and exact success/failure diagnostics now have one shared owner. Paired inherited additions fall by 46 lines; focused contracts, Windows D1/D2, all Android ABIs, scoped quality and final repository audits passed
 
 ### 2026-08-12: GQR-0157 / GQF-0170 completion
 

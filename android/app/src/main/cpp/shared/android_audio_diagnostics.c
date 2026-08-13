@@ -1,5 +1,6 @@
 #ifdef ANDROID
 
+#include <android/log.h>
 #include <SDL_audio.h>
 #include <SDL_mixer.h>
 
@@ -68,9 +69,24 @@ static int androidaud_sfx_chunk_ms(const void *chunk_buffer,
 	return (frames * 1000) / actual_freq;
 }
 
-void androidaud_log_mixer_init(int requested_rate, int actual_rate,
-                               unsigned int actual_format, int actual_channels, int mixer_buffer_frames)
+void androidaud_log_mixer_open_failed(const char *error)
 {
+	__android_log_print(ANDROID_LOG_DEBUG, "digi_mixer",
+	                    "ERROR: Couldn't open audio: %s", error);
+}
+
+void androidaud_log_mixer_init(int requested_rate, int mixer_buffer_frames)
+{
+	int actual_rate = 0;
+	Uint16 actual_format = 0;
+	int actual_channels = 0;
+
+	Mix_QuerySpec(&actual_rate, &actual_format, &actual_channels);
+	__android_log_print(
+	    ANDROID_LOG_DEBUG, "digi_mixer",
+	    "Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d (native_rate=%d)",
+	    requested_rate, actual_rate, actual_format, actual_channels,
+	    mixer_buffer_frames, g_android_native_sample_rate);
 	debug_log(DLOG_GAME,
 	          "[audio] init: mixer_rate=%d actual_rate=%d fmt=0x%04X ch=%d buf_frames=%d native_buf_frames=%d initial_queue_buffers=%d perf_mode_result=%d native_rate=%d cb_overruns=%d",
 	          requested_rate, actual_rate, actual_format, actual_channels,

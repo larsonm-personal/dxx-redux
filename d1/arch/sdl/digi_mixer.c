@@ -17,11 +17,7 @@
 #include <SDL_mixer.h>
 
 #ifdef ANDROID
-#include <android/log.h>
 #include "android_audio_diagnostics.h"
-#define MIXLOG(...) __android_log_print(ANDROID_LOG_DEBUG, "digi_mixer_d1", __VA_ARGS__)
-#else
-#define MIXLOG(...) do {} while(0)
 #endif
 
 #include "pstypes.h"
@@ -74,11 +70,6 @@ static int digi_mixer_check_soundfont(const char *path, void *data)
 /* Initialise audio */
 int digi_mixer_init()
 {
-#ifdef ANDROID
-	int actual_freq = 0;
-	Uint16 actual_fmt = 0;
-	int actual_ch = 0;
-#endif
 	digi_sample_rate = DIGI_MIXER_OUTPUT_RATE;
 
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_init %d (SDL_Mixer)\n", MAX_SOUNDS);
@@ -99,29 +90,15 @@ int digi_mixer_init()
 	if (Mix_OpenAudio(digi_sample_rate, MIX_OUTPUT_FORMAT, MIX_OUTPUT_CHANNELS, SOUND_BUFFER_SIZE))
 	{
 		//edited on 10/05/98 by Matt Mueller - should keep running, just with no sound.
-		MIXLOG("ERROR: Couldn't open audio: %s", SDL_GetError());
+#ifdef ANDROID
+		androidaud_log_mixer_open_failed(SDL_GetError());
+#endif
 		con_printf(CON_URGENT,"\nError: Couldn't open audio: %s\n", SDL_GetError());
 		GameArg.SndNoSound = 1;
 		return 1;
 	}
-	{
-#ifndef ANDROID
-		int actual_freq; Uint16 actual_fmt; int actual_ch;
-#endif
-		Mix_QuerySpec(&actual_freq, &actual_fmt, &actual_ch);
 #ifdef ANDROID
-		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d (native_rate=%d)",
-			digi_sample_rate, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE,
-			g_android_native_sample_rate);
-#else
-		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d",
-			digi_sample_rate, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE);
-#endif
-	}
-
-#ifdef ANDROID
-	androidaud_log_mixer_init(digi_sample_rate, actual_freq, actual_fmt, actual_ch,
-		SOUND_BUFFER_SIZE);
+	androidaud_log_mixer_init(digi_sample_rate, SOUND_BUFFER_SIZE);
 #endif
 
 	digi_max_channels = Mix_AllocateChannels(digi_max_channels);
