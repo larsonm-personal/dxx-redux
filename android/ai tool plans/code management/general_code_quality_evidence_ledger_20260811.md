@@ -16228,3 +16228,3939 @@ Outcome: ISSUES. All 600 assigned lines were reviewed with the enclosing test he
 </details>
 
 <!-- END IMPORT: GQ1-CHUNK-0107 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0108 frozen survey SHA256:3d75df125f6867715c0b3a3c1101a48022dd28b2d47ab004564fae99839b150b -->
+
+## GQ1-CHUNK-0108 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0108.md`
+- Imported SHA-256: `3d75df125f6867715c0b3a3c1101a48022dd28b2d47ab004564fae99839b150b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0108 frozen survey
+
+Outcome: ISSUES. All 600 assigned lines were reviewed against the frozen production HFS reader, public API, callers, standalone build registration, remaining test body, paired D1/D2 trees, history, and prior review records. The assigned file and every traced HFS owner are branch-added under `android/`, so this unit has no branch-caused inherited-file effect. Secondary review found that two synthetic expectations preserve known defective catalog behavior and that the bounds suite leaves the current allocation-ownership investigation unresolved. No product file, plan, canonical ledger, existing report, generated output, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned file: `android/app/src/main/cpp/extract/test_hfs.c` L1-L600, 600 reviewed lines, frozen blob `5d1207505ea940672e09e23e9e6ac0d9e94b9866`
+- Scope manifest: `android/app/src/main/cpp/extract/test_hfs.c|L1-L600|5d1207505ea940672e09e23e9e6ac0d9e94b9866`
+- Git blob fingerprint of the LF-terminated scope manifest: `d27a67b86261c72a6bc3a5097379103cbd4b0ff8`
+- SHA-256 of the UTF-8 scope manifest without a final LF: `e5be6a80c5634d5fb8b74fcddc6ef90089fec3387e682e4f6e8e7127a880504e`
+- The assigned path is branch-added relative to the frozen base: 1,140 additions, zero deletions, one added-file diff
+- Evidence came from frozen Git objects. Mutable worktree product files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned test slice is branch-added and contributes 600 of the added file's 1,140 lines. It modifies zero inherited paths, zero inherited hunks, and zero inherited lines
+- Its direct production seam, `hfs_reader.c` and `hfs_reader.h`, is also branch-added at the frozen boundary: 1,408 and 113 additions respectively, with zero deletions
+- Its standalone registration owner, `extract/CMakeLists.txt`, is branch-added: 681 additions, zero deletions. The parent Android native build file that includes the HFS reader is branch-added: 897 additions, zero deletions
+- The traced native callers and owners are branch-added Android files: `extract_cd.c` 704 additions, `jni_disc_import.c` 513 additions, and `mac_hfs_extract.c` 316 additions, all with zero deletions. `test_sti2.c` and the Kotlin/JNI import owners are likewise confined to the branch-owned Android port
+- Frozen `git grep` found no `hfs_reader`, `test_hfs`, or HFS-test registration reference under either `d1/` or `d2/`. The broad frozen branch does modify 355 D1/D2 paths, but none is required by, declares, registers, calls, or duplicates this HFS test or reader seam
+- The HFS parser is a standalone Android extraction owner. It consumes a borrowed descriptor and returns plain C metadata/catalog results. No game-source hook, paired D1/D2 declaration, copied game policy, or inherited build entry is needed for this test slice
+
+### Ownership alternative tested
+
+- Moving the test helpers or HFS reader into `d1/` or `d2/` would create inherited churn and game duplication without removing an inherited line. Sharing it through a new wrapper would also remove zero inherited lines and add indirection around an already branch-added owner
+- Removing the standalone registration would reduce only branch-added CMake lines and would discard focused malformed-media coverage. It is not an inherited-diff minimization and is not justified
+- Expected inherited reduction from any extraction or revert in this scope is therefore exactly zero lines and zero hunks. The narrowest ownership boundary is the existing `android/app/src/main/cpp/extract/` test plus reader API
+- Recheck trigger: only a later generation that adds an HFS hook, declaration, registration, or copied parser policy to an inherited D1/D2 path could change this disposition
+
+## Process and deduplication context
+
+- Read `.github/copilot-instructions.md`, the amended `general_code_quality_worker_process.md`, active and done GQ ledgers, durable GQ evidence ledger, campaign plan, both adversarial ledgers, DMR1, and relevant earlier cleanup records
+- Process SHA-256 before its weighting amendment was recorded during the initial pass; the complete amended process was reread after the root correction. Plan SHA-256: `7c2b77c6bb093df05a565738d21bfe2d7741a708262d596d68609eec0d40a266`
+- Active-ledger SHA-256 at resumed review: `1ee1da376049cd938d730c3c63007d52979c162b655f20ddb56d5de948f20291`
+- Done-ledger SHA-256: `7a09d3b802451b7126b1a6810d4afa3681968acbb47e51508c706728aa8fa6cd`
+- DMR1 contains no HFS or Android extraction ownership candidate. This is consistent with the measured zero inherited effect
+- Archived `BR-0026` claimed complete fixed-record validation, but current `GQF-0074` records the frozen regrowth in which short fixed folder and file payloads remain accepted
+- Current `GQF-0040` owns lossy HFS name and portable-identity collisions. Current `GQI-0003` owns the undecided allocation-bitmap and cross-fork-overlap policy. Archived `BR-0158` owns optional real-media tests that return successful status when fixtures are absent
+
+## Context inspected
+
+- Every assigned line, including CUE and file helpers, descriptor cleanup, synthetic raw-sector writer, APM/MDB builder, partition and extent boundary cases, catalog-name cases, and the first fixed-record boundary cases
+- The remainder of `test_hfs.c`, including record footer, leaf chain, allocation map, catalog growth, real-media listing and extraction, cleanup, summary, and process result
+- Complete frozen `hfs_reader.c/.h`: track reads, partition validation, volume allocation geometry, inline extents, catalog record parsing, allocation map and leaf traversal, parent/path construction, public list/catalog/extraction APIs, and test-only seams
+- Android native build inclusion, standalone CMake target and CTest registration, CLI/JNI/Mac callers, CUE parsing, real-media fixture paths, and prior HFS remediations
+- D1 and D2 source and build trees were searched for direct or semantic HFS owners. None was found
+- File history from initial April addition through July partition, catalog, resource, and path remediations, including the changes that added the assigned synthetic cases
+
+## Atomic observations
+
+### GQ1-CHUNK-0108-OBS-001: Fixed-record tests certify truncated HFS records as valid
+
+- Provisional disposition: `EXTENDS GQF-0074` and links archived `BR-0026`; do not allocate a second parser root
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/parser-validation`
+- Frozen locations: `test_hfs.c:L539-L597`; `hfs_reader.c:L732-L805`
+- Evidence: `catalog_record_bounds_tests` rejects folder payloads below 10 bytes but requires a 10-byte folder payload to produce one entry. It rejects file payloads below 98 bytes but requires a 98-byte file payload to produce one entry. The production parser uses the same 10 and 98 minima. Classic HFS folder and file catalog records have larger fixed bodies, currently recorded by `GQF-0074` as 70 and 102 bytes. The assigned test therefore converts the exact defective acceptance boundary into a required PASS instead of detecting the regrowth from archived `BR-0026`
+- Trigger: keep a valid key and record type but truncate a folder body to 10 bytes or a file body to 98 bytes. The production test seam accepts it, and the assigned test fails if the parser is tightened without updating the false-positive oracle
+- Impact: malformed catalog data can be published as a live file or directory entry, while the focused suite presents the acceptance as intentional and can resist the necessary repair
+- Recommended fix: build exact complete folder and file records, require all shorter fixed-body boundaries to fail, and add key-length, Pascal-name, padding, record-type, and exact-end cases through the production scanner seam
+- Focused validation: mutation-test every payload length around the full fixed schema and every key/name/padding boundary; require no entry publication for malformed records and retain known-media catalog identities
+
+### GQ1-CHUNK-0108-OBS-002: Catalog-name safety test preserves a lossy collision-producing mapping
+
+- Provisional disposition: `EXTENDS GQF-0040`; no new collision root
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/data-integrity/portability`
+- Frozen locations: `test_hfs.c:L505-L530`; `hfs_reader.c:L230-L255`
+- Evidence: `catalog_name_safety_tests` requires the untrusted HFS name `Mac/Play` to be accepted as `Mac_Play`. The production decoder also maps both slash types to underscore and maps every non-printable or non-ASCII byte to `?`, with no collision set. A genuine `Mac_Play` entry and multiple distinct legacy-encoded names can therefore share the same decoded identity. Current `GQF-0040` owns the resulting flattened HFS projection and portable alias problem; this test supplies direct evidence that the low-level decoder oracle currently protects one collision mechanism
+- Trigger: place `Mac/Play` and `Mac_Play`, or two names that map to the same question-mark spelling, in one catalog
+- Impact: distinct catalog entries can become indistinguishable before parent/path and publication policy, enabling order-dependent omission or replacement while the component-safety test remains green
+- Recommended fix: make decoding return a stable source identity alongside a display spelling, or reject lossy and duplicate normalized components before publication. Replace the slash-success expectation with explicit collision-aware cases coordinated with `GQF-0040`
+- Focused validation: include slash/backslash, underscore, control, high-byte, case, Unicode-normalization, trailing-dot/space, and device-name aliases; require deterministic rejection before output mutation on Windows and POSIX
+
+### GQ1-CHUNK-0108-OBS-003: Bounds coverage does not establish HFS allocation ownership
+
+- Provisional disposition: `EXTENDS GQI-0003`; retain as investigation, not a new finding
+- Suggested priority/confidence/category: P2/medium, `correctness/data-integrity/malformed-media`
+- Frozen locations: `test_hfs.c:L414-L503`; `hfs_reader.c` volume, catalog, and fork extent validators
+- Evidence: the assigned bounds cases prove arithmetic confinement to the partition and declared allocation-block count, including one-byte and overflow edges. They never construct or inspect the HFS volume allocation bitmap and never create two admitted forks whose extents overlap. The production test seam `hfs_test_validate_extent_bounds` accepts only geometry and a single extent record, so it cannot answer whether this importer is intended to reject free blocks, multiply owned blocks, or cross-fork overlap. This is exactly the unresolved policy and fixture boundary in `GQI-0003`
+- Trigger: construct a catalog file or data fork whose in-range block is marked free, or two live entries that claim the same allocation block
+- Impact: if strict import integrity is intended, corrupted or adversarial media can expose unowned or aliased bytes as legitimate files; if recovery semantics are intended, rejecting them could break supported media. The required policy evidence is missing
+- Recommended next evidence: compare known supported Mac discs for intentional sharing, document strict versus recovery semantics, then add a real synthetic volume that includes the allocation bitmap and multiple forks. Promote only if strict ownership is confirmed
+
+### GQ1-CHUNK-0108-OBS-004: Optional Mac media remains success-coded when unavailable
+
+- Provisional disposition: `DUPLICATE BR-0158`; no new finding
+- Suggested priority/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen locations: assigned CUE fixture paths and helpers at `test_hfs.c:L39-L40,L110-L345`; enclosing real-media cases and `main` at `L829-L1140`; `extract/CMakeLists.txt:L199-L200`
+- Evidence: both hard-coded real CUE paths are ignored optional media. Enclosing helpers increment a private skipped counter and return success when absent, and `main` returns zero. CTest registers the executable without a skip return code or required-media profile. This exact HFS target and mechanism are already recorded in `BR-0158`, including earlier reviews of this same path
+- Trigger and impact: run the registered target in a clean checkout without either CUE. CTest reports success despite executing none of the known-media partition, catalog, or extraction assertions
+- Recommended fix and validation remain those of `BR-0158`: explicit optional skip semantics plus a required-fixture profile, exact pass/skip accounting, and mandatory distributable success-path fixtures where possible
+
+## Explicit clean dimensions
+
+- Inherited diff: no assigned or traced HFS owner adds, deletes, or changes any frozen D1/D2 line. The existing Android ownership boundary is already optimal for merge pressure
+- Production-seam parity: synthetic partition, extent, record, and tree helpers call test-only wrappers around the same static production validators and scanners compiled from `hfs_reader.c`; there is no copied parser implementation in the test
+- Arithmetic and partition boundaries: cases include a valid partition, wrapping partition start, MDB exclusion, allocation-area crossing, catalog extent crossing, exact one-byte partition end, one-byte overflow, 512-byte and 1,024-byte physical blocks, allocation-count crossing, and wide maximum values
+- Basic path safety: empty, dot, and dot-dot components fail, and ordinary printable names survive. The remaining lossy/portable collision policy is OBS-002 and `GQF-0040`
+- Record-footer safety in the inspected continuation: unordered, duplicate, table-overlapping, and excessively numerous record offsets fail; undersized folder/file payloads fail up to the currently defective minima
+- Resource cleanup: assigned `tmpfile` paths close on write and parser failure; CUE text is freed on examined parse/size failures; opened track descriptors close through the helper. Later catalog arrays and temporary extraction outputs have explicit cleanup paths
+- Isolation: synthetic cases use anonymous `tmpfile` streams and fixed stack buffers. Real-media extraction uses fixed working-directory output names, but that separate ownership risk is already covered by adversarial test-isolation records and belongs primarily to the continuation chunk
+- Portability: Windows descriptors are opened or switched to binary mode; POSIX uses ordinary descriptor APIs. Integer widths in the assigned synthetic inputs intentionally exercise 32-bit HFS fields and production uses wide checked byte geometry
+- Diagnostics: named top-level cases and distinct failure summaries identify broad failed dimensions. Per-subcase diagnostics are weak because helpers return only Boolean status, but no distinct high-impact root beyond the existing test owners was established
+- D1/D2 parity: the feature is game-data extraction shared outside both game trees. No duplicated game-specific HFS policy or asymmetric inherited hook exists
+
+## Evidence gaps and limits
+
+- No build or test was run because this was a frozen read-only survey and a generated build tree would use mutable post-freeze files. All observations follow from frozen source and registration control flow
+- No proprietary Mac disc image was opened. Known-media content and current fixture availability were inferred only from frozen paths and prior durable validation records
+- The assignment ends at line 600. The continuation was read for enclosing behavior and ownership, but chunk 0109 should own detailed leaf-map, growth, real-media extraction, output cleanup, and suite-status coverage
+- No complete synthetic HFS volume with catalog B-tree, allocation bitmap, extents-overflow file, or multiple overlapping forks exists in this slice. That absence is why OBS-003 remains an investigation
+- The frozen generation manifest directory was unavailable in this worktree. Frozen commits, trees, assigned blob, queue row, diff status, and deterministic scope fingerprints were independently confirmed
+- No claim is made that every one of the branch's 355 modified D1/D2 paths is already minimized. The narrower claim is that none is causally connected to this assigned HFS unit or its traced owners
+
+## Commands and validation
+
+- `Get-Content -Raw .github/copilot-instructions.md` and repeated complete reads of `general_code_quality_worker_process.md`, including the amended 80/20 rubric
+- `git cat-file`, `git show -s --format=%T`, `git merge-base --is-ancestor`, `git rev-parse`, and `git ls-tree` for frozen object, ancestry, blob, and added-path confirmation
+- `git show` with numbered ranges for all 1,140 test lines and relevant `hfs_reader.c/.h` regions
+- `git diff --numstat`, `git diff --name-status`, and historical diff inspection for exact assigned, owner, caller, Android build, and inherited-path attribution
+- `git grep` at the frozen head for HFS reader/test symbols, production callers, Android registrations, and all D1/D2 references
+- `git log` and frozen diffs for the initial addition and July audit repairs that added the assigned tests
+- `rg` across active/done GQ, active/done adversarial, DMR1, durable evidence, and cleanup plans for HFS, test, false-pass, collision, parser-bound, and allocation-ownership duplicates
+- `Get-FileHash -Algorithm SHA256` plus in-memory SHA-256 and `git hash-object --stdin` for context and scope fingerprints
+- No executable build, CTest, extraction, fixture generation, emulator, network operation, product mutation, or temp-file write was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for `GQ1-CHUNK-0108` with disposition `NO_INHERITED_EFFECT`, measured inherited reduction opportunity zero lines and zero hunks, and the traced branch-added Android ownership boundary above
+- Create one non-partial `ISSUES` coverage record for `GQ1-CHUNK-0108`
+- Normalize OBS-001 as an evidence and test-oracle extension of current `GQF-0074`, linked to archived `BR-0026`; do not allocate a second parser finding
+- Normalize OBS-002 as an evidence and test-oracle extension of current `GQF-0040`; do not allocate a second collision finding
+- Normalize OBS-003 as additional evidence for current `GQI-0003`; retain investigation status until strict versus recovery policy and multi-fork fixtures are available
+- Normalize OBS-004 as a duplicate of `BR-0158`; do not allocate a new false-pass finding
+- No DMR1 item, diff-minimization finding, or remediation chunk should be created from this unit
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0108 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0109 frozen survey SHA256:14bc8e8ca6ee953f2cc7860262f3d05333641e41566800b80c5af5efb2737c26 -->
+
+## GQ1-CHUNK-0109 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0109.md`
+- Imported SHA-256: `14bc8e8ca6ee953f2cc7860262f3d05333641e41566800b80c5af5efb2737c26`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0109 frozen survey
+
+Outcome: ISSUES. The assigned path and every traced HFS production, test, and build owner are branch-added, so this unit has no branch-caused inherited-file effect to minimize. The measured disposition is `NO_INHERITED_EFFECT`: zero inherited paths, hunks, added lines, or deleted lines are attributable to this slice. The secondary quality review found no new root cause. It adds exact evidence to existing HFS parser-test, missing-fixture, repeated-extraction, and test-isolation owners.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned file and range: `android/app/src/main/cpp/extract/test_hfs.c` L601-L1140, all 540 assigned lines reviewed
+- Frozen file blob: `5d1207505ea940672e09e23e9e6ac0d9e94b9866`
+- Scope manifest, ASCII with LF and one final LF:
+
+```text
+android/app/src/main/cpp/extract/test_hfs.c|L601-L1140|5d1207505ea940672e09e23e9e6ac0d9e94b9866
+```
+
+- Scope-manifest byte count: 96
+- SHA-256 of the exact manifest bytes: `256aa60d537ea35da6139488d382980255de5ca530b90a53eb8fc0edbf711716`
+- The assigned file is absent at the frozen base and has frozen diff size `+1140/-0`
+- Frozen Git objects, not the mutable worktree copy, were used as product and test evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+- Path classification: the assigned `test_hfs.c` is branch-added. Its direct production owners `hfs_reader.c` (`+1408/-0`), `hfs_reader.h` (`+113/-0`), `mac_hfs_extract.c` (`+316/-0`), and `mac_hfs_extract.h` (`+24/-0`) are also branch-added. Its standalone registration owner `extract/CMakeLists.txt` (`+681/-0`) and the Android D1/D2 native source-list owner `android/app/src/main/cpp/CMakeLists.txt` (`+897/-0`) are branch-added as well.
+- Traced boundary: `test_hfs` links the branch-added `cue_parser.c` and `hfs_reader.c` from the branch-added extraction CMake file. Production calls flow through branch-added `extract_cd.c`, `jni_disc_import.c`, and `mac_hfs_extract.c`; D1 and D2 Android binaries receive the shared implementation through the branch-added Android CMake file. The test-only seams are declared in the branch-added HFS header and compiled under `HFS_READER_TESTING` only for the branch-added standalone target.
+- Inherited attribution: frozen symbol and include searches across `d1/`, `d2/`, and `cmake/` found no `hfs_reader`, `mac_hfs_extract`, `test_hfs`, `hfs_catalog_*`, or `hfs_find_partition` consumer. The complete `d1/` and `d2/` frozen diff contains no HFS- or Mac-extraction-named path. Therefore the assigned slice causes zero changes to 1996-original files and zero inherited paths, hunks, added lines, or deleted lines.
+- Ownership test: moving these test fixtures or HFS policy cannot reduce inherited churn because all relevant code already resides in branch-added Android extraction owners. A new wrapper, callback table, or D1/D2 hook would add code and coupling without removing one inherited line.
+- D1/D2 duplication: the HFS parser and Mac extraction policy are shared once. The Android CMake file lists the same branch-added sources in the two game targets, but that registration is in one branch-added owner and does not duplicate implementation inside either inherited game tree.
+- DMR1 reconciliation: no DMR1 item applies because there is no inherited D1/D2 HFS edit to extract, consolidate, or revert.
+- Recheck trigger: only a later generation that introduces an HFS hook, declaration, policy body, test seam, or build registration into a base-present file should change this disposition.
+
+## Context inspected
+
+- Every assigned frozen line, including the tail of malformed catalog-record fixtures, header/map/leaf fixture builders, allocation-map overflow setup, leaf-chain validation cases, CUE probing, optional known-media listing and extraction, repeated catalog extraction, allocation-failure coverage, synthetic non-HFS media, aggregate result accounting, and cleanup
+- Complete frozen `test_hfs.c` context, especially CUE helpers and earlier partition, extent, name, and record builders needed to interpret the assigned tail
+- Complete relevant `hfs_reader.c/.h` production paths: node-offset validation, record decoding, B-tree allocation-map materialization, leaf-chain traversal, catalog open/close, entry lookup, extraction, and test-only seams
+- Frozen `mac_hfs_extract.c/.h`, `extract_cd.c`, `jni_disc_import.c`, both branch-added CMake owners, and D1/D2 symbol consumers and source registrations
+- Frozen file history through the July 2026 HFS audit repairs and the delta from adversarial head `c01d8fe4686c63d931b1e543a6305bbafaa944a9`
+- Current GQ process and relevant active, done, and evidence-ledger records; both adversarial ledgers; DMR1; HFS repair plans; and prior owners BR-0026, BR-0027, BR-0050, BR-0051, BR-0158, BR-0160, plus GQ1-CHUNK-0027 and GQ1-CHUNK-0028 observations
+
+## Atomic observations
+
+### GQ1-CHUNK-0109-OBS-001 - EXTENDS GQ1-CHUNK-0028-OBS-001 and archived BR-0050: the overflow-map oracle stops one node before the known compatibility defect
+
+- Severity/confidence/category: P2, high, test-gap/compatibility/parser-validation
+- Frozen locations: assigned `test_hfs.c:L675-L826`, especially `build_catalog_tree_map_node` at L744-L756 and the sole overflow-map case at L816-L826; production `hfs_reader.c:L911-L933`
+- Evidence: the only fixture exceeding the header allocation-map capacity uses 2,050 nodes and exactly one map node. That map node has `bLink == 0`, so it satisfies both the classic-HFS rule and the production loop's first-node-only expectation. No test constructs the second map node at which production incorrectly requires `bLink` to equal the prior map-node index.
+- Trigger and impact: a conforming catalog needing two map nodes is rejected by production, while every assigned allocation-map test remains green. This is the exact already-recorded GQ1-CHUNK-0028 observation, not a new parser root.
+- Normalization: extend the existing observation or its normalized owner. Validation should cover zero, one, two, and three map nodes at exact bitmap-capacity boundaries, with zero backward links as the valid control.
+
+### GQ1-CHUNK-0109-OBS-002 - EXTENDS GQ1-CHUNK-0028-OBS-002 and archived BR-0026: the test suite enshrines accessed-prefix sizes as complete records
+
+- Severity/confidence/category: P2, high, test-gap/correctness/parser-validation
+- Frozen locations: assigned continuation `test_hfs.c:L601-L672` and enclosing `catalog_record_bounds_tests`; production `hfs_reader.c:L744-L804`
+- Evidence: the enclosing fixture requires a 10-byte folder payload and a 98-byte file payload to succeed, then the assigned tail builds further cases on those same minimal bodies. Classic fixed-format folder and file records are longer, so the test protects the old out-of-bounds repair but also makes schema-truncated records the positive controls.
+- Trigger and impact: a bounded folder body of 10 through 69 bytes or file body of 98 through 101 bytes is promoted to a live entry, and the focused suite treats that acceptance as correct. This is the same complete-schema gap already recorded by chunk 0028, not a new root.
+- Normalization: extend the prior observation or reopen the exact BR-0026 acceptance boundary. Replace the positive controls with complete fixed bodies and add every size around both true boundaries.
+
+### GQ1-CHUNK-0109-OBS-003 - DUPLICATE BR-0158: all production-path HFS cases pass when ignored media is absent
+
+- Severity/confidence/category: P2, high, test-gap/false-pass/fixture-ownership
+- Frozen locations: `test_hfs.c:L893-L1021,L1114-L1132`; CTest registration `extract/CMakeLists.txt:L199`
+- Evidence: both real-disc probes, primary catalog listing, and repeated real-file extraction return success after incrementing only `tests_skipped` when their CUE is absent. The final process result depends only on `ok`, so the registered `hfs_tests` target exits zero while executing no successful production-path catalog listing or data-fork extraction.
+- Trigger and impact: run a clean checkout without ignored proprietary CD images. Synthetic malformed-input tests run, but absence of every valid catalog and extraction fixture is reported to CTest as a passing target.
+- Normalization: duplicate BR-0158. This assigned range supplies the complete current call and final-status evidence; do not create a new finding.
+
+### GQ1-CHUNK-0109-OBS-004 - EXTENDS BR-0160: repeated-extraction outputs have shared fixed ownership
+
+- Severity/confidence/category: P2, high, test-gap/resource-lifetime/concurrency
+- Frozen locations: `test_hfs.c:L965-L1018`, fixed files `test_hfs_install_descent.bin` and `test_hfs_install_descent_2.bin`; suite registration and working-directory ownership in `extract/CMakeLists.txt`
+- Evidence: every process uses the same two relative output paths, performs direct create/truncate extraction, and removes those paths without a per-run directory or lock. Concurrent native-suite invocations in the same build working directory can truncate, read, or remove each other's output. An interrupted process can also leave a same-name artifact for the next run.
+- Trigger and impact: overlap two `test_hfs` processes with the known media available, or interrupt one after its first successful extraction. Assertions can observe another generation or fail because another process removed an active file.
+- Normalization: extend open BR-0160's suite-wide isolation boundary rather than create a separate HFS-test owner. Use a unique invocation directory and cleanup that removes only the invoking run's paths.
+
+### GQ1-CHUNK-0109-OBS-005 - EXTENDS archived BR-0027: the second extraction proves scan reuse but not byte reuse correctness
+
+- Severity/confidence/category: P3, high, test-gap/oracle-strength
+- Frozen locations: `test_hfs.c:L985-L1019`, especially the two extraction calls at L1001-L1003 and prefix check at L1013-L1018
+- Evidence: both extraction calls must return nonnegative and the scan counter must remain one, but only the first output is opened and only its four-byte `STi2` prefix is checked. The second output is deleted unread. The BR-0027 resolution says focused tests prove two direct extractions; the frozen test proves reuse and return status, but cannot detect a second-call state bug that returns the expected count while emitting different bytes.
+- Trigger and impact: mutate per-catalog extraction state or the second read path so the second call returns the declared size but emits different content. The intended reuse regression test remains green.
+- Normalization: treat this as acceptance-evidence extension for archived BR-0027, not a new production defect. Compare both full output size and digest, preferably against a fixture-independent synthetic successful data fork.
+
+## Explicit clean dimensions
+
+- Inherited-file pressure: all test, production, interface, wrapper, and build owners found in the trace are branch-added. No inherited D1/D2 hook, copied HFS body, paired declaration, or original-file registration exists.
+- Fixture bounds already covered: the assigned cases reject nonmonotonic and overlapping record offsets, oversized record counts, out-of-node endings, free leaf nodes, leaf cycles, out-of-range links, duplicate leaf CNIDs, and allocation failure at initial and growth boundaries. Exact remaining parser gaps are owned by the observations above and prior HFS records.
+- Resource cleanup: `large_nodes` is freed after the one production seam call; CUE text and descriptors are released on inspected ordinary paths; catalog and track owners close on both success and examined failure paths; real catalog lists are freed; synthetic temporary streams are closed; and both repeated-extraction outputs are removed after ordinary success and the combined failure path.
+- Process status: every non-skip assertion failure in the assigned range clears `ok` or returns false to a caller that clears it. The final exit is nonzero when `ok` is false. The false-pass boundary is specifically missing optional media under BR-0158.
+- Production-seam parity: malformed node and tree fixtures call the same `scan_catalog_node` and `scan_catalog_tree` implementations through narrow test-only adapters. Repeated known-media extraction calls the public catalog API used by `mac_hfs_extract.c`, not a test-local parser.
+- Portability: Windows uses binary descriptors and `_setmode` for temporary streams; POSIX uses normal descriptors; on-disc values use explicit big-endian writers; sizes in the assigned fixtures remain bounded; no non-ASCII source or format-string mismatch was found.
+- Diagnostics: named top-level cases distinguish partition/extent, component, record, leaf-chain, allocation, non-HFS, real-disc, catalog, and extraction failures. Detailed per-mutation diagnostics remain coarse but do not hide a non-skip failure from process status.
+- Diff size and duplication: the assigned test is branch-added and shares production code between D1 and D2. Moving its fixture helpers elsewhere would not remove inherited diff and would add indirection without a second consumer.
+
+## Evidence gaps and limitations
+
+- No build, CTest, sanitizer, proprietary-disc run, concurrent runner, interruption injection, or filesystem-failure test was performed because this was a frozen-object read-only survey.
+- Ignored commercial Mac disc bytes are not frozen Git objects. Known-media contents, full extraction hashes, and current local availability were not independently established.
+- The assigned range begins inside `catalog_record_bounds_tests`; its enclosing setup and earlier assertions were inspected as required context but were not reclassified as assigned coverage.
+- No fixture-independent successful HFS catalog plus data-fork extraction exists in the focused suite, so the repeated-extraction oracle cannot run in a clean checkout. This is already part of the BR-0158 and BR-0027 evidence above.
+- A complete second-map fixture and complete fixed-record positive controls are absent, as already recorded by GQ1-CHUNK-0028.
+
+## Commands and methods
+
+- `Get-Content -Raw` for `.github/copilot-instructions.md`, the amended GQ worker process, and relevant plan and ledger sections
+- `git cat-file`, `git rev-parse`, `git merge-base`, `git ls-tree`, `git show`, `git diff --numstat`, `git diff --name-only`, `git log --follow`, and `git grep` against the exact frozen base and head
+- Line-numbered frozen projections of every assigned line, complete test context, production catalog parsing and extraction paths, public header, wrappers, callers, and CMake registrations
+- Frozen base-presence and numstat classification for every assigned, production, interface, wrapper, and build owner
+- Symbol and include searches across `d1/`, `d2/`, `cmake/`, and Android native owners for HFS consumers, declarations, hooks, registrations, and duplicated policy
+- `rg` across both GQ ledgers, the durable evidence ledger, both adversarial ledgers, DMR1, and prior HFS plans for duplicate roots, historical acceptance, fixture gaps, output ownership, repeated extraction, and inherited-file effects
+- In-memory ASCII scope-manifest SHA-256 calculation. No temporary report, product file, canonical ledger, plan, fixture, or build output was created or modified
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision with disposition `NO_INHERITED_EFFECT`, measured inherited effect `0 paths / 0 hunks / +0/-0 lines`, and the branch-added ownership trace above.
+- Normalize observations 001 and 002 as evidence extensions of the already imported GQ1-CHUNK-0028 observations and their BR-0050/BR-0026 historical owners.
+- Normalize observation 003 as a duplicate of BR-0158.
+- Normalize observation 004 as an evidence extension of open BR-0160.
+- Normalize observation 005 as an acceptance-evidence extension or recheck for archived BR-0027. Do not admit a new production finding without a demonstrated second-call defect.
+- Add no new `GQF-*`, `GQI-*`, or DMR1 item from this unit. The coverage outcome remains `ISSUES` because existing open or incomplete quality boundaries are directly exercised by the assigned code.
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0109 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0110 frozen survey SHA256:c0a53c61b918550828fe1f20529d60b6f69a5216d5e81a9c74eab622dee4db62 -->
+
+## GQ1-CHUNK-0110 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0110.md`
+- Imported SHA-256: `c0a53c61b918550828fe1f20529d60b6f69a5216d5e81a9c74eab622dee4db62`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0110 frozen survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0110`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned scope: `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` L1-L600 inclusive
+- Scope status: complete. Every assigned line was read from the frozen blob, with L601-L665 read only as enclosing test-suite context
+- Authority: product, test, build, caller, and diff evidence came from the frozen Git objects. Mutable files were used only for repository instructions, campaign records, and the ownership check
+
+No product source, canonical ledger, existing report, temporary file, build output, or external state was changed.
+
+## Frozen fingerprints
+
+- Assigned path state: absent at the frozen base and added at the frozen head
+- Frozen file length: 665 lines
+- Frozen blob: `09383ac456410f8d56d14bf317f4987a4fed3fec`
+- Complete-file SHA-256 after LF normalization with a final LF: `411933ee9664a332c3a3ff4a5c3587620ff1323a2a9f74f350a5ce612f4be332`
+- Assigned L1-L600 SHA-256 after LF normalization with a final LF: `ec4c3b8e37b6d91294f39295b59760cb1c941dead641fc112519cbfa5163db5b`
+- Frozen diff for the assigned path: one added path, one hunk, `+665/-0`
+- Relevant frozen context blobs: extract CMake `47992190e8edccf31ac9c21985029434b8f44b31`, `pkg_reader.c` `6f9b92361246d3174484fe75359d8e468077cc31`, `pkg_reader.h` `5611d7d292f0393dce65810b847fb67cca3c33ef`, and `game_file_extensions.c` `a2b70a4afb8b16b5cba412aedc2da0852a5ae7d4`
+
+## Commands and context checked
+
+- Read `.github/copilot-instructions.md`, the complete amended general-quality worker process, the active GQ snapshot and queue row, the GQ done archive, relevant durable evidence, DMR1, both adversarial ledgers, and prior PKG/parser cleanup records
+- Confirmed both frozen objects, their merge base, the frozen tree, path base absence, added-file status, blob identity, exact line count, full and assigned-slice digests, and worktree ownership with `git cat-file`, `git merge-base`, `git diff`, `git rev-parse`, `git show`, and `git status`
+- Inspected every assigned line plus the rest of the 665-line test for complete fixture, cleanup, assertion, and process-exit control flow
+- Inspected the complete frozen `pkg_reader.c` and `pkg_reader.h`, relevant extension policy, extract CMake target and CTest registration, Windows and POSIX host runners, Android CMake inclusion, JNI and CLI production callers, Kotlin manifest handoff previously recorded by GQ1, and the focused commit history
+- Searched frozen D1 and D2 trees and the complete branch-caused D1/D2 diff for `pkg_reader`, `test_pkg_toc_bounds`, and the CTest name; all searches were empty
+- Reconciled open `GQF-0090`, `GQF-0091`, and `GQF-0046`, archived `BR-0067` through `BR-0070`, and the later GQ1-CHUNK-0096 test-tail evidence before admitting observations
+- Did not build or execute mutable worktree tests. This was a frozen read-only shard, and the observations below follow from deterministic test-to-production control flow
+
+## Diff-minimization assessment
+
+- Disposition: `NO_INHERITED_EFFECT`
+- Classification: the assigned test is branch-added, not inherited-modified or generated. Its direct build owner, `android/app/src/main/cpp/extract/CMakeLists.txt`, is also branch-added. The test compiles branch-added `pkg_reader.c` and `game_file_extensions.c` behind the test-only `PKG_READER_TESTING` definition and is registered by the same branch-added CMake file
+- Traced ownership boundary: the Windows runner `android/tests/test_cue_iso.ps1`, POSIX runner `android/helpers/run_cue_iso_tests.sh`, standalone extract CMake project, Android native CMake project, PKG reader/header, JNI GOG importer, CLI extractor, and their Kotlin launcher owners are all below `android/` and are absent at the frozen base. The test target itself is not included in the Android game libraries. No assigned symbol, test hook, registration, declaration, or copied policy body is referenced by D1 or D2
+- Measured inherited impact: `0` inherited paths, `0` inherited hunks, and `+0/-0` inherited lines are caused or required by the assigned unit at the frozen boundary. The broader supporting branch-added boundary measures `+665/-0` for the test, `+681/-0` for its standalone CMake owner, `+999/-0` for `pkg_reader.c`, `+91/-0` for `pkg_reader.h`, `+71/-0` for the extension owner, `+38/-0` for the Windows runner, `+32/-0` for the POSIX runner, and `+897/-0` for Android native CMake
+- Smallest-boundary test: moving fixture builders, test hooks, or CTest registration to another new file cannot remove an inherited line because the current ownership boundary already contains all of them in branch-added Android paths. Removing the test-only production hooks would require duplicating parser logic in the test or weakening the oracle, while folding the standalone target into inherited D1/D2 build logic would create new merge pressure
+- Owner and payoff: keep ownership in the branch-added extract test and standalone extract CMake project. The maximum inherited-line payoff from extraction, consolidation, or revert is exactly zero
+- Risk and validation: cosmetic splitting would increase branch-owned build surface and risk fixture/production drift without reducing merge conflicts. Preserve the current boundary by validating that frozen and future D1/D2 searches remain empty, both host runners configure the standalone project, the target continues to compile the production reader with only narrow test hooks, and Android packaging excludes the test executable
+
+## Atomic observations
+
+### GQ1-CHUNK-0110-OBS-001 - EXTENDS GQF-0090: wrong-depth XAR fields remain outside the focused matrix
+
+- Severity/confidence/category: P2, high, test-gap/parser-correctness/api-data-format
+- Assigned evidence: the fixture builder at L321-L331 always puts the package name, Scripts name, data, encoding, offset, size, and length at the expected direct depths. The negative scope case at L589-L595 separates `package.pkg` and `Scripts` into sibling top-level `file` elements, but never moves any selected field below an arbitrary non-`file` wrapper
+- Production mechanism: frozen `pkg_reader.c` L194-L247 makes `xml_direct_value` skip nested `file` elements while searching through other descendants. `xar_find_scripts` at L282-L382 consequently accepts selected fields at a wrong non-`file` depth. This is the exact incomplete direct-field root already owned by open `GQF-0090`
+- Trigger and impact: wrap a valid selected name, data record, encoding, offset, size, or length in one or more non-`file` elements while retaining a valid bounded gzip/CPIO payload. The suite remains green while malformed structural metadata can select bytes for listing and extraction
+- Fix and validation direction: retain ownership in `GQF-0090`. Add direct-depth controls and one- and multi-wrapper negative fixtures for every selected field, including direct plus nested decoys and duplicate fields, and require rejection before heap access
+- Deduplication: this is assigned-line evidence extending `GQF-0090` and the earlier GQ1-CHUNK-0096 observation. Allocate no new finding
+
+### GQ1-CHUNK-0110-OBS-002 - EXTENDS GQF-0091 and GQF-0046: the extraction oracle tests neither equal-CRC replacement nor terminal rollback
+
+- Severity/confidence/category: P2, high, test-gap/source-integrity/publication
+- Assigned evidence: `run_xar_extraction` at L275-L318 optionally flips only the stored manifest CRC bit at L298-L299. The call at L542-L544 checks success and that mutation's return code; it never changes source bytes after scan. Cleanup at L314-L317 unconditionally removes the sole known output, so the test does not assert that a failed extraction itself leaves no attempt-owned output
+- Production mechanism: frozen `pkg_reader.c` L696-L719 and L899-L984 binds selected entries and the expanded Scripts stream with IEEE CRC32. Open `GQF-0091` records that an equal-length CRC collision can preserve that identity across source replacement. Open `GQF-0046` records that a later entry or terminal stream failure can leave an earlier final-path output published. A stored-bit flip is detected while processing the current file, which is then removed, and therefore exercises neither root
+- Trigger and impact: analyze generation A and replace it with a same-layout, equal-length generation B with the same selected and concatenated CRC32 values, or arrange a multi-file post-write terminal mismatch. The focused test can pass although the wrong generation is accepted or an earlier output survives failure
+- Fix and validation direction: retain generation identity in `GQF-0091` and publication transactionality in `GQF-0046`. Add a deterministic equal-length collision pair through the public scan/extract seam and a multi-file terminal-failure fixture; require rejection before publication and exact absence of every attempt-owned output while preserving a prior generation
+- Deduplication: this is an evidence extension to the two open owners and to GQ1-CHUNK-0096, not a new root
+
+## Explicit clean dimensions
+
+- Frozen diff ownership: the assigned test, its registration, runners, production reader, public header, extension helper, Android build entries, and launcher owners are branch-added; no inherited declaration, hook, paired edit, or build entry is required
+- Fixed-header and TOC limits: L34-L94 covers accepted boundaries and rejection of short headers, unsupported versions, zero and over-budget sizes, physical truncation, conversion limits, exact inflate output, truncated input, and compressed trailing input through the production test hooks
+- Fixture arithmetic and lifetime: buffer growth checks addition and doubling overflow, preserves the old allocation on failed `realloc`, and frees every constructed CPIO/gzip buffer in the enclosing cleanup paths. XAR writes require complete header, TOC, and heap writes plus successful close, with failed artifacts removed
+- Production parity: the integrated fixtures call public `pkg_open` and `pkg_extract_all`, not a test-local parser. The registered target compiles the same `pkg_reader.c` and extension implementation as production; only low-level TOC helpers are exposed by `PKG_READER_TESTING`
+- Name and node policy: L425-L488 covers an ordinary selected file, ignored extension and slash-nested entries, unsafe empty/dot/backslash/drive/control/reserved names, overlong and embedded-NUL names, nonregular modes, exact 128/129 entry limits, and case-insensitive output collisions
+- Scripts completion and physical confinement: L490-L600 plus enclosing tail context covers an ordinary stream and exact one-byte extraction, manifest mismatch, bounded zero padding, excessive padding, nonzero heap offset, short and long selected spans, unsupported encoding, malformed and overflowing decimals, size/length mismatch, and sibling-file scope separation. The open wrong-depth gap remains OBS-001
+- Oracle and diagnostics: every `CHECK` increments a single process failure count and prints the exact source line and expression; the ordinary extraction oracle checks both byte value and EOF. Fixture construction failures cannot yield a clean process exit because their failed checks remain counted
+- Portability: file I/O is binary, directory creation/removal has explicit Windows and POSIX implementations, widths use fixed-size integers, and the test uses no inherited game headers or platform-private Android API
+- Security and resource limits: generated inputs exercise parser framing, name safety, selected-file counts, TOC ceilings, and decompression completion without external or proprietary fixture provenance. No additional high-confidence defect distinct from the already-open parser, identity, and publication owners was established
+
+## Evidence gaps
+
+- No proprietary D1 or D2 Mac installer was opened, no mutable document provider was simulated, and no equal-CRC replacement fixture was generated
+- No sanitizer, allocation-failure injector, short-write/close-failure shim, concurrent test invocation, or hostile filesystem was executed
+- L601-L665 was read to close the enclosing function, cleanup, and `main` control flow, but remains assigned coverage of GQ1-CHUNK-0096 rather than this unit
+- Live worktree code is ahead of the frozen campaign and contains unrelated edits. No live product content was used to replace frozen evidence
+
+## Normalization recommendation
+
+- Record one weighted diff-minimization decision with the measured zero-inherited-effect boundary above
+- Normalize OBS-001 only as an evidence and test-gap extension to open `GQF-0090`
+- Normalize OBS-002 only as evidence and missing-test extensions to open `GQF-0091` and `GQF-0046`
+- Allocate no new `GQF-*` or `GQI-*` ID from this report
+- Record coverage outcome `ISSUES` because assigned lines provide concrete evidence for current open PKG owners, while retaining the measured clean ownership, bounds, cleanup, portability, and production-parity dimensions
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0110 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0111 raw survey SHA256:1ec9e39746c6fa122c28fbafc2cd4d7bdb5ad8ceb684abda5374d3c82787efba -->
+
+## GQ1-CHUNK-0111 raw survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0111.md`
+- Imported SHA-256: `1ec9e39746c6fa122c28fbafc2cd4d7bdb5ad8ceb684abda5374d3c82787efba`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0111 raw survey
+
+## Outcome
+
+ISSUES. All 567 assigned frozen lines were reviewed with the complete SOW
+extractor contract, build registration, host and JNI callers, launcher owners,
+paired D1/D2 context, history, tests, and existing finding owners. The assigned
+test is branch-added and all traced owners are branch-added, so it creates no
+inherited-file merge pressure. The suite preserves the archived BR-0024 repair,
+but its cancellation, filtered-progress, and zero-length oracles do not cover
+three currently open SOW boundaries. Those gaps extend existing owners and do
+not justify a new finding.
+
+No product source, plan, canonical ledger, existing report, temporary file,
+build output, fixture, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Coverage ID: `GQ1-CHUNK-0111`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Merge base of the frozen objects: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Assigned path: `android/app/src/main/cpp/extract/test_sow_integrity.c`
+- Assigned range: L1-L567, the complete file
+- Frozen classification: branch-added
+- Frozen blob: `c1b5d5191eaddd30ec764ea022650d1ddae64c06`
+- Frozen blob size: 20,451 bytes
+- Frozen blob SHA-256: `020bd11046c87d36ee4bb998d95f22c62bae2b516c94cb91b3ab9599ebc15a88`
+- Frozen file diff: one added path, one added-file hunk, +567/-0 lines
+- Scope fingerprint algorithm: SHA-256 over the following UTF-8 records in
+  order, joined with LF and no final LF: coverage ID, base, head, path, range,
+  and blob ID
+- Scope fingerprint:
+  `41da2c8220a339e0a1e42c7c103e4996065b18bd0a6774318a8acef84838fb88`
+
+All product, test, caller, build, and history evidence came from frozen Git
+objects. Mutable files were used only for repository instructions, campaign
+records, prior evidence, and worktree ownership checks.
+
+## Diff-minimization assessment
+
+- Disposition: `NO_INHERITED_EFFECT`
+- Assigned measurement: the complete unit is one branch-added test path, one
+  added-file hunk, and +567/-0 lines. It modifies no inherited path.
+- Traced native and build boundary: `sow_extract.c`, `sow_extract.h`,
+  `extract_cd.c`, `jni_disc_import.c`, the Android native root
+  `CMakeLists.txt`, and `extract/CMakeLists.txt` are all absent at the frozen
+  base and added at the frozen head. The focused build cost is confined to the
+  branch-added extraction CMake file: a three-line test target block and one
+  `add_test` registration compile the branch-added production source directly.
+- Traced launcher boundary: `DiscImportBridge.kt`, `SetupActivity.kt`,
+  `SetupDialogs.kt`, `SetupDiscImport.kt`, and `SetupFileImport.kt` are also
+  branch-added. They consume the production SOW API, not this test target.
+- Inherited measurement: the assigned test requires 0 inherited D1/D2 paths,
+  0 inherited hunks, and +0/-0 inherited lines. The unchanged D2
+  `piggy.c` lookup for `descent2.sow` and `INSTALL.txt` media documentation do
+  not call the Android extractor or test. Frozen branch changes elsewhere in
+  `d1/main/piggy.c` and `d2/main/piggy.c` contain no SOW test registration,
+  declaration, hook, or paired policy body attributable to this unit.
+- Smallest ownership boundary tested: ownership is already at the desired
+  boundary. Synthetic ARJ fixture construction, public-API assertions, and
+  cleanup live in one branch-added test file; production code lives in the
+  branch-added extractor; registration lives in the branch-added Android test
+  CMake file. Moving fixture helpers or assertions to another new file would
+  remove 0 inherited lines and would add target/source-list churn, so it has no
+  diff-minimization payoff.
+- Risk and validation: retaining this boundary has no upstream D1/D2 merge
+  risk. Validation for later product changes should keep the target registered
+  as `sow_integrity_tests`, compile the same production `sow_extract.c`, run the
+  focused CTest on Windows and POSIX, and confirm the inherited D1/D2 diff
+  remains exactly zero for this test owner.
+
+## Context and commands checked
+
+- Read `AGENTS.md` through its required `.github/copilot-instructions.md`, the
+  complete general-quality worker process, active and done GQ ledgers, durable
+  evidence ledger, DMR1 ledger, active and done adversarial ledgers, and prior
+  cleanup and SOW remediation plans
+- Confirmed both frozen commits, their merge base, frozen head tree, path
+  absence at base, path blob at head, line count, byte count, blob identity,
+  SHA-256 fingerprints, and exact +567/-0 added-file diff using `git rev-parse`,
+  `git merge-base`, `git ls-tree`, `git cat-file`, `git diff --name-status`,
+  `git diff --numstat`, and in-memory SHA-256
+- Inspected every assigned line with frozen `git show`, including fixture
+  serialization, CRC and compressed-literal generation, archive joins, header
+  resizing, file I/O oracles, scan tests, malformed-header cases, stored and
+  compressed corruption, mixed-success behavior, cancellation, and cleanup
+- Inspected complete frozen `sow_extract.c` and `sow_extract.h`, extraction
+  limits, host `extract_cd.c`, JNI `jni_disc_import.c`, Android native build
+  files, `DiscImportBridge.kt`, four launcher consumers, sibling SOW tests, and
+  real-media registration
+- Used frozen `git grep` to trace every SOW registration and caller and frozen
+  `git diff` to classify all traced owners. Searched D1 and D2 for SOW use and
+  checked the frozen inherited diffs for any attributable hook, declaration,
+  registration, or duplicated policy
+- Inspected the file's introducing and hardening history in `48f5a447`,
+  `2a454df1`, `d3b4c8a9`, and `3bc4ef9e`, plus BR-0023 and BR-0024 validation
+- Searched both GQ ledgers, the durable evidence ledger, both adversarial
+  ledgers, DMR1, and prior cleanup plans for SOW integrity, cancellation,
+  progress, append rollback, output-node ownership, zero-length allocation,
+  fixed test directories, and weak oracles
+- Reconciled archived `BR-0023` and `BR-0024`, live `BR-0021`, and open
+  `GQF-0041`, `GQF-0042`, `GQF-0043`, and `GQF-0092`
+- Did not execute a live or rebuilt binary because the assignment is a frozen
+  read-only survey and concurrent worktree changes must not replace the frozen
+  source boundary
+
+## Atomic observations
+
+### GQ1-CHUNK-0111-OBS-001 - EXTENDS GQF-0092: no empty-entry oracle exercises allocator-independent extraction
+
+- Severity/confidence/category: P3, high,
+  test-gap/correctness/compatibility/portability
+- Assigned evidence: `make_named_fixture` at L75-L128 can encode a zero-byte
+  payload, but every invocation supplies either the 14-byte stored payload or
+  one decoded literal. The boundary cases at L487-L500 cover payload ending
+  exactly at EOF and extending one byte beyond EOF, not a structurally valid
+  method-0 entry with both sizes zero. No allocator seam is used.
+- Production mechanism: frozen `sow_extract.c` L960-L965 treats a null return
+  from `malloc(e.comp_size)` as extraction failure. Its compressed path likewise
+  rejects a null `malloc(orig_size)` at L637-L646. A valid empty entry therefore
+  depends on implementation-defined `malloc(0)` behavior, the exact open
+  `GQF-0092` root.
+- Trigger and impact: run a valid zero-length stored or compressed entry on an
+  allocator that returns null for zero. This registered integrity suite stays
+  green because it never creates that entry, while production rejects media
+  according to allocator behavior.
+- Fix and validation direction: retain ownership in `GQF-0092`. Add an empty
+  method-0 fixture through the public API and a narrow allocation seam proving
+  identical success and a zero-byte regular output for both permitted
+  zero-allocation behaviors. Cover an empty compressed representation only if
+  the supported ARJ contract permits it.
+- Deduplication: this is missing-test evidence for open `GQF-0092`, not a new
+  correctness root.
+
+### GQ1-CHUNK-0111-OBS-002 - EXTENDS BR-0021: cancellation coverage proves only rejection before entry work
+
+- Severity/confidence/category: P2, high,
+  test-gap/correctness/cancellation/resource-use
+- Assigned evidence: `cancel_progress` at L205-L213 unconditionally returns 1
+  and discards filename, done, and total. The sole cancellation case at
+  L530-L548 uses a one-entry stored fixture and therefore cancels at the only
+  callback, before compressed input allocation, read, decode, CRC, output open,
+  write, or close. It asserts one callback and no final file, but cannot request
+  cancellation during any expensive or mutating stage.
+- Production mechanism: frozen `sow_extract.c` invokes progress once before
+  each selected entry at L946-L953, then can allocate, read, decode, checksum,
+  and write a maximum-budget entry without another cancellation check. Live
+  `BR-0021` already owns prompt cancellation and distinct propagation through
+  these extraction layers.
+- Trigger and impact: cancel just after the pre-entry callback while processing
+  a large compressed entry or slow destination. Native work continues through
+  the complete entry, so lifecycle cancellation can consume bounded but large
+  CPU, memory, I/O, and storage while this focused test still passes.
+- Fix and validation direction: retain ownership in `BR-0021`. When its
+  cancellation predicate reaches decoder and write loops, add deterministic
+  checkpoints before input, during early/middle/late decode, during CRC or
+  streaming output, and after one completed entry. Bound post-cancel work and
+  require cancellation-specific status and attempt-owned cleanup.
+- Deduplication: `GQ1-CHUNK-0011-OBS-005` already established the production
+  root. This observation adds exact assigned-test evidence only.
+
+### GQ1-CHUNK-0111-OBS-003 - EXTENDS GQF-0043: the callback oracle discards the inconsistent progress fields
+
+- Severity/confidence/category: P3, high,
+  test-gap/correctness/api-contract/diagnostics
+- Assigned evidence: the only progress callback in the 567-line suite is
+  `cancel_progress`; it explicitly discards `filename`, `done`, and `total`.
+  Every success or corruption call passes a null callback. The fixtures never
+  combine an early filtered-out entry with a later selected entry and never
+  assert monotonicity, population identity, or `done <= total`.
+- Production mechanism: frozen `sow_extract.c` counts only selected output in
+  `total_bytes` at L881-L894, but adds every skipped entry's original size to
+  `bytes_done` at L936-L943. The next selected callback can report done greater
+  than total, the exact open `GQF-0043` contract failure.
+- Trigger and impact: filter out a large first entry and select a small later
+  entry. UI or host progress can exceed 100 percent or misstate selected work,
+  while all assigned integrity assertions remain green because callback values
+  are ignored.
+- Fix and validation direction: retain ownership in `GQF-0043`. Add public-API
+  fixtures with selected and skipped entries in both orders, stored and
+  compressed sizes, and boundary totals. Capture every callback and require a
+  documented population, checked monotonic arithmetic, stable total, and final
+  completion semantics.
+- Deduplication: this is focused test-gap evidence for open `GQF-0043`, not a
+  new progress finding.
+
+## Explicit clean dimensions
+
+- Diff ownership: the assigned source, production seam, CMake registration,
+  JNI bridge, host tool, and launcher consumers are branch-added. No D1/D2
+  registration, declaration, test hook, copied policy, or paired inherited edit
+  is required.
+- Oracle strength: every valid synthetic extraction checks the exact return
+  count and exact output bytes. Corrupt and malformed cases require a negative
+  status and absence of the destination. Every accumulated failure makes main
+  return nonzero, and CMake registers that exit as `sow_integrity_tests`.
+- Production parity: the target compiles the same `sow_extract.c` used by the
+  host and Android native builds and calls public `sow_scan_dir` and
+  `sow_extract`; it does not substitute a parser mock. The compressed-literal
+  fixture reaches the production Huffman and LZSS decoder.
+- Format and boundary coverage: the suite covers stored and compressed success,
+  basic and extended header CRC corruption, stored and decoded-payload CRC
+  corruption, compressed truncation, short and inconsistent headers, missing
+  terminators, overlong names, exact EOF, one-byte-overrun declarations, scan
+  arguments, case-insensitive extension discovery, natural ordering, capacity,
+  and a POSIX child-directory symlink.
+- Failure and publication coverage: the two-entry mixed-success fixture proves
+  a later corrupt entry returns failure, preserves the earlier complete output
+  at this low-level API boundary, and does not publish the corrupt output. Each
+  ordinary corrupt single-entry fixture checks that no destination survives.
+- Resource lifetime: fixture files are closed after checked writes, read oracles
+  close their handles, production handles are exercised through the public API,
+  and the nominal test completion path removes generated files and directories.
+  Failure residue cannot make the same invocation pass because failures remain
+  accumulated into the exit status.
+- Portability: platform-specific directory removal, separator, and symlink use
+  is guarded for Windows or POSIX. The assigned C uses the same C99-capable
+  target assumptions as its production source and uses fixed-width fixture
+  serialization rather than host struct layout.
+- Historical closure: the registered assertion suite, Huffman suite, and
+  optional exact-hash real-media test preserve the substance of archived
+  `BR-0024`; the direct smoke CLI is not the only SOW oracle. The CRC and hard
+  compressed-input checks required by archived `BR-0023` have direct synthetic
+  success and corruption coverage here.
+
+## Evidence gaps
+
+- No frozen executable was built or run, and no sanitizer, allocation-failure,
+  filesystem-fault, or cancellation checkpoint injection was available in this
+  read-only shard.
+- The suite does not exercise `sow_extract_with_mode`, append rollback after a
+  short write or close failure, a preexisting destination link or special node,
+  output-root replacement, long or non-ACP Windows paths, root symlinks or
+  junctions, concurrent invocations, or exact path truncation. These remain
+  validation gaps under existing `GQF-0041`, `GQF-0042`, `GQF-0038`,
+  `GQF-0067`, and `GQF-0070`; no new root is asserted here.
+- The fixed `sow_integrity_temp` working directory is not invocation-unique,
+  but the registered CTest graph schedules this target once and no second test
+  claims that pathname. No concrete false pass under the maintained runner was
+  established, so no concurrency finding is recommended from that fact alone.
+- Proprietary retail and split SOW byte identity belongs to
+  `GQ1-CHUNK-0112`. This unit inspected its registration and prior exact-hash
+  evidence only as context.
+- Live HEAD and the mutable worktree are beyond the frozen survey boundary and
+  contain concurrent campaign and user changes. They were not used to replace
+  assigned product evidence.
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for this weighted unit using the measured
+  diff-minimization assessment above
+- Record `ISSUES` coverage for `GQ1-CHUNK-0111`, with the inherited-diff
+  dimension explicitly clean and archived `BR-0024` still closed
+- Normalize OBS-001 only as a test-gap extension to open `GQF-0092`
+- Normalize OBS-002 only as assigned-test evidence extending live `BR-0021`
+- Normalize OBS-003 only as a test-gap extension to open `GQF-0043`
+- Allocate no new `GQF-*`, `GQI-*`, or remediation ID from this report
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0111 raw survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0112 frozen survey SHA256:521bee2396f768d5d84d62bd14d3019fdc9cdb9c5d84cc9cf24f6a396b5cd721 -->
+
+## GQ1-CHUNK-0112 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0112.md`
+- Imported SHA-256: `521bee2396f768d5d84d62bd14d3019fdc9cdb9c5d84cc9cf24f6a396b5cd721`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0112 frozen survey
+
+Outcome: CLEAN. All 77 assigned lines were reviewed against the frozen CTest registration, standalone driver, production SOW API, host and JNI callers, paired D1/D2 trees, history, and prior review records. The assigned oracle and every traced owner are branch-added under `android/`, so the unit creates no merge pressure on inherited files. The focused count, content, append-order, failure, cleanup, and optional-fixture behavior remains consistent with the archived `BR-0024` repair. No product file, plan, canonical ledger, existing report, temp file, generated output, fixture, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned file: `android/app/src/main/cpp/extract/test_sow_real_media.cmake` L1-L77, 77 reviewed lines, frozen blob `fc6b69127b77d29d558ff4bc9dfb0c6367b5d1c9`
+- Scope manifest: `android/app/src/main/cpp/extract/test_sow_real_media.cmake|L1-L77|fc6b69127b77d29d558ff4bc9dfb0c6367b5d1c9`
+- SHA-256 of the UTF-8 scope manifest without a final LF: `bb1d4c44a4adc5d7a35671dab282e7419d9d03ec5e4005647788ecb43c4a593e`
+- The path is branch-added relative to the frozen base: 77 additions, zero deletions, one added-file diff
+- Evidence came from frozen Git objects. Mutable worktree product files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned script contributes 77 added lines in one branch-added Android path. It modifies zero inherited paths, zero inherited hunks, and zero inherited lines
+- The complete registration boundary is `extract/CMakeLists.txt:L184-L196`. That owner is branch-added at 681 additions and zero deletions; the SOW registration itself added 13 lines in the same repair commit as the assigned script
+- The direct test driver, `test_sow_direct.c`, is branch-added at 23 additions and zero deletions. Its production seam, `sow_extract.c/.h`, is branch-added at 1,051 and 77 additions respectively, both with zero deletions
+- The traced runtime owners remain branch-added Android code: `extract_cd.c` has 704 additions, `jni_disc_import.c` has 513 additions, and the parent native `CMakeLists.txt` has 897 additions, all with zero deletions
+- Frozen symbol searches found no `sow_real_media`, `test_sow_direct`, or `sow_extract` reference under `d1/` or `d2/`. No inherited consumer, registration, declaration, hook, paired D1/D2 change, or copied game policy is required by this oracle
+- The test crosses only the branch-owned CMake-script to standalone-driver to shared-extractor API boundary. It neither exposes nor induces an inherited game-source interface
+
+### Smallest ownership boundary tested
+
+- The current smallest boundary is already the branch-added CMake script plus its compact branch-added CTest registration and standalone driver API
+- Moving the oracle, driver, or extractor into either inherited game tree would add inherited churn and likely duplicate the test seam. Adding a wrapper elsewhere would remove zero inherited lines and add another ownership layer
+- Reverting the 13-line registration would remove only branch-added build lines and would discard the focused real-media oracle. Consolidating it into another branch-added test file could change total branch size but would still remove zero inherited hunks or lines
+- The measured inherited reduction available from extraction, consolidation, or revert is therefore exactly zero paths, zero hunks, and zero lines
+- Recheck trigger: a later generation adds a SOW test or extractor hook, declaration, build entry, or copied policy body to an inherited path
+
+## Process and deduplication context
+
+- Read `.github/copilot-instructions.md`, the amended general quality process, the active and done GQ ledgers, the durable evidence ledger, DMR1, both adversarial ledgers, and the focused `BR-0024` remediation plan
+- Archived `BR-0024` is the exact historical owner for the formerly weak and unregistered SOW test seam. Its resolution records the same 34-file retail oracle, 8/2/17 split-part counts, 25-file final split inventory, seven SHA-256 checks, explicit missing-fixture skip, deliberate bad-hash failure, and 13-suite validation
+- Existing GQ evidence for chunks 0011 and 0096 already owns product extraction, collision, publication, and weak-driver concerns. This assigned script does not add a distinct root cause or show regrowth of the archived registration and oracle defect
+- Open `BR-0158` concerns neighboring optional-media tests that return success without CTest skip semantics. This SOW registration instead uses `SKIP_REGULAR_EXPRESSION`, so the assigned missing-media path is positive closed evidence rather than an extension of that finding
+- DMR1 contains no SOW test or Android extraction candidate, consistent with the measured absence of inherited ownership
+
+## Context inspected
+
+- Every assigned line: fixture presence, command construction, append selection, child result propagation, extraction-count match, file existence and SHA-256 checks, top-level file count, cleanup, retail extraction, split extraction order, and final status
+- Frozen `extract/CMakeLists.txt` target and CTest registration, including the fixed retail and preview fixture paths, generated executable path, working directory, and skip expression
+- Frozen `test_sow_direct.c` argument parsing, append-mode selection, production call, nonnegative-count success condition, and stderr count report used by the script
+- Frozen public SOW API and relevant implementation result boundary, plus direct-disc and JNI consumers, to establish that the test invokes the same production extractor rather than a copied parser
+- D1 and D2 source and build trees for direct or semantic ownership, and history for the `91ef716a` repair that introduced the assigned script and registration
+- Prior SOW parser, output, collision, cancellation, scan, fixture, and weak-oracle records for duplicate and historical-closure checks
+
+## Atomic observations
+
+No supported new finding, investigation, duplicate extension, or regrowth observation survived the admission and deduplication checks.
+
+## Explicit clean dimensions
+
+- Inherited diff: the assigned path and all traced owners are branch-added Android files. They cause zero inherited paths, hunks, additions, or deletions
+- Production-seam parity: the script invokes the built `test_sow_direct` target, which calls `sow_extract_with_mode` from the same `sow_extract.c` used by Android extraction owners. No parser or decoder behavior is copied into the oracle
+- Result propagation: every nonzero child result is fatal, and a successful child must emit the exact expected extraction-count phrase. Missing expected outputs, wrong counts, and wrong hashes are independently fatal
+- Oracle strength: retail requires 34 final files and exact HOG, HAM, and PIG hashes. Split media is applied in fixed 1, 2, 3 append order, requires per-part extraction counts 8, 2, and 17, requires 25 final files, and checks exact DEM, HAM, HOG, and PIG hashes
+- Fixture identity: the seven output hashes bind the main retail and preview game payloads to known bytes. The source media is proprietary and ignored, but absence of any required media takes the explicit skip path instead of reporting an assertion pass
+- False-pass behavior: the CTest owner recognizes only the script's literal missing-fixture message as a skip. Extraction, count, missing-output, and hash failures use different fatal messages and cannot match that skip expression
+- Cleanup and isolation: the fixed work directory is under the target's binary directory, is cleared before use, and is removed after complete success. Failure retains evidence for diagnosis, and a retry clears it before extracting again
+- Append semantics: each part runs synchronously before the next, the first uses overwrite mode, later parts explicitly use append mode, and both per-archive counts and the final inventory are checked
+- Portability: CMake list elements preserve executable, archive, and output paths containing spaces; file operations and SHA-256 use CMake primitives; no shell quoting or platform-specific command is introduced by the script
+- Resource lifetime and concurrency: the script owns no persistent descriptor or process. `execute_process` is synchronous, and the unique target-binary work directory prevents overlap with unrelated tests in the same build tree
+- Diagnostics: every failure identifies the archive or path and includes child stderr or expected and actual values. The success and skip messages are distinct
+- D1/D2 parity: there is no D1/D2 hook or game-specific copy to pair, and both games consume extracted assets through the Android-owned import layer rather than this test script
+
+## Evidence gaps and limits
+
+- No proprietary SOW media was opened, and no executable or CTest run was performed. Runtime conclusions are based on frozen control flow plus the durable `BR-0024` validation record because a live build would use post-freeze sources
+- Seven of the 59 final files are content-hashed. Counts and the main game-payload hashes make the oracle materially stronger than a smoke test, but the script does not cryptographically bind every minor output. The archived repair explicitly accepted this seven-hash boundary, and no concrete unobserved regression distinct from existing SOW product findings was established
+- The script trusts the fixed registration to provide nonempty `TEST_SOW_DIRECT`, fixture, and work-directory variables. Direct unsupported invocation with missing variables was not treated as a product or maintained-runner defect
+- Filesystem fault injection was not used. A fatal run intentionally leaves the work directory for diagnosis, so no claim is made about immediate failure cleanup
+- The current worktree is ahead of the frozen review and contains unrelated user and campaign edits. None was used to replace frozen evidence
+
+## Commands and validation
+
+- `git cat-file -t`, `git merge-base --is-ancestor`, and `git show -s --format=%T` confirmed both frozen commits, ancestry, and tree identities
+- `git ls-tree`, `git rev-parse <head>:<path>`, `git diff --name-status`, `git diff --numstat`, and `git show` confirmed the assigned blob, added-file classification, exact 77-line scope, and branch-added owner metrics
+- `git grep` at the frozen head traced the script, CTest name, direct driver variable, production API, Android callers, and the absence of all matching D1/D2 references
+- `git log --follow` and `git show --stat 91ef716a` traced the script and its 13-line registration to the same historical repair
+- `rg` across active and done GQ ledgers, durable evidence, active and done adversarial ledgers, DMR1, and earlier plans checked `BR-0024`, `BR-0158`, SOW real-media, weak-oracle, fixture-skip, append, collision, and extraction ownership
+- An in-memory SHA-256 calculation verified the scope manifest. No product build, CTest execution, fixture extraction, formatter, emulator, network operation, or temp-file write ran
+- The report-only patch is checked below for whitespace, encoding, and scope
+
+## Normalization recommendation
+
+- Record one weighted diff-minimization decision for `GQ1-CHUNK-0112` with disposition `NO_INHERITED_EFFECT`, measured inherited reduction opportunity zero paths, zero hunks, and zero lines
+- Create one non-partial `CLEAN` coverage record for the complete 77-line assignment
+- Preserve archived `BR-0024` as positive historical closure evidence and do not reopen it
+- Allocate no new finding, investigation, DMR1 item, diff-minimization remediation, or general remediation chunk from this unit
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0112 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0113 frozen survey SHA256:c43126c022c667f1a666faf4d77546286ec226ef993839c1fd70ae7f47c5e02d -->
+
+## GQ1-CHUNK-0113 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0113.md`
+- Imported SHA-256: `c43126c022c667f1a666faf4d77546286ec226ef993839c1fd70ae7f47c5e02d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0113 frozen survey
+
+Outcome: ISSUES. All 600 assigned lines were reviewed against the complete frozen test, STi2 parser and extraction API, CUE and HFS helpers, native production callers, standalone build registration, paired D1/D2 trees, history, and durable review records. Diff attribution is conclusive: the assigned test and every traced code or build owner are branch-added under `android/`, and the unit requires zero inherited paths, hunks, additions, or deletions. Secondary review found one unchecked test-input and comparison-I/O root and extends the existing fixed-output isolation owner. The structural, encryption, and payload-integrity cases supply closure evidence for three archived adversarial findings rather than new roots. No product file, plan, canonical ledger, existing report, fixture, build output, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen ancestry: the review base is an ancestor of the review head
+- Assigned file and range: `android/app/src/main/cpp/extract/test_sti2.c` L1-L600, all 600 assigned lines reviewed
+- Frozen file blob: `c8c7e4df9ea5f9deebf7160e00ef140cbb83e415`, 29,241 bytes
+- Scope manifest, ASCII with one final LF: `android/app/src/main/cpp/extract/test_sti2.c|L1-L600|c8c7e4df9ea5f9deebf7160e00ef140cbb83e415`
+- Scope-manifest byte count including final LF: 94
+- Scope-manifest Git blob fingerprint: `bc5788eb450690484f4c553593ea72a5fcd52ff7`
+- Scope-manifest SHA-256 including final LF: `8f1a2a1fe68940ef12ddaf8cf794f7787013b8fa9e592efa7a9674565f90bfa4`
+- Path classification: branch-added, with frozen change shape `+1050/-0` and one added-file diff
+- Evidence came from frozen Git objects. Mutable worktree product and test files were not used as source evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+### Attribution and measured boundary
+
+- The assigned test contributes 600 reviewed lines within a branch-added 1,050-line file. It causes zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines
+- The standalone target and CTest owner, `android/app/src/main/cpp/extract/CMakeLists.txt`, is branch-added at `+681/-0`. It registers `test_sti2` at L139-L146 and L201-L202 using only branch-added sources
+- Direct compiled owners are branch-added: `cue_parser.c` `+250/-0`, `hfs_reader.c` `+1408/-0`, `mac_hfs_extract.c` `+316/-0`, and `sti2_extract.c` `+2404/-0`. Their public headers are also branch-added at `+88/-0`, `+113/-0`, `+24/-0`, and `+74/-0`
+- Production calls remain in branch-added Android owners. `mac_hfs_extract.c` invokes the STi2 matching API; `stuffit_extract.c` `+492/-0` invokes direct and nested STi2 extraction; `extract_cd.c` `+704/-0` and `jni_disc_import.c` `+513/-0` own host and Android import entry points. The Android native source-list owner is itself branch-added at `+897/-0`
+- Frozen symbol and include searches found no `test_sti2`, `sti2_extract`, `sti2_list_entries`, `sti2_extract_entry`, or `sti2_extract_matching` reference under `d1/` or `d2/`. Although the frozen branch changes 355 D1/D2 paths overall, none declares, registers, calls, or duplicates this test or parser boundary
+- No paired D1/D2 edit, inherited build entry, game-source hook, copied game policy body, or inherited declaration is causally required by the assigned test. DMR1 therefore has no STi2 extraction owner to extend or reactivate
+
+### Ownership boundary tested
+
+- The smallest current boundary is already the natural one: one branch-added standalone test target links the branch-added shared extraction implementation directly. Moving test helpers, parser policy, or registration into D1 or D2 would add inherited churn while removing no inherited line
+- A wrapper or callback facade around the STi2 API would remove zero inherited lines, duplicate an already plain C boundary, and increase total branch code. Removing the target would save only branch-added CMake lines while discarding focused malformed-archive coverage
+- Measured inherited-diff payoff for extraction, consolidation, or revert is exactly zero paths, zero hunks, and zero lines. The risk of changing ownership is new game-tree coupling and duplicated registration without merge-pressure benefit
+- Validation for this decision is frozen base-presence and numstat classification of every named owner, exact D1/D2 symbol searches, and confirmation that both standalone and Android production registrations reside in branch-added CMake files
+- Recheck trigger: a later generation adds an STi2 declaration, registration, hook, or copied parser policy to a base-present file
+
+## Context inspected
+
+- Every assigned frozen line: platform descriptor wrappers, CUE and binary file helpers, path construction, data-track discovery, HFS extraction bridge, byte comparison, cleanup helpers, fixture endian and CRC writers, structural archive cases, encrypted-entry cases, and the payload-checksum case through its enclosing function end at L620
+- The remainder of `test_sti2.c` for method-14 and bit-reader helpers, invalid-header checks, real MacPlay and D2 media cases, fixed output ownership, call registration, pass/skip accounting, and final process status
+- Complete relevant `sti2_extract.c/.h` paths for archive recognition, ordered header scanning, public entry metadata, direct extraction, matching extraction, encryption rejection, checksum verification, test-only seams, fixed entry-list ownership, and method decoders
+- `cue_parser.c/.h`, `hfs_reader.c/.h`, `mac_hfs_extract.c/.h`, `stuffit_extract.c/.h`, `extract_cd.c`, `jni_disc_import.c`, `test_stuffit_corpus.cpp`, both Android native CMake owners, and their frozen branch attribution
+- Frozen history from the April STi2 test addition through the July structural, encryption, checksum, exhaustion, method-14, HFS reuse, and D2 coverage changes, including the `+458/-4` delta after adversarial head `c01d8fe4686c63d931b1e543a6305bbafaa944a9`
+- Relevant active and done GQ records, durable GQ evidence, both adversarial ledgers, DMR1, the current GQ plan, and prior local and parser cleanup queues. Duplicate ownership checked includes `BR-0008`, archived `BR-0031` through `BR-0033`, archived `BR-0046`, `BR-0158`, `BR-0160`, archived `BR-0178`, `GQF-0093`, `GQF-0094`, and `GQF-0150`
+
+## Atomic observations
+
+### GQ1-CHUNK-0113-OBS-001: Test input and exact-comparison helpers do not establish complete I/O
+
+- Provisional normalization: broaden or extend current `GQF-0150` for exact test-fixture acquisition and link archived `BR-0046`; if the canonical owner remains fingerprint-specific, admit this as one separate STi2 test-infrastructure root rather than reopening the production defect
+- Suggested priority/confidence/category: P3/high, `test-infrastructure/fixture-integrity/error-propagation`
+- Frozen locations: assigned `test_sti2.c:L73-L91,L160-L177,L229-L263,L266-L292,L584-L616`; enclosing real-media consumers L685-L874 and L877-L943
+- Evidence: `read_text_file` ignores both `fseek` results, accepts a negative `ftell`, converts it to `size_t` for allocation and read, ignores `fread`, and writes `buf[len]`. A measurement or seek failure can therefore request an enormous read and index before the allocation; a short read leaves bytes uninitialized for `cue_parse`. `read_binary_file` rejects a negative length and an incomplete read but still ignores both seeks and does not bind measurement to an unchanged source generation. `files_match_exact` treats simultaneous zero-byte reads as equality without checking `ferror`, so an error on either stream at the same comparison boundary can be reported as an exact match
+- Trigger: inject a seek, measurement, or partial-read error; truncate or replace an optional CUE or extracted oracle after measurement; or inject read errors into actual and expected streams at the same block boundary
+- Impact: the registered suite can crash outside a named assertion, parse indeterminate CUE tail bytes, diagnose parser failure when fixture acquisition failed, or accept an incomplete byte comparison as a correct extraction. The real-media oracle is already optional, so a reached run should not add an unreported I/O false-pass path
+- Historical relation: archived `BR-0046` repaired the same unchecked CUE measurement and exact-read mechanism in production CD tools, while current `GQF-0150` owns an analogous unchecked binary fixture loader in `test_fingerprint.c`. Neither existing record names these still-live STi2 helpers. This is evidence of an incomplete shared test-helper acceptance boundary, not production-regression evidence against the closed CD implementation
+- Recommended boundary: use one checked bounded loader that validates both seeks, nonnegative and representable length, exact read, unchanged owned handle, and close status. Make exact comparison fail on either `ferror` and distinguish unequal bytes from acquisition failure. Prefer a shared branch-added test helper only if it reduces duplicate code across STi2 and HFS tests without hiding format policy
+- Focused validation: inject first and second seek failure, negative measurement, truncation between measurement and read, short read, close failure, comparison-side read errors, and an ordinary exact file. Require a named test failure, no parser call on incomplete bytes, cleared outputs, and no false equality
+
+### GQ1-CHUNK-0113-OBS-002: Synthetic STi2 cases reuse process-global output names
+
+- Provisional normalization: `EXTENDS BR-0160`; do not create a second native-suite isolation finding
+- Suggested priority/confidence/category: P2/high, `test-gap/resource-lifetime/concurrency`
+- Frozen locations: assigned `test_sti2.c:L372-L510,L512-L620`, especially `test_sti2_malformed_structure`, `test_sti2_encrypted_output.hog`, `test_sti2_encrypted_matching`, and `test_sti2_payload_crc.hog`; `extract/CMakeLists.txt:L201-L202`
+- Evidence: CTest runs `test_sti2` with the extraction source directory as its working directory. Every process removes, creates, tests, and removes the same relative output names. None of the cases owns a unique invocation directory or a lock, and several assertion-failure returns leave cleanup dependent on which branch was reached
+- Trigger: overlap two `test_sti2` processes, overlap this target with another native suite invocation using the same working tree, or interrupt one run between creation and cleanup
+- Impact: one process can remove or observe another process's active output, stale residue can affect `file_exists` assertions, and otherwise deterministic encryption, malformed-structure, or checksum cases can fail or pass based on another run's generation
+- Historical relation: open `BR-0160` already owns fixed source-tree CTest outputs, absent run identity, failure cleanup, interruption, and concurrency for this exact target. The newer synthetic paths enlarge its concrete output set but do not create a new ownership root
+- Recommended validation remains suite-wide: give each invocation a unique build and fixture/output directory, pass it to native targets, clean only owned paths on success and failure, add a wall-clock bound, and overlap two complete runs while injecting interruption
+
+### GQ1-CHUNK-0113-OBS-003: Structural-order repair remains covered
+
+- Provisional normalization: `HISTORICAL-CLOSED`, archived `BR-0032`; no new finding
+- Frozen locations: assigned `test_sti2.c:L433-L510`; production `sti2_extract.c` structural scanner and public listing/matching entries
+- Evidence: header-shaped stored and compressed payloads are not promoted, a corrupt middle header fails listing and extraction before output, truncated and overflowing fork spans fail, parent and folder closure are enforced, and declared root-count mismatches fail. These directly exercise the archived repair's control-flow boundary
+- Validation gap: no sanitizer or executable run was performed in this frozen survey. The source oracle is materially complete for the historical structural triggers
+
+### GQ1-CHUNK-0113-OBS-004: Encrypted-entry repair remains covered
+
+- Provisional normalization: `HISTORICAL-CLOSED`, archived `BR-0031`; no new finding
+- Frozen locations: assigned `test_sti2.c:L313-L370,L512-L562`; production public metadata and direct/matching extraction paths
+- Evidence: fixtures cover encrypted stored data and encrypted method-13 data below and above the historical 16-byte key boundary. Listing preserves the encrypted flag and low method bits, both extraction APIs return the distinct unsupported-encryption status, and neither direct nor directory output may exist
+- Validation gap: resource-fork encryption and future password support are outside the current public contract. No current repair regression was found
+
+### GQ1-CHUNK-0113-OBS-005: Stored-payload checksum repair remains covered
+
+- Provisional normalization: `HISTORICAL-CLOSED`, archived `BR-0033`; no new finding
+- Frozen locations: assigned `test_sti2.c:L289-L311,L372-L430,L564-L620`; production CRC metadata and direct extraction transaction
+- Evidence: the fixture derives header and payload CRC independently in test code, requires a valid stored payload to round-trip exactly, changes a payload byte without updating metadata, then changes the recorded checksum while retaining valid header integrity. Both corruption forms must fail without a final output
+- Validation gap: compressed method-13 through method-15 terminal-state and checksum cases are outside this assigned slice. Current `GQF-0093` separately owns the missing successful production method-14 oracle
+
+## Explicit clean dimensions
+
+- Inherited diff and D1/D2 parity: zero inherited owners, hooks, declarations, registrations, or policy copies were found. One branch-added STi2 implementation serves both Android game builds
+- Production parity: structural, encrypted, and stored-checksum tests compile and call the same public parser and extraction functions used by Mac HFS and StuffIt production paths. They do not reimplement a parser; fixture construction is limited to byte encoding and an independent CRC oracle
+- Structural and arithmetic boundaries: assigned cases cover header-shaped payloads, corrupt middle headers, truncated forks, 32-bit fork-span overflow, valid nesting, invalid parent links, unbalanced folders, and too-small and too-large root counts
+- Encryption: full method flags remain observable through public entry metadata; direct and matching extraction reject before output mutation for the covered stored and method-13 cases
+- Integrity and publication: valid stored bytes are compared exactly, payload and declared-CRC corruption are rejected, and the final output is absent on the examined failure paths. Shared pathname ownership remains OBS-002
+- Resource lifetime: assigned synthetic fixtures use bounded stack buffers; heap output from `read_binary_file` is freed on the examined checksum success and failure paths; CUE text and descriptors close on ordinary parse, discovery, and extraction paths. Exceptional fixture-I/O reporting remains OBS-001
+- Process status: each assigned top-level helper returns false on a reached assertion failure; the enclosing `main` includes all of them and returns nonzero when any returns false. Optional real-media success coding remains the existing `BR-0158` boundary and is primarily owned by chunk 0114
+- Portability: Windows uses binary descriptor modes and 64-bit stat; POSIX uses ordinary descriptors and stat. On-disc integers are emitted explicitly in big-endian order. Assigned frozen source is ASCII and has no BOM
+- Diagnostics: top-level cases and failure strings distinguish structure, encryption metadata, direct extraction, matching extraction, valid checksum, corrupt payload, and corrupt checksum. Subcase identification is coarse but no additional high-impact root was established
+
+## Evidence gaps and limitations
+
+- No build, CTest, sanitizer, proprietary-media run, concurrent-run probe, I/O fault injection, or interruption test was performed because this is a frozen-object read-only survey and those actions would use or create mutable state
+- The proprietary MacPlay D1 and D2 image bytes and extracted oracle trees are ignored and not frozen. Their availability, content, and current hashes were not independently inspected
+- The assignment ends at L600 inside `run_payload_checksum_test`; its closing L601-L620 and all later helpers were read as enclosing context. Chunk 0114 owns detailed coverage of L601-L1050, especially valid decoder paths, real-media expectations, skip status, D2 byte oracles, and final cleanup
+- The campaign's generated manifest directory is unavailable in this worktree. The canonical queue row, frozen commits, trees, ancestry, path status, blob, byte size, line count, and deterministic scope fingerprints were independently confirmed
+- No claim is made that all 355 frozen changed D1/D2 paths are minimized. The measured claim is that none is causally connected to this assigned test or its complete traced STi2 ownership boundary
+
+## Commands and validation
+
+- Complete reads of `.github/copilot-instructions.md` and `general_code_quality_worker_process.md`, plus relevant current plan, active/done GQ, durable evidence, active/done adversarial, DMR1, and cleanup records
+- `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, and `git ls-tree` for frozen commits, trees, ancestry, blob, and base-presence confirmation
+- `git show` with numbered ranges for all assigned lines, enclosing functions, complete test continuation, parser and extraction entry points, callers, headers, and CMake registrations
+- `git diff --name-status`, `git diff --numstat`, `git diff --unified=0`, and frozen history inspection for exact classification, line counts, later audit changes, and owner measurements
+- `git grep` for STi2 public and test-only symbols, include owners, direct and nested production callers, standalone and Android registrations, and D1/D2 references
+- `rg` across both GQ ledgers, durable evidence, both adversarial ledgers, DMR1, and earlier cleanup plans for STi2 structure, encryption, checksum, fixture I/O, false-pass, output isolation, stack ownership, method-14, and inherited-diff duplicates
+- In-memory ASCII SHA-1 Git-blob and SHA-256 calculation for the scope manifest. No temp file was created
+- Report-only ASCII, BOM, NUL, trailing-whitespace, final-LF, and scoped `git diff --check` validation was run after writing this file
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for `GQ1-CHUNK-0113` with disposition `NO_INHERITED_EFFECT`, measured inherited effect `0 paths / 0 hunks / +0/-0 lines`, zero extraction payoff, and the branch-added Android ownership boundary above
+- Record one non-partial `ISSUES` coverage result for all 600 assigned lines and the named production, build, caller, test, history, and D1/D2 context
+- Normalize OBS-001 as an extension or broadened acceptance boundary for current `GQF-0150`, linked to archived `BR-0046`. If exact current finding ownership remains raw-fingerprint-specific, admit one P3 STi2 test-fixture I/O finding rather than reopening the closed production defect
+- Normalize OBS-002 as an evidence extension of open `BR-0160`; do not allocate a second test-isolation owner
+- Normalize OBS-003, OBS-004, and OBS-005 as historical closure evidence for archived `BR-0032`, `BR-0031`, and `BR-0033` respectively
+- Create no DMR1 item or diff-minimization remediation chunk from this unit
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0113 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0114 frozen survey SHA256:3666ee7d6796dd1e5c0b50e475f80e5f20a4e1e724fe73726e35ac696f5ea86a -->
+
+## GQ1-CHUNK-0114 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0114.md`
+- Imported SHA-256: `3666ee7d6796dd1e5c0b50e475f80e5f20a4e1e724fe73726e35ac696f5ea86a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0114 frozen survey
+
+Outcome: ISSUES. All 450 assigned lines were reviewed against the complete frozen test, STi2 and HFS production seams, native callers, build registration, paired game targets, history, and prior review records. The assigned test and every traced owner are branch-added under `android/`, so the mandatory diff-minimization disposition is `NO_INHERITED_EFFECT`: this slice causes zero inherited paths, hunks, added lines, or deleted lines. Secondary review found one apparently unowned D2 Mac oracle gap and supplied current evidence to three existing test owners. No product file, plan, canonical ledger, existing report, generated output, temp file, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen ancestry: the review base is an ancestor of the review head
+- Assigned file and range: `android/app/src/main/cpp/extract/test_sti2.c` L601-L1050, all 450 assigned lines reviewed
+- Frozen file blob: `c8c7e4df9ea5f9deebf7160e00ef140cbb83e415`
+- Frozen file size and SHA-256: 29,241 bytes; `b3b029120ed9eb5988a1b96306ddd6c548414aa40c63457a54fc5d254fce67f0`
+- Exact LF-normalized assigned-range size and SHA-256: 12,728 bytes; `969facdeef3e277e2610d15fb491194667305f1555b3fa2a244fdc1099f2787c`
+- Scope manifest, ASCII with one final LF: `android/app/src/main/cpp/extract/test_sti2.c|L601-L1050|c8c7e4df9ea5f9deebf7160e00ef140cbb83e415`
+- Scope-manifest byte count, SHA-256, and Git blob: 97; `37c4b1b1d796283c58992a2b6ce2227823f1fc374a15bf42f397700925a3a91a`; `d0bcecce90d8141a509e6064d0e7b3f183ab2ad7`
+- The assigned path is absent at the frozen base and has frozen diff size `+1050/-0`, one added path and no deletion
+- Evidence came from frozen Git objects. Mutable worktree product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+### Attribution and measured boundary
+
+- Path classification: `test_sti2.c` is branch-added. The assigned slice is 450 of its 1,050 added lines and directly modifies zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines
+- Its direct production owner `sti2_extract.c` is branch-added at `+2404/-0`; its public and test-seam header `sti2_extract.h` is branch-added at `+74/-0`
+- The assigned native-integration paths are branch-added: `mac_hfs_extract.c` `+316/-0`, `mac_hfs_extract.h` `+24/-0`, `hfs_reader.c` `+1408/-0`, `hfs_reader.h` `+113/-0`, `cue_parser.c` `+250/-0`, and `cue_parser.h` `+88/-0`
+- The standalone target and CTest registration owner `extract/CMakeLists.txt` is branch-added at `+681/-0`. The parent Android native build owner is branch-added at `+897/-0`
+- Broader callers remain branch-added Android owners: `extract_cd.c` `+704/-0`, `jni_disc_import.c` `+513/-0`, `stuffit_extract.c` `+492/-0`, and the paired D1/D2 Android target registrations in the one branch-added Android CMake file
+- Frozen symbol, include, and registration searches found no `sti2_extract`, `test_sti2`, `mac_hfs_extract`, or `STI2_EXTRACT_TESTING` consumer under `d1/` or `d2/`. No 1996-original source or inherited build entry declares, calls, registers, or copies this test policy
+- The test uses a plain C API owned entirely by the branch-added extraction directory. D1 and D2 share the same implementation through one Android owner; there is no paired implementation body in the inherited game trees
+
+### Ownership alternatives tested
+
+- Moving this test, its fixture helpers, or its extraction policy into `d1/` or `d2/` would add inherited churn and likely paired duplication while removing zero inherited lines
+- Introducing a wrapper or callback table outside `android/app/src/main/cpp/extract/` would remove zero inherited lines and add indirection around an already narrow branch-added API
+- Reverting the standalone target registration would remove only branch-added CMake lines and discard focused parser, integrity, real-media, and shared-wrapper coverage. It offers no inherited-diff reduction
+- The smallest safe ownership boundary is therefore the existing branch-added test plus branch-added extractor, HFS wrapper, and build owners. The maximum possible inherited reduction in this scope is exactly zero paths, zero hunks, and zero lines
+- DMR1 has no STi2 or Android extraction item to reconcile because no inherited D1/D2 edit exists here
+- Recheck trigger: only a later generation that moves an STi2 declaration, hook, policy body, test seam, or registration into a base-present path can change this disposition
+
+## Context inspected
+
+- Every assigned line: stored-payload checksum corruption, bit-reader exhaustion, method-14 code-length validation, invalid archive header, real MacPlay listing, direct STi2 extraction, native MacPlay extraction, native D2 Mac extraction, aggregate invocation, summary, and exit status
+- Complete earlier test context needed by the assigned tail: file/CUE helpers, exact-file comparator, cleanup, fixture builders, structural validation, encrypted-entry rejection, checksum setup, and all test counters and macros
+- Complete public STi2 contract and relevant frozen implementation paths for entry listing, method-14 validation and decoding, checksum and exhaustion rejection, direct extraction, matching extraction, temporary publication, progress, and result aggregation
+- Complete Mac HFS wrapper seam, CUE/HFS reader interfaces, direct CLI and JNI callers, StuffIt low-level decoder consumers, standalone CMake target, CTest registration, and paired Android game-target source lists
+- File history from the April test addition through July structural, integrity, decoder, repeated-scan, and D2 Mac additions
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, and relevant earlier remediation records for STi2, optional fixtures, test isolation, source identity, method 14, and oracle completeness
+
+## Atomic observations
+
+### GQ1-CHUNK-0114-OBS-001: The D2 Mac test calls filename presence a full output oracle
+
+- Provisional disposition: `NEW` unless canonical normalization finds a concurrent exact owner
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/oracle-strength/production-parity`
+- Frozen locations: `test_sti2.c:L946-L1016`, especially the test name at L975, exact count check at L996-L1001, and existence-only loop at L1002-L1011; production path `mac_hfs_extract.c` and `sti2_extract.c`
+- Evidence: `real_d2_mac_native_extract_restores_full_oracle` requires the public wrapper to return 17 and requires 17 named output paths to exist. It never opens one D2 output and has no expected size, digest, or byte comparison. The immediately preceding MacPlay test compares every output byte-for-byte with its eight-file oracle tree, demonstrating the intended stronger boundary. The frozen repository already records D2 file hashes in `known_versions.json5` and related test inputs, but this target does not consume or independently bind an exact 17-file D2 Mac extraction oracle
+- Concrete trigger: make the HFS or STi2 path emit the expected 17 names and count but corrupt, truncate, zero-fill, or swap the bytes of one or more outputs. Every D2 assertion still passes
+- Impact: a content-corrupting D2 Mac extraction regression can remain green in the only assigned production-wrapper integration case even though the test name and prior repair history present it as a restored full oracle
+- Recommended fix: bind the exact source generation and compare the complete produced D2 inventory against independently recorded sizes and SHA-256 values. Keep the public wrapper path, reject missing and extra leaves, and avoid deriving expected hashes from the output under test
+- Focused validation: mutate one byte, truncate, swap two payloads, add and remove a file, preserve names and count with wrong bytes, and reverse extraction order. Require failure for every mutation and exact success for verified D2 Mac media
+
+### GQ1-CHUNK-0114-OBS-002: Every real-media STi2 case returns process success when its fixture is absent
+
+- Provisional disposition: `DUPLICATE BR-0158`; do not allocate a new false-pass root
+- Suggested priority/confidence/category: P2/high, `test-gap/false-pass/fixture-ownership`
+- Frozen locations: `test_sti2.c:L696-L943,L946-L1016,L1019-L1050`; registration `extract/CMakeLists.txt:L201-L202`
+- Evidence: the four real-media functions call `SKIP` and return true when the MacPlay or D2 CUE is absent. `main` leaves `ok` true and exits zero; unlike the SOW real-media target, CMake supplies no `SKIP_REGULAR_EXPRESSION` for `sti2_tests`. A clean checkout can therefore report this registered target as passed while executing no successful production-path STi2 listing, STi2 extraction, or native Mac extraction
+- Trigger and impact: run CTest without ignored proprietary CD images. Synthetic negative tests execute, all four successful production-path cases are skipped internally, and CTest records success
+- Recommended normalization: extend `BR-0158` with the complete current four-case and final-status evidence. Use a tracked synthetic positive production fixture for mandatory coverage and surface optional commercial-media absence as CTest skip or an explicitly required-profile failure
+
+### GQ1-CHUNK-0114-OBS-003: Real-media outputs share fixed source-tree path ownership
+
+- Provisional disposition: `EXTENDS BR-0160`; do not allocate a separate STi2 isolation root
+- Suggested priority/confidence/category: P2/high, `test-gap/resource-lifetime/concurrency/filesystem-isolation`
+- Frozen locations: `test_sti2.c:L720-L741,L799-L875,L877-L943,L946-L1016`; registration `extract/CMakeLists.txt:L201-L202`
+- Evidence: CTest forces the extraction source directory as the working directory. All processes reuse `test_sti2_install_descent.bin`, eight `test_sti2_<name>` leaves, `test_sti2_native_extract`, and `test_sti2_d2_native_extract`. Cleanup removes only named expected leaves, ignores errors, and has no invocation identity or lock. The later D2 addition extends the same ownership problem to 17 more shared output leaves
+- Trigger and impact: overlap two `test_sti2` processes in one build tree, interrupt one after publication, or leave a conflicting directory entry. One process can truncate, compare, delete, or inherit another process's bytes, producing flaky results or a false oracle generation
+- Recommended normalization: extend `BR-0160` with the D2 directory and full fixed-path set. Give each invocation a unique build-tree work directory, clean only its own generation, and require cleanup failure and unexpected residue to be visible
+
+### GQ1-CHUNK-0114-OBS-004: Method-14 coverage still validates trees without a production success decode
+
+- Provisional disposition: `EXTENDS GQF-0093` and linked archived `BR-0158`; no second decoder-oracle finding
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/decoder`
+- Frozen locations: `test_sti2.c:L633-L676`; `sti2_extract.c` method-14 code-length and decoder paths
+- Evidence: the assigned helper test proves empty and oversubscribed trees fail, a two-symbol complete tree succeeds, 31- and 32-bit lengths are admitted, and 33- and 37-bit lengths fail. It calls only `sti2_test_method14_code_lengths`; it does not construct a legal archive or execute production method-14 symbol decode, terminal state, output bytes, checksum, and atomic publication. Current `GQF-0093` already owns that exact missing production success oracle
+- Trigger and impact: regress production method-14 decoding or terminal behavior while leaving the isolated code-length validator correct. The assigned test remains green
+- Recommended normalization: retain as direct test-side evidence for `GQF-0093`; the existing remediation should add a legal archive with exact bytes or hash and mutation proof through `sti2_extract_entry`
+
+## Explicit clean dimensions
+
+- Diff minimization: all assigned, production, interface, caller, and build owners found in the trace are branch-added Android files. No inherited hook, declaration, build entry, copied game policy, or D1/D2 implementation body is implicated
+- Synthetic integrity coverage: stored payload mutation and stored-header checksum mismatch both require failure without a final output. Bit-reader exhaustion is exercised through the narrow test seam. Structural and encryption cases from the enclosing context cover the current archived repairs
+- Real MacPlay content oracle: when media exists, direct STi2 extraction and the public native wrapper compare all eight expected outputs byte-for-byte with the neighboring oracle tree; listing checks declared and regular counts, names, methods, sizes, and selected physical header offsets. Source and oracle provenance remain prior-owner evidence, not a new root here
+- Result aggregation: every non-skip assigned failure returns false to `main`, clears `ok`, and yields process exit 1. The false-pass boundary is specifically optional fixture absence under `BR-0158`
+- Resource lifetime: assigned ordinary paths close the CUE descriptor after synchronous extraction, free archive buffers on examined success and failure branches, remove intermediate archive files, and remove known output leaves after comparisons. Cross-process ownership remains OBS-003
+- API and D1/D2 parity: the test target compiles the same branch-added STi2, HFS, CUE, and Mac wrapper implementations used by the Android extraction path. Both game targets consume the same branch-added production sources rather than copied D1/D2 bodies
+- Portability: binary descriptors are used on Windows, POSIX descriptors are closed, on-disc integers use explicit endian fixture writers, and assigned sizes fit their declared host types. No assigned format mismatch, inherited-platform regression, or compiler-dependent assertion removal was established
+- Diagnostics: named cases and final passed/skipped/total counts make ordinary failures visible. Per-file D2 mismatch evidence is absent because payloads are not inspected, as recorded by OBS-001
+
+## Evidence gaps and limitations
+
+- No build, CTest run, sanitizer, proprietary-media extraction, concurrent runner, interruption, filesystem-failure injection, emulator, or Android ABI build was run because this was a frozen-object read-only survey
+- The ignored MacPlay and D2 CUE/BIN media and neighboring MacPlay output tree are not frozen Git evidence. Their current bytes and availability were not treated as authoritative
+- The D2 content-oracle observation follows directly from the existence-only control flow and does not claim a current extracted file is corrupt
+- This unit begins inside `run_payload_checksum_test`; its setup at L564-L600 was inspected as enclosing context but not counted as assigned coverage
+- Fixed helper buffers, ignored removal results, read-error distinction, test source identity, full-output collision policy, STi2 stack catalogs, and production aggregate publication already have current GQ or BR owners or lack a distinct material trigger here. They were not split into duplicate findings
+- A concurrent chunk covers L1-L600. Canonical normalization should reconcile any overlap at the payload-checksum boundary and retain coverage-ID order
+
+## Commands and methods
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Read relevant sections of the active and done GQ ledgers, durable evidence ledger, active and done adversarial ledgers, DMR1, and earlier cleanup/remediation records
+- Used `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git show`, `git diff --numstat`, `git diff --stat`, `git log --follow`, and `git grep` against the exact frozen base and head
+- Inspected line-numbered frozen projections of every assigned line, full test context, public header, relevant decoder and wrapper paths, CMake registration, native callers, and D1/D2 search results
+- Classified and measured each traced path at the frozen boundary and searched `d1/`, `d2/`, `cmake/`, and Android owners for inherited consumers, hooks, registrations, and semantic duplication
+- Used `rg` across all review ledgers and evidence for STi2, method 14, MacPlay, D2 Mac, optional fixtures, output isolation, payload oracles, and prior IDs
+- Calculated the scope, file, range, and manifest fingerprints in memory. No temporary report or product/build output was created
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for `GQ1-CHUNK-0114` with disposition `NO_INHERITED_EFFECT`, measured inherited effect `0 paths / 0 hunks / +0/-0 lines`, and the traced branch-added ownership boundary above
+- Admit OBS-001 as one new P2/high test-oracle finding unless the immediately preceding chunk supplies an exact current owner. Keep its remediation local to the branch-added D2 Mac integration test and verified oracle data
+- Normalize OBS-002 as a duplicate or evidence extension of `BR-0158`
+- Normalize OBS-003 as an evidence extension of `BR-0160`
+- Normalize OBS-004 as an evidence extension of current `GQF-0093`, linked to archived `BR-0158`
+- Create one non-partial `ISSUES` coverage record for `GQ1-CHUNK-0114`. Create no DMR1 item or diff-minimization remediation chunk from this unit
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0114 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0115 frozen survey SHA256:8aade7303a295972557d54cc347d717ab2e164bfaa8b5c0de72ccd0af97f4fc0 -->
+
+## GQ1-CHUNK-0115 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0115.md`
+- Imported SHA-256: `8aade7303a295972557d54cc347d717ab2e164bfaa8b5c0de72ccd0af97f4fc0`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0115 frozen survey
+
+Outcome: ISSUES. Every assigned line was reviewed against the complete frozen corpus runner, production StuffIt parser, low-level STi2 decoder, native registration, manifest generator, host runners, JNI and Kotlin callers, paired D1/D2 trees, history, and prior review records. The assigned file and every traced owner are branch-added under `android/`, so this unit has no branch-caused inherited-file effect. Secondary review confirms the already-open production-oracle gap and adds consumer-side evidence to the existing partial-manifest generator defect. No product file, canonical ledger, plan, existing report, fixture, generated output, build output, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned scope: `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp` L1-L600 inclusive, 600 reviewed lines
+- Frozen blob: `d2db2e1a596d9b1d7be5eb75228455d39b0ec591`
+- Assigned L1-L600 SHA-256 after LF normalization with a final LF: `d273477b773af8908f2aaaf6826421b65cfaf5c64e18c6a693fe07e993ac3d0e`
+- Scope manifest: `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp|L1-L600|d2db2e1a596d9b1d7be5eb75228455d39b0ec591`
+- SHA-256 of that UTF-8 scope manifest without a final LF: `b5b3b4739265d9b72b791a5b0fa0f06284561fcd24595526ff11055c6ab2a826`
+- The path is absent at the frozen base and is one branch-added file at the frozen head: one added-file hunk, `+1120/-0`
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned test slice is branch-added and accounts for 600 of the file's 1,120 added lines. It modifies zero inherited paths, zero inherited hunks, and zero inherited lines
+- The direct standalone build owner, `android/app/src/main/cpp/extract/CMakeLists.txt`, is branch-added at `+681/-0`. It fetches the full-commit corpus, builds this test with `sti2_extract.c`, supplies the two fixed directory definitions, and registers the CTest. The Windows and POSIX aggregate runners are branch-added at `+38/-0` and `+32/-0`
+- The low-level code compiled into this target, `sti2_extract.c/.h`, is branch-added at `+2404/-0` and `+74/-0`. The production high-level comparison seam, `stuffit_extract.c/.h`, is branch-added at `+492/-0` and `+23/-0`. The manifest generator is branch-added at `+354/-0`
+- Production ownership remains within branch-added Android code: Android native CMake is `+897/-0`, `jni_disc_import.c` is `+513/-0`, and the `DiscImportBridge`, `SetupFileImport`, and setup/import callers are all under the base-absent `android/` subtree. Both game libraries compile the same branch-added extractor, but no inherited game declaration or hook is used
+- Frozen `git grep` over `d1/**` and `d2/**` found no reference to `test_stuffit_corpus`, `sit5_list_entries`, `stuffit_extract`, or `sti2_extract`. The test has no paired D1/D2 body, inherited registration, copied game policy, or 1996-original consumer
+- The branch does modify inherited D1/D2 paths elsewhere, but none is causally required by this test, its fixtures, its decoder, or the launcher extraction call chain. Measured inherited effect for this unit and its traced owners is therefore exactly zero paths, zero hunks, and `+0/-0` lines
+
+### Smallest-boundary test
+
+- Moving this test, the reference-manifest loader, or the extractor into `d1/` or `d2/` would create inherited churn and likely paired duplication while removing no inherited line. A new wrapper around the current target would likewise reduce zero inherited lines
+- Removing the standalone registration would affect only branch-added CMake and would discard mandatory public-corpus decoder coverage. Splitting the 1,120-line test could improve branch-owned maintainability, but it is not inherited-diff minimization and would add target or helper ownership without merge-pressure payoff
+- The narrowest valid merge boundary is therefore the existing branch-added `android/app/src/main/cpp/extract/` owner. The maximum inherited reduction from extraction, consolidation, or revert is zero lines and zero hunks
+- Recheck trigger: a later generation that adds a StuffIt declaration, hook, copied parser body, or build registration to an inherited D1/D2 path
+
+## Context and history inspected
+
+- Every assigned line: platform file helpers, fixed provenance constants, manifest model and validation, SHA-256 implementation, archive recognition, path projection, and the first 34 lines of the test-local entry parser
+- The enclosing test-local SIT5 parser and all corpus cases through L1120, read for complete control flow and ownership. Detailed continuation coverage remains assigned to GQ1-CHUNK-0116
+- Complete frozen `stuffit_extract.c/.h`, relevant `sti2_extract.c/.h` public listing and extraction seams, malformed and direct tests, demo-oracle CMake, all six schema-3 manifests, and the manifest generator
+- Standalone and Android native CMake registration, Windows and POSIX host runners, JNI extraction entry point, Kotlin bridge and staging/import callers, and D1/D2 searches
+- Focused history and the prior StuffIt work plans, active and done GQ ledgers, durable evidence ledger, active and done adversarial ledgers, and DMR1
+- Existing ownership reconciled before observations: open `BR-0182` owns the mandatory corpus bypass of the production parser; open `BR-0586` owns partial-oracle publication after unchecked reference subprocess failure; open `BR-0158` owns optional high-level real-media false success; open `GQF-0093` owns missing method-14 success coverage; archived parser, integrity, and publication repairs were checked for regrowth
+
+## Atomic observations
+
+### GQ1-CHUNK-0115-OBS-001: The mandatory corpus duplicates the production SIT5 parser instead of testing it
+
+- Provisional normalization: `DUPLICATE BR-0182`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/production-parity`
+- Frozen locations: assigned `test_stuffit_corpus.cpp:L525-L600`, enclosing test-local parser through L707 and its caller at L722-L738, target linkage at `extract/CMakeLists.txt:L148-L157`, and production parser at `stuffit_extract.c:L167-L490`
+- Evidence: the assigned range starts a second SIT5 recognizer, path builder, and entry parser. The registered target links only `test_stuffit_corpus.cpp` and `sti2_extract.c`, not `stuffit_extract.c`. The enclosing corpus cases therefore accept entries built by the test-local parser and call the low-level decoder directly. They cannot fail when the production header, optional-field, resource-fork, parent/child, encryption, entry-order, filtering, basename, nested-STi, callback, or result-count behavior diverges
+- Trigger and impact: regress any production-only field or high-level contract while retaining low-level decoding. The mandatory pinned corpus can stay green; only the optional proprietary-media target reaches `stuffit_extract`, and `BR-0158` records its clean-checkout skip behavior
+- Fix and validation remain with `BR-0182`: link the production owner, drive every pinned archive through a public or narrow internal production seam, compare the complete inventory, sizes, hashes, callbacks, and result count, and mutation-test production-only fields. Delete the copied parser once equivalent production coverage exists
+
+### GQ1-CHUNK-0115-OBS-002: The manifest consumer cannot reject a generator-published partial archive inventory
+
+- Provisional normalization: `EXTENDS BR-0586`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/oracle-integrity/false-pass`
+- Frozen locations: assigned manifest model and loader at `test_stuffit_corpus.cpp:L91-L113,L434-L522`; enclosing one-sided listing comparison at L783-L829; generator subprocess and publication flow at `android/helpers/generate-stuffit-corpus-manifests.ps1:L141-L174,L305-L337`
+- Evidence: schema 3 authenticates tool identities and validates each recorded entry, but contains and consumes no independently derived archive digest or expected complete entry count. `manifest_load` accepts any nonempty entries array of at most 32 elements. The listing test walks only manifest entries and requires at least one comparison; it never rejects additional parsed archive entries omitted from the manifest. Thus the valid partial JSON and partial extraction mechanism already established by `BR-0586` is accepted as a complete oracle by this consumer
+- Trigger and impact: let authenticated `lsar` emit a syntactically valid prefix and fail after omitting entries, with the generator publishing that reduced array. Future corpus runs validate only the retained subset and can hide missing-entry, unsupported-method, or extraction regressions
+- Fix and validation remain with `BR-0586`: require checked bounded subprocess completion before parsing, stage and atomically publish all manifests, bind each manifest to the exact corpus archive, record an independently validated complete inventory count, and make the consumer compare both sets exactly, including duplicate and extra identities
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: all assigned and traced owners are branch-added Android files. No D1/D2 reference, paired edit, hook, declaration, or inherited build entry is required
+- Manifest parsing: required top-level and per-entry fields are type-checked; signed negatives and values wider than `unsigned int` fail; archive names, paths, hashes, and entry counts are bounded; malformed JSON fails through the caught library exception. Partial-set completeness remains OBS-002
+- Buffer and integer handling: the SHA-256 block buffer is bounded, length accounting uses 64-bit state, output is fixed at 64 lowercase hex characters, and file-read failures propagate. The assigned fixed corpus files are small regular files; no distinct high-impact overflow or lifetime root survived review
+- Resource lifetime: every examined `FILE *` is closed on success and failure, `std::ifstream` and vectors own their storage, parse failure publishes no manifest state outside the caller-owned zeroed structure, and no assigned helper creates persistent output
+- Provenance: the corpus CMake pin is a full commit; manifests require exact schema, tool version, package URL and package/executable hashes. The separate generator exit and complete-set defect remains OBS-002 and `BR-0586`
+- Portability: binary file mode is used, Windows selects `_stat64`, POSIX selects `stat`, and fixed-width integer types are used by SHA state. Forward-slash joining is accepted by the targeted Windows and POSIX file APIs. No Android-only runtime API enters the host test
+- Diagnostics and exit behavior: top-level tests name their dimension and failures produce nonzero process status. Subcase diagnostics are coarse, but no separate actionable root beyond existing owners was established
+- Security: corpus bytes come from a pinned public repository and are not application runtime inputs. The copied parser's weaker bounds are test-oracle risks already subsumed by `BR-0182`, not a second production security defect
+- General cleanup: helper duplication is substantial, but removing the copied parser is already the behavioral fix for `BR-0182`; splitting SHA or JSON helpers without that acceptance boundary would be cosmetic movement with no inherited payoff
+
+## Evidence gaps and limits
+
+- No executable build or test was run because this is a frozen read-only survey and a live build would compile post-freeze mutable files. The target-link and oracle separation are deterministic from frozen source and CMake
+- No network fetch, proprietary StuffIt image, hostile filesystem, allocation-failure injector, sanitizer, or reference-tool fault shim was used
+- The assignment ends at L600. L601-L1120 was read only to close parser and test control flow; GQ1-CHUNK-0116 owns detailed decoder-oracle, unsupported-method, output-isolation, cleanup, and process-summary coverage
+- The frozen generation manifest directory was unavailable, so frozen commit/tree identities, queue scope, blob, added-file diff, and deterministic slice digest were independently confirmed
+- No claim is made that unrelated inherited D1/D2 changes are minimized. The bounded claim is that none is caused by or connected to this StuffIt corpus unit
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md`, the complete amended `general_code_quality_worker_process.md`, active and done GQ ledgers, durable evidence, DMR1, both adversarial ledgers, and relevant prior cleanup and extraction plans
+- Used `git cat-file`, `git rev-parse`, `git show -s --format=%T`, `git merge-base`, `git show`, `git diff --numstat`, and path-existence checks for frozen object, ancestry, blob, line-count, and added-path attribution
+- Used frozen `git grep` for the test, parser, decoder, build registrations, production JNI/Kotlin call chain, and empty D1/D2 ownership searches
+- Used `rg` and targeted ledger excerpts to reconcile `BR-0182`, `BR-0586`, `BR-0158`, `GQF-0093`, archived integrity/parser repairs, prior GQ reports, and the prior R1 review of this exact range
+- Computed the assigned-slice and scope-manifest SHA-256 values in memory from the frozen object
+- No product edit, canonical-ledger edit, fixture generation, download, build, CTest, emulator, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0115 with disposition `NO_INHERITED_EFFECT`, zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added Android ownership boundary
+- Normalize OBS-001 as a duplicate and evidence extension of open `BR-0182`
+- Normalize OBS-002 as consumer-side evidence extending open `BR-0586`
+- Allocate no new `GQF-*`, `GQI-*`, DMR1 item, diff-minimization finding, or remediation chunk from this unit
+- Record a non-partial `ISSUES` coverage outcome because the assigned range supplies concrete evidence for two existing open test-oracle owners while its inherited-diff, bounds, lifetime, portability, and provenance dimensions are explicitly covered
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0115 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0116 frozen survey SHA256:f3c2611f81e19e941f50ac6d30b4ef536fbe67013b179ebb4c12f282ad4d1c99 -->
+
+## GQ1-CHUNK-0116 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0116.md`
+- Imported SHA-256: `f3c2611f81e19e941f50ac6d30b4ef536fbe67013b179ebb4c12f282ad4d1c99`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0116 frozen survey
+
+Outcome: ISSUES. All 520 assigned lines were reviewed against the complete frozen corpus test, the production StuffIt and STi2 implementations, standalone and Android build registration, JNI and direct-tool callers, paired D1/D2 trees, fixtures, history, and durable review records. Diff attribution is conclusive: the assigned test and every traced code, test, build, and caller owner are branch-added under `android/`, so this unit causes zero inherited paths, hunks, additions, or deletions. Secondary review extends existing `BR-0182` because the mandatory corpus still drives a divergent test-local SIT5 parser and its unsupported-method test executes zero cases, and extends `BR-0160` for fixed process-global output names. No new root is proposed. No product file, canonical ledger, existing report, fixture, build output, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen ancestry: the review base is an ancestor of the review head
+- Assigned file and range: `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp` L601-L1120, all 520 assigned lines reviewed
+- Frozen file blob: `d2db2e1a596d9b1d7be5eb75228455d39b0ec591`, 33,506 bytes and 1,120 lines
+- Assigned-range SHA-256 after LF normalization and one final LF: `38b91dc4d305aa2ff2a15082fde5820c83daa0bd723c60f31f22529c2a558fff`
+- Scope manifest, ASCII with one final LF: `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp|L601-L1120|d2db2e1a596d9b1d7be5eb75228455d39b0ec591`
+- Scope-manifest byte count including final LF: 109
+- Scope-manifest Git blob fingerprint: `db7ab21853087a085dc43255abf3919ba82ccb9b`
+- Scope-manifest SHA-256 including final LF: `9f1c55940023553df45518b85cfa5ca90abaee14d4a5d90df4088105f946c1fc`
+- Path classification: branch-added, with frozen change shape `+1120/-0` and one added-file hunk
+- The mutable worktree file has the same Git blob as the frozen head, but evidence came from frozen Git objects
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+### Attribution and measured boundary
+
+- The assigned range contributes 520 reviewed lines within a branch-added 1,120-line test. It causes zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines
+- Its standalone target and CTest owner, `android/app/src/main/cpp/extract/CMakeLists.txt`, is branch-added at `+681/-0`. L148-L157 compiles this test only with branch-added `sti2_extract.c`; L203-L204 registers it with CTest
+- The linked decoder and public header are branch-added: `sti2_extract.c` is `+2404/-0` and `sti2_extract.h` is `+74/-0`. The production parser and public owner are also branch-added: `stuffit_extract.c` is `+492/-0` and `stuffit_extract.h` is `+23/-0`
+- Production registration and calls remain in branch-added Android owners. `android/app/src/main/cpp/CMakeLists.txt` is `+897/-0` and includes `stuffit_extract.c` in both game builds. `jni_disc_import.c` is `+513/-0` and calls `stuffit_extract`; the host direct wrapper and all StuffIt-specific tests are branch-added
+- All six committed manifests and their pinned fetched-corpus registration are branch-added. The assigned test neither declares nor requires any game-engine hook, callback, data constant, or build entry
+- Frozen searches found no `StuffIt`, `stuffit`, or `sti2` reference under `d1/` or `d2/`. No paired D1/D2 edit, inherited declaration, inherited build registration, copied game policy, or base-present consumer is causally connected to this unit
+- DMR1 has no StuffIt or STi2 extraction owner to extend. The complete relevant inherited-diff measurement is therefore zero paths, zero hunks, zero additions, and zero deletions
+
+### Ownership boundary tested
+
+- The smallest natural ownership boundary is already branch-owned: the corpus test and fixtures sit beside the branch-added parser and decoder, with production reached through a branch-added JNI caller. Moving any of this code into D1 or D2 would create inherited churn while removing none
+- Extracting the assigned test helpers to another new file would reduce no inherited line. A wrapper around the existing C API would likewise add a callback or facade without reducing merge pressure
+- Reverting the test or its standalone registration would save only branch-added lines and discard decoder coverage. It would not improve the inherited diff
+- Consolidating the test-local parser with the production parser is worthwhile for test validity under existing `BR-0182`, but it is not an inherited-file minimization candidate because both sides are branch-added. It belongs to the existing quality remediation owner, not DMR1
+- Measured inherited payoff for extraction, consolidation, or revert is exactly zero. The decision is therefore `NO_INHERITED_EFFECT`, not `RETAIN`: there is no inherited edit to retain
+- Recheck trigger: a later generation adds a StuffIt or STi2 hook, declaration, registration, or copied parser policy to a base-present file
+
+## Context inspected
+
+- Every assigned frozen line: recursive test-local SIT5 listing, archive and manifest acquisition, manifest-driven entry projection, fixture-presence checks, listing comparison, supported hash and truncation checks, method-15 corruption check, unsupported-method handling, resource-record accounting, method-13 data-fork decoding, and final process result
+- The complete preceding test-local SIT5 recognizer, path builder, and entry parser, plus manifest parsing, provenance checks, SHA-256 implementation, archive lists, output-name sanitization, and file helpers
+- Complete production `stuffit_extract.c/.h` recognition, header parsing, parent reconstruction, resource metadata, extension selection, nested STi handoff, progress callback, output naming, return contract, and test-only listing seam
+- Relevant `sti2_extract.c/.h` public entry representation and direct extraction path, especially methods 13 through 15, input exhaustion, payload checksums, transactional output, and unsupported-method behavior
+- Both CMake owners, `jni_disc_import.c`, `test_stuffit_direct.c`, `test_stuffit_malformed.c`, `test_stuffit_demo_oracles.cmake`, all six committed manifests, their frozen methods and kinds, and the manifest generator relationship
+- Frozen history from initial addition through the July parser-safety, integrity, decoder, provenance, and dependency-management changes
+- Relevant active and done GQ records, durable GQ evidence, active and done adversarial records, DMR1, and prior cleanup records. Duplicate ownership checked includes `BR-0017`, archived `BR-0031`, archived `BR-0033`, `BR-0158`, `BR-0160`, archived `BR-0178`, `BR-0182`, `GQF-0093`, and the earlier chunk 0044 and 0079 normalization records
+
+## Atomic observations
+
+### GQ1-CHUNK-0116-OBS-001: Mandatory corpus assertions bypass the production SIT5 parser
+
+- Provisional normalization: `EXTENDS BR-0182`; do not create a new finding
+- Suggested priority/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen locations: assigned `test_stuffit_corpus.cpp:L601-L705,L722-L750,L795-L1000,L1099-L1119`; preceding local parser start L505; `extract/CMakeLists.txt:L148-L157,L203-L204`; production `stuffit_extract.c:L211-L397,L423-L489`
+- Evidence: `load_archive_and_manifest` invokes the test-local `sit5_list_entries`, and the supported, unsupported, and listing cases consume the resulting test-built `sti2_entry_t` records. The target links only this test and `sti2_extract.c`, omitting `stuffit_extract.c`. Production instead parses optional comments, encryption and password fields, resource metadata, parent offsets, and sequential entry boundaries with materially different control flow. The corpus therefore verifies decoder behavior against a second parser rather than verifying the parser and high-level entry point used by JNI
+- Trigger: regress production header cursor movement, comment or resource metadata consumption, parent reconstruction, encryption rejection, extension selection, nested-STi handling, progress, or final result counting while leaving `sti2_extract_entry` and the copied parser intact
+- Impact: the mandatory fetched corpus can stay green while Android StuffIt import rejects, omits, misnames, or incorrectly accepts entries. Optional demo-oracle coverage does not close the gap when its ignored proprietary inputs are absent under `BR-0158`
+- New measured evidence: the frozen corpus contains six manifests and 28 non-directory, non-resource data records with supported methods. It contains zero unsupported data records. `run_manifest_unsupported_test` increments `unsupported_count` but never asserts it is nonzero, so its named assertion deterministically executes zero extraction attempts and passes. This exactly confirms the unsupported-method subcase already owned by `BR-0182`
+- Additional boundary evidence: the schema-3 method-13 manifest contains three method-13 data forks and four method-13 resource forks. `run_manifest_method13_test` explicitly skips resources and the general hash test does the same. This is consistent with the current game's data-fork extraction policy, but it means committed resource hashes are provenance only and do not validate production resource metadata parsing
+- Recommended boundary remains `BR-0182`: link the corpus to `stuffit_extract.c`, drive every pinned archive through the same production listing and high-level extraction seam used by JNI, compare an exact complete expected data-file inventory and callback/result contract, and add a synthetic unsupported-method case whose reached count must be nonzero. Expose a narrow test-only listing seam only where metadata assertions cannot be made through output
+- Focused validation: mutation-test production recognition, header cursor movement, resource and parent metadata, encryption, filtering, nested archives, cancellation, basename conflicts, and return counts. Require each mutation to fail this mandatory corpus target even when proprietary demo inputs are absent
+
+### GQ1-CHUNK-0116-OBS-002: Corpus extraction cases reuse fixed working-tree output names
+
+- Provisional normalization: `EXTENDS BR-0160`; do not create a second native-suite isolation finding
+- Suggested priority/confidence/category: P2/high, `test-gap/resource-lifetime/concurrency`
+- Frozen locations: assigned `test_stuffit_corpus.cpp:L848-L949,L953-L999,L1032-L1097`; `extract/CMakeLists.txt:L203-L204`
+- Evidence: CTest assigns the extraction source directory as this target's working directory. Supported cases write `test_stuffit_<archive-index>_<sanitized-path>.bin`, unsupported cases write `test_stuffit_unsupported_<archive-index>_<sanitized-path>.bin`, and method-13 cases write another fixed archive-index and sanitized-name pattern. They remove these same relative names on ordinary paths, but own no invocation directory or lock
+- Trigger: overlap two CTest or direct invocations, interrupt one after output creation, or run another process that uses the same deterministic names
+- Impact: one process can remove or inspect another process's output, and stale residue can perturb absence checks. The suite can fail or pass based on concurrent process timing rather than decoder behavior
+- Historical relation: open `BR-0160` already owns fixed source-tree CTest output paths, absent run identity, interruption residue, and parallel-run interference across native extraction suites. These names are further concrete instances of that root
+- Recommended validation remains suite-wide: provide a unique per-invocation build-owned output directory, clean only owned paths, inject interruption, and overlap two full native-suite runs
+
+### GQ1-CHUNK-0116-OBS-003: Supported decoder integrity coverage remains present
+
+- Provisional normalization: `HISTORICAL-CLOSED` evidence for archived `BR-0033`; no new finding
+- Frozen locations: assigned `test_stuffit_corpus.cpp:L848-L949,L1032-L1097`; production `sti2_extract.c` methods 13 and 15 and transactional output path
+- Evidence: 28 supported data records are available across six manifests. Reached entries require exact output length and SHA-256. Real method-13 and method-15 compressed records are materially truncated and must fail without a final file; method-15 records also receive bounded trailer corruption until a rejected mutation is observed. Three real method-13 data entries must be exercised, and both nonzero method-13 and truncation counts are required
+- Limitation: this does not close production-parser parity in OBS-001, method-14 success coverage in `GQF-0093`, or fixed output ownership in OBS-002
+
+## Explicit clean dimensions
+
+- Inherited diff and D1/D2 parity: zero inherited owners, hooks, declarations, build entries, or copied policy bodies were found. Both game builds consume one branch-added Android extraction implementation
+- Decoder oracle: supported data entries require exact size and SHA-256, material truncation fails without final output for real method 13 and 15 streams, and method-15 trailer corruption is rejected. Parser parity remains OBS-001
+- Manifest admission: fixture and archive paths must exist; schema, tool identity, archive name, required fields, numeric widths, entry capacity, and nonempty entry arrays are checked in the preceding range. All six frozen manifests parse under that policy
+- Claimed-case accounting: fixture, listing, supported extraction, and method-13 tests require nonzero reached counts where appropriate. The unsupported test's missing nonzero assertion is explicitly OBS-001
+- Resource lifetime: vectors and manifest objects use bounded local ownership; each reached extraction removes its final output on examined success and failure paths. Process-global pathname ownership remains OBS-002
+- Bounds: recursive local listing has a depth cap and shared entry cap, path construction is bounded, manifest capacity is fixed at 32, and extraction receives the frozen archive size. The copied parser is not relied on as evidence of production safety
+- Process status: every registered top-level test contributes to `ok`, and `main` returns nonzero after a reached failed assertion. Optional media behavior belongs to `BR-0158`, outside this target's fetched fixture set
+- Portability: the frozen test has Windows and POSIX file-stat branches, reads archives in binary mode, uses explicit endian decoding, and compiles as C++11. No new platform-specific production dependency is introduced by the assigned range
+- Diagnostics: failures identify fixture, listing, supported hash, truncation, corruption, unsupported extraction, resource accounting, or method-13 coverage at the case level. Per-archive detail remains coarse but did not establish a separate high-impact root
+- Provenance: the target fetches a full pinned corpus commit and requires manifests that bind the recorded unar package and executable identities. Broader source and oracle provenance remains under existing historical owners
+
+## Evidence gaps and limitations
+
+- No build, CTest, sanitizer, proprietary-media run, parallel-run probe, interruption injection, or mutation test was performed because this is a frozen-object read-only survey and those actions would create or depend on mutable build state
+- The external fetched archive bytes are not Git objects in this repository. Their frozen CMake commit pin and committed manifest expectations were inspected, but the archives were not downloaded or independently hashed in this review
+- Resource-fork hashes were counted from committed manifests but not interpreted as a requirement that the game publish resource forks. The current production game-file policy uses data forks; the relevant assertion is parser metadata parity under existing `BR-0182`
+- The assignment starts at L601 within the test-local parser. L1-L600 was read as required enclosing context, while chunk 0115 owns its detailed normalization
+- No claim is made that all frozen D1/D2 changes are minimized. The measured claim is limited to this test and its complete traced StuffIt/STi2 ownership boundary
+
+## Commands and validation
+
+- Complete read of `.github/copilot-instructions.md` and `general_code_quality_worker_process.md`, plus relevant current plan, active/done GQ, durable evidence, active/done adversarial, DMR1, and cleanup records
+- `git cat-file`, `git rev-parse`, `git merge-base --is-ancestor`, `git ls-tree`, `git diff --numstat`, `git diff --summary`, and zero-context hunk counting for frozen commit, tree, ancestry, blob, base-presence, line, and path classification
+- `git show` and `git grep` for every assigned line, enclosing test helpers, production parser and decoder, public interfaces, JNI and direct-tool callers, both CMake owners, D1/D2 references, fixtures, and history
+- In-memory PowerShell JSON projection across all six frozen manifests measured 28 supported data records, zero unsupported data records, three method-13 data records, four method-13 resource records, and one directory record
+- `rg` across both GQ ledgers, both adversarial ledgers, DMR1, durable evidence, and cleanup records for duplicate ownership and earlier normalization
+- No product test was appropriate for this evidence-only survey. The report itself receives byte-level and diff validation below
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision with disposition `NO_INHERITED_EFFECT`, measured at zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines
+- Normalize OBS-001 as `EXTENDS BR-0182`; do not create a new `GQF-*` or DMR1 item
+- Normalize OBS-002 as `EXTENDS BR-0160`; do not create a new `GQF-*`
+- Normalize OBS-003 as `HISTORICAL-CLOSED` evidence for archived `BR-0033`
+- Record one `GQC-*` coverage result with outcome `ISSUES` because two open historical owners receive current frozen evidence, despite no new root and no inherited effect
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0116 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0117 frozen survey SHA256:8e86847e25217e3258819b04da09695db39e7d07597c3f8b9fc3683120ef74d5 -->
+
+## GQ1-CHUNK-0117 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0117.md`
+- Imported SHA-256: `8e86847e25217e3258819b04da09695db39e7d07597c3f8b9fc3683120ef74d5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0117 frozen survey
+
+## Outcome
+
+ISSUES. Both assigned branch-added tests, all 212 assigned lines, and their frozen producer, publication, setup-progress, native-consumer, paired-engine, build, caller, historical, and focused-test context were reviewed. Diff minimization received the primary review effort. The assigned tests themselves add no inherited registration or hook, while their mission-name feature reaches a small paired inherited `songs.c` residue and two Android CMake source-list entries. A possible shared post-initialization callback would remove about 16 inherited additions but no hunks, so it is deferred as a below-threshold residual pending adjacent music cleanup. One new P3/high publication observation survived quality deduplication: the empty-name path reports success after unchecked deletion and can leave an old public sidecar authoritative. Existing container-identity and partial-generation test gaps extend `GQF-0106` and `GQF-0107`; ordinary progress behavior is clean. No product source, canonical ledger, plan, fixture, temporary file, build output, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Coverage ID: `GQ1-CHUNK-0117`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Frozen head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Frozen base is an ancestor of frozen head: yes
+- Assigned paths and ranges:
+  - `android/app/src/test/java/com/dxxredux/app/MissionZipMusicNamesTest.kt` L1-L179, all 179 lines reviewed
+  - `android/app/src/test/java/com/dxxredux/app/MissionZipMusicProgressTest.kt` L1-L33, all 33 lines reviewed
+- Both assigned paths are absent from the frozen base and branch-added at the frozen head
+- Frozen blobs:
+  - `MissionZipMusicNamesTest.kt`: `c29ca20abfc651a1c5d08d67d73bf70dd8d1d8d7`
+  - `MissionZipMusicProgressTest.kt`: `f0ea22a785dc16f0e388ea3e6b25300ba517b0cc`
+- Scope manifest SHA-256: `dcf35dfdacce57e8221038148abef40545ab4c23d01b9aac22ab74dfc0caa442`
+
+```text
+android/app/src/test/java/com/dxxredux/app/MissionZipMusicNamesTest.kt|L1-L179|c29ca20abfc651a1c5d08d67d73bf70dd8d1d8d7
+android/app/src/test/java/com/dxxredux/app/MissionZipMusicProgressTest.kt|L1-L33|f0ea22a785dc16f0e388ea3e6b25300ba517b0cc
+```
+
+All product and caller evidence came from frozen Git objects. Live `HEAD` was `1f8b1952057ff1893045003abcfae60dee967bc8`; mutable product files were not used as evidence.
+
+## Diff-minimization assessment
+
+Disposition: `DEFER`
+
+### Attribution and measured surface
+
+- The two assigned tests are branch-added and contribute exactly two paths, two addition-only hunks, and `+212/-0` at the frozen boundary. Gradle discovers them by classpath convention. They require no branch-caused edit to a base build file, inherited test registry, D1 source, or D2 source.
+- `MissionZipMusicNames.kt`, `track_names.c`, `track_names.h`, and `songs_android_shared.c` are branch-added at this boundary. Their policy and schema therefore already live outside 1996-original files.
+- `SetupSections.kt` is branch-added and owns both `MissionZipMusicAnalysisProgress` and `formatMissionZipMusicProgress`; the progress test has no inherited effect.
+- `android/app/src/main/cpp/CMakeLists.txt` existed at the base and is modified at the head. The traced name consumer needs the branch-added `shared/track_names.c` in both game targets at frozen lines 643 and 811: one added source-list line in each of two build hunks. Both entries are narrow and necessary because D1 and D2 are separate native targets. A variable or wrapper would add at least as much CMake surface and would not eliminate either target registration.
+- The engine-facing name load reaches `d1/main/songs.c` and `d2/main/songs.c`, whose complete mixed-purpose frozen diffs are respectively `+58/-7` and `+77/-7`. Only two additions per file are directly name-sidecar-specific: `#include "track_names.h"` and `mission_music_names_load()`, spread across the existing Android include and post-song-initialization hunks. The lookup and display policy itself is already in branch-added shared native owners.
+- The immediately adjacent Android post-initialization block is identical in both inherited files: a guard, the name-table load, and one seven-line `debug_log` call. A natural shared API such as `android_music_songs_initialized(const char *source, int song_count, int music_type)` in existing branch-added `songs_android_shared.c/.h` could replace each nine-line guarded block with a guarded one-line call and remove the now-unneeded direct `track_names.h` and `android_log.h` includes. Estimated frozen result: two inherited paths retained, about 16 inherited additions removed, zero inherited hunks eliminated, one branch-added declaration and roughly 10-14 branch-added implementation lines added. It preserves the required timing after `BIMSongs` and `Num_bim_songs` are complete.
+
+### Decision and recheck trigger
+
+The shared callback is a real ownership improvement, but it is below the current standalone payoff threshold and does not remove a conflict hunk. It also combines two policies, sidecar generation loading and diagnostic logging, behind a new API solely to save a small paired residue. This matches DMR1's documented 20-40-line threshold seams and final residual batch rather than justifying a competing extraction root. Defer it until adjacent paired `songs_init` or Android music initialization cleanup can remove the complete post-initialization hunk or combine enough related calls to produce a material reduction. Retain the two CMake entries and the current compact direct load calls until then. Validation if activated: D1 and D2 mission change/reload with and without a sidecar, base fallback, `descent.sng` and `dxx-r.sng` selection, exact decoded name lookup, identical log fields, both Windows builds, all configured Android ABIs, focused native name-table tests, and JVM producer tests.
+
+## Context and ownership inspected
+
+- Complete assigned test classes, fixtures, helpers, cleanup behavior, assertions, and histories
+- Complete frozen `MissionZipMusicNames`, `MusicNameSidecar`, and `AtomicFilePublication` producer and publication paths
+- `ModManager` import, cache, launch, extracted-mission, and sidecar copy callers
+- Native `track_names` parsing, table publication, exact-path and basename lookup, and `songs_android_shared` list/current-track consumers
+- Paired D1/D2 `songs_init` load timing and Android include ownership, plus related D2 overlay notification calls
+- Both Android native target registrations for `track_names.c`
+- Complete progress model, formatter, Compose display consumer, and every frozen construction site
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, R1-CHUNK-0084, archived `BR-0088`, `BR-0089`, and `BR-0091`, and current `GQF-0105` through `GQF-0107`
+
+## Atomic observations
+
+### GQ1-CHUNK-0117-OBS-001 - NEW: empty name generation can report success while retaining the old public sidecar
+
+- Proposed normalization: NEW, unless a concurrently normalized report owns this exact unchecked empty-generation removal. It is distinct from `GQF-0107`, which covers a nonempty partial generation being considered current, and from archived `BR-0089`, whose repaired atomic writer covers replacement publication rather than absence publication.
+- Severity/confidence/category: P3, high, correctness/data-integrity/publication/diagnostics
+- Frozen locations: `MissionZipMusicNamesTest.kt:L59-L95`; `MissionZipMusicNames.kt:L70-L89`; `AtomicFilePublication.kt:L10-L28,L111-L149`; currentness admission at `MissionZipMusicNames.kt:L27-L38`
+- Evidence: when `records` is empty, `writeSidecar` calls `outputFile.delete()` and `identityFile(outputFile).delete()`, ignores both Boolean results, and returns zero. The synchronized `transaction` prevents an in-process race but adds no checked removal or rollback. The focused empty test creates an ordinary writable file and asserts that it disappears; unlike the following replacement test, it has no failure seam. If deletion returns false, the method still reports a successful zero-record result while the previous regular file remains at the public pathname. If that old file has the same catalog `sourceIdentity`, `isCurrent` accepts it on the next call, and launch staging can continue to publish old decoded names.
+- Concrete trigger: start with a valid same-source sidecar, then produce an empty record set while the public file cannot be unlinked or renamed because of a filesystem, permission, provider, corruption, or platform locking failure. `File.delete()` returns false without throwing.
+- Impact: a name that is no longer supported can remain visible as current across import and launch, while the caller receives a successful count of zero and no diagnostic or retry signal. Playback bytes are not changed, which keeps severity at P3.
+- Suggested boundary: add one checked absence-publication primitive to `AtomicFilePublication`. Under its existing lock, atomically rename every public file that must disappear to a uniquely owned sibling, roll back if any required rename fails, report failure to the caller, and clean committed tombstones best-effort. Do not claim success merely from an unchecked `delete`. Keep output and legacy identity removal in one transaction.
+- Focused validation: inject output and identity removal failures independently with a prior same-source generation, retry after recovery, and race a reader at the commit boundary. Require either both prior public paths and an explicit failure or both absent paths and success, never a stale public file with a zero result. Preserve the existing successful deletion and replacement-failure cases.
+
+### GQ1-CHUNK-0117-OBS-002 - EXTENDS GQF-0106 and GQF-0107: focused tests still omit contained-track and partial-generation boundaries
+
+- Proposed normalization: EXTENDS `GQF-0106` and `GQF-0107`; do not allocate another finding.
+- Severity/confidence/category: P2, high, test-gap/correctness/cache
+- Frozen locations: `MissionZipMusicNamesTest.kt:L12-L95,L98-L148`
+- Evidence: the decoded-name case uses one known loose track and deliberately omits a placeholder loose track. It does not create two identified entries in one HOG or DXA, so it cannot detect the shared-container exact-path collision already owned by `GQF-0106`. Every write is supplied a complete caller-chosen entry map; no test drives one success plus one transient failure through `identifyLocalAndWrite`, restart, or currentness, so the permanent partial-generation suppression remains owned by `GQF-0107`. The replacement-failure test materially strengthens archived `BR-0089` by proving prior bytes and temporary-file cleanup for the injected pre-publish exception, but it does not cover either logical completeness root.
+- Validation extension: use two identified contained tracks per HOG and DXA and require one valid exact identity per track; separately inject one failed track beside one success, recover, and require bounded retry without discarding the successful record or allowing the partial sidecar to claim complete currentness.
+
+## Explicit clean dimensions
+
+- The assigned tests are isolated under `build/`, create parents, and clean their scoped parent before use. No source tree, shared fixture, external storage, or device state is mutated.
+- The ordinary decoded-name test verifies schema version, exact path, basename alias, display name, matching source identity, and rejection of a changed source identity.
+- Placeholder-only input is omitted and an ordinary writable stale output is removed when the generation is empty. OBS-001 is specifically the unrepresented failed-removal boundary.
+- The publication-failure case preserves byte-identical prior content, preserves currentness, proves the old decoded name remains, and checks that no `.tmp` sibling remains after the injected exception.
+- Existing schema and native tests, not this class alone, own collision order, Unicode, escape, size/count, malformed JSON, strict decode, exact-first lookup, and prior-table preservation coverage from archived `BR-0091`.
+- Progress fraction returns null for nonpositive totals, clamps ratios to `[0,1]`, and actual frozen producers keep completed counts within nonnegative nonzero totals. Formatting clamps visible counts at zero and includes a match count only when supplied. The two assigned progress cases correctly cover active fractional and complete-with-result ordinary behavior.
+- No additional actionable concurrency, resource lifetime, security, performance, portability, warning, naming, dead-code, or test-isolation defect survived tracing after the listed owners and gaps were reconciled.
+
+## Commands and validation
+
+- `git cat-file -t`, `git merge-base --is-ancestor`, `git rev-parse`, `git ls-tree`, `git show`, `git diff --name-status`, `git diff --numstat`, `git diff --stat`, `git diff --unified`, `git grep`, `git log --all`, `git status --short`, `Get-Content`, `Select-String`, and `rg`
+- In-memory SHA-256 calculation for the exact two-line scope manifest
+- Line-numbered frozen inspection of both assigned tests, paired `songs.c` integration, branch-added shared native owners, producer/publication code, CMake registrations, setup progress owners, and callers
+- Deduplication against active and done GQ and adversarial ledgers, durable evidence, DMR1, prior mission-music coverage, and current findings
+- No product test was run. This read-only shard changed only its tracked report, the frozen behavior is established by source, and executing the materially advanced live product tree would not validate the frozen snapshot. Final report-only checks are recorded below.
+
+## Evidence gaps
+
+- No immutable failing filesystem fixture was executed against the frozen Android/JVM implementation. The unchecked false-return path and successful return are explicit in source; platform-specific failure injection remains required during remediation.
+- No D1 or D2 runtime was launched to test the deferred shared callback prototype. The reduction estimate is static and must be remeasured against the live remediation boundary if activated.
+- Mutable live product paths have advanced beyond the frozen head and were intentionally excluded from behavioral evidence.
+
+## Normalization recommendation
+
+1. Record one `GQD-*` decision with disposition `DEFER`: the assigned tests have no direct inherited effect; their traced feature has a roughly 16-line paired `songs.c` consolidation that removes no hunks and should be revisited only with adjacent Android music initialization cleanup. Retain the two necessary CMake target entries.
+2. Admit OBS-001 as one P3/high unchecked absence-publication finding unless exact concurrent ownership exists.
+3. Normalize OBS-002 as evidence extensions to `GQF-0106` and `GQF-0107`, with archived `BR-0089` receiving clean closure evidence from the injected replacement failure case. Do not allocate new IDs for these gaps.
+4. Record one non-partial `ISSUES` coverage result for exactly `GQ1-CHUNK-0117`.
+
+## Report hygiene
+
+- Verified encoding: printable ASCII, UTF-8 without BOM
+- Verified line endings: LF with a final LF
+- Verified NUL bytes: none
+- Verified trailing whitespace: none
+- `git diff --check -- android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0117.md`: passed
+- Product or canonical-ledger edits: none
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0117 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0118 frozen survey SHA256:aed7690abe51fbccd30827d63f03fcfbbcc3167756f8c2b3e7f17666c7b34dc6 -->
+
+## GQ1-CHUNK-0118 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0118.md`
+- Imported SHA-256: `aed7690abe51fbccd30827d63f03fcfbbcc3167756f8c2b3e7f17666c7b34dc6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0118 frozen survey
+
+Outcome: ISSUES. Every assigned line was reviewed against its frozen production APIs, launcher callers, Gradle registration, focused neighboring tests, paired D1/D2 mission and song consumers, history, and prior review ownership. All four tests and every directly tested implementation/build owner are branch-added under `android/`; the standard extracted mission and song files reach existing engine lookup behavior without requiring a branch-caused inherited edit. The measured inherited effect is zero paths, zero hunks, and `+0/-0` lines. Secondary review adds test-side evidence to three existing open roots and finds no new root. No product file, canonical ledger, plan, existing report, fixture, generated output, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned paths and complete reviewed ranges:
+  - `android/app/src/test/java/com/dxxredux/app/MissionZipExtractionStoreTest.kt` L1-L231, blob `a8b6ee2623fd3553769119b6e19f22b445ccb70d`, SHA-256 `fd942e67131601211133aa75b514764d8c12f282ac8b3996add6786359e5173d`
+  - `android/app/src/test/java/com/dxxredux/app/MissionZipMusicAnalysisSkipTest.kt` L1-L63, blob `8b9a2c0ba7d5cd1f113be3d0dfbac66660055a66`, SHA-256 `a4bac255bd62b79e1742749fa347fe1e868200992a1ea512196a6f5eb392398a`
+  - `android/app/src/test/java/com/dxxredux/app/MissionZipMusicDisplayTest.kt` L1-L76, blob `cbd09f477bb17ae9ea26499c14755ae75da5b02b`, SHA-256 `7525f370d73c73c067238d1263331c802cc6d5f637aa07359651d88cdb2585a8`
+  - `android/app/src/test/java/com/dxxredux/app/MissionZipMusicExtractedPreviewTest.kt` L1-L179, blob `65baedcd48820c7f75f5a6e2558e859fa0c46986`, SHA-256 `8af9100aa962f62594e0eb666c907f5ff87a77327e77de8f4ad1f3dd1fd70855`
+- Scope manifest SHA-256, using the four `path|range|blob` rows above in queue order with LF separators and no final LF: `02a598143bfab09b9f12eacd2ce8356f933dc723c97a1e8da97a4258e6998574`
+- All four paths are absent at the frozen base and added at the frozen head. Their complete frozen contribution is four added-file hunks and `+549/-0` lines: `+231`, `+63`, `+76`, and `+179`
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned unit modifies zero inherited paths, zero inherited hunks, and zero inherited lines. Gradle discovers the four tests through the normal branch-added Android unit-test source set; no per-test registration touches an inherited file
+- Every directly tested production owner is also base-absent and branch-added: `MissionZipExtractionStore.kt` `+654/-0`, `MissionZip.kt` `+539/-0`, `ArchiveFiles.kt` `+478/-0`, `MissionZipMusic.kt` `+698/-0`, `MissionZipMusicStageManager.kt` `+571/-0`, `MissionZipAudioFingerprintCache.kt` `+354/-0`, and `SetupSections.kt` `+3634/-0`. The build owner `android/app/build.gradle` is `+476/-0`
+- Traced callers remain branch-added Android owners: `ModManager.kt` `+1920/-0`, `AdvancedSettingsPage.kt` `+2679/-0`, `LevelMetadata.kt` `+1889/-0`, and `MissionZipMusicNames.kt` `+123/-0`. The tests call no JNI or native symbol
+- Extraction-store cases publish ordinary descriptor, HOG, song-list, and audio paths. Existing D1/D2 mission and `descent.sng` lookup behavior consumes those files without a new declaration, hook, copied policy body, or build entry. Preview/catalog, pending-analysis, decoded-name, and song-slot-label assertions stop in Kotlin and do not enter an inherited game path
+- Relevant changed inherited files were inspected to disprove a hidden dependency: paired `songs.c`, `arch/sdl/jukebox.c`, `game.c`, and `gamecntl.c`. Their Android soundtrack preference, overlay notification, and pending-control hooks are orthogonal to extraction freshness, output collision validation, catalog inspection/staging, cache filtering, and launcher display helpers tested here. Reverting every assigned test would remove none of those inherited hunks
+- Frozen searches found no assigned class name in `d1/**` or `d2/**`, and no assigned test requires a paired D1/D2 edit. The causal inherited effect for this unit and its tested boundary is exactly zero paths, zero hunks, and `+0/-0` lines
+
+### Extraction, consolidation, and revert tests
+
+- Extracting `missionZipMusicSongSlotLabel`, cache filtering, or decoded-name policy into an inherited engine owner would add a cross-language API or duplicate paired adapters while removing zero inherited lines. The present launcher-local ownership is narrower
+- Consolidating the repeated test constructors for `MissionZipAudioFingerprintCache.Entry`, ZIP entries, or extraction records into a branch-added test fixture could reduce a small amount of branch-owned test code, but it cannot reduce any 1996-original diff. It would also couple otherwise focused test classes, so it is not a merge-pressure candidate
+- Consolidating D1/D2 song-slot constants behind these tests would require new inherited declarations or calls merely to serve launcher labels. The current seven-value launcher mapping has no branch-caused inherited consumer, so that ownership inversion fails the inherited-reduction gate
+- Reverting any or all 549 assigned lines would reduce branch-owned coverage only. It would remove no inherited hook or registration and would weaken regression evidence for content identity, collisions, optional-container isolation, and display/cache contracts
+- The smallest valid merge boundary is therefore the current branch-added Android test and implementation boundary. Maximum inherited reduction from extraction, consolidation, or revert is zero lines and zero hunks
+- Recheck trigger: a later generation adds an assigned helper or its registration to an inherited path, makes launcher catalog/display behavior call a new D1/D2 hook, or moves Android unit-test registration into inherited build logic
+
+## Context and history inspected
+
+- All 17 assigned test cases and their complete fixture helpers, including exact source/output replacement, portable collision order, prior-generation preservation, generated song-list placement, cache skip behavior, name priority, extracted source identity, nested DXA staging, and malformed optional DXA isolation
+- Complete frozen `MissionZipExtractionStore` and its scan, plan, publication, freshness, output projection, extracted-target, alias, and caller boundaries
+- Complete relevant `MissionZipMusic`, `MissionZipMusicStageManager`, `MissionZipAudioFingerprintCache`, and the exact `SetupSections` helpers and callers used by the tests
+- Import, launch, details, metadata, storage-inspector, preview, sidecar, and Gradle test discovery paths needed to establish ownership
+- Paired D1/D2 mission and song lookup plus nearby changed music-control, jukebox-name, and track-overlay hooks to distinguish standard file consumption from branch-caused inherited integration
+- Focused file history; active and done GQ ledgers; durable evidence; active and done adversarial ledgers; DMR1; and prior mission extraction/music cleanup plans
+- Historical ownership reconciled before observations: archived `BR-0088`, `BR-0089`, `BR-0092`, `BR-0102`, and `BR-0104` are fixed at this frozen head; open `BR-0099` and `BR-0103`, plus open `GQF-0115`, own the remaining relevant roots
+
+## Atomic observations
+
+### GQ1-CHUNK-0118-OBS-001: Extraction fixtures never replace the archive between semantic scan and extraction ownership
+
+- Provisional normalization: `EXTENDS GQF-0115`, linked archived `BR-0102`; no new finding
+- Severity/confidence/category: P1/high, `test-gap/source-transaction/data-integrity`
+- Frozen locations: `MissionZipExtractionStoreTest.kt:L17-L42,L45-L62,L120-L145`; production `MissionZipExtractionStore.kt:L59-L121,L502-L600`; callers `ModManager.kt:L475-L518,L546-L573,L707-L734`
+- Evidence: every `ensureExtracted` test obtains a `MissionZip.ScanResult` and immediately passes the same mutable archive to extraction. The source-content replacement case changes the archive only after the first extraction has completed, then obtains a new scan before the second extraction. No case preserves scan A while replacing the archive with stable generation B before `ensureExtracted` begins, so the tests cannot expose a record that hashes B while staging layout and metadata derived from A
+- Trigger and impact are already owned by `GQF-0115`: replace the source after `MissionZip.inspect` but before the first extraction digest. The durable record can validate B while its admission/layout decisions describe A
+- Fix and validation remain with `GQF-0115`: bind scan and extraction to one immutable content identity or descriptor, inject replacement before and during extraction, and require either one-generation publication or explicit failure without a stale/mixed tree
+
+### GQ1-CHUNK-0118-OBS-002: The cache-skip tests codify track-ID presence as sufficient despite database-generation drift
+
+- Provisional normalization: `DUPLICATE BR-0099`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/cache-invalidation`
+- Frozen locations: `MissionZipMusicAnalysisSkipTest.kt:L8-L28,L40-L62`; production `SetupSections.kt:L987,L1329-L1332`; cache fields in `MissionZipAudioFingerprintCache.kt`
+- Evidence: both cases pass a map keyed only by track ID and assert that every present entry suppresses analysis. Their fixture sets `localMatchDbIdentity = "db"`, but the function receives no current database identity and never compares that stored value. The tests therefore enforce the exact stale-database behavior already described by `BR-0099`
+- Trigger, impact, fix, and validation remain with `BR-0099`: reopen entries produced under database A while database B is current, reuse stored fingerprints, rematch once, refresh UI and sidecar names, and skip only after the current database identity is recorded
+
+### GQ1-CHUNK-0118-OBS-003: Sequential collision preservation does not exercise the open extraction publication transaction
+
+- Provisional normalization: `EXTENDS BR-0103`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/concurrency/publication`
+- Frozen locations: `MissionZipExtractionStoreTest.kt:L120-L145`; production `MissionZipExtractionStore.kt:L56-L121,L191-L223,L321-L419`
+- Evidence: `collidingReplacementPreservesPreviousPublishedGeneration` is a useful preflight-failure case, but it performs one successful publication and then one deterministic collision rejection through one store instance. It does not overlap same-owner or distinct-owner ensure/remove/prune operations, inject failure between tree and manifest steps, restart from partial artifacts, or challenge the shared manifest read-modify-write boundary. It therefore cannot close the still-open atomic-generation owner
+- Trigger, impact, fix, and validation remain with `BR-0103`: serialize complete owner transactions, publish an immutable validated generation through one atomic visibility switch, retain the prior valid generation on failure, and barrier-race plus fault-inject every tree/manifest boundary
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: all assigned and directly tested owners are branch-added. No inherited hook, declaration, registration, copied policy body, or D1/D2 asymmetry is caused by this unit
+- Historical repair coverage: same-size source and output replacement now exercise the fixed content-backed freshness behavior from archived `BR-0102`; distinct same-metadata extracted directories exercise archived `BR-0088`; malformed optional DXA retention exercises archived `BR-0092`; generated root alias placement covers part of archived `BR-0104`. No regrowth was established in those fixed contracts
+- Assertions and false-pass behavior: exception helpers fail if no collision occurs; exact bytes, identities, names, nullability, playability, and preserved prior content are asserted where applicable. No ignored test, conditional skip, swallowed assertion, or orphaned source-set registration was found
+- Resource lifetime: ZIP output streams and byte-array streams close through `use`; production streams reached by the tests also use bounded ownership. Tiny fixtures do not prove hostile resource bounds, but those production roots are already owned by `GQF-0118` and `GQF-0119`
+- Filesystem isolation: fixtures stay under distinct `build/test-*` roots and delete their owned root before use. No assigned class shares a mutable root with another assigned class
+- Portability and compatibility: portable path collisions cover case, separators, dot components, Unicode case, and parent/child identities in both input orders. Engine-facing mission/song integration gaps remain owned by existing findings rather than a new test-only root
+- Display contracts: bundled names intentionally precede AcoustID names, placeholder-only names become null, and the seven slot labels match the current launcher contract. Moving the constants into inherited code would worsen merge pressure
+- Maintainability: the four classes are focused and automatically discovered. Fixture duplication is modest and branch-owned; extracting it would not improve inherited diff and was not promoted over correctness owners
+
+## Evidence gaps and limits
+
+- No executable test or build was run because this is a frozen read-only survey and the live worktree has moved materially beyond the frozen objects. Prior adversarial review records a passing focused suite for these exact classes, while source inspection establishes the ownership and omitted boundaries here
+- No race harness, failure injector, process-death restart, large archive, database-version swap, emulator, or engine song introspection was used
+- The tests are JVM-local. They do not prove PhysicsFS mount order, actual engine song selection, native overlay sidecar consumption, or on-device storage semantics. Existing findings retain those acceptance boundaries
+- The generation manifest directory was unavailable, so commit/tree identities, exact queue scope, blob IDs, line counts, added-file attribution, and deterministic hashes were independently confirmed from frozen Git objects
+- No claim is made that nearby or unrelated D1/D2 music and mission changes are minimized. The bounded claim is that none is caused by these tests or the production contracts they directly exercise
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used `git show`, `git cat-file`, `git ls-tree`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git log --follow`, and frozen `git grep` for scope, history, production symbols, callers, registrations, D1/D2 consumers, and branch attribution
+- Used `rg` and targeted ledger excerpts to reconcile archived `BR-0088`, `BR-0089`, `BR-0092`, `BR-0102`, `BR-0104`; open `BR-0099`, `BR-0103`, `GQF-0115`, `GQF-0118`, `GQF-0119`; prior exact R1-CHUNK-0085 coverage; DMR1; and prior cleanup records
+- Computed all four blob SHA-256 values through byte streams from the frozen objects and computed the ordered scope-manifest SHA-256 in memory
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, Gradle test, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0118 with disposition `NO_INHERITED_EFFECT`, zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added Android ownership boundary
+- Normalize OBS-001 as evidence extending open `GQF-0115`, linked to archived `BR-0102`
+- Normalize OBS-002 as a duplicate and test-oracle extension of open `BR-0099`
+- Normalize OBS-003 as test-boundary evidence extending open `BR-0103`
+- Allocate no new `GQF-*`, `GQI-*`, DMR1 item, diff-minimization finding, or remediation chunk from this unit
+- Record a non-partial `ISSUES` coverage outcome because the assigned tests supply concrete evidence for three open owners while inherited diff, historical fixes, assertions, resource lifetime, portability, isolation, and registration were explicitly covered
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0118 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0119 frozen survey SHA256:f20ee641a8d8797b69a9b0cdb57cc845945e35a03bcad97f0d3c016839183788 -->
+
+## GQ1-CHUNK-0119 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0119.md`
+- Imported SHA-256: `f20ee641a8d8797b69a9b0cdb57cc845945e35a03bcad97f0d3c016839183788`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0119 frozen survey
+
+Outcome: ISSUES. Every assigned line was reviewed against its frozen production helpers, Android/JNI/extractor callers, automatic Gradle test discovery, file-publication and storage boundaries, paired D1/D2 consumers, history, and prior review ownership. All five assigned tests and every directly exercised implementation/build owner are branch-added under `android/`. The ordinary files produced by disc and archive import reach existing engine filesystem behavior without a branch-caused inherited declaration, hook, copied policy body, or build entry. The measured inherited effect is zero paths, zero hunks, and `+0/-0` lines. Secondary review adds test-side evidence to open `GQF-0061` and `GQF-0100` through `GQF-0104`; archived `BR-0094` remains fixed, and no new root survives deduplication. No product file, canonical ledger, plan, existing report, fixture, generated output, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- The base is an ancestor of the head
+- Assigned paths and complete reviewed ranges:
+  - `android/app/src/test/java/com/dxxredux/app/ArchiveCompressedSizeTest.kt` L1-L13, blob `b50613c426f91d3c183986419041fcba4b25f7d5`
+  - `android/app/src/test/java/com/dxxredux/app/ArchiveInputStreamsTest.kt` L1-L93, blob `25f223cba30df8248fd239674f4cac281b1152e0`
+  - `android/app/src/test/java/com/dxxredux/app/CueDataTrackExtractionTest.kt` L1-L288, blob `6f01e44fb6f9d7304fc0138a55b66e59e9708bc9`
+  - `android/app/src/test/java/com/dxxredux/app/ExtractionLimitsTest.kt` L1-L45, blob `9949ae0efd94d6a2680896783abaac16ad4f79db`
+  - `android/app/src/test/java/com/dxxredux/app/MissionArchiveProgressFormatTest.kt` L1-L22, blob `a13eed27134c1ec4411cca152b9049ab350c9059`
+- Scope manifest SHA-256, using the five `path|range|blob` rows above in queue order with LF separators and no final LF: `d4c982718cc222d7972b6e16e93ae0c5c6c60f809ca7077b0319fce9388f1bf2`
+- All five paths are absent at the frozen base and added at the frozen head. Their complete frozen contribution is five added-file hunks and `+461/-0` lines: `+13`, `+93`, `+288`, `+45`, and `+22`
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+- Review-time instruction and ledger SHA-256 values:
+  - `general_code_quality_worker_process.md`: `fa40f412b76067b837298168f212b942a6873c22b37d41e7fc5879f4cb0956f1`
+  - active GQ ledger: `f2f3c5679193d04c8e98a7ec86f503568181a5636b0402c330c4e4f6a78c9d26`
+  - done GQ ledger: `7a09d3b802451b7126b1a6810d4afa3681968acbb47e51508c706728aa8fa6cd`
+  - durable evidence ledger: `ddace6917273c62e7e6ee285f9770958a0521c6e1042e4bbe4ad5dc5f81a8852`
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned unit changes zero inherited paths, zero inherited hunks, and zero inherited lines. Android Gradle discovers these classes through the ordinary branch-added unit-test source set; there is no per-test inherited registration
+- The assigned files themselves account for `+461/-0` branch-added lines in five added-file hunks. Removing them would reduce only branch-owned regression coverage
+- Direct Kotlin owners are base-absent additions: `ArchiveInputStreams.kt` `+237/-0`, `ExtractionLimits.kt` `+117/-0`, `SetupDiscImport.kt` `+1076/-0`, `SetupDialogs.kt` `+1924/-0`, `SetupSections.kt` `+3634/-0`, and `SetupActivity.kt` `+5215/-0`
+- The CUE path continues through branch-added `DiscImportBridge.kt` `+390/-0`, `jni_disc_import.c` `+513/-0`, `iso9660_reader.c` `+996/-0`, `mac_hfs_extract.c` `+316/-0`, and extraction `CMakeLists.txt` `+681/-0`. The Android unit-test build owner `android/app/build.gradle` is `+476/-0`
+- ZIP callers in `MissionZip.kt`, `MissionZipMusic.kt`, `MissionZipMusicStageManager.kt`, and `SetupFileImport.kt` are also base-absent Android additions. Their archive and mission outputs use ordinary engine-visible filenames; they do not require a new D1/D2 archive API
+- Frozen searches found none of the five assigned class names or the directly tested helper names in `d1/**` or `d2/**`. The CUE/JNI extraction boundary does not compile or call an inherited game source. Existing game code later consumes installed HOG, PIG, mission, and song files through its preexisting filesystem paths
+- Reverting all five tests would remove none of the branch's inherited D1/D2 edits. The causal inherited effect for the assigned tests and directly tested behavior is exactly zero paths, zero hunks, and `+0/-0` lines
+
+### Extraction, consolidation, and revert tests
+
+- Moving archive formatting, ZIP validation, extraction budgets, CUE orchestration, or progress-label policy into D1/D2 would add cross-language hooks or duplicated paired adapters while removing zero inherited lines. The current Android ownership is the narrower merge boundary
+- Consolidating small test helpers across these unrelated classes could reduce a few branch-owned test lines, but would not reduce 1996-original merge pressure and would couple archive-format, CUE, resource-policy, and presentation tests
+- The CUE test's local `track` constructor is the only material repeated fixture body in this unit. Moving it to a shared branch-added fixture would leave the inherited diff unchanged and would obscure the sector-geometry arguments being asserted
+- Reverting any assigned test reduces only regression evidence for completed archive-metadata, ZIP-candidate, all-data-track, sector-geometry, extraction-limit, transaction, and progress-format work. It removes no inherited hook, declaration, registration, or hunk
+- Maximum inherited reduction from extraction, consolidation, or revert is zero lines and zero hunks. The smallest valid ownership boundary is the existing branch-added Android test and implementation boundary
+- Recheck trigger: a later generation moves one of these helpers or its test registration into an inherited path, adds a D1/D2 callback specifically for these policies, or makes imported-file publication depend on a new paired engine hook
+
+## Context and history inspected
+
+- All 16 assigned test cases and their complete fixture helpers, exception boundaries, file cleanup, progress callbacks, and result assertions
+- Complete frozen ZIP staging and validation, extraction budgets, bounded reads and copies, direct Setup ZIP import, archive metadata projection, and details rendering
+- Complete relevant CUE data-track filtering, sector-geometry validation, aggregate progress, native ISO/HFS calls, staging, post-processing, publication, cancellation, storage preflight, and host-path import flow
+- `DiscImportBridge` track schema and JNI boundary, relevant native extraction entry points, Android CMake registration, Gradle unit-test discovery, and standard engine consumption of imported game files
+- Progress production and formatting for mission music identification and byte-copy operations
+- Focused histories through `46c17660`, `9150e442`, `95f13e5e`, `d3b4c8a9`, `da8da577`, `e9d53c8f`, `3bc4ef9e`, and `2a9afb2d`
+- Active and done GQ ledgers, durable evidence, active and done adversarial ledgers, DMR1, and targeted prior extraction and cleanup plans
+- Historical ownership reconciled before observations: archived `BR-0018`, `BR-0020`, `BR-0064`, `BR-0093`, `BR-0094`, `BR-0183`, and `BR-0184`; current `GQF-0061` and `GQF-0100` through `GQF-0104`
+
+## Atomic observations
+
+### GQ1-CHUNK-0119-OBS-001: ZIP stream tests do not exercise the three open validated-archive boundary defects
+
+- Provisional normalization: `EXTENDS GQF-0100`, `GQF-0101`, and `GQF-0102`; no new finding
+- Severity/confidence/category: P1/high for `GQF-0100`, P2/high for `GQF-0101` and `GQF-0102`, `test-gap/security/resource-exhaustion/parser-validation/data-integrity`
+- Frozen locations: `ArchiveInputStreamsTest.kt:L13-L60`; production `ArchiveInputStreams.kt:L41-L77,L80-L165,L185-L235`
+- Evidence: the excessive-preamble case uses a stream containing only zero bytes, so the prompt 16 MiB marker-free rejection remains covered. The competing-marker case places invalid and superficially plausible local headers before an ordinary valid ZIP, which is positive evidence for the archived `BR-0093` repair. No case places an early raw marker before a long or unbounded non-ZIP tail, puts a plausible EOCD record inside a legal comment after the real EOCD, or creates a central-listed local entry followed by a valid central-unlisted local record. The suite therefore remains green for the exact source-staging amplification, candidate-fallback, and authoritative-entry-set roots already admitted as `GQF-0100`, `GQF-0101`, and `GQF-0102`
+- Trigger, impact, fix, and validation remain with those owners: bound staging despite false markers, retry complete validation across EOCD candidates, and expose exactly the validated central member set. Extend the fixture builder with counting-stream and crafted central/local layouts instead of allocating a real multi-gigabyte archive
+
+### GQ1-CHUNK-0119-OBS-002: Extraction limit tests stop at helper-local arithmetic and cannot close the two open consumer and peak-memory roots
+
+- Provisional normalization: `EXTENDS GQF-0103` and `GQF-0104`; no new finding
+- Severity/confidence/category: P1/high, `test-gap/security/resource-exhaustion/storage/compression/memory-budget`
+- Frozen locations: `ExtractionLimitsTest.kt:L10-L43`; production `ExtractionLimits.kt:L18-L97`; direct consumer `SetupFileImport.kt:L235` onward
+- Evidence: the tests prove a three-byte bounded read, one-over rejection, declared entry and ratio rejection, a two-entry count limit, and aggregate actual-byte rejection. They never drive the direct Setup ZIP/SFX extraction path that does not instantiate the helper budget, and they use payloads too small to observe `ByteArrayOutputStream` growth plus the second complete `toByteArray` allocation. The exact bypass and peak-live-memory behavior are already owned by `GQF-0103` and `GQF-0104`
+- Trigger, impact, fix, and validation remain with those owners: carry one attempt-owned budget through direct ZIP extraction and enforce the shared peak-live-memory policy with allocation-aware exact and one-over cases
+
+### GQ1-CHUNK-0119-OBS-003: CUE orchestration tests model each extraction attempt as already bounded
+
+- Provisional normalization: `EXTENDS GQF-0061`, linked archived `BR-0018`; no new finding
+- Severity/confidence/category: P1/high, `test-gap/security/resource-exhaustion/storage/nested-budget`
+- Frozen locations: `CueDataTrackExtractionTest.kt:L30-L125,L162-L286`; production `SetupDiscImport.kt:L624-L650,L734-L789,L814-L955,L974-L1038`
+- Evidence: every `extractTrack` lambda writes only tiny local files and returns a precomputed attempt result; `postProcess` is either a constant result or a tiny synthetic write. The storage assertions cover raw sector bytes and one nonseekable staged-image size. No case sends two data tracks or a nested SOW through the real native budget owners, so a fresh per-track or post-processing budget can still admit many multiples of the nominal attempt ceiling. The test is valuable for all-track order, rollback, cancellation, and sector geometry, but it cannot close the complete-attempt resource owner
+- Trigger, impact, fix, and validation remain with `GQF-0061`: pass one attempt-owned byte, entry, memory, work, cancellation, and free-space budget through every data track and nested SOW operation, then test exact and one-over aggregate limits across track boundaries
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: all assigned, implementation, JNI, native extractor, and build owners are branch-added. No causal inherited hook, declaration, registration, copied policy body, or D1/D2 asymmetry was found
+- Archived compressed-size repair: `ArchiveCompressedSizeTest` distinguishes unknown metadata from real zero and known 1 KiB values. Frozen production uses nullable `compressedSizeBytes` and renders null as `Unknown`, so archived `BR-0094` remains fixed for this boundary
+- Archived ZIP repair controls: ordinary SFX opening, absent-marker rejection, invalid and plausible false local headers, and marker-free over-limit input are asserted. Remaining distinct roots are observation 001
+- CUE correctness: the suite checks all data tracks in CUE order, later-file overwrite semantics, later-track failure rollback, nested post-process rollback, sequential publication rollback, cancellation before the next track, invalid image index, staged-image storage, arithmetic failure, MODE1/2048 sizing, and inconsistent sector-geometry rejection
+- Transaction and cleanup: every assigned filesystem fixture owns a unique temporary root and deletes it in `finally`. Production CUE staging is deleted in `finally`, and the focused single-writer rollback case proves preservation of a prior file when a later destination parent cannot be created
+- Progress formatting: the only current count-label producer renders raw counts and byte-copy labels retain size units. This matches the prior adversarial clean result for `MissionArchiveProgressFormatTest`
+- Assertions and registration: no ignored or conditionally skipped assigned test, swallowed assertion, empty test body, manual registration requirement, or orphaned helper was found. Expected exceptions fail explicitly when the operation unexpectedly succeeds
+- Portability and compatibility: tests use JVM temporary directories, ASCII fixture data, Java ZIP streams, and platform-neutral `File` operations. Sector-mode tests cover the maintained 2048 and 2352 geometry distinction; unsupported geometry fails before extraction
+- Resource lifetime: ZIP streams and output streams close through `use`; temporary roots are reclaimed on ordinary assertion failure. Hostile aggregate storage and peak-memory gaps remain with existing owners rather than a new root
+- Maintainability: class boundaries match distinct production contracts. Some frozen CUE test indentation uses tabs, but style-only formatting does not meet finding admission and does not displace the diff-minimization review
+
+## Evidence gaps and limits
+
+- No executable test, build, emulator, device import, proprietary image, allocation profile, multi-gigabyte stream, concurrency harness, or filesystem fault injector was run. This is a frozen read-only survey, and the live worktree has moved beyond the frozen objects
+- No claim is made that unrelated D1/D2 changes are minimized. The bounded result is that none is caused by these tests or their directly exercised branch-added owners
+- The direct UI entry points were inspected for normal operation, but no lifecycle race or process-death run was performed. A speculative concurrent Kotlin publication concern was not admitted without a demonstrated reachable concurrent caller in this unit
+- Standard `InputStream.read(byte[])` contracts do not ordinarily return zero for a nonempty buffer. Existing helper inconsistency around zero returns remains a test gap, not a finding, absent a maintained conforming Android source that triggers it
+- The generation manifest directory was unavailable. Commit/tree identities, exact queue scope, blob IDs, line counts, added-file attribution, hunk count, and deterministic scope hash were independently confirmed from frozen Git objects
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used `git show`, `git cat-file`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git log --follow`, `git grep`, and frozen tree identities for exact scope, history, production symbols, callers, registrations, D1/D2 consumers, and branch attribution
+- Used `rg` and targeted ledger excerpts to reconcile archived `BR-0018`, `BR-0020`, `BR-0064`, `BR-0093`, `BR-0094`, `BR-0183`, and `BR-0184`; open `GQF-0061` and `GQF-0100` through `GQF-0104`; prior R1-CHUNK-0046 and R1-CHUNK-0085 coverage; DMR1; and prior cleanup plans
+- Computed the ordered scope-manifest SHA-256 in memory. Frozen scope `git diff --check` passed and the five added files contain five diff hunks
+- No product edit, canonical-ledger edit, temporary report, fixture generation, test run, Gradle action, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0119 with disposition `NO_INHERITED_EFFECT`, zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added Android ownership boundary
+- Normalize OBS-001 as test-boundary evidence extending open `GQF-0100`, `GQF-0101`, and `GQF-0102`
+- Normalize OBS-002 as test-boundary evidence extending open `GQF-0103` and `GQF-0104`
+- Normalize OBS-003 as test-boundary evidence extending open `GQF-0061`, linked archived `BR-0018`
+- Record archived `BR-0094` as still fixed at the nullable compressed-size formatting boundary and retain the prior clean progress-format assessment
+- Allocate no new `GQF-*`, `GQI-*`, DMR1 item, diff-minimization finding, or remediation chunk from this unit
+- Record a non-partial `ISSUES` coverage outcome because the assigned tests supply concrete evidence for six open owners while inherited diff, archived repairs, correctness controls, cleanup, progress formatting, registration, portability, and maintainability were explicitly covered
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0119 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0120 frozen survey SHA256:94c1875c2e4554976734e5cb77cee9e03878af7974b0a75e62ce641ac1dead19 -->
+
+## GQ1-CHUNK-0120 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0120.md`
+- Imported SHA-256: `94c1875c2e4554976734e5cb77cee9e03878af7974b0a75e62ce641ac1dead19`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0120 frozen survey
+
+Outcome: ISSUES. All 403 assigned lines were reviewed against the frozen cache implementation, production callers, fingerprint JNI boundary, Gradle test discovery, mission-name sidecar path, paired D1/D2 engine consumers, history, and prior review records. Diff minimization was the dominant review. The assigned test is branch-added, requires no inherited registration or declaration, and its direct test execution does not cross JNI. The nearest complete production feature chain has only four relevant inherited additions, already at the natural paired song-initialization boundary; moving them behind another shared wrapper would not materially reduce inherited churn. Secondary review found four test gaps, all owned by existing findings. No new root cause or diff-minimization candidate is recommended.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned file: `android/app/src/test/java/com/dxxredux/app/MissionZipAudioFingerprintCacheTest.kt` L1-L403
+- Assigned lines reviewed: 403 of 403
+- Frozen blob: `73159a105b0f096fc7014b5aeb248c2186bcb797`, 16,216 bytes
+- Scope manifest: `android/app/src/test/java/com/dxxredux/app/MissionZipAudioFingerprintCacheTest.kt|L1-L403|73159a105b0f096fc7014b5aeb248c2186bcb797`
+- Scope-manifest SHA-256, UTF-8 without final LF: `d3f60c913379783e916aa1d4fd983ed05ed96015337a9841576de8d42aa56839`
+- Frozen attribution: added file, 403 additions, zero deletions, one added-file diff
+- Evidence came from frozen Git objects. Mutable product files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned path is a branch-added JVM test. It contributes 403 added lines and changes zero inherited paths, zero inherited hunks, and zero inherited lines
+- Gradle discovers the test from the standard `src/test/java` source set. The branch-added `android/app/build.gradle` supplies the shared JUnit and JSON test dependencies but contains no file-specific registration, source list, task, hook, or declaration for this class. Deleting or moving a build entry therefore cannot reduce inherited diff
+- The direct test seam is the branch-added `MissionZipAudioFingerprintCache.kt`, itself 354 additions and zero deletions. The tests construct Kotlin `FingerprintBridge.FingerprintResult` and `MatchResult` values, but never call `fingerprintAudioFile`, `matchFingerprint`, `ensureDbLoaded`, or another external method. Test execution therefore does not cross `FingerprintBridge.kt` into `jni_fingerprint.c`
+- The direct cache callers are branch-added Android files: `MissionZipMusicNames.kt` 123 additions, `SetupSections.kt` 3,634 additions, and `ModManager.kt` 1,920 additions, all with zero deletions at the frozen boundary. The fingerprint bridge and JNI implementation are also branch-added: 510 and 332 additions respectively
+- The complete decoded-name path continues through branch-added `MusicNameSidecar.kt`, `track_names.c/.h`, and `songs_android_shared.c`. It eventually reaches two inherited consumers: `d1/main/songs.c` and `d2/main/songs.c`
+- In that nearest production chain, the cache and this test do not require an inherited hook. The later native mission-name feature uses exactly four feature-relevant inherited additions across four existing diff hunks: one `#include "track_names.h"` in each paired `songs.c`, and one `mission_music_names_load();` call in each paired `songs_init`. There is no test registration, cache declaration, fingerprint declaration, JSON policy body, or copied test helper under `d1/` or `d2/`
+- The broader frozen branch changes 355 D1/D2 files, but frozen searches found no reference to `MissionZipAudioFingerprintCache`, its test class, its cache filename, or JVM test registration under those trees. The four mission-name lines above belong to the downstream sidecar consumer, not to the assigned test
+
+### Ownership alternative tested
+
+- Moving any of the 403 test lines into an inherited game test or build file would increase merge pressure from zero and would duplicate Kotlin/JSON cache policy in the wrong owner
+- Consolidating the test into another branch-added JVM test could reduce added-file count or total new test lines, but would remove zero inherited lines and make cache failure attribution less local. It is not a diff-minimization result
+- The downstream paired engine hooks are already compact lifecycle calls into a branch-added owner. Moving `mission_music_names_load` behind a new `songs_android_shared` wrapper could remove the two `track_names.h` includes, but would retain two inherited calls and require a new declaration, implementation, and argument contract. That is a wrapper-only abstraction for at most two inherited lines, not a material extraction
+- Removing either paired load call would break D1/D2 parity and leave the active mission sidecar unread. Removing the test would discard regression coverage without reducing a 1996-original edit
+- Estimated inherited reduction available from extraction, consolidation, or revert in the assigned boundary is therefore zero paths, zero hunks, and zero lines. The existing owner is the narrowest behaviorally testable boundary
+- Recheck trigger: a later generation adds file-specific JVM registration, cache policy, fingerprint declarations, or copied Kotlin behavior to an inherited path, or expands the paired mission-name hooks beyond their current compact lifecycle seam
+
+## Process and deduplication context
+
+- Read `.github/copilot-instructions.md`, the amended general-quality process, active and done GQ ledgers, durable evidence, both adversarial ledgers, DMR1, and relevant cleanup and music plans
+- DMR1 contains no cache-test or mission-fingerprint ownership candidate. Its extraction threshold and rejection of wrapper-only movement agree with the measured zero-line opportunity here
+- `GQ1-CHUNK-0058` already reviewed the complete production cache and attached its remaining roots to `GQF-0030`, `BR-0099`, `GQF-0034`, and `BR-0101`
+- Archived `BR-0088`, `BR-0089`, and `BR-0100` own the repaired content identity, atomic publication and merge, and typed retry outcomes exercised by this test
+- The earlier adversarial test review, `R1-CHUNK-0085`, examined the original smaller version of this file and already attached automatic database revision and persistent retention gaps to open `BR-0099` and `BR-0101`. Current added tests repair several archived gaps but do not close those two owners
+- Current `GQF-0030` owns missing fingerprint-generation identity across runtime and generated caches. Current `GQF-0034` owns typed semantic admission of complete mission fingerprint records
+
+## Context inspected
+
+- Every assigned test and helper: archive relocation, metadata and content identity, exact content lookup, sorted JSON, typed AcoustID outcomes, local/web merge, stale-entry merge, concurrent cache instances, failed publication preservation, corruption quarantine, catalog construction, file creation, and SHA-256
+- Complete frozen `MissionZipAudioFingerprintCache.kt`: projection, exact lookup, hashing, fingerprint and match reuse, database identity, local and web updates, shared transaction, JSON load/save, schema, record identity, and supported formats
+- `MissionZipMusicNames`, `SetupSections`, and `ModManager` projection, pending-analysis, sidecar generation, import, replacement, deletion, and launch paths
+- `FingerprintBridge.kt` and `jni_fingerprint.c` production boundary, specifically confirming that this test uses data classes only and performs no native call
+- `AtomicFilePublication` ownership sufficient to reconcile the concurrency and publication tests with archived `BR-0089`
+- `MusicNameSidecar`, `track_names.c/.h`, `songs_android_shared.c`, and the paired D1/D2 `songs_init` consumers for end-to-end inherited attribution
+- `android/app/build.gradle` test dependencies and standard source-set discovery
+- Complete file history through the July cache identity, AcoustID, concurrency, atomic-publication, and corruption-regression additions
+
+## Atomic observations
+
+### GQ1-CHUNK-0120-OBS-001: Cache tests do not vary fingerprint-generation identity
+
+- Provisional disposition: `EXTENDS GQF-0030`; no new finding
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/data-integrity/reproducibility`
+- Frozen locations: `MissionZipAudioFingerprintCacheTest.kt:L15-L118,L268-L355`; `MissionZipAudioFingerprintCache.kt:L62-L140,L337-L352`
+- Evidence: every test uses the same frozen cache schema and synthetic `FingerprintResult` values. Tests vary source bytes, path, metadata, track, and cache publication state, but none supplies or changes a fingerprint algorithm, decoder, native implementation, Chromaprint dependency, complete-track policy, or producer-generation identity. The cache record has no such identity to vary, so an implementation or decoder update can continue reusing an older stored fingerprint while all assigned tests pass
+- Trigger and impact are the current `GQF-0030` runtime-cache case: retain app data across a build that changes fingerprint production, then open an unchanged mission. Results remain dependent on cache history rather than the current implementation
+- Validation direction: after the shared generation identity exists, persist generation A, reopen under independently varied generation B components, require one regeneration or explicit migration, then confirm unchanged B reuses the record
+
+### GQ1-CHUNK-0120-OBS-002: Direct local-refresh coverage bypasses the normal database-revision skip path
+
+- Provisional disposition: `DUPLICATE BR-0099` and test-oracle extension; no new finding
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/cache-invalidation`
+- Frozen locations: `MissionZipAudioFingerprintCacheTest.kt:L202-L236`; `MissionZipAudioFingerprintCache.kt:L52-L60,L123-L162`; `SetupSections.kt` cached projection and pending-analysis flow
+- Evidence: `localMatchRefreshPreservesWebLookupResult` directly invokes `recordLocalMatchResult` with a caller-chosen `new-db` identity and correctly verifies field preservation. It never starts from `cachedEntries`, passes database A and B through pending-track selection, or exercises the ordinary dialog path that treats track-ID presence as completed analysis before `identifyLocal` can compare database identity. The test therefore validates the update primitive but cannot detect the bypass already owned by `BR-0099`
+- Trigger, impact, fix, and validation remain with `BR-0099`: update or recover the bundled database with an existing cache, rematch stored fingerprints exactly once, refresh UI and sidecars, and skip only after the current identity is recorded
+
+### GQ1-CHUNK-0120-OBS-003: Corruption coverage proves syntax quarantine but not semantic record admission
+
+- Provisional disposition: `EXTENDS GQF-0034`; no new finding
+- Suggested priority/confidence/category: P2/high, `test-gap/correctness/data-integrity/generated-cache`
+- Frozen locations: `MissionZipAudioFingerprintCacheTest.kt:L337-L355`; `MissionZipAudioFingerprintCache.kt:L214-L245,L281-L312`
+- Evidence: the sole corruption fixture is the syntactically invalid text `{not-json`. It proves quarantine and rewrite after a parser exception. It does not construct syntactically valid v2 JSON with empty or oversized identities and coordinates, invalid hashes or fingerprints, nonpositive duration, invalid timestamps, nonfinite or out-of-range score/confidence, unknown status, incoherent optional fields, or duplicate logical records. Such entries can pass the current permissive `toEntry` projection and exact reuse while this test remains green
+- Validation direction: use the typed complete-cache schema owned by `GQF-0034`; mutate every required and optional field plus record uniqueness, require rejection or whole-generation quarantine, preserve the prior valid generation, and admit a valid boundary record
+
+### GQ1-CHUNK-0120-OBS-004: Isolated test directories cannot establish bounded persistent retention
+
+- Provisional disposition: `EXTENDS BR-0101`; no new finding
+- Suggested priority/confidence/category: P3/high, `test-gap/performance/resource-lifecycle/cache-retention`
+- Frozen locations: `MissionZipAudioFingerprintCacheTest.kt:L103-L118,L268-L297,L378-L385`; `MissionZipAudioFingerprintCache.kt:L52-L120,L214-L245`
+- Evidence: each test calls `testDir` with a distinct path, and that helper recursively deletes the directory before use. The largest case writes 20 live records for one archive generation. No case keeps one files directory across mission replacement, rename, deletion, restart, age, record-count, byte-count, large-string, or compaction boundaries. Consequently the global whole-file cache can retain obsolete generations and grow without limit while all assigned cases pass
+- Validation direction remains with `BR-0101`: persist one directory across owner lifecycle operations and more entries and bytes than every documented ceiling, restart between phases, and assert bounded file size, record count, parse/rewrite cost, and preservation of active reusable records
+
+## Explicit clean dimensions
+
+- Inherited diff: the assigned test and direct Kotlin, JNI, and Gradle owners require no inherited modification. The only downstream feature hooks are four compact paired lines, and no material extraction boundary exists
+- D1/D2 parity: the downstream `track_names.h` include and `mission_music_names_load` call exist in both D1 and D2 at matching lifecycle points. No asymmetric cache or test policy was found
+- Content identity: tests cover byte-identical relocation, changed size, same-size/same-mtime content change through source SHA-256, and exact staged-content SHA-256. This is positive regression evidence for archived `BR-0088`
+- Concurrency and publication: 20 independent cache instances write distinct records under one process, stale local updates preserve newer web fields, an injected pre-publish failure preserves the previous generation, and malformed JSON is quarantined. These are positive regression extensions for archived `BR-0089`; no current lost-update or torn-publication root was established
+- Retry state: typed retryable and configuration failures remain non-authoritative, while match and no-match are authoritative and timestamped. This supports archived `BR-0100`
+- Determinism: the assigned sorted-output case checks pretty JSON and stable track ordering. Helper SHA-256 output is fixed-width lowercase hexadecimal
+- Resource ownership: the worker pool shuts down in `finally`; test file operations use short-lived Kotlin APIs. No descriptor, executor, or temporary-file lifetime defect was found in the assigned code
+- Portability: test paths are relative to the Gradle build directory, use `File`, and avoid platform path literals. Fixed last-modified values are explicitly reset before identity checks. No Windows/POSIX-specific inherited edit is required
+- Security and privacy: fixtures contain only synthetic bytes, cache fingerprints, and labels under a test build directory. No credential, network request, device state, external storage, or sensitive log is involved
+- Test isolation: each named case deletes and recreates a unique subdirectory, preventing ordinary cross-test contamination. The deliberate absence of persistent lifecycle coverage is OBS-004, not an accidental collision
+- Scope quality: assertions cover successful and failed paths at the cache API boundary without copying production serialization or locking logic into the test
+
+## Evidence gaps and limits
+
+- No build or Gradle test was run. This was a frozen read-only survey, and a build would compile mutable post-freeze worktree sources rather than prove the frozen object under review
+- No Android runtime or JNI execution was needed or performed. Assigned tests are local JVM tests and never call native fingerprint functions
+- The four relevant inherited mission-name lines were measured as downstream feature context. This unit does not claim complete diff-minimization coverage for the remaining additions in either `songs.c`; those files have separate deterministic coverage and DMR1 ownership
+- Static review did not benchmark the cache size at which `BR-0101` becomes visible. Its missing bound and monotonically retained generations are explicit; remediation must choose and measure policy
+- This unit does not claim full coverage of `MissionZipAudioFingerprintCache.kt`, `SetupSections.kt`, `MissionZipMusicNames.kt`, `ModManager.kt`, `FingerprintBridge.kt`, JNI, or native sidecar parsing. They were read only as required attribution and interface context
+- The assigned file does not contain a database-loader failure seam, generation-identity seam, semantic-schema fixture builder, or cache-retention policy. These absences are mapped to existing owners rather than promoted as speculative new roots
+
+## Commands and validation
+
+- Read repository instructions and the complete amended survey process before review
+- Used `git show`, `git diff --name-status`, `git diff --numstat`, `git diff --unified=0`, `git ls-tree`, `git cat-file`, `git rev-parse`, and `git log` for frozen scope, history, path classification, blobs, line counts, hunks, and exact inherited attribution
+- Used frozen `git grep` for the test class, cache class, cache filename, production callers, fingerprint bridge, JNI seam, mission sidecar, native lookup, build registration, and all D1/D2 references
+- Used `rg` and targeted ledger excerpts across active/done GQ, durable evidence, active/done adversarial ledgers, DMR1, and cleanup/music plans for duplicates, repairs, regrowth, and existing ownership
+- `git diff --check` passed for the assigned frozen file
+- No product edit, canonical-ledger edit, build, test, formatter, emulator, network request, temp-file write, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for `GQ1-CHUNK-0120` with disposition `NO_INHERITED_EFFECT`: assigned inherited impact zero paths, zero hunks, and zero lines; nearest downstream feature context four retained paired lines with no material extraction payoff
+- Create one non-partial `ISSUES` coverage record for exactly `GQ1-CHUNK-0120`
+- Normalize OBS-001 as a test-gap evidence extension of current `GQF-0030`
+- Normalize OBS-002 as a duplicate and test-oracle extension of open `BR-0099`
+- Normalize OBS-003 as a test-gap evidence extension of current `GQF-0034`
+- Normalize OBS-004 as a persistent-lifecycle test extension of open `BR-0101`
+- Allocate no new finding, investigation, DMR1 item, diff-minimization finding, or remediation chunk from this unit
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0120 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0121 frozen survey SHA256:75c4a0fe3f7bda73b775f6389b0e3839704d88db95230c583d00d15709aa1da8 -->
+
+## GQ1-CHUNK-0121 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0121.md`
+- Imported SHA-256: `75c4a0fe3f7bda73b775f6389b0e3839704d88db95230c583d00d15709aa1da8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0121 frozen survey
+
+Outcome: ISSUES. All 486 assigned lines were reviewed against the frozen staging implementation, archive readers, publication owner, cache consumers, UI preview callers, sidecar generation, Gradle discovery, paired engine music hooks, focused neighboring tests, history, and prior review ownership. The test and every directly tested implementation, caller, and build owner are branch-added under `android/`. The assigned unit has a measured inherited effect of zero paths, zero hunks, and `+0/-0` lines. Secondary review adds test-boundary evidence to two existing open findings and finds no new root. No product file, canonical ledger, plan, existing report, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/app/src/test/java/com/dxxredux/app/MissionZipMusicStageManagerTest.kt` L1-L486
+- Frozen scope blob: `702fda1a985552faa03fb3b5df4424031c65bb88`
+- Scope manifest record: `android/app/src/test/java/com/dxxredux/app/MissionZipMusicStageManagerTest.kt|L1-L486|702fda1a985552faa03fb3b5df4424031c65bb88`
+- Scope manifest SHA-256 over that UTF-8 record without a final LF: `8df0bc9a9af117e9c5b8c6cd8504afc66d3f5230f9b7007bdc39d28dc9bf73de`
+- The path is absent at the frozen base and added at the frozen head. Its complete contribution is one added-file hunk and `+486/-0` lines
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned unit modifies zero inherited paths, zero inherited hunks, and zero inherited lines. Gradle discovers it through the ordinary branch-added Android unit-test source set; there is no per-test build registration
+- Every direct implementation and build owner is also absent at the base and added at the head: `MissionZipMusicStageManager.kt` `+571/-0`, `MissionZipMusic.kt` `+698/-0`, `ArchiveFiles.kt` `+478/-0`, `AtomicFilePublication.kt` `+201/-0`, and `android/app/build.gradle` `+476/-0`
+- Direct production callers remain in branch-added Kotlin: `MissionZipMusicNames.kt` `+123/-0` calls staging for fingerprint/name generation, while `SetupSections.kt` `+3634/-0` calls staging and MIDI reads for launcher preview, local identification, and analysis. Preview sinks `AudioFilePreviewDialog.kt` `+241/-0` and `MidiBytesPreviewDialog.kt` `+202/-0` are branch-added too
+- The staged audio file is an app-cache artifact consumed by Kotlin preview and fingerprint code. It is not mounted or read by D1, D2, JNI, shared native code, or an inherited build entry. `MissionZipMusicNames` may later serialize identification results into `mission_music_names.json`, but the paired `songs.c` hooks consume that separate sidecar through branch-added shared native owners; they do not consume or require the stage-manager API or this test
+- Relevant frozen inherited music changes were inspected to disprove a hidden dependency. Paired `d1/main/songs.c` and `d2/main/songs.c` contain Android soundtrack preference, name-loading, and overlay hooks, but none references `MissionZipMusicStageManager`, `stageCompressedAudioTrack`, `readMidiTrackBytes`, its cache directory, or the assigned test. Reverting every assigned line would remove none of those inherited edits
+- Frozen searches found no assigned class or API symbol in `d1/**` or `d2/**`. The complete causal inherited effect for this unit and its directly tested boundary is therefore exactly zero paths, zero hunks, and `+0/-0` lines
+
+### Extraction, consolidation, and revert tests
+
+- Moving staging, archive traversal, cache publication, or cleanup policy into either engine would create JNI or paired D1/D2 adapters while removing zero inherited lines. The present branch-added Kotlin owner is the smallest natural boundary
+- Consolidating ZIP, HOG, fixed-name, or little-endian fixture helpers with neighboring branch-added tests could reduce some test-only duplication, but it cannot reduce any 1996-original diff and would couple focused fixtures to a shared mutable test API. It does not pass the merge-pressure gate
+- Consolidating the paired engine name hooks behind the stage manager is ownership inversion: engines consume a small finalized sidecar, while staging owns untrusted archive I/O and app-cache lifetime. Such a callback or JNI boundary would be larger and less testable than the existing separation
+- Reverting the 486 assigned lines would reduce branch-owned coverage only. It would remove no inherited declaration, hook, call, registration, or build entry, and would discard regression checks for cache identity, exact HOG reads, atomic publication, same-key concurrency, selected-entry streaming, MIDI paths, and capacity cleanup
+- The maximum inherited reduction available from extraction, consolidation, or revert is zero lines and zero hunks. Recheck only if a later generation moves this API, cache consumption, or test registration into an inherited path, or adds a JNI/D1/D2 consumer of staged cache files
+
+## Context and history inspected
+
+- All 14 tests and complete helpers, covering top-level, nested DXA, HOG, compressed-audio and MIDI bytes; truncated HOG rejection; cache reuse and content identity; injected publication failure; same-key concurrent staging; selected-only staging; and capacity cleanup
+- Complete relevant frozen `MissionZipMusicStageManager`, including archive and extracted-file routing, nested DXA/HOG traversal, bounded reads/copies, size checks, cache identity/markers, directory publication, cleanup, and storage preflight
+- Direct catalog, archive, atomic-publication, fingerprint, name-sidecar, UI preview, and Gradle owners needed to establish API and build ownership
+- Paired D1/D2 song initialization and playback hooks plus shared native track-name sidecar consumption, to distinguish the later engine-facing sidecar from the Kotlin-only stage cache
+- File history; active and done GQ ledgers; durable evidence; active and done adversarial ledgers; DMR1; and prior music cleanup plans
+- Historical ownership reconciled before observations: archived `BR-0088` and `BR-0089` own and have frozen regression coverage for prior cache-identity, short-HOG, publication, and same-key concurrency defects. Open `GQF-0119` owns nested streaming-size and expansion accounting; open `GQF-0120` owns post-return generation lifetime under eviction
+
+## Atomic observations
+
+### GQ1-CHUNK-0121-OBS-001: Staging tests do not exercise the open nested streaming-size and expansion-budget bypass
+
+- Provisional normalization: `EXTENDS GQF-0119`, linked archived `BR-0018`; no new finding
+- Severity/confidence/category: P1/high, `test-gap/security/resource-exhaustion/storage/compression`
+- Frozen test locations: `MissionZipMusicStageManagerTest.kt:L69-L148,L201-L230,L340-L389`; production owner `MissionZipMusicStageManager.kt:L24-L149,L324-L449,L501-L519`; catalog producer `MissionZipMusic.kt:L355-L427`
+- Evidence: nested DXA fixtures use tiny ordinary `ZipOutputStream` entries and assert only exact four-byte results. The HOG truncation case proves a declared short payload is rejected, and the large outer-ZIP case proves an unrelated highly compressible entry is not staged. No case supplies a streaming data-descriptor DXA entry whose scan-time expanded size is unknown, a negative or unknown compressed size, a nested DXA-to-HOG chain whose inner reads escape the outer budget, a ratio boundary, declining free space, or a MIDI payload near its dedicated heap ceiling
+- The untested trigger, impact, fix, and validation are already owned by `GQF-0119`: preserve actual source sizes, carry one hierarchical expansion/storage budget through nested readers, impose a realistic in-memory MIDI ceiling, and test known/unknown descriptor sizes plus below/above ratio and storage boundaries without proportional workstation allocation
+
+### GQ1-CHUNK-0121-OBS-002: Cleanup coverage never retains a staged file while another operation evicts its generation
+
+- Provisional normalization: `EXTENDS GQF-0120`; no new finding
+- Severity/confidence/category: P2/medium, `test-gap/correctness/concurrency/resource-lifetime/cache`
+- Frozen test locations: `MissionZipMusicStageManagerTest.kt:L265-L285`; production owner `MissionZipMusicStageManager.kt:L24-L104,L151-L173`; UI callers `SetupSections.kt:L907-L956,L1026-L1053,L1221-L1244`
+- Evidence: `cleanupEvictsOldestGenerationsToReserveCacheCapacity` creates two handcrafted directories, invokes cleanup synchronously, and checks that the older unreferenced directory was deleted. It never retains a `File` returned by `stageCompressedAudioTrack`, delays preview open, overlaps cleanup or another staging request, exceeds capacity while a preview is preparing or replaying, or checks whether an actively used generation survives. Thus it cannot validate the lease/lifetime contract currently missing after the publication transaction returns
+- The trigger, impact, fix, and validation remain with `GQF-0120`: return or establish explicit consumer ownership, exclude live generations from eviction, and barrier-race held preview paths against age/capacity cleanup before open, during preparation/playback, and after release
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: all assigned, direct implementation, caller, preview, and build owners are branch-added Android files. No inherited hook, declaration, copied policy body, registration, or D1/D2 asymmetry is caused by this unit
+- Historical repair coverage: same-name equal-metadata archives and in-place equal-metadata replacement exercise content-backed identity; truncated HOG audio and MIDI exercise exact declared-length rejection; injected publication failure exposes no public partial generation; and concurrent same-key requests converge on one complete generation with no `.tmp` residue. These are useful frozen closure evidence for archived `BR-0088` and `BR-0089`
+- Assertion strength: byte-producing cases assert exact arrays, cache reuse asserts stable path and timestamp, identity cases assert distinct correct content, publication/concurrency cases inspect complete public state, and cleanup asserts both eviction and retention. No ignored test, conditional skip, swallowed assertion, or orphaned source-set registration was found
+- Resource lifetime: executors shut down in `finally`; ZIP and byte-array streams close through `use`; temporary archive files use deletion-on-exit. Missing staged-generation ownership is limited to OBS-002 and its existing finding
+- Path and input coverage: top-level archive, nested DXA, HOG, selected-only outer ZIP, compressed audio, and MIDI routes are represented. Hostile nested budget combinations remain explicitly assigned to OBS-001 and its existing finding
+- Test isolation: named cache roots are deleted and recreated beneath `build/test-mission-zip-music-stage`. The same-name test deliberately creates a distinct nested source path. No collision with another test class was established
+- Portability and hygiene: fixture names are portable ASCII; HOG fields and little-endian lengths are constructed explicitly; no platform-specific filesystem separator is embedded in a production identity assertion
+- Maintainability: the class is focused on one production owner. Its local fixture duplication is branch-owned and keeps binary-format intent visible; extracting it would not improve inherited diff
+
+## Evidence gaps and limits
+
+- No Gradle test, build, emulator, large archive, low-storage simulation, race barrier, or fault-injection run was performed. This is a frozen-object read-only survey, and the materially changed live worktree would not validate the frozen snapshot
+- Exact device heap and filesystem behavior at the open `GQF-0119` and `GQF-0120` boundaries remains for those remediations to measure. The report adds omitted-test evidence, not a claim that those production findings are newly discovered
+- The JVM tests do not prove MediaPlayer file-descriptor timing, PhysicsFS sidecar mounting, native track-name lookup, or engine playback. Those are outside this stage-cache unit and do not change its zero inherited-diff attribution
+- The generation manifest directory was unavailable, so frozen commit/tree identity, queue scope, blob ID, line count, and diff attribution were independently confirmed from Git objects
+- No claim is made that nearby D1/D2 music hooks are themselves minimized. The bounded claim is that this test and the cache-staging production contract it directly exercises cause none of those hooks
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used `git show`, `git cat-file`, `git ls-tree`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git log --follow`, and frozen `git grep` for exact scope, history, implementations, callers, build discovery, JNI/native boundaries, and paired D1/D2 context
+- Used `rg` and targeted ledger excerpts to reconcile archived `BR-0018`, `BR-0088`, and `BR-0089`; open `GQF-0119` and `GQF-0120`; prior exact R1 coverage; DMR1; and prior cleanup records
+- Computed the ordered one-record scope-manifest SHA-256 in memory and confirmed the Git blob and frozen added-file hunk
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, Gradle test, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for `GQ1-CHUNK-0121` with disposition `NO_INHERITED_EFFECT`, zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added Android staging boundary
+- Normalize OBS-001 as test-boundary evidence extending open `GQF-0119`, linked to archived `BR-0018`; allocate no new finding
+- Normalize OBS-002 as test-boundary evidence extending open `GQF-0120`; allocate no new finding
+- Record one non-partial `GQC-*` outcome of `ISSUES` for exactly `GQ1-CHUNK-0121`, citing the explicit clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0121 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0122 frozen survey SHA256:0c906758373a1d46ed10d2fac3a5731b73688494a5ebe880954048111169c848 -->
+
+## GQ1-CHUNK-0122 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0122.md`
+- Imported SHA-256: `0c906758373a1d46ed10d2fac3a5731b73688494a5ebe880954048111169c848`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0122 frozen survey
+
+Outcome: ISSUES. All 357 assigned lines were reviewed against the frozen catalog implementation, archive readers, staging and sidecar consumers, launcher callers, native name-table boundary, paired engine music hooks, neighboring tests, history, and prior review ownership. The assigned test and its directly tested catalog owner are branch-added under `android/`. The assigned unit has a measured inherited effect of zero paths, zero hunks, and `+0/-0` lines. Secondary review adds test-boundary evidence to one existing open finding and records strong closure evidence for one archived finding; it finds no new root. No product file, canonical ledger, plan, existing report, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/app/src/test/java/com/dxxredux/app/MissionZipMusicTest.kt` L1-L357
+- Frozen scope blob: `94cb3ffd52feacad7ef03a3b4555422f4fd326f5`
+- Scope manifest record: `android/app/src/test/java/com/dxxredux/app/MissionZipMusicTest.kt|L1-L357|94cb3ffd52feacad7ef03a3b4555422f4fd326f5`
+- Scope manifest SHA-256 over that UTF-8 record without a final LF: `eec682121a77ca72d18542d154e8ea8bdb43d4bb23491e8802d3bdfc0e203a80`
+- The path is absent at the frozen base and added at the frozen head. Its complete contribution is one added-file hunk and `+357/-0` lines
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned unit modifies zero inherited paths, zero inherited hunks, and zero inherited lines. Gradle discovers the class through the ordinary branch-added Android unit-test source set; there is no per-test registration
+- Its directly tested owner, `MissionZipMusic.kt`, is also absent at the base and added at the head as one `+698/-0` hunk. The archive abstraction, extraction budgets, stage manager, names writer, module build owner, `ModManager.kt`, and `SetupSections.kt` are likewise branch-added Android owners
+- The tests call only `MissionZipMusic.inspect` and `resolveSongList`. They do not call JNI or native symbols, publish a mounted mission, write `mission_music_names.json`, change engine preferences, start playback, or exercise a D1/D2 declaration or build entry
+- The complete downstream feature chain was nevertheless traced. `MissionZipMusicNames` can turn catalog entries into a branch-added sidecar, branch-added `track_names.c` reads it, and paired inherited `songs.c` files each retain one include and one lifecycle load call. Those four natural consumer additions were already measured and retained by `GQD-0013`; they consume the finalized sidecar and do not depend on this test API
+- The broader paired `songs.c` preference and overlay edits were also inspected. The seven marker-bearing hunks total `+43/-4` across two paths, but soundtrack selection, diagnostics, and playback notification are orthogonal to archive catalog inspection. Reverting the assigned test or its parser-only assertions removes none of those lines or hunks. The approximately 16-line post-init consolidation seam is already deferred by `GQD-0010`, so this unit does not create a competing DMR1 owner
+- Frozen searches found no assigned class, helper, or test symbol in `d1/**` or `d2/**`. The complete causal inherited effect for this unit and its directly tested boundary is exactly zero paths, zero hunks, and `+0/-0` lines
+
+### Extraction, consolidation, and revert tests
+
+- Moving archive classification, SNG parsing, HOG parsing, or catalog resolution into either game would introduce JNI and paired adapters while removing zero inherited lines. The branch-added Kotlin owner is the narrow natural launcher boundary
+- Extracting the ZIP, 7z, HOG, fixed-name, and little-endian fixture helpers into a shared test utility could reduce branch-owned duplication with neighboring tests, but it cannot reduce any inherited diff and would obscure each focused binary fixture. It fails the merge-pressure gate
+- Replacing the four sidecar consumer additions with a callback from Kotlin would invert ownership and require a larger cross-language lifecycle. The engine must reload the sidecar when its mounted song set initializes, so the current include and load calls remain the smaller testable boundary
+- Reverting all 357 assigned lines would remove no inherited hook, declaration, copied policy body, registration, or build entry. It would discard regression coverage for top-level ZIP and 7z song lists, exact path-qualified selection, ambiguous-leaf rejection, nested DXA coordinates, HOG MIDI/audio catalogs, malformed optional sources, and no-music behavior
+- Maximum inherited reduction available from extracting, consolidating, or reverting this unit is zero lines and zero hunks. Recheck only if a later generation moves catalog parsing or test registration into an inherited path or introduces a direct JNI/D1/D2 catalog consumer
+
+## Context and history inspected
+
+- All 13 tests and complete local fixture helpers, including ZIP, 7z, DXA-as-ZIP, HOG headers and payloads, repeated rows, exact and ambiguous path resolution, malformed optional containers, and empty catalogs
+- Complete frozen `MissionZipMusic.kt`, including archive and extracted scans, song-list parsing and resolution, content identity, DXA/HOG traversal, extraction budgets, and display-track construction
+- Direct frozen callers and downstream owners: `MissionZipMusicStageManager`, `MissionZipMusicNames`, `MissionZipAudioFingerprintCache`, `ModManager`, `SetupSections`, archive/build owners, shared native track-name code, and paired D1/D2 song initialization and playback
+- File history; active and done GQ ledgers; durable evidence; active and done adversarial ledgers; DMR1; and prior music cleanup plans
+- Historical ownership reconciled before observations: open `GQF-0118` owns aggregate catalog-budget exhaustion; archived `BR-0185` owns path-qualified and ambiguous-leaf resolution. `GQD-0010`, `GQD-0013`, and `GQD-0014` already own adjacent music minimization decisions
+
+## Atomic observations
+
+### GQ1-CHUNK-0122-OBS-001: Catalog tests do not exercise the open aggregate nested-container budget failure
+
+- Provisional normalization: `EXTENDS GQF-0118`, linked archived `BR-0018`; no new finding
+- Severity/confidence/category: P1/high, `test-gap/security/resource-exhaustion/catalog-budget`
+- Frozen test locations: `MissionZipMusicTest.kt:L84-L97,L152-L171,L196-L237,L239-L268`; production owner `MissionZipMusic.kt:L71-L150,L355-L484,L487-L623`
+- Evidence: every fixture contains at most one DXA or HOG and only a handful of tiny members. The malformed-DXA case checks independent-source survival, but no case combines many admitted outer containers, maximum entries per container, repeated SNG references, nested HOGs, or aggregate retained tracks. The production scanners create fresh entry and metadata budgets per outer source, so these tests cannot detect the already owned multiplicative catalog retention described by `GQF-0118`
+- The trigger, impact, fix, and validation remain with `GQF-0118`: carry a single attempt-owned entry, work, and retained-memory budget through the complete catalog, and test below/above aggregate limits across many small individually valid containers without proportional workstation allocation
+
+### GQ1-CHUNK-0122-OBS-002: Frozen tests provide direct closure evidence for exact path-qualified resolution
+
+- Provisional normalization: `HISTORICAL-CLOSED BR-0185`; no new finding
+- Severity/confidence/category: P2/high historical closure, `correctness/path-identity/test-coverage`
+- Frozen test locations: `MissionZipMusicTest.kt:L117-L171`; production owner `MissionZipMusic.kt:L256-L291,L554-L610`
+- Evidence: top-level and nested DXA fixtures deliberately enumerate `b/theme.ogg` before `a/theme.ogg` while the SNG requests the opposite order, assert retained source-relative and physical coordinates, and check byte-distinct sizes. A basename-only `theme.ogg` fixture asserts an explicit nonplayable reference and preserves both ambiguous candidates instead of choosing by archive order. These are the exact reversed-enumeration and ambiguity oracles requested by archived `BR-0185`
+- This is useful frozen closure evidence only. It does not reopen the finding and does not claim staging-byte coverage, which belongs to the separately reviewed stage-manager tests
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: the assigned test and directly tested parser are branch-added. No inherited hook, declaration, registration, copied body, D1/D2 asymmetry, or build edit is caused by this unit
+- Assertion strength: catalog ordering, playable state, kind, extension, exact coordinates, sizes, repeated references, ambiguity, optional-source isolation, and absence are asserted. No ignored test, conditional skip, swallowed assertion, tautological production constant round trip, or orphaned registration was found
+- Historical repair coverage: path-qualified top-level and nested entries plus ambiguous basename rejection materially exercise archived `BR-0185` at the frozen head
+- Resource lifetime: ZIP, 7z, and byte-array streams close through `use`; temporary archives are deletion-on-exit. Aggregate hostile-input limits remain explicitly assigned to OBS-001 and `GQF-0118`
+- Input and compatibility breadth: ordinary ZIP, 7z, nested DXA, HOG, SNG, MIDI/HMP, compressed audio, malformed optional DXA, repeated rows, mixed case, missing references, and no-music input are represented
+- Portability and hygiene: binary HOG fields use explicit ASCII and little-endian encoding; fixture paths use archive separators; names and source are printable ASCII; no platform-specific absolute path is asserted
+- Maintainability: the class stays focused on catalog semantics. Local binary fixture construction makes the tested bytes visible, and extracting it would not improve inherited diff
+
+## Evidence gaps and limits
+
+- No Gradle test, build, emulator, large archive, memory measurement, or mutation run was performed. This is a frozen-object read-only survey, and the materially changed live worktree would not validate the frozen snapshot
+- The tests stop at catalog structure. They do not prove exact staged bytes for every route, sidecar publication, PhysicsFS mounting, native name lookup, soundtrack selection, or audible playback; those boundaries have separate tests and findings
+- No adversarial case reaches aggregate entry, metadata, expansion, or retained-object ceilings. That omission is recorded only as evidence for the existing `GQF-0118` owner
+- The generation manifest directory was unavailable, so frozen commit/tree identity, queue scope, blob ID, line count, and diff attribution were independently confirmed from Git objects
+- No claim is made that all adjacent D1/D2 music edits are globally minimal. This unit's bounded parser/test effect is zero; adjacent post-init and sidecar-call seams remain owned by earlier `GQD-*` decisions
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used `git show`, `git cat-file`, `git ls-tree`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git log --follow`, and frozen symbol searches for exact scope, history, implementations, callers, build discovery, native boundaries, and paired D1/D2 context
+- Used `rg` and targeted ledger excerpts to reconcile open `GQF-0118`; archived `BR-0185`; earlier `GQD-0010`, `GQD-0013`, and `GQD-0014`; DMR1; and prior exact R1 coverage
+- Counted the marker-bearing paired inherited music hunks from the frozen zero-context diff and computed the ordered one-record scope-manifest SHA-256 in memory
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, Gradle test, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for `GQ1-CHUNK-0122` with disposition `NO_INHERITED_EFFECT`, zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the directly tested catalog boundary. Link, but do not duplicate, earlier adjacent `GQD-0010` and `GQD-0013`
+- Normalize OBS-001 as test-boundary evidence extending open `GQF-0118`, linked archived `BR-0018`; allocate no new finding
+- Normalize OBS-002 as frozen closure evidence for archived `BR-0185`; do not reopen it or allocate a new finding
+- Record one non-partial `GQC-*` outcome of `ISSUES` for exactly `GQ1-CHUNK-0122`, citing the explicit clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0122 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0123 survey result SHA256:9e334192f084025b08e2c4c1fdf325db41c8c044541e77ab94ab513d70a8744d -->
+
+## GQ1-CHUNK-0123 survey result imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0123.md`
+- Imported SHA-256: `9e334192f084025b08e2c4c1fdf325db41c8c044541e77ab94ab513d70a8744d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0123 survey result
+
+## Result
+
+- Outcome: ISSUES
+- Assigned scope: `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` L1-L600
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned blob: `23fad08ea06d0084030729c5ddb4b30aa45ff2ef`
+- Blob size: 24,510 bytes
+- Blob SHA-256: `d35333f3181783e2c0bad33fdceb988497784d435e9bbff1be04770eede47d08`
+- Scope completion: all 600 assigned lines inspected; L601-L706 inspected only as helper-callee context and is not claimed as coverage
+- Product or canonical-ledger edits: none
+
+## Diff-minimization assessment
+
+- Disposition: `NO_INHERITED_EFFECT`
+- Frozen classification: the assigned test is branch-added. Its complete frozen diff is one new-file hunk, +706/-0 lines. The assigned range contains 26 JUnit tests, 78 assertion references, 38 `MissionZip` references, and 3 `GameFileFormats` references
+- Traced boundary: the tests exercise the branch-added `MissionZip.kt` scanner and branch-added `GameFileFormats.kt` descriptor owner through ZIP, 7z, stream, and extracted-record fixtures. Frozen direct-reference enumeration found 16 Android source/test paths and every one is `A` relative to the base, including `MissionZip.kt` (+539/-0), `ModManager.kt`, `LevelMetadata.kt`, `LauncherScriptExecutor.kt`, setup/UI consumers, and their tests. Android unit tests are source-set discovered; there is no per-test registration edit. `android/app/build.gradle`, the dependency declaration used by production and tests, and the shared automation owner are also branch-added
+- Inherited measurement: frozen `git grep` found zero `MissionZip`, `MISSION_ZIP`, `mission zip`, or `mission_zip` hits in `d1/**` and `d2/**` attributable to this test boundary. Consequently this unit requires 0 inherited paths, 0 inherited hunks, and +0/-0 inherited lines. It adds no declaration, registration, JNI bridge, native callback, build entry, or paired D1/D2 hook to a 1996-original file
+- Extraction/consolidation/revert checks: moving the fixture helpers at L523-L706 to another branch-added test utility could relocate at most 184 new lines but would remove 0 inherited lines and introduce a shared helper API. Parameterizing the repeated readme-policy cases or splitting the class would likewise alter only branch-added test code. Reverting the file would remove one +706-line branch-added hunk but no inherited hunk, while discarding scanner regression coverage. None is a merge-pressure reduction for inherited code
+- Ownership conclusion: retain the branch-added test and its direct branch-added production boundary. No DMR1 extraction owner is implicated. Recheck only if a future MissionZip implementation or test registration introduces a D1/D2 or other inherited consumer
+
+## Scope and context checked
+
+- Every assigned line, all 26 assigned test methods, the local helpers beginning at L523, and the L601-L706 helper definitions needed to interpret their generated HOG, nested ZIP, 7z, and extracted-tree bytes
+- Complete frozen `MissionZip.kt` admission path, especially `playableMissionSets` at L385-L429, plus the `GameFileFormats` descriptor contract and direct MissionZip caller inventory
+- Android test source-set/build ownership, Commons Compress dependency ownership, launcher automation ownership, and repository-wide D1/D2 MissionZip-token search
+- Frozen history through `1cd6f61b`, `37e41681`, `213fb5be`, `0fcc91b8`, `0e010b86`, `2c2d33d7`, `6da5d519`, `2c89ee33`, `3bc4ef9e`, `2a9afb2d`, and `0498798f`
+- Active and done general-quality ledgers, durable evidence for GQ1-CHUNK-0057, active and done adversarial ledgers, DMR1, and relevant cleanup/test plans for duplicate and regrowth ownership
+
+## Atomic observations
+
+### GQ1-CHUNK-0123-OBS-001 - Positive fixtures reinforce the already-owned loadable-level admission gap
+
+- Proposed normalization: `EXTENDS GQF-0111` and archived `BR-0096`; do not allocate a new finding
+- Severity/confidence/category: P2, high, correctness/test-gap/input-validation/compatibility
+- Frozen locations: assigned tests at L18-L49, L126-L185, L256-L304, and L352-L520; assigned helper callers at L523-L600; helper-callee context at L617-L704; production `MissionZip.kt:L385-L429`
+- Evidence: positive mission fixtures encode each HOG member with a declared size of one byte and one zero payload byte. Nested DXA fixtures are ZIPs whose alleged level members likewise contain one zero byte. The basic helper also adds four arbitrary DXA bytes. `acceptsDeclaredLevelsFromValidatedHogDxaOrLooseFiles` positively accepts one-byte HOG, nested-ZIP, and loose `.rl2` members, while its name describes those sources as validated. Scanner admission only compares catalogued leaf names, so these tests make malformed engine-level payloads the success oracle rather than detecting them
+- Concrete trigger: use any positive helper-generated mission, or the combined-source test at L276-L304. `MissionZip.inspect` publishes a playable set although none of the asserted ordinary level bytes is a loadable D1/D2 level
+- Impact: the tests cannot prevent the launcher from continuing to advertise structurally catalogued but engine-unloadable missions. They can instead make a future proper engine-facing admission check appear to regress otherwise-valid scanner coverage until the fixtures are replaced with valid minimal levels
+- Deduplication: GQ1-CHUNK-0057 already established the production root and explicitly cited the one-byte `hogBytes` and `zipBytes` fixtures. `GQF-0111` owns the shared production fix, and archived `BR-0096` owns the incomplete historical acceptance boundary. This observation adds exact assigned-test extent and oracle evidence only
+- Suggested boundary: remediate under `GQF-0111`, replacing positive payloads with valid minimal paired-game fixtures or a reviewed native admission probe while retaining dedicated empty, one-byte, truncated, and wrong-game negative cases. Do not duplicate level-format truth in Kotlin
+- Focused validation: run this JVM class plus the selected shared native/headless admission tests; require valid D1 and D2 levels to pass and empty, one-byte, truncated-header, wrong-game, HOG, DXA, loose, ZIP, 7z, stream, and extracted variants to fail before registration
+
+### GQ1-CHUNK-0123-OBS-002 - Directory tests do not cover the already-owned descriptor-reference identity collapse
+
+- Proposed normalization: `EXTENDS GQF-0112` and archived `BR-0096`; do not allocate a new finding
+- Severity/confidence/category: P2, high, correctness/test-gap/path-identity/compatibility
+- Frozen locations: L70-L124 and L220-L304; production `MissionZip.kt:L395-L427`
+- Evidence: the multi-backend and variant-directory tests cover descriptor placement and repeated mission stems, but every descriptor declares a basename such as `LEVEL01.rl2`. No assigned test declares `a/l1.rl2`, `a\\l1.rl2`, a dot component, or repeated same-leaf references. The production path applies `leafName` to every declared level before comparison, so the directory tests cannot distinguish exact reference preservation from leaf-only admission
+- Concrete trigger: add a descriptor declaring `a/l1.rl2` and provide only sibling or archived `l1.rl2`. The frozen scanner admits it by leaf even though the retained descriptor asks the engine for the qualified identity; none of the 26 assigned tests fails
+- Impact: the suite exercises directory grouping while leaving the incompatible descriptor-to-engine identity boundary unguarded
+- Deduplication: GQ1-CHUNK-0057 and `GQF-0112` already own the production root and exact filename-grammar decision. This is test-coverage extension only, not a separate path bug
+- Suggested boundary: add slash, backslash, dot-component, wrong-game-extension, and repeated-leaf cases under the `GQF-0112` remediation after deciding whether paired engines accept only basenames or canonical relative paths
+
+## Explicit clean dimensions
+
+- Diff minimization: no inherited consumer, hook, declaration, registration, build entry, copied policy body, or paired D1/D2 edit is caused by the assigned branch-added test. Helper extraction, parameterization, class splitting, and revert were measured and provide no inherited-diff reduction
+- Backend and order coverage: ZIP, 7z, stream, extracted records, normal and reversed entry order, multiple mission sets, and repeated stems in distinct directories have explicit assertions
+- Negative scanner coverage: plain archives, malformed or orphan descriptors, missing ordinary members, and a structurally truncated same-stem HOG have direct rejection assertions. These do not close the payload-validity and reference-identity roots above
+- Readme behavior: inline-versus-external priority, archive-name preference, size fallback, ordering, MIME mapping, and refusal to inline external documents are covered without network, shell, JNI, credential, or telemetry behavior
+- Resource lifetime: ZIP output streams, 7z output files, and inspected input streams are closed with `use`. Temporary files use delete-on-exit; no distinct open-handle leak was found in the assigned range
+- Determinism: the entry-order matrix checks ZIP, 7z, and extracted backends in forward and reverse order. Fixed filenames in the readme helper are deterministic under the maintained serial JVM configuration; no configured parallel-fork collision was found
+- Portability and hygiene: the frozen assigned diff passes `git diff --check`; the blob is printable ASCII apart from ordinary CRLF line endings, has no UTF-8 BOM or NUL, and contains no platform-specific inherited edit
+
+## Evidence gaps and limits
+
+- No JVM test, Gradle build, APK build, emulator/device import, or native engine launch was run. This is a frozen-object read-only survey, and no frozen checkout was materialized over the dirty live worktree
+- No proprietary mission corpus or valid minimal level fixture was available in this unit. Executable proof of loadability remains part of `GQF-0111`
+- L601-L706 was inspected only because assigned tests call those local helpers. GQ1-CHUNK-0124 retains coverage ownership for that range
+- The broad MissionZip caller graph is entirely branch-added at this boundary, but later engine launch consumes staged files through separately reviewed owners. This test neither creates nor validates those inherited engine paths
+- Fixed build-directory fixture names could conflict if method-level parallelism is enabled later, but the frozen Gradle configuration does not enable it and no failure trigger exists now, so no speculative finding was admitted
+
+## Commands and review methods
+
+- `git rev-parse`, `git ls-tree`, `git cat-file`, `openssl dgst -sha256`, `git show`, `git diff --name-status`, `git diff --numstat`, `git diff --unified=0`, `git diff --check`, `git log --follow`, and frozen `git grep`
+- `rg`, `Select-String`, `Get-Content`, and `Get-FileHash` for scoped line/test/assertion counts, caller classification, build ownership, history, and ledger deduplication
+- Static trace from each test fixture through `MissionZip.inspect`, descriptor parsing, archive catalogues, `playableMissionSets`, import owners, launcher automation, and the absence of a test-caused native/JNI/D1/D2 registration
+
+## Normalization recommendation
+
+1. Record one `GQD-*` decision for GQ1-CHUNK-0123 with disposition `NO_INHERITED_EFFECT`: 0 inherited paths, 0 inherited hunks, and +0/-0 inherited lines, with all 16 direct reference paths branch-added
+2. Normalize OBS-001 as an evidence extension of `GQF-0111` and archived `BR-0096`; allocate no new finding or remediation root
+3. Normalize OBS-002 as an evidence extension of `GQF-0112` and archived `BR-0096`; allocate no new finding or remediation root
+4. Record one non-partial `ISSUES` coverage result for exactly GQ1-CHUNK-0123. Do not claim L601-L706 coverage and do not create style, helper-extraction, fixed-directory, or generic test-duplication findings
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0123 survey result -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0124 frozen survey SHA256:83d6a3bf877c7f7227b7cb3fd5a81980b7809125d12706d06cc08c8fd3daff6a -->
+
+## GQ1-CHUNK-0124 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0124.md`
+- Imported SHA-256: `83d6a3bf877c7f7227b7cb3fd5a81980b7809125d12706d06cc08c8fd3daff6a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0124 frozen survey
+
+Outcome: ISSUES. All 106 assigned lines were reviewed against every helper caller, the complete frozen MissionZip admission path, descriptor and archive-format owners, import and launch consumers, Gradle discovery, paired engine mission loaders, history, and prior review ownership. The test, helpers, directly tested production code, and Android build owners are branch-added. This unit has a measured inherited effect of zero paths, zero hunks, and `+0/-0` lines. The helper payloads add exact evidence to one already-open MissionZip admission finding; no new root was found. No product file, canonical ledger, plan, existing report, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` L601-L706
+- Frozen scope blob: `23fad08ea06d0084030729c5ddb4b30aa45ff2ef`
+- Scope manifest record: `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt|L601-L706|23fad08ea06d0084030729c5ddb4b30aa45ff2ef`
+- Scope manifest SHA-256 over that UTF-8 record without a final LF: `4f886e1d9ca0d68a35bf71ca888f617f35127529da4d3559cbe33b9f3587d369`
+- The path is absent at the frozen base and added at the frozen head as one `+706/-0` file hunk. This unit owns exactly its 106-line tail
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned helper range modifies zero inherited paths, zero inherited hunks, and zero inherited lines. Gradle discovers the containing class through the ordinary branch-added Android unit-test source set; there is no per-test registration
+- The helpers construct branch-owned ZIP, 7z, extracted-tree, HOG, nested-ZIP, descriptor, and documentation fixtures. Their only repository callers are in the same branch-added test file. They exercise branch-added `MissionZip.kt` (`+539/-0`) and `GameFileFormats.kt` (`+587/-0`), plus branch-added archive and extraction record owners
+- Direct downstream production consumers remain under branch-added `android/`: `ModManager.kt` imports and publishes admitted packages, `LevelMetadata.kt` analyzes their constituents, and launcher setup and automation owners select and launch them. The Android module build file and Commons Compress dependency owner are also branch-added at the frozen boundary
+- Paired inherited `d1/main/mission.c` and `d2/main/mission.c` were traced because they ultimately parse mounted `.msn` and `.mn2` files and open their levels. Neither file references `MissionZip`, these test helpers, their fixture paths, or a launcher admission API. Frozen changes in those files address Mac shareware HOG recognition, Android D1 asset visibility, and D2 mission-menu presentation, not MissionZip scanning
+- Paired inherited `songs.c` changes were also checked because mission packages may carry soundtracks. They consume mounted song lists and a branch-added finalized name sidecar, not the assigned helpers or MissionZip admission API. No JNI bridge, native callback, declaration, build registration, or copied policy body is caused by this unit
+- Frozen symbol and causal tracing therefore measures the complete inherited effect of the assigned helper boundary at exactly zero paths, zero hunks, and `+0/-0` lines
+
+### Extraction, consolidation, and revert tests
+
+- Moving the 106 helper lines into a shared branch-added test utility could relocate new test code but would remove zero inherited lines. It would also create a cross-class fixture API for helpers whose current callers are local, so it fails the inherited merge-pressure gate
+- Parameterizing the ZIP and 7z writers, or merging `hogBytes` and `zipBytes` behind a generic binary-container builder, would be cosmetic branch-owned consolidation and would obscure the deliberately visible byte layouts. It offers zero inherited hunk reduction
+- Moving descriptor or archive admission into D1/D2 would introduce a JNI or file-serialization boundary and paired engine changes while removing no existing inherited hook. The current launcher-owned scanner is the smaller ownership boundary
+- Reverting L601-L706 would remove only part of a branch-added test hunk and break compilation or discard regression coverage for deterministic backend ordering, multi-mission identity, readme policy, HOG cataloguing, nested ZIP cataloguing, and extracted-record inspection. It would remove no inherited declaration, call, or build entry
+- The maximum inherited reduction available from extraction, consolidation, or revert is zero lines and zero hunks. Recheck only if a later generation moves MissionZip admission, these test fixtures, or their registration into an inherited path
+
+## Scope and context checked
+
+- Every assigned line, including the tail of `createMissionZipWithDocs`, deterministic Descent Maximum fixture records, ZIP and 7z writers, extracted-record materialization, HOG bytes, and nested-ZIP bytes
+- Every frozen caller of each helper. Callers cover 26 tests in L1-L520 and the adjacent ZIP/7z helper prefix in L523-L600; those lines were context only and remain owned by GQ1-CHUNK-0123
+- Complete frozen `MissionZip.kt` admission and mission-set construction, especially `playableMissionSets`; descriptor parsing in `GameFileFormats.kt`; archive catalog owners; `ModManager`, metadata, setup, automation, and build ownership
+- Paired D1/D2 mission descriptor and level-loading behavior, relevant frozen mission and music diffs, and the absence of any helper or MissionZip symbol in inherited code
+- File history; active and done GQ ledgers; durable evidence including GQ1-CHUNK-0057 and GQ1-CHUNK-0123; active and done adversarial ledgers; DMR1; and prior MissionZip cleanup plans
+- Historical ownership reconciled before observations: open `GQF-0111` owns launcher admission of catalogued but engine-unloadable level payloads; open `GQF-0112` owns descriptor-reference identity collapse; archived `BR-0096` owns the incomplete earlier mission-admission boundary
+
+## Atomic observations
+
+### GQ1-CHUNK-0124-OBS-001: Binary fixture helpers encode malformed levels as positive MissionZip oracles
+
+- Provisional normalization: `EXTENDS GQF-0111` and archived `BR-0096`; duplicate evidence of GQ1-CHUNK-0123-OBS-001, no new finding
+- Severity/confidence/category: P2/high, `correctness/test-gap/input-validation/compatibility`
+- Frozen locations: assigned `hogBytes` at L682-L692, `zipBytes` at L695-L704, and their use in `descentMaximumEntries` at L617-L637; caller locations throughout L18-L49, L52-L124, L126-L185, L221-L320, and L523-L600; production `MissionZip.kt:L385-L429`
+- Evidence: `hogBytes` emits a valid HOG directory shape but declares each alleged level as one byte and writes one zero payload byte. `zipBytes` likewise puts one zero byte behind each alleged nested level name. The Descent Maximum records use the same one-byte HOG members. Positive tests therefore prove only name cataloguing while labeling the resulting sets playable; they cannot prove that either paired engine can load the retained level payload
+- Concrete trigger: inspect any helper-generated positive mission, including either Descent Maximum mission set. The frozen scanner accepts it because its descriptor references a catalogued leaf, even though the referenced bytes are not a loadable D1 or D2 level
+- Impact: the suite can preserve launcher admission of malformed packages and can oppose a correct native-owned loadability check until the positive fixtures are made valid. Users can import and register a mission that fails only when the engine tries to load its level
+- Deduplication: GQ1-CHUNK-0057 admitted the production root as `GQF-0111`, and GQ1-CHUNK-0123-OBS-001 already identified the positive-test extent. This observation supplies the exact assigned byte generator and Descent Maximum helper evidence only
+- Suggested boundary: remediate under `GQF-0111`. Use valid minimal paired-game fixture levels or a narrow native validation probe, keeping explicit empty, one-byte, truncated, wrong-game, HOG, nested-DXA, loose, ZIP, 7z, stream, and extracted negative cases. Do not copy level-format policy into Kotlin
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: no inherited consumer, registration, declaration, hook, copied body, or D1/D2 asymmetry is caused by the assigned branch-added helper range
+- Determinism: the helper matrix feeds ZIP, 7z, and extracted backends in forward and reverse order, and the test asserts a stable primary mission and mission-set order. Entry bytes and order are explicit
+- Archive correctness at the intended fixture layer: ZIP and 7z writers close archives and entries through `use` and explicit entry closure. HOG names are encoded as ASCII, bounded to the 13-byte field, padded deterministically, and followed by an explicit little-endian one-byte length and payload
+- Resource lifetime: output streams close on exceptions. Temporary archive files use deletion-on-exit. The extracted tree remains under `build/`; no open handle, external path escape, or production publication was found
+- Test isolation: the extracted-tree helper uses a per-call `System.nanoTime()` child. Fixed readme filenames are distinct between current tests, and the frozen Gradle configuration does not enable method-level parallel execution. No current collision trigger was established
+- Portability and hygiene: archive member paths use portable ASCII and archive separators. The frozen file has no diff-check error, BOM, NUL, or non-ASCII content
+- Maintainability: local helpers have multiple direct callers and keep binary fixture intent near assertions. Shared-helper extraction would not reduce inherited diff and is not justified by a correctness boundary
+- Descriptor identity: the helpers preserve caller-supplied archive paths rather than silently normalizing them. Missing path-qualified and alias cases remain evidence already owned by `GQF-0112`, not a new helper defect
+
+## Evidence gaps and limits
+
+- No JVM test, Gradle build, APK build, emulator import, or native level launch was run. This is a frozen-object read-only survey, and the materially changed live worktree would not validate the frozen snapshot
+- No valid minimal level corpus was available in this unit, so executable proof of the positive-fixture mismatch remains with `GQF-0111`
+- L1-L600 was inspected only as caller and behavior context. GQ1-CHUNK-0123 owns that range and already recorded the duplicate observation
+- `deleteOnExit` does not clean extracted directories, but they are confined to the disposable Gradle build tree and no bounded current resource failure was established. No speculative finding was admitted
+- The generation manifest directory was unavailable, so frozen commit/tree identity, queue scope, blob ID, line count, and diff attribution were independently confirmed from Git objects
+- No claim is made that all broad D1/D2 mission or music changes are globally minimal. The bounded conclusion is that this branch-added test/helper and its directly tested scanner contract require none of them
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used `git show`, `git cat-file`, `git rev-parse`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git log --follow`, and frozen `git grep` for exact scope, callers, history, implementation, build ownership, native boundaries, and paired D1/D2 context
+- Used `rg` and targeted ledger excerpts to reconcile `GQF-0111`, `GQF-0112`, archived `BR-0096`, GQ1-CHUNK-0057, GQ1-CHUNK-0123, DMR1, and prior cleanup records
+- Computed the ordered one-record scope-manifest SHA-256 in memory and confirmed the frozen blob, added-file hunk, and exact 106-line assignment
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, test execution, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0124 with disposition `NO_INHERITED_EFFECT`: zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added helper, scanner, caller, and build boundary
+- Normalize OBS-001 as a duplicate evidence extension of open `GQF-0111` and archived `BR-0096`, linked to GQ1-CHUNK-0123-OBS-001; allocate no new finding, investigation, DMR1 item, or remediation chunk
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0124, citing the clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0124 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0125 frozen survey SHA256:24b818d0082e43d039382040740c4ee3a9ce9aa94b16f331c51f9233da73bf96 -->
+
+## GQ1-CHUNK-0125 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0125.md`
+- Imported SHA-256: `24b818d0082e43d039382040740c4ee3a9ce9aa94b16f331c51f9233da73bf96`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0125 frozen survey
+
+Outcome: ISSUES. All 600 assigned lines were reviewed with their helper continuations, production owners, launch callers, Android native mount consumer, paired D1/D2 hooks, build entries, history, and prior finding ownership. The assigned test and its direct Kotlin, native-shared, and Android build owners are branch-added. The traced feature boundary still carries 40 branch-added lines in six relevant hunks across two inherited files. A further consolidation into the existing branch-added PhysFS owner can remove an estimated 26 inherited lines and two hunks without changing the file contract. Secondary test-quality evidence extends existing adversarial findings; no separate quality root was found. No product file, canonical ledger, plan, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` L1-L600
+- Frozen scope blob: `335ff87f0843fb711b10db3e1302c921dd41e6ee`
+- Frozen blob size: 38,599 bytes; complete file length: 972 lines; this unit owns exactly its first 600 lines
+- Scope manifest record: `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt|L1-L600|335ff87f0843fb711b10db3e1302c921dd41e6ee`
+- Scope manifest SHA-256 over that UTF-8 record without a final LF: `9840336f03023b5e5a3ef5444ccacc2f8d249a7b6fe87c467ca9ffe7690784fd`
+- The assigned path is absent at the frozen base and added at the frozen head as one `+972/-0` file hunk
+- Evidence came from frozen Git objects. Mutable product and test files were not used as evidence
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE`.
+
+### Attribution and measured boundary
+
+- The assigned test range itself changes zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines. It is discovered by the ordinary branch-added Android JVM test source set and has no inherited registration
+- Its tested import, inspection, extraction, metadata, and publication owners are branch-added: `ModManager.kt` (`+1920/-0`), `MissionZip.kt` (`+539/-0`), `MissionZipExtractionStore.kt` (`+654/-0`), `LevelMetadata.kt`, and the Android Gradle/CMake owners. The test file is also branch-added at `+972/-0`
+- The mission packages ultimately cross one inherited boundary: `ModManager.writeEnabledModPaths` publishes complete generated or extracted roots and nested DXA paths to `.active_mod_paths`; branch-added `physfsx_android_shared.c` reads and mounts them; paired inherited `d1/misc/physfsx.c` and `d2/misc/physfsx.c` invoke that shared setup during `PHYSFSX_init`
+- At the frozen boundary each inherited `physfsx.c` is `+27/-0` in total. Exactly three hunks and 20 added lines per file are part of this Android initialization boundary: the three-line shared-header include, five lines wrapping `PHYSFS_init` with Android failure handling, and the twelve-line shared setup, `InitArgsAndroid`, and return block. The unrelated seven-line Windows absolute-path hunk is excluded. Relevant inherited impact is therefore two paths, six hunks, and `+40/-0`
+- The paired blocks are semantically identical except for the constant `d1x-redux` versus `d2x-redux`. Both Android misc targets already compile the same branch-added `physfsx_android_shared.c` and `physfsx_android_setup.c`, and both expose `InitArgsAndroid(int, char **)` through their paired `args.h`
+- No JNI declaration, Kotlin API, mission parser rule, test registration, or inherited mission/song policy body is required by the assigned test. The only causal inherited pressure found is the paired startup hook above
+
+### Proposed ownership boundary and payoff
+
+- Extend the existing branch-added owner `android/app/src/main/cpp/shared/physfsx_android_shared.c/.h` with one per-target helper that accepts `argc`, `argv`, and `game_dir`, performs the checked `PHYSFS_init`, symbolic-link setup, existing search-path setup, exact diagnostic, and `InitArgsAndroid`, then returns or terminates through the same error contract
+- Each inherited caller can then retain only the Android include plus a compact `#ifdef ANDROID` call with its game-directory constant and immediate return. Desktop initialization remains byte-for-byte in the inherited function and the shared helper remains compiled only into the two Android misc targets
+- Measured estimate: shrink each relevant inherited boundary from 20 added lines in three hunks to about seven added lines in two hunks. This removes about 13 lines and one hunk per game, or 26 inherited lines and two hunks aggregate, while adding only a small implementation extension to an already-required branch-added owner
+- API boundary: `physfsx_android_init_or_error(int argc, char **argv, const char *game_dir)` or an equivalent status-returning form. It must preserve the current full operation, path, and detail diagnostic and must not move desktop PhysFS behavior into Android code
+- Risks: initialization order, `PHYSFS_permitSymbolicLinks(1)` placement, exact fatal diagnostics, `InitArgsAndroid` timing, and per-target symbol resolution. The helper already links into each game-specific misc library, so no new inherited build registration or cross-game callback table is needed
+- Validation: compile both D1 and D2 Android targets for configured ABIs, run the shared PhysFS setup unit test and active-mod capacity test, run dual-game launch assertions for write directory and ordered active mounts, exercise setup failure diagnostics, and run both Windows builds to prove the desktop path is unchanged
+- This candidate extends the completed `plan_d1d2_diff_physfsx_extract_20260711.md` ownership seam, which removed 220 inherited lines and explicitly retained a small mirrored hook. It should be reconciled as a residual improvement of that extraction, not opened as a competing DMR1 root
+
+### Rejected alternatives
+
+- Moving the Kotlin mission parser, extraction policy, or test fixtures into D1/D2 would add paired inherited policy and JNI or serialized interfaces while removing none of the startup hook. It reverses the repository's Android-owner direction
+- A macro in an inherited header would replace visible statements with another inherited declaration and retain paired preprocessor churn. It offers less measured reduction than extending the existing compiled shared owner
+- A callback table for D1/D2 initialization would be larger than the one differing game-directory string and would obscure failure ownership
+- Reverting the assigned tests removes only branch-added regression coverage, not inherited lines. Reverting the startup hook breaks all launcher-generated active paths, including the mission-root and nested-DXA assertions in L62-L119 and L162-L225
+
+## Scope and context checked
+
+- Every assigned test and helper line: active-path capacity; ZIP, 7z, optional RAR, D1-in-D2, soundtrack, rooted/Rebirth, nested-child, durable extraction, stale-record rejection, progress, moving-source, and large nested-HOG cases through the start of `createLargePreambleMissionZip`
+- Helper continuations in L601-L972 as context only, sufficient to trace binary fixture construction and all assigned callers. GQ1-CHUNK-0126 owns that range
+- Complete relevant frozen paths in `ModManager`, `MissionZip`, `MissionZipExtractionStore`, `LevelMetadata`, launcher preparation, shared PhysFS setup and adapter, Android CMake source registration, and paired D1/D2 PhysFS initialization
+- Paired mission and song consumers were checked for file-layout and mount causation. Their broader branch changes are not caused by the assigned test or launcher archive boundary
+- Complete path history; active and done GQ ledgers; durable GQ evidence; active and done adversarial ledgers; DMR1; `plan_d1d2_diff_physfsx_extract_20260711.md`; and prior cleanup plans
+- Historical ownership reconciled before observations: BR-0095 owns optional RAR fixture coverage, BR-0096 mission admission, BR-0102 extraction freshness, BR-0103 extraction publication, BR-0104 engine-relative staging, BR-0186 replacement transactionality, and BR-0469 active-path capacity
+
+## Atomic observations
+
+### GQ1-CHUNK-0125-OBS-001: Finish consolidating the paired Android PhysFS initialization hook
+
+- Provisional normalization: `NEW`, but reconcile as an extension or reactivation of the completed PhysFS extraction plan and DMR1 ownership rather than a competing root
+- Severity/confidence/category: P3/high, `diff-minimization/merge-pressure`
+- Frozen locations: `d1/misc/physfsx.c:L22-L61`; `d2/misc/physfsx.c:L22-L61`; proposed owner `android/app/src/main/cpp/shared/physfsx_android_shared.c/.h`; build owner `android/app/src/main/cpp/CMakeLists.txt:L556-L563,L724-L731`
+- Evidence: each inherited file retains the same checked PhysicsFS initialization, structured shared-setup call, fatal formatting, Android argument initialization, and early return. Only the game directory differs. The shared adapter is already compiled separately into each game target and already owns the complete Android search-path operation, so it can call each target's existing `InitArgsAndroid` and preserve the diagnostic without a new inherited declaration or build entry
+- Concrete trigger: any change to Android PhysicsFS startup failure handling, argument initialization order, or shared setup signature requires editing the same policy block in both inherited sources. The current frozen branch pays 40 inherited added lines across six relevant hunks for a boundary with one string parameter
+- Impact: avoidable paired merge conflicts and review burden in two 1996-derived files. The estimated complete extraction removes 26 inherited additions and two hunks while retaining compact, readable, game-specific calls
+- Suggested boundary: extend `physfsx_android_shared.c/.h`; leave the shared include, one parameterized call, and early return in each inherited source. Preserve desktop source flow, exact D1/D2 directory constants, operation/path/detail diagnostics, and the existing Android-only build ownership
+
+### GQ1-CHUNK-0125-OBS-002: Capacity coverage is a partial evidence extension of BR-0469
+
+- Provisional normalization: `HISTORICAL-CLOSED` or `EXTENDS BR-0469` after checking its live remediation state; no new finding
+- Severity/confidence/category: P2/high, `compatibility/test-gap/resource-limits`
+- Frozen locations: assigned L22-L29 and L62-L119; `ModManager.kt:L18-L27,L651-L690`; native `physfsx_android_setup.c:L128-L164`; adversarial BR-0469
+- Evidence: the assigned test now proves direct acceptance of 64 strings and rejection of 65, while production constructs the complete `validPaths` list before the check, deletes a stale path file on rejection, and publishes atomically only after acceptance. This is material repair evidence for BR-0469. It does not execute the actual manager with 63 through 66 mixed one-path and two-path mission entries or prove exact paired native mount order in both games
+- Normalization note: do not create a second capacity finding. Reconcile whether BR-0469 should close on the frozen repair or retain a test-gap follow-up for the cross-language boundary
+
+## Explicit clean dimensions
+
+- Branch ownership: all assigned test, fixture, Kotlin production, shared native policy, and Android build code is new. No copied mission-import policy was found in inherited D1/D2
+- D1/D2 parity: the only causal inherited startup blocks are exact structural pairs with explicit game-directory constants. Test cases cover D1 mission staging for both engines and the compatibility opt-out
+- Resource lifetime: assigned ZIP and 7z writers close streams and entries; `RandomAccessFile` closes through `use`; manager import and extraction lifetime defects remain under BR-0103 and BR-0186 rather than a new test-file root
+- Capacity and publication: frozen production counts the complete generated patch, ordinary mod, mission root, and nested DXA list before atomic publication. The assigned direct 64/65 assertion is deterministic
+- Portability: test archive member names use portable separators and ASCII payloads. Platform filesystem assertions use `File.separator`. No inherited desktop build registration is caused by this test
+- Test isolation: assigned fixed build directories are unique per test. Frozen Gradle configuration does not enable method-level parallelism, and temporary archive helpers use unique platform temp names. No current collision trigger was established
+- Determinism and diagnostics: progress assertions require a determinate total and terminal equality. Stale-extraction coverage verifies both record invalidation and absence from the published path list. Broad production roots remain owned by cited adversarial findings
+- Hygiene: the frozen assigned file and traced inherited/shared diffs pass `git diff --check`; no BOM, NUL, non-ASCII content, or trailing whitespace was found in the report
+
+## Evidence gaps and limits
+
+- No JVM test, Android build, Windows build, emulator launch, native mount test, or fault injection was run. This is a frozen-object read-only survey, and live execution would not validate the frozen snapshot after worktree drift
+- The 26-line/two-hunk reduction is an implementation estimate based on replacing the two exact frozen blocks. Remediation must remeasure against the live merge base and reject the candidate if preserving diagnostic or initialization ownership makes the residual call materially larger
+- The optional RAR test can skip when no fixture is present; that existing gap remains BR-0095
+- Assigned positive mission fixtures do not establish native level loadability, transactionality, or correct root-relative soundtrack use. Those roots remain BR-0096, BR-0103, and BR-0104 and were not duplicated
+- The generation manifest directory was unavailable, so frozen commit/tree identity, queue scope, blob ID, line count, and diff attribution were independently confirmed from Git objects
+- No claim is made that all D1/D2 PhysFS or mission diffs are globally minimal. The candidate is bounded to the paired Android initialization hook reached by this test's active-path contract
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used `git show`, `git cat-file`, `git rev-parse`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git log --follow`, and frozen `git grep` for exact scope, history, implementation, build ownership, native consumers, and paired D1/D2 attribution
+- Used `rg` and targeted ledger excerpts to reconcile DMR1, the completed PhysFS extraction plan, BR-0095, BR-0096, BR-0102, BR-0103, BR-0104, BR-0186, BR-0469, prior GQ evidence, and cleanup records
+- Computed the ordered one-record scope-manifest SHA-256 in memory and confirmed the frozen blob, added-file hunk, exact 600-line assignment, relevant inherited line counts, and shared target registration
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, test execution, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0125 with disposition `CANDIDATE`: two inherited paths, six relevant current hunks, and `+40/-0` current inherited lines; estimated reduction 26 lines and two hunks into the existing branch-added PhysFS owner
+- Normalize OBS-001 as one atomic diff-minimization finding after reconciliation with the completed PhysFS extraction plan and DMR1. Its remediation should own only `physfsx_android_shared.c/.h`, the two compact inherited callers, focused shared tests, and validation records
+- Normalize OBS-002 as repair/test evidence for BR-0469, not a new finding. Close or extend that historical item according to the canonical live-state audit
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0125, citing the clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0125 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0126 frozen survey SHA256:1e1cf9c630019acc5af6ddcf3c3a58c61706d6ed32d5ed653cb62d68559935dc -->
+
+## GQ1-CHUNK-0126 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0126.md`
+- Imported SHA-256: `1e1cf9c630019acc5af6ddcf3c3a58c61706d6ed32d5ed653cb62d68559935dc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0126 frozen survey
+
+Outcome: ISSUES. All 372 assigned lines were reviewed against every helper caller, the complete frozen ModManager mission import and staging path, metadata and extraction owners, Gradle discovery, the paired native mount setup, the D2 D1-custom owner and its inherited call sites, history, and prior review ownership. The assigned file and every helper in this range are branch-added. This unit has a measured inherited effect of zero paths, zero hunks, and `+0/-0` lines. Its synthetic level payloads add exact evidence to one already-open MissionZip admission finding; no new quality or minimization root was found. No product file, canonical ledger, plan, existing report, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` L601-L972
+- Frozen scope blob: `335ff87f0843fb711b10db3e1302c921dd41e6ee`
+- Scope manifest record: `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt|L601-L972|335ff87f0843fb711b10db3e1302c921dd41e6ee`
+- Scope manifest SHA-256 over that UTF-8 record without a final LF: `6d4cc37adda5444de8232d6db498d121b20d2f7ffa514f46729abdd49495c599`
+- The path is absent at the frozen base and added at the frozen head as one `+972/-0` file hunk. This unit owns exactly its 372-line tail
+- The mutable file currently hashes to the same Git blob, but all product conclusions came from frozen Git objects
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned helper range modifies zero inherited paths, zero inherited hunks, and zero inherited lines. Gradle discovers the containing class through the ordinary branch-added Android `src/test` source set; there is no per-class or per-method registration. The Android module build owner is itself branch-added (`android/app/build.gradle`, `+476/-0`)
+- The whole test is one branch-added `+972/-0` hunk. Its 21 assigned helpers construct ZIP, nested ZIP/DXA, HOG, POG, DTX/PIG1-like, Rebirth-layout, soundtrack, large-preamble, and optional RAR fixtures. Every repository caller is in this same branch-added test file
+- Directly exercised production is also branch-added: `ModManager.kt` (`+1920/-0`), `MissionZip.kt` (`+539/-0`), `MissionZipExtractionStore.kt` (`+654/-0`), and `LevelMetadata.kt` (`+1889/-0`). Calls cover mission import, durable extraction, generated launch staging, active-path publication, soundtrack detection, metadata targets, and deletion. No JNI method is called by these JVM tests
+- The runtime mount boundary was traced beyond the JVM test. Branch-added `physfsx_android_setup.c` (`+301/-0`) reads `.active_mod_paths`; paired inherited `d1/misc/physfsx.c` and `d2/misc/physfsx.c` each contain four Android setup hunks totaling 20 additions before their unrelated Windows real-path hunk. Those paired hooks initialize the complete Android content search path for all launcher content. The assigned helpers neither compile nor execute them and do not require a test registration, declaration, callback, or copied policy body in either inherited file
+- The Trine fixture was also traced into D1-in-D2 runtime ownership. `d2/main/d1_custom.c` (`+894/-0`) and `d1_custom.h` (`+26/-0`) are branch-added sinks. Their inherited seams are one source-list entry in `d2/main/CMakeLists.txt` and three narrow lines in `d2/main/gameseq.c`: the include, `d1_custom_remove`, and `d1_custom_load_data`. These runtime seams are not exercised by this staging test. The test only reads its generated HOG back and checks the fixture's first two little-endian counts
+- The Rebirth, soundtrack, and durable-extraction helpers similarly stop at branch-added launcher and metadata owners in this JVM unit. Native D1/D2 later consume the resulting mounted conventional files without any symbol reference to this test, its helpers, or a MissionZip Kotlin API
+- Frozen causal tracing therefore measures the complete inherited effect of the assigned test/helper boundary at exactly zero paths, zero hunks, and `+0/-0` lines. The contextual inherited runtime seams remain separately owned by their later GQ coverage and DMR1 residual accounting
+
+### Extraction, consolidation, and revert tests
+
+- Moving the 372-line tail into one or more branch-added test-fixture files could relocate nearly all assigned lines, but it would remove zero inherited paths, hunks, or lines. The current callers are local, so extraction would add a fixture API and imports without reducing merge pressure
+- Consolidating the similar ZIP writers behind a generic archive builder could remove an estimated 35-60 branch-added test lines, but it would obscure deliberately visible archive layouts and still remove zero inherited lines. This fails the campaign's inherited-reduction gate
+- Moving mission staging, HOG parsing, D1 custom-data policy, or soundtrack handling into D1/D2 would invert ownership, duplicate launcher policy, and add JNI or serialized boundaries. The current branch-added Kotlin and native owners already absorb the large bodies, leaving only conventional file consumption and narrow runtime calls in inherited code
+- Reverting L601-L972 would remove only branch-added fixture and assertion support. It would break compilation for callers in L1-L600 or discard coverage for large durable extraction, nested Rebirth selection, D1 mission staging, soundtrack placement, HOG layout, and configured RAR resolution. It would remove no inherited declaration, call, build entry, or policy body
+- The maximum inherited reduction available from extraction, consolidation, or revert of this unit is zero lines and zero hunks. Recheck only if a later generation moves these fixtures, their registration, or a MissionZip policy body into an inherited path
+
+## Scope and context checked
+
+- Every assigned line, including the continuation of `createLargePreambleMissionZip`, all mission-layout fixture writers, binary endian helpers, HOG assertions and reader, and configured RAR resolver
+- Every frozen caller in L1-L600. The callers cover D1 and D2 staging, D1-in-D2 compatibility gating, DXA soundtrack selection, top-level song aliasing, Rebirth layout and child selection, durable extraction and freshness, moving-source import, metadata targeting, deletion, 7z import, and optional RAR import
+- Complete frozen production owners for import, scan, extraction, active-path generation, music inspection, metadata targeting, and deletion, plus Android Gradle unit-test discovery and dependency ownership
+- Branch-added native active-path setup and D1-custom sinks; paired inherited PhysicsFS startup hooks; the narrow D2 source-list and game-sequence D1-custom seams; paired D1/D2 mission and HOG consumption as contextual runtime boundaries
+- File history; active and done GQ ledgers; durable prior GQ evidence; active and done adversarial ledgers; DMR1; prior parser and local-correctness cleanup plans; and the earlier R1-CHUNK-0089 review of L601-L930
+- Historical ownership reconciled before observations: open `GQF-0111` owns catalogued but engine-unloadable level payloads; archived `BR-0096` owns the incomplete earlier mission-admission boundary; archived D1-custom findings and their maintained automation own runtime loader validation; the former active-path capacity root `BR-0469` is not duplicated here
+
+## Atomic observations
+
+### GQ1-CHUNK-0126-OBS-001: Mission staging fixtures use non-loadable synthetic level payloads
+
+- Provisional normalization: `EXTENDS GQF-0111` and archived `BR-0096`; duplicate evidence of GQ1-CHUNK-0123-OBS-001 and GQ1-CHUNK-0124-OBS-001, no new finding
+- Severity/confidence/category: P2/high, `correctness/test-gap/input-validation/compatibility`
+- Frozen locations: assigned `createTrine2StyleMissionZip` at L618-L646, `writeEnemyWithinStyleEntries` at L682-L719, `createObsidianStyleMissionZip` at L721-L751, soundtrack fixtures at L753-L822, and generic `createHogBytes` at L837-L846; caller assertions at L164-L221, L228-L316, and L320-L365
+- Evidence: the helpers emit level members such as `e2m1.rdl`, `level01.rl2`, `argnentr.rl2`, and `Uneasy4.rl2` as one, 12, or 28 zero bytes. The HOG directory is structurally adequate for the Kotlin catalog and staging paths, but none of those payloads is a loadable game level. Positive tests therefore prove descriptor/name association, layout, copying, and mount-path generation while still using a package that cannot be launched by either paired engine
+- Concrete trigger: import any affected helper output. Frozen MissionZip/ModManager code admits and stages the named mission because the descriptor references a catalogued leaf, while actual level loading would reject the synthetic payload
+- Impact: the suite can preserve launcher admission and staging of a mission whose apparent positive end state is not playable. It cannot serve as proof that the inherited engine boundary accepts the package, especially for the D1 and D1-in-D2 fixture named as staging "for D1 and D2 engine"
+- Deduplication: `GQF-0111` already owns production loadability admission. GQ1-CHUNK-0123 and 0124 already identify the same false-positive fixture root in adjacent MissionZip test helpers. This observation adds the exact ModManager helper matrix and D1/Rebirth/soundtrack staging extent only
+- Suggested boundary: remediate under `GQF-0111`. Replace at least one positive D1 and D2 payload with valid minimal levels or invoke one narrow native-owned validator before publication. Preserve the current cheap synthetic fixtures for staging-only cases, but name them as staging-only and do not treat them as engine-loadability oracles
+
+## Explicit clean dimensions
+
+- Inherited diff and parity: no inherited consumer, registration, declaration, hook, copied body, or D1/D2 asymmetry is caused by the assigned branch-added range. The contextual mount hooks are paired and the D1-custom implementation already resides in branch-added sinks
+- Ownership: archive construction and launcher policy remain in Android test and production owners. Conventional mission, HOG, DTX/PG1, and song-list consumption stays native. No proposal that copies detailed engine format policy into Kotlin survived the ownership gate
+- Resource lifetime: every ZIP writer and byte-array stream closes through `use`; individual entries are explicitly closed; `RandomAccessFile` and `FileOutputStream` close on failure. Temporary source archives use deletion-on-exit, and fixed test directories remain under the disposable Gradle build tree
+- Archive layout: ZIP and nested DXA entry names use archive separators and portable ASCII. Rebirth helpers deliberately preserve the existing `missions/` root. Large-preamble helpers exceed the named threshold by exactly one byte before appending a valid ZIP local header
+- HOG fixture correctness at its intended layer: names fit the 13-byte field in all current callers, sizes use explicit little-endian encoding, and assertion helpers check the `DHF` signature and expected entry presence. D1 custom count assertions read the deliberate PIG1 count prefix
+- Determinism and isolation: helper bytes and archive order are explicit. Test build-directory names are distinct by method, and the frozen Gradle setup does not enable parallel execution of the same method. The configured RAR path fails explicitly when a caller supplies a missing path and otherwise skips only the optional repository fixture path
+- Security and containment: assigned helpers write only caller-chosen temporary files or fixed children beneath test-owned build roots. No production archive extraction, symlink, path traversal, or external publication occurs in the helpers themselves; production extraction risks remain with their existing owners
+- Portability and hygiene: integer serialization is explicit, character encodings are named where format-sensitive, and member names avoid platform separators. The frozen file passes diff checking and contains no BOM, NUL, non-ASCII byte, or trailing whitespace
+- Maintainability: every assigned helper has a caller. The endian and HOG helpers are shared locally enough to justify their small abstraction, while broader generic fixture extraction would add API surface without inherited reduction
+
+## Evidence gaps and limits
+
+- No JVM test, Gradle build, APK build, native build, emulator import, or engine launch was run. This was a frozen-object read-only survey; executing the mutable production graph would not validate the complete frozen snapshot
+- The assigned unit does not execute JNI, paired PhysicsFS setup, D1/D2 mission loading, or `d1_custom`. Those paths were inspected as causal context only. Runtime D1-custom behavior has separate focused native tests and maintained automation in historical closure records
+- L1-L600 was inspected only as caller and assertion context. GQ1-CHUNK-0125 owns that range and any independent issue rooted there
+- `readHogEntryData` assumes its locally generated size fields are in bounds. A malformed external HOG could cause a test-side range exception, but the helper is private, all inputs are generated in this class, and no production parser relies on it. No concrete current defect was admitted
+- `deleteOnExit` retains temporary archives until JVM shutdown, including large-preamble fixtures. The focused class creates a bounded number and current execution has no established resource failure. This remains a test-runtime consideration rather than an admitted finding
+- The generated campaign manifest directory was unavailable, so frozen commit/tree identity, queue scope, blob ID, line count, added-file status, and SHA-256 scope fingerprint were independently confirmed from Git objects
+- No claim is made that the contextual broad D1/D2 runtime diffs are globally minimal. The bounded conclusion is that this branch-added unit requires none of them, while DMR1 and later inherited coverage retain ownership of those seams
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used frozen `git show`, `git cat-file`, `git rev-parse`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git log --follow`, `git ls-tree`, and `git grep` for scope, callers, path classification, history, production/build/native tracing, and exact inherited hunk measurements
+- Used `rg` and targeted ledger excerpts to reconcile GQ1-CHUNK-0057, GQ1-CHUNK-0123, GQ1-CHUNK-0124, `GQF-0111`, archived `BR-0096`, R1-CHUNK-0089, `BR-0469`, D1-custom closures, DMR1, and earlier cleanup plans
+- Computed the ordered one-record scope-manifest SHA-256 in memory and confirmed the frozen blob, one added-file hunk, exact 372-line assignment, and live equality without using live content as product evidence
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, test execution, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0126 with disposition `NO_INHERITED_EFFECT`: zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added test, production, build, and native-owner boundary
+- Normalize OBS-001 as a duplicate evidence extension of open `GQF-0111` and archived `BR-0096`, linked to GQ1-CHUNK-0123-OBS-001 and GQ1-CHUNK-0124-OBS-001; allocate no new finding, investigation, DMR1 item, or remediation chunk
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0126, citing the clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0126 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0127 frozen survey SHA256:13ba9c87a15e1656e0bf3bb50107c1da4bf34f474822e5192a0f7c05a59374e3 -->
+
+## GQ1-CHUNK-0127 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0127.md`
+- Imported SHA-256: `13ba9c87a15e1656e0bf3bb50107c1da4bf34f474822e5192a0f7c05a59374e3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0127 frozen survey
+
+Outcome: ISSUES. All 150 assigned lines were reviewed with roughly 80 percent of effort applied to frozen attribution and diff minimization. All four scripts are branch-added and directly contribute zero inherited paths, hunks, or lines. Their native menu automation and introspection boundary, however, contains 154 duplicated branch-caused accessor/declaration lines across paired inherited D1/D2 files. Consolidating those mechanical definitions in branch-added include/header owners is a measured diff-minimization candidate estimated to remove about 144 inherited lines while retaining compact include seams. The remaining quality review reconfirmed two existing false-pass roots and one runner-level extraction-result root; no new secondary quality finding was found. No product file, canonical ledger, plan, existing report, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned paths and complete reviewed ranges:
+  - `android/game_scripts/test_extract_regression_template.json5` L1-L57, blob `09c559c44889486cf7fd8af8122d4326d02a51fc`
+  - `android/game_scripts/test_level_metadata_launcher_zip_reusable.json5` L1-L37, blob `f13f687593eb1fe1e2846176acea19238ea2dae3`
+  - `android/game_scripts/test_mission_zip_batch_import_metadata_launch.json5` L1-L38, blob `c3e74015830aa3a3816a165d7aeede95e6828b47`
+  - `android/game_scripts/test_mission_zip_batch_import_metadata.json5` L1-L18, blob `3b7e1dd3899a6c24689232000e38aa1b1e62ed2b`
+- Scope manifest SHA-256 over the four ordered UTF-8 records above, joined by LF without a final LF: `4814089335e890bac0de4aca689cefa6d53376864510982aab4b51f438643794`
+- All four paths are absent at the frozen base and added at the frozen head. Their exact frozen numstat is respectively `+57/-0`, `+37/-0`, `+38/-0`, and `+18/-0`, for `+150/-0` assigned branch-added lines
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE`.
+
+### Attribution and measured boundary
+
+- The assigned script files themselves modify zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines. `test_extract.ps1` resolves and substitutes the extraction template. `run_mission_zip_batch.ps1` selects either mission-batch template. The reusable level-metadata script is discovered by the branch-added script catalog and parameter/dependency resolver. No D1/D2 build file registers any individual script
+- Launcher-only actions are owned by branch-added `LauncherScriptExecutor.kt`: `enter_launcher`, reset and cleanup, mission import, level-metadata analysis, and launch-button handling. Native action parsing and execution are owned by branch-added `game_automate.cpp`; introspection serialization is owned by branch-added `game_introspect.cpp`. Android target source registration is in the branch-added Android CMake owner
+- The scripts' native menu path does require narrow inherited visibility seams. `event.c` in both games includes the shared automation/introspection headers and calls `game_automate_tick` and `game_introspect_check_and_dump`. Menu selection and assertions use newmenu/listbox data through accessors, while introspection recognizes opaque windows through callback/data accessors. These are branch-caused hooks supporting the assigned `select`, `wait_for`, `assert`, `assert_mission_list_has_non_base`, `select_non_base_mission`, and final `introspect` steps
+- The event-loop hook is already the natural frame boundary: paired `d1/arch/sdl/event.c` and `d2/arch/sdl/event.c` each need one tick and one post-draw dump call. Moving frame orchestration into shared code would require callback tables or expose private window/event state and was rejected under DMR1's retained frame-orchestration policy
+- The accessor implementations are different. Frozen paired `newmenu.c` files contain identical 41-line `INTROSPECT_ON` blocks for six newmenu getters and identical 7-line listbox-title getter blocks, totaling 96 inherited lines. Paired `newmenu.h` files add the corresponding identical declaration blocks totaling 22 lines. Paired `window.c` files add identical 12-line callback/data accessor blocks totaling 24 lines, and paired `window.h` files add identical six-line declaration blocks totaling 12 lines. The measured consolidation surface is therefore eight inherited paths and 154 added lines
+- These bodies are mechanical field access, not game policy or private menu geometry. The same definitions can compile in each game only after its private structures are complete, which makes branch-added implementation include fragments a narrower boundary than publishing the private structures or adding callback tables
+
+### Candidate extraction
+
+- Proposed branch-added owners: a narrowly named `android/app/src/main/cpp/shared/game_menu_introspect_accessors.inc` for the identical newmenu and listbox definitions, a `game_window_introspect_accessors.inc` for the identical window definitions, and one shared declaration header included from the paired inherited headers after the opaque types are declared. Separate menu and window fragments preserve their private structure scopes
+- Inherited result: replace the two accessor blocks in each `newmenu.c`, the declaration blocks in each `newmenu.h`, and the window blocks in each `window.c` and `window.h` with about ten total guarded include lines. Against the measured 154-line surface, the estimated isolated inherited reduction is about 144 lines across eight paths and eight existing hunk locations. Exact final numstat must be recorded by remediation rather than treating this estimate as acceptance
+- API boundary: preserve every existing exported function name and signature. The fragments receive no callbacks and own no state. They compile inside the current translation units after `struct newmenu`, `struct listbox`, or `struct window` is complete, so callers in branch-added automation/introspection remain unchanged
+- Rejected alternatives: making the private structs public increases inherited header churn and couples shared code to complete layouts; a callback table is larger than the removed field getters; moving menu selection or frame traversal out of the engine hides game policy and conflicts with DMR1's retained private-geometry/frame-orchestration boundary; reverting the accessors breaks named menu automation and introspection; reverting the four scripts removes coverage but saves zero inherited lines
+- Risks: D1/D2 private layouts could diverge; an `.inc` file can obscure definition location; include ordering must preserve complete type visibility and C/C++ linkage. Limit the fragments to exact field-returning definitions, retain compile-time per-game ownership, and reject the extraction if adapters or conditional mappings grow beyond the ten-line inherited estimate
+- Validation: exact isolated before/after numstat for all eight inherited paths; a source-contract test proving each inherited file contains only the expected include seam and no duplicate definitions; D1 and D2 Windows builds; configured Android ABI builds with `INTROSPECT_ON`; automation catalog validation; focused D1 and D2 menu selection plus mission ZIP launch scripts; scoped quality for new branch-owned files; and `git diff --check`
+- DMR1 reconciliation: DMR1 currently retains private newmenu geometry and frame orchestration but has no accessor-consolidation chunk. This candidate does not move either retained family. Normalize it as a new diff-minimization finding only after the canonical writer confirms no newer DMR1 or live-worktree extraction already owns these exact accessor blocks
+
+## Scope and context checked
+
+- Every assigned script line, placeholder, dependency digest, action, timeout, game gate, assertion, owner marker, and final result/log step
+- Direct host owners: `android/tests/test_extract.ps1`, `android/helpers/run_mission_zip_batch.ps1`, `run_test.ps1`, `test_helpers.ps1`, and the automation catalog/discovery path
+- Launcher owners: script parsing and handoff, `LauncherScriptExecutor`, mission import, level metadata single/all analysis, reset/cleanup, launch controls, result publication, and retained worker behavior
+- Native owners: all assigned action names in `game_automate.cpp`, relevant menu selection and mission classification, `game_introspect.cpp` menu/window state, JNI handoff, and Android CMake source ownership
+- Paired inherited consumers: D1/D2 SDL event loops, window declarations/implementations, newmenu/listbox declarations/implementations, and D2 movie intro context. D1/D2 parity and exact accessor duplication were compared at the frozen head
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, R1-CHUNK-0090, existing BR-0009, BR-0076, BR-0077, and BR-0283 ownership, and prior cleanup/process records
+
+## Atomic observations
+
+### GQ1-CHUNK-0127-OBS-001: Consolidate duplicated debug menu and window accessors outside inherited files
+
+- Provisional normalization: `NEW`, subject to final DMR1/live deduplication
+- Severity/confidence/category: P2/high, `diff-minimization/merge-pressure`
+- Frozen locations: `d1/main/newmenu.c:L758-L798,L2597-L2603`, `d2/main/newmenu.c:L745-L785,L2592-L2598`, paired `main/newmenu.h` introspection declaration blocks, paired `arch/sdl/window.c:L224-L235`, and paired `arch/include/window.h:L36-L41`
+- Trigger: merge or rebase the Android branch across upstream changes to any paired menu/window owner. Identical branch-specific definitions must be reconciled twice even though they implement one shared debug API
+- Impact: 154 inherited additions across eight files carry duplicated merge pressure, allow D1/D2 accessor drift, and leave branch-owned debug implementation in upstream-sensitive files despite a type-complete include seam
+- Suggested boundary and validation: use the measured candidate extraction above. Preserve names, signatures, guards, field behavior, and existing branch-added consumers exactly. Require a material measured inherited reduction and paired platform/automation validation
+
+### GQ1-CHUNK-0127-OBS-002: Metadata templates can accept failed level rows
+
+- Provisional normalization: `DUPLICATE/EXTENDS BR-0077`; no new finding
+- Severity/confidence/category: P2/high, `correctness/error-reporting/test-gap`
+- Frozen locations: `test_level_metadata_launcher_zip_reusable.json5:L34-L36` and both mission-batch templates at their `analyze_level_metadata_all` steps
+- Evidence: the scripts assert root status and minimum row count, while the loaded-mission analyzer can publish failed rows under root `status="ok"`. This exact template-to-analyzer false-pass path is already recorded by R1-CHUNK-0090 as additional evidence for open BR-0077
+- Normalization: retain the exact assigned-script evidence under BR-0077. Do not allocate a new GQ finding or remediation root
+
+### GQ1-CHUNK-0127-OBS-003: Mission ZIP launch can select the sole base mission
+
+- Provisional normalization: `DUPLICATE BR-0283`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `test_mission_zip_batch_import_metadata_launch.json5:L26-L29`
+- Evidence: the script's non-base assertion and following selector share a helper that can return the sole recognized base mission. BR-0283 already owns this exact trigger, impact, split-predicate repair, and mission-identity validation
+- Normalization: retain as coverage evidence for BR-0283 only. BR-0009 separately owns the extraction runner's ability to record success despite a failed exact-level automation result, so the extraction template's exact level assertion does not create another root here
+
+## Explicit clean dimensions
+
+- Path ownership: all four assigned files and their direct runner, launcher, JNI, and shared automation owners are branch-added. No script content or individual registration was copied into inherited files
+- D1/D2 parity: the required event hooks and debug accessors are paired. The proposed extraction preserves identical APIs and does not attempt to deduplicate substantive menu geometry or frame policy
+- Revert testing: removing any script eliminates only branch-owned coverage. It cannot remove an inherited hook because the automation/introspection system has many other maintained consumers. Removing native accessors would break named menu inspection across that corpus
+- Fixture integrity: every fixed SHA-256 is 64 lowercase hexadecimal characters. Mission-batch values are inserted by the runner with JSON-safe serialization. Required waits and selections have finite timeouts
+- Parser behavior: the reusable and both mission-batch files parse after comment/trailing-comma normalization. The extraction file deliberately contains the raw Boolean placeholder `MISSION_OPTIONAL`, so it is not standalone JSON5 before runner substitution; its `_standalone:false` and owner metadata correctly prevent catalog execution as a resolved script
+- Resource, concurrency, and security: assigned declarative scripts allocate no resources and execute no concurrent code themselves. Import, metadata worker, mount lifetime, and archive safety remain in their existing product owners; fixed BR-0076 owns the prior request-mount leak
+- Portability and hygiene: assigned paths are ASCII, have no BOM or NUL, use repository path conventions, and pass frozen `git diff --check`. The proposed fragments must remain guarded and compile in both C-based game translation units
+- Maintainability: the two mission-batch scripts appropriately split metadata-only and launch behavior while retaining a small shared runner selection point. Consolidating whole scripts would save branch-added lines but would not reduce inherited merge pressure and risks complicating substitution
+
+## Evidence gaps and limits
+
+- No product build, Gradle test, APK build, emulator run, extraction corpus, or mission ZIP import was executed. This was a frozen-object read-only survey; runtime execution of the mutable worktree would not prove the complete frozen boundary
+- The 144-line reduction is an implementation estimate derived from exact frozen blocks. Remediation must produce isolated before/after metrics and reject the candidate if include/adaptor growth materially erodes the payoff
+- The candidate intentionally does not address the much larger Android newmenu diff, private geometry, rendering, touch policy, event-loop rendering changes, or D2 movie tracking. Those are separate DMR1 retained or later-coverage families
+- `test_level_metadata_launcher_zip_reusable.json5` has no literal filename caller because it is catalog-discovered. Catalog parameter/default execution was statically traced, not run against the proprietary dependency set
+- BR-0077 and BR-0283 are open historical owners at the frozen evidence boundary. Live remediation or later ledger normalization may have changed their state and must be checked by the canonical writer
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used frozen `git cat-file`, `git merge-base`, `git rev-parse`, `git show`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git grep`, and line-numbered searches for classification, scope, callers, consumers, paired hooks, and exact metrics
+- Used `rg`, `Select-String`, and targeted ledger excerpts to reconcile R1-CHUNK-0090, BR-0009, BR-0076, BR-0077, BR-0283, DMR1 retained boundaries, and prior GQ evidence
+- Compared the paired accessor definitions and declarations, counted their exact frozen ranges, and computed the ordered scope-manifest SHA-256 in memory
+- Parsed the three resolved-shape scripts after conservative comment/trailing-comma normalization. Confirmed the extraction template fails pre-substitution exactly at its intentional raw `MISSION_OPTIONAL` token
+- No product edit, canonical-ledger edit, temporary report, fixture generation, build, test execution, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0127 with disposition `CANDIDATE`: eight inherited paths, eight accessor/declaration locations, 154 measured added lines, about ten retained include-seam lines, and about 144 estimated inherited lines removed
+- Admit OBS-001 as one atomic P2/high `diff-minimization/merge-pressure` finding and one later remediation chunk, after reconciling the exact accessor blocks with current DMR1 and the live worktree
+- Normalize OBS-002 as a duplicate evidence extension of BR-0077 and OBS-003 as a duplicate of BR-0283. Link the extraction exact-level context to BR-0009 without allocating another finding
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0127, citing the explicit clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0127 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0128 frozen survey SHA256:35b27bb1ab6bf2340858a37ad0e55f887814abf256ca6412035ec48f5a05e9c5 -->
+
+## GQ1-CHUNK-0128 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0128.md`
+- Imported SHA-256: `35b27bb1ab6bf2340858a37ad0e55f887814abf256ca6412035ec48f5a05e9c5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0128 frozen survey
+
+Outcome: ISSUES. All 295 assigned lines were reviewed against their frozen production, build, runner, paired D1/D2, history, DMR1, and prior-review owners. Diff minimization dominated the review. The frozen test pair exposed a 559-line inherited host-test registration block that belonged in a branch-added test owner. This is a measured `CANDIDATE` at the frozen boundary, but current commit `7f0f7c20ff232201084750a8083a01a35bed4c54` has already implemented the same ownership change by adding `android/tests/CMakeLists.txt` and deleting all 559 lines from the paired inherited maths files. The remaining quality pass found that the bounded-extractor quota tests are both unregistered and mutation-insensitive: deleting all output-tree budget checks still leaves the quota tests green because their child programs time out and any nonzero result is accepted. No product file, canonical ledger, existing report, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/tests/test_net_udp_reconnect_auth.c` L1-L205
+- Frozen blob: `4718b88e5423d7119abb8055c45f1d6d1d1d0a08`
+- Assigned path and complete reviewed range: `android/tests/test_run_bounded_extractor.py` L1-L90
+- Frozen blob: `dddd9f67e888cfd507639faf3bd3b5d2ada3995d`
+- Ordered scope records:
+  - `android/tests/test_net_udp_reconnect_auth.c|L1-L205|4718b88e5423d7119abb8055c45f1d6d1d1d0a08`
+  - `android/tests/test_run_bounded_extractor.py|L1-L90|dddd9f67e888cfd507639faf3bd3b5d2ada3995d`
+- Scope manifest SHA-256 over the two UTF-8 records separated by one LF and without a final LF: `ad7113943249704efc7863531ea37f5855d7a9b43aef4ff291b47ea47e0798bf`
+- Both assigned paths are absent at the frozen base and added at the frozen head as one complete-file hunk each: `test_net_udp_reconnect_auth.c` is `+205/-0`; `test_run_bounded_extractor.py` is `+90/-0`
+- Current `HEAD` is `1f8b1952057ff1893045003abcfae60dee967bc8`. Both assigned files and `run_bounded_extractor.py` remain frozen-identical. Current build ownership differs and is discussed only as historical reconciliation, not substituted for frozen product evidence
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE` at the frozen boundary, already implemented after the freeze.
+
+### Attribution and measured boundary
+
+- Both assigned files are branch-added, totaling `+295/-0`, so their bodies themselves create no original-file merge pressure
+- The Python test has no frozen build, runner, or discovery reference. Its production helper and callers are all branch-added: `android/helpers/run_bounded_extractor.py` (`+153/-0`), `android/helpers/bounded_extraction.ps1` (`+468/-0`), and `game_data/extract_mac_cd.ps1` (`+468/-0`). Frozen D1/D2 contain no `run_bounded_extractor` reference. Its measured inherited effect is therefore zero paths, zero hunks, and `+0/-0` lines
+- The reconnect-auth test exercises branch-added `net_udp_reconnect_auth.c` (`+141/-0`) and `.h` (`+53/-0`). Its runtime feature continues through branch-added `net_udp_android.c` (`+709/-0`) and `jni_udp_reconnect.c` (`+269/-0`). The broad reconnect feature has paired inherited protocol hooks in `net_udp.c` and `net_udp.h`, plus source-list entries in paired `main/CMakeLists.txt`; these hooks belong to the feature, not to this focused test. Moving or removing the test does not remove them
+- The test's direct frozen inherited effect is its paired host-build registration. `d1/maths/CMakeLists.txt` L116-L120 and L257 and `d2/maths/CMakeLists.txt` L132-L136 and L289 repeat the five-line target/include definition and one manifest entry. That is 12 additions at four logical sites inside the two large file-rewrite hunks
+- The correct ownership boundary is larger than this one target. Frozen `d1/maths/CMakeLists.txt` L11-L272 contains a 262-line branch-specific `if(NOT ANDROID)` host-test graph. Paired `d2/maths/CMakeLists.txt` L11-L307 contains 297 lines. They duplicate the common Android host-test inventory, dependencies, include policy, target properties, and registration, with game-specific additions and definitions mixed in. Together they contribute 559 inherited additions in two original files
+- The frozen base versions of both maths files contain only the small maths library declaration. The host-test blocks are entirely branch-caused. Frozen numstat for the paired files is `+573/-4`; the two host-test blocks account for 559 of those additions
+
+### Proposed branch-added owner and payoff
+
+- Move the complete host-test graph to branch-added `android/tests/CMakeLists.txt`, parameterized by the game identity and source root. Invoke it from branch-added top-level test build ownership, not from either inherited maths file. Keep the maths files responsible only for their original library plus independently justified shared math wiring
+- The assigned reconnect test then owns one target definition and one registration in the branch-added test file. Game-specific D1 and D2 tests remain conditional inside that owner. No callback table, wrapper-only API, or game policy is introduced
+- Estimated frozen inherited reduction: exactly 559 additions removed from two inherited paths. The two raw giant rewrite hunks remain small only for unrelated maths-target changes, while all 559 lines of host-test review pressure disappear. For the assigned reconnect test alone, 12 additions across four logical sites move out of inherited files
+- API boundary: CMake cache/input variables for game identity, game source directory, target prefix, and existing dependency targets. There is no C/C++ ABI change and no runtime ownership inversion
+- Risks: relative source paths must be anchored to the new file, D1/D2-only targets and `INPUT_DEMO_TEST_D1`/`INPUT_DEMO_TEST_D2` definitions must remain exact, target names must retain the current one-game-per-build assumption, and root CTest discovery must remain visible rather than nested below maths
+- Validation: configure D1 and D2 independently on Windows and Linux; compare generated target and CTest inventories before and after; build and execute every registered host test; verify Android configuration does not create host-only test targets; run paired Windows builds and `git diff --check`
+
+### DMR1 and current-history reconciliation
+
+- DMR1 does not allocate a chunk for host-test ownership. Its generation-2 note mentions paired maths test-registration movement only as collateral accounting around the two accepted renderer chunks, not as ownership of this 559-line block
+- Current commit `7f0f7c20ff232201084750a8083a01a35bed4c54` independently implements the proposed boundary: it adds a 324-line `android/tests/CMakeLists.txt` and deletes 262 lines from `d1/maths/CMakeLists.txt` plus 297 lines from `d2/maths/CMakeLists.txt`. The current inherited delta from the frozen head is exactly `+0/-559` for the paired files
+- Current `android/tests/CMakeLists.txt` contains the reconnect-auth target and registration at its branch-added owner. This is exact post-freeze closure evidence, not a reason to hide the frozen candidate. Normalization should record the measured decision and reconcile it as completed external diff minimization rather than create a competing DMR1 implementation chunk
+- Reverting either assigned test would remove branch-added coverage only and would not improve the inherited runtime boundary. Extracting their test helpers would likewise remove zero inherited lines. The only material ownership move is the completed build-graph relocation above
+
+## Scope and context checked
+
+- Every assigned C test helper and assertion: reconnect request field binding, identity validity, public-key matching, monotonic counters, challenge binding, constant-time comparison, and main-result propagation
+- Complete frozen reconnect serializer and identity helper, its header, shared Android UDP owner, JNI crypto/random boundary, all frozen symbol references, paired D1/D2 headers, UDP sources, main source lists, maths target definitions, and CTest registration
+- Every assigned Python test helper and assertion; complete frozen `run_bounded_extractor.py`; the PowerShell bounded-extraction facade; the Mac CD direct caller; process supervision, diagnostic drain, tree measurement, limit checks, return propagation, and publication context
+- Frozen and current histories of both assigned paths and the paired maths build files; the exact post-freeze centralization commit and current branch-added test owner
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, and earlier cleanup records for duplicate reconnect, bounded-extractor, unsafe-output, descendant-process, test-registration, and false-pass roots
+
+## Atomic observations
+
+### GQ1-CHUNK-0128-OBS-001: Output-budget tests accept timeout as proof of quota enforcement
+
+- Provisional normalization: `NEW`, with validation extensions to open `GQF-0127` and `GQF-0128`; deduplicate if the canonical writer identifies an existing mutation-oracle owner
+- Severity/confidence/category: P2/high, `test-gap/false-pass/security-resource-bounds`
+- Frozen locations: `android/tests/test_run_bounded_extractor.py` L51-L72; production decision points at `android/helpers/run_bounded_extractor.py` L88-L103 and L111-L122
+- Evidence: `test_rejects_large_output` and both `test_rejects_excessive_files_and_total_output` cases deliberately sleep for two seconds, exactly the helper's default timeout. Each assertion accepts any nonzero return. They neither capture nor assert the quota diagnostic, nor require termination before the timeout. If file-count, per-file-byte, and total-byte checks are removed, the children merely reach the two-second deadline and the tests still pass
+- Direct mutation validation against the frozen-identical live files patched `MODULE.measure_tree` to always return `(0, 0)`, disabling all three output-tree quotas. `test_rejects_large_output` passed with `extractor exceeded 2 seconds`; both excessive-file/total cases passed with the same timeout. The two test methods completed `OK` in 6.730 seconds
+- Concrete trigger: regress or delete the calls to `measure_tree` at L99 and L118, or make the corresponding limit comparisons ineffective. Run the assigned quota tests. All three quota cases remain green because timeout supplies the accepted nonzero result
+- Impact: a maintained security regression can report success while per-file, file-count, and aggregate output bounds are absent. That directly weakens the tests supporting current resource-exhaustion and unsafe-output findings, and can let a later remediation claim coverage without proving the intended failure reason
+- Suggested boundary: make `run_bounded` return or expose a typed failure reason, or capture stderr and assert the exact expected limit category. Use a child timeout comfortably larger than the expected prompt quota detection and assert elapsed time stays below it. Split the combined file-count and total-size table into named expected reasons. Add mutations or fixtures that independently disable each quota and require the corresponding test to fail
+- Validation: independently disable file count, per-file bytes, aggregate bytes, diagnostics, and timeout checks. Each matching test must fail when its own guard is disabled and must not pass from a different guard. Require exact reason plus prompt termination and no surviving child
+
+### GQ1-CHUNK-0128-OBS-002: Bounded-extractor Python regression has no maintained discovery owner
+
+- Provisional normalization: `NEW` or extend the repository's existing missing-test-registration owner; do not merge with the reconnect C target, which is registered in both frozen game graphs
+- Severity/confidence/category: P2/high, `test-gap/build-release/discovery`
+- Frozen location: complete `android/tests/test_run_bounded_extractor.py` L1-L90
+- Evidence: frozen repository-wide symbol and basename searches find no reference to this file outside itself. Searches for `pytest`, `unittest discover`, and `test_*.py` in maintained PowerShell, shell, workflow, and CMake entry points return no discovery command. The file has a direct `unittest.main()` entry point but no CTest, aggregate runner, workflow, or wrapper registration
+- Concrete trigger: break `run_bounded_extractor.py`, then run the maintained native CTest, Android JVM, extraction, quick, or aggregate suites. None discovers this Python file by filename or unittest convention
+- Impact: all routine maintained suites can remain green without executing the only focused checks for this child supervisor. Combined with OBS-001, even direct manual execution does not prove the three output quotas
+- Deduplication: archived/open `BR-0396` covers omitted route executables in paired CTest lists, not this Python file. The broad adversarial test sweep names unregistered tests as a class but the scoped search found no exact bounded-extractor registration record. Canonical normalization should extend an existing generic discovery owner if one exists rather than allocate parallel ownership
+- Suggested boundary: add the Python module to the central branch-added host-test graph or a maintained script-test manifest, invoking the repository-admitted Python runtime. Ensure the root aggregate reports its pass, failure, timeout, and not-run states and exercises it on every supported host
+- Validation: inject a deterministic failing assertion and require the maintained host aggregate to fail with this test's name; then run the repaired test on Windows and POSIX and confirm exact bounded completion
+
+## Explicit clean dimensions
+
+- Diff ownership: both assigned bodies and all direct production owners are branch-added. The only direct inherited cost was host-test registration, and the material 559-line enclosing ownership problem is measured and already repaired after the freeze
+- D1/D2 parity: the reconnect target, source, include directory, and registration are paired at the frozen boundary. Runtime reconnect protocol hooks were traced in both games. No one-sided test or declaration was found
+- Reconnect assertion execution: the C test uses an always-active `CHECK` macro rather than standard `assert`, accumulates all test results, and returns nonzero after any failed check. It does not disappear under `NDEBUG`
+- Reconnect memory safety in assigned fixtures: fixed buffers exceed current serialized sizes, payload copies use exact array sizes, initialized identity fields stay within public maxima, and comparison lengths come from successful builders
+- Reconnect ownership: message serialization, key comparison, replay counter policy, and byte comparison remain in shared branch-added C rather than being copied into the paired engines or Kotlin. The assigned test directly compiles that owner
+- Bounded-extractor success and timeout basics: the bounded-output case checks zero status; the timeout case uses a shorter explicit timeout; temporary directories are independently owned and automatically removed; the file-removal race test asserts both retained count and bytes
+- Frozen hygiene: both assigned blobs pass `git diff --check` and contain no BOM, NUL, non-ASCII byte, trailing whitespace, or missing final LF
+- No style-only, naming-only, unchanged-upstream, or speculative observation was admitted
+
+## Evidence gaps and limits
+
+- No frozen native build, CTest, Windows build, Android build, extraction suite, or emulator run was performed. This was a frozen-object survey; mutable build execution would not validate the complete frozen graph
+- The focused mutation run used live assigned and production files only after confirming all three are byte-identical to the frozen blobs. It created only unittest-owned system temporary directories and changed no repository file
+- No cryptographic provider, JNI key store, multiplayer session, hostile packet exchange, or cross-version protocol interoperability run was performed. Those are contextual runtime owners beyond this test-source unit
+- The reconnect test checks field binding by inequality, not a fixed canonical byte vector. A byte-order mutation could therefore evade it, but both peers currently use the same serializer and no concrete interop failure was established, so this remains an explicit coverage gap rather than a finding
+- The Python test does not cover successful-parent orphan descendants or link/special-file output. Those production roots are already owned by open `GQF-0127` and `GQF-0128`; OBS-001 records the distinct false-pass mechanism rather than duplicating them
+- Current centralization was inspected only to reconcile completion of the frozen candidate. Its current correctness and full CTest discovery behavior belong to later delta coverage
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended general-quality worker process
+- Used frozen `git show`, `git cat-file`, `git rev-parse`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git ls-tree`, `git grep`, and `git log` for classification, exact blobs, ranges, callers, build registrations, histories, and line measurements
+- Used `rg` and targeted ledger excerpts to reconcile DMR1, `GQF-0127`, `GQF-0128`, `BR-0396`, bounded-extractor and missing-registration evidence, and prior cleanup records
+- Computed the ordered scope-manifest SHA-256 in memory and confirmed both complete-file additions and exact 295-line assignment
+- Ran a focused in-memory Python mutation probe that replaced `measure_tree` with a no-op only for the two quota test methods. It produced three timeout diagnostics and an overall `OK`, proving OBS-001. No repository source was modified
+- Inspected post-freeze commit `7f0f7c20ff232201084750a8083a01a35bed4c54` and measured its `android/tests/CMakeLists.txt +324`, `d1/maths/CMakeLists.txt -262`, and `d2/maths/CMakeLists.txt -297` ownership move
+- No product edit, canonical-ledger edit, temporary report, build-tree mutation, fixture publication, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0128 with frozen disposition `CANDIDATE`: move the 559-line paired host-test graph to branch-added `android/tests/CMakeLists.txt`, including the assigned test's 12 inherited registration lines. Reconcile it as completed external work at commit `7f0f7c20ff232201084750a8083a01a35bed4c54`; update DMR1 residual accounting but allocate no new implementation chunk unless delta validation finds regression
+- Normalize OBS-001 as a new P2/high test-oracle finding unless a precise existing false-pass owner is found. Link its validation to `GQF-0127` and `GQF-0128`, but do not collapse their production roots into this test defect
+- Normalize OBS-002 as a new P2/high discovery finding or an evidence extension of an exact generic missing-registration owner. It is not a duplicate of `BR-0396`'s two route targets on location alone
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0128, citing the measured completed minimization, two supported quality observations, clean dimensions, and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0128 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0129 frozen survey SHA256:e170ccb4d918f59befa37fc41313815829f7be6d14a34777d8bd1402df294c56 -->
+
+## GQ1-CHUNK-0129 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0129.md`
+- Imported SHA-256: `e170ccb4d918f59befa37fc41313815829f7be6d14a34777d8bd1402df294c56`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0129 frozen survey
+
+Outcome: ISSUES. All 383 assigned lines were reviewed with approximately 80 percent of effort devoted to frozen diff attribution and minimization. Both files are branch-added, all seven direct consumer paths are branch-added, and the traced test, generator, Android extraction, JNI, build, and paired D1/D2 boundaries contain no inherited edit caused by this unit. The measured inherited effect is zero paths, zero hunks, and `+0/-0` lines. The quality pass reproduced four already-owned extraction-regression roots and found no new root. No product file, canonical ledger, existing report, fixture, build output, temporary finding, device state, or external state was changed.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/tests/extract_regression_recovery.ps1` L1-L12
+- Frozen blob: `026d489b4e0a67cefdcc38116e32b62200a84ef7`
+- Assigned path and complete reviewed range: `android/tests/extract_regression_spec_helpers.ps1` L1-L371
+- Frozen blob: `389f267771a8e3aefce380c0776cccc8a453ed72`
+- Scope manifest records are `<path>|<range>|<blob>` in the order above
+- Scope manifest SHA-256 over the two UTF-8 records joined by one LF without a final LF: `90cc8bc30cc0485dc81a085bcfe955544a7cf2ab721dbac6d48904b1e00a4f1f`
+- Both paths are absent at the frozen base. The recovery helper is one `+12/-0` hunk and the spec helper is one `+371/-0` hunk, for two branch-added paths, two added-file hunks, and `+383/-0` lines
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned unit modifies zero inherited paths, zero inherited hunks, and zero inherited lines. It adds 383 test/tooling lines in two branch-owned files
+- Frozen symbol tracing found seven direct consumer paths: `android/run_all_tests.ps1`, `android/tests/test_all_extracts.ps1`, `android/tests/test_extract.ps1`, `android/tests/test_extract_regression_workflow.ps1`, `android/tests/test_generate_regression_specs.ps1`, `android/tests/validate_extract_regression_specs.ps1`, and `game_data/generate_regression_specs.ps1`. Each is absent at the base and added at the head, totaling `+4918/-0` lines across those consumer files
+- The spec helper already acts as the branch-added shared owner for JSON property access, canonical serialization, mutable test evidence, oracle inventory, and recovery used by the suite, validator, single-spec runner, and generator. The 12-line recovery classifier is separately shared by the single-spec runner and its focused workflow test
+- The runner path reaches branch-added Android launcher import broadcasts and branch-added extraction/JNI owners, then validates conventional extracted game data. Frozen searches found no reference to either assigned filename or any assigned function in `d1/`, `d2/`, native extraction C/CMake, JNI declarations, or inherited build files
+- No D1/D2 declaration, registration, callback, paired hook, copied policy body, source-list entry, or conditional was introduced to support these helpers. D1/D2 changes elsewhere in the frozen branch are not causal consumers of this test-side unit
+- The complete measured inherited effect across assigned code and traced consumers is therefore zero paths, zero hunks, and `+0/-0` lines. There is no DMR1 extraction root to extend or reactivate
+
+### Extraction, consolidation, and revert tests
+
+- Consolidating the 12-line ADB classifier into the 371-line spec helper could remove one branch-added file and one dot-source, but would remove zero inherited lines or hunks and would mix transport retry policy with regression-spec serialization. It is not a diff-minimization candidate
+- Inlining the shared spec functions into their seven consumers would duplicate policy and increase branch-added churn while changing no inherited file. The existing branch-added shared owner is the smaller ownership boundary
+- Moving canonical spec or extraction recovery policy into D1/D2, JNI, or native extraction code would invert ownership and create inherited declarations or calls where none currently exist. It fails both ownership and merge-pressure gates
+- Reverting either assigned file would remove only branch-added code. It would break direct consumers or discard canonical-oracle, recovery, and focused workflow coverage without allowing any inherited hook, declaration, registration, or body to be reverted
+- Maximum inherited reduction available from extracting, consolidating, or reverting this unit is zero paths, zero hunks, and zero lines. Recheck only if a later generation moves a direct consumer or extraction-regression policy into an inherited file
+
+## Scope and context checked
+
+- Every assigned function and line, including dictionary/object property access, string-array normalization, evidence ranking and replacement, deterministic top-level and nested ordering, generated-header preservation, no-churn comparison, direct publication, result mutation, CD-source/spec inventory, child PowerShell resolution, recovery, prompting, and ADB transport classification
+- Every direct frozen dot-source and symbol caller in the seven branch-added consumers, including the top-level suite, sampled extraction suite, single-spec emulator runner, workflow contract tests, validator, generator tests, and game-data generator
+- The recovery children `game_data/extract_all_cds.ps1` and `game_data/generate_regression_specs.ps1`; JSON5 parsing owner `android/helpers/json5.ps1`; Android launcher import path and native extraction/JNI/build directories; and D1/D2 trees as causal-boundary checks
+- Active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, and prior extraction cleanup plans for duplicate, regrowth, and ownership reconciliation
+- Historical ownership reconciled before observations: `BR-0008` owns missing source hash enforcement, `BR-0169` owns false-success batch extraction status, `BR-0187` owns incomplete/unrecognized regression-spec admission, and `BR-0189` owns direct non-atomic spec publication and lost updates. Archived `BR-0177` owns the frozen JSON5 reader's string-blind preprocessing and requires no new extension from this wrapper
+
+## Atomic observations
+
+### GQ1-CHUNK-0129-OBS-001: Oracle readiness is pathname-only
+
+- Provisional normalization: `EXTENDS BR-0187` and `BR-0008`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/data-integrity/false-readiness`
+- Frozen location: `android/tests/extract_regression_spec_helpers.ps1` L244-L286 and L325-L371
+- Evidence: `Get-ExtractRegressionOracleStatus` declares readiness when at least one source directory and spec pathname exist and no source directory lacks that pathname. It never parses a spec or validates its source type, schema, expected-file/count oracle, or recorded source hashes. `Ensure-ExtractRegressionOracles` returns true immediately for that pathname-only state, bypassing recovery and allowing later runners to encounter or inconsistently admit malformed, stale, or wrong-source oracles
+- Trigger and impact: leave a present `extract_regression.json5` malformed, schema-incomplete, or paired with same-name changed source bytes. The shared readiness gate says ready even though the suite's claimed oracle is not valid or identified
+- Deduplication: R1-CHUNK-0094 explicitly assigned incomplete readiness schema to open `BR-0187`; missing digest enforcement is open `BR-0008`. This observation adds exact frozen readiness control flow only
+- Suggested boundary: make readiness call a shared read-only schema and source-identity validator, while recovery remains the only writer. Validate malformed, unknown-type, incomplete, hash-mismatch, absent, and complete controls
+
+### GQ1-CHUNK-0129-OBS-002: Canonical spec and result updates publish directly to the tracked destination
+
+- Provisional normalization: `EXTENDS BR-0189`; no new finding
+- Severity/confidence/category: P2/high, `correctness/data-integrity/concurrency`
+- Frozen location: `android/tests/extract_regression_spec_helpers.ps1` L159-L236
+- Evidence: `Write-CanonicalRegressionSpec` serializes in memory and calls `WriteAllText` on the final path. `Set-RegressionSpecLastTestResult` reads outside any transaction, mutates, and calls that writer. Partial write, interruption, disk failure, or concurrent generator/test writers can therefore damage the only tracked oracle or overwrite a newer update
+- Trigger and impact: interrupt or fail a final write, or overlap result persistence and regeneration for one spec. Readers can see invalid bytes and one writer can silently lose the other generation
+- Deduplication: this is the exact open `BR-0189` root previously found in this helper; no new ID or GQ remediation owner is warranted
+- Suggested boundary: serialize by normalized path, reread inside the transaction, write and validate a unique same-directory temporary file, then atomically replace. Prefer separating mutable run evidence from tracked source oracles
+
+### GQ1-CHUNK-0129-OBS-003: Recovery trusts a child whose recorded failures return success
+
+- Provisional normalization: `EXTENDS BR-0169`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/false-pass/build-tooling`
+- Frozen location: `android/tests/extract_regression_spec_helpers.ps1` L288-L323
+- Evidence: `Invoke-ExtractRegressionOracleRecovery` correctly checks `$LASTEXITCODE`, but its first child, `game_data/extract_all_cds.ps1`, records missing-source, child-exit, and exception failures and still falls through with process status zero. Recovery then runs spec generation against incomplete or stale extraction output
+- Trigger and impact: make any selected CD extraction fail while another succeeds or cached output remains. The shared recovery path accepts the batch as successful and can generate or retain misleading regression inputs
+- Deduplication: open `BR-0169` already names this helper as a relying caller and owns aggregate extraction exit status. This is confirming evidence, not a distinct caller defect
+- Suggested boundary: fix the child aggregate to return nonzero for every failed requested item and retain the helper's existing checked-child contract. Exercise direct and recovery-invoked mixed batches
+
+### GQ1-CHUNK-0129-OBS-004: Source identities are preserved but never enforced by this shared boundary
+
+- Provisional normalization: `EXTENDS BR-0008`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/data-integrity/provenance`
+- Frozen location: `android/tests/extract_regression_spec_helpers.ps1` L74-L91, L113-L156, and L244-L286
+- Evidence: canonicalization preserves each `source_files[].sha256`, demonstrating a stable shared schema, but readiness only counts source directories and spec paths. The traced validator and single-spec runner likewise do not measure those hashes before extraction. Same-name changed media can be processed and credited to the recorded release identity
+- Trigger and impact: replace one source image byte without renaming it. Readiness and later extraction proceed under stale source identity, weakening every derived output and launch assertion
+- Deduplication: open `BR-0008` already owns this exact validator/runner enforcement gap. The helper supplies a natural shared validation boundary but does not create a new root
+- Suggested boundary: add one streaming digest validator beside the shared schema accessors and require both readiness/validation and the runner to call it before device or extractor work
+
+## Explicit clean dimensions
+
+- Diff minimization: no inherited consumer, hook, declaration, build entry, registration, callback, or D1/D2 policy body is caused by the assigned unit. The shared branch-added helper already prevents duplication across its seven branch-added consumers
+- Syntax and portability: both frozen scripts parse with zero PowerShell AST errors. Paths are constructed with `Join-Path`, child arguments are passed as arrays, output is normalized to LF and written as UTF-8 without BOM, and property access supports dictionaries and PowerShell objects
+- Determinism: known canonical fields use declared order, unknown properties sort by name, nested source files and result objects have stable ordering, source/spec discovery sorts by full path, and unchanged semantic content preserves the original generated timestamp and avoids rewriting
+- Evidence policy: full evidence outranks file-only evidence at equal status, a lower-rank result does not replace an existing higher-rank result except for the explicitly tested pass-over-fail recovery policy, and infrastructure categories are narrow enumerated values
+- Error handling: missing recovery scripts and nonzero child statuses throw; recovery rechecks readiness after generation; `NoPrompt` never reads input; prompted refusal returns false; and ADB transport matching is anchored to timeout or ADB-failure prefixes and excludes tested semantic failures
+- Resource lifetime and security: assigned code opens no persistent native resource or network endpoint, passes paths as values rather than interpolated shell commands, bounds displayed missing-directory diagnostics, and writes only caller-selected regression-spec paths. Its publication defect remains owned by `BR-0189`
+- Maintainability: every assigned function has at least one frozen caller beyond its definition. The small ADB classifier and shared spec owner have distinct responsibilities; extracting wrappers or generic policy layers would not reduce inherited churn
+- Hygiene: the frozen scope passes `git diff --check`; source inspection found no branch-caused inherited edit or hidden build registration
+
+## Evidence gaps and limits
+
+- No mutable-worktree workflow, generator, full suite, APK build, native build, emulator extraction, or D1/D2 launch was run. This was a frozen-object read-only survey, and live code has moved since the frozen head
+- The assigned helpers do not themselves execute extraction or game code. Android launcher, JNI/native extraction, and D1/D2 paths were inspected only to close the causal diff boundary; their independent defects remain owned by their own chunks
+- Proprietary CD media was not available as frozen Git content, so source digest and extraction behavior were established from deterministic control flow and checked-in schema rather than a full corpus run
+- The generated campaign manifest directory was unavailable. Frozen commit/tree identities, queue scope, blob IDs, ranges, added-file hunks, line counts, direct consumers, and scope SHA-256 were independently confirmed from Git objects and the canonical mechanical path list
+- This report does not claim the branch's broad D1/D2 extraction and Android-port diffs are globally minimal. It establishes only that this branch-added test/tooling unit requires none of them
+
+## Commands and validation
+
+- Read `AGENTS.md`-directed `.github/copilot-instructions.md`, the complete amended general-quality process, active and done GQ ledgers, durable evidence references, adversarial active/done ledgers, DMR1 references, and prior extraction plans
+- Used frozen `git cat-file`, `git show`, `git rev-parse`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git diff --check`, and `git grep` for object verification, scope, classification, exact hunk/line metrics, consumers, build/native/JNI/game tracing, and inherited-boundary closure
+- Used `rg` and targeted ledger excerpts to reconcile R1-CHUNK-0094, `BR-0008`, `BR-0169`, archived `BR-0177`, `BR-0187`, `BR-0189`, prior GQ evidence, and DMR1
+- Parsed both frozen scripts in memory with the PowerShell AST parser and observed zero errors. Counted every declared helper's frozen repository references and found no unreferenced assigned function
+- Computed the ordered two-record scope-manifest SHA-256 in memory. No temporary report, product edit, canonical-ledger edit, fixture generation, build, test execution, emulator action, or external mutation was performed
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision for GQ1-CHUNK-0129 with disposition `NO_INHERITED_EFFECT`: zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines across the traced branch-added test, runner, generator, Android extraction, JNI/build, and D1/D2 boundary
+- Normalize OBS-001 as evidence extensions of `BR-0187` and `BR-0008`; OBS-002 as an evidence extension of `BR-0189`; OBS-003 as an evidence extension of `BR-0169`; and OBS-004 as an evidence extension of `BR-0008`. Allocate no new finding, investigation, DMR1 item, or remediation chunk
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0129, citing the clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0129 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0130 frozen survey SHA256:bdb800772d17f7ce9d2d39787c120eb99b80fd5ca69e4a3fc79efa0a5ffc2509 -->
+
+## GQ1-CHUNK-0130 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0130.md`
+- Imported SHA-256: `bdb800772d17f7ce9d2d39787c120eb99b80fd5ca69e4a3fc79efa0a5ffc2509`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0130 frozen survey
+
+Outcome: ISSUES. All 597 assigned lines were reviewed with approximately 80 percent of effort devoted to frozen diff attribution and minimization. All three files are branch-added, all 12 traced runner, helper, native-test, build, and workflow paths are branch-added, and no D1/D2 or other inherited edit is caused by this unit. The measured inherited effect is zero paths, zero hunks, and `+0/-0` lines. The remaining quality review extended three existing owners and found no new root. No product source or canonical ledger was edited.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and complete reviewed range: `android/tests/test_all_extracts.ps1` L1-L354
+- Frozen blob: `38baa4938fd17cc896d2e26244a4576590711ed9`
+- Assigned path and complete reviewed range: `android/tests/test_bounded_extraction.ps1` L1-L205
+- Frozen blob: `1258b0097c79d073fa96a622427a9c7d86432cbf`
+- Assigned path and complete reviewed range: `android/tests/test_cue_iso.ps1` L1-L38
+- Frozen blob: `ce370a1c4010676a2e34c1c3f1e2225001484455`
+- Scope manifest records are `<path>|<blob>|<range>` in the order above
+- Scope manifest SHA-256 over the three UTF-8 records joined by one LF without a final LF: `bf01e10200a4e69cc97e52f69ac48e13d4969a152c5b12384aaa4ccd5fabc3c2`
+- All three paths are absent at the frozen base. Each is one added-file hunk, for three branch-added paths, three added-file hunks, and `+597/-0` lines
+- The frozen blobs are byte-identical to the live worktree at review time
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`.
+
+### Attribution and measured boundary
+
+- The assigned unit modifies zero inherited paths, zero inherited hunks, and zero inherited lines. It adds 597 test-runner lines in three branch-owned files
+- Frozen tracing covered 12 direct runner, helper, build, native-test, and workflow paths: `android/run_all_tests.ps1`, `android/run_quick_tests.ps1`, `android/tests/test_extract.ps1`, `android/tests/test_extract_regression_workflow.ps1`, `android/tests/extract_regression_spec_helpers.ps1`, `android/helpers/test_helpers.ps1`, `android/helpers/bounded_extraction.ps1`, `android/helpers/verified_dependencies.ps1`, `android/helpers/test_env.ps1`, `android/app/src/main/cpp/extract/CMakeLists.txt`, `android/app/src/main/cpp/extract/test_cue_iso.c`, and `game_data/run_all_cd_regressions.ps1`. Every path is absent at the base and added at the head, totaling `+12025/-0` lines
+- `test_all_extracts.ps1` is discovered by the branch-added aggregate runner and delegates to the branch-added single-spec runner, regression-spec owner, emulator helper, and game-data regression wrapper. It reaches launcher automation and conventional extracted game data without introducing a game-engine declaration or hook
+- `test_bounded_extraction.ps1` is discovered mechanically as a branch-added `test_*.ps1` path and exercises branch-added bounded-extraction and dependency-verification helpers. Its ZIP construction and filesystem policy are test-local
+- `test_cue_iso.ps1` is registered by branch-added aggregate and quick runners and configures the branch-added extraction CMake project and native test program. Neither its runner nor the extraction project is registered through an inherited CMake file
+- Frozen searches found no assigned filename, assigned helper symbol, registration, or build dependency in `d1/` or `d2/`. No paired D1/D2 callback, conditional, declaration, source-list entry, copied policy body, or test hook is causal to these scripts
+- The complete measured inherited effect across the assigned scripts and traced owners is zero paths, zero hunks, and `+0/-0` lines. The branch contains unrelated inherited edits, but none is reachable as a required ownership or registration boundary for this unit. There is no DMR1 item to extend
+
+### Extraction, consolidation, and revert tests
+
+- Moving aggregate extraction selection or device orchestration into D1/D2 would invert test ownership and add inherited calls or declarations where none currently exist. It fails the merge-pressure gate
+- Moving bounded archive fixture creation or Windows CUE/ISO runner policy into native game sources would likewise create inherited test-only policy and reduce zero inherited lines
+- Consolidating the three scripts into the aggregate runner could remove branch-added files but would add large specialized bodies to another branch-added file, weaken focused invocation, and remove zero inherited paths, hunks, or lines
+- The existing shared branch-added owners already avoid the relevant duplication: extraction-spec parsing and recovery are shared, bounded ZIP policy is shared, dependency verification is shared, and the native extraction project is independently configured
+- Reverting an assigned script would remove only branch-added tests. It would discard aggregate extraction, hostile archive, or native parser coverage without permitting any inherited hook or declaration to be reverted
+- Maximum inherited reduction available from extraction, consolidation, or revert is zero paths, zero hunks, and zero lines. Recheck only if a later generation registers these tests or moves their policy through an inherited build or game file
+
+## Scope and context checked
+
+- Every assigned line and function, including discovery, explicit path resolution, filtering, seeded Fisher-Yates selection, sampling, build/install/restart preflight, child retry, result accounting, device cleanup, ZIP fixture creation, traversal and collision rejection, size/count/reparse checks, verified package extraction, CMake configuration, CTest status propagation, and fixture cleanup
+- Aggregate and quick test discovery and registration; single-spec result persistence and skip policy; extraction regression workflow contract; game-data aggregate caller; shared emulator, JSON5, bounded-extraction, dependency, and CMake environment owners
+- Native extraction CMake registration, CUE/ISO test fixture ownership, and the D1/D2 trees as causal diff-boundary checks
+- Active and done GQ ledgers, active and done adversarial ledgers, DMR1, and prior extraction findings for duplicate and regrowth reconciliation
+- Historical ownership reconciled before observations: `BR-0162` owns zero-pass aggregate extraction success and omitted explicit paths; `BR-0160` owns CUE/ISO deadlines, shared build/fixture state, and cleanup lifetime; `GQF-0125` owns the bounded extractor's PATH-selected Python runtime. Related descendant and special-file output roots remain `GQF-0127` and `GQF-0128` and were not duplicated from test coverage
+
+## Atomic observations
+
+### GQ1-CHUNK-0130-OBS-001: Aggregate extraction can succeed without one passing requested spec
+
+- Provisional normalization: `EXTENDS BR-0162`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/test_all_extracts.ps1` L82-L96, L136-L155, L257-L345
+- Evidence: unresolved explicit paths are warned and omitted as long as another path resolves. A child exit zero with persisted `skip` increments neither passes nor failures, and final process status is only `$failures`. A selected all-skip set therefore reports zero passes and exits zero, while a mixed explicit request can be green without attempting every named member
+- Trigger and impact: select a known skip directly or by deterministic sampling, or pass one valid and one missing explicit path. The aggregate can claim success without a passing extraction assertion or complete requested coverage
+- Deduplication: adversarial R1-CHUNK-0091 already attached the same frozen control flow to open `BR-0162`. The added build/install/restart lines do not repair its admission or final-status contract
+- Suggested boundary: require a named minimum-pass/skip policy and fail any unresolved explicitly requested path. Validate all-skip, pass-plus-skip, and mixed valid/missing requests with exact counts and exit status
+
+### GQ1-CHUNK-0130-OBS-002: Windows CUE/ISO runner shares mutable state and has no suite deadline
+
+- Provisional normalization: `EXTENDS BR-0160`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/resource-lifetime/concurrency`
+- Frozen location: `android/tests/test_cue_iso.ps1` L13-L37
+- Evidence: every invocation reuses `android/tests/build` and the extraction source tree's `test_fixtures`, invokes CTest without a suite deadline, and removes the shared fixture tree only after CTest returns. A hang or interruption bypasses cleanup, while concurrent Windows or POSIX runs can reconfigure, mutate, or delete each other's live state
+- Trigger and impact: hang or interrupt CTest, or overlap two wrappers at configure, fixture write, CTest, or cleanup. The run can remain unbounded, leave residue, or obtain nondeterministic results from another generation
+- Deduplication: this is the exact Windows extension already recorded under open `BR-0160` by R1-CHUNK-0091 and later GQ CUE/ISO reviews. No parallel GQ root is warranted
+- Suggested boundary: use a cross-platform lock or unique build and fixture roots, guaranteed owned cleanup, and explicit per-test and suite deadlines. Validate synchronized concurrent, failure, hang, and interruption cases
+
+### GQ1-CHUNK-0130-OBS-003: Bounded extraction coverage does not exercise hostile runtime resolution
+
+- Provisional normalization: `EXTENDS GQF-0125`; no new finding
+- Severity/confidence/category: P1/high, `security/supply-chain/test-gap`
+- Frozen location: `android/tests/test_bounded_extraction.ps1` L1-L205 and traced `android/helpers/bounded_extraction.ps1`
+- Evidence: the test exercises valid ZIPs, lexical traversal and aliases, count and byte limits, reparse roots, and four verified package identities. It invokes the normal bounded helper environment only and never places a hostile `python` or `python3` ahead of the accepted runtime. The traced helper's existing PATH-selected Python root can therefore regress or remain exploitable while this focused suite stays green
+- Trigger and impact: prepend an attacker-controlled interpreter to PATH while the repository's accepted runtime is also available. The focused security suite does not prove which executable runs, so it cannot detect the supply-chain boundary owned by `GQF-0125`
+- Deduplication: `GQ1-CHUNK-0083` already admitted `GQF-0125` for this exact helper runtime. This observation contributes the focused test location and validation seam only
+- Suggested boundary: extend the focused test with hostile PATH precedence, an exact accepted runtime identity, unavailable-runtime failure, and argument/path quoting controls. Keep descendant and special-output validation with `GQF-0127` and `GQF-0128`
+
+## Explicit clean dimensions
+
+- Diff minimization: all assigned and traced direct-owner paths are branch-added. No inherited D1/D2 consumer, hook, declaration, build entry, registration, callback, conditional, or copied policy is caused by this unit
+- Syntax: all three frozen scripts parse with zero PowerShell AST errors. Frozen blobs contain no NUL bytes
+- Selection and determinism: automatic regression-spec discovery sorts by full path; Fisher-Yates selection uses a caller-provided seed when supplied; negative sample counts and `-All` plus `-SampleCount` are rejected; zero discovered specs fail
+- Status handling: child nonzero exits become failures, exit 98 receives at most one full-spec retry after recovery, infrastructure/runner failures stop the aggregate, `MaxFailures` preserves a nonzero result, and ordinary per-spec cleanup force-stops the app
+- Archive security coverage: the executed bounded extraction suite passed valid nested extraction and rejected forward/backslash traversal, rooted and drive/UNC paths, dot and empty components, sibling prefixes, Windows aliases/devices/streams, duplicate destinations, file-child conflicts, case collisions, oversized entries, excessive entry counts, and a reparse destination root
+- Fixture identity: all four locally available maintained demo packages passed exact SHA-256 verification and bounded extraction, including required `INSTALL.EXE` presence
+- Native wrapper: configure and build failures are checked, CTest status is preserved after an ordinary completed run, and ordinary completion removes generated fixtures. Remaining lifetime and isolation limits are `BR-0160`
+- Portability boundary: the scripts use `Join-Path` for repository paths and array-valued child arguments. Windows-specific behavior in the CUE/ISO wrapper is declared in its header. The bounded test branches between junction and symbolic-link fixtures by host
+- Maintainability: the three focused entry points keep specialized workflows out of inherited code and are discoverable or explicitly registered by branch-added runners. Consolidation would not reduce inherited merge pressure
+
+## Evidence gaps and limits
+
+- The emulator-backed extraction aggregate and native CUE/ISO suite were not executed. They require device/build state and exercise behavior already covered by existing open findings; static frozen control flow is sufficient for the duplicate observations
+- `android/tests/test_bounded_extraction.ps1` was executed because the frozen blobs are live-identical. It passed in about two seconds and cleaned its GUID-named test root. This execution did not inject hostile PATH resolution, process descendants, special-file outputs, interruption, concurrency, or disk failure
+- The review did not assert that unrelated inherited D1/D2 changes in the broad branch are minimal. It establishes only that this assigned branch-added unit causes none of them
+- Generated campaign manifests were not required to reconstruct the scope: frozen commit/tree identities, blobs, ranges, added-file hunks, exact line counts, direct owners, and scope digest were independently confirmed from Git objects and the canonical queue
+- Live product and ledger drift outside the assigned paths was not used as frozen evidence and was preserved
+
+## Commands and validation
+
+- `git cat-file -t`, `git rev-parse <commit>^{tree}`, `git ls-tree -r`, `git diff --name-status`, `git diff --numstat`, `git diff --stat`, and zero-context hunk counting for frozen classification and measurement
+- `git show <head>:<path>`, `git grep`, and `rg` for complete assigned source, runner/helper/build/JNI/native-test ownership, D1/D2 boundary checks, and repository references
+- `git diff <head> -- <assigned paths>` confirmed all three frozen blobs are live-identical
+- PowerShell parser API checks reported zero AST errors for all three frozen scripts
+- `pwsh -NoProfile -NonInteractive -File android/tests/test_bounded_extraction.ps1` exited zero after all synthetic rejection cases and all four verified packages passed
+- Duplicate searches covered both GQ ledgers, both adversarial ledgers, DMR1 references, prior completion records, and current extraction findings
+- Final report checks: ASCII, no BOM, no NUL, no trailing whitespace, final LF, and `git diff --check` on the assigned inbox path
+
+## Normalization recommendation
+
+- Record one `GQD-*` decision with disposition `NO_INHERITED_EFFECT`, measured inherited effect zero paths, zero hunks, and `+0/-0` lines, and no DMR1 linkage
+- Normalize `GQ1-CHUNK-0130-OBS-001` as `EXTENDS BR-0162`
+- Normalize `GQ1-CHUNK-0130-OBS-002` as `EXTENDS BR-0160`
+- Normalize `GQ1-CHUNK-0130-OBS-003` as `EXTENDS GQF-0125`
+- Create no new `GQF-*`, `GQI-*`, or `GQR-*` record from this unit
+- Record one `GQC-*` coverage result with outcome `ISSUES`, explicit clean dimensions above, and the stated execution gaps
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0130 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0131 frozen survey SHA256:a34a9c89c2773c3977aeaddcfa3d84c97b373cd9c3e6b93fc123cbef29fa9b81 -->
+
+## GQ1-CHUNK-0131 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0131.md`
+- Imported SHA-256: `a34a9c89c2773c3977aeaddcfa3d84c97b373cd9c3e6b93fc123cbef29fa9b81`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0131 frozen survey
+
+Outcome: `ISSUES`
+
+## Frozen identity and assigned scope
+
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Scope-manifest SHA-256: `3e171e93892d645236d66fff171c54b616d8cbac61a847c9f7ee9da33c8aa64c`
+- `android/tests/test_saf_archiver.ps1` L601-L731: blob `e94ee73ee88ce924b3c1fdfb5b66868808a2399f`, normalized range SHA-256 `47b1cf85c78037f6ee832badd450ec164c627a6107955cca650c2f5fa15352f0`
+- `android/tests/test_validate_extract_regression_specs.ps1` L1-L10: blob `b8172ba097874d3e78c1a32e42b73cc2bcd8874a`, normalized range SHA-256 `a1f9cf60ce9848fafd8acf523e0fa0dc3355fe4f95222651494feed967ebec8f`
+- `android/tests/validate_extract_regression_specs.ps1` L1-L127: blob `90cc87fa0a3675e570f59d4a85b850935fc87559`, normalized range SHA-256 `6274486c18b0e770426fbf7f52c62054d9a4ba6a080d852299ac79511f67248c`
+- All 268 assigned lines were read from the frozen objects. The three live paths have no frozen-head-to-worktree delta, but live files were not used as survey evidence
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE`, as a duplicate and evidence extension of existing `GQD-0018` and its linked residual of `plan_d1d2_diff_physfsx_extract_20260711.md`. Do not allocate another extraction finding or remediation owner
+
+### Frozen attribution and measurements
+
+- All three assigned paths are branch-added, each as one creation hunk. Their complete frozen impact is `+731/-0`, `+10/-0`, and `+127/-0`, for three paths, three hunks, and `+868/-0`. They directly modify no 1996-original file
+- The two validation scripts stay entirely in branch-added script ownership. `android/run_all_tests.ps1`, `android/tests/test_extract_regression_workflow.ps1`, and `game_data/run_all_cd_regressions.ps1` are branch-added callers or registrations. No inherited build entry, declaration, hook, copied policy body, or D1/D2 consumer is caused by that validator boundary
+- The SAF tail is called through the branch-added `android/run_all_tests.ps1` catalog and consumes the branch-added `test_saf_basic.json5`. Its automation/result, logcat, provider-stage, and cleanup logic introduces no inherited declaration or registration
+- The SAF test does exercise one branch-caused inherited runtime seam. Branch-added `physfs_archiver_saf.c`, `physfsx_android_setup.c`, and `physfsx_android_shared.c` own the implementation, while paired `d1/misc/physfsx.c` and `d2/misc/physfsx.c` invoke the shared Android setup during `PHYSFSX_init`
+- At the frozen boundary, each inherited `physfsx.c` is `+27/-0` overall. Excluding the unrelated seven-line Windows absolute-path addition, the Android startup seam is 20 added lines in three logical hunks per game: the three-line include, the checked `PHYSFS_init` wrapper, and the shared setup plus `InitArgsAndroid` and return block. Aggregate relevant pressure is two inherited paths, six hunks, and `+40/-0`
+- The paired inherited blocks are semantically identical except for `d1x-redux` versus `d2x-redux`. Both Android targets already compile the same branch-added shared adapter and setup implementation
+
+### Smallest ownership boundary and payoff
+
+- Reuse the already-recorded `GQD-0018` boundary: extend `android/app/src/main/cpp/shared/physfsx_android_shared.c/.h` with one helper accepting `argc`, `argv`, and the game-directory constant. It should own checked PhysicsFS initialization, symbolic-link setup, the existing search-path call and full operation/path/detail diagnostic, and `InitArgsAndroid`
+- Leave only the Android include and a compact parameterized call plus return in each inherited caller. Preserve the desktop initialization body byte-for-byte
+- The earlier measured estimate remains supported by this end-to-end SAF test: reduce each inherited boundary from 20 added lines in three hunks to about seven lines in two hunks, removing about 13 lines and one hunk per game, or 26 inherited lines and two hunks aggregate
+- Validation remains dual-game Android builds and launches, the shared PhysicsFS setup tests, SAF direct/pipe/stale-size/descriptor cases, active-mod mount order and capacity, injected setup failure diagnostics, and both Windows builds
+- This chunk adds validation ownership evidence because `test_saf_archiver.ps1` directly observes the shared mount boundary, but it does not justify a second `GQF-*`, `GQR-*`, or DMR1 root
+
+### Rejected minimization alternatives
+
+- Removing the ten-line discovery wrapper or merging the validator into a runner changes only branch-added lines and does not reduce inherited merge pressure. It also weakens the ordinary `test_*.ps1` catalog boundary
+- Moving validation, SAF policy, provider logic, or automation into D1/D2 would add paired inherited policy and interfaces while removing none of the startup hook
+- A macro or callback table in inherited headers would add declarations or indirection larger than the one differing directory string. It has less measurable payoff than extending the already-linked shared owner
+- Reverting the inherited startup hook outright is not behavior-preserving: both games need the shared Android search paths for SAF and launcher-published content. The viable operation is consolidation, not removal
+
+## Atomic observations
+
+### GQ1-CHUNK-0131-OBS-001: An ISO spec with no `source_files` passes the dedicated validator
+
+- Provisional normalization: `NEW`
+- Severity/confidence/category: P2/high, `test-gap/false-pass/schema-validation`
+- Frozen location: `android/tests/validate_extract_regression_specs.ps1:L44-L76`; readiness owner `android/tests/extract_regression_spec_helpers.ps1:L238-L270`
+- Evidence: the validator projects `$sourceNames` from `@($spec.source_files)`, then checks existence only by iterating those names. When `source_files` is absent or empty, that loop performs no check. For `disc_image_type=iso`, the only remaining type-specific assertion is `import_mode=setup_iso`, after which line 76 continues. A spec with `source_type=cd`, `disc_image_type=iso`, a valid import mode, and nonempty `expected_files` therefore reaches the green final result without binding the oracle to even one named source image
+- The readiness helper does not close this gap. It marks a root ready when a directory contains any `.iso` or `.cue`, every such top-level source directory has a spec pathname, and at least one spec exists. It does not require the spec's `source_files` list to name that media. Thus an existing ISO beside the malformed spec satisfies readiness while the validator skips source binding
+- Trigger: delete `source_files` from the maintained ISO spec, set it to an empty array, or generate a new ISO spec without populating the list while leaving an ISO in its directory
+- Impact: the command prints that the discovered CD specs were validated and exits zero although the ISO regression oracle identifies no input. Subsequent execution can fail later or obtain input through a different ambient path, so the dedicated schema gate no longer proves that a named source exists
+- Expected: every CD spec has a nonempty, well-formed `source_files` array. An ISO spec names the intended ISO source, and each entry has a nonempty leaf name before existence and provenance checks run
+- Suggested fix: validate the shared source list before disc-type dispatch, require at least one named regular file, and for ISO require the documented cardinality and `.iso` member. Keep digest syntax and content verification under existing `BR-0008` rather than duplicating that owner
+- Validation: run the validator against isolated roots containing missing, null, empty, nameless, directory-valued, multiple-ISO, wrong-extension, and valid single-ISO source lists. Require field-specific nonzero failures before extraction, with a valid ISO and valid multi-file CUE control
+
+### GQ1-CHUNK-0131-OBS-002: Unknown schema discriminators remain BR-0187
+
+- Provisional normalization: `DUPLICATE BR-0187`
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/validate_extract_regression_specs.ps1:L44-L49,L72-L80`
+- Evidence: missing or misspelled `source_type` is skipped, and an unrecognized `disc_image_type` receives no rejecting branch. Both cases remain included in the final discovered-spec count. This exactly reproduces BR-0187 and should extend its coverage provenance only
+
+### GQ1-CHUNK-0131-OBS-003: Source digest enforcement remains BR-0008
+
+- Provisional normalization: `DUPLICATE BR-0008`
+- Severity/confidence/category: P2/high, `test-gap/data-integrity`
+- Frozen location: `android/tests/validate_extract_regression_specs.ps1:L52-L70,L106-L115`
+- Evidence: existing source names and CUE references are checked by pathname only; recorded SHA-256 values are not checked. BR-0008 already names this validator, trigger, impact, and shared remediation boundary
+
+### GQ1-CHUNK-0131-OBS-004: SAF result and provider evidence can be stale after unchecked ADB failures
+
+- Provisional normalization: `DUPLICATE BR-0190`, with tail coverage extension
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/test_saf_archiver.ps1:L601-L675`; causative unchecked removal and logcat clearing are earlier in the same frozen file
+- Evidence: the assigned loop accepts `automation_result.json`, `SCRIPT_RESULT: PASS`, or the provider-stage log plus a step-14 automation record. Those records have no request identifier. Earlier required ADB removals and logcat clearing use wrappers that do not enforce the child exit code, so a failed clear permits this tail to accept prior PASS-shaped files or logs. BR-0190 already records the exact SAF runner, stale-result trigger, and checked-ADB plus request-correlation remediation
+
+## Explicit clean dimensions
+
+- Diff ownership: all assigned source is branch-added; no assigned test or validator registration was placed in inherited CMake, C, or header files
+- D1/D2 parity: the only traced inherited SAF seam is paired, with the same policy body and one intentional game-directory string difference. Its consolidation is already owned by GQD-0018
+- Wrapper status: `test_validate_extract_regression_specs.ps1` invokes the validator and returns its native exit code
+- Validator ordinary paths: discovery is recursive and sorted; source and referenced-file checks use literal paths; read failures become recorded failures; empty `expected_files` fails; recognized ISO and CUE import modes are checked; a CUE spec must name a CUE; and missing referenced images or unlisted CUE members fail
+- SAF tail bounds and diagnostics: the progress deadline is bounded, structured PASS/FAIL is parsed, crash and timeout results are nonzero, failure output includes automation tails, and ordinary completion reaches the centralized cleanup function
+- Syntax: all three frozen PowerShell blobs parse with zero AST errors
+- Portability and secrets: assigned code adds no dependency, credential, host-absolute repository path, inherited platform registration, or non-ASCII source requirement
+
+## Evidence gaps
+
+- No emulator run was performed. The frozen SAF test mutates shared device game data, and the observations are deterministic control-flow and ownership results already covered by focused historical evidence
+- No synthetic validator files were written because this worker is read-only. OBS-001 follows directly from the empty projection, skipped loop, ISO `continue`, and readiness predicate; remediation should add the isolated fixtures listed above
+- The live head and broader worktree may contain post-freeze fixes. They do not change frozen attribution and must be rechecked by any remediation owner before editing
+
+## Commands and review record
+
+- `git cat-file -e`, `git rev-parse`, `git ls-tree`, `git diff --numstat`, `git diff --summary`, `git diff --unified`, `git show`, `git log --follow`, and `git grep` against the frozen base/head
+- `rg` across active and done GQ ledgers, durable GQ evidence, active and done adversarial ledgers, DMR1, and earlier PhysFS extraction plans for `physfsx`, SAF, validator, source-file, stale-result, and finding ownership
+- In-memory PowerShell AST parsing of all three frozen blobs, with zero errors
+- In-memory blob/range and ordered scope-manifest fingerprinting; no temporary finding, product edit, canonical-ledger edit, fixture, build output, emulator state, or external state was created
+
+## Normalization recommendation
+
+- Record one `GQD-*` for GQ1-CHUNK-0131 as `CANDIDATE`, explicitly `DUPLICATE/EXTENDS GQD-0018`: two inherited paths, six relevant hunks, `+40/-0`, with an estimated 26-line and two-hunk reduction into the existing shared PhysicsFS owner. Do not create a second minimization finding or remediation
+- Admit OBS-001 as one new P2/high schema-validation finding after a final duplicate scan. Keep source hash validation linked to BR-0008 and discriminator rejection linked to BR-0187
+- Normalize OBS-002 through OBS-004 as coverage extensions of BR-0187, BR-0008, and BR-0190 respectively, with no new IDs
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0131
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0131 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0132 frozen survey SHA256:8eb31857e4dafed8ff3ab210caf0f6236ffafde374c1899207e6c062213beab8 -->
+
+## GQ1-CHUNK-0132 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0132.md`
+- Imported SHA-256: `8eb31857e4dafed8ff3ab210caf0f6236ffafde374c1899207e6c062213beab8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0132 frozen survey
+
+Outcome: ISSUES. All 585 assigned lines were reviewed against their frozen production, build, JNI, runner, paired D1/D2, history, DMR1, adversarial, and earlier GQ owners. Diff minimization dominated the review. The assigned branch-added tests exercise the same 154-line paired inherited menu/window accessor surface already admitted as `GQF-0156` and planned as `GQR-0143`; this report extends that owner rather than proposing a second extraction. The paired 22-line event-loop automation/introspection seam is retained because it is already a compact call boundary and moving it would produce wrapper-only indirection. The quality pass found that both host-only extraction helper tests default to the emulator tier, and confirmed a stale undefined navigation-count diagnostic in the extraction runner. The runner's wrong-level success branch remains duplicate evidence for open `BR-0009`.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned path and reviewed range: `android/tests/test_extract.ps1` L1201-L1620, 420 lines from a 1,620-line added file
+- Frozen blob: `6d7dbd1d014fd68d67483cbdb98b8339af82034a`
+- Assigned path and reviewed range: `android/tests/test_extraction_cache_provenance.ps1` L1-L123, complete file
+- Frozen blob: `5fa02bb50f8585b4b6c5b9e1305ac1ea0882889b`
+- Assigned path and reviewed range: `android/tests/test_extraction_publication.ps1` L1-L42, complete file
+- Frozen blob: `74f74ce33e217d477be90e004a5e04aadedc81e9`
+- Ordered scope records:
+  - `android/tests/test_extract.ps1|L1201-L1620|6d7dbd1d014fd68d67483cbdb98b8339af82034a`
+  - `android/tests/test_extraction_cache_provenance.ps1|L1-L123|5fa02bb50f8585b4b6c5b9e1305ac1ea0882889b`
+  - `android/tests/test_extraction_publication.ps1|L1-L42|74f74ce33e217d477be90e004a5e04aadedc81e9`
+- Scope manifest SHA-256 over those UTF-8 records separated by one LF and without a final LF: `74f6a8ae5a14fa23b39284226300d9dde48ef021b4b7f35d4e17b7fdca7a022d`
+- All three paths are absent at the frozen base and added at the frozen head. Whole-file frozen numstat is `+1620/-0`, `+123/-0`, and `+42/-0`, respectively
+- Current `HEAD` during review was `1f8b1952057ff1893045003abcfae60dee967bc8`. Each assigned live blob remained frozen-identical. Live product or ledger drift was not substituted for frozen evidence
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE`, as an evidence extension and deduplication to existing `GQF-0156` / `GQR-0143`.
+
+### Attribution and measured inherited boundary
+
+- The three assigned files are branch-added. Their assigned bodies contribute 585 reviewed branch-owned lines and directly add zero lines to inherited files
+- Direct CD/ISO import, setup introspection, set switching, and readiness polling terminate in branch-added Kotlin launcher owners and branch-added native extraction/JNI owners. Extraction provenance and publication terminate in branch-added `android/helpers/bounded_extraction.ps1` and branch-added fingerprint tooling. Test discovery and execution are owned by branch-added `android/run_all_tests.ps1`. None of those paths requires an inherited build or test registration
+- The full launch path constructs a branch-added automation script, launches through branch-added launcher/JNI code, and executes branch-added `game_automate.cpp` and `game_introspect.cpp`. Its named menu selection and exact level assertion consume the inherited private menu/window state through paired debug accessors
+- The accessor boundary is exactly the one measured by GQ1-CHUNK-0127: paired `d1`/`d2` `main/newmenu.c`, `main/newmenu.h`, `arch/sdl/window.c`, and `arch/include/window.h` contain 154 branch-added accessor implementation/declaration lines across eight inherited paths. They are identical or game-neutral and exist for branch-owned automation/introspection
+- The already proposed type-complete branch-added implementation fragments plus one shared declaration owner retain about ten inherited include-seam lines and remove about 144 inherited lines. API names, private type access, compile guards, and behavior remain unchanged. This chunk adds the extraction regression as a concrete consumer that validation must preserve
+- The same launch path also requires `game_automate_tick()` and `game_introspect_check_and_dump()` in paired `d1/arch/sdl/event.c` and `d2/arch/sdl/event.c`. Frozen measurement is 11 additions in three hunks per game, 22 additions and six hunks total: four guarded include lines, four guarded automation-tick lines, and three guarded dump lines per file
+- Retain the event seam. It is one call at the frame/event owner for each operation, its bodies are already branch-added, and replacing it with a shared wrapper or callback table would save at most a few inherited lines while obscuring scheduling and increasing branch-owned indirection. It does not meet the material-payoff rule
+
+### Candidate boundary, risks, and validation
+
+- Existing owner: `GQF-0156`, paired menu/window debug accessor consolidation
+- Existing remediation: `GQR-0143`
+- Estimated payoff: about 144 inherited lines removed from eight paths, with about ten compact include/declaration seam lines retained. Do not count or mix the retained 22-line event-loop seam into the candidate
+- Proposed branch-added owners: the type-complete implementation fragments and shared declaration owner already specified by GQ1-CHUNK-0127. Do not move private menu geometry, frame orchestration, selection policy, or renderer state
+- Risks: include position must see complete private structs; C/C++ linkage, guards, D1/D2 field parity, listbox/newmenu signatures, and non-introspection builds must remain intact
+- Validation must include isolated frozen/live inherited metrics, paired Windows builds, configured Android ABIs, menu automation, and this extraction launch path with exact mission and level assertions. Reject the extraction if adapter/include growth materially erodes the measured reduction
+- DMR1 reconciliation: DMR1 retains private newmenu geometry and frame orchestration as high-coupling policy. The narrow accessor extraction does not conflict with that retained boundary. No new DMR1 root is requested
+
+## Atomic observations
+
+### GQ1-CHUNK-0132-OBS-001: Extraction launch coverage extends the paired accessor extraction candidate
+
+- Provisional normalization: `DUPLICATE/EXTENDS GQF-0156`; no new finding or remediation
+- Severity/confidence/category: P2/high, `diff-minimization/merge-pressure`
+- Frozen locations: the eight inherited accessor paths and exact 154-line boundary already recorded by GQ1-CHUNK-0127, consumed here from `test_extract.ps1:L1531-L1569` through the extraction automation template
+- Evidence: this test depends on text selection and exact `current_level_name` introspection after launcher handoff. Those operations use the paired private menu/window accessors, so extraction regression must be added to `GQR-0143` validation. Removing this test cannot remove the accessors because many other maintained automation scripts consume them
+- Normalization: extend `GQF-0156` and `GQR-0143` validation evidence. Do not allocate another `GQF-*` or `GQR-*`
+
+### GQ1-CHUNK-0132-OBS-002: Host-only extraction helper tests default to the emulator tier
+
+- Provisional normalization: `NEW`
+- Severity/confidence/category: P2/high, `test-runner/portability/performance`
+- Frozen locations: `android/tests/test_extraction_cache_provenance.ps1:L1-L123`, `android/tests/test_extraction_publication.ps1:L1-L42`, and `android/run_all_tests.ps1:L373-L403,L483-L484,L1344`
+- Evidence: both assigned scripts operate only on repository-local files under `android/temp`, dot-source a host PowerShell helper, and invoke no ADB, Android package, Gradle, emulator, or device API. The aggregate runner discovers every `test_*.ps1`, but neither name appears in `$noInfraTests`; its default branch therefore assigns `Requires="emulator"`. Any selection containing either test makes `$needsApk` true and enters the single-emulator tier
+- Trigger: run `android/run_all_tests.ps1 -Filter test_extraction_cache_provenance` or the publication equivalent on a host without emulator acceleration, or include either in a normal suite
+- Impact: a deterministic host test is blocked by Android emulator prerequisites, forces an unrelated APK build/install/start path, and runs later than other host validation. This makes focused extraction safety checks unavailable in ordinary headless/offline host environments and adds substantial avoidable suite cost
+- Expected and suggested fix: classify both names as no-infrastructure tests, or replace the hand-maintained name list with explicit test metadata that defaults safely and is validated by the catalog. Verify each filter runs without Gradle, ADB, or emulator setup and remains discovered in the aggregate suite
+- Deduplication: exact-name and root-cause searches across both GQ ledgers, both adversarial ledgers, DMR1, and earlier evidence found no existing owner. `BR-0535`, `BR-0536`, and `BR-0544` concern different build anchoring, menu build-policy, and stale APK roots
+
+### GQ1-CHUNK-0132-OBS-003: Removed navigation loop leaves an undefined count in the failure diagnostic
+
+- Provisional normalization: `NEW`
+- Severity/confidence/category: P3/high, `diagnostics/maintainability`
+- Frozen location: `android/tests/test_extract.ps1:L1558-L1598`, especially L1588
+- Evidence: the only frozen `$maxNav` reference is the failure message `after $maxNav navigation attempts`; no parameter or assignment defines it. History shows commit `8ce0949e` removed `$maxNav = 25` and the navigation loop when automation replaced manual navigation but retained this message. Without strict mode, PowerShell expands the missing variable to an empty string
+- Trigger: automation reports PASS, then the subsequent fresh game introspection reports `in_game=false`
+- Impact: the primary failure line claims an unspecified number of attempts and describes navigation that no longer occurs, obscuring whether the failure came from automation/result correlation, the final introspection request, or a game-state transition
+- Expected and suggested fix: replace the stale count with a truthful post-automation introspection message, or record and print the actual bounded operation being retried. Add a focused failure-path assertion for the emitted diagnostic if the message remains operationally important
+- Deduplication: exact `$maxNav`, message, stale-navigation, and undefined-variable searches across the canonical history found no existing finding
+
+### GQ1-CHUNK-0132-OBS-004: Wrong-level terminal success remains historical duplicate evidence
+
+- Provisional normalization: `DUPLICATE BR-0009`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/test_extract.ps1:L1562-L1569,L1613-L1620`
+- Evidence: the local mismatch branch still prints `PASS (level mismatch)` and reaches unconditional success. The generated automation body now also contains an exact level assertion, which normally rejects the mismatch earlier, but the terminal branch remains the same false-success root already owned by `BR-0009`
+- Normalization: retain this frozen state as evidence for `BR-0009`. Do not allocate a new GQ finding
+
+## Explicit clean dimensions
+
+- Path classification and ownership: all assigned code is branch-added. Host extraction policy remains in branch-added helper/tool owners, launcher import remains in branch-added Kotlin/JNI/native owners, and no test body was copied into D1/D2
+- Diff minimization: relevant build entries are in branch-added Android/test owners. The 154-line accessor candidate is deduplicated, and the 22-line event seam was tested against wrapper, macro, and callback alternatives and retained for insufficient payoff
+- D1/D2 parity: automation tick, introspection publication, window accessors, and menu/listbox accessors are paired. The candidate preserves identical signatures and guards
+- Correctness and false-pass checks: direct import failure, incomplete completion, and timeout paths exit nonzero; missing pushed files fail; automation timeout/non-PASS fails; cache tests cover source, tool, policy, output, descriptor multiplicity, CUE/ISO binding, and mission-sidecar identity changes; publication tests reject old-generation retention and post-publication corruption. Exact loaded-level terminal success remains BR-0009
+- Security and resource lifetime: assigned host tests use fixed owned roots beneath `android/temp` and remove them in `finally`. Publication uses unique test roots. No assigned input is an untrusted remote path. Production archive and publication safety remains in existing bounded-extraction and adversarial owners
+- Concurrency: the publication fixture is single-caller and does not prove same-destination serialization; that root is already `GQF-0130` / `GQR-0117`, so it was not duplicated
+- Portability and hygiene: all three frozen scripts parse with zero PowerShell AST errors, contain only ASCII, contain no NUL, and pass frozen `git diff --check`. The host tests use repository-rooted paths and no platform-specific executable
+- Test quality: provenance checks use always-active explicit throws rather than `assert`; publication failures throw and the process exits nonzero; cleanup is guaranteed through `finally`. Aggregate tier ownership is the distinct OBS-002 gap
+
+## Evidence gaps and limits
+
+- No build, APK install, emulator action, proprietary extraction corpus, or mutable-worktree product test ran. This was a read-only frozen-object survey, and the assigned live blobs were frozen-identical
+- The 144-line accessor reduction is inherited from the exact GQ1-CHUNK-0127 measurement and was independently traced as required by this test. `GQR-0143` must remeasure the live eight-path boundary before editing
+- No fault-injection execution forced the publication helper's second rename to fail. Existing publication rollback and concurrency findings own those production risks
+- The tier-classification impact was established from deterministic catalog control flow. No emulator was started merely to demonstrate an unnecessary prerequisite
+- `BR-0009` may be partially masked by the current template's earlier exact assertion, but the assigned terminal success branch remains frozen and was not treated as a new root
+
+## Commands and validation
+
+- Read `.github/copilot-instructions.md` and the complete amended `general_code_quality_worker_process.md`
+- Used frozen `git cat-file`, `git rev-parse`, `git show`, `git diff --name-status`, `git diff --numstat`, `git diff -U0`, `git diff --check`, `git grep`, and line-numbered inspection for path classification, production/JNI/build tracing, paired inherited hooks, and exact measurements
+- Used `rg`, `Select-String`, and targeted ledger/evidence excerpts to reconcile GQ1-CHUNK-0127, `GQF-0156`, `GQR-0143`, `GQF-0130`, DMR1 retained boundaries, `BR-0009`, and runner/build historical roots
+- Computed all blob IDs and the ordered scope SHA-256 in memory. Parsed each frozen script with the PowerShell AST parser and obtained zero errors
+- Used frozen non-ASCII and NUL scans plus `git diff --check`; all assigned paths passed
+- Used `git log -S'maxNav'` to attribute the stale diagnostic to the navigation-loop removal
+- No product code, canonical ledger, temporary finding report, build output, test fixture, emulator state, or external state was changed
+
+## Normalization recommendation
+
+- Record one `GQD-*` for GQ1-CHUNK-0132 with disposition `CANDIDATE`, explicitly as `DUPLICATE/EXTENDS GQF-0156 / GQR-0143`: 154 measured inherited accessor lines, about ten retained seam lines, and about 144 estimated removed lines. Add this extraction launch as required validation
+- Record the paired event-loop seam as retained sub-evidence: two inherited paths, six hunks, 22 additions, and no material safe extraction payoff
+- Admit OBS-002 as one atomic P2/high finding with one later remediation to correct the host-test tier metadata
+- Admit OBS-003 as one atomic P3/high diagnostic/maintainability finding, unless normalization deliberately folds it into a broader already admitted stale-diagnostic root found after this report
+- Normalize OBS-004 as duplicate evidence for `BR-0009`
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0132, citing the explicit clean dimensions and evidence gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0132 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0133 frozen 80/20 survey SHA256:5983c328c7914eb268983f784e4d3737e31eecdcbf75049d68bf10cb1db4cad9 -->
+
+## GQ1-CHUNK-0133 frozen 80/20 survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0133.md`
+- Imported SHA-256: `5983c328c7914eb268983f784e4d3737e31eecdcbf75049d68bf10cb1db4cad9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0133 frozen 80/20 survey
+
+## Assignment and outcome
+
+- Coverage ID: `GQ1-CHUNK-0133`
+- Outcome: `ISSUES`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned scope: `android/tests/test_fingerprint_mission_zip_budgets.ps1:L1-L149`; `android/tests/test_mac_extract_saf.ps1:L1-L240`; `android/tests/test_mission_zip_batch_recovery.ps1:L1-L81`; `android/tests/test_mission_zip_batch.ps1:L1-L18`
+- Frozen scope fingerprint: `3eba6c627e41f382fe263a02c890450748ad0cd91626001dd8b9773dc19c1113`, SHA-256 of the sorted `path=blob` records below with LF separators and no final separator
+- Scope status: complete. Every assigned frozen line and file history was inspected, followed through the direct test runner, helpers, production owners, debug provider, Android import boundary, and relevant prior review owners
+
+Frozen blobs:
+
+- `android/tests/test_fingerprint_mission_zip_budgets.ps1`: `4dcdbcc320404807f374c76e7d8b489f137231e4`
+- `android/tests/test_mac_extract_saf.ps1`: `14d02deb3fd583180bf61bb45e8b34c1ab70c2f2`
+- `android/tests/test_mission_zip_batch_recovery.ps1`: `6786d3e3618845111dfcb40ebfadaa5e2413a4c8`
+- `android/tests/test_mission_zip_batch.ps1`: `2f8e5081fcfad25951a6b5f75388d6d80c77d4cf`
+
+## Diff-minimization assessment
+
+- Disposition: `NO_INHERITED_EFFECT`
+- Classification: all four assigned paths are branch-added. At the frozen boundary they contribute 488 added lines, zero deleted lines, four paths, and four addition hunks. None existed at the frozen base
+- Traced branch-added owners: `android/run_all_tests.ps1` automatically discovers the PowerShell tests and carries the only named timeout/tier policy; `game_data/fingerprint_mission_zip_music.ps1` owns the host archive-budget functions; `android/helpers/mission_zip_batch_recovery.ps1` and `android/helpers/run_mission_zip_batch.ps1` own recovery and batch execution; `android/helpers/test_helpers.ps1` owns ADB/test orchestration; `android/app/src/debug/AndroidManifest.xml` and `SafTestProvider.kt` own the debug SAF endpoint; and `SafDescriptorStager.kt`, `SetupActivity.kt`, `SetupDiscImport.kt`, `MainActivity.kt`, and `LauncherScriptExecutor.kt` own the tested launcher/import flow. Every one of these traced files is also branch-added relative to the frozen base
+- Inherited measurement: exact frozen `git grep` over `d1/` and `d2/` found zero references to the four test names or their distinctive `BudgetTestOnly`, SAF-provider/log tag, picked-URI, and preparation-retry boundaries. No inherited CMake or test registration consumes them. Therefore the assigned tests cause zero inherited paths, zero inherited hunks, zero inherited additions, and zero inherited deletions
+- Ownership-boundary test: deleting or consolidating any assigned test could shrink branch-added test code, but it would remove no line or hunk from an inherited file. The test runner already uses branch-added automatic discovery, so moving registration data cannot eliminate an inherited registration. The SAF and mission-batch behaviors eventually exercise an Android game, but those port/runtime seams exist for the product feature independently of these test clients; no D1/D2 edit is named, declared, or conditionally built for these tests
+- Rejected alternatives: moving PowerShell assertions into D1/D2 C tests, adding inherited registration wrappers, or introducing a callback table would create inherited churn and invert ownership. Combining the four unrelated integration contracts into one wrapper would reduce branch-added filenames only, weaken isolation, and provide no merge-pressure payoff
+- DMR1 reconciliation: the DMR1 ledger has no owner for these test scripts or their branch-added runner/helper boundary. No DMR1 extension, candidate, or new diff-minimization finding is warranted
+- Estimated inherited reduction: 0 lines and 0 hunks. Recheck only if a later generation adds an explicit D1/D2 declaration, build registration, test-only hook, or copied test policy for one of these four clients
+
+## Context checked
+
+- Complete frozen bodies and histories of all four assigned additions
+- PowerShell auto-discovery, timeout selection, extract-tier placement, and `-SkipBuild` injection in `android/run_all_tests.ps1`
+- Archive budget state, ZIP/HOG parsing, recursive nested archive calls, `-BudgetTestOnly`, and existing budget/fingerprint tests around `game_data/fingerprint_mission_zip_music.ps1`
+- Recovery predicate, bounded retry, complete frozen mission-batch caller sites, the sample wrapper, and prior GQ1 chunk 0083 recovery evidence
+- Debug SAF provider manifest and implementation; descriptor staging; picked-URI automation; setup import; app-private staging; UI polling; set creation/switch/clear; and cleanup
+- Frozen D1/D2 namespace and build-tree searches for assigned names, distinctive symbols, test registrations, copied policy, and direct consumers
+- Active and done GQ ledgers, active and done adversarial ledgers, DMR1, durable evidence for GQ1 chunks 0083, 0085, 0090, 0091 and 0114, and prior cleanup-plan references for duplicate or regrowth ownership
+
+## Atomic observations
+
+### GQ1-CHUNK-0133-OBS-001: The Mac SAF integration oracle accepts extra or wrong output bytes
+
+- Severity/confidence: `P2/high`
+- Category: `test-gap/correctness/oracle-strength`
+- Normalization recommendation: `EXTENDS GQF-0153`; broaden its D2-native wording to the shared Mac extraction oracle root instead of allocating a second finding
+- Location: `android/tests/test_mac_extract_saf.ps1:L26,L115-L121,L138-L141`
+- Trigger: Make either seekable or pipe-backed Mac extraction publish all seven named leaves plus an unexpected eighth leaf, or publish corrupted, truncated, or swapped bytes under any expected name
+- Evidence: `Test-ExpectedSetFiles` checks only that each expected name occurs in `State.set_files`. It does not require the actual set to equal the seven-name inventory and checks no sizes or hashes. Both extraction passes clear the target set before import, so an unexpected leaf is branch-produced rather than unavoidable stale state, yet the predicate still returns true. The source CUE and BIN are SHA-256-bound, so the test has a stable input generation from which a content-exact output oracle can be maintained. `GQF-0153` already owns the same root in the D2 Mac native production-wrapper test: treating filenames and count as a full oracle without checking bytes
+- Impact: A regression that extracts extra files, selects the wrong fork/member, truncates content, or swaps bytes while retaining expected basenames passes this maintained end-to-end SAF test on both descriptor modes. The test can therefore certify the seekability boundary while missing corrupt or overbroad Mac publication
+- Expected: Require exact set equality and bind the known source generation to the complete expected relative names, sizes, and SHA-256 values for both modes
+- Suggested validation: mutate, truncate, swap, add, and remove one output at a time; require the predicate to fail and retain ordinary seekable and pipe-backed passes plus staging-log assertions
+- Deduplication: `GQF-0153` is the direct current owner. Archived `BR-0043` concerns exact result identity in audio fingerprint enumeration, not Mac extraction bytes, and should not receive this extension
+
+### GQ1-CHUNK-0133-OBS-002: The budget test does not exercise the open nested-depth boundary
+
+- Severity/confidence: `P2/high`
+- Category: `test-gap/security/resource-exhaustion`
+- Normalization recommendation: `EXTENDS GQF-0137`; validation evidence only, no new finding
+- Location: `android/tests/test_fingerprint_mission_zip_budgets.ps1:L29-L58,L98-L112`
+- Trigger: Regress or repair archive recursion so exact-depth, one-over-depth, cyclic, or mixed ZIP/DXA chains behave incorrectly while ordinary one-level `nested.zip` still extracts
+- Evidence: the sole nested fixture is one outer ZIP containing one inner ZIP and a payload. It verifies reclaimed output-byte accounting but has no recursion-depth parameter, exact-limit chain, one-over-limit rejection, cycle, or mixed archive chain. `GQF-0137` already records that the production recursion is unbounded and prescribes exactly those depth tests
+- Impact: the existing budget suite can stay green while the known nesting resource boundary remains absent or is later implemented with an off-by-one or bypass
+- Expected: remediation for `GQF-0137` extends this maintained suite with exact/over depth, cycle, and mixed-chain cases while retaining the current output-budget assertion
+- Deduplication: this is not a second production defect. It is focused validation evidence for `GQF-0137` and its existing remediation `GQR-0124`
+
+## Explicit clean dimensions
+
+- Diff minimization: all assigned and direct registration/ownership files are branch-added; no assigned identifier, test registration, declaration, build entry, copied policy, or conditional hook exists in D1/D2
+- Archive-budget tests: ordinary non-audio input, high expansion ratio, aggregate container bytes, nested-output budget release, and four truncated HOG header boundaries have explicit failure or count assertions; archive and stream handles are disposed through nested `finally` blocks
+- SAF setup: both source artifacts are bound to exact SHA-256 values; the copied CUE rewrites only the maintained FILE record; staged BIN size is checked before launch; logcat is cleared per mode; seekable and pipe paths assert opposite staging behavior
+- Device isolation and cleanup: the test creates and selects a dedicated file set, clears it before each pass, restores the default set, stops the app, deletes provider inputs and UI dump, and confines the local temporary CUE under `android/temp`
+- Recovery behavior: transient preparation is retried once, persistent infrastructure failure is bounded, nonrecoverable input failure is not retried, recovery count is asserted, and the original terminal message is checked
+- Batch wrapper: missing helper detection and child exit-code propagation are explicit. The wrapper adds no duplicate archive or game policy
+- Static syntax: all four frozen scripts parse with zero PowerShell AST errors
+- Frozen patch hygiene: `git diff --check` passes for all four assigned paths
+- Prior-owner reconciliation: the broad recovery predicate's bare `closed` substring was already inspected in GQ1 chunk 0083 and left as an evidence gap because no maintained false-result trigger was established. It is not promoted here
+
+## Evidence gaps
+
+- No emulator, Gradle build, 719 MB Mac media transfer, mission batch, proprietary extraction, native tool build, or filesystem-mutating product test was run in this read-only frozen survey
+- The Mac output bytes were not available as a checked-in complete oracle in the assigned scope. Observation 001 follows from the subset-only predicate and stable input hashes, not from a claim that current retail output is corrupt
+- Exact nested archive depth policy is absent by definition under open `GQF-0137`; no synthetic deep corpus was created during this survey
+- D1/D2 runtime paths exercised after mission launch were treated as product context, not as test-caused inherited edits. A later explicit test-only engine hook or inherited registration must trigger delta coverage
+- Live worktree drift was not used as frozen evidence and no existing dirty file was edited
+
+## Commands and verification
+
+- Read `AGENTS.md` through its required `.github/copilot-instructions.md` target and the complete amended general-quality worker process
+- Used `git cat-file`, `git rev-parse`, `git merge-base`, `git show`, `git diff --name-status`, `git diff --numstat`, `git diff --unified=0`, `git diff --check`, `git log --follow`, `git grep`, and `git ls-tree` against the frozen objects
+- Used `rg`, `Get-Content`, and targeted ledger excerpts for DMR1 and active/done GQ and adversarial deduplication
+- Parsed each frozen assigned script in memory with `System.Management.Automation.Language.Parser`; all returned zero errors
+- Verified 488 frozen insertions, zero deletions, four assigned paths, four addition hunks, and zero D1/D2 named references
+- Product code, test code outside this single report, canonical ledgers, prior evidence, temporary files, build output, dependencies, emulator state, and network state were not modified
+
+## Normalization recommendation
+
+- Import this complete tracked report into the durable evidence ledger with its SHA-256 marker
+- Record one `GQD-*` decision with disposition `NO_INHERITED_EFFECT`, measured as 0 inherited paths / 0 hunks / 0 lines
+- Record one `ISSUES` `GQC-*` coverage result because two existing finding owners gain concrete validation evidence
+- Normalize `OBS-001` as `EXTENDS GQF-0153` and `OBS-002` as `EXTENDS GQF-0137`; allocate no new GQF, GQI, DMR1 owner, or remediation chunk
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0133 frozen 80/20 survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0134 frozen survey SHA256:6f84d65225f9ab48696836dcb47765c29dcb1dd2a57ba34b7252b4568aa2ace8 -->
+
+## GQ1-CHUNK-0134 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0134.md`
+- Imported SHA-256: `6f84d65225f9ab48696836dcb47765c29dcb1dd2a57ba34b7252b4568aa2ace8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0134 frozen survey
+
+Outcome: `ISSUES`
+
+## Frozen identity and assigned scope
+
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Ordered scope fingerprint SHA-256: `56f55cc373b9122e492af3264abc30cb30c446a1685a4babfa6accf0e3fc6526`
+- `android/tests/test_extract_all_cds_batch.ps1` L1-L131: blob `a3a394008329b3e8ac26db9c2c4b2b3414b8bd2b`, normalized range SHA-256 `5a9e4cdaa8e1d047c9dce8733c9802d5d60346cf787958776683fa16aaca2a71`
+- `android/tests/test_extract_all_gog_batch.ps1` L1-L54: blob `8d5edf14face8b74a17c2514b8296bee06862d6a`, normalized range SHA-256 `d5ca425abfe5f3128c95ee0e67e13d83e431f8dbc320b7669ce879d3c065b7d7`
+- `android/tests/test_extract_hfs_machfs.py` L1-L79: blob `e7a22951562d97f238f34813fd6ad8b92286ab13`, normalized range SHA-256 `f705384f421ee7b1e5299d35168dcb2cb794b5e3f1f671a52effcc0c047ae63c`
+- `android/tests/test_extract_regression_workflow.ps1` L1-L198: blob `346ee6469ddeb292323f0c607a949e7a832b276b`, normalized range SHA-256 `cfb7397528623fc2b127e56698a5a68a866cecaca78b7016f8c497b6b2fa0397`
+- `android/tests/test_extract_suite_device_preflight.ps1` L1-L80: blob `3635b06cd20e08af7d7a46c17a7333d6ae85e00c`, normalized range SHA-256 `1faf224d8c20e3c1e904f7b77180571ed126244ff410d6bcf97c8f8306f784ca`
+- All 542 assigned lines were read from the frozen objects. Each live path has the same Git blob as the frozen head, which permitted focused execution after frozen attribution was complete
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+### Frozen attribution and measurements
+
+- All five assigned paths are branch-added regular files. Their complete frozen impact is five paths, five creation hunks, and `+542/-0`: `+131`, `+54`, `+79`, `+198`, and `+80` respectively. They directly modify no 1996-original or other inherited file
+- The branch-added `android/run_all_tests.ps1` discovers the four `test_*.ps1` files through its test catalog. The Python test is likewise confined to `android/tests` and imports only the branch-added `android/helpers/extract_hfs_machfs.py`. No inherited test registration, CMake entry, header declaration, hook, or copied D1/D2 policy body is required by these test files
+- Frozen tracing covered 17 direct production, build, JNI, launcher, runner, and game-data owners: `android/app/src/main/cpp/extract/CMakeLists.txt`, `extract_cd.c`, `extract_gog.c`, `jni_disc_import.c`, `DiscImportBridge.kt`, `SetupActivity.kt`, `android/helpers/extract_hfs_machfs.py`, `android/helpers/test_helpers.ps1`, `android/run_all_tests.ps1`, the extraction workflow helpers and runners, and the four `game_data` extraction or regression scripts. Every traced owner is branch-added, totaling `+15699/-0`. With the assigned tests, the measured boundary is 22 branch-added paths and `+16241/-0`
+- `git grep` of the frozen D1 and D2 trees found no assigned basename, extraction batch helper, machfs helper, or launcher-preflight symbol. A frozen D1/D2 changed-path filter also found no extraction, disc, HFS, GOG, setup, or test path attributable to this boundary
+- The native Android extractor and JNI route are separate branch-added implementations under `android/app/src/main/cpp/extract`. The machfs helper is an offline game-data oracle path called by branch-added `game_data/extract_mac_cd.ps1`; it is not the Android JNI HFS implementation and creates no inherited game hook
+
+### Smallest ownership boundary and payoff
+
+- The natural ownership boundary is already achieved: tests remain in branch-added `android/tests`, shared test/device policy remains in branch-added helpers, offline extraction remains under `game_data`, and native/JNI extraction remains under branch-added Android sources
+- Moving these tests, fixtures, or policy into D1/D2 would add inherited test or platform policy and increase merge pressure. Adding an inherited callback, registration table, or declaration would remove no existing inherited line
+- Consolidating the two batch tests or moving their fixture stubs into another branch-added helper could reduce new-file line count, but it would remove zero inherited paths, hunks, or lines and would couple distinct CD and GOG contracts. It is therefore not a diff-minimization candidate
+- Reverting these focused tests would not remove an inherited edit and would weaken coverage for batch status, source selection, HFS confinement, extraction workflow, and launcher recovery. No extraction, consolidation, or revert produces a material inherited-diff reduction
+- DMR1 contains no competing extraction owner for this test-only boundary. No `GQF-*`, `GQR-*`, or DMR1 item should be created for minimization
+
+## Atomic observations
+
+### GQ1-CHUNK-0134-OBS-001: Raw-source regex assertions can pass after the behavior they claim to protect is removed
+
+- Provisional normalization: `NEW`
+- Severity/confidence/category: P2/high, `test-gap/false-pass/maintainability`
+- Frozen location: `android/tests/test_extract_regression_workflow.ps1:L21-L55`
+- Evidence: the test reads `test_extract.ps1`, `test_all_extracts.ps1`, and `run_all_tests.ps1` as unparsed text, then treats ordered regular-expression token matches as proof of process-boundary, asynchronous-broadcast, recovery, catalog, normalization, and error-classification behavior. The expressions do not establish reachability, call arguments, return handling, or control-flow ownership. For example, the setup-boundary assertion passes if the required tokens remain in a comment, here-string, or dead function after the operative call is removed. Conversely, a behavior-preserving helper extraction, named-argument reorder, or intermediate variable can fail the test because the source tokens no longer appear in the expected textual order
+- Trigger: retain the matched `am start`, `pidof`, and `Wait-SetupReady` text in an unused block while removing the live wait, or preserve the live behavior while factoring it into a shared helper whose call site no longer contains the whole regex sequence
+- Impact: the focused workflow can exit zero without protecting the runtime contract it advertises, while harmless refactors can block the suite. This makes a high-level regression gate both false-negative and false-positive at the most maintenance-sensitive launcher and ADB handoff boundary
+- Expected: assertions invoke extracted branch-added helpers with controlled command and status doubles, then verify ordered operations, arguments, return classification, and resulting state. Any narrow structural contract that must remain can use PowerShell AST inspection rather than raw source substring matching
+- Suggested fix: move the launch, broadcast, and retry decisions behind testable helper functions in branch-added test or launcher-support files, unit-test their command plans and outcomes, and leave the full extraction workflow as an integration test. Remove the corresponding raw-text assertions once behavioral coverage exists
+- Validation: demonstrate that removing or bypassing the live wait, async broadcast, recovery call, or exit classification fails; demonstrate that comment-only tokens do not satisfy coverage; demonstrate that formatting, named-argument reorder, and behavior-preserving helper extraction continue to pass
+
+### GQ1-CHUNK-0134-OBS-002: GOG batch coverage leaves the open aggregate-status defect unexercised
+
+- Provisional normalization: `DUPLICATE/EXTENDS BR-0169`
+- Severity/confidence/category: P2/high, `test-gap/false-success`
+- Frozen location: `android/tests/test_extract_all_gog_batch.ps1:L19-L50`; production owner `game_data/extract_all_gog.ps1`
+- Evidence: the test constructs only a same-basename `.exe` and `.pkg` collision and asserts that preflight exits 1. It never permits the extractor stub to run, never injects a child failure, and never checks mixed-item or final aggregate status. Existing BR-0169 already records that the GOG script increments `$totalErrors`, prints the count, and can still reach end-of-file with process status zero. This test does not close that exact branch
+- Normalization should extend BR-0169 with focused test-gap provenance only. Do not allocate a new finding or remediation owner
+
+### GQ1-CHUNK-0134-OBS-003: HFS helper coverage omits the known zero-length-file loss
+
+- Provisional normalization: `DUPLICATE/EXTENDS GQF-0126`
+- Severity/confidence/category: P3/high, `test-gap/data-preservation/HFS`
+- Frozen location: `android/tests/test_extract_hfs_machfs.py:L30-L76`; production owner `android/helpers/extract_hfs_machfs.py`
+- Evidence: the test covers one nonempty nested file, unsafe path components, and entry, file-byte, and total-byte budgets. It provides no `FakeFile(b"")` case and therefore does not detect the production helper's known omission of admitted zero-length files. GQF-0126 and GQR-0113 already own the defect and its required empty-file regression
+- Normalization should attach this exact missing assertion to GQF-0126/GQR-0113 and allocate no duplicate ID
+
+## Explicit clean dimensions
+
+- Diff ownership: all assigned and directly traced code is branch-added. No inherited C/C++, header, CMake, game-policy, or paired D1/D2 edit is caused by the scope
+- D1/D2 parity: there is no D1/D2 test hook to pair, and frozen symbol/path searches found no one-sided inherited consumer
+- Batch tests: the CD fixture checks sole-descriptor selection, one-record array count, error-bearing zero-exit records, missing sources, optional error details, and aggregate nonzero status. The GOG fixture checks ambiguous extensionless destination identity before extraction
+- HFS test: ordinary nested extraction, traversal and absolute-name rejection, entry count, per-file bytes, and aggregate bytes are covered with isolated temporary roots
+- Workflow behavior outside OBS-001: canonical spec writes preserve generation time on semantic no-op, update on semantic change, maintain evidence-strength rules, reject an empty extraction oracle, and distinguish tested infrastructure and semantic failures
+- Device preflight: installed, missing-package, single-recovery, and recovery-failure sequences are deterministic and assert the full call order and requested timeout
+- Resource lifetime and isolation: all PowerShell tests use repository-local temporary roots with `finally` cleanup; the Python test uses `TemporaryDirectory`; focused executions left no assigned-file changes
+- Syntax and formatting: four frozen PowerShell scripts parse with zero AST errors, the Python file compiles, and the frozen scoped `git diff --check` passes
+- Security and portability: assigned code introduces no network acquisition, credential, secret, host-absolute repository path, inherited platform registration, or new dependency. Unsafe HFS component tests include traversal, rooted POSIX, rooted Windows, and drive-qualified forms
+
+## Evidence gaps
+
+- No emulator or APK run was performed. The preflight test replaces device operations with deterministic functions, and the workflow test is host-only; runtime launcher and ADB behavior remains covered by their broader existing integration owners
+- No proprietary GOG installer, CD corpus, or real HFS volume was used. The assigned unit tests intentionally use isolated doubles, and the remaining concrete corpus and production failures already have BR/GQ owners
+- The raw-source observation was established from deterministic parsing semantics and the frozen source. A remediation should add mutation-style controls proving comment-only tokens cannot pass before removing the old assertions
+- The broader live worktree may move after this report. All five assigned live blobs matched the frozen head during review, but any remediation must recheck live ownership and status before editing
+
+## Commands and review record
+
+- `git cat-file`, `git ls-tree`, `git diff --numstat`, `git diff --summary`, `git diff --check`, `git show`, `git log`, and `git grep` against the frozen base and head
+- `rg` across the active and done general-quality ledgers, durable evidence ledger, active and done adversarial ledgers, and DMR1 for extraction, HFS, aggregate-status, raw-source, and test ownership
+- In-memory PowerShell AST parsing of all four frozen PowerShell blobs and in-memory Python compilation, with zero errors
+- Focused execution of all five assigned live files after confirming byte identity with the frozen blobs: all passed, including three Python cases
+- In-memory normalized range and ordered-scope fingerprinting. No product, fixture, canonical-ledger, generated-data, emulator, device, dependency, or external state was changed
+
+## Normalization recommendation
+
+- Record one `GQD-*` for GQ1-CHUNK-0134 as `NO_INHERITED_EFFECT`: five assigned branch-added paths, five creation hunks, `+542/-0`, plus 17 traced branch-added owners at `+15699/-0`; zero inherited paths, hunks, or lines are attributable to this boundary
+- Admit OBS-001 as one new P2/high test false-pass finding after a final duplicate scan. Its remediation stays entirely in branch-added test/helper ownership and is not a DMR1 task
+- Normalize OBS-002 as an evidence extension of BR-0169 and OBS-003 as an evidence extension of GQF-0126/GQR-0113, with no new IDs
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0134
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0134 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0136 raw survey report SHA256:bb5203bed2718e9ce41c86bfc0f05a159c997f9f91b3a53f6bf23d96421c3a4e -->
+
+## GQ1-CHUNK-0136 raw survey report imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0136.md`
+- Imported SHA-256: `bb5203bed2718e9ce41c86bfc0f05a159c997f9f91b3a53f6bf23d96421c3a4e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0136 raw survey report
+
+## Identity and frozen scope
+
+- Coverage unit: `GQ1-CHUNK-0136`
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Confirmed merge base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Assigned path and range: `android/tests/test_extract.ps1` L601-L1200, exactly 600 lines from a 1,620-line file
+- Frozen blob: `6d7dbd1d014fd68d67483cbdb98b8339af82034a`
+- Ordered scope record: `android/tests/test_extract.ps1|L601-L1200|6d7dbd1d014fd68d67483cbdb98b8339af82034a`
+- Scope-record SHA-256, over the UTF-8 record without a final LF: `42c9ef49f8aa8cbcd8694c77148eb81fbced706aedcb4fddbfc248e491af849f`
+- Frozen blob-content SHA-256, over Git-normalized content with one final LF: `99bc58ad438bc0aeb529b0bf7027fd65fbbeaedc06762f9740cfb40da57b1d86`
+- Frozen path classification: branch-added test source. The base has no path and the frozen diff is one added-file hunk, `+1620/-0`
+- Live drift check: live `test_extract.ps1` hashes to the same Git blob as the frozen head. Live repository HEAD was `1f8b1952057ff1893045003abcfae60dee967bc8` during review; unrelated concurrent plan, ledger, and product changes were not used as frozen evidence
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+- The assigned path contributes zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines. It is absent at the base
+- The assigned range owns checked chunked ADB transfer, result bookkeeping, source-type dispatch, local extracted-file selection, emulator sanitation, launcher-state canary checks, and the first half of direct CUE staging
+- Direct host callers and owners are branch-added: `test_all_extracts.ps1`, its `run_all_tests.ps1` catalog entry, `run_all_cd_regressions.ps1`, the focused workflow test, the regression-spec and recovery helpers, and the host-platform helper
+- Launcher consumers and registrations are also branch-added: `SetupActivity.kt` owns `write_bool_pref`, set management, audio cleanup, and direct-import broadcasts; `SetupAutomationApi.kt` publishes `active_set`, `set_files`, and `can_launch`; `FileSetManager.kt` owns set paths; and the Android manifest is absent at the base
+- The twelve directly traced host/launcher owner paths are all additions and total `+12238/-0`. This is branch-added context, not an inherited reduction target
+- Frozen searches found no `test_extract.ps1`, extraction-regression, `SETUP_COMMAND`, `SetupAutomationApi`, or `FileSetManager` reference in `d1/` or `d2/`. No inherited declaration, consumer, callback, source registration, build entry, paired D1/D2 edit, or copied policy body is caused by L601-L1200
+- The later L1201-L1620 launch path reaches shared automation and introspection seams, but that is outside this assigned range and is already traced by the adjacent coverage report to `GQF-0156`/`GQR-0143`. The L601-L1200 canary uses launcher-side readiness only and does not require those engine accessors
+- Moving these test-local bodies into another branch-added helper would remove no inherited hunk. Extracting `Invoke-AdbRaw`, the chunk copier, source dispatch, or sanitation only to shorten this file would be wrapper-only movement or would invert the single-runner ownership. No safe revert removes inherited churn because there is none
+
+Normalization recommendation: record one `NO_INHERITED_EFFECT` GQD decision. Do not create a diff-minimization finding, DMR1 item, or remediation chunk
+
+## Scope and context checked
+
+- Every frozen assigned line, including the tail of `Ensure-AppPrivateFile`; complete `Invoke-AdbRaw`, size helpers, chunk copier, and `Push-FileToSet`; spec admission and result publication; CD, combined, and GOG dispatch; flattening and basename collision selection; optional demo hashes; emulator recovery; destructive sanitation; setup introspection canary; and direct CUE source matching and first staged file
+- Enclosing definitions before L601 and the direct-CD continuation after L1200, plus later uses of the staging helpers and result variables where needed to establish behavior
+- Direct callers, aggregate registrations, launcher broadcast handlers, set ownership, readiness/introspection publication, Android registration, extraction workflow tests, relevant specs, and complete file history/blame
+- Frozen path attribution for twelve direct owner paths and repository-wide frozen searches for inherited D1/D2 references
+- Canonical GQ active/done/evidence ledgers, both adversarial ledgers, DMR1, prior cleanup notes, and neighboring GQ1 extraction coverage for duplicate or historical ownership
+
+## Quality observations
+
+### GQ1-CHUNK-0136-OBS-001 - DUPLICATE GQF-0032
+
+- Severity/confidence/category: P2/high, `correctness/reproducibility/data-integrity`
+- Frozen location: `android/tests/test_extract.ps1:L877-L930`
+- Evidence: combined sources are recursively flattened and keyed only by lowercase basename. A larger file replaces a smaller one and equal sizes retain incidental enumeration order. The real D2 plus Vertigo components already collide on declared HAM/HOG names
+- Trigger and impact: change relative sizes, equalize them, or reverse component enumeration. The runner can stage a different component payload while satisfying filename and launch oracles
+- Deduplication: `GQF-0032` already owns this exact combined-launch staging collision rule and its explicit owner/digest remediation. Preserve this range as direct consumer evidence; allocate no new finding
+
+### GQ1-CHUNK-0136-OBS-002 - DUPLICATE BR-0010
+
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/test_extract.ps1:L784-L788`, consumed by the direct-import completion path after L1200
+- Evidence: mutable `last_test_result.status` controls whether a current incomplete direct import may exit zero as a skip. Identical current bytes and build can therefore receive different outcomes from prior test history
+- Deduplication: open `BR-0010` already owns this historical-result-as-policy root, including this runner and generator carry-forward. No new finding
+
+### GQ1-CHUNK-0136-OBS-003 - DUPLICATE BR-0190
+
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/test_extract.ps1:L970-L1129`
+- Evidence: emulator checks and required sanitation still use the older `Adb` facade, which does not enforce native exit status. Failed force-stop, removal, listing, activity, or setup commands can be treated as ordinary text or empty output before the clean-state canary
+- Deduplication: open `BR-0190` explicitly records this range and the stale-state consequence. The checked `Invoke-AdbRaw` at L606-L652 is positive evidence for the intended command boundary, not a new root
+
+### GQ1-CHUNK-0136-OBS-004 - DUPLICATE BR-0191
+
+- Severity/confidence/category: P2/high, `test-correctness/path-safety`
+- Frozen location: `android/tests/test_extract.ps1:L1160-L1199`, continuing at L1201-L1205
+- Evidence: a CUE reference is matched to a declared image by basename, but its raw directory components are retained in `CuePath` and appended to `files/tmp_import/<source>`. `Ensure-AppPrivateFile` normalizes separators and quotes the resulting absolute path but does not canonicalize it or prove containment. Enough `..` components can stage outside the owned scratch tree
+- Deduplication: open `BR-0191` owns the exact projection, trigger, containment fix, and validation matrix. No new finding
+
+### GQ1-CHUNK-0136-OBS-005 - DUPLICATE BR-0192
+
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen location: `android/tests/test_extract.ps1:L940-L966`
+- Evidence: the advertised anti-demo identity oracle derives hashes only from optional local files. The frozen demo directory has no payload, so the ordinary checkout produces an empty hash map; the later matching path is warning-only
+- Deduplication: open `BR-0192` owns this exact missing and non-decisive canary. No new finding
+
+### GQ1-CHUNK-0136-OBS-006 - DUPLICATE BR-0008
+
+- Severity/confidence/category: P2/high, `test-gap/data-integrity/provenance`
+- Frozen location: `android/tests/test_extract.ps1:L778-L788,L1137-L1199`
+- Evidence: direct-import sources are selected and staged by recorded name, while the stable `source_files[].sha256` values are not measured before emulator mutation. Same-name changed media can be credited to the recorded release identity
+- Deduplication: open `BR-0008` already owns the shared validator/runner digest-enforcement gap. The regression helper offers the existing shared fix boundary. No new finding
+
+## Clean dimensions and positive evidence
+
+- Frozen PowerShell AST parsing reports zero errors; the frozen file contains no non-ASCII characters
+- The checked chunk-transfer path uses argument-list process startup, concurrent stdout/stderr draining, explicit exit checks, per-call bounds after input staging, unique host and device chunk names, chunk and aggregate byte-count verification, retry, best-effort owned cleanup, and final rename publication
+- The current `Push-FileToSet` delegates to that checked copier, so the old legacy transfer instance attached to `BR-0168` is not regrown in this frozen range. Broader `BR-0168` owners elsewhere remain unaffected
+- Source-type dispatch rejects unsupported values and requires at least two existing component specs for combined mode. Direct CUE admission requires a descriptor and at least one image, matches ordinary unique basenames case-insensitively, and fails missing referenced images
+- Emulator and setup waits in the assigned range are bounded. The canary requires setup introspection, the requested active set, no recognized game files in the set, and `can_launch=false` before staging
+- Result writes are skipped for infrastructure failures and file-only runs through the existing shared helper policy. Atomic publication ownership remains the already tracked `BR-0189`, not a new observation here
+- No new correctness, security, resource-lifetime, concurrency, performance, compatibility, portability, warning, diagnostic, API-ownership, or documentation root survived admission and deduplication beyond the six owners above
+
+## Evidence gaps and validation limits
+
+- No emulator run was performed. This read-only unit could not safely sanitize package state, stage proprietary media, or persist regression results
+- Proprietary CD/GOG bytes and extracted output trees are not tracked, so payload hashes, real collision winners, import timing, and end-to-end launch behavior were not reproduced
+- The assigned range begins and ends inside larger control-flow units. Necessary enclosing lines were inspected, but general-quality ownership of L1201-L1620 remains with adjacent coverage
+- Static review cannot prove device-specific ADB pipe, storage exhaustion, process-kill, or Android lifecycle timing behavior. Those remain part of the existing findings' focused validation matrices
+
+## Commands and checks
+
+- `git cat-file -t <base>` and `git cat-file -t <head>`; `git merge-base <base> <head>`; `git rev-parse HEAD`; `git status --short`
+- `git diff --name-status`, `git diff --numstat`, and `git diff --stat` between the frozen objects for the assigned and traced paths
+- `git rev-parse <head>:android/tests/test_extract.ps1`, `git show <head>:<path>`, `git hash-object`, and in-memory SHA-256 calculations for frozen fingerprints
+- `git log --follow`, `git show`, and `git blame` for the assigned file and relevant history
+- `git grep` at the frozen head for runner callers, setup commands, readiness fields, registrations, helper use, and all D1/D2 references
+- `rg` across canonical GQ/GQI evidence, active/done adversarial ledgers, DMR1, cleanup plans, and prior extraction coverage for path/symbol/category/trigger deduplication
+- PowerShell parser API against frozen blob content: zero AST errors
+- In-memory ASCII scan against frozen blob content: zero non-ASCII characters
+
+## Recommended coverage outcome
+
+- Outcome: `ISSUES`, entirely duplicate or evidence-extension observations
+- Normalize OBS-001 through OBS-006 to their named existing owners, retain the positive and clean evidence, and allocate no new `GQF-*`, `GQI-*`, or `GQR-*`
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0136 raw survey report -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0135 frozen survey SHA256:288ad05b77c16c3376c84a645394fcbe14fdf9df907d9d0530315b89ab61dea1 -->
+
+## GQ1-CHUNK-0135 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0135.md`
+- Imported SHA-256: `288ad05b77c16c3376c84a645394fcbe14fdf9df907d9d0530315b89ab61dea1`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0135 frozen survey
+
+Outcome: ISSUES. All 600 assigned lines were reviewed at the frozen head with the enclosing staging function, direct callers, launcher and native owners, paired inherited hooks, history, tests, and canonical deduplication records. Diff minimization dominated the review. The assigned branch-added runner consumes the existing 154-line paired menu/window accessor candidate owned by `GQF-0156` and `GQR-0143`; it does not justify a second extraction. The separate 22-line paired event-loop seam remains a narrow natural boundary. The quality pass found current same-size stale-source admission in app-private extraction staging, a bounded regrowth/extension of archived `BR-0605`. Unchecked early ADB wrappers and unsafe CUE path projection remain duplicate evidence for open `BR-0190` and `BR-0191`.
+
+## Frozen scope and fingerprint
+
+- Review base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Review head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Base tree: `6648e2d868beb15168b6c4f451c171ae3943c542`
+- Head tree: `fc89f3b91550aa563b3658afce1dbecb7c09d7ee`
+- Assigned path and range: `android/tests/test_extract.ps1` L1-L600, exactly 600 lines from a 1,620-line file
+- Frozen head blob: `6d7dbd1d014fd68d67483cbdb98b8339af82034a`, 70,537 bytes
+- Frozen base state: absent
+- Path classification: branch-added test/tooling source, mode `100755`; whole-file frozen numstat `+1620/-0`, one creation hunk
+- Assigned range SHA-256: `247c5ac135d3b903e7410d2147a1189ff88f07a3f34ee8d7a0c77a2ab09e1951` over UTF-8 lines L1-L600 joined by LF with no final LF, 24,793 bytes
+- Ordered scope record: `android/tests/test_extract.ps1|L1-L600|6d7dbd1d014fd68d67483cbdb98b8339af82034a`
+- Scope manifest SHA-256 over that UTF-8 record with no final LF: `528bd2213cddf18f4569208e01aad656ee3d7fc33226f70e4f9a797a38cbcd6a`
+- Base is an ancestor of the frozen head and their merge base is the stated base
+- Live `HEAD` during review was `1f8b1952057ff1893045003abcfae60dee967bc8`; the assigned live file was clean and its blob remained exactly `6d7dbd1d014fd68d67483cbdb98b8339af82034a`. Live drift was not substituted for frozen evidence
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE`, strictly as `DUPLICATE/EXTENDS GQD-0020`, `GQF-0156`, and `GQR-0143`.
+
+### Attribution and measured inherited boundary
+
+- The assigned range directly changes zero inherited paths, zero inherited hunks, and `+0/-0` inherited lines. Its command, staging, JSON5, launcher-script, setup-introspection, and direct-import policy is branch-owned
+- `Get-ExtractAutomationScriptText` L322-L355 reads the branch-added extraction automation template and `Invoke-GameAutomationScript` L377-L429 hands it to branch-added `SetupActivity`, `LauncherScriptExecutor`, `game_automate.cpp`, and `game_introspect.cpp`. Setup command and extraction paths terminate in branch-added Kotlin, JNI, native extraction, and test owners. Test discovery is branch-added and does not require an inherited build registration
+- Menu selection and introspection from that launch path consume the paired inherited debug accessors in `d1/main/newmenu.c`, `d1/main/newmenu.h`, `d1/arch/sdl/window.c`, `d1/arch/include/window.h`, and the four corresponding `d2` paths. GQ1-CHUNK-0127 measured exactly 154 relevant added accessor/declaration lines across those eight paths. The branch-wide whole-path totals are much larger because `newmenu.c` owns unrelated Android UI work; those totals were not misreported as the candidate
+- The smallest safe boundary remains the existing type-complete branch-added implementation fragments plus one shared declaration owner. About ten compact inherited include/declaration seam lines remain and about 144 inherited lines are removed while API names, compile guards, private layouts, and behavior remain unchanged
+- The same launch path reaches `game_automate_tick()` and `game_introspect_check_and_dump()` through `d1/arch/sdl/event.c` and `d2/arch/sdl/event.c`. The relevant seam is 11 additions in three hunks per game, 22 additions and six hunks total. Retain it: one tick call and one post-draw dump call are already the natural frame owner, while a wrapper or callback table would obscure scheduling for negligible or negative reduction
+- The frozen whole-path context totals for the eight accessor paths are `+2688/-259` across 277 hunks, and the two event paths are `+182/-2` across 24 hunks. Only the isolated 154-line accessor surface and 22-line event seam are causal measurements for this test
+
+### Candidate boundary, risks, and validation
+
+- Existing finding and remediation: `GQF-0156` and `GQR-0143`; do not allocate a second minimization owner
+- Proposed branch-added owners: the type-complete implementation fragments and shared declaration header already specified by GQ1-CHUNK-0127
+- Estimated payoff: remove about 144 inherited lines from eight paired paths, retaining about ten seam lines. Do not include the retained event-loop calls in the reduction
+- Reject moving private menu geometry, selection policy, frame orchestration, or renderer state. Reject wrapper-only forwarding and callback tables larger than the removed declarations
+- Risks: the include location must see complete private structs; C/C++ linkage, `INTROSPECT_ON` guards, D1/D2 field parity, listbox/newmenu signatures, desktop builds, and non-introspection builds must remain intact
+- Validation: remeasure the live eight-path diff; build paired Windows targets and configured Android ABIs; run representative menu automation; run this extraction automation path through setup handoff, mission selection, and exact level assertion. Reject the extraction if adapter/include growth materially erodes the measured reduction
+- DMR1 reconciliation: DMR1 retains private newmenu geometry and frame orchestration as high-coupling policy. This narrow accessor consolidation is already reconciled and needs no competing DMR1 root
+
+## Scope and context checked
+
+- Every assigned line L1-L600, including parameters, recovery trap, spec discovery, dependency and ADB resolution, both early ADB wrappers, cleanup, JSON/introspection helpers, setup readiness and launch, game introspection, intro tap geometry, automation generation and execution, setup commands, CUE parsing, shell quoting, app-private cleanup, and the first 49 lines of `Ensure-AppPrivateFile`
+- Enclosing `Ensure-AppPrivateFile`, checked `Invoke-AdbRaw`, file-size helpers, `Copy-LocalFileToAppPrivate`, and all four frozen call sites, including direct CUE/BIN and ISO staging
+- Branch-added spec and recovery helpers, host platform helper, aggregate runner, automation template, launcher receivers/executor, setup automation, native automation/introspection, Android build ownership, and relevant extraction owners
+- Paired D1/D2 event-loop hooks and menu/window declarations and definitions, with exact inherited measurements and D1/D2 parity comparison
+- File history and blame for the early ADB wrappers and size-only reuse, including their pre-test-cleanup origins and later checked transfer helpers
+- Full active/done GQ ledgers, durable evidence ledger, active/done adversarial ledgers, DMR1, the chunk plan, and both next-30 plans were read. Targeted deduplication covered `GQD-0020`, `GQF-0156`, `GQR-0143`, `BR-0190`, `BR-0191`, archived `BR-0605`, and earlier extraction coverage
+
+## Atomic observations
+
+### GQ1-CHUNK-0135-OBS-001: Size-only app-private reuse can execute stale extraction source bytes
+
+- Provisional normalization: `REGROWTH/EXTENDS` archived `BR-0605`; create one current generation-specific GQ finding rather than reopening an unrelated helper implementation
+- Severity/confidence/category: P2/high, `test-gap/correctness/data-freshness`
+- Frozen locations: `android/tests/test_extract.ps1:L552-L580`, with callers at L1193-L1205 and L1280-L1286 inspected as required context
+- Evidence: `Ensure-AppPrivateFile` returns immediately when the existing app-private pathname has the same byte count as the selected local file. After a copy it again accepts only byte-count equality. Direct CD and ISO callers use stable paths derived from the sanitized source directory name, such as `files/tmp_import/<source>/source.iso`. Successful runs clear this scratch tree, but interruption, process termination, or failure before `Clear-DirectImportScratch` can retain it, and registered exit cleanup does not remove it. A different same-length CUE, BIN, IMG, or ISO at the same logical source path is then announced as reused without hashing either side
+- Trigger: interrupt a direct import after staging, replace one local source with different bytes of the same length, and rerun the same spec, or preseed the stable app-private path with equal-length stale bytes
+- Impact: the launcher extracts a prior media generation while the runner records results against the newly selected local spec. This can hide or invent parser and extraction regressions, and it defeats the test's source-generation claim
+- Root-cause relation: archived `BR-0605` fixed the same size-equals-content predicate in provisioning and maintained GOG wrappers, but this separate branch-added staging helper still contains it at the frozen head. The GQ and adversarial ledgers do not yet name this exact survivor
+- Suggested fix: extend the checked app-private staging boundary to compute the local SHA-256, compare a checked app-private device digest before reuse, transfer through a unique owned temporary, verify staged and final digest, and then publish. Remove retained scratch on every exit without deleting another run's generation
+- Validation: preseed equal and unequal bytes of equal size, larger and smaller bytes, corrupt/short staging, digest-command failure, interruption before and after publication, and two concurrent source generations. Require reuse only for exact identity and require the importer to consume the selected generation
+
+### GQ1-CHUNK-0135-OBS-002: Early ADB wrappers still discard native failure
+
+- Provisional normalization: `DUPLICATE/EXTENDS BR-0190`; no new finding
+- Severity/confidence/category: P2/high, `test-gap/false-pass`
+- Frozen locations: `android/tests/test_extract.ps1:L127-L175`, with callers in cleanup, readiness, introspection, setup launch, diagnostics, and later launch verification
+- Evidence: both wrappers redirect stderr but never test `Process.ExitCode`; `Adb` does not await stderr on ordinary completion, `Adb-RunAs` discards it, and timeouts return an ordinary empty string. Required remove, broadcast, activity, state-read, and cleanup failures therefore do not enter the top-level recovery trap. The same file's later `Invoke-AdbRaw` checks exit status and demonstrates the intended boundary
+- Normalization: attach this current frozen-head confirmation to `BR-0190`. Its existing trigger, stale-result impact, checked-helper fix, and fault-injection matrix fully own the root cause
+
+### GQ1-CHUNK-0135-OBS-003: CUE logical paths remain unconfined during direct staging
+
+- Provisional normalization: `DUPLICATE/EXTENDS BR-0191`; no new finding
+- Severity/confidence/category: P2/high, `test-correctness/path-safety`
+- Frozen locations: `android/tests/test_extract.ps1:L467-L477`, with projection callers at L1161-L1205 inspected as required context
+- Evidence: `Get-CueReferencedImagePaths` preserves the quoted CUE path, and the direct-import caller appends that logical path beneath the stable app-private scratch root. Shell quoting prevents command injection but does not reject absolute, dot, or parent components or prove canonical containment. This is the exact path-projection root already recorded by `BR-0191`
+- Normalization: extend `BR-0191` with current frozen-head confirmation only. Its existing containment policy and separator/path-component validation matrix remain sufficient
+
+## Explicit clean dimensions
+
+- Classification and ownership: the assigned path and direct test/launcher/native owners are branch-added. No assigned test policy was copied into D1/D2, and no inherited build registration is causal
+- Diff minimization: exact accessor duplication is already owned, the event-loop seam is retained on measured payoff, and no cosmetic extraction, ownership inversion, or wrapper-only move survived review
+- D1/D2 parity: relevant event calls, menu/window accessors, declarations, guards, and automation/introspection consumers are paired. The proposed candidate preserves game-private types and policies
+- Correctness: JSON5 parsing delegates to the shared helper; missing specs and missing direct sources fail; setup launch and automation have finite deadlines; checked staging retries and size checks reject short writes when reuse is not taken. Same-size identity is the admitted gap
+- Security and path handling: shell arguments in the checked path are quoted, app-private operations use `run-as`, random automation script names avoid cross-run filename reuse, and owned local automation files are removed in `finally`. Unconfined CUE projection remains `BR-0191`
+- Resource lifetime: checked process calls consume both streams and dispose processes; local staging streams and chunk directories use `finally`; app force-stop and metadata cleanup are registered once. Best-effort cleanup and unchecked early process failures remain `BR-0190`
+- Concurrency: automation script names and local chunk directories are unique. App-private payload temporaries use PID-only suffixes and stable final paths; the same-generation race risk is included in OBS-001 validation rather than split into a speculative finding
+- Portability and hygiene: the complete 1,620-line frozen script parsed with zero PowerShell AST errors. The assigned range is ASCII, contains no NUL, and the frozen path passed `git diff --check`
+- Diagnostics: setup launch captures bounded activity and logcat context, automation timeout captures step and launcher logs, staging failures include expected/actual sizes and device storage, and the trap distinguishes recoverable ADB transport failures. The undefined tail diagnostic is outside this range and already owned by `GQF-0161`
+- Test quality: the test uses explicit failure exits rather than PowerShell assertions, correlates automation through a random script name, and validates setup readiness before commands. Existing false-pass and source-contract roots remain deduplicated
+
+## Evidence gaps and limits
+
+- No APK build, emulator mutation, proprietary media extraction, network access, or product test ran. The defects and minimization boundary follow deterministically from frozen control flow and measured Git objects
+- The 154-line accessor measurement and approximately 144-line payoff were independently traced to this consumer and reconciled with the exact prior GQ1-CHUNK-0127 measurement. `GQR-0143` must remeasure live files before editing
+- No fault-injection run interrupted a real multi-gigabyte direct import. OBS-001 does not depend on that unavailable corpus: an equal-size different-byte preseed satisfies the exact reuse predicate
+- The assigned range ends inside `Ensure-AppPrivateFile`; its complete function and all calls were inspected only as necessary context. Later extraction-oracle logic belongs to GQ1-CHUNK-0136 and completed GQ1-CHUNK-0132 coverage
+- Whole-path inherited totals include unrelated branch work and are provided only as context, not claimed as removable. Only the isolated causal surfaces are candidate evidence
+
+## Commands and validation
+
+- Read `AGENTS.md`, `.github/copilot-instructions.md`, and the complete `general_code_quality_worker_process.md`
+- Read the complete active/done GQ ledgers, durable evidence ledger, active/done adversarial ledgers, DMR1, campaign plan, and both next-30 plans; used targeted `rg` excerpts for normalization
+- Used frozen `git cat-file`, `git rev-parse`, `git merge-base`, `git show`, `git diff --numstat`, `git diff --summary`, `git diff -U0`, `git diff --check`, `git grep`, `git log`, and `git blame`
+- Used line-numbered in-memory projections for every assigned line and required context, plus in-memory SHA-256 computation. No temporary file was written
+- Parsed the complete frozen script with the PowerShell AST parser: zero errors. Scanned assigned text for ASCII and NUL hygiene: zero non-ASCII characters and zero NUL bytes
+- Confirmed live assigned blob equality and preserved all unrelated worktree changes
+
+## Normalization recommendation
+
+- Record one `GQD-*` for GQ1-CHUNK-0135 with disposition `CANDIDATE`, normalized as `DUPLICATE/EXTENDS GQD-0020 / GQF-0156 / GQR-0143`: 154 relevant inherited accessor lines across eight paths, about ten retained seam lines, and about 144 estimated removed lines. Retain the separate 22-line paired event seam
+- Normalize OBS-001 as current regrowth/extension evidence of archived `BR-0605` and admit one current P2/high GQ finding for the surviving `Ensure-AppPrivateFile` owner. Keep its remediation narrow to verified app-private staging and exact cleanup ownership
+- Normalize OBS-002 as duplicate/extension evidence for open `BR-0190`
+- Normalize OBS-003 as duplicate/extension evidence for open `BR-0191`
+- Record one non-partial `ISSUES` coverage outcome for exactly GQ1-CHUNK-0135, citing the clean dimensions and limits above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0135 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0137 frozen survey SHA256:053fe26e663f954d1189e51094258afe81f890f8848fcae4b55541465cc507f5 -->
+
+## GQ1-CHUNK-0137 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0137.md`
+- Imported SHA-256: `053fe26e663f954d1189e51094258afe81f890f8848fcae4b55541465cc507f5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0137 frozen survey
+
+Outcome: `ISSUES`
+
+## Frozen identity and assigned scope
+
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Scope-manifest SHA-256: `3e171e93892d645236d66fff171c54b616d8cbac61a847c9f7ee9da33c8aa64c`
+- Assigned path: `android/tests/test_saf_archiver.ps1` L1-L600
+- Frozen blob: `e94ee73ee88ce924b3c1fdfb5b66868808a2399f`
+- Normalized assigned-range SHA-256, LF terminated: `160f8f4100ae7d33ac26dcd370d2f731eca529430affcf44a0bad552202506a6`
+- The path is absent at the frozen base and is a branch-added `+731/-0` creation in one hunk. All 600 assigned lines and the L601-L731 continuation were read from the frozen object
+- Traced frozen context blobs: `android/run_all_tests.ps1` `a2659c84c0083edea3f33a9c2c1d187142a5b859`; `android/game_scripts/test_saf_basic.json5` `24888bcff1d0836e1c772b4ddc0eff8ae5052b27`; `android/helpers/test_helpers.ps1` `ead43252d5efc433963757ee06ce5de3425e3194`; `android/app/src/main/cpp/shared/physfs_archiver_saf.c` `5f91d6ec4acef889c64af61b9fdb59b036702eb8`; `android/app/src/main/cpp/shared/physfsx_android_setup.c` `5e3ac8356e44ba42d15e99f181592be5e71b6866`; `android/app/src/main/cpp/shared/physfsx_android_shared.c` `78a0c1115210a1339739b89a656500a4bcd71adb`; `android/app/src/main/cpp/shared/physfsx_android_shared.h` `8626cd91acd21aacf7b921414e6a84487f0fef0c`; `d1/misc/physfsx.c` `4758ca4291149813aa2d28ee07f6cee85ccae0fb`; `d2/misc/physfsx.c` `c549753c1b7081393f69dc1e0e0439465ddf9ec2`
+- The assigned and traced paths have no frozen-head-to-worktree delta. Live files were not used as survey evidence
+
+## Diff-minimization assessment
+
+Disposition: `CANDIDATE`, strictly as a duplicate and evidence extension of existing `GQD-0018`, `GQF-0155`, and `GQR-0142`. Do not create another extraction finding, DMR1 item, or remediation owner
+
+### Frozen attribution and measurements
+
+- The assigned test, its `test_saf_basic.json5` support script, its `run_all_tests.ps1` registration, the shared test helpers, all SAF native implementation files, and the Android CMake owner are branch-added. The relevant complete creation sizes are `+731/-0`, `+67/-0`, `+1948/-0`, `+2518/-0`, `+524/-0`, `+301/-0`, `+30/-0`, `+11/-0`, and `+897/-0`; each is one creation hunk. These branch-added files do not themselves create inherited merge pressure
+- The runner discovers the test through the branch-added `test_*.ps1` catalog, supplies `-NoBuild`, and gives it a 360-second budget. The support JSON5 script declares `_owner: test_saf_archiver`, is D2-only, and is not independently runnable. No inherited test registration, build entry, declaration, or copied test policy is required
+- The runtime under test reaches the paired inherited seam in `d1/misc/physfsx.c` and `d2/misc/physfsx.c`. Each file is `+27/-0` in five total hunks at the frozen boundary. Seven lines in two hunks per game are the unrelated Windows absolute-path change. The Android PhysicsFS initialization seam is therefore 20 added lines in three relevant hunks per game, for two inherited paths, six relevant hunks, and `+40/-0`
+- The paired Android bodies are semantically identical except for the required `d1x-redux` versus `d2x-redux` directory value. Both targets already compile the same branch-added setup and shared owners
+
+### Smallest ownership boundary and payoff
+
+- Reuse the accepted `GQD-0018` boundary: extend `android/app/src/main/cpp/shared/physfsx_android_shared.c/.h` with one helper accepting `argc`, `argv`, and the game-directory value. It should own checked `PHYSFS_init`, symbolic-link setup, `physfsx_android_init_search_paths`, exact operation/path/detail diagnostics, and `InitArgsAndroid`
+- Leave the Android include and one compact parameterized call plus return in each inherited `PHYSFSX_init`; preserve the desktop body byte-for-byte
+- The existing measured estimate remains supported: shrink each inherited Android boundary from 20 lines in three hunks to about seven lines in two hunks, removing about 13 lines and one hunk per game, or about 26 inherited lines and two hunks aggregate
+- Validate both Windows games, all configured Android ABIs, D1 and D2 Android startup, `test_physfsx_android_setup`, direct SAF gameplay, descriptor lifetime, incomplete-manifest rejection, provider-pipe staging, stale-size handling, mount order, rollback, and exact fatal diagnostics
+
+### Rejected alternatives
+
+- Moving or merging the test, its owner JSON5 script, or its branch-added runner registration changes only branch-added lines and removes no inherited pressure
+- Moving SAF, launcher, automation, or validation policy into paired D1/D2 sources inverts ownership and increases inherited coupling
+- Reverting the shared setup call is not behavior-preserving because both Android games require the launcher-published active set, SAF manifest, mods, and required roots
+- A callback table, macro layer, or wrapper-only adapter would be larger and less explicit than the single differing game-directory argument. It would not improve on the already-recorded shared-owner candidate
+
+## Atomic observations
+
+### GQ1-CHUNK-0137-OBS-001: Descriptor-only mode can pass without observing any game descriptor
+
+- Provisional normalization: `NEW`
+- Severity/confidence/category: P2/high, `test-gap/false-pass/resource-lifetime`
+- Frozen location: `android/tests/test_saf_archiver.ps1:L495-L570`, especially L521-L539 and L559-L570
+- Evidence: after 15 launch/readiness attempts, `$gameStarted` remains false when the process never appears, introspection never produces `screen_mode`, the launch broadcast fails, or its preceding unchecked cleanup leaves readiness unavailable. L521-L523 only prints a warning. The descriptor listing and both descriptor assertions exist exclusively in the `else` branch at L523-L539. L559 then enters the `DescriptorOnly` result block regardless of `$gameStarted`, prints both `RESULT: PASS` and `SAF manifest descriptor was released after successful mount`, cleans up, and exits zero
+- Trigger: run the maintained focused mode with `-DescriptorOnly` while native startup does not become introspectable during the bounded loop, including an app launch failure, missing process, delayed startup, or introspection transport failure
+- Impact: the focused regression introduced to close archived `BR-0087` can report success without listing `/proc/<pid>/fd` and without checking whether `.saf_manifest.json` remains open. A manifest-I/O lifetime regression or complete startup failure can therefore be hidden by the mode whose stated contract is to prove descriptor release
+- Expected: descriptor-only success is reachable only after positive engine readiness, a valid process id, a successful descriptor listing, and the explicit absence assertion. Full gameplay mode may retain its later automation fallback, but a focused assertion mode must fail when its prerequisite observation is unavailable
+- Suggested fix: fail immediately when `-DescriptorOnly` and `$gameStarted` is false, or structure the mode around an explicit `$descriptorChecked` result that is set only after the listing and absence assertion complete. Keep provider-stale-size evidence separate because that mode also has its own required log assertions
+- Validation: invoke the focused mode with a suppressed launch broadcast, a nonexistent or killed game process, unavailable introspection, an unreadable `/proc/<pid>/fd`, an intentionally retained manifest descriptor, and a clean descriptor-release control. Require nonzero for every missing or failing observation and zero only for the clean control
+- Deduplication: no `DescriptorOnly`, missing-readiness-to-PASS, or equivalent focused assertion gate appears in the active/done GQ ledgers, durable GQ evidence, active/done adversarial ledgers, DMR1, or searched SAF cleanup plans. `BR-0190` owns unchecked ADB commands and stale evidence, but this branch returns PASS even when the bounded readiness loop truthfully leaves `$gameStarted = $false`; `BR-0193` owns restoration transactionality. This is a distinct result-gating root
+
+### GQ1-CHUNK-0137-OBS-002: The synthetic direct-path test remains evidence for open BR-0084
+
+- Provisional normalization: `DUPLICATE/EXTENDS BR-0084`
+- Severity/confidence/category: P2/high, `architecture/dead-feature/test-parity`
+- Frozen location: `android/tests/test_saf_archiver.ps1:L322-L400,L441-L493`; support script L60-L64
+- Evidence: the ordinary fixture copies `descent2.ham` to `/data/local/tmp`, writes that absolute path into `content_uri`, injects `.saf_manifest.json` through ADB, and later checks the shared mount. It never invokes a visible picker, calls the otherwise unowned `SafManifest.addOrReplace`, persists provider permission, or verifies unlink/prune through the production UI. This is the exact synthetic-seam evidence already recorded by open `BR-0084`; do not allocate a new root
+
+### GQ1-CHUNK-0137-OBS-003: Unchecked ADB and staging behavior remains owned by BR-0168, BR-0190, and BR-0193
+
+- Provisional normalization: `DUPLICATE/EXTENDS BR-0168, BR-0190, BR-0193`
+- Severity/confidence/category: P2/high, `test-infrastructure/resource-lifetime/false-pass/failure-recovery`
+- Frozen location: local `Adb` and timeout wrappers L87-L136; cleanup L210-L267; destructive setup L269-L379; manifest and log publication L400-L470; launch and result setup L495-L600
+- Evidence: the local `Adb` wrapper returns output but does not enforce the child exit code; many required pushes, copies, removals, broadcasts, logcat clears, and cleanup operations ignore `$LASTEXITCODE`. Fixed shared `/data/local/tmp` names remain on failure paths, and restoration is a sequence of best-effort commands whose final size warning is not a test failure. These are the exact mechanisms and locations already recorded in the three adversarial owners. The tail review for Chunk 0131 also attached stale-result acceptance to `BR-0190`; no second GQ root is warranted
+
+## Explicit clean dimensions
+
+- Diff ownership and D1/D2 parity: every test, helper, runner, SAF implementation, and Android build owner is branch-added. The only inherited runtime seam is paired and measured; its remaining consolidation is already owned by `GQD-0018` and `GQF-0155`
+- Syntax and text hygiene: the frozen PowerShell parses with zero AST errors; the assigned blob has no non-ASCII bytes and no BOM-dependent behavior
+- Bounds: emulator readiness, setup readiness, force-stop, native rejection, game-start polling, and later automation progress are bounded. The assigned code introduces no unbounded input allocation or recursion
+- Manifest oracle: complete mode validates the exact one-entry schema and values. Incomplete mode creates a deliberately truncated document and requires the native rejection diagnostic. Provider modes cover nonseekable staging and stale seekable-size behavior. These remain useful focused oracles apart from the observation-gating defect above
+- Descriptor success path: when `$gameStarted` is true, the code requires a parseable process id, a recognizable descriptor listing, and absence of `.saf_manifest.json`; retained descriptors and unreadable listings exit nonzero
+- Caller and support ownership: `run_all_tests.ps1` supplies `-NoBuild`; the JSON5 support script is explicitly non-standalone, D2-only, and owned by this wrapper. No duplicate top-level registration was found
+- Compatibility and dependencies: the assigned file adds no dependency version, credential, secret, inherited build registration, or host-absolute repository path. Windows/Linux path construction uses shared host helpers
+- Historical repairs: the frozen modes provide direct evidence for archived `BR-0085`, `BR-0086`, and `BR-0087`; no static regrowth of their parser, descriptor staging, size check, or successful-mount input-I/O ownership was found in the assigned test logic. Open `GQF-0099` remains the separate seekable-source generation owner
+
+## Evidence gaps
+
+- No emulator run was performed. This is a read-only frozen survey, and the new false-pass follows directly from the mutually exclusive readiness/assertion branches and unconditional focused-mode success block
+- No failure injection was performed for launch, introspection, `/proc` access, or retained descriptors. The remediation validation matrix above should execute these cases
+- The full SAF test mutates shared emulator game data. Historical `BR-0193` cleanup concerns remain open, so running it merely for survey evidence would introduce avoidable device-state risk
+- The live repository head is `1f8b1952057ff1893045003abcfae60dee967bc8`, later than the frozen head. The assigned and traced files have no frozen-head-to-worktree delta, but remediation must still remeasure live ownership and overlap before editing
+
+## Commands and review record
+
+- Read `.github/copilot-instructions.md`, the complete `general_code_quality_worker_process.md`, the campaign plan/manifest, active and done GQ ledgers, durable GQ evidence, DMR1, active and done adversarial ledgers, and targeted historical SAF plans/findings
+- Used `git cat-file`, `git rev-parse`, `git show`, `git diff --summary`, `git diff --numstat`, `git diff --unified=0`, `git grep`, `rg`, `git log --follow`, and `git blame` against the frozen objects
+- Parsed the complete frozen PowerShell text with `System.Management.Automation.Language.Parser`; result: zero syntax errors
+- Computed the assigned range SHA-256 in memory from frozen lines normalized to LF with a terminal LF; no temporary file was created
+- Reviewed complete assigned L1-L600 and continuation L601-L731; caller catalog and invocation; JSON5 owner/oracle; relevant shared helper functions; native SAF archive/setup owners; paired inherited `PHYSFSX_init` hooks; build ownership; history; and canonical deduplication records
+
+## Normalization recommendation
+
+- Record this chunk's mandatory diff decision as `CANDIDATE`, `DUPLICATE/EXTENDS GQD-0018`, with two inherited paths, six relevant hunks, `+40/-0`, and the existing estimated reduction of 26 inherited lines and two hunks into `physfsx_android_shared.c/.h`. Do not create another minimization finding or remediation
+- Admit `GQ1-CHUNK-0137-OBS-001` as one new P2/high test-gap finding with a narrow remediation in `android/tests/test_saf_archiver.ps1` and focused failure-injection validation
+- Normalize OBS-002 as `DUPLICATE/EXTENDS BR-0084`
+- Normalize OBS-003 as evidence extensions of `BR-0168`, `BR-0190`, and `BR-0193`; create no new finding for those mechanisms
+- Create one `GQC-*` coverage record with outcome `ISSUES`, preserving the clean dimensions and execution gaps above
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0137 frozen survey -->

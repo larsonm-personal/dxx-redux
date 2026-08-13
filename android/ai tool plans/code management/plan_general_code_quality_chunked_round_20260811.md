@@ -2,7 +2,8 @@
 
 ## Goal
 
-- Expand the current diff-minimization campaign into a general branch code-quality campaign while retaining inherited-file diff reduction as a first-class objective
+- Reduce branch impact on 1996-original and other inherited files as the dominant objective, using roughly 80 percent of survey effort for diff attribution, extraction, consolidation, revert, and retained-boundary decisions
+- Use the remaining roughly 20 percent for the broader branch code-quality survey without discarding concrete high-severity defects
 - Survey the full branch-owned change surface and relevant whole-codebase context for correctness, safety, ownership, duplication, maintainability, portability, warnings, diagnostics, tests, automation, scripts, build logic, documentation drift, and upstream merge cost
 - Produce a review-scale ledger expected to contain hundreds of atomic findings or explicit coverage records, comparable in granularity and auditability to the branch adversarial review
 - Process accepted remediation chunks one at a time with a fresh `gpt-5.6-sol` worker at medium reasoning effort, under a single-product-writer rule
@@ -59,11 +60,30 @@
 
 - [x] Migrate the three audits, three preflights, and `GQ1-CHUNK-0001` through `GQ1-CHUNK-0039` from ignored `temp/` reports into one tracked SHA-256-provenance evidence ledger
 - [x] Change the worker process so new reports enter a tracked inbox and become terminal only after single-writer import into the durable evidence ledger
-- [-] Process `GQ1-CHUNK-0031` through `GQ1-CHUNK-0130` with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
-- [ ] Normalize every raw report in strict chunk-ID order before later workers use its findings for deduplication
-- [ ] Create one non-partial `GQC-*` record per completed chunk, including explicit clean results
-- [ ] Reconcile observations, finding and investigation IDs, duplicate links, queue counts, and remediation candidates after Chunk 0130
-- [ ] Verify all 100 queue rows are terminal, no survey worker remains active, reports are ASCII/no-BOM, and campaign files pass `git diff --check`
+- [x] Process `GQ1-CHUNK-0031` through `GQ1-CHUNK-0130` with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
+- [x] Normalize every raw report in strict chunk-ID order before later workers use its findings for deduplication
+- [x] Create one non-partial `GQC-*` record per completed chunk, including explicit clean results
+- [x] Reconcile observations, finding and investigation IDs, duplicate links, queue counts, and remediation candidates after Chunk 0130
+- [x] Verify all 100 queue rows are terminal, no survey worker remains active, reports are ASCII/no-BOM, and campaign files pass `git diff --check`
+
+## Diff-minimization-weighted 30-chunk tranche
+
+- [x] Record the user correction that diff minimization, not general finding discovery, is 80 percent of the effort goal beginning with `GQ1-CHUNK-0108`
+- [x] Amend the worker protocol so every chunk begins with frozen diff attribution and emits a measured `CANDIDATE`, `RETAIN`, `NO_INHERITED_EFFECT`, or `DEFER` assessment
+- [x] Process `GQ1-CHUNK-0108` through `GQ1-CHUNK-0137` with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
+- [x] Normalize one durable `GQD-*` diff-minimization decision and one `GQC-*` coverage record per chunk, plus only deduplicated secondary findings
+- [x] Reconcile every actionable minimization candidate against DMR1 and existing GQ/adversarial owners before creating implementation work
+- [x] After Chunk 0137, report candidate count, retained/deferred/no-effect count, named inherited paths and estimated inherited-line/hunk reduction, separately from general-quality findings
+- [x] Verify all 30 reports are imported into the tracked evidence ledger, no inbox fragment or worker remains active, and campaign files pass `git diff --check`
+
+## Diff-minimization-weighted second 30-chunk tranche
+
+- [x] Continue the 80 percent diff-minimization and 20 percent general-quality protocol for `GQ1-CHUNK-0138` through `GQ1-CHUNK-0167`
+- [-] Process all 30 chunks with one fresh read-only `gpt-5.6-sol` medium worker per chunk, up to three disjoint workers concurrently
+- [ ] Normalize one durable `GQD-*` decision and one `GQC-*` coverage record per chunk, plus only deduplicated secondary findings
+- [ ] Reconcile actionable minimization candidates against DMR1, the first weighted tranche, and existing GQ/adversarial owners
+- [ ] Report candidate, retained, deferred, and no-effect counts with named inherited paths and estimated inherited-line/hunk reduction
+- [ ] Verify all 30 reports are imported exactly once, no inbox or weighted temp report remains, no worker is active, and campaign files pass tracked ASCII/BOM and `git diff --check` audits
 
 ## Initial hypotheses to verify
 

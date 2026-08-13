@@ -4,6 +4,8 @@
 
 This process combines the repository's broad adversarial review method with its reusable cleanup practices. It covers the complete branch change surface and relevant whole-codebase context, while retaining `DMR1` as the inherited D1/D2 diff-minimization subtrack
 
+Beginning with `GQ1-CHUNK-0108`, diff minimization is the dominant objective. Workers allocate roughly 80 percent of review effort to reducing merge pressure on 1996-original and other inherited files, and roughly 20 percent to general quality. This weighting changes review order and required evidence, not the admission bar for concrete correctness or security defects
+
 The campaign separates four objects that the first DMR1 queue conflated:
 
 - Coverage unit: a frozen path, range, hunk, mechanical batch, preflight, or cross-file sweep assigned for read-only review
@@ -77,11 +79,31 @@ Survey workers are read-only. Every coverage unit uses a fresh `gpt-5.6-sol` wor
 1. Read `AGENTS.md`, `.github/copilot-instructions.md`, this process, the active and done ledgers, and the frozen generation manifest
 2. Confirm the frozen objects and assigned scope fingerprint
 3. Inspect every assigned range or path plus enclosing functions, relevant callers and callees, tests, owners, paired D1/D2 code, and interfaces
-4. Apply all applicable general review and reusable cleanup dimensions
+4. Apply the 80/20 weighted rubric below, beginning with diff attribution and minimization before general-quality review
 5. Search the adversarial active and done ledgers, DMR1, earlier cleanup plans, and earlier GQ generations for duplicates, prior fixes, incomplete work, or regrowth
 6. Write one raw result to the assigned tracked `android/ai tool plans/code management/general_code_quality_inbox/` path
 7. Record exact scope and context checked, commands, atomic observations, explicit clean dimensions, evidence gaps, and scope fingerprint
 8. Stop without editing product code or a canonical ledger
+
+### 80/20 weighted rubric from Chunk 0108
+
+The first and largest part of every survey is a diff-minimization assessment. The worker must:
+
+1. Classify every assigned path as branch-added, inherited-modified, generated, or unchanged context, using the frozen base and head
+2. Trace the assigned code to every branch-caused inherited consumer, registration, hook, declaration, build entry, paired D1/D2 edit, and copied policy body that it requires
+3. Measure the relevant inherited paths, hunks, and added/deleted lines at the frozen boundary; do not substitute total file size or live-worktree drift
+4. Test the smallest ownership boundary that could move branch-specific behavior into a branch-added file while leaving inherited files with compact calls, declarations, data, or no change
+5. Check for exact or semantic D1/D2 duplication, branch-added sinks that can absorb policy, obsolete or superseded inherited edits that can be reverted, unnecessary build/test registrations in inherited files, and APIs whose shape causes avoidable churn
+6. Reject cosmetic movement, wrapper-only abstraction, callback tables larger than the removed bodies, ownership inversion, hidden game policy, or any extraction whose inherited reduction is not material and behaviorally testable
+7. Record one mandatory `Diff-minimization assessment` section with one of these dispositions:
+   - `CANDIDATE`: concrete extraction, consolidation, or revert with named inherited paths, proposed branch-added owner, estimated removed inherited lines/hunks, API boundary, risks, and validation
+   - `RETAIN`: inherited edit is already at a narrow natural boundary; state exact evidence and why proposed alternatives would increase coupling or total inherited churn
+   - `NO_INHERITED_EFFECT`: the assigned branch-added unit and its traced owners require no branch-caused inherited modification; name the traced boundary rather than merely saying none
+   - `DEFER`: a plausible reduction exists but lacks payoff, safe ownership, prerequisite coverage, or a stable live boundary; state the recheck trigger
+
+Only after that assessment should the worker spend the remaining effort on correctness, security, resource lifetime, concurrency, performance, compatibility, warnings, diagnostics, test quality, dead code, and documentation. P0/P1 risks and clear high-confidence localized defects are still recorded regardless of the nominal time split. Style-only or speculative quality observations must not displace the minimization analysis
+
+The canonical writer records one `GQD-*` diff-minimization decision per weighted coverage unit. A `CANDIDATE` also becomes an atomic `GQF-*` with category `diff-minimization/merge-pressure` and a later `GQR-*` implementation chunk after deduplication. D1/D2 candidates first reconcile against `DMR1`; extend or reactivate its ownership instead of creating a competing extraction root. `RETAIN`, `NO_INHERITED_EFFECT`, and `DEFER` decisions remain durable coverage evidence and do not inflate finding counts
 
 Read-only survey shards may run concurrently when their assigned inbox outputs and frozen scopes are disjoint. Every shard still belongs to only one fresh worker. They must not use mutable live files as evidence while a product writer is active
 
@@ -102,7 +124,7 @@ Admit a finding only when it has:
 - Specific impact and narrow verifiable location
 - Plausible fix direction and validation
 
-Severity is P0 through P3 and confidence is high or medium. Low-confidence concerns become investigations. Categories include correctness, security, resource-lifetime, concurrency, performance, compatibility, build-release, api-data-format, test-gap, maintainability, naming, documentation, and pr-hygiene, with cleanup-specific subcategories as needed
+Severity is P0 through P3 and confidence is high or medium. Low-confidence concerns become investigations. Categories include diff-minimization/merge-pressure, correctness, security, resource-lifetime, concurrency, performance, compatibility, build-release, api-data-format, test-gap, maintainability, naming, documentation, and pr-hygiene, with cleanup-specific subcategories as needed
 
 Do not admit generic warnings, formatter-only noise, unchanged upstream defects, personal style preferences, or duplicate symptoms. A 20-40-line extraction threshold never suppresses correctness or cleanup findings
 
@@ -185,13 +207,13 @@ The root conversation:
 Survey:
 
 ```text
-Survey exactly <GQ-COVERAGE-ID> read-only using gpt-5.6-sol at medium effort. Read the repository instructions, general quality process, active and done ledgers, durable evidence ledger, generation manifest, and assigned frozen scope. Inspect the assigned ranges plus necessary callers, callees, tests, paired D1/D2 files, owners, and interfaces. Apply the full general-quality and reusable-cleanup rubric. Do not edit product code or canonical ledgers. Write one raw survey result to the assigned tracked evidence-inbox path with concrete observations, explicit clean dimensions, commands, gaps, and scope fingerprint. Stop after this unit
+Survey exactly <GQ-COVERAGE-ID> read-only using gpt-5.6-sol at medium effort. Read the repository instructions, general quality process, active and done ledgers, durable evidence ledger, generation manifest, and assigned frozen scope. Allocate roughly 80 percent of effort to frozen diff attribution and inherited-file minimization, and 20 percent to general quality. Inspect the assigned ranges plus necessary callers, callees, tests, paired D1/D2 files, owners, and interfaces. Produce the mandatory diff-minimization assessment with a measured CANDIDATE, RETAIN, NO_INHERITED_EFFECT, or DEFER disposition before quality observations. Do not edit product code or canonical ledgers. Write one raw survey result to the assigned tracked evidence-inbox path with concrete observations, explicit clean dimensions, commands, gaps, and scope fingerprint. Stop after this unit
 ```
 
 Normalization:
 
 ```text
-Import exactly the pending inbox reports into the durable evidence ledger, verify their SHA-256 markers, and remove only successfully imported inbox fragments. Normalize them in deterministic coverage-ID order as the sole canonical-ledger writer. Apply the admission standard and search both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup records, and earlier generations for duplicates or regrowth. Assign stable IDs only after deduplication. Create atomic findings or investigations and one explicit coverage record per unit. Do not edit product code or form unrelated remediation batches
+Import exactly the pending inbox reports into the durable evidence ledger, verify their SHA-256 markers, and remove only successfully imported inbox fragments. Normalize them in deterministic coverage-ID order as the sole canonical-ledger writer. Record one `GQD-*` minimization decision per weighted unit before normalizing secondary quality observations. Apply the admission standard and search both GQ ledgers, both adversarial ledgers, DMR1, prior cleanup records, and earlier generations for duplicates or regrowth. Assign stable IDs only after deduplication. Create atomic findings or investigations and one explicit coverage record per unit. Do not edit product code or form unrelated remediation batches
 ```
 
 Remediation:

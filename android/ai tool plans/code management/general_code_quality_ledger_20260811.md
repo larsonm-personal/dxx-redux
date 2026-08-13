@@ -74,7 +74,9 @@ Evidence:
 
 Queue size is reported as a tuple rather than one ambiguous number:
 
-`819 total coverage calls / 108 completed issue records / 2 completed clean records / 4 open investigations / 151 open findings / 1 terminal finding / 139 remediation chunks (1 done)`
+`819 total coverage calls / 137 completed issue records / 3 completed clean records / 30 weighted diff-minimization decisions (7 candidate decisions, 3 unique candidates, 1 already completed externally) / 4 open investigations / 163 open findings / 1 terminal finding / 151 remediation chunks (1 done)`
+
+Beginning with `GQ1-CHUNK-0108`, the user-set effort weighting is 80 percent diff minimization and 20 percent general quality. Each weighted unit must produce one `GQD-*` decision before secondary findings are normalized. The decision measures branch-caused inherited paths, hunks and lines and is `CANDIDATE`, `RETAIN`, `NO_INHERITED_EFFECT`, or `DEFER`. Actionable D1/D2 candidates reconcile with DMR1 before any new owner is admitted
 
 The two completed DMR1 remediation chunks remain linked separately and removed 175 isolated inherited additions
 
@@ -192,36 +194,36 @@ The two completed DMR1 remediation chunks remain linked separately and removed 1
 | GQ1-CHUNK-0105 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_game_file_extensions.c` | L1-L20 | `GQC-0118`; extended `BR-0662`, archived `BR-0041` |
 | GQ1-CHUNK-0106 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_gog_fd.c` | L1-L600 | `GQC-0119`; extended six current owners |
 | GQ1-CHUNK-0107 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_gog_fd.c` | L601-L1200 | `GQC-0120`; added `GQF-0152`; extended three owners |
-| GQ1-CHUNK-0108 | [-] ACTIVE | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L1-L600 | `general_code_quality_inbox/gq1_chunk_0108.md` |
-| GQ1-CHUNK-0109 | [-] ACTIVE | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L601-L1140 | `general_code_quality_inbox/gq1_chunk_0109.md` |
-| GQ1-CHUNK-0110 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` | L1-L600 | - |
-| GQ1-CHUNK-0111 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_sow_integrity.c` | L1-L567 | - |
-| GQ1-CHUNK-0112 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_sow_real_media.cmake` | L1-L77 | - |
-| GQ1-CHUNK-0113 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_sti2.c` | L1-L600 | - |
-| GQ1-CHUNK-0114 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_sti2.c` | L601-L1050 | - |
-| GQ1-CHUNK-0115 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp` | L1-L600 | - |
-| GQ1-CHUNK-0116 | [ ] TODO | source | critical | test-source | `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp` | L601-L1120 | - |
-| GQ1-CHUNK-0117 | [ ] TODO | source | critical | test-source | `2 related paths` | 212 review lines under android/app/src/test/java | - |
-| GQ1-CHUNK-0118 | [ ] TODO | source | critical | test-source | `4 related paths` | 549 review lines under android/app/src/test/java | - |
-| GQ1-CHUNK-0119 | [ ] TODO | source | critical | test-source | `5 related paths` | 461 review lines under android/app/src/test/java | - |
-| GQ1-CHUNK-0120 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipAudioFingerprintCacheTest.kt` | L1-L403 | - |
-| GQ1-CHUNK-0121 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipMusicStageManagerTest.kt` | L1-L486 | - |
-| GQ1-CHUNK-0122 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipMusicTest.kt` | L1-L357 | - |
-| GQ1-CHUNK-0123 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` | L1-L600 | - |
-| GQ1-CHUNK-0124 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` | L601-L706 | - |
-| GQ1-CHUNK-0125 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` | L1-L600 | - |
-| GQ1-CHUNK-0126 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` | L601-L972 | - |
-| GQ1-CHUNK-0127 | [ ] TODO | source | critical | test-source | `4 related paths` | 150 review lines under android/game_scripts | - |
-| GQ1-CHUNK-0128 | [ ] TODO | source | critical | test-source | `2 related paths` | 295 review lines under android/tests | - |
-| GQ1-CHUNK-0129 | [ ] TODO | source | critical | test-source | `2 related paths` | 383 review lines under android/tests | - |
-| GQ1-CHUNK-0130 | [ ] TODO | source | critical | test-source | `3 related paths` | 597 review lines under android/tests | - |
-| GQ1-CHUNK-0131 | [ ] TODO | source | critical | test-source | `3 related paths` | 268 review lines under android/tests | - |
-| GQ1-CHUNK-0132 | [ ] TODO | source | critical | test-source | `3 related paths` | 585 review lines under android/tests | - |
-| GQ1-CHUNK-0133 | [ ] TODO | source | critical | test-source | `4 related paths` | 488 review lines under android/tests | - |
-| GQ1-CHUNK-0134 | [ ] TODO | source | critical | test-source | `5 related paths` | 542 review lines under android/tests | - |
-| GQ1-CHUNK-0135 | [ ] TODO | source | critical | test-source | `android/tests/test_extract.ps1` | L1-L600 | - |
-| GQ1-CHUNK-0136 | [ ] TODO | source | critical | test-source | `android/tests/test_extract.ps1` | L601-L1200 | - |
-| GQ1-CHUNK-0137 | [ ] TODO | source | critical | test-source | `android/tests/test_saf_archiver.ps1` | L1-L600 | - |
+| GQ1-CHUNK-0108 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L1-L600 | `GQD-0001`, `GQC-0121`; no inherited effect; extended three owners and `GQI-0003` |
+| GQ1-CHUNK-0109 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_hfs.c` | L601-L1140 | `GQD-0002`, `GQC-0122`; no inherited effect; evidence extensions only |
+| GQ1-CHUNK-0110 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` | L1-L600 | `GQD-0003`, `GQC-0123`; no inherited effect; evidence extensions only |
+| GQ1-CHUNK-0111 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_sow_integrity.c` | L1-L567 | `GQD-0004`, `GQC-0124`; no inherited effect; extended three owners |
+| GQ1-CHUNK-0112 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_sow_real_media.cmake` | L1-L77 | `GQD-0005`, `GQC-0125`; no inherited effect; clean, `BR-0024` remains closed |
+| GQ1-CHUNK-0113 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_sti2.c` | L1-L600 | `GQD-0006`, `GQC-0126`; no inherited effect; extended `GQF-0150`, `BR-0160` |
+| GQ1-CHUNK-0114 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_sti2.c` | L601-L1050 | `GQD-0007`, `GQC-0127`; no inherited effect; added `GQF-0153`, extended three owners |
+| GQ1-CHUNK-0115 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp` | L1-L600 | `GQD-0008`, `GQC-0128`; no inherited effect; extended `BR-0182`, `BR-0586` |
+| GQ1-CHUNK-0116 | [x] DONE | source | critical | test-source | `android/app/src/main/cpp/extract/test_stuffit_corpus.cpp` | L601-L1120 | `GQD-0009`, `GQC-0129`; no inherited effect; extended two owners |
+| GQ1-CHUNK-0117 | [x] DONE | source | critical | test-source | `2 related paths` | 212 review lines under android/app/src/test/java | `GQD-0010`, `GQC-0130`; deferred ~16-line paired seam; added `GQF-0154` |
+| GQ1-CHUNK-0118 | [x] DONE | source | critical | test-source | `4 related paths` | 549 review lines under android/app/src/test/java | `GQD-0011`, `GQC-0131`; no inherited effect; existing-owner evidence only |
+| GQ1-CHUNK-0119 | [x] DONE | source | critical | test-source | `5 related paths` | 461 review lines under android/app/src/test/java | `GQD-0012`, `GQC-0132`; no inherited effect; existing-owner evidence only |
+| GQ1-CHUNK-0120 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipAudioFingerprintCacheTest.kt` | L1-L403 | `GQD-0013`, `GQC-0133`; no inherited effect; retained 4-line natural consumer boundary |
+| GQ1-CHUNK-0121 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipMusicStageManagerTest.kt` | L1-L486 | `GQD-0014`, `GQC-0134`; no inherited effect; extended `GQF-0119`, `GQF-0120` |
+| GQ1-CHUNK-0122 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipMusicTest.kt` | L1-L357 | `GQD-0015`, `GQC-0135`; no inherited effect; linked prior paired songs decisions |
+| GQ1-CHUNK-0123 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` | L1-L600 | `GQD-0016`, `GQC-0136`; no inherited effect; extended `GQF-0111`, `GQF-0112` |
+| GQ1-CHUNK-0124 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` | L601-L706 | `GQD-0017`, `GQC-0137`; no inherited effect; duplicate `GQF-0111` evidence |
+| GQ1-CHUNK-0125 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` | L1-L600 | `GQD-0018`, `GQC-0138`; added `GQF-0155`; estimated -26 inherited lines/-2 hunks |
+| GQ1-CHUNK-0126 | [x] DONE | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` | L601-L972 | `GQD-0019`, `GQC-0139`; no inherited effect; duplicate `GQF-0111` evidence |
+| GQ1-CHUNK-0127 | [x] DONE | source | critical | test-source | `4 related paths` | 150 review lines under android/game_scripts | `GQD-0020`, `GQC-0140`; added `GQF-0156`; estimated -144 inherited lines |
+| GQ1-CHUNK-0128 | [x] DONE | source | critical | test-source | `2 related paths` | 295 review lines under android/tests | `GQD-0021`, `GQC-0141`; 559 inherited lines already removed externally; added `GQF-0157`, `GQF-0158` |
+| GQ1-CHUNK-0129 | [x] DONE | source | critical | test-source | `2 related paths` | 383 review lines under android/tests | `GQD-0022`, `GQC-0142`; no inherited effect; existing-owner evidence only |
+| GQ1-CHUNK-0130 | [x] DONE | source | critical | test-source | `3 related paths` | 597 review lines under android/tests | `GQD-0023`, `GQC-0143`; no inherited effect; existing-owner evidence only |
+| GQ1-CHUNK-0131 | [x] DONE | source | critical | test-source | `3 related paths` | 268 review lines under android/tests | `GQD-0024`, `GQC-0144`; duplicate PhysFS candidate; added `GQF-0159` |
+| GQ1-CHUNK-0132 | [x] DONE | source | critical | test-source | `3 related paths` | 585 review lines under android/tests | `GQD-0025`, `GQC-0145`; duplicate accessor candidate; added `GQF-0160`, `GQF-0161` |
+| GQ1-CHUNK-0133 | [x] DONE | source | critical | test-source | `4 related paths` | 488 review lines under android/tests | `GQD-0026`, `GQC-0146`; no inherited effect; extended `GQF-0153`, `GQF-0137` |
+| GQ1-CHUNK-0134 | [x] DONE | source | critical | test-source | `5 related paths` | 542 review lines under android/tests | `GQD-0027`, `GQC-0147`; no inherited effect; added `GQF-0162` |
+| GQ1-CHUNK-0135 | [x] DONE | source | critical | test-source | `android/tests/test_extract.ps1` | L1-L600 | `GQD-0028`, `GQC-0148`; duplicate accessor candidate; added `GQF-0163` |
+| GQ1-CHUNK-0136 | [x] DONE | source | critical | test-source | `android/tests/test_extract.ps1` | L601-L1200 | `GQD-0029`, `GQC-0149`; no inherited effect; existing-owner evidence only |
+| GQ1-CHUNK-0137 | [x] DONE | source | critical | test-source | `android/tests/test_saf_archiver.ps1` | L1-L600 | `GQD-0030`, `GQC-0150`; duplicate PhysFS candidate; added `GQF-0164` |
 | GQ1-CHUNK-0138 | [ ] TODO | source | critical | test-source | `game_data/mods/d2x-xl/test_wav_parser.ps1` | L1-L79 | - |
 | GQ1-CHUNK-0139 | [ ] TODO | source | high | authored-config | `d1/CMakePresets.json` | diff hunks 1-1, new L20-L20 | - |
 | GQ1-CHUNK-0140 | [ ] TODO | source | high | authored-config | `d2/CMakePresets.json` | diff hunks 1-1, new L20-L20 | - |
@@ -5446,6 +5448,53 @@ Append one completion note for every finished queue item using the process templ
 - Normalization: chunk 0106 extends `GQF-0076` through `GQF-0080` and `GQF-0085`; chunk 0107 admitted uninitialized LZMA fixture tail `GQF-0152` and extended archived `BR-0034`, `BR-0058`, and current `GQF-0082`
 - Evidence: `general_code_quality_evidence_ledger_20260811.md`
 
+## Diff-minimization decisions
+
+Beginning with Chunk 0108, this table is the primary output of each coverage unit. `CANDIDATE` means a measured extraction, consolidation, or revert is actionable after live overlap review. `RETAIN` means the inherited boundary is already minimal. `NO_INHERITED_EFFECT` means the assigned branch-added unit and its traced owners create no inherited merge pressure. `DEFER` records a plausible reduction with a named prerequisite or payoff/risk gate
+
+| ID | Coverage | Disposition | Inherited merge surface and decision |
+|---|---|---|---|
+| `GQD-0001` | `GQ1-CHUNK-0108` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The HFS test, reader, wrapper, interfaces, callers and CMake owners are branch-added under `android/`; frozen D1/D2 contain no HFS reference or registration |
+| `GQD-0002` | `GQ1-CHUNK-0109` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The HFS test tail traces only to the same branch-added parser, wrapper, callers and build owners, with no inherited hook or paired game change to extract |
+| `GQD-0003` | `GQ1-CHUNK-0110` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The PKG test, parser, JNI/Kotlin consumers and extraction CMake wiring are branch-added; no frozen inherited hook, declaration or registration is attributable |
+| `GQD-0004` | `GQ1-CHUNK-0111` | `NO_INHERITED_EFFECT` | Assigned SOW integrity test is a branch-added +567-line file; every traced CMake, native, JNI and Kotlin owner is branch-added, for 0 inherited paths, 0 hunks and +0/-0 lines |
+| `GQD-0005` | `GQ1-CHUNK-0112` | `NO_INHERITED_EFFECT` | Assigned +77-line CMake driver and its test registration, extractor, host/JNI and build owners are branch-added. Frozen D1/D2 have zero SOW references, so inherited impact is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0006` | `GQ1-CHUNK-0113` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The STi2 test, production decoder, wrappers, JNI/Kotlin consumers and both Android game build owners are branch-added |
+| `GQD-0007` | `GQ1-CHUNK-0114` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The STi2 test tail and complete traced decoder/caller/build boundary remain in branch-added Android paths, with no inherited hook to extract |
+| `GQD-0008` | `GQ1-CHUNK-0115` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The StuffIt corpus test, decoder, production parser, JNI/Kotlin consumers and build owners are branch-added Android paths |
+| `GQD-0009` | `GQ1-CHUNK-0116` | `NO_INHERITED_EFFECT` | Measured 0 inherited paths, 0 hunks and +0/-0 lines. The corpus tail and all traced test/build/parser/JNI owners remain in branch-added Android paths |
+| `GQD-0010` | `GQ1-CHUNK-0117` | `DEFER` | Assigned tests are branch-added and require no inherited registration. A shared paired `songs.c` post-init callback could remove about 16 inherited additions across D1/D2 but no hunks; retain below standalone DMR1 threshold until coherent adjacent songs work raises payoff |
+| `GQD-0011` | `GQ1-CHUNK-0118` | `NO_INHERITED_EFFECT` | Four assigned tests are branch-added +549/-0 and all tested production/build/caller owners are branch-added Android; measured inherited effect is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0012` | `GQ1-CHUNK-0119` | `NO_INHERITED_EFFECT` | Five assigned tests are branch-added +461/-0 and all traced Kotlin, JNI, native and build owners are branch-added; measured inherited effect is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0013` | `GQ1-CHUNK-0120` | `NO_INHERITED_EFFECT` | Assigned +403-line test has no inherited hook. The full feature chain ends in four paired inherited additions: one include and one lifecycle load call per `songs.c`; retain this natural boundary because a wrapper saves at most two lines and adds indirection |
+| `GQD-0014` | `GQ1-CHUNK-0121` | `NO_INHERITED_EFFECT` | Assigned +486-line test and StageManager/catalog/archive/publication/build/UI owners are branch-added; D1/D2 consume only a later sidecar. Measured inherited effect is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0015` | `GQ1-CHUNK-0122` | `NO_INHERITED_EFFECT` | Assigned +357-line test and directly tested +698-line Kotlin catalog boundary cause 0 inherited paths, hunks or lines. Broader paired `songs.c` marker hunks are orthogonal and remain owned by `GQD-0010`/`GQD-0013` |
+| `GQD-0016` | `GQ1-CHUNK-0123` | `NO_INHERITED_EFFECT` | Assigned MissionZip test is one branch-added +706-line hunk; all 16 direct MissionZip production/test references are branch-added and frozen D1/D2 contain zero MissionZip token hits |
+| `GQD-0017` | `GQ1-CHUNK-0124` | `NO_INHERITED_EFFECT` | Assigned MissionZip test tail and direct production/test owners are branch-added; measured inherited impact is 0 paths, 0 hunks and +0/-0 lines, with no extraction or revert target |
+| `GQD-0018` | `GQ1-CHUNK-0125` | `CANDIDATE` | Paired `d1/misc/physfsx.c` and `d2/misc/physfsx.c` retain 40 branch-added lines across six relevant hunks. Extending existing `physfsx_android_shared.c/.h` with a parameterized init helper should remove about 26 inherited lines and two hunks while preserving compact per-game directory calls and desktop flow |
+| `GQD-0019` | `GQ1-CHUNK-0126` | `NO_INHERITED_EFFECT` | Assigned branch-added test tail and traced Kotlin/build/native owners cause 0 inherited paths, 0 hunks and +0/-0 lines. The previously measured PhysFS seam remains solely owned by `GQD-0018` |
+| `GQD-0020` | `GQ1-CHUNK-0127` | `CANDIDATE` | Eight paired inherited newmenu/window implementation and header paths contain 154 duplicated accessor/declaration lines. Branch-added type-complete implementation fragments and one shared declaration header should leave about ten include-seam lines, removing an estimated 144 inherited lines without moving private geometry or frame orchestration |
+| `GQD-0021` | `GQ1-CHUNK-0128` | `CANDIDATE` | Frozen paired maths CMake files carried 559 branch-caused host-test lines, including 12 reconnect-test registration lines. Post-freeze commit `7f0f7c20` moved the graph to branch-added `android/tests/CMakeLists.txt` and removed all 559 inherited lines; record as completed external minimization with no new implementation chunk |
+| `GQD-0022` | `GQ1-CHUNK-0129` | `NO_INHERITED_EFFECT` | Two assigned branch-added scripts and seven direct branch-added consumers trace to 0 inherited paths, 0 hunks and +0/-0 causal lines across extraction, JNI/build and paired game boundaries |
+| `GQD-0023` | `GQ1-CHUNK-0130` | `NO_INHERITED_EFFECT` | Three assigned branch-added test paths and all 12 traced runner, helper, build, native-test and workflow owners are branch-added. Measured causal inherited effect is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0024` | `GQ1-CHUNK-0131` | `CANDIDATE` | Duplicate confirmation of `GQD-0018`: paired `d1/misc/physfsx.c` and `d2/misc/physfsx.c` retain 40 additions across six relevant hunks, with the same estimated 26-line and two-hunk reduction into the existing shared PhysFS owner. No second finding or remediation |
+| `GQD-0025` | `GQ1-CHUNK-0132` | `CANDIDATE` | Duplicate confirmation of `GQD-0020`: the extraction launcher consumes the same 154 inherited accessor/declaration lines across paired newmenu/window paths, with about 144 removable. Add exact-level extraction launch to `GQR-0143` validation. Retain the separate compact paired event-loop seam of 22 additions across six hunks |
+| `GQD-0026` | `GQ1-CHUNK-0133` | `NO_INHERITED_EFFECT` | Four assigned tests contain 488 branch-added lines across four creation hunks; every traced production, build and launcher owner is also branch-added, and frozen D1/D2 contain no attributable reference or registration. Measured inherited impact is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0027` | `GQ1-CHUNK-0134` | `NO_INHERITED_EFFECT` | Five assigned branch-added tests contain 542 additions and trace to 17 branch-added production, build, JNI, launcher and game-data owners. Measured attributable inherited impact is 0 paths, 0 hunks and +0/-0 lines |
+| `GQD-0028` | `GQ1-CHUNK-0135` | `CANDIDATE` | Duplicate confirmation of `GQD-0020`: this extraction runner consumes the same 154 inherited accessor/declaration lines across eight paired newmenu/window paths, with about 144 removable. Retain the separate 22-line paired event-loop seam across six hunks |
+| `GQD-0029` | `GQ1-CHUNK-0136` | `NO_INHERITED_EFFECT` | The assigned branch-added test range and 12 traced branch-added production, runner and workflow owners cause 0 inherited paths, 0 hunks and +0/-0 inherited lines; frozen D1/D2 contain no attributable consumer or registration |
+| `GQD-0030` | `GQ1-CHUNK-0137` | `CANDIDATE` | Duplicate confirmation of `GQD-0018`: paired `d1/misc/physfsx.c` and `d2/misc/physfsx.c` retain 40 additions across six relevant hunks, with the same estimated 26-line and two-hunk reduction into `physfsx_android_shared.c/.h`. No second minimization finding or remediation |
+
+### Weighted tranche 0108-0137 summary
+
+- Thirty decisions are terminal: seven `CANDIDATE` decisions, zero `RETAIN`, one `DEFER`, and 22 `NO_INHERITED_EFFECT`
+- The seven candidate decisions collapse to three unique ownership changes. Repeated consumers confirm validation scope but do not create duplicate findings or remediation chunks
+- Outstanding `GQF-0155` / `GQR-0142`: move shared Android PhysFS initialization out of `d1/misc/physfsx.c` and `d2/misc/physfsx.c`; measured surface 40 additions in six relevant hunks; estimated reduction about 26 inherited lines and two hunks
+- Outstanding `GQF-0156` / `GQR-0143`: consolidate automation/introspection accessors from paired `d1` and `d2` `main/newmenu.c`, `main/newmenu.h`, `arch/sdl/window.c`, and `arch/include/window.h`; measured surface 154 lines across eight paths; estimated reduction about 144 inherited lines across about eight hunk locations
+- Completed externally at commit `7f0f7c20`: move the host-test graph from inherited `d1/maths/CMakeLists.txt` and `d2/maths/CMakeLists.txt` to branch-added `android/tests/CMakeLists.txt`; 559 inherited lines were removed from the two paths, including 12 assigned registration lines across four logical sites
+- Outstanding actionable estimate: about 170 inherited lines and about ten hunk locations. Separately, the post-freeze CMake ownership move has already realized 559 inherited lines of reduction
+- The one `DEFER` is a roughly 16-line paired songs post-init seam that removes no hunk and remains below the standalone payoff threshold. Natural retained boundaries observed inside other decisions include four paired songs consumer lines and 22 event-loop additions across six hunks
+
 ## Findings
 
 The initial broad live survey seeded the following evidence-backed findings. These are atomic observations, not the 819-call coverage queue. Later coverage may narrow, extend, duplicate, or independently verify them
@@ -5604,6 +5653,18 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0150` | `OPEN` | P2/high | test-gap/fixture-integrity/input-validation | Fingerprint raw PCM fixture loader | Short or malformed fixture files are accepted as successful test input. Require exact header/length/read completion and reject trailing or incomplete data before fingerprint assertions |
 | `GQF-0151` | `OPEN` | P3/high | test-infrastructure/diagnostics/side-effects | Fingerprint `ASSERT_EQ_INT` macro | Failed diagnostics reevaluate expressions, allowing side effects or changed values to obscure the original failure. Evaluate each operand once before comparison and printing |
 | `GQF-0152` | `OPEN` | P3/high | test-infrastructure/undefined-data/fixture-integrity | GOG LZMA1 trailing-data fixture | The fixture passes 129 bytes after initializing only 41, making results depend on uninitialized stack tail. Initialize the complete buffer and assert exact intended trailing-byte semantics |
+| `GQF-0153` | `OPEN` | P2/high | test-gap/correctness/oracle-strength | D2 Mac native extraction output oracle | The production-wrapper test calls 17 expected filenames and count a full oracle without checking any bytes. Bind exact source generation and validate complete file identities, sizes and hashes |
+| `GQF-0154` | `OPEN` | P3/high | correctness/cache-generation/error-handling | Empty mission music sidecar generation | Empty generation ignores failed sidecar deletion and returns zero, allowing an older same-source sidecar to remain current without diagnostics. Publish explicit empty state or require verified removal |
+| `GQF-0155` | `OPEN` | P3/high | diff-minimization/merge-pressure | Paired Android PhysFS initialization residue | Forty inherited additions across six paired hunks duplicate checked PhysFS initialization, shared setup, diagnostics and Android argument init. Extend the existing shared owner and leave only parameterized per-game calls, targeting about 26 inherited lines and two hunks removed |
+| `GQF-0156` | `OPEN` | P2/high | diff-minimization/merge-pressure | Paired menu/window debug accessors | Eight inherited D1/D2 files contain 154 identical accessor/declaration lines for branch-owned automation and introspection. Consolidate exact definitions into type-complete branch-added include/header owners, targeting about 144 inherited lines removed while retaining API names and private layouts |
+| `GQF-0157` | `OPEN` | P2/high | test-gap/false-pass/security-resource-bounds | Bounded extractor quota reason oracle | File, per-file-byte and aggregate output quota tests accept timeout as success; disabling all tree measurements leaves them green. Require typed or exact failure reason and prompt quota termination independently of timeout |
+| `GQF-0158` | `OPEN` | P2/high | test-gap/build-release/discovery | Bounded extractor Python regression registration | The focused Python supervisor regression has no maintained runner, discovery, CTest or workflow owner. Register it in the branch-added host-test graph and prove aggregate failure propagation on supported hosts |
+| `GQF-0159` | `OPEN` | P2/high | test-gap/schema-validation/false-pass | Extraction regression spec validator | An ISO spec with absent or empty `source_files` passes validation because the empty projection, skipped loop and ISO branch reach readiness without a source. Require the declared source set and reject missing, empty and malformed source identities |
+| `GQF-0160` | `OPEN` | P2/high | test-infrastructure/discovery/tiering | Host-only extraction provenance/publication tests | Two host-only scripts are absent from the no-infrastructure set, default into the emulator tier and require APK/emulator prerequisites. Classify them in maintained host discovery and prove they run without device infrastructure |
+| `GQF-0161` | `OPEN` | P3/high | test-infrastructure/diagnostics/stale-state | `test_extract.ps1` extraction failure diagnostic | The failure path references undefined stale variable `$maxNav` after the navigation loop was removed, obscuring the primary wrong-level failure. Use current bounded context and add a failing-path oracle under strict mode |
+| `GQF-0162` | `OPEN` | P2/high | test-gap/false-pass/source-contract | Extraction regression workflow source assertions | Raw-source regular expressions can pass on comments or dead tokens and fail harmless refactors without proving runtime behavior. Replace them with behavior-level fixtures or structured ownership checks that fail when the production contract is broken |
+| `GQF-0163` | `OPEN` | P2/high | test-gap/correctness/data-freshness | App-private extraction source staging | `Ensure-AppPrivateFile` reuses a stable app-private CUE/BIN/IMG/ISO path solely when byte counts match, so interrupted cleanup plus equal-length replacement can run stale media bytes under the new spec. Bind reuse and publication to exact source identity and owned cleanup |
+| `GQF-0164` | `OPEN` | P2/high | test-gap/false-pass/resource-lifetime | SAF archiver descriptor-only mode | Descriptor-only mode prints PASS and exits zero when game readiness never succeeds, so no process descriptor listing or manifest-release assertion occurs. Require positive readiness and an explicit completed descriptor observation before focused success |
 
 ## Investigations
 
@@ -6026,6 +6087,76 @@ Rows are append-only mappings from raw worker observations to canonical owners. 
 | `GQ1-CHUNK-0107-OBS-002` | `NEW` | `GQF-0152` |
 | `GQ1-CHUNK-0107-OBS-003` | `EXTENDS` | Archived `BR-0058` |
 | `GQ1-CHUNK-0107-OBS-004` | `EXTENDS` | `GQF-0082` |
+| `GQ1-CHUNK-0108-OBS-001` | `EXTENDS` | `GQF-0074` |
+| `GQ1-CHUNK-0108-OBS-002` | `EXTENDS` | `GQF-0040` |
+| `GQ1-CHUNK-0108-OBS-003` | `EXTENDS` | `GQI-0003` |
+| `GQ1-CHUNK-0108-OBS-004` | `DUPLICATE` | `BR-0158` |
+| `GQ1-CHUNK-0109` | `DUPLICATE/EXTENDS` | Earlier HFS observations, `BR-0158`, `BR-0160`, `BR-0027`; no new owner |
+| `GQ1-CHUNK-0110` | `EXTENDS` | `GQF-0090`, `GQF-0091`, `GQF-0046`; no new owner |
+| `GQ1-CHUNK-0111-OBS-001` | `EXTENDS` | `GQF-0092` |
+| `GQ1-CHUNK-0111-OBS-002` | `EXTENDS` | `BR-0021` |
+| `GQ1-CHUNK-0111-OBS-003` | `EXTENDS` | `GQF-0043` |
+| `GQ1-CHUNK-0112` | `HISTORICAL-CLOSED` | Archived `BR-0024`; explicit clean coverage |
+| `GQ1-CHUNK-0113-OBS-001` | `EXTENDS` | `GQF-0150`, linked archived `BR-0046` |
+| `GQ1-CHUNK-0113-OBS-002` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0113-OBS-003` through `OBS-005` | `HISTORICAL-CLOSED` | Archived `BR-0032`, `BR-0031`, `BR-0033` |
+| `GQ1-CHUNK-0114-OBS-001` | `NEW` | `GQF-0153` |
+| `GQ1-CHUNK-0114-OBS-002` | `DUPLICATE` | `BR-0158` |
+| `GQ1-CHUNK-0114-OBS-003` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0114-OBS-004` | `EXTENDS` | `GQF-0093` |
+| `GQ1-CHUNK-0115-OBS-001` | `DUPLICATE/EXTENDS` | `BR-0182` |
+| `GQ1-CHUNK-0115-OBS-002` | `EXTENDS` | `BR-0586` |
+| `GQ1-CHUNK-0116-OBS-001` | `DUPLICATE/EXTENDS` | `BR-0182` |
+| `GQ1-CHUNK-0116-OBS-002` | `EXTENDS` | `BR-0160` |
+| `GQ1-CHUNK-0116-OBS-003` | `HISTORICAL-CLOSED` | Archived `BR-0033` |
+| `GQ1-CHUNK-0117-OBS-001` | `NEW` | `GQF-0154` |
+| `GQ1-CHUNK-0117-OBS-002` | `EXTENDS` | `GQF-0106`, `GQF-0107` |
+| `GQ1-CHUNK-0118-OBS-001` | `EXTENDS` | `GQF-0115` |
+| `GQ1-CHUNK-0118-OBS-002` | `DUPLICATE` | `BR-0099` |
+| `GQ1-CHUNK-0118-OBS-003` | `EXTENDS` | `BR-0103` |
+| `GQ1-CHUNK-0119-OBS-001` | `EXTENDS` | `GQF-0100`, `GQF-0101`, `GQF-0102` |
+| `GQ1-CHUNK-0119-OBS-002` | `EXTENDS` | `GQF-0103`, `GQF-0104` |
+| `GQ1-CHUNK-0119-OBS-003` | `EXTENDS` | `GQF-0061` |
+| `GQ1-CHUNK-0120` | `DUPLICATE/EXTENDS` | `GQF-0030`, `BR-0099`, `GQF-0034`, `BR-0101`; no new owner |
+| `GQ1-CHUNK-0121-OBS-001` | `EXTENDS` | `GQF-0119` |
+| `GQ1-CHUNK-0121-OBS-002` | `EXTENDS` | `GQF-0120` |
+| `GQ1-CHUNK-0122-OBS-001` | `EXTENDS` | `GQF-0118` |
+| `GQ1-CHUNK-0122-OBS-002` | `HISTORICAL-CLOSED` | Archived `BR-0185` |
+| `GQ1-CHUNK-0123-OBS-001` | `EXTENDS` | `GQF-0111`, archived `BR-0096` |
+| `GQ1-CHUNK-0123-OBS-002` | `EXTENDS` | `GQF-0112`, archived `BR-0096` |
+| `GQ1-CHUNK-0124` | `DUPLICATE/EXTENDS` | `GQF-0111`, archived `BR-0096`; no new owner |
+| `GQ1-CHUNK-0125-OBS-001` | `NEW` | `GQF-0155`; residual extension of completed PhysFS extraction plan and reconciled with DMR1 |
+| `GQ1-CHUNK-0125-OBS-002` | `HISTORICAL-CLOSED/EXTENDS` | `BR-0469`; repair evidence, no new owner |
+| `GQ1-CHUNK-0126` | `DUPLICATE/EXTENDS` | `GQF-0111`, archived `BR-0096`; no new owner |
+| `GQ1-CHUNK-0127-OBS-001` | `NEW` | `GQF-0156`; reconciled with DMR1 retained geometry/frame policy |
+| `GQ1-CHUNK-0127-OBS-002` | `DUPLICATE/EXTENDS` | `BR-0077` |
+| `GQ1-CHUNK-0127-OBS-003` | `DUPLICATE` | `BR-0283`; runner context remains `BR-0009` |
+| `GQ1-CHUNK-0128-DIFF` | `RESOLVED_EXTERNAL` | `GQD-0021`; post-freeze commit `7f0f7c20`, no new GQF |
+| `GQ1-CHUNK-0128-OBS-001` | `NEW` | `GQF-0157`, validation link `GQF-0127`, `GQF-0128` |
+| `GQ1-CHUNK-0128-OBS-002` | `NEW` | `GQF-0158` |
+| `GQ1-CHUNK-0129` | `EXTENDS` | `BR-0187`, `BR-0008`, `BR-0189`, `BR-0169`; no new owner |
+| `GQ1-CHUNK-0130` | `EXTENDS` | `BR-0162`, `BR-0160`, `GQF-0125`; no new owner |
+| `GQ1-CHUNK-0131-DIFF` | `DUPLICATE/EXTENDS` | `GQD-0018`; no new minimization owner |
+| `GQ1-CHUNK-0131-OBS-001` | `NEW` | `GQF-0159` |
+| `GQ1-CHUNK-0131-OBS-002` through `OBS-004` | `EXTENDS` | `BR-0187`, `BR-0008`, `BR-0190` |
+| `GQ1-CHUNK-0132-DIFF` | `DUPLICATE/EXTENDS` | `GQD-0020`, `GQF-0156`, `GQR-0143`; retained event-loop seam |
+| `GQ1-CHUNK-0132-OBS-002` | `NEW` | `GQF-0160` |
+| `GQ1-CHUNK-0132-OBS-003` | `NEW` | `GQF-0161` |
+| `GQ1-CHUNK-0132-OBS-004` | `DUPLICATE` | `BR-0009` |
+| `GQ1-CHUNK-0133-OBS-001` | `EXTENDS` | `GQF-0153` |
+| `GQ1-CHUNK-0133-OBS-002` | `EXTENDS` | `GQF-0137` |
+| `GQ1-CHUNK-0134-OBS-001` | `NEW` | `GQF-0162` |
+| `GQ1-CHUNK-0134-OBS-002` | `EXTENDS` | `BR-0169` |
+| `GQ1-CHUNK-0134-OBS-003` | `EXTENDS` | `GQF-0126`, `GQR-0113` |
+| `GQ1-CHUNK-0135-DIFF` | `DUPLICATE/EXTENDS` | `GQD-0020`, `GQF-0156`, `GQR-0143`; retained event-loop seam |
+| `GQ1-CHUNK-0135-OBS-001` | `REGROWTH/EXTENDS` | `GQF-0163`, linked archived `BR-0605` |
+| `GQ1-CHUNK-0135-OBS-002` | `DUPLICATE/EXTENDS` | `BR-0190` |
+| `GQ1-CHUNK-0135-OBS-003` | `DUPLICATE/EXTENDS` | `BR-0191` |
+| `GQ1-CHUNK-0136` | `DUPLICATE/EXTENDS` | `GQF-0032`, `BR-0010`, `BR-0190`, `BR-0191`, `BR-0192`, `BR-0008`; no new owner |
+| `GQ1-CHUNK-0137-DIFF` | `DUPLICATE/EXTENDS` | `GQD-0018`, `GQF-0155`, `GQR-0142`; no new minimization owner |
+| `GQ1-CHUNK-0137-OBS-001` | `NEW` | `GQF-0164` |
+| `GQ1-CHUNK-0137-OBS-002` | `DUPLICATE/EXTENDS` | `BR-0084` |
+| `GQ1-CHUNK-0137-OBS-003` | `DUPLICATE/EXTENDS` | `BR-0168`, `BR-0190`, `BR-0193` |
 
 ## Bootstrap coverage records
 
@@ -6153,6 +6284,36 @@ The broad live survey produced ten preliminary `PARTIAL` records. They establish
 | `GQC-0118` | `ISSUES` | `GQ1-CHUNK-0105` shared game-extension test | Completed all lines plus shared/build/history context. Extended `BR-0662` and archived `BR-0041`; no new root |
 | `GQC-0119` | `ISSUES` | `GQ1-CHUNK-0106` GOG descriptor tests lines 1-600 | Completed assigned range plus production/build/history. Extended six current owners; no new root |
 | `GQC-0120` | `ISSUES` | `GQ1-CHUNK-0107` GOG descriptor tests lines 601-1200 | Completed assigned range plus production/build/history. Admitted `GQF-0152`; extended three owners |
+| `GQC-0121` | `ISSUES` | `GQ1-CHUNK-0108` HFS tests lines 1-600 | `GQD-0001` measured no inherited effect. Extended three owners and `GQI-0003`; duplicated `BR-0158` |
+| `GQC-0122` | `ISSUES` | `GQ1-CHUNK-0109` HFS tests lines 601-1140 | `GQD-0002` measured no inherited effect. Existing HFS and fixture-owner evidence only; no new root |
+| `GQC-0123` | `ISSUES` | `GQ1-CHUNK-0110` PKG TOC bounds tests lines 1-600 | `GQD-0003` measured no inherited effect. Extended three current owners; no new root |
+| `GQC-0124` | `ISSUES` | `GQ1-CHUNK-0111` SOW integrity test | `GQD-0004` measured no inherited effect. Extended `GQF-0092`, `BR-0021`, `GQF-0043`; no new root |
+| `GQC-0125` | `CLEAN` | `GQ1-CHUNK-0112` SOW real-media CMake test | `GQD-0005` measured no inherited effect. Explicit fixture/registration review; archived `BR-0024` repair remains effective |
+| `GQC-0126` | `ISSUES` | `GQ1-CHUNK-0113` STi2 tests lines 1-600 | `GQD-0006` measured no inherited effect. Extended `GQF-0150`, `BR-0160`; verified three archived repairs |
+| `GQC-0127` | `ISSUES` | `GQ1-CHUNK-0114` STi2 tests lines 601-1050 | `GQD-0007` measured no inherited effect. Admitted `GQF-0153`; extended three owners |
+| `GQC-0128` | `ISSUES` | `GQ1-CHUNK-0115` StuffIt corpus lines 1-600 | `GQD-0008` measured no inherited effect. Extended `BR-0182`, `BR-0586`; no new root |
+| `GQC-0129` | `ISSUES` | `GQ1-CHUNK-0116` StuffIt corpus lines 601-1120 | `GQD-0009` measured no inherited effect. Extended `BR-0182`, `BR-0160`; archived `BR-0033` remains closed |
+| `GQC-0130` | `ISSUES` | `GQ1-CHUNK-0117` mission music name/progress tests | `GQD-0010` defers a roughly 16-line paired songs seam below DMR1 threshold. Admitted `GQF-0154`; extended two owners |
+| `GQC-0131` | `ISSUES` | `GQ1-CHUNK-0118` mission music store/display/preview tests | `GQD-0011` measured no inherited effect. Three existing-owner observations; no new root |
+| `GQC-0132` | `ISSUES` | `GQ1-CHUNK-0119` archive/CUE/limit/progress JVM tests | `GQD-0012` measured no inherited effect. Existing extraction-budget and stream-owner evidence only |
+| `GQC-0133` | `ISSUES` | `GQ1-CHUNK-0120` audio fingerprint cache test | `GQD-0013` measured no inherited effect and retained four necessary paired consumer lines. Four existing-owner observations; no new root |
+| `GQC-0134` | `ISSUES` | `GQ1-CHUNK-0121` music stage manager test | `GQD-0014` measured no inherited effect. Extended `GQF-0119`, `GQF-0120`; no new root |
+| `GQC-0135` | `ISSUES` | `GQ1-CHUNK-0122` mission ZIP music catalog test | `GQD-0015` measured no inherited effect. Extended `GQF-0118`; archived `BR-0185` remains closed |
+| `GQC-0136` | `ISSUES` | `GQ1-CHUNK-0123` MissionZip tests lines 1-600 | `GQD-0016` measured no inherited effect. Extended `GQF-0111`, `GQF-0112`; no new root |
+| `GQC-0137` | `ISSUES` | `GQ1-CHUNK-0124` MissionZip test tail | `GQD-0017` measured no inherited effect. Duplicate evidence for `GQF-0111`/archived `BR-0096`; no new root |
+| `GQC-0138` | `ISSUES` | `GQ1-CHUNK-0125` ModManager mission ZIP tests lines 1-600 | `GQD-0018` admitted `GQF-0155`: estimated 26 inherited lines and two hunks removable from paired PhysFS init. Capacity evidence reconciles with `BR-0469` |
+| `GQC-0139` | `ISSUES` | `GQ1-CHUNK-0126` ModManager mission ZIP test tail | `GQD-0019` measured no inherited effect beyond the already-owned PhysFS seam. Duplicate `GQF-0111` evidence only |
+| `GQC-0140` | `ISSUES` | `GQ1-CHUNK-0127` extraction/metadata automation scripts | `GQD-0020` admitted `GQF-0156`: estimated 144 inherited lines removable across eight menu/window files. Secondary observations deduplicated |
+| `GQC-0141` | `ISSUES` | `GQ1-CHUNK-0128` reconnect and bounded-extractor tests | `GQD-0021` records 559 inherited build lines already removed externally. Admitted `GQF-0157`, `GQF-0158` |
+| `GQC-0142` | `ISSUES` | `GQ1-CHUNK-0129` extraction regression spec helpers | `GQD-0022` measured no inherited effect. Four existing-owner extensions; no new root |
+| `GQC-0143` | `ISSUES` | `GQ1-CHUNK-0130` bounded extraction and workflow tests | `GQD-0023` measured no inherited effect. Extended `BR-0162`, `BR-0160`, `GQF-0125`; no new root |
+| `GQC-0144` | `ISSUES` | `GQ1-CHUNK-0131` extraction schema and SAF tests | `GQD-0024` confirms but does not duplicate the PhysFS remediation. Admitted `GQF-0159`; extended three owners |
+| `GQC-0145` | `ISSUES` | `GQ1-CHUNK-0132` extraction provenance/publication tests and extraction tail | `GQD-0025` confirms `GQF-0156` and retains the compact event seam. Admitted `GQF-0160`, `GQF-0161`; deduplicated wrong-level success |
+| `GQC-0146` | `ISSUES` | `GQ1-CHUNK-0133` mission fingerprint, Mac SAF and batch tests | `GQD-0026` measured no inherited effect. Extended `GQF-0153`, `GQF-0137`; no new root |
+| `GQC-0147` | `ISSUES` | `GQ1-CHUNK-0134` extraction batch, HFS and workflow tests | `GQD-0027` measured no inherited effect. Admitted `GQF-0162`; extended `BR-0169`, `GQF-0126` |
+| `GQC-0148` | `ISSUES` | `GQ1-CHUNK-0135` extraction tests lines 1-600 | `GQD-0028` confirms `GQF-0156` and retains the compact event seam. Admitted `GQF-0163`; extended `BR-0190`, `BR-0191` |
+| `GQC-0149` | `ISSUES` | `GQ1-CHUNK-0136` extraction tests lines 601-1200 | `GQD-0029` measured no inherited effect. Existing `GQF-0032`, `BR-0010`, `BR-0190`, `BR-0191`, `BR-0192`, `BR-0008` evidence only |
+| `GQC-0150` | `ISSUES` | `GQ1-CHUNK-0137` SAF archiver test lines 1-600 | `GQD-0030` confirms but does not duplicate the PhysFS remediation. Admitted `GQF-0164`; extended `BR-0084`, `BR-0168`, `BR-0190`, `BR-0193` |
 
 ## Initial remediation queue
 
@@ -6299,6 +6460,18 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0137` | `TODO` | `GQF-0150` | Validate raw fingerprint fixtures exactly | Cover short header/payload, overflow, trailing bytes and read errors |
 | `GQR-0138` | `TODO` | `GQF-0151` | Make fingerprint assertions evaluate operands once | Add side-effect operands and preserve first observed values in diagnostics |
 | `GQR-0139` | `TODO` | `GQF-0152` | Initialize GOG LZMA trailing-data fixtures | Make intended prefix and trailing bytes explicit and run under memory sanitizers where available |
+| `GQR-0140` | `TODO` | `GQF-0153` | Make D2 Mac extraction oracle content-exact | Bind verified source and complete expected inventory, sizes and SHA-256; mutate bytes, truncate, swap, add and remove leaves |
+| `GQR-0141` | `TODO` | `GQF-0154` | Make empty music generations explicit | Inject deletion failure and stale same-source sidecars; require verified removal or atomic empty generation with diagnostics |
+| `GQR-0142` | `TODO` | `GQF-0155` | Finish paired Android PhysFS init extraction | Live-remeasure paired hooks; extend existing shared owner, preserve exact diagnostics/order and compact game-dir calls; validate shared setup, D1/D2 Windows, Android ABIs and mount order |
+| `GQR-0143` | `TODO` | `GQF-0156` | Consolidate paired menu/window debug accessors | Live-remeasure eight inherited paths; use narrow type-complete branch-added fragments/header; preserve signatures/guards/layout and validate D1/D2 builds plus menu automation |
+| `GQR-0144` | `TODO` | `GQF-0157` | Make bounded-extractor quota tests reason-exact | Independently disable each quota and timeout and require the matching test to fail promptly with the expected category |
+| `GQR-0145` | `TODO` | `GQF-0158` | Register bounded-extractor Python regression | Add it to maintained branch-added host-test discovery and prove pass/fail/not-run reporting on Windows and POSIX |
+| `GQR-0146` | `TODO` | `GQF-0159` | Require source-bearing extraction regression specs | Reject absent, empty and malformed source sets for every schema discriminator and test readiness cannot bypass admission |
+| `GQR-0147` | `TODO` | `GQF-0160` | Put host-only extraction tests in the host tier | Register provenance and publication scripts without APK/emulator prerequisites and prove aggregate discovery and failure propagation |
+| `GQR-0148` | `TODO` | `GQF-0161` | Remove stale extraction failure state | Replace `$maxNav` with current bounded context and exercise the exact-level failure path under strict mode |
+| `GQR-0149` | `TODO` | `GQF-0162` | Make extraction workflow assertions behavioral | Replace comment/token regex checks with structured or executable production-contract oracles and mutation-prove each assertion |
+| `GQR-0150` | `TODO` | `GQF-0163` | Bind app-private extraction staging to source identity | Verify local and device digests, publish through an owned temporary and test equal-size replacement, interruption and concurrent generations |
+| `GQR-0151` | `TODO` | `GQF-0164` | Make descriptor-only SAF success observation-gated | Fail missing readiness/process/listing evidence and inject suppressed launch, dead process, unreadable descriptors, retained manifest and clean release |
 
 ### GQR-0001 live claim
 
