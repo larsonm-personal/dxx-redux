@@ -11,6 +11,7 @@
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
+#include "jni_string.h"
 #include "midi_preview.h"
 #include "midi_enumeration.h"
 
@@ -75,7 +76,7 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeGetState(
 	int state = midi_preview_get_state(&pos, &dur);
 	char buf[64];
 	snprintf(buf, sizeof(buf), "%d|%d|%d", state, pos, dur);
-	return (*env)->NewStringUTF(env, buf);
+	return dxx_jni_string_from_utf8(env, buf);
 }
 
 /* ── MidiEnumerationBridge ───────────────────────────────────────────── */
@@ -84,11 +85,12 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MidiEnumerationBridge_nativeEnumerateTracks(
     JNIEnv *env, jclass clazz, jstring jfilesDir)
 {
-	const char *files_dir = (*env)->GetStringUTFChars(env, jfilesDir, NULL);
+	char *files_dir = NULL;
+	if (!dxx_jni_string_to_utf8(env, jfilesDir, &files_dir)) return NULL;
 	char *json = midi_enumerate_tracks(files_dir);
-	(*env)->ReleaseStringUTFChars(env, jfilesDir, files_dir);
+	free(files_dir);
 
-	jstring result = (*env)->NewStringUTF(env, json ? json : "{\"sources\":[]}");
+	jstring result = dxx_jni_string_from_utf8(env, json ? json : "{\"sources\":[]}");
 	free(json);
 	return result;
 }
@@ -100,8 +102,13 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeReadHogEntry(
     JNIEnv *env, jclass clazz,
     jstring jhogPath, jstring jentryName)
 {
-	const char *hog_path = (*env)->GetStringUTFChars(env, jhogPath, NULL);
-	const char *entry_name = (*env)->GetStringUTFChars(env, jentryName, NULL);
+	char *hog_path = NULL;
+	char *entry_name = NULL;
+	if (!dxx_jni_string_to_utf8(env, jhogPath, &hog_path)) return NULL;
+	if (!dxx_jni_string_to_utf8(env, jentryName, &entry_name)) {
+		free(hog_path);
+		return NULL;
+	}
 
 	unsigned char *data = NULL;
 	int data_len = 0;
@@ -112,8 +119,8 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeReadHogEntry(
 
 	int ok = hog_read_entry(hog_path, entry_name, &data, &data_len);
 
-	(*env)->ReleaseStringUTFChars(env, jentryName, entry_name);
-	(*env)->ReleaseStringUTFChars(env, jhogPath, hog_path);
+	free(entry_name);
+	free(hog_path);
 
 	if (!ok || !data) return NULL;
 

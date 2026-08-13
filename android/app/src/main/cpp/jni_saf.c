@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <android/log.h>
 
+#include "jni_string.h"
+
 #define LOG_TAG   "DXX-SAF"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -69,7 +71,17 @@ int saf_open_file(const char *content_uri)
 		return -1;
 	}
 
-	jstring juri = (*env)->NewStringUTF(env, content_uri);
+	jstring juri = dxx_jni_string_from_utf8(env, content_uri);
+	if (!juri) {
+		LOGE("saf_open_file: invalid UTF-8 content URI");
+		if ((*env)->ExceptionCheck(env)) {
+			(*env)->ExceptionDescribe(env);
+			(*env)->ExceptionClear(env);
+		}
+		(*env)->DeleteLocalRef(env, cls);
+		if (need_detach) (*g_jvm)->DetachCurrentThread(g_jvm);
+		return -1;
+	}
 	int fd = (*env)->CallIntMethod(env, g_activity, mid, juri);
 
 	/* Check for Java exceptions */

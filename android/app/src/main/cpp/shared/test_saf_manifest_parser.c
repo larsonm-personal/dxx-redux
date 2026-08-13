@@ -35,6 +35,26 @@ static int test_valid_manifests(void)
 	return 1;
 }
 
+static int test_raw_and_escaped_unicode_uris_match(void)
+{
+	static const char expected[] = "content://provider/\xC3\xA9/\xF0\x9F\x98\x80";
+	static const char raw[] =
+	    "{\"files\":[{\"filename\":\"raw.hog\",\"content_uri\":\""
+	    "content://provider/\xC3\xA9/\xF0\x9F\x98\x80\",\"size_bytes\":1}]}";
+	static const char escaped[] =
+	    "{\"files\":[{\"filename\":\"escaped.hog\",\"content_uri\":\""
+	    "content://provider/\\u00E9/\\uD83D\\uDE00\",\"size_bytes\":1}]}";
+	SafManifestData *raw_manifest = saf_manifest_parse(raw, strlen(raw));
+	SafManifestData *escaped_manifest = saf_manifest_parse(escaped, strlen(escaped));
+	CHECK(raw_manifest != NULL);
+	CHECK(escaped_manifest != NULL);
+	CHECK(strcmp(raw_manifest->entries[0].content_uri, expected) == 0);
+	CHECK(strcmp(escaped_manifest->entries[0].content_uri, expected) == 0);
+	saf_manifest_free(raw_manifest);
+	saf_manifest_free(escaped_manifest);
+	return 1;
+}
+
 static int test_every_truncated_prefix_is_rejected(void)
 {
 	const char *json =
@@ -78,6 +98,7 @@ static int test_invalid_schema_and_json_are_rejected(void)
 int main(void)
 {
 	CHECK(test_valid_manifests());
+	CHECK(test_raw_and_escaped_unicode_uris_match());
 	CHECK(test_every_truncated_prefix_is_rejected());
 	CHECK(test_invalid_schema_and_json_are_rejected());
 	printf("SAF manifest parser tests passed\n");
