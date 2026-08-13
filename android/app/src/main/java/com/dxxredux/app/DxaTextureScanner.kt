@@ -15,7 +15,7 @@ import java.util.zip.ZipFile
 object DxaTextureScanner {
     private const val TAG = "DXX-DxaScan"
 
-    // Traversal limits must match pngfile_stb.c native texture indexing.
+    // Traversal limits must match pngfile.c native texture indexing.
     private const val MAX_ARCHIVE_ENTRIES = 65_536
     private const val MAX_DIRECTORIES = 16_384
     private const val MAX_TEXTURE_ENTRIES = 49_152

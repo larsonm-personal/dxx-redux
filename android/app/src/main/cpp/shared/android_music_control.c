@@ -1,5 +1,5 @@
 /*
- * jni_music_control.c -- JNI bridge for in-game track control.
+ * android_music_control.c -- JNI bridge for in-game track control.
  *
  * Uses the unified songs_*() API so next/prev/play/info work across
  * all music types (BUILTIN/MIDI, REDBOOK, CUSTOM/jukebox).

@@ -14,10 +14,21 @@ One additional guard-only mismatch was found and corrected:
 `DXX_ANDROID_SHARED_NET_UDP_ANDROID_AUTONET_SHARED_H`, including every component
 of the filename inside the project-qualified guard.
 
-No other unambiguous source/interface mismatch was found. Similar-looking names
-were retained only where declarations, consumers, or build ownership establish a
-real distinction. No CMake source entry referred to the renamed header, so no
-CMake edit was required.
+The corrective declaration-level pass found four more 1:1 implementation names
+that the initial filename-only survey had incorrectly excused:
+
+- `jni_music_control.c` is now `android_music_control.c`, matching its public
+  game-thread interface
+- `jni_udp_reconnect.c` is now `net_udp_reconnect_jni.c`, matching its complete
+  four-function interface
+- `secret_area_game_adapter.c` is now `secretarea.c`, matching the paired D1/D2
+  interfaces that own 30 of its 32 public definitions
+- `pngfile_stb.c` is now `pngfile.c`, matching the complete paired D1/D2 image
+  interface while the source comment still records the stb backend
+
+All source registrations, tests, live queue paths, and maintained comments were
+updated. Historical ledgers and completed design plans retain old paths as
+historical evidence.
 
 ## Rules used
 
@@ -39,9 +50,11 @@ useful ownership boundary.
 
 After applying the rename:
 
-- 137 of 253 sources have at least one exact-stem branch-added header
+- 140 of 253 sources have at least one exact-stem branch-added header
 - 81 unmatched sources are explicitly named native tests or test programs
-- 35 unmatched production sources were reviewed semantically below
+- 32 unmatched production sources were reviewed semantically below; `pngfile.c`
+  matches inherited D1/D2 headers and therefore remains mechanically unmatched
+  only within the branch-added-header subset
 - 48 headers have no exact-stem branch-added source and were reviewed as
   header-only, compatibility, stub, inherited-interface, or split-interface
   owners
@@ -53,11 +66,41 @@ The only remaining mechanical guard exception is
 `_SDL_config_h` guard because it is the selected replacement for SDL's canonical
 configuration header.
 
+## Declaration-level ownership results
+
+The corrective pass extracted public function definitions from every unmatched
+branch-added production source and mapped them to declarations across all
+repository headers, including inherited D1/D2 headers. The four renames above are
+the cases where one differently named source owns the associated interface.
+
+The strongest retained cross-stem results are not 1:1 relationships:
+
+- `android_input.c` has 89 public or JNI definitions; only ten belong to
+  `android_screen_advance.h` and two belong to `android_lifecycle_actions.h`
+- `software_renderer_debug.c` deliberately satisfies three separate debug
+  interfaces: seven merged-wall functions, four texture-debug functions, and one
+  overlay request function
+- `difficulty_runtime_shared.c` contributes six declarations to the much larger
+  inherited `game.h`/`game.c` owner; `effect_runtime_shared.c` similarly
+  contributes three declarations to `effects.h` alongside inherited `effects.c`
+- `multi_save_transfer.c` contributes 16 transfer declarations to the much
+  larger inherited `multi.h`/`multi.c` owner
+- `digi_tsf_music.c` has 27 public definitions, only seven of which belong to
+  `digi_mixer_music.h`
+- `android_surface.c` already matches the main `android_surface.h` interface;
+  `android_surface_lifecycle.h` is a narrow two-function secondary view
+- `route_planner.cpp` and `route_snapshot.cpp` already match their main C++
+  headers; their `_c.h` files are explicit secondary C ABI facades
+
+The remaining unmatched production sources either expose only `main`/`wmain` or
+JNI entry points, instantiate header-only dependencies, or publish a backend
+object without a public function interface.
+
 ## Unmatched production source decisions
 
 ### Boundary and orchestration owners - retain
 
-These 24 files are entry points, JNI bridges, high-level commands, or platform
+These 22 files are entry points, JNI bridges, high-level commands, or platform
 adapters. They do not have a unique same-stem interface header:
 
 - `android_autoselect.cpp`, `android_gamepad_config.cpp`, `android_input.c`, and
@@ -66,30 +109,26 @@ adapters. They do not have a unique same-stem interface header:
   `fingerprint_match.c`
 - `jni_disc_import.c`, `jni_gog_import.c`, `jni_cd_preview.c`,
   `jni_fingerprint.c`, `jni_level_metadata.cpp`, `jni_main.c`,
-  `jni_midi_preview.c`, `jni_music_control.c`, `jni_resume_save.cpp`, `jni_saf.c`,
-  and `jni_udp_reconnect.c`
+  `jni_midi_preview.c`, `jni_resume_save.cpp`, and `jni_saf.c`
 - `d2_headless_runtime.c`, `headless_metadata_dump_main.cpp`,
   `input_demo_headless_main.cpp`, and `native-lib.cpp`
 
 ### Backend and compatibility implementations - retain
 
-These eight files implement an inherited API, a selected backend, or a
+These seven files implement an inherited API, a selected backend, or a
 single-translation-unit dependency. Their specialized source names distinguish
 the implementation from the interface they satisfy:
 
 - `difficulty_runtime_shared.c`, `effect_runtime_shared.c`,
   `digi_tsf_music.c`, and `messagebox.c`
-- `physfs_archiver_saf.c`, `pngfile_stb.c`, `tsf_impl.c`, and `etc2tool.cpp`
+- `physfs_archiver_saf.c`, `tsf_impl.c`, and `etc2tool.cpp`
 
-### Aggregate and adapter implementations - retain
+### Aggregate implementations - retain
 
 - `multi_save_transfer.c` owns the complete transfer protocol;
   `multi_save_transfer_policy.h` is only its small pure policy component
 - `software_renderer_debug.c` is the non-GLES aggregate implementation of
   `android_texture_debug.h`, `debug_tex_overlay.h`, and `merged_wall_debug.h`
-- `secret_area_game_adapter.c` adapts the per-game `secretarea.h` interfaces to
-  several shared analysis owners; its adapter name is more accurate than any one
-  included interface name
 
 ## Header-only and split-interface decisions
 
@@ -142,7 +181,10 @@ signatures through both game headers.
   targets compiled and linked
 - `:app:externalNativeBuildDebug` with JDK 21: arm64-v8a, armeabi-v7a, and x86_64
   compiled and linked
-- Scoped code quality formatted and accepted the new header
+- `python -m unittest` for the naming, music lifecycle, control-center,
+  replacement-texture, and Redbook contracts: fourteen tests passed
+- Scoped code quality accepted the renamed sources, CMake owner, Kotlin comments,
+  Python contracts, and maintained records
 - Final old-name, include-guard, build-reference, ASCII/BOM, and diff whitespace
   audits passed
 

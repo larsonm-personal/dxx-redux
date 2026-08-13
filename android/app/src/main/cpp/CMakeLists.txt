@@ -567,7 +567,7 @@ endif()
 target_sources(
     dxx-redux-d1
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_udp_reconnect.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
@@ -593,7 +593,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_track_json.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
@@ -646,7 +646,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile_stb.c)
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
 if(OPENGL)
     target_sources(
         dxx-redux-d1
@@ -739,7 +739,7 @@ endif()
 target_sources(
     dxx-redux-d2
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_udp_reconnect.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
@@ -765,7 +765,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_track_json.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
@@ -818,7 +818,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile_stb.c)
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
 if(OPENGL)
     target_sources(
         dxx-redux-d2

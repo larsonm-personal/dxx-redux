@@ -38,6 +38,7 @@
 #include "dxxerror.h"
 #include "args.h"
 #include "config.h"
+#include "rbaudio_bin.h"
 #include "rbaudio.h"
 #include "console.h"
 #include "timer.h"

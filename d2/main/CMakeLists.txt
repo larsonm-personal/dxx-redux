@@ -82,7 +82,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/route_edge.cpp
     ../../android/app/src/main/cpp/shared/route_planner.cpp
     ../../android/app/src/main/cpp/shared/route_analysis_cache.c
-    ../../android/app/src/main/cpp/shared/secret_area_game_adapter.c
+    ../../android/app/src/main/cpp/shared/secretarea.c
     ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c
     ../../android/app/src/main/cpp/shared/input_demo_fp_env.c

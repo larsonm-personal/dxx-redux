@@ -1,5 +1,5 @@
 /*
- * pngfile_stb.c -- PNG/TGA/JPG texture loading via stb_image
+ * pngfile.c -- PNG/TGA/JPG texture loading via stb_image
  *
  * Android port: replacement for pngfile.c (which requires libpng).
  * Implements the same read_png() interface so ogl.c texture replacement

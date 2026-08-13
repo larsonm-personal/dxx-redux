@@ -43,3 +43,27 @@ in the tracked survey.
 The focused three-test contract passed, the complete Windows D1/D2 build passed,
 and Android external native builds passed for arm64-v8a, armeabi-v7a, and x86_64.
 Scoped formatting, path/guard/reference audits, and `git diff --check` passed.
+
+## Corrective 1:1 ownership pass
+
+The initial survey over-relied on filename categories. This follow-up treats
+exported declaration ownership as primary and requires evidence for every
+cross-stem exception.
+
+- [x] Extract declarations from every branch-added unmatched header and map each
+  to its defining translation unit
+- [x] Identify headers whose externally defined interface is owned wholly or
+  overwhelmingly by one differently named source
+- [x] Rename every clear 1:1 source/header pair, including guards, includes,
+  build registrations, tests, and current documentation
+- [x] Replace the initial survey conclusions with the declaration-level mapping
+  and retain only demonstrated split, inherited, header-only, or entry-point
+  exceptions
+- [x] Rerun focused contracts, scoped quality, D1/D2 host builds, Android ABI
+  builds, and final stale-name/path audits
+
+Completion: the declaration-level pass corrected four additional 1:1 source
+names: `android_music_control.c`, `net_udp_reconnect_jni.c`, `secretarea.c`, and
+`pngfile.c`. A maintained naming contract covers all five corrected families and
+rejects their obsolete paths. Fourteen focused tests, scoped quality, complete
+Windows D1/D2 builds, and all three Android ABIs passed.

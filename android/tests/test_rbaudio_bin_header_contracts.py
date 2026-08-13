@@ -104,7 +104,7 @@ const char *(*init_status)(void) = RBAGetInitStatus;
 
     def test_production_consumers_retain_rbaudio_owner(self) -> None:
         consumers = (
-            "android/app/src/main/cpp/jni_music_control.c",
+            "android/app/src/main/cpp/shared/android_music_control.c",
             "android/app/src/main/cpp/shared/game_automate.cpp",
             "android/app/src/main/cpp/shared/rbaudio_bin.c",
             "android/app/src/main/cpp/shared/songs_android_shared.c",

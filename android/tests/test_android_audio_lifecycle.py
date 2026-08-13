@@ -7,7 +7,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SOURCE = (REPO_ROOT / "android/app/src/main/cpp/SDL_androidaudio.c").read_text(encoding="utf-8")
 CMAKE = (REPO_ROOT / "android/app/src/main/cpp/CMakeLists.txt").read_text(encoding="utf-8")
 MUSIC = (REPO_ROOT / "android/app/src/main/cpp/shared/digi_tsf_music.c").read_text(encoding="utf-8")
-MUSIC_CONTROL = (REPO_ROOT / "android/app/src/main/cpp/jni_music_control.c").read_text(
+MUSIC_CONTROL = (REPO_ROOT / "android/app/src/main/cpp/shared/android_music_control.c").read_text(
     encoding="utf-8"
 )
 MAIN_ACTIVITY = (

@@ -12,7 +12,7 @@ def read(relative: str) -> str:
 
 
 def main() -> None:
-    loader = read("android/app/src/main/cpp/shared/pngfile_stb.c")
+    loader = read("android/app/src/main/cpp/shared/pngfile.c")
     png = loader.split("int read_png", 1)[1].split("int write_png", 1)[0]
     assert "#define STBI_MAX_DIMENSIONS 2048" in loader
     assert png.index("stbi_info_from_memory") < png.index("stbi_load_from_memory")

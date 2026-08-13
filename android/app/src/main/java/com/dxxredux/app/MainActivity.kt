@@ -447,7 +447,7 @@ class MainActivity :
 
     external fun nativeOpenGameMenuIfSafe(): Boolean
 
-    // ── Music track control (jni_music_control.c) ────────────────────
+    // ── Music track control (android_music_control.c) ────────────────
     external fun nativeNextTrack(): Int
 
     external fun nativePrevTrack(): Int

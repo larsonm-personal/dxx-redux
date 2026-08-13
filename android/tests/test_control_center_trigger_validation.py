@@ -32,7 +32,7 @@ def main() -> None:
         assert "if (!control_center_triggers_read_n" in read(f"{game}/main/gamesave.c")
         assert "if (!control_center_triggers_read_n_swap" in read(f"{game}/main/state.c")
 
-    adapter = read("android/app/src/main/cpp/shared/secret_area_game_adapter.c")
+    adapter = read("android/app/src/main/cpp/shared/secretarea.c")
     assert "control_center_triggers_are_valid(&ControlCenterTriggers" in adapter
     headless = read("android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp")
     assert "control_center_triggers_are_valid(&ControlCenterTriggers" in headless

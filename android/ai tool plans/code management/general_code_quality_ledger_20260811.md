@@ -489,7 +489,7 @@ Rating snapshot: 2026-08-12. Recompute the affected owner and all reference rows
 | GQ1-CHUNK-0047 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_level_metadata.cpp` | L1201-L1251 | `GQC-0060`; extended `BR-0077`, two closed verifications |
 | GQ1-CHUNK-0048 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_main.c` | L1-L600 | `GQC-0061`; extended `BR-0078`, `BR-0029`, `GQF-0052` |
 | GQ1-CHUNK-0049 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_main.c` | L601-L1200 | `GQC-0062`; extended five owners, two closed verifications |
-| GQ1-CHUNK-0050 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_music_control.c` | L1-L447 | `GQC-0063`; extended `BR-0029`, `GQF-0089`; three closed verifications |
+| GQ1-CHUNK-0050 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/shared/android_music_control.c` | L1-L447 | `GQC-0063`; extended `BR-0029`, `GQF-0089`; three closed verifications |
 | GQ1-CHUNK-0051 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_resume_save.cpp` | L1-L600 | `GQC-0064`; added `GQF-0096`, `GQF-0097`; extended `BR-0082` |
 | GQ1-CHUNK-0052 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/jni_resume_save.cpp` | L601-L1154 | `GQC-0065`; added `GQF-0098`; extended `BR-0417` |
 | GQ1-CHUNK-0053 | [x] DONE | source | critical | authored-source | `android/app/src/main/cpp/shared/physfs_archiver_saf.c` | L1-L524 | `GQC-0066`; added `GQF-0099`; extended `GQF-0036` |
@@ -699,7 +699,7 @@ Rating snapshot: 2026-08-12. Recompute the affected owner and all reference rows
 | GQ1-CHUNK-0257 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/midi_preview.c` | L1-L724 | - |
 | GQ1-CHUNK-0258 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/multi_save_transfer.c` | L1-L750 | - |
 | GQ1-CHUNK-0259 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/net/net_udp_android.c` | L1-L709 | - |
-| GQ1-CHUNK-0260 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/pngfile_stb.c` | L1-L650 | - |
+| GQ1-CHUNK-0260 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/pngfile.c` | L1-L650 | - |
 | GQ1-CHUNK-0261 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/rbaudio_bin.c` | L1-L750 | - |
 | GQ1-CHUNK-0262 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/rbaudio_bin.c` | L751-L1500 | - |
 | GQ1-CHUNK-0263 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | L1-L750 | - |
@@ -707,9 +707,9 @@ Rating snapshot: 2026-08-12. Recompute the affected owner and all reference rows
 | GQ1-CHUNK-0265 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | L1501-L2250 | - |
 | GQ1-CHUNK-0266 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | L2251-L3000 | - |
 | GQ1-CHUNK-0267 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_snapshot.cpp` | L1-L620 | - |
-| GQ1-CHUNK-0268 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | L1-L750 | - |
-| GQ1-CHUNK-0269 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | L751-L1500 | - |
-| GQ1-CHUNK-0270 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | L1501-L2250 | - |
+| GQ1-CHUNK-0268 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L1-L750 | - |
+| GQ1-CHUNK-0269 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L751-L1500 | - |
+| GQ1-CHUNK-0270 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L1501-L2250 | - |
 | GQ1-CHUNK-0271 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secret_area_scan.c` | L1-L750 | - |
 | GQ1-CHUNK-0272 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/state_android_shared.c` | L1-L750 | - |
 | GQ1-CHUNK-0273 | [ ] TODO | source | high | authored-source | `2 related paths` | 449 review lines under android/app/src/main/java | - |
@@ -1192,7 +1192,7 @@ Rating snapshot: 2026-08-12. Recompute the affected owner and all reference rows
 | GQ1-CHUNK-0750 | [ ] TODO | mechanical | mechanical | other-data | `22 paths` | batch 1 | - |
 | GQ1-RECHECK-0001 | [ ] TODO | recheck | high | correctness | `SetupActivity.kt:commandReceiver` | Revalidate BR-0016 preview command serialization and stale completion ownership | - |
 | GQ1-RECHECK-0002 | [ ] TODO | recheck | high | correctness | `jni_gog_import.c`, `jni_disc_import.c`, `iso9660_reader.c` | Revalidate BR-0021 cancellation propagation across extraction layers | - |
-| GQ1-RECHECK-0003 | [ ] TODO | recheck | critical | concurrency | `jni_main.c`, `jni_music_control.c` | Revalidate BR-0029 engine-thread ownership for overlay and music access | - |
+| GQ1-RECHECK-0003 | [ ] TODO | recheck | critical | concurrency | `jni_main.c`, `android_music_control.c` | Revalidate BR-0029 engine-thread ownership for overlay and music access | - |
 | GQ1-RECHECK-0004 | [ ] TODO | recheck | critical | resource-lifetime | `shared/android_jni_overlay.c` | Revalidate BR-0044 local-reference and pending-exception handling | - |
 | GQ1-RECHECK-0005 | [ ] TODO | recheck | high | correctness | `jni_level_metadata.cpp` | Revalidate BR-0077 level-load failure propagation | - |
 | GQ1-RECHECK-0006 | [ ] TODO | recheck | critical | lifecycle | `jni_main.c` engine start and exit paths | Revalidate BR-0078 process-lifetime engine admission | - |
@@ -1410,7 +1410,7 @@ Rating snapshot: 2026-08-12. Recompute the affected owner and all reference rows
 ### GQ1-CHUNK-0023
 
 - `android/app/src/main/cpp/jni_saf.c`: L1-L92
-- `android/app/src/main/cpp/jni_udp_reconnect.c`: L1-L269
+- `android/app/src/main/cpp/shared/net/net_udp_reconnect_jni.c`: L1-L269
 - `android/app/src/main/cpp/shared/android_jni_overlay.c`: L1-L61
 - `android/app/src/main/cpp/shared/android_jni_overlay.h`: L1-L18
 - `android/app/src/main/cpp/shared/jni_string.c`: L1-L89
@@ -1742,7 +1742,7 @@ Rating snapshot: 2026-08-12. Recompute the affected owner and all reference rows
 
 ### GQ1-CHUNK-0167
 
-- `android/app/src/main/cpp/shared/secret_area_game_adapter.c`: L2251-L2563
+- `android/app/src/main/cpp/shared/secretarea.c`: L2251-L2563
 - `android/app/src/main/cpp/shared/secret_area_item_names.c`: L1-L85
 - `android/app/src/main/cpp/shared/secret_area_item_names.h`: L1-L14
 
