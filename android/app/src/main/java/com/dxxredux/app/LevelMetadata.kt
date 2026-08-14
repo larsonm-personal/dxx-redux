@@ -21,7 +21,6 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.zip.ZipFile
 
 private const val LEVEL_METADATA_TIMEOUT_MS = 120_000L
 private const val LEVEL_METADATA_POLL_MS = 200L
@@ -578,20 +577,20 @@ internal object LevelMetadataTargets {
         val normalLevels = mutableListOf<String>()
         val secretLevels = mutableListOf<String>()
         val gameHints = mutableListOf<String>()
-        ZipFile(archive).use { zip ->
+        ArchiveFiles.open(archive).use { source ->
             val entries =
-                zip
-                    .entries()
+                source
+                    .entries
                     .asSequence()
                     .filterNot { it.isDirectory }
                     .take(LEVEL_METADATA_MAX_ZIP_FILES + 1)
                     .toList()
             if (entries.size > LEVEL_METADATA_MAX_ZIP_FILES) return null
             entries.forEach { entry ->
-                val name = entry.name.substringAfterLast('/').substringAfterLast('\\')
+                val name = entry.name
                 when {
                     GameFileFormats.isLevelFile(name) -> {
-                        archiveEntries += entry.name
+                        archiveEntries += entry.path
                         gameHints += GameFileFormats.gameForLevel(name).orEmpty()
                         if (GameFileFormats.extensionOf(name) in setOf("sdl", "sl2")) {
                             secretLevels += name
@@ -603,11 +602,11 @@ internal object LevelMetadataTargets {
                     GameFileFormats.extensionOf(name) == "hog" -> {
                         val summary =
                             runCatching {
-                                GameFileMetadata.summarizeZipConstituent(archive, entry.name, name)
+                                GameFileMetadata.summarizeZipConstituent(archive, entry.path, name)
                             }.getOrNull()
                         val hogLevels = hogLevelFiles(summary?.contents.orEmpty())
                         if (hogLevels.first.isNotEmpty() || hogLevels.second.isNotEmpty()) {
-                            archiveEntries += entry.name
+                            archiveEntries += entry.path
                             hogFiles += name
                             normalLevels += hogLevels.first
                             secretLevels += hogLevels.second
@@ -896,23 +895,23 @@ internal object LevelMetadataTargets {
     ): LevelMetadataTarget? {
         val archive = File(archivePath)
         if (!archive.isFile) return null
-        ZipFile(archive).use { zip ->
-            val descriptorEntry = zip.getEntry(constituent.path) ?: return null
+        ArchiveFiles.open(archive).use { source ->
+            val descriptorEntry = source.findEntry(constituent.path) ?: return null
             val mission =
                 runCatching {
-                    zip.getInputStream(descriptorEntry).use {
+                    source.openInputStream(descriptorEntry).use {
                         MissionZip.parseMissionDescriptor(constituent.path, it.readBytes())
                     }
                 }.getOrNull() ?: return null
-            val hogEntry = findSameStemZipEntry(zip, constituent.path, "hog") ?: return null
-            val hogName = hogEntry.name.substringAfterLast('/').substringAfterLast('\\')
+            val hogEntry = findSameStemArchiveEntry(source, constituent.path, "hog") ?: return null
+            val hogName = hogEntry.name
             return LevelMetadataTarget(
                 displayName = constituent.name,
                 game = game,
                 sourceType = "mission_files",
                 dataDir = setDir.absolutePath,
                 archivePath = archivePath,
-                archiveEntries = listOf(constituent.path, hogEntry.name),
+                archiveEntries = listOf(constituent.path, hogEntry.path),
                 missionName = constituent.name.substringBeforeLast('.'),
                 missionDisplayName = mission.displayName,
                 missionFilename = constituent.name,
@@ -933,12 +932,12 @@ internal object LevelMetadataTargets {
         val archive = File(archivePath)
         if (!archive.isFile) return null
         val descriptorExt = if (game == GameFileFormats.GAME_D1) "msn" else "mn2"
-        ZipFile(archive).use { zip ->
-            val descriptorEntry = findSameStemZipEntry(zip, constituent.path, descriptorExt) ?: return null
+        ArchiveFiles.open(archive).use { source ->
+            val descriptorEntry = findSameStemArchiveEntry(source, constituent.path, descriptorExt) ?: return null
             val mission =
                 runCatching {
-                    zip.getInputStream(descriptorEntry).use {
-                        MissionZip.parseMissionDescriptor(descriptorEntry.name, it.readBytes())
+                    source.openInputStream(descriptorEntry).use {
+                        MissionZip.parseMissionDescriptor(descriptorEntry.path, it.readBytes())
                     }
                 }.getOrNull() ?: return null
             return LevelMetadataTarget(
@@ -947,7 +946,7 @@ internal object LevelMetadataTargets {
                 sourceType = "mission_files",
                 dataDir = setDir.absolutePath,
                 archivePath = archivePath,
-                archiveEntries = listOf(constituent.path, descriptorEntry.name),
+                archiveEntries = listOf(constituent.path, descriptorEntry.path),
                 missionName = constituent.name.substringBeforeLast('.'),
                 missionDisplayName = mission.displayName,
                 missionFilename = descriptorEntry.name.substringAfterLast('/').substringAfterLast('\\'),
@@ -959,23 +958,20 @@ internal object LevelMetadataTargets {
         }
     }
 
-    private fun findSameStemZipEntry(
-        zip: ZipFile,
+    private fun findSameStemArchiveEntry(
+        archive: ReadableArchiveFile,
         path: String,
         extension: String,
-    ): java.util.zip.ZipEntry? {
+    ): ArchiveFileEntry? {
         val normalized = path.replace('\\', '/').trim('/')
         val dir = normalized.substringBeforeLast('/', "")
         val stem = normalized.substringAfterLast('/').substringBeforeLast('.')
         val sibling = if (dir.isBlank()) "$stem.$extension" else "$dir/$stem.$extension"
-        zip.getEntry(sibling)?.let { return it }
+        archive.findEntry(sibling)?.let { return it }
         val wanted = "$stem.$extension".lowercase(Locale.US)
-        return zip.entries().asSequence().firstOrNull {
+        return archive.entries.firstOrNull {
             !it.isDirectory &&
-                it.name
-                    .substringAfterLast('/')
-                    .substringAfterLast('\\')
-                    .lowercase(Locale.US) == wanted
+                it.name.lowercase(Locale.US) == wanted
         }
     }
 
@@ -1381,7 +1377,7 @@ internal object LevelMetadataAnalyzer {
     ): PreparedTarget {
         val archivePath = target.archivePath
         if (archivePath != null) {
-            stageZipEntries(File(archivePath), target.archiveEntries, stageDir)
+            stageArchiveEntries(File(archivePath), target.archiveEntries, stageDir)
             val stagedHog =
                 target.hogFile
                     ?.takeIf { target.sourceType == "hog" }
@@ -1443,54 +1439,54 @@ internal object LevelMetadataAnalyzer {
         )
     }
 
-    private fun stageZipEntries(
+    internal fun stageArchiveEntries(
         archive: File,
         entryPaths: List<String>,
         stageDir: File,
     ) {
-        if (!archive.isFile) throw IllegalArgumentException("Mission ZIP is missing")
-        if (entryPaths.size > LEVEL_METADATA_MAX_ZIP_FILES) throw IllegalArgumentException("Too many ZIP entries")
+        if (!archive.isFile) throw IllegalArgumentException("Mission archive is missing")
+        if (entryPaths.size > LEVEL_METADATA_MAX_ZIP_FILES) throw IllegalArgumentException("Too many archive entries")
         stageDir.mkdirs()
         var total = 0L
         val buffer = ByteArray(8192)
         val usedNames = mutableSetOf<String>()
-        ZipFile(archive).use { zip ->
+        ArchiveFiles.open(archive).use { source ->
             ImportStorageGuard.requireFreeSpace(
                 stageDir,
-                levelMetadataZipStageBytes(zip, entryPaths),
+                levelMetadataArchiveStageBytes(source, entryPaths),
                 "stage level metadata files",
             )
             entryPaths.forEach { path ->
-                val entry = zip.getEntry(path) ?: throw IllegalArgumentException("ZIP entry is missing: $path")
+                val entry = source.findEntry(path) ?: throw IllegalArgumentException("Archive entry is missing: $path")
                 if (entry.isDirectory) return@forEach
                 val leaf = path.substringAfterLast('/').substringAfterLast('\\')
                 if (leaf.isBlank() || leaf == "." || leaf == ".." || !usedNames.add(leaf.lowercase(Locale.US))) {
-                    throw IllegalArgumentException("Unsafe or duplicate ZIP entry: $path")
+                    throw IllegalArgumentException("Unsafe or duplicate archive entry: $path")
                 }
-                val declaredSize = entry.size.coerceAtLeast(0)
+                val declaredSize = entry.sizeBytes.coerceAtLeast(0)
                 if (declaredSize >
                     LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES
                 ) {
-                    throw IllegalArgumentException("ZIP entry is too large: $leaf")
+                    throw IllegalArgumentException("Archive entry is too large: $leaf")
                 }
                 if (declaredSize > 0 && total + declaredSize >
                     LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES
                 ) {
-                    throw IllegalArgumentException("ZIP package is too large")
+                    throw IllegalArgumentException("Mission archive is too large")
                 }
                 val out = File(stageDir, leaf)
                 var copied = 0L
-                zip.getInputStream(entry).use { input ->
+                source.openInputStream(entry).use { input ->
                     out.outputStream().use { output ->
                         while (true) {
                             val read = input.read(buffer)
                             if (read <= 0) break
                             copied += read.toLong()
                             if (copied > LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES) {
-                                throw IllegalArgumentException("ZIP entry is too large: $leaf")
+                                throw IllegalArgumentException("Archive entry is too large: $leaf")
                             }
                             if (total + copied > LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES) {
-                                throw IllegalArgumentException("ZIP package is too large")
+                                throw IllegalArgumentException("Mission archive is too large")
                             }
                             output.write(buffer, 0, read)
                         }
@@ -1513,19 +1509,23 @@ internal object LevelMetadataAnalyzer {
         source: File,
         target: File,
     ) {
-        if (source.absolutePath == target.absolutePath) return
+        if (source.absolutePath == target.absolutePath ||
+            runCatching { source.canonicalFile == target.canonicalFile }.getOrDefault(false)
+        ) {
+            return
+        }
         target.parentFile?.mkdirs()
         ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "stage ${target.name}")
         source.copyTo(target, overwrite = true)
     }
 
-    private fun levelMetadataZipStageBytes(
-        zip: ZipFile,
+    private fun levelMetadataArchiveStageBytes(
+        archive: ReadableArchiveFile,
         entryPaths: List<String>,
     ): Long =
         ImportStorageGuard.archiveEntryBytes(
             entryPaths.mapNotNull { path ->
-                zip.getEntry(path)?.takeUnless { it.isDirectory }?.size
+                archive.findEntry(path)?.takeUnless { it.isDirectory }?.sizeBytes
             },
         )
 

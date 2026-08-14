@@ -1002,8 +1002,13 @@ class ModManager(
     private fun getMissionZipDetails(modFile: File): ModDetails =
         try {
             val extractionStore = MissionZipExtractionStore(filesDir)
-            val extractionRecord = extractionStore.freshRecord(modFile.name, modFile)
-            val scan = extractionRecord?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(modFile)
+            var extractionRecord = extractionStore.freshRecord(modFile.name, modFile)
+            var scan = extractionRecord?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(modFile)
+            val sourceScan = scan
+            if (extractionRecord == null && sourceScan?.importMode == "extracted_bundle") {
+                extractionRecord = extractionStore.ensureExtracted(modFile.name, modFile, sourceScan)
+                scan = MissionZip.inspectExtracted(extractionRecord) ?: scan
+            }
             if (scan == null) {
                 ModDetails(
                     archivePath = modFile.absolutePath,

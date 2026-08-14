@@ -1,7 +1,10 @@
 package com.dxxredux.app
 
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
+import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -9,6 +12,42 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class LevelMetadataTargetsTest {
+    @Test
+    fun stagesMissionEntriesFromSevenZipArchive() {
+        val root = File("build/test-level-metadata-targets/seven-zip-stage").absoluteFile
+        root.deleteRecursively()
+        root.mkdirs()
+        val archive = File(root, "mission.7z")
+        val descriptor = "name = Seven Stage\nnum_levels = 1\nseven01.rl2\n".toByteArray()
+        SevenZOutputFile(archive).use { sevenZ ->
+            sevenZ.writeEntry("pack/Seven.mn2", descriptor)
+            sevenZ.writeEntry("pack/Seven.hog", hogBytes("seven01.rl2"))
+        }
+        val stageDir = File(root, "staged")
+        val target =
+            requireNotNull(
+                LevelMetadataTargets.genericZip(
+                    archive.absolutePath,
+                    File(root, "set"),
+                    "Seven Pack.7z",
+                    GameFileFormats.GAME_D2,
+                ),
+            )
+
+        LevelMetadataAnalyzer.stageArchiveEntries(
+            archive,
+            listOf("pack/Seven.mn2", "pack/Seven.hog"),
+            stageDir,
+        )
+
+        assertEquals(listOf("pack/Seven.hog"), target.archiveEntries)
+        assertEquals(listOf("seven01.rl2"), target.normalLevelFiles)
+        assertEquals(descriptor.toList(), File(stageDir, "Seven.mn2").readBytes().toList())
+        assertTrue(File(stageDir, "Seven.hog").isFile)
+        assertTrue(File(stageDir, "missions/Seven.mn2").isFile)
+        assertTrue(File(stageDir, "missions/seven.mn2").isFile)
+    }
+
     @Test
     fun directBaseHogExposesItsLevelsForBackgroundScheduling() {
         val setDir = File("build/test-level-metadata-targets/base").absoluteFile
@@ -285,4 +324,18 @@ class LevelMetadataTargetsTest {
             }
             output.toByteArray()
         }
+
+    private fun SevenZOutputFile.writeEntry(
+        name: String,
+        bytes: ByteArray,
+    ) {
+        val entry =
+            SevenZArchiveEntry().apply {
+                this.name = name
+                size = bytes.size.toLong()
+            }
+        putArchiveEntry(entry)
+        write(bytes)
+        closeArchiveEntry()
+    }
 }

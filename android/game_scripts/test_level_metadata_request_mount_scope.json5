@@ -11,8 +11,9 @@
     }},
 
     {"action": "enter_launcher"},
-    {"action": "analyze_level_metadata", "label": "mount_scope_first", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
-    {"action": "analyze_level_metadata", "label": "mount_scope_second", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
-    {"action": "analyze_level_metadata", "label": "mount_scope_third", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
+    {"action": "analyze_level_metadata", "label": "mount_scope_base_first", "file": "descent2.hog", "game": "d2", "status": "ok", "min_levels": 24},
+    {"action": "analyze_level_metadata", "label": "mount_scope_mod_first", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
+    {"action": "analyze_level_metadata", "label": "mount_scope_base_second", "file": "descent2.hog", "game": "d2", "status": "ok", "min_levels": 24},
+    {"action": "analyze_level_metadata", "label": "mount_scope_mod_second", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
     {"action": "log", "message": "Sequential level metadata request mount scope passed"}
 ]

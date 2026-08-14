@@ -119,6 +119,27 @@ class ModManagerMissionZipTest {
     }
 
     @Test
+    fun missionSevenZipDetailsRepairStaleExtractionRecord() {
+        val filesDir = File("build/test-mod-manager-mission-7z-details-repair").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val manager = ModManager(filesDir)
+        val imported = requireNotNull(manager.importMissionZipFile(createMission7z(), "SevenPack.7z"))
+        val modFile = File(filesDir, "mods/SevenPack.7z")
+        val store = MissionZipExtractionStore(filesDir)
+        val original = requireNotNull(store.freshRecord(modFile.name, modFile))
+        assertTrue(modFile.setLastModified(original.ownerLastModifiedMs + 2_000L))
+        assertEquals(null, store.freshRecord(modFile.name, modFile))
+
+        val details = manager.getModDetails(imported, File(filesDir, "sets/default"))
+
+        assertTrue(details.problems.joinToString(), details.problems.isEmpty())
+        assertNotNull(details.missionZip)
+        assertNotNull(details.missionZipExtraction)
+        assertNotNull(store.freshRecord(modFile.name, modFile))
+    }
+
+    @Test
     fun missionRarImportsReetusAndStagesAtMissions() {
         val configuredFixture = System.getProperty("dxx.reetusRarFixture")?.takeIf { it.isNotBlank() }
         val repositoryRoot = File(requireNotNull(System.getProperty("dxx.repositoryRoot"))).absoluteFile
@@ -543,7 +564,7 @@ class ModManagerMissionZipTest {
         val archive = File.createTempFile("missionzip-manager", ".7z")
         archive.deleteOnExit()
         SevenZOutputFile(archive).use { sevenZ ->
-            sevenZ.writeEntry("Seven.dxa", byteArrayOf(1, 2, 3, 4))
+            sevenZ.writeEntry("Seven.dxa", createZipBytes {})
             sevenZ.writeEntry("Seven.hog", createHogBytes("seven01.rl2" to ByteArray(1)))
             sevenZ.writeEntry("Seven.mn2", "name = Seven Pack\nnum_levels = 1\nseven01.rl2\n".toByteArray())
         }

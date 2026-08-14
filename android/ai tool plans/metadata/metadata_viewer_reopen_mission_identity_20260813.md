@@ -25,13 +25,20 @@
 
 ## Repair plan
 
-- [ ] Make request mount ownership idempotent: if a PHYSFS source is already on the
+- [x] Make request mount ownership idempotent: if a PHYSFS source is already on the
   search path, use it without recording it as request-owned
-- [ ] Preserve reverse-order cleanup for paths actually added by the request
-- [ ] Add a native integration regression covering repeated base-D2 requests in one
-  worker runtime, followed by a mission-pack request
-- [ ] Add or extend a launcher/service regression for analyze, close, and analyze again
-- [ ] Run scoped formatting, tests, and relevant Android build verification
+- [x] Preserve reverse-order cleanup for paths actually added by the request
+- [x] Extend the native integration regression to alternate base-D2 and mission-pack
+  requests in one reusable worker runtime
+- [x] Verify the second base-D2 and mission-pack requests both complete after cleanup
+- [x] Run scoped formatting, JVM tests, Android build, and emulator verification
+
+## Validation
+
+- [x] `LevelMetadataTargetsTest` and the focused stale-extraction repair test pass
+- [x] `:app:assembleDebug` passes for arm64-v8a, armeabi-v7a, and x86_64
+- [x] `test_level_metadata_request_mount_scope.json5` passes all 6 steps on the emulator
+- [x] Scoped code-quality checks pass
 
 ## Constraints
 

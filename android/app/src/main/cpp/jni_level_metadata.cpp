@@ -485,11 +485,11 @@ class LevelMetadataRequestMounts
 
 	int mount(const std::string &path)
 	{
-		mounted_paths.push_back(path);
-		if (!PHYSFS_mount(path.c_str(), NULL, 0)) {
-			mounted_paths.pop_back();
+		if (search_path_contains(path) == 1)
+			return 1;
+		if (!PHYSFS_mount(path.c_str(), NULL, 0))
 			return 0;
-		}
+		mounted_paths.push_back(path);
 		return 1;
 	}
 
