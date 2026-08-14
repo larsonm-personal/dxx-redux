@@ -1,5 +1,6 @@
 #include "boss_health_shared.h"
 #include "boss_hud.h"
+#include "ai.h"
 #include "game.h"
 #include "hudmsg.h"
 #include "input_demo_recorder.h"
@@ -11,6 +12,11 @@
 #include "text.h"
 #include "window.h"
 
+extern fix Gate_interval;
+#ifdef DXX_BUILD_DESCENT_II
+extern int Boss_invulnerable_dot;
+#endif
+
 static int difficulty_clamp(int difficulty)
 {
 	if (difficulty < 0)
@@ -18,6 +24,16 @@ static int difficulty_clamp(int difficulty)
 	if (difficulty >= NDL)
 		return NDL - 1;
 	return difficulty;
+}
+
+void difficulty_refresh_runtime_parameters(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Gate_interval = F1_0 * 4 - Difficulty_level * i2f(2) / 3;
+	Boss_invulnerable_dot = F1_0 / 4 - i2f(Difficulty_level) / 8;
+#else
+	Gate_interval = F1_0 * 5 - Difficulty_level * F1_0 / 2;
+#endif
 }
 
 void difficulty_reset_history(void)
@@ -91,8 +107,9 @@ int difficulty_change_to(int difficulty, int flags)
 	if (difficulty == old_difficulty)
 		return 1;
 
-	boss_health_rescale_live_bosses(old_difficulty, difficulty);
+	difficulty_health_rescale_live_robots(old_difficulty, difficulty);
 	Difficulty_level = difficulty;
+	difficulty_refresh_runtime_parameters();
 	boss_hud_refresh_maximum();
 	if (Game_mode & GM_MULTI)
 		Netgame.difficulty = (ubyte) difficulty;

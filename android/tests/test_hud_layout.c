@@ -113,6 +113,25 @@ static void test_boss_health_difficulty_scaling(void)
 	assert(boss_health_rescale_value(-1, rookie_maximum, trainee_maximum) == -1);
 }
 
+static void test_d2_thief_and_guidebot_health(void)
+{
+	const int32_t strength = 80 * 65536;
+	const int32_t level_maximum = 100 * 65536;
+
+	assert(d2_thief_or_companion_health_maximum(strength, 3, 0, 0) ==
+	       level_maximum);
+	assert(d2_thief_or_companion_health_maximum(strength, -3, 4, 0) ==
+	       level_maximum);
+	assert(d2_thief_or_companion_health_maximum(strength, 3, 0, 1) ==
+	       20000 * 65536);
+	assert(d2_thief_or_companion_health_maximum(strength, 3, 1, 1) ==
+	       level_maximum * 3);
+	assert(d2_thief_or_companion_health_maximum(strength, 3, 2, 1) ==
+	       level_maximum * 2);
+	assert(d2_thief_or_companion_health_maximum(strength, 3, 4, 1) ==
+	       level_maximum);
+}
+
 int main(void)
 {
 	test_embedded_font_controls_are_not_visible();
@@ -123,5 +142,6 @@ int main(void)
 	test_padding_can_turn_a_near_miss_into_overlap();
 	test_boss_health_bar_widths();
 	test_boss_health_difficulty_scaling();
+	test_d2_thief_and_guidebot_health();
 	return 0;
 }

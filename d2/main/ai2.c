@@ -354,7 +354,7 @@ void init_ai_objects(void)
 	Boss_dying_sound_playing = 0;
 	Boss_dying = 0;
 	// -- unused! MK, 10/21/95 -- Boss_been_hit = 0;
-	Gate_interval = F1_0*4 - Difficulty_level*i2f(2)/3;
+	difficulty_refresh_runtime_parameters();
 
 	Ai_initialized = 1;
 

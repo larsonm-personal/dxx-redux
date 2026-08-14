@@ -2416,17 +2416,9 @@ void copy_defaults_to_robot(object *objp)
 	objp->shields = robptr->strength;
 
 	if ((robptr->thief) || (robptr->companion)) {
-		objp->shields = (objp->shields * (abs(Current_level_num)+7))/8;
-
-		if (robptr->companion) {
-			//	Now, scale guide-bot hits by skill level
-			switch (Difficulty_level) {
-				case 0:	objp->shields = i2f(20000);	break;		//	Trainee, basically unkillable
-				case 1:	objp->shields *= 3;				break;		//	Rookie, pretty dang hard
-				case 2:	objp->shields *= 2;				break;		//	Hotshot, a bit tough
-				default:	break;
-			}
-		}
+		objp->shields = d2_thief_or_companion_health_maximum(
+		    robptr->strength, Current_level_num, Difficulty_level,
+		    robptr->companion);
 	} else if (robptr->boss_flag) { // MK, 01/16/95, make boss shields lower on lower diff levels.
 		objp->shields = boss_health_maximum_for_difficulty(
 		    robptr->strength, Difficulty_level);

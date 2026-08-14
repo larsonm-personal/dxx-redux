@@ -130,6 +130,7 @@ extern int Difficulty_level_max_seen;
 void difficulty_reset_history(void);
 void difficulty_include_current(void);
 void difficulty_restore_history(int changed, int min_level, int max_level);
+void difficulty_refresh_runtime_parameters(void);
 int difficulty_can_show_live(void);
 int difficulty_can_change_live(void);
 int difficulty_change_to(int difficulty, int flags);

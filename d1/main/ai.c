@@ -400,7 +400,7 @@ void init_ai_objects(void)
 	Boss_dying = 0;
 	Boss_been_hit = 0;
 	#ifndef SHAREWARE
-	Gate_interval = F1_0*5 - Difficulty_level*F1_0/2;
+	difficulty_refresh_runtime_parameters();
 	#endif
 
 	Ai_initialized = 1;

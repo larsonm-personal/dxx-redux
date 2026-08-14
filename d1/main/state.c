@@ -2547,6 +2547,7 @@ RetryObjectLoading:
 		PHYSFS_close(fp);
 		return 0;
 	}
+	difficulty_refresh_runtime_parameters();
 
 	// Restore the automap visited info
 	if ( Highest_segment_index+1 > MAX_SEGMENTS_ORIGINAL )
