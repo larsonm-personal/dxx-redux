@@ -30,6 +30,21 @@ build
 *.dblite
 *.bak
 
+# Local repository-root matchmaking runtime state
+/dxx_matchmaking.db
+/dxx_matchmaking.db-wal
+/dxx_matchmaking.db-shm
+
+# Local Android build, test, and emulator-copy transcripts
+/android/build_output.txt
+/android/test_output.txt
+/game_data_to_copy_to_emulator/debuglog_*.txt
+
+# One-off repository-root comparison and command scratch
+/.tmp
+/d1_d2_ogl_diff.txt
+/test.txt
+
 # OS generated files #
 ######################
 .DS_Store

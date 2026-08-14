@@ -5,12 +5,11 @@ import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import java.io.File
 
 internal object RouteMetadataBackground {
-    private const val RETRY_WINDOW_MS = 10L * 60L * 1_000L
     private const val TOTAL_TIMEOUT_MS = 10L * 60L * 1_000L
-    private const val BUSY_RETRY_COUNT = 3
-    private val requestedAt = mutableMapOf<String, Long>()
+    private const val RETRY_DELAY_MS = 2_000L
 
     suspend fun computeActiveLevel(
         context: Context,
@@ -18,13 +17,8 @@ internal object RouteMetadataBackground {
         mission: String,
         levelNum: Int,
         levelFile: String,
-    ) {
+    ): Boolean {
         val key = "$game|$mission|$levelNum|$levelFile"
-        val now = SystemClock.elapsedRealtime()
-        synchronized(requestedAt) {
-            if (now - (requestedAt[key] ?: Long.MIN_VALUE) < RETRY_WINDOW_MS) return
-            requestedAt[key] = now
-        }
         val fileSets = FileSetManager(context.filesDir)
         val target =
             LevelMetadataTarget(
@@ -39,30 +33,39 @@ internal object RouteMetadataBackground {
                 secretLevelFiles = if (levelNum < 0) listOf(levelFile) else emptyList(),
             )
         try {
-            repeat(BUSY_RETRY_COUNT) { attempt ->
+            val deadline = SystemClock.elapsedRealtime() + TOTAL_TIMEOUT_MS
+            var attempt = 0
+            while (SystemClock.elapsedRealtime() < deadline) {
                 val result =
                     LevelMetadataAnalyzer.analyze(
                         context,
                         target,
                         background = true,
-                        totalTimeoutMs = TOTAL_TIMEOUT_MS,
+                        totalTimeoutMs = deadline - SystemClock.elapsedRealtime(),
                     )
+                val level = result.levels.singleOrNull()
+                val cacheFile = level?.routeCacheFile.orEmpty()
+                val gameDir = if (game == GameFileFormats.GAME_D1) "d1x-redux" else "d2x-redux"
+                val cachePublished =
+                    cacheFile.isNotBlank() && File(File(context.filesDir, gameDir), cacheFile).isFile
                 val busy = result.problems.any { it.contains("already running", ignoreCase = true) }
-                if (!busy) {
+                val retryable = busy || result.status == "crashed"
+                if (cachePublished || !retryable) {
                     LauncherDebugLog.log(
                         "Route metadata background result game=$game mission=$mission " +
                             "level=$levelNum status=${result.status} " +
-                            "route=${result.levels.singleOrNull()?.routeStatus.orEmpty()}",
+                            "route=${level?.routeStatus.orEmpty()} cache_published=$cachePublished",
                     )
-                    return
+                    return cachePublished
                 }
-                if (attempt + 1 < BUSY_RETRY_COUNT) delay((attempt + 1) * 2_000L)
+                attempt++
+                val remaining = deadline - SystemClock.elapsedRealtime()
+                if (remaining > 0L) delay(minOf(attempt * RETRY_DELAY_MS, 10_000L, remaining))
             }
         } catch (e: CancellationException) {
-            synchronized(requestedAt) { requestedAt.remove(key) }
             throw e
         }
-        synchronized(requestedAt) { requestedAt.remove(key) }
-        Log.w("DXX-RouteMetadata", "Background route worker remained busy for $key")
+        Log.w("DXX-RouteMetadata", "Background route worker did not publish a cache for $key")
+        return false
     }
 }

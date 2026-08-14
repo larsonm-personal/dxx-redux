@@ -185,6 +185,9 @@ if(DXX_TEST_GAME STREQUAL "d2")
     add_executable(test_escort_exit_policy test_escort_exit_policy.c)
     target_include_directories(test_escort_exit_policy PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main")
 
+    add_executable(test_escort_goal_policy test_escort_goal_policy.c)
+    target_include_directories(test_escort_goal_policy PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main")
+
     add_executable(test_thief_network_policy test_thief_network_policy.c)
     target_include_directories(test_thief_network_policy PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main")
 endif()
@@ -315,6 +318,7 @@ if(DXX_TEST_GAME STREQUAL "d2")
         test_bounded_rle
         test_escort_owner_policy
         test_escort_exit_policy
+        test_escort_goal_policy
         test_thief_network_policy)
 endif()
 

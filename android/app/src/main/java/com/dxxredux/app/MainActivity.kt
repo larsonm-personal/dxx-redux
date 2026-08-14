@@ -547,6 +547,11 @@ class MainActivity :
 
     external fun nativeSetMusicPaused(paused: Boolean): Boolean
 
+    external fun nativeNotifyRouteMetadataFinished(
+        requestGeneration: Int,
+        success: Boolean,
+    )
+
     fun gameVariantForMusicOverlay(): String = gameVariantId
 
     @Suppress("unused") // Called from native code on the game thread
@@ -555,15 +560,18 @@ class MainActivity :
         mission: String,
         levelNum: Int,
         levelFile: String,
+        requestGeneration: Int,
     ) {
         startupScope.launch(Dispatchers.IO) {
-            RouteMetadataBackground.computeActiveLevel(
-                this@MainActivity,
-                game,
-                mission,
-                levelNum,
-                levelFile,
-            )
+            val success =
+                RouteMetadataBackground.computeActiveLevel(
+                    this@MainActivity,
+                    game,
+                    mission,
+                    levelNum,
+                    levelFile,
+                )
+            nativeNotifyRouteMetadataFinished(requestGeneration, success)
         }
     }
 

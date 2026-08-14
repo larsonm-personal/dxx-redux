@@ -62,8 +62,16 @@ int saf_open_file(const char *content_uri)
 	}
 
 	jclass cls = (*env)->GetObjectClass(env, g_activity);
+	if (!cls || (*env)->ExceptionCheck(env)) {
+		if (need_detach) (*g_jvm)->DetachCurrentThread(g_jvm);
+		return -1;
+	}
 	jmethodID mid = (*env)->GetMethodID(env, cls, "openSafFile",
 	                                    "(Ljava/lang/String;)I");
+	if ((*env)->ExceptionCheck(env)) {
+		if (need_detach) (*g_jvm)->DetachCurrentThread(g_jvm);
+		return -1;
+	}
 	if (!mid) {
 		LOGE("saf_open_file: openSafFile method not found");
 		(*env)->DeleteLocalRef(env, cls);

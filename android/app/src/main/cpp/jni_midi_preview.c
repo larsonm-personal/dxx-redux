@@ -32,10 +32,16 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeStart(
     JNIEnv *env, jclass clazz,
     jbyteArray jdata, jboolean isHmp, jint sampleRate)
 {
-	jsize len = (*env)->GetArrayLength(env, jdata);
-	jbyte *data = (*env)->GetByteArrayElements(env, jdata, NULL);
-	int result = midi_preview_start((const unsigned char *) data, (int) len,
-	                                isHmp ? 1 : 0, (int) sampleRate);
+	jsize len;
+	jbyte *data;
+	int result;
+	if (!jdata) return JNI_FALSE;
+	len = (*env)->GetArrayLength(env, jdata);
+	if ((*env)->ExceptionCheck(env)) return JNI_FALSE;
+	data = (*env)->GetByteArrayElements(env, jdata, NULL);
+	if (!data || (*env)->ExceptionCheck(env)) return JNI_FALSE;
+	result = midi_preview_start((const unsigned char *) data, (int) len,
+	                            isHmp ? 1 : 0, (int) sampleRate);
 	(*env)->ReleaseByteArrayElements(env, jdata, data, JNI_ABORT);
 	return result ? JNI_TRUE : JNI_FALSE;
 }
@@ -125,7 +131,12 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeReadHogEntry(
 	if (!ok || !data) return NULL;
 
 	jbyteArray result = (*env)->NewByteArray(env, data_len);
+	if (!result || (*env)->ExceptionCheck(env)) {
+		free(data);
+		return NULL;
+	}
 	(*env)->SetByteArrayRegion(env, result, 0, data_len, (jbyte *) data);
 	free(data);
+	if ((*env)->ExceptionCheck(env)) return NULL;
 	return result;
 }

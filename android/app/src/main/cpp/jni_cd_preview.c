@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <android/log.h>
 #include "cd_preview.h"
+#include "jni_string.h"
 
 #define TAG "DXX-CdPreviewJNI"
 
@@ -19,11 +20,16 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStart(
     jstring jbin_path, jstring jcue_path,
     jint audio_track, jint sample_rate)
 {
-	const char *bin = (*env)->GetStringUTFChars(env, jbin_path, NULL);
-	const char *cue = (*env)->GetStringUTFChars(env, jcue_path, NULL);
+	char *bin = NULL;
+	char *cue = NULL;
+	if (!dxx_jni_string_to_utf8(env, jbin_path, &bin)) return JNI_FALSE;
+	if (!dxx_jni_string_to_utf8(env, jcue_path, &cue)) {
+		free(bin);
+		return JNI_FALSE;
+	}
 	int result = cd_preview_start(bin, cue, audio_track, sample_rate);
-	(*env)->ReleaseStringUTFChars(env, jcue_path, cue);
-	(*env)->ReleaseStringUTFChars(env, jbin_path, bin);
+	free(cue);
+	free(bin);
 	return result ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -33,8 +39,8 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStartMulti(
     jobjectArray jbin_paths, jstring jcue_path,
     jint audio_track, jint sample_rate)
 {
-	const char *cue;
-	const char **bins;
+	char *cue = NULL;
+	char **bins;
 	jstring *jbins;
 	jsize count;
 	int i;
@@ -43,15 +49,14 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStartMulti(
 	if (!jbin_paths || !jcue_path) return JNI_FALSE;
 	count = (*env)->GetArrayLength(env, jbin_paths);
 	if (count <= 0) return JNI_FALSE;
-	bins = (const char **) calloc((size_t) count, sizeof(*bins));
+	bins = (char **) calloc((size_t) count, sizeof(*bins));
 	jbins = (jstring *) calloc((size_t) count, sizeof(*jbins));
 	if (!bins || !jbins) {
 		free(bins);
 		free(jbins);
 		return JNI_FALSE;
 	}
-	cue = (*env)->GetStringUTFChars(env, jcue_path, NULL);
-	if (!cue) {
+	if (!dxx_jni_string_to_utf8(env, jcue_path, &cue)) {
 		free(bins);
 		free(jbins);
 		return JNI_FALSE;
@@ -59,21 +64,20 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStartMulti(
 
 	for (i = 0; i < count; i++) {
 		jbins[i] = (jstring) (*env)->GetObjectArrayElement(env, jbin_paths, i);
-		if (!jbins[i]) break;
-		bins[i] = (*env)->GetStringUTFChars(env, jbins[i], NULL);
-		if (!bins[i]) break;
+		if (!jbins[i] || (*env)->ExceptionCheck(env)) break;
+		if (!dxx_jni_string_to_utf8(env, jbins[i], &bins[i])) break;
 	}
 
 	if (i == count)
-		result = cd_preview_start_multi(bins, (int) count, cue, audio_track, sample_rate);
+		result = cd_preview_start_multi((const char *const *) bins, (int) count,
+		                                cue, audio_track, sample_rate);
 
 	for (i = 0; i < count; i++) {
-		if (jbins[i] && bins[i])
-			(*env)->ReleaseStringUTFChars(env, jbins[i], bins[i]);
-		if (jbins[i])
+		free(bins[i]);
+		if (jbins[i] && !(*env)->ExceptionCheck(env))
 			(*env)->DeleteLocalRef(env, jbins[i]);
 	}
-	(*env)->ReleaseStringUTFChars(env, jcue_path, cue);
+	free(cue);
 	free(bins);
 	free(jbins);
 	return result ? JNI_TRUE : JNI_FALSE;
@@ -85,9 +89,10 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStartFd(
     jint fd, jstring jcue_path,
     jint audio_track, jint sample_rate)
 {
-	const char *cue = (*env)->GetStringUTFChars(env, jcue_path, NULL);
+	char *cue = NULL;
+	if (!dxx_jni_string_to_utf8(env, jcue_path, &cue)) return JNI_FALSE;
 	int result = cd_preview_start_fd(fd, cue, audio_track, sample_rate);
-	(*env)->ReleaseStringUTFChars(env, jcue_path, cue);
+	free(cue);
 	return result ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -97,24 +102,29 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStartMultiFd(
     jintArray jfds, jstring jcue_path,
     jint audio_track, jint sample_rate)
 {
-	const char *cue;
+	char *cue = NULL;
 	jint *fds;
 	jsize count;
 	int result;
 
 	if (!jfds || !jcue_path) return JNI_FALSE;
 	count = (*env)->GetArrayLength(env, jfds);
+	if ((*env)->ExceptionCheck(env)) return JNI_FALSE;
 	if (count <= 0) return JNI_FALSE;
-	fds = (*env)->GetIntArrayElements(env, jfds, NULL);
+	fds = (jint *) malloc((size_t) count * sizeof(*fds));
 	if (!fds) return JNI_FALSE;
-	cue = (*env)->GetStringUTFChars(env, jcue_path, NULL);
-	if (!cue) {
-		(*env)->ReleaseIntArrayElements(env, jfds, fds, JNI_ABORT);
+	(*env)->GetIntArrayRegion(env, jfds, 0, count, fds);
+	if ((*env)->ExceptionCheck(env)) {
+		free(fds);
+		return JNI_FALSE;
+	}
+	if (!dxx_jni_string_to_utf8(env, jcue_path, &cue)) {
+		free(fds);
 		return JNI_FALSE;
 	}
 	result = cd_preview_start_multi_fd((const int *) fds, (int) count, cue, audio_track, sample_rate);
-	(*env)->ReleaseStringUTFChars(env, jcue_path, cue);
-	(*env)->ReleaseIntArrayElements(env, jfds, fds, JNI_ABORT);
+	free(cue);
+	free(fds);
 	return result ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -158,5 +168,5 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeGetState(
 	int state = cd_preview_get_state(&pos, &dur);
 	char buf[64];
 	snprintf(buf, sizeof(buf), "%d|%d|%d", state, pos, dur);
-	return (*env)->NewStringUTF(env, buf);
+	return dxx_jni_string_from_utf8(env, buf);
 }

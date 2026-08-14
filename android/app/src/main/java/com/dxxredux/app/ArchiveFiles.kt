@@ -4,6 +4,7 @@ import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.ISequentialOutStream
 import net.sf.sevenzipjbinding.PropID
 import net.sf.sevenzipjbinding.SevenZip
+import net.sf.sevenzipjbinding.SevenZipNativeInitializationException
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
@@ -73,6 +74,21 @@ internal class ArchiveOutputValidationException(
     message: String,
 ) : IllegalArgumentException(message)
 
+internal sealed class RarNativeCapabilityException(
+    message: String,
+    cause: Throwable? = null,
+) : IOException(message, cause)
+
+internal class RarNativeBackendUnavailableException(
+    message: String,
+    cause: Throwable? = null,
+) : RarNativeCapabilityException(message, cause)
+
+internal class RarNativeFormatUnsupportedException(
+    message: String,
+    cause: Throwable? = null,
+) : RarNativeCapabilityException(message, cause)
+
 internal fun validateArchiveOutputProjections(
     projections: List<ArchiveOutputProjection>,
     label: String,
@@ -115,7 +131,7 @@ internal fun validateArchiveOutputProjections(
     return normalized
 }
 
-private fun canonicalArchiveRelativePath(path: String): String? {
+internal fun canonicalArchiveRelativePath(path: String): String? {
     val components = mutableListOf<String>()
     for (component in path.replace('\\', '/').split('/')) {
         when (component) {
@@ -268,25 +284,60 @@ private class ExtractedReadableArchive(
 internal fun extractRarArchiveToDirectory(
     archive: File,
     targetRoot: File,
+    nativeExtractor: (File, File) -> Unit = ::extractRarWithSevenZipBinding,
+    capabilityFallback: (File, File) -> Unit = ::extractRarWithHostTar,
 ) {
     targetRoot.mkdirs()
-    runCatching {
-        extractRarWithSevenZipBinding(archive, targetRoot)
-    }.getOrElse { sevenZipError ->
-        if (sevenZipError is ArchiveOutputValidationException) throw sevenZipError
+    try {
+        nativeExtractor(archive, targetRoot)
+    } catch (nativeError: Throwable) {
+        val capabilityError = nativeRarCapabilityFailure(nativeError) ?: throw nativeError
         targetRoot.deleteRecursively()
         targetRoot.mkdirs()
-        runCatching {
-            extractRarWithHostTar(archive, targetRoot)
-        }.getOrElse { tarError ->
+        try {
+            capabilityFallback(archive, targetRoot)
+        } catch (fallbackError: Exception) {
             throw IllegalArgumentException(
-                "RAR extraction failed: ${sevenZipError.message ?: sevenZipError.javaClass.simpleName}; " +
-                    tarError.message,
-                tarError,
+                "RAR extraction failed: ${capabilityError.message}; ${fallbackError.message}",
+                fallbackError,
             )
         }
     }
 }
+
+private fun nativeRarCapabilityFailure(error: Throwable): RarNativeCapabilityException? =
+    when (error) {
+        is RarNativeCapabilityException -> {
+            error
+        }
+
+        is SevenZipNativeInitializationException -> {
+            RarNativeBackendUnavailableException(
+                "native RAR backend is unavailable: ${error.message ?: error.javaClass.simpleName}",
+                error,
+            )
+        }
+
+        is LinkageError -> {
+            RarNativeBackendUnavailableException(
+                "native RAR backend is unavailable: ${error.message ?: error.javaClass.simpleName}",
+                error,
+            )
+        }
+
+        is ExceptionInInitializerError -> {
+            (error.cause as? LinkageError)?.let { cause ->
+                RarNativeBackendUnavailableException(
+                    "native RAR backend is unavailable: ${cause.message ?: cause.javaClass.simpleName}",
+                    error,
+                )
+            }
+        }
+
+        else -> {
+            null
+        }
+    }
 
 private fun extractRarWithSevenZipBinding(
     archive: File,
@@ -298,56 +349,54 @@ private fun extractRarWithSevenZipBinding(
         try {
             val inArchive = SevenZip.openInArchive(null, input)
             try {
-                val budget = ExtractionBudget()
-                val items =
-                    (0 until inArchive.getNumberOfItems()).mapNotNull { index ->
-                        val path = inArchive.getStringProperty(index, PropID.PATH)?.replace('\\', '/')?.trim('/')
-                        if (path.isNullOrBlank()) return@mapNotNull null
-                        RarExtractionItem(
-                            index = index,
-                            path = path,
-                            isDirectory = inArchive.getProperty(index, PropID.IS_FOLDER) as? Boolean ?: false,
-                            size = (inArchive.getProperty(index, PropID.SIZE) as? Number)?.toLong() ?: -1L,
-                            packedSize =
-                                (inArchive.getProperty(index, PropID.PACKED_SIZE) as? Number)?.toLong() ?: -1L,
-                        )
+                val source =
+                    object : RarCatalogSource {
+                        override val itemCount = inArchive.getNumberOfItems()
+
+                        override fun path(index: Int): String? = inArchive.getStringProperty(index, PropID.PATH)
+
+                        override fun isDirectory(index: Int): Boolean =
+                            inArchive.getProperty(index, PropID.IS_FOLDER) as? Boolean ?: false
+
+                        override fun size(index: Int): Long =
+                            (inArchive.getProperty(index, PropID.SIZE) as? Number)?.toLong() ?: -1L
+
+                        override fun packedSize(index: Int): Long =
+                            (inArchive.getProperty(index, PropID.PACKED_SIZE) as? Number)?.toLong() ?: -1L
                     }
-                val outputs =
-                    validateArchiveOutputProjections(
-                        items.map { ArchiveOutputProjection(it.path, it.path, it.isDirectory) },
-                        "RAR archive",
-                    )
-                for ((item, outputPath) in items.zip(outputs)) {
-                    val index = item.index
-                    val path = outputPath.relativePath
-                    val isDirectory = item.isDirectory
-                    val size = item.size
-                    val packedSize = item.packedSize
-                    budget.registerEntry(if (isDirectory) 0 else size, if (isDirectory) 0 else packedSize, path)
-                    val output = File(canonicalRoot, path.replace('/', File.separatorChar)).canonicalFile
-                    if (!output.path.startsWith(canonicalRoot.path + File.separator)) continue
-                    if (isDirectory) {
-                        output.mkdirs()
-                        continue
-                    }
-                    output.parentFile?.mkdirs()
-                    var entryBytes = 0L
-                    FileOutputStream(output).use { fileOutput ->
-                        val result =
-                            inArchive.extractSlow(
-                                index,
-                                ISequentialOutStream { data ->
-                                    entryBytes += data.size
-                                    budget.accountActual(data.size, entryBytes, packedSize, path)
-                                    if (entryBytes % (8L * 1024L * 1024L) < data.size) {
-                                        ImportStorageGuard.requireFreeSpace(canonicalRoot, 0, "extract $path")
-                                    }
-                                    fileOutput.write(data)
-                                    data.size
-                                },
-                            )
-                        if (result != ExtractOperationResult.OK) {
-                            throw IllegalArgumentException("7-Zip extraction returned $result for $path")
+                enumerateRarCatalog(source).use { catalog ->
+                    val budget = catalog.extractionBudget
+                    for (item in catalog.items) {
+                        val index = item.index
+                        val path = item.path
+                        val isDirectory = item.isDirectory
+                        val size = item.size
+                        val packedSize = item.packedSize
+                        val output = File(canonicalRoot, path.replace('/', File.separatorChar)).canonicalFile
+                        if (!output.path.startsWith(canonicalRoot.path + File.separator)) continue
+                        if (isDirectory) {
+                            output.mkdirs()
+                            continue
+                        }
+                        output.parentFile?.mkdirs()
+                        var entryBytes = 0L
+                        FileOutputStream(output).use { fileOutput ->
+                            val result =
+                                inArchive.extractSlow(
+                                    index,
+                                    ISequentialOutStream { data ->
+                                        entryBytes += data.size
+                                        budget.accountActual(data.size, entryBytes, packedSize, path)
+                                        if (entryBytes % (8L * 1024L * 1024L) < data.size) {
+                                            ImportStorageGuard.requireFreeSpace(canonicalRoot, 0, "extract $path")
+                                        }
+                                        fileOutput.write(data)
+                                        data.size
+                                    },
+                                )
+                            if (result != ExtractOperationResult.OK) {
+                                throw IllegalArgumentException("7-Zip extraction returned $result for $path")
+                            }
                         }
                     }
                 }
@@ -359,14 +408,6 @@ private fun extractRarWithSevenZipBinding(
         }
     }
 }
-
-private data class RarExtractionItem(
-    val index: Int,
-    val path: String,
-    val isDirectory: Boolean,
-    val size: Long,
-    val packedSize: Long,
-)
 
 private fun extractRarWithHostTar(
     archive: File,
@@ -400,8 +441,11 @@ private fun extractRarWithHostTar(
         try {
             diagnosticFile.inputStream().use {
                 it
-                    .readBytesBounded(ExtractionLimits.MAX_DESCRIPTOR_BYTES, "host tar diagnostics")
-                    .toString(Charsets.UTF_8)
+                    .readBytesBounded(
+                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                        "host tar diagnostics",
+                        expectedSizeBytes = diagnosticFile.length(),
+                    ).toString(Charsets.UTF_8)
             }
         } finally {
             diagnosticFile.delete()
@@ -436,8 +480,11 @@ private fun validateHostTarArchiveOutputs(
         val diagnostics =
             errorFile.inputStream().use {
                 it
-                    .readBytesBounded(ExtractionLimits.MAX_DESCRIPTOR_BYTES, "host tar listing diagnostics")
-                    .toString(Charsets.UTF_8)
+                    .readBytesBounded(
+                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                        "host tar listing diagnostics",
+                        expectedSizeBytes = errorFile.length(),
+                    ).toString(Charsets.UTF_8)
             }
         if (process.exitValue() != 0) {
             throw IllegalArgumentException(
@@ -447,8 +494,11 @@ private fun validateHostTarArchiveOutputs(
         val listing =
             listingFile.inputStream().use {
                 it
-                    .readBytesBounded(ExtractionLimits.MAX_DESCRIPTOR_BYTES, "host tar listing")
-                    .toString(Charsets.UTF_8)
+                    .readBytesBounded(
+                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
+                        "host tar listing",
+                        expectedSizeBytes = listingFile.length(),
+                    ).toString(Charsets.UTF_8)
             }
         validateArchiveOutputProjections(
             listing

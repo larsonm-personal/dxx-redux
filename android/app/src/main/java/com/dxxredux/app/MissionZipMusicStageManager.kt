@@ -44,13 +44,14 @@ class MissionZipMusicStageManager private constructor(
             val temporaryDirectory = AtomicFilePublication.uniqueSibling(targetDirectory, "tmp")
             check(temporaryDirectory.mkdir()) { "Could not create temporary music cache generation" }
             val temporaryOutput = File(temporaryDirectory, output.name)
+            val budget = ExtractionBudget()
             try {
                 val ok =
                     runCatching {
                         if (track.sourceFilePath != null && archive.isFile) {
-                            extractFromSourceFile(archive, track, temporaryOutput)
+                            extractFromSourceFile(archive, track, temporaryOutput, budget)
                         } else if (archive.isDirectory) {
-                            extractFromDirectory(archive, track, temporaryOutput)
+                            extractFromDirectory(archive, track, temporaryOutput, budget)
                         } else {
                             ArchiveFiles.open(archive).use { archiveFile ->
                                 when {
@@ -61,25 +62,32 @@ class MissionZipMusicStageManager private constructor(
                                                 track.nestedEntryPath,
                                                 track.hogEntryName,
                                                 temporaryOutput,
+                                                budget,
                                             )
                                         } ?: false
                                     }
 
                                     track.hogEntryName != null -> {
                                         archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
-                                            extractFromHog(hog, track.hogEntryName, temporaryOutput)
+                                            extractFromHog(hog, track.hogEntryName, temporaryOutput, budget)
                                         } ?: false
                                     }
 
                                     track.nestedEntryPath != null -> {
                                         archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                            extractFromDxa(dxa, track.nestedEntryPath, temporaryOutput)
+                                            extractFromDxa(dxa, track.nestedEntryPath, temporaryOutput, budget)
                                         } ?: false
                                     }
 
                                     else -> {
                                         archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
-                                            copyTrack(input, temporaryOutput, track.sizeBytes, track.archiveEntryPath)
+                                            copyTrack(
+                                                input,
+                                                temporaryOutput,
+                                                track.sizeBytes,
+                                                track.archiveEntryPath,
+                                                budget,
+                                            )
                                             true
                                         } ?: false
                                     }
@@ -108,38 +116,39 @@ class MissionZipMusicStageManager private constructor(
         track: MissionZipMusicTrack,
     ): ByteArray? {
         if (!track.playable || track.kind != MissionZipMusic.KIND_MIDI) return null
-        if (track.sizeBytes > ExtractionLimits.MAX_ENTRY_BYTES) return null
+        if (track.sizeBytes < 0 || track.sizeBytes > MAX_MIDI_BYTES) return null
         val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
         if (!archive.isFile && !archive.isDirectory) return null
         return runCatching {
+            val budget = ExtractionBudget(maxEntryBytes = MAX_MIDI_BYTES, maxTotalBytes = MAX_MIDI_BYTES)
             if (track.sourceFilePath != null && archive.isFile) {
-                readFromSourceFile(archive, track)
+                readFromSourceFile(archive, track, budget)
             } else if (archive.isDirectory) {
-                readFromDirectory(archive, track)
+                readFromDirectory(archive, track, budget)
             } else {
                 ArchiveFiles.open(archive).use { archiveFile ->
                     when {
                         track.hogEntryName != null && track.nestedEntryPath != null -> {
                             archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                readFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName)
+                                readFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName, budget)
                             }
                         }
 
                         track.hogEntryName != null -> {
                             archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
-                                readFromHog(hog, track.hogEntryName)
+                                readFromHog(hog, track.hogEntryName, budget)
                             }
                         }
 
                         track.nestedEntryPath != null -> {
                             archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                readFromDxa(dxa, track.nestedEntryPath)
+                                readFromDxa(dxa, track.nestedEntryPath, budget)
                             }
                         }
 
                         else -> {
                             archiveFile.openEntryStream(track.archiveEntryPath)?.use {
-                                readTrack(it, track.sizeBytes, track.archiveEntryPath)
+                                readTrack(it, track.sizeBytes, track.archiveEntryPath, budget)
                             }
                         }
                     }
@@ -229,23 +238,32 @@ class MissionZipMusicStageManager private constructor(
         rootDir: File,
         track: MissionZipMusicTrack,
         output: File,
+        budget: ExtractionBudget,
     ): Boolean {
         val file = sourceFile(rootDir, track.archiveEntryPath) ?: return false
         return when {
             track.hogEntryName != null && track.nestedEntryPath != null -> {
-                file.inputStream().use { extractFromDxaHog(it, track.nestedEntryPath, track.hogEntryName, output) }
+                file.inputStream().use {
+                    extractFromDxaHog(
+                        it,
+                        track.nestedEntryPath,
+                        track.hogEntryName,
+                        output,
+                        budget,
+                    )
+                }
             }
 
             track.hogEntryName != null -> {
-                file.inputStream().use { extractFromHog(it, track.hogEntryName, output) }
+                file.inputStream().use { extractFromHog(it, track.hogEntryName, output, budget) }
             }
 
             track.nestedEntryPath != null -> {
-                file.inputStream().use { extractFromDxa(it, track.nestedEntryPath, output) }
+                file.inputStream().use { extractFromDxa(it, track.nestedEntryPath, output, budget) }
             }
 
             else -> {
-                file.inputStream().use { input -> copyTrack(input, output, file.length(), file.name) }
+                file.inputStream().use { input -> copyTrack(input, output, file.length(), file.name, budget) }
                 true
             }
         }
@@ -254,23 +272,24 @@ class MissionZipMusicStageManager private constructor(
     private fun readFromDirectory(
         rootDir: File,
         track: MissionZipMusicTrack,
+        budget: ExtractionBudget,
     ): ByteArray? {
         val file = sourceFile(rootDir, track.archiveEntryPath) ?: return null
         return when {
             track.hogEntryName != null && track.nestedEntryPath != null -> {
-                file.inputStream().use { readFromDxaHog(it, track.nestedEntryPath, track.hogEntryName) }
+                file.inputStream().use { readFromDxaHog(it, track.nestedEntryPath, track.hogEntryName, budget) }
             }
 
             track.hogEntryName != null -> {
-                file.inputStream().use { readFromHog(it, track.hogEntryName) }
+                file.inputStream().use { readFromHog(it, track.hogEntryName, budget) }
             }
 
             track.nestedEntryPath != null -> {
-                file.inputStream().use { readFromDxa(it, track.nestedEntryPath) }
+                file.inputStream().use { readFromDxa(it, track.nestedEntryPath, budget) }
             }
 
             else -> {
-                file.inputStream().use { readTrack(it, file.length(), file.name) }
+                file.inputStream().use { readTrack(it, file.length(), file.name, budget) }
             }
         }
     }
@@ -279,22 +298,31 @@ class MissionZipMusicStageManager private constructor(
         file: File,
         track: MissionZipMusicTrack,
         output: File,
+        budget: ExtractionBudget,
     ): Boolean =
         when {
             track.hogEntryName != null && track.nestedEntryPath != null -> {
-                file.inputStream().use { extractFromDxaHog(it, track.nestedEntryPath, track.hogEntryName, output) }
+                file.inputStream().use {
+                    extractFromDxaHog(
+                        it,
+                        track.nestedEntryPath,
+                        track.hogEntryName,
+                        output,
+                        budget,
+                    )
+                }
             }
 
             track.hogEntryName != null -> {
-                file.inputStream().use { extractFromHog(it, track.hogEntryName, output) }
+                file.inputStream().use { extractFromHog(it, track.hogEntryName, output, budget) }
             }
 
             track.nestedEntryPath != null -> {
-                file.inputStream().use { extractFromDxa(it, track.nestedEntryPath, output) }
+                file.inputStream().use { extractFromDxa(it, track.nestedEntryPath, output, budget) }
             }
 
             else -> {
-                file.inputStream().use { input -> copyTrack(input, output, file.length(), file.name) }
+                file.inputStream().use { input -> copyTrack(input, output, file.length(), file.name, budget) }
                 true
             }
         }
@@ -302,22 +330,23 @@ class MissionZipMusicStageManager private constructor(
     private fun readFromSourceFile(
         file: File,
         track: MissionZipMusicTrack,
+        budget: ExtractionBudget,
     ): ByteArray? =
         when {
             track.hogEntryName != null && track.nestedEntryPath != null -> {
-                file.inputStream().use { readFromDxaHog(it, track.nestedEntryPath, track.hogEntryName) }
+                file.inputStream().use { readFromDxaHog(it, track.nestedEntryPath, track.hogEntryName, budget) }
             }
 
             track.hogEntryName != null -> {
-                file.inputStream().use { readFromHog(it, track.hogEntryName) }
+                file.inputStream().use { readFromHog(it, track.hogEntryName, budget) }
             }
 
             track.nestedEntryPath != null -> {
-                file.inputStream().use { readFromDxa(it, track.nestedEntryPath) }
+                file.inputStream().use { readFromDxa(it, track.nestedEntryPath, budget) }
             }
 
             else -> {
-                file.inputStream().use { readTrack(it, file.length(), file.name) }
+                file.inputStream().use { readTrack(it, file.length(), file.name, budget) }
             }
         }
 
@@ -325,9 +354,9 @@ class MissionZipMusicStageManager private constructor(
         dxa: InputStream,
         nestedEntryPath: String,
         output: File,
+        budget: ExtractionBudget,
     ): Boolean {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
-            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -336,9 +365,13 @@ class MissionZipMusicStageManager private constructor(
                     entry.name,
                 )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
-                    FileOutputStream(output).use {
-                        zip.copyToBounded(it, budget, entry.compressedSize, entry.name)
-                    }
+                    val expanded =
+                        FileOutputStream(output).use {
+                            zip.copyToBounded(it, budget, entry.compressedSize, entry.name)
+                        }
+                    zip.closeEntry()
+                    if (entry.size < 0 || entry.size != expanded) return false
+                    budget.validateExpansion(expanded, entry.compressedSize, entry.name)
                     return true
                 }
                 zip.closeEntry()
@@ -351,9 +384,9 @@ class MissionZipMusicStageManager private constructor(
     private fun readFromDxa(
         dxa: InputStream,
         nestedEntryPath: String,
+        budget: ExtractionBudget,
     ): ByteArray? {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
-            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -362,12 +395,18 @@ class MissionZipMusicStageManager private constructor(
                     entry.name,
                 )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
-                    return zip.readBytesBounded(
-                        ExtractionLimits.MAX_ENTRY_BYTES,
-                        entry.name,
-                        budget,
-                        entry.compressedSize,
-                    )
+                    val result =
+                        zip.readBytesBounded(
+                            ExtractionLimits.MAX_ENTRY_BYTES,
+                            entry.name,
+                            budget,
+                            entry.compressedSize,
+                            expectedSizeBytes = entry.size,
+                        )
+                    zip.closeEntry()
+                    if (entry.size < 0 || entry.size != result.size.toLong()) return null
+                    budget.validateExpansion(result.size.toLong(), entry.compressedSize, entry.name)
+                    return result
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
@@ -380,9 +419,9 @@ class MissionZipMusicStageManager private constructor(
         dxa: InputStream,
         nestedEntryPath: String,
         hogEntryName: String,
+        budget: ExtractionBudget,
     ): ByteArray? {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
-            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -391,7 +430,12 @@ class MissionZipMusicStageManager private constructor(
                     entry.name,
                 )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
-                    return readFromHog(zip, hogEntryName)
+                    val expanded = BudgetedEntryInputStream(zip, budget, entry.name, entry.compressedSize)
+                    val result = readFromHog(expanded, hogEntryName, budget)
+                    expanded.drain()
+                    zip.closeEntry()
+                    budget.validateExpansion(expanded.entryBytes, entry.compressedSize, entry.name)
+                    return result
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
@@ -403,9 +447,9 @@ class MissionZipMusicStageManager private constructor(
     private fun readFromHog(
         hog: InputStream,
         hogEntryName: String,
+        budget: ExtractionBudget,
     ): ByteArray? {
         if (hog.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return null
-        val budget = ExtractionBudget()
         while (true) {
             val nameBytes = hog.readNBytesCompat(13)
             if (nameBytes.isEmpty() || nameBytes.size != 13) return null
@@ -420,7 +464,7 @@ class MissionZipMusicStageManager private constructor(
                 if (bytes.size.toLong() != size) return null
                 return bytes
             }
-            hog.skipFullyCompat(size)
+            hog.skipFullyBounded(size, budget, name)
         }
     }
 
@@ -429,9 +473,9 @@ class MissionZipMusicStageManager private constructor(
         nestedEntryPath: String,
         hogEntryName: String,
         output: File,
+        budget: ExtractionBudget,
     ): Boolean {
         openZipInputStreamSkippingPreamble(dxa).use { zip ->
-            val budget = ExtractionBudget()
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -440,7 +484,12 @@ class MissionZipMusicStageManager private constructor(
                     entry.name,
                 )
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
-                    return extractFromHog(zip, hogEntryName, output)
+                    val expanded = BudgetedEntryInputStream(zip, budget, entry.name, entry.compressedSize)
+                    val result = extractFromHog(expanded, hogEntryName, output, budget)
+                    expanded.drain()
+                    zip.closeEntry()
+                    budget.validateExpansion(expanded.entryBytes, entry.compressedSize, entry.name)
+                    return result
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
@@ -453,9 +502,9 @@ class MissionZipMusicStageManager private constructor(
         hog: InputStream,
         hogEntryName: String,
         output: File,
+        budget: ExtractionBudget,
     ): Boolean {
         if (hog.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return false
-        val budget = ExtractionBudget()
         while (true) {
             val nameBytes = hog.readNBytesCompat(13)
             if (nameBytes.isEmpty() || nameBytes.size != 13) return false
@@ -468,7 +517,7 @@ class MissionZipMusicStageManager private constructor(
                 FileOutputStream(output).use { out -> hog.copyLimitedTo(out, size, budget, name) }
                 return true
             }
-            hog.skipFullyCompat(size)
+            hog.skipFullyBounded(size, budget, name)
         }
     }
 
@@ -479,6 +528,44 @@ class MissionZipMusicStageManager private constructor(
                 !it.isDirectory && normalizePath(it.path).equals(normalized, ignoreCase = true)
             }
         return entry?.let { openInputStream(it) }
+    }
+
+    private class BudgetedEntryInputStream(
+        private val input: InputStream,
+        private val budget: ExtractionBudget,
+        private val label: String,
+        private val compressedSize: Long,
+    ) : InputStream() {
+        var entryBytes = 0L
+            private set
+
+        override fun read(): Int {
+            val value = input.read()
+            if (value >= 0) account(1)
+            return value
+        }
+
+        override fun read(
+            bytes: ByteArray,
+            offset: Int,
+            length: Int,
+        ): Int {
+            val count = input.read(bytes, offset, length)
+            if (count > 0) account(count)
+            return count
+        }
+
+        fun drain() {
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (read(buffer) >= 0) {
+                // Keep draining so the descriptor resolves exact entry sizes
+            }
+        }
+
+        private fun account(count: Int) {
+            entryBytes += count
+            budget.accountActual(count, entryBytes, compressedSize, label)
+        }
     }
 
     private fun InputStream.copyLimitedTo(
@@ -503,8 +590,8 @@ class MissionZipMusicStageManager private constructor(
         output: File,
         declaredSize: Long,
         label: String,
+        budget: ExtractionBudget,
     ) {
-        val budget = ExtractionBudget()
         budget.registerEntry(declaredSize, declaredSize, label)
         FileOutputStream(output).use { input.copyToBounded(it, budget, declaredSize, label) }
     }
@@ -513,10 +600,16 @@ class MissionZipMusicStageManager private constructor(
         input: InputStream,
         declaredSize: Long,
         label: String,
+        budget: ExtractionBudget,
     ): ByteArray {
-        val budget = ExtractionBudget()
         budget.registerEntry(declaredSize, declaredSize, label)
-        return input.readBytesBounded(ExtractionLimits.MAX_ENTRY_BYTES, label, budget, declaredSize)
+        return input.readBytesBounded(
+            ExtractionLimits.MAX_ENTRY_BYTES,
+            label,
+            budget,
+            declaredSize,
+            expectedSizeBytes = declaredSize,
+        )
     }
 
     private fun InputStream.readNBytesCompat(count: Int): ByteArray {
@@ -530,17 +623,18 @@ class MissionZipMusicStageManager private constructor(
         return if (total == count) out else out.copyOf(total)
     }
 
-    private fun InputStream.skipFullyCompat(count: Long) {
-        var remaining = count
-        while (remaining > 0) {
-            val skipped = skip(remaining)
-            if (skipped > 0) {
-                remaining -= skipped
-            } else if (read() >= 0) {
-                remaining--
-            } else {
-                return
-            }
+    private fun InputStream.skipFullyBounded(
+        count: Long,
+        budget: ExtractionBudget,
+        label: String,
+    ) {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        while (total < count) {
+            val read = read(buffer, 0, minOf(buffer.size.toLong(), count - total).toInt())
+            if (read < 0) throw IOException("Unexpected end of $label")
+            total += read
+            budget.accountActual(read, total, count, label)
         }
     }
 
@@ -567,5 +661,6 @@ class MissionZipMusicStageManager private constructor(
 
     private companion object {
         const val MAX_CACHE_BYTES = 256L * 1024L * 1024L
+        const val MAX_MIDI_BYTES = 64L * 1024L * 1024L
     }
 }

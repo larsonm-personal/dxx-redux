@@ -58,6 +58,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort.h"
 #include "thief_network_policy.h"
 #include "escort_exit_policy.h"
+#include "escort_goal_policy.h"
 #include "escort_owner_policy.h"
 #include "secretarea.h"
 #include "collide.h"
@@ -1118,6 +1119,7 @@ static int escort_route_shared_next_goal(int set_goal, int *selected_index)
 }
 
 static fix64 Escort_route_cache_poll_time;
+static int Escort_route_logged_readiness = -1;
 
 static int escort_route_metadata_pending(void)
 {
@@ -1128,6 +1130,11 @@ static int escort_route_metadata_pending(void)
 static void escort_route_poll_pending_cache(void)
 {
 	const int readiness = level_metadata_get_route_readiness();
+	if (readiness != Escort_route_logged_readiness) {
+		debug_log(DLOG_GAME, "Guide-Bot route metadata readiness=%s",
+		          level_metadata_route_readiness_name(readiness));
+		Escort_route_logged_readiness = readiness;
+	}
 	if (readiness == LEVEL_METADATA_READINESS_COMPLETE ||
 	    readiness == LEVEL_METADATA_READINESS_FAILED)
 		return;
@@ -1141,8 +1148,13 @@ static void escort_route_poll_pending_cache(void)
 	    Escort_route_cache_poll_time - GameTime64 < 2 * F1_0)
 		return;
 	Escort_route_cache_poll_time = GameTime64 + F1_0;
-	if (level_metadata_try_load_pending_cache())
+	if (level_metadata_try_load_pending_cache()) {
+		const int loaded_readiness = level_metadata_get_route_readiness();
+		debug_log(DLOG_GAME, "Guide-Bot loaded route metadata readiness=%s",
+		          level_metadata_route_readiness_name(loaded_readiness));
+		Escort_route_logged_readiness = loaded_readiness;
 		Escort_route_metadata_dirty = 1;
+	}
 }
 
 static int escort_route_next_goal(void)
@@ -2560,6 +2572,16 @@ void escort_create_path_to_goal(object *objp)
 	if (Escort_special_goal != -1)
 		Escort_goal_object = Escort_special_goal;
 
+#ifdef __ANDROID__
+	if (!escort_goal_is_pathable(Escort_goal_object)) {
+		debug_log(DLOG_GAME,
+		          "Guide-Bot ignored path request without a goal readiness=%s",
+		          level_metadata_route_readiness_name(
+		              level_metadata_get_route_readiness()));
+		return;
+	}
+#endif
+
 	Escort_kill_object = -1;
 
 	if (Looking_for_marker != -1) {
@@ -3278,6 +3300,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		(aip->cur_path_index >= aip->path_length/2) &&
 		(dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4)) {
 		Escort_goal_object = escort_set_goal_object();
+#ifdef __ANDROID__
+		if (!escort_goal_is_pathable(Escort_goal_object))
+			return;
+#endif
 		ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
 		escort_create_path_to_goal(objp);
 		if (replay_rng_probe_active)
@@ -3296,6 +3322,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			((aip->cur_path_index >= aip->path_length/2) &&
 			 (dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4))) {
 			Escort_goal_object = escort_set_goal_object();
+#ifdef __ANDROID__
+			if (!escort_goal_is_pathable(Escort_goal_object))
+				return;
+#endif
 			ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
 			escort_create_path_to_goal(objp);
 			if (replay_rng_probe_active)

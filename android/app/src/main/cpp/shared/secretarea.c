@@ -29,9 +29,11 @@
 #include "wall.h"
 #include "weapon.h"
 #ifdef __ANDROID__
+#include <stdatomic.h>
 #include "android_log.h"
 #include "android_native_build_info.h"
 #include "android_profile.h"
+#include "android_route_metadata.h"
 #include <unistd.h>
 #endif
 #ifdef DXX_BUILD_DESCENT_II
@@ -60,6 +62,9 @@ static int Secret_area_reveal_unfound;
 static int Level_metadata_objective_mode;
 static int Level_metadata_expensive_planning_allowed = 1;
 static int Level_metadata_route_readiness = LEVEL_METADATA_READINESS_CALCULATING;
+#ifdef __ANDROID__
+static atomic_int Level_metadata_background_result;
+#endif
 static route_analysis_cache_summary Level_metadata_analysis_cache_summary;
 static unsigned char
     Level_metadata_completed_canonical_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
@@ -2422,6 +2427,7 @@ static void level_metadata_rescan_current_level_internal(
 		if (Level_metadata_canonical_plan_summary_valid) {
 			level_metadata_apply_planned_route(
 			    &Level_metadata_canonical_state, &shared_route);
+			Level_metadata_expensive_planning_allowed = 1;
 			Level_metadata_route_readiness =
 			    shared_route.route_status == LEVEL_METADATA_ROUTE_OK ? LEVEL_METADATA_READINESS_COMPLETE : Level_metadata_canonical_plan_summary.first_pending_step >= 0     ? LEVEL_METADATA_READINESS_NEXT_READY
 			                                                                                           : Level_metadata_canonical_plan_summary.partial_frontier_segment >= 0 ? LEVEL_METADATA_READINESS_PARTIAL
@@ -2514,6 +2520,16 @@ int level_metadata_try_load_pending_cache(void)
 	     Level_metadata_route_readiness == LEVEL_METADATA_READINESS_COMPLETE) ||
 	    !Level_metadata_canonical_snapshot_valid)
 		return Level_metadata_canonical_plan_summary_valid;
+#ifdef __ANDROID__
+	if (atomic_load(&Level_metadata_background_result) < 0) {
+		Level_metadata_route_readiness = LEVEL_METADATA_READINESS_FAILED;
+		Level_metadata_canonical_state.route_status = LEVEL_METADATA_ROUTE_FAILED;
+		snprintf(Level_metadata_canonical_state.route_problem,
+		         sizeof(Level_metadata_canonical_state.route_problem), "%s",
+		         "background route analysis failed");
+		return 0;
+	}
+#endif
 	level_metadata_state_clear(&shared_route);
 	memset(&summary, 0, sizeof(summary));
 	summary.first_pending_step = -1;
@@ -2536,7 +2552,19 @@ int level_metadata_try_load_pending_cache(void)
 	    shared_route.route_status == LEVEL_METADATA_ROUTE_OK ? LEVEL_METADATA_READINESS_COMPLETE : summary.first_pending_step >= 0     ? LEVEL_METADATA_READINESS_NEXT_READY
 	                                                                                           : summary.partial_frontier_segment >= 0 ? LEVEL_METADATA_READINESS_PARTIAL
 	                                                                                                                                   : LEVEL_METADATA_READINESS_FAILED;
+	Level_metadata_expensive_planning_allowed = 1;
 	return 1;
+}
+
+void level_metadata_note_background_result(int success)
+{
+#ifdef __ANDROID__
+	atomic_store(&Level_metadata_background_result, success ? 1 : -1);
+	debug_log(DLOG_GAME, "Route metadata background result=%s",
+	          success ? "cache_published" : "failed");
+#else
+	(void) success;
+#endif
 }
 
 int level_metadata_get_route_readiness(void)
@@ -2580,6 +2608,11 @@ int level_metadata_rescan_unexplored_route_from_object(
     int objnum,
     level_metadata_unexplored_route *result)
 {
+	if (result) {
+		memset(result, 0, sizeof(*result));
+		result->target_seg = -1;
+		result->waypoint_seg = -1;
+	}
 	level_metadata_rescan_current_level_internal(objnum, -1, 1, result);
 	return result && result->target_seg >= 0;
 }
@@ -2738,6 +2771,10 @@ void secret_area_rescan_current_level(void)
 
 void secret_area_prepare_current_level(void)
 {
+#ifdef __ANDROID__
+	android_route_metadata_invalidate_pending();
+	atomic_store(&Level_metadata_background_result, 0);
+#endif
 	secret_area_scan_current_level(0);
 }
 

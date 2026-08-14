@@ -38,7 +38,10 @@ static jobjectArray build_iso_listing_array(JNIEnv *env, const iso_file_list_t *
 		if (!list->files[i].is_dir) file_count++;
 
 	strClass = (*env)->FindClass(env, "java/lang/String");
+	if (!strClass || (*env)->ExceptionCheck(env)) return NULL;
 	result = (*env)->NewObjectArray(env, file_count, strClass, NULL);
+	if (!result || (*env)->ExceptionCheck(env)) return NULL;
+	(*env)->DeleteLocalRef(env, strClass);
 	for (int i = 0; i < list->num_files; i++) {
 		char buf[ISO_PATH_LEN + 32];
 		jstring s;
@@ -225,9 +228,9 @@ typedef struct {
 	dxx_extract_attempt_budget_t *budget;
 } extract_ctx_t;
 
-static void init_extract_ctx(JNIEnv *env, jobject progress,
-                             dxx_extract_attempt_budget_t *budget,
-                             extract_ctx_t *ctx)
+static int init_extract_ctx(JNIEnv *env, jobject progress,
+                            dxx_extract_attempt_budget_t *budget,
+                            extract_ctx_t *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
 	ctx->env = env;
@@ -235,11 +238,15 @@ static void init_extract_ctx(JNIEnv *env, jobject progress,
 	if (progress) {
 		jclass cls;
 
-		ctx->callback = progress;
 		cls = (*env)->GetObjectClass(env, progress);
+		if (!cls || (*env)->ExceptionCheck(env)) return 0;
 		ctx->on_progress = (*env)->GetMethodID(env, cls,
 		                                       "onProgress", "(Ljava/lang/String;JJ)I");
+		if (!ctx->on_progress || (*env)->ExceptionCheck(env)) return 0;
+		(*env)->DeleteLocalRef(env, cls);
+		ctx->callback = progress;
 	}
+	return 1;
 }
 
 static int extract_progress_cb(const char *current_file,
@@ -339,7 +346,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 
 	/* Set up progress callback */
 	extract_ctx_t ctx;
-	init_extract_ctx(env, progress, &budget, &ctx);
+	if (!init_extract_ctx(env, progress, &budget, &ctx)) {
+		iso_file_list_destroy(list);
+		free(out_dir);
+		return -1;
+	}
 
 	int extracted = iso_extract_track_files_with_budget(binFd, trackStart, trackSectors,
 	                                                    sectorStride, userDataOffset,
@@ -388,7 +399,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 		return -1;
 	}
 
-	init_extract_ctx(env, progress, &budget, &ctx);
+	if (!init_extract_ctx(env, progress, &budget, &ctx)) {
+		iso_file_list_destroy(list);
+		free(out_dir);
+		return -1;
+	}
 	extracted = iso_extract_image_files_with_budget(
 	    isoFd, list, out_dir, dxx_android_disc_extract_extensions,
 	    progress ? extract_progress_cb : NULL, &ctx, &budget);
@@ -429,11 +444,16 @@ Java_com_dxxredux_app_DiscImportBridge_nativeScanSowFiles(
 		LOGI("No .sow files found");
 		/* Return empty array */
 		jclass strClass = (*env)->FindClass(env, "java/lang/String");
-		return (*env)->NewObjectArray(env, 0, strClass, NULL);
+		if (!strClass || (*env)->ExceptionCheck(env)) return NULL;
+		jobjectArray empty = (*env)->NewObjectArray(env, 0, strClass, NULL);
+		if (!empty || (*env)->ExceptionCheck(env)) return NULL;
+		return empty;
 	}
 
 	jclass strClass = (*env)->FindClass(env, "java/lang/String");
+	if (!strClass || (*env)->ExceptionCheck(env)) return NULL;
 	jobjectArray result = (*env)->NewObjectArray(env, list.count, strClass, NULL);
+	if (!result || (*env)->ExceptionCheck(env)) return NULL;
 	for (int i = 0; i < list.count; i++) {
 		jstring s = dxx_jni_string_from_utf8(env, list.paths[i]);
 		if (!s) return NULL;
@@ -482,7 +502,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 
 	/* Set up progress callback */
 	extract_ctx_t ctx;
-	init_extract_ctx(env, progress, &budget, &ctx);
+	if (!init_extract_ctx(env, progress, &budget, &ctx)) {
+		free(sow);
+		free(out_dir);
+		return -1;
+	}
 
 	int extracted = sow_extract_with_budget(sow, out_dir, NULL,
 	                                        progress ? extract_progress_cb : NULL,
@@ -512,7 +536,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractStuffitFiles(
 	}
 
 	extract_ctx_t ctx;
-	init_extract_ctx(env, progress, NULL, &ctx);
+	if (!init_extract_ctx(env, progress, NULL, &ctx)) {
+		free(sit);
+		free(out_dir);
+		return -1;
+	}
 
 	int extracted = stuffit_extract(sit, out_dir,
 	                                dxx_android_mac_disc_extract_extensions,
@@ -547,7 +575,10 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir))
 		return -1;
-	init_extract_ctx(env, progress, &budget, &ctx);
+	if (!init_extract_ctx(env, progress, &budget, &ctx)) {
+		free(out_dir);
+		return -1;
+	}
 
 	if (hfs_find_partition(binFd, trackStart, trackSectors, &hfs_info) < 0) {
 		free(out_dir);

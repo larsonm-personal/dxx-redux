@@ -17,6 +17,23 @@ import java.util.zip.ZipOutputStream
 
 class MissionZipMusicStageManagerTest {
     @Test
+    fun rejectsMidiLargerThanMaterializationLimitBeforeReading() {
+        val track =
+            MissionZipMusicTrack(
+                id = "large-midi",
+                displayName = "large.mid",
+                archiveEntryPath = "large.mid",
+                kind = MissionZipMusic.KIND_MIDI,
+                extension = "mid",
+                sizeBytes = 64L * 1024L * 1024L + 1L,
+                playable = true,
+            )
+        val catalog = MissionZipMusicCatalog("missing.zip", emptyList(), "large-midi")
+
+        assertNull(MissionZipMusicStageManager(testCacheDir("large-midi")).readMidiTrackBytes(catalog, track))
+    }
+
+    @Test
     fun stagesTopLevelAudioTrack() {
         val payload = byteArrayOf(1, 3, 5, 7)
         val zip =

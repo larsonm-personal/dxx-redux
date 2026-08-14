@@ -60,7 +60,7 @@ static int select_inno_output(const char *path, void *user_data)
 
 static void launcher_log(JNIEnv *env, const char *message)
 {
-	if (!env || !message || !message[0]) return;
+	if (!env || !message || !message[0] || (*env)->ExceptionCheck(env)) return;
 	jclass cls = (*env)->FindClass(env, "com/dxxredux/app/LauncherDebugLog");
 	if (!cls) {
 		(*env)->ExceptionClear(env);
@@ -107,6 +107,7 @@ static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
 	}
 
 	jobjectArray result = (*env)->NewObjectArray(env, game_count, strClass, NULL);
+	if (!result || (*env)->ExceptionCheck(env)) return NULL;
 	jsize idx = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
 		if (!has_game_extension(arc->files[i].destination)) continue;
@@ -119,10 +120,12 @@ static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
 		snprintf(buf, sizeof(buf), "%s|%llu", fname, (unsigned long long) size);
 		jstring s = dxx_jni_string_from_utf8(env, buf);
 		if (!s) {
-			(*env)->DeleteLocalRef(env, result);
+			if (!(*env)->ExceptionCheck(env))
+				(*env)->DeleteLocalRef(env, result);
 			return NULL;
 		}
 		(*env)->SetObjectArrayElement(env, result, idx++, s);
+		if ((*env)->ExceptionCheck(env)) return NULL;
 		(*env)->DeleteLocalRef(env, s);
 	}
 	return result;
@@ -131,8 +134,10 @@ static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
 static int pkg_manifest_matches_java(JNIEnv *env, const pkg_archive_t *arc,
                                      jobjectArray expected_entries)
 {
-	if (!expected_entries ||
-	    (*env)->GetArrayLength(env, expected_entries) != arc->file_count)
+	if (!expected_entries)
+		return 0;
+	jsize expected_count = (*env)->GetArrayLength(env, expected_entries);
+	if ((*env)->ExceptionCheck(env) || expected_count != arc->file_count)
 		return 0;
 	for (int i = 0; i < arc->file_count; i++) {
 		jstring value = (jstring) (*env)->GetObjectArrayElement(env,
@@ -201,6 +206,10 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 	int is_pkg = dot && ci_cmp(dot, ".pkg") == 0;
 
 	jclass strClass = (*env)->FindClass(env, "java/lang/String");
+	if (!strClass || (*env)->ExceptionCheck(env)) {
+		free(p);
+		return NULL;
+	}
 
 	if (is_pkg) {
 		pkg_archive_t arc;
@@ -210,6 +219,10 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 
 		/* All pkg files are already filtered to game files */
 		jobjectArray result = (*env)->NewObjectArray(env, arc.file_count, strClass, NULL);
+		if (!result || (*env)->ExceptionCheck(env)) {
+			pkg_close(&arc);
+			return NULL;
+		}
 		for (int i = 0; i < arc.file_count; i++) {
 			char buf[PKG_PATH_LEN + 48];
 			snprintf(buf, sizeof(buf), "%s|%llu|%u",
@@ -217,11 +230,16 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 			         arc.files[i].crc32);
 			jstring s = dxx_jni_string_from_utf8(env, buf);
 			if (!s) {
-				(*env)->DeleteLocalRef(env, result);
+				if (!(*env)->ExceptionCheck(env))
+					(*env)->DeleteLocalRef(env, result);
 				pkg_close(&arc);
 				return NULL;
 			}
 			(*env)->SetObjectArrayElement(env, result, i, s);
+			if ((*env)->ExceptionCheck(env)) {
+				pkg_close(&arc);
+				return NULL;
+			}
 			(*env)->DeleteLocalRef(env, s);
 		}
 		pkg_close(&arc);
@@ -247,6 +265,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFilesFromFd(
 {
 	(void) clazz;
 	jclass strClass = (*env)->FindClass(env, "java/lang/String");
+	if (!strClass || (*env)->ExceptionCheck(env)) return NULL;
 	inno_archive_t arc;
 	int n = inno_open_fd((int) fd, &arc);
 	if (n < 0) return NULL;
@@ -267,6 +286,24 @@ typedef struct {
 	long long completed_bytes; /* bytes for fully extracted files */
 	int cancelled;
 } gog_extract_ctx_t;
+
+static int init_gog_extract_ctx(JNIEnv *env, jobject progress,
+                                gog_extract_ctx_t *ctx)
+{
+	jclass cls;
+
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->env = env;
+	if (!progress) return 1;
+	cls = (*env)->GetObjectClass(env, progress);
+	if (!cls || (*env)->ExceptionCheck(env)) return 0;
+	ctx->on_progress = (*env)->GetMethodID(
+	    env, cls, "onProgress", "(Ljava/lang/String;JJ)I");
+	if (!ctx->on_progress || (*env)->ExceptionCheck(env)) return 0;
+	(*env)->DeleteLocalRef(env, cls);
+	ctx->callback = progress;
+	return 1;
+}
 
 static int gog_progress_cb(const char *current_file,
                            long long bytes_done, long long bytes_total,
@@ -305,13 +342,8 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 		LOGE("Colliding Inno output basenames");
 		return -1;
 	}
-	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0, 0 };
-	if (progress) {
-		ctx.callback = progress;
-		jclass cls = (*env)->GetObjectClass(env, progress);
-		ctx.on_progress = (*env)->GetMethodID(env, cls,
-		                                      "onProgress", "(Ljava/lang/String;JJ)I");
-	}
+	gog_extract_ctx_t ctx;
+	if (!init_gog_extract_ctx(env, progress, &ctx)) return -1;
 
 	long long total = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
@@ -393,12 +425,11 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 	}
 
 	/* Set up progress callback */
-	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0, 0 };
-	if (progress) {
-		ctx.callback = progress;
-		jclass cls = (*env)->GetObjectClass(env, progress);
-		ctx.on_progress = (*env)->GetMethodID(env, cls,
-		                                      "onProgress", "(Ljava/lang/String;JJ)I");
+	gog_extract_ctx_t ctx;
+	if (!init_gog_extract_ctx(env, progress, &ctx)) {
+		free(p);
+		free(out_dir);
+		return -1;
 	}
 
 	const char *dot = strrchr(p, '.');

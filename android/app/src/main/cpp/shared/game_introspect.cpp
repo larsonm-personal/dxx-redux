@@ -714,6 +714,8 @@ static json serialize_level_metadata_route()
 		return result;
 	}
 	result["status"] = level_metadata_route_status_name(metadata->route_status);
+	result["readiness"] = level_metadata_route_readiness_name(
+	    level_metadata_get_route_readiness());
 	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
 	result["planner_source"] =
 	    level_metadata_get_canonical_route_plan_summary(&canonical_plan) ? "shared_cpp" : "unavailable";

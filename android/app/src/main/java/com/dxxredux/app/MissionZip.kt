@@ -89,6 +89,7 @@ object MissionZip {
                                     entry.path,
                                     metadataBudget,
                                     entry.compressedSizeBytes ?: -1,
+                                    expectedSizeBytes = entry.sizeBytes,
                                 )
                         }
                     missions += parseMissionDescriptor(entry.path, bytes)
@@ -141,6 +142,7 @@ object MissionZip {
                                     entry.name,
                                     metadataBudget,
                                     entry.compressedSize,
+                                    expectedSizeBytes = entry.size,
                                 ),
                             )
                     }
@@ -195,6 +197,7 @@ object MissionZip {
                                     entryPath,
                                     metadataBudget,
                                     file.sizeBytes,
+                                    expectedSizeBytes = file.sizeBytes,
                                 ),
                             )
                         }
@@ -247,6 +250,7 @@ object MissionZip {
                                     entry.name,
                                     metadataBudget,
                                     entry.compressedSize,
+                                    expectedSizeBytes = entry.size,
                                 ),
                             )
                     }

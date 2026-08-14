@@ -17,6 +17,7 @@
 void secret_area_rescan_current_level(void);
 void secret_area_prepare_current_level(void);
 int level_metadata_try_load_pending_cache(void);
+void level_metadata_note_background_result(int success);
 int level_metadata_get_route_readiness(void);
 const char *level_metadata_route_readiness_name(int readiness);
 void level_metadata_rescan_current_level(void);

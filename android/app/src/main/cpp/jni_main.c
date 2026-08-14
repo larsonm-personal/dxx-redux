@@ -70,24 +70,112 @@ static char *android_consume_activity_string(JNIEnv *env, jobject activity, cons
 	char *copied;
 
 	activity_class = (*env)->GetObjectClass(env, activity);
-	if (!activity_class)
+	if (!activity_class || (*env)->ExceptionCheck(env))
 		return NULL;
 	method = (*env)->GetMethodID(env, activity_class, method_name, "()Ljava/lang/String;");
-	if (!method)
+	if (!method || (*env)->ExceptionCheck(env))
 		return NULL;
 	value = (jstring) (*env)->CallObjectMethod(env, activity, method);
-	if (!value)
+	if (!value || (*env)->ExceptionCheck(env))
 		return NULL;
-	if (!dxx_jni_string_to_utf8(env, value, &copied)) {
-		(*env)->DeleteLocalRef(env, value);
-		return NULL;
-	}
+	if (!dxx_jni_string_to_utf8(env, value, &copied)) return NULL;
 	(*env)->DeleteLocalRef(env, value);
 	if (!copied || !copied[0]) {
 		free(copied);
 		return NULL;
 	}
 	return copied;
+}
+
+static int android_finish_activity(JNIEnv *env, jobject activity)
+{
+	jclass cls = (*env)->GetObjectClass(env, activity);
+	jmethodID method;
+	if (!cls || (*env)->ExceptionCheck(env)) return 0;
+	method = (*env)->GetMethodID(env, cls, "finish", "()V");
+	if (!method || (*env)->ExceptionCheck(env)) return 0;
+	(*env)->CallVoidMethod(env, activity, method);
+	return !(*env)->ExceptionCheck(env);
+}
+
+static int android_kill_process(JNIEnv *env)
+{
+	jclass cls = (*env)->FindClass(env, "android/os/Process");
+	jmethodID my_pid;
+	jmethodID kill_process;
+	jint pid;
+	if (!cls || (*env)->ExceptionCheck(env)) return 0;
+	my_pid = (*env)->GetStaticMethodID(env, cls, "myPid", "()I");
+	if (!my_pid || (*env)->ExceptionCheck(env)) return 0;
+	kill_process = (*env)->GetStaticMethodID(env, cls, "killProcess", "(I)V");
+	if (!kill_process || (*env)->ExceptionCheck(env)) return 0;
+	pid = (*env)->CallStaticIntMethod(env, cls, my_pid);
+	if ((*env)->ExceptionCheck(env)) return 0;
+	(*env)->CallStaticVoidMethod(env, cls, kill_process, pid);
+	return !(*env)->ExceptionCheck(env);
+}
+
+static int android_cache_asset_manager(JNIEnv *env, jobject activity)
+{
+	jclass cls = (*env)->GetObjectClass(env, activity);
+	jmethodID method;
+	jobject manager;
+	if (!cls || (*env)->ExceptionCheck(env)) return 0;
+	method = (*env)->GetMethodID(env, cls, "getAssets",
+	                             "()Landroid/content/res/AssetManager;");
+	if (!method || (*env)->ExceptionCheck(env)) return 0;
+	manager = (*env)->CallObjectMethod(env, activity, method);
+	if (!manager || (*env)->ExceptionCheck(env)) return 0;
+	g_asset_manager = AAssetManager_fromJava(env, manager);
+	return g_asset_manager != NULL && !(*env)->ExceptionCheck(env);
+}
+
+static int android_audio_property(JNIEnv *env, jobject manager, jmethodID get_property,
+                                  const char *key, int *output)
+{
+	jstring java_key = (*env)->NewStringUTF(env, key);
+	jstring java_value;
+	char *value = NULL;
+	if (!java_key || (*env)->ExceptionCheck(env)) return 0;
+	java_value = (*env)->CallObjectMethod(env, manager, get_property, java_key);
+	if ((*env)->ExceptionCheck(env)) return 0;
+	if (!java_value) return 1;
+	if (!dxx_jni_string_to_utf8(env, java_value, &value)) return 0;
+	*output = atoi(value);
+	free(value);
+	return 1;
+}
+
+static int android_query_audio_properties(JNIEnv *env, jobject activity)
+{
+	extern int g_android_native_sample_rate;
+	extern int g_android_native_buffer_frames;
+	jclass activity_class = (*env)->GetObjectClass(env, activity);
+	jmethodID get_service;
+	jstring service_name;
+	jobject manager;
+	jclass manager_class;
+	jmethodID get_property;
+	if (!activity_class || (*env)->ExceptionCheck(env)) return 0;
+	get_service = (*env)->GetMethodID(env, activity_class, "getSystemService",
+	                                  "(Ljava/lang/String;)Ljava/lang/Object;");
+	if (!get_service || (*env)->ExceptionCheck(env)) return 0;
+	service_name = (*env)->NewStringUTF(env, "audio");
+	if (!service_name || (*env)->ExceptionCheck(env)) return 0;
+	manager = (*env)->CallObjectMethod(env, activity, get_service, service_name);
+	if ((*env)->ExceptionCheck(env)) return 0;
+	if (!manager) return 1;
+	manager_class = (*env)->GetObjectClass(env, manager);
+	if (!manager_class || (*env)->ExceptionCheck(env)) return 0;
+	get_property = (*env)->GetMethodID(env, manager_class, "getProperty",
+	                                   "(Ljava/lang/String;)Ljava/lang/String;");
+	if (!get_property || (*env)->ExceptionCheck(env)) return 0;
+	return android_audio_property(env, manager, get_property,
+	                              "android.media.property.OUTPUT_SAMPLE_RATE",
+	                              &g_android_native_sample_rate) &&
+	       android_audio_property(env, manager, get_property,
+	                              "android.media.property.OUTPUT_FRAMES_PER_BUFFER",
+	                              &g_android_native_buffer_frames);
 }
 
 static void copy_utf8_bounded(char *destination, size_t destination_size, const char *source)
@@ -160,73 +248,26 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 		LOGE("startGame() called while game already running -- aborting to avoid crash");
 		debug_log(DLOG_GAME, "jni startup rejected: startGame called while native game is already running");
 		/* Finish this redundant Activity so the user sees the running game. */
-		jclass cls = (*env)->GetObjectClass(env, thiz);
-		jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
-		if (mid)
-			(*env)->CallVoidMethod(env, thiz, mid);
+		android_finish_activity(env, thiz);
 		return;
 	}
 	LOGI("Starting D2X-Redux game engine...");
 
-	/* Cache a global reference to the Activity for C→Java callbacks. */
-	g_activity = (*env)->NewGlobalRef(env, thiz);
-	if (!g_activity) {
+	/* Cache AAssetManager for native asset access (soundfont loading etc.) */
+	if (!android_cache_asset_manager(env, thiz)) {
 		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
 		return;
 	}
-
-	/* Cache AAssetManager for native asset access (soundfont loading etc.) */
-	{
-		jclass actCls = (*env)->GetObjectClass(env, thiz);
-		jmethodID getAssets = (*env)->GetMethodID(env, actCls, "getAssets",
-		                                          "()Landroid/content/res/AssetManager;");
-		jobject jAssetMgr = (*env)->CallObjectMethod(env, thiz, getAssets);
-		g_asset_manager = AAssetManager_fromJava(env, jAssetMgr);
-		LOGI("AAssetManager cached for native asset access");
-	}
+	LOGI("AAssetManager cached for native asset access");
 
 	/* Query native audio sample rate and buffer size from AudioManager.
 	 * This lets OpenSL ES avoid AudioFlinger resampling. */
 	{
 		extern int g_android_native_sample_rate;
 		extern int g_android_native_buffer_frames;
-
-		jclass actCls = (*env)->GetObjectClass(env, thiz);
-		jmethodID getSysSvc = (*env)->GetMethodID(env, actCls,
-		                                          "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-		jstring audioStr = (*env)->NewStringUTF(env, "audio");
-		jobject audioMgr = (*env)->CallObjectMethod(env, thiz, getSysSvc, audioStr);
-		(*env)->DeleteLocalRef(env, audioStr);
-
-		if (audioMgr) {
-			jclass amCls = (*env)->GetObjectClass(env, audioMgr);
-			jmethodID getProp = (*env)->GetMethodID(env, amCls,
-			                                        "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
-
-			/* PROPERTY_OUTPUT_SAMPLE_RATE */
-			jstring keyRate = (*env)->NewStringUTF(env,
-			                                       "android.media.property.OUTPUT_SAMPLE_RATE");
-			jstring valRate = (*env)->CallObjectMethod(env, audioMgr, getProp, keyRate);
-			if (valRate) {
-				const char *s = (*env)->GetStringUTFChars(env, valRate, NULL);
-				g_android_native_sample_rate = atoi(s);
-				(*env)->ReleaseStringUTFChars(env, valRate, s);
-				(*env)->DeleteLocalRef(env, valRate);
-			}
-			(*env)->DeleteLocalRef(env, keyRate);
-
-			/* PROPERTY_OUTPUT_FRAMES_PER_BUFFER */
-			jstring keyBuf = (*env)->NewStringUTF(env,
-			                                      "android.media.property.OUTPUT_FRAMES_PER_BUFFER");
-			jstring valBuf = (*env)->CallObjectMethod(env, audioMgr, getProp, keyBuf);
-			if (valBuf) {
-				const char *s = (*env)->GetStringUTFChars(env, valBuf, NULL);
-				g_android_native_buffer_frames = atoi(s);
-				(*env)->ReleaseStringUTFChars(env, valBuf, s);
-				(*env)->DeleteLocalRef(env, valBuf);
-			}
-			(*env)->DeleteLocalRef(env, keyBuf);
-			(*env)->DeleteLocalRef(env, audioMgr);
+		if (!android_query_audio_properties(env, thiz)) {
+			atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
+			return;
 		}
 		LOGI("Native audio: rate=%d buf=%d",
 		     g_android_native_sample_rate, g_android_native_buffer_frames);
@@ -255,7 +296,9 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 
 	argv_startup[0] = (char *) &androidInit;
 	pilot_callsign = android_consume_activity_string(env, thiz, "consumePilotCallsign");
+	if ((*env)->ExceptionCheck(env)) goto startup_failed;
 	input_demo_replay_path = android_consume_activity_string(env, thiz, "consumeInputDemoReplayPath");
+	if ((*env)->ExceptionCheck(env)) goto startup_failed;
 	if (input_demo_replay_path) {
 		LOGI("Launching input demo replay: %s", input_demo_replay_path);
 		argv_startup[argc++] = "-inputdemo-replay";
@@ -264,7 +307,9 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 		const char *startup_pilot = pilot_callsign;
 
 		resume_save_path = android_consume_activity_string(env, thiz, "consumeResumeSavePath");
+		if ((*env)->ExceptionCheck(env)) goto startup_failed;
 		resume_callsign = android_consume_activity_string(env, thiz, "consumeResumeCallsign");
+		if ((*env)->ExceptionCheck(env)) goto startup_failed;
 		if (resume_save_path && resume_save_path[0]) {
 			if (resume_callsign && resume_callsign[0]) {
 				LOGI("Launching startup resume for pilot '%s': %s",
@@ -284,6 +329,9 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 			argv_startup[argc++] = resume_save_path;
 		}
 	}
+	/* Publish callback ownership only after required setup succeeds */
+	g_activity = (*env)->NewGlobalRef(env, thiz);
+	if (!g_activity || (*env)->ExceptionCheck(env)) goto startup_failed;
 	android_log_startup_argv("before-main", argc, argv_startup,
 	                         input_demo_replay_path, resume_save_path, resume_callsign);
 	main(argc, argv_startup);
@@ -299,11 +347,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	 * Call Activity.finish() so the activity closes instead of freezing
 	 * on the last rendered frame. */
 	LOGI("Game engine exited, finishing activity...");
-	jclass cls = (*env)->GetObjectClass(env, g_activity);
-	jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
-	if (mid) {
-		(*env)->CallVoidMethod(env, g_activity, mid);
-	}
+	if (!android_finish_activity(env, g_activity)) return;
 
 	/*
 	 * Kill the process so the next launch starts with clean native state.
@@ -315,11 +359,15 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	 * will be recreated in a fresh process automatically.
 	 */
 	LOGI("Killing process for clean restart...");
-	jclass processCls = (*env)->FindClass(env, "android/os/Process");
-	jmethodID myPid = (*env)->GetStaticMethodID(env, processCls, "myPid", "()I");
-	jmethodID killProc = (*env)->GetStaticMethodID(env, processCls, "killProcess", "(I)V");
-	jint pid = (*env)->CallStaticIntMethod(env, processCls, myPid);
-	(*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
+	android_kill_process(env);
+	return;
+
+startup_failed:
+	free(input_demo_replay_path);
+	free(resume_save_path);
+	free(resume_callsign);
+	free(pilot_callsign);
+	atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
 }
 
 JNIEXPORT void JNICALL
@@ -337,18 +385,13 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 		return;
 	if (!android_engine_admit()) {
 		jclass cls = (*env)->GetObjectClass(env, thiz);
+		if (!cls || (*env)->ExceptionCheck(env)) return;
 		jmethodID finished = (*env)->GetMethodID(
 		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
+		if (!finished || (*env)->ExceptionCheck(env)) return;
 		jstring error = (*env)->NewStringUTF(env, "Another native engine is already running");
-		if (finished && error)
-			(*env)->CallVoidMethod(env, thiz, finished, error);
-		if (error)
-			(*env)->DeleteLocalRef(env, error);
-		return;
-	}
-	g_activity = (*env)->NewGlobalRef(env, thiz);
-	if (!g_activity) {
-		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
+		if (!error || (*env)->ExceptionCheck(env)) return;
+		(*env)->CallVoidMethod(env, thiz, finished, error);
 		return;
 	}
 	dxx_jni_string_to_utf8(env, jrequest_path, &request_path);
@@ -357,10 +400,13 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 	if (!request_path || !data_dir) {
 		free(request_path);
 		free(data_dir);
-		if (g_activity) {
-			(*env)->DeleteGlobalRef(env, g_activity);
-			g_activity = NULL;
-		}
+		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
+		return;
+	}
+	g_activity = (*env)->NewGlobalRef(env, thiz);
+	if (!g_activity || (*env)->ExceptionCheck(env)) {
+		free(request_path);
+		free(data_dir);
 		atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
 		return;
 	}
@@ -382,25 +428,21 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 		error = "Native preview exited with an error";
 	{
 		jclass cls = (*env)->GetObjectClass(env, thiz);
+		if (!cls || (*env)->ExceptionCheck(env)) goto preview_cleanup;
 		jmethodID finished = (*env)->GetMethodID(
 		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
+		if (!finished || (*env)->ExceptionCheck(env)) goto preview_cleanup;
 		jstring jerror = dxx_jni_string_from_utf8(env, error ? error : "");
-		if (finished)
-			(*env)->CallVoidMethod(env, thiz, finished, jerror);
-		if (jerror)
-			(*env)->DeleteLocalRef(env, jerror);
+		if (!jerror || (*env)->ExceptionCheck(env)) goto preview_cleanup;
+		(*env)->CallVoidMethod(env, thiz, finished, jerror);
+		if ((*env)->ExceptionCheck(env)) goto preview_cleanup;
 	}
+preview_cleanup:
 	free(request_path);
 	free(data_dir);
 	unsetenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR");
 	atomic_store(&g_engine_state, ANDROID_ENGINE_TERMINATING);
-	{
-		jclass process_cls = (*env)->FindClass(env, "android/os/Process");
-		jmethodID my_pid = (*env)->GetStaticMethodID(env, process_cls, "myPid", "()I");
-		jmethodID kill_process = (*env)->GetStaticMethodID(env, process_cls, "killProcess", "(I)V");
-		jint pid = (*env)->CallStaticIntMethod(env, process_cls, my_pid);
-		(*env)->CallStaticVoidMethod(env, process_cls, kill_process, pid);
-	}
+	if (!(*env)->ExceptionCheck(env)) android_kill_process(env);
 }
 
 /*
@@ -426,34 +468,25 @@ void android_finish_and_exit(const char *message)
 		}
 		if (env) {
 			jclass cls = (*env)->GetObjectClass(env, g_activity);
+			if (!cls || (*env)->ExceptionCheck(env)) goto fatal_exit;
 			jmethodID report_error = (*env)->GetMethodID(
 			    env, cls, "reportNativeFatalError", "(Ljava/lang/String;)V");
+			if (!report_error || (*env)->ExceptionCheck(env)) goto fatal_exit;
 			if (report_error && message) {
 				jstring java_message = dxx_jni_string_from_utf8(env, message);
-				if (java_message) {
-					(*env)->CallVoidMethod(env, g_activity, report_error, java_message);
-					(*env)->DeleteLocalRef(env, java_message);
-				}
+				if (!java_message || (*env)->ExceptionCheck(env)) goto fatal_exit;
+				(*env)->CallVoidMethod(env, g_activity, report_error, java_message);
+				if ((*env)->ExceptionCheck(env)) goto fatal_exit;
 			}
-			if ((*env)->ExceptionCheck(env)) {
-				(*env)->ExceptionDescribe(env);
-				(*env)->ExceptionClear(env);
-			}
-			jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
-			if (mid)
-				(*env)->CallVoidMethod(env, g_activity, mid);
-
-			jclass processCls = (*env)->FindClass(env, "android/os/Process");
-			jmethodID myPid = (*env)->GetStaticMethodID(env, processCls, "myPid", "()I");
-			jmethodID killProc = (*env)->GetStaticMethodID(env, processCls, "killProcess", "(I)V");
-			jint pid = (*env)->CallStaticIntMethod(env, processCls, myPid);
-			(*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
+			if (!android_finish_activity(env, g_activity)) goto fatal_exit;
+			android_kill_process(env);
 
 			if (attached)
 				(*g_jvm)->DetachCurrentThread(g_jvm);
 		}
 	}
 	/* Fallback if JNI cleanup didn't kill the process */
+fatal_exit:
 	_exit(1);
 }
 

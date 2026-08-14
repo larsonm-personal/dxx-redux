@@ -6,5 +6,6 @@ void android_route_metadata_request(
     const char *mission,
     int level_num,
     const char *level_file);
+void android_route_metadata_invalidate_pending(void);
 
 #endif

@@ -37,10 +37,7 @@ static void android_jni_scope_leave(android_jni_scope *scope)
 
 static int android_jni_check(android_jni_scope *scope)
 {
-	if (!(*scope->env)->ExceptionCheck(scope->env))
-		return 1;
-	(*scope->env)->ExceptionClear(scope->env);
-	return 0;
+	return !(*scope->env)->ExceptionCheck(scope->env);
 }
 
 static jbyteArray android_jni_new_byte_array(JNIEnv *env,
@@ -52,20 +49,26 @@ static jbyteArray android_jni_new_byte_array(JNIEnv *env,
 	if (size > 0x7fffffff)
 		return NULL;
 	result = (*env)->NewByteArray(env, (jsize) size);
-	if (result && size)
+	if (!result || (*env)->ExceptionCheck(env)) return NULL;
+	if (size) {
 		(*env)->SetByteArrayRegion(env, result, 0, (jsize) size,
 		                           (const jbyte *) data);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+	}
 	return result;
 }
 
 static int android_jni_copy_byte_array(JNIEnv *env, jbyteArray source,
                                        uint8_t *output, size_t output_size)
 {
-	const jsize size = source ? (*env)->GetArrayLength(env, source) : 0;
+	jsize size;
 
-	if (!source || size <= 0 || (size_t) size > output_size)
+	if (!source) return 0;
+	size = (*env)->GetArrayLength(env, source);
+	if ((*env)->ExceptionCheck(env) || size <= 0 || (size_t) size > output_size)
 		return 0;
 	(*env)->GetByteArrayRegion(env, source, 0, size, (jbyte *) output);
+	if ((*env)->ExceptionCheck(env)) return 0;
 	return size;
 }
 
@@ -104,13 +107,13 @@ static jclass android_jni_identity_class(android_jni_scope *scope)
 		identity_class = NULL;
 
 cleanup:
-	if (class_name)
+	if (!(*scope->env)->ExceptionCheck(scope->env) && class_name)
 		(*scope->env)->DeleteLocalRef(scope->env, class_name);
-	if (class_loader_class)
+	if (!(*scope->env)->ExceptionCheck(scope->env) && class_loader_class)
 		(*scope->env)->DeleteLocalRef(scope->env, class_loader_class);
-	if (class_loader)
+	if (!(*scope->env)->ExceptionCheck(scope->env) && class_loader)
 		(*scope->env)->DeleteLocalRef(scope->env, class_loader);
-	if (activity_class)
+	if (!(*scope->env)->ExceptionCheck(scope->env) && activity_class)
 		(*scope->env)->DeleteLocalRef(scope->env, activity_class);
 	return identity_class;
 }
@@ -138,9 +141,9 @@ int android_net_udp_reconnect_get_public_key(uint8_t *output,
 		if (!android_jni_check(&scope))
 			result = 0;
 	}
-	if (key)
+	if (key && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, key);
-	if (identity_class)
+	if (identity_class && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, identity_class);
 	android_jni_scope_leave(&scope);
 	return result;
@@ -178,11 +181,11 @@ int android_net_udp_reconnect_sign(const uint8_t *message,
 		if (!android_jni_check(&scope))
 			result = 0;
 	}
-	if (java_signature)
+	if (java_signature && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, java_signature);
-	if (java_message)
+	if (java_message && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, java_message);
-	if (identity_class)
+	if (identity_class && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, identity_class);
 	android_jni_scope_leave(&scope);
 	return result;
@@ -221,17 +224,17 @@ int android_net_udp_reconnect_verify(const uint8_t *public_key,
 	    java_message
 	        ? android_jni_new_byte_array(scope.env, signature, signature_size)
 	        : NULL;
-	if (java_signature)
+	if (java_signature && android_jni_check(&scope))
 		verified = (*scope.env)->CallStaticBooleanMethod(scope.env, identity_class, method, java_key, java_message, java_signature);
 	if (!android_jni_check(&scope))
 		verified = JNI_FALSE;
 	if (java_signature)
 		(*scope.env)->DeleteLocalRef(scope.env, java_signature);
-	if (java_message)
+	if (java_message && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, java_message);
-	if (java_key)
+	if (java_key && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, java_key);
-	if (identity_class)
+	if (identity_class && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, identity_class);
 	android_jni_scope_leave(&scope);
 	return verified == JNI_TRUE;
@@ -260,9 +263,9 @@ int android_net_udp_reconnect_random(uint8_t *output, size_t output_size)
 		if (!android_jni_check(&scope))
 			result = 0;
 	}
-	if (bytes)
+	if (bytes && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, bytes);
-	if (identity_class)
+	if (identity_class && android_jni_check(&scope))
 		(*scope.env)->DeleteLocalRef(scope.env, identity_class);
 	android_jni_scope_leave(&scope);
 	return result == (int) output_size;

@@ -1,5 +1,104 @@
 Set-StrictMode -Version Latest
 
+function Resolve-BoundedPythonRuntime {
+    param(
+        [string]$RuntimePath,
+        [string]$ExpectedSha256
+    )
+
+    $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+    $expectedVersion = '3.12.8'
+    $provenance = 'explicit-sha256'
+    if ([string]::IsNullOrWhiteSpace($RuntimePath) -and
+        [string]::IsNullOrWhiteSpace($ExpectedSha256) -and
+        (-not [string]::IsNullOrWhiteSpace($env:DXX_BOUNDED_PYTHON_RUNTIME) -or
+        -not [string]::IsNullOrWhiteSpace($env:DXX_BOUNDED_PYTHON_SHA256))) {
+        $RuntimePath = $env:DXX_BOUNDED_PYTHON_RUNTIME
+        $ExpectedSha256 = $env:DXX_BOUNDED_PYTHON_SHA256
+    }
+    if ([string]::IsNullOrWhiteSpace($RuntimePath)) {
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedSha256)) {
+            throw 'A bounded Python SHA-256 requires an explicit runtime path'
+        }
+        if ($env:OS -ne 'Windows_NT') {
+            throw 'No repository-pinned bounded Python runtime is available for this platform; supply an explicit runtime path and SHA-256'
+        }
+
+        . (Join-Path $PSScriptRoot 'verified_dependencies.ps1')
+        $config = Read-DxxDependencyConfig -RepoRoot $repoRoot
+        foreach ($key in @('PYTHON_EMBED_VERSION', 'PYTHON_EMBED_TREE_SHA256', 'PYTHON_ORACLE_DIR_NAME')) {
+            if (-not $config.ContainsKey($key) -or [string]::IsNullOrWhiteSpace($config[$key])) {
+                throw "$key not found in tool_versions.conf"
+            }
+        }
+        if ($config['PYTHON_EMBED_VERSION'] -cne $expectedVersion) {
+            throw "Bounded Python policy requires version $expectedVersion"
+        }
+        $depBaseFile = Join-Path $repoRoot 'dependency_base.txt'
+        if (-not (Test-Path -LiteralPath $depBaseFile -PathType Leaf)) {
+            throw "dependency_base.txt not found at $depBaseFile"
+        }
+        $depBase = (Get-Content -LiteralPath $depBaseFile -First 1).Trim()
+        $runtimeRoot = Join-Path $depBase $config['PYTHON_ORACLE_DIR_NAME']
+        $verifiedRoot = Assert-DxxTreeSha256 -Path (Join-Path $runtimeRoot 'python') `
+            -ExpectedSha256 $config['PYTHON_EMBED_TREE_SHA256'] -Label 'bounded Python runtime'
+        $RuntimePath = Join-Path $verifiedRoot 'python.exe'
+        $ExpectedSha256 = (Get-FileHash -LiteralPath $RuntimePath -Algorithm SHA256).Hash
+        $provenance = 'repository-pinned-tree'
+    } elseif ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
+        throw 'An explicit bounded Python runtime requires its SHA-256'
+    }
+
+    if ($ExpectedSha256 -notmatch '^[0-9a-fA-F]{64}$') {
+        throw 'Invalid bounded Python SHA-256'
+    }
+    if (-not (Test-Path -LiteralPath $RuntimePath -PathType Leaf)) {
+        throw "Bounded Python runtime not found at $RuntimePath"
+    }
+    $runtime = (Resolve-Path -LiteralPath $RuntimePath).Path
+    $actualSha256 = (Get-FileHash -LiteralPath $runtime -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualSha256 -cne $ExpectedSha256.ToLowerInvariant()) {
+        throw "Bounded Python runtime SHA-256 mismatch expected=$($ExpectedSha256.ToLowerInvariant()) actual=$actualSha256"
+    }
+
+    $identityScript = 'import json, os, platform, sys; print(json.dumps({"executable": os.path.realpath(sys.executable), "version": platform.python_version()}))'
+    $oldPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $identityOutput = @(& $runtime -I -c $identityScript 2>&1)
+        $identityExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldPreference
+    }
+    if ($identityExitCode -ne 0 -or $identityOutput.Count -ne 1) {
+        throw 'Bounded Python runtime identity probe failed'
+    }
+    try {
+        $identity = $identityOutput[0] | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw 'Bounded Python runtime returned an invalid identity'
+    }
+    if ([string]$identity.version -cne $expectedVersion) {
+        throw "Bounded Python runtime must be version $expectedVersion"
+    }
+    $reportedRuntime = [IO.Path]::GetFullPath([string]$identity.executable)
+    $comparison = if ($env:OS -eq 'Windows_NT') {
+        [StringComparison]::OrdinalIgnoreCase
+    } else {
+        [StringComparison]::Ordinal
+    }
+    if (-not $reportedRuntime.Equals([IO.Path]::GetFullPath($runtime), $comparison)) {
+        throw 'Bounded Python runtime executable identity mismatch'
+    }
+
+    return [pscustomobject][ordered]@{
+        Path = $runtime
+        Version = $expectedVersion
+        Sha256 = $actualSha256
+        Provenance = $provenance
+    }
+}
+
 function Invoke-BoundedExtractor {
     param(
         [Parameter(Mandatory = $true)][string]$OutputDirectory,
@@ -9,19 +108,17 @@ function Invoke-BoundedExtractor {
         [int]$MaxFiles = 4096,
         [long]$MaxFileBytes = 536870912,
         [long]$MaxTotalBytes = 2147483648,
-        [int]$MaxDiagnosticBytes = 1048576
+        [int]$MaxDiagnosticBytes = 1048576,
+        [string]$PythonRuntimePath,
+        [string]$PythonRuntimeSha256
     )
 
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    $launcherArgs = @()
-    if (-not $python) {
-        $python = Get-Command py -ErrorAction SilentlyContinue
-        $launcherArgs = @('-3')
-    }
-    if (-not $python) { throw 'Python 3 is required for bounded child execution' }
+    $python = Resolve-BoundedPythonRuntime -RuntimePath $PythonRuntimePath `
+        -ExpectedSha256 $PythonRuntimeSha256
 
     $helper = Join-Path $PSScriptRoot 'run_bounded_extractor.py'
-    $arguments = $launcherArgs + @(
+    $arguments = @(
+        '-I',
         $helper,
         '--output-dir', $OutputDirectory,
         '--timeout-seconds', $TimeoutSeconds,
@@ -35,7 +132,7 @@ function Invoke-BoundedExtractor {
     $oldPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $output = & $python.Source @arguments 2>&1
+        $output = & $python.Path @arguments 2>&1
         $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $oldPreference

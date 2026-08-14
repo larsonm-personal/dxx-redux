@@ -19,6 +19,7 @@
 #include "fingerprint_gen.h"
 #include "pcm_decoders.h"
 #include "chromaprint.h"
+#include "jni_string.h"
 
 #define TAG       "DXX-Fingerprint"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -63,13 +64,13 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeLoadFingerprintDb(
     JNIEnv *env, jclass clazz, jstring jsonData)
 {
-	const char *json = (*env)->GetStringUTFChars(env, jsonData, NULL);
-	if (!json) return -1;
+	char *json = NULL;
+	if (!dxx_jni_string_to_utf8(env, jsonData, &json)) return -1;
 
 	int len = (int) strlen(json);
 	int count = chromaprint_db_load(json, len);
 
-	(*env)->ReleaseStringUTFChars(env, jsonData, json);
+	free(json);
 	LOGI("Loaded fingerprint DB: %d entries", count);
 	return count;
 }
@@ -84,12 +85,12 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAudioFile(
     JNIEnv *env, jclass clazz, jstring filePath)
 {
-	const char *path = (*env)->GetStringUTFChars(env, filePath, NULL);
-	if (!path) return NULL;
+	char *path = NULL;
+	if (!dxx_jni_string_to_utf8(env, filePath, &path)) return NULL;
 
 	fingerprint_result_t fp = { 0 };
 	int rc = fingerprint_from_audio_file(path, &fp);
-	(*env)->ReleaseStringUTFChars(env, filePath, path);
+	free(path);
 
 	if (rc != 0 || !fp.encoded) {
 		fingerprint_free(&fp);
@@ -105,7 +106,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAudioFile(
 	}
 	snprintf(buf, buf_len, "%s|%d", fp.encoded, fp.duration_ms);
 
-	jstring result = (*env)->NewStringUTF(env, buf);
+	jstring result = dxx_jni_string_from_utf8(env, buf);
 	free(buf);
 	fingerprint_free(&fp);
 	return result;
@@ -205,7 +206,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 	}
 	snprintf(buf, buf_len, "%s|%d", fp.encoded, fp.duration_ms);
 
-	jstring result = (*env)->NewStringUTF(env, buf);
+	jstring result = dxx_jni_string_from_utf8(env, buf);
 	free(buf);
 	fingerprint_free(&fp);
 	return result;
@@ -215,25 +216,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintDiscTrack(
 
 static jstring new_utf8_string(JNIEnv *env, const char *value)
 {
-	jsize length = (jsize) strlen(value);
-	jbyteArray bytes = (*env)->NewByteArray(env, length);
-	if (!bytes) return NULL;
-	(*env)->SetByteArrayRegion(env, bytes, 0, length, (const jbyte *) value);
-
-	jclass string_class = (*env)->FindClass(env, "java/lang/String");
-	jmethodID constructor = string_class
-	                            ? (*env)->GetMethodID(env, string_class, "<init>",
-	                                                  "([BLjava/lang/String;)V")
-	                            : NULL;
-	jstring charset = constructor ? (*env)->NewStringUTF(env, "UTF-8") : NULL;
-	jstring result = charset
-	                     ? (jstring) (*env)->NewObject(env, string_class, constructor,
-	                                                   bytes, charset)
-	                     : NULL;
-	if (charset) (*env)->DeleteLocalRef(env, charset);
-	if (string_class) (*env)->DeleteLocalRef(env, string_class);
-	(*env)->DeleteLocalRef(env, bytes);
-	return result;
+	return dxx_jni_string_from_utf8(env, value);
 }
 
 static jobject new_match_result(JNIEnv *env, const chromaprint_db_match_t *match)
@@ -243,15 +226,19 @@ static jobject new_match_result(JNIEnv *env, const chromaprint_db_match_t *match
 	if (!result_class) return NULL;
 	jmethodID constructor = (*env)->GetMethodID(
 	    env, result_class, "<init>", "(FLjava/lang/String;Ljava/lang/String;I)V");
+	if (!constructor || (*env)->ExceptionCheck(env)) return NULL;
 	jstring name = constructor ? new_utf8_string(env, match->name) : NULL;
+	if (!name || (*env)->ExceptionCheck(env)) return NULL;
 	jstring disc_id = name ? new_utf8_string(env, match->disc_id) : NULL;
+	if (!disc_id || (*env)->ExceptionCheck(env)) return NULL;
 	jobject result = disc_id
 	                     ? (*env)->NewObject(env, result_class, constructor,
 	                                         match->confidence, name, disc_id,
 	                                         match->track_num)
 	                     : NULL;
-	if (disc_id) (*env)->DeleteLocalRef(env, disc_id);
-	if (name) (*env)->DeleteLocalRef(env, name);
+	if ((*env)->ExceptionCheck(env)) return NULL;
+	(*env)->DeleteLocalRef(env, disc_id);
+	(*env)->DeleteLocalRef(env, name);
 	(*env)->DeleteLocalRef(env, result_class);
 	return result;
 }
@@ -266,8 +253,8 @@ Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
     JNIEnv *env, jclass clazz,
     jstring encodedFp, jint durationMs)
 {
-	const char *b64 = (*env)->GetStringUTFChars(env, encodedFp, NULL);
-	if (!b64) return NULL;
+	char *b64 = NULL;
+	if (!dxx_jni_string_to_utf8(env, encodedFp, &b64)) return NULL;
 
 	/* Decode the base64 fingerprint to raw */
 	uint32_t *raw_fp = NULL;
@@ -276,7 +263,7 @@ Java_com_dxxredux_app_FingerprintBridge_nativeMatchFingerprint(
 	int ok = chromaprint_decode_fingerprint(b64, (int) strlen(b64),
 	                                        &raw_fp, &raw_len,
 	                                        &algorithm, 1);
-	(*env)->ReleaseStringUTFChars(env, encodedFp, b64);
+	free(b64);
 
 	if (!ok || !raw_fp) return NULL;
 
@@ -299,12 +286,12 @@ JNIEXPORT jobject JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeFingerprintAndMatch(
     JNIEnv *env, jclass clazz, jstring filePath)
 {
-	const char *path = (*env)->GetStringUTFChars(env, filePath, NULL);
-	if (!path) return NULL;
+	char *path = NULL;
+	if (!dxx_jni_string_to_utf8(env, filePath, &path)) return NULL;
 
 	fingerprint_result_t fp = { 0 };
 	int rc = fingerprint_from_audio_file(path, &fp);
-	(*env)->ReleaseStringUTFChars(env, filePath, path);
+	free(path);
 
 	if (rc != 0 || !fp.raw_fp) {
 		fingerprint_free(&fp);
