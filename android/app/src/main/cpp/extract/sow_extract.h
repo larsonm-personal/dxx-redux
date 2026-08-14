@@ -17,6 +17,8 @@
 #ifndef SOW_EXTRACT_H
 #define SOW_EXTRACT_H
 
+#include "extract_attempt_budget.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,6 +71,12 @@ int sow_extract_with_mode(const char *sow_path, const char *output_dir,
                           const char **extensions,
                           sow_progress_fn progress, void *user_data,
                           int append_existing);
+
+int sow_extract_with_budget(const char *sow_path, const char *output_dir,
+                            const char **extensions,
+                            sow_progress_fn progress, void *user_data,
+                            int append_existing,
+                            dxx_extract_attempt_budget_t *budget);
 
 #ifdef __cplusplus
 }

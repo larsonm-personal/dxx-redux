@@ -110,6 +110,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_log.h"
 #include "android_profile.h"
+#include "android_route_metadata.h"
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
 #include "merged_wall_debug.h"
@@ -698,7 +699,16 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	if (!load_level(level_name)) {
 		Current_level_num=level_num;
+#ifdef __ANDROID__
+		secret_area_prepare_current_level();
+		if (level_metadata_get_route_readiness() !=
+		    LEVEL_METADATA_READINESS_COMPLETE)
+			android_route_metadata_request(
+			    "d1", Current_mission ? Current_mission_filename : "",
+			    Current_level_num, level_name);
+#else
 		secret_area_rescan_current_level();
+#endif
 	}
 
 #ifdef __ANDROID__

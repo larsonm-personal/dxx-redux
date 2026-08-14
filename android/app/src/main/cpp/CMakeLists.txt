@@ -480,6 +480,7 @@ endif()
 target_sources(
     dxx-redux-d1
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
@@ -495,6 +496,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c
@@ -653,6 +655,7 @@ endif()
 target_sources(
     dxx-redux-d2
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
@@ -668,6 +671,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c

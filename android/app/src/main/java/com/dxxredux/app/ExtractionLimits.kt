@@ -25,6 +25,21 @@ internal class ExtractionBudget(
     private var declaredBytes = 0L
     private var actualBytes = 0L
 
+    fun newDiscExtractionAttempt(): DiscExtractionAttempt =
+        DiscExtractionAttempt(longArrayOf(actualBytes, entries.toLong(), 0L))
+
+    fun acceptDiscExtractionAttempt(attempt: DiscExtractionAttempt) {
+        if (attempt.cancelled) throw IOException("Archive extraction was cancelled")
+        if (attempt.outputBytes < actualBytes || attempt.outputBytes > maxTotalBytes) {
+            throw IOException("Archive exceeds $maxTotalBytes extracted bytes")
+        }
+        if (attempt.entries < entries || attempt.entries > maxEntries.toLong()) {
+            throw IOException("Archive exceeds $maxEntries entries")
+        }
+        actualBytes = attempt.outputBytes
+        entries = attempt.entries.toInt()
+    }
+
     fun registerEntry(
         declaredSize: Long,
         compressedSize: Long,

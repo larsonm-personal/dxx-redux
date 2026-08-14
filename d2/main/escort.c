@@ -1117,6 +1117,34 @@ static int escort_route_shared_next_goal(int set_goal, int *selected_index)
 	return escort_route_goal_object_for_step(step);
 }
 
+static fix64 Escort_route_cache_poll_time;
+
+static int escort_route_metadata_pending(void)
+{
+	return level_metadata_get_route_readiness() ==
+	       LEVEL_METADATA_READINESS_CALCULATING;
+}
+
+static void escort_route_poll_pending_cache(void)
+{
+	const int readiness = level_metadata_get_route_readiness();
+	if (readiness == LEVEL_METADATA_READINESS_COMPLETE ||
+	    readiness == LEVEL_METADATA_READINESS_FAILED)
+		return;
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI)
+		return;
+#endif
+	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded())
+		return;
+	if (GameTime64 < Escort_route_cache_poll_time &&
+	    Escort_route_cache_poll_time - GameTime64 < 2 * F1_0)
+		return;
+	Escort_route_cache_poll_time = GameTime64 + F1_0;
+	if (level_metadata_try_load_pending_cache())
+		Escort_route_metadata_dirty = 1;
+}
+
 static int escort_route_next_goal(void)
 {
 	return escort_route_shared_next_goal(1, NULL);
@@ -1128,6 +1156,9 @@ static void escort_route_refresh_metadata(void)
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
 		return;
 #endif
+	escort_route_poll_pending_cache();
+	if (escort_route_metadata_pending())
+		return;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    Escort_unexplored_route_target.active &&
 	    escort_valid_segment(Escort_unexplored_route_target.target_seg) &&
@@ -1171,6 +1202,7 @@ void escort_route_monitor_completion(void)
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
 		return;
 #endif
+	escort_route_poll_pending_cache();
 	if (!Escort_route_goal.active || Escort_route_goal.objective_kind < 0)
 		return;
 	if (!escort_route_has_local_authority())
@@ -2018,6 +2050,11 @@ void escort_resume_default_goal(void)
 	escort_route_note_replan("goal_command");
 	escort_route_refresh_metadata();
 	escort_route_next_goal();
+	if (escort_route_metadata_pending())
+	{
+		debug_log(DLOG_GAME, "Guide-Bot route help refused: still calculating");
+		HUD_init_message_literal(HM_DEFAULT, "Still calculating");
+	}
 	Escort_last_path_created = 0;
 	escort_route_sync_target_mode();
 #endif
@@ -2081,6 +2118,11 @@ void escort_find_unexplored_goal(void)
 	escort_route_note_replan("unexplored_command");
 	escort_route_refresh_metadata();
 	escort_route_next_goal();
+	if (escort_route_metadata_pending())
+	{
+		debug_log(DLOG_GAME, "Guide-Bot unexplored help refused: still calculating");
+		HUD_init_message_literal(HM_DEFAULT, "Still calculating");
+	}
 	Escort_last_path_created = 0;
 	Last_buddy_message_time = GameTime64 - 2*F1_0;
 	escort_route_sync_target_mode();
@@ -2720,6 +2762,8 @@ int escort_set_goal_object(void)
 	route_goal = escort_route_next_goal();
 	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
 		return route_goal;
+	if (escort_route_metadata_pending())
+		return ESCORT_GOAL_UNSPECIFIED;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED)
 		return ESCORT_GOAL_UNSPECIFIED;
 #endif

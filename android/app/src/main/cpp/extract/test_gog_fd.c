@@ -1,4 +1,5 @@
 #include "inno_reader.h"
+#include "extract_limits.h"
 #include "game_file_extensions.h"
 
 #include <limits.h>
@@ -142,6 +143,11 @@ static int check_version_id_bounds(void)
 		"Inno Setup Setup Data (5..0)",
 		"Inno Setup Setup Data (5.3.)",
 		"Inno Setup Setup Data (5.3)",
+		"Inno Setup Setup Data (-1.3.0)",
+		"Inno Setup Setup Data (+5.3.0)",
+		"Inno Setup Setup Data ( 5.3.0)",
+		"Inno Setup Setup Data (5.-1.0)",
+		"Inno Setup Setup Data (5.3.-1)",
 		"Inno Setup Setup Data (2147483648.3.0)",
 		"Inno Setup Setup Data (5.2147483648.0)",
 		"Inno Setup Setup Data (5.3.2147483648)",
@@ -199,6 +205,56 @@ static int check_version_id_bounds(void)
 	field[34] = 'X';
 	if (inno_test_parse_version_id(field, &version) == 0) {
 		fprintf(stderr, "nonzero version ID padding accepted\n");
+		failures++;
+	}
+
+	return failures ? 1 : 0;
+}
+
+static int check_version_admission_bounds(void)
+{
+	static const struct {
+		inno_version_t version;
+		int supported;
+		const char *label;
+	} cases[] = {
+		{ { 5, 3, 0, 0 }, 1, "supported minimum" },
+		{ { 5, 6, 99, 1 }, 1, "supported maximum" },
+		{ { 5, 2, INT_MAX, 1 }, 0, "one minor below" },
+		{ { 5, 3, 100, 1 }, 0, "minimum-series patch above" },
+		{ { 5, 6, 100, 1 }, 0, "one patch above" },
+		{ { 5, 7, 0, 1 }, 0, "one minor above" },
+		{ { INT_MAX, 3, 0, 1 }, 0, "maximum major" },
+		{ { 5, INT_MAX, 0, 1 }, 0, "maximum minor" },
+		{ { 5, 3, INT_MAX, 1 }, 0, "maximum patch" },
+	};
+	static const inno_version_t extreme_version = {
+		INT_MAX, INT_MAX, INT_MAX, 1
+	};
+	inno_checksum_type_t checksum_type;
+	size_t digest_size;
+	int failures = 0;
+
+	for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+		if (inno_test_version_supported(&cases[i].version) != cases[i].supported) {
+			fprintf(stderr, "version admission mismatch: %s\n", cases[i].label);
+			failures++;
+		}
+	}
+	if (inno_test_version_supported(NULL)) {
+		fprintf(stderr, "null version admitted\n");
+		failures++;
+	}
+	failures += expect_version_id("Inno Setup Setup Data (2147483647.3.0)",
+	                              INT_MAX, 3, 0, 0);
+	failures += expect_version_id("Inno Setup Setup Data (5.2147483647.0)",
+	                              5, INT_MAX, 0, 0);
+	failures += expect_version_id("Inno Setup Setup Data (5.3.2147483647)",
+	                              5, 3, INT_MAX, 0);
+	if (inno_test_checksum_layout(&extreme_version, &checksum_type,
+	                              &digest_size) < 0 ||
+	    checksum_type != INNO_CHECKSUM_SHA1 || digest_size != 20) {
+		fprintf(stderr, "maximum tuple schema comparison mismatch\n");
 		failures++;
 	}
 
@@ -835,6 +891,246 @@ static int count_progress(const char *current_file, long long bytes_done,
 	return 0;
 }
 
+static int cancel_after_decode_starts(const char *current_file,
+                                      long long bytes_done,
+                                      long long bytes_total,
+                                      void *user_data)
+{
+	int *calls = (int *) user_data;
+	(void) current_file;
+	(void) bytes_total;
+	(*calls)++;
+	return bytes_done > 0;
+}
+
+static int check_decode_work_budget(void)
+{
+	static const uint8_t abcd_sha1[20] = {
+		0x81, 0xfe, 0x8b, 0xfe, 0x87, 0x57, 0x6c, 0x3e, 0xcb, 0x22,
+		0x42, 0x6f, 0x8e, 0x57, 0x84, 0x73, 0x82, 0x91, 0x7a, 0xcf
+	};
+	static const uint8_t wxyz_sha1[20] = {
+		0xa0, 0xd8, 0xa7, 0x27, 0x97, 0xb5, 0x18, 0x5f, 0x09, 0x7a,
+		0x4f, 0x0f, 0x8c, 0xc7, 0xb1, 0x9d, 0x98, 0xb7, 0x2a, 0x5e
+	};
+	const uint8_t magic[4] = { 'z', 'l', 'b', 0x1a };
+	const char *source_path = "test_gog_fd_work_source.tmp";
+	const char *output_path = "test_gog_fd_work_output.tmp";
+	inno_archive_t arc;
+	inno_file_entry_t *aliases = NULL;
+	inno_data_entry_t data[2];
+	uint8_t plain[4096];
+	uint8_t compressed[128];
+	uLongf compressed_size = sizeof(compressed);
+	int failures = 0;
+
+	memset(&arc, 0, sizeof(arc));
+	inno_test_set_decode_work_limit(8);
+	if (inno_test_reserve_decode_work(&arc, 8) < 0 ||
+	    inno_test_reserve_decode_work(&arc, 1) == 0 ||
+	    inno_test_decode_work_bytes(&arc) != 8) {
+		fprintf(stderr, "decode-work exact and one-over admission failed\n");
+		failures++;
+	}
+
+	memcpy(plain, "abcd", 4);
+	memset(plain + 4, 'Z', sizeof(plain) - 4);
+	if (compress2(compressed, &compressed_size, plain, sizeof(plain),
+	              Z_BEST_SPEED) != Z_OK) {
+		inno_test_set_decode_work_limit(0);
+		return 1;
+	}
+	aliases = (inno_file_entry_t *) calloc(4096, sizeof(*aliases));
+	if (!aliases) {
+		inno_test_set_decode_work_limit(0);
+		return 1;
+	}
+	remove(source_path);
+	remove(output_path);
+	FILE *source = fopen(source_path, "wb");
+	int write_failed = !source;
+	if (!write_failed)
+		write_failed =
+		    fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+		    fwrite(compressed, 1, compressed_size, source) != compressed_size;
+	if (source && fclose(source) != 0) write_failed = 1;
+	if (write_failed) {
+		free(aliases);
+		inno_test_set_decode_work_limit(0);
+		remove(source_path);
+		return 1;
+	}
+	memset(&arc, 0, sizeof(arc));
+	memset(data, 0, sizeof(data));
+	arc.fd = OPEN_RB(source_path);
+	arc.source_size = sizeof(magic) + compressed_size;
+	arc.compression = INNO_COMPRESS_ZLIB;
+	arc.file_count = 4096;
+	arc.files = aliases;
+	arc.data_entry_count = 1;
+	arc.data_entries = data;
+	for (uint32_t i = 0; i < arc.file_count; i++) {
+		strcpy(aliases[i].destination, "alias.bin");
+		aliases[i].location = 0;
+	}
+	data[0].chunk_compressed = 1;
+	data[0].chunk_compressed_size = compressed_size;
+	data[0].file_size = 4;
+	data[0].checksum_type = INNO_CHECKSUM_SHA1;
+	memcpy(data[0].checksum, abcd_sha1, sizeof(abcd_sha1));
+	inno_test_set_decode_work_limit(sizeof(plain));
+	if (arc.fd < 0 ||
+	    inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
+	    inno_test_decode_work_bytes(&arc) != sizeof(plain) ||
+	    !file_equals(output_path, "abcd", 4)) {
+		fprintf(stderr, "4096-alias first decode accounting failed\n");
+		failures++;
+	}
+	remove(output_path);
+	if (inno_extract_file(&arc, 1, output_path, NULL, NULL) == 0 ||
+	    inno_extract_file(&arc, 4095, output_path, NULL, NULL) == 0 ||
+	    file_exists(output_path) || arc.extracted_files != 1) {
+		fprintf(stderr, "4096-alias restart amplification was admitted\n");
+		failures++;
+	}
+	if (arc.fd >= 0) CLOSE_FD(arc.fd);
+	free(aliases);
+	aliases = NULL;
+	remove(source_path);
+	remove(output_path);
+
+	uint8_t first[64];
+	uint8_t second[64];
+	uLongf first_size = sizeof(first);
+	uLongf second_size = sizeof(second);
+	if (compress2(first, &first_size, (const Bytef *) "abcd", 4,
+	              Z_BEST_SPEED) != Z_OK ||
+	    compress2(second, &second_size, (const Bytef *) "wxyz", 4,
+	              Z_BEST_SPEED) != Z_OK) {
+		inno_test_set_decode_work_limit(0);
+		return 1;
+	}
+	source = fopen(source_path, "wb");
+	write_failed = !source;
+	if (!write_failed)
+		write_failed =
+		    fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+		    fwrite(first, 1, first_size, source) != first_size ||
+		    fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+		    fwrite(second, 1, second_size, source) != second_size;
+	if (source && fclose(source) != 0) write_failed = 1;
+	if (write_failed) {
+		inno_test_set_decode_work_limit(0);
+		remove(source_path);
+		return 1;
+	}
+	inno_file_entry_t entries[2];
+	memset(&arc, 0, sizeof(arc));
+	memset(entries, 0, sizeof(entries));
+	memset(data, 0, sizeof(data));
+	arc.fd = OPEN_RB(source_path);
+	arc.source_size = 8 + first_size + second_size;
+	arc.compression = INNO_COMPRESS_ZLIB;
+	arc.file_count = 2;
+	arc.files = entries;
+	arc.data_entry_count = 2;
+	arc.data_entries = data;
+	strcpy(entries[0].destination, "first.bin");
+	strcpy(entries[1].destination, "second.bin");
+	entries[1].location = 1;
+	for (int i = 0; i < 2; i++) {
+		data[i].chunk_compressed = 1;
+		data[i].file_size = 4;
+		data[i].checksum_type = INNO_CHECKSUM_SHA1;
+	}
+	data[0].chunk_compressed_size = first_size;
+	data[1].chunk_offset = 4 + first_size;
+	data[1].chunk_compressed_size = second_size;
+	memcpy(data[0].checksum, abcd_sha1, sizeof(abcd_sha1));
+	memcpy(data[1].checksum, wxyz_sha1, sizeof(wxyz_sha1));
+	inno_test_set_decode_work_limit(8);
+	if (arc.fd < 0 ||
+	    inno_extract_file(&arc, 0, output_path, NULL, NULL) < 0 ||
+	    inno_extract_file(&arc, 1, output_path, NULL, NULL) < 0 ||
+	    inno_test_decode_work_bytes(&arc) != 8 ||
+	    !file_equals(output_path, "wxyz", 4)) {
+		fprintf(stderr, "unique solid chunks did not share the exact budget\n");
+		failures++;
+	}
+	if (arc.fd >= 0) CLOSE_FD(arc.fd);
+	remove(source_path);
+	remove(output_path);
+
+	{
+		const size_t cancel_size = 2u * 1024u * 1024u;
+		uint8_t *cancel_plain = (uint8_t *) malloc(cancel_size);
+		uLongf cancel_capacity = compressBound((uLong) cancel_size);
+		uint8_t *cancel_compressed =
+		    (uint8_t *) malloc((size_t) cancel_capacity);
+		if (!cancel_plain || !cancel_compressed) {
+			free(cancel_plain);
+			free(cancel_compressed);
+			inno_test_set_decode_work_limit(0);
+			return 1;
+		}
+		memset(cancel_plain, 'C', cancel_size);
+		if (compress2(cancel_compressed, &cancel_capacity, cancel_plain,
+		              (uLong) cancel_size, Z_BEST_SPEED) != Z_OK) {
+			free(cancel_plain);
+			free(cancel_compressed);
+			inno_test_set_decode_work_limit(0);
+			return 1;
+		}
+		source = fopen(source_path, "wb");
+		write_failed = !source;
+		if (!write_failed)
+			write_failed =
+			    fwrite(magic, 1, sizeof(magic), source) != sizeof(magic) ||
+			    fwrite(cancel_compressed, 1, cancel_capacity, source) !=
+			        cancel_capacity;
+		if (source && fclose(source) != 0) write_failed = 1;
+		if (write_failed) {
+			free(cancel_plain);
+			free(cancel_compressed);
+			inno_test_set_decode_work_limit(0);
+			remove(source_path);
+			return 1;
+		}
+		inno_file_entry_t cancel_entry;
+		inno_data_entry_t cancel_data;
+		init_range_archive(&arc, &cancel_entry, &cancel_data,
+		                   OPEN_RB(source_path), 4 + cancel_capacity);
+		arc.compression = INNO_COMPRESS_ZLIB;
+		cancel_data.chunk_compressed = 1;
+		cancel_data.chunk_compressed_size = cancel_capacity;
+		cancel_data.file_size = cancel_size;
+		inno_test_set_decode_work_limit(cancel_size);
+		int progress_calls = 0;
+		int cancel_result = inno_extract_file(
+		    &arc, 0, output_path, cancel_after_decode_starts, &progress_calls);
+		if (cancel_result != DXX_EXTRACT_CANCELLED || progress_calls < 2 ||
+		    file_exists(output_path) ||
+		    inno_test_decode_work_bytes(&arc) != cancel_size) {
+			fprintf(stderr, "decode-work cancellation accounting failed\n");
+			failures++;
+		}
+		if (arc.fd >= 0) CLOSE_FD(arc.fd);
+		free(cancel_plain);
+		free(cancel_compressed);
+		remove(source_path);
+		remove(output_path);
+	}
+
+	inno_test_set_decode_work_limit(sizeof(plain));
+	memset(&arc, 0, sizeof(arc));
+	if (inno_test_decode_work_bytes(&arc) != 0) {
+		fprintf(stderr, "fresh archive retained decode work\n");
+		failures++;
+	}
+	inno_test_set_decode_work_limit(0);
+	return failures ? 1 : 0;
+}
+
 static int check_encrypted_chunk_rejection(void)
 {
 	static const uint8_t payload_sha1[20] = {
@@ -1382,6 +1678,27 @@ static int check_pe_resource_bounds(void)
 	return failures ? 1 : 0;
 }
 
+static int check_metadata_peak_memory_budget(void)
+{
+	const size_t memory_limit = 128u * 1024u * 1024u;
+	if (!inno_test_metadata_memory_allowed(
+	        64u * 1024u * 1024u, 48u * 1024u * 1024u,
+	        16u * 1024u * 1024u)) {
+		fprintf(stderr, "exact metadata memory limit rejected\n");
+		return 1;
+	}
+	if (inno_test_metadata_memory_allowed(memory_limit, 0, 1)) {
+		fprintf(stderr, "metadata memory one byte over limit accepted\n");
+		return 1;
+	}
+	if (inno_test_metadata_decoder_allocation_succeeds(0) ||
+	    !inno_test_metadata_decoder_allocation_succeeds(1)) {
+		fprintf(stderr, "metadata allocation failure injection mismatch\n");
+		return 1;
+	}
+	return 0;
+}
+
 static int check_installer(const char *path, const char **expected, int expected_count,
                            int expected_game_count, int expected_galaxy_game_count,
                            const char *label)
@@ -1451,14 +1768,17 @@ int main(int argc, char **argv)
 
 	int failures = 0;
 	failures += check_version_id_bounds();
+	failures += check_version_admission_bounds();
 	failures += check_unicode_destination_paths();
 	failures += check_pe_resource_bounds();
+	failures += check_metadata_peak_memory_budget();
 	failures += check_complete_file_catalog();
 	failures += check_unsigned_entry_bounds();
 	failures += check_galaxy_metadata_pattern();
 	failures += check_checksum_layout_transition();
 	failures += check_encrypted_chunk_rejection();
 	failures += check_buffered_decoder_failures();
+	failures += check_decode_work_budget();
 	failures += check_chunk_range_boundaries();
 	failures += check_galaxy_checksum_order();
 	failures += check_installer(argv[1], d1_expected, 2, 7, 7, "d1");

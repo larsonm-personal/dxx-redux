@@ -12,6 +12,8 @@
 #ifndef ISO9660_READER_H
 #define ISO9660_READER_H
 
+#include "extract_attempt_budget.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -121,6 +123,13 @@ int iso_extract_track_files(int bin_fd, int track_start_sector, int track_num_se
                             const char **extensions,
                             iso_progress_fn progress, void *user_data);
 
+int iso_extract_track_files_with_budget(
+    int bin_fd, int track_start_sector, int track_num_sectors,
+    int sector_stride, int user_data_offset,
+    const iso_file_list_t *file_list, const char *output_dir,
+    const char **extensions, iso_progress_fn progress, void *user_data,
+    dxx_extract_attempt_budget_t *budget);
+
 /*
  * Extract files from a standalone ISO image file to an output directory.
  *
@@ -139,6 +148,11 @@ int iso_extract_image_files(int iso_fd,
                             const char *output_dir,
                             const char **extensions,
                             iso_progress_fn progress, void *user_data);
+
+int iso_extract_image_files_with_budget(
+    int iso_fd, const iso_file_list_t *file_list, const char *output_dir,
+    const char **extensions, iso_progress_fn progress, void *user_data,
+    dxx_extract_attempt_budget_t *budget);
 
 #ifdef ISO9660_READER_TESTING
 int iso_test_append_extent_sizes(unsigned int first_size,

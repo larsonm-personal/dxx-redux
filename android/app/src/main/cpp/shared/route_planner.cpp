@@ -3128,6 +3128,17 @@ extern "C" int route_planner_plan_view(
 			}
 		}
 		if (analysis_budget.was_cancelled || analysis_budget.exhausted) {
+			if (analysis_budget.exhausted && result.steps.size() > 1 &&
+			    project_plan(
+			        result, endpoint_kind, *state, unexplored, *summary,
+			        detail)) {
+				state->route_status = LEVEL_METADATA_ROUTE_PARTIAL;
+				copy_problem(
+				    state->route_problem,
+				    static_cast<int>(sizeof(state->route_problem)),
+				    "shared route planning reached its work budget");
+				return 1;
+			}
 			copy_problem(
 			    problem, problem_capacity,
 			    analysis_budget.was_cancelled

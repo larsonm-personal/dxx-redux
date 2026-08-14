@@ -75,6 +75,7 @@ file(TO_CMAKE_PATH "${stuffit_test_files_SOURCE_DIR}" STUFFIT_TEST_FILES_DIR)
 set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c
     ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
@@ -89,6 +90,7 @@ set(EXTRACT_SOURCES
 add_executable(
     test_cue_iso
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cue_iso.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(test_cue_iso PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_cue_iso PRIVATE ISO9660_READER_TESTING)
@@ -101,17 +103,23 @@ add_executable(extract_cd ${CMAKE_CURRENT_SOURCE_DIR}/extract_cd.c ${EXTRACT_SOU
 target_include_directories(extract_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ── test_sow_direct ─────────────────────────────────────────────────
-add_executable(test_sow_direct ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_direct.c
-                               ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
+add_executable(
+    test_sow_direct
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_direct.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
 target_include_directories(test_sow_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(test_sow_huffman ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_huffman.c
-                                ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
+add_executable(
+    test_sow_huffman
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_huffman.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
 target_include_directories(test_sow_huffman PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_sow_huffman PRIVATE SOW_EXTRACT_TESTING)
 
-add_executable(test_sow_integrity ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_integrity.c
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
+add_executable(
+    test_sow_integrity
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_integrity.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c)
 target_include_directories(test_sow_integrity PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ── test_hfs ───────────────────────────────────────────────────────
@@ -125,14 +133,16 @@ target_compile_definitions(test_hfs PRIVATE HFS_READER_TESTING)
 add_executable(
     test_sti2
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sti2.c ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
 target_include_directories(test_sti2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_sti2 PRIVATE STI2_EXTRACT_TESTING HFS_READER_TESTING)
 
 # ── test_stuffit_corpus ────────────────────────────────────────────
-add_executable(test_stuffit_corpus ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
+add_executable(
+    test_stuffit_corpus
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
 target_include_directories(test_stuffit_corpus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(test_stuffit_corpus PRIVATE cxx_std_11)
 target_compile_definitions(
@@ -148,7 +158,8 @@ add_executable(test_json_writer ${CMAKE_CURRENT_SOURCE_DIR}/test_json_writer.cpp
 target_include_directories(test_json_writer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_json_writer PRIVATE nlohmann_json::nlohmann_json)
 add_test(NAME json_writer_tests COMMAND test_json_writer)
-add_executable(test_extract_limits ${CMAKE_CURRENT_SOURCE_DIR}/test_extract_limits.c)
+add_executable(test_extract_limits ${CMAKE_CURRENT_SOURCE_DIR}/test_extract_limits.c
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c)
 target_include_directories(test_extract_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME extract_limit_tests COMMAND test_extract_limits)
 add_executable(test_game_file_extensions ${CMAKE_CURRENT_SOURCE_DIR}/test_game_file_extensions.c
@@ -191,6 +202,7 @@ set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_C
 add_executable(
     test_stuffit_malformed
     ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_malformed.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
 target_include_directories(test_stuffit_malformed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_stuffit_malformed PRIVATE STUFFIT_EXTRACT_TESTING)
@@ -200,8 +212,11 @@ set_tests_properties(stuffit_malformed_tests PROPERTIES WORKING_DIRECTORY
 
 add_executable(
     test_stuffit_direct
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_direct.c ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_direct.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)
 target_include_directories(test_stuffit_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 set(DEMO_INSTALLER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/demo installers")
 set(MAC_STUFFIT_ORACLE_FILE "${DEMO_INSTALLER_DIR}/mac_stuffit_oracles.json")

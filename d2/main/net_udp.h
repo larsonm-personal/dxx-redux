@@ -69,7 +69,8 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_GAME_INFO				  3 // Packet containing all info about a netgame.
 #ifdef __ANDROID__
 #define UPID_GAME_INFO_RECONNECT_AUTH_SIZE \
-	((MAX_PLAYERS + 4) * ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE)
+	((MAX_PLAYERS + 4) * ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE + \
+	 ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE)
 #else
 #define UPID_GAME_INFO_RECONNECT_AUTH_SIZE 0
 #endif

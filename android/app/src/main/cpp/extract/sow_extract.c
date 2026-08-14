@@ -837,9 +837,10 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 static int sow_extract_impl(const char *sow_path, const char *output_dir,
                             const char **extensions,
                             sow_progress_fn progress, void *user_data,
-                            int append_existing)
+                            int append_existing,
+                            dxx_extract_attempt_budget_t *budget)
 {
-	if (!sow_path || !output_dir) return -1;
+	if (!sow_path || !output_dir || !budget) return -1;
 
 	FILE *fp = fopen(sow_path, "rb");
 	if (!fp) {
@@ -861,9 +862,9 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 
 	/* First pass: count total bytes for progress */
 	uint64_t total_bytes = 0;
+	uint64_t entry_count = 0;
 	{
 		arj_entry_t e;
-		unsigned int entry_count = 0;
 		while (1) {
 			int r = arj_read_entry(fp, &e, file_size);
 			uint64_t output_size;
@@ -881,13 +882,13 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			if (e.file_type == ARJ_TYPE_BINARY && e.filename[0] != '\0') {
 				if (ext_matches(e.filename, extensions)) {
 					output_size = e.method == ARJ_METHOD_STORED ? e.comp_size : e.orig_size;
-					if (++entry_count > DXX_EXTRACT_MAX_ENTRIES ||
+					if (++entry_count > budget->max_entries ||
 					    (e.method == ARJ_METHOD_STORED && e.comp_size != e.orig_size) ||
 					    !dxx_extract_entry_allowed(output_size, e.comp_size) ||
 					    !dxx_extract_memory_allowed(e.comp_size,
 					                                e.method == ARJ_METHOD_STORED ? 0 : e.orig_size) ||
 					    dxx_extract_add_bytes(&total_bytes, output_size,
-					                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+					                          budget->max_output_bytes) < 0) {
 						fclose(fp);
 						return -1;
 					}
@@ -904,9 +905,13 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			return -1;
 		}
 	}
-	if (!dxx_extract_has_free_space(output_dir, total_bytes)) {
-		fclose(fp);
-		return -1;
+	{
+		int reserve_result = dxx_extract_attempt_reserve_output(
+		    budget, output_dir, total_bytes, entry_count);
+		if (reserve_result < 0) {
+			fclose(fp);
+			return reserve_result;
+		}
 	}
 
 	/* Second pass: extract */
@@ -915,6 +920,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 	arj_entry_t e;
 
 	while (1) {
+		uint64_t memory_bytes;
 		int r = arj_read_entry(fp, &e, file_size);
 		if (r < 0) {
 			fclose(fp);
@@ -942,6 +948,10 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			}
 			continue;
 		}
+		if (dxx_extract_attempt_cancelled(budget)) {
+			fclose(fp);
+			return DXX_EXTRACT_CANCELLED;
+		}
 
 		/* Progress callback */
 		if (progress) {
@@ -957,18 +967,32 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		         output_dir, PATH_SEP, filename);
 
 		/* Read compressed data */
+		memory_bytes = e.comp_size;
+		if (e.method != ARJ_METHOD_STORED &&
+		    dxx_extract_add_bytes(&memory_bytes, e.orig_size,
+		                          budget->max_memory_bytes) < 0) {
+			fclose(fp);
+			return -1;
+		}
+		if (dxx_extract_attempt_reserve_memory(budget, memory_bytes) < 0) {
+			fclose(fp);
+			return -1;
+		}
 		unsigned char *comp_data = (unsigned char *) malloc(e.comp_size);
 		if (!comp_data) {
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
 		if (fseek(fp, e.data_offset, SEEK_SET) != 0) {
 			free(comp_data);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
 		if (fread(comp_data, 1, e.comp_size, fp) != e.comp_size) {
 			free(comp_data);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
@@ -989,6 +1013,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			fprintf(stderr, "sow_extract: unsupported method %d for '%s'\n",
 			        e.method, filename);
 			free(comp_data);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
@@ -996,6 +1021,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		if (!out_data) {
 			fprintf(stderr, "sow_extract: decompression failed for '%s'\n",
 			        filename);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
@@ -1003,6 +1029,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			fprintf(stderr, "sow_extract: payload CRC mismatch for '%s'\n",
 			        filename);
 			free(out_data);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
@@ -1015,6 +1042,7 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 			if (!write_ok || !close_ok) {
 				remove(out_path);
 				free(out_data);
+				dxx_extract_attempt_release_memory(budget, memory_bytes);
 				fclose(fp);
 				return -1;
 			}
@@ -1023,10 +1051,12 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		} else {
 			fprintf(stderr, "sow_extract: cannot create '%s'\n", out_path);
 			free(out_data);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
 			fclose(fp);
 			return -1;
 		}
 		free(out_data);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
 	}
 
 	fclose(fp);
@@ -1037,8 +1067,10 @@ int sow_extract(const char *sow_path, const char *output_dir,
                 const char **extensions,
                 sow_progress_fn progress, void *user_data)
 {
+	dxx_extract_attempt_budget_t budget;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
 	return sow_extract_impl(sow_path, output_dir, extensions, progress,
-	                        user_data, 0);
+	                        user_data, 0, &budget);
 }
 
 int sow_extract_with_mode(const char *sow_path, const char *output_dir,
@@ -1046,6 +1078,18 @@ int sow_extract_with_mode(const char *sow_path, const char *output_dir,
                           sow_progress_fn progress, void *user_data,
                           int append_existing)
 {
+	dxx_extract_attempt_budget_t budget;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
 	return sow_extract_impl(sow_path, output_dir, extensions, progress,
-	                        user_data, append_existing);
+	                        user_data, append_existing, &budget);
+}
+
+int sow_extract_with_budget(const char *sow_path, const char *output_dir,
+                            const char **extensions,
+                            sow_progress_fn progress, void *user_data,
+                            int append_existing,
+                            dxx_extract_attempt_budget_t *budget)
+{
+	return sow_extract_impl(sow_path, output_dir, extensions, progress,
+	                        user_data, append_existing, budget);
 }

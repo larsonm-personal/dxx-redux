@@ -222,12 +222,16 @@ typedef struct {
 	JNIEnv *env;
 	jobject callback; /* DiscImportBridge.ExtractProgress instance */
 	jmethodID on_progress;
+	dxx_extract_attempt_budget_t *budget;
 } extract_ctx_t;
 
-static void init_extract_ctx(JNIEnv *env, jobject progress, extract_ctx_t *ctx)
+static void init_extract_ctx(JNIEnv *env, jobject progress,
+                             dxx_extract_attempt_budget_t *budget,
+                             extract_ctx_t *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
 	ctx->env = env;
+	ctx->budget = budget;
 	if (progress) {
 		jclass cls;
 
@@ -255,7 +259,39 @@ static int extract_progress_cb(const char *current_file,
 	(*ctx->env)->DeleteLocalRef(ctx->env, jfile);
 	if ((*ctx->env)->ExceptionCheck(ctx->env))
 		return 1;
+	if (cancel != 0)
+		dxx_extract_attempt_cancel(ctx->budget);
 	return (int) cancel;
+}
+
+static int init_attempt_budget(JNIEnv *env, jlongArray state,
+                               dxx_extract_attempt_budget_t *budget)
+{
+	jlong values[3];
+
+	if (!state || (*env)->GetArrayLength(env, state) != 3)
+		return 0;
+	(*env)->GetLongArrayRegion(env, state, 0, 3, values);
+	if ((*env)->ExceptionCheck(env) || values[0] < 0 || values[1] < 0 ||
+	    values[0] > (jlong) DXX_EXTRACT_MAX_TOTAL_BYTES ||
+	    values[1] > (jlong) DXX_EXTRACT_MAX_ENTRIES)
+		return 0;
+	dxx_extract_attempt_budget_init(budget, NULL, NULL);
+	budget->output_bytes = (uint64_t) values[0];
+	budget->entries = (uint64_t) values[1];
+	budget->cancelled = values[2] != 0;
+	return 1;
+}
+
+static void store_attempt_budget(JNIEnv *env, jlongArray state,
+                                 const dxx_extract_attempt_budget_t *budget)
+{
+	jlong values[3];
+
+	values[0] = (jlong) budget->output_bytes;
+	values[1] = (jlong) budget->entries;
+	values[2] = budget->cancelled ? 1 : 0;
+	(*env)->SetLongArrayRegion(env, state, 0, 3, values);
 }
 
 /*
@@ -274,12 +310,15 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
     JNIEnv *env, jclass clazz,
     jint binFd, jint trackStart, jint trackSectors,
     jint sectorStride, jint userDataOffset,
-    jstring outputDir, jobject progress)
+    jstring outputDir, jobject progress, jlongArray attemptState)
 {
+	dxx_extract_attempt_budget_t budget;
 	if (binFd < 0) {
 		LOGE("nativeExtractIsoFiles: invalid binFd %d", binFd);
 		return -1;
 	}
+	if (!init_attempt_budget(env, attemptState, &budget))
+		return -1;
 
 	char *out_dir;
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
@@ -300,14 +339,15 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 
 	/* Set up progress callback */
 	extract_ctx_t ctx;
-	init_extract_ctx(env, progress, &ctx);
+	init_extract_ctx(env, progress, &budget, &ctx);
 
-	int extracted = iso_extract_track_files(binFd, trackStart, trackSectors,
-	                                        sectorStride, userDataOffset,
-	                                        list, out_dir, dxx_android_disc_extract_extensions,
-	                                        progress ? extract_progress_cb : NULL,
-	                                        &ctx);
+	int extracted = iso_extract_track_files_with_budget(binFd, trackStart, trackSectors,
+	                                                    sectorStride, userDataOffset,
+	                                                    list, out_dir, dxx_android_disc_extract_extensions,
+	                                                    progress ? extract_progress_cb : NULL,
+	                                                    &ctx, &budget);
 
+	store_attempt_budget(env, attemptState, &budget);
 	iso_file_list_destroy(list);
 	free(out_dir);
 	LOGI("Extracted %d files", extracted);
@@ -318,8 +358,9 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
     JNIEnv *env, jclass clazz,
     jint isoFd,
-    jstring outputDir, jobject progress)
+    jstring outputDir, jobject progress, jlongArray attemptState)
 {
+	dxx_extract_attempt_budget_t budget;
 	char *out_dir;
 	iso_file_list_t *list;
 	int n;
@@ -330,6 +371,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 		LOGE("nativeExtractIsoImageFiles: invalid isoFd %d", isoFd);
 		return -1;
 	}
+	if (!init_attempt_budget(env, attemptState, &budget))
+		return -1;
 
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 
@@ -345,11 +388,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 		return -1;
 	}
 
-	init_extract_ctx(env, progress, &ctx);
-	extracted = iso_extract_image_files(isoFd, list, out_dir, dxx_android_disc_extract_extensions,
-	                                    progress ? extract_progress_cb : NULL,
-	                                    &ctx);
+	init_extract_ctx(env, progress, &budget, &ctx);
+	extracted = iso_extract_image_files_with_budget(
+	    isoFd, list, out_dir, dxx_android_disc_extract_extensions,
+	    progress ? extract_progress_cb : NULL, &ctx, &budget);
 
+	store_attempt_budget(env, attemptState, &budget);
 	iso_file_list_destroy(list);
 	free(out_dir);
 	LOGI("Extracted %d files from ISO image", extracted);
@@ -420,11 +464,16 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
     JNIEnv *env, jclass clazz,
     jstring sowPath, jstring outputDir, jobject progress,
-    jboolean appendExisting)
+    jboolean appendExisting, jlongArray attemptState)
 {
+	dxx_extract_attempt_budget_t budget;
 	char *sow;
 	char *out_dir;
 	if (!dxx_jni_string_to_utf8(env, sowPath, &sow)) return -1;
+	if (!init_attempt_budget(env, attemptState, &budget)) {
+		free(sow);
+		return -1;
+	}
 
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) {
 		free(sow);
@@ -433,11 +482,13 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 
 	/* Set up progress callback */
 	extract_ctx_t ctx;
-	init_extract_ctx(env, progress, &ctx);
+	init_extract_ctx(env, progress, &budget, &ctx);
 
-	int extracted = sow_extract_with_mode(sow, out_dir, NULL,
-	                                      progress ? extract_progress_cb : NULL,
-	                                      &ctx, appendExisting == JNI_TRUE);
+	int extracted = sow_extract_with_budget(sow, out_dir, NULL,
+	                                        progress ? extract_progress_cb : NULL,
+	                                        &ctx, appendExisting == JNI_TRUE,
+	                                        &budget);
+	store_attempt_budget(env, attemptState, &budget);
 	LOGI("SOW extracted %d files from %s (append=%s)", extracted, sow,
 	     appendExisting == JNI_TRUE ? "true" : "false");
 
@@ -461,7 +512,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractStuffitFiles(
 	}
 
 	extract_ctx_t ctx;
-	init_extract_ctx(env, progress, &ctx);
+	init_extract_ctx(env, progress, NULL, &ctx);
 
 	int extracted = stuffit_extract(sit, out_dir,
 	                                dxx_android_mac_disc_extract_extensions,
@@ -479,8 +530,9 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
     JNIEnv *env, jclass clazz,
     jint binFd, jint trackStart, jint trackSectors,
-    jstring outputDir, jobject progress)
+    jstring outputDir, jobject progress, jlongArray attemptState)
 {
+	dxx_extract_attempt_budget_t budget;
 	extract_ctx_t ctx;
 	hfs_partition_info_t hfs_info;
 	char *out_dir;
@@ -490,23 +542,26 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 		LOGE("nativeExtractMacFiles: invalid binFd %d", binFd);
 		return -1;
 	}
+	if (!init_attempt_budget(env, attemptState, &budget))
+		return -1;
 
 	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir))
 		return -1;
-	init_extract_ctx(env, progress, &ctx);
+	init_extract_ctx(env, progress, &budget, &ctx);
 
 	if (hfs_find_partition(binFd, trackStart, trackSectors, &hfs_info) < 0) {
 		free(out_dir);
 		return -1;
 	}
 
-	extracted = mac_extract_files_from_hfs_track(binFd, trackStart, trackSectors,
-	                                             out_dir,
-	                                             dxx_android_mac_disc_extract_extensions,
-	                                             dxx_android_mac_disc_extract_extensions,
-	                                             progress ? extract_progress_cb : NULL,
-	                                             &ctx);
+	extracted = mac_extract_files_from_hfs_track_with_budget(binFd, trackStart, trackSectors,
+	                                                         out_dir,
+	                                                         dxx_android_mac_disc_extract_extensions,
+	                                                         dxx_android_mac_disc_extract_extensions,
+	                                                         progress ? extract_progress_cb : NULL,
+	                                                         &ctx, &budget);
 
+	store_attempt_budget(env, attemptState, &budget);
 	LOGI("Mac import extracted %d files from HFS volume '%s'", extracted,
 	     hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name);
 

@@ -8,7 +8,17 @@
 #include "secret_area_scan.h"
 #include "rewind_file.h"
 
+#define LEVEL_METADATA_READINESS_CALCULATING 0
+#define LEVEL_METADATA_READINESS_NEXT_READY  1
+#define LEVEL_METADATA_READINESS_COMPLETE    2
+#define LEVEL_METADATA_READINESS_PARTIAL     3
+#define LEVEL_METADATA_READINESS_FAILED      4
+
 void secret_area_rescan_current_level(void);
+void secret_area_prepare_current_level(void);
+int level_metadata_try_load_pending_cache(void);
+int level_metadata_get_route_readiness(void);
+const char *level_metadata_route_readiness_name(int readiness);
 void level_metadata_rescan_current_level(void);
 void level_metadata_rescan_current_level_from_object(int objnum);
 void level_metadata_rescan_route_from_object(int objnum);

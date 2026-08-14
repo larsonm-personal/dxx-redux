@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -42,13 +43,13 @@ class CueDataTrackExtractionTest {
                     setDir = setDir,
                     tracks = tracks,
                     imageCount = 2,
-                    extractTrack = { cueTrack, outputDir, _ ->
+                    extractTrack = { cueTrack, outputDir, _, _ ->
                         visited += cueTrack.trackNum to cueTrack.fileIndex
                         File(outputDir, "track-${cueTrack.trackNum}.hog").writeText("unique")
                         File(outputDir, "overlay.hog").writeText("track-${cueTrack.trackNum}")
                         CueDataTrackAttempt(1, 0)
                     },
-                    postProcess = { _, _ -> 0 },
+                    postProcess = { _, _, _ -> 0 },
                 )
 
             assertTrue(result.succeeded)
@@ -58,6 +59,39 @@ class CueDataTrackExtractionTest {
             assertTrue(File(setDir, "track-1.hog").isFile)
             assertTrue(File(setDir, "track-3.hog").isFile)
             assertTrue(File(setDir, "track-4.hog").isFile)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun oneAttemptBudgetFlowsAcrossTracksAndNestedPostProcessing() {
+        val root = createTempDirectory("cue-attempt-budget").toFile()
+        try {
+            var shared: DiscExtractionAttempt? = null
+            val observedBytes = mutableListOf<Long>()
+            val result =
+                extractCueDataTracks(
+                    setDir = File(root, "set"),
+                    tracks = listOf(track(1, 0, 0, 10), track(2, 0, 0, 10)),
+                    imageCount = 1,
+                    extractTrack = { cueTrack, outputDir, _, attempt ->
+                        shared?.let { assertSame(it, attempt) } ?: run { shared = attempt }
+                        observedBytes += attempt.outputBytes
+                        attempt.state[0] += cueTrack.trackNum.toLong()
+                        File(outputDir, "track-${cueTrack.trackNum}.hog").writeText("data")
+                        CueDataTrackAttempt(1, 0)
+                    },
+                    postProcess = { _, _, attempt ->
+                        assertSame(shared, attempt)
+                        observedBytes += attempt.outputBytes
+                        0
+                    },
+                )
+
+            assertTrue(result.succeeded)
+            assertEquals(listOf(0L, 1L, 3L), observedBytes)
+            assertFalse(root.listFiles().orEmpty().any { it.name.startsWith(".disc-import-") })
         } finally {
             root.deleteRecursively()
         }
@@ -76,7 +110,7 @@ class CueDataTrackExtractionTest {
                     setDir = setDir,
                     tracks = tracks,
                     imageCount = 2,
-                    extractTrack = { cueTrack, outputDir, _ ->
+                    extractTrack = { cueTrack, outputDir, _, _ ->
                         File(outputDir, "new.hog").writeText("track-${cueTrack.trackNum}")
                         if (cueTrack.trackNum == 2) {
                             CueDataTrackAttempt(-1, -1)
@@ -84,7 +118,7 @@ class CueDataTrackExtractionTest {
                             CueDataTrackAttempt(1, 0)
                         }
                     },
-                    postProcess = { _, _ -> 0 },
+                    postProcess = { _, _, _ -> 0 },
                 )
 
             assertFalse(result.succeeded)
@@ -106,11 +140,11 @@ class CueDataTrackExtractionTest {
                     setDir = setDir,
                     tracks = listOf(track(1, 0, 0, 10)),
                     imageCount = 1,
-                    extractTrack = { _, outputDir, _ ->
+                    extractTrack = { _, outputDir, _, _ ->
                         File(outputDir, "primary.hog").writeText("complete")
                         CueDataTrackAttempt(1, 0)
                     },
-                    postProcess = { outputDir, _ ->
+                    postProcess = { outputDir, _, _ ->
                         File(outputDir, "partial.pig").writeText("partial")
                         -1
                     },
@@ -176,13 +210,13 @@ class CueDataTrackExtractionTest {
                     tracks = tracks,
                     imageCount = 1,
                     progress = progress,
-                    extractTrack = { _, outputDir, trackProgress ->
+                    extractTrack = { _, outputDir, trackProgress, _ ->
                         calls++
                         File(outputDir, "partial.hog").writeText("partial")
                         trackProgress?.onProgress("partial.hog", 100, 100)
                         CueDataTrackAttempt(1, 0)
                     },
-                    postProcess = { _, _ -> 0 },
+                    postProcess = { _, _, _ -> 0 },
                 )
 
             assertTrue(result.cancelled)
@@ -205,11 +239,11 @@ class CueDataTrackExtractionTest {
                     setDir = File(root, "set"),
                     tracks = tracks,
                     imageCount = 2,
-                    extractTrack = { _, _, _ ->
+                    extractTrack = { _, _, _, _ ->
                         calls++
                         CueDataTrackAttempt(1, 0)
                     },
-                    postProcess = { _, _ -> 0 },
+                    postProcess = { _, _, _ -> 0 },
                 )
 
             assertFalse(result.succeeded)
@@ -273,7 +307,7 @@ class CueDataTrackExtractionTest {
 					setDir = File(root, "set"),
 					tracks = listOf(invalid),
 					imageCount = 1,
-					extractTrack = { _, _, _ ->
+					extractTrack = { _, _, _, _ ->
 						calls++
 						CueDataTrackAttempt(1, 0)
 					},

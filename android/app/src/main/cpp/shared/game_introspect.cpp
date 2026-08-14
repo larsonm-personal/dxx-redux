@@ -730,7 +730,7 @@ static json serialize_level_metadata_route()
 	}
 	if (level_metadata_get_route_analysis_cache_summary(&analysis_cache)) {
 		result["analysis_cache"] = {
-			{ "build_number", analysis_cache.build_number },
+			{ "generation", analysis_cache.generation },
 			{ "hits", analysis_cache.hits },
 			{ "misses", analysis_cache.misses },
 			{ "writes", analysis_cache.writes },
@@ -2139,7 +2139,7 @@ extern "C" char *game_introspect_get_state(void)
 #else
 		j["headlight_active_default"] = false;
 #endif
-		#ifdef OGL
+#ifdef OGL
 		{
 			android_ogl_msaa_diagnostics msaa = {};
 			json diagnostics;
@@ -2160,11 +2160,11 @@ extern "C" char *game_introspect_get_state(void)
 			diagnostics["resolve_count"] = msaa.resolve_count;
 			j["msaa"] = std::move(diagnostics);
 		}
-		#else
+#else
 		j["msaa_samples"] = 0;
 		j["msaa_max_samples"] = 0;
 		j["msaa_fbo_bound"] = false;
-		#endif
+#endif
 		{
 			auto &rja = j["raw_joy_axis"];
 			for (int a = 0; a < 8; a++)
@@ -2183,8 +2183,8 @@ extern "C" char *game_introspect_get_state(void)
 		}
 	}
 
-	/* -- Player & position (only meaningful when a level is loaded) -- */
-	#ifdef OGL
+/* -- Player & position (only meaningful when a level is loaded) -- */
+#ifdef OGL
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
@@ -2304,7 +2304,7 @@ extern "C" char *game_introspect_get_state(void)
 		tex["max_hires_h"] = max_h;
 		j["hires_textures"] = tex;
 	}
-	#endif
+#endif
 
 	/* -- Framebuffer pixel sample (center + 4x4 grid average) -------- */
 	{

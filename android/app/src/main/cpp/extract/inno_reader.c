@@ -100,17 +100,171 @@ static const uint64_t INNO_STREAM_DIRECT_THRESHOLD = 64ULL * 1024ULL * 1024ULL;
 
 #ifdef INNO_READER_TESTING
 static int inno_test_allocations_before_failure = -1;
+static uint64_t inno_test_decode_work_limit;
 #endif
 
-static void *inno_calloc(size_t count, size_t size)
+static uint64_t inno_decode_work_limit(void)
+{
+#ifdef INNO_READER_TESTING
+	if (inno_test_decode_work_limit > 0)
+		return inno_test_decode_work_limit;
+#endif
+	return DXX_EXTRACT_MAX_TOTAL_BYTES;
+}
+
+static int reserve_decode_work(inno_archive_t *arc, uint64_t bytes)
+{
+	if (!arc || dxx_extract_add_bytes(&arc->decoded_work_bytes, bytes,
+	                                  inno_decode_work_limit()) < 0) {
+		INNO_LOG("aggregate solid-chunk decode work exceeds extraction budget");
+		return -1;
+	}
+	return 0;
+}
+
+static void exhaust_decode_work(inno_archive_t *arc)
+{
+	if (arc)
+		arc->decoded_work_bytes = inno_decode_work_limit();
+}
+
+static int reconcile_decode_work(inno_archive_t *arc, uint64_t reserved,
+                                 uint64_t actual)
+{
+	if (actual <= reserved)
+		return 0;
+	if (reserve_decode_work(arc, actual - reserved) < 0) {
+		exhaust_decode_work(arc);
+		return -1;
+	}
+	return 0;
+}
+
+static int inno_allocation_allowed(void)
 {
 #ifdef INNO_READER_TESTING
 	if (inno_test_allocations_before_failure == 0)
-		return NULL;
+		return 0;
 	if (inno_test_allocations_before_failure > 0)
 		inno_test_allocations_before_failure--;
 #endif
+	return 1;
+}
+
+static void *inno_calloc(size_t count, size_t size)
+{
+	if (!inno_allocation_allowed()) return NULL;
 	return calloc(count, size);
+}
+
+typedef struct {
+	ISzAlloc allocator;
+	size_t live_bytes;
+} inno_memory_budget_t;
+
+typedef union {
+	struct {
+		size_t size;
+	} allocation;
+	long double long_double_alignment;
+	void *pointer_alignment;
+} inno_allocation_header_t;
+
+static int inno_memory_reserve(inno_memory_budget_t *budget, size_t size)
+{
+	if (!budget || size > (size_t) DXX_EXTRACT_MAX_MEMORY_BYTES ||
+	    budget->live_bytes >
+	        (size_t) DXX_EXTRACT_MAX_MEMORY_BYTES - size)
+		return -1;
+	budget->live_bytes += size;
+	return 0;
+}
+
+static void inno_memory_release(inno_memory_budget_t *budget, size_t size)
+{
+	if (budget && size <= budget->live_bytes)
+		budget->live_bytes -= size;
+}
+
+static void *inno_memory_alloc(inno_memory_budget_t *budget, size_t size)
+{
+	if (inno_memory_reserve(budget, size) < 0)
+		return NULL;
+	if (!inno_allocation_allowed()) {
+		inno_memory_release(budget, size);
+		return NULL;
+	}
+	void *allocation = malloc(size);
+	if (!allocation)
+		inno_memory_release(budget, size);
+	return allocation;
+}
+
+static void inno_memory_free(inno_memory_budget_t *budget, void *allocation,
+                             size_t size)
+{
+	free(allocation);
+	inno_memory_release(budget, size);
+}
+
+static void *inno_memory_realloc(inno_memory_budget_t *budget,
+                                 void *allocation, size_t old_size,
+                                 size_t new_size)
+{
+	if (new_size < old_size)
+		return NULL;
+	if (inno_memory_reserve(budget, new_size) < 0)
+		return NULL;
+	if (!inno_allocation_allowed()) {
+		inno_memory_release(budget, new_size);
+		return NULL;
+	}
+	void *resized = malloc(new_size);
+	if (!resized) {
+		inno_memory_release(budget, new_size);
+		return NULL;
+	}
+	memcpy(resized, allocation, old_size);
+	free(allocation);
+	inno_memory_release(budget, old_size);
+	return resized;
+}
+
+static void *lzma_budget_alloc(ISzAllocPtr p, size_t size)
+{
+	inno_memory_budget_t *budget = (inno_memory_budget_t *) p;
+	if (size > SIZE_MAX - sizeof(inno_allocation_header_t) ||
+	    inno_memory_reserve(budget, size) < 0)
+		return NULL;
+	if (!inno_allocation_allowed()) {
+		inno_memory_release(budget, size);
+		return NULL;
+	}
+	inno_allocation_header_t *header =
+	    (inno_allocation_header_t *) malloc(sizeof(*header) + size);
+	if (!header) {
+		inno_memory_release(budget, size);
+		return NULL;
+	}
+	header->allocation.size = size;
+	return header + 1;
+}
+
+static void lzma_budget_free(ISzAllocPtr p, void *addr)
+{
+	if (!addr) return;
+	inno_memory_budget_t *budget = (inno_memory_budget_t *) p;
+	inno_allocation_header_t *header =
+	    (inno_allocation_header_t *) addr - 1;
+	inno_memory_release(budget, header->allocation.size);
+	free(header);
+}
+
+static void inno_memory_budget_init(inno_memory_budget_t *budget)
+{
+	budget->allocator.Alloc = lzma_budget_alloc;
+	budget->allocator.Free = lzma_budget_free;
+	budget->live_bytes = 0;
 }
 
 static void *lzma_alloc(ISzAllocPtr p, size_t size)
@@ -118,11 +272,13 @@ static void *lzma_alloc(ISzAllocPtr p, size_t size)
 	(void) p;
 	return malloc(size);
 }
+
 static void lzma_free(ISzAllocPtr p, void *addr)
 {
 	(void) p;
 	free(addr);
 }
+
 static const ISzAlloc g_lzma_alloc = { lzma_alloc, lzma_free };
 
 /* ── CRC32 (IEEE 802.3, same as zlib/InnoSetup) ─────────────────── */
@@ -534,8 +690,20 @@ static uint64_t get_u64(const uint8_t *p)
 	return (uint64_t) get_u32(p) | ((uint64_t) get_u32(p + 4) << 32);
 }
 
-/* ── InnoSetup version constants ─────────────────────────────────── */
-#define INNO_VER(a, b, c) (((a) * 10000) + ((b) * 100) + (c))
+/* -- InnoSetup version comparison --------------------------------- */
+static int version_at_least(const inno_version_t *version, int major,
+                            int minor, int patch)
+{
+	if (version->major != major) return version->major > major;
+	if (version->minor != minor) return version->minor > minor;
+	return version->patch >= patch;
+}
+
+static int version_is_supported(const inno_version_t *version)
+{
+	return version && version->major == 5 && version->minor >= 3 &&
+	       version->minor <= 6 && version->patch <= 99;
+}
 
 /* ── PE Resource reader (find RT_RCDATA / name 11111) ────────────── */
 
@@ -883,6 +1051,9 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
                                         size_t *out_len,
                                         size_t *bytes_consumed)
 {
+	inno_memory_budget_t memory_budget;
+	inno_memory_budget_init(&memory_budget);
+
 	/* Read the 9-byte block header */
 	uint8_t hdr[9];
 	if (read_at(fd, offset, hdr, 9) < 0) {
@@ -909,20 +1080,21 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 	*bytes_consumed = 9 + stored_size;
 
 	/* Read all stored data */
-	uint8_t *stored = (uint8_t *) malloc(stored_size);
+	uint8_t *stored =
+	    (uint8_t *) inno_memory_alloc(&memory_budget, stored_size);
 	if (!stored) return NULL;
 	if (read_at(fd, offset + 9, stored, stored_size) < 0) {
 		INNO_LOG("cannot read %u bytes of block data", stored_size);
-		free(stored);
+		inno_memory_free(&memory_budget, stored, stored_size);
 		return NULL;
 	}
 
 	/* Strip CRC32 prefixes from 4096-byte sub-blocks.
 	 * Format: [CRC32 4 bytes][data up to 4096 bytes]... */
 	size_t raw_cap = stored_size; /* upper bound (raw < stored) */
-	uint8_t *raw = (uint8_t *) malloc(raw_cap);
+	uint8_t *raw = (uint8_t *) inno_memory_alloc(&memory_budget, raw_cap);
 	if (!raw) {
-		free(stored);
+		inno_memory_free(&memory_budget, stored, stored_size);
 		return NULL;
 	}
 	size_t raw_len = 0;
@@ -930,8 +1102,8 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 	while (pos < stored_size) {
 		if (pos + 4 > stored_size) {
 			INNO_LOG("truncated sub-block CRC at pos %zu", pos);
-			free(raw);
-			free(stored);
+			inno_memory_free(&memory_budget, raw, raw_cap);
+			inno_memory_free(&memory_budget, stored, stored_size);
 			return NULL;
 		}
 		uint32_t sub_crc = get_u32(stored + pos);
@@ -942,26 +1114,27 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 		uint32_t actual_sub_crc = inno_crc32(stored + pos, chunk_len);
 		if (actual_sub_crc != sub_crc) {
 			INNO_LOG("sub-block CRC mismatch at pos %zu", pos - 4);
-			free(raw);
-			free(stored);
+			inno_memory_free(&memory_budget, raw, raw_cap);
+			inno_memory_free(&memory_budget, stored, stored_size);
 			return NULL;
 		}
 		memcpy(raw + raw_len, stored + pos, chunk_len);
 		raw_len += chunk_len;
 		pos += chunk_len;
 	}
-	free(stored);
+	inno_memory_free(&memory_budget, stored, stored_size);
 
 	if (!compressed) {
 		/* Stored (uncompressed) */
 		*out_len = raw_len;
+		inno_memory_release(&memory_budget, raw_cap);
 		return raw;
 	}
 
 	/* LZMA1 decompression (Inno-specific: 5-byte header, no size field) */
 	if (raw_len < 5) {
 		INNO_LOG("LZMA data too small (%zu bytes)", raw_len);
-		free(raw);
+		inno_memory_free(&memory_budget, raw, raw_cap);
 		return NULL;
 	}
 
@@ -969,7 +1142,7 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 	uint8_t lzma_props[5];
 	memcpy(lzma_props, raw, 5);
 	if (get_u32(lzma_props + 1) > DXX_EXTRACT_MAX_METADATA_BYTES) {
-		free(raw);
+		inno_memory_free(&memory_budget, raw, raw_cap);
 		return NULL;
 	}
 
@@ -981,19 +1154,21 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 	                        ? (size_t) DXX_EXTRACT_MAX_METADATA_BYTES
 	                        : lzma_data_len * 4u;
 	if (decomp_cap < 65536) decomp_cap = 65536;
-	uint8_t *decomp = (uint8_t *) malloc(decomp_cap);
+	uint8_t *decomp =
+	    (uint8_t *) inno_memory_alloc(&memory_budget, decomp_cap);
 	if (!decomp) {
-		free(raw);
+		inno_memory_free(&memory_budget, raw, raw_cap);
 		return NULL;
 	}
 
 	CLzmaDec dec;
 	LzmaDec_Construct(&dec);
-	SRes res = LzmaDec_Allocate(&dec, lzma_props, 5, &g_lzma_alloc);
+	SRes res = LzmaDec_Allocate(&dec, lzma_props, 5,
+	                            &memory_budget.allocator);
 	if (res != SZ_OK) {
 		INNO_LOG("LZMA alloc failed: %d", res);
-		free(decomp);
-		free(raw);
+		inno_memory_free(&memory_budget, decomp, decomp_cap);
+		inno_memory_free(&memory_budget, raw, raw_cap);
 		return NULL;
 	}
 	LzmaDec_Init(&dec);
@@ -1006,22 +1181,24 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 		/* Grow output buffer if needed */
 		if (decomp_len >= decomp_cap) {
 			if (decomp_cap >= DXX_EXTRACT_MAX_METADATA_BYTES) {
-				LzmaDec_Free(&dec, &g_lzma_alloc);
-				free(decomp);
-				free(raw);
+				LzmaDec_Free(&dec, &memory_budget.allocator);
+				inno_memory_free(&memory_budget, decomp, decomp_cap);
+				inno_memory_free(&memory_budget, raw, raw_cap);
 				return NULL;
 			}
-			decomp_cap *= 2u;
-			if (decomp_cap > DXX_EXTRACT_MAX_METADATA_BYTES)
-				decomp_cap = (size_t) DXX_EXTRACT_MAX_METADATA_BYTES;
-			uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
+			size_t next_cap = decomp_cap * 2u;
+			if (next_cap > DXX_EXTRACT_MAX_METADATA_BYTES)
+				next_cap = (size_t) DXX_EXTRACT_MAX_METADATA_BYTES;
+			uint8_t *tmp = (uint8_t *) inno_memory_realloc(
+			    &memory_budget, decomp, decomp_cap, next_cap);
 			if (!tmp) {
-				LzmaDec_Free(&dec, &g_lzma_alloc);
-				free(decomp);
-				free(raw);
+				LzmaDec_Free(&dec, &memory_budget.allocator);
+				inno_memory_free(&memory_budget, decomp, decomp_cap);
+				inno_memory_free(&memory_budget, raw, raw_cap);
 				return NULL;
 			}
 			decomp = tmp;
+			decomp_cap = next_cap;
 		}
 
 		size_t dest_len = decomp_cap - decomp_len;
@@ -1034,9 +1211,9 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 
 		if (res != SZ_OK) {
 			INNO_LOG("LZMA decode error: %d", res);
-			LzmaDec_Free(&dec, &g_lzma_alloc);
-			free(decomp);
-			free(raw);
+			LzmaDec_Free(&dec, &memory_budget.allocator);
+			inno_memory_free(&memory_budget, decomp, decomp_cap);
+			inno_memory_free(&memory_budget, raw, raw_cap);
 			return NULL;
 		}
 		if (status == LZMA_STATUS_FINISHED_WITH_MARK ||
@@ -1046,14 +1223,15 @@ static uint8_t *decompress_block_stream(int fd, uint64_t offset,
 		if (dest_len == 0 && src_len == 0) break; /* no progress */
 	}
 
-	LzmaDec_Free(&dec, &g_lzma_alloc);
-	free(raw);
+	LzmaDec_Free(&dec, &memory_budget.allocator);
+	inno_memory_free(&memory_budget, raw, raw_cap);
 	if (!dxx_extract_ratio_allowed(decomp_len, lzma_data_len)) {
-		free(decomp);
+		inno_memory_free(&memory_budget, decomp, decomp_cap);
 		return NULL;
 	}
 
 	*out_len = decomp_len;
+	inno_memory_release(&memory_budget, decomp_cap);
 	return decomp;
 }
 
@@ -1144,8 +1322,7 @@ typedef struct {
 static inno_checksum_layout_t checksum_layout_for_version(const inno_version_t *ver)
 {
 	inno_checksum_layout_t layout;
-	int version = INNO_VER(ver->major, ver->minor, ver->patch);
-	if (version >= INNO_VER(5, 3, 9)) {
+	if (version_at_least(ver, 5, 3, 9)) {
 		layout.type = INNO_CHECKSUM_SHA1;
 		layout.digest_size = 20;
 	} else {
@@ -1166,18 +1343,18 @@ static int data_location_valid(const inno_archive_t *arc, uint32_t location)
 	       location < arc->data_entry_count;
 }
 
-static size_t data_flag_bytes_for_version(int version)
+static size_t data_flag_bytes_for_version(const inno_version_t *version)
 {
 	int flag_count;
 
-	if (version >= INNO_VER(5, 5, 7)) flag_count = 11;
-	else if (version >= INNO_VER(5, 1, 13)) flag_count = 9;
-	else if (version >= INNO_VER(4, 2, 5)) flag_count = 8;
-	else if (version >= INNO_VER(4, 2, 2)) flag_count = 7;
-	else if (version >= INNO_VER(4, 2, 0)) flag_count = 6;
-	else if (version >= INNO_VER(4, 1, 8)) flag_count = 5;
-	else if (version >= INNO_VER(4, 1, 0)) flag_count = 4;
-	else if (version >= INNO_VER(4, 0, 10)) flag_count = 3;
+	if (version_at_least(version, 5, 5, 7)) flag_count = 11;
+	else if (version_at_least(version, 5, 1, 13)) flag_count = 9;
+	else if (version_at_least(version, 4, 2, 5)) flag_count = 8;
+	else if (version_at_least(version, 4, 2, 2)) flag_count = 7;
+	else if (version_at_least(version, 4, 2, 0)) flag_count = 6;
+	else if (version_at_least(version, 4, 1, 8)) flag_count = 5;
+	else if (version_at_least(version, 4, 1, 0)) flag_count = 4;
+	else if (version_at_least(version, 4, 0, 10)) flag_count = 3;
 	else flag_count = 2;
 	size_t bytes = (size_t) ((flag_count + 7) / 8);
 	return bytes == 3 ? 4 : bytes;
@@ -1186,7 +1363,7 @@ static size_t data_flag_bytes_for_version(int version)
 static size_t data_entry_size_for_version(const inno_version_t *ver)
 {
 	return 52 + checksum_layout_for_version(ver).digest_size +
-	       data_flag_bytes_for_version(INNO_VER(ver->major, ver->minor, ver->patch));
+	       data_flag_bytes_for_version(ver);
 }
 
 /* ── Header stream parser ────────────────────────────────────────── */
@@ -1476,18 +1653,17 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
                                 inno_version_t *ver, inno_archive_t *arc)
 {
 	size_t pos = 0;
-	int v = INNO_VER(ver->major, ver->minor, ver->patch);
 	inno_checksum_layout_t checksum_layout = checksum_layout_for_version(ver);
 
 	/* ── Main header strings ── */
 	int num_header_strings;
-	if (v >= INNO_VER(5, 6, 1)) num_header_strings = 34;
-	else if (v >= INNO_VER(5, 5, 6)) num_header_strings = 32;
-	else if (v >= INNO_VER(5, 5, 0)) num_header_strings = 31;
-	else if (v >= INNO_VER(5, 3, 10)) num_header_strings = 30;
-	else if (v >= INNO_VER(5, 3, 8)) num_header_strings = 29;
-	else if (v >= INNO_VER(5, 2, 5)) num_header_strings = 28;
-	else if (v >= INNO_VER(5, 1, 13)) num_header_strings = 25;
+	if (version_at_least(ver, 5, 6, 1)) num_header_strings = 34;
+	else if (version_at_least(ver, 5, 5, 6)) num_header_strings = 32;
+	else if (version_at_least(ver, 5, 5, 0)) num_header_strings = 31;
+	else if (version_at_least(ver, 5, 3, 10)) num_header_strings = 30;
+	else if (version_at_least(ver, 5, 3, 8)) num_header_strings = 29;
+	else if (version_at_least(ver, 5, 2, 5)) num_header_strings = 28;
+	else if (version_at_least(ver, 5, 1, 13)) num_header_strings = 25;
 	else num_header_strings = 24;
 
 	if (skip_strings(buf, buf_len, &pos, num_header_strings) < 0) {
@@ -1551,12 +1727,12 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	/* back_color, back_color2 */
 	if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
 
-	if (v < INNO_VER(5, 5, 7)) {
+	if (!version_at_least(ver, 5, 5, 7)) {
 		/* image_back_color: present in < 5.5.7 */
 		if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 	}
 
-	if (v >= INNO_VER(5, 5, 7)) {
+	if (version_at_least(ver, 5, 5, 7)) {
 		/* image_alpha_format: uint8 enum, added in 5.5.7 */
 		if (skip_bytes(buf, buf_len, &pos, 1) < 0) return -1;
 	}
@@ -1586,28 +1762,28 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	pos += 1;
 
 	/* architectures_allowed + architectures_installed_64bit flags */
-	int arch_flag_bits = (v >= INNO_VER(5, 6, 0)) ? 5 : 4;
+	int arch_flag_bits = version_at_least(ver, 5, 6, 0) ? 5 : 4;
 	int arch_bytes = (arch_flag_bits + 7) / 8;
 	/* Two sets of arch flags */
 	if (skip_bytes(buf, buf_len, &pos, arch_bytes * 2) < 0) return -1;
 
 	/* disable_dir_page (1) + disable_program_group_page (1) - for >= 5.3.3 */
-	if (v >= INNO_VER(5, 3, 3)) {
+	if (version_at_least(ver, 5, 3, 3)) {
 		if (skip_bytes(buf, buf_len, &pos, 2) < 0) return -1;
 	}
 
 	/* uninstall_display_size (8) for >= 5.5.0, (4) for >= 5.3.6 */
-	if (v >= INNO_VER(5, 5, 0)) {
+	if (version_at_least(ver, 5, 5, 0)) {
 		if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
-	} else if (v >= INNO_VER(5, 3, 6)) {
+	} else if (version_at_least(ver, 5, 3, 6)) {
 		if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 	}
 
 	/* Header flags bitfield (variable count) */
 	int num_flags;
-	if (v >= INNO_VER(5, 5, 7)) num_flags = 44;
-	else if (v >= INNO_VER(5, 5, 0)) num_flags = 43;
-	else if (v >= INNO_VER(5, 3, 3)) num_flags = 37;
+	if (version_at_least(ver, 5, 5, 7)) num_flags = 44;
+	else if (version_at_least(ver, 5, 5, 0)) num_flags = 43;
+	else if (version_at_least(ver, 5, 3, 3)) num_flags = 37;
 	else num_flags = 35;
 	if (skip_flags(buf, buf_len, &pos, num_flags) < 0) return -1;
 
@@ -1615,20 +1791,20 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 
 	/* Each language entry: 10 strings + scalars */
 	for (uint32_t i = 0; i < language_count; i++) {
-		int lang_strings = (v >= INNO_VER(4, 2, 1)) ? 10 : 8;
+		int lang_strings = version_at_least(ver, 4, 2, 1) ? 10 : 8;
 		if (skip_strings(buf, buf_len, &pos, lang_strings) < 0) return -1;
 		/* language_id (4) */
 		if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 		/* codepage: NOT read for unicode >= 5.3.0 */
-		if (!(ver->unicode && v >= INNO_VER(5, 3, 0))) {
-			if (v >= INNO_VER(4, 2, 1)) {
+		if (!(ver->unicode && version_at_least(ver, 5, 3, 0))) {
+			if (version_at_least(ver, 4, 2, 1)) {
 				if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 			}
 		}
 		/* dialog_font_size(4) + title_font_size(4) + welcome_font_size(4) + copyright_font_size(4) */
 		if (skip_bytes(buf, buf_len, &pos, 16) < 0) return -1;
 		/* right_to_left (1 byte bool, >= 5.2.3) */
-		if (v >= INNO_VER(5, 2, 3)) {
+		if (version_at_least(ver, 5, 2, 3)) {
 			if (skip_bytes(buf, buf_len, &pos, 1) < 0) return -1;
 		}
 	}
@@ -1645,81 +1821,81 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 	}
 	/* Skip types */
 	for (uint32_t i = 0; i < type_count; i++) {
-		int type_strings = (v >= INNO_VER(4, 0, 1)) ? 4 : 3;
+		int type_strings = version_at_least(ver, 4, 0, 1) ? 4 : 3;
 		if (skip_strings(buf, buf_len, &pos, type_strings) < 0) return -1;
 		/* winver (20) */
 		if (skip_bytes(buf, buf_len, &pos, 20) < 0) return -1;
 		/* options: stored_flags (1 flag) → 1 byte */
 		if (skip_bytes(buf, buf_len, &pos, 1) < 0) return -1;
 		/* type: stored_enum (>= 4.0.3) → 1 byte */
-		if (v >= INNO_VER(4, 0, 3)) {
+		if (version_at_least(ver, 4, 0, 3)) {
 			if (skip_bytes(buf, buf_len, &pos, 1) < 0) return -1;
 		}
 		/* size: uint64 (>= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
 		}
 	}
 	/* Skip components */
 	for (uint32_t i = 0; i < component_count; i++) {
-		int comp_strings = (v >= INNO_VER(4, 0, 1)) ? 5 : 4;
+		int comp_strings = version_at_least(ver, 4, 0, 1) ? 5 : 4;
 		if (skip_strings(buf, buf_len, &pos, comp_strings) < 0) return -1;
 		/* extra_disk_space_required (8, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
 		}
 		/* level (4, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 		}
 		/* used (1 byte bool, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 1) < 0) return -1;
 		}
 		/* winver (20) */
 		if (skip_bytes(buf, buf_len, &pos, 20) < 0) return -1;
 		/* options: stored_flags (5 flags for >= 4.2.3, 2 for older) */
-		int comp_flags = (v >= INNO_VER(4, 2, 3)) ? 5 : 2;
+		int comp_flags = version_at_least(ver, 4, 2, 3) ? 5 : 2;
 		if (skip_flags(buf, buf_len, &pos, comp_flags) < 0) return -1;
 		/* size (8, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 8) < 0) return -1;
 		}
 	}
 	/* Skip tasks */
 	for (uint32_t i = 0; i < task_count; i++) {
-		int task_strings = (v >= INNO_VER(4, 0, 1)) ? 6 : 5;
+		int task_strings = version_at_least(ver, 4, 0, 1) ? 6 : 5;
 		if (skip_strings(buf, buf_len, &pos, task_strings) < 0) return -1;
 		/* level (4, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 		}
 		/* used (1 byte bool, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 1) < 0) return -1;
 		}
 		/* winver (20) */
 		if (skip_bytes(buf, buf_len, &pos, 20) < 0) return -1;
 		/* options: stored_flags (5 flags for >= 4.2.3) */
-		int task_flags = (v >= INNO_VER(4, 2, 3)) ? 5 : 3;
+		int task_flags = version_at_least(ver, 4, 2, 3) ? 5 : 3;
 		if (skip_flags(buf, buf_len, &pos, task_flags) < 0) return -1;
 	}
 	/* Skip directories */
 	for (uint32_t i = 0; i < directory_count; i++) {
-		int dir_strings = (v >= INNO_VER(4, 1, 0)) ? 7 : 5;
+		int dir_strings = version_at_least(ver, 4, 1, 0) ? 7 : 5;
 		if (skip_strings(buf, buf_len, &pos, dir_strings) < 0) return -1;
 		/* attributes (4, >= 2.0.11) */
-		if (v >= INNO_VER(2, 0, 11)) {
+		if (version_at_least(ver, 2, 0, 11)) {
 			if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 		}
 		/* winver (20) */
 		if (skip_bytes(buf, buf_len, &pos, 20) < 0) return -1;
 		/* permission (int16, >= 4.1.0) */
-		if (v >= INNO_VER(4, 1, 0)) {
+		if (version_at_least(ver, 4, 1, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 2) < 0) return -1;
 		}
 		/* options: stored_flags (5 flags for >= 5.2.0, 3 for older) */
-		int dir_flags = (v >= INNO_VER(5, 2, 0)) ? 5 : 3;
+		int dir_flags = version_at_least(ver, 5, 2, 0) ? 5 : 3;
 		if (skip_flags(buf, buf_len, &pos, dir_flags) < 0) return -1;
 	}
 	/* ── Parse file entries (the ones we care about!) ── */
@@ -1755,7 +1931,7 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		/* install_font_name */
 		if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		/* strong_assembly_name (>= 5.2.5) */
-		if (v >= INNO_VER(5, 2, 5)) {
+		if (version_at_least(ver, 5, 2, 5)) {
 			if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		}
 
@@ -1763,19 +1939,19 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		/* components, tasks (>= 2.0.0) */
 		if (skip_strings(buf, buf_len, &pos, 2) < 0) return -1;
 		/* languages (>= 4.0.1) */
-		if (v >= INNO_VER(4, 0, 1)) {
+		if (version_at_least(ver, 4, 0, 1)) {
 			if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		}
 		/* check (>= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		}
 		/* after_install (>= 4.1.0) */
-		if (v >= INNO_VER(4, 1, 0)) {
+		if (version_at_least(ver, 4, 1, 0)) {
 			if (skip_string(buf, buf_len, &pos) < 0) return -1;
 		}
 		/* before_install (>= 4.1.0) — GOG Galaxy stores real filename here */
-		if (v >= INNO_VER(4, 1, 0)) {
+		if (version_at_least(ver, 4, 1, 0)) {
 			char before_install[INNO_GALAXY_SCRIPT_LEN + 1u];
 			char galaxy_destination[INNO_PATH_LEN];
 			int captured;
@@ -1805,13 +1981,13 @@ static int parse_header_stream1(const uint8_t *buf, size_t buf_len,
 		if (skip_bytes(buf, buf_len, &pos, 4) < 0) return -1;
 
 		/* external_size (uint64, >= 4.0.0) */
-		if (v >= INNO_VER(4, 0, 0)) {
+		if (version_at_least(ver, 4, 0, 0)) {
 			if (pos + 8 > buf_len) return -1;
 			fe->external_size = get_u64(buf + pos);
 			pos += 8;
 		}
 		/* permission (int16, >= 4.1.0) */
-		if (v >= INNO_VER(4, 1, 0)) {
+		if (version_at_least(ver, 4, 1, 0)) {
 			if (skip_bytes(buf, buf_len, &pos, 2) < 0) return -1;
 		}
 
@@ -1844,7 +2020,6 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
                               inno_version_t *ver, inno_archive_t *arc)
 {
 	size_t pos = 0;
-	int v = INNO_VER(ver->major, ver->minor, ver->patch);
 	inno_checksum_layout_t checksum_layout = checksum_layout_for_version(ver);
 
 	for (uint32_t i = 0; i < arc->data_entry_count; i++) {
@@ -1863,7 +2038,7 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		pos += 4;
 
 		/* file_offset (uint64 for >= 4.0.1) */
-		if (v >= INNO_VER(4, 0, 1)) {
+		if (version_at_least(ver, 4, 0, 1)) {
 			if (pos + 8 > buf_len) return -1;
 			de->file_offset = get_u64(buf + pos);
 			pos += 8;
@@ -1894,7 +2069,7 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 
 		/* data flags */
 		/* Read the raw flag bytes */
-		size_t flag_bytes = data_flag_bytes_for_version(v);
+		size_t flag_bytes = data_flag_bytes_for_version(ver);
 		if (pos + flag_bytes > buf_len) return -1;
 
 		/* Parse relevant flags by bit position */
@@ -1915,13 +2090,13 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 		de->chunk_encrypted = 0;
 		de->chunk_compressed = 0;
 
-		if (v >= INNO_VER(4, 1, 8)) {
+		if (version_at_least(ver, 4, 1, 8)) {
 			de->call_instruction_optimized = (buf[pos + 0] >> 4) & 1; /* bit 4 */
 		}
-		if (v >= INNO_VER(4, 2, 2)) {
+		if (version_at_least(ver, 4, 2, 2)) {
 			de->chunk_encrypted = (buf[pos + 0] >> 6) & 1; /* bit 6 */
 		}
-		if (v >= INNO_VER(4, 2, 5)) {
+		if (version_at_least(ver, 4, 2, 5)) {
 			de->chunk_compressed = (buf[pos + 0] >> 7) & 1; /* bit 7 */
 		}
 
@@ -1970,6 +2145,11 @@ int inno_test_parse_version_id(const uint8_t id[INNO_VERSION_ID_SIZE],
                                inno_version_t *version)
 {
 	return parse_version_string(id, version);
+}
+
+int inno_test_version_supported(const inno_version_t *version)
+{
+	return version_is_supported(version);
 }
 
 int inno_test_checksum_layout(const inno_version_t *version,
@@ -2068,6 +2248,43 @@ int inno_test_data_location_valid(uint32_t data_entry_count,
 	archive.data_entries = has_backing_array ? &entry : NULL;
 	return data_location_valid(&archive, location);
 }
+
+int inno_test_metadata_memory_allowed(size_t raw_size, size_t output_size,
+                                      size_t decoder_size)
+{
+	inno_memory_budget_t budget;
+	inno_memory_budget_init(&budget);
+	return inno_memory_reserve(&budget, raw_size) == 0 &&
+	       inno_memory_reserve(&budget, output_size) == 0 &&
+	       inno_memory_reserve(&budget, decoder_size) == 0;
+}
+
+int inno_test_metadata_decoder_allocation_succeeds(int fail_after)
+{
+	inno_memory_budget_t budget;
+	inno_memory_budget_init(&budget);
+	inno_test_set_allocation_fail_after(fail_after);
+	void *allocation = budget.allocator.Alloc(&budget.allocator, 1);
+	if (allocation)
+		budget.allocator.Free(&budget.allocator, allocation);
+	inno_test_set_allocation_fail_after(-1);
+	return allocation != NULL;
+}
+
+void inno_test_set_decode_work_limit(uint64_t limit)
+{
+	inno_test_decode_work_limit = limit;
+}
+
+uint64_t inno_test_decode_work_bytes(const inno_archive_t *arc)
+{
+	return arc ? arc->decoded_work_bytes : 0;
+}
+
+int inno_test_reserve_decode_work(inno_archive_t *arc, uint64_t bytes)
+{
+	return reserve_decode_work(arc, bytes);
+}
 #endif
 
 /* ── Chunk decompressor (for setup-1.bin data) ───────────────────── */
@@ -2131,6 +2348,7 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
                                  const inno_data_entry_t *de,
                                  inno_compress_method_t method,
                                  size_t *out_len,
+                                 int *decode_result,
                                  inno_progress_fn progress, void *progress_data,
                                  const char *progress_name)
 {
@@ -2139,6 +2357,7 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 	uint64_t required_output;
 	inno_compress_method_t actual_method =
 	    de->chunk_compressed ? method : INNO_COMPRESS_STORED;
+	if (decode_result) *decode_result = -1;
 	if (validate_chunk_file_range(arc, de, actual_method, &chunk_pos,
 	                              &payload_pos, &required_output) < 0)
 		return NULL;
@@ -2159,6 +2378,9 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 	     required_output > DXX_EXTRACT_MAX_MEMORY_BYTES - comp_size) ||
 	    !dxx_extract_ratio_allowed(required_output, comp_size))
 		return NULL;
+	if (actual_method != INNO_COMPRESS_STORED &&
+	    reserve_decode_work(arc, required_output) < 0)
+		return NULL;
 	uint8_t *comp_data = (uint8_t *) malloc((size_t) comp_size);
 	if (!comp_data) return NULL;
 	if (read_at(arc->fd, payload_pos, comp_data, (size_t) comp_size) < 0) {
@@ -2172,6 +2394,7 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 
 	if (actual_method == INNO_COMPRESS_STORED) {
 		*out_len = (size_t) comp_size;
+		if (decode_result) *decode_result = 0;
 		return comp_data;
 	}
 
@@ -2213,8 +2436,16 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 			total_out = zs.total_out;
 			if (progress && progress_name &&
 			    total_out - last_progress_out >= 1048576) {
-				progress(progress_name, (long long) zs.total_in,
-				         (long long) comp_size, progress_data);
+				if (progress(progress_name, (long long) zs.total_in,
+				             (long long) comp_size, progress_data)) {
+					reconcile_decode_work(arc, required_output, total_out);
+					inflateEnd(&zs);
+					free(decomp);
+					free(comp_data);
+					if (decode_result)
+						*decode_result = DXX_EXTRACT_CANCELLED;
+					return NULL;
+				}
 				last_progress_out = total_out;
 			}
 			if (zs.avail_out == 0) {
@@ -2243,12 +2474,17 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 		inflateEnd(&zs);
 		free(comp_data);
 
+		if (reconcile_decode_work(arc, required_output, total_out) < 0) {
+			free(decomp);
+			return NULL;
+		}
 		if (!decode_finished ||
 		    !dxx_extract_ratio_allowed(total_out, comp_size)) {
 			free(decomp);
 			return NULL;
 		}
 		*out_len = total_out;
+		if (decode_result) *decode_result = 0;
 		return decomp;
 	}
 
@@ -2288,8 +2524,16 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 		while (src_pos < comp_size) {
 			if (progress && progress_name &&
 			    src_pos - last_progress_pos >= 1048576) {
-				progress(progress_name, (long long) src_pos,
-				         (long long) comp_size, progress_data);
+				if (progress(progress_name, (long long) src_pos,
+				             (long long) comp_size, progress_data)) {
+					reconcile_decode_work(arc, required_output, decomp_len);
+					LzmaDec_Free(&dec, &g_lzma_alloc);
+					free(decomp);
+					free(comp_data);
+					if (decode_result)
+						*decode_result = DXX_EXTRACT_CANCELLED;
+					return NULL;
+				}
 				last_progress_pos = src_pos;
 			}
 			if (decomp_len >= decomp_cap) {
@@ -2322,12 +2566,17 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 
 		LzmaDec_Free(&dec, &g_lzma_alloc);
 		free(comp_data);
+		if (reconcile_decode_work(arc, required_output, decomp_len) < 0) {
+			free(decomp);
+			return NULL;
+		}
 		if (!decode_finished ||
 		    !dxx_extract_ratio_allowed(decomp_len, comp_size)) {
 			free(decomp);
 			return NULL;
 		}
 		*out_len = decomp_len;
+		if (decode_result) *decode_result = 0;
 		return decomp;
 	}
 
@@ -2366,8 +2615,16 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 		while (src_pos < comp_size) {
 			if (progress && progress_name &&
 			    src_pos - last_progress_pos2 >= 1048576) {
-				progress(progress_name, (long long) src_pos,
-				         (long long) comp_size, progress_data);
+				if (progress(progress_name, (long long) src_pos,
+				             (long long) comp_size, progress_data)) {
+					reconcile_decode_work(arc, required_output, decomp_len);
+					Lzma2Dec_Free(&dec, &g_lzma_alloc);
+					free(decomp);
+					free(comp_data);
+					if (decode_result)
+						*decode_result = DXX_EXTRACT_CANCELLED;
+					return NULL;
+				}
 				last_progress_pos2 = src_pos;
 			}
 			if (decomp_len >= decomp_cap) {
@@ -2400,12 +2657,17 @@ static uint8_t *decompress_chunk(inno_archive_t *arc,
 
 		Lzma2Dec_Free(&dec, &g_lzma_alloc);
 		free(comp_data);
+		if (reconcile_decode_work(arc, required_output, decomp_len) < 0) {
+			free(decomp);
+			return NULL;
+		}
 		if (!decode_finished ||
 		    !dxx_extract_ratio_allowed(decomp_len, comp_size)) {
 			free(decomp);
 			return NULL;
 		}
 		*out_len = decomp_len;
+		if (decode_result) *decode_result = 0;
 		return decomp;
 	}
 
@@ -2510,8 +2772,7 @@ static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *a
 	         arc->version.major, arc->version.minor, arc->version.patch,
 	         arc->version.unicode);
 
-	int v = INNO_VER(arc->version.major, arc->version.minor, arc->version.patch);
-	if (v < INNO_VER(5, 3, 0) || v > INNO_VER(5, 6, 99)) {
+	if (!version_is_supported(&arc->version)) {
 		INNO_LOG("unsupported version %d.%d.%d (need 5.3.x - 5.6.x)",
 		         arc->version.major, arc->version.minor, arc->version.patch);
 		CLOSE_FD(fd);
@@ -2604,7 +2865,7 @@ int inno_open_fd(int source_fd, inno_archive_t *arc)
 
 typedef int (*inno_chunk_sink_fn)(const uint8_t *data, size_t len, void *user_data);
 
-static int stream_chunk_file_range(const inno_archive_t *arc,
+static int stream_chunk_file_range(inno_archive_t *arc,
                                    const inno_file_entry_t *fe,
                                    const inno_data_entry_t *de,
                                    inno_compress_method_t method,
@@ -2864,13 +3125,14 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 		free(temporary_path);
 		return -1;
 	}
-	if (stream_chunk_file_range(arc, fe, de,
-	                            arc->compression, progress, user_data,
-	                            raw_file_stream_writer_feed, &writer) < 0) {
+	int stream_result = stream_chunk_file_range(
+	    arc, fe, de, arc->compression, progress, user_data,
+	    raw_file_stream_writer_feed, &writer);
+	if (stream_result < 0) {
 		fclose(out);
 		remove_output_path(temporary_path);
 		free(temporary_path);
-		return -1;
+		return stream_result;
 	}
 	if (writer.written != (size_t) de->file_size) {
 		INNO_LOG("streamed file size mismatch for %s: expected %llu got %zu",
@@ -2905,7 +3167,7 @@ static int extract_regular_file_streamed(inno_archive_t *arc,
 	return 0;
 }
 
-static int stream_chunk_file_range(const inno_archive_t *arc,
+static int stream_chunk_file_range(inno_archive_t *arc,
                                    const inno_file_entry_t *fe,
                                    const inno_data_entry_t *de,
                                    inno_compress_method_t method,
@@ -2937,6 +3199,9 @@ static int stream_chunk_file_range(const inno_archive_t *arc,
 		INNO_LOG("missing zlb magic at 0x%llx", (unsigned long long) chunk_pos);
 		return -1;
 	}
+	if (actual_method != INNO_COMPRESS_STORED &&
+	    reserve_decode_work(arc, range_end) < 0)
+		return -1;
 
 	if (actual_method == INNO_COMPRESS_STORED) {
 		uint8_t in_buf[INNO_STREAM_BUFFER_SIZE];
@@ -2958,8 +3223,9 @@ static int stream_chunk_file_range(const inno_archive_t *arc,
 				long long done = (long long) copied;
 				if (done > (long long) comp_size)
 					done = (long long) comp_size;
-				progress(fe->destination, done,
-				         (long long) comp_size, progress_data);
+				if (progress(fe->destination, done,
+				             (long long) comp_size, progress_data))
+					return DXX_EXTRACT_CANCELLED;
 			}
 		}
 		return 0;
@@ -3008,8 +3274,11 @@ static int stream_chunk_file_range(const inno_archive_t *arc,
 			}
 			if (progress && fe->destination[0] &&
 			    (size_t) input.total_in - last_progress_in >= 1048576) {
-				progress(fe->destination, (long long) input.total_in,
-				         (long long) comp_size, progress_data);
+				if (progress(fe->destination, (long long) input.total_in,
+				             (long long) comp_size, progress_data)) {
+					inflateEnd(&zs);
+					return DXX_EXTRACT_CANCELLED;
+				}
 				last_progress_in = (size_t) input.total_in;
 			}
 			if (outer_pos >= range_end) break;
@@ -3060,8 +3329,11 @@ static int stream_chunk_file_range(const inno_archive_t *arc,
 			ELzmaStatus status;
 			if (progress && fe->destination[0] &&
 			    (size_t) input.total_in - last_progress_pos >= 1048576) {
-				progress(fe->destination, (long long) input.total_in,
-				         (long long) comp_size, progress_data);
+				if (progress(fe->destination, (long long) input.total_in,
+				             (long long) comp_size, progress_data)) {
+					LzmaDec_Free(&dec, &g_lzma_alloc);
+					return DXX_EXTRACT_CANCELLED;
+				}
 				last_progress_pos = (size_t) input.total_in;
 			}
 			SRes res = LzmaDec_DecodeToBuf(&dec, out_buf, &dest_len,
@@ -3130,8 +3402,11 @@ static int stream_chunk_file_range(const inno_archive_t *arc,
 			ELzmaStatus status;
 			if (progress && fe->destination[0] &&
 			    (size_t) input.total_in - last_progress_pos2 >= 1048576) {
-				progress(fe->destination, (long long) input.total_in,
-				         (long long) comp_size, progress_data);
+				if (progress(fe->destination, (long long) input.total_in,
+				             (long long) comp_size, progress_data)) {
+					Lzma2Dec_Free(&dec, &g_lzma_alloc);
+					return DXX_EXTRACT_CANCELLED;
+				}
 				last_progress_pos2 = (size_t) input.total_in;
 			}
 			SRes res = Lzma2Dec_DecodeToBuf(&dec, out_buf, &dest_len,
@@ -3193,14 +3468,15 @@ static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
 		free(temporary_path);
 		return -1;
 	}
-	if (stream_chunk_file_range(arc, fe, de,
-	                            arc->compression, progress, user_data,
-	                            gog_galaxy_stream_writer_feed, &writer) < 0) {
+	int stream_result = stream_chunk_file_range(
+	    arc, fe, de, arc->compression, progress, user_data,
+	    gog_galaxy_stream_writer_feed, &writer);
+	if (stream_result < 0) {
 		gog_galaxy_stream_writer_finish(&writer, NULL);
 		fclose(out);
 		remove_output_path(temporary_path);
 		free(temporary_path);
-		return -1;
+		return stream_result;
 	}
 	if (gog_galaxy_stream_writer_finish(&writer, written_out) < 0) {
 		fclose(out);
@@ -3430,11 +3706,13 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 
 	/* Decompress the chunk */
 	size_t chunk_len = 0;
+	int decode_result = -1;
 	uint8_t *chunk = decompress_chunk(arc, de, arc->compression, &chunk_len,
-	                                  progress, user_data, fe->destination);
+	                                  &decode_result, progress, user_data,
+	                                  fe->destination);
 	if (!chunk) {
 		INNO_LOG("failed to decompress chunk for %s", fe->destination);
-		return -1;
+		return decode_result;
 	}
 
 	/* Verify we have enough data */

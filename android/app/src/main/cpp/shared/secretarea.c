@@ -29,7 +29,9 @@
 #include "wall.h"
 #include "weapon.h"
 #ifdef __ANDROID__
+#include "android_log.h"
 #include "android_native_build_info.h"
+#include "android_profile.h"
 #include <unistd.h>
 #endif
 #ifdef DXX_BUILD_DESCENT_II
@@ -56,13 +58,11 @@ static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
 static int Level_metadata_objective_mode;
+static int Level_metadata_expensive_planning_allowed = 1;
+static int Level_metadata_route_readiness = LEVEL_METADATA_READINESS_CALCULATING;
 static route_analysis_cache_summary Level_metadata_analysis_cache_summary;
 static unsigned char
     Level_metadata_completed_canonical_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
-
-#ifndef DXX_ANDROID_VERSION_CODE
-#define DXX_ANDROID_VERSION_CODE 0
-#endif
 
 static void level_metadata_apply_planned_route(
     level_metadata_state *destination,
@@ -185,9 +185,29 @@ typedef struct level_metadata_visibility_entry {
 	unsigned char result;
 } level_metadata_visibility_entry;
 
+#define LEVEL_METADATA_VISIBILITY_CHUNK_MAGIC 0x56495343u
+#define LEVEL_METADATA_VISIBILITY_CHUNK_SIZE  256
+
+typedef struct level_metadata_visibility_chunk {
+	unsigned int magic;
+	unsigned int checksum;
+	route_analysis_cache_key key;
+	unsigned int sequence;
+	unsigned int count;
+	level_metadata_visibility_entry entries[LEVEL_METADATA_VISIBILITY_CHUNK_SIZE];
+} level_metadata_visibility_chunk;
+
 static level_metadata_visibility_entry *Level_metadata_visibility_entries;
 static int Level_metadata_visibility_count;
 static level_metadata_visibility_cache_summary Level_metadata_visibility_summary;
+static route_analysis_cache_key Level_metadata_visibility_checkpoint_key;
+static int Level_metadata_visibility_checkpoint_key_valid;
+static int Level_metadata_visibility_checkpoint_loading;
+static unsigned int Level_metadata_visibility_checkpoint_sequence;
+static level_metadata_visibility_chunk Level_metadata_visibility_pending_chunk;
+
+static void level_metadata_visibility_checkpoint_store(
+    const level_metadata_visibility_entry *entry);
 
 typedef struct level_metadata_wall_shot_diagnostics {
 	unsigned int requests;
@@ -355,6 +375,7 @@ static void level_metadata_visibility_cache_store(
 			Level_metadata_visibility_count++;
 			Level_metadata_visibility_summary.entries =
 			    Level_metadata_visibility_count;
+			level_metadata_visibility_checkpoint_store(entry);
 			return;
 		}
 		if (entry->hash == hash &&
@@ -422,6 +443,11 @@ static void level_metadata_visibility_cache_sync(void)
 	Level_metadata_visibility_summary.capacity = capacity;
 	Level_metadata_visibility_summary.resets = resets + 1;
 	Level_metadata_visibility_count = 0;
+	Level_metadata_visibility_checkpoint_key_valid = 0;
+	Level_metadata_visibility_checkpoint_sequence = 0;
+	memset(
+	    &Level_metadata_visibility_pending_chunk, 0,
+	    sizeof(Level_metadata_visibility_pending_chunk));
 }
 
 static unsigned int level_metadata_next_generation(unsigned int current)
@@ -1925,23 +1951,185 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 static int level_metadata_analysis_cache_key(
     route_analysis_cache_key *key)
 {
+	unsigned long long analysis_profile_hash = 1469598103934665603ULL;
 #ifdef DXX_BUILD_DESCENT_II
 	const unsigned int game = ROUTE_ANALYSIS_CACHE_GAME_D2;
 #else
 	const unsigned int game = ROUTE_ANALYSIS_CACHE_GAME_D1;
 #endif
 
+	analysis_profile_hash = level_metadata_visibility_hash_int(
+	    analysis_profile_hash, Level_metadata_scan_view.navigator_radius);
+	analysis_profile_hash = level_metadata_visibility_hash_int(
+	    analysis_profile_hash, level_metadata_switch_projectile_radius());
 	return Level_metadata_canonical_snapshot_valid &&
 	       route_analysis_cache_make_key(
-	           DXX_ANDROID_VERSION_CODE, game,
+	           ROUTE_ANALYSIS_CACHE_GENERATION, game,
+	           analysis_profile_hash ? analysis_profile_hash : 1,
 	           &Level_metadata_canonical_snapshot, key);
+}
+
+static unsigned int level_metadata_visibility_chunk_checksum(
+    const level_metadata_visibility_chunk *chunk)
+{
+	level_metadata_visibility_chunk copy = *chunk;
+	const unsigned char *bytes = (const unsigned char *) &copy;
+	unsigned int hash = 2166136261u;
+	size_t index;
+
+	copy.checksum = 0;
+	for (index = 0; index < sizeof(copy); ++index) {
+		hash ^= bytes[index];
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+static int level_metadata_visibility_chunk_filename(
+    const route_analysis_cache_key *key,
+    unsigned int sequence,
+    char *filename,
+    size_t capacity)
+{
+	char route_filename[192];
+	int written;
+
+	if (!route_analysis_cache_filename(
+	        key, route_filename, sizeof(route_filename)))
+		return 0;
+	written = snprintf(
+	    filename, capacity, "%s.samples-%06u", route_filename, sequence);
+	return written > 0 && (size_t) written < capacity;
+}
+
+static void level_metadata_visibility_checkpoint_flush(void)
+{
+#ifdef __ANDROID__
+	char generation_dir[64];
+	char filename[224];
+	char temporary_filename[256];
+	PHYSFS_File *file;
+	int write_ok;
+
+	if (!Level_metadata_visibility_checkpoint_key_valid ||
+	    !Level_metadata_visibility_pending_chunk.count)
+		return;
+	Level_metadata_visibility_pending_chunk.magic =
+	    LEVEL_METADATA_VISIBILITY_CHUNK_MAGIC;
+	Level_metadata_visibility_pending_chunk.key =
+	    Level_metadata_visibility_checkpoint_key;
+	Level_metadata_visibility_pending_chunk.sequence =
+	    Level_metadata_visibility_checkpoint_sequence;
+	Level_metadata_visibility_pending_chunk.checksum =
+	    level_metadata_visibility_chunk_checksum(
+	        &Level_metadata_visibility_pending_chunk);
+	if (!level_metadata_visibility_chunk_filename(
+	        &Level_metadata_visibility_checkpoint_key,
+	        Level_metadata_visibility_checkpoint_sequence,
+	        filename, sizeof(filename)) ||
+	    snprintf(
+	        temporary_filename, sizeof(temporary_filename), "%s.tmp-%ld",
+	        filename, (long) getpid()) >= (int) sizeof(temporary_filename))
+		return;
+	PHYSFS_mkdir("route-cache");
+	snprintf(
+	    generation_dir, sizeof(generation_dir), "route-cache/g%u",
+	    Level_metadata_visibility_checkpoint_key.generation);
+	if (!PHYSFS_mkdir(generation_dir) && !PHYSFS_exists(generation_dir))
+		return;
+	file = PHYSFS_openWrite(temporary_filename);
+	write_ok = file &&
+	           PHYSFS_writeBytes(
+	               file, &Level_metadata_visibility_pending_chunk,
+	               sizeof(Level_metadata_visibility_pending_chunk)) ==
+	               (PHYSFS_sint64) sizeof(Level_metadata_visibility_pending_chunk);
+	if (file)
+		write_ok = PHYSFS_close(file) && write_ok;
+	if (write_ok)
+		write_ok = PHYSFSX_rename(temporary_filename, filename);
+	if (!write_ok) {
+		PHYSFS_delete(temporary_filename);
+		return;
+	}
+	Level_metadata_visibility_checkpoint_sequence++;
+	memset(
+	    &Level_metadata_visibility_pending_chunk, 0,
+	    sizeof(Level_metadata_visibility_pending_chunk));
+#endif
+}
+
+static void level_metadata_visibility_checkpoint_store(
+    const level_metadata_visibility_entry *entry)
+{
+	unsigned int count;
+
+	if (!entry || !Level_metadata_visibility_checkpoint_key_valid ||
+	    Level_metadata_visibility_checkpoint_loading)
+		return;
+	count = Level_metadata_visibility_pending_chunk.count;
+	if (count >= LEVEL_METADATA_VISIBILITY_CHUNK_SIZE) {
+		level_metadata_visibility_checkpoint_flush();
+		count = Level_metadata_visibility_pending_chunk.count;
+	}
+	Level_metadata_visibility_pending_chunk.entries[count] = *entry;
+	Level_metadata_visibility_pending_chunk.count = count + 1;
+	if (Level_metadata_visibility_pending_chunk.count >=
+	    LEVEL_METADATA_VISIBILITY_CHUNK_SIZE)
+		level_metadata_visibility_checkpoint_flush();
+}
+
+static void level_metadata_visibility_checkpoint_load(void)
+{
+#ifdef __ANDROID__
+	route_analysis_cache_key key;
+	unsigned int sequence;
+
+	if (!level_metadata_analysis_cache_key(&key))
+		return;
+	Level_metadata_visibility_checkpoint_key = key;
+	Level_metadata_visibility_checkpoint_key_valid = 1;
+	Level_metadata_visibility_checkpoint_loading = 1;
+	for (sequence = 0;; ++sequence) {
+		char filename[224];
+		PHYSFS_File *file;
+		level_metadata_visibility_chunk chunk;
+		unsigned int index;
+		int read_ok;
+
+		if (!level_metadata_visibility_chunk_filename(
+		        &key, sequence, filename, sizeof(filename)))
+			break;
+		file = PHYSFS_openRead(filename);
+		if (!file)
+			break;
+		read_ok =
+		    PHYSFS_fileLength(file) == (PHYSFS_sint64) sizeof(chunk) &&
+		    PHYSFS_readBytes(file, &chunk, sizeof(chunk)) ==
+		        (PHYSFS_sint64) sizeof(chunk);
+		read_ok = PHYSFS_close(file) && read_ok;
+		if (!read_ok ||
+		    chunk.magic != LEVEL_METADATA_VISIBILITY_CHUNK_MAGIC ||
+		    chunk.sequence != sequence ||
+		    chunk.count > LEVEL_METADATA_VISIBILITY_CHUNK_SIZE ||
+		    memcmp(&chunk.key, &key, sizeof(key)) != 0 ||
+		    chunk.checksum != level_metadata_visibility_chunk_checksum(&chunk))
+			break;
+		for (index = 0; index < chunk.count; ++index)
+			if (chunk.entries[index].used)
+				level_metadata_visibility_cache_store(
+				    &chunk.entries[index].key,
+				    chunk.entries[index].result);
+	}
+	Level_metadata_visibility_checkpoint_loading = 0;
+	Level_metadata_visibility_checkpoint_sequence = sequence;
+#endif
 }
 
 static int level_metadata_analysis_cache_load(
     level_metadata_state *state,
     route_planner_plan_summary *summary)
 {
-#if defined(__ANDROID__) && DXX_ANDROID_VERSION_CODE > 0
+#if defined(__ANDROID__)
 	route_analysis_cache_key key;
 	PHYSFS_File *file;
 	void *record;
@@ -1953,8 +2141,7 @@ static int level_metadata_analysis_cache_load(
 	        &key, Level_metadata_analysis_cache_summary.filename,
 	        sizeof(Level_metadata_analysis_cache_summary.filename)))
 		return 0;
-	Level_metadata_analysis_cache_summary.build_number =
-	    DXX_ANDROID_VERSION_CODE;
+	Level_metadata_analysis_cache_summary.generation = key.generation;
 	Level_metadata_analysis_cache_summary.topology_hash = key.topology_hash;
 	file = PHYSFS_openRead(Level_metadata_analysis_cache_summary.filename);
 	if (!file) {
@@ -1981,6 +2168,17 @@ static int level_metadata_analysis_cache_load(
 	            &key, record, (size_t) length, state, summary);
 	free(record);
 	if (valid) {
+		if (Level_metadata_expensive_planning_allowed &&
+		    state->route_status != LEVEL_METADATA_ROUTE_OK) {
+			/* A partial route is useful to the live game, but the isolated
+			 * analyzer must continue from the visibility checkpoints. */
+			level_metadata_state_clear(state);
+			memset(summary, 0, sizeof(*summary));
+			summary->first_pending_step = -1;
+			summary->first_pending_path_terminal_segment = -1;
+			summary->partial_frontier_segment = -1;
+			return 0;
+		}
 		Level_metadata_analysis_cache_summary.hits++;
 		return 1;
 	}
@@ -1997,9 +2195,9 @@ static void level_metadata_analysis_cache_save(
     const level_metadata_state *state,
     const route_planner_plan_summary *summary)
 {
-#if defined(__ANDROID__) && DXX_ANDROID_VERSION_CODE > 0
+#if defined(__ANDROID__)
 	route_analysis_cache_key key;
-	char version_dir[64];
+	char generation_dir[64];
 	char temporary_filename[224];
 	PHYSFS_File *file;
 	void *record;
@@ -2019,8 +2217,9 @@ static void level_metadata_analysis_cache_save(
 		return;
 	}
 	PHYSFS_mkdir("route-cache");
-	snprintf(version_dir, sizeof(version_dir), "route-cache/%u", key.build_number);
-	if (!PHYSFS_mkdir(version_dir) && !PHYSFS_exists(version_dir)) {
+	snprintf(generation_dir, sizeof(generation_dir),
+	         "route-cache/g%u", key.generation);
+	if (!PHYSFS_mkdir(generation_dir) && !PHYSFS_exists(generation_dir)) {
 		free(record);
 		Level_metadata_analysis_cache_summary.io_errors++;
 		return;
@@ -2193,7 +2392,9 @@ static void level_metadata_rescan_current_level_internal(
 		Level_metadata_canonical_plan_summary_valid =
 		    level_metadata_analysis_cache_load(
 		        &shared_route, &Level_metadata_canonical_plan_summary);
-		if (!Level_metadata_canonical_plan_summary_valid) {
+		if (!Level_metadata_canonical_plan_summary_valid &&
+		    Level_metadata_expensive_planning_allowed) {
+			level_metadata_visibility_checkpoint_load();
 			Level_metadata_canonical_plan_summary_valid = route_planner_plan_view(
 			    view,
 			    ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL,
@@ -2208,8 +2409,9 @@ static void level_metadata_rescan_current_level_internal(
 				    &shared_route,
 				    &Level_metadata_canonical_plan_summary);
 		}
-		if (Level_metadata_analysis_budget_exhausted ||
-		    Level_metadata_analysis_cancelled) {
+		if (Level_metadata_analysis_cancelled ||
+		    (Level_metadata_analysis_budget_exhausted &&
+		     !Level_metadata_canonical_plan_summary_valid)) {
 			Level_metadata_canonical_plan_summary_valid = 0;
 			snprintf(
 			    problem, sizeof(problem), "%s",
@@ -2220,6 +2422,10 @@ static void level_metadata_rescan_current_level_internal(
 		if (Level_metadata_canonical_plan_summary_valid) {
 			level_metadata_apply_planned_route(
 			    &Level_metadata_canonical_state, &shared_route);
+			Level_metadata_route_readiness =
+			    shared_route.route_status == LEVEL_METADATA_ROUTE_OK ? LEVEL_METADATA_READINESS_COMPLETE : Level_metadata_canonical_plan_summary.first_pending_step >= 0     ? LEVEL_METADATA_READINESS_NEXT_READY
+			                                                                                           : Level_metadata_canonical_plan_summary.partial_frontier_segment >= 0 ? LEVEL_METADATA_READINESS_PARTIAL
+			                                                                                                                                                                 : LEVEL_METADATA_READINESS_FAILED;
 		} else {
 			Level_metadata_canonical_state.travel_distance = 0.0;
 			Level_metadata_canonical_state.travel_time_seconds = 0;
@@ -2229,16 +2435,20 @@ static void level_metadata_rescan_current_level_internal(
 			       sizeof(Level_metadata_canonical_state.route_steps));
 			snprintf(Level_metadata_canonical_state.route_problem,
 			         sizeof(Level_metadata_canonical_state.route_problem),
-			         "shared route planner: %s",
-			         problem[0] ? problem : "unknown failure");
+			         "%s",
+			         Level_metadata_expensive_planning_allowed ? (problem[0] ? problem : "shared route planning failed") : "route metadata still calculating");
 			Level_metadata_canonical_state.route_note[0] = '\0';
+			Level_metadata_route_readiness =
+			    Level_metadata_expensive_planning_allowed ? LEVEL_METADATA_READINESS_FAILED : LEVEL_METADATA_READINESS_CALCULATING;
 		}
 		level_metadata_report_progress("route_planning", 1, 1);
+		level_metadata_visibility_checkpoint_flush();
 		level_metadata_trace_wall_shot_diagnostics();
 	}
 	if (route_only) {
 		char problem[128];
 		int endpoint_kind = ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL;
+		problem[0] = '\0';
 
 		if (unexplored_result)
 			endpoint_kind = ROUTE_PLANNER_ENDPOINT_UNEXPLORED;
@@ -2259,7 +2469,7 @@ static void level_metadata_rescan_current_level_internal(
 		        &Level_metadata_live_plan_summary);
 		if (Level_metadata_live_plan_summary_valid)
 			Level_metadata_analysis_cache_summary.live_reuses++;
-		else {
+		else if (Level_metadata_expensive_planning_allowed) {
 			if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL)
 				Level_metadata_analysis_cache_summary.live_fallbacks++;
 			Level_metadata_live_plan_summary_valid = route_planner_plan_view(
@@ -2272,8 +2482,9 @@ static void level_metadata_rescan_current_level_internal(
 			    problem,
 			    sizeof(problem));
 		}
-		if (Level_metadata_analysis_budget_exhausted ||
-		    Level_metadata_analysis_cancelled) {
+		if (Level_metadata_analysis_cancelled ||
+		    (Level_metadata_analysis_budget_exhausted &&
+		     !Level_metadata_live_plan_summary_valid)) {
 			Level_metadata_live_plan_summary_valid = 0;
 			snprintf(
 			    problem, sizeof(problem), "%s",
@@ -2288,7 +2499,60 @@ static void level_metadata_rescan_current_level_internal(
 			         "shared route planner: %s",
 			         problem[0] ? problem : "unknown failure");
 		}
-		Level_metadata_live_route_state_valid = 1;
+		Level_metadata_live_route_state_valid =
+		    Level_metadata_live_plan_summary_valid;
+	}
+}
+
+int level_metadata_try_load_pending_cache(void)
+{
+	level_metadata_state shared_route;
+	route_planner_plan_summary summary;
+	int improved;
+
+	if ((Level_metadata_canonical_plan_summary_valid &&
+	     Level_metadata_route_readiness == LEVEL_METADATA_READINESS_COMPLETE) ||
+	    !Level_metadata_canonical_snapshot_valid)
+		return Level_metadata_canonical_plan_summary_valid;
+	level_metadata_state_clear(&shared_route);
+	memset(&summary, 0, sizeof(summary));
+	summary.first_pending_step = -1;
+	summary.first_pending_path_terminal_segment = -1;
+	summary.partial_frontier_segment = -1;
+	if (!level_metadata_analysis_cache_load(&shared_route, &summary))
+		return 0;
+	improved =
+	    !Level_metadata_canonical_plan_summary_valid ||
+	    shared_route.route_status == LEVEL_METADATA_ROUTE_OK ||
+	    shared_route.route_step_count >
+	        Level_metadata_canonical_state.route_step_count;
+	if (!improved)
+		return 0;
+	level_metadata_apply_planned_route(
+	    &Level_metadata_canonical_state, &shared_route);
+	Level_metadata_canonical_plan_summary = summary;
+	Level_metadata_canonical_plan_summary_valid = 1;
+	Level_metadata_route_readiness =
+	    shared_route.route_status == LEVEL_METADATA_ROUTE_OK ? LEVEL_METADATA_READINESS_COMPLETE : summary.first_pending_step >= 0     ? LEVEL_METADATA_READINESS_NEXT_READY
+	                                                                                           : summary.partial_frontier_segment >= 0 ? LEVEL_METADATA_READINESS_PARTIAL
+	                                                                                                                                   : LEVEL_METADATA_READINESS_FAILED;
+	return 1;
+}
+
+int level_metadata_get_route_readiness(void)
+{
+	return Level_metadata_route_readiness;
+}
+
+const char *level_metadata_route_readiness_name(int readiness)
+{
+	switch (readiness) {
+		case LEVEL_METADATA_READINESS_CALCULATING: return "calculating";
+		case LEVEL_METADATA_READINESS_NEXT_READY: return "next_ready";
+		case LEVEL_METADATA_READINESS_COMPLETE: return "complete";
+		case LEVEL_METADATA_READINESS_PARTIAL: return "partial";
+		case LEVEL_METADATA_READINESS_FAILED: return "failed";
+		default: return "unknown";
 	}
 }
 
@@ -2345,7 +2609,11 @@ int level_metadata_get_route_analysis_cache_summary(
 	if (!summary)
 		return 0;
 	*summary = Level_metadata_analysis_cache_summary;
-	return DXX_ANDROID_VERSION_CODE > 0;
+#ifdef __ANDROID__
+	return 1;
+#else
+	return 0;
+#endif
 }
 
 void level_metadata_mark_route_objective_completed(
@@ -2378,12 +2646,16 @@ void level_metadata_mark_route_objective_completed(
 	}
 }
 
-void secret_area_rescan_current_level(void)
+static void secret_area_scan_current_level(int allow_expensive_planning)
 {
 	secret_area_scan_view view;
 	int start_segment;
+#ifdef __ANDROID__
+	const long long started_us = android_profile_monotonic_us();
+#endif
 
 	secret_area_trace("start");
+	Level_metadata_expensive_planning_allowed = allow_expensive_planning;
 	Secret_area_reveal_unfound = 0;
 	Level_metadata_objective_mode = LEVEL_METADATA_OBJECTIVES_OFF;
 	Level_metadata_topology_valid = 0;
@@ -2442,7 +2714,31 @@ void secret_area_rescan_current_level(void)
 	secret_area_scan_level(&view, &Secret_area_state);
 	level_metadata_report_progress("secret_areas", 1, 1);
 	level_metadata_rescan_current_level();
+#ifdef __ANDROID__
+	debug_log(
+	    DLOG_PROFILING,
+	    "route_metadata level=%d mode=%s readiness=%s elapsed_us=%lld "
+	    "cache_hits=%u cache_misses=%u fvi=%u visibility_entries=%d",
+	    Current_level_num,
+	    allow_expensive_planning ? "analyze" : "prepare",
+	    level_metadata_route_readiness_name(Level_metadata_route_readiness),
+	    android_profile_monotonic_us() - started_us,
+	    Level_metadata_analysis_cache_summary.hits,
+	    Level_metadata_analysis_cache_summary.misses,
+	    Level_metadata_analysis_fvi_count,
+	    Level_metadata_visibility_summary.entries);
+#endif
 	secret_area_trace("done");
+}
+
+void secret_area_rescan_current_level(void)
+{
+	secret_area_scan_current_level(1);
+}
+
+void secret_area_prepare_current_level(void)
+{
+	secret_area_scan_current_level(0);
 }
 
 const secret_area_state *secret_area_get_state(void)

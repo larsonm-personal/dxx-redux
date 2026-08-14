@@ -32,14 +32,15 @@ int main(void)
 	snapshot.object_hash = 0x4567;
 	failures += expect(
 	    route_analysis_cache_make_key(
-	        7010, ROUTE_ANALYSIS_CACHE_GAME_D2, &snapshot, &key),
+	        ROUTE_ANALYSIS_CACHE_GENERATION, ROUTE_ANALYSIS_CACHE_GAME_D2,
+	        0x5678, &snapshot, &key),
 	    "make key");
 	wrong_key = key;
-	wrong_key.build_number++;
+	wrong_key.generation++;
 	failures += expect(
 	    route_analysis_cache_filename(&key, filename, sizeof(filename)) &&
-	        strstr(filename, "route-cache/7010/d2-") == filename,
-	    "versioned filename");
+	        strstr(filename, "route-cache/g1/d2-0000000000005678-") == filename,
+	    "generation and profile filename");
 
 	input.route_status = LEVEL_METADATA_ROUTE_OK;
 	input.route_step_count = 2;
@@ -94,7 +95,13 @@ int main(void)
 	failures += expect(
 	    !route_analysis_cache_decode(
 	        &wrong_key, record, size, &output, &output_summary),
-	    "reject wrong build");
+	    "reject wrong generation");
+	wrong_key = key;
+	wrong_key.analysis_profile_hash++;
+	failures += expect(
+	    !route_analysis_cache_decode(
+	        &wrong_key, record, size, &output, &output_summary),
+	    "reject wrong analysis profile");
 	failures += expect(
 	    !route_analysis_cache_decode(
 	        &key, record, size - 1, &output, &output_summary),

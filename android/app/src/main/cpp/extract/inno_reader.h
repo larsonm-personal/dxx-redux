@@ -114,6 +114,7 @@ typedef struct {
 	uint32_t data_entry_count;
 	uint64_t extracted_bytes;
 	uint32_t extracted_files;
+	uint64_t decoded_work_bytes; /* aggregate decompressed solid prefixes */
 
 	/* file handle (kept open for extraction) */
 	int fd;
@@ -187,6 +188,7 @@ int inno_test_parse_gog_galaxy_before_install(const char *script,
                                               uint32_t *part_count);
 int inno_test_parse_version_id(const uint8_t id[64],
                                inno_version_t *version);
+int inno_test_version_supported(const inno_version_t *version);
 int inno_test_checksum_layout(const inno_version_t *version,
                               inno_checksum_type_t *type_out,
                               size_t *digest_size_out);
@@ -207,6 +209,12 @@ int inno_test_entry_count_allowed(uint32_t entry_count);
 int inno_test_data_location_valid(uint32_t data_entry_count,
                                   int has_backing_array,
                                   uint32_t location);
+int inno_test_metadata_memory_allowed(size_t raw_size, size_t output_size,
+                                      size_t decoder_size);
+int inno_test_metadata_decoder_allocation_succeeds(int fail_after);
+void inno_test_set_decode_work_limit(uint64_t limit);
+uint64_t inno_test_decode_work_bytes(const inno_archive_t *arc);
+int inno_test_reserve_decode_work(inno_archive_t *arc, uint64_t bytes);
 #endif
 
 #ifdef __cplusplus

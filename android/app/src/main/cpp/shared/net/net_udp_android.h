@@ -26,12 +26,17 @@ int android_net_udp_sockaddr_equal(const struct _sockaddr *a,
 uint64_t android_net_udp_read_u64_le(const unsigned char *source);
 void android_net_udp_write_u64_le(unsigned char *destination,
                                   uint64_t value);
-void android_net_udp_auth_reset(int local_player_num);
+void android_net_udp_auth_reset(int local_player_num, int game_kind);
+int android_net_udp_auth_new_generation(void);
+int android_net_udp_auth_write_generation(unsigned char *destination,
+                                          int destination_size);
+int android_net_udp_auth_read_generation(const unsigned char *source,
+                                         int source_size);
 int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
                                          unsigned int game_token);
 int android_net_udp_auth_validate_request(
     const UDP_sequence_packet *request, unsigned int game_token,
-    int player_count);
+    int player_count, const struct _sockaddr *route_addr, fix64 now);
 void android_net_udp_auth_store_player(
     int player_num, const UDP_sequence_packet *request);
 void android_net_udp_auth_move_player(int destination_player_num,
@@ -44,14 +49,15 @@ int android_net_udp_auth_read_player(const unsigned char *source,
 int android_net_udp_auth_begin_challenge(
     int player_num, const UDP_sequence_packet *request,
     unsigned int game_token, const struct _sockaddr *route_addr,
-    int is_proxy, fix64 now, unsigned char *packet, int packet_size);
+    int is_proxy, int context, fix64 now, unsigned char *packet,
+    int packet_size);
 int android_net_udp_auth_answer_challenge(
     const unsigned char *data, int data_len, unsigned int game_token,
     int local_player_num, unsigned char *packet, int packet_size);
 int android_net_udp_auth_finish_challenge(
     const unsigned char *data, int data_len, unsigned int game_token,
-    const struct _sockaddr *route_addr, int is_proxy, fix64 now,
-    UDP_sequence_packet *request, int *player_num);
+    const struct _sockaddr *route_addr, int is_proxy, int context,
+    fix64 now, UDP_sequence_packet *request, int *player_num);
 #endif
 int android_net_udp_find_player_by_identity(const char *callsign,
                                             struct _sockaddr *addr, int player_count, const struct player *players,

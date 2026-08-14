@@ -111,6 +111,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_warp.h"
 #include "android_log.h"
 #include "android_profile.h"
+#include "android_route_metadata.h"
 #include "merged_wall_debug.h"
 #endif
 #ifdef EDITOR
@@ -880,7 +881,16 @@ void LoadLevel(int level_num,int page_in_textures)
 #ifdef ANDROID
 	gameseq_log_multiplayer_texture_state("after-load-level", level_name);
 #endif
+#ifdef __ANDROID__
+	secret_area_prepare_current_level();
+	if (level_metadata_get_route_readiness() !=
+	    LEVEL_METADATA_READINESS_COMPLETE)
+		android_route_metadata_request(
+		    "d2", Current_mission ? Current_mission_filename : "",
+		    Current_level_num, level_name);
+#else
 	secret_area_rescan_current_level();
+#endif
 
 #ifdef ANDROID
 	level_overlay_notify(level_num, Current_level_name);

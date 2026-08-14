@@ -28,6 +28,7 @@
 #endif
 
 #include "cue_parser.h"
+#include "extract_limits.h"
 #include "hfs_reader.h"
 #include "mac_hfs_extract.h"
 #include "sti2_extract.h"
@@ -1016,12 +1017,67 @@ static int run_real_d2_native_mac_extract_test(void)
 	return 1;
 }
 
+static int run_method15_memory_budget_test(void)
+{
+	const uint64_t archive_bytes = 4096u;
+	uint64_t reserved_min;
+	uint64_t reserved_max;
+	uint64_t exact_output;
+
+	TEST("sti2_method15_enforces_complete_peak_memory_budget");
+	reserved_min = sti2_test_method15_reserved_bytes(9);
+	reserved_max = sti2_test_method15_reserved_bytes(24);
+	if (reserved_min == 0 || reserved_max <= reserved_min ||
+	    reserved_max >= DXX_EXTRACT_MAX_MEMORY_BYTES) {
+		FAIL("unexpected method 15 fixed memory charge");
+		return 0;
+	}
+	exact_output = DXX_EXTRACT_MAX_MEMORY_BYTES - reserved_max - archive_bytes;
+	if (!sti2_test_method15_memory_allowed(archive_bytes, exact_output, 24) ||
+	    sti2_test_method15_memory_allowed(archive_bytes, exact_output + 1u, 24) ||
+	    sti2_test_method15_memory_allowed(archive_bytes + 1u, exact_output, 24) ||
+	    !sti2_test_method15_memory_allowed(archive_bytes, exact_output, 9) ||
+	    sti2_test_method15_memory_allowed(0, 0, 8) ||
+	    sti2_test_method15_memory_allowed(0, 0, 25)) {
+		FAIL("method 15 exact or one-over admission was wrong");
+		return 0;
+	}
+	PASS();
+	return 1;
+}
+
+static int run_method15_allocation_failure_test(void)
+{
+	int output_failure;
+	int workspace_failure;
+	int success;
+
+	TEST("sti2_method15_handles_output_and_workspace_allocation_failure");
+	sti2_test_set_allocation_fail_after(0);
+	output_failure = sti2_test_method15_allocation_probe(1, 1, 9);
+	sti2_test_set_allocation_fail_after(1);
+	workspace_failure = sti2_test_method15_allocation_probe(1, 1, 9);
+	sti2_test_set_allocation_fail_after(2);
+	success = sti2_test_method15_allocation_probe(1, 1, 9);
+	sti2_test_set_allocation_fail_after(-1);
+	if (output_failure == 0 || workspace_failure == 0 || success != 0) {
+		FAIL("method 15 allocation failure injection was not fail-closed");
+		return 0;
+	}
+	PASS();
+	return 1;
+}
+
 int main(void)
 {
 	int ok = 1;
 
 	printf("STi2 tests\n");
 
+	if (!run_method15_memory_budget_test())
+		ok = 0;
+	if (!run_method15_allocation_failure_test())
+		ok = 0;
 	if (!run_method14_code_length_test())
 		ok = 0;
 	if (!run_encrypted_entry_reject_test())

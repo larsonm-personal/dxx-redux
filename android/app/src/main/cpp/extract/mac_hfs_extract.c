@@ -181,7 +181,8 @@ static int hfs_sti2_entry_allowed(uint64_t data_size)
 
 static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
                                  const char *output_dir, const char **extensions,
-                                 extract_progress_fn progress, void *user_data)
+                                 extract_progress_fn progress, void *user_data,
+                                 dxx_extract_attempt_budget_t *budget)
 {
 	char archive_path[1024];
 	mapped_file_t archive = { 0 };
@@ -206,6 +207,12 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
 		fprintf(stderr, "mac_hfs_extract: Descent installer was not found in HFS catalog\n");
 		return -2;
 	}
+	{
+		int reserve_result = dxx_extract_attempt_reserve_output(
+		    budget, output_dir, entry->data_size, 1);
+		if (reserve_result < 0)
+			return reserve_result;
+	}
 	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
 	if (hfs_catalog_extract_entry(catalog, entry, archive_path) < 0) {
 		fprintf(stderr, "mac_hfs_extract: failed to extract Install Descent from HFS\n");
@@ -216,16 +223,23 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
 		remove(archive_path);
 		return -1;
 	}
+	if (dxx_extract_attempt_reserve_memory(budget, archive.size) < 0) {
+		unmap_file(&archive);
+		remove(archive_path);
+		return -1;
+	}
 	if (!sti2_is_archive(archive.data, archive.size)) {
+		dxx_extract_attempt_release_memory(budget, archive.size);
 		fprintf(stderr, "mac_hfs_extract: Install Descent is not a recognized STi2 archive\n");
 		unmap_file(&archive);
 		remove(archive_path);
 		return -1;
 	}
 
-	extracted = sti2_extract_matching(archive.data, archive.size,
-	                                  extensions, output_dir,
-	                                  progress, user_data);
+	extracted = sti2_extract_matching_with_budget(
+	    archive.data, archive.size, extensions, output_dir,
+	    progress, user_data, budget);
+	dxx_extract_attempt_release_memory(budget, archive.size);
 	unmap_file(&archive);
 	remove(archive_path);
 	return extracted;
@@ -233,9 +247,11 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
 
 static int extract_hfs_matching_files(hfs_catalog_t *catalog,
                                       const char *output_dir, const char **extensions,
-                                      extract_progress_fn progress, void *user_data)
+                                      extract_progress_fn progress, void *user_data,
+                                      dxx_extract_attempt_budget_t *budget)
 {
 	uint64_t total_bytes = 0;
+	uint64_t total_entries = 0;
 	long long done_bytes = 0;
 	int extracted = 0;
 	int i;
@@ -247,17 +263,26 @@ static int extract_hfs_matching_files(hfs_catalog_t *catalog,
 			continue;
 		if (entry->data_size > DXX_EXTRACT_MAX_ENTRY_BYTES ||
 		    dxx_extract_add_bytes(&total_bytes, entry->data_size,
-		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
+		                          budget->max_output_bytes) < 0 ||
+		    dxx_extract_add_bytes(&total_entries, 1,
+		                          budget->max_entries) < 0)
 			return -1;
 	}
-	if (!dxx_extract_has_free_space(output_dir, total_bytes))
-		return -1;
+	{
+		int reserve_result = dxx_extract_attempt_reserve_output(
+		    budget, output_dir, total_bytes, total_entries);
+		if (reserve_result < 0)
+			return reserve_result;
+	}
 
 	for (i = 0; i < hfs_catalog_file_count(catalog); i++) {
 		char output_path[1024];
 		const hfs_file_entry_t *entry = hfs_catalog_file_at(catalog, i);
 		int written;
 		const char *name;
+
+		if (dxx_extract_attempt_cancelled(budget))
+			return DXX_EXTRACT_CANCELLED;
 
 		if (!entry || entry->is_dir ||
 		    !(name = path_basename(entry->path)) ||
@@ -286,29 +311,42 @@ int mac_extract_files_from_hfs_track(int bin_fd, int track_start_sector, int tra
                                      extract_progress_fn progress,
                                      void *user_data)
 {
+	dxx_extract_attempt_budget_t budget;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	return mac_extract_files_from_hfs_track_with_budget(
+	    bin_fd, track_start_sector, track_num_sectors, output_dir,
+	    sti2_extensions, hfs_extensions, progress, user_data, &budget);
+}
+
+int mac_extract_files_from_hfs_track_with_budget(
+    int bin_fd, int track_start_sector, int track_num_sectors,
+    const char *output_dir, const char **sti2_extensions,
+    const char **hfs_extensions, extract_progress_fn progress,
+    void *user_data, dxx_extract_attempt_budget_t *budget)
+{
 	hfs_catalog_t *catalog;
 	int extracted;
 	int fallback_extracted;
 	const char **fallback_extensions = hfs_extensions ? hfs_extensions : sti2_extensions;
 
-	if (bin_fd < 0 || !output_dir)
+	if (bin_fd < 0 || !output_dir || !budget)
 		return -1;
 	if (hfs_catalog_open(bin_fd, track_start_sector, track_num_sectors, &catalog) < 0)
 		return -1;
 
 	extracted = extract_sti2_from_hfs(catalog, output_dir, sti2_extensions,
-	                                  progress, user_data);
+	                                  progress, user_data, budget);
 	if (extracted == DXX_EXTRACT_CANCELLED) {
 		hfs_catalog_close(catalog);
 		return extracted;
 	}
 	if (extracted == -2) {
 		extracted = extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
-		                                       progress, user_data);
+		                                       progress, user_data, budget);
 	} else if (extracted > 0) {
 		fallback_extracted =
 		    extract_hfs_matching_files(catalog, output_dir, fallback_extensions,
-		                               progress, user_data);
+		                               progress, user_data, budget);
 		if (fallback_extracted == DXX_EXTRACT_CANCELLED) {
 			hfs_catalog_close(catalog);
 			return fallback_extracted;

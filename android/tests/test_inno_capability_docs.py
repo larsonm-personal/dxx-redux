@@ -23,7 +23,11 @@ class InnoCapabilityDocumentationTests(unittest.TestCase):
             self.assertIn("the historical preamble above is preserved verbatim", text)
 
     def test_documented_version_gate_matches_the_parser(self):
-        self.assertIn("v < INNO_VER(5, 3, 0) || v > INNO_VER(5, 6, 99)", self.source)
+        self.assertIn("version->major == 5", self.source)
+        self.assertIn("version->minor >= 3", self.source)
+        self.assertIn("version->minor <= 6", self.source)
+        self.assertIn("version->patch <= 99", self.source)
+        self.assertIsNone(re.search(r"#define\s+INNO_VER\s*\(", self.source))
         self.assertIn("5.3.0 through 5.6.99", self.docs)
         self.assertIn("5.3.8 MD5 and 5.3.9 SHA-1", self.docs)
         self.assertIn("5.5.7 and 5.6.2 Unicode", self.docs)

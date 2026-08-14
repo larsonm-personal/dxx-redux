@@ -39,6 +39,7 @@ private const val LEVEL_METADATA_CANCELLATION_FILE = "cancel"
 private const val LEVEL_METADATA_WORKER_OWNER_D1_FILE = "worker-owner-d1.json"
 private const val LEVEL_METADATA_WORKER_OWNER_D2_FILE = "worker-owner-d2.json"
 private const val LEVEL_METADATA_WORKER_IDENTITY_MAX_BYTES = 4_096L
+private const val LEVEL_METADATA_GLOBAL_LOCK_FILE = "worker-global.lock"
 
 internal data class LevelMetadataTarget(
     val displayName: String,
@@ -269,6 +270,7 @@ internal data class LevelMetadataLevelRow(
     val routeStatus: String,
     val routeProblem: String,
     val routeNote: String,
+    val routeCacheFile: String = "",
     val routeSteps: List<LevelMetadataRouteStep>,
     val status: String,
     val problems: List<String>,
@@ -319,6 +321,7 @@ internal data class LevelMetadataResult(
                                 routeStatus = row.optString("route_status"),
                                 routeProblem = row.optString("route_problem"),
                                 routeNote = row.optString("route_note"),
+                                routeCacheFile = row.optString("route_cache_file"),
                                 routeSteps = row.optRouteSteps("route_steps"),
                                 status = row.optString("status", "ok"),
                                 problems = row.optStringList("problems"),
@@ -388,25 +391,28 @@ internal object LevelMetadataTargets {
         if (!file.isFile || !canAnalyzeFile(file.name)) return null
         val game = gameForFile(file.name, metadata?.contents?.map { it.name }.orEmpty()) ?: return null
         val ext = GameFileFormats.extensionOf(file.name)
-        if (ext == "hog" && !isBaseHog(file.name)) {
-            descriptorForHog(file, game)?.let { mission ->
-                return LevelMetadataTarget(
-                    displayName = file.name,
-                    game = game,
-                    sourceType = "hog",
-                    sourcePath = file.absolutePath,
-                    dataDir = setDir.absolutePath,
-                    missionName = file.name.substringBeforeLast('.'),
-                    missionDisplayName = mission.displayName,
-                    missionFilename = descriptorFileNameForHog(file, game),
-                    missionType = mission.type,
-                    hogFile = file.name,
-                    normalLevelFiles = mission.levelNames,
-                    secretLevelFiles = mission.secretLevelNames,
-                )
+        if (ext == "hog") {
+            if (!isBaseHog(file.name)) {
+                descriptorForHog(file, game)?.let { mission ->
+                    return LevelMetadataTarget(
+                        displayName = file.name,
+                        game = game,
+                        sourceType = "hog",
+                        sourcePath = file.absolutePath,
+                        dataDir = setDir.absolutePath,
+                        missionName = file.name.substringBeforeLast('.'),
+                        missionDisplayName = mission.displayName,
+                        missionFilename = descriptorFileNameForHog(file, game),
+                        missionType = mission.type,
+                        hogFile = file.name,
+                        normalLevelFiles = mission.levelNames,
+                        secretLevelFiles = mission.secretLevelNames,
+                    )
+                }
             }
             hogLevelFiles(
                 metadata?.contents.orEmpty(),
+                baseGame = isBaseHog(file.name),
             ).takeIf { it.first.isNotEmpty() || it.second.isNotEmpty() }?.let {
                 return LevelMetadataTarget(
                     displayName = file.name,
@@ -414,7 +420,7 @@ internal object LevelMetadataTargets {
                     sourceType = "hog",
                     sourcePath = file.absolutePath,
                     dataDir = setDir.absolutePath,
-                    missionName = file.name.substringBeforeLast('.'),
+                    missionName = missionNameFor(file.name, game),
                     hogFile = file.name,
                     normalLevelFiles = it.first,
                     secretLevelFiles = it.second,
@@ -568,10 +574,13 @@ internal object LevelMetadataTargets {
         if (GameFileFormats.isMissionDescriptor(constituent.name)) {
             descriptorTargetForZipConstituent(archivePath, setDir, constituent, game)?.let { return it }
         }
-        if (ext == "hog" && !isBaseHog(constituent.name)) {
-            descriptorTargetForZipHog(archivePath, setDir, constituent, game)?.let { return it }
+        if (ext == "hog") {
+            if (!isBaseHog(constituent.name)) {
+                descriptorTargetForZipHog(archivePath, setDir, constituent, game)?.let { return it }
+            }
             hogLevelFiles(
                 metadata?.contents.orEmpty(),
+                baseGame = isBaseHog(constituent.name),
             ).takeIf { it.first.isNotEmpty() || it.second.isNotEmpty() }?.let {
                 return LevelMetadataTarget(
                     displayName = constituent.name,
@@ -580,7 +589,7 @@ internal object LevelMetadataTargets {
                     dataDir = setDir.absolutePath,
                     archivePath = archivePath,
                     archiveEntries = listOf(constituent.path),
-                    missionName = constituent.name.substringBeforeLast('.'),
+                    missionName = missionNameFor(constituent.name, game),
                     hogFile = constituent.name,
                     normalLevelFiles = it.first,
                     secretLevelFiles = it.second,
@@ -738,22 +747,39 @@ internal object LevelMetadataTargets {
         }
     }
 
-    private fun isBaseHog(name: String): Boolean =
+    internal fun isBaseHog(name: String): Boolean =
         when (name.lowercase(Locale.US)) {
             "descent.hog", "descent2.hog", "d2demo.hog" -> true
             else -> false
         }
 
-    private fun hogLevelFiles(entries: List<GameFileMetadata.EntrySummary>): Pair<List<String>, List<String>> {
+    private fun hogLevelFiles(
+        entries: List<GameFileMetadata.EntrySummary>,
+        baseGame: Boolean = false,
+    ): Pair<List<String>, List<String>> {
         val normal = mutableListOf<String>()
         val secret = mutableListOf<String>()
         entries.forEach { entry ->
             when (GameFileFormats.extensionOf(entry.name)) {
-                "rdl", "rl2" -> normal += entry.name
-                "sdl", "sl2" -> secret += entry.name
+                "rdl", "rl2" -> {
+                    if (baseGame && isBaseSecretLevel(entry.name)) {
+                        secret += entry.name
+                    } else {
+                        normal += entry.name
+                    }
+                }
+
+                "sdl", "sl2" -> {
+                    secret += entry.name
+                }
             }
         }
         return normal to secret
+    }
+
+    private fun isBaseSecretLevel(name: String): Boolean {
+        val stem = name.substringAfterLast('/').substringBeforeLast('.').lowercase(Locale.US)
+        return stem.matches(Regex("levels[0-9]+")) || stem.endsWith("-s")
     }
 
     private fun descriptorTargetForFile(
@@ -899,6 +925,8 @@ internal object LevelMetadataAnalyzer {
     suspend fun analyze(
         context: Context,
         target: LevelMetadataTarget,
+        background: Boolean = false,
+        totalTimeoutMs: Long = Long.MAX_VALUE,
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
         withContext(Dispatchers.IO) {
@@ -942,7 +970,15 @@ internal object LevelMetadataAnalyzer {
                 progress("Preparing analysis files", 0)
                 val request =
                     try {
-                        buildRequestJson(target, requestId, workDir, resultFile, checkpointFile)
+                        buildRequestJson(
+                            target,
+                            requestId,
+                            workDir,
+                            resultFile,
+                            checkpointFile,
+                            background,
+                            totalTimeoutMs,
+                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -1174,10 +1210,15 @@ internal object LevelMetadataAnalyzer {
         workDir: File,
         resultFile: File,
         checkpointFile: File,
+        background: Boolean,
+        totalTimeoutMs: Long,
     ): JSONObject =
         buildPreparedRequestJson(target, requestId, workDir, "dxx-level-metadata-request-v1")
             .put("result_path", resultFile.absolutePath)
             .put("checkpoint_path", checkpointFile.absolutePath)
+            .put("cancellation_path", File(workDir, LEVEL_METADATA_CANCELLATION_FILE).absolutePath)
+            .put("background", background)
+            .put("total_timeout_ms", totalTimeoutMs)
 
     internal fun buildPreviewRequestJson(
         target: LevelMetadataTarget,
@@ -1580,6 +1621,7 @@ internal class LevelMetadataServiceCommandQueue(
         try {
             executor.execute {
                 try {
+                    runCatching { Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND) }
                     command()
                 } finally {
                     completeCommand()
@@ -1686,28 +1728,38 @@ open class LevelMetadataAnalysisService : Service() {
                 workDir.parentFile ?: error("Level metadata cache root is missing"),
                 request.optString("game"),
             )
-        LevelMetadataWorkerOwnerStore.publish(ownerFile, identity)
-        try {
-            val workerFile =
-                OwnedCacheDirectories.writeUtf8Atomically(
-                    workDir,
-                    LEVEL_METADATA_WORKER_FILE,
-                    identity.toJson(),
-                )
-            queuedFile.delete()
-            if (cancellationFile.exists()) {
-                workerFile.delete()
+        val lockFile = File(workDir.parentFile, LEVEL_METADATA_GLOBAL_LOCK_FILE)
+        RandomAccessFile(lockFile, "rw").use { lockAccess ->
+            val lock = lockAccess.channel.tryLock()
+            if (lock == null) {
+                writeBusyResult(requestFile)
                 return
             }
-            val watchdog = startWatchdog(request, cancellationFile)
-            try {
-                runAnalysis(requestJson, request)
-            } finally {
-                watchdog.interrupt()
-                workerFile.delete()
+            lock.use {
+                LevelMetadataWorkerOwnerStore.publish(ownerFile, identity)
+                try {
+                    val workerFile =
+                        OwnedCacheDirectories.writeUtf8Atomically(
+                            workDir,
+                            LEVEL_METADATA_WORKER_FILE,
+                            identity.toJson(),
+                        )
+                    queuedFile.delete()
+                    if (cancellationFile.exists()) {
+                        workerFile.delete()
+                        return
+                    }
+                    val watchdog = startWatchdog(request, cancellationFile)
+                    try {
+                        runAnalysis(requestJson, request)
+                    } finally {
+                        watchdog.interrupt()
+                        workerFile.delete()
+                    }
+                } finally {
+                    LevelMetadataWorkerOwnerStore.clearIfOwned(ownerFile, identity)
+                }
             }
-        } finally {
-            LevelMetadataWorkerOwnerStore.clearIfOwned(ownerFile, identity)
         }
     }
 
@@ -1732,6 +1784,8 @@ open class LevelMetadataAnalysisService : Service() {
         cancellationFile: File,
     ): Thread =
         Thread {
+            val startedAt = SystemClock.elapsedRealtime()
+            val totalTimeoutMs = request.optLong("total_timeout_ms", Long.MAX_VALUE)
             val deadline = LevelMetadataProgressDeadline(SystemClock.elapsedRealtime())
             val checkpointFile = File(request.optString("checkpoint_path"))
             var lastCheckpoint = ""
@@ -1754,6 +1808,11 @@ open class LevelMetadataAnalysisService : Service() {
                 }
                 if (deadline.isExpired(SystemClock.elapsedRealtime())) {
                     Log.e(TAG, "Level metadata worker deadline expired")
+                    Process.killProcess(Process.myPid())
+                    return@Thread
+                }
+                if (SystemClock.elapsedRealtime() - startedAt >= totalTimeoutMs) {
+                    Log.e(TAG, "Level metadata worker total deadline expired")
                     Process.killProcess(Process.myPid())
                     return@Thread
                 }

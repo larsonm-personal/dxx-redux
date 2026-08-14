@@ -397,7 +397,8 @@ static int maybe_extract_nested_sti(const unsigned char *sit_data, size_t sit_si
                                     const sti2_entry_t *entry,
                                     const char *output_dir,
                                     const char **extensions,
-                                    sti2_progress_fn progress, void *user_data)
+                                    sti2_progress_fn progress, void *user_data,
+                                    dxx_extract_attempt_budget_t *budget)
 {
 	char safe_name[SIT5_NESTED_NAME_LIMIT];
 	char temp_path[STI2_PATH_LEN * 2];
@@ -405,14 +406,19 @@ static int maybe_extract_nested_sti(const unsigned char *sit_data, size_t sit_si
 	size_t nested_size = 0;
 	int extracted = 0;
 
-	if (entry->is_directory || entry->uncompressed_size < 22u) return 0;
+	if (!budget || entry->is_directory || entry->uncompressed_size < 22u) return 0;
 	sanitize_temp_name(basename_only(entry->path), safe_name, sizeof(safe_name));
 	snprintf(temp_path, sizeof(temp_path), "%s/.stuffit_nested_%s", output_dir, safe_name);
-	if (sti2_extract_entry(sit_data, sit_size, entry, temp_path) < 0) return 0;
+	if (sti2_extract_entry_with_budget(sit_data, sit_size, entry, temp_path,
+	                                   budget) < 0)
+		return 0;
 	if (read_file_to_buffer(temp_path, &nested_data, &nested_size) == 0 &&
-	    sti2_is_archive(nested_data, nested_size)) {
-		extracted = sti2_extract_matching(nested_data, nested_size, extensions,
-		                                  output_dir, progress, user_data);
+	    sti2_is_archive(nested_data, nested_size) &&
+	    dxx_extract_attempt_reserve_memory(budget, nested_size) == 0) {
+		extracted = sti2_extract_matching_with_budget(
+		    nested_data, nested_size, extensions, output_dir, progress,
+		    user_data, budget);
+		dxx_extract_attempt_release_memory(budget, nested_size);
 		if (extracted < 0) extracted = 0;
 	}
 	free(nested_data);
@@ -428,17 +434,26 @@ int stuffit_extract(const char *sit_path, const char *output_dir,
 	size_t archive_size = 0;
 	sti2_entry_list_t list;
 	uint64_t output_bytes = 0;
+	dxx_extract_attempt_budget_t budget;
 	int extracted = 0;
 
 	if (!sit_path || !output_dir) return -1;
 	if (read_file_to_buffer(sit_path, &archive_data, &archive_size) < 0) return -1;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	if (dxx_extract_attempt_reserve_memory(&budget, archive_size) < 0) {
+		free(archive_data);
+		return -1;
+	}
 	if (sit5_list_entries(archive_data, archive_size, &list) < 0) {
 		if (sti2_is_archive(archive_data, archive_size)) {
-			extracted = sti2_extract_matching(archive_data, archive_size, extensions,
-			                                  output_dir, progress, user_data);
+			extracted = sti2_extract_matching_with_budget(
+			    archive_data, archive_size, extensions, output_dir, progress,
+			    user_data, &budget);
+			dxx_extract_attempt_release_memory(&budget, archive_size);
 			free(archive_data);
 			return extracted;
 		}
+		dxx_extract_attempt_release_memory(&budget, archive_size);
 		free(archive_data);
 		return -1;
 	}
@@ -450,15 +465,18 @@ int stuffit_extract(const char *sit_path, const char *output_dir,
 		    !dxx_extract_memory_allowed(list.entries[i].uncompressed_size, 0) ||
 		    dxx_extract_add_bytes(&output_bytes, list.entries[i].uncompressed_size,
 		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0) {
+			dxx_extract_attempt_release_memory(&budget, archive_size);
 			free(archive_data);
 			return -1;
 		}
 	}
 	if (mkdirs_for_path(output_dir) < 0) {
+		dxx_extract_attempt_release_memory(&budget, archive_size);
 		free(archive_data);
 		return -1;
 	}
 	if (!dxx_extract_has_free_space(output_dir, output_bytes)) {
+		dxx_extract_attempt_release_memory(&budget, archive_size);
 		free(archive_data);
 		return -1;
 	}
@@ -471,22 +489,27 @@ int stuffit_extract(const char *sit_path, const char *output_dir,
 		name = basename_only(list.entries[i].path);
 		if (ext_matches(name, extensions)) {
 			snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, name);
-			written = sti2_extract_entry(archive_data, archive_size, &list.entries[i], output_path);
+			written = sti2_extract_entry_with_budget(
+			    archive_data, archive_size, &list.entries[i], output_path, &budget);
 			if (written < 0) {
+				dxx_extract_attempt_release_memory(&budget, archive_size);
 				free(archive_data);
 				return -1;
 			}
 			extracted++;
 			if (progress && progress(name, written, written, user_data) != 0) {
+				dxx_extract_attempt_release_memory(&budget, archive_size);
 				free(archive_data);
 				return -1;
 			}
 		} else {
 			extracted += maybe_extract_nested_sti(archive_data, archive_size,
 			                                      &list.entries[i], output_dir,
-			                                      extensions, progress, user_data);
+			                                      extensions, progress, user_data,
+			                                      &budget);
 		}
 	}
+	dxx_extract_attempt_release_memory(&budget, archive_size);
 	free(archive_data);
 	return extracted;
 }

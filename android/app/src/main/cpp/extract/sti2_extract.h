@@ -2,6 +2,9 @@
 #define DXX_ANDROID_EXTRACT_STI2_EXTRACT_H
 
 #include <stddef.h>
+#include <stdint.h>
+
+#include "extract_attempt_budget.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,13 +61,31 @@ int sti2_find_entry_index(const sti2_entry_list_t *list, const char *path);
 int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
                        const sti2_entry_t *entry, const char *output_path);
 
+int sti2_extract_entry_with_budget(const unsigned char *archive_data,
+                                   size_t archive_size,
+                                   const sti2_entry_t *entry,
+                                   const char *output_path,
+                                   dxx_extract_attempt_budget_t *budget);
+
 int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size,
                           const char **extensions, const char *output_dir,
                           sti2_progress_fn progress, void *user_data);
 
+int sti2_extract_matching_with_budget(
+    const unsigned char *archive_data, size_t archive_size,
+    const char **extensions, const char *output_dir,
+    sti2_progress_fn progress, void *user_data,
+    dxx_extract_attempt_budget_t *budget);
+
 #ifdef STI2_EXTRACT_TESTING
 int sti2_test_method14_code_lengths(const unsigned char *lengths, unsigned int count);
 int sti2_test_bit_reader_exhaustion(void);
+uint64_t sti2_test_method15_reserved_bytes(unsigned int block_bits);
+int sti2_test_method15_memory_allowed(uint64_t archive_size, uint64_t output_size,
+                                      unsigned int block_bits);
+void sti2_test_set_allocation_fail_after(int allocations);
+int sti2_test_method15_allocation_probe(uint64_t archive_size, size_t output_size,
+                                        unsigned int block_bits);
 #endif
 
 #ifdef __cplusplus

@@ -10,6 +10,35 @@ import java.util.zip.ZipOutputStream
 
 class LevelMetadataTargetsTest {
     @Test
+    fun directBaseHogExposesItsLevelsForBackgroundScheduling() {
+        val setDir = File("build/test-level-metadata-targets/base").absoluteFile
+        setDir.deleteRecursively()
+        setDir.mkdirs()
+        val hog = File(setDir, "descent2.hog").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val metadata =
+            GameFileMetadata.Summary(
+                format = "HOG",
+                scope = "Game archive",
+                game = "D2",
+                detailRows = emptyList(),
+                categories = emptyList(),
+                contents =
+                    listOf(
+                        GameFileMetadata.EntrySummary("d2leva-1.rl2", 1, "D2 level"),
+                        GameFileMetadata.EntrySummary("d2leva-s.rl2", 1, "D2 level"),
+                    ),
+            )
+
+        val target = LevelMetadataTargets.directFile(hog, setDir, metadata)
+
+        assertNotNull(target)
+        assertEquals("hog", target!!.sourceType)
+        assertEquals("d2", target.missionName)
+        assertEquals(listOf("d2leva-1.rl2"), target.normalLevelFiles)
+        assertEquals(listOf("d2leva-s.rl2"), target.secretLevelFiles)
+    }
+
+    @Test
     fun directVertigoHogUsesAdjacentDescriptorForSecretLevels() {
         val setDir = File("build/test-level-metadata-targets/vertigo").absoluteFile
         setDir.deleteRecursively()

@@ -169,6 +169,28 @@ struct levelmeta_progress_context {
 	std::string last_stage;
 };
 
+struct levelmeta_budget_context {
+	std::string cancellation_path;
+	unsigned int checks = 0;
+	bool background = false;
+};
+
+static int levelmeta_budget_cancelled(void *user)
+{
+	levelmeta_budget_context *context =
+	    static_cast<levelmeta_budget_context *>(user);
+	if (!context)
+		return 0;
+	if (!context->cancellation_path.empty()) {
+		std::ifstream cancellation(context->cancellation_path);
+		if (cancellation.good())
+			return 1;
+	}
+	if (context->background && (++context->checks & 63u) == 0)
+		SDL_Delay(1);
+	return 0;
+}
+
 static void write_level_task_progress(
     const levelmeta_progress_context &context, const char *phase,
     int completed, int total)
@@ -851,6 +873,7 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	int robots = 0;
 	int hostages = 0;
 	json row;
+	route_analysis_cache_summary cache_summary;
 
 	count_level_objects(&robots, &hostages);
 	row["level_num"] = level_num;
@@ -877,6 +900,8 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	row["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	row["route_steps"] = serialize_route_steps(metadata);
+	row["route_cache_file"] =
+	    level_metadata_get_route_analysis_cache_summary(&cache_summary) ? cache_summary.filename : "";
 	row["status"] = "ok";
 	row["problems"] = json::array();
 	row["notes"] = serialize_metadata_notes(metadata);
@@ -1015,8 +1040,13 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 		0,
 		"",
 	};
+	levelmeta_budget_context budget_context;
+	budget_context.cancellation_path = request.value("cancellation_path", "");
+	budget_context.background = request.value("background", false);
 	level_metadata_set_progress_callback(levelmeta_progress, &progress_context);
+	level_metadata_set_cancel_callback(levelmeta_budget_cancelled, &budget_context);
 	secret_area_rescan_current_level();
+	level_metadata_set_cancel_callback(NULL, NULL);
 	level_metadata_set_progress_callback(NULL, NULL);
 	levels.push_back(serialize_current_level_row(level_num, level_file));
 	write_checkpoint_progress(request, "level_done",
@@ -1034,7 +1064,7 @@ static json analyze_hog_entries(const json &request)
 	int successful = 0;
 	int failed = 0;
 	int missing_secret = 0;
-	int level_num = 1;
+	int level_num = normal_levels.size() == 1 && secret_levels.empty() ? request.value("level_num", 1) : 1;
 	int completed = 0;
 	const int total =
 	    static_cast<int>(normal_levels.size() + secret_levels.size());
@@ -1056,7 +1086,7 @@ static json analyze_hog_entries(const json &request)
 		++completed;
 		++level_num;
 	}
-	level_num = -1;
+	level_num = secret_levels.size() == 1 && normal_levels.empty() ? request.value("level_num", -1) : -1;
 	for (const std::string &level_file : secret_levels) {
 		int coop_starts = 0;
 		const LevelScanStatus status = scan_level(
@@ -1202,6 +1232,40 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		root["source"] = request.value("source_name", "");
 		root["mission_name"] = "";
 		root["mission_filename"] = "";
+		set_coop_start_header(root, request, coop_start_range);
+		root["levels"] = levels;
+		root["problems"] = json::array();
+		return finish_levelmeta_request(mounts, request, root, error, sizeof(error));
+	}
+	if (source_type == "active_level") {
+		json root;
+		json levels = json::array();
+		CoopStartRange coop_start_range;
+		const std::string level_file = request.value("level_file", "");
+		const int level_num = request.value("level_num", 1);
+		if (!mount_requested_hogs(request, mounts, 0, error, sizeof(error)))
+			return finish_levelmeta_request(
+			    mounts, request, failed_result(request, error), error, sizeof(error));
+		if (!load_requested_mission(request, mounts, error, sizeof(error)))
+			return finish_levelmeta_request(
+			    mounts, request, failed_result(request, error), error, sizeof(error));
+		if (level_file.empty())
+			return finish_levelmeta_request(
+			    mounts, request, failed_result(request, "missing active level file"),
+			    error, sizeof(error));
+		{
+			int coop_starts = 0;
+			if (scan_level(request, levels, level_num, level_file.c_str(),
+			               0, 1, &coop_starts))
+				coop_start_range.add(coop_starts);
+		}
+		root["schema"] = "dxx-level-metadata-v1";
+		root["status"] = levels.empty() || levels[0].value("status", "") != "ok" ? "failed" : "ok";
+		root["request_id"] = request.value("request_id", "");
+		root["game"] = request.value("game", "");
+		root["source"] = request.value("source_name", "");
+		root["mission_name"] = Current_mission ? Current_mission_longname : "";
+		root["mission_filename"] = Current_mission ? Current_mission_filename : "";
 		set_coop_start_header(root, request, coop_start_range);
 		root["levels"] = levels;
 		root["problems"] = json::array();

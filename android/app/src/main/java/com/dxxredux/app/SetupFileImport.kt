@@ -6,12 +6,14 @@ import android.os.CancellationSignal
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -45,6 +47,10 @@ internal data class ZipExtractionResult(
     val hadAudioFiles: Boolean,
     val error: String? = null,
 )
+
+internal fun cleanupZipExtractionAttempt(paths: List<File>) {
+    paths.asReversed().forEach { it.deleteRecursively() }
+}
 
 internal fun ambiguousLogicalImportName(paths: Collection<String>): String? =
     paths
@@ -208,6 +214,7 @@ internal suspend fun extractZipContents(
     context: Context,
     zipUri: Uri,
     tmpDir: File,
+    budget: ExtractionBudget,
     archiveName: String? = null,
     onProgress: suspend (String, Long, Long) -> Unit,
 ): ZipExtractionResult =
@@ -215,6 +222,7 @@ internal suspend fun extractZipContents(
         tmpDir.mkdirs()
         val results = mutableListOf<ExtractedFile>()
         val sowFiles = mutableListOf<File>()
+        val attemptPaths = mutableListOf<File>()
         val logicalSources = mutableMapOf<String, String>()
         var foundAudio = false
         val audioExts = setOf("mp3", "ogg", "flac")
@@ -230,12 +238,22 @@ internal suspend fun extractZipContents(
             } else {
                 name in ALL_GAME_FILENAMES
             }
+
+        fun failure(message: String?): ZipExtractionResult {
+            cleanupZipExtractionAttempt(attemptPaths)
+            results.clear()
+            sowFiles.clear()
+            return ZipExtractionResult(emptyList(), foundAudio, message)
+        }
         try {
+            val extractionContext = currentCoroutineContext()
             context.contentResolver.openInputStream(zipUri)?.use { raw ->
                 openZipInputStreamSkippingPreamble(raw).use { zis ->
                     var entry = zis.nextEntry
                     while (entry != null) {
+                        extractionContext.ensureActive()
                         val name = entry.name.substringAfterLast('/').lowercase(Locale.ROOT)
+                        budget.registerEntry(entry.size, entry.compressedSize, entry.name)
                         if (!entry.isDirectory && !foundAudio) {
                             val ext = name.substringAfterLast('.', "")
                             if (ext in audioExts) foundAudio = true
@@ -244,9 +262,7 @@ internal suspend fun extractZipContents(
                             if (shouldKeepGameFile(name)) {
                                 val prior = logicalSources.putIfAbsent(name, entry.name)
                                 if (prior != null) {
-                                    return@withContext ZipExtractionResult(
-                                        emptyList(),
-                                        foundAudio,
+                                    return@withContext failure(
                                         "Archive has colliding game-file outputs for $name: $prior, ${entry.name}",
                                     )
                                 }
@@ -261,53 +277,56 @@ internal suspend fun extractZipContents(
                                 "extract $name",
                             )
                             val tmpFile = AtomicFilePublication.uniqueSibling(File(tmpDir, name), "entry")
+                            attemptPaths.add(tmpFile)
                             val digest = java.security.MessageDigest.getInstance("SHA-256")
                             var size = 0L
                             var lastReported = 0L
-                            FileOutputStream(tmpFile).use { out ->
-                                val buf = ByteArray(8192)
-                                while (true) {
-                                    val n = zis.read(buf)
-                                    if (n < 0) break
-                                    if (n == 0) {
-                                        val byte = zis.read()
-                                        if (byte < 0) break
-                                        out.write(byte)
-                                        digest.update(byte.toByte())
-                                        size++
-                                    } else {
+                            var complete = false
+                            try {
+                                FileOutputStream(tmpFile).use { out ->
+                                    val buf = ByteArray(8192)
+                                    while (true) {
+                                        extractionContext.ensureActive()
+                                        val n = zis.read(buf)
+                                        if (n < 0) break
+                                        if (n == 0) continue
+                                        budget.accountActual(n, size + n, entry.compressedSize, entry.name)
                                         out.write(buf, 0, n)
                                         digest.update(buf, 0, n)
                                         size += n
-                                    }
-                                    if (size - lastReported >= 1024L * 1024L || size == totalBytes) {
-                                        lastReported = size
-                                        kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                            onProgress(name, size, totalBytes)
+                                        if (size - lastReported >= 1024L * 1024L || size == totalBytes) {
+                                            lastReported = size
+                                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                                onProgress(name, size, totalBytes)
+                                            }
                                         }
                                     }
+                                    budget.accountActual(0, size, entry.compressedSize, entry.name)
+                                    if (totalBytes > 0L && size != totalBytes) {
+                                        throw java.io.IOException(
+                                            "Incomplete archive entry $name: expected $totalBytes bytes, received $size",
+                                        )
+                                    }
+                                    out.flush()
+                                    out.fd.sync()
                                 }
-                                if (totalBytes > 0L && size != totalBytes) {
-                                    throw java.io.IOException(
-                                        "Incomplete archive entry $name: expected $totalBytes bytes, received $size",
+                                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                    onProgress(name, size, totalBytes)
+                                }
+                                val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
+                                if (name.endsWith(".sow")) {
+                                    sowFiles.add(tmpFile)
+                                    Log.i("DXX-Setup", "Extracted SOW from archive: $name ($size bytes)")
+                                } else {
+                                    results.add(ExtractedFile(name, tmpFile, sha256, size))
+                                    Log.i(
+                                        "DXX-Setup",
+                                        "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)",
                                     )
                                 }
-                                out.flush()
-                                out.fd.sync()
-                            }
-                            kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                onProgress(name, size, totalBytes)
-                            }
-                            val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
-                            if (name.endsWith(".sow")) {
-                                sowFiles.add(tmpFile)
-                                Log.i("DXX-Setup", "Extracted SOW from archive: $name ($size bytes)")
-                            } else {
-                                results.add(ExtractedFile(name, tmpFile, sha256, size))
-                                Log.i(
-                                    "DXX-Setup",
-                                    "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)",
-                                )
+                                complete = true
+                            } finally {
+                                if (!complete) tmpFile.delete()
                             }
                         }
                         zis.closeEntry()
@@ -322,22 +341,30 @@ internal suspend fun extractZipContents(
                     }
                     val sowOutputDir = AtomicFilePublication.uniqueSibling(File(tmpDir, "sow-output"), "directory")
                     if (!sowOutputDir.mkdirs()) {
-                        return@withContext ZipExtractionResult(results, foundAudio, "Could not stage ${sowFile.name}")
+                        return@withContext failure("Could not stage ${sowFile.name}")
                     }
+                    attemptPaths.add(sowOutputDir)
+                    val sowAttempt = budget.newDiscExtractionAttempt()
+                    val extractionContext = currentCoroutineContext()
                     val count =
                         DiscImportBridge.extractSowFiles(
                             sowFile.absolutePath,
                             sowOutputDir.absolutePath,
-                            null,
+                            object : DiscImportBridge.ExtractProgress {
+                                override fun onProgress(
+                                    currentFile: String,
+                                    bytesDone: Long,
+                                    bytesTotal: Long,
+                                ): Int = if (extractionContext.isActive) 0 else 1
+                            },
                             appendExisting = false,
+                            attempt = sowAttempt,
                         )
+                    extractionContext.ensureActive()
                     if (count < 0) {
-                        return@withContext ZipExtractionResult(
-                            results,
-                            foundAudio,
-                            "SOW extraction failed for ${sowFile.name}",
-                        )
+                        return@withContext failure("SOW extraction failed for ${sowFile.name}")
                     }
+                    budget.acceptDiscExtractionAttempt(sowAttempt)
                     Log.i("DXX-Setup", "Extracted $count file(s) from nested SOW ${sowFile.name}")
                     val extractedFiles = sowOutputDir.listFiles()?.filter { it.isFile } ?: emptyList()
                     for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
@@ -345,9 +372,7 @@ internal suspend fun extractZipContents(
                         if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
                         val prior = logicalSources.putIfAbsent(lowerName, "${sowFile.name}:${file.name}")
                         if (prior != null) {
-                            return@withContext ZipExtractionResult(
-                                emptyList(),
-                                foundAudio,
+                            return@withContext failure(
                                 "Nested SOW has colliding game-file output $lowerName with $prior",
                             )
                         }
@@ -364,14 +389,17 @@ internal suspend fun extractZipContents(
                     }
                 }
             }
+        } catch (e: CancellationException) {
+            failure("ZIP extraction cancelled")
+            throw e
         } catch (e: InsufficientStorageException) {
             Log.e("DXX-Setup", "ZIP extraction ran out of space", e)
             ImportStorageGuard.recordFailure(context.filesDir, "ZIP extraction failed", e)
-            return@withContext ZipExtractionResult(results, foundAudio, e.message)
+            return@withContext failure(e.message)
         } catch (e: Exception) {
             Log.e("DXX-Setup", "ZIP extraction failed", e)
             ImportStorageGuard.recordFailure(context.filesDir, "ZIP extraction failed", e)
-            return@withContext ZipExtractionResult(results, foundAudio, "ZIP extraction failed: ${e.message}")
+            return@withContext failure("ZIP extraction failed: ${e.message}")
         }
         ZipExtractionResult(results, foundAudio)
     }

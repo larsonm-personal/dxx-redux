@@ -32,6 +32,7 @@
 #include "iso9660_reader.h"
 
 #include "extract_limits.h"
+#include "extract_attempt_budget.h"
 #include "physical_output_file.h"
 
 #ifdef ANDROID
@@ -758,14 +759,16 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
                                          const char *output_dir,
                                          const char **extensions,
                                          iso_progress_fn progress,
-                                         void *user_data)
+                                         void *user_data,
+                                         dxx_extract_attempt_budget_t *budget)
 {
 	int i, extracted = 0;
 	uint64_t output_bytes = 0;
+	uint64_t output_entries = 0;
 	long long total_bytes = 0, done_bytes = 0;
 	unsigned char sector[USER_DATA_SIZE];
 
-	if (!src || src->fd < 0 || !file_list || !output_dir ||
+	if (!src || src->fd < 0 || !file_list || !output_dir || !budget ||
 	    file_list->num_files < 0 || file_list->num_files > ISO_MAX_FILES ||
 	    file_list->num_extents < 0 ||
 	    file_list->num_extents > ISO_MAX_EXTENTS)
@@ -782,11 +785,17 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 		if (!dxx_extract_entry_allowed(file_list->files[i].size,
 		                               file_list->files[i].size) ||
 		    dxx_extract_add_bytes(&output_bytes, file_list->files[i].size,
-		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
+		                          budget->max_output_bytes) < 0 ||
+		    dxx_extract_add_bytes(&output_entries, 1,
+		                          budget->max_entries) < 0)
 			return -1;
 	}
-	if (!dxx_extract_has_free_space(output_dir, output_bytes))
-		return -1;
+	{
+		int reserve_result = dxx_extract_attempt_reserve_output(
+		    budget, output_dir, output_bytes, output_entries);
+		if (reserve_result < 0)
+			return reserve_result;
+	}
 	total_bytes = (long long) output_bytes;
 
 	for (i = 0; i < file_list->num_files; i++) {
@@ -794,6 +803,9 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 		char out_path[ISO_PATH_LEN * 2];
 		dxx_physical_output_file_t output_file;
 		int file_ok = 1;
+
+		if (dxx_extract_attempt_cancelled(budget))
+			return DXX_EXTRACT_CANCELLED;
 
 		/* Skip directories stored in the listing (created on demand) */
 		if (entry->is_dir) continue;
@@ -827,6 +839,11 @@ static int iso_extract_files_from_source(const iso_reader_source_t *src,
 				int to_write =
 				    (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE
 				                                 : (int) remaining;
+
+				if (dxx_extract_attempt_cancelled(budget)) {
+					dxx_physical_output_abort(&output_file);
+					return DXX_EXTRACT_CANCELLED;
+				}
 
 				if (read_user_sector(src, (int) lba, sector) < 0) {
 					ISO_LOG("Read error at LBA %u for %s", lba,
@@ -909,9 +926,12 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
                       const char **extensions,
                       iso_progress_fn progress, void *user_data)
 {
-	return iso_extract_track_files(bin_fd, track_start_sector, track_num_sectors,
-	                               RAW_SECTOR_SIZE, USER_DATA_OFFSET, file_list,
-	                               output_dir, extensions, progress, user_data);
+	dxx_extract_attempt_budget_t budget;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	return iso_extract_track_files_with_budget(
+	    bin_fd, track_start_sector, track_num_sectors,
+	    RAW_SECTOR_SIZE, USER_DATA_OFFSET, file_list,
+	    output_dir, extensions, progress, user_data, &budget);
 }
 
 int iso_extract_track_files(int bin_fd, int track_start_sector, int track_num_sectors,
@@ -921,13 +941,28 @@ int iso_extract_track_files(int bin_fd, int track_start_sector, int track_num_se
                             const char **extensions,
                             iso_progress_fn progress, void *user_data)
 {
+	dxx_extract_attempt_budget_t budget;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	return iso_extract_track_files_with_budget(
+	    bin_fd, track_start_sector, track_num_sectors,
+	    sector_stride, user_data_offset, file_list, output_dir,
+	    extensions, progress, user_data, &budget);
+}
+
+int iso_extract_track_files_with_budget(
+    int bin_fd, int track_start_sector, int track_num_sectors,
+    int sector_stride, int user_data_offset,
+    const iso_file_list_t *file_list, const char *output_dir,
+    const char **extensions, iso_progress_fn progress, void *user_data,
+    dxx_extract_attempt_budget_t *budget)
+{
 	iso_reader_source_t src;
 
-	if (init_track_source(&src, bin_fd, track_start_sector, track_num_sectors,
-	                      sector_stride, user_data_offset) < 0)
+	if (!budget || init_track_source(&src, bin_fd, track_start_sector, track_num_sectors,
+	                                 sector_stride, user_data_offset) < 0)
 		return -1;
 	return iso_extract_files_from_source(&src, file_list, output_dir, extensions,
-	                                     progress, user_data);
+	                                     progress, user_data, budget);
 }
 
 int iso_extract_image_files(int iso_fd,
@@ -937,11 +972,23 @@ int iso_extract_image_files(int iso_fd,
                             iso_progress_fn progress,
                             void *user_data)
 {
+	dxx_extract_attempt_budget_t budget;
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	return iso_extract_image_files_with_budget(iso_fd, file_list, output_dir,
+	                                           extensions, progress, user_data,
+	                                           &budget);
+}
+
+int iso_extract_image_files_with_budget(
+    int iso_fd, const iso_file_list_t *file_list, const char *output_dir,
+    const char **extensions, iso_progress_fn progress, void *user_data,
+    dxx_extract_attempt_budget_t *budget)
+{
 	iso_reader_source_t src;
 
-	if (iso_fd < 0 || !file_list || !output_dir) return -1;
+	if (iso_fd < 0 || !file_list || !output_dir || !budget) return -1;
 
 	init_iso_image_source(&src, iso_fd);
 	return iso_extract_files_from_source(&src, file_list, output_dir, extensions,
-	                                     progress, user_data);
+	                                     progress, user_data, budget);
 }

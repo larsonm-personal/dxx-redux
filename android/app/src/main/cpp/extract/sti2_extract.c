@@ -78,6 +78,12 @@
 #define STI2_OPEN_BRANCH      (-1)
 #define STI2_LEAF_BASE        (-3)
 
+#define STI2_METHOD15_NUM_BITS       26
+#define STI2_METHOD15_ONE            (1 << (STI2_METHOD15_NUM_BITS - 1))
+#define STI2_METHOD15_HALF           (1 << (STI2_METHOD15_NUM_BITS - 2))
+#define STI2_METHOD15_MIN_BLOCK_BITS 9
+#define STI2_METHOD15_MAX_BLOCK_BITS 24
+
 typedef struct {
 	unsigned int offset;
 	unsigned int parent_offset;
@@ -188,6 +194,44 @@ typedef struct {
 	int count;
 	int last;
 } sti2_method15_decoder_t;
+
+#ifdef STI2_EXTRACT_TESTING
+static int sti2_test_allocations_before_failure = -1;
+#endif
+
+static void *sti2_malloc(size_t size)
+{
+#ifdef STI2_EXTRACT_TESTING
+	if (sti2_test_allocations_before_failure == 0)
+		return NULL;
+	if (sti2_test_allocations_before_failure > 0)
+		sti2_test_allocations_before_failure--;
+#endif
+	return malloc(size);
+}
+
+static int method15_memory_bytes(uint64_t output_size, int block_bits,
+                                 uint64_t limit, uint64_t *out_bytes)
+{
+	uint64_t block_size;
+	uint64_t bytes = sizeof(sti2_entry_list_t);
+
+	if (!out_bytes || block_bits < STI2_METHOD15_MIN_BLOCK_BITS ||
+	    block_bits > STI2_METHOD15_MAX_BLOCK_BITS)
+		return -1;
+	block_size = 1ULL << block_bits;
+	if (dxx_extract_add_bytes(&bytes, sizeof(sti2_method15_decoder_t),
+	                          limit) < 0 ||
+	    dxx_extract_add_bytes(&bytes, output_size,
+	                          limit) < 0 ||
+	    dxx_extract_add_bytes(&bytes, block_size,
+	                          limit) < 0 ||
+	    dxx_extract_add_bytes(&bytes, block_size * sizeof(uint32_t),
+	                          limit) < 0)
+		return -1;
+	*out_bytes = bytes;
+	return 0;
+}
 
 // clang-format off
 static const unsigned char first_code_lengths_1[STI2_METHOD13_SYMBOLS] ={ 4, 5, 7, 8, 8, 9, 9, 9, 9, 7, 9, 9, 9, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 9, 9, 10, 10, 9, 10, 9, 9, 5, 9, 9, 9, 9, 10, 9, 9, 9, 9, 9, 9, 9, 9, 7, 9, 9, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 9, 9, 8, 8, 9, 9, 9, 9, 9, 9, 9, 7, 8, 9, 7, 9, 9, 7, 7, 9, 9, 9, 9, 10, 9, 10, 10, 10, 9, 9, 9, 5, 9, 8, 7, 5, 9, 8, 8, 7, 9, 9, 8, 8, 5, 5, 7, 10, 5, 8, 5, 8, 9, 9, 9, 9, 9, 10, 9, 9, 10, 9, 9, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 9, 5, 6, 5, 5, 8, 9, 9, 9, 9, 9, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 9, 9, 9, 10, 9, 10, 9, 10, 9, 10, 9, 10, 10, 10, 9, 10, 9, 10, 10, 9, 9, 9, 6, 9, 9, 10, 9, 5,  };
@@ -1440,11 +1484,6 @@ cleanup:
 	return status;
 }
 
-#define STI2_METHOD15_NUM_BITS       26
-#define STI2_METHOD15_ONE            (1 << (STI2_METHOD15_NUM_BITS - 1))
-#define STI2_METHOD15_HALF           (1 << (STI2_METHOD15_NUM_BITS - 2))
-#define STI2_METHOD15_MAX_BLOCK_BITS 24
-
 static const uint16_t method15_randomization_table[256] = {
 	0xee,
 	0x56,
@@ -1751,6 +1790,58 @@ int sti2_test_bit_reader_exhaustion(void)
 	msb_br_get_bits(&msb, 9);
 	return lsb.exhausted && msb.exhausted ? 0 : -1;
 }
+
+uint64_t sti2_test_method15_reserved_bytes(unsigned int block_bits)
+{
+	uint64_t bytes;
+
+	if (method15_memory_bytes(0, (int) block_bits, UINT64_MAX, &bytes) < 0)
+		return 0;
+	return bytes;
+}
+
+int sti2_test_method15_memory_allowed(uint64_t retained_size, uint64_t output_size,
+                                      unsigned int block_bits)
+{
+	uint64_t bytes;
+
+	if (retained_size > DXX_EXTRACT_MAX_MEMORY_BYTES)
+		return 0;
+	return method15_memory_bytes(output_size, (int) block_bits,
+	                             DXX_EXTRACT_MAX_MEMORY_BYTES - retained_size,
+	                             &bytes) == 0;
+}
+
+void sti2_test_set_allocation_fail_after(int allocations)
+{
+	sti2_test_allocations_before_failure = allocations;
+}
+
+int sti2_test_method15_allocation_probe(uint64_t retained_size, size_t output_size,
+                                        unsigned int block_bits)
+{
+	uint64_t memory_bytes = 0;
+	size_t block_size;
+	void *output;
+	void *workspace;
+
+	if (!sti2_test_method15_memory_allowed(retained_size, output_size, block_bits) ||
+	    method15_memory_bytes(output_size, (int) block_bits, UINT64_MAX,
+	                          &memory_bytes) < 0)
+		return -1;
+	block_size = (size_t) 1u << block_bits;
+	output = sti2_malloc(output_size);
+	if (!output)
+		return -1;
+	workspace = sti2_malloc(block_size * (1u + sizeof(uint32_t)));
+	if (!workspace) {
+		free(output);
+		return -1;
+	}
+	free(workspace);
+	free(output);
+	return 0;
+}
 #endif
 
 static void method15_reset_arithmetic_model(sti2_arithmetic_model_t *model)
@@ -1926,7 +2017,6 @@ static int method15_read_block(sti2_method15_decoder_t *state)
 {
 	int end_marker;
 	int i;
-	uint32_t *new_transform;
 
 	method15_reset_mtf(&state->mtf);
 	state->randomized = method15_next_symbol(&state->decoder, &state->initial_model);
@@ -1999,11 +2089,6 @@ static int method15_read_block(sti2_method15_decoder_t *state)
 		state->has_expected_crc = 1;
 		state->end_of_blocks = 1;
 	}
-	new_transform = (uint32_t *) malloc(sizeof(*new_transform) * (size_t) state->num_bytes);
-	if (!new_transform)
-		return -1;
-	free(state->transform);
-	state->transform = new_transform;
 	method15_calculate_inverse_bwt(state->transform, state->block, state->num_bytes);
 	return 0;
 }
@@ -2036,9 +2121,6 @@ static int method15_init_decoder(sti2_method15_decoder_t *state,
 	if (state->block_bits < 9 || state->block_bits > STI2_METHOD15_MAX_BLOCK_BITS)
 		return -1;
 	state->block_size = 1 << state->block_bits;
-	state->block = (unsigned char *) malloc((size_t) state->block_size);
-	if (!state->block)
-		return -1;
 	state->end_of_blocks = method15_next_symbol(&state->decoder, &state->initial_model);
 	if (state->end_of_blocks < 0)
 		return -1;
@@ -2046,18 +2128,35 @@ static int method15_init_decoder(sti2_method15_decoder_t *state,
 }
 
 static int decompress_method15(const unsigned char *data, size_t comp_size,
-                               unsigned char *out, unsigned int out_size)
+                               unsigned int out_size, unsigned char **out_data,
+                               dxx_extract_attempt_budget_t *budget)
 {
 	sti2_msb_bit_reader_t br;
 	sti2_method15_decoder_t state;
+	unsigned char *out = NULL;
+	uint64_t memory_bytes = 0;
+	size_t workspace_size;
 	unsigned int out_pos = 0;
 	int status = -1;
 
-	if (!data || (!out && out_size != 0))
+	if (!data || !out_data || !budget || out_size == 0)
 		return -1;
+	*out_data = NULL;
 	msb_br_init(&br, data, comp_size);
 	if (method15_init_decoder(&state, &br) < 0)
 		goto cleanup;
+	if (method15_memory_bytes(out_size, state.block_bits,
+	                          budget->max_memory_bytes, &memory_bytes) < 0 ||
+	    dxx_extract_attempt_reserve_memory(budget, memory_bytes) < 0)
+		goto cleanup;
+	out = (unsigned char *) sti2_malloc(out_size);
+	if (!out)
+		goto cleanup;
+	workspace_size = (size_t) state.block_size * (1u + sizeof(uint32_t));
+	state.block = (unsigned char *) sti2_malloc(workspace_size);
+	if (!state.block)
+		goto cleanup;
+	state.transform = (uint32_t *) (void *) (state.block + state.block_size);
 	while (out_pos < out_size) {
 		int out_byte;
 
@@ -2104,23 +2203,29 @@ static int decompress_method15(const unsigned char *data, size_t comp_size,
 		state.crc = crc32_ieee_byte(state.crc, (unsigned char) out_byte);
 	}
 	if (!br.exhausted && state.end_of_blocks && state.has_expected_crc &&
-	    state.expected_crc == ~state.crc)
+	    state.expected_crc == ~state.crc) {
 		status = (int) out_pos;
+		*out_data = out;
+		out = NULL;
+	}
 
 cleanup:
 	free(state.block);
-	free(state.transform);
+	free(out);
+	if (memory_bytes != 0)
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
 	return status;
 }
 
 static int extract_entry_data(const unsigned char *archive_data, size_t archive_size,
                               const sti2_entry_t *entry, unsigned char **out_data,
-                              unsigned int *out_size)
+                              unsigned int *out_size,
+                              dxx_extract_attempt_budget_t *budget)
 {
 	const unsigned char *src;
 	unsigned char *dst;
 
-	if (!archive_data || !entry || !out_data || !out_size || entry->is_directory)
+	if (!archive_data || !entry || !out_data || !out_size || !budget || entry->is_directory)
 		return -1;
 	if (entry->data_encrypted)
 		return STI2_EXTRACT_UNSUPPORTED_ENCRYPTION;
@@ -2139,10 +2244,16 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 		return 0;
 	}
 
-	dst = (unsigned char *) malloc(entry->uncompressed_size);
-	if (!dst)
-		return -1;
 	src = archive_data + entry->data_offset;
+	if (entry->data_method == 15) {
+		if (decompress_method15(src, entry->compressed_size,
+		                        entry->uncompressed_size, &dst, budget) < 0)
+			return -1;
+	} else {
+		dst = (unsigned char *) malloc(entry->uncompressed_size);
+		if (!dst)
+			return -1;
+	}
 
 	switch (entry->data_method) {
 		case 0:
@@ -2170,11 +2281,6 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 			break;
 
 		case 15:
-			if (decompress_method15(src, entry->compressed_size,
-			                        dst, entry->uncompressed_size) < 0) {
-				free(dst);
-				return -1;
-			}
 			break;
 
 		default:
@@ -2296,6 +2402,24 @@ int sti2_find_entry_index(const sti2_entry_list_t *list, const char *path)
 int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
                        const sti2_entry_t *entry, const char *output_path)
 {
+	dxx_extract_attempt_budget_t budget;
+	int result;
+
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	if (dxx_extract_attempt_reserve_memory(&budget, archive_size) < 0)
+		return -1;
+	result = sti2_extract_entry_with_budget(archive_data, archive_size, entry,
+	                                        output_path, &budget);
+	dxx_extract_attempt_release_memory(&budget, archive_size);
+	return result;
+}
+
+int sti2_extract_entry_with_budget(const unsigned char *archive_data,
+                                   size_t archive_size,
+                                   const sti2_entry_t *entry,
+                                   const char *output_path,
+                                   dxx_extract_attempt_budget_t *budget)
+{
 	unsigned char *data;
 	unsigned int size;
 	char temp_path[STI2_PATH_LEN * 2 + 32];
@@ -2303,9 +2427,10 @@ int sti2_extract_entry(const unsigned char *archive_data, size_t archive_size,
 	int result;
 	int fd = -1;
 
-	if (!output_path)
+	if (!output_path || !budget)
 		return -1;
-	result = extract_entry_data(archive_data, archive_size, entry, &data, &size);
+	result = extract_entry_data(archive_data, archive_size, entry, &data, &size,
+	                            budget);
 	if (result < 0)
 		return result;
 	if (mkdirs_for_file(output_path) < 0) {
@@ -2349,14 +2474,34 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
                           const char **extensions, const char *output_dir,
                           sti2_progress_fn progress, void *user_data)
 {
+	dxx_extract_attempt_budget_t budget;
+	int result;
+
+	dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+	if (dxx_extract_attempt_reserve_memory(&budget, archive_size) < 0)
+		return -1;
+	result = sti2_extract_matching_with_budget(
+	    archive_data, archive_size, extensions, output_dir,
+	    progress, user_data, &budget);
+	dxx_extract_attempt_release_memory(&budget, archive_size);
+	return result;
+}
+
+int sti2_extract_matching_with_budget(
+    const unsigned char *archive_data, size_t archive_size,
+    const char **extensions, const char *output_dir,
+    sti2_progress_fn progress, void *user_data,
+    dxx_extract_attempt_budget_t *budget)
+{
 	sti2_entry_list_t list;
 	long long bytes_done = 0;
 	long long bytes_total = 0;
 	uint64_t output_bytes = 0;
+	uint64_t output_entries = 0;
 	int extracted = 0;
 	int i;
 
-	if (!output_dir)
+	if (!output_dir || !budget)
 		return -1;
 	if (sti2_list_entries(archive_data, archive_size, &list) < 0)
 		return -1;
@@ -2370,11 +2515,17 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 		if (!dxx_extract_entry_allowed(list.entries[i].uncompressed_size,
 		                               list.entries[i].compressed_size) ||
 		    dxx_extract_add_bytes(&output_bytes, list.entries[i].uncompressed_size,
-		                          DXX_EXTRACT_MAX_TOTAL_BYTES) < 0)
+		                          budget->max_output_bytes) < 0 ||
+		    dxx_extract_add_bytes(&output_entries, 1,
+		                          budget->max_entries) < 0)
 			return -1;
 	}
-	if (!dxx_extract_has_free_space(output_dir, output_bytes))
-		return -1;
+	{
+		int reserve_result = dxx_extract_attempt_reserve_output(
+		    budget, output_dir, output_bytes, output_entries);
+		if (reserve_result < 0)
+			return reserve_result;
+	}
 	if (mkdirs_for_path(output_dir) < 0)
 		return -1;
 	bytes_total = (long long) output_bytes;
@@ -2384,6 +2535,9 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 		const char *name;
 		int written;
 
+		if (dxx_extract_attempt_cancelled(budget))
+			return DXX_EXTRACT_CANCELLED;
+
 		if (list.entries[i].is_directory)
 			continue;
 		name = basename_only(list.entries[i].path);
@@ -2391,7 +2545,8 @@ int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size
 			continue;
 
 		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, name);
-		written = sti2_extract_entry(archive_data, archive_size, &list.entries[i], output_path);
+		written = sti2_extract_entry_with_budget(
+		    archive_data, archive_size, &list.entries[i], output_path, budget);
 		if (written < 0)
 			return written;
 		bytes_done += written;

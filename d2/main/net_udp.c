@@ -1794,17 +1794,8 @@ void net_udp_send_sequence_packet(UDP_sequence_packet seq, struct _sockaddr recv
 	buf[len] = seq.player.observer;     len++;
 	memcpy(buf + len, &seq.player.protocol.udp.addr, sizeof(struct _sockaddr));  len += sizeof(struct _sockaddr); 
 #ifdef __ANDROID__
-	buf[len++] = seq.reconnect_identity.public_key_len;
-	memcpy(buf + len, seq.reconnect_identity.public_key,
-	       sizeof(seq.reconnect_identity.public_key));
-	len += sizeof(seq.reconnect_identity.public_key);
-	android_net_udp_write_u64_le(buf + len,
-	                             seq.reconnect_identity.request_counter);
-	len += 8;
-	buf[len++] = seq.reconnect_identity.request_signature_len;
-	memcpy(buf + len, seq.reconnect_identity.request_signature,
-	       sizeof(seq.reconnect_identity.request_signature));
-	len += sizeof(seq.reconnect_identity.request_signature);
+	len += android_net_udp_reconnect_write_sequence_identity(
+	    buf + len, sizeof(buf) - len, &seq.reconnect_identity);
 #endif
 	
 	dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&recv_addr, sizeof(struct _sockaddr));
@@ -1824,17 +1815,9 @@ void net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, stru
 	seq->player.observer = data[len]; len++;
 #ifdef __ANDROID__
 	len += sizeof(struct _sockaddr);
-	seq->reconnect_identity.public_key_len = data[len++];
-	memcpy(seq->reconnect_identity.public_key, data + len,
-	       sizeof(seq->reconnect_identity.public_key));
-	len += sizeof(seq->reconnect_identity.public_key);
-	seq->reconnect_identity.request_counter =
-	    android_net_udp_read_u64_le(data + len);
-	len += 8;
-	seq->reconnect_identity.request_signature_len = data[len++];
-	memcpy(seq->reconnect_identity.request_signature, data + len,
-	       sizeof(seq->reconnect_identity.request_signature));
-	len += sizeof(seq->reconnect_identity.request_signature);
+	len += android_net_udp_reconnect_read_sequence_identity(
+	    data + len, ANDROID_NET_UDP_RECONNECT_SEQUENCE_AUTH_SIZE,
+	    &seq->reconnect_identity);
 	len -= ANDROID_NET_UDP_RECONNECT_SEQUENCE_AUTH_SIZE +
 	       sizeof(struct _sockaddr);
 #endif
@@ -1888,7 +1871,8 @@ void net_udp_init()
 
 	multi_new_game();
 #ifdef __ANDROID__
-	android_net_udp_auth_reset(Player_num);
+	android_net_udp_auth_reset(
+	    Player_num, ANDROID_NET_UDP_RECONNECT_GAME_D2);
 #endif
 	net_udp_flush();
 	
@@ -2137,6 +2121,36 @@ net_udp_new_player(UDP_sequence_packet *their)
 	net_udp_noloss_clear_mdata_got(pnum);
 }
 
+#ifdef __ANDROID__
+static void net_udp_begin_reconnect_proof(
+    UDP_sequence_packet *their, int player_num, int is_proxy,
+    int context)
+{
+	ubyte challenge[ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE];
+	int challenge_len;
+	int through_player = -1;
+
+	if (is_proxy)
+		through_player =
+		    find_player_by_address(their->player.protocol.udp.addr);
+	if (is_proxy && through_player < 0)
+		return;
+	challenge_len = android_net_udp_auth_begin_challenge(
+	    player_num, their, netgame_token,
+	    &their->player.protocol.udp.addr, is_proxy, context,
+	    timer_query(), challenge, sizeof(challenge));
+	if (!challenge_len)
+		return;
+	if (is_proxy)
+		net_udp_send_to_player_proxy(
+		    challenge, challenge_len, player_num, through_player);
+	else
+		dxx_sendto(UDP_Socket[0], challenge, challenge_len, 0,
+		           (struct sockaddr *) &their->player.protocol.udp.addr,
+		           sizeof(struct _sockaddr));
+}
+#endif
+
 void net_udp_welcome_player(UDP_sequence_packet *their,
                             int authenticated_player_num,
                             int reconnect_proven, int is_proxy)
@@ -2261,29 +2275,8 @@ void net_udp_welcome_player(UDP_sequence_packet *their,
 
 #ifdef __ANDROID__
 	if (existing_player_num != -1 && !reconnect_proven) {
-		ubyte challenge[ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE];
-		int challenge_len;
-		int through_player = -1;
-
-		challenge_len = android_net_udp_auth_begin_challenge(
-		    player_num, their, netgame_token,
-		    &their->player.protocol.udp.addr, is_proxy, timer_query(),
-		    challenge, sizeof(challenge));
-		if (!challenge_len)
-			return;
-		if (is_proxy)
-			through_player =
-			    find_player_by_address(their->player.protocol.udp.addr);
-		if (is_proxy && through_player < 0)
-			return;
-		if (is_proxy)
-			net_udp_send_to_player_proxy(
-			    challenge, challenge_len, player_num, through_player);
-		else
-			dxx_sendto(
-			    UDP_Socket[0], challenge, challenge_len, 0,
-			    (struct sockaddr *)&their->player.protocol.udp.addr,
-			    sizeof(struct _sockaddr));
+		net_udp_begin_reconnect_proof(
+		    their, player_num, is_proxy, Network_status);
 		return;
 	}
 #endif
@@ -3464,6 +3457,16 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 			PUT_INTEL_INT(buf + len, netgame_token); len += 4;
 		}
 
+#ifdef __ANDROID__
+		{
+			int generation_size = android_net_udp_auth_write_generation(
+			    buf + len, sizeof(buf) - len);
+			if (!generation_size)
+				return;
+			len += generation_size;
+		}
+#endif
+
 		Assert(len <= sizeof(buf));
 
 		if (send_to_observers != 2)
@@ -3788,6 +3791,16 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			netgame_token = my_player_token = GET_INTEL_INT(data + len); len += 4;
 		}
 
+#ifdef __ANDROID__
+		{
+			int generation_size = android_net_udp_auth_read_generation(
+			    data + len, data_len - len);
+			if (!generation_size)
+				return 0;
+			len += generation_size;
+		}
+#endif
+
 		if (len > data_len) {
 			char err_mess[200];
 			snprintf(err_mess, sizeof(err_mess), "game info size incorrect; received %d, expected %d",  data_len, len);
@@ -3993,11 +4006,21 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 #ifdef __ANDROID__
 			authenticated_player_num =
 			    android_net_udp_auth_validate_request(
-			        &their, netgame_token, N_players);
+			        &their, netgame_token, N_players,
+			        &sender_addr, timer_query());
 			if (authenticated_player_num ==
 			    ANDROID_NET_UDP_AUTH_INVALID) {
 				drop_rx_packet(data,
 				               "invalid reconnect authentication");
+				break;
+			}
+			if (authenticated_player_num >= 0) {
+				if (Network_status == NETSTAT_STARTING ||
+				    Network_status == NETSTAT_WAITING ||
+				    Network_status == NETSTAT_PLAYING)
+					net_udp_begin_reconnect_proof(
+					    &their, authenticated_player_num,
+					    is_proxy, Network_status);
 				break;
 			}
 #endif
@@ -4086,11 +4109,19 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			       sizeof(reconnect_request));
 			if (android_net_udp_auth_finish_challenge(
 			        data, length, netgame_token, &sender_addr,
-			        is_proxy, timer_query(), &reconnect_request,
-			        &reconnect_player_num))
-				net_udp_welcome_player(
-				    &reconnect_request, reconnect_player_num, 1,
-				    is_proxy);
+			        is_proxy, Network_status, timer_query(),
+			        &reconnect_request, &reconnect_player_num)) {
+				if (Network_status == NETSTAT_STARTING)
+					net_udp_add_player(
+					    &reconnect_request, reconnect_player_num);
+				else if (Network_status == NETSTAT_WAITING)
+					net_udp_process_request(
+					    &reconnect_request, reconnect_player_num);
+				else if (Network_status == NETSTAT_PLAYING)
+					net_udp_welcome_player(
+					    &reconnect_request, reconnect_player_num,
+					    1, is_proxy);
+			}
 			break;
 		}
 #endif
@@ -6070,6 +6101,10 @@ int net_udp_start_game(void)
 	Netgame.players[0].protocol.udp.isyou = 1; // I am Host. I need to know that y'know? For syncing later.
 	
 	netgame_token = generate_token();
+#ifdef __ANDROID__
+	if (!android_net_udp_auth_new_generation())
+		return 0;
+#endif
 	con_printf(CON_DEBUG, "Generated token %d in net_udp_start_game\n", netgame_token);
 
 	if(net_udp_select_players())

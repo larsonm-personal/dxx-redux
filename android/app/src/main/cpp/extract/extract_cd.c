@@ -325,7 +325,8 @@ static void extract_iso_image(const char *iso_path,
                               const char *out_dir,
                               int *data_tracks_extracted,
                               int *total_files_extracted,
-                              int *errors)
+                              int *errors,
+                              dxx_extract_attempt_budget_t *budget)
 {
 	char sha_hex[41] = "";
 	iso_file_list_t *file_list;
@@ -360,8 +361,8 @@ static void extract_iso_image(const char *iso_path,
 		int extracted;
 
 		mkdir_p(out_dir);
-		extracted = iso_extract_image_files(iso_fd, file_list, out_dir,
-		                                    NULL, progress_cb, NULL);
+		extracted = iso_extract_image_files_with_budget(
+		    iso_fd, file_list, out_dir, NULL, progress_cb, NULL, budget);
 		if (extracted >= 0) {
 			if (extracted > 0) {
 				(*data_tracks_extracted)++;
@@ -408,6 +409,7 @@ int main(int argc, char *argv[])
 	int i, num_tracks, data_tracks_extracted = 0, total_files_extracted = 0;
 	int errors = 0;
 	int is_iso;
+	dxx_extract_attempt_budget_t attempt_budget;
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: extract_cd <cue_or_iso_file> [output_dir]\n");
@@ -415,6 +417,7 @@ int main(int argc, char *argv[])
 	}
 
 	is_iso = path_has_extension(argv[1], ".iso");
+	dxx_extract_attempt_budget_init(&attempt_budget, NULL, NULL);
 	path_dir(argv[1], source_dir, sizeof(source_dir));
 
 	/* Determine output directory */
@@ -429,7 +432,7 @@ int main(int argc, char *argv[])
 		extract_iso_image(argv[1], out_dir,
 		                  &data_tracks_extracted,
 		                  &total_files_extracted,
-		                  &errors);
+		                  &errors, &attempt_budget);
 	} else {
 
 		/* Read CUE sheet */
@@ -582,9 +585,10 @@ int main(int argc, char *argv[])
 				if (nf > 0) {
 					int extracted;
 					mkdir_p(out_dir);
-					extracted = iso_extract_track_files(bin_fd, t->start_sector, t->num_sectors,
-					                                    t->sector_size, t->user_data_offset,
-					                                    file_list, out_dir, NULL, progress_cb, NULL);
+					extracted = iso_extract_track_files_with_budget(bin_fd, t->start_sector, t->num_sectors,
+					                                                t->sector_size, t->user_data_offset,
+					                                                file_list, out_dir, NULL, progress_cb, NULL,
+					                                                &attempt_budget);
 					if (extracted > 0) {
 						data_tracks_extracted++;
 						total_files_extracted += extracted;
@@ -613,12 +617,13 @@ int main(int argc, char *argv[])
 						        hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name,
 						        hfs_info.partition_block_count);
 
-						extracted = mac_extract_files_from_hfs_track(bin_fd, t->start_sector, t->num_sectors,
-						                                             out_dir,
-						                                             NULL,
-						                                             dxx_android_mac_disc_extract_extensions,
-						                                             progress_cb,
-						                                             NULL);
+						extracted = mac_extract_files_from_hfs_track_with_budget(bin_fd, t->start_sector, t->num_sectors,
+						                                                         out_dir,
+						                                                         NULL,
+						                                                         dxx_android_mac_disc_extract_extensions,
+						                                                         progress_cb,
+						                                                         NULL,
+						                                                         &attempt_budget);
 						if (extracted > 0) {
 							data_tracks_extracted++;
 							total_files_extracted += extracted;
@@ -678,8 +683,9 @@ int main(int argc, char *argv[])
 					if (*p == '\\') *p = '/';
 
 				fprintf(stderr, "  Extracting %s...\n", rel);
-				int sow_count = sow_extract(sow_list.paths[si], sow_dir,
-				                            NULL, progress_cb, NULL);
+				int sow_count = sow_extract_with_budget(
+				    sow_list.paths[si], sow_dir, NULL, progress_cb, NULL, 0,
+				    &attempt_budget);
 				if (sow_count >= 0) {
 					printf("{\"sow\": ");
 					json_write_string(stdout, rel_json);

@@ -549,6 +549,24 @@ class MainActivity :
 
     fun gameVariantForMusicOverlay(): String = gameVariantId
 
+    @Suppress("unused") // Called from native code on the game thread
+    fun onRouteMetadataNeeded(
+        game: String,
+        mission: String,
+        levelNum: Int,
+        levelFile: String,
+    ) {
+        startupScope.launch(Dispatchers.IO) {
+            RouteMetadataBackground.computeActiveLevel(
+                this@MainActivity,
+                game,
+                mission,
+                levelNum,
+                levelFile,
+            )
+        }
+    }
+
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
     @Suppress("unused") // Called from native code
     fun openSafFile(contentUri: String): Int {

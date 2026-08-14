@@ -254,12 +254,13 @@ private fun summarizeCueTracks(cueFile: File): CueTrackSummary {
 internal fun extractSowArchives(
     setDir: File,
     progress: DiscImportBridge.ExtractProgress? = null,
+    attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
 ): Int {
     val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return -1
     var sowExtracted = 0
     for (sow in sowFiles) {
         val outputDir = File(sow).parentFile?.absolutePath ?: setDir.absolutePath
-        val extracted = DiscImportBridge.extractSowFiles(sow, outputDir, progress)
+        val extracted = DiscImportBridge.extractSowFiles(sow, outputDir, progress, attempt = attempt)
         if (extracted < 0) return extracted
         sowExtracted += extracted
     }
@@ -269,8 +270,9 @@ internal fun extractSowArchives(
 internal fun postProcessImportedDiscFiles(
     setDir: File,
     progress: DiscImportBridge.ExtractProgress? = null,
+    attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
 ): Int {
-    val sowExtracted = extractSowArchives(setDir, progress)
+    val sowExtracted = extractSowArchives(setDir, progress, attempt)
     if (sowExtracted < 0) return sowExtracted
     if (hoistNestedImportedGameFiles(setDir) < 0) return -1
     return sowExtracted
@@ -736,7 +738,7 @@ internal fun extractPickedCueDataTracks(
         tracks = tracks,
         imageCount = orderedBinUris.size,
         progress = progress,
-        extractTrack = { track, outputDir, trackProgress ->
+        extractTrack = { track, outputDir, trackProgress, attempt ->
             val image = orderedBinUris.getOrNull(track.fileIndex)
             if (image == null) {
                 CueDataTrackAttempt(-1, -1)
@@ -752,6 +754,7 @@ internal fun extractPickedCueDataTracks(
                             track.userDataOffset,
                             outputDir.absolutePath,
                             trackProgress,
+                            attempt,
                         )
                     val mac =
                         if (iso == DiscImportBridge.EXTRACT_CANCELLED) {
@@ -766,6 +769,7 @@ internal fun extractPickedCueDataTracks(
                                 track.numSectors,
                                 outputDir.absolutePath,
                                 trackProgress,
+                                attempt,
                             )
                         } else {
                             -1
@@ -822,8 +826,13 @@ internal fun extractCueDataTracks(
         track: DiscImportBridge.CueTrack,
         outputDir: File,
         progress: DiscImportBridge.ExtractProgress?,
+        attempt: DiscExtractionAttempt,
     ) -> CueDataTrackAttempt,
-    postProcess: (File, DiscImportBridge.ExtractProgress?) -> Int = ::postProcessImportedDiscFiles,
+    postProcess: (
+        File,
+        DiscImportBridge.ExtractProgress?,
+        DiscExtractionAttempt,
+    ) -> Int = ::postProcessImportedDiscFiles,
 ): CueDataTrackExtractionResult {
     val dataTracks = tracks.filter { it.isData }
     if (dataTracks.isEmpty()) {
@@ -874,12 +883,14 @@ internal fun extractCueDataTracks(
     }
 
     val aggregateProgress = CueDataTrackProgress(dataTracks, progress)
+    val attemptBudget = DiscExtractionAttempt()
     var isoExtracted = 0
     var macExtracted = 0
     var processed = 0
     try {
         for ((index, track) in dataTracks.withIndex()) {
-            val attempt = extractTrack(track, stagingDir, aggregateProgress.forTrack(index))
+            val attempt =
+                extractTrack(track, stagingDir, aggregateProgress.forTrack(index), attemptBudget)
             if (aggregateProgress.cancelled) {
                 return CueDataTrackExtractionResult(
                     isoExtracted = isoExtracted,
@@ -905,7 +916,8 @@ internal fun extractCueDataTracks(
         }
 
         val primaryExtracted = isoExtracted + macExtracted
-        val sowExtracted = if (primaryExtracted > 0) postProcess(stagingDir, progress) else 0
+        val sowExtracted =
+            if (primaryExtracted > 0) postProcess(stagingDir, progress, attemptBudget) else 0
         if (sowExtracted < 0) {
             return CueDataTrackExtractionResult(
                 isoExtracted = isoExtracted,
@@ -1000,7 +1012,7 @@ internal fun importDiscImageFromPath(
             setDir = setDir,
             tracks = tracks,
             imageCount = orderedImageFiles.size,
-            extractTrack = { track, outputDir, progress ->
+            extractTrack = { track, outputDir, progress, attempt ->
                 val image = orderedImageFiles[track.fileIndex]
                 val iso =
                     DiscImportBridge.extractIsoFiles(
@@ -1011,6 +1023,7 @@ internal fun importDiscImageFromPath(
                         track.userDataOffset,
                         outputDir.absolutePath,
                         progress,
+                        attempt,
                     )
                 val mac =
                     if (iso == DiscImportBridge.EXTRACT_CANCELLED) {
@@ -1024,6 +1037,7 @@ internal fun importDiscImageFromPath(
                             track.numSectors,
                             outputDir.absolutePath,
                             progress,
+                            attempt,
                         )
                     } else {
                         -1

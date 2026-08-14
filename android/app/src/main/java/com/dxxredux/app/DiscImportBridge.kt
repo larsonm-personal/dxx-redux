@@ -3,6 +3,14 @@ package com.dxxredux.app
 import android.os.ParcelFileDescriptor
 import java.io.File
 
+class DiscExtractionAttempt internal constructor(
+    internal val state: LongArray = longArrayOf(0L, 0L, 0L),
+) {
+    val outputBytes: Long get() = state[0]
+    val entries: Long get() = state[1]
+    val cancelled: Boolean get() = state[2] != 0L
+}
+
 /**
  * JNI bridge for BIN/CUE disc import operations.
  *
@@ -184,6 +192,7 @@ object DiscImportBridge {
         userDataOffset: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
     ): Int =
         nativeExtractIsoFiles(
             binFd,
@@ -193,6 +202,7 @@ object DiscImportBridge {
             userDataOffset,
             outputDir,
             progress,
+            attempt.state,
         )
 
     /**
@@ -206,6 +216,7 @@ object DiscImportBridge {
         userDataOffset: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
     ): Int {
         val pfd =
             ParcelFileDescriptor.open(
@@ -221,6 +232,7 @@ object DiscImportBridge {
                 userDataOffset,
                 outputDir,
                 progress,
+                attempt,
             )
         } finally {
             pfd.close()
@@ -234,7 +246,8 @@ object DiscImportBridge {
         isoFd: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
-    ): Int = nativeExtractIsoImageFiles(isoFd, outputDir, progress)
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
+    ): Int = nativeExtractIsoImageFiles(isoFd, outputDir, progress, attempt.state)
 
     /**
      * Extract from an ISO file path (opens the fd internally).
@@ -243,6 +256,7 @@ object DiscImportBridge {
         isoPath: String,
         outputDir: String,
         progress: ExtractProgress? = null,
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
     ): Int {
         val pfd =
             ParcelFileDescriptor.open(
@@ -250,7 +264,7 @@ object DiscImportBridge {
                 ParcelFileDescriptor.MODE_READ_ONLY,
             )
         return try {
-            extractIsoImageFiles(pfd.fd, outputDir, progress)
+            extractIsoImageFiles(pfd.fd, outputDir, progress, attempt)
         } finally {
             pfd.close()
         }
@@ -272,7 +286,8 @@ object DiscImportBridge {
         trackSectors: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
-    ): Int = nativeExtractMacFiles(binFd, trackStart, trackSectors, outputDir, progress)
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
+    ): Int = nativeExtractMacFiles(binFd, trackStart, trackSectors, outputDir, progress, attempt.state)
 
     /**
      * Extract from a BIN file path (opens the fd internally).
@@ -283,6 +298,7 @@ object DiscImportBridge {
         trackSectors: Int,
         outputDir: String,
         progress: ExtractProgress? = null,
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
     ): Int {
         val pfd =
             ParcelFileDescriptor.open(
@@ -290,7 +306,7 @@ object DiscImportBridge {
                 ParcelFileDescriptor.MODE_READ_ONLY,
             )
         return try {
-            extractMacFiles(pfd.fd, trackStart, trackSectors, outputDir, progress)
+            extractMacFiles(pfd.fd, trackStart, trackSectors, outputDir, progress, attempt)
         } finally {
             pfd.close()
         }
@@ -331,7 +347,8 @@ object DiscImportBridge {
         outputDir: String,
         progress: ExtractProgress? = null,
         appendExisting: Boolean = false,
-    ): Int = nativeExtractSowFiles(sowPath, outputDir, progress, appendExisting)
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
+    ): Int = nativeExtractSowFiles(sowPath, outputDir, progress, appendExisting, attempt.state)
 
     // ── Native methods ────────────────────────────────────────────
 
@@ -358,12 +375,14 @@ object DiscImportBridge {
         userDataOffset: Int,
         outputDir: String,
         progress: ExtractProgress?,
+        attemptState: LongArray,
     ): Int
 
     private external fun nativeExtractIsoImageFiles(
         isoFd: Int,
         outputDir: String,
         progress: ExtractProgress?,
+        attemptState: LongArray,
     ): Int
 
     private external fun nativeExtractMacFiles(
@@ -372,6 +391,7 @@ object DiscImportBridge {
         trackSectors: Int,
         outputDir: String,
         progress: ExtractProgress?,
+        attemptState: LongArray,
     ): Int
 
     private external fun nativeExtractStuffitFiles(
@@ -387,5 +407,6 @@ object DiscImportBridge {
         outputDir: String,
         progress: ExtractProgress?,
         appendExisting: Boolean,
+        attemptState: LongArray,
     ): Int
 }

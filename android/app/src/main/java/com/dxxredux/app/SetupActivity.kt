@@ -69,7 +69,10 @@ import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetworkConstants
 import com.dxxredux.app.multiplayer.PlayGamesAuth
 import com.dxxredux.app.multiplayer.readCoopRestoreSlot
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -92,6 +95,9 @@ import java.util.Locale
  * This is the launcher activity.
  */
 class SetupActivity : ComponentActivity() {
+    private val routeMetadataScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private lateinit var routeMetadataCoordinator: RouteMetadataPrecomputeCoordinator
+
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
     private val focusResumeTrigger = mutableIntStateOf(0)
@@ -1967,6 +1973,7 @@ class SetupActivity : ComponentActivity() {
         )
 
         gameRunningFlag = hasReturnableGameActivity()
+        routeMetadataCoordinator = RouteMetadataPrecomputeCoordinator(this, routeMetadataScope)
         val filesDir = filesDir
 
         setContent {
@@ -2214,6 +2221,11 @@ class SetupActivity : ComponentActivity() {
         val returningFromLevelPreview = LevelPreviewReturnRefreshGate.consumeReturn()
         mpGameLaunching = false
         gameRunningFlag = hasReturnableGameActivity()
+        if (gameRunningFlag) {
+            routeMetadataCoordinator.stop()
+        } else {
+            routeMetadataCoordinator.start()
+        }
         // If a LAN host was broadcasting in-game, stop now
         com.dxxredux.app.lobby.LobbyService
             .stopInGameBroadcast()
@@ -2334,12 +2346,20 @@ class SetupActivity : ComponentActivity() {
         if (gameRunningFlag) {
             Log.w("DXX-Setup", "LAUNCHER_CONTINUE: game process still returnable after wait")
         } else {
+            routeMetadataCoordinator.start()
             requestSetupRefresh()
             schedulePostResumeRefreshes()
         }
     }
 
+    override fun onPause() {
+        routeMetadataCoordinator.stop()
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        routeMetadataCoordinator.stop()
+        routeMetadataScope.cancel()
         resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
         try {
             unregisterReceiver(introspectReceiver)
@@ -2972,6 +2992,7 @@ private fun SetupScreen(
                 }
                 val tmpDir = OwnedCacheDirectories.create(File(filesDir, "tmp"))
                 val allExtracted = mutableListOf<ExtractedFile>()
+                val zipExtractionBudget = ExtractionBudget()
                 var anyAudio = false
                 val archiveErrors = mutableListOf<String>()
                 for ((arcName, arcUri) in zipUris) {
@@ -3006,6 +3027,7 @@ private fun SetupScreen(
                                 context,
                                 arcUri,
                                 archiveDir,
+                                budget = zipExtractionBudget,
                                 archiveName = arcName,
                             ) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"

@@ -10,12 +10,14 @@
 extern "C" {
 #endif
 
-#define ROUTE_ANALYSIS_CACHE_GAME_D1 1
-#define ROUTE_ANALYSIS_CACHE_GAME_D2 2
+#define ROUTE_ANALYSIS_CACHE_GAME_D1    1
+#define ROUTE_ANALYSIS_CACHE_GAME_D2    2
+#define ROUTE_ANALYSIS_CACHE_GENERATION 1
 
 typedef struct route_analysis_cache_key {
-	unsigned int build_number;
+	unsigned int generation;
 	unsigned int game;
+	unsigned long long analysis_profile_hash;
 	unsigned long long topology_hash;
 	unsigned long long progression_hash;
 	unsigned long long trigger_hash;
@@ -23,7 +25,7 @@ typedef struct route_analysis_cache_key {
 } route_analysis_cache_key;
 
 typedef struct route_analysis_cache_summary {
-	unsigned int build_number;
+	unsigned int generation;
 	unsigned int hits;
 	unsigned int misses;
 	unsigned int writes;
@@ -37,8 +39,9 @@ typedef struct route_analysis_cache_summary {
 
 size_t route_analysis_cache_record_size(void);
 int route_analysis_cache_make_key(
-    unsigned int build_number,
+    unsigned int generation,
     unsigned int game,
+    unsigned long long analysis_profile_hash,
     const route_snapshot_summary *snapshot,
     route_analysis_cache_key *key);
 int route_analysis_cache_filename(

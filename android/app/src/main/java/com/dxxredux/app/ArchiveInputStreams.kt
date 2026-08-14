@@ -17,10 +17,12 @@ private const val ZIP_MAX_COMMENT_BYTES = 0xffff
 private const val ZIP64_SENTINEL_16 = 0xffff
 private const val ZIP64_SENTINEL_32 = 0xffffffffL
 private const val ZIP_SUPPORTED_FLAGS = 0x080e
-private val ZIP_LOCAL_FILE_HEADER_BYTES = byteArrayOf(0x50, 0x4b, 0x03, 0x04)
 
-internal fun openZipInputStreamSkippingPreamble(input: InputStream): ZipInputStream {
-    val staged = File.createTempFile("dxx-zip-", ".tmp")
+internal fun openZipInputStreamSkippingPreamble(
+    input: InputStream,
+    stagingDirectory: File? = null,
+): ZipInputStream {
+    val staged = File.createTempFile("dxx-zip-", ".tmp", stagingDirectory)
     try {
         stageBoundedZip(input, staged)
         val firstLocalHeader = validateZipAndFindFirstLocalHeader(staged)
@@ -42,39 +44,23 @@ private fun stageBoundedZip(
     input: InputStream,
     staged: File,
 ) {
-    val maxSourceBytes = Math.addExact(ExtractionLimits.MAX_TOTAL_BYTES, ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES)
+    // A one-shot stream cannot prove its trailing central directory before it is staged
+    val maxSourceBytes = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES
     val buffer = ByteArray(64 * 1024)
     var total = 0L
-    var markerMatch = 0
-    var foundLocalMarker = false
     input.use { source ->
         staged.outputStream().buffered().use { output ->
             while (true) {
-                val count = source.read(buffer)
+                val remaining = maxSourceBytes - total
+                val count = source.read(buffer, 0, minOf(buffer.size.toLong(), remaining + 1).toInt())
                 if (count < 0) break
                 if (count == 0) continue
-                if (total > maxSourceBytes - count) throw ZipException("ZIP source exceeds $maxSourceBytes bytes")
-                for (index in 0 until count) {
-                    if (total + index >= ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES && !foundLocalMarker) {
-                        throw ZipException("ZIP preamble exceeds ${ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES} bytes")
-                    }
-                    val value = buffer[index]
-                    if (value == ZIP_LOCAL_FILE_HEADER_BYTES[markerMatch]) {
-                        markerMatch++
-                        if (markerMatch == ZIP_LOCAL_FILE_HEADER_BYTES.size) {
-                            foundLocalMarker = true
-                            markerMatch = 0
-                        }
-                    } else {
-                        markerMatch = if (value == ZIP_LOCAL_FILE_HEADER_BYTES[0]) 1 else 0
-                    }
-                }
+                if (count.toLong() > remaining) throw ZipException("ZIP source exceeds $maxSourceBytes bytes")
                 output.write(buffer, 0, count)
                 total += count
             }
         }
     }
-    if (!foundLocalMarker) throw ZipException("ZIP local file header not found")
 }
 
 private fun validateZipAndFindFirstLocalHeader(staged: File): Long =

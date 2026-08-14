@@ -75,19 +75,21 @@ size_t route_analysis_cache_record_size(void)
 }
 
 int route_analysis_cache_make_key(
-    unsigned int build_number,
+    unsigned int generation,
     unsigned int game,
+    unsigned long long analysis_profile_hash,
     const route_snapshot_summary *snapshot,
     route_analysis_cache_key *key)
 {
-	if (!build_number ||
+	if (!generation || !analysis_profile_hash ||
 	    (game != ROUTE_ANALYSIS_CACHE_GAME_D1 &&
 	     game != ROUTE_ANALYSIS_CACHE_GAME_D2) ||
 	    !snapshot || !snapshot->topology_hash || !key)
 		return 0;
 	memset(key, 0, sizeof(*key));
-	key->build_number = build_number;
+	key->generation = generation;
 	key->game = game;
+	key->analysis_profile_hash = analysis_profile_hash;
 	key->topology_hash = snapshot->topology_hash;
 	key->progression_hash = snapshot->progression_hash;
 	key->trigger_hash = snapshot->trigger_hash;
@@ -106,11 +108,11 @@ int route_analysis_cache_filename(
 		return 0;
 	written = snprintf(
 	    filename, capacity,
-	    "route-cache/%u/%s-%016llx-%016llx-%016llx-%016llx.bin",
-	    key->build_number,
+	    "route-cache/g%u/%s-%016llx-%016llx-%016llx-%016llx-%016llx.bin",
+	    key->generation,
 	    key->game == ROUTE_ANALYSIS_CACHE_GAME_D2 ? "d2" : "d1",
-	    key->topology_hash, key->progression_hash, key->trigger_hash,
-	    key->object_hash);
+	    key->analysis_profile_hash, key->topology_hash, key->progression_hash,
+	    key->trigger_hash, key->object_hash);
 	return written > 0 && (size_t) written < capacity;
 }
 
