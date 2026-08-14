@@ -1,3 +1,5 @@
+#include "boss_health_shared.h"
+#include "boss_hud.h"
 #include "game.h"
 #include "hudmsg.h"
 #include "input_demo_recorder.h"
@@ -89,7 +91,9 @@ int difficulty_change_to(int difficulty, int flags)
 	if (difficulty == old_difficulty)
 		return 1;
 
+	boss_health_rescale_live_bosses(old_difficulty, difficulty);
 	Difficulty_level = difficulty;
+	boss_hud_refresh_maximum();
 	if (Game_mode & GM_MULTI)
 		Netgame.difficulty = (ubyte) difficulty;
 	if (!(flags & DIFFICULTY_CHANGE_FROM_REPLAY)) {

@@ -45,6 +45,7 @@ static inline int boss_hud_green_width(int shields, int maximum_shields, int bar
 
 void boss_hud_note_active(int objnum);
 void boss_hud_reset(void);
+void boss_hud_refresh_maximum(void);
 int boss_hud_is_visible(void);
 int boss_hud_message_capacity(int normal_capacity);
 int boss_hud_prepare_row(int y, int queued_message_capacity,

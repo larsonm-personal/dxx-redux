@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "boss_health_shared.h"
 #include "boss_hud.h"
 #include "game.h"
 #include "gamefont.h"
@@ -8,6 +9,9 @@
 #include "object.h"
 #include "playsave.h"
 #include "robot.h"
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
 
 static int Boss_hud_objnum = -1;
 static int Boss_hud_signature = -1;
@@ -23,13 +27,8 @@ static boss_hud_debug_state Boss_hud_debug;
 
 static fix boss_hud_full_shields(const object *boss)
 {
-	fix maximum = Robot_info[boss->id].strength;
-
-#ifdef DXX_BUILD_DESCENT_II
-	maximum = maximum / (NDL + 3) * (Difficulty_level + 4);
-	if (Difficulty_level == 0)
-		maximum /= 2;
-#endif
+	fix maximum = boss_health_maximum_for_difficulty(
+	    Robot_info[boss->id].strength, Difficulty_level);
 	if (boss->shields > maximum)
 		maximum = boss->shields;
 	return maximum;
@@ -48,6 +47,14 @@ static object *boss_hud_get_active(void)
 		return NULL;
 	}
 	return boss;
+}
+
+void boss_hud_refresh_maximum(void)
+{
+	object *boss = boss_hud_get_active();
+
+	if (boss)
+		Boss_hud_maximum_shields = boss_hud_full_shields(boss);
 }
 
 void boss_hud_note_active(int objnum)
@@ -89,6 +96,11 @@ static object *boss_hud_find_active_or_damaged(void)
 			continue;
 		maximum = boss_hud_full_shields(boss);
 		if (boss->shields < maximum) {
+#ifdef __ANDROID__
+			debug_log(DLOG_GAME,
+			          "boss HUD auto-activate damaged: obj=%d robot=%d shields=%d maximum=%d difficulty=%d",
+			          i, boss->id, boss->shields, maximum, Difficulty_level);
+#endif
 			boss_hud_note_active(i);
 			return boss_hud_get_active();
 		}

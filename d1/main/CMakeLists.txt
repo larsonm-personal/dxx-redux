@@ -83,6 +83,7 @@ set(D1X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/android_newmenu_text_wrap.c
     ../../android/app/src/main/cpp/shared/coop/coop_multi_status.c
     ../../android/app/src/main/cpp/shared/automap_metadata_overlay.c
+    ../../android/app/src/main/cpp/shared/boss_health_shared.c
     ../../android/app/src/main/cpp/shared/boss_hud.c
     ../../android/app/src/main/cpp/shared/hud_counts_shared.c
     ../../android/app/src/main/cpp/shared/difficulty_runtime_shared.c

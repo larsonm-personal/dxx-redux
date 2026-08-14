@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "boss_health_shared.h"
 #include "boss_hud.h"
 #include "font_control_shared.h"
 #include "hud_layout_shared.h"
@@ -96,6 +97,22 @@ static void test_boss_health_bar_widths(void)
 	assert(boss_hud_green_width(1, 100, 0) == 0);
 }
 
+static void test_boss_health_difficulty_scaling(void)
+{
+	const int32_t rookie_maximum = 239616000;
+	const int32_t trainee_maximum = 95846400;
+
+	assert(boss_health_rescale_value(rookie_maximum, rookie_maximum,
+	                                 trainee_maximum) == trainee_maximum);
+	assert(boss_health_rescale_value(rookie_maximum / 2, rookie_maximum,
+	                                 trainee_maximum) == trainee_maximum / 2);
+	assert(boss_health_rescale_value(trainee_maximum, trainee_maximum,
+	                                 rookie_maximum) == rookie_maximum);
+	assert(boss_health_rescale_value(1, rookie_maximum, trainee_maximum) == 1);
+	assert(boss_health_rescale_value(0, rookie_maximum, trainee_maximum) == 0);
+	assert(boss_health_rescale_value(-1, rookie_maximum, trainee_maximum) == -1);
+}
+
 int main(void)
 {
 	test_embedded_font_controls_are_not_visible();
@@ -105,5 +122,6 @@ int main(void)
 	test_empty_rectangles_do_not_overlap();
 	test_padding_can_turn_a_near_miss_into_overlap();
 	test_boss_health_bar_widths();
+	test_boss_health_difficulty_scaling();
 	return 0;
 }

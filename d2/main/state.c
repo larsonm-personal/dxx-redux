@@ -2480,6 +2480,13 @@ int state_save_all_sub(char *filename, char *desc)
 		object_rw *obj_rw;
 		CALLOC(obj_rw, object_rw, 1);
 		state_object_to_object_rw(&Objects[i], obj_rw);
+#ifdef __ANDROID__
+		if (Objects[i].type == OBJ_ROBOT && Robot_info[Objects[i].id].boss_flag)
+			debug_log(DLOG_GAME,
+			          "save boss shields: obj=%d robot=%d shields=%d strength=%d difficulty=%d",
+			          i, Objects[i].id, Objects[i].shields,
+			          Robot_info[Objects[i].id].strength, Difficulty_level);
+#endif
 		PHYSFS_write(fp, obj_rw, sizeof(object_rw), 1);
 		d_free(obj_rw);
 	}
@@ -3178,14 +3185,23 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		//look for, and fix, boss with bogus shields
 		if (obj->type == OBJ_ROBOT && Robot_info[obj->id].boss_flag) {
 			fix save_shields = obj->shields;
+			fix default_shields;
 
 			copy_defaults_to_robot(obj);		//calculate starting shields
+			default_shields = obj->shields;
 
 			//if in valid range, use loaded shield value
 			if (save_shields > 0 && save_shields <= obj->shields)
 				obj->shields = save_shields;
 			else
 				obj->shields /= 2;  //give player a break
+#ifdef __ANDROID__
+			debug_log(DLOG_GAME,
+			          "restore boss shields: obj=%d robot=%d saved=%d default=%d result=%d valid=%d difficulty=%d",
+			          i, obj->id, save_shields, default_shields, obj->shields,
+			          save_shields > 0 && save_shields <= default_shields,
+			          Difficulty_level);
+#endif
 		}
 	}
 	special_reset_objects();

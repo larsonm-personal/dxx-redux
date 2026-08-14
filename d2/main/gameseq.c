@@ -85,6 +85,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kconfig.h"
 #include "config.h"
 #include "robot.h"
+#include "boss_health_shared.h"
 #include "automap.h"
 #include "cntrlcen.h"
 #include "powerup.h"
@@ -2426,12 +2427,10 @@ void copy_defaults_to_robot(object *objp)
 				default:	break;
 			}
 		}
-	} else if (robptr->boss_flag)	//	MK, 01/16/95, make boss shields lower on lower diff levels.
-		objp->shields = objp->shields/(NDL+3) * (Difficulty_level+4);
-
-	//	Additional wimpification of bosses at Trainee
-	if ((robptr->boss_flag) && (Difficulty_level == 0))
-		objp->shields /= 2;
+	} else if (robptr->boss_flag) { // MK, 01/16/95, make boss shields lower on lower diff levels.
+		objp->shields = boss_health_maximum_for_difficulty(
+		    robptr->strength, Difficulty_level);
+	}
 }
 
 //	-----------------------------------------------------------------------------------------------------

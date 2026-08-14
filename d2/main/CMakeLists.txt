@@ -96,6 +96,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/classic_demo_json.c
     ../../android/app/src/main/cpp/shared/classic_demo_json_d2_snapshot.c
     ../../android/app/src/main/cpp/shared/bounded_rle.c
+    ../../android/app/src/main/cpp/shared/boss_health_shared.c
     ../../android/app/src/main/cpp/shared/boss_hud.c
     ../../android/app/src/main/cpp/shared/hud_counts_shared.c
     ../../android/app/src/main/cpp/shared/difficulty_runtime_shared.c
