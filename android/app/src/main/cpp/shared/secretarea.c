@@ -125,6 +125,7 @@ static void level_metadata_report_progress(
 
 #define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
 #define LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY     262144
+#define LEVEL_METADATA_OCCUPIABILITY_CACHE_CAPACITY      65536
 #define LEVEL_METADATA_FVI_CONFIRM_SPAN                  (64 * F1_0)
 #define LEVEL_METADATA_ANALYSIS_FVI_LIMIT                1000000U
 
@@ -232,6 +233,7 @@ typedef struct level_metadata_visibility_chunk {
 } level_metadata_visibility_chunk;
 
 static level_metadata_visibility_entry *Level_metadata_visibility_entries;
+static level_metadata_visibility_entry *Level_metadata_occupiability_entries;
 static int Level_metadata_visibility_count;
 static level_metadata_visibility_cache_summary Level_metadata_visibility_summary;
 static route_analysis_cache_key Level_metadata_visibility_checkpoint_key;
@@ -392,9 +394,14 @@ static void level_metadata_visibility_cache_store(
 		}
 		capacity = Level_metadata_visibility_summary.capacity;
 	} else if ((Level_metadata_visibility_count + 1) * 10 > capacity * 7) {
-		if (capacity < LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY &&
-		    level_metadata_visibility_cache_resize(capacity * 2))
-			capacity = Level_metadata_visibility_summary.capacity;
+		/* A full open-addressed table turns every absent lookup into a scan of
+		 * the entire memory bound. Stop admitting entries before that cliff. */
+		if (capacity >= LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY ||
+		    !level_metadata_visibility_cache_resize(capacity * 2)) {
+			Level_metadata_visibility_summary.bypasses++;
+			return;
+		}
+		capacity = Level_metadata_visibility_summary.capacity;
 	}
 	hash = level_metadata_visibility_hash_key(key);
 	slot = (int) (hash & (unsigned long long) (capacity - 1));
@@ -477,6 +484,11 @@ static void level_metadata_visibility_cache_sync(void)
 	Level_metadata_visibility_summary.capacity = capacity;
 	Level_metadata_visibility_summary.resets = resets + 1;
 	Level_metadata_visibility_count = 0;
+	if (Level_metadata_occupiability_entries)
+		memset(
+		    Level_metadata_occupiability_entries, 0,
+		    LEVEL_METADATA_OCCUPIABILITY_CACHE_CAPACITY *
+		        sizeof(*Level_metadata_occupiability_entries));
 	Level_metadata_visibility_checkpoint_key_valid = 0;
 	Level_metadata_visibility_checkpoint_sequence = 0;
 	memset(
@@ -654,6 +666,8 @@ static int secret_area_position_occupiable_cached(
     int seg, const vms_vector *position, int radius)
 {
 	level_metadata_visibility_key key;
+	level_metadata_visibility_entry *entry;
+	unsigned long long hash;
 	int result;
 
 	if (!position || seg < 0 || seg >= Num_segments || radius <= 0)
@@ -665,10 +679,25 @@ static int secret_area_position_occupiable_cached(
 	key.from_pos[1] = position->y;
 	key.from_pos[2] = position->z;
 	key.clearance_radius = radius;
-	if (level_metadata_visibility_cache_lookup(&key, &result))
-		return result;
+	/* Pose tests are cheaper and much more repetitive than collision rays. A
+	 * collision here only loses a memoized result; it cannot change the answer. */
+	if (!Level_metadata_occupiability_entries)
+		Level_metadata_occupiability_entries =
+		    (level_metadata_visibility_entry *) calloc(
+		        LEVEL_METADATA_OCCUPIABILITY_CACHE_CAPACITY,
+		        sizeof(*Level_metadata_occupiability_entries));
+	if (!Level_metadata_occupiability_entries)
+		return secret_area_position_occupiable(seg, position, radius);
+	hash = level_metadata_visibility_hash_key(&key);
+	entry = &Level_metadata_occupiability_entries[hash & (LEVEL_METADATA_OCCUPIABILITY_CACHE_CAPACITY - 1)];
+	if (entry->used && entry->hash == hash &&
+	    level_metadata_visibility_key_equal(&entry->key, &key))
+		return entry->result != 0;
 	result = secret_area_position_occupiable(seg, position, radius);
-	level_metadata_visibility_cache_store(&key, result);
+	entry->used = 1;
+	entry->hash = hash;
+	entry->key = key;
+	entry->result = result != 0;
 	return result;
 }
 
@@ -2185,7 +2214,9 @@ static void level_metadata_visibility_checkpoint_load(void)
 		    chunk.checksum != level_metadata_visibility_chunk_checksum(&chunk))
 			break;
 		for (index = 0; index < chunk.count; ++index)
-			if (chunk.entries[index].used)
+			if (chunk.entries[index].used &&
+			    chunk.entries[index].key.kind !=
+			        LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE)
 				level_metadata_visibility_cache_store(
 				    &chunk.entries[index].key,
 				    chunk.entries[index].result);

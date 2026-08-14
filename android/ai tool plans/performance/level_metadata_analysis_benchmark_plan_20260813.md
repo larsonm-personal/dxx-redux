@@ -366,9 +366,8 @@ classification, or deterministic replay result.
   change was rolled back
 - [x] Direct benchmark and D1/D2 native host suites pass; Android external native
   builds pass for arm64-v8a, armeabi-v7a, and x86_64
-- [ ] The filtered/full dispatcher run is blocked before test execution by the
-  pre-existing catalog error in `test_route_metadata_large_level_budget.json5`:
-  `_standalone=false` has no `_owner`
+- [x] The invalid Uneasy 4 catalog entry was repaired and filtered full-suite
+  dispatch now passes for both the benchmark and the emulator liveness test
 - [ ] The JVM unit suite has one unrelated existing failure initializing
   SevenZip native bindings in `ModManagerMissionZipTest`; 806 other tests pass
 
@@ -377,3 +376,40 @@ classification, or deterministic replay result.
 - [x] Research and measurement complete
 - [x] Corpus and history policy selected
 - [x] Implementation and optimization experiments complete
+
+## Follow-up tranche: dispatcher repair and bounded-cache experiments
+
+- [x] Make the Uneasy 4 gameplay liveness automation a valid standalone catalog
+  entry and verify that filtered full-suite dispatch reaches the requested test
+- [x] Prevent the visibility cache from ever reaching a pathological full-table
+  probe state while preserving its memory bound and exact cached predicates
+- [x] Measure the ordinary nine-level corpus and Uneasy 4 stress case before
+  retaining the cache-load guard
+- [x] Try the next low-risk repeated geometry or route-planning optimization only
+  if counters show material remaining cost; roll it back below the established
+  significance threshold
+- [x] Run scoped quality, native host, Android native, benchmark, and dispatcher
+  validation and record any unrelated blockers
+
+### Follow-up results
+
+- The Uneasy 4 liveness JSON is now standalone. Catalog validation reports 42
+  standalone JSON tests and 19 valid support scripts. Filtered dispatch passed
+  both the metadata benchmark and the complete 60-second Uneasy 4 emulator test
+- Visibility-cache admission now stops at 70 percent when the 262,144-entry
+  memory bound is reached. This preserves short unsuccessful probes instead of
+  allowing a full table to turn every miss into a complete table scan
+- Occupiability uses a separate bounded 65,536-slot direct-mapped memo. This
+  keeps cheap pose predicates from displacing expensive collision-ray results
+  and removes occupiability records from persistent visibility checkpoints
+- Uneasy 4 completes in a 5.39-second median with the same
+  `5d99a0d383609a9c23c13362e48163f12073773d436ead896bf346500d5af05d`
+  output hash. The split cache reduced collision queries from 245,171 to 204,718,
+  route-planning CPU from about 2.56 to 2.09 seconds, and total CPU by about 8
+  percent. The ordinary nine-level corpus remained within noise at 0.890 seconds
+- Caching wall centers measured 5.90 seconds versus 5.88 seconds without it and
+  was rolled back. Moving Guide-Bot accessibility behind canonical route planning
+  measured 5.93 seconds versus 5.88 seconds and was also rolled back
+- Scoped code quality, D1/D2 Windows builds, all native CTests, Android native
+  builds for arm64-v8a, armeabi-v7a, and x86_64, pinned benchmark digests, and
+  both filtered dispatcher runs pass
