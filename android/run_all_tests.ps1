@@ -315,6 +315,7 @@ $testTimeouts = @{
     "test_input_demo_determinism_matrix"  = 600
     "test_input_demo_regressions"         = 900
     "test_input_demo_regressions_graphics" = 900
+    "test_level_metadata_benchmark"       = 180
     "test_mission_zip_batch"              = 3600
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
@@ -379,6 +380,7 @@ $noInfraTests = @(
     "test_input_demo_regressions",
     "test_input_demo_regressions_graphics",
     "test_input_demo_runtime_smoke",
+    "test_level_metadata_benchmark",
     "test_native_host_unit_tests",
     "test_server_integration",
     "test_secret_area_baseline_diff",

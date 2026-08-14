@@ -124,13 +124,14 @@ static void level_metadata_report_progress(
 }
 
 #define LEVEL_METADATA_VISIBILITY_CACHE_INITIAL_CAPACITY 4096
-#define LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY     65536
+#define LEVEL_METADATA_VISIBILITY_CACHE_MAX_CAPACITY     262144
 #define LEVEL_METADATA_FVI_CONFIRM_SPAN                  (64 * F1_0)
 #define LEVEL_METADATA_ANALYSIS_FVI_LIMIT                1000000U
 
 static unsigned int Level_metadata_analysis_fvi_count;
 static unsigned int Level_metadata_analysis_fvi_limit =
     LEVEL_METADATA_ANALYSIS_FVI_LIMIT;
+static int Level_metadata_persistent_cache_enabled = 1;
 static int Level_metadata_analysis_budget_exhausted;
 static int Level_metadata_analysis_cancelled;
 
@@ -163,6 +164,16 @@ void level_metadata_set_analysis_fvi_limit(unsigned int limit)
 	    limit ? limit : LEVEL_METADATA_ANALYSIS_FVI_LIMIT;
 }
 
+unsigned int level_metadata_get_analysis_fvi_count(void)
+{
+	return Level_metadata_analysis_fvi_count;
+}
+
+void level_metadata_set_persistent_cache_enabled(int enabled)
+{
+	Level_metadata_persistent_cache_enabled = enabled != 0;
+}
+
 void level_metadata_set_defer_guidebot_accessibility(int defer)
 {
 	Level_metadata_defer_guidebot_accessibility = defer != 0;
@@ -188,7 +199,8 @@ static fix level_metadata_switch_projectile_radius(void)
 enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL = 1,
 	LEVEL_METADATA_VISIBILITY_TARGET_POSITION = 2,
-	LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT = 3
+	LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT = 3,
+	LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE = 4
 };
 
 typedef struct level_metadata_visibility_key {
@@ -636,6 +648,28 @@ static int secret_area_position_occupiable(
 	probe.segnum = seg;
 	probe.size = radius;
 	return !object_intersects_wall(&probe);
+}
+
+static int secret_area_position_occupiable_cached(
+    int seg, const vms_vector *position, int radius)
+{
+	level_metadata_visibility_key key;
+	int result;
+
+	if (!position || seg < 0 || seg >= Num_segments || radius <= 0)
+		return 0;
+	memset(&key, 0, sizeof(key));
+	key.kind = LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE;
+	key.from_seg = seg;
+	key.from_pos[0] = position->x;
+	key.from_pos[1] = position->y;
+	key.from_pos[2] = position->z;
+	key.clearance_radius = radius;
+	if (level_metadata_visibility_cache_lookup(&key, &result))
+		return result;
+	result = secret_area_position_occupiable(seg, position, radius);
+	level_metadata_visibility_cache_store(&key, result);
+	return result;
 }
 
 static int secret_area_side_clearance_radius(void *user, int seg, int side)
@@ -1396,7 +1430,7 @@ static int level_metadata_wall_shootable_from_position_impl(
 	from.x = from_pos[0];
 	from.y = from_pos[1];
 	from.z = from_pos[2];
-	if (!secret_area_position_occupiable(
+	if (!secret_area_position_occupiable_cached(
 	        seg, &from, navigator_radius)) {
 		Level_metadata_wall_shot_diagnostics.unoccupiable_poses++;
 		level_metadata_visibility_cache_store(&key, 0);
@@ -2044,7 +2078,8 @@ static void level_metadata_visibility_checkpoint_flush(void)
 	PHYSFS_File *file;
 	int write_ok;
 
-	if (!Level_metadata_visibility_checkpoint_key_valid ||
+	if (!Level_metadata_persistent_cache_enabled ||
+	    !Level_metadata_visibility_checkpoint_key_valid ||
 	    !Level_metadata_visibility_pending_chunk.count)
 		return;
 	Level_metadata_visibility_pending_chunk.magic =
@@ -2096,7 +2131,8 @@ static void level_metadata_visibility_checkpoint_store(
 {
 	unsigned int count;
 
-	if (!entry || !Level_metadata_visibility_checkpoint_key_valid ||
+	if (!Level_metadata_persistent_cache_enabled || !entry ||
+	    !Level_metadata_visibility_checkpoint_key_valid ||
 	    Level_metadata_visibility_checkpoint_loading)
 		return;
 	count = Level_metadata_visibility_pending_chunk.count;
@@ -2117,7 +2153,8 @@ static void level_metadata_visibility_checkpoint_load(void)
 	route_analysis_cache_key key;
 	unsigned int sequence;
 
-	if (!level_metadata_analysis_cache_key(&key))
+	if (!Level_metadata_persistent_cache_enabled ||
+	    !level_metadata_analysis_cache_key(&key))
 		return;
 	Level_metadata_visibility_checkpoint_key = key;
 	Level_metadata_visibility_checkpoint_key_valid = 1;
@@ -2169,7 +2206,8 @@ static int level_metadata_analysis_cache_load(
 	PHYSFS_sint64 length;
 	int valid;
 
-	if (!level_metadata_analysis_cache_key(&key) ||
+	if (!Level_metadata_persistent_cache_enabled ||
+	    !level_metadata_analysis_cache_key(&key) ||
 	    !route_analysis_cache_filename(
 	        &key, Level_metadata_analysis_cache_summary.filename,
 	        sizeof(Level_metadata_analysis_cache_summary.filename)))
@@ -2237,7 +2275,8 @@ static void level_metadata_analysis_cache_save(
 	size_t size = route_analysis_cache_record_size();
 	int write_ok = 0;
 
-	if (!level_metadata_analysis_cache_key(&key) ||
+	if (!Level_metadata_persistent_cache_enabled ||
+	    !level_metadata_analysis_cache_key(&key) ||
 	    !route_analysis_cache_filename(
 	        &key, Level_metadata_analysis_cache_summary.filename,
 	        sizeof(Level_metadata_analysis_cache_summary.filename)))

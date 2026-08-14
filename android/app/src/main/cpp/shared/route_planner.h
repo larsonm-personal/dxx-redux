@@ -27,6 +27,17 @@ struct route_search_result {
 	std::string problem;
 };
 
+struct route_planner_work_summary {
+	std::size_t search_calls = 0;
+	std::size_t visited_segments = 0;
+	std::size_t considered_edges = 0;
+	std::size_t evaluated_edges = 0;
+};
+
+void reset_route_planner_work_summary();
+route_planner_work_summary get_route_planner_work_summary();
+void set_route_planner_work_tracking(bool enabled);
+
 struct route_search_options {
 	bool optimistic = false;
 	bool prioritize_progress = true;

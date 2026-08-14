@@ -53,6 +53,8 @@ const char *level_metadata_objective_mode_name(int mode);
 void level_metadata_set_objective_mode(int mode);
 void level_metadata_cycle_objective_mode(void);
 void level_metadata_set_analysis_fvi_limit(unsigned int limit);
+unsigned int level_metadata_get_analysis_fvi_count(void);
+void level_metadata_set_persistent_cache_enabled(int enabled);
 void level_metadata_set_defer_guidebot_accessibility(int defer);
 unsigned int level_metadata_get_visibility_checkpoint_sequence(void);
 unsigned int level_metadata_get_route_revision(void);

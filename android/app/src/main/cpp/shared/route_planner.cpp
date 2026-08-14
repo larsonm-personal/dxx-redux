@@ -15,6 +15,9 @@ namespace dxx_route
 namespace
 {
 
+route_planner_work_summary Work_summary;
+bool Work_tracking_enabled = false;
+
 bool valid_segment(const route_snapshot &snapshot, int segment);
 bool valid_wall(const route_snapshot &snapshot, int wall);
 
@@ -739,6 +742,21 @@ int key_index(route_key_requirement key)
 
 } // namespace
 
+void reset_route_planner_work_summary()
+{
+	Work_summary = route_planner_work_summary{};
+}
+
+route_planner_work_summary get_route_planner_work_summary()
+{
+	return Work_summary;
+}
+
+void set_route_planner_work_tracking(bool enabled)
+{
+	Work_tracking_enabled = enabled;
+}
+
 route_progress_state initial_route_progress_state(
     const route_snapshot &snapshot,
     const route_query &query)
@@ -878,6 +896,8 @@ route_search_result search_routes(
     const route_progress_state &progress,
     const route_search_options &options)
 {
+	if (Work_tracking_enabled)
+		++Work_summary.search_calls;
 	route_search_result result;
 	result.start_segment = progress.current_segment;
 	const int count = static_cast<int>(snapshot.topology.segments.size());
@@ -907,9 +927,13 @@ route_search_result search_routes(
 	heap.push(result.start_segment);
 	while (!heap.empty()) {
 		const int current = heap.pop();
+		if (Work_tracking_enabled)
+			++Work_summary.visited_segments;
 		result.visit_order.push_back(current);
 		closed[current] = 1;
 		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			if (Work_tracking_enabled)
+				++Work_summary.considered_edges;
 			const int child = snapshot.topology.segments[current].sides[side].child;
 			if (!valid_segment(snapshot, child) || closed[child])
 				continue;
@@ -921,6 +945,8 @@ route_search_result search_routes(
 			const auto edge = evaluate_route_edge(
 			    snapshot, query, progress, options.forbidden_missing_key,
 			    current, side);
+			if (Work_tracking_enabled)
+				++Work_summary.evaluated_edges;
 			if (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED ||
 			    (!options.optimistic &&
 			     edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS))

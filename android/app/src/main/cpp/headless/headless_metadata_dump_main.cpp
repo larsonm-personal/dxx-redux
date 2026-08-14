@@ -3,6 +3,10 @@
 #include <string.h>
 
 #include <fstream>
+#include <chrono>
+#include <climits>
+#include <ctime>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -44,6 +48,8 @@ extern "C" {
 #include "wall.h"
 }
 
+#include "route_planner.h"
+
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
 #endif
@@ -52,6 +58,122 @@ extern "C" void gameseq_init_network_players(void);
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
 static int secret_area_missing_secret_levels = 0;
+
+namespace
+{
+using benchmark_clock = std::chrono::steady_clock;
+
+struct benchmark_phase {
+	benchmark_clock::time_point wall_started;
+	std::clock_t cpu_started = 0;
+	double wall_seconds = 0.0;
+	double cpu_seconds = 0.0;
+	int tasks = 0;
+	bool active = false;
+};
+
+struct benchmark_timing {
+	std::map<std::string, benchmark_phase> phases;
+	benchmark_clock::time_point total_wall_started;
+	std::clock_t total_cpu_started = 0;
+	double total_wall_seconds = 0.0;
+	double total_cpu_seconds = 0.0;
+
+	void begin_total()
+	{
+		total_wall_started = benchmark_clock::now();
+		total_cpu_started = std::clock();
+	}
+
+	void finish_total()
+	{
+		total_wall_seconds = std::chrono::duration<double>(
+		    benchmark_clock::now() - total_wall_started).count();
+		total_cpu_seconds = static_cast<double>(std::clock() - total_cpu_started) /
+		                    CLOCKS_PER_SEC;
+	}
+
+	void begin(const std::string &name)
+	{
+		auto &phase = phases[name];
+		if (phase.active)
+			return;
+		phase.wall_started = benchmark_clock::now();
+		phase.cpu_started = std::clock();
+		phase.active = true;
+	}
+
+	void finish(const std::string &name)
+	{
+		auto &phase = phases[name];
+		if (!phase.active)
+			return;
+		phase.wall_seconds += std::chrono::duration<double>(
+		    benchmark_clock::now() - phase.wall_started).count();
+		phase.cpu_seconds += static_cast<double>(std::clock() - phase.cpu_started) /
+		                     CLOCKS_PER_SEC;
+		++phase.tasks;
+		phase.active = false;
+	}
+
+	void progress(const char *stage, int completed, int total)
+	{
+		if (!stage || total < 0)
+			return;
+		if (completed == 0)
+			begin(stage);
+		if (completed == total)
+			finish(stage);
+	}
+};
+
+benchmark_timing *Active_benchmark_timing = nullptr;
+
+void benchmark_progress_callback(
+    void *, const char *stage, int completed, int total)
+{
+	if (Active_benchmark_timing)
+		Active_benchmark_timing->progress(stage, completed, total);
+}
+
+nlohmann::ordered_json serialize_benchmark_timing(
+    const benchmark_timing &timing,
+    int level_num)
+{
+	nlohmann::ordered_json result;
+	nlohmann::ordered_json phases;
+	level_metadata_visibility_cache_summary visibility = {};
+	const auto route_work = dxx_route::get_route_planner_work_summary();
+
+	result["schema"] = "dxx-level-metadata-analysis-timing-v1";
+	result["level_num"] = level_num;
+	result["total"] = {
+	    { "wall_seconds", timing.total_wall_seconds },
+	    { "cpu_seconds", timing.total_cpu_seconds }
+	};
+	for (const auto &item : timing.phases) {
+		phases[item.first] = {
+		    { "wall_seconds", item.second.wall_seconds },
+		    { "cpu_seconds", item.second.cpu_seconds },
+		    { "tasks", item.second.tasks }
+		};
+	}
+	result["phases"] = phases;
+	level_metadata_get_visibility_cache_summary(&visibility);
+	result["work"] = {
+	    { "collision_queries", level_metadata_get_analysis_fvi_count() },
+	    { "visibility_cache_hits", visibility.hits },
+	    { "visibility_cache_misses", visibility.misses },
+	    { "visibility_cache_entries", visibility.entries },
+	    { "visibility_cache_bypasses", visibility.bypasses },
+	    { "route_searches", route_work.search_calls },
+	    { "route_visited_segments", route_work.visited_segments },
+	    { "route_considered_edges", route_work.considered_edges },
+	    { "route_evaluated_edges", route_work.evaluated_edges }
+	};
+	return result;
+}
+} // namespace
 
 static std::string dump_metadata_json(const nlohmann::ordered_json &value)
 {
@@ -915,11 +1037,16 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 }
 
 static int dump_level(nlohmann::ordered_json &levels, int level_num, const char *level_file,
-                      CoopStartRange *coop_start_range)
+                      CoopStartRange *coop_start_range,
+                      benchmark_timing *timing = nullptr)
 {
 	const secret_area_state *state;
 	int total;
 
+	if (timing) {
+		timing->begin_total();
+		timing->begin("load_level");
+	}
 	trace_dump_init("load_level");
 	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
 		fprintf(stderr, "SECRET-AREA-DUMP WARN level missing %s\n", level_file ? level_file : "<null>");
@@ -931,17 +1058,32 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		return 0;
 	}
 	if (load_level(level_file)) {
+		if (timing)
+			timing->finish("load_level");
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL level could not load %s\n", level_file ? level_file : "<null>");
 		levels.push_back(serialize_failed_level(level_num, level_file, "could not load level"));
 		secret_area_dump_failed = 1;
 		return 0;
 	}
+	if (timing)
+		timing->finish("load_level");
 	trace_wall_inventory(level_num, level_file);
 	Current_level_num = level_num;
 	if (coop_start_range)
 		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
+	if (timing) {
+		Active_benchmark_timing = timing;
+		level_metadata_set_progress_callback(benchmark_progress_callback, nullptr);
+		dxx_route::reset_route_planner_work_summary();
+		dxx_route::set_route_planner_work_tracking(true);
+	}
 	secret_area_rescan_current_level();
+	if (timing) {
+		dxx_route::set_route_planner_work_tracking(false);
+		level_metadata_set_progress_callback(nullptr, nullptr);
+		Active_benchmark_timing = nullptr;
+	}
 	state = secret_area_get_state();
 	total = secret_area_total(state);
 	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
@@ -955,7 +1097,13 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		        total);
 		fflush(stderr);
 	}
+	if (timing)
+		timing->begin("serialize_output");
 	levels.push_back(serialize_current_level(level_num, level_file));
+	if (timing) {
+		timing->finish("serialize_output");
+		timing->finish_total();
+	}
 	return total;
 }
 
@@ -994,6 +1142,49 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 	return root;
 }
 
+static nlohmann::ordered_json build_level_dump(
+    int level_num, int *total_secrets, benchmark_timing *timing)
+{
+	nlohmann::ordered_json root;
+	nlohmann::ordered_json levels = nlohmann::ordered_json::array();
+	const char *level_file = nullptr;
+	int secret_total;
+	CoopStartRange coop_start_range;
+
+	if (level_num > 0 && level_num <= Last_level)
+		level_file = Level_names[level_num - 1];
+	else if (level_num < 0 && level_num >= Last_secret_level)
+		level_file = Secret_level_names[-level_num - 1];
+	else {
+		fprintf(stderr, "SECRET-AREA-DUMP FAIL level %d is outside mission range %d..%d\n",
+		        level_num, Last_secret_level, Last_level);
+		secret_area_dump_failed = 1;
+	}
+
+	root["schema"] = "dxx-secret-area-baseline-v1";
+	root["algorithm_version"] = 2;
+	root["max_generated_secrets"] = SECRET_AREA_MAX_GENERATED;
+#ifdef DXX_BUILD_DESCENT_II
+	root["game"] = "d2";
+#else
+	root["game"] = "d1";
+#endif
+	root["mission_name"] = Current_mission_longname;
+	root["mission_filename"] = Current_mission_filename;
+	secret_total = level_file
+	                   ? dump_level(levels, level_num, level_file,
+	                                &coop_start_range, timing)
+	                   : 0;
+	if (!coop_start_range.text().empty())
+		root["coop_starts"] = coop_start_range.text();
+	root["levels"] = levels;
+	root["problems"] = nlohmann::ordered_json::array();
+	root["total_secret_count"] = secret_total;
+	if (total_secrets)
+		*total_secrets = secret_total;
+	return root;
+}
+
 int main(int argc, char *argv[])
 {
 	char error[256] = "";
@@ -1001,10 +1192,27 @@ int main(int argc, char *argv[])
 	const char *coop_starts_json_out = find_arg_value(argc, argv, "-coop-starts-json-out");
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
+	const char *level_text = find_arg_value(argc, argv, "-level");
+	const char *timing_json_out = find_arg_value(argc, argv, "-analysis-timing-json-out");
+	int selected_level = 0;
+	benchmark_timing timing;
 	int total_secrets = 0;
 	if (!json_out && !coop_starts_json_out) {
-		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
+		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>] [-level <signed-number>] [-analysis-timing-json-out <path>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-headless-metadata");
+		return 1;
+	}
+	if (level_text) {
+		char *end = nullptr;
+		const long parsed = strtol(level_text, &end, 10);
+		if (!end || *end || parsed == 0 || parsed < INT_MIN || parsed > INT_MAX) {
+			fprintf(stderr, "SECRET-AREA-DUMP FAIL invalid -level value %s\n", level_text);
+			return 1;
+		}
+		selected_level = static_cast<int>(parsed);
+	}
+	if (timing_json_out && !selected_level) {
+		fprintf(stderr, "SECRET-AREA-DUMP FAIL -analysis-timing-json-out requires -level\n");
 		return 1;
 	}
 	if (!init_headless_metadata_runtime(argc, argv, error, sizeof(error))) {
@@ -1044,13 +1252,32 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL output could not open %s\n", json_out);
 		return 1;
 	}
-	stream << dump_metadata_json(build_dump(&total_secrets)) << "\n";
+	if (timing_json_out)
+		level_metadata_set_persistent_cache_enabled(0);
+	stream << dump_metadata_json(
+	    selected_level
+	        ? build_level_dump(selected_level, &total_secrets,
+	                           timing_json_out ? &timing : nullptr)
+	        : build_dump(&total_secrets)) << "\n";
 	if (secret_area_dump_failed)
 		return 1;
 	trace_dump_init("write_done");
 	if (!stream) {
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL output could not write %s\n", json_out);
 		return 1;
+	}
+	if (timing_json_out) {
+		std::ofstream timing_stream(timing_json_out);
+		if (!timing_stream) {
+			fprintf(stderr, "SECRET-AREA-DUMP FAIL timing output could not open %s\n", timing_json_out);
+			return 1;
+		}
+		timing_stream << dump_metadata_json(
+		    serialize_benchmark_timing(timing, selected_level)) << "\n";
+		if (!timing_stream) {
+			fprintf(stderr, "SECRET-AREA-DUMP FAIL timing output could not write %s\n", timing_json_out);
+			return 1;
+		}
 	}
 	printf("SECRET-AREA-DUMP OK secrets=%d out=%s\n", total_secrets, json_out);
 	return 0;
