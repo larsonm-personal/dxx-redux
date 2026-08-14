@@ -2166,6 +2166,10 @@ class SetupActivity : ComponentActivity() {
      * Settings that live in binary .plr files (like ControlType) can't be
      * handled here -- those are set in config.c's android_apply_initial_defaults().
      */
+    internal fun notifyRouteMetadataContentImportedForAutomation() {
+        routeMetadataCoordinator.notifyContentImported()
+    }
+
     private fun writeInitialGameConfig() {
         writeDefaultControllerConfig()
         // Check all config paths -- don't overwrite if any exist (user has a config)

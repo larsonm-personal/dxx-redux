@@ -1,10 +1,12 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.nio.file.Files
 import java.util.Collections
 import java.util.concurrent.CountDownLatch
@@ -12,6 +14,28 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class LevelMetadataWorkerIdentityTest {
+    @Test
+    fun onlyBackgroundRequestPriorityCanBePreempted() {
+        val cacheRoot = Files.createTempDirectory("level-metadata-preemption").toFile()
+        val background = LevelMetadataWorkerIdentity("background-request", 101, 201)
+        val foreground = LevelMetadataWorkerIdentity("foreground-request", 102, 202)
+        try {
+            writeRequest(cacheRoot, background, background = true, priority = "fill")
+            writeRequest(cacheRoot, foreground, background = false, priority = "active")
+
+            assertEquals(RouteMetadataPriority.FILL, levelMetadataBackgroundRequestPriority(cacheRoot, background))
+            assertNull(levelMetadataBackgroundRequestPriority(cacheRoot, foreground))
+            assertNull(
+                levelMetadataBackgroundRequestPriority(
+                    cacheRoot,
+                    LevelMetadataWorkerIdentity("missing-request", 103, 203),
+                ),
+            )
+        } finally {
+            cacheRoot.deleteRecursively()
+        }
+    }
+
     @Test
     fun identityRequiresTheExactRequestAndProcessGeneration() {
         val identity = LevelMetadataWorkerIdentity("request-a", 321, 9001)
@@ -115,5 +139,21 @@ class LevelMetadataWorkerIdentityTest {
         assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
         assertEquals(listOf("a-start", "a-end", "b", "c"), order.toList())
         assertEquals(listOf(3), drained.toList())
+    }
+
+    private fun writeRequest(
+        cacheRoot: File,
+        identity: LevelMetadataWorkerIdentity,
+        background: Boolean,
+        priority: String,
+    ) {
+        val workDir = File(cacheRoot, identity.requestId).apply { mkdirs() }
+        File(workDir, "request.json").writeText(
+            JSONObject()
+                .put("request_id", identity.requestId)
+                .put("background", background)
+                .put("priority", priority)
+                .toString(),
+        )
     }
 }

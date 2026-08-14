@@ -257,6 +257,18 @@ internal object LevelMetadataWorkerOwnerStore {
     }
 }
 
+internal fun levelMetadataBackgroundRequestPriority(
+    cacheRoot: File,
+    identity: LevelMetadataWorkerIdentity,
+): RouteMetadataPriority? =
+    runCatching {
+        val request = JSONObject(File(File(cacheRoot, identity.requestId), "request.json").readText(Charsets.UTF_8))
+        if (request.optString("request_id") != identity.requestId || !request.optBoolean("background")) {
+            return@runCatching null
+        }
+        RouteMetadataPriority.entries.firstOrNull { it.wireName == request.optString("priority") }
+    }.getOrNull()
+
 internal fun parseProcessStartTicks(stat: String): Long? {
     val commandEnd = stat.lastIndexOf(')')
     if (commandEnd < 0 || commandEnd + 1 >= stat.length) return null
@@ -1073,7 +1085,14 @@ internal object LevelMetadataAnalyzer {
                     val intent =
                         Intent(appContext, serviceClassForGame(target.game))
                             .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
+                    if (preemptLowerPriorityWorker(appContext, cacheRoot, target.game, priority)) {
+                        progress("Switching from background analysis", 2)
+                    }
                     progress("Starting analysis worker", 2)
+                    RouteMetadataDiagnostics.log(
+                        "Level metadata submit request=$requestId source=${target.displayName} " +
+                            "priority=${priority.wireName} background=$background",
+                    )
                     appContext.startService(intent)
                     workerStarted = true
                 } catch (e: CancellationException) {
@@ -1554,6 +1573,33 @@ internal object LevelMetadataAnalyzer {
         }
     }
 
+    private suspend fun preemptLowerPriorityWorker(
+        context: Context,
+        cacheRoot: File,
+        game: String,
+        incomingPriority: RouteMetadataPriority,
+    ): Boolean {
+        val ownerFile = workerOwnerFile(cacheRoot, game)
+        val identity = LevelMetadataWorkerOwnerStore.read(ownerFile) ?: return false
+        val runningPriority = levelMetadataBackgroundRequestPriority(cacheRoot, identity) ?: return false
+        if (!RouteMetadataPreemption.shouldPreempt(runningPriority, incomingPriority)) return false
+        val workDir = File(cacheRoot, identity.requestId)
+        RouteMetadataDiagnostics.log(
+            "Level metadata preempt request=${identity.requestId} priority=${runningPriority.wireName} " +
+                "incoming=${incomingPriority.wireName}",
+        )
+        cancelOwnedWorker(
+            context,
+            game,
+            identity.requestId,
+            File(workDir, LEVEL_METADATA_WORKER_FILE),
+            File(workDir, LEVEL_METADATA_QUEUED_FILE),
+            ownerFile,
+            File(workDir, LEVEL_METADATA_CANCELLATION_FILE),
+        )
+        return true
+    }
+
     private suspend fun cancelOwnedWorker(
         context: Context,
         game: String,
@@ -1771,6 +1817,7 @@ open class LevelMetadataAnalysisService : Service() {
         val queuedFile = File(requestFile.parentFile, LEVEL_METADATA_QUEUED_FILE)
         runCatching { publishQueuedIdentity(requestFile, queuedFile) }
             .onFailure { Log.e(TAG, "Level metadata queue publication failed", it) }
+        RouteMetadataDiagnostics.log("Level metadata service queued request=${requestFile.parentFile?.name.orEmpty()}")
         commandQueue.submit(startId) {
             try {
                 if (!LevelMetadataAnalysisSingleFlight.tryEnter()) {
@@ -1823,6 +1870,10 @@ open class LevelMetadataAnalysisService : Service() {
             } ?: RouteMetadataPriority.FILL
         runCatching { Process.setThreadPriority(priority.threadPriority) }
         val requestId = request.optString("request_id")
+        RouteMetadataDiagnostics.log(
+            "Level metadata worker starting request=$requestId source=${request.optString("source_name")} " +
+                "priority=${priority.wireName}",
+        )
         val workDir = requestFile.parentFile ?: error("Level metadata request directory is missing")
         require(requestId.isNotBlank() && requestId == workDir.name) { "Invalid level metadata request identity" }
         val cancellationFile = File(workDir, LEVEL_METADATA_CANCELLATION_FILE)
