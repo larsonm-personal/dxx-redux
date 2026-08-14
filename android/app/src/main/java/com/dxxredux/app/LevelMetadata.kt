@@ -26,6 +26,7 @@ import java.util.zip.ZipFile
 private const val LEVEL_METADATA_TIMEOUT_MS = 120_000L
 private const val LEVEL_METADATA_POLL_MS = 200L
 private const val LEVEL_METADATA_WORKER_START_TIMEOUT_MS = 5_000L
+private const val LEVEL_METADATA_CANCELLATION_GRACE_MS = 2_000L
 private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 120_000L
 private const val LEVEL_METADATA_MAX_ZIP_FILES = 240
 private const val LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES = 256L * 1024L * 1024L
@@ -64,6 +65,10 @@ internal data class LevelMetadataTarget(
 internal data class LevelMetadataCheckpointUpdate(
     val progress: MetadataLoadProgress,
     val activityId: String,
+    val stage: String = "level_progress",
+    val phase: String = "",
+    val taskId: Int = 0,
+    val levelIdentity: String = "",
     val analysisProgress: LevelMetadataAnalysisProgress =
         LevelMetadataAnalysisProgress(overall = progress),
 )
@@ -71,7 +76,69 @@ internal data class LevelMetadataCheckpointUpdate(
 internal data class LevelMetadataAnalysisProgress(
     val overall: MetadataLoadProgress,
     val currentLevel: MetadataLoadProgress? = null,
+    val estimatedLevel: MetadataLoadProgress? = null,
 )
+
+internal class LevelMetadataLevelProgressEstimator {
+    companion object {
+        const val TOTAL = 1_000
+        private const val SECRET_END = 100
+        private const val TOPOLOGY_END = 200
+        private const val SUMMARY_END = 300
+        private const val ROUTE_SPAN = TOTAL - SUMMARY_END
+        private const val FIRST_ROUTE_INNER_TASK_ID = 5
+        private const val UNFINISHED_MAX = TOTAL - 1
+    }
+
+    private var levelIdentity = ""
+    private var maximum = 0
+
+    fun observe(update: LevelMetadataCheckpointUpdate): MetadataLoadProgress {
+        if (update.levelIdentity.isNotBlank() && update.levelIdentity != levelIdentity) {
+            levelIdentity = update.levelIdentity
+            maximum = 0
+        }
+        val rawFraction =
+            update.progress.fraction
+                ?.toDouble()
+                ?.coerceIn(0.0, 1.0) ?: 0.0
+        val candidate =
+            when {
+                update.stage == "level_done" -> {
+                    TOTAL
+                }
+
+                update.stage != "level_progress" -> {
+                    maximum
+                }
+
+                update.phase == "secret_areas" -> {
+                    (rawFraction * SECRET_END).toInt()
+                }
+
+                update.phase == "level_topology" -> {
+                    SECRET_END + (rawFraction * (TOPOLOGY_END - SECRET_END)).toInt()
+                }
+
+                update.phase == "level_summary" -> {
+                    TOPOLOGY_END + (rawFraction * (SUMMARY_END - TOPOLOGY_END)).toInt()
+                }
+
+                update.phase == "route_planning" && update.progress.completed >= update.progress.total -> {
+                    TOTAL
+                }
+
+                else -> {
+                    val completedInnerTasks =
+                        (update.taskId - FIRST_ROUTE_INNER_TASK_ID).coerceAtLeast(0)
+                    val estimatedInner = 1.0 - Math.pow(0.9, completedInnerTasks + rawFraction)
+                    SUMMARY_END + (ROUTE_SPAN * estimatedInner).toInt()
+                }
+            }
+        maximum = maxOf(maximum, candidate.coerceIn(0, if (candidate >= TOTAL) TOTAL else UNFINISHED_MAX))
+        return MetadataLoadProgress("Estimated level progress", maximum, TOTAL)
+    }
+}
 
 internal class LevelMetadataProgressDeadline(
     startedAtMs: Long,
@@ -271,6 +338,10 @@ internal data class LevelMetadataLevelRow(
     val routeProblem: String,
     val routeNote: String,
     val routeCacheFile: String = "",
+    val routeReadiness: String = "",
+    val failureKind: String = "",
+    val visibilityEntries: Int = 0,
+    val visibilityCheckpointSequence: Int = 0,
     val routeSteps: List<LevelMetadataRouteStep>,
     val status: String,
     val problems: List<String>,
@@ -287,6 +358,7 @@ internal data class LevelMetadataResult(
     val levels: List<LevelMetadataLevelRow>,
     val problems: List<String>,
     val diagnostics: List<String> = emptyList(),
+    val failureKind: String = "",
 ) {
     companion object {
         fun fromJson(text: String): LevelMetadataResult {
@@ -322,6 +394,10 @@ internal data class LevelMetadataResult(
                                 routeProblem = row.optString("route_problem"),
                                 routeNote = row.optString("route_note"),
                                 routeCacheFile = row.optString("route_cache_file"),
+                                routeReadiness = row.optString("route_readiness"),
+                                failureKind = row.optString("failure_kind"),
+                                visibilityEntries = row.optInt("visibility_entries"),
+                                visibilityCheckpointSequence = row.optInt("visibility_checkpoint_sequence"),
                                 routeSteps = row.optRouteSteps("route_steps"),
                                 status = row.optString("status", "ok"),
                                 problems = row.optStringList("problems"),
@@ -340,6 +416,7 @@ internal data class LevelMetadataResult(
                 levels = rows,
                 problems = obj.optStringList("problems"),
                 diagnostics = obj.optStringList("diagnostics"),
+                failureKind = obj.optString("failure_kind"),
             )
         }
 
@@ -349,6 +426,7 @@ internal data class LevelMetadataResult(
             problem: String,
             diagnostics: List<String> = emptyList(),
             status: String = "failed",
+            failureKind: String = "analysis_failed",
         ): LevelMetadataResult =
             LevelMetadataResult(
                 status = status,
@@ -360,6 +438,7 @@ internal data class LevelMetadataResult(
                 levels = emptyList(),
                 problems = listOf(problem),
                 diagnostics = diagnostics,
+                failureKind = failureKind,
             )
     }
 }
@@ -926,6 +1005,7 @@ internal object LevelMetadataAnalyzer {
         context: Context,
         target: LevelMetadataTarget,
         background: Boolean = false,
+        priority: RouteMetadataPriority = if (background) RouteMetadataPriority.FILL else RouteMetadataPriority.ACTIVE,
         totalTimeoutMs: Long = Long.MAX_VALUE,
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
@@ -934,6 +1014,7 @@ internal object LevelMetadataAnalyzer {
             val expectedLevelCount =
                 (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
             var completedLevelCount = 0
+            val levelProgressEstimator = LevelMetadataLevelProgressEstimator()
 
             suspend fun progress(
                 label: String,
@@ -977,6 +1058,7 @@ internal object LevelMetadataAnalyzer {
                             resultFile,
                             checkpointFile,
                             background,
+                            priority,
                             totalTimeoutMs,
                         )
                     } catch (e: CancellationException) {
@@ -1039,7 +1121,11 @@ internal object LevelMetadataAnalyzer {
                                     progressDeadline.observe(update, SystemClock.elapsedRealtime())
                                     completedLevelCount =
                                         maxOf(completedLevelCount, update.analysisProgress.overall.completed)
-                                    onProgress(update.analysisProgress)
+                                    onProgress(
+                                        update.analysisProgress.copy(
+                                            estimatedLevel = levelProgressEstimator.observe(update),
+                                        ),
+                                    )
                                 }
                             }
                     }
@@ -1077,6 +1163,7 @@ internal object LevelMetadataAnalyzer {
                     if (status == "crashed") "Analysis worker crashed" else "Analysis timed out",
                     diagnostics,
                     status,
+                    status,
                 )
             } finally {
                 withContext(NonCancellable) {
@@ -1111,6 +1198,7 @@ internal object LevelMetadataAnalyzer {
             val completed = checkpoint.optInt("completed", 0).coerceIn(0, total)
             val detail = checkpoint.optString("detail").substringAfterLast('/').substringAfterLast('\\')
             val phase = checkpoint.optString("phase")
+            val taskId = checkpoint.optInt("task_id", 0)
             val label =
                 if (stage == "level_progress") {
                     levelMetadataTaskLabel(phase, detail)
@@ -1121,7 +1209,7 @@ internal object LevelMetadataAnalyzer {
                 }
             val activityId =
                 if (stage == "level_progress") {
-                    "$detail:${checkpoint.optInt("task_id", 0)}"
+                    "$detail:$taskId"
                 } else {
                     "levels:$detail"
                 }
@@ -1162,6 +1250,10 @@ internal object LevelMetadataAnalyzer {
             LevelMetadataCheckpointUpdate(
                 progress = taskProgress,
                 activityId = activityId,
+                stage = stage,
+                phase = phase,
+                taskId = taskId,
+                levelIdentity = detail,
                 analysisProgress =
                     LevelMetadataAnalysisProgress(
                         overall = overallProgress,
@@ -1211,6 +1303,7 @@ internal object LevelMetadataAnalyzer {
         resultFile: File,
         checkpointFile: File,
         background: Boolean,
+        priority: RouteMetadataPriority,
         totalTimeoutMs: Long,
     ): JSONObject =
         buildPreparedRequestJson(target, requestId, workDir, "dxx-level-metadata-request-v1")
@@ -1218,6 +1311,10 @@ internal object LevelMetadataAnalyzer {
             .put("checkpoint_path", checkpointFile.absolutePath)
             .put("cancellation_path", File(workDir, LEVEL_METADATA_CANCELLATION_FILE).absolutePath)
             .put("background", background)
+            .put("priority", priority.wireName)
+            .put("cpu_duty_percent", priority.cpuDutyPercent)
+            .put("fvi_limit", priority.fviLimit)
+            .put("defer_guidebot_accessibility", target.sourceType == "active_level")
             .put("total_timeout_ms", totalTimeoutMs)
 
     internal fun buildPreviewRequestJson(
@@ -1469,6 +1566,11 @@ internal object LevelMetadataAnalyzer {
         requestWorkerCancellation(cancellationFile)
         val identityWasPublished = workerFile.isFile
         if (!identityWasPublished) return
+        val graceDeadline = SystemClock.elapsedRealtime() + LEVEL_METADATA_CANCELLATION_GRACE_MS
+        while (SystemClock.elapsedRealtime() < graceDeadline) {
+            if (!isOwnedWorkerProcessRunning(context, game, requestId, workerFile, queuedFile, ownerFile)) return
+            delay(LEVEL_METADATA_POLL_MS)
+        }
         repeat(10) {
             killOwnedWorkerProcess(context, game, requestId, workerFile, ownerFile)
             delay(LEVEL_METADATA_POLL_MS)
@@ -1715,6 +1817,11 @@ open class LevelMetadataAnalysisService : Service() {
     ) {
         val requestJson = requestFile.readText(Charsets.UTF_8)
         val request = JSONObject(requestJson)
+        val priority =
+            RouteMetadataPriority.entries.firstOrNull {
+                it.wireName == request.optString("priority")
+            } ?: RouteMetadataPriority.FILL
+        runCatching { Process.setThreadPriority(priority.threadPriority) }
         val requestId = request.optString("request_id")
         val workDir = requestFile.parentFile ?: error("Level metadata request directory is missing")
         require(requestId.isNotBlank() && requestId == workDir.name) { "Invalid level metadata request identity" }
@@ -1772,9 +1879,9 @@ open class LevelMetadataAnalysisService : Service() {
         val result =
             try {
                 LevelMetadataNativeBridge.analyze(this, requestJson, request.optString("game"))
-                    ?: failedJson(request, "Native bridge returned no result")
+                    ?: failedJson(request, "Native bridge returned no result", "internal_error")
             } catch (e: Throwable) {
-                failedJson(request, e.message ?: e.javaClass.simpleName)
+                failedJson(request, e.message ?: e.javaClass.simpleName, "internal_error")
             }
         writeResult(resultFile, result)
     }
@@ -1789,11 +1896,19 @@ open class LevelMetadataAnalysisService : Service() {
             val deadline = LevelMetadataProgressDeadline(SystemClock.elapsedRealtime())
             val checkpointFile = File(request.optString("checkpoint_path"))
             var lastCheckpoint = ""
+            var cancellationStartedAt = -1L
             while (!Thread.currentThread().isInterrupted) {
                 if (cancellationFile.exists()) {
-                    Log.w(TAG, "Canceling level metadata worker")
-                    Process.killProcess(Process.myPid())
-                    return@Thread
+                    if (cancellationStartedAt < 0L) {
+                        cancellationStartedAt = SystemClock.elapsedRealtime()
+                        Log.w(TAG, "Waiting for level metadata worker checkpoint flush")
+                    } else if (SystemClock.elapsedRealtime() - cancellationStartedAt >=
+                        LEVEL_METADATA_CANCELLATION_GRACE_MS
+                    ) {
+                        Log.w(TAG, "Canceling unresponsive level metadata worker")
+                        Process.killProcess(Process.myPid())
+                        return@Thread
+                    }
                 }
                 if (checkpointFile.isFile) {
                     runCatching { checkpointFile.readText(Charsets.UTF_8) }
@@ -1833,7 +1948,7 @@ open class LevelMetadataAnalysisService : Service() {
         val request = JSONObject(requestJson)
         writeResult(
             File(request.optString("result_path")),
-            failedJson(request, "Level metadata analysis is already running"),
+            failedJson(request, "Level metadata analysis is already running", "busy"),
         )
     }
 
@@ -1865,6 +1980,7 @@ open class LevelMetadataAnalysisService : Service() {
     private fun failedJson(
         request: JSONObject,
         problem: String,
+        failureKind: String,
     ): String =
         JSONObject()
             .put("schema", "dxx-level-metadata-v1")
@@ -1872,6 +1988,7 @@ open class LevelMetadataAnalysisService : Service() {
             .put("request_id", request.optString("request_id"))
             .put("game", request.optString("game"))
             .put("source", request.optString("source_name"))
+            .put("failure_kind", failureKind)
             .put("levels", JSONArray())
             .put("problems", JSONArray().put(problem))
             .toString(2)

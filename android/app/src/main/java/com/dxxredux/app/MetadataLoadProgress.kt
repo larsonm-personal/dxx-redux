@@ -79,6 +79,10 @@ internal fun LevelMetadataAnalysisProgressView(
             Spacer(modifier = Modifier.height(10.dp))
             MetadataLinearProgress(currentLevel)
         }
+        progress.estimatedLevel?.let { estimatedLevel ->
+            Spacer(modifier = Modifier.height(10.dp))
+            MetadataLinearProgress(estimatedLevel)
+        }
     }
 }
 

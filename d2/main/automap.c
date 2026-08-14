@@ -73,6 +73,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_recorder.h"
 #ifdef __ANDROID__
 #include "escort.h"
+#include "input_demo_replay.h"
 #endif
 
 #ifdef OGL
@@ -856,6 +857,8 @@ void draw_automap(automap *am)
 		&am->objective_label_candidate_count, &am->objective_label_projected_count);
 	automap_metadata_draw_next_objectives(
 		&am->next_objective_count, SWIDTH / 64, SHEIGHT / 48);
+	automap_metadata_draw_readiness(
+		SWIDTH / 64, SHEIGHT / 48, am->next_objective_count);
 
 	name_frame(am);
 
@@ -1085,6 +1088,17 @@ int automap_handler(window *wind, d_event *event, automap *am)
 		case EVENT_WINDOW_DRAW:
 		{
 			static int draw_log_count = 0;
+		#ifdef __ANDROID__
+			int allow_route_adoption =
+				!input_demo_recorder_is_active() &&
+				!input_demo_replay_is_loaded();
+		#ifdef NETWORK
+			if (Game_mode & GM_MULTI)
+				allow_route_adoption = 0;
+		#endif
+			automap_metadata_update_route(
+				Players[Player_num].objnum, allow_route_adoption);
+		#endif
 			if (draw_log_count < 3) {
 				AUTOMAP_LOGI("automap_handler: EVENT_WINDOW_DRAW #%d", draw_log_count);
 				draw_log_count++;
@@ -1136,6 +1150,7 @@ void do_automap()
 
 #ifdef __ANDROID__
 	level_metadata_rescan_route_from_object(Players[Player_num].objnum);
+	automap_metadata_begin();
 #endif
 	
 	AUTOMAP_LOGI("do_automap() entered");

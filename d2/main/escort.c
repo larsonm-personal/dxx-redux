@@ -238,6 +238,8 @@ static escort_unexplored_route_target Escort_unexplored_route_target;
 static int Escort_route_target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
 static int Escort_route_target_mode_restore_pending;
 static int Escort_route_metadata_dirty = 1;
+static int Escort_route_cache_improvement_pending;
+static unsigned int Escort_route_seen_revision;
 static unsigned int Escort_route_metadata_rescan_count;
 static unsigned int Escort_route_guidance_full_search_count;
 static unsigned int Escort_route_ignored_nonowner_key_change_count;
@@ -347,6 +349,11 @@ static void escort_route_sync_target_mode(void)
 static void escort_route_clear_goal(void)
 {
 	memset(&Escort_route_goal, 0, sizeof(Escort_route_goal));
+	if (Escort_route_cache_improvement_pending) {
+		Escort_route_cache_improvement_pending = 0;
+		Escort_route_metadata_dirty = 1;
+		Escort_route_last_replan_reason = "cache_ready";
+	}
 	Escort_route_goal.target_seg = -1;
 	Escort_route_goal.target_side = -1;
 	Escort_route_goal.target_wall = -1;
@@ -1127,9 +1134,38 @@ static int escort_route_metadata_pending(void)
 	       LEVEL_METADATA_READINESS_CALCULATING;
 }
 
+static int escort_route_next_waypoint_pending(void)
+{
+	const int readiness = level_metadata_get_route_readiness();
+
+	if (readiness == LEVEL_METADATA_READINESS_CALCULATING)
+		return 1;
+	return readiness == LEVEL_METADATA_READINESS_PARTIAL &&
+	       escort_route_shared_next_goal(0, NULL) == ESCORT_GOAL_UNSPECIFIED;
+}
+
+int escort_get_route_next_waypoint_pending(void)
+{
+	return escort_route_next_waypoint_pending();
+}
+
+int escort_get_route_cache_improvement_pending(void)
+{
+	return Escort_route_cache_improvement_pending;
+}
+
 static void escort_route_poll_pending_cache(void)
 {
 	const int readiness = level_metadata_get_route_readiness();
+	const fix64 now = timer_query();
+	const unsigned int revision = level_metadata_get_route_revision();
+	if (revision != Escort_route_seen_revision) {
+		Escort_route_seen_revision = revision;
+		if (Escort_route_goal.active)
+			Escort_route_cache_improvement_pending = 1;
+		else
+			Escort_route_metadata_dirty = 1;
+	}
 	if (readiness != Escort_route_logged_readiness) {
 		debug_log(DLOG_GAME, "Guide-Bot route metadata readiness=%s",
 		          level_metadata_route_readiness_name(readiness));
@@ -1144,16 +1180,19 @@ static void escort_route_poll_pending_cache(void)
 #endif
 	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded())
 		return;
-	if (GameTime64 < Escort_route_cache_poll_time &&
-	    Escort_route_cache_poll_time - GameTime64 < 2 * F1_0)
+	if (now < Escort_route_cache_poll_time &&
+	    Escort_route_cache_poll_time - now < 2 * F1_0)
 		return;
-	Escort_route_cache_poll_time = GameTime64 + F1_0;
+	Escort_route_cache_poll_time = now + F1_0;
 	if (level_metadata_try_load_pending_cache()) {
 		const int loaded_readiness = level_metadata_get_route_readiness();
 		debug_log(DLOG_GAME, "Guide-Bot loaded route metadata readiness=%s",
 		          level_metadata_route_readiness_name(loaded_readiness));
 		Escort_route_logged_readiness = loaded_readiness;
-		Escort_route_metadata_dirty = 1;
+		if (Escort_route_goal.active)
+			Escort_route_cache_improvement_pending = 1;
+		else
+			Escort_route_metadata_dirty = 1;
 	}
 }
 
@@ -1364,6 +1403,8 @@ void init_buddy_for_level(void)
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
 #ifdef __ANDROID__
+	Escort_route_cache_poll_time = 0;
+	Escort_route_seen_revision = level_metadata_get_route_revision();
 	escort_route_clear_goal();
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	Escort_route_metadata_rescan_count = 0;
@@ -2062,7 +2103,7 @@ void escort_resume_default_goal(void)
 	escort_route_note_replan("goal_command");
 	escort_route_refresh_metadata();
 	escort_route_next_goal();
-	if (escort_route_metadata_pending())
+	if (escort_route_next_waypoint_pending())
 	{
 		debug_log(DLOG_GAME, "Guide-Bot route help refused: still calculating");
 		HUD_init_message_literal(HM_DEFAULT, "Still calculating");
@@ -2130,7 +2171,7 @@ void escort_find_unexplored_goal(void)
 	escort_route_note_replan("unexplored_command");
 	escort_route_refresh_metadata();
 	escort_route_next_goal();
-	if (escort_route_metadata_pending())
+	if (escort_route_next_waypoint_pending())
 	{
 		debug_log(DLOG_GAME, "Guide-Bot unexplored help refused: still calculating");
 		HUD_init_message_literal(HM_DEFAULT, "Still calculating");
@@ -2784,7 +2825,7 @@ int escort_set_goal_object(void)
 	route_goal = escort_route_next_goal();
 	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
 		return route_goal;
-	if (escort_route_metadata_pending())
+	if (escort_route_next_waypoint_pending())
 		return ESCORT_GOAL_UNSPECIFIED;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED)
 		return ESCORT_GOAL_UNSPECIFIED;

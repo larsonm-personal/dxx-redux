@@ -1615,6 +1615,39 @@ static int test_guidebot_unreachable_note(void)
 	return failures;
 }
 
+static int test_guidebot_accessibility_can_be_deferred(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	view.object_is_companion = test_object_is_companion;
+	view.defer_guidebot_accessibility = 1;
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_ROBOT;
+	test_object_id[0] = TEST_ROBOT_GUIDEBOT;
+	test_object_seg[0] = 1;
+	level_metadata_scan_level_summary(&view, &state);
+	failures += expect_int("deferred guidebot count", 1, state.guidebot_count);
+	failures += expect_int("deferred guidebot placed", 1, state.guidebot_placed);
+	failures += expect_int("deferred guidebot accessible", 0, state.guidebot_accessible);
+	failures += expect_string(
+	    "deferred guidebot placement note",
+	    "guidebot or guidebot start cage placed in this level",
+	    state.guidebot_placement_note);
+	failures += expect_string("deferred guidebot note", "", state.guidebot_note);
+	return failures;
+}
+
 int main(void)
 {
 	int failures = 0;
@@ -1649,6 +1682,7 @@ int main(void)
 	failures += test_guidebot_missing_note();
 	failures += test_guidebot_accessible();
 	failures += test_guidebot_unreachable_note();
+	failures += test_guidebot_accessibility_can_be_deferred();
 	if (failures)
 		return 1;
 

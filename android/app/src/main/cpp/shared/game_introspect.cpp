@@ -28,6 +28,7 @@ extern "C" {
 #include "android_axis_mailbox.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
+#include "android_route_metadata.h"
 #include "android_screen_advance.h"
 #include "window.h"
 #include "newmenu.h"
@@ -716,6 +717,13 @@ static json serialize_level_metadata_route()
 	result["status"] = level_metadata_route_status_name(metadata->route_status);
 	result["readiness"] = level_metadata_route_readiness_name(
 	    level_metadata_get_route_readiness());
+	result["revision"] = level_metadata_get_route_revision();
+	result["estimated_progress_permille"] =
+	    android_route_metadata_get_progress_permille();
+	result["background_progress_state"] =
+	    android_route_metadata_get_progress_state();
+	result["background_request_generation"] =
+	    android_route_metadata_get_request_generation();
 	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
 	result["planner_source"] =
 	    level_metadata_get_canonical_route_plan_summary(&canonical_plan) ? "shared_cpp" : "unavailable";
@@ -906,6 +914,12 @@ static json serialize_guidebot()
 	result["route_target_mode_name"] = escort_get_route_target_mode_name();
 	result["route_last_replan_reason"] = escort_get_route_last_replan_reason();
 	result["route_metadata_rescan_count"] = escort_get_route_metadata_rescan_count();
+	result["route_readiness"] =
+	    level_metadata_route_readiness_name(level_metadata_get_route_readiness());
+	result["route_next_waypoint_pending"] =
+	    (bool) escort_get_route_next_waypoint_pending();
+	result["route_cache_improvement_pending"] =
+	    (bool) escort_get_route_cache_improvement_pending();
 	result["route_guidance_full_search_count"] = escort_get_route_guidance_full_search_count();
 	result["route_ignored_nonowner_key_change_count"] =
 	    escort_get_route_ignored_nonowner_key_change_count();
@@ -1734,7 +1748,11 @@ extern "C" char *game_introspect_get_state(void)
 				      automap_metadata_get_level_label_y() },
 				{ "first_next_objective_text", automap_metadata_get_first_next_objective_text() },
 				{ "long_guidance_suppressed_count", automap_metadata_get_long_guidance_suppressed_count() },
-				{ "key_carrier_marker_count", automap_metadata_get_key_carrier_marker_count() }
+				{ "key_carrier_marker_count", automap_metadata_get_key_carrier_marker_count() },
+				{ "objective_readiness_note_visible", (bool) automap_metadata_get_readiness_note_visible() },
+				{ "objective_readiness_text", automap_metadata_get_readiness_text() },
+				{ "objective_readiness_progress_permille", automap_metadata_get_readiness_progress_permille() },
+				{ "route_refresh_count", automap_metadata_get_route_refresh_count() }
 			};
 			if (automap_metadata_get_key_carrier_marker(
 			        &carrier_objnum, &carrier_key_index, carrier_position)) {

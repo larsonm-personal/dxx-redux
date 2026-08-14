@@ -489,8 +489,10 @@ static void collect_guidebot_info(const level_metadata_scan_view *view, level_me
 		obj_seg = view->object_segment(view->user, objnum);
 		if (!valid_segment(view, obj_seg))
 			continue;
-		if (obj_seg == view->start_segment ||
-		    route_planner_segment_reachable_view(view, obj_seg))
+		if (obj_seg == view->start_segment)
+			state->guidebot_accessible = 1;
+		else if (!view->defer_guidebot_accessibility &&
+		         route_planner_segment_reachable_view(view, obj_seg))
 			state->guidebot_accessible = 1;
 	}
 	if (state->guidebot_count <= 0) {
@@ -499,7 +501,8 @@ static void collect_guidebot_info(const level_metadata_scan_view *view, level_me
 		    sizeof(state->guidebot_placement_note),
 		    "%s",
 		    "no guidebot or guidebot start cage placed in this level");
-	} else if (!state->guidebot_accessible) {
+	} else if (!state->guidebot_accessible &&
+	           !view->defer_guidebot_accessibility) {
 		state->guidebot_placed = 1;
 		snprintf(
 		    state->guidebot_placement_note,

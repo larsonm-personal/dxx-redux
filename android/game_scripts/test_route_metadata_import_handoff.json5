@@ -1,0 +1,52 @@
+// TEST: Imported mission route work starts in the launcher and remains usable after entering the game
+[
+    {"_info": {
+        "description": "Verify immediate imported-content precompute and launcher-to-game checkpoint handoff",
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
+            {"file": "kcxf2rmv11.7z", "sha256": "c2aa754df2462376cd77b7afb75125c0096ba04f870fcff4d41182995762848f", "target": "files/mission_zip_batch_cache"}
+        ]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "dlog_profiling_enabled", "value": true}},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "dlog_game logs_enabled", "value": true}},
+    {"action": "import_mission_zip", "file": "kcxf2rmv11.7z", "label": "route_handoff", "display_name": "KCXF2RMv11.7z"},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"menu.items": {"contains": "Project KCX-F2"}}},
+    {"action": "select_mission", "text": "Project KCX-F2", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.buddy_objnum": {"gte": 0}
+    }},
+    {"action": "wait_for", "timeout_ms": 120000, "expect": {
+        "guidebot.route_next_waypoint_pending": "false"
+    }},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_next_waypoint_pending": "false"
+    }},
+    {"action": "log", "message": "=== TEST: route metadata import handoff -- PASS ==="}
+]

@@ -176,6 +176,10 @@ add_executable(test_route_analysis_cache test_route_analysis_cache.c
                                          "${DXX_TEST_SHARED_SOURCE_DIR}/route_analysis_cache.c")
 target_include_directories(test_route_analysis_cache PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(test_android_route_metadata_progress test_android_route_metadata_progress.c)
+target_include_directories(test_android_route_metadata_progress
+                           PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
 if(DXX_TEST_GAME STREQUAL "d2")
     add_executable(
         test_escort_owner_policy test_escort_owner_policy.c
@@ -302,6 +306,7 @@ set(DXX_HOST_TEST_TARGETS
     test_level_metadata_scan
     test_route_snapshot
     test_route_analysis_cache
+    test_android_route_metadata_progress
     test_input_demo_controls
     test_input_demo_fixture
     test_input_demo_recorder

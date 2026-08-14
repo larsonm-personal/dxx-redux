@@ -71,6 +71,7 @@ import com.dxxredux.app.multiplayer.PlayGamesAuth
 import com.dxxredux.app.multiplayer.readCoopRestoreSlot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -97,6 +98,7 @@ import java.util.Locale
 class SetupActivity : ComponentActivity() {
     private val routeMetadataScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var routeMetadataCoordinator: RouteMetadataPrecomputeCoordinator
+    private var routeMetadataLaunchJob: Job? = null
 
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
@@ -323,7 +325,27 @@ class SetupActivity : ComponentActivity() {
         intent.putExtra("automation_script", scriptPath)
         intent.putExtra("automation_start_step", startStep)
         intent.putExtra("automation_run_id", automationRunId)
-        startActivity(intent)
+        startGameAfterRouteMetadataHandoff(intent)
+    }
+
+    private fun startGameAfterRouteMetadataHandoff(intent: Intent) {
+        if (routeMetadataLaunchJob?.isActive == true) {
+            Log.w("DXX-RouteMetadata", "Ignoring duplicate game launch during route metadata handoff")
+            return
+        }
+        routeMetadataLaunchJob =
+            routeMetadataScope.launch {
+                val startedAt = SystemClock.elapsedRealtime()
+                RouteMetadataDiagnostics.log("Route metadata launcher-to-game handoff started")
+                routeMetadataCoordinator.stopAndAwait()
+                RouteMetadataDiagnostics.log(
+                    "Route metadata launcher-to-game handoff finished " +
+                        "elapsed_ms=${SystemClock.elapsedRealtime() - startedAt}",
+                )
+                withContext(Dispatchers.Main.immediate) {
+                    if (!isFinishing && !isDestroyed) startActivity(intent)
+                }
+            }
     }
 
     private fun gameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
@@ -357,7 +379,7 @@ class SetupActivity : ComponentActivity() {
         }
 
         val intent = createGameLaunchIntent(demo.game, demo.file.absolutePath)
-        startActivity(intent)
+        startGameAfterRouteMetadataHandoff(intent)
     }
 
     private fun createGameLaunchIntent(
@@ -467,6 +489,7 @@ class SetupActivity : ComponentActivity() {
     }
 
     private fun requestSetupRefresh() {
+        if (::routeMetadataCoordinator.isInitialized) routeMetadataCoordinator.wake()
         runOnUiThread { refreshTrigger.intValue++ }
     }
 
@@ -518,7 +541,7 @@ class SetupActivity : ComponentActivity() {
                                 return
                             }
                             val launchIntent = createGameLaunchIntent(game)
-                            startActivity(launchIntent)
+                            startGameAfterRouteMetadataHandoff(launchIntent)
                         }
                     }
 
@@ -653,6 +676,36 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "clear_route_metadata_cache" -> {
+                        val pendingResult = goAsync()
+                        this@SetupActivity.lifecycleScope.launch {
+                            try {
+                                routeMetadataCoordinator.stopAndAwait()
+                                val deleted =
+                                    withContext(Dispatchers.IO) {
+                                        var count = 0
+                                        listOf(
+                                            File(filesDir, "d1x-redux/route-cache"),
+                                            File(filesDir, "d2x-redux/route-cache"),
+                                        ).forEach { cacheDir ->
+                                            if (cacheDir.exists() && cacheDir.deleteRecursively()) count++
+                                        }
+                                        listOf(
+                                            File(filesDir, "route_metadata_precompute.json"),
+                                            File(filesDir, "route_metadata_precompute.lock"),
+                                        ).forEach { stateFile ->
+                                            if (stateFile.delete()) count++
+                                        }
+                                        count
+                                    }
+                                Log.i("DXX-Setup", "clear_route_metadata_cache: deleted $deleted path(s)")
+                            } finally {
+                                routeMetadataCoordinator.start()
+                                pendingResult.finish()
+                            }
+                        }
+                    }
+
                     "clear_crash_reports" -> {
                         runIo {
                             val deleted = CrashLog.listCrashFiles(this@SetupActivity).size
@@ -743,6 +796,7 @@ class SetupActivity : ComponentActivity() {
                                 enableRedbookInConfig(filesDir, this@SetupActivity)
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
+                            if (count > 0) routeMetadataCoordinator.notifyContentImported()
                             requestSetupRefresh()
                         }
                     }
@@ -754,6 +808,7 @@ class SetupActivity : ComponentActivity() {
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)
                             Log.i("DXX-Setup", "import_sow '$path' -> $count file(s) to ${setDir.name}")
+                            if (count > 0) routeMetadataCoordinator.notifyContentImported()
                             requestSetupRefresh()
                         }
                     }
@@ -783,6 +838,7 @@ class SetupActivity : ComponentActivity() {
                                         includeAudio = audio,
                                     )
                                 SetupImportTracker.complete("cd", count)
+                                if (count > 0) routeMetadataCoordinator.notifyContentImported()
                                 Log.i(
                                     "DXX-Setup",
                                     "import_cd cue='$cuePath' images=${binPaths.size} -> $count file(s) to ${setDir.name} (audio=$audio)",
@@ -817,6 +873,7 @@ class SetupActivity : ComponentActivity() {
                                 val setDir = fsm.getSetDir(fsm.getActive())
                                 val count = importIsoImageFromPath(setDir, path)
                                 SetupImportTracker.complete("iso", count)
+                                if (count > 0) routeMetadataCoordinator.notifyContentImported()
                                 Log.i(
                                     "DXX-Setup",
                                     "import_iso iso='$path' -> $count file(s) to ${setDir.name}",
@@ -845,6 +902,8 @@ class SetupActivity : ComponentActivity() {
                             ImportStorageGuard.requireFreeSpace(destDir, src.length(), "import ${src.name}")
                             LauncherFileCopy.copyFileToFile(src, File(destDir, src.name))
                             Log.i("DXX-Setup", "import_files: copied ${src.name} to ${destDir.name}")
+                            routeMetadataCoordinator.notifyContentImported()
+                            requestSetupRefresh()
                         } else {
                             Log.w("DXX-Setup", "import_files: not a file: $path")
                         }
@@ -1910,7 +1969,7 @@ class SetupActivity : ComponentActivity() {
         )
         // Clear gameLaunchInfo after consumption to prevent stale re-launches
         MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
-        startActivity(mpIntent)
+        startGameAfterRouteMetadataHandoff(mpIntent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -2071,7 +2130,7 @@ class SetupActivity : ComponentActivity() {
                                     resumeSavePath = resolvedResumeSavePath,
                                     resumeCallsign = resolvedResumeCallsign,
                                 )
-                            startActivity(intent)
+                            startGameAfterRouteMetadataHandoff(intent)
                             // Don't finish() -- stay in back stack so quitting
                             // the game returns here instead of the launcher.
                         }
@@ -2083,7 +2142,11 @@ class SetupActivity : ComponentActivity() {
                 onMultiplayerLaunch = { info ->
                     launchMultiplayerGame(info)
                 },
-                onRefresh = { refreshTrigger.intValue++ },
+                onContentImported = { routeMetadataCoordinator.notifyContentImported() },
+                onRefresh = {
+                    routeMetadataCoordinator.wake()
+                    refreshTrigger.intValue++
+                },
                 onDownloadStateChanged = { name, progress ->
                     if (progress == -2) {
                         downloadStates.remove(name)
@@ -2405,6 +2468,7 @@ private fun SetupScreen(
     onLaunchGame: (String, ResumeSaveBridge.ResumeSaveCandidate?) -> Unit,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
+    onContentImported: () -> Unit,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> },
 ) {
@@ -2923,6 +2987,7 @@ private fun SetupScreen(
                     } else {
                         importStatus = dxaResults.joinToString("; ")
                     }
+                    if (dxaResults.any { it.startsWith("Imported") }) onContentImported()
                     onRefresh()
                 }
             }
@@ -2979,6 +3044,9 @@ private fun SetupScreen(
                         importStatus = failures.joinToString("; ")
                     } else {
                         importStatus = results.joinToString("; ")
+                    }
+                    if (results.any { it.startsWith("Imported") || it.startsWith("Extracted") }) {
+                        onContentImported()
                     }
                     onRefresh()
                 }
@@ -3509,6 +3577,7 @@ private fun SetupScreen(
                             discImportCueUri = null
                             discImportCueName = null
                             discImportBins = emptyList()
+                            onContentImported()
                             onRefresh()
                         },
                         onDismiss = {
@@ -3531,6 +3600,7 @@ private fun SetupScreen(
                         onImported = {
                             isoImportUri = null
                             isoImportName = null
+                            onContentImported()
                             onRefresh()
                         },
                         onDismiss = {
@@ -3552,6 +3622,7 @@ private fun SetupScreen(
                         onImported = {
                             gogImportUri = null
                             gogImportName = null
+                            onContentImported()
                             onRefresh()
                         },
                         onDismiss = {
@@ -3573,6 +3644,7 @@ private fun SetupScreen(
                         onImported = {
                             sowImportUri = null
                             sowImportName = null
+                            onContentImported()
                             onRefresh()
                         },
                         onDismiss = {
@@ -4290,6 +4362,7 @@ private fun SetupScreen(
                                                         importStatus =
                                                             "Imported $imported of ${found.size} files."
                                                         scanResults = null
+                                                        if (imported > 0) onContentImported()
                                                         onRefresh()
                                                     } catch (e: Exception) {
                                                         Log.e("DXX-Setup", "Import failed", e)
@@ -4579,6 +4652,7 @@ private fun SetupScreen(
                                                     zipExtracted = null
                                                     zipPackageName = null
                                                     cleanupTmpDir(filesDir)
+                                                    if (imported > 0) onContentImported()
                                                     onRefresh()
                                                 }
                                             },

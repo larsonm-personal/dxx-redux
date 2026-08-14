@@ -1,0 +1,60 @@
+// TEST: Keep an automap open while cold route metadata becomes usable
+[
+    {"_info": {
+        "description": "Verify objective readiness progress, independent secret labels, and open-map route refresh",
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
+        ]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace"},
+    {"action": "key", "key": "2"},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "automap.objective_readiness_note_visible": "true",
+        "automap.objective_readiness_text": {"contains": "calculating"},
+        "automap.objective_readiness_progress_permille": {"lt": 1000},
+        "automap.objective_visible_step_count": "0"
+    }},
+    {"action": "set_secret_reveal", "enabled": true, "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "secret_areas.drawable_label_count": {"gt": 0},
+        "automap.secret_label_candidate_count": {"gt": 0},
+        "automap.secret_visible_edge_count": {"gt": 0}
+    }},
+    {"action": "wait_for", "timeout_ms": 240000, "expect": {
+        "automap.objective_visible_step_count": {"gt": 0},
+        "automap.objective_label_candidate_count": {"gt": 0},
+        "automap.route_refresh_count": {"gt": 0}
+    }},
+    {"action": "assert", "expect": {
+        "automap_active": "true",
+        "automap.objective_overlay_mode_name": "all",
+        "level_metadata_route.estimated_progress_permille": {"lte": 1000}
+    }},
+    {"action": "log", "message": "=== TEST: automap objective readiness progress -- PASS ==="}
+]

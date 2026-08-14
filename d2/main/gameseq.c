@@ -27,6 +27,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <time.h>
 #include "inferno.h"
 #include "input_demo_hooks.h"
+#include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_start.h"
 #include "game.h"
@@ -883,11 +884,24 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 #ifdef __ANDROID__
 	secret_area_prepare_current_level();
-	if (level_metadata_get_route_readiness() !=
-	    LEVEL_METADATA_READINESS_COMPLETE)
+	if (!(Game_mode & GM_MULTI) && !input_demo_recorder_is_active() &&
+	    !input_demo_replay_is_loaded()) {
+		const char *normal_level_files[MAX_LEVELS_PER_MISSION];
+		const char *secret_level_files[MAX_SECRET_LEVELS_PER_MISSION];
+		int secret_entry_levels[MAX_SECRET_LEVELS_PER_MISSION];
+		int i;
+
+		for (i = 0; i < Last_level; ++i)
+			normal_level_files[i] = Level_names[i];
+		for (i = 0; i < N_secret_levels; ++i) {
+			secret_level_files[i] = Secret_level_names[i];
+			secret_entry_levels[i] = Secret_level_table[i];
+		}
 		android_route_metadata_request(
 		    "d2", Current_mission ? Current_mission_filename : "",
-		    Current_level_num, level_name);
+		    Current_level_num, level_name, normal_level_files, Last_level,
+		    secret_level_files, secret_entry_levels, N_secret_levels);
+	}
 #else
 	secret_area_rescan_current_level();
 #endif

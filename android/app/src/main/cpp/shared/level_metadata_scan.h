@@ -119,6 +119,7 @@ typedef struct level_metadata_scan_view {
 	int initial_key_mask;
 	int initial_control_center_destroyed;
 	int navigator_radius;
+	int defer_guidebot_accessibility;
 	int segment_special_fuelcen;
 	int segment_special_robotmaker;
 	int segment_special_control_center;

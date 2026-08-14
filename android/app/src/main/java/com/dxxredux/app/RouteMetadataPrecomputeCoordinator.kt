@@ -7,16 +7,19 @@ import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import org.json.JSONObject
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
 internal data class RouteMetadataPrecomputeJob(
     val target: LevelMetadataTarget,
     val sourceIdentity: String,
     val enabled: Boolean,
+    val sourceModifiedMs: Long = 0L,
 ) {
     val id: String =
         listOf(
@@ -25,6 +28,7 @@ internal data class RouteMetadataPrecomputeJob(
             target.levelNum.toString(),
             target.levelFile.orEmpty(),
             sourceIdentity,
+            ROUTE_METADATA_CACHE_GENERATION.toString(),
         ).joinToString("|")
 }
 
@@ -32,9 +36,11 @@ internal object RouteMetadataPrecomputeOrdering {
     fun order(
         jobs: List<RouteMetadataPrecomputeJob>,
         recent: ResumeSaveBridge.ResumeSaveCandidate?,
+        focusedSourceIdentity: String? = null,
     ): List<RouteMetadataPrecomputeJob> =
         jobs.sortedWith(
             compareBy<RouteMetadataPrecomputeJob>(
+                { if (it.sourceIdentity == focusedSourceIdentity) 0 else 1 },
                 { if (matchesRecentLevel(it, recent)) 0 else 1 },
                 { if (it.target.game == recent?.game) 0 else 1 },
                 { if (it.enabled) 0 else 1 },
@@ -45,7 +51,7 @@ internal object RouteMetadataPrecomputeOrdering {
             ),
         )
 
-    private fun matchesRecentLevel(
+    fun matchesRecentLevel(
         job: RouteMetadataPrecomputeJob,
         recent: ResumeSaveBridge.ResumeSaveCandidate?,
     ): Boolean =
@@ -60,7 +66,10 @@ internal object RouteMetadataPrecomputeOrdering {
             )
 
     private fun isBaseGame(job: RouteMetadataPrecomputeJob): Boolean {
-        val sourceName = job.target.sourcePath?.let(::File)?.name ?: job.target.hogFile.orEmpty()
+        val sourceName =
+            job.target.sourcePath
+                ?.let(::File)
+                ?.name ?: job.target.hogFile.orEmpty()
         return job.target.sourceType == "hog" && LevelMetadataTargets.isBaseHog(sourceName)
     }
 }
@@ -70,71 +79,119 @@ internal class RouteMetadataPrecomputeCoordinator(
     private val scope: CoroutineScope,
 ) {
     private val appContext = context.applicationContext
-    private val stateFile = File(appContext.filesDir, "route_metadata_precompute.json")
-    private val failureCount = mutableMapOf<String, Int>()
-    private val retryAfter = mutableMapOf<String, Long>()
+    private val ledger = RouteMetadataLedger(appContext.filesDir)
+    private val wakeups = Channel<Unit>(Channel.CONFLATED)
     private var runner: Job? = null
 
+    @Volatile private var focusNewestSource = false
+
+    @Volatile private var runningPriority: RouteMetadataPriority? = null
+    private var focusedSourceIdentity: String? = null
+
+    @Synchronized
+    fun notifyContentImported() {
+        focusNewestSource = true
+        wakeups.trySend(Unit)
+        val previous = runner
+        if (previous == null) {
+            start()
+        } else if (
+            runningPriority == null ||
+            RouteMetadataPreemption.shouldPreempt(
+                runningPriority,
+                RouteMetadataPriority.NEXT,
+                replacesFocus = true,
+            )
+        ) {
+            previous.cancel()
+            previous.invokeOnCompletion {
+                synchronized(this) {
+                    if (runner === previous) {
+                        runner = null
+                        start()
+                    }
+                }
+            }
+        }
+    }
+
+    fun wake() {
+        wakeups.trySend(Unit)
+    }
+
+    @Synchronized
     fun start() {
         if (runner?.isActive == true) return
         runner =
             scope.launch {
                 while (isActive) {
                     if (shouldPause()) {
-                        delay(2_000L)
+                        awaitWake(2_000L)
                         continue
                     }
-                    val completed = loadCompleted()
                     val recent = ResumeSaveBridge.findOptions(appContext.filesDir)?.latestOverall
+                    val jobs = discoverJobs()
+                    if (focusNewestSource) {
+                        focusedSourceIdentity = jobs.maxByOrNull { it.sourceModifiedMs }?.sourceIdentity
+                        focusNewestSource = false
+                    }
                     val next =
                         RouteMetadataPrecomputeOrdering
-                            .order(discoverJobs(), recent)
+                            .order(jobs, recent, focusedSourceIdentity)
                             .firstOrNull {
-                                !isCompleted(it, completed) &&
-                                    System.currentTimeMillis() >= (retryAfter[it.id] ?: 0L)
+                                !isCompleted(it) && ledger.read(it.id)?.status != RouteMetadataLedgerStatus.FAILED
                             }
                     if (next == null) {
-                        delay(30_000L)
+                        focusedSourceIdentity = null
+                        awaitWake(30_000L)
                         continue
                     }
                     try {
+                        val priority =
+                            if (next.sourceIdentity == focusedSourceIdentity ||
+                                RouteMetadataPrecomputeOrdering.matchesRecentLevel(next, recent)
+                            ) {
+                                RouteMetadataPriority.NEXT
+                            } else {
+                                RouteMetadataPriority.FILL
+                            }
+                        runningPriority = priority
                         val result =
-                            LevelMetadataAnalyzer.analyze(
-                                appContext,
-                                next.target,
-                                background = true,
-                                totalTimeoutMs = 10L * 60L * 1_000L,
-                            )
+                            try {
+                                LevelMetadataAnalyzer.analyze(
+                                    appContext,
+                                    next.target,
+                                    background = true,
+                                    priority = priority,
+                                    totalTimeoutMs = 10L * 60L * 1_000L,
+                                )
+                            } finally {
+                                runningPriority = null
+                            }
                         val cacheFile =
                             result.levels
                                 .singleOrNull()
                                 ?.routeCacheFile
                                 .orEmpty()
-                        val routeComplete =
-                            result.levels.singleOrNull()?.routeStatus == "ok"
-                        if (result.status == "ok" && routeComplete &&
-                            cacheArtifact(next.target.game, cacheFile).isFile
-                        ) {
-                            completed[next.id] = cacheFile
-                            saveCompleted(completed)
-                        } else {
+                        val assessment =
+                            RouteMetadataAttemptClassifier.classify(
+                                result,
+                                cacheFile.isNotBlank() && cacheArtifact(next.target.game, cacheFile).isFile,
+                                ledger.read(next.id),
+                            )
+                        ledger.record(next.id, assessment)
+                        RouteMetadataDiagnostics.log(
+                            "Route metadata precompute level=${next.target.levelNum} " +
+                                "priority=${priority.wireName} status=${assessment.status.wireName} " +
+                                "progress=${assessment.progressToken}",
+                        )
+                        if (assessment.status == RouteMetadataLedgerStatus.FAILED) {
                             Log.w(
                                 TAG,
                                 "Precompute failed ${next.target.displayName} " +
-                                    "level=${next.target.levelNum}: ${result.problems.joinToString()}",
+                                    "level=${next.target.levelNum} kind=${assessment.failureKind}: " +
+                                    result.problems.joinToString(),
                             )
-                            val busy = result.problems.any { it.contains("already running", ignoreCase = true) }
-                            val attempts = if (busy) 0 else (failureCount[next.id] ?: 0) + 1
-                            failureCount[next.id] = attempts
-                            if (attempts >= 3) {
-                                // Bound repeated work for this launcher session, but do not
-                                // persist a permanent failure across app or planner updates.
-                                retryAfter[next.id] = Long.MAX_VALUE
-                            } else {
-                                retryAfter[next.id] =
-                                    System.currentTimeMillis() +
-                                    if (busy) 2_000L else (1L shl attempts) * 10_000L
-                            }
                         }
                     } catch (e: CancellationException) {
                         throw e
@@ -142,14 +199,32 @@ internal class RouteMetadataPrecomputeCoordinator(
                         Log.e(TAG, "Precompute worker failed", e)
                         delay(10_000L)
                     }
-                    delay(750L)
+                    awaitWake(750L)
                 }
             }
     }
 
+    @Synchronized
     fun stop() {
         runner?.cancel()
         runner = null
+        runningPriority = null
+    }
+
+    suspend fun stopAndAwait() {
+        val previous =
+            synchronized(this) {
+                runner.also {
+                    it?.cancel()
+                    runner = null
+                    runningPriority = null
+                }
+            }
+        listOfNotNull(previous).joinAll()
+    }
+
+    private suspend fun awaitWake(timeoutMs: Long) {
+        withTimeoutOrNull(timeoutMs) { wakeups.receive() }
     }
 
     private fun shouldPause(): Boolean {
@@ -229,6 +304,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                     ),
                     sourceIdentity,
                     enabled,
+                    source?.lastModified() ?: 0L,
                 )
             }
         val secret =
@@ -242,18 +318,16 @@ internal class RouteMetadataPrecomputeCoordinator(
                     ),
                     sourceIdentity,
                     enabled,
+                    source?.lastModified() ?: 0L,
                 )
             }
         return normal + secret
     }
 
-    private fun isCompleted(
-        job: RouteMetadataPrecomputeJob,
-        completed: MutableMap<String, String>,
-    ): Boolean {
-        val filename = completed[job.id] ?: return false
+    private fun isCompleted(job: RouteMetadataPrecomputeJob): Boolean {
+        val filename = ledger.completedCache(job.id) ?: return false
         if (cacheArtifact(job.target.game, filename).isFile) return true
-        completed.remove(job.id)
+        ledger.update(job.id) { null }
         return false
     }
 
@@ -263,27 +337,6 @@ internal class RouteMetadataPrecomputeCoordinator(
     ): File {
         val gameDir = if (game == GameFileFormats.GAME_D1) "d1x-redux" else "d2x-redux"
         return File(File(appContext.filesDir, gameDir), filename)
-    }
-
-    private fun loadCompleted(): MutableMap<String, String> =
-        runCatching {
-            val root = JSONObject(stateFile.readText(Charsets.UTF_8))
-            val values = root.optJSONObject("completed") ?: JSONObject()
-            values
-                .keys()
-                .asSequence()
-                .associateWith { values.getString(it) }
-                .toMutableMap()
-        }.getOrDefault(mutableMapOf())
-
-    private fun saveCompleted(completed: Map<String, String>) {
-        val entries = JSONObject()
-        completed.toSortedMap().forEach { (id, filename) -> entries.put(id, filename) }
-        val root =
-            JSONObject()
-                .put("schema", "dxx-route-precompute-v1")
-                .put("completed", entries)
-        AtomicFilePublication.writeUtf8(stateFile, root.toString(2) + "\n")
     }
 
     private companion object {

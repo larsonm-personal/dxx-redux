@@ -2704,6 +2704,12 @@ private fun LevelMetadataDialog(
             LevelMetadataAnalysisProgress(
                 overall = MetadataLoadProgress("Overall analysis", 0, 0),
                 currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
+                estimatedLevel =
+                    MetadataLoadProgress(
+                        "Estimated level progress",
+                        0,
+                        LevelMetadataLevelProgressEstimator.TOTAL,
+                    ),
             ),
         )
     }
@@ -2732,6 +2738,12 @@ private fun LevelMetadataDialog(
             LevelMetadataAnalysisProgress(
                 overall = MetadataLoadProgress("Overall analysis", 0, 0),
                 currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
+                estimatedLevel =
+                    MetadataLoadProgress(
+                        "Estimated level progress",
+                        0,
+                        LevelMetadataLevelProgressEstimator.TOTAL,
+                    ),
             )
         result =
             LevelMetadataAnalyzer.analyze(context, target) { update ->

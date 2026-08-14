@@ -1,11 +1,13 @@
 #include <jni.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <time.h>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -173,7 +175,20 @@ struct levelmeta_budget_context {
 	std::string cancellation_path;
 	unsigned int checks = 0;
 	bool background = false;
+	unsigned int cpu_duty_percent = 100;
+	unsigned long long wall_start_us = 0;
+	unsigned long long cpu_start_us = 0;
 };
+
+static unsigned long long levelmeta_clock_us(clockid_t clock_id)
+{
+	struct timespec value;
+
+	if (clock_gettime(clock_id, &value))
+		return 0;
+	return (unsigned long long) value.tv_sec * 1000000ULL +
+	       (unsigned long long) value.tv_nsec / 1000ULL;
+}
 
 static int levelmeta_budget_cancelled(void *user)
 {
@@ -186,8 +201,32 @@ static int levelmeta_budget_cancelled(void *user)
 		if (cancellation.good())
 			return 1;
 	}
-	if (context->background && (++context->checks & 63u) == 0)
-		SDL_Delay(1);
+	if (context->background && (++context->checks & 7u) == 0) {
+		const unsigned long long wall_now = levelmeta_clock_us(CLOCK_MONOTONIC);
+		const unsigned long long cpu_now =
+		    levelmeta_clock_us(CLOCK_THREAD_CPUTIME_ID);
+		if (!context->wall_start_us || !context->cpu_start_us) {
+			context->wall_start_us = wall_now;
+			context->cpu_start_us = cpu_now;
+		} else if (context->cpu_duty_percent &&
+		           context->cpu_duty_percent < 100) {
+			const unsigned long long wall_used =
+			    wall_now - context->wall_start_us;
+			const unsigned long long cpu_used = cpu_now - context->cpu_start_us;
+			const unsigned long long target_wall =
+			    cpu_used * 100ULL / context->cpu_duty_percent;
+			if (target_wall > wall_used) {
+				const unsigned long long delay_us =
+				    std::min<unsigned long long>(target_wall - wall_used, 50000ULL);
+				SDL_Delay((Uint32) ((delay_us + 999ULL) / 1000ULL));
+			}
+			if (wall_used >= 1000000ULL) {
+				context->wall_start_us = levelmeta_clock_us(CLOCK_MONOTONIC);
+				context->cpu_start_us =
+				    levelmeta_clock_us(CLOCK_THREAD_CPUTIME_ID);
+			}
+		}
+	}
 	return 0;
 }
 
@@ -874,6 +913,7 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	int hostages = 0;
 	json row;
 	route_analysis_cache_summary cache_summary;
+	level_metadata_visibility_cache_summary visibility_summary;
 
 	count_level_objects(&robots, &hostages);
 	row["level_num"] = level_num;
@@ -897,11 +937,26 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["guidebot_placement_note"] = metadata && metadata->guidebot_placement_note[0] ? metadata->guidebot_placement_note : "";
 	row["guidebot_note"] = metadata && metadata->guidebot_note[0] ? metadata->guidebot_note : "";
 	row["route_status"] = metadata ? level_metadata_route_status_name(metadata->route_status) : "failed";
+	row["route_readiness"] =
+	    level_metadata_route_readiness_name(level_metadata_get_route_readiness());
+	row["failure_kind"] = "";
+	if (metadata && metadata->route_status == LEVEL_METADATA_ROUTE_FAILED) {
+		if (strstr(metadata->route_problem, "cancelled"))
+			row["failure_kind"] = "preempted";
+		else if (strstr(metadata->route_problem, "collision-work budget"))
+			row["failure_kind"] = "budget_exhausted";
+		else
+			row["failure_kind"] = "unroutable";
+	}
 	row["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	row["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	row["route_steps"] = serialize_route_steps(metadata);
 	row["route_cache_file"] =
 	    level_metadata_get_route_analysis_cache_summary(&cache_summary) ? cache_summary.filename : "";
+	if (level_metadata_get_visibility_cache_summary(&visibility_summary))
+		row["visibility_entries"] = visibility_summary.entries;
+	row["visibility_checkpoint_sequence"] =
+	    level_metadata_get_visibility_checkpoint_sequence();
 	row["status"] = "ok";
 	row["problems"] = json::array();
 	row["notes"] = serialize_metadata_notes(metadata);
@@ -974,7 +1029,8 @@ enum LevelScanStatus {
 	LEVEL_SCAN_MISSING = 2,
 };
 
-static json failed_level_row(int level_num, const char *level_file, const char *problem)
+static json failed_level_row(int level_num, const char *level_file,
+                             const char *problem, const char *failure_kind)
 {
 	json row;
 	row["level_num"] = level_num;
@@ -998,6 +1054,8 @@ static json failed_level_row(int level_num, const char *level_file, const char *
 	row["guidebot_placement_note"] = "";
 	row["guidebot_note"] = "";
 	row["route_status"] = "failed";
+	row["route_readiness"] = "failed";
+	row["failure_kind"] = failure_kind ? failure_kind : "analysis_failed";
 	row["route_problem"] = problem;
 	row["route_note"] = "";
 	row["route_steps"] = json::array();
@@ -1018,11 +1076,13 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	if (coop_starts)
 		*coop_starts = 0;
 	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
-		levels.push_back(failed_level_row(level_num, level_file, "level file is missing"));
+		levels.push_back(failed_level_row(
+		    level_num, level_file, "level file is missing", "missing"));
 		return LEVEL_SCAN_MISSING;
 	}
 	if (load_level(level_file)) {
-		levels.push_back(failed_level_row(level_num, level_file, "could not load level"));
+		levels.push_back(failed_level_row(
+		    level_num, level_file, "could not load level", "invalid_input"));
 		return LEVEL_SCAN_FAILED;
 	}
 	Current_level_num = level_num;
@@ -1043,9 +1103,17 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	levelmeta_budget_context budget_context;
 	budget_context.cancellation_path = request.value("cancellation_path", "");
 	budget_context.background = request.value("background", false);
+	budget_context.cpu_duty_percent =
+	    request.value("cpu_duty_percent", budget_context.background ? 5u : 100u);
+	level_metadata_set_analysis_fvi_limit(
+	    request.value("fvi_limit", 1000000u));
+	level_metadata_set_defer_guidebot_accessibility(
+	    request.value("defer_guidebot_accessibility", false));
 	level_metadata_set_progress_callback(levelmeta_progress, &progress_context);
 	level_metadata_set_cancel_callback(levelmeta_budget_cancelled, &budget_context);
 	secret_area_rescan_current_level();
+	level_metadata_set_defer_guidebot_accessibility(0);
+	level_metadata_set_analysis_fvi_limit(0);
 	level_metadata_set_cancel_callback(NULL, NULL);
 	level_metadata_set_progress_callback(NULL, NULL);
 	levels.push_back(serialize_current_level_row(level_num, level_file));
@@ -1174,6 +1242,7 @@ static json failed_result(const json &request, const char *problem)
 	root["mission_name"] = request_mission_display_name(request);
 	root["mission_filename"] = request.value("mission_filename", "");
 	root["levels"] = json::array();
+	root["failure_kind"] = "analysis_failed";
 	root["problems"] = json::array({ problem ? problem : "analysis failed" });
 	return root;
 }

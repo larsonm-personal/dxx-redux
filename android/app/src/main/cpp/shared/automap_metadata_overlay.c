@@ -7,11 +7,20 @@
 #include "object.h"
 #include "automap.h"
 #include "automap_metadata_overlay.h"
+#ifdef __ANDROID__
+#include "android_route_metadata.h"
+#else
+#define ANDROID_ROUTE_METADATA_CALCULATING 0
+#define ANDROID_ROUTE_METADATA_USEFUL      1
+#define ANDROID_ROUTE_METADATA_COMPLETE    2
+#define ANDROID_ROUTE_METADATA_FAILED      3
+#endif
 #include "gamefont.h"
 #include "gameseg.h"
 #include "gr.h"
 #include "powerup.h"
 #include "secretarea.h"
+#include "timer.h"
 
 #define K_SECRET_LABEL_UNFOUND_COLOR      BM_XRGB(31, 0, 0)
 #define K_SECRET_LABEL_FOUND_COLOR        BM_XRGB(0, 31, 0)
@@ -22,6 +31,9 @@
 #define K_NEXT_OBJECTIVE_COLOR            BM_XRGB(63, 5, 5)
 #define K_NEXT_OBJECTIVE_COUNT            3
 #define K_OBJECTIVE_GUIDANCE_MAX_DISTANCE (200 * F1_0)
+#define K_READINESS_TEXT_COLOR            BM_XRGB(40, 40, 40)
+#define K_READINESS_BAR_COLOR             BM_XRGB(10, 50, 50)
+#define K_READINESS_BAR_BACKGROUND        BM_XRGB(8, 8, 8)
 
 static int key_carrier_marker_count;
 static int key_carrier_marker_objnum = -1;
@@ -34,6 +46,65 @@ static int next_objective_y;
 static int objective_level_label_y;
 static char first_next_objective_text[LEVEL_METADATA_ROUTE_LABEL_LEN + 16];
 static int long_guidance_suppressed_count;
+static int readiness_note_visible;
+static int readiness_progress_permille;
+static char readiness_text[48];
+static unsigned int route_refresh_count;
+static unsigned int displayed_route_revision;
+static fix64 route_cache_poll_time;
+
+static int automap_metadata_progress_permille(void)
+{
+#ifdef __ANDROID__
+	return android_route_metadata_get_progress_permille();
+#else
+	return 1000;
+#endif
+}
+
+static int automap_metadata_progress_state(void)
+{
+#ifdef __ANDROID__
+	return android_route_metadata_get_progress_state();
+#else
+	return ANDROID_ROUTE_METADATA_COMPLETE;
+#endif
+}
+
+void automap_metadata_begin(void)
+{
+	displayed_route_revision = level_metadata_get_route_revision();
+	route_cache_poll_time = 0;
+	readiness_note_visible = 0;
+	readiness_progress_permille = 0;
+	readiness_text[0] = '\0';
+}
+
+void automap_metadata_update_route(int player_objnum, int allow_adoption)
+{
+	unsigned int revision;
+	const fix64 now = timer_query();
+	const int progress_state = automap_metadata_progress_state();
+	const int readiness = level_metadata_get_route_readiness();
+
+	if (!allow_adoption)
+		return;
+	if ((progress_state == ANDROID_ROUTE_METADATA_USEFUL ||
+	     progress_state == ANDROID_ROUTE_METADATA_COMPLETE) &&
+	    readiness != LEVEL_METADATA_READINESS_COMPLETE &&
+	    readiness != LEVEL_METADATA_READINESS_FAILED &&
+	    (now >= route_cache_poll_time ||
+	     route_cache_poll_time - now >= 2 * F1_0)) {
+		route_cache_poll_time = now + F1_0;
+		level_metadata_try_load_pending_cache();
+	}
+	revision = level_metadata_get_route_revision();
+	if (revision == displayed_route_revision)
+		return;
+	displayed_route_revision = revision;
+	level_metadata_rescan_route_from_object(player_objnum);
+	route_refresh_count++;
+}
 
 static int objective_key_powerup_id(int key_index)
 {
@@ -749,6 +820,66 @@ void automap_metadata_draw_next_objectives(
 	*objective_count = drawn;
 }
 
+void automap_metadata_draw_readiness(
+    int x, int level_label_y, int objective_count)
+{
+	route_planner_plan_summary plan;
+	const level_metadata_state *metadata;
+	const int mode = level_metadata_get_objective_mode();
+	const int readiness = level_metadata_get_route_readiness();
+	const int progress_state = automap_metadata_progress_state();
+	const int failed = progress_state == ANDROID_ROUTE_METADATA_FAILED ||
+	                   readiness == LEVEL_METADATA_READINESS_FAILED;
+	int usable = 0;
+	int y;
+	int bar_y;
+	int bar_width;
+	int bar_height;
+	int fill_width;
+
+	readiness_note_visible = 0;
+	readiness_progress_permille =
+	    automap_metadata_progress_permille();
+	readiness_text[0] = '\0';
+	if (mode == LEVEL_METADATA_OBJECTIVES_OFF ||
+	    readiness == LEVEL_METADATA_READINESS_COMPLETE)
+		return;
+	memset(&plan, 0, sizeof(plan));
+	metadata = current_objective_route(&plan);
+	usable = metadata && plan.first_pending_step >= 0 &&
+	         plan.first_pending_step < metadata->route_step_count;
+	if (mode == LEVEL_METADATA_OBJECTIVES_NEXT && usable)
+		return;
+	if (failed)
+		snprintf(readiness_text, sizeof(readiness_text), "%s",
+		         usable ? "More objectives unavailable" : "Objectives unavailable");
+	else
+		snprintf(readiness_text, sizeof(readiness_text), "%s",
+		         usable ? "More objectives calculating" : "Objectives still calculating");
+	readiness_note_visible = 1;
+	y = level_label_y + LINE_SPACING * (objective_count + 1);
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(K_READINESS_TEXT_COLOR, -1);
+	gr_printf(x, y, "%s", readiness_text);
+	if (failed)
+		return;
+	bar_y = y + LINE_SPACING;
+	bar_width = FSPACX(96);
+	bar_height = FSPACY(3);
+	if (bar_height < 2)
+		bar_height = 2;
+	readiness_progress_permille =
+	    readiness_progress_permille < 0 ? 0 : readiness_progress_permille > 999 ? 999
+	                                                                            : readiness_progress_permille;
+	fill_width = bar_width * readiness_progress_permille / 1000;
+	gr_setcolor(K_READINESS_BAR_BACKGROUND);
+	gr_rect(x, bar_y, x + bar_width - 1, bar_y + bar_height - 1);
+	if (fill_width > 0) {
+		gr_setcolor(K_READINESS_BAR_COLOR);
+		gr_rect(x, bar_y, x + fill_width - 1, bar_y + bar_height - 1);
+	}
+}
+
 int automap_metadata_get_next_objective_x(void)
 {
 	return next_objective_x;
@@ -772,6 +903,26 @@ const char *automap_metadata_get_first_next_objective_text(void)
 int automap_metadata_get_long_guidance_suppressed_count(void)
 {
 	return long_guidance_suppressed_count;
+}
+
+int automap_metadata_get_readiness_note_visible(void)
+{
+	return readiness_note_visible;
+}
+
+int automap_metadata_get_readiness_progress_permille(void)
+{
+	return readiness_progress_permille;
+}
+
+const char *automap_metadata_get_readiness_text(void)
+{
+	return readiness_text;
+}
+
+unsigned int automap_metadata_get_route_refresh_count(void)
+{
+	return route_refresh_count;
 }
 
 int secret_area_should_draw_segment_edges(int segnum)

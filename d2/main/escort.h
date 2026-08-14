@@ -69,6 +69,7 @@ extern int escort_get_route_target_mode(void);
 extern const char *escort_get_route_target_mode_name(void);
 extern const char *escort_get_route_last_replan_reason(void);
 extern unsigned int escort_get_route_metadata_rescan_count(void);
+extern int escort_get_route_cache_improvement_pending(void);
 extern unsigned int escort_get_route_guidance_full_search_count(void);
 extern unsigned int escort_get_route_ignored_nonowner_key_change_count(void);
 extern unsigned int escort_get_route_boss_move_invalidation_count(void);
@@ -89,6 +90,7 @@ extern int escort_get_unexplored_direct_reachable(void);
 extern int escort_get_unexplored_target_visited(void);
 extern const char *escort_get_route_goal_label(void);
 extern const char *escort_get_route_goal_guidance_mode_name(void);
+extern int escort_get_route_next_waypoint_pending(void);
 extern void escort_route_monitor_completion(void);
 extern void escort_route_notify_wall_changed(int wall_num);
 #ifdef __ANDROID__

@@ -79,4 +79,19 @@ class RouteMetadataPrecomputeOrderingTest {
 
         assertEquals(base, RouteMetadataPrecomputeOrdering.order(listOf(expansion, base), null).first())
     }
+
+    @Test
+    fun newlyImportedSourceWinsNormalOrdering() {
+        val recentJob = job("d2", "recent", 7)
+        val imported = job("d1", "new", 1)
+
+        val ordered =
+            RouteMetadataPrecomputeOrdering.order(
+                listOf(recentJob, imported),
+                recent = null,
+                focusedSourceIdentity = imported.sourceIdentity,
+            )
+
+        assertEquals(imported, ordered.first())
+    }
 }

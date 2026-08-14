@@ -46,6 +46,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -191,6 +192,7 @@ class MainActivity :
     SurfaceHolder.Callback {
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var playlistPreparation: Deferred<Unit>? = null
+    private var routeMetadataJob: Job? = null
 
     companion object {
         private const val ADMIN_TRAY_CLOSE_GRACE_MS = 400L
@@ -552,6 +554,12 @@ class MainActivity :
         success: Boolean,
     )
 
+    external fun nativeNotifyRouteMetadataProgress(
+        requestGeneration: Int,
+        estimatedPermille: Int,
+        state: Int,
+    )
+
     fun gameVariantForMusicOverlay(): String = gameVariantId
 
     @Suppress("unused") // Called from native code on the game thread
@@ -560,19 +568,37 @@ class MainActivity :
         mission: String,
         levelNum: Int,
         levelFile: String,
+        routeReadiness: String,
+        normalLevelFiles: Array<String>,
+        secretLevelFiles: Array<String>,
+        secretEntryLevels: IntArray,
         requestGeneration: Int,
     ) {
-        startupScope.launch(Dispatchers.IO) {
-            val success =
-                RouteMetadataBackground.computeActiveLevel(
+        routeMetadataJob?.cancel()
+        routeMetadataJob =
+            startupScope.launch(Dispatchers.IO) {
+                RouteMetadataBackground.computeMission(
                     this@MainActivity,
                     game,
                     mission,
                     levelNum,
                     levelFile,
+                    routeReadiness,
+                    normalLevelFiles.toList(),
+                    secretLevelFiles.toList(),
+                    secretEntryLevels.toList(),
+                    onCurrentReady = { success ->
+                        nativeNotifyRouteMetadataFinished(requestGeneration, success)
+                    },
+                    onCurrentProgress = { estimatedPermille, state ->
+                        nativeNotifyRouteMetadataProgress(
+                            requestGeneration,
+                            estimatedPermille,
+                            state.wireValue,
+                        )
+                    },
                 )
-            nativeNotifyRouteMetadataFinished(requestGeneration, success)
-        }
+            }
     }
 
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
@@ -2554,6 +2580,7 @@ class MainActivity :
 
     override fun onDestroy() {
         window.decorView.removeCallbacks(musicStateRefreshRunnable)
+        routeMetadataJob?.cancel()
         startupScope.cancel()
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()

@@ -54,6 +54,7 @@ static route_planner_plan_summary Level_metadata_live_plan_summary;
 static int Level_metadata_live_plan_summary_valid;
 static route_snapshot_summary Level_metadata_canonical_snapshot;
 static int Level_metadata_canonical_snapshot_valid;
+static unsigned long long Level_metadata_canonical_analysis_profile_hash;
 static route_snapshot_summary Level_metadata_live_snapshot;
 static int Level_metadata_live_snapshot_valid;
 static int Level_metadata_route_start_objnum = -1;
@@ -61,9 +62,12 @@ static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
 static int Level_metadata_objective_mode;
 static int Level_metadata_expensive_planning_allowed = 1;
+static int Level_metadata_defer_guidebot_accessibility;
 static int Level_metadata_route_readiness = LEVEL_METADATA_READINESS_CALCULATING;
+static unsigned int Level_metadata_route_revision;
 #ifdef __ANDROID__
 static atomic_int Level_metadata_background_result;
+static int Level_metadata_pending_cache_miss_logged;
 #endif
 static route_analysis_cache_summary Level_metadata_analysis_cache_summary;
 static unsigned char
@@ -125,6 +129,8 @@ static void level_metadata_report_progress(
 #define LEVEL_METADATA_ANALYSIS_FVI_LIMIT                1000000U
 
 static unsigned int Level_metadata_analysis_fvi_count;
+static unsigned int Level_metadata_analysis_fvi_limit =
+    LEVEL_METADATA_ANALYSIS_FVI_LIMIT;
 static int Level_metadata_analysis_budget_exhausted;
 static int Level_metadata_analysis_cancelled;
 
@@ -143,12 +149,23 @@ static int level_metadata_analysis_consume_fvi(void)
 		return 0;
 	}
 	if (Level_metadata_analysis_fvi_count >=
-	    LEVEL_METADATA_ANALYSIS_FVI_LIMIT) {
+	    Level_metadata_analysis_fvi_limit) {
 		Level_metadata_analysis_budget_exhausted = 1;
 		return 0;
 	}
 	Level_metadata_analysis_fvi_count++;
 	return 1;
+}
+
+void level_metadata_set_analysis_fvi_limit(unsigned int limit)
+{
+	Level_metadata_analysis_fvi_limit =
+	    limit ? limit : LEVEL_METADATA_ANALYSIS_FVI_LIMIT;
+}
+
+void level_metadata_set_defer_guidebot_accessibility(int defer)
+{
+	Level_metadata_defer_guidebot_accessibility = defer != 0;
 }
 
 static fix level_metadata_switch_projectile_radius(void)
@@ -1926,6 +1943,9 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	view->initial_key_mask = secret_area_current_key_mask();
 	view->initial_control_center_destroyed = Control_center_destroyed != 0;
 	view->navigator_radius = secret_area_player_radius();
+	view->defer_guidebot_accessibility =
+	    !Level_metadata_expensive_planning_allowed ||
+	    Level_metadata_defer_guidebot_accessibility;
 	view->progress_user = Level_metadata_progress_user;
 	view->progress = Level_metadata_progress_callback;
 	view->cancel_user = Level_metadata_cancel_user;
@@ -1953,24 +1973,32 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	return view;
 }
 
+static unsigned long long level_metadata_analysis_profile_hash(
+    const level_metadata_scan_view *view)
+{
+	unsigned long long analysis_profile_hash = 1469598103934665603ULL;
+
+	analysis_profile_hash = level_metadata_visibility_hash_int(
+	    analysis_profile_hash, view->navigator_radius);
+	analysis_profile_hash = level_metadata_visibility_hash_int(
+	    analysis_profile_hash, level_metadata_switch_projectile_radius());
+	return analysis_profile_hash ? analysis_profile_hash : 1;
+}
+
 static int level_metadata_analysis_cache_key(
     route_analysis_cache_key *key)
 {
-	unsigned long long analysis_profile_hash = 1469598103934665603ULL;
 #ifdef DXX_BUILD_DESCENT_II
 	const unsigned int game = ROUTE_ANALYSIS_CACHE_GAME_D2;
 #else
 	const unsigned int game = ROUTE_ANALYSIS_CACHE_GAME_D1;
 #endif
 
-	analysis_profile_hash = level_metadata_visibility_hash_int(
-	    analysis_profile_hash, Level_metadata_scan_view.navigator_radius);
-	analysis_profile_hash = level_metadata_visibility_hash_int(
-	    analysis_profile_hash, level_metadata_switch_projectile_radius());
 	return Level_metadata_canonical_snapshot_valid &&
+	       Level_metadata_canonical_analysis_profile_hash &&
 	       route_analysis_cache_make_key(
 	           ROUTE_ANALYSIS_CACHE_GENERATION, game,
-	           analysis_profile_hash ? analysis_profile_hash : 1,
+	           Level_metadata_canonical_analysis_profile_hash,
 	           &Level_metadata_canonical_snapshot, key);
 }
 
@@ -2331,12 +2359,24 @@ static void level_metadata_rescan_current_level_internal(
     int route_only,
     level_metadata_unexplored_route *unexplored_result)
 {
+#ifdef __ANDROID__
+	const long long rescan_started_us = android_profile_monotonic_us();
+#endif
 	level_metadata_scan_view *view = level_metadata_refresh_scan_view(start_objnum);
+#ifdef __ANDROID__
+	const long long refresh_finished_us = android_profile_monotonic_us();
+	long long snapshot_finished_us = refresh_finished_us;
+	long long visibility_finished_us = refresh_finished_us;
+	long long summary_finished_us = refresh_finished_us;
+	long long planning_finished_us = refresh_finished_us;
+#endif
 
 	Level_metadata_route_start_objnum = start_objnum;
 	Level_metadata_route_start_seg = view->start_segment;
 	if (!route_only) {
 		level_metadata_report_progress("level_topology", 0, 1);
+		Level_metadata_canonical_analysis_profile_hash =
+		    level_metadata_analysis_profile_hash(view);
 		Level_metadata_live_route_state_valid = 0;
 		Level_metadata_live_plan_summary_valid = 0;
 		Level_metadata_live_snapshot_valid = 0;
@@ -2348,7 +2388,13 @@ static void level_metadata_rescan_current_level_internal(
 		    &Level_metadata_canonical_snapshot,
 		    NULL,
 		    0);
+#ifdef __ANDROID__
+		snapshot_finished_us = android_profile_monotonic_us();
+#endif
 		level_metadata_visibility_cache_sync();
+#ifdef __ANDROID__
+		visibility_finished_us = android_profile_monotonic_us();
+#endif
 		if (Level_metadata_canonical_snapshot_valid)
 			level_metadata_seed_snapshot_generations(
 			    &Level_metadata_canonical_snapshot);
@@ -2385,6 +2431,9 @@ static void level_metadata_rescan_current_level_internal(
 		       sizeof(Level_metadata_wall_shot_diagnostics));
 		level_metadata_report_progress("level_summary", 0, 1);
 		level_metadata_scan_level_summary(view, &Level_metadata_canonical_state);
+#ifdef __ANDROID__
+		summary_finished_us = android_profile_monotonic_us();
+#endif
 		level_metadata_report_progress("level_summary", 1, 1);
 		level_metadata_state_clear(&shared_route);
 		memset(&Level_metadata_canonical_plan_summary, 0,
@@ -2447,9 +2496,26 @@ static void level_metadata_rescan_current_level_internal(
 			Level_metadata_route_readiness =
 			    Level_metadata_expensive_planning_allowed ? LEVEL_METADATA_READINESS_FAILED : LEVEL_METADATA_READINESS_CALCULATING;
 		}
+		if (Level_metadata_canonical_plan_summary_valid)
+			Level_metadata_route_revision++;
 		level_metadata_report_progress("route_planning", 1, 1);
 		level_metadata_visibility_checkpoint_flush();
 		level_metadata_trace_wall_shot_diagnostics();
+#ifdef __ANDROID__
+		planning_finished_us = android_profile_monotonic_us();
+		debug_log(
+		    DLOG_PROFILING,
+		    "route_metadata_phases level=%d mode=%s refresh_us=%lld "
+		    "snapshot_us=%lld visibility_sync_us=%lld summary_us=%lld "
+		    "planning_us=%lld",
+		    Current_level_num,
+		    Level_metadata_expensive_planning_allowed ? "analyze" : "prepare",
+		    refresh_finished_us - rescan_started_us,
+		    snapshot_finished_us - refresh_finished_us,
+		    visibility_finished_us - snapshot_finished_us,
+		    summary_finished_us - visibility_finished_us,
+		    planning_finished_us - summary_finished_us);
+#endif
 	}
 	if (route_only) {
 		char problem[128];
@@ -2535,8 +2601,23 @@ int level_metadata_try_load_pending_cache(void)
 	summary.first_pending_step = -1;
 	summary.first_pending_path_terminal_segment = -1;
 	summary.partial_frontier_segment = -1;
-	if (!level_metadata_analysis_cache_load(&shared_route, &summary))
+	if (!level_metadata_analysis_cache_load(&shared_route, &summary)) {
+#ifdef __ANDROID__
+		if (atomic_load(&Level_metadata_background_result) > 0 &&
+		    !Level_metadata_pending_cache_miss_logged) {
+			debug_log(
+			    DLOG_PROFILING,
+			    "route_metadata cache adoption miss file=%s misses=%u rejections=%u io_errors=%u physfs=%s",
+			    Level_metadata_analysis_cache_summary.filename,
+			    Level_metadata_analysis_cache_summary.misses,
+			    Level_metadata_analysis_cache_summary.rejections,
+			    Level_metadata_analysis_cache_summary.io_errors,
+			    PHYSFS_getLastError());
+			Level_metadata_pending_cache_miss_logged = 1;
+		}
+#endif
 		return 0;
+	}
 	improved =
 	    !Level_metadata_canonical_plan_summary_valid ||
 	    shared_route.route_status == LEVEL_METADATA_ROUTE_OK ||
@@ -2553,6 +2634,15 @@ int level_metadata_try_load_pending_cache(void)
 	                                                                                           : summary.partial_frontier_segment >= 0 ? LEVEL_METADATA_READINESS_PARTIAL
 	                                                                                                                                   : LEVEL_METADATA_READINESS_FAILED;
 	Level_metadata_expensive_planning_allowed = 1;
+	Level_metadata_route_revision++;
+#ifdef __ANDROID__
+	Level_metadata_pending_cache_miss_logged = 0;
+	debug_log(DLOG_PROFILING,
+	          "route_metadata cache adopted file=%s readiness=%s steps=%d",
+	          Level_metadata_analysis_cache_summary.filename,
+	          level_metadata_route_readiness_name(Level_metadata_route_readiness),
+	          shared_route.route_step_count);
+#endif
 	return 1;
 }
 
@@ -2636,6 +2726,16 @@ int level_metadata_get_visibility_cache_summary(
 	return 1;
 }
 
+unsigned int level_metadata_get_visibility_checkpoint_sequence(void)
+{
+	return Level_metadata_visibility_checkpoint_sequence;
+}
+
+unsigned int level_metadata_get_route_revision(void)
+{
+	return Level_metadata_route_revision;
+}
+
 int level_metadata_get_route_analysis_cache_summary(
     route_analysis_cache_summary *summary)
 {
@@ -2685,6 +2785,8 @@ static void secret_area_scan_current_level(int allow_expensive_planning)
 	int start_segment;
 #ifdef __ANDROID__
 	const long long started_us = android_profile_monotonic_us();
+	long long topology_finished_us;
+	long long secret_scan_finished_us;
 #endif
 
 	secret_area_trace("start");
@@ -2693,6 +2795,9 @@ static void secret_area_scan_current_level(int allow_expensive_planning)
 	Level_metadata_objective_mode = LEVEL_METADATA_OBJECTIVES_OFF;
 	Level_metadata_topology_valid = 0;
 	secret_area_ensure_level_topology();
+#ifdef __ANDROID__
+	topology_finished_us = android_profile_monotonic_us();
+#endif
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
@@ -2746,16 +2851,23 @@ static void secret_area_scan_current_level(int allow_expensive_planning)
 	level_metadata_report_progress("secret_areas", 0, 1);
 	secret_area_scan_level(&view, &Secret_area_state);
 	level_metadata_report_progress("secret_areas", 1, 1);
+#ifdef __ANDROID__
+	secret_scan_finished_us = android_profile_monotonic_us();
+#endif
 	level_metadata_rescan_current_level();
 #ifdef __ANDROID__
 	debug_log(
 	    DLOG_PROFILING,
 	    "route_metadata level=%d mode=%s readiness=%s elapsed_us=%lld "
+	    "topology_us=%lld secret_scan_us=%lld metadata_us=%lld "
 	    "cache_hits=%u cache_misses=%u fvi=%u visibility_entries=%d",
 	    Current_level_num,
 	    allow_expensive_planning ? "analyze" : "prepare",
 	    level_metadata_route_readiness_name(Level_metadata_route_readiness),
 	    android_profile_monotonic_us() - started_us,
+	    topology_finished_us - started_us,
+	    secret_scan_finished_us - topology_finished_us,
+	    android_profile_monotonic_us() - secret_scan_finished_us,
 	    Level_metadata_analysis_cache_summary.hits,
 	    Level_metadata_analysis_cache_summary.misses,
 	    Level_metadata_analysis_fvi_count,
@@ -2774,6 +2886,7 @@ void secret_area_prepare_current_level(void)
 #ifdef __ANDROID__
 	android_route_metadata_invalidate_pending();
 	atomic_store(&Level_metadata_background_result, 0);
+	Level_metadata_pending_cache_miss_logged = 0;
 #endif
 	secret_area_scan_current_level(0);
 }
