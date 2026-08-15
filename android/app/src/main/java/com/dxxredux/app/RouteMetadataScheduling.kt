@@ -7,7 +7,7 @@ import java.io.RandomAccessFile
 import java.util.Locale
 
 // Keep in sync with ROUTE_ANALYSIS_CACHE_GENERATION in route_analysis_cache.h.
-internal const val ROUTE_METADATA_CACHE_GENERATION = 2
+internal const val ROUTE_METADATA_CACHE_GENERATION = 3
 
 internal object RouteMetadataDiagnostics {
     fun log(message: String) {

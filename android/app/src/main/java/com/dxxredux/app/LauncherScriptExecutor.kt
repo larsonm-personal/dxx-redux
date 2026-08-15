@@ -1009,6 +1009,7 @@ class LauncherScriptExecutor(
                     .put("guidebot_accessible", row.guidebotAccessible)
                     .put("route_status", row.routeStatus)
                     .put("route_steps", levelMetadataRouteStepsJson(row.routeSteps))
+                    .put("replacements", levelMetadataReplacementsJson(row.replacements))
             if (row.guidebotPlacementNote.isNotBlank()) {
                 rowJson.put("guidebot_placement_note", row.guidebotPlacementNote)
             }
@@ -1081,6 +1082,20 @@ class LauncherScriptExecutor(
                 item.put("opens", opens)
             }
             array.put(item)
+        }
+        return array
+    }
+
+    private fun levelMetadataReplacementsJson(replacements: List<LevelMetadataReplacement>): JSONArray {
+        val array = JSONArray()
+        replacements.forEach { replacement ->
+            array.put(
+                JSONObject()
+                    .put("kind", replacement.kind)
+                    .put("label", replacement.label)
+                    .put("base_game", replacement.baseGame)
+                    .put("mod", replacement.mod),
+            )
         }
         return array
     }

@@ -140,7 +140,7 @@ class RouteMetadataSchedulingTest {
             "job",
             RouteMetadataAttemptAssessment(
                 status = RouteMetadataLedgerStatus.PARTIAL,
-                cacheFile = "route-cache/g2/example.bin",
+                cacheFile = "route-cache/g3/example.bin",
                 progressToken = "partial|12",
                 failureKind = "",
                 failureFingerprint = "",

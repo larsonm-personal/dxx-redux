@@ -324,6 +324,13 @@ internal data class LevelMetadataRouteStep(
     val opens: List<LevelMetadataRouteOpenLink> = emptyList(),
 )
 
+internal data class LevelMetadataReplacement(
+    val kind: String,
+    val label: String,
+    val baseGame: Int,
+    val mod: Int,
+)
+
 internal data class LevelMetadataLevelRow(
     val levelNum: Int,
     val secret: Boolean,
@@ -357,6 +364,7 @@ internal data class LevelMetadataLevelRow(
     val status: String,
     val problems: List<String>,
     val notes: List<String>,
+    val replacements: List<LevelMetadataReplacement> = emptyList(),
 )
 
 internal data class LevelMetadataResult(
@@ -413,6 +421,7 @@ internal data class LevelMetadataResult(
                                 status = row.optString("status", "ok"),
                                 problems = row.optStringList("problems"),
                                 notes = row.optStringList("notes"),
+                                replacements = row.optReplacements("replacements"),
                             ),
                         )
                     }
@@ -2169,6 +2178,26 @@ private fun JSONObject.optRouteSteps(name: String): List<LevelMetadataRouteStep>
                                 )
                             }
                         },
+                ),
+            )
+        }
+    }
+}
+
+private fun JSONObject.optReplacements(name: String): List<LevelMetadataReplacement> {
+    val array = optJSONArray(name) ?: return emptyList()
+    return buildList {
+        for (index in 0 until array.length()) {
+            val replacement = array.optJSONObject(index) ?: continue
+            val baseGame = replacement.optInt("base_game")
+            val mod = replacement.optInt("mod")
+            if (baseGame == mod) continue
+            add(
+                LevelMetadataReplacement(
+                    kind = replacement.optString("kind"),
+                    label = replacement.optString("label"),
+                    baseGame = baseGame,
+                    mod = mod,
                 ),
             )
         }

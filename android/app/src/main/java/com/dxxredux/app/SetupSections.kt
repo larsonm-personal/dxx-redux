@@ -2867,11 +2867,52 @@ private fun LevelMetadataResultContent(
     result.diagnostics.forEach { diagnostic ->
         ModDetailLine(diagnostic)
     }
+    val replacements = result.levels.flatMap { it.replacements }.distinct()
+    if (replacements.isNotEmpty()) {
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        ModDetailSectionTitle("Replacements")
+        LevelMetadataReplacementsTable(replacements)
+    }
     if (result.levels.isEmpty()) return
 
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
     ModDetailSectionTitle("Levels")
     LevelMetadataTable(result.levels, target, previewPreparing, previewError, onPreview)
+}
+
+@Composable
+private fun LevelMetadataReplacementsTable(replacements: List<LevelMetadataReplacement>) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text("", modifier = Modifier.weight(1f))
+        Text(
+            "Base game",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.width(92.dp),
+        )
+        Text(
+            "Mod",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.width(92.dp),
+        )
+    }
+    HorizontalDivider(modifier = Modifier.padding(bottom = 2.dp))
+    replacements.forEach { replacement ->
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+            Text(replacement.label, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            Text(
+                formatLevelMetadataReplacement(replacement, replacement.baseGame),
+                fontSize = 11.sp,
+                modifier = Modifier.width(92.dp),
+            )
+            Text(
+                formatLevelMetadataReplacement(replacement, replacement.mod),
+                fontSize = 11.sp,
+                modifier = Modifier.width(92.dp),
+            )
+        }
+    }
 }
 
 @Composable
@@ -3121,6 +3162,15 @@ private fun formatLevelMetadataLevelNumber(row: LevelMetadataLevelRow): String =
         "S${-row.levelNum}"
     } else {
         row.levelNum.toString()
+    }
+
+internal fun formatLevelMetadataReplacement(
+    replacement: LevelMetadataReplacement,
+    value: Int,
+): String =
+    when (replacement.kind) {
+        "player_ship_size" -> "%.6f".format(Locale.US, value / 65536.0)
+        else -> value.toString()
     }
 
 private fun formatLevelMetadataVolumeMultiplier(value: Double): String {

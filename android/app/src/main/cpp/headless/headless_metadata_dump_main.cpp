@@ -943,7 +943,8 @@ static void count_level_objects(int *robots, int *hostages)
 	}
 }
 
-static nlohmann::ordered_json serialize_current_level(int level_num, const char *level_file)
+static nlohmann::ordered_json serialize_current_level(
+    int level_num, const char *level_file, int base_player_ship_radius)
 {
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
 	const secret_area_state *state = secret_area_get_state();
@@ -987,6 +988,19 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	result["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	result["route_steps"] = serialize_route_steps(metadata);
+#ifdef DXX_BUILD_DESCENT_II
+	result["replacements"] = nlohmann::ordered_json::array();
+	if (base_player_ship_radius > 0 && Player_ship &&
+	    Player_ship->model_num >= 0 && Player_ship->model_num < N_polygon_models &&
+	    Polygon_models[Player_ship->model_num].rad != base_player_ship_radius) {
+		result["replacements"].push_back({
+		    { "kind", "player_ship_size" },
+		    { "label", "Player ship size" },
+		    { "base_game", base_player_ship_radius },
+		    { "mod", Polygon_models[Player_ship->model_num].rad },
+		});
+	}
+#endif
 	for (int index = 0; index < total; ++index)
 		secrets.push_back(serialize_secret(*state, state->secrets[index]));
 	result["secrets"] = secrets;
@@ -1042,6 +1056,7 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 {
 	const secret_area_state *state;
 	int total;
+	int base_player_ship_radius = 0;
 
 	if (timing) {
 		timing->begin_total();
@@ -1070,7 +1085,7 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	trace_wall_inventory(level_num, level_file);
 	Current_level_num = level_num;
 #ifdef DXX_BUILD_DESCENT_II
-	load_level_robots_file(level_file);
+	base_player_ship_radius = load_level_robots_file(level_file);
 #endif
 	if (coop_start_range)
 		coop_start_range->add(count_loaded_coop_start_objects());
@@ -1102,7 +1117,8 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	}
 	if (timing)
 		timing->begin("serialize_output");
-	levels.push_back(serialize_current_level(level_num, level_file));
+	levels.push_back(serialize_current_level(
+	    level_num, level_file, base_player_ship_radius));
 	if (timing) {
 		timing->finish("serialize_output");
 		timing->finish_total();

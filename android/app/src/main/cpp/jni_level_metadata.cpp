@@ -904,7 +904,8 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 	return notes;
 }
 
-static json serialize_current_level_row(int level_num, const char *level_file)
+static json serialize_current_level_row(int level_num, const char *level_file,
+                                        int base_player_ship_radius)
 {
 	const secret_area_state *secret_state = secret_area_get_state();
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
@@ -951,6 +952,19 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	row["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	row["route_steps"] = serialize_route_steps(metadata);
+#ifdef DXX_BUILD_DESCENT_II
+	row["replacements"] = json::array();
+	if (base_player_ship_radius > 0 && Player_ship &&
+	    Player_ship->model_num >= 0 && Player_ship->model_num < N_polygon_models &&
+	    Polygon_models[Player_ship->model_num].rad != base_player_ship_radius) {
+		row["replacements"].push_back({
+		    { "kind", "player_ship_size" },
+		    { "label", "Player ship size" },
+		    { "base_game", base_player_ship_radius },
+		    { "mod", Polygon_models[Player_ship->model_num].rad },
+		});
+	}
+#endif
 	row["route_cache_file"] =
 	    level_metadata_get_route_analysis_cache_summary(&cache_summary) ? cache_summary.filename : "";
 	if (level_metadata_get_visibility_cache_summary(&visibility_summary))
@@ -1070,6 +1084,8 @@ static LevelScanStatus scan_level(const json &request, json &levels,
                                   int completed, int total,
                                   int *coop_starts)
 {
+	int base_player_ship_radius = 0;
+
 	write_checkpoint_progress(request, "level", level_file ? level_file : "",
 	                          completed, total);
 	breadcrumb_metadata_level(request, level_num, level_file);
@@ -1087,7 +1103,7 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	}
 	Current_level_num = level_num;
 #ifdef DXX_BUILD_DESCENT_II
-	load_level_robots_file(level_file);
+	base_player_ship_radius = load_level_robots_file(level_file);
 #endif
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();
@@ -1119,7 +1135,8 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	level_metadata_set_analysis_fvi_limit(0);
 	level_metadata_set_cancel_callback(NULL, NULL);
 	level_metadata_set_progress_callback(NULL, NULL);
-	levels.push_back(serialize_current_level_row(level_num, level_file));
+	levels.push_back(serialize_current_level_row(
+	    level_num, level_file, base_player_ship_radius));
 	write_checkpoint_progress(request, "level_done",
 	                          level_file ? level_file : "",
 	                          completed + 1, total);
