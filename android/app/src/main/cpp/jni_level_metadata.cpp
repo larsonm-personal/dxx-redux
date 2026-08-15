@@ -476,6 +476,9 @@ class LevelMetadataRequestMounts
 
 		if (finished)
 			return 1;
+#ifdef DXX_BUILD_DESCENT_II
+		reset_level_robots_file();
+#endif
 		if (mission_loaded && Current_mission)
 			free_mission();
 		Current_mission = NULL;

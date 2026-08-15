@@ -817,16 +817,24 @@ void load_robot_replacements(char *level_name);
 int read_hamfile();
 extern int Robot_replacements_loaded;
 
+void reset_level_robots_file(void)
+{
+	if (Robot_replacements_loaded) {
+		int load_mission_ham();
+		free_polygon_models();
+		if (Current_mission)
+			load_mission_ham();
+		else
+			read_hamfile();
+		Robot_replacements_loaded = 0;
+	}
+}
+
 int load_level_robots_file(const char *level_name)
 {
 	int base_player_ship_radius;
 
-	if (Robot_replacements_loaded) {
-		int load_mission_ham();
-		free_polygon_models();
-		load_mission_ham();
-		Robot_replacements_loaded = 0;
-	}
+	reset_level_robots_file();
 	base_player_ship_radius = Polygon_models[Player_ship->model_num].rad;
 	load_robot_replacements((char *) level_name);
 	Robot_replacements_loaded |= multi_change_weapon_info();

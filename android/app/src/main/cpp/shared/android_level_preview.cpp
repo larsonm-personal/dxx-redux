@@ -136,11 +136,16 @@ static unsigned long long Robot_preview_actual_weapon_renders;
 static unsigned long long Robot_preview_fallback_weapon_renders;
 static unsigned long long Robot_preview_mines_dropped;
 static unsigned long long Robot_preview_projectiles_retired_offscreen;
+static unsigned long long Robot_preview_homing_reversals;
 static unsigned long long Robot_preview_projectile_sequence;
 static fix Robot_preview_normal_view_radius;
 static fix Robot_preview_large_view_radius;
 static fix Robot_preview_view_radius;
+static int Robot_preview_scale_reference_robot = -1;
+static fix Robot_preview_camera_scale = F1_0;
 static const char *Robot_preview_camera_tier = "normal";
+static fix Robot_preview_last_projectile_render_size;
+static fix Robot_preview_last_projectile_render_scale = F1_0;
 static vms_vector Robot_preview_last_projectile_origin;
 static vms_vector Robot_preview_last_projectile_direction;
 static fix Robot_preview_last_projectile_initial_speed;
@@ -991,6 +996,7 @@ static void robot_preview_update_projectiles(void)
 			continue;
 		const weapon_info *weapon = &Weapon_info[projectile.weapon];
 		if (weapon->homing_flag && projectile.lifeleft < weapon->lifetime - F1_0 / 2) {
+			const fix previous_velocity_x = projectile.velocity.x;
 			vms_vector desired;
 			vm_vec_sub(&desired, &target, &projectile.position);
 			vms_vector velocity = projectile.velocity;
@@ -1007,6 +1013,8 @@ static void robot_preview_update_projectiles(void)
 				vm_vec_add2(&velocity, &desired);
 			vm_vec_normalize_quick(&velocity);
 			vm_vec_copy_scale(&projectile.velocity, &velocity, speed);
+			Robot_preview_homing_reversals +=
+			    previous_velocity_x > 0 && projectile.velocity.x < 0;
 		}
 		if (weapon->drag) {
 			int count = ROBOT_PREVIEW_FRAME_TIME / ROBOT_PREVIEW_PHYSICS_TIME;
@@ -1032,7 +1040,9 @@ static void robot_preview_update_projectiles(void)
 		    fixmul(ROBOT_PREVIEW_FRAME_TIME, display_scale));
 		projectile.lifeleft -= ROBOT_PREVIEW_FRAME_TIME;
 		++Robot_preview_projectile_updates;
-		if (!projectile.mine && vm_vec_dist_quick(&projectile.position, &target) <= radius / 2) {
+		const int reached_homing_target = weapon->homing_flag && projectile.position.x >= target.x;
+		if (!projectile.mine &&
+		    (reached_homing_target || vm_vec_dist_quick(&projectile.position, &target) <= radius / 2)) {
 			if (projectile.lifeleft > 0)
 				++Robot_preview_projectile_hits;
 			projectile.active = 0;
@@ -1077,6 +1087,50 @@ static int robot_preview_projectile_is_offscreen(
 	       abs(position.y) > position.z + visual_radius;
 }
 
+static fix robot_preview_projectile_render_scale(const weapon_info *weapon, int mine)
+{
+#ifndef DXX_BUILD_DESCENT_II
+	const fix minimum_size = Robot_preview_view_radius / 5;
+	const fix minimum_scale = F1_0 * 3 / 2;
+	if (mine && weapon->model_num >= 0 && weapon->model_num < N_polygon_models) {
+		const fix radius = Polygon_models[weapon->model_num].rad;
+		return radius > 0 ? (std::max) (minimum_scale, fixdiv(minimum_size, radius))
+		                  : minimum_scale;
+	}
+	if (weapon->render_type == WEAPON_RENDER_VCLIP) {
+		const int vclip = weapon->weapon_vclip;
+		if (vclip >= 0 && vclip < VCLIP_MAXNUM && Vclip[vclip].num_frames > 0) {
+			const int bitmap_index = Vclip[vclip].frames[0].index;
+			if (bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES) {
+				const grs_bitmap *bitmap = &GameBitmaps[bitmap_index];
+				const int largest = (std::max) (bitmap->bm_w, bitmap->bm_h);
+				const int smallest = (std::min) (bitmap->bm_w, bitmap->bm_h);
+				if (smallest > 0 && largest > smallest * 2)
+					return F1_0;
+			}
+		}
+		return weapon->blob_size > 0
+		           ? (std::max) (minimum_scale, fixdiv(minimum_size, weapon->blob_size))
+		           : minimum_scale;
+	}
+	if (weapon->render_type == WEAPON_RENDER_BLOB && weapon->bitmap.index >= 0 &&
+	    weapon->bitmap.index < MAX_BITMAP_FILES) {
+		const grs_bitmap *bitmap = &GameBitmaps[weapon->bitmap.index];
+		const int largest = (std::max) (bitmap->bm_w, bitmap->bm_h);
+		const int smallest = (std::min) (bitmap->bm_w, bitmap->bm_h);
+		if (smallest > 0 && largest <= smallest * 2 && weapon->blob_size > 0 &&
+		    weapon->blob_size < minimum_size)
+			return (std::max) (minimum_scale, fixdiv(minimum_size, weapon->blob_size));
+		if (smallest > 0 && largest <= smallest * 2)
+			return minimum_scale;
+	}
+#else
+	(void) weapon;
+	(void) mine;
+#endif
+	return F1_0;
+}
+
 static int robot_preview_draw_weapon(
     const robot_preview_projectile *projectile, const vms_vector *robot_position)
 {
@@ -1091,6 +1145,8 @@ static int robot_preview_draw_weapon(
 	};
 	preview_object.lifeleft = projectile->lifeleft;
 	preview_object.size = weapon->blob_size > 0 ? weapon->blob_size : F1_0 / 2;
+	const fix render_scale = robot_preview_projectile_render_scale(weapon, projectile->mine);
+	Robot_preview_last_projectile_render_scale = render_scale;
 	vms_vector direction = projectile->velocity;
 	if (!direction.x && !direction.y && !direction.z)
 		direction.x = F1_0;
@@ -1099,12 +1155,18 @@ static int robot_preview_draw_weapon(
 	switch (weapon->render_type) {
 		case WEAPON_RENDER_LASER:
 		case WEAPON_RENDER_BLOB:
+			preview_object.size = fixmul(preview_object.size, render_scale);
+			Robot_preview_last_projectile_render_size = preview_object.size;
 			draw_object_blob(&preview_object, weapon->bitmap);
 			return 1;
 		case WEAPON_RENDER_POLYMODEL: {
 			const int model = weapon->model_num;
 			if (model < 0 || model >= N_polygon_models)
 				return 0;
+			Robot_preview_last_projectile_render_size =
+			    fixmul(Polygon_models[model].rad, render_scale);
+			if (render_scale != F1_0)
+				vm_vec_scale(&preview_object.pos, fixdiv(F1_0, render_scale));
 			g3s_lrgb light = { F1_0, F1_0, F1_0 };
 			draw_polygon_model(
 			    &preview_object.pos, &preview_object.orient, NULL, model, 0, light, NULL, NULL);
@@ -1112,9 +1174,11 @@ static int robot_preview_draw_weapon(
 		}
 		case WEAPON_RENDER_VCLIP: {
 			const int vclip = weapon->weapon_vclip;
-			if (vclip < 0 || vclip >= Num_vclips || Vclip[vclip].num_frames <= 0 ||
+			if (vclip < 0 || vclip >= VCLIP_MAXNUM || Vclip[vclip].num_frames <= 0 ||
 			    Vclip[vclip].play_time <= 0)
 				return 0;
+			preview_object.size = fixmul(preview_object.size, render_scale);
+			Robot_preview_last_projectile_render_size = preview_object.size;
 			fix frame_time = projectile->lifeleft % Vclip[vclip].play_time;
 			if (frame_time < 0)
 				frame_time += Vclip[vclip].play_time;
@@ -1260,6 +1324,28 @@ static int robot_preview_uses_large_camera(int number)
 	return Robot_info[number].boss_flag != 0;
 }
 
+static int robot_preview_scale_reference(int number)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	switch (number) {
+		case 5:
+		case 19:
+			return 19;
+		case 6:
+			return 0;
+		case 18:
+			return 1;
+		case 54:
+			return 40;
+		case 55:
+			return 25;
+	}
+#else
+	(void) number;
+#endif
+	return -1;
+}
+
 static void robot_preview_configure_camera_tiers(void)
 {
 	Robot_preview_normal_view_radius = robot_preview_model_radius(ROBOT_PREVIEW_SUPER_HULK);
@@ -1289,6 +1375,18 @@ static int robot_preview_configure_robot(int number)
 	} else {
 		Robot_preview_camera_tier = "normal";
 		Robot_preview_view_radius = Robot_preview_normal_view_radius;
+	}
+	Robot_preview_scale_reference_robot = robot_preview_scale_reference(number);
+	Robot_preview_camera_scale = F1_0;
+	if (Robot_preview_scale_reference_robot >= 0) {
+		const fix reference_radius = robot_preview_model_radius(Robot_preview_scale_reference_robot);
+		const fix model_radius = robot_preview_model_radius(number);
+		if (reference_radius > 0 && model_radius > 0)
+			Robot_preview_view_radius =
+			    fixmuldiv(Robot_preview_view_radius, model_radius, reference_radius);
+		if (Robot_preview_scale_reference_robot == 19)
+			Robot_preview_camera_scale = F1_0 * 4 / 3;
+		Robot_preview_view_radius = fixmul(Robot_preview_view_radius, Robot_preview_camera_scale);
 	}
 	Robot_preview_behavior = robot_preview_find_behavior(number, &Robot_preview_behavior_from_level);
 	Robot_preview_target_distance = (std::max) (i2f(40), Robot_info[number].circle_distance[Robot_preview_difficulty]);
@@ -1482,10 +1580,15 @@ static int run_robot_preview(
 	Robot_preview_fallback_weapon_renders = 0;
 	Robot_preview_mines_dropped = 0;
 	Robot_preview_projectiles_retired_offscreen = 0;
+	Robot_preview_homing_reversals = 0;
 	Robot_preview_projectile_sequence = 0;
+	Robot_preview_last_projectile_render_size = 0;
+	Robot_preview_last_projectile_render_scale = F1_0;
 	Robot_preview_normal_view_radius = 0;
 	Robot_preview_large_view_radius = 0;
 	Robot_preview_view_radius = 0;
+	Robot_preview_scale_reference_robot = -1;
+	Robot_preview_camera_scale = F1_0;
 	Robot_preview_camera_tier = "normal";
 	Robot_preview_navigation_numbers.clear();
 	Robot_preview_attack_was_enabled = Robot_preview_attack_enabled.load(std::memory_order_relaxed);
@@ -1827,6 +1930,13 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "boss", robot->boss_flag != 0 },
 			{ "camera_tier", Robot_preview_camera_tier },
 			{ "camera_view_radius", f2fl(Robot_preview_view_radius) },
+			{ "scale_reference_robot", Robot_preview_scale_reference_robot },
+			{ "scale_reference_radius", f2fl(robot_preview_model_radius(
+			                                Robot_preview_scale_reference_robot)) },
+			{ "camera_scale", f2fl(Robot_preview_camera_scale) },
+			{ "display_radius_ratio", f2fl(fixdiv(
+			                              Polygon_models[Robot_preview_model].rad,
+			                              Robot_preview_view_radius)) },
 			{ "normal_camera_view_radius", f2fl(Robot_preview_normal_view_radius) },
 			{ "large_camera_view_radius", f2fl(Robot_preview_large_view_radius) },
 			{ "palette_ready", Level_preview_palette_ready != 0 },
@@ -1865,6 +1975,9 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "active_mines", robot_preview_active_mines() },
 			{ "max_active_mines", ROBOT_PREVIEW_MAX_ACTIVE_MINES },
 			{ "projectiles_retired_offscreen", Robot_preview_projectiles_retired_offscreen },
+			{ "homing_direction_reversals", Robot_preview_homing_reversals },
+			{ "last_projectile_render_size", f2fl(Robot_preview_last_projectile_render_size) },
+			{ "last_projectile_render_scale", f2fl(Robot_preview_last_projectile_render_scale) },
 			{ "last_projectile_initial_speed", f2fl(Robot_preview_last_projectile_initial_speed) },
 			{ "projectile_display_distance", f2fl(ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE) },
 			{ "last_projectile_origin", json::array({ f2fl(Robot_preview_last_projectile_origin.x),

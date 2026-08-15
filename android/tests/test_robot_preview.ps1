@@ -10,6 +10,9 @@ param(
     [int]$ExpectedWeapon = -1,
     [ValidateSet("", "normal", "large")]
     [string]$ExpectedCameraTier = "",
+    [int]$ExpectedScaleReference = -2,
+    [double]$ExpectedMinProjectileRenderScale = 0,
+    [double]$ExpectedMaxProjectileRenderScale = 0,
     [int]$Seed = 6042,
     [int]$TimeoutSeconds = 180,
     [string]$Serial = "emulator-5554"
@@ -166,6 +169,16 @@ try {
     if ($ExpectedCameraTier -and $initial.level_preview.camera_tier -ne $ExpectedCameraTier) {
         throw "Expected camera tier '$ExpectedCameraTier', got '$($initial.level_preview.camera_tier)'"
     }
+    if ($ExpectedScaleReference -ge -1 -and
+        [int]$initial.level_preview.scale_reference_robot -ne $ExpectedScaleReference) {
+        throw "Expected scale reference $ExpectedScaleReference, got $($initial.level_preview.scale_reference_robot)"
+    }
+    if ($ExpectedScaleReference -ge 0) {
+        $expectedDisplayRatio = [double]$initial.level_preview.scale_reference_radius /
+        ([double]$initial.level_preview.normal_camera_view_radius * [double]$initial.level_preview.camera_scale)
+        Assert-Near -Actual ([double]$initial.level_preview.display_radius_ratio) `
+            -Expected $expectedDisplayRatio -Description "Canonical robot display ratio"
+    }
 
     $robotCount = [int]$initial.level_preview.robot_count
     $currentNavigationIndex = 0
@@ -187,7 +200,9 @@ try {
     if (-not $navigated -or [int]$navigated.level_preview.robot_number -ne $nextRobot) {
         throw "Robot preview did not advance to the next robot"
     }
-    if ($navigated.level_preview.camera_tier -eq $initial.level_preview.camera_tier -and
+    if ([int]$navigated.level_preview.scale_reference_robot -lt 0 -and
+        [int]$initial.level_preview.scale_reference_robot -lt 0 -and
+        $navigated.level_preview.camera_tier -eq $initial.level_preview.camera_tier -and
         [Math]::Abs(
             [double]$navigated.level_preview.camera_view_radius -
             [double]$initial.level_preview.camera_view_radius
@@ -329,6 +344,17 @@ try {
     if ($ExpectedWeapon -ge 0 -and [long]$preview.actual_weapon_renders -le 0) {
         throw "Expected weapon $ExpectedWeapon did not produce an actual projectile render"
     }
+    if ($preview.weapon.homing -and [long]$preview.homing_direction_reversals -ne 0) {
+        throw "Homing projectile reversed direction in the preview"
+    }
+    if ($ExpectedMinProjectileRenderScale -gt 0 -and
+        [double]$preview.last_projectile_render_scale -lt $ExpectedMinProjectileRenderScale) {
+        throw "Expected projectile render scale of at least $ExpectedMinProjectileRenderScale, got $($preview.last_projectile_render_scale)"
+    }
+    if ($ExpectedMaxProjectileRenderScale -gt 0 -and
+        [double]$preview.last_projectile_render_scale -gt $ExpectedMaxProjectileRenderScale) {
+        throw "Expected projectile render scale of at most $ExpectedMaxProjectileRenderScale, got $($preview.last_projectile_render_scale)"
+    }
     if ($script:attackState.level_preview.attack_role -eq "ranged" -and
         [int]$script:attackState.level_preview.weapon.speed_variance -eq 128 -and
         [double]$script:attackState.level_preview.weapon.thrust -eq 0 -and
@@ -366,6 +392,40 @@ try {
             $direction -ne $firstDirection
         }
         if (-not $orientedShot) { throw "Projectile direction did not follow robot rotation" }
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "attack", "--ez", "enabled", "false"
+        ) | Out-Null
+        Start-Sleep -Milliseconds 300
+    }
+
+    if ($preview.weapon.homing) {
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "reset"
+        ) | Out-Null
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "rotate", "--ei", "heading", "-16384", "--ei", "pitch", "0"
+        ) | Out-Null
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "attack", "--ez", "enabled", "true"
+        ) | Out-Null
+        $stageRightHit = Wait-ForCondition -Description "stage-right homing projectile exit" -TimeoutSec 10 `
+            -PollMs 300 -Condition {
+            Adb -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE
+            ) | Out-Null
+            Start-Sleep -Milliseconds 150
+            $script:homingState = Read-AppJson -Path $introspectionFile
+            return $script:homingState -and
+            [double]$script:homingState.level_preview.last_projectile_direction[0] -gt 0.8 -and
+            [long]$script:homingState.level_preview.projectile_hits -gt 0
+        }
+        if (-not $stageRightHit -or [long]$script:homingState.level_preview.homing_direction_reversals -ne 0) {
+            throw "Stage-right homing projectile did not exit without reversing"
+        }
         Adb -AdbArgs @(
             "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
             "--es", "command", "attack", "--ez", "enabled", "false"

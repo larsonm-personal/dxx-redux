@@ -1,0 +1,26 @@
+// TEST: Reused D2 metadata worker restores HXM replacements between missions
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "obsidian.zip", "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce", "target": "files/mission_zip_batch_cache"},
+            {"file": "kcxf2rmv11.7z", "sha256": "c2aa754df2462376cd77b7afb75125c0096ba04f870fcff4d41182995762848f", "target": "files/mission_zip_batch_cache"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
+    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "worker_reuse_obsidian", "display_name": "Obsidian.zip"},
+    {"action": "import_mission_zip", "file": "kcxf2rmv11.7z", "label": "worker_reuse_kcxf2", "display_name": "KCXF2RMv11.7z"},
+    {"action": "analyze_level_metadata_all", "label": "worker_reuse_obsidian", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
+    {"action": "analyze_level_metadata_all", "label": "worker_reuse_kcxf2", "mod_file": "KCXF2RMv11.7z", "game": "d2", "status": "ok", "min_total_levels": 8},
+    {"action": "log", "message": "=== TEST: D2 HXM metadata worker reuse -- PASS ==="}
+]

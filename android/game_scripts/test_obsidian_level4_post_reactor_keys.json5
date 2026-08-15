@@ -1,0 +1,100 @@
+// TEST: Obsidian level 4 Guide-Bot routes through post-reactor keys before exit
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
+            {"file": "obsidian.zip", "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce", "target": "files/mission_zip_batch_cache"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
+    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level4", "display_name": "Obsidian.zip"},
+    {"action": "analyze_level_metadata_all", "label": "obsidian_level4", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000, "optional": true},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Obsidian", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace", "post_delay_ms": 100},
+    {"action": "key", "key": "4", "post_delay_ms": 100},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "assert", "expect": {"current_level_num": "4"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "level_metadata_route.status": "ok",
+        "level_metadata_route.step_count": "11",
+        "level_metadata_route.steps[7].key": "blue",
+        "level_metadata_route.steps[9].key": "red",
+        "level_metadata_route.steps[10].kind": "exit"
+    }},
+
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_objective_trigger": "1",
+        "guidebot.route_goal_objective_wall": "26"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "1"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_label": {"contains": "gold key"}
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "player.has_gold_key": "true",
+        "guidebot.route_goal_activation_kind_name": "destroy_reactor"
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_objective_trigger": "3",
+        "guidebot.route_goal_objective_wall": "55"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "3"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_objective_trigger": "22",
+        "guidebot.route_goal_objective_wall": "79"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "22"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_objective_trigger": "7",
+        "guidebot.route_goal_objective_wall": "83"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "7"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_label": {"contains": "blue key"}
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "player.has_blue_key": "true",
+        "guidebot.route_goal_objective_trigger": "12",
+        "guidebot.route_goal_objective_wall": "105"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "12"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_label": {"contains": "red key"}
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "player.has_red_key": "true",
+        "guidebot.route_goal_activation_kind_name": "enter_exit"
+    }},
+    {"action": "log", "message": "=== TEST: Obsidian level 4 post-reactor keys -- PASS ==="}
+]
