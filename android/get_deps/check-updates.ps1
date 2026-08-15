@@ -1846,6 +1846,8 @@ foreach ($item in $selectedInstall) {
     Invoke-InstallSyncForDependency $dep $target
 }
 
+& (Join-Path (Join-Path $scriptDir "helpers") "sync-vscode-java-settings.ps1")
+
 Write-Host ""
 if ($selectedTarget.Count -gt 0) {
     Write-Host "tool_versions.conf and related metadata updated"
