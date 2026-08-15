@@ -1010,6 +1010,7 @@ class LauncherScriptExecutor(
                     .put("route_status", row.routeStatus)
                     .put("route_steps", levelMetadataRouteStepsJson(row.routeSteps))
                     .put("replacements", levelMetadataReplacementsJson(row.replacements))
+                    .put("replacement_groups", levelMetadataReplacementGroupsJson(row.replacementGroups))
             if (row.guidebotPlacementNote.isNotBlank()) {
                 rowJson.put("guidebot_placement_note", row.guidebotPlacementNote)
             }
@@ -1095,6 +1096,43 @@ class LauncherScriptExecutor(
                     .put("label", replacement.label)
                     .put("base_game", replacement.baseGame)
                     .put("mod", replacement.mod),
+            )
+        }
+        return array
+    }
+
+    private fun levelMetadataReplacementGroupsJson(groups: List<LevelMetadataReplacementGroup>): JSONArray {
+        val array = JSONArray()
+        groups.forEach { group ->
+            val items = JSONArray()
+            group.items.forEach { item ->
+                val fields = JSONArray()
+                item.fields.forEach { field ->
+                    fields.put(
+                        JSONObject()
+                            .put("kind", field.kind)
+                            .put("label", field.label)
+                            .put("base_game", field.baseGame)
+                            .put("mod", field.mod)
+                            .put("base_game_text", field.baseGameText)
+                            .put("mod_text", field.modText)
+                            .put("format", field.format),
+                    )
+                }
+                items.put(
+                    JSONObject()
+                        .put("kind", item.kind)
+                        .put("label", item.label)
+                        .put("summary", item.summary)
+                        .put("fields", fields),
+                )
+            }
+            array.put(
+                JSONObject()
+                    .put("kind", group.kind)
+                    .put("label", group.label)
+                    .put("summary", group.summary)
+                    .put("items", items),
             )
         }
         return array

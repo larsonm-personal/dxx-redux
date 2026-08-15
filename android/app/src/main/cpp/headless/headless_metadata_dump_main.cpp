@@ -28,6 +28,7 @@ extern "C" {
 #include "gamesave.h"
 #include "gr.h"
 #include "inferno.h"
+#include "makesig.h"
 #include "messagebox.h"
 #include "mission.h"
 #include "multi.h"
@@ -39,6 +40,7 @@ extern "C" {
 #include "secret_area_scan.h"
 #include "secretarea.h"
 #include "songs.h"
+#include "strutil.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "switch.h"
 #endif
@@ -52,6 +54,8 @@ extern "C" {
 
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
+#include "level_metadata_replacements.hpp"
+static level_metadata_base_definitions Level_metadata_base_definitions = {};
 #endif
 extern "C" void gameseq_init_network_players(void);
 
@@ -283,6 +287,9 @@ static int init_headless_metadata_runtime(int argc, char *argv[], char *error, s
 	PHYSFSX_addArchiveContent();
 	trace_dump_init("gamedata");
 	gamedata_init();
+#ifdef DXX_BUILD_DESCENT_II
+	level_metadata_capture_base_definitions(Level_metadata_base_definitions);
+#endif
 	trace_dump_init("texmerge");
 	texmerge_init(10);
 #ifdef DXX_BUILD_DESCENT_II
@@ -1000,6 +1007,8 @@ static nlohmann::ordered_json serialize_current_level(
 		    { "mod", Polygon_models[Player_ship->model_num].rad },
 		});
 	}
+	result["replacement_groups"] =
+	    level_metadata_serialize_replacement_groups<nlohmann::ordered_json>(Level_metadata_base_definitions, level_file);
 #endif
 	for (int index = 0; index < total; ++index)
 		secrets.push_back(serialize_secret(*state, state->secrets[index]));

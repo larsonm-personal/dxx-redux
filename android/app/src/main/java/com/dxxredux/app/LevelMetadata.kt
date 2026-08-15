@@ -327,8 +327,25 @@ internal data class LevelMetadataRouteStep(
 internal data class LevelMetadataReplacement(
     val kind: String,
     val label: String,
-    val baseGame: Int,
-    val mod: Int,
+    val baseGame: Int = 0,
+    val mod: Int = 0,
+    val baseGameText: String = "",
+    val modText: String = "",
+    val format: String = "integer",
+)
+
+internal data class LevelMetadataReplacementItem(
+    val kind: String,
+    val label: String,
+    val summary: String,
+    val fields: List<LevelMetadataReplacement>,
+)
+
+internal data class LevelMetadataReplacementGroup(
+    val kind: String,
+    val label: String,
+    val summary: String,
+    val items: List<LevelMetadataReplacementItem>,
 )
 
 internal data class LevelMetadataLevelRow(
@@ -365,6 +382,7 @@ internal data class LevelMetadataLevelRow(
     val problems: List<String>,
     val notes: List<String>,
     val replacements: List<LevelMetadataReplacement> = emptyList(),
+    val replacementGroups: List<LevelMetadataReplacementGroup> = emptyList(),
 )
 
 internal data class LevelMetadataResult(
@@ -422,6 +440,7 @@ internal data class LevelMetadataResult(
                                 problems = row.optStringList("problems"),
                                 notes = row.optStringList("notes"),
                                 replacements = row.optReplacements("replacements"),
+                                replacementGroups = row.optReplacementGroups("replacement_groups"),
                             ),
                         )
                     }
@@ -2191,13 +2210,49 @@ private fun JSONObject.optReplacements(name: String): List<LevelMetadataReplacem
             val replacement = array.optJSONObject(index) ?: continue
             val baseGame = replacement.optInt("base_game")
             val mod = replacement.optInt("mod")
-            if (baseGame == mod) continue
+            val baseGameText = replacement.optString("base_game_text")
+            val modText = replacement.optString("mod_text")
+            if (baseGameText.isBlank() && modText.isBlank() && baseGame == mod) continue
             add(
                 LevelMetadataReplacement(
                     kind = replacement.optString("kind"),
                     label = replacement.optString("label"),
                     baseGame = baseGame,
                     mod = mod,
+                    baseGameText = baseGameText,
+                    modText = modText,
+                    format = replacement.optString("format", "integer"),
+                ),
+            )
+        }
+    }
+}
+
+private fun JSONObject.optReplacementGroups(name: String): List<LevelMetadataReplacementGroup> {
+    val array = optJSONArray(name) ?: return emptyList()
+    return buildList {
+        for (groupIndex in 0 until array.length()) {
+            val group = array.optJSONObject(groupIndex) ?: continue
+            val items = group.optJSONArray("items") ?: JSONArray()
+            add(
+                LevelMetadataReplacementGroup(
+                    kind = group.optString("kind"),
+                    label = group.optString("label"),
+                    summary = group.optString("summary"),
+                    items =
+                        buildList {
+                            for (itemIndex in 0 until items.length()) {
+                                val item = items.optJSONObject(itemIndex) ?: continue
+                                add(
+                                    LevelMetadataReplacementItem(
+                                        kind = item.optString("kind"),
+                                        label = item.optString("label"),
+                                        summary = item.optString("summary"),
+                                        fields = item.optReplacements("fields"),
+                                    ),
+                                )
+                            }
+                        },
                 ),
             )
         }

@@ -2867,11 +2867,22 @@ private fun LevelMetadataResultContent(
     result.diagnostics.forEach { diagnostic ->
         ModDetailLine(diagnostic)
     }
-    val replacements = result.levels.flatMap { it.replacements }.distinct()
-    if (replacements.isNotEmpty()) {
+    val replacementGroups =
+        result.levels
+            .flatMap { it.replacementGroups }
+            .groupBy { it.kind }
+            .map { (_, groups) ->
+                val items = groups.flatMap { it.items }.distinct()
+                val summary = "${items.size} ${if (items.size == 1) "change" else "changes"}"
+                groups.first().copy(
+                    summary = summary,
+                    items = items,
+                )
+            }
+    if (replacementGroups.isNotEmpty()) {
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         ModDetailSectionTitle("Replacements")
-        LevelMetadataReplacementsTable(replacements)
+        LevelMetadataReplacementGroups(replacementGroups)
     }
     if (result.levels.isEmpty()) return
 
@@ -2881,36 +2892,82 @@ private fun LevelMetadataResultContent(
 }
 
 @Composable
-private fun LevelMetadataReplacementsTable(replacements: List<LevelMetadataReplacement>) {
+private fun LevelMetadataReplacementGroups(groups: List<LevelMetadataReplacementGroup>) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        groups.forEach { group -> LevelMetadataReplacementGroupRow(group) }
+    }
+}
+
+@Composable
+private fun LevelMetadataReplacementGroupRow(group: LevelMetadataReplacementGroup) {
+    var expanded by remember(group.kind) { mutableStateOf(false) }
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(group.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(group.summary, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (expanded) "Collapse ${group.label}" else "Expand ${group.label}",
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        if (expanded) {
+            if (group.items.isEmpty()) {
+                Text("No changes", fontSize = 11.sp, modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
+            } else {
+                group.items.forEach { item -> LevelMetadataReplacementItemRow(item) }
+            }
+        }
+        HorizontalDivider()
+    }
+}
+
+@Composable
+private fun LevelMetadataReplacementItemRow(item: LevelMetadataReplacementItem) {
+    var expanded by remember(item.kind, item.label) { mutableStateOf(false) }
+    val canExpand = item.fields.isNotEmpty()
+    Column(modifier = Modifier.padding(start = 16.dp)) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (canExpand) Modifier.clickable { expanded = !expanded } else Modifier)
+                    .padding(vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(item.label, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            Text(
+                item.summary.ifBlank { "${item.fields.size} ${if (item.fields.size == 1) "change" else "changes"}" },
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (canExpand) {
+                Icon(
+                    if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Collapse ${item.label}" else "Expand ${item.label}",
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+        if (expanded) LevelMetadataReplacementFields(item.fields)
+    }
+}
+
+@Composable
+private fun LevelMetadataReplacementFields(fields: List<LevelMetadataReplacement>) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Text("", modifier = Modifier.weight(1f))
-        Text(
-            "Base game",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.width(92.dp),
-        )
-        Text(
-            "Mod",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.width(92.dp),
-        )
+        Text("Base game", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(82.dp))
+        Text("Mod", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(82.dp))
     }
-    HorizontalDivider(modifier = Modifier.padding(bottom = 2.dp))
-    replacements.forEach { replacement ->
+    fields.forEach { field ->
         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-            Text(replacement.label, fontSize = 11.sp, modifier = Modifier.weight(1f))
-            Text(
-                formatLevelMetadataReplacement(replacement, replacement.baseGame),
-                fontSize = 11.sp,
-                modifier = Modifier.width(92.dp),
-            )
-            Text(
-                formatLevelMetadataReplacement(replacement, replacement.mod),
-                fontSize = 11.sp,
-                modifier = Modifier.width(92.dp),
-            )
+            Text(field.label, fontSize = 10.sp, modifier = Modifier.weight(1f))
+            Text(formatLevelMetadataReplacement(field, true), fontSize = 10.sp, modifier = Modifier.width(82.dp))
+            Text(formatLevelMetadataReplacement(field, false), fontSize = 10.sp, modifier = Modifier.width(82.dp))
         }
     }
 }
@@ -3168,10 +3225,28 @@ internal fun formatLevelMetadataReplacement(
     replacement: LevelMetadataReplacement,
     value: Int,
 ): String =
-    when (replacement.kind) {
-        "player_ship_size" -> "%.6f".format(Locale.US, value / 65536.0)
-        else -> value.toString()
+    when {
+        replacement.format == "fixed" || replacement.kind == "player_ship_size" -> {
+            "%.6f".format(
+                Locale.US,
+                value / 65536.0,
+            )
+        }
+
+        else -> {
+            value.toString()
+        }
     }
+
+private fun formatLevelMetadataReplacement(
+    replacement: LevelMetadataReplacement,
+    baseGame: Boolean,
+): String {
+    val text = if (baseGame) replacement.baseGameText else replacement.modText
+    return text.ifBlank {
+        formatLevelMetadataReplacement(replacement, if (baseGame) replacement.baseGame else replacement.mod)
+    }
+}
 
 private fun formatLevelMetadataVolumeMultiplier(value: Double): String {
     if (value <= 0.0) return ""

@@ -311,6 +311,7 @@ function ConvertTo-CheckedInLevelJson {
         route_status = $routeStatus
         route_steps = @(Get-ArrayValue (Get-Prop $Level "route_steps" @()))
         replacements = @(Get-ArrayValue (Get-Prop $Level "replacements" @()))
+        replacement_groups = @(Get-ArrayValue (Get-Prop $Level "replacement_groups" @()))
     }
     Add-IfString -Target $row -Name "guidebot_placement_note" -Value (Get-StringProp $Level "guidebot_placement_note")
     Add-IfString -Target $row -Name "guidebot_note" -Value (Get-StringProp $Level "guidebot_note")

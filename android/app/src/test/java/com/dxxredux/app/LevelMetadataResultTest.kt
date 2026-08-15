@@ -83,4 +83,44 @@ class LevelMetadataResultTest {
         assertEquals("4.735001", formatLevelMetadataReplacement(replacement, replacement.mod))
         assertTrue(result.problems.isEmpty())
     }
+
+    @Test
+    fun fromJsonReadsNestedReplacementGroups() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "levels": [{
+                    "level_num": 4,
+                    "replacement_groups": [
+                      {"kind":"ship_stats","label":"Ship stats","summary":"1 change","items":[
+                        {"kind":"player_ship","label":"Player ship","fields":[
+                          {"kind":"player_ship_size","label":"Size","base_game":310325,"mod":310313,"format":"fixed"}
+                        ]}
+                      ]},
+                      {"kind":"weapon_balance","label":"Weapon balance","summary":"1 change","items":[
+                        {"kind":"weapon","label":"Weapon 30","fields":[
+                          {"kind":"added","label":"Definition","base_game_text":"Not present","mod_text":"Added"}
+                        ]}
+                      ]},
+                      {"kind":"robot_changes","label":"Robot changes","summary":"No changes","items":[]},
+                      {"kind":"asset_replacements","label":"Texture/model/sound replacements","summary":"1 change","items":[
+                        {"kind":"textures","label":"Textures","summary":"12 replaced","fields":[]}
+                      ]}
+                    ]
+                  }]
+                }
+                """.trimIndent(),
+            )
+
+        val groups = result.levels.single().replacementGroups
+        assertEquals(4, groups.size)
+        assertEquals("fixed", groups[0].items.single().fields.single().format)
+        val added = groups[1].items.single().fields.single()
+        assertEquals("Not present", added.baseGameText)
+        assertEquals("Added", added.modText)
+        assertTrue(groups[2].items.isEmpty())
+        assertEquals("12 replaced", groups[3].items.single().summary)
+    }
 }

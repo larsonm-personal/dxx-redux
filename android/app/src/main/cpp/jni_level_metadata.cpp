@@ -29,6 +29,7 @@ extern "C" {
 #include "gamesave.h"
 #include "gr.h"
 #include "inferno.h"
+#include "makesig.h"
 #include "messagebox.h"
 #include "mission.h"
 #include "object.h"
@@ -38,6 +39,7 @@ extern "C" {
 #include "secret_area_scan.h"
 #include "secretarea.h"
 #include "songs.h"
+#include "strutil.h"
 #include "texmerge.h"
 #include "text.h"
 #include "u_mem.h"
@@ -45,6 +47,8 @@ extern "C" {
 
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
+#include "level_metadata_replacements.hpp"
+static level_metadata_base_definitions Level_metadata_base_definitions = {};
 #endif
 
 using json = nlohmann::ordered_json;
@@ -416,6 +420,9 @@ static int init_levelmeta_runtime(JNIEnv *env, jobject context, const json &requ
 	}
 	PHYSFSX_addArchiveContent();
 	gamedata_init();
+#ifdef DXX_BUILD_DESCENT_II
+	level_metadata_capture_base_definitions(Level_metadata_base_definitions);
+#endif
 	texmerge_init(10);
 #ifdef DXX_BUILD_DESCENT_II
 	{
@@ -964,6 +971,8 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 		    { "mod", Polygon_models[Player_ship->model_num].rad },
 		});
 	}
+	row["replacement_groups"] =
+	    level_metadata_serialize_replacement_groups<json>(Level_metadata_base_definitions, level_file);
 #endif
 	row["route_cache_file"] =
 	    level_metadata_get_route_analysis_cache_summary(&cache_summary) ? cache_summary.filename : "";
