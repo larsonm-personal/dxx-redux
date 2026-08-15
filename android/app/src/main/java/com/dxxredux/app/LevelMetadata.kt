@@ -1442,6 +1442,7 @@ internal object LevelMetadataAnalyzer {
         previewWriteDir: File,
         robotNumber: Int,
         robotLabel: String,
+        robotNumbers: List<Int>,
     ): JSONObject =
         buildPreparedRequestJson(target, requestId, workDir, "dxx-robot-preview-request-v1")
             .put("level_file", row.levelFile)
@@ -1449,6 +1450,7 @@ internal object LevelMetadataAnalyzer {
             .put("secret_level", row.secret)
             .put("robot_number", robotNumber)
             .put("robot_label", robotLabel)
+            .put("robot_numbers", JSONArray(robotNumbers))
             .put("preview_write_dir", previewWriteDir.absolutePath)
 
     internal fun buildBaseRobotPreviewRequestJson(

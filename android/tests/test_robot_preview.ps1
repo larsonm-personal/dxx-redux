@@ -138,9 +138,39 @@ try {
         throw "Robot preview output geometry changed the framebuffer aspect ratio"
     }
 
+    $navigationNumbers = @($initial.level_preview.navigation_numbers)
+    if ($navigationNumbers.Count -ne [int]$initial.level_preview.robot_count -or
+        [int]$initial.level_preview.robot_number -notin $navigationNumbers) {
+        throw "Robot preview did not report a valid navigation list"
+    }
+    if (-not $BaseGame) {
+        $requestState =
+        Read-AppJson -Path "cache/robot_preview/$([string]$selection.request_id)/request.json"
+        $requestedNumbers = @($requestState.robot_numbers)
+        if (-not $requestState -or $requestedNumbers.Count -le 0 -or
+            (@($requestedNumbers | ForEach-Object { [int]$_ }) -join ",") -ne
+            (@($navigationNumbers | ForEach-Object { [int]$_ }) -join ",")) {
+            throw "Mod robot navigation did not match the modified-robot list"
+        }
+    }
+    if ([double]$initial.level_preview.model_radius -le 0 -or
+        [double]$initial.level_preview.camera_view_radius -lt [double]$initial.level_preview.model_radius -or
+        [double]$initial.level_preview.normal_camera_view_radius -le 0 -or
+        [double]$initial.level_preview.large_camera_view_radius -lt
+        [double]$initial.level_preview.normal_camera_view_radius -or
+        $initial.level_preview.camera_tier -notin @("normal", "large")) {
+        throw "Robot preview did not report a valid fixed camera tier"
+    }
+
     $robotCount = [int]$initial.level_preview.robot_count
-    if ($robotCount -le 1) { throw "Robot preview did not report an adjacent robot" }
-    $nextRobot = ([int]$initial.level_preview.robot_number + 1) % $robotCount
+    $currentNavigationIndex = 0
+    for ($index = 0; $index -lt $navigationNumbers.Count; $index++) {
+        if ([int]$navigationNumbers[$index] -eq [int]$initial.level_preview.robot_number) {
+            $currentNavigationIndex = $index
+            break
+        }
+    }
+    $nextRobot = [int]$navigationNumbers[($currentNavigationIndex + 1) % $robotCount]
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
         "--es", "command", "next"
@@ -151,6 +181,13 @@ try {
     $navigated = Read-AppJson -Path $introspectionFile
     if (-not $navigated -or [int]$navigated.level_preview.robot_number -ne $nextRobot) {
         throw "Robot preview did not advance to the next robot"
+    }
+    if ($navigated.level_preview.camera_tier -eq $initial.level_preview.camera_tier -and
+        [Math]::Abs(
+            [double]$navigated.level_preview.camera_view_radius -
+            [double]$initial.level_preview.camera_view_radius
+        ) -gt 0.001) {
+        throw "Robots in the same camera tier used different zoom levels"
     }
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
@@ -176,11 +213,13 @@ try {
             "melee" { [int]$preview.attack_type -ne 0 -and [long]$preview.shots_fired -eq 0 }
             "mine dropper" {
                 $preview.weapon -and [long]$preview.mines_dropped -gt 0 -and
-                [long]$preview.projectile_updates -gt 0 -and [long]$preview.actual_weapon_renders -gt 0
+                [long]$preview.projectile_updates -gt 0 -and
+                ([long]$preview.actual_weapon_renders + [long]$preview.fallback_weapon_renders) -gt 0
             }
             default {
                 $preview.weapon -and [long]$preview.shots_fired -gt 0 -and
-                [long]$preview.projectile_updates -gt 0 -and [long]$preview.actual_weapon_renders -gt 0
+                [long]$preview.projectile_updates -gt 0 -and
+                ([long]$preview.actual_weapon_renders + [long]$preview.fallback_weapon_renders) -gt 0
             }
         }
         return $hasBehavior -and $hasMovementStats -and $hasWeaponFlight
@@ -249,6 +288,35 @@ try {
                     -Expected ([double]$preview.firing_wait2) -Description "Secondary firing interval"
             }
         }
+    }
+
+    if ($preview.attack_role -eq "ranged") {
+        $retiredOffscreen = Wait-ForCondition -Description "off-screen projectile retirement" -TimeoutSec 8 `
+            -PollMs 300 -Condition {
+            Adb -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE
+            ) | Out-Null
+            Start-Sleep -Milliseconds 150
+            $script:attackState = Read-AppJson -Path $introspectionFile
+            return $script:attackState -and
+            [long]$script:attackState.level_preview.projectiles_retired_offscreen -gt 0
+        }
+        if (-not $retiredOffscreen) { throw "Robot projectiles did not retire after leaving the preview" }
+        $preview = $script:attackState.level_preview
+    } elseif ($preview.attack_role -eq "mine dropper") {
+        $mineCap = Wait-ForCondition -Description "two newest preview mines" -TimeoutSec 14 -PollMs 400 -Condition {
+            Adb -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE
+            ) | Out-Null
+            Start-Sleep -Milliseconds 150
+            $script:attackState = Read-AppJson -Path $introspectionFile
+            return $script:attackState -and [long]$script:attackState.level_preview.mines_dropped -ge 3
+        }
+        if (-not $mineCap -or [int]$script:attackState.level_preview.active_mines -ne 2 -or
+            [int]$script:attackState.level_preview.max_active_mines -ne 2) {
+            throw "Mine-dropping robot did not retain exactly its two newest mines"
+        }
+        $preview = $script:attackState.level_preview
     }
     if ($ExpectedWeapon -ge 0 -and [int]$script:attackState.level_preview.weapon.number -ne $ExpectedWeapon) {
         throw "Expected preview weapon $ExpectedWeapon, got $($script:attackState.level_preview.weapon.number)"

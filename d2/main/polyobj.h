@@ -90,7 +90,7 @@ void draw_model_picture(int mn,vms_angvec *orient_angles);
 void draw_model_picture_animated(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles);
 void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset);
 typedef void (*model_picture_extra_drawer)(const vms_vector *model_pos,void *data);
-void draw_model_picture_animated_scene(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset,model_picture_extra_drawer draw_extra,void *data);
+void draw_model_picture_animated_scene(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset,fix view_radius,model_picture_extra_drawer draw_extra,void *data);
 
 // free up a model, getting rid of all its memory
 void free_model(polymodel *po);

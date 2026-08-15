@@ -93,7 +93,7 @@ void draw_model_picture(int mn,vms_angvec *orient_angles);
 void draw_model_picture_animated(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles);
 void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset);
 typedef void (*model_picture_extra_drawer)(const vms_vector *model_pos,void *data);
-void draw_model_picture_animated_scene(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset,model_picture_extra_drawer draw_extra,void *data);
+void draw_model_picture_animated_scene(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset,fix view_radius,model_picture_extra_drawer draw_extra,void *data);
 
 #define MAX_POLYOBJ_TEXTURES 50
 extern grs_bitmap *texture_list[MAX_POLYOBJ_TEXTURES];

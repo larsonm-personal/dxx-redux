@@ -48,6 +48,13 @@ internal object RobotPreviewRequestStore {
         try {
             val previewWriteDir = File(workDir, "runtime-write").canonicalFile
             check(previewWriteDir.mkdir()) { "Could not create isolated robot preview write directory" }
+            val robotNumbers =
+                row.replacementGroups
+                    .flatMap { group -> group.items }
+                    .filter { replacement -> replacement.kind == "robot" && replacement.number >= 0 }
+                    .map { replacement -> replacement.number }
+                    .distinct()
+                    .sorted()
             val request =
                 LevelMetadataAnalyzer.buildRobotPreviewRequestJson(
                     target,
@@ -57,6 +64,7 @@ internal object RobotPreviewRequestStore {
                     previewWriteDir,
                     item.number,
                     robotLabel,
+                    robotNumbers,
                 )
             val requestFile =
                 OwnedCacheDirectories.writeUtf8Atomically(
@@ -137,6 +145,19 @@ internal object RobotPreviewRequestStore {
         require(dataDir.isDirectory) { "Robot preview base data directory is missing" }
         val robotNumber = request.optInt("robot_number", -1)
         require(robotNumber >= 0) { "Robot preview number is invalid" }
+        request.optJSONArray("robot_numbers")?.let { numbers ->
+            val navigationNumbers =
+                List(numbers.length()) { index -> numbers.optInt(index, -1) }
+            require(navigationNumbers.isNotEmpty() && navigationNumbers.all { it >= 0 }) {
+                "Robot preview navigation list is invalid"
+            }
+            require(navigationNumbers.distinct().size == navigationNumbers.size) {
+                "Robot preview navigation list contains duplicates"
+            }
+            require(robotNumber in navigationNumbers) {
+                "Robot preview navigation list does not contain the selected robot"
+            }
+        }
         return RobotPreviewRuntimeRequest(
             expectedGame,
             requestFile,
