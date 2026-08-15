@@ -88,6 +88,7 @@ int read_model_guns(char *filename,vms_vector *gun_points, vms_vector *gun_dirs,
 // canvas.
 void draw_model_picture(int mn,vms_angvec *orient_angles);
 void draw_model_picture_animated(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles);
+void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset);
 
 // free up a model, getting rid of all its memory
 void free_model(polymodel *po);

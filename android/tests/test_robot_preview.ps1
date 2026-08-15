@@ -102,6 +102,73 @@ try {
     if ([int]$initial.framebuffer_probe.gl_error -ne 0 -or [long]$initial.framebuffer_probe.visible_pixels -le 0) {
         throw "Robot preview did not produce a visible framebuffer"
     }
+    if (-not $initial.level_preview.preserve_aspect -or
+        [int]$initial.level_preview.source_width -le 0 -or
+        [int]$initial.level_preview.source_height -le 0 -or
+        [int]$initial.level_preview.draw_width -le 0 -or
+        [int]$initial.level_preview.draw_height -le 0) {
+        throw "Robot preview did not report aspect-preserving output geometry"
+    }
+    $aspectError = [Math]::Abs(
+        [long]$initial.level_preview.draw_width * [long]$initial.level_preview.source_height -
+        [long]$initial.level_preview.draw_height * [long]$initial.level_preview.source_width
+    )
+    if ($aspectError -gt [Math]::Max(
+            [int]$initial.level_preview.source_width,
+            [int]$initial.level_preview.source_height
+        )) {
+        throw "Robot preview output geometry changed the framebuffer aspect ratio"
+    }
+
+    $robotCount = [int]$initial.level_preview.robot_count
+    if ($robotCount -le 1) { throw "Robot preview did not report an adjacent robot" }
+    $nextRobot = ([int]$initial.level_preview.robot_number + 1) % $robotCount
+    Adb -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+        "--es", "command", "next"
+    ) | Out-Null
+    Start-Sleep -Milliseconds 500
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
+    Start-Sleep -Milliseconds 300
+    $navigated = Read-AppJson -Path $introspectionFile
+    if (-not $navigated -or [int]$navigated.level_preview.robot_number -ne $nextRobot) {
+        throw "Robot preview did not advance to the next robot"
+    }
+
+    Adb -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+        "--es", "command", "attack", "--ez", "enabled", "true"
+    ) | Out-Null
+    $attackMode = Wait-ForCondition -Description "robot preview attack simulation" -TimeoutSec 12 -PollMs 500 -Condition {
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
+        Start-Sleep -Milliseconds 200
+        $script:attackState = Read-AppJson -Path $introspectionFile
+        if (-not $script:attackState -or -not $script:attackState.level_preview.attack_enabled) { return $false }
+        $preview = $script:attackState.level_preview
+        $hasBehavior = $preview.behavior -and $preview.behavior_source -and [long]$preview.attack_frames -gt 2
+        $hasMovementStats = $null -ne $preview.max_speed -and $null -ne $preview.circle_distance -and
+        $null -ne $preview.evade_speed -and $null -ne $preview.firing_wait
+        $hasWeaponFlight = [int]$preview.attack_type -ne 0 -or
+        ($preview.weapon -and [long]$preview.shots_fired -gt 0 -and [long]$preview.projectile_updates -gt 0)
+        return $hasBehavior -and $hasMovementStats -and $hasWeaponFlight
+    }
+    if (-not $attackMode) { throw "Robot preview did not model AI movement and weapon flight" }
+
+    Adb -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+        "--es", "command", "sounds", "--ez", "enabled", "true"
+    ) | Out-Null
+    $playedSound = Wait-ForCondition -Description "robot preview sound" -TimeoutSec 8 -PollMs 500 -Condition {
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
+        Start-Sleep -Milliseconds 200
+        $script:soundState = Read-AppJson -Path $introspectionFile
+        return $script:soundState -and $script:soundState.level_preview.sounds_enabled -and
+        [long]$script:soundState.level_preview.sounds_played -gt 0 -and
+        [int]$script:soundState.level_preview.last_sound -ge 0 -and
+        [long]$script:soundState.audio.sfx_probe_count -gt 0 -and
+        [int]$script:soundState.audio.sfx_last_soundnum -ge 0
+    }
+    if (-not $playedSound) { throw "Robot preview did not schedule a robot sound" }
 
     $oldPitch = [int]$initial.level_preview.pitch
     Adb -AdbArgs @(
@@ -130,7 +197,7 @@ try {
         return $setupResumed -and $requestState -notmatch [regex]::Escape([string]$selection.request_id)
     }
     if (-not $closed) { throw "Robot preview did not close cleanly" }
-    Write-Status "PASS: robot $($selection.robot_number) model $($initial.level_preview.model_number) animated and rotated" "Green"
+    Write-Status "PASS: robot $($selection.robot_number) preserved aspect, navigated, played sound, animated, and rotated" "Green"
 } finally {
     try {
         if (Test-DeviceOnline -Serial $Serial) {

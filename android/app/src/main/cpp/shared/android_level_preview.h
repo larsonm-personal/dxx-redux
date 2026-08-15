@@ -14,6 +14,10 @@ const char *android_level_preview_introspection_json(void);
 void android_robot_preview_request_close(void);
 void android_robot_preview_rotate(int heading_delta, int pitch_delta);
 void android_robot_preview_reset(void);
+int android_robot_preview_select(int direction);
+void android_robot_preview_set_sounds(int enabled);
+void android_robot_preview_set_attack(int enabled);
+const char *android_robot_preview_attack_summary(void);
 
 #ifdef __cplusplus
 }

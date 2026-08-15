@@ -372,7 +372,7 @@ startup_failed:
 
 static void android_start_preview(
     JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir,
-    const char *finished_method, const char *preview_label)
+    const char *finished_method, const char *preview_label, int enable_sound)
 {
 	char *request_path = NULL;
 	char *data_dir = NULL;
@@ -417,12 +417,21 @@ static void android_start_preview(
 	argv_preview[0] = (char *) &android_init;
 	argv_preview[1] = "-hogdir";
 	argv_preview[2] = (char *) data_dir;
-	argv_preview[3] = "-nosound";
-	argv_preview[4] = "-nomusic";
-	argv_preview[5] = "-level-preview-request";
-	argv_preview[6] = (char *) request_path;
+	int argc_preview;
+	if (enable_sound) {
+		argv_preview[3] = "-nomusic";
+		argv_preview[4] = "-level-preview-request";
+		argv_preview[5] = (char *) request_path;
+		argc_preview = 6;
+	} else {
+		argv_preview[3] = "-nosound";
+		argv_preview[4] = "-nomusic";
+		argv_preview[5] = "-level-preview-request";
+		argv_preview[6] = (char *) request_path;
+		argc_preview = 7;
+	}
 	debug_log(DLOG_GAME, "%s starting request=%s data=%s", preview_label, request_path, data_dir);
-	result = main(7, argv_preview);
+	result = main(argc_preview, argv_preview);
 	error = android_level_preview_last_error();
 	if (result && (!error || !error[0]))
 		error = "Native preview exited with an error";
@@ -450,7 +459,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
     JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
 {
 	android_start_preview(
-	    env, thiz, jrequest_path, jdata_dir, "onNativePreviewFinished", "level preview");
+	    env, thiz, jrequest_path, jdata_dir, "onNativePreviewFinished", "level preview", 0);
 }
 
 JNIEXPORT void JNICALL
@@ -458,7 +467,7 @@ Java_com_dxxredux_app_RobotPreviewActivity_startRobotPreview(
     JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
 {
 	android_start_preview(
-	    env, thiz, jrequest_path, jdata_dir, "onNativeRobotPreviewFinished", "robot preview");
+	    env, thiz, jrequest_path, jdata_dir, "onNativeRobotPreviewFinished", "robot preview", 1);
 }
 
 JNIEXPORT void JNICALL
@@ -491,6 +500,46 @@ Java_com_dxxredux_app_RobotPreviewActivity_nativeResetRobotPreview(JNIEnv *env, 
 	(void) thiz;
 	android_robot_preview_reset();
 	android_lifecycle_actions_request_wake();
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeSelectRobotPreview(
+    JNIEnv *env, jobject thiz, jint direction)
+{
+	(void) env;
+	(void) thiz;
+	const int selected = android_robot_preview_select(direction);
+	if (selected >= 0)
+		android_lifecycle_actions_request_wake();
+	return selected;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeSetRobotPreviewSounds(
+    JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	(void) env;
+	(void) thiz;
+	android_robot_preview_set_sounds(enabled);
+	android_lifecycle_actions_request_wake();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeSetRobotPreviewAttack(
+    JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	(void) env;
+	(void) thiz;
+	android_robot_preview_set_attack(enabled);
+	android_lifecycle_actions_request_wake();
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeRobotPreviewAttackSummary(
+    JNIEnv *env, jobject thiz)
+{
+	(void) thiz;
+	return (*env)->NewStringUTF(env, android_robot_preview_attack_summary());
 }
 
 #ifdef INTROSPECT_ON

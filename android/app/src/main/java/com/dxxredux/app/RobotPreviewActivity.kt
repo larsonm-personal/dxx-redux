@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
@@ -52,6 +53,14 @@ abstract class RobotPreviewActivity :
 
     private external fun nativeResetRobotPreview()
 
+    private external fun nativeSelectRobotPreview(direction: Int): Int
+
+    private external fun nativeSetRobotPreviewSounds(enabled: Boolean)
+
+    private external fun nativeSetRobotPreviewAttack(enabled: Boolean)
+
+    private external fun nativeRobotPreviewAttackSummary(): String
+
     private external fun nativeCloseRobotPreview()
 
     private external fun nativeRequestIntrospect()
@@ -60,12 +69,19 @@ abstract class RobotPreviewActivity :
 
     private lateinit var runtimeRequest: RobotPreviewRuntimeRequest
     private lateinit var loadingProgressOverlay: LoadingProgressOverlayView
+    private lateinit var robotLabelView: TextView
+    private lateinit var soundsButton: Button
+    private lateinit var attackButton: Button
+    private lateinit var attackSummaryView: TextView
+    private lateinit var robotNames: List<RobotNameEntry>
     private var nativeStarted = false
     private var nativeFinished = false
     private var closeRequested = false
     private var previousTouchX = 0f
     private var previousTouchY = 0f
     private var debugReceiverRegistered = false
+    private var soundsEnabled = false
+    private var attackEnabled = false
 
     private val debugReceiver =
         object : BroadcastReceiver() {
@@ -100,6 +116,10 @@ abstract class RobotPreviewActivity :
             finishWithResult(e.message ?: "Could not load robot preview engine")
             return
         }
+        robotNames = RobotNameCatalog.load(this, previewGame)
+        soundsEnabled = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE).getBoolean(PREF_PLAY_SOUNDS, false)
+        nativeSetRobotPreviewSounds(soundsEnabled)
+        nativeSetRobotPreviewAttack(attackEnabled)
         if (BuildConfig.DEBUG) {
             val introspection = File(filesDir, INTROSPECTION_FILE)
             introspection.delete()
@@ -119,7 +139,7 @@ abstract class RobotPreviewActivity :
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val surface =
-            SurfaceView(this).apply {
+            AspectRatioSurfaceView(this).apply {
                 holder.addCallback(this@RobotPreviewActivity)
                 setOnTouchListener { _, event -> handleTouch(event) }
             }
@@ -127,7 +147,14 @@ abstract class RobotPreviewActivity :
         val controls = createControls()
         setContentView(
             FrameLayout(this).apply {
-                addView(surface, matchParentLayoutParams())
+                addView(
+                    surface,
+                    FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        Gravity.CENTER,
+                    ),
+                )
                 addView(controls, matchParentLayoutParams())
                 addView(loadingProgressOverlay, matchParentLayoutParams())
             },
@@ -221,7 +248,11 @@ abstract class RobotPreviewActivity :
     ) = runOnUiThread { loadingProgressOverlay.showProgress(phase, item, percent) }
 
     @Suppress("unused")
-    fun hideLoadingProgress() = runOnUiThread { loadingProgressOverlay.hideProgress() }
+    fun hideLoadingProgress() =
+        runOnUiThread {
+            loadingProgressOverlay.hideProgress()
+            updateAttackSummary()
+        }
 
     @Suppress("unused")
     fun reportNativeFatalError(message: String) {
@@ -275,6 +306,7 @@ abstract class RobotPreviewActivity :
         FrameLayout(this).apply {
             addView(
                 TextView(this@RobotPreviewActivity).apply {
+                    robotLabelView = this
                     text = runtimeRequest.robotLabel
                     setTextColor(Color.WHITE)
                     textSize = 18f
@@ -291,11 +323,70 @@ abstract class RobotPreviewActivity :
             )
             addView(
                 TextView(this@RobotPreviewActivity).apply {
+                    attackSummaryView = this
+                    setTextColor(Color.LTGRAY)
+                    textSize = 12f
+                    setShadowLayer(3f, 1f, 1f, Color.BLACK)
+                    setPadding(dp(12), dp(8), dp(12), dp(8))
+                    visibility = View.GONE
+                },
+                FrameLayout
+                    .LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        gravity = Gravity.TOP or Gravity.START
+                        topMargin = dp(8)
+                        marginStart = dp(8)
+                    },
+            )
+            addView(
+                TextView(this@RobotPreviewActivity).apply {
                     text = "Drag to rotate"
                     setTextColor(Color.LTGRAY)
                     textSize = 13f
                     setShadowLayer(3f, 1f, 1f, Color.BLACK)
                     setPadding(dp(16), dp(8), dp(16), dp(8))
+                },
+                FrameLayout
+                    .LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                        bottomMargin = dp(64)
+                    },
+            )
+            addView(
+                LinearLayout(this@RobotPreviewActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    addView(
+                        Button(context).apply {
+                            text = "Previous"
+                            setOnClickListener { selectRobot(-1) }
+                        },
+                    )
+                    addView(
+                        Button(context).apply {
+                            soundsButton = this
+                            setOnClickListener { setSoundsEnabled(!soundsEnabled) }
+                        },
+                    )
+                    addView(
+                        Button(context).apply {
+                            attackButton = this
+                            setOnClickListener { setAttackEnabled(!attackEnabled) }
+                        },
+                    )
+                    addView(
+                        Button(context).apply {
+                            text = "Next"
+                            setOnClickListener { selectRobot(1) }
+                        },
+                    )
+                    updateSoundsButton()
+                    updateAttackButton()
                 },
                 FrameLayout
                     .LayoutParams(
@@ -335,6 +426,47 @@ abstract class RobotPreviewActivity :
             )
         }
 
+    private fun selectRobot(direction: Int) {
+        val selected = nativeSelectRobotPreview(direction)
+        if (selected < 0) return
+        robotLabelView.text =
+            RobotNameCatalog.displayName(robotNames, selected, "Robot $selected")
+        attackSummaryView.postDelayed({ updateAttackSummary() }, 100)
+    }
+
+    private fun setSoundsEnabled(enabled: Boolean) {
+        soundsEnabled = enabled
+        getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE)
+            .edit()
+            .putBoolean(PREF_PLAY_SOUNDS, enabled)
+            .apply()
+        nativeSetRobotPreviewSounds(enabled)
+        updateSoundsButton()
+    }
+
+    private fun updateSoundsButton() {
+        if (!::soundsButton.isInitialized) return
+        soundsButton.text = if (soundsEnabled) "Play sounds: On" else "Play sounds: Off"
+    }
+
+    private fun setAttackEnabled(enabled: Boolean) {
+        attackEnabled = enabled
+        nativeSetRobotPreviewAttack(enabled)
+        updateAttackButton()
+        updateAttackSummary()
+    }
+
+    private fun updateAttackButton() {
+        if (!::attackButton.isInitialized) return
+        attackButton.text = if (attackEnabled) "Attack: On" else "Attack: Off"
+    }
+
+    private fun updateAttackSummary() {
+        if (!::attackSummaryView.isInitialized) return
+        attackSummaryView.visibility = if (attackEnabled) View.VISIBLE else View.GONE
+        if (attackEnabled) attackSummaryView.text = nativeRobotPreviewAttackSummary()
+    }
+
     private fun closePreview() {
         if (closeRequested) return
         closeRequested = true
@@ -355,6 +487,22 @@ abstract class RobotPreviewActivity :
 
             COMMAND_RESET -> {
                 nativeResetRobotPreview()
+            }
+
+            COMMAND_PREVIOUS -> {
+                selectRobot(-1)
+            }
+
+            COMMAND_NEXT -> {
+                selectRobot(1)
+            }
+
+            COMMAND_SOUNDS -> {
+                setSoundsEnabled(intent.getBooleanExtra(EXTRA_ENABLED, false))
+            }
+
+            COMMAND_ATTACK -> {
+                setAttackEnabled(intent.getBooleanExtra(EXTRA_ENABLED, false))
             }
 
             COMMAND_CLOSE -> {
@@ -396,10 +544,17 @@ abstract class RobotPreviewActivity :
         private const val EXTRA_COMMAND = "command"
         private const val EXTRA_HEADING = "heading"
         private const val EXTRA_PITCH = "pitch"
+        private const val EXTRA_ENABLED = "enabled"
         private const val COMMAND_ROTATE = "rotate"
         private const val COMMAND_RESET = "reset"
+        private const val COMMAND_PREVIOUS = "previous"
+        private const val COMMAND_NEXT = "next"
+        private const val COMMAND_SOUNDS = "sounds"
+        private const val COMMAND_ATTACK = "attack"
         private const val COMMAND_CLOSE = "close"
         private const val ROTATION_PER_PIXEL = 80f
+        private const val PREFERENCES_NAME = "dxx_prefs"
+        private const val PREF_PLAY_SOUNDS = "robot_preview_play_sounds"
         private const val TAG = "DXX-RobotPreview"
 
         internal fun createIntent(
@@ -415,6 +570,32 @@ abstract class RobotPreviewActivity :
                 },
             ).putExtra(EXTRA_REQUEST_PATH, request.requestFile.absolutePath)
                 .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+    }
+}
+
+private class AspectRatioSurfaceView(
+    context: Context,
+) : SurfaceView(context) {
+    override fun onMeasure(
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int,
+    ) {
+        val availableWidth = View.MeasureSpec.getSize(widthMeasureSpec)
+        val availableHeight = View.MeasureSpec.getSize(heightMeasureSpec)
+        if (availableWidth <= 0 || availableHeight <= 0) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+            return
+        }
+        if (availableWidth * PREVIEW_ASPECT_HEIGHT <= availableHeight * PREVIEW_ASPECT_WIDTH) {
+            setMeasuredDimension(availableWidth, availableWidth * PREVIEW_ASPECT_HEIGHT / PREVIEW_ASPECT_WIDTH)
+        } else {
+            setMeasuredDimension(availableHeight * PREVIEW_ASPECT_WIDTH / PREVIEW_ASPECT_HEIGHT, availableHeight)
+        }
+    }
+
+    companion object {
+        private const val PREVIEW_ASPECT_WIDTH = 4
+        private const val PREVIEW_ASPECT_HEIGHT = 3
     }
 }
 
