@@ -739,7 +739,7 @@ void init_polygon_models()
 //more-or-less fill the canvas.  Note that this routine actually renders
 //into an off-screen canvas that it creates, then copies to the current
 //canvas.
-void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset)
+void draw_model_picture_animated_scene(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset,model_picture_extra_drawer draw_extra,void *data)
 {
 	vms_vector	temp_pos=ZERO_VECTOR;
 	vms_matrix	temp_orient = IDENTITY_MATRIX;
@@ -761,7 +761,14 @@ void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_ang
 
 	vm_angles_2_matrix(&temp_orient, orient_angles);
 	draw_polygon_model(&temp_pos,&temp_orient,anim_angles,mn,0,lrgb,NULL,NULL);
+	if (draw_extra)
+		draw_extra(&temp_pos,data);
 	g3_end_frame();
+}
+
+void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset)
+{
+	draw_model_picture_animated_scene(mn,orient_angles,anim_angles,offset_x,offset_y,distance_offset,NULL,NULL);
 }
 
 void draw_model_picture_animated(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles)

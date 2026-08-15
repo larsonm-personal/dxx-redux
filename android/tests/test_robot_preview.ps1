@@ -6,6 +6,8 @@ param(
     [string]$Game = "d2",
     [switch]$BaseGame,
     [int]$RobotNumber = 0,
+    [string]$ExpectedAttackRole = "",
+    [int]$ExpectedWeapon = -1,
     [int]$Seed = 6042,
     [int]$TimeoutSeconds = 180,
     [string]$Serial = "emulator-5554"
@@ -34,6 +36,18 @@ function Read-AppJson {
     $text = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $Path) -Seconds 8
     if (-not $text -or $text -match "No such file") { return $null }
     try { return ($text | ConvertFrom-Json) } catch { return $null }
+}
+
+function Assert-Near {
+    param(
+        [Parameter(Mandatory = $true)][double]$Actual,
+        [Parameter(Mandatory = $true)][double]$Expected,
+        [Parameter(Mandatory = $true)][string]$Description,
+        [double]$Tolerance = 0.001
+    )
+    if ([Math]::Abs($Actual - $Expected) -gt $Tolerance) {
+        throw "$Description expected $Expected, got $Actual"
+    }
 }
 
 try {
@@ -91,12 +105,16 @@ try {
     if ([int]$initial.level_preview.model_number -lt 0 -or -not $initial.level_preview.palette_ready) {
         throw "Robot preview did not resolve a model and palette"
     }
+    if ($ExpectedAttackRole -and $initial.level_preview.attack_role -ne $ExpectedAttackRole) {
+        throw "Expected attack role '$ExpectedAttackRole', got '$($initial.level_preview.attack_role)'"
+    }
     if ($null -eq $initial.level_preview.animated_joint_count -or
         $null -eq $initial.level_preview.motion_updates) {
         throw "Robot preview did not report HAM/HXM joint animation"
     }
     if ([int]$initial.level_preview.animated_joint_count -gt 0 -and
-        [long]$initial.level_preview.motion_updates -le 0) {
+        [long]$initial.level_preview.motion_updates -le 0 -and
+        $initial.level_preview.attack_role -ne "non-firing") {
         throw "Robot preview has animated joints but did not move them"
     }
     if ([int]$initial.framebuffer_probe.gl_error -ne 0 -or [long]$initial.framebuffer_probe.visible_pixels -le 0) {
@@ -134,6 +152,11 @@ try {
     if (-not $navigated -or [int]$navigated.level_preview.robot_number -ne $nextRobot) {
         throw "Robot preview did not advance to the next robot"
     }
+    Adb -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+        "--es", "command", "previous"
+    ) | Out-Null
+    Start-Sleep -Milliseconds 500
 
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
@@ -148,11 +171,131 @@ try {
         $hasBehavior = $preview.behavior -and $preview.behavior_source -and [long]$preview.attack_frames -gt 2
         $hasMovementStats = $null -ne $preview.max_speed -and $null -ne $preview.circle_distance -and
         $null -ne $preview.evade_speed -and $null -ne $preview.firing_wait
-        $hasWeaponFlight = [int]$preview.attack_type -ne 0 -or
-        ($preview.weapon -and [long]$preview.shots_fired -gt 0 -and [long]$preview.projectile_updates -gt 0)
+        $hasWeaponFlight = switch ($preview.attack_role) {
+            "non-firing" { [long]$preview.shots_fired -eq 0 -and [long]$preview.active_projectiles -eq 0 }
+            "melee" { [int]$preview.attack_type -ne 0 -and [long]$preview.shots_fired -eq 0 }
+            "mine dropper" {
+                $preview.weapon -and [long]$preview.mines_dropped -gt 0 -and
+                [long]$preview.projectile_updates -gt 0 -and [long]$preview.actual_weapon_renders -gt 0
+            }
+            default {
+                $preview.weapon -and [long]$preview.shots_fired -gt 0 -and
+                [long]$preview.projectile_updates -gt 0 -and [long]$preview.actual_weapon_renders -gt 0
+            }
+        }
         return $hasBehavior -and $hasMovementStats -and $hasWeaponFlight
     }
     if (-not $attackMode) { throw "Robot preview did not model AI movement and weapon flight" }
+
+    $preview = $script:attackState.level_preview
+    if ($null -eq $preview.dps -or $null -eq $preview.dps.total -or
+        $preview.dps.assumption -ne "all direct damaging attacks connect") {
+        throw "Robot preview did not report sustained direct-hit DPS"
+    }
+    $channels = @($preview.dps.channels)
+    $channelTotal = 0.0
+    foreach ($channel in $channels) {
+        if ([double]$channel.cycle_attacks -le 0 -or [double]$channel.cycle_seconds -le 0) {
+            throw "DPS channel '$($channel.kind)' has an invalid attack cycle"
+        }
+        $expectedRate = [double]$channel.cycle_attacks / [double]$channel.cycle_seconds
+        Assert-Near -Actual ([double]$channel.attacks_per_second) -Expected $expectedRate `
+            -Description "DPS channel '$($channel.kind)' attack rate"
+        $expectedChannelDps = [double]$channel.damage_per_hit * $expectedRate
+        Assert-Near -Actual ([double]$channel.dps) -Expected $expectedChannelDps `
+            -Description "DPS channel '$($channel.kind)' damage"
+        $channelTotal += [double]$channel.dps
+    }
+    Assert-Near -Actual ([double]$preview.dps.total) -Expected $channelTotal `
+        -Description "Total sustained DPS"
+
+    switch ($preview.attack_role) {
+        "non-firing" {
+            if ($channels.Count -ne 0) { throw "Non-firing robot reported damaging DPS channels" }
+            Assert-Near -Actual ([double]$preview.dps.total) -Expected 0 `
+                -Description "Non-firing robot DPS"
+        }
+        "melee" {
+            if ($channels.Count -ne 1 -or $channels[0].kind -ne "melee") {
+                throw "Melee robot did not report one melee DPS channel"
+            }
+            Assert-Near -Actual ([double]$channels[0].damage_per_hit) `
+                -Expected ([int]$preview.difficulty + 1) -Description "Melee damage per hit"
+        }
+        "mine dropper" {
+            if ($channels.Count -ne 1 -or $channels[0].kind -ne "mine") {
+                throw "Mine dropper did not report one mine DPS channel"
+            }
+            $expectedMineWait = if ($Game -eq "d1") { 5.0 } else { (10 - [int]$preview.difficulty) / 2.0 }
+            Assert-Near -Actual ([double]$channels[0].cycle_seconds) -Expected $expectedMineWait `
+                -Description "Mine drop interval"
+        }
+        default {
+            $primary = @($channels | Where-Object { $_.kind -eq "primary" })
+            if ($primary.Count -ne 1) { throw "Ranged robot did not report one primary DPS channel" }
+            $burstAttacks = [Math]::Max(1, [int]$preview.rapidfire_count)
+            if ($preview.dps.randomized_timing_average -and [int]$preview.rapidfire_count -gt 0) {
+                $burstAttacks *= 2
+            }
+            $shortWait = [Math]::Min(0.125, [double]$preview.firing_wait / 2.0)
+            $expectedCycle = [double]$preview.firing_wait + ($burstAttacks - 1) * $shortWait
+            Assert-Near -Actual ([double]$primary[0].cycle_attacks) -Expected $burstAttacks `
+                -Description "Primary rapid-fire cycle attacks"
+            Assert-Near -Actual ([double]$primary[0].cycle_seconds) -Expected $expectedCycle `
+                -Description "Primary rapid-fire cycle duration"
+            $secondary = @($channels | Where-Object { $_.kind -eq "secondary" })
+            if ($secondary.Count -gt 0) {
+                Assert-Near -Actual ([double]$secondary[0].cycle_seconds) `
+                    -Expected ([double]$preview.firing_wait2) -Description "Secondary firing interval"
+            }
+        }
+    }
+    if ($ExpectedWeapon -ge 0 -and [int]$script:attackState.level_preview.weapon.number -ne $ExpectedWeapon) {
+        throw "Expected preview weapon $ExpectedWeapon, got $($script:attackState.level_preview.weapon.number)"
+    }
+    if ($script:attackState.level_preview.attack_role -eq "ranged" -and
+        [int]$script:attackState.level_preview.weapon.speed_variance -eq 128 -and
+        [double]$script:attackState.level_preview.weapon.thrust -eq 0 -and
+        [Math]::Abs(
+            [double]$script:attackState.level_preview.last_projectile_initial_speed -
+            [double]$script:attackState.level_preview.weapon.speed
+        ) -gt 0.01) {
+        throw "Preview projectile speed does not match the loaded constant-speed weapon"
+    }
+
+    $firstShotCount = [long]$script:attackState.level_preview.shots_fired
+    $firstDirection = @($script:attackState.level_preview.last_projectile_direction) -join ","
+
+    Adb -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+        "--es", "command", "attack", "--ez", "enabled", "false"
+    ) | Out-Null
+    Start-Sleep -Milliseconds 300
+
+    if ($script:attackState.level_preview.attack_role -in @("ranged", "mine dropper")) {
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "rotate", "--ei", "heading", "8192", "--ei", "pitch", "4096"
+        ) | Out-Null
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "attack", "--ez", "enabled", "true"
+        ) | Out-Null
+        $orientedShot = Wait-ForCondition -Description "orientation-dependent robot shot" -TimeoutSec 8 -PollMs 400 -Condition {
+            Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
+            Start-Sleep -Milliseconds 150
+            $script:orientedState = Read-AppJson -Path $introspectionFile
+            $direction = @($script:orientedState.level_preview.last_projectile_direction) -join ","
+            return $script:orientedState -and [long]$script:orientedState.level_preview.shots_fired -gt $firstShotCount -and
+            $direction -ne $firstDirection
+        }
+        if (-not $orientedShot) { throw "Projectile direction did not follow robot rotation" }
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+            "--es", "command", "attack", "--ez", "enabled", "false"
+        ) | Out-Null
+        Start-Sleep -Milliseconds 300
+    }
 
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
@@ -165,6 +308,8 @@ try {
         return $script:soundState -and $script:soundState.level_preview.sounds_enabled -and
         [long]$script:soundState.level_preview.sounds_played -gt 0 -and
         [int]$script:soundState.level_preview.last_sound -ge 0 -and
+        [int]$script:soundState.level_preview.last_sound_sample -eq [int]$script:soundState.audio.sfx_last_soundnum -and
+        $script:soundState.level_preview.last_sound_kind -in @("see", "attack", "claw") -and
         [long]$script:soundState.audio.sfx_probe_count -gt 0 -and
         [int]$script:soundState.audio.sfx_last_soundnum -ge 0
     }

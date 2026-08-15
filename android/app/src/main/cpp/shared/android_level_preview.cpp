@@ -15,6 +15,7 @@
 
 extern "C" {
 #include "args.h"
+#include "ai.h"
 #include "aistruct.h"
 #include "segment.h"
 #include "automap.h"
@@ -30,6 +31,7 @@ extern "C" {
 #include "gr.h"
 #include "inferno.h"
 #include "kconfig.h"
+#include "laser.h"
 #include "mission.h"
 #include "object.h"
 #ifdef OGL
@@ -43,11 +45,13 @@ extern "C" {
 #include "robot.h"
 #include "screens.h"
 #include "secretarea.h"
+#include "sounds.h"
 #include "startup_resume_shared.h"
 #include "texmerge.h"
 #include "timer.h"
 #include "window.h"
 #include "weapon.h"
+#include "vclip.h"
 
 #include "android_log.h"
 #include "android_loading_progress.h"
@@ -100,12 +104,15 @@ static std::atomic<int> Robot_preview_sounds_enabled(0);
 static unsigned int Robot_preview_sound_seed;
 static Uint32 Robot_preview_next_sound_at;
 static int Robot_preview_last_sound = -1;
+static int Robot_preview_last_sound_sample = -1;
+static const char *Robot_preview_last_sound_kind = "none";
 static unsigned long long Robot_preview_sounds_played;
 static std::atomic<int> Robot_preview_attack_enabled(0);
 static int Robot_preview_attack_was_enabled;
 static int Robot_preview_has_level;
 static int Robot_preview_behavior;
 static int Robot_preview_behavior_from_level;
+static int Robot_preview_sub_flags;
 static int Robot_preview_difficulty;
 static fix Robot_preview_target_distance;
 static fix Robot_preview_robot_offset_x;
@@ -124,17 +131,22 @@ static unsigned long long Robot_preview_projectile_hits;
 static unsigned long long Robot_preview_projectile_misses;
 static unsigned long long Robot_preview_projectile_updates;
 static unsigned long long Robot_preview_attack_frames;
+static unsigned long long Robot_preview_actual_weapon_renders;
+static unsigned long long Robot_preview_fallback_weapon_renders;
+static unsigned long long Robot_preview_mines_dropped;
+static vms_vector Robot_preview_last_projectile_origin;
+static vms_vector Robot_preview_last_projectile_direction;
+static fix Robot_preview_last_projectile_initial_speed;
 
 struct robot_preview_projectile {
 	int active;
 	int weapon;
-	fix x;
-	fix y;
-	fix velocity_x;
-	fix velocity_y;
-	fix thrust_x;
-	fix thrust_y;
+	vms_vector position;
+	vms_vector velocity;
+	vms_vector thrust;
 	fix lifeleft;
+	int mine;
+	int used_actual_render;
 };
 
 static robot_preview_projectile Robot_preview_projectiles[32];
@@ -146,6 +158,9 @@ static const int ROBOT_PREVIEW_TRANSITION_FRAMES = 45;
 static const Uint32 ROBOT_PREVIEW_SOUND_INTERVAL_MS = 3000;
 static const fix ROBOT_PREVIEW_FRAME_TIME = F1_0 / 60;
 static const fix ROBOT_PREVIEW_PHYSICS_TIME = F1_0 / 64;
+static const fix ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE = i2f(40);
+// RUN_FROM is stored on level objects, not in the original D1/D2 robot records.
+static const int ROBOT_PREVIEW_BASE_MINE_DROPPER = 10;
 
 class preview_loading_progress_guard
 {
@@ -456,11 +471,15 @@ static const char *robot_preview_behavior_name(int behavior)
 
 static int robot_preview_find_behavior(int number, int *from_level)
 {
+	Robot_preview_sub_flags = 0;
 	if (Robot_preview_has_level) {
 		for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
 			const object *obj = &Objects[objnum];
 			if (obj->type == OBJ_ROBOT && obj->id == number) {
 				*from_level = 1;
+#ifdef DXX_BUILD_DESCENT_II
+				Robot_preview_sub_flags = obj->ctype.ai_info.SUB_FLAGS;
+#endif
 				return obj->ctype.ai_info.behavior;
 			}
 		}
@@ -473,6 +492,53 @@ static int robot_preview_find_behavior(int number, int *from_level)
 #endif
 }
 
+enum robot_preview_attack_role {
+	ROBOT_PREVIEW_ATTACK_NONE,
+	ROBOT_PREVIEW_ATTACK_MELEE,
+	ROBOT_PREVIEW_ATTACK_RANGED,
+	ROBOT_PREVIEW_ATTACK_MINE_DROPPER
+};
+
+static robot_preview_attack_role robot_preview_attack_role_for(const robot_info *robot)
+{
+	if (robot->attack_type)
+		return ROBOT_PREVIEW_ATTACK_MELEE;
+#ifdef DXX_BUILD_DESCENT_II
+	if (robot->companion || robot->thief)
+		return ROBOT_PREVIEW_ATTACK_NONE;
+#endif
+	if (Robot_preview_behavior == AIB_RUN_FROM ||
+	    (!Robot_preview_has_level && Robot_preview_number == ROBOT_PREVIEW_BASE_MINE_DROPPER))
+		return ROBOT_PREVIEW_ATTACK_MINE_DROPPER;
+	if (Robot_preview_number == ROBOT_BRAIN || robot->n_guns <= 0 ||
+	    robot->weapon_type < 0 || robot->weapon_type >= N_weapon_types)
+		return ROBOT_PREVIEW_ATTACK_NONE;
+	return ROBOT_PREVIEW_ATTACK_RANGED;
+}
+
+static const char *robot_preview_attack_role_name(robot_preview_attack_role role)
+{
+	switch (role) {
+		case ROBOT_PREVIEW_ATTACK_MELEE:
+			return "melee";
+		case ROBOT_PREVIEW_ATTACK_RANGED:
+			return "ranged";
+		case ROBOT_PREVIEW_ATTACK_MINE_DROPPER:
+			return "mine dropper";
+		default:
+			return "non-firing";
+	}
+}
+
+static int robot_preview_mine_weapon(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	if (Robot_preview_sub_flags & SUB_FLAGS_SPROX)
+		return ROBOT_SUPERPROX_ID;
+#endif
+	return PROXIMITY_ID;
+}
+
 static int robot_preview_weapon_for_gun(const robot_info *robot, int gun)
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -482,6 +548,174 @@ static int robot_preview_weapon_for_gun(const robot_info *robot, int gun)
 	(void) gun;
 #endif
 	return robot->weapon_type;
+}
+
+struct robot_preview_dps_channel {
+	const char *kind;
+	int weapon;
+	double damage_per_hit;
+	double cycle_attacks;
+	double cycle_seconds;
+	double attacks_per_second;
+	double dps;
+};
+
+struct robot_preview_dps_result {
+	robot_preview_dps_channel primary;
+	robot_preview_dps_channel secondary;
+	int channel_count;
+	int randomized_timing_average;
+	double total;
+};
+
+static robot_preview_dps_channel robot_preview_dps_channel_for(
+    const char *kind, int weapon, double damage_per_hit, double cycle_attacks,
+    double cycle_seconds)
+{
+	robot_preview_dps_channel channel = {};
+	channel.kind = kind;
+	channel.weapon = weapon;
+	channel.damage_per_hit = damage_per_hit;
+	channel.cycle_attacks = cycle_attacks;
+	channel.cycle_seconds = cycle_seconds;
+	if (cycle_attacks > 0 && cycle_seconds > 0) {
+		channel.attacks_per_second = cycle_attacks / cycle_seconds;
+		channel.dps = damage_per_hit * channel.attacks_per_second;
+	}
+	return channel;
+}
+
+static robot_preview_dps_channel robot_preview_rapidfire_dps_channel(
+    const char *kind, int weapon, double damage_per_hit, fix firing_wait,
+    int rapidfire_count, int sniper_timing)
+{
+	const double long_wait = f2fl(firing_wait);
+	if (long_wait <= 0)
+		return robot_preview_dps_channel_for(kind, weapon, damage_per_hit, 0, 0);
+	const int burst_attacks = (std::max) (1, rapidfire_count);
+	const double cycle_attacks = sniper_timing && rapidfire_count > 0
+	                                 ? burst_attacks * 2.0
+	                                 : burst_attacks;
+	const double short_wait = (std::min) (0.125, long_wait / 2.0);
+	return robot_preview_dps_channel_for(
+	    kind, weapon, damage_per_hit, cycle_attacks,
+	    long_wait + (cycle_attacks - 1.0) * short_wait);
+}
+
+static void robot_preview_add_dps_channel(
+    robot_preview_dps_result *result, const robot_preview_dps_channel &channel)
+{
+	if (result->channel_count == 0)
+		result->primary = channel;
+	else if (result->channel_count == 1)
+		result->secondary = channel;
+	else
+		return;
+	++result->channel_count;
+	result->total += channel.dps;
+}
+
+static robot_preview_dps_result robot_preview_calculate_dps(const robot_info *robot)
+{
+	robot_preview_dps_result result = {};
+	const robot_preview_attack_role role = robot_preview_attack_role_for(robot);
+	const int difficulty = Robot_preview_difficulty;
+	if (role == ROBOT_PREVIEW_ATTACK_NONE)
+		return result;
+	if (role == ROBOT_PREVIEW_ATTACK_MELEE) {
+#ifdef DXX_BUILD_DESCENT_II
+		const int sniper_timing = Robot_preview_behavior == AIB_SNIPE;
+#else
+		const int sniper_timing = 0;
+#endif
+		robot_preview_add_dps_channel(
+		    &result,
+		    robot_preview_rapidfire_dps_channel(
+		        "melee", -1, difficulty + 1.0, robot->firing_wait[difficulty],
+		        robot->rapidfire_count[difficulty], sniper_timing));
+		result.randomized_timing_average = sniper_timing &&
+		                                   robot->rapidfire_count[difficulty] > 0;
+		return result;
+	}
+	if (role == ROBOT_PREVIEW_ATTACK_MINE_DROPPER) {
+		const int weapon = robot_preview_mine_weapon();
+		if (weapon >= 0 && weapon < N_weapon_types) {
+#ifdef DXX_BUILD_DESCENT_II
+			const fix wait = (F1_0 / 2) * (NDL + 5 - difficulty);
+#else
+			const fix wait = F1_0 * 5;
+#endif
+			robot_preview_add_dps_channel(
+			    &result, robot_preview_dps_channel_for(
+			                 "mine", weapon, f2fl(Weapon_info[weapon].strength[difficulty]),
+			                 1.0, f2fl(wait)));
+		}
+		return result;
+	}
+
+#ifdef DXX_BUILD_DESCENT_II
+	const int has_secondary = robot->n_guns > 0 && robot->weapon_type2 >= 0 &&
+	                          robot->weapon_type2 < N_weapon_types;
+	const int has_primary = robot->weapon_type >= 0 && robot->weapon_type < N_weapon_types &&
+	                        (!has_secondary || robot->n_guns > 1);
+	const int sniper_timing = Robot_preview_behavior == AIB_SNIPE;
+#else
+	const int has_secondary = 0;
+	const int has_primary = robot->weapon_type >= 0 && robot->weapon_type < N_weapon_types;
+	const int sniper_timing = 0;
+#endif
+	if (has_primary) {
+		robot_preview_add_dps_channel(
+		    &result,
+		    robot_preview_rapidfire_dps_channel(
+		        "primary", robot->weapon_type,
+		        f2fl(Weapon_info[robot->weapon_type].strength[difficulty]),
+		        robot->firing_wait[difficulty], robot->rapidfire_count[difficulty],
+		        sniper_timing));
+		result.randomized_timing_average = sniper_timing &&
+		                                   robot->rapidfire_count[difficulty] > 0;
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (has_secondary) {
+		robot_preview_add_dps_channel(
+		    &result,
+		    robot_preview_dps_channel_for(
+		        "secondary", robot->weapon_type2,
+		        f2fl(Weapon_info[robot->weapon_type2].strength[difficulty]), 1.0,
+		        f2fl(robot->firing_wait2[difficulty])));
+	}
+#else
+	(void) has_secondary;
+#endif
+	return result;
+}
+
+static json robot_preview_dps_channel_json(const robot_preview_dps_channel &channel)
+{
+	return {
+		{ "kind", channel.kind ? channel.kind : "" },
+		{ "weapon", channel.weapon },
+		{ "damage_per_hit", channel.damage_per_hit },
+		{ "cycle_attacks", channel.cycle_attacks },
+		{ "cycle_seconds", channel.cycle_seconds },
+		{ "attacks_per_second", channel.attacks_per_second },
+		{ "dps", channel.dps }
+	};
+}
+
+static json robot_preview_dps_json(const robot_preview_dps_result &result)
+{
+	json channels = json::array();
+	if (result.channel_count > 0)
+		channels.push_back(robot_preview_dps_channel_json(result.primary));
+	if (result.channel_count > 1)
+		channels.push_back(robot_preview_dps_channel_json(result.secondary));
+	return {
+		{ "total", result.total },
+		{ "assumption", "all direct damaging attacks connect" },
+		{ "randomized_timing_average", result.randomized_timing_average != 0 },
+		{ "channels", channels }
+	};
 }
 
 static void robot_preview_reset_attack_state(void)
@@ -588,7 +822,7 @@ static void robot_preview_update_movement(void)
 	Robot_preview_robot_distance_offset = Robot_preview_robot_offset_x / 8;
 }
 
-static void robot_preview_spawn_projectile(int weapon_number)
+static void robot_preview_spawn_projectile(int weapon_number, int mine)
 {
 	if (weapon_number < 0 || weapon_number >= N_weapon_types)
 		return;
@@ -614,13 +848,37 @@ static void robot_preview_spawn_projectile(int weapon_number)
 #endif
 	if (weapon->thrust)
 		speed /= 2;
+	const robot_info *robot = &Robot_info[Robot_preview_number];
+	vms_angvec angles = {
+		static_cast<fixang>(Robot_preview_pitch.load(std::memory_order_relaxed)),
+		0,
+		static_cast<fixang>(Robot_preview_heading.load(std::memory_order_relaxed))
+	};
+	vms_matrix orientation;
+	vm_angles_2_matrix(&orientation, &angles);
+	vms_vector direction = orientation.fvec;
+	if (mine)
+		vm_vec_negate(&direction);
 	projectile->active = 1;
 	projectile->weapon = weapon_number;
-	projectile->x = 0;
-	const robot_info *robot = &Robot_info[Robot_preview_number];
-	const int gun = (std::max) (0, (std::min) (Robot_preview_gun, static_cast<int>(robot->n_guns) - 1));
-	const fix radius = (std::max) (F1_0, Polygon_models[Robot_preview_model].rad);
-	projectile->y = robot->n_guns > 0 ? fixdiv(robot->gun_points[gun].y, radius) * 3 : 0;
+	projectile->position = {
+		Robot_preview_robot_offset_x, Robot_preview_robot_offset_y,
+		Robot_preview_robot_distance_offset
+	};
+	if (mine) {
+		vm_vec_scale_add2(&projectile->position, &direction, F1_0);
+	} else {
+		const int gun = (std::max) (0, (std::min) (Robot_preview_gun, static_cast<int>(robot->n_guns) - 1));
+		object preview_robot = {};
+		preview_robot.type = OBJ_ROBOT;
+		preview_robot.id = Robot_preview_number;
+		preview_robot.render_type = RT_POLYOBJ;
+		preview_robot.pos = projectile->position;
+		preview_robot.orient = orientation;
+		memcpy(preview_robot.rtype.pobj_info.anim_angles, Robot_preview_anim_angles,
+		       sizeof(Robot_preview_anim_angles));
+		calc_gun_point(&projectile->position, &preview_robot, gun);
+	}
 	Robot_preview_sound_seed = Robot_preview_sound_seed * 1664525u + 1013904223u;
 	fix aim_spread = i2f((NDL - Robot_preview_difficulty - 1) * 2);
 #ifdef DXX_BUILD_DESCENT_II
@@ -629,15 +887,23 @@ static void robot_preview_spawn_projectile(int weapon_number)
 	const fix aim_error = static_cast<fix>(
 	    static_cast<long long>(static_cast<int>((Robot_preview_sound_seed >> 16) & 0xffff) - 32768) *
 	    aim_spread / 32768);
-	vms_vector direction = { Robot_preview_target_distance, -projectile->y + aim_error, 0 };
-	vm_vec_normalize_quick(&direction);
-	projectile->velocity_x = fixmul(direction.x, speed);
-	projectile->velocity_y = fixmul(direction.y, speed);
-	projectile->thrust_x = fixmul(direction.x, weapon->thrust);
-	projectile->thrust_y = fixmul(direction.y, weapon->thrust);
+	if (!mine && aim_error) {
+		direction.x += fixmul(orientation.rvec.x, fixdiv(aim_error, ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE));
+		direction.y += fixmul(orientation.rvec.y, fixdiv(aim_error, ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE));
+		direction.z += fixmul(orientation.rvec.z, fixdiv(aim_error, ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE));
+		vm_vec_normalize_quick(&direction);
+	}
+	vm_vec_copy_scale(&projectile->velocity, &direction, speed);
+	vm_vec_copy_scale(&projectile->thrust, &direction, weapon->thrust);
 	projectile->lifeleft = weapon->lifetime > 0 ? weapon->lifetime : WEAPON_DEFAULT_LIFETIME;
+	projectile->mine = mine;
+	projectile->used_actual_render = 0;
+	Robot_preview_last_projectile_origin = projectile->position;
+	Robot_preview_last_projectile_direction = direction;
+	Robot_preview_last_projectile_initial_speed = speed;
 	Robot_preview_last_weapon = weapon_number;
 	++Robot_preview_shots_fired;
+	Robot_preview_mines_dropped += mine != 0;
 	if (Robot_preview_sounds_enabled.load(std::memory_order_relaxed) && weapon->flash_sound >= 0)
 		digi_play_sample(weapon->flash_sound, F1_0);
 }
@@ -647,16 +913,31 @@ static void robot_preview_schedule_fire(Uint32 now)
 	if (now < Robot_preview_next_fire_at)
 		return;
 	const robot_info *robot = &Robot_info[Robot_preview_number];
-	if (robot->attack_type) {
+	const robot_preview_attack_role role = robot_preview_attack_role_for(robot);
+	if (role == ROBOT_PREVIEW_ATTACK_NONE)
+		return;
+	if (role == ROBOT_PREVIEW_ATTACK_MELEE) {
 		robot_preview_set_anim_target(AS_FIRE);
 		const int wait_ms = static_cast<int>(
 		    static_cast<long long>(robot->firing_wait[Robot_preview_difficulty]) * 1000 / F1_0);
 		Robot_preview_next_fire_at = now + (std::max) (125, wait_ms);
 		return;
 	}
+	if (role == ROBOT_PREVIEW_ATTACK_MINE_DROPPER) {
+		robot_preview_spawn_projectile(robot_preview_mine_weapon(), 1);
+		robot_preview_set_anim_target(AS_FIRE);
+#ifdef DXX_BUILD_DESCENT_II
+		const fix wait = (F1_0 / 2) * (NDL + 5 - Robot_preview_difficulty);
+#else
+		const fix wait = F1_0 * 5;
+#endif
+		Robot_preview_next_fire_at =
+		    now + static_cast<Uint32>(static_cast<long long>(wait) * 1000 / F1_0);
+		return;
+	}
 	const int gun_count = (std::max) (1, static_cast<int>(robot->n_guns));
 	Robot_preview_gun = (Robot_preview_gun + 1) % gun_count;
-	robot_preview_spawn_projectile(robot_preview_weapon_for_gun(robot, Robot_preview_gun));
+	robot_preview_spawn_projectile(robot_preview_weapon_for_gun(robot, Robot_preview_gun), 0);
 	robot_preview_set_anim_target(AS_FIRE);
 	++Robot_preview_rapidfire_count;
 	fix wait = robot->firing_wait[Robot_preview_difficulty];
@@ -675,17 +956,17 @@ static void robot_preview_schedule_fire(Uint32 now)
 
 static void robot_preview_update_projectiles(void)
 {
+	const fix radius = (std::max) (F1_0, Polygon_models[Robot_preview_model].rad);
+	const fix display_scale = fixdiv(radius * 3, ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE);
+	vms_vector target = { radius * 3, 0, 0 };
 	for (robot_preview_projectile &projectile : Robot_preview_projectiles) {
 		if (!projectile.active)
 			continue;
 		const weapon_info *weapon = &Weapon_info[projectile.weapon];
 		if (weapon->homing_flag && projectile.lifeleft < weapon->lifetime - F1_0 / 2) {
-			vms_vector desired = {
-				Robot_preview_target_distance - projectile.x, -projectile.y, 0
-			};
-			vms_vector velocity = {
-				projectile.velocity_x, projectile.velocity_y, 0
-			};
+			vms_vector desired;
+			vm_vec_sub(&desired, &target, &projectile.position);
+			vms_vector velocity = projectile.velocity;
 			vm_vec_normalize_quick(&desired);
 			fix speed = vm_vec_normalize_quick(&velocity);
 			const fix max_speed = weapon->speed[Robot_preview_difficulty];
@@ -698,8 +979,7 @@ static void robot_preview_update_projectiles(void)
 			if (weapon->render_type != WEAPON_RENDER_POLYMODEL)
 				vm_vec_add2(&velocity, &desired);
 			vm_vec_normalize_quick(&velocity);
-			projectile.velocity_x = fixmul(velocity.x, speed);
-			projectile.velocity_y = fixmul(velocity.y, speed);
+			vm_vec_copy_scale(&projectile.velocity, &velocity, speed);
 		}
 		if (weapon->drag) {
 			int count = ROBOT_PREVIEW_FRAME_TIME / ROBOT_PREVIEW_PHYSICS_TIME;
@@ -707,29 +987,27 @@ static void robot_preview_update_projectiles(void)
 			const fix fraction = fixdiv(remainder, ROBOT_PREVIEW_PHYSICS_TIME);
 			while (count--) {
 				if (weapon->thrust && weapon->mass) {
-					projectile.velocity_x += fixdiv(projectile.thrust_x, weapon->mass);
-					projectile.velocity_y += fixdiv(projectile.thrust_y, weapon->mass);
+					vm_vec_scale_add2(
+					    &projectile.velocity, &projectile.thrust, fixdiv(F1_0, weapon->mass));
 				}
-				projectile.velocity_x = fixmul(projectile.velocity_x, F1_0 - weapon->drag);
-				projectile.velocity_y = fixmul(projectile.velocity_y, F1_0 - weapon->drag);
+				vm_vec_scale(&projectile.velocity, F1_0 - weapon->drag);
 			}
 			if (weapon->thrust && weapon->mass) {
-				projectile.velocity_x += fixmul(fixdiv(projectile.thrust_x, weapon->mass), fraction);
-				projectile.velocity_y += fixmul(fixdiv(projectile.thrust_y, weapon->mass), fraction);
+				vm_vec_scale_add2(
+				    &projectile.velocity, &projectile.thrust,
+				    fixmul(fixdiv(F1_0, weapon->mass), fraction));
 			}
 			const fix fractional_drag = F1_0 - fixmul(fraction, weapon->drag);
-			projectile.velocity_x = fixmul(projectile.velocity_x, fractional_drag);
-			projectile.velocity_y = fixmul(projectile.velocity_y, fractional_drag);
+			vm_vec_scale(&projectile.velocity, fractional_drag);
 		}
-		projectile.x += fixmul(projectile.velocity_x, ROBOT_PREVIEW_FRAME_TIME);
-		projectile.y += fixmul(projectile.velocity_y, ROBOT_PREVIEW_FRAME_TIME);
+		vm_vec_scale_add2(
+		    &projectile.position, &projectile.velocity,
+		    fixmul(ROBOT_PREVIEW_FRAME_TIME, display_scale));
 		projectile.lifeleft -= ROBOT_PREVIEW_FRAME_TIME;
 		++Robot_preview_projectile_updates;
-		if (projectile.x >= Robot_preview_target_distance) {
-			if (abs(projectile.y) <= i2f(2))
+		if (!projectile.mine && vm_vec_dist_quick(&projectile.position, &target) <= radius / 2) {
+			if (projectile.lifeleft > 0)
 				++Robot_preview_projectile_hits;
-			else
-				++Robot_preview_projectile_misses;
 			projectile.active = 0;
 		} else if (projectile.lifeleft <= 0) {
 			++Robot_preview_projectile_misses;
@@ -746,26 +1024,87 @@ static int robot_preview_active_projectiles(void)
 	return count;
 }
 
+static int robot_preview_draw_weapon(
+    const robot_preview_projectile *projectile, const vms_vector *robot_position)
+{
+	const weapon_info *weapon = &Weapon_info[projectile->weapon];
+	object preview_object = {};
+	preview_object.type = OBJ_WEAPON;
+	preview_object.id = projectile->weapon;
+	preview_object.pos = {
+		robot_position->x - Robot_preview_robot_offset_x + projectile->position.x,
+		robot_position->y - Robot_preview_robot_offset_y + projectile->position.y,
+		robot_position->z - Robot_preview_robot_distance_offset + projectile->position.z
+	};
+	preview_object.lifeleft = projectile->lifeleft;
+	preview_object.size = weapon->blob_size > 0 ? weapon->blob_size : F1_0 / 2;
+	vms_vector direction = projectile->velocity;
+	if (!direction.x && !direction.y && !direction.z)
+		direction.x = F1_0;
+	vm_vector_2_matrix(&preview_object.orient, &direction, NULL, NULL);
+
+	switch (weapon->render_type) {
+		case WEAPON_RENDER_LASER:
+		case WEAPON_RENDER_BLOB:
+			draw_object_blob(&preview_object, weapon->bitmap);
+			return 1;
+		case WEAPON_RENDER_POLYMODEL: {
+			const int model = weapon->model_num;
+			if (model < 0 || model >= N_polygon_models)
+				return 0;
+			g3s_lrgb light = { F1_0, F1_0, F1_0 };
+			draw_polygon_model(
+			    &preview_object.pos, &preview_object.orient, NULL, model, 0, light, NULL, NULL);
+			return 1;
+		}
+		case WEAPON_RENDER_VCLIP: {
+			const int vclip = weapon->weapon_vclip;
+			if (vclip < 0 || vclip >= Num_vclips || Vclip[vclip].num_frames <= 0 ||
+			    Vclip[vclip].play_time <= 0)
+				return 0;
+			fix frame_time = projectile->lifeleft % Vclip[vclip].play_time;
+			if (frame_time < 0)
+				frame_time += Vclip[vclip].play_time;
+			draw_vclip_object(&preview_object, frame_time, 0, vclip);
+			return 1;
+		}
+		default:
+			return 0;
+	}
+}
+
+static void robot_preview_draw_projectiles(const vms_vector *robot_position, void *data)
+{
+	(void) data;
+	for (robot_preview_projectile &projectile : Robot_preview_projectiles) {
+		if (!projectile.active)
+			continue;
+		const int actual = robot_preview_draw_weapon(&projectile, robot_position);
+		if (!projectile.used_actual_render) {
+			if (actual)
+				++Robot_preview_actual_weapon_renders;
+			else
+				++Robot_preview_fallback_weapon_renders;
+			projectile.used_actual_render = actual ? 1 : -1;
+		}
+	}
+}
+
 static void robot_preview_draw_attack_overlay(void)
 {
-	const int left = SWIDTH * 47 / 100;
 	const int right = SWIDTH * 84 / 100;
 	const int center_y = SHEIGHT / 2;
 	gr_setcolor(BM_XRGB(18, 42, 18));
 	gr_line(i2f(right - 8), i2f(center_y), i2f(right + 8), i2f(center_y));
 	gr_line(i2f(right), i2f(center_y - 8), i2f(right), i2f(center_y + 8));
 	for (const robot_preview_projectile &projectile : Robot_preview_projectiles) {
-		if (!projectile.active)
+		if (!projectile.active || projectile.used_actual_render >= 0)
 			continue;
-		const weapon_info *weapon = &Weapon_info[projectile.weapon];
-		const int x = left + static_cast<int>(
-		                         static_cast<long long>(right - left) * projectile.x /
-		                         (std::max) (F1_0, Robot_preview_target_distance));
-		const int y = center_y - f2i(projectile.y * (SHEIGHT / 8));
-		gr_setcolor(weapon->homing_flag ? BM_XRGB(63, 40, 8)
-		            : weapon->matter    ? BM_XRGB(48, 48, 48)
-		                                : BM_XRGB(12, 48, 63));
-		gr_disk(i2f(x), i2f(y), i2f(weapon->matter ? 4 : 3));
+		const fix radius = (std::max) (F1_0, Polygon_models[Robot_preview_model].rad);
+		const int x = SWIDTH / 2 + fixmuldiv(projectile.position.x, SWIDTH / 3, radius * 3);
+		const int y = center_y - fixmuldiv(projectile.position.y, SHEIGHT / 3, radius * 3);
+		gr_setcolor(BM_XRGB(48, 20, 48));
+		gr_disk(i2f(x), i2f(y), i2f(3));
 	}
 }
 
@@ -872,36 +1211,46 @@ static int robot_preview_configure_robot(int number)
 	Robot_preview_pitch.store(0, std::memory_order_release);
 	Robot_preview_next_sound_at = SDL_GetTicks() + ROBOT_PREVIEW_SOUND_INTERVAL_MS;
 	robot_preview_reset_attack_state();
+	Robot_preview_last_projectile_origin = ZERO_VECTOR;
+	Robot_preview_last_projectile_direction = ZERO_VECTOR;
+	Robot_preview_last_projectile_initial_speed = 0;
 	return 1;
 }
 
 static void robot_preview_play_sound(void)
 {
 	const robot_info *robot = &Robot_info[Robot_preview_number];
-	int sounds[4];
+	int sounds[3];
+	const char *kinds[3];
 	int sound_count = 0;
 	const int candidates[] = {
-		robot->see_sound,
-		robot->attack_sound,
-		robot->claw_sound,
-#ifdef DXX_BUILD_DESCENT_II
-		robot->taunt_sound,
-#endif
+		robot->see_sound, robot->attack_sound, robot->claw_sound
 	};
+	const char *candidate_kinds[] = { "see", "attack", "claw" };
 	for (unsigned int candidate = 0;
 	     candidate < sizeof(candidates) / sizeof(candidates[0]); ++candidate) {
+		if (candidate == 2 && !robot->attack_type)
+			continue;
 		if (candidates[candidate] == 255)
 			continue;
 		int duplicate = 0;
 		for (int existing = 0; existing < sound_count; ++existing)
 			duplicate |= sounds[existing] == candidates[candidate];
-		if (!duplicate)
+		if (!duplicate) {
+			kinds[sound_count] = candidate_kinds[candidate];
 			sounds[sound_count++] = candidates[candidate];
+		}
 	}
 	if (!sound_count)
 		return;
 	Robot_preview_sound_seed = Robot_preview_sound_seed * 1664525u + 1013904223u;
-	Robot_preview_last_sound = sounds[Robot_preview_sound_seed % sound_count];
+	const unsigned int selected = Robot_preview_sound_seed % sound_count;
+	Robot_preview_last_sound = sounds[selected];
+	Robot_preview_last_sound_sample =
+	    Robot_preview_last_sound >= 0 && Robot_preview_last_sound < MAX_SOUNDS
+	        ? digi_xlat_sound(Robot_preview_last_sound)
+	        : -1;
+	Robot_preview_last_sound_kind = kinds[selected];
 	digi_play_sample(Robot_preview_last_sound, F1_0);
 	++Robot_preview_sounds_played;
 }
@@ -946,10 +1295,11 @@ static int robot_preview_window_handler(window *wind, d_event *event, void *data
 			        : Robot_preview_heading.fetch_add(40, std::memory_order_relaxed));
 			angles.p = static_cast<fixang>(Robot_preview_pitch.load(std::memory_order_relaxed));
 			angles.b = 0;
-			draw_model_picture_animated_offset(
+			draw_model_picture_animated_scene(
 			    Robot_preview_model, &angles, Robot_preview_anim_angles,
 			    Robot_preview_robot_offset_x, Robot_preview_robot_offset_y,
-			    Robot_preview_robot_distance_offset);
+			    Robot_preview_robot_distance_offset,
+			    attack_enabled ? robot_preview_draw_projectiles : NULL, NULL);
 			if (attack_enabled)
 				robot_preview_draw_attack_overlay();
 			timer_delay(F1_0 / 60);
@@ -992,12 +1342,17 @@ static int run_robot_preview(
 	Robot_preview_sound_seed = started_at ^ static_cast<unsigned int>(Robot_preview_number * 2654435761u);
 	Robot_preview_next_sound_at = started_at + ROBOT_PREVIEW_SOUND_INTERVAL_MS;
 	Robot_preview_last_sound = -1;
+	Robot_preview_last_sound_sample = -1;
+	Robot_preview_last_sound_kind = "none";
 	Robot_preview_sounds_played = 0;
 	Robot_preview_shots_fired = 0;
 	Robot_preview_projectile_hits = 0;
 	Robot_preview_projectile_misses = 0;
 	Robot_preview_projectile_updates = 0;
 	Robot_preview_attack_frames = 0;
+	Robot_preview_actual_weapon_renders = 0;
+	Robot_preview_fallback_weapon_renders = 0;
+	Robot_preview_mines_dropped = 0;
 	Robot_preview_attack_was_enabled = Robot_preview_attack_enabled.load(std::memory_order_relaxed);
 	robot_preview_reset_attack_state();
 	loading.update(base_game ? "Preparing base game" : "Mounting mission files", 5);
@@ -1270,14 +1625,41 @@ extern "C" const char *android_level_preview_introspection_json(void)
 		    (aspect_error < 0 ? -aspect_error : aspect_error) <=
 		        (source_width > source_height ? source_width : source_height);
 		const robot_info *robot = &Robot_info[Robot_preview_number];
-		const int preview_weapon = Robot_preview_last_weapon >= 0
-		                               ? Robot_preview_last_weapon
-		                               : robot_preview_weapon_for_gun(robot, 0);
+		auto preview_sound_info = [](int logical) {
+			const int sample = logical >= 0 && logical < MAX_SOUNDS
+			                       ? digi_xlat_sound(logical)
+			                       : -1;
+			return json{
+				{ "logical", logical }, { "sample", sample }
+			};
+		};
+		json robot_sounds = {
+			{ "see", preview_sound_info(robot->see_sound) },
+			{ "attack", preview_sound_info(robot->attack_sound) },
+			{ "claw", preview_sound_info(robot->claw_sound) },
+			{ "claw_in_random_pool", robot->attack_type != 0 }
+		};
+#ifdef DXX_BUILD_DESCENT_II
+		robot_sounds["taunt"] = preview_sound_info(robot->taunt_sound);
+		robot_sounds["taunt_in_random_pool"] = false;
+#endif
+		const robot_preview_attack_role attack_role = robot_preview_attack_role_for(robot);
+		const robot_preview_dps_result dps = robot_preview_calculate_dps(robot);
+		const int configured_preview_weapon =
+		    attack_role == ROBOT_PREVIEW_ATTACK_RANGED
+		        ? robot_preview_weapon_for_gun(robot, 0)
+		    : attack_role == ROBOT_PREVIEW_ATTACK_MINE_DROPPER ? robot_preview_mine_weapon()
+		                                                       : -1;
+		const int preview_weapon = Robot_preview_last_weapon >= 0 ? Robot_preview_last_weapon
+		                                                          : configured_preview_weapon;
 		json weapon_stats = NULL;
 		if (preview_weapon >= 0 && preview_weapon < N_weapon_types) {
 			const weapon_info *weapon = &Weapon_info[preview_weapon];
 			weapon_stats = {
 				{ "number", preview_weapon },
+				{ "render_type", weapon->render_type },
+				{ "model_number", weapon->model_num },
+				{ "vclip_number", weapon->weapon_vclip },
 				{ "speed", f2fl(weapon->speed[Robot_preview_difficulty]) },
 				{ "thrust", f2fl(weapon->thrust) },
 				{ "drag", f2fl(weapon->drag) },
@@ -1317,24 +1699,43 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "sounds_enabled", Robot_preview_sounds_enabled.load(std::memory_order_relaxed) != 0 },
 			{ "sounds_played", Robot_preview_sounds_played },
 			{ "last_sound", Robot_preview_last_sound },
+			{ "last_sound_sample", Robot_preview_last_sound_sample },
+			{ "last_sound_kind", Robot_preview_last_sound_kind },
+			{ "robot_sounds", robot_sounds },
 			{ "attack_enabled", Robot_preview_attack_enabled.load(std::memory_order_relaxed) != 0 },
 			{ "difficulty", Robot_preview_difficulty },
 			{ "behavior", robot_preview_behavior_name(Robot_preview_behavior) },
 			{ "behavior_number", Robot_preview_behavior },
 			{ "behavior_source", Robot_preview_behavior_from_level ? "level object" : "robot type fallback" },
+			{ "attack_role", robot_preview_attack_role_name(attack_role) },
+			{ "can_fire", attack_role != ROBOT_PREVIEW_ATTACK_NONE },
 			{ "attack_type", robot->attack_type },
+			{ "gun_count", robot->n_guns },
+			{ "configured_weapon", robot->weapon_type },
 			{ "max_speed", f2fl(robot->max_speed[Robot_preview_difficulty]) },
 			{ "circle_distance", f2fl(robot->circle_distance[Robot_preview_difficulty]) },
 			{ "evade_speed", robot->evade_speed[Robot_preview_difficulty] },
 			{ "firing_wait", f2fl(robot->firing_wait[Robot_preview_difficulty]) },
 			{ "rapidfire_count", robot->rapidfire_count[Robot_preview_difficulty] },
 			{ "shots_fired", Robot_preview_shots_fired },
+			{ "mines_dropped", Robot_preview_mines_dropped },
+			{ "last_projectile_initial_speed", f2fl(Robot_preview_last_projectile_initial_speed) },
+			{ "projectile_display_distance", f2fl(ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE) },
+			{ "last_projectile_origin", json::array({ f2fl(Robot_preview_last_projectile_origin.x),
+			                                          f2fl(Robot_preview_last_projectile_origin.y),
+			                                          f2fl(Robot_preview_last_projectile_origin.z) }) },
+			{ "last_projectile_direction", json::array({ f2fl(Robot_preview_last_projectile_direction.x),
+			                                             f2fl(Robot_preview_last_projectile_direction.y),
+			                                             f2fl(Robot_preview_last_projectile_direction.z) }) },
 			{ "projectile_hits", Robot_preview_projectile_hits },
 			{ "projectile_misses", Robot_preview_projectile_misses },
 			{ "projectile_updates", Robot_preview_projectile_updates },
 			{ "attack_frames", Robot_preview_attack_frames },
+			{ "actual_weapon_renders", Robot_preview_actual_weapon_renders },
+			{ "fallback_weapon_renders", Robot_preview_fallback_weapon_renders },
 			{ "active_projectiles", robot_preview_active_projectiles() },
 			{ "weapon", weapon_stats },
+			{ "dps", robot_preview_dps_json(dps) },
 			{ "preserve_aspect", preserve_aspect },
 			{ "source_width", source_width },
 			{ "source_height", source_height },
@@ -1343,6 +1744,13 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "close_requested", Robot_preview_close_requested.load(std::memory_order_relaxed) != 0 },
 			{ "uptime_ms", now - Level_preview_started_at }
 		};
+#ifdef DXX_BUILD_DESCENT_II
+		preview["configured_weapon2"] = robot->weapon_type2;
+		preview["firing_wait2"] = f2fl(robot->firing_wait2[Robot_preview_difficulty]);
+		preview["companion"] = robot->companion != 0;
+		preview["thief"] = robot->thief != 0;
+		preview["sub_flags"] = Robot_preview_sub_flags;
+#endif
 		Level_preview_introspection = preview.dump();
 		return Level_preview_introspection.c_str();
 	}
@@ -1433,15 +1841,38 @@ extern "C" const char *android_robot_preview_attack_summary(void)
 	    Robot_preview_number >= N_robot_types)
 		return "";
 	const robot_info *robot = &Robot_info[Robot_preview_number];
-	const int weapon_number = robot_preview_weapon_for_gun(robot, 0);
-	char summary[384];
+	const robot_preview_attack_role role = robot_preview_attack_role_for(robot);
+	const robot_preview_dps_result dps = robot_preview_calculate_dps(robot);
+	const int weapon_number = role == ROBOT_PREVIEW_ATTACK_RANGED
+	                              ? robot_preview_weapon_for_gun(robot, 0)
+	                          : role == ROBOT_PREVIEW_ATTACK_MINE_DROPPER
+	                              ? robot_preview_mine_weapon()
+	                              : -1;
+	char dps_summary[160];
+	if (dps.channel_count > 1) {
+		snprintf(
+		    dps_summary, sizeof(dps_summary), "DPS: %.2f direct (%s %.2f + %s %.2f)",
+		    dps.total, dps.primary.kind, dps.primary.dps, dps.secondary.kind,
+		    dps.secondary.dps);
+	} else if (dps.channel_count == 1) {
+		snprintf(
+		    dps_summary, sizeof(dps_summary),
+		    "DPS: %.2f direct (%.1f damage x %.3f/s)%s", dps.total,
+		    dps.primary.damage_per_hit, dps.primary.attacks_per_second,
+		    dps.randomized_timing_average ? ", averaged timing" : "");
+	} else {
+		snprintf(dps_summary, sizeof(dps_summary), "DPS: 0.00 direct");
+	}
+	char summary[560];
 	if (weapon_number >= 0 && weapon_number < N_weapon_types) {
 		const weapon_info *weapon = &Weapon_info[weapon_number];
 		snprintf(
 		    summary, sizeof(summary),
-		    "AI: %s (%s)\nMove: %.1f speed, %.1f circle, evade %d\nWeapon %d: %.1f speed, %.2f thrust, %.3f drag, %.1fs%s",
+		    "%s\nAI: %s (%s), %s\nMove: %.1f speed, %.1f circle, evade %d\nWeapon %d: %.1f speed, %.2f thrust, %.3f drag, %.1fs%s",
+		    dps_summary,
 		    robot_preview_behavior_name(Robot_preview_behavior),
 		    Robot_preview_behavior_from_level ? "level object" : "type fallback",
+		    robot_preview_attack_role_name(role),
 		    f2fl(robot->max_speed[Robot_preview_difficulty]),
 		    f2fl(robot->circle_distance[Robot_preview_difficulty]),
 		    robot->evade_speed[Robot_preview_difficulty], weapon_number,
@@ -1451,9 +1882,11 @@ extern "C" const char *android_robot_preview_attack_summary(void)
 	} else {
 		snprintf(
 		    summary, sizeof(summary),
-		    "AI: %s (%s)\nMove: %.1f speed, %.1f circle, evade %d\nNo ranged weapon",
+		    "%s\nAI: %s (%s), %s\nMove: %.1f speed, %.1f circle, evade %d\nNo ranged weapon",
+		    dps_summary,
 		    robot_preview_behavior_name(Robot_preview_behavior),
 		    Robot_preview_behavior_from_level ? "level object" : "type fallback",
+		    robot_preview_attack_role_name(role),
 		    f2fl(robot->max_speed[Robot_preview_difficulty]),
 		    f2fl(robot->circle_distance[Robot_preview_difficulty]),
 		    robot->evade_speed[Robot_preview_difficulty]);
