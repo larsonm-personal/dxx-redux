@@ -90,6 +90,7 @@ int read_model_guns(char *filename,vms_vector *gun_points, vms_vector *gun_dirs,
 // into an off-screen canvas that it creates, then copies to the current
 // canvas.
 void draw_model_picture(int mn,vms_angvec *orient_angles);
+void draw_model_picture_animated(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles);
 
 #define MAX_POLYOBJ_TEXTURES 50
 extern grs_bitmap *texture_list[MAX_POLYOBJ_TEXTURES];

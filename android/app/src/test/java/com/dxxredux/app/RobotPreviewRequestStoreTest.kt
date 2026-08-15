@@ -14,7 +14,7 @@ class RobotPreviewRequestStoreTest {
         val cacheDir = File(root, "cache").apply { mkdirs() }
         val dataDir = File(root, "data").apply { mkdirs() }
 
-        val launch = RobotPreviewRequestStore.createBase(cacheDir, "d1", dataDir, 29, "Robot 29")
+        val launch = RobotPreviewRequestStore.createBase(cacheDir, "d1", dataDir, 23, "Robot 23")
         val request = JSONObject(launch.requestFile.readText())
         val runtime = RobotPreviewRequestStore.validateForLaunch(cacheDir, launch.requestFile.absolutePath, "d1")
 
@@ -22,7 +22,7 @@ class RobotPreviewRequestStoreTest {
         assertEquals("base_game", request.getString("source_type"))
         assertEquals(0, request.getInt("level_num"))
         assertFalse(request.has("level_file"))
-        assertEquals(29, runtime.robotNumber)
+        assertEquals(23, runtime.robotNumber)
     }
 
     @Test

@@ -91,6 +91,14 @@ try {
     if ([int]$initial.level_preview.model_number -lt 0 -or -not $initial.level_preview.palette_ready) {
         throw "Robot preview did not resolve a model and palette"
     }
+    if ($null -eq $initial.level_preview.animated_joint_count -or
+        $null -eq $initial.level_preview.motion_updates) {
+        throw "Robot preview did not report HAM/HXM joint animation"
+    }
+    if ([int]$initial.level_preview.animated_joint_count -gt 0 -and
+        [long]$initial.level_preview.motion_updates -le 0) {
+        throw "Robot preview has animated joints but did not move them"
+    }
     if ([int]$initial.framebuffer_probe.gl_error -ne 0 -or [long]$initial.framebuffer_probe.visible_pixels -le 0) {
         throw "Robot preview did not produce a visible framebuffer"
     }
@@ -122,7 +130,7 @@ try {
         return $setupResumed -and $requestState -notmatch [regex]::Escape([string]$selection.request_id)
     }
     if (-not $closed) { throw "Robot preview did not close cleanly" }
-    Write-Status "PASS: robot $($selection.robot_number) model $($initial.level_preview.model_number) previewed and rotated" "Green"
+    Write-Status "PASS: robot $($selection.robot_number) model $($initial.level_preview.model_number) animated and rotated" "Green"
 } finally {
     try {
         if (Test-DeviceOnline -Serial $Serial) {

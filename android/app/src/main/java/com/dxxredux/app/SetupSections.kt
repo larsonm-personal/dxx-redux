@@ -14,6 +14,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -2718,6 +2719,7 @@ private fun BaseGameRobotBrowserDialog(
     var previewRequestPath by remember { mutableStateOf<String?>(null) }
     var previewPreparing by remember { mutableStateOf(false) }
     var previewError by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
     val previewLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             previewRequestPath?.let { RobotPreviewRequestStore.delete(context.cacheDir, it) }
@@ -2744,43 +2746,53 @@ private fun BaseGameRobotBrowserDialog(
                     Text(it, color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
                     Spacer(Modifier.height(6.dp))
                 }
-                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
-                    items(robots, key = { it.number }) { robot ->
-                        val label = RobotNameCatalog.displayName(robots, robot.number, "Robot ${robot.number}")
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(label, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                            TextButton(
-                                enabled = !previewPreparing,
-                                onClick = {
-                                    previewPreparing = true
-                                    previewError = null
-                                    scope.launch {
-                                        val request =
-                                            runCatching {
-                                                withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                                    RobotPreviewRequestStore.createBase(
-                                                        context.cacheDir,
-                                                        game,
-                                                        dataDir,
-                                                        robot.number,
-                                                        label,
-                                                    )
-                                                }
-                                            }.getOrElse { error ->
-                                                previewPreparing = false
-                                                previewError = error.message ?: "Could not prepare robot preview"
-                                                return@launch
+                Box(modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
+                    LazyColumn(state = listState, modifier = Modifier.fillMaxWidth()) {
+                        items(robots, key = { it.number }) { robot ->
+                            val label = RobotNameCatalog.displayName(robots, robot.number, "Robot ${robot.number}")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(label, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                                    TextButton(
+                                        modifier = Modifier.height(28.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp),
+                                        enabled = !previewPreparing,
+                                        onClick = {
+                                            previewPreparing = true
+                                            previewError = null
+                                            scope.launch {
+                                                val request =
+                                                    runCatching {
+                                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                            RobotPreviewRequestStore.createBase(
+                                                                context.cacheDir,
+                                                                game,
+                                                                dataDir,
+                                                                robot.number,
+                                                                label,
+                                                            )
+                                                        }
+                                                    }.getOrElse { error ->
+                                                        previewPreparing = false
+                                                        previewError =
+                                                            error.message ?: "Could not prepare robot preview"
+                                                        return@launch
+                                                    }
+                                                previewRequestPath = request.requestFile.absolutePath
+                                                previewLauncher.launch(
+                                                    RobotPreviewActivity.createIntent(context, request),
+                                                )
                                             }
-                                        previewRequestPath = request.requestFile.absolutePath
-                                        previewLauncher.launch(RobotPreviewActivity.createIntent(context, request))
-                                    }
-                                },
-                            ) { Text(if (previewPreparing) "Preparing" else "Preview") }
+                                        },
+                                    ) { Text(if (previewPreparing) "Preparing" else "Preview") }
+                                }
+                            }
                         }
                     }
+                    SharedLazyListScrollArrows(listState)
                 }
             }
         },

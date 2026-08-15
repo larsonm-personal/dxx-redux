@@ -1,6 +1,7 @@
 #include "android_level_preview.h"
 
 #include <atomic>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -77,6 +78,19 @@ static std::atomic<int> Robot_preview_active(0);
 static int Robot_preview_model = -1;
 static int Robot_preview_number = -1;
 static unsigned long long Robot_preview_frames;
+static vms_angvec Robot_preview_anim_angles[MAX_SUBMODELS];
+static vms_angvec Robot_preview_anim_source[MAX_SUBMODELS];
+static vms_angvec Robot_preview_anim_target[MAX_SUBMODELS];
+static std::atomic<int> Robot_preview_anim_state(AS_REST);
+static std::atomic<int> Robot_preview_anim_frame(0);
+static int Robot_preview_animated_joint_count;
+static unsigned long long Robot_preview_motion_updates;
+static unsigned int Robot_preview_anim_cycle_index;
+
+static const int Robot_preview_anim_cycle[] = {
+	AS_ALERT, AS_FIRE, AS_RECOIL, AS_ALERT, AS_FLINCH, AS_REST
+};
+static const int ROBOT_PREVIEW_TRANSITION_FRAMES = 45;
 
 class preview_loading_progress_guard
 {
@@ -336,6 +350,99 @@ static int preview_base_window_handler(window *wind, d_event *event, void *data)
 	return 0;
 }
 
+static const char *robot_preview_anim_state_name(int state)
+{
+	switch (state) {
+		case AS_REST:
+			return "rest";
+		case AS_ALERT:
+			return "alert";
+		case AS_FIRE:
+			return "fire";
+		case AS_RECOIL:
+			return "recoil";
+		case AS_FLINCH:
+			return "flinch";
+		default:
+			return "unknown";
+	}
+}
+
+static int robot_preview_set_anim_target(int state)
+{
+	int animated_joints[MAX_SUBMODELS] = {};
+	int animated_joint_count = 0;
+	const robot_info *robot = &Robot_info[Robot_preview_number];
+	const int gun_count = robot->n_guns >= 0 && robot->n_guns <= MAX_GUNS
+	                          ? robot->n_guns
+	                          : 0;
+	const int model_count = Polygon_models[Robot_preview_model].n_models;
+
+	memcpy(Robot_preview_anim_source, Robot_preview_anim_angles,
+	       sizeof(Robot_preview_anim_source));
+	memcpy(Robot_preview_anim_target, Robot_preview_anim_angles,
+	       sizeof(Robot_preview_anim_target));
+	for (int gun = 0; gun <= gun_count; ++gun) {
+		const jointlist *list = &robot->anim_states[gun][state];
+		if (list->offset < 0 || list->n_joints < 0 ||
+		    list->offset + list->n_joints > N_robot_joints)
+			continue;
+		for (int joint = 0; joint < list->n_joints; ++joint) {
+			const jointpos *position = &Robot_joints[list->offset + joint];
+			if (position->jointnum < 0 || position->jointnum >= model_count ||
+			    position->jointnum >= MAX_SUBMODELS)
+				continue;
+			Robot_preview_anim_target[position->jointnum] = position->angles;
+			if (!animated_joints[position->jointnum]) {
+				animated_joints[position->jointnum] = 1;
+				++animated_joint_count;
+			}
+		}
+	}
+	Robot_preview_anim_state.store(state, std::memory_order_relaxed);
+	Robot_preview_anim_frame.store(0, std::memory_order_relaxed);
+	return animated_joint_count;
+}
+
+static fixang robot_preview_interpolate_angle(fixang source, fixang target, int frame)
+{
+	const int delta = static_cast<int16_t>(target - source);
+	return static_cast<fixang>(source + delta * frame / ROBOT_PREVIEW_TRANSITION_FRAMES);
+}
+
+static void robot_preview_animate(void)
+{
+	int frame = Robot_preview_anim_frame.load(std::memory_order_relaxed) + 1;
+	if (frame > ROBOT_PREVIEW_TRANSITION_FRAMES)
+		frame = ROBOT_PREVIEW_TRANSITION_FRAMES;
+	int moved = 0;
+	for (int joint = 0; joint < MAX_SUBMODELS; ++joint) {
+		vms_angvec next;
+		next.p = robot_preview_interpolate_angle(
+		    Robot_preview_anim_source[joint].p, Robot_preview_anim_target[joint].p, frame);
+		next.b = robot_preview_interpolate_angle(
+		    Robot_preview_anim_source[joint].b, Robot_preview_anim_target[joint].b, frame);
+		next.h = robot_preview_interpolate_angle(
+		    Robot_preview_anim_source[joint].h, Robot_preview_anim_target[joint].h, frame);
+		moved |= next.p != Robot_preview_anim_angles[joint].p ||
+		         next.b != Robot_preview_anim_angles[joint].b ||
+		         next.h != Robot_preview_anim_angles[joint].h;
+		Robot_preview_anim_angles[joint] = next;
+	}
+	if (moved)
+		++Robot_preview_motion_updates;
+	Robot_preview_anim_frame.store(frame, std::memory_order_relaxed);
+	if (frame == ROBOT_PREVIEW_TRANSITION_FRAMES) {
+		Robot_preview_anim_cycle_index =
+		    (Robot_preview_anim_cycle_index + 1) %
+		    (sizeof(Robot_preview_anim_cycle) / sizeof(Robot_preview_anim_cycle[0]));
+		const int count =
+		    robot_preview_set_anim_target(Robot_preview_anim_cycle[Robot_preview_anim_cycle_index]);
+		if (count > Robot_preview_animated_joint_count)
+			Robot_preview_animated_joint_count = count;
+	}
+}
+
 static int robot_preview_window_handler(window *wind, d_event *event, void *data)
 {
 	(void) data;
@@ -344,12 +451,14 @@ static int robot_preview_window_handler(window *wind, d_event *event, void *data
 			window_close(wind);
 			return 1;
 		case EVENT_WINDOW_DRAW: {
+			robot_preview_animate();
 			vms_angvec angles;
 			angles.h = static_cast<fixang>(
 			    Robot_preview_heading.fetch_add(40, std::memory_order_relaxed));
 			angles.p = static_cast<fixang>(Robot_preview_pitch.load(std::memory_order_relaxed));
 			angles.b = 0;
-			draw_model_picture(Robot_preview_model, &angles);
+			draw_model_picture_animated(
+			    Robot_preview_model, &angles, Robot_preview_anim_angles);
 			timer_delay(F1_0 / 60);
 			return 1;
 		}
@@ -373,6 +482,14 @@ static int run_robot_preview(
 	Robot_preview_model = -1;
 	Robot_preview_number = request.value("robot_number", -1);
 	Robot_preview_frames = 0;
+	memset(Robot_preview_anim_angles, 0, sizeof(Robot_preview_anim_angles));
+	memset(Robot_preview_anim_source, 0, sizeof(Robot_preview_anim_source));
+	memset(Robot_preview_anim_target, 0, sizeof(Robot_preview_anim_target));
+	Robot_preview_anim_state.store(AS_REST, std::memory_order_relaxed);
+	Robot_preview_anim_frame.store(0, std::memory_order_relaxed);
+	Robot_preview_animated_joint_count = 0;
+	Robot_preview_motion_updates = 0;
+	Robot_preview_anim_cycle_index = 0;
 	loading.update(base_game ? "Preparing base game" : "Mounting mission files", 5);
 
 	const std::string preview_write_dir = request.value("preview_write_dir", "");
@@ -421,6 +538,12 @@ static int run_robot_preview(
 	Robot_preview_model = Robot_info[Robot_preview_number].model_num;
 	if (Robot_preview_model < 0 || Robot_preview_model >= N_polygon_models)
 		return preview_fail("Robot model is not available in the selected game data");
+	Robot_preview_animated_joint_count = robot_preview_set_anim_target(AS_REST);
+	memcpy(Robot_preview_anim_angles, Robot_preview_anim_target,
+	       sizeof(Robot_preview_anim_angles));
+	const int alert_joint_count = robot_preview_set_anim_target(AS_ALERT);
+	if (alert_joint_count > Robot_preview_animated_joint_count)
+		Robot_preview_animated_joint_count = alert_joint_count;
 
 	loading.update("Opening robot viewer", 90);
 	set_screen_mode(SCREEN_GAME);
@@ -442,9 +565,9 @@ static int run_robot_preview(
 		if (first_frame_pending) {
 			first_frame_pending = 0;
 			loading.finish();
-			debug_log(DLOG_GAME, "robot preview first frame ready in %u ms robot=%d model=%d level=%s",
+			debug_log(DLOG_GAME, "robot preview first frame ready in %u ms robot=%d model=%d joints=%d level=%s",
 			          (unsigned int) (SDL_GetTicks() - started_at), Robot_preview_number,
-			          Robot_preview_model, level_file.c_str());
+			          Robot_preview_model, Robot_preview_animated_joint_count, level_file.c_str());
 		}
 	}
 	Robot_preview_active.store(0, std::memory_order_release);
@@ -643,6 +766,11 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "palette_ready", Level_preview_palette_ready != 0 },
 			{ "palette_name", Level_preview_palette_name },
 			{ "frame_count", Robot_preview_frames },
+			{ "animation_state", robot_preview_anim_state_name(
+			                         Robot_preview_anim_state.load(std::memory_order_relaxed)) },
+			{ "animation_transition_frame", Robot_preview_anim_frame.load(std::memory_order_relaxed) },
+			{ "animated_joint_count", Robot_preview_animated_joint_count },
+			{ "motion_updates", Robot_preview_motion_updates },
 			{ "heading", Robot_preview_heading.load(std::memory_order_relaxed) },
 			{ "pitch", Robot_preview_pitch.load(std::memory_order_relaxed) },
 			{ "close_requested", Robot_preview_close_requested.load(std::memory_order_relaxed) != 0 },
