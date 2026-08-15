@@ -553,6 +553,34 @@ class LauncherScriptExecutor(
                     activity.startActivity(RobotPreviewActivity.createIntent(context, launchRequest))
                 }
 
+                "launch_base_robot_preview" -> {
+                    val game = step.optString("game", GameFileFormats.GAME_D2)
+                    val robots = RobotNameCatalog.load(context, game)
+                    val robotNumber = step.optInt("robot_number", 0)
+                    if (robotNumber !in robots.indices) {
+                        fail("launch_base_robot_preview: robot $robotNumber is out of range for $game")
+                        return
+                    }
+                    val robotLabel = RobotNameCatalog.displayName(robots, robotNumber, "Robot $robotNumber")
+                    val fileSetManager = FileSetManager(context.filesDir)
+                    val dataDir = fileSetManager.getSetDir(fileSetManager.getActive())
+                    val launchRequest =
+                        withContext(Dispatchers.IO) {
+                            RobotPreviewRequestStore.createBase(
+                                context.cacheDir,
+                                game,
+                                dataDir,
+                                robotNumber,
+                                robotLabel,
+                            )
+                        }
+                    writeBaseRobotPreviewSmokeSelection(game, robotNumber, robotLabel, launchRequest)
+                    Log.i(TAG, "Launching base robot preview: game=$game robot=$robotNumber")
+                    currentStep++
+                    activity.prepareForLevelPreviewLaunch()
+                    activity.startActivity(RobotPreviewActivity.createIntent(context, launchRequest))
+                }
+
                 "tap_button" -> {
                     val text = step.optString("text", "")
                     val exact = step.optBoolean("exact", false)
@@ -1270,6 +1298,33 @@ class LauncherScriptExecutor(
                 .put("level_name", selected.second.levelName)
                 .put("level_file", selected.second.levelFile)
                 .put("robot_number", selected.third.number)
+                .put("robot_label", robotLabel)
+                .put(
+                    "request_id",
+                    request.requestFile.parentFile
+                        ?.name
+                        .orEmpty(),
+                )
+        temporary.writeText(json.toString(2) + "\n", Charsets.UTF_8)
+        Os.rename(temporary.absolutePath, output.absolutePath)
+    }
+
+    private fun writeBaseRobotPreviewSmokeSelection(
+        game: String,
+        robotNumber: Int,
+        robotLabel: String,
+        request: RobotPreviewLaunchRequest,
+    ) {
+        val output = File(context.filesDir, ROBOT_PREVIEW_SMOKE_SELECTION_FILE)
+        val temporary = File(context.filesDir, "$ROBOT_PREVIEW_SMOKE_SELECTION_FILE.tmp")
+        val json =
+            JSONObject()
+                .put("schema", "dxx-robot-preview-smoke-selection-v1")
+                .put("source", "base_game")
+                .put("game", game)
+                .put("level_num", 0)
+                .put("level_file", "")
+                .put("robot_number", robotNumber)
                 .put("robot_label", robotLabel)
                 .put(
                     "request_id",

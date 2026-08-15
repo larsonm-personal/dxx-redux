@@ -1451,6 +1451,27 @@ internal object LevelMetadataAnalyzer {
             .put("robot_label", robotLabel)
             .put("preview_write_dir", previewWriteDir.absolutePath)
 
+    internal fun buildBaseRobotPreviewRequestJson(
+        game: String,
+        dataDir: File,
+        requestId: String,
+        previewWriteDir: File,
+        robotNumber: Int,
+        robotLabel: String,
+    ): JSONObject =
+        JSONObject()
+            .put("schema", "dxx-robot-preview-request-v1")
+            .put("request_id", requestId)
+            .put("game", game)
+            .put("source_name", if (game == GameFileFormats.GAME_D1) "Descent" else "Descent 2")
+            .put("source_type", "base_game")
+            .put("data_dir", dataDir.canonicalPath)
+            .put("base_game", true)
+            .put("level_num", 0)
+            .put("robot_number", robotNumber)
+            .put("robot_label", robotLabel)
+            .put("preview_write_dir", previewWriteDir.absolutePath)
+
     private fun buildPreparedRequestJson(
         target: LevelMetadataTarget,
         requestId: String,

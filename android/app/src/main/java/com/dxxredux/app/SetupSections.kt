@@ -12,6 +12,8 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -2487,11 +2489,16 @@ internal fun FileDetailDialog(
     }
     val fileMetadata = fileMetadataResult?.metadata
     val levelMetadataTarget = fileMetadataResult?.levelMetadataTarget
+    val baseRobotGame =
+        remember(name, status.found) {
+            if (status.found) RobotPreviewRequestStore.baseGameForFile(name) else null
+        }
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
     var confirmingForget by remember { mutableStateOf(false) }
     var openLevelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
+    var openBaseRobotGame by remember { mutableStateOf<String?>(null) }
     val closeFocus = remember { FocusRequester() }
     val okFocus = remember { FocusRequester() }
 
@@ -2523,6 +2530,13 @@ internal fun FileDetailDialog(
         LevelMetadataDialog(
             target = target,
             onDismiss = { openLevelMetadataTarget = null },
+        )
+    }
+    openBaseRobotGame?.let { game ->
+        BaseGameRobotBrowserDialog(
+            game = game,
+            dataDir = setDir,
+            onDismiss = { openBaseRobotGame = null },
         )
     }
 
@@ -2573,11 +2587,25 @@ internal fun FileDetailDialog(
                             modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
                         )
                     } else {
-                        levelMetadataTarget?.let { target ->
-                            LevelMetadataButton(
-                                onClick = { openLevelMetadataTarget = target },
-                                modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
-                            )
+                        if (levelMetadataTarget != null || baseRobotGame != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                levelMetadataTarget?.let { target ->
+                                    LevelMetadataButton(
+                                        onClick = { openLevelMetadataTarget = target },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                                baseRobotGame?.let { game ->
+                                    LevelMetadataButton(
+                                        label = "Robot preview",
+                                        onClick = { openBaseRobotGame = game },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
                         }
                     }
                     missionDescriptor?.let { mission ->
@@ -2673,6 +2701,87 @@ internal fun FileDetailDialog(
                     }
                 }
                 SetupScrollArrows(scrollState)
+            }
+        },
+    )
+}
+
+@Composable
+private fun BaseGameRobotBrowserDialog(
+    game: String,
+    dataDir: File,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val robots = remember(game) { RobotNameCatalog.load(context, game) }
+    var previewRequestPath by remember { mutableStateOf<String?>(null) }
+    var previewPreparing by remember { mutableStateOf(false) }
+    var previewError by remember { mutableStateOf<String?>(null) }
+    val previewLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            previewRequestPath?.let { RobotPreviewRequestStore.delete(context.cacheDir, it) }
+            previewRequestPath = null
+            previewPreparing = false
+            previewError =
+                if (result.resultCode == Activity.RESULT_OK) {
+                    null
+                } else {
+                    result.data?.getStringExtra(RobotPreviewActivity.EXTRA_ERROR)
+                        ?: "Robot preview process ended before reporting a result"
+                }
+        }
+
+    AlertDialog(
+        onDismissRequest = { if (!previewPreparing) onDismiss() },
+        title = { Text(if (game == GameFileFormats.GAME_D1) "Descent robots" else "Descent 2 robots") },
+        confirmButton = {
+            TextButton(onClick = onDismiss, enabled = !previewPreparing) { Text("Close") }
+        },
+        text = {
+            Column {
+                previewError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
+                    Spacer(Modifier.height(6.dp))
+                }
+                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
+                    items(robots, key = { it.number }) { robot ->
+                        val label = RobotNameCatalog.displayName(robots, robot.number, "Robot ${robot.number}")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(label, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            TextButton(
+                                enabled = !previewPreparing,
+                                onClick = {
+                                    previewPreparing = true
+                                    previewError = null
+                                    scope.launch {
+                                        val request =
+                                            runCatching {
+                                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                    RobotPreviewRequestStore.createBase(
+                                                        context.cacheDir,
+                                                        game,
+                                                        dataDir,
+                                                        robot.number,
+                                                        label,
+                                                    )
+                                                }
+                                            }.getOrElse { error ->
+                                                previewPreparing = false
+                                                previewError = error.message ?: "Could not prepare robot preview"
+                                                return@launch
+                                            }
+                                        previewRequestPath = request.requestFile.absolutePath
+                                        previewLauncher.launch(RobotPreviewActivity.createIntent(context, request))
+                                    }
+                                },
+                            ) { Text(if (previewPreparing) "Preparing" else "Preview") }
+                        }
+                    }
+                }
             }
         },
     )

@@ -9,6 +9,32 @@ import java.io.File
 
 class RobotPreviewRequestStoreTest {
     @Test
+    fun baseRequestDoesNotRequireMissionOrLevelContext() {
+        val root = testRoot("base")
+        val cacheDir = File(root, "cache").apply { mkdirs() }
+        val dataDir = File(root, "data").apply { mkdirs() }
+
+        val launch = RobotPreviewRequestStore.createBase(cacheDir, "d1", dataDir, 29, "Robot 29")
+        val request = JSONObject(launch.requestFile.readText())
+        val runtime = RobotPreviewRequestStore.validateForLaunch(cacheDir, launch.requestFile.absolutePath, "d1")
+
+        assertTrue(request.getBoolean("base_game"))
+        assertEquals("base_game", request.getString("source_type"))
+        assertEquals(0, request.getInt("level_num"))
+        assertFalse(request.has("level_file"))
+        assertEquals(29, runtime.robotNumber)
+    }
+
+    @Test
+    fun baseRobotBrowserIsAvailableFromCoreDataFiles() {
+        assertEquals("d1", RobotPreviewRequestStore.baseGameForFile("DESCENT.HOG"))
+        assertEquals("d1", RobotPreviewRequestStore.baseGameForFile("descent.pig"))
+        assertEquals("d2", RobotPreviewRequestStore.baseGameForFile("descent2.hog"))
+        assertEquals("d2", RobotPreviewRequestStore.baseGameForFile("descent2.ham"))
+        assertEquals(null, RobotPreviewRequestStore.baseGameForFile("water.pig"))
+    }
+
+    @Test
     fun requestRetainsRobotAndSourceLevelContext() {
         val root = testRoot("create")
         val cacheDir = File(root, "cache").apply { mkdirs() }

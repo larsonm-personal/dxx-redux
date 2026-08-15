@@ -21,6 +21,13 @@ internal data class RobotPreviewRuntimeRequest(
 )
 
 internal object RobotPreviewRequestStore {
+    fun baseGameForFile(name: String): String? =
+        when (name.lowercase(Locale.US)) {
+            "descent.hog", "descent.pig" -> GameFileFormats.GAME_D1
+            "descent2.hog", "d2demo.hog", "descent2.ham", "d2demo.ham" -> GameFileFormats.GAME_D2
+            else -> null
+        }
+
     fun findSourceLevel(
         levels: List<LevelMetadataLevelRow>,
         item: LevelMetadataReplacementItem,
@@ -58,6 +65,47 @@ internal object RobotPreviewRequestStore {
                     request.toString(2) + "\n",
                 )
             return RobotPreviewLaunchRequest(target.game, requestFile)
+        } catch (e: Exception) {
+            OwnedCacheDirectories.delete(cacheRoot, workDir)
+            throw e
+        }
+    }
+
+    fun createBase(
+        cacheDir: File,
+        game: String,
+        dataDir: File,
+        robotNumber: Int,
+        robotLabel: String,
+    ): RobotPreviewLaunchRequest {
+        require(game == GameFileFormats.GAME_D1 || game == GameFileFormats.GAME_D2) {
+            "Unsupported robot preview game"
+        }
+        val canonicalDataDir = dataDir.canonicalFile
+        require(canonicalDataDir.isDirectory) { "Robot preview base data directory is missing" }
+        require(robotNumber >= 0) { "Robot preview number is invalid" }
+        val cacheRoot = root(cacheDir)
+        OwnedCacheDirectories.prune(cacheRoot, ROBOT_PREVIEW_CACHE_MAX_AGE_MS)
+        val workDir = OwnedCacheDirectories.create(cacheRoot)
+        try {
+            val previewWriteDir = File(workDir, "runtime-write").canonicalFile
+            check(previewWriteDir.mkdir()) { "Could not create isolated robot preview write directory" }
+            val request =
+                LevelMetadataAnalyzer.buildBaseRobotPreviewRequestJson(
+                    game,
+                    canonicalDataDir,
+                    workDir.name,
+                    previewWriteDir,
+                    robotNumber,
+                    robotLabel,
+                )
+            val requestFile =
+                OwnedCacheDirectories.writeUtf8Atomically(
+                    workDir,
+                    "request.json",
+                    request.toString(2) + "\n",
+                )
+            return RobotPreviewLaunchRequest(game, requestFile)
         } catch (e: Exception) {
             OwnedCacheDirectories.delete(cacheRoot, workDir)
             throw e

@@ -197,7 +197,7 @@ static void preview_metadata_progress(
 static int preview_fail(const std::string &message)
 {
 	Level_preview_error = message;
-	debug_log(DLOG_GAME, "level preview failed: %s", message.c_str());
+	debug_log_force(DLOG_GAME, "level preview failed: %s", message.c_str());
 	return 1;
 }
 
@@ -365,6 +365,7 @@ static int robot_preview_window_handler(window *wind, d_event *event, void *data
 static int run_robot_preview(
     const json &request, Uint32 started_at, preview_loading_progress_guard &loading)
 {
+	const bool base_game = request.value("base_game", false);
 	Robot_preview_close_requested.store(0, std::memory_order_release);
 	Robot_preview_heading.store(F0_5 - 1, std::memory_order_release);
 	Robot_preview_pitch.store(0, std::memory_order_release);
@@ -372,7 +373,7 @@ static int run_robot_preview(
 	Robot_preview_model = -1;
 	Robot_preview_number = request.value("robot_number", -1);
 	Robot_preview_frames = 0;
-	loading.update("Mounting mission files", 5);
+	loading.update(base_game ? "Preparing base game" : "Mounting mission files", 5);
 
 	const std::string preview_write_dir = request.value("preview_write_dir", "");
 	if (preview_write_dir.empty() || !PHYSFS_setWriteDir(preview_write_dir.c_str()) ||
@@ -394,25 +395,32 @@ static int run_robot_preview(
 	init_game();
 	new_player_config();
 	Players[Player_num].callsign[0] = '\0';
-	if (load_preview_mission(request))
-		return 1;
-
 	const std::string level_file = request.value("level_file", "");
-	if (level_file.empty() || !PHYSFSX_exists(level_file.c_str(), 1))
-		return preview_fail("Robot preview source level is missing");
-	loading.update(level_file.c_str(), 55);
-	if (load_level(level_file.c_str()))
-		return preview_fail(std::string("Could not load robot preview level ") + level_file);
-	Current_level_num = request.value("level_num", 1);
+	if (!base_game) {
+		if (load_preview_mission(request))
+			return 1;
+		if (level_file.empty() || !PHYSFSX_exists(level_file.c_str(), 1))
+			return preview_fail("Robot preview source level is missing");
+		loading.update(level_file.c_str(), 55);
+		if (load_level(level_file.c_str()))
+			return preview_fail(std::string("Could not load robot preview level ") + level_file);
+		Current_level_num = request.value("level_num", 1);
 #ifdef DXX_BUILD_DESCENT_II
-	load_level_robots_file(level_file.c_str());
+		load_level_robots_file(level_file.c_str());
 #endif
+	} else {
+		loading.update("Loading base robot", 55);
+		Current_level_num = 0;
+#ifdef DXX_BUILD_DESCENT_II
+		std::strcpy(Current_level_palette, DEFAULT_LEVEL_PALETTE);
+#endif
+	}
 	load_preview_palette();
 	if (Robot_preview_number < 0 || Robot_preview_number >= N_robot_types)
-		return preview_fail("Robot number is not available in the selected level");
+		return preview_fail("Robot number is not available in the selected game data");
 	Robot_preview_model = Robot_info[Robot_preview_number].model_num;
 	if (Robot_preview_model < 0 || Robot_preview_model >= N_polygon_models)
-		return preview_fail("Robot model is not available in the selected level");
+		return preview_fail("Robot model is not available in the selected game data");
 
 	loading.update("Opening robot viewer", 90);
 	set_screen_mode(SCREEN_GAME);

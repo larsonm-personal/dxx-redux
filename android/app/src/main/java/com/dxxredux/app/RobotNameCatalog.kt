@@ -59,6 +59,7 @@ internal object RobotNameCatalog {
                 .getOrNull(number)
                 ?.takeIf { it.number == number }
                 ?.name
+                ?.takeUnless { it == number.toString() }
                 .orEmpty()
         return if (name.isBlank()) fallback else "$name (Robot $number)"
     }

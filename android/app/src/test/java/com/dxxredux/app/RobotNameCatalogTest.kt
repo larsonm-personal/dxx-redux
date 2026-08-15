@@ -18,12 +18,13 @@ class RobotNameCatalogTest {
     fun displayNameUsesFilledNameAndPreservesRobotNumber() {
         val entries =
             RobotNameCatalog.parse(
-                """[{"number":0,"name":""},{"number":1,"name":"Lou Guard"}]""",
-                2,
+                """[{"number":0,"name":""},{"number":1,"name":"Lou Guard"},{"number":2,"name":"2"}]""",
+                3,
             )
 
         assertEquals("Robot 0", RobotNameCatalog.displayName(entries, 0, "Robot 0"))
         assertEquals("Lou Guard (Robot 1)", RobotNameCatalog.displayName(entries, 1, "Robot 1"))
+        assertEquals("Robot 2", RobotNameCatalog.displayName(entries, 2, "Robot 2"))
         assertEquals("Robot 80", RobotNameCatalog.displayName(entries, 80, "Robot 80"))
     }
 

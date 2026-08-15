@@ -24,6 +24,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @Suppress("DEPRECATION")
 abstract class RobotPreviewActivity :
@@ -199,7 +201,16 @@ abstract class RobotPreviewActivity :
     fun onNativeRobotPreviewFinished(error: String?) {
         if (nativeFinished) return
         nativeFinished = true
-        if (!closeRequested) runOnUiThread { finishWithResult(error.orEmpty()) }
+        if (closeRequested) return
+        val activityFinished = CountDownLatch(1)
+        runOnUiThread {
+            try {
+                finishWithResult(error.orEmpty())
+            } finally {
+                activityFinished.countDown()
+            }
+        }
+        activityFinished.await(2, TimeUnit.SECONDS)
     }
 
     @Suppress("unused")

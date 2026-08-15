@@ -4,6 +4,8 @@ param(
     [string]$MissionZip = "",
     [ValidateSet("d1", "d2")]
     [string]$Game = "d2",
+    [switch]$BaseGame,
+    [int]$RobotNumber = 0,
     [int]$Seed = 6042,
     [int]$TimeoutSeconds = 180,
     [string]$Serial = "emulator-5554"
@@ -15,10 +17,10 @@ $androidRoot = Split-Path -Parent $testsDir
 $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $androidRoot "helpers\test_helpers.ps1")
 
-if (-not $MissionZip) {
+if (-not $BaseGame -and -not $MissionZip) {
     $MissionZip = Join-Path $repoRoot "game_data\mission_files\Obsidian.zip"
 }
-$MissionZip = (Resolve-Path -LiteralPath $MissionZip).Path
+$MissionZip = if ($BaseGame) { "" } else { (Resolve-Path -LiteralPath $MissionZip).Path }
 $deviceZip = "robot_preview_smoke_$Seed.zip"
 $deviceScript = "robot_preview_smoke_$Seed.json5"
 $localScript = Join-Path $androidRoot "temp\robot_preview_smoke\$deviceScript"
@@ -37,14 +39,20 @@ function Read-AppJson {
 try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Android device $Serial is not online" }
     Reset-DeviceGameState -Serial $Serial
-    $temporaryZip = "/data/local/tmp/$deviceZip"
-    Adb -AdbArgs @("push", $MissionZip, $temporaryZip) | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files/mods") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", $temporaryZip, "files/mods/$deviceZip") | Out-Null
-    Adb -AdbArgs @("shell", "rm", "-f", $temporaryZip) | Out-Null
+    if (-not $BaseGame) {
+        $temporaryZip = "/data/local/tmp/$deviceZip"
+        Adb -AdbArgs @("push", $MissionZip, $temporaryZip) | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files/mods") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", $temporaryZip, "files/mods/$deviceZip") | Out-Null
+        Adb -AdbArgs @("shell", "rm", "-f", $temporaryZip) | Out-Null
+    }
 
-    $template = Get-Content -LiteralPath (Join-Path $androidRoot "game_scripts\test_robot_preview.json5") -Raw
-    $body = $template.Replace('${MISSION_ZIP}', $deviceZip).Replace('${GAME}', $Game).Replace('${SEED}', "$Seed")
+    $templateName = if ($BaseGame) { "test_base_robot_preview.json5" } else { "test_robot_preview.json5" }
+    $template = Get-Content -LiteralPath (Join-Path $androidRoot "game_scripts\$templateName") -Raw
+    $body = $template.Replace('${MISSION_ZIP}', $deviceZip)
+    $body = $body.Replace('${GAME}', $Game)
+    $body = $body.Replace('${ROBOT_NUMBER}', "$RobotNumber")
+    $body = $body.Replace('${SEED}', "$Seed")
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $localScript) | Out-Null
     [IO.File]::WriteAllText($localScript, $body + "`n", [Text.UTF8Encoding]::new($false))
     $temporaryScript = "/data/local/tmp/$deviceScript"
@@ -119,9 +127,9 @@ try {
     try {
         if (Test-DeviceOnline -Serial $Serial) {
             Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
-            Adb -AdbArgs @(
-                "shell", "run-as", $script:PACKAGE, "rm", "-f", "files/mods/$deviceZip", "files/$deviceScript"
-            ) | Out-Null
+            $cleanupFiles = @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/$deviceScript")
+            if (-not $BaseGame) { $cleanupFiles += "files/mods/$deviceZip" }
+            Adb -AdbArgs $cleanupFiles | Out-Null
         }
     } catch {
         Write-Warning "Robot preview cleanup failed: $($_.Exception.Message)"
