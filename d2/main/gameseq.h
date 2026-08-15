@@ -68,6 +68,7 @@ void DoPlayerDead(void);
 
 // load just the hxm file
 void load_level_robots(int level_num);
+void load_level_robots_file(const char *level_name);
 
 // load a level off disk. level numbers start at 1.
 // Secret levels are -1,-2,-3

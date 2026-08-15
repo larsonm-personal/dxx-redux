@@ -715,6 +715,11 @@ static int secret_area_player_radius(void)
 {
 	int objnum;
 	int local_objnum = Players[Player_num].objnum;
+	int model_num = Player_ship ? Player_ship->model_num : -1;
+
+	if (model_num >= 0 && model_num < N_polygon_models &&
+	    Polygon_models[model_num].rad > 0)
+		return Polygon_models[model_num].rad;
 
 	if (local_objnum >= 0 && local_objnum < num_objects &&
 	    (Objects[local_objnum].type == OBJ_PLAYER ||

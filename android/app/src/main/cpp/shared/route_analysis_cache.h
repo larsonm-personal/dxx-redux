@@ -10,9 +10,10 @@
 extern "C" {
 #endif
 
-#define ROUTE_ANALYSIS_CACHE_GAME_D1    1
-#define ROUTE_ANALYSIS_CACHE_GAME_D2    2
-#define ROUTE_ANALYSIS_CACHE_GENERATION 1
+#define ROUTE_ANALYSIS_CACHE_GAME_D1 1
+#define ROUTE_ANALYSIS_CACHE_GAME_D2 2
+/* Keep in sync with ROUTE_METADATA_CACHE_GENERATION in RouteMetadataScheduling.kt. */
+#define ROUTE_ANALYSIS_CACHE_GENERATION 2
 
 typedef struct route_analysis_cache_key {
 	unsigned int generation;

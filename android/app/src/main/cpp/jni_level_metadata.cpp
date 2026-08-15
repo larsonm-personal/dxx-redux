@@ -1086,6 +1086,9 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 		return LEVEL_SCAN_FAILED;
 	}
 	Current_level_num = level_num;
+#ifdef DXX_BUILD_DESCENT_II
+	load_level_robots_file(level_file);
+#endif
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();
 	levelmeta_progress_context progress_context = {

@@ -403,6 +403,9 @@ extern "C" int android_level_preview_run(const char *request_path)
 	loading_progress.update("Preparing level palette", 45);
 	load_preview_palette();
 	Current_level_num = request.value("level_num", 1);
+#ifdef DXX_BUILD_DESCENT_II
+	load_level_robots_file(level_file.c_str());
+#endif
 	Game_mode = GM_NORMAL;
 	if (select_preview_player())
 		return 1;

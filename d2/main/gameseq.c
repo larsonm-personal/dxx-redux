@@ -817,6 +817,18 @@ void load_robot_replacements(char *level_name);
 int read_hamfile();
 extern int Robot_replacements_loaded;
 
+void load_level_robots_file(const char *level_name)
+{
+	if (Robot_replacements_loaded) {
+		int load_mission_ham();
+		free_polygon_models();
+		load_mission_ham();
+		Robot_replacements_loaded = 0;
+	}
+	load_robot_replacements((char *) level_name);
+	Robot_replacements_loaded |= multi_change_weapon_info();
+}
+
 // load just the hxm file
 void load_level_robots(int level_num)
 {
@@ -829,14 +841,7 @@ void load_level_robots(int level_num)
 	else					//normal level
 		level_name = Level_names[level_num-1];
 
-	if (Robot_replacements_loaded) {
-		int load_mission_ham();
-		free_polygon_models();
-		load_mission_ham();
-		Robot_replacements_loaded = 0;
-	}
-	load_robot_replacements(level_name);
-	Robot_replacements_loaded |= multi_change_weapon_info();
+	load_level_robots_file(level_name);
 }
 
 //load a level off disk. level numbers start at 1.  Secret levels are -1,-2,-3
@@ -883,30 +888,6 @@ void LoadLevel(int level_num,int page_in_textures)
 #ifdef ANDROID
 	gameseq_log_multiplayer_texture_state("after-load-level", level_name);
 #endif
-#ifdef __ANDROID__
-	secret_area_prepare_current_level();
-	if (!(Game_mode & GM_MULTI) && !input_demo_recorder_is_active() &&
-	    !input_demo_replay_is_loaded()) {
-		const char *normal_level_files[MAX_LEVELS_PER_MISSION];
-		const char *secret_level_files[MAX_SECRET_LEVELS_PER_MISSION];
-		int secret_entry_levels[MAX_SECRET_LEVELS_PER_MISSION];
-		int i;
-
-		for (i = 0; i < Last_level; ++i)
-			normal_level_files[i] = Level_names[i];
-		for (i = 0; i < N_secret_levels; ++i) {
-			secret_level_files[i] = Secret_level_names[i];
-			secret_entry_levels[i] = Secret_level_table[i];
-		}
-		android_route_metadata_request(
-		    "d2", Current_mission ? Current_mission_filename : "",
-		    Current_level_num, level_name, normal_level_files, Last_level,
-		    secret_level_files, secret_entry_levels, N_secret_levels);
-	}
-#else
-	secret_area_rescan_current_level();
-#endif
-
 #ifdef ANDROID
 	level_overlay_notify(level_num, Current_level_name);
 	load_profile.file_us = android_profile_take_elapsed_us(&load_profile_phase_us);
@@ -961,6 +942,29 @@ void LoadLevel(int level_num,int page_in_textures)
 	load_level_robots(level_num);
 	if (EMULATING_D1)
 		d1_in_d2_apply_robot_assets(1);
+#ifdef __ANDROID__
+	secret_area_prepare_current_level();
+	if (!(Game_mode & GM_MULTI) && !input_demo_recorder_is_active() &&
+	    !input_demo_replay_is_loaded()) {
+		const char *normal_level_files[MAX_LEVELS_PER_MISSION];
+		const char *secret_level_files[MAX_SECRET_LEVELS_PER_MISSION];
+		int secret_entry_levels[MAX_SECRET_LEVELS_PER_MISSION];
+		int i;
+
+		for (i = 0; i < Last_level; ++i)
+			normal_level_files[i] = Level_names[i];
+		for (i = 0; i < N_secret_levels; ++i) {
+			secret_level_files[i] = Secret_level_names[i];
+			secret_entry_levels[i] = Secret_level_table[i];
+		}
+		android_route_metadata_request(
+		    "d2", Current_mission ? Current_mission_filename : "",
+		    Current_level_num, level_name, normal_level_files, Last_level,
+		    secret_level_files, secret_entry_levels, N_secret_levels);
+	}
+#else
+	secret_area_rescan_current_level();
+#endif
 #ifdef ANDROID
 	gameseq_log_multiplayer_texture_state("after-robots", level_name);
 	load_profile.robots_us = android_profile_take_elapsed_us(&load_profile_phase_us);

@@ -1069,6 +1069,9 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		timing->finish("load_level");
 	trace_wall_inventory(level_num, level_file);
 	Current_level_num = level_num;
+#ifdef DXX_BUILD_DESCENT_II
+	load_level_robots_file(level_file);
+#endif
 	if (coop_start_range)
 		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
