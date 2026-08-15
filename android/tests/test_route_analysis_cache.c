@@ -39,7 +39,7 @@ int main(void)
 	wrong_key.generation++;
 	failures += expect(
 	    route_analysis_cache_filename(&key, filename, sizeof(filename)) &&
-	        strstr(filename, "route-cache/g4/d2-0000000000005678-") == filename,
+	        strstr(filename, "route-cache/g5/d2-0000000000005678-") == filename,
 	    "generation and profile filename");
 
 	input.route_status = LEVEL_METADATA_ROUTE_OK;

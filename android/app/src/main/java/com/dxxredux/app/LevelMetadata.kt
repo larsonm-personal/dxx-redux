@@ -336,6 +336,7 @@ internal data class LevelMetadataReplacement(
 
 internal data class LevelMetadataReplacementItem(
     val kind: String,
+    val number: Int,
     val label: String,
     val summary: String,
     val fields: List<LevelMetadataReplacement>,
@@ -2246,6 +2247,7 @@ private fun JSONObject.optReplacementGroups(name: String): List<LevelMetadataRep
                                 add(
                                     LevelMetadataReplacementItem(
                                         kind = item.optString("kind"),
+                                        number = item.optInt("number", -1),
                                         label = item.optString("label"),
                                         summary = item.optString("summary"),
                                         fields = item.optReplacements("fields"),

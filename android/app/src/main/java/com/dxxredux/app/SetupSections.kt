@@ -2867,6 +2867,11 @@ private fun LevelMetadataResultContent(
     result.diagnostics.forEach { diagnostic ->
         ModDetailLine(diagnostic)
     }
+    val context = LocalContext.current
+    val robotNames =
+        remember(result.game) {
+            runCatching { RobotNameCatalog.load(context, result.game) }.getOrDefault(emptyList())
+        }
     val replacementGroups =
         result.levels
             .flatMap { it.replacementGroups }
@@ -2882,7 +2887,7 @@ private fun LevelMetadataResultContent(
     if (replacementGroups.isNotEmpty()) {
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         ModDetailSectionTitle("Replacements")
-        LevelMetadataReplacementGroups(replacementGroups)
+        LevelMetadataReplacementGroups(replacementGroups, robotNames)
     }
     if (result.levels.isEmpty()) return
 
@@ -2892,14 +2897,20 @@ private fun LevelMetadataResultContent(
 }
 
 @Composable
-private fun LevelMetadataReplacementGroups(groups: List<LevelMetadataReplacementGroup>) {
+private fun LevelMetadataReplacementGroups(
+    groups: List<LevelMetadataReplacementGroup>,
+    robotNames: List<RobotNameEntry>,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        groups.forEach { group -> LevelMetadataReplacementGroupRow(group) }
+        groups.forEach { group -> LevelMetadataReplacementGroupRow(group, robotNames) }
     }
 }
 
 @Composable
-private fun LevelMetadataReplacementGroupRow(group: LevelMetadataReplacementGroup) {
+private fun LevelMetadataReplacementGroupRow(
+    group: LevelMetadataReplacementGroup,
+    robotNames: List<RobotNameEntry>,
+) {
     var expanded by remember(group.kind) { mutableStateOf(false) }
     Column {
         Row(
@@ -2918,7 +2929,7 @@ private fun LevelMetadataReplacementGroupRow(group: LevelMetadataReplacementGrou
             if (group.items.isEmpty()) {
                 Text("No changes", fontSize = 11.sp, modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
             } else {
-                group.items.forEach { item -> LevelMetadataReplacementItemRow(item) }
+                group.items.forEach { item -> LevelMetadataReplacementItemRow(item, robotNames) }
             }
         }
         HorizontalDivider()
@@ -2926,9 +2937,18 @@ private fun LevelMetadataReplacementGroupRow(group: LevelMetadataReplacementGrou
 }
 
 @Composable
-private fun LevelMetadataReplacementItemRow(item: LevelMetadataReplacementItem) {
+private fun LevelMetadataReplacementItemRow(
+    item: LevelMetadataReplacementItem,
+    robotNames: List<RobotNameEntry>,
+) {
     var expanded by remember(item.kind, item.label) { mutableStateOf(false) }
     val canExpand = item.fields.isNotEmpty()
+    val label =
+        if (item.kind == "robot") {
+            RobotNameCatalog.displayName(robotNames, item.number, item.label)
+        } else {
+            item.label
+        }
     Column(modifier = Modifier.padding(start = 16.dp)) {
         Row(
             modifier =
@@ -2938,7 +2958,7 @@ private fun LevelMetadataReplacementItemRow(item: LevelMetadataReplacementItem) 
                     .padding(vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(item.label, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            Text(label, fontSize = 11.sp, modifier = Modifier.weight(1f))
             Text(
                 item.summary.ifBlank { "${item.fields.size} ${if (item.fields.size == 1) "change" else "changes"}" },
                 fontSize = 11.sp,
@@ -2947,7 +2967,7 @@ private fun LevelMetadataReplacementItemRow(item: LevelMetadataReplacementItem) 
             if (canExpand) {
                 Icon(
                     if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Collapse ${item.label}" else "Expand ${item.label}",
+                    contentDescription = if (expanded) "Collapse $label" else "Expand $label",
                     modifier = Modifier.size(18.dp),
                 )
             }

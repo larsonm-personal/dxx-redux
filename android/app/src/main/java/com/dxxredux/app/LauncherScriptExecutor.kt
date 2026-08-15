@@ -1122,6 +1122,7 @@ class LauncherScriptExecutor(
                 items.put(
                     JSONObject()
                         .put("kind", item.kind)
+                        .put("number", item.number)
                         .put("label", item.label)
                         .put("summary", item.summary)
                         .put("fields", fields),

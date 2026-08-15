@@ -104,7 +104,11 @@ class LevelMetadataResultTest {
                           {"kind":"added","label":"Definition","base_game_text":"Not present","mod_text":"Added"}
                         ]}
                       ]},
-                      {"kind":"robot_changes","label":"Robot changes","summary":"No changes","items":[]},
+                      {"kind":"robot_changes","label":"Robot changes","summary":"1 change","items":[
+                        {"kind":"robot","number":60,"label":"Robot 60","fields":[
+                          {"kind":"shields","label":"Shields","base_game":655360,"mod":1310720,"format":"fixed"}
+                        ]}
+                      ]},
                       {"kind":"asset_replacements","label":"Texture/model/sound replacements","summary":"1 change","items":[
                         {"kind":"textures","label":"Textures","summary":"12 replaced","fields":[]}
                       ]}
@@ -120,7 +124,7 @@ class LevelMetadataResultTest {
         val added = groups[1].items.single().fields.single()
         assertEquals("Not present", added.baseGameText)
         assertEquals("Added", added.modText)
-        assertTrue(groups[2].items.isEmpty())
+        assertEquals(60, groups[2].items.single().number)
         assertEquals("12 replaced", groups[3].items.single().summary)
     }
 }

@@ -191,7 +191,7 @@ static Json level_metadata_serialize_replacement_groups(
 		}
 		if (!fields.empty()) {
 			snprintf(label, sizeof(label), "Robot %d", index);
-			robot_items.push_back({ { "kind", "robot" }, { "label", label }, { "fields", fields } });
+			robot_items.push_back({ { "kind", "robot" }, { "number", index }, { "label", label }, { "fields", fields } });
 		}
 	}
 

@@ -33,7 +33,7 @@ class LevelMetadataResultCacheTest {
         val firstIdentity = checkNotNull(LevelMetadataResultCache.identify(target))
         val resultText = resultJson("d2")
         val result = LevelMetadataResult.fromJson(resultText)
-        val routeFile = File(checkNotNull(root.parentFile), "d2x-redux/route-cache/g4/test.bin").apply {
+        val routeFile = File(checkNotNull(root.parentFile), "d2x-redux/route-cache/g5/test.bin").apply {
             checkNotNull(parentFile).mkdirs()
             writeText("route")
         }
@@ -96,5 +96,5 @@ class LevelMetadataResultCacheTest {
     }
 
     private fun resultJson(game: String): String =
-        """{"status":"ok","source":"Level","game":"$game","levels":[{"status":"ok","route_readiness":"complete","route_cache_file":"route-cache/g4/test.bin"}]}"""
+        """{"status":"ok","source":"Level","game":"$game","levels":[{"status":"ok","route_readiness":"complete","route_cache_file":"route-cache/g5/test.bin"}]}"""
 }
