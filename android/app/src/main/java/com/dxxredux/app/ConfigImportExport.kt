@@ -199,6 +199,7 @@ object ConfigImportExport {
                     "auto_leveling",
                     "show_robot_hostage_counts",
                     "show_boss_health_bar",
+                    "map_cheats_accessible",
                     "headlight_active_default",
                     "original_homing",
                 )) {
@@ -614,6 +615,7 @@ object ConfigImportExport {
                         put("auto_leveling", prefs.autoLeveling)
                         put("show_robot_hostage_counts", prefs.showRobotHostageCounts)
                         put("show_boss_health_bar", prefs.showBossHealthBar)
+                        put("map_cheats_accessible", prefs.mapCheatsAccessible)
                         put("headlight_active_default", prefs.headlightActiveDefault)
                         put("original_homing", homingPrefs.enabled)
                     },
@@ -642,6 +644,7 @@ object ConfigImportExport {
                         obj.getBoolean("auto_leveling"),
                         obj.optBoolean("show_robot_hostage_counts", false),
                         obj.optBoolean("show_boss_health_bar", true),
+                        obj.optBoolean("map_cheats_accessible", true),
                         obj.optBoolean("headlight_active_default", false),
                     )
                 if (engineCount < 0) {

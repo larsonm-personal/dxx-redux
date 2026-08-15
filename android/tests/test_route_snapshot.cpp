@@ -646,6 +646,8 @@ int main()
 	planner_query.progression.key_mask = first.state.key_mask;
 	auto destroyed_snapshot = first;
 	destroyed_snapshot.state.control_center_destroyed = true;
+	destroyed_snapshot.state.walls[1].key =
+	    dxx_route::route_key_requirement::none;
 	auto destroyed_query = planner_query;
 	destroyed_query.endpoint = dxx_route::route_endpoint_kind::end_of_level;
 	const auto destroyed_plan = dxx_route::plan_route(
@@ -660,6 +662,31 @@ int main()
 	       destroyed_snapshot.topology.segments[1].sides[0].center.value);
 	assert(destroyed_plan.steps[1].activation_position.value !=
 	       destroyed_plan.steps[1].aim_position.value);
+	auto key_gated_exit_snapshot = first;
+	key_gated_exit_snapshot.state.segments[0].sides[0].flyable = true;
+	key_gated_exit_snapshot.state.walls[1].key =
+	    dxx_route::route_key_requirement::red;
+	key_gated_exit_snapshot.state.objects[0].kind =
+	    dxx_route::route_object_kind::control_center;
+	key_gated_exit_snapshot.state.objects[0].boss = false;
+	dxx_route::route_state_object red_key;
+	red_key.segment = 1;
+	red_key.kind = dxx_route::route_object_kind::powerup;
+	red_key.key = dxx_route::route_key_requirement::red;
+	red_key.position = key_gated_exit_snapshot.topology.segments[1].center;
+	key_gated_exit_snapshot.state.objects.push_back(red_key);
+	const auto key_gated_exit_plan = dxx_route::plan_route(
+	    key_gated_exit_snapshot, destroyed_query);
+	assert(key_gated_exit_plan.status == dxx_route::route_plan_status::ok);
+	assert(key_gated_exit_plan.steps.size() == 4);
+	assert(key_gated_exit_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::reactor);
+	assert(key_gated_exit_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::key);
+	assert(key_gated_exit_plan.steps[2].key ==
+	       dxx_route::route_key_requirement::red);
+	assert(key_gated_exit_plan.steps[3].kind ==
+	       dxx_route::route_semantic_step_kind::exit);
 	auto blast_query = planner_query;
 	blast_query.endpoint = dxx_route::route_endpoint_kind::segment;
 	blast_query.target_segment = 1;

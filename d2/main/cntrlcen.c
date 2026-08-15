@@ -146,6 +146,27 @@ int Base_control_center_explosion_time=DEFAULT_CONTROL_CENTER_EXPLOSION_TIME;
 int Control_center_destroyed = 0;
 fix Countdown_timer=0;
 int Countdown_seconds_left=0, Total_countdown_time=0;		//in whole seconds
+int Reactor_countdown_paused = 0;
+
+int reactor_countdown_is_active(void)
+{
+	return Control_center_destroyed && !Endlevel_sequence && Countdown_timer > 0;
+}
+
+int reactor_countdown_set_paused(int paused, fix remaining_time)
+{
+	if (!reactor_countdown_is_active() || remaining_time <= 0)
+		return 0;
+	Countdown_timer = remaining_time;
+	Countdown_seconds_left = f2i(Countdown_timer + F1_0*7/8);
+	Reactor_countdown_paused = paused ? 1 : 0;
+	return 1;
+}
+
+void reactor_countdown_reset_pause(void)
+{
+	Reactor_countdown_paused = 0;
+}
 
 static const int	Alan_pavlish_reactor_times[NDL] = {90, 60, 45, 35, 30};
 
@@ -173,6 +194,7 @@ void do_countdown_frame()
 	int	fc, div_scale;
 
 	if (!Control_center_destroyed)	return;
+	if (Reactor_countdown_paused)	return;
 
 	if (!is_D2_OEM && !is_MAC_SHARE && !is_SHAREWARE)   // get countdown in OEM and SHAREWARE only
 	{
@@ -272,6 +294,7 @@ void do_controlcen_destroyed_stuff(object *objp)
 
 	// And start the countdown stuff.
 	Control_center_destroyed = 1;
+	reactor_countdown_reset_pause();
 #ifdef __ANDROID__
 	escort_route_notify_reactor_changed();
 #endif
@@ -454,6 +477,7 @@ int Reactor_strength=-1;		//-1 mean not set by designer
 //	If this level contains a boss and mode == multiplayer, do control center stuff.
 void init_controlcen_for_level(void)
 {
+	reactor_countdown_reset_pause();
 	int		i;
 	object	*objp;
 	int		cntrlcen_objnum=-1, boss_objnum=-1;

@@ -60,7 +60,7 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30015 // Redux 1.2 + per-player coop energy/shield pickups
+#define MULTI_PROTO_VERSION 30016 // Redux 1.2 + synchronized coop reactor countdown pause
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -167,6 +167,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_BEGIN, 5)   \
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_ENTRY, 55)   \
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_END, 5)   \
+	VALUE(MULTI_REACTOR_PAUSE       , 7)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -342,6 +343,7 @@ void multi_leave_game(void);
 void multi_process_data(const ubyte *dat, int len);
 void multi_process_bigdata(const ubyte *buf, unsigned len);
 void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender);
+void multi_request_reactor_pause_toggle(void);
 void multi_do_death(int objnum);
 void multi_send_message_dialog(void);
 int multi_delete_extra_objects(void);

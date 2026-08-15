@@ -1624,7 +1624,8 @@ class dependency_planner
 		}
 		const auto &target = targets_.exits[selected.selected_index];
 		const auto activation = exit_activation_position(snapshot_, target);
-		if (!move_to_target(target.segment, activation, 0) ||
+		if (!acquire_exit_key(target) ||
+		    !move_to_target(target.segment, activation, 0) ||
 		    !append_target_step(
 		        route_semantic_step_kind::exit, target, "Exit"))
 			return finish_partial("route incomplete");
@@ -2235,6 +2236,23 @@ class dependency_planner
 		state_.progress.key_in_progress &= ~bit;
 		preserve_carrier_continuation_anchor(target);
 		return true;
+	}
+
+	bool acquire_exit_key(const route_target &target)
+	{
+		if (!valid_segment(snapshot_, target.segment) || target.side < 0 ||
+		    target.side >= LEVEL_METADATA_MAX_SIDES)
+			return true;
+		const int wall = snapshot_.topology.segments[target.segment]
+		                     .sides[target.side]
+		                     .wall;
+		if (!valid_wall(snapshot_, wall))
+			return true;
+		const auto &exit_wall = snapshot_.state.walls[wall];
+		if (exit_wall.opened || exit_wall.kind != route_wall_kind::door)
+			return true;
+		const int required_key = key_index(exit_wall.key);
+		return required_key < 0 || acquire_key(required_key, 0);
 	}
 
 	bool acquire_recovery_key(int depth)

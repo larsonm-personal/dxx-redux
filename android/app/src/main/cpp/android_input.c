@@ -18,12 +18,14 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "android_log.h"
+#include "android_meta_actions.h"
 #include "android_profile.h"
 #include "android_screen_advance.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_rewind.h"
 #include "coop/coop_level_restart.h"
+#include "cntrlcen.h"
 #include "android_save_meta.h"
 #include "state_android_shared.h"
 #include "android_axis_mailbox.h"
@@ -34,6 +36,7 @@
 #include "input_demo_recorder.h"
 #include "joy.h"
 #include "mouse.h"
+#include "playsave.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -1775,7 +1778,8 @@ Java_com_dxxredux_app_MainActivity_nativeSecretAreaRevealActive(JNIEnv *env, job
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeToggleSecretAreaReveal(JNIEnv *env, jobject thiz)
 {
-	secret_area_set_reveal_unfound(!secret_area_get_reveal_unfound());
+	if (PlayerCfg.MapCheatsAccessible)
+		secret_area_set_reveal_unfound(!secret_area_get_reveal_unfound());
 }
 
 JNIEXPORT jint JNICALL
@@ -1787,7 +1791,39 @@ Java_com_dxxredux_app_MainActivity_nativeObjectiveOverlayMode(JNIEnv *env, jobje
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeCycleObjectiveOverlay(JNIEnv *env, jobject thiz)
 {
-	level_metadata_cycle_objective_mode();
+	if (PlayerCfg.MapCheatsAccessible)
+		level_metadata_cycle_objective_mode();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeMapCheatsAccessible(JNIEnv *env, jobject thiz)
+{
+	return PlayerCfg.MapCheatsAccessible ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeReactorCountdownActive(JNIEnv *env, jobject thiz)
+{
+	return reactor_countdown_is_active() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeReactorCountdownPaused(JNIEnv *env, jobject thiz)
+{
+	return Reactor_countdown_paused ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeReactorPauseAllowed(JNIEnv *env, jobject thiz)
+{
+	return (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_COOP)) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeToggleReactorCountdownPause(JNIEnv *env, jobject thiz)
+{
+	if (PlayerCfg.MapCheatsAccessible)
+		android_reactor_pause_toggle_pending = 1;
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────

@@ -51,6 +51,12 @@ void android_get_default_boss_health_bar_prefs(int *show_boss_health_bar)
 		*show_boss_health_bar = 1;
 }
 
+void android_get_default_map_cheats_prefs(int *map_cheats_accessible)
+{
+	if (map_cheats_accessible)
+		*map_cheats_accessible = 1;
+}
+
 void android_get_default_music_prefs(int *source, int *prefer_mission, int *play_order, int *volume)
 {
 	if (source)
@@ -216,7 +222,7 @@ int plx_write_robot_hostage_counts(const char *path, int show_counts)
 	                                    "[cockpit]", &entry, 1);
 }
 
-int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health_bar)
+int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health_bar, int *map_cheats_accessible)
 {
 	FILE *f = fopen(path, "r");
 	char line[256];
@@ -225,6 +231,8 @@ int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health
 
 	if (show_boss_health_bar)
 		*show_boss_health_bar = 1;
+	if (map_cheats_accessible)
+		*map_cheats_accessible = 1;
 	if (!f) return 0;
 
 	while (fgets(line, sizeof(line), f)) {
@@ -243,6 +251,10 @@ int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health
 			if (show_boss_health_bar)
 				*show_boss_health_bar = atoi(line + 14) ? 1 : 0;
 			found = 1;
+		} else if (!d_strnicmp(line, "mapcheatsaccessible=", 20)) {
+			if (map_cheats_accessible)
+				*map_cheats_accessible = atoi(line + 20) ? 1 : 0;
+			found = 1;
 		}
 	}
 
@@ -250,22 +262,27 @@ int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health
 	return found;
 }
 
-int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_bar)
+int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_bar, int map_cheats_accessible)
 {
 	char counts_line[64];
 	char boss_line[64];
-	struct playsave_text_entry entries[2];
+	char map_cheats_line[64];
+	struct playsave_text_entry entries[3];
 
 	snprintf(counts_line, sizeof(counts_line), "robothostagecounts=%i\n",
 	         show_counts ? 1 : 0);
 	snprintf(boss_line, sizeof(boss_line), "bosshealthbar=%i\n",
 	         show_boss_health_bar ? 1 : 0);
+	snprintf(map_cheats_line, sizeof(map_cheats_line), "mapcheatsaccessible=%i\n",
+	         map_cheats_accessible ? 1 : 0);
 	entries[0].key = "robothostagecounts=";
 	entries[0].line = counts_line;
 	entries[1].key = "bosshealthbar=";
 	entries[1].line = boss_line;
+	entries[2].key = "mapcheatsaccessible=";
+	entries[2].line = map_cheats_line;
 	return playsave_text_update_section(path, playsave_android_options_header(),
-	                                    "[cockpit]", entries, 2);
+	                                    "[cockpit]", entries, 3);
 }
 
 int plx_read_original_homing(const char *path, int *original_homing)

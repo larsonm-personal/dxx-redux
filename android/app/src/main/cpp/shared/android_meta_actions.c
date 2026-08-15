@@ -21,6 +21,7 @@
 #include "android_log.h"
 #include "android_rewind.h"
 #include "coop/coop_level_restart.h"
+#include "cntrlcen.h"
 #include "android_save_meta.h"
 #include "game.h"
 #include "hudmsg.h"
@@ -30,6 +31,7 @@
 #include "multi.h"
 #include "newdemo.h"
 #include "object.h"
+#include "playsave.h"
 #include "screens.h"
 #include "state.h"
 #include "weapon.h"
@@ -45,6 +47,7 @@ volatile int android_escort_warp_to_me_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
 volatile int android_rewind_pending = 0;
 volatile int android_coop_restart_level_pending = 0;
+volatile int android_reactor_pause_toggle_pending = 0;
 volatile int android_weapon_select_pending = 0;
 extern int HandleSystemKey(int key);
 
@@ -328,6 +331,21 @@ int android_handle_ingame_saveload_request(void)
 			HUD_init_message_literal(HM_DEFAULT, "Level-start checkpoint unavailable");
 		else
 			HUD_init_message_literal(HM_DEFAULT, "Restarting level from checkpoint");
+		return 1;
+	}
+
+	if (android_reactor_pause_toggle_pending) {
+		android_reactor_pause_toggle_pending = 0;
+		if (!PlayerCfg.MapCheatsAccessible || !reactor_countdown_is_active())
+			return 0;
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI) {
+			multi_request_reactor_pause_toggle();
+			return 1;
+		}
+#endif
+		if (reactor_countdown_set_paused(!Reactor_countdown_paused, Countdown_timer))
+			HUD_init_message_literal(HM_DEFAULT, Reactor_countdown_paused ? "Reactor countdown paused" : "Reactor countdown resumed");
 		return 1;
 	}
 

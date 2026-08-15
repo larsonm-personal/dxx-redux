@@ -86,6 +86,10 @@ extern void do_controlcen_dead_frame(void);
 
 extern fix Countdown_timer;
 extern int Control_center_destroyed, Countdown_seconds_left, Total_countdown_time;
+extern int Reactor_countdown_paused;
+int reactor_countdown_is_active(void);
+int reactor_countdown_set_paused(int paused, fix remaining_time);
+void reactor_countdown_reset_pause(void);
 
 /*
  * reads n control_center_triggers structs from a PHYSFS_file

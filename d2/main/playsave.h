@@ -131,6 +131,7 @@ typedef struct player_config
 	ubyte ClassicAutoselectWeapon;
 	ubyte ShowRobotHostageCounts;
 	ubyte ShowBossHealthBar;
+	ubyte MapCheatsAccessible;
 	ubyte OriginalHoming;
 } __pack__ player_config;
 
@@ -170,6 +171,7 @@ void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling);
 void android_get_default_visual_prefs(int *alpha_effects, int *dynlight_color);
 void android_get_default_hud_count_prefs(int *show_counts);
 void android_get_default_boss_health_bar_prefs(int *show_boss_health_bar);
+void android_get_default_map_cheats_prefs(int *map_cheats_accessible);
 void android_get_default_music_prefs(int *source, int *prefer_mission, int *play_order, int *volume);
 int plr_read_cockpit_autolevel(const char *path,
 							   int *cockpit_mode,
@@ -181,8 +183,8 @@ int plr_patch_cockpit_autolevel(const char *path,
 								int headlight_active_default);
 int plx_read_robot_hostage_counts(const char *path, int *show_counts);
 int plx_write_robot_hostage_counts(const char *path, int show_counts);
-int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health_bar);
-int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_bar);
+int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health_bar, int *map_cheats_accessible);
+int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_bar, int map_cheats_accessible);
 int plx_read_original_homing(const char *path, int *original_homing);
 int plx_write_original_homing(const char *path, int original_homing);
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color);

@@ -158,6 +158,39 @@ class AdminTrayUiTest {
         assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
+        assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
+    }
+
+    @Test
+    fun mapCheatsPreferenceHidesAllGameplayMapCheats() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                automapActive = true,
+                mapCheatsAccessible = false,
+            )
+
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
+    }
+
+    @Test
+    fun competitiveModeCanHideReactorWithoutHidingLocalMapCheats() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+                automapActive = true,
+                reactorPauseAllowed = false,
+            )
+
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
     }
 

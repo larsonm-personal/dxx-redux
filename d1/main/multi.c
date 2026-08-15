@@ -106,6 +106,7 @@ void multi_send_gmode_update();
 void multi_do_gmode_update(const ubyte *buf);
 void multi_do_difficulty(const ubyte *buf);
 int multi_i_am_master(void);
+static void multi_process_data_from_player(const ubyte *buf, int len, int authenticated_sender);
 
 #ifdef __ANDROID__
 static void multi_log_hidden_door_state(const char *event, int segnum, int side, int packet_flag)
@@ -3269,6 +3270,12 @@ void multi_reset_object_texture (object *objp)
 void
 multi_process_bigdata(const ubyte *buf, unsigned len)
 {
+	multi_process_bigdata_from_player(buf, len, -1);
+}
+
+void
+multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+{
 	// Takes a bunch of messages, check them for validity,
 	// and pass them to multi_process_data. 
 
@@ -3292,7 +3299,7 @@ multi_process_bigdata(const ubyte *buf, unsigned len)
 			return;
 		}
 
-		multi_process_data(&buf[bytes_processed], sub_len);
+		multi_process_data_from_player(&buf[bytes_processed], sub_len, authenticated_sender);
 		bytes_processed += sub_len;
 	}
 }
@@ -3349,6 +3356,66 @@ void multi_do_difficulty(const ubyte *buf)
 	if (sender != multi_who_is_master())
 		return;
 	difficulty_change_to(difficulty, DIFFICULTY_CHANGE_FROM_NETWORK);
+}
+
+#define REACTOR_PAUSE_REQUEST 0
+#define REACTOR_PAUSE_STATE   1
+
+static void multi_send_reactor_pause_state(void)
+{
+	multibuf[0] = (char) MULTI_REACTOR_PAUSE;
+	multibuf[1] = REACTOR_PAUSE_STATE;
+	multibuf[2] = Reactor_countdown_paused ? 1 : 0;
+	PUT_INTEL_INT(multibuf + 3, Countdown_timer);
+	multi_send_data(multibuf, 7, 2);
+}
+
+void multi_request_reactor_pause_toggle(void)
+{
+	if (!(Game_mode & GM_MULTI_COOP) || is_observer() ||
+	    !reactor_countdown_is_active())
+		return;
+	if (!multi_i_am_master()) {
+		multibuf[0] = (char) MULTI_REACTOR_PAUSE;
+		multibuf[1] = REACTOR_PAUSE_REQUEST;
+		multibuf[2] = 0;
+		PUT_INTEL_INT(multibuf + 3, 0);
+		multi_send_data_direct(multibuf, 7, multi_who_is_master(), 2);
+		return;
+	}
+	if (reactor_countdown_set_paused(!Reactor_countdown_paused, Countdown_timer)) {
+		HUD_init_message_literal(HM_MULTI, Reactor_countdown_paused ? "Reactor countdown paused" : "Reactor countdown resumed");
+		multi_send_reactor_pause_state();
+	}
+}
+
+static void multi_do_reactor_pause(const ubyte *buf, int authenticated_sender)
+{
+	fix remaining_time;
+
+	if (!(Game_mode & GM_MULTI_COOP) || !reactor_countdown_is_active())
+		return;
+	if (buf[1] == REACTOR_PAUSE_REQUEST) {
+		if (!multi_i_am_master() || authenticated_sender < 0 ||
+		    authenticated_sender >= N_players ||
+		    Players[authenticated_sender].connected != CONNECT_PLAYING)
+			return;
+		if (reactor_countdown_set_paused(!Reactor_countdown_paused, Countdown_timer)) {
+			HUD_init_message(HM_MULTI, "%s %s the reactor countdown",
+			                 Players[authenticated_sender].callsign,
+			                 Reactor_countdown_paused ? "paused" : "resumed");
+			multi_send_reactor_pause_state();
+		}
+		return;
+	}
+	if (buf[1] != REACTOR_PAUSE_STATE || multi_i_am_master() ||
+	    authenticated_sender != multi_who_is_master() || buf[2] > 1)
+		return;
+	remaining_time = GET_INTEL_INT(buf + 3);
+	if (remaining_time <= 0 || remaining_time > i2f(60 * 60))
+		return;
+	if (reactor_countdown_set_paused(buf[2], remaining_time))
+		HUD_init_message_literal(HM_MULTI, Reactor_countdown_paused ? "Reactor countdown paused" : "Reactor countdown resumed");
 }
 
 void
@@ -5580,6 +5647,12 @@ void multi_do_gmode_update(const ubyte *buf)
 void
 multi_process_data(const ubyte *buf, int len)
 {
+	multi_process_data_from_player(buf, len, -1);
+}
+
+static void
+multi_process_data_from_player(const ubyte *buf, int len, int authenticated_sender)
+{
 	// Take an entire message (that has already been checked for validity,
 	// if necessary) and act on it.  
 
@@ -5725,6 +5798,8 @@ multi_process_data(const ubyte *buf, int len)
 #endif
 		case MULTI_DIFFICULTY:
 			if (!Endlevel_sequence) multi_do_difficulty(buf); break;
+		case MULTI_REACTOR_PAUSE:
+			if (!Endlevel_sequence) multi_do_reactor_pause(buf, authenticated_sender); break;
 		default:
 			Int3();
 	}

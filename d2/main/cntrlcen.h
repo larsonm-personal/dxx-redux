@@ -98,6 +98,10 @@ extern void do_controlcen_dead_frame(void);
 
 extern fix Countdown_timer;
 extern int Control_center_destroyed, Countdown_seconds_left, Total_countdown_time;
+extern int Reactor_countdown_paused;
+int reactor_countdown_is_active(void);
+int reactor_countdown_set_paused(int paused, fix remaining_time);
+void reactor_countdown_reset_pause(void);
 extern int Base_control_center_explosion_time;      // how long to blow up on insane
 extern int Reactor_strength;
 

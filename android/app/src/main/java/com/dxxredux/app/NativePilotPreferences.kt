@@ -15,6 +15,7 @@ object NativePilotPreferences {
         val autoLeveling: Boolean,
         val showRobotHostageCounts: Boolean,
         val showBossHealthBar: Boolean,
+        val mapCheatsAccessible: Boolean,
         val headlightActiveDefault: Boolean,
         val hasPotentialConflicts: Boolean = false,
     )
@@ -56,6 +57,7 @@ object NativePilotPreferences {
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
+        mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean,
     ): Int
 
@@ -65,6 +67,7 @@ object NativePilotPreferences {
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
+        mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean,
     ): Int
 
@@ -126,6 +129,7 @@ object NativePilotPreferences {
             showRobotHostageCounts = raw.size >= 4 && raw[3] != 0,
             showBossHealthBar = raw.size < 5 || raw[4] != 0,
             headlightActiveDefault = raw.size >= 6 && raw[5] != 0,
+            mapCheatsAccessible = raw.size < 7 || raw[6] != 0,
         )
 
     private fun decodeVisualPrefs(raw: IntArray): VisualPrefs =
@@ -207,6 +211,7 @@ object NativePilotPreferences {
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
+        mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean = false,
     ): Int {
         if (!validCockpitMode(cockpitMode)) return -1
@@ -217,6 +222,7 @@ object NativePilotPreferences {
                 autoLeveling,
                 showRobotHostageCounts,
                 showBossHealthBar,
+                mapCheatsAccessible,
                 headlightActiveDefault,
             )
         } else {
@@ -226,6 +232,7 @@ object NativePilotPreferences {
                 autoLeveling,
                 showRobotHostageCounts,
                 showBossHealthBar,
+                mapCheatsAccessible,
                 headlightActiveDefault,
             )
         }
@@ -237,6 +244,7 @@ object NativePilotPreferences {
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
+        mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean = false,
     ): Int {
         if (!validCockpitMode(cockpitMode)) return -1
@@ -249,6 +257,7 @@ object NativePilotPreferences {
                     autoLeveling,
                     showRobotHostageCounts,
                     showBossHealthBar,
+                    mapCheatsAccessible,
                     headlightActiveDefault,
                 )
             },
@@ -259,6 +268,7 @@ object NativePilotPreferences {
                     autoLeveling,
                     showRobotHostageCounts,
                     showBossHealthBar,
+                    mapCheatsAccessible,
                     headlightActiveDefault,
                 )
             },
@@ -271,6 +281,7 @@ object NativePilotPreferences {
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
         showBossHealthBar: Boolean,
+        mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean,
         originalHoming: Boolean?,
     ): Int {
@@ -285,6 +296,7 @@ object NativePilotPreferences {
                     autoLeveling,
                     showRobotHostageCounts,
                     showBossHealthBar,
+                    mapCheatsAccessible,
                     headlightActiveDefault,
                 )
             if (engine < 0 || originalHoming == null) return engine

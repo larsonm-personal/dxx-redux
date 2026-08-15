@@ -398,6 +398,16 @@ class MainActivity :
 
     external fun nativeCycleObjectiveOverlay()
 
+    external fun nativeMapCheatsAccessible(): Boolean
+
+    external fun nativeReactorCountdownActive(): Boolean
+
+    external fun nativeReactorCountdownPaused(): Boolean
+
+    external fun nativeReactorPauseAllowed(): Boolean
+
+    external fun nativeToggleReactorCountdownPause()
+
     external fun nativeGetAutomapMarkerState(): IntArray
 
     external fun nativeGetGameWidth(): Int
@@ -1109,6 +1119,14 @@ class MainActivity :
                     }
                 }
 
+                TouchOverlayView.ADMIN_AUTOMAP_REACTOR -> {
+                    try {
+                        nativeReactorCountdownPaused()
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
                     videoInfoOverlay?.visibility == View.VISIBLE
                 }
@@ -1123,6 +1141,27 @@ class MainActivity :
                 nativeObjectiveOverlayMode()
             } catch (_: Exception) {
                 OBJECTIVE_MODE_OFF
+            }
+        }
+        touchOverlay.mapCheatsAccessibleProvider = {
+            try {
+                nativeMapCheatsAccessible()
+            } catch (_: Exception) {
+                true
+            }
+        }
+        touchOverlay.reactorCountdownPausedProvider = {
+            try {
+                nativeReactorCountdownPaused()
+            } catch (_: Exception) {
+                false
+            }
+        }
+        touchOverlay.reactorPauseAllowedProvider = {
+            try {
+                nativeReactorPauseAllowed()
+            } catch (_: Exception) {
+                false
             }
         }
         touchOverlay.adminTrayEnabledStateProvider = { action ->
@@ -1150,6 +1189,14 @@ class MainActivity :
                 TouchOverlayView.ADMIN_DIFFICULTY -> {
                     try {
                         nativeCanChangeDifficulty()
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
+                TouchOverlayView.ADMIN_AUTOMAP_REACTOR -> {
+                    try {
+                        nativeReactorCountdownActive()
                     } catch (_: Exception) {
                         false
                     }
@@ -1297,6 +1344,13 @@ class MainActivity :
                 TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES -> {
                     try {
                         nativeCycleObjectiveOverlay()
+                    } catch (_: Exception) {
+                    }
+                }
+
+                TouchOverlayView.ADMIN_AUTOMAP_REACTOR -> {
+                    try {
+                        nativeToggleReactorCountdownPause()
                     } catch (_: Exception) {
                     }
                 }

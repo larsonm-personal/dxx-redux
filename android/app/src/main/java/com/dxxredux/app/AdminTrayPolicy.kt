@@ -8,6 +8,7 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
         TouchOverlayView.ADMIN_NET_EVENTS,
         TouchOverlayView.ADMIN_NET_STATS,
         TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL,
+        TouchOverlayView.ADMIN_AUTOMAP_REACTOR,
         TouchOverlayView.ADMIN_VIDEO_INFO,
         -> true
 
@@ -112,6 +113,8 @@ internal fun adminTrayVisibleActions(
     canShowDifficultyChange: Boolean = false,
     canShowCoopLevelRestart: Boolean = false,
     previewMode: Boolean = false,
+    mapCheatsAccessible: Boolean = true,
+    reactorPauseAllowed: Boolean = true,
 ): List<Int> {
     if (previewMode) {
         return if (automapActive) {
@@ -170,8 +173,13 @@ internal fun adminTrayVisibleActions(
                 TouchOverlayView.ADMIN_QUICK_SAVE,
             ),
         )
-        actions.add(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL)
-        actions.add(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES)
+        if (mapCheatsAccessible) {
+            actions.add(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL)
+            if (reactorPauseAllowed) {
+                actions.add(TouchOverlayView.ADMIN_AUTOMAP_REACTOR)
+            }
+            actions.add(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES)
+        }
     }
     return actions
 }

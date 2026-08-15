@@ -727,6 +727,7 @@ class TouchOverlayView
             const val ADMIN_CYCLE_RIGHT_VIEW = 26
             const val ADMIN_AUTOMAP_OBJECTIVES = 27
             const val ADMIN_RESTART_LEVEL = 28
+            const val ADMIN_AUTOMAP_REACTOR = 29
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -900,6 +901,9 @@ class TouchOverlayView
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
         var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
         var adminTrayObjectiveModeProvider: (() -> Int)? = null
+        var mapCheatsAccessibleProvider: (() -> Boolean)? = null
+        var reactorCountdownPausedProvider: (() -> Boolean)? = null
+        var reactorPauseAllowedProvider: (() -> Boolean)? = null
         var secretAreaRevealProvider: (() -> Boolean)? = null
 
         // Gamepad-only mode: no touchscreen, admin tray gets extra items + D-pad nav
@@ -4257,6 +4261,10 @@ class TouchOverlayView
                     objectiveOverlayLabel(adminTrayObjectiveModeProvider?.invoke() ?: OBJECTIVE_MODE_OFF)
                 }
 
+                ADMIN_AUTOMAP_REACTOR -> {
+                    if (reactorCountdownPausedProvider?.invoke() == true) "Reactor: Paused" else "Reactor: Running"
+                }
+
                 ADMIN_HEADLIGHT -> {
                     "Headlight"
                 }
@@ -4322,6 +4330,8 @@ class TouchOverlayView
                 canShowDifficultyChange = adminTrayCanShowDifficultyProvider?.invoke() == true,
                 canShowCoopLevelRestart = adminTrayCanShowCoopLevelRestartProvider?.invoke() == true,
                 previewMode = previewMode,
+                mapCheatsAccessible = mapCheatsAccessibleProvider?.invoke() != false,
+                reactorPauseAllowed = reactorPauseAllowedProvider?.invoke() != false,
             )
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size

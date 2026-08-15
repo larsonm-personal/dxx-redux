@@ -125,6 +125,27 @@ int	Dead_controlcen_object_num=-1;
 int Control_center_destroyed = 0;
 fix Countdown_timer=0;
 int Countdown_seconds_left=0, Total_countdown_time=0;		//in whole seconds
+int Reactor_countdown_paused = 0;
+
+int reactor_countdown_is_active(void)
+{
+	return Control_center_destroyed && !Endlevel_sequence && Countdown_timer > 0;
+}
+
+int reactor_countdown_set_paused(int paused, fix remaining_time)
+{
+	if (!reactor_countdown_is_active() || remaining_time <= 0)
+		return 0;
+	Countdown_timer = remaining_time;
+	Countdown_seconds_left = f2i(Countdown_timer + F1_0*7/8);
+	Reactor_countdown_paused = paused ? 1 : 0;
+	return 1;
+}
+
+void reactor_countdown_reset_pause(void)
+{
+	Reactor_countdown_paused = 0;
+}
 
 static const int	Alan_pavlish_reactor_times[NDL] = {50, 45, 40, 35, 30};
 
@@ -152,6 +173,7 @@ void do_countdown_frame()
 	int	fc, div_scale;
 
 	if (!Control_center_destroyed)	return;
+	if (Reactor_countdown_paused)	return;
 
 	//	Control center destroyed, rock the player's ship.
 	fc = Countdown_seconds_left;
@@ -236,6 +258,7 @@ void do_controlcen_destroyed_stuff(object *objp)
 
 	// And start the countdown stuff.
 	Control_center_destroyed = 1;
+	reactor_countdown_reset_pause();
 
 	Total_countdown_time = Alan_pavlish_reactor_times[Difficulty_level];
 
@@ -383,6 +406,7 @@ void do_controlcen_frame(object *obj)
 //	If this level contains a boss and mode == multiplayer, do control center stuff.
 void init_controlcen_for_level(void)
 {
+	reactor_countdown_reset_pause();
 	int		i;
 	object	*objp;
 	int		cntrlcen_objnum=-1, boss_objnum=-1;

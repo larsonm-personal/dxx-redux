@@ -1333,6 +1333,13 @@ extern "C" char *game_introspect_get_state(void)
 	j["difficulty_changed"] = Difficulty_level_changed != 0;
 	j["difficulty_min"] = Difficulty_level_min_seen;
 	j["difficulty_max"] = Difficulty_level_max_seen;
+	j["reactor_countdown"] = {
+		{ "active", reactor_countdown_is_active() != 0 },
+		{ "paused", Reactor_countdown_paused != 0 },
+		{ "timer", Countdown_timer },
+		{ "seconds_left", Countdown_seconds_left },
+		{ "map_cheats_accessible", PlayerCfg.MapCheatsAccessible != 0 }
+	};
 	j["current_level_num"] = Current_level_num;
 	j["current_level_name"] = Current_level_name;
 	{

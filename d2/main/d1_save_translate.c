@@ -1388,6 +1388,7 @@ static void d1_save_translate_commit_d1_world_state(
 			Segments[i].sides[j].tmap_num2 = state->sides[i][j].tmap_num2;
 		}
 	Control_center_destroyed = state->control_center_destroyed;
+	reactor_countdown_reset_pause();
 	Countdown_seconds_left = state->countdown_seconds_left;
 	Num_robot_centers = state->num_robot_centers;
 	memcpy(RobotCenters, state->robot_centers, sizeof(state->robot_centers));

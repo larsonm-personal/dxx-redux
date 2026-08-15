@@ -601,6 +601,7 @@ class SetupActivity : ComponentActivity() {
                         val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
                         val showRobotHostageCounts = intent.getBooleanExtra("show_robot_hostage_counts", false)
                         val showBossHealthBar = intent.getBooleanExtra("show_boss_health_bar", true)
+                        val mapCheatsAccessible = intent.getBooleanExtra("map_cheats_accessible", true)
                         val headlightActiveDefault = intent.getBooleanExtra("headlight_active_default", false)
                         val originalHoming = intent.getBooleanExtra("original_homing", false)
                         val hasOriginalHoming = intent.hasExtra("original_homing")
@@ -612,6 +613,7 @@ class SetupActivity : ComponentActivity() {
                                     autoLeveling,
                                     showRobotHostageCounts,
                                     showBossHealthBar,
+                                    mapCheatsAccessible,
                                     headlightActiveDefault,
                                     originalHoming.takeIf { hasOriginalHoming },
                                 )
@@ -625,6 +627,7 @@ class SetupActivity : ComponentActivity() {
                                     "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
                                     "show_counts=$showRobotHostageCounts " +
                                     "show_boss_health=$showBossHealthBar " +
+                                    "map_cheats=$mapCheatsAccessible " +
                                     "headlight_default=$headlightActiveDefault " +
                                     "original_homing=$originalHoming)",
                             )

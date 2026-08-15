@@ -3260,6 +3260,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 	//Restore the fuelcen info
 	Control_center_destroyed = PHYSFSX_readSXE32(fp, swap);
+	reactor_countdown_reset_pause();
 	Countdown_timer = PHYSFSX_readSXE32(fp, swap);
 	Num_robot_centers = PHYSFSX_readSXE32(fp, swap);
 	matcen_info_read_n_swap(RobotCenters, Num_robot_centers, swap, fp);

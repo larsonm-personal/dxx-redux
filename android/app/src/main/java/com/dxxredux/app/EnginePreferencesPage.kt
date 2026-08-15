@@ -93,6 +93,8 @@ fun EnginePreferencesPage(
     var savedShowRobotHostageCounts by remember { mutableStateOf(false) }
     var showBossHealthBar by remember { mutableStateOf(true) }
     var savedShowBossHealthBar by remember { mutableStateOf(true) }
+    var mapCheatsAccessible by remember { mutableStateOf(true) }
+    var savedMapCheatsAccessible by remember { mutableStateOf(true) }
     var originalHoming by remember { mutableStateOf(false) }
     var savedOriginalHoming by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf("") }
@@ -131,6 +133,7 @@ fun EnginePreferencesPage(
             autoLeveling != savedAutoLeveling ||
             showRobotHostageCounts != savedShowRobotHostageCounts ||
             showBossHealthBar != savedShowBossHealthBar ||
+            mapCheatsAccessible != savedMapCheatsAccessible ||
             originalHoming != savedOriginalHoming
 
     fun loadPrefs() {
@@ -145,6 +148,8 @@ fun EnginePreferencesPage(
         savedShowRobotHostageCounts = data.showRobotHostageCounts
         showBossHealthBar = data.showBossHealthBar
         savedShowBossHealthBar = data.showBossHealthBar
+        mapCheatsAccessible = data.mapCheatsAccessible
+        savedMapCheatsAccessible = data.mapCheatsAccessible
         originalHoming = homingData.enabled
         savedOriginalHoming = homingData.enabled
         if (musicData.hasPilotFile) {
@@ -361,6 +366,27 @@ fun EnginePreferencesPage(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = mapCheatsAccessible,
+                        onCheckedChange = { mapCheatsAccessible = it },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Map cheats accessible", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Secrets view button, reactor extend, and objectives extend options",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     OutlinedButton(
@@ -369,6 +395,7 @@ fun EnginePreferencesPage(
                             autoLeveling = true
                             showRobotHostageCounts = false
                             showBossHealthBar = true
+                            mapCheatsAccessible = true
                             originalHoming = false
                         },
                         modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
@@ -384,6 +411,7 @@ fun EnginePreferencesPage(
                                     autoLeveling,
                                     showRobotHostageCounts,
                                     showBossHealthBar,
+                                    mapCheatsAccessible,
                                     !headlightOffByDefault,
                                     originalHoming,
                                 )
@@ -394,6 +422,7 @@ fun EnginePreferencesPage(
                                 savedAutoLeveling = autoLeveling
                                 savedShowRobotHostageCounts = showRobotHostageCounts
                                 savedShowBossHealthBar = showBossHealthBar
+                                savedMapCheatsAccessible = mapCheatsAccessible
                                 savedOriginalHoming = originalHoming
                                 hasPilotFile = true
                                 statusMessage = "Saved to $count pilot file(s) across both games"

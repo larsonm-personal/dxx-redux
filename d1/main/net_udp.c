@@ -959,15 +959,18 @@ int is_observer_ip(struct _sockaddr addr) {
 	return 0;
 }
 
-int is_any_player_ip(struct _sockaddr addr) {
-	for(int i = 0; i < MAX_PLAYERS; i++) {
-		if(Players[i].connected == CONNECT_DISCONNECTED) continue;
-		if(i == Player_num) continue;
-
-		if(is_player_ip(addr, i)) return 1;
+static int player_num_for_address(struct _sockaddr addr) {
+	for (int i = 0; i < MAX_PLAYERS; i++) {
+		if (Players[i].connected == CONNECT_DISCONNECTED || i == Player_num)
+			continue;
+		if (is_player_ip(addr, i))
+			return i;
 	}
+	return -1;
+}
 
-	return 0; 
+int is_any_player_ip(struct _sockaddr addr) {
+	return player_num_for_address(addr) >= 0;
 }
 
 int valid_sender(ubyte *data, int data_len, struct _sockaddr sender_addr) {
@@ -7172,6 +7175,7 @@ void net_udp_send_mdata(int needack, fix64 time)
 void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_addr, int needack)
 {
 	int pnum = data[5], dataoffset = (needack?10:6);
+	int authenticated_sender = player_num_for_address(sender_addr);
 
 	// Check if packet might be bogus
 	if ((pnum < 0) || (data_len > sizeof(UDP_mdata_info)))
@@ -7250,12 +7254,12 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 	{
 		int old_Endlevel_sequence = Endlevel_sequence;
 		Endlevel_sequence = 1;
-		multi_process_bigdata(data+dataoffset, data_len-dataoffset);
+		multi_process_bigdata_from_player(data+dataoffset, data_len-dataoffset, authenticated_sender);
 		Endlevel_sequence = old_Endlevel_sequence;
 		return;
 	}
 
-	multi_process_bigdata( data+dataoffset, data_len-dataoffset );
+	multi_process_bigdata_from_player(data+dataoffset, data_len-dataoffset, authenticated_sender);
 }
 
 void net_udp_process_obs_data (ubyte *data, int data_len, struct _sockaddr sender_addr)
