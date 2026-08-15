@@ -10,6 +10,7 @@
 #include "console.h"
 #include "coop_host_migration_policy.h"
 #include "coop_level_restart.h"
+#include "cntrlcen.h"
 #include "game.h"
 #include "gameseq.h"
 #include "hudmsg.h"
@@ -84,6 +85,7 @@ int coop_host_migration_handle_disconnect(int disconnected_player)
 	Multi_master_playernum = decision.new_master;
 	android_rewind_reset_level();
 	coop_level_restart_clear();
+	reactor_countdown_reset_pause();
 	android_rewind_set_clients_can_request(0);
 	con_printf(CON_NORMAL, "host migration: player %d is now master\n", decision.new_master);
 	if (decision.action == COOP_HOST_MIGRATION_LOCAL_HOST) {

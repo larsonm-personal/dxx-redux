@@ -1071,7 +1071,7 @@ static int robot_preview_projectile_is_offscreen(
 		robot_position->y - Robot_preview_robot_offset_y + projectile->position.y,
 		robot_position->z - Robot_preview_robot_distance_offset + projectile->position.z
 	};
-	if (position.z <= visual_radius * 2)
+	if (position.z <= 0)
 		return 1;
 	return abs(position.x) > position.z * 2 + visual_radius ||
 	       abs(position.y) > position.z + visual_radius;
@@ -1249,7 +1249,7 @@ static fix robot_preview_model_radius(int number)
 	return model >= 0 && model < N_polygon_models ? Polygon_models[model].rad : 0;
 }
 
-static int robot_preview_uses_large_camera(int number, fix radius)
+static int robot_preview_uses_large_camera(int number)
 {
 	if (number < 0 || number >= N_robot_types)
 		return 0;
@@ -1257,7 +1257,7 @@ static int robot_preview_uses_large_camera(int number, fix radius)
 	if (number == ROBOT_PREVIEW_MINI_REACTOR)
 		return 1;
 #endif
-	return Robot_info[number].boss_flag || radius > Robot_preview_normal_view_radius;
+	return Robot_info[number].boss_flag != 0;
 }
 
 static void robot_preview_configure_camera_tiers(void)
@@ -1268,7 +1268,7 @@ static void robot_preview_configure_camera_tiers(void)
 	Robot_preview_large_view_radius = Robot_preview_normal_view_radius;
 	for (int number = 0; number < N_robot_types; ++number) {
 		const fix radius = robot_preview_model_radius(number);
-		if (robot_preview_uses_large_camera(number, radius) &&
+		if (robot_preview_uses_large_camera(number) &&
 		    radius > Robot_preview_large_view_radius)
 			Robot_preview_large_view_radius = radius;
 	}
@@ -1283,8 +1283,7 @@ static int robot_preview_configure_robot(int number)
 		return 0;
 	Robot_preview_number = number;
 	Robot_preview_model = model;
-	const fix model_radius = Polygon_models[model].rad;
-	if (robot_preview_uses_large_camera(number, model_radius)) {
+	if (robot_preview_uses_large_camera(number)) {
 		Robot_preview_camera_tier = "large";
 		Robot_preview_view_radius = Robot_preview_large_view_radius;
 	} else {
@@ -1825,6 +1824,7 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "robot_label", Level_preview_request.value("robot_label", "") },
 			{ "model_number", Robot_preview_model },
 			{ "model_radius", f2fl(Polygon_models[Robot_preview_model].rad) },
+			{ "boss", robot->boss_flag != 0 },
 			{ "camera_tier", Robot_preview_camera_tier },
 			{ "camera_view_radius", f2fl(Robot_preview_view_radius) },
 			{ "normal_camera_view_radius", f2fl(Robot_preview_normal_view_radius) },

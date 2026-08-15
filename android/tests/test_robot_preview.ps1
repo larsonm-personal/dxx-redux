@@ -8,6 +8,8 @@ param(
     [int]$RobotNumber = 0,
     [string]$ExpectedAttackRole = "",
     [int]$ExpectedWeapon = -1,
+    [ValidateSet("", "normal", "large")]
+    [string]$ExpectedCameraTier = "",
     [int]$Seed = 6042,
     [int]$TimeoutSeconds = 180,
     [string]$Serial = "emulator-5554"
@@ -160,6 +162,9 @@ try {
         [double]$initial.level_preview.normal_camera_view_radius -or
         $initial.level_preview.camera_tier -notin @("normal", "large")) {
         throw "Robot preview did not report a valid fixed camera tier"
+    }
+    if ($ExpectedCameraTier -and $initial.level_preview.camera_tier -ne $ExpectedCameraTier) {
+        throw "Expected camera tier '$ExpectedCameraTier', got '$($initial.level_preview.camera_tier)'"
     }
 
     $robotCount = [int]$initial.level_preview.robot_count
@@ -320,6 +325,9 @@ try {
     }
     if ($ExpectedWeapon -ge 0 -and [int]$script:attackState.level_preview.weapon.number -ne $ExpectedWeapon) {
         throw "Expected preview weapon $ExpectedWeapon, got $($script:attackState.level_preview.weapon.number)"
+    }
+    if ($ExpectedWeapon -ge 0 -and [long]$preview.actual_weapon_renders -le 0) {
+        throw "Expected weapon $ExpectedWeapon did not produce an actual projectile render"
     }
     if ($script:attackState.level_preview.attack_role -eq "ranged" -and
         [int]$script:attackState.level_preview.weapon.speed_variance -eq 128 -and

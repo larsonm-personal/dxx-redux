@@ -77,8 +77,8 @@ extern "C" {
 #include "secretarea.h"
 #include "switch.h"
 #include "wall.h"
-#ifdef DXX_BUILD_DESCENT_II
 #include "cntrlcen.h"
+#ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
 #ifdef ANDROID
@@ -3643,6 +3643,15 @@ extern "C" void game_automate_tick(void)
 				     strtol(s.value.c_str(), NULL, 10) != 0)
 				        ? 1
 				        : 0;
+			} else if (s.field == "reactor_countdown_paused") {
+				int paused = (strcasecmp(s.value.c_str(), "true") == 0 ||
+				              strtol(s.value.c_str(), NULL, 10) != 0)
+				                 ? 1
+				                 : 0;
+				if (!reactor_countdown_set_paused(paused, Countdown_timer)) {
+					stop_script_fail("reactor_countdown_paused: countdown inactive");
+					break;
+				}
 			} else if (s.field == "damage_boss") {
 				char reason[128];
 				if (!damage_first_boss(s.value, reason, sizeof(reason))) {
