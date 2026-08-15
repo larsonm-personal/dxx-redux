@@ -107,7 +107,13 @@ class SetupActivity : ComponentActivity() {
     private val launchFailureMessage = mutableStateOf<String?>(null)
     private val pendingPickedImportUris = mutableStateOf<List<Uri>>(emptyList())
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
-    private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
+    private val resumeOfferRefreshRunnable =
+        Runnable {
+            RouteMetadataDiagnostics.log(
+                "Launcher post-resume refresh trigger=${refreshTrigger.intValue + 1}",
+            )
+            refreshTrigger.intValue++
+        }
 
     // -- Setup-screen introspection --------------------------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
@@ -493,11 +499,9 @@ class SetupActivity : ComponentActivity() {
         runOnUiThread { refreshTrigger.intValue++ }
     }
 
-    private fun schedulePostResumeRefreshes() {
+    private fun schedulePostResumeRefresh() {
         resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
-        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 250L)
-        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 1000L)
-        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 2500L)
+        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, PostResumeRefreshPolicy.DELAY_MS)
     }
 
     internal fun prepareForLevelPreviewLaunch() {
@@ -703,6 +707,14 @@ class SetupActivity : ComponentActivity() {
                                 routeMetadataCoordinator.start()
                                 pendingResult.finish()
                             }
+                        }
+                    }
+
+                    "clear_level_metadata_result_cache" -> {
+                        runIo {
+                            val cache = File(filesDir, "level_metadata_results")
+                            val deleted = cache.exists() && cache.deleteRecursively()
+                            Log.i("DXX-Setup", "clear_level_metadata_result_cache: deleted=$deleted")
                         }
                     }
 
@@ -2309,8 +2321,7 @@ class SetupActivity : ComponentActivity() {
             resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
             Log.i("DXX-Setup", "Preserving launcher metadata state after read-only level preview")
         } else {
-            refreshTrigger.intValue++
-            schedulePostResumeRefreshes()
+            schedulePostResumeRefresh()
         }
         // If the host returns from a game, signal the server to reset the lobby
         val mpState =
@@ -2414,8 +2425,7 @@ class SetupActivity : ComponentActivity() {
             Log.w("DXX-Setup", "LAUNCHER_CONTINUE: game process still returnable after wait")
         } else {
             routeMetadataCoordinator.start()
-            requestSetupRefresh()
-            schedulePostResumeRefreshes()
+            schedulePostResumeRefresh()
         }
     }
 

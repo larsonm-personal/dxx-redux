@@ -362,6 +362,26 @@ class LauncherScriptExecutor(
                         fail("analyze_level_metadata: could not build target for $label")
                         return
                     }
+                    if (step.optBoolean("expect_result_cache_hit")) {
+                        val expectedLevelCount = target.normalLevelFiles.size + target.secretLevelFiles.size
+                        val identity = withContext(Dispatchers.IO) { LevelMetadataResultCache.identify(target) }
+                        val cached =
+                            identity?.let {
+                                withContext(Dispatchers.IO) {
+                                    LevelMetadataResultCache.read(
+                                        File(context.filesDir, "level_metadata_results"),
+                                        it,
+                                        target,
+                                        expectedLevelCount,
+                                    )
+                                }
+                            }
+                        if (cached == null) {
+                            fail("analyze_level_metadata: expected a persisted result cache hit for $label")
+                            return
+                        }
+                        Log.i(TAG, "ASSERT_PASS: persisted level metadata result cache hit for $label")
+                    }
                     Log.i(TAG, "Analyzing level metadata: ${target.displayName}")
                     val result = LevelMetadataAnalyzer.analyze(context, target)
                     writeLevelMetadataAutomationResult(label, result)

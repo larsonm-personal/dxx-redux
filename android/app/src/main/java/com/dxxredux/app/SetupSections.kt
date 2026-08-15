@@ -231,8 +231,10 @@ internal fun ModsSection(
 
     LaunchedEffect(detailTarget?.filename, setDir.absolutePath, refreshTrigger) {
         val target = detailTarget ?: return@LaunchedEffect
-        detailInfo = null
-        detailLoading = true
+        RouteMetadataDiagnostics.log(
+            "Mod details reload start source=${target.displayName} refresh=$refreshTrigger",
+        )
+        detailLoading = detailInfo == null
         detailProgress = MetadataLoadProgress("Reading mod metadata", 1, 3)
         detailInfo =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -241,6 +243,9 @@ internal fun ModsSection(
         detailProgress = MetadataLoadProgress("Preparing metadata view", 2, 3)
         detailLoading = false
         detailProgress = null
+        RouteMetadataDiagnostics.log(
+            "Mod details reload complete source=${target.displayName} refresh=$refreshTrigger",
+        )
     }
 
     LaunchedEffect(expanded) {
@@ -1401,10 +1406,10 @@ private fun MissionZipConstituentDialog(
     onDismiss: () -> Unit,
 ) {
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
-    var metadataResult by remember(archivePath, constituent.path, setDir.absolutePath, refreshTrigger) {
+    var metadataResult by remember(archivePath, constituent.path, setDir.absolutePath) {
         mutableStateOf<MetadataDetailLoadResult?>(null)
     }
-    var metadataProgress by remember(archivePath, constituent.path, refreshTrigger) {
+    var metadataProgress by remember(archivePath, constituent.path) {
         mutableStateOf(MetadataLoadProgress("Locating metadata source", 0, 4))
     }
 
@@ -1414,7 +1419,6 @@ private fun MissionZipConstituentDialog(
             metadataResult = MetadataDetailLoadResult(null, null)
             return@LaunchedEffect
         }
-        metadataResult = null
         metadataProgress = MetadataLoadProgress("Locating metadata source", 0, 4)
         val extractedEntry =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -2446,7 +2450,7 @@ internal fun FileDetailDialog(
     }
     val missionDescriptor = detailSources?.missionDescriptor
     val metadataSourceFile = detailSources?.metadataSourceFile
-    var fileMetadataResult by remember(metadataSourceFile?.absolutePath, refreshTrigger) {
+    var fileMetadataResult by remember(metadataSourceFile?.absolutePath) {
         mutableStateOf(
             if (metadataSourceFile == null) {
                 MetadataDetailLoadResult(null, null)
@@ -2455,7 +2459,7 @@ internal fun FileDetailDialog(
             },
         )
     }
-    var fileMetadataProgress by remember(metadataSourceFile?.absolutePath, refreshTrigger) {
+    var fileMetadataProgress by remember(metadataSourceFile?.absolutePath) {
         mutableStateOf(MetadataLoadProgress("Locating file metadata", 0, 3))
     }
     LaunchedEffect(metadataSourceFile?.absolutePath, setDir.absolutePath, refreshTrigger) {
@@ -2464,7 +2468,6 @@ internal fun FileDetailDialog(
             fileMetadataResult = MetadataDetailLoadResult(null, null)
             return@LaunchedEffect
         }
-        fileMetadataResult = null
         fileMetadataProgress = MetadataLoadProgress("Reading file metadata", 1, 3)
         val metadata =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -2697,6 +2700,7 @@ private fun LevelMetadataDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val dialogIdentity = remember(target) { Integer.toHexString(System.identityHashCode(Any())) }
     var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
     var loading by remember(target) { mutableStateOf(true) }
     var progress by remember(target) {
@@ -2717,6 +2721,17 @@ private fun LevelMetadataDialog(
     var previewError by remember(target) { mutableStateOf<String?>(null) }
     var previewRequestPath by remember(target) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    DisposableEffect(target) {
+        RouteMetadataDiagnostics.log(
+            "Level metadata dialog open id=$dialogIdentity source=${target.displayName} " +
+                "source_type=${target.sourceType}",
+        )
+        onDispose {
+            RouteMetadataDiagnostics.log(
+                "Level metadata dialog close id=$dialogIdentity source=${target.displayName}",
+            )
+        }
+    }
     val previewLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
             previewRequestPath?.let { LevelPreviewRequestStore.delete(context.cacheDir, it) }
@@ -2732,6 +2747,9 @@ private fun LevelMetadataDialog(
         }
 
     LaunchedEffect(target) {
+        RouteMetadataDiagnostics.log(
+            "Level metadata dialog analyze id=$dialogIdentity source=${target.displayName}",
+        )
         loading = true
         result = null
         progress =
@@ -2752,6 +2770,10 @@ private fun LevelMetadataDialog(
                 }
             }
         loading = false
+        RouteMetadataDiagnostics.log(
+            "Level metadata dialog ready id=$dialogIdentity source=${target.displayName} " +
+                "status=${result?.status.orEmpty()}",
+        )
     }
 
     AlertDialog(

@@ -1042,6 +1042,26 @@ internal object LevelMetadataAnalyzer {
             }
 
             val appContext = context.applicationContext
+            progress("Checking metadata cache", 0)
+            val resultCacheRoot = File(appContext.filesDir, "level_metadata_results")
+            val identityStartedAt = SystemClock.elapsedRealtime()
+            val resultCacheIdentity = LevelMetadataResultCache.identify(target)
+            val cachedResult =
+                resultCacheIdentity?.let {
+                    LevelMetadataResultCache.read(resultCacheRoot, it, target, expectedLevelCount)
+                }
+            RouteMetadataDiagnostics.log(
+                "Level metadata result cache source=${target.displayName} " +
+                    "hit=${cachedResult != null} identifiable=${resultCacheIdentity != null} " +
+                    "files=${resultCacheIdentity?.sourceFiles ?: 0} " +
+                    "bytes=${resultCacheIdentity?.sourceBytes ?: 0} " +
+                    "elapsed_ms=${SystemClock.elapsedRealtime() - identityStartedAt}",
+            )
+            if (cachedResult != null) {
+                completedLevelCount = expectedLevelCount
+                progress("Analysis complete", stepCount)
+                return@withContext cachedResult
+            }
             val cacheRoot = File(appContext.cacheDir, "level_metadata")
             OwnedCacheDirectories.prune(cacheRoot, LEVEL_METADATA_CACHE_MAX_AGE_MS)
             val workDir = OwnedCacheDirectories.create(cacheRoot)
@@ -1054,9 +1074,11 @@ internal object LevelMetadataAnalyzer {
             val cancellationFile = File(workDir, LEVEL_METADATA_CANCELLATION_FILE)
             val ownerFile = workerOwnerFile(cacheRoot, target.game)
             val startedAt = System.currentTimeMillis()
+            val profilingStartedAt = SystemClock.elapsedRealtime()
             var workerStarted = false
             try {
                 progress("Preparing analysis files", 0)
+                val prepareStartedAt = SystemClock.elapsedRealtime()
                 val request =
                     try {
                         buildRequestJson(
@@ -1078,6 +1100,12 @@ internal object LevelMetadataAnalyzer {
                             e.message ?: e.javaClass.simpleName,
                         )
                     }
+                RouteMetadataDiagnostics.log(
+                    "Level metadata prepared request=$requestId source=${target.displayName} " +
+                        "source_type=${target.sourceType} archive=${target.archivePath != null} " +
+                        "entries=${target.archiveEntries.size} levels=$expectedLevelCount " +
+                        "elapsed_ms=${SystemClock.elapsedRealtime() - prepareStartedAt}",
+                )
 
                 progress("Writing analysis request", 1)
                 try {
@@ -1122,7 +1150,30 @@ internal object LevelMetadataAnalyzer {
                     if (resultFile.isFile) {
                         completedLevelCount = expectedLevelCount
                         progress("Reading analysis result", 4)
-                        val parsed = parseResultFile(target, resultFile)
+                        val parseStartedAt = SystemClock.elapsedRealtime()
+                        val resultText = runCatching { resultFile.readText(Charsets.UTF_8) }.getOrDefault("")
+                        val parsed = parseResultText(target, resultText)
+                        val cachePublished =
+                            resultCacheIdentity?.let { identity ->
+                                runCatching {
+                                    LevelMetadataResultCache.publish(
+                                        resultCacheRoot,
+                                        identity,
+                                        target,
+                                        expectedLevelCount,
+                                        resultText,
+                                        parsed,
+                                    )
+                                }.getOrDefault(false)
+                            } ?: false
+                        RouteMetadataDiagnostics.log(
+                            "Level metadata complete request=$requestId source=${target.displayName} " +
+                                "worker_ms=${SystemClock.elapsedRealtime() - workerStartedAt} " +
+                                "parse_ms=${SystemClock.elapsedRealtime() - parseStartedAt} " +
+                                "total_ms=${SystemClock.elapsedRealtime() - profilingStartedAt} " +
+                                "status=${parsed.status} levels=${parsed.levels.size} " +
+                                "result_cache_published=$cachePublished",
+                        )
                         progress("Analysis complete", 5)
                         return@withContext parsed
                     }
@@ -1172,6 +1223,10 @@ internal object LevelMetadataAnalyzer {
                 progress("Collecting diagnostics", 4)
                 val diagnostics = collectDiagnostics(appContext, startedAt, checkpointFile)
                 val status = if (diagnostics.any { it.contains("crash", ignoreCase = true) }) "crashed" else "timeout"
+                RouteMetadataDiagnostics.log(
+                    "Level metadata failed request=$requestId source=${target.displayName} " +
+                        "total_ms=${SystemClock.elapsedRealtime() - profilingStartedAt} status=$status",
+                )
                 LevelMetadataResult.failed(
                     target.displayName,
                     target.game,
@@ -1193,6 +1248,11 @@ internal object LevelMetadataAnalyzer {
                             cancellationFile,
                         )
                     }
+                    RouteMetadataDiagnostics.log(
+                        "Level metadata dispose request=$requestId source=${target.displayName} " +
+                            "result_deleted=${resultFile.isFile} " +
+                            "elapsed_ms=${SystemClock.elapsedRealtime() - profilingStartedAt}",
+                    )
                     OwnedCacheDirectories.delete(cacheRoot, workDir)
                 }
             }
@@ -1301,12 +1361,12 @@ internal object LevelMetadataAnalyzer {
             LevelMetadataD2AnalysisService::class.java
         }
 
-    private fun parseResultFile(
+    private fun parseResultText(
         target: LevelMetadataTarget,
-        resultFile: File,
+        text: String,
     ): LevelMetadataResult =
         try {
-            LevelMetadataResult.fromJson(resultFile.readText(Charsets.UTF_8))
+            LevelMetadataResult.fromJson(text)
         } catch (e: Exception) {
             LevelMetadataResult.failed(target.displayName, target.game, "Bad analysis result: ${e.message}")
         }
