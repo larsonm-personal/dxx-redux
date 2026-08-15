@@ -116,6 +116,21 @@ Java_com_dxxredux_app_LevelPreviewActivity_nativeSetSurface(JNIEnv *env, jobject
 	android_set_surface(env, surface);
 }
 
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeSetSurfaceSize(JNIEnv *env, jobject thiz, jint width, jint height)
+{
+	(void) env;
+	(void) thiz;
+	android_set_surface_size(width, height);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeSetSurface(JNIEnv *env, jobject thiz, jobject surface)
+{
+	(void) thiz;
+	android_set_surface(env, surface);
+}
+
 /* ── Called from gr_flip() in arch/sdl/gr.c ─────────────────── */
 
 static int g_blit_count = 0;

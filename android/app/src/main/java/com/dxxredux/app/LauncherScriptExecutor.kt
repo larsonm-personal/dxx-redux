@@ -88,6 +88,7 @@ class LauncherScriptExecutor(
     companion object {
         private const val TAG = "DXX-LauncherScript"
         private const val LEVEL_PREVIEW_SMOKE_SELECTION_FILE = "level_preview_smoke_selection.json"
+        private const val ROBOT_PREVIEW_SMOKE_SELECTION_FILE = "robot_preview_smoke_selection.json"
     }
 
     /** Pending game launch set by tap_button with launches_game=true.
@@ -492,6 +493,64 @@ class LauncherScriptExecutor(
                     currentStep++
                     activity.prepareForLevelPreviewLaunch()
                     activity.startActivity(LevelPreviewActivity.createIntent(context, launchRequest))
+                }
+
+                "launch_random_robot_preview" -> {
+                    val seed = step.optLong("seed", 0L)
+                    val label = step.optString("label", step.optString("mod_file", "robot preview"))
+                    val requestedGame = step.optString("game", "")
+                    val candidates =
+                        mutableListOf<
+                            Triple<
+                                LevelMetadataTarget,
+                                LevelMetadataLevelRow,
+                                LevelMetadataReplacementItem,
+                            >,
+                        >()
+                    withContext(Dispatchers.IO) { buildLevelMetadataTargetsForAutomation(step) }
+                        .filter { requestedGame.isBlank() || it.game == requestedGame }
+                        .forEach { target ->
+                            val result = LevelMetadataAnalyzer.analyze(context, target)
+                            if (result.status == "ok") {
+                                result.levels.forEach { row ->
+                                    row.replacementGroups
+                                        .flatMap { it.items }
+                                        .filter { it.kind == "robot" && it.number >= 0 }
+                                        .forEach { item -> candidates += Triple(target, row, item) }
+                                }
+                            }
+                        }
+                    if (candidates.isEmpty()) {
+                        fail("launch_random_robot_preview: no changed robots for $label")
+                        return
+                    }
+                    val selected = candidates[Random(seed).nextInt(candidates.size)]
+                    val robotNames = RobotNameCatalog.load(context, selected.first.game)
+                    val robotLabel =
+                        RobotNameCatalog.displayName(
+                            robotNames,
+                            selected.third.number,
+                            selected.third.label,
+                        )
+                    val launchRequest =
+                        withContext(Dispatchers.IO) {
+                            RobotPreviewRequestStore.create(
+                                context.cacheDir,
+                                selected.first,
+                                selected.second,
+                                selected.third,
+                                robotLabel,
+                            )
+                        }
+                    writeRobotPreviewSmokeSelection(seed, label, candidates.size, selected, launchRequest, robotLabel)
+                    Log.i(
+                        TAG,
+                        "Launching seeded robot preview: seed=$seed source=${selected.first.displayName} " +
+                            "level=${selected.second.levelNum} robot=${selected.third.number}",
+                    )
+                    currentStep++
+                    activity.prepareForLevelPreviewLaunch()
+                    activity.startActivity(RobotPreviewActivity.createIntent(context, launchRequest))
                 }
 
                 "tap_button" -> {
@@ -1179,6 +1238,39 @@ class LauncherScriptExecutor(
                 .put("secret", row.secret)
                 .put("level_name", row.levelName)
                 .put("level_file", row.levelFile)
+                .put(
+                    "request_id",
+                    request.requestFile.parentFile
+                        ?.name
+                        .orEmpty(),
+                )
+        temporary.writeText(json.toString(2) + "\n", Charsets.UTF_8)
+        Os.rename(temporary.absolutePath, output.absolutePath)
+    }
+
+    private fun writeRobotPreviewSmokeSelection(
+        seed: Long,
+        label: String,
+        candidateCount: Int,
+        selected: Triple<LevelMetadataTarget, LevelMetadataLevelRow, LevelMetadataReplacementItem>,
+        request: RobotPreviewLaunchRequest,
+        robotLabel: String,
+    ) {
+        val output = File(context.filesDir, ROBOT_PREVIEW_SMOKE_SELECTION_FILE)
+        val temporary = File(context.filesDir, "$ROBOT_PREVIEW_SMOKE_SELECTION_FILE.tmp")
+        val json =
+            JSONObject()
+                .put("schema", "dxx-robot-preview-smoke-selection-v1")
+                .put("seed", seed)
+                .put("label", label)
+                .put("candidate_robot_count", candidateCount)
+                .put("source", selected.first.displayName)
+                .put("game", selected.first.game)
+                .put("level_num", selected.second.levelNum)
+                .put("level_name", selected.second.levelName)
+                .put("level_file", selected.second.levelFile)
+                .put("robot_number", selected.third.number)
+                .put("robot_label", robotLabel)
                 .put(
                     "request_id",
                     request.requestFile.parentFile

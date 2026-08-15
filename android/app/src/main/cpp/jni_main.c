@@ -370,9 +370,9 @@ startup_failed:
 	atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
 }
 
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
-    JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
+static void android_start_preview(
+    JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir,
+    const char *finished_method, const char *preview_label)
 {
 	char *request_path = NULL;
 	char *data_dir = NULL;
@@ -387,7 +387,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 		jclass cls = (*env)->GetObjectClass(env, thiz);
 		if (!cls || (*env)->ExceptionCheck(env)) return;
 		jmethodID finished = (*env)->GetMethodID(
-		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
+		    env, cls, finished_method, "(Ljava/lang/String;)V");
 		if (!finished || (*env)->ExceptionCheck(env)) return;
 		jstring error = (*env)->NewStringUTF(env, "Another native engine is already running");
 		if (!error || (*env)->ExceptionCheck(env)) return;
@@ -421,7 +421,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 	argv_preview[4] = "-nomusic";
 	argv_preview[5] = "-level-preview-request";
 	argv_preview[6] = (char *) request_path;
-	debug_log(DLOG_GAME, "level preview starting request=%s data=%s", request_path, data_dir);
+	debug_log(DLOG_GAME, "%s starting request=%s data=%s", preview_label, request_path, data_dir);
 	result = main(7, argv_preview);
 	error = android_level_preview_last_error();
 	if (result && (!error || !error[0]))
@@ -430,7 +430,7 @@ Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
 		jclass cls = (*env)->GetObjectClass(env, thiz);
 		if (!cls || (*env)->ExceptionCheck(env)) goto preview_cleanup;
 		jmethodID finished = (*env)->GetMethodID(
-		    env, cls, "onNativePreviewFinished", "(Ljava/lang/String;)V");
+		    env, cls, finished_method, "(Ljava/lang/String;)V");
 		if (!finished || (*env)->ExceptionCheck(env)) goto preview_cleanup;
 		jstring jerror = dxx_jni_string_from_utf8(env, error ? error : "");
 		if (!jerror || (*env)->ExceptionCheck(env)) goto preview_cleanup;
@@ -444,6 +444,78 @@ preview_cleanup:
 	atomic_store(&g_engine_state, ANDROID_ENGINE_TERMINATING);
 	if (!(*env)->ExceptionCheck(env)) android_kill_process(env);
 }
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_LevelPreviewActivity_startLevelPreview(
+    JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
+{
+	android_start_preview(
+	    env, thiz, jrequest_path, jdata_dir, "onNativePreviewFinished", "level preview");
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_startRobotPreview(
+    JNIEnv *env, jobject thiz, jstring jrequest_path, jstring jdata_dir)
+{
+	android_start_preview(
+	    env, thiz, jrequest_path, jdata_dir, "onNativeRobotPreviewFinished", "robot preview");
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeCloseRobotPreview(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	LOGI("nativeCloseRobotPreview: requesting preview close");
+	android_robot_preview_request_close();
+	SDL_Event ev = { 0 };
+	ev.type = SDL_QUIT;
+	SDL_PushEvent(&ev);
+	android_lifecycle_actions_request_wake();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeRotateRobotPreview(
+    JNIEnv *env, jobject thiz, jint heading_delta, jint pitch_delta)
+{
+	(void) env;
+	(void) thiz;
+	android_robot_preview_rotate(heading_delta, pitch_delta);
+	android_lifecycle_actions_request_wake();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeResetRobotPreview(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	android_robot_preview_reset();
+	android_lifecycle_actions_request_wake();
+}
+
+#ifdef INTROSPECT_ON
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeRequestIntrospect(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	game_introspect_request();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_RobotPreviewActivity_nativeSetIntrospectPath(
+    JNIEnv *env, jobject thiz, jstring jpath)
+{
+	char *path;
+	(void) thiz;
+	if (!jpath)
+		return;
+	if (dxx_jni_string_to_utf8(env, jpath, &path)) {
+		game_introspect_set_path(path);
+		free(path);
+	}
+}
+#endif
 
 /*
  * android_finish_and_exit -- clean fatal exit for Error() calls.

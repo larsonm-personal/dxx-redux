@@ -76,6 +76,18 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".RobotPreviewD1Activity"
+            android:process=":robotpreview_d1"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".RobotPreviewD2Activity"
+            android:process=":robotpreview_d2"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
 
         <!-- FileProvider for sharing exported config files -->
         <provider

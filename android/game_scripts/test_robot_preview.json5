@@ -1,0 +1,17 @@
+// TEST: Host-driven robot preview smoke test for a mission with robot replacements
+[
+    {"_info": {
+        "description": "Launch a robot replacement preview from a staged mission pack",
+        "games": ["d1", "d2"],
+        "_standalone": false,
+        "_owner": "test_robot_preview"
+    }},
+    {"action": "enter_launcher"},
+    {
+        "action": "launch_random_robot_preview",
+        "label": "host-selected mission pack",
+        "mod_file": "${MISSION_ZIP}",
+        "game": "${GAME}",
+        "seed": ${SEED}
+    }
+]

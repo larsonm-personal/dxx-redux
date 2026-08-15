@@ -2720,6 +2720,7 @@ private fun LevelMetadataDialog(
     var previewPreparing by remember(target) { mutableStateOf(false) }
     var previewError by remember(target) { mutableStateOf<String?>(null) }
     var previewRequestPath by remember(target) { mutableStateOf<String?>(null) }
+    var robotPreviewRequestPath by remember(target) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     DisposableEffect(target) {
         RouteMetadataDiagnostics.log(
@@ -2743,6 +2744,19 @@ private fun LevelMetadataDialog(
                 } else {
                     activityResult.data?.getStringExtra(LevelPreviewActivity.EXTRA_ERROR)
                         ?: "Preview process ended before reporting a result"
+                }
+        }
+    val robotPreviewLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
+            robotPreviewRequestPath?.let { RobotPreviewRequestStore.delete(context.cacheDir, it) }
+            robotPreviewRequestPath = null
+            previewPreparing = false
+            previewError =
+                if (activityResult.resultCode == Activity.RESULT_OK) {
+                    null
+                } else {
+                    activityResult.data?.getStringExtra(RobotPreviewActivity.EXTRA_ERROR)
+                        ?: "Robot preview process ended before reporting a result"
                 }
         }
 
@@ -2830,6 +2844,35 @@ private fun LevelMetadataDialog(
                                     }
                                 }
                             },
+                            onRobotPreview = { row, item, label ->
+                                if (!previewPreparing) {
+                                    previewPreparing = true
+                                    previewError = null
+                                    scope.launch {
+                                        val launchRequest =
+                                            runCatching {
+                                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                    RobotPreviewRequestStore.create(
+                                                        context.cacheDir,
+                                                        target,
+                                                        row,
+                                                        item,
+                                                        label,
+                                                    )
+                                                }
+                                            }.getOrElse { error ->
+                                                previewPreparing = false
+                                                previewError = error.message ?: "Could not prepare robot preview"
+                                                return@launch
+                                            }
+                                        robotPreviewRequestPath = launchRequest.requestFile.absolutePath
+                                        (context as? SetupActivity)?.prepareForLevelPreviewLaunch()
+                                        robotPreviewLauncher.launch(
+                                            RobotPreviewActivity.createIntent(context, launchRequest),
+                                        )
+                                    }
+                                }
+                            },
                         )
                     }
                 }
@@ -2846,6 +2889,7 @@ private fun LevelMetadataResultContent(
     previewPreparing: Boolean,
     previewError: String?,
     onPreview: (LevelMetadataLevelRow) -> Unit,
+    onRobotPreview: (LevelMetadataLevelRow, LevelMetadataReplacementItem, String) -> Unit,
 ) {
     if (result == null) {
         ModDetailLine("No analysis result", color = MaterialTheme.colorScheme.error)
@@ -2887,7 +2931,16 @@ private fun LevelMetadataResultContent(
     if (replacementGroups.isNotEmpty()) {
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         ModDetailSectionTitle("Replacements")
-        LevelMetadataReplacementGroups(replacementGroups, robotNames)
+        LevelMetadataReplacementGroups(
+            replacementGroups,
+            robotNames,
+            previewPreparing,
+        ) { item, label ->
+            RobotPreviewRequestStore
+                .findSourceLevel(result.levels, item)
+                ?.let { row -> onRobotPreview(row, item, label) }
+        }
+        previewError?.let { ModDetailLine(it, color = MaterialTheme.colorScheme.error) }
     }
     if (result.levels.isEmpty()) return
 
@@ -2900,9 +2953,13 @@ private fun LevelMetadataResultContent(
 private fun LevelMetadataReplacementGroups(
     groups: List<LevelMetadataReplacementGroup>,
     robotNames: List<RobotNameEntry>,
+    previewPreparing: Boolean,
+    onRobotPreview: (LevelMetadataReplacementItem, String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        groups.forEach { group -> LevelMetadataReplacementGroupRow(group, robotNames) }
+        groups.forEach { group ->
+            LevelMetadataReplacementGroupRow(group, robotNames, previewPreparing, onRobotPreview)
+        }
     }
 }
 
@@ -2910,6 +2967,8 @@ private fun LevelMetadataReplacementGroups(
 private fun LevelMetadataReplacementGroupRow(
     group: LevelMetadataReplacementGroup,
     robotNames: List<RobotNameEntry>,
+    previewPreparing: Boolean,
+    onRobotPreview: (LevelMetadataReplacementItem, String) -> Unit,
 ) {
     var expanded by remember(group.kind) { mutableStateOf(false) }
     Column {
@@ -2929,7 +2988,9 @@ private fun LevelMetadataReplacementGroupRow(
             if (group.items.isEmpty()) {
                 Text("No changes", fontSize = 11.sp, modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
             } else {
-                group.items.forEach { item -> LevelMetadataReplacementItemRow(item, robotNames) }
+                group.items.forEach { item ->
+                    LevelMetadataReplacementItemRow(item, robotNames, previewPreparing, onRobotPreview)
+                }
             }
         }
         HorizontalDivider()
@@ -2940,6 +3001,8 @@ private fun LevelMetadataReplacementGroupRow(
 private fun LevelMetadataReplacementItemRow(
     item: LevelMetadataReplacementItem,
     robotNames: List<RobotNameEntry>,
+    previewPreparing: Boolean,
+    onRobotPreview: (LevelMetadataReplacementItem, String) -> Unit,
 ) {
     var expanded by remember(item.kind, item.label) { mutableStateOf(false) }
     val canExpand = item.fields.isNotEmpty()
@@ -2964,6 +3027,14 @@ private fun LevelMetadataReplacementItemRow(
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (item.kind == "robot" && item.number >= 0) {
+                TextButton(
+                    onClick = { onRobotPreview(item, label) },
+                    enabled = !previewPreparing,
+                ) {
+                    Text(if (previewPreparing) "Preparing" else "Preview")
+                }
+            }
             if (canExpand) {
                 Icon(
                     if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,

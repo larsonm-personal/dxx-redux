@@ -1,5 +1,20 @@
 # Robot Preview Implementation Plan
 
+## Implementation Status
+
+- [x] Confirm the existing developer viewer renders polygon model indexes rather than robot identities
+- [x] Preserve a source level for each aggregated robot replacement row
+- [x] Add validated robot preview request staging with the selected robot and source level
+- [x] Add isolated D1 and D2 robot preview activities with drag rotation, reset, and close controls
+- [x] Add the native mission-aware robot render loop and JNI surface/control bridge
+- [x] Add Preview robot to replacement rows and report launch failures in the metadata viewer
+- [x] Add request/UI/native regression coverage and run Android, native, and Windows verification
+
+Implementation reuses the established level-preview startup request and native file so no D1/D2
+engine source changes or second startup argument are needed. The launcher retains exact row/item
+provenance, and the isolated preview process loads that mission and level before resolving the robot.
+The initial implementation previews the mod definition; base/mod switching remains a follow-up.
+
 ## Objective
 
 Launch a read-only engine-rendered robot preview from a robot entry in the metadata replacement browser. The preview must show the robot definition, model, and textures from the correct mission and level without starting gameplay.

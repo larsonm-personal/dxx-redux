@@ -35,10 +35,13 @@ extern "C" {
 #include "playsave.h"
 #include "palette.h"
 #include "player.h"
+#include "polyobj.h"
+#include "robot.h"
 #include "screens.h"
 #include "secretarea.h"
 #include "startup_resume_shared.h"
 #include "texmerge.h"
+#include "timer.h"
 #include "window.h"
 
 #include "android_log.h"
@@ -67,6 +70,13 @@ static std::atomic<int> Level_preview_close_requested(0);
 static int Level_preview_loading_progress_completed;
 static int Level_preview_loading_progress_max_percent;
 static unsigned long long Level_preview_metadata_progress_callbacks;
+static std::atomic<int> Robot_preview_close_requested(0);
+static std::atomic<int> Robot_preview_heading(F0_5 - 1);
+static std::atomic<int> Robot_preview_pitch(0);
+static std::atomic<int> Robot_preview_active(0);
+static int Robot_preview_model = -1;
+static int Robot_preview_number = -1;
+static unsigned long long Robot_preview_frames;
 
 class preview_loading_progress_guard
 {
@@ -326,6 +336,117 @@ static int preview_base_window_handler(window *wind, d_event *event, void *data)
 	return 0;
 }
 
+static int robot_preview_window_handler(window *wind, d_event *event, void *data)
+{
+	(void) data;
+	switch (event->type) {
+		case EVENT_QUIT:
+			window_close(wind);
+			return 1;
+		case EVENT_WINDOW_DRAW: {
+			vms_angvec angles;
+			angles.h = static_cast<fixang>(
+			    Robot_preview_heading.fetch_add(40, std::memory_order_relaxed));
+			angles.p = static_cast<fixang>(Robot_preview_pitch.load(std::memory_order_relaxed));
+			angles.b = 0;
+			draw_model_picture(Robot_preview_model, &angles);
+			timer_delay(F1_0 / 60);
+			return 1;
+		}
+		case EVENT_WINDOW_CLOSE:
+			if (Game_wind == wind)
+				Game_wind = NULL;
+			return 0;
+		default:
+			return 0;
+	}
+}
+
+static int run_robot_preview(
+    const json &request, Uint32 started_at, preview_loading_progress_guard &loading)
+{
+	Robot_preview_close_requested.store(0, std::memory_order_release);
+	Robot_preview_heading.store(F0_5 - 1, std::memory_order_release);
+	Robot_preview_pitch.store(0, std::memory_order_release);
+	Robot_preview_active.store(0, std::memory_order_release);
+	Robot_preview_model = -1;
+	Robot_preview_number = request.value("robot_number", -1);
+	Robot_preview_frames = 0;
+	loading.update("Mounting mission files", 5);
+
+	const std::string preview_write_dir = request.value("preview_write_dir", "");
+	if (preview_write_dir.empty() || !PHYSFS_setWriteDir(preview_write_dir.c_str()) ||
+	    !PHYSFS_addToSearchPath(preview_write_dir.c_str(), 0))
+		return preview_fail(std::string("Could not isolate robot preview writes: ") + physfs_error());
+	if (mount_preview_content(request))
+		return 1;
+
+	loading.update("Loading game data", 15);
+	gamedata_init();
+	texmerge_init(10);
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		char groupa_pig[] = "groupa.pig";
+		piggy_init_pigfile(groupa_pig);
+	}
+#endif
+	loading.update("Initializing game", 35);
+	init_game();
+	new_player_config();
+	Players[Player_num].callsign[0] = '\0';
+	if (load_preview_mission(request))
+		return 1;
+
+	const std::string level_file = request.value("level_file", "");
+	if (level_file.empty() || !PHYSFSX_exists(level_file.c_str(), 1))
+		return preview_fail("Robot preview source level is missing");
+	loading.update(level_file.c_str(), 55);
+	if (load_level(level_file.c_str()))
+		return preview_fail(std::string("Could not load robot preview level ") + level_file);
+	Current_level_num = request.value("level_num", 1);
+#ifdef DXX_BUILD_DESCENT_II
+	load_level_robots_file(level_file.c_str());
+#endif
+	load_preview_palette();
+	if (Robot_preview_number < 0 || Robot_preview_number >= N_robot_types)
+		return preview_fail("Robot number is not available in the selected level");
+	Robot_preview_model = Robot_info[Robot_preview_number].model_num;
+	if (Robot_preview_model < 0 || Robot_preview_model >= N_polygon_models)
+		return preview_fail("Robot model is not available in the selected level");
+
+	loading.update("Opening robot viewer", 90);
+	set_screen_mode(SCREEN_GAME);
+	Game_wind = window_create(
+	    &grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT,
+	    robot_preview_window_handler, NULL);
+	if (!Game_wind)
+		return preview_fail("Could not create robot preview window");
+	Robot_preview_active.store(1, std::memory_order_release);
+	int first_frame_pending = 1;
+	while (Game_wind) {
+		if (Robot_preview_close_requested.exchange(0, std::memory_order_acq_rel)) {
+			window_close(Game_wind);
+			continue;
+		}
+		FrameTime = F1_0 / 60;
+		event_process();
+		++Robot_preview_frames;
+		if (first_frame_pending) {
+			first_frame_pending = 0;
+			loading.finish();
+			debug_log(DLOG_GAME, "robot preview first frame ready in %u ms robot=%d model=%d level=%s",
+			          (unsigned int) (SDL_GetTicks() - started_at), Robot_preview_number,
+			          Robot_preview_model, level_file.c_str());
+		}
+	}
+	Robot_preview_active.store(0, std::memory_order_release);
+	if (Game_wind)
+		window_close(Game_wind);
+	debug_log(DLOG_GAME, "robot preview closed after %u ms robot=%d",
+	          (unsigned int) (SDL_GetTicks() - started_at), Robot_preview_number);
+	return 0;
+}
+
 extern "C" const char *android_level_preview_request_path(void)
 {
 	const int index = startup_find_cmd_arg("-level-preview-request");
@@ -362,6 +483,10 @@ extern "C" int android_level_preview_run(const char *request_path)
 		stream >> request;
 	} catch (const std::exception &error) {
 		return preview_fail(std::string("Could not parse preview request: ") + error.what());
+	}
+	if (request.value("schema", "") == "dxx-robot-preview-request-v1") {
+		Level_preview_request = request;
+		return run_robot_preview(request, started_at, loading_progress);
 	}
 	if (request.value("schema", "") != "dxx-level-preview-request-v1")
 		return preview_fail("Unsupported preview request schema");
@@ -484,7 +609,7 @@ extern "C" int android_level_preview_run(const char *request_path)
 
 extern "C" int android_level_preview_active(void)
 {
-	return Level_preview_is_active;
+	return Level_preview_is_active || Robot_preview_active.load(std::memory_order_acquire);
 }
 
 extern "C" void android_level_preview_request_close(void)
@@ -494,6 +619,30 @@ extern "C" void android_level_preview_request_close(void)
 
 extern "C" const char *android_level_preview_introspection_json(void)
 {
+	if (Robot_preview_active.load(std::memory_order_acquire)) {
+		const Uint32 now = SDL_GetTicks();
+		json preview = {
+			{ "schema", "dxx-robot-preview-introspection-v1" },
+			{ "active", true },
+			{ "request_id", Level_preview_request.value("request_id", "") },
+			{ "game", Level_preview_request.value("game", "") },
+			{ "mission_name", Level_preview_request.value("mission_name", "") },
+			{ "level_file", Level_preview_request.value("level_file", "") },
+			{ "level_num", Level_preview_request.value("level_num", 0) },
+			{ "robot_number", Robot_preview_number },
+			{ "robot_label", Level_preview_request.value("robot_label", "") },
+			{ "model_number", Robot_preview_model },
+			{ "palette_ready", Level_preview_palette_ready != 0 },
+			{ "palette_name", Level_preview_palette_name },
+			{ "frame_count", Robot_preview_frames },
+			{ "heading", Robot_preview_heading.load(std::memory_order_relaxed) },
+			{ "pitch", Robot_preview_pitch.load(std::memory_order_relaxed) },
+			{ "close_requested", Robot_preview_close_requested.load(std::memory_order_relaxed) != 0 },
+			{ "uptime_ms", now - Level_preview_started_at }
+		};
+		Level_preview_introspection = preview.dump();
+		return Level_preview_introspection.c_str();
+	}
 	if (!Level_preview_is_active)
 		return NULL;
 	configure_preview_touch_axes();
@@ -533,4 +682,23 @@ extern "C" const char *android_level_preview_introspection_json(void)
 extern "C" const char *android_level_preview_last_error(void)
 {
 	return Level_preview_error.c_str();
+}
+
+extern "C" void android_robot_preview_request_close(void)
+{
+	Robot_preview_close_requested.store(1, std::memory_order_release);
+}
+
+extern "C" void android_robot_preview_rotate(int heading_delta, int pitch_delta)
+{
+	if (!Robot_preview_active.load(std::memory_order_acquire))
+		return;
+	Robot_preview_heading.fetch_add(heading_delta, std::memory_order_relaxed);
+	Robot_preview_pitch.fetch_add(pitch_delta, std::memory_order_relaxed);
+}
+
+extern "C" void android_robot_preview_reset(void)
+{
+	Robot_preview_heading.store(F0_5 - 1, std::memory_order_release);
+	Robot_preview_pitch.store(0, std::memory_order_release);
 }
