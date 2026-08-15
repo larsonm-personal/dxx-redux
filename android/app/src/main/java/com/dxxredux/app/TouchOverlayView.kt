@@ -4250,7 +4250,7 @@ class TouchOverlayView
                 }
 
                 ADMIN_AUTOMAP_SECRET_REVEAL -> {
-                    if (secretAreaRevealProvider?.invoke() == true) "Hide Secrets" else "Reveal Secrets"
+                    "Show Secrets"
                 }
 
                 ADMIN_AUTOMAP_OBJECTIVES -> {
