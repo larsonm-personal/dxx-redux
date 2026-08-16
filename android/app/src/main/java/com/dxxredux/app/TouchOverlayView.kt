@@ -728,6 +728,7 @@ class TouchOverlayView
             const val ADMIN_AUTOMAP_OBJECTIVES = 27
             const val ADMIN_RESTART_LEVEL = 28
             const val ADMIN_AUTOMAP_REACTOR = 29
+            const val ADMIN_AUTOMAP_MATCEN_MODE = 30
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -901,6 +902,7 @@ class TouchOverlayView
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
         var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
         var adminTrayObjectiveModeProvider: (() -> Int)? = null
+        var adminTrayMatcenModeProvider: (() -> Int)? = null
         var mapCheatsAccessibleProvider: (() -> Boolean)? = null
         var reactorCountdownPausedProvider: (() -> Boolean)? = null
         var reactorPauseAllowedProvider: (() -> Boolean)? = null
@@ -4255,6 +4257,10 @@ class TouchOverlayView
 
                 ADMIN_AUTOMAP_SECRET_REVEAL -> {
                     "Show Secrets"
+                }
+
+                ADMIN_AUTOMAP_MATCEN_MODE -> {
+                    matcenModeLabel(adminTrayMatcenModeProvider?.invoke() ?: MATCEN_MODE_DEFAULT)
                 }
 
                 ADMIN_AUTOMAP_OBJECTIVES -> {

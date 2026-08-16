@@ -32,6 +32,7 @@ void state_android_ensure_parent_dirs_for_path(const char *filename);
 int state_android_write_save_metadata(rewind_file *fp, const char *desc,
                                       const char *mission_filename);
 void state_android_restore_music_type_from_meta(const android_save_meta_disk *meta);
+void state_android_restore_matcen_mode_from_meta(const android_save_meta_disk *meta);
 void state_android_restore_player_flight_state(void);
 void state_android_prepare_modal_error_background(const char *reason);
 int state_android_save_to_path(const char *filename, const char *desc,

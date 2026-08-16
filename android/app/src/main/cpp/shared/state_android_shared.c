@@ -23,6 +23,8 @@
 #include "android_file_pair_transaction.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#include "fuelcen.h"
+#include "matcen_mode.h"
 #include "android_save_set.h"
 #include "coop_save.h"
 #include "android_log.h"
@@ -717,6 +719,9 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 #ifdef DXX_BUILD_DESCENT_II
 	android_params.guidebot_route_target_mode = (uint8_t) escort_get_route_target_mode();
 #endif
+	android_params.matcen_mode = (uint8_t) matcen_mode_get();
+	matcen_mode_get_activation_counts(android_params.matcen_activation_counts,
+	                                  MATCEN_MODE_MAX_CENTERS);
 	android_save_meta_apply_cached_thumbnail(&android_params);
 	if (!android_save_meta_write_physfs(physfs_fp, &android_params))
 		return 0;
@@ -732,6 +737,16 @@ void state_android_restore_music_type_from_meta(const android_save_meta_disk *me
 	debug_log(DLOG_GAME, "restore applying saved music type: game=%s old=%d new=%d",
 	          state_android_game_label(), GameCfg.MusicType, meta->music_type);
 	GameCfg.MusicType = meta->music_type;
+}
+
+void state_android_restore_matcen_mode_from_meta(const android_save_meta_disk *meta)
+{
+	if (!meta) {
+		matcen_mode_reset_game();
+		return;
+	}
+	matcen_restore_mode(meta->matcen_mode, meta->matcen_activation_counts,
+	                    MATCEN_MODE_MAX_CENTERS);
 }
 
 void state_android_prepare_modal_error_background(const char *reason)

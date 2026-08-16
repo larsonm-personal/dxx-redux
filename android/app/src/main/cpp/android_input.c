@@ -1783,6 +1783,19 @@ Java_com_dxxredux_app_MainActivity_nativeToggleSecretAreaReveal(JNIEnv *env, job
 }
 
 JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeMatcenMode(JNIEnv *env, jobject thiz)
+{
+	return matcen_mode_get();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCycleMatcenMode(JNIEnv *env, jobject thiz)
+{
+	if (PlayerCfg.MapCheatsAccessible)
+		android_matcen_mode_cycle_pending = 1;
+}
+
+JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeObjectiveOverlayMode(JNIEnv *env, jobject thiz)
 {
 	return level_metadata_get_objective_mode();

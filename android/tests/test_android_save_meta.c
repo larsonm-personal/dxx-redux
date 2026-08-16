@@ -71,6 +71,8 @@ int main(void)
 	params.level_name = "Lunar Outpost";
 	params.level_seconds = 123;
 	params.total_seconds = 456;
+	params.matcen_mode = MATCEN_MODE_PAUSED;
+	params.matcen_activation_counts[2] = 1;
 	params.thumbnail_rgb6 = thumb_a;
 	params.thumbnail_width = ANDROID_SAVE_META_THUMB_W;
 	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H;
@@ -151,6 +153,10 @@ int main(void)
 		failures += report_failure("parsed wrong game id for D1 trailer");
 	if (parsed.music_type != 1)
 		failures += report_failure("music type did not round-trip");
+	if (parsed.matcen_mode != MATCEN_MODE_PAUSED)
+		failures += report_failure("matcen mode did not round-trip");
+	if (parsed.matcen_activation_counts[2] != 1)
+		failures += report_failure("matcen activation count did not round-trip");
 	if (parsed.thumbnail_format != ANDROID_SAVE_META_THUMB_RGB6)
 		failures += report_failure("thumbnail format missing on D1 trailer");
 	if (parsed.thumbnail_rgb6[0] != 7)

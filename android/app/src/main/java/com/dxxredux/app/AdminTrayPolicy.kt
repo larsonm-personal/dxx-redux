@@ -8,6 +8,7 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
         TouchOverlayView.ADMIN_NET_EVENTS,
         TouchOverlayView.ADMIN_NET_STATS,
         TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL,
+        TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE,
         TouchOverlayView.ADMIN_AUTOMAP_REACTOR,
         TouchOverlayView.ADMIN_VIDEO_INFO,
         -> true
@@ -49,6 +50,18 @@ internal const val OBJECTIVE_MODE_OFF = 0
 internal const val OBJECTIVE_MODE_ALL = 1
 internal const val OBJECTIVE_MODE_REMAINING = 2
 internal const val OBJECTIVE_MODE_NEXT = 3
+
+// These values mirror the matcen modes in matcen_mode.h.
+internal const val MATCEN_MODE_DEFAULT = 0
+internal const val MATCEN_MODE_ONE_ROUND = 1
+internal const val MATCEN_MODE_PAUSED = 2
+
+internal fun matcenModeLabel(mode: Int): String =
+    when (mode) {
+        MATCEN_MODE_ONE_ROUND -> "matcens: 1 round limit"
+        MATCEN_MODE_PAUSED -> "matcens: paused"
+        else -> "matcens: default"
+    }
 
 internal fun objectiveOverlayLabel(mode: Int): String =
     "Objectives: " +
@@ -175,6 +188,7 @@ internal fun adminTrayVisibleActions(
         )
         if (mapCheatsAccessible) {
             actions.add(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL)
+            actions.add(TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE)
             if (reactorPauseAllowed) {
                 actions.add(TouchOverlayView.ADMIN_AUTOMAP_REACTOR)
             }

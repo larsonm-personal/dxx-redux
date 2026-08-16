@@ -93,6 +93,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "state.h"
 #include "songs.h"
+#include "matcen_mode.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -834,6 +835,8 @@ void InitPlayerObject()
 void StartNewGame(int start_level)
 {
 	state_quick_item = -1;	// for first blind save, pick slot to save in
+
+	matcen_mode_reset_game();
 
 	Game_mode = GM_NORMAL;
 

@@ -4,7 +4,7 @@
         "description": "Launch a selected robot from the installed base-game data",
         "games": ["d1", "d2"],
         "_standalone": false,
-        "_owner": "test_base_robot_preview"
+        "_owner": "test_robot_preview"
     }},
     {"action": "enter_launcher"},
     {

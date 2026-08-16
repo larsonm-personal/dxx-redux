@@ -158,6 +158,7 @@ class AdminTrayUiTest {
         assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
@@ -174,6 +175,7 @@ class AdminTrayUiTest {
             )
 
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
     }
@@ -190,6 +192,7 @@ class AdminTrayUiTest {
             )
 
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_REACTOR))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
     }
@@ -276,6 +279,7 @@ class AdminTrayUiTest {
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_STATS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_EVENTS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_VIDEO_INFO))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertTrue(adminTrayCyclesState(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
@@ -283,6 +287,7 @@ class AdminTrayUiTest {
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_STATS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_EVENTS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_OBJECTIVES))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_VIDEO_INFO))
     }
@@ -294,6 +299,14 @@ class AdminTrayUiTest {
         assertEquals("Objectives: Remaining", objectiveOverlayLabel(OBJECTIVE_MODE_REMAINING))
         assertEquals("Objectives: Next", objectiveOverlayLabel(OBJECTIVE_MODE_NEXT))
         assertEquals("Objectives: Off", objectiveOverlayLabel(Int.MAX_VALUE))
+    }
+
+    @Test
+    fun matcenModeLabelsDescribeEveryCycleState() {
+        assertEquals("matcens: default", matcenModeLabel(MATCEN_MODE_DEFAULT))
+        assertEquals("matcens: 1 round limit", matcenModeLabel(MATCEN_MODE_ONE_ROUND))
+        assertEquals("matcens: paused", matcenModeLabel(MATCEN_MODE_PAUSED))
+        assertEquals("matcens: default", matcenModeLabel(Int.MAX_VALUE))
     }
 
     @Test

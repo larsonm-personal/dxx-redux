@@ -99,6 +99,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "state.h"
 #include "songs.h"
+#include "matcen_mode.h"
 #include "gamepal.h"
 #include "movie.h"
 #include "controls.h"
@@ -1069,6 +1070,8 @@ extern void init_seismic_disturbances(void);
 void StartNewGame(int start_level)
 {
 	state_quick_item = -1;	// for first blind save, pick slot to save in
+
+	matcen_mode_reset_game();
 
 	Game_mode = GM_NORMAL;
 

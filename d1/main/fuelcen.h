@@ -136,6 +136,8 @@ extern fix Fuelcen_control_center_strength;
 extern void trigger_matcen(int segnum);
 
 extern void disable_matcens(void);
+extern int matcen_set_mode(int mode);
+extern int matcen_restore_mode(int mode, const ubyte *activation_counts, int count);
 
 extern FuelCenter Station[MAX_NUM_FUELCENS];
 extern int Num_fuelcenters;

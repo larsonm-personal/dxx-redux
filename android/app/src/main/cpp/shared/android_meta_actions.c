@@ -24,11 +24,13 @@
 #include "cntrlcen.h"
 #include "android_save_meta.h"
 #include "game.h"
+#include "fuelcen.h"
 #include "hudmsg.h"
 #include "inferno.h"
 #include "input_demo_hooks.h"
 #include "key.h"
 #include "multi.h"
+#include "matcen_mode.h"
 #include "newdemo.h"
 #include "object.h"
 #include "playsave.h"
@@ -48,6 +50,7 @@ volatile int android_demo_record_toggle_pending = 0;
 volatile int android_rewind_pending = 0;
 volatile int android_coop_restart_level_pending = 0;
 volatile int android_reactor_pause_toggle_pending = 0;
+volatile int android_matcen_mode_cycle_pending = 0;
 volatile int android_weapon_select_pending = 0;
 extern int HandleSystemKey(int key);
 
@@ -331,6 +334,22 @@ int android_handle_ingame_saveload_request(void)
 			HUD_init_message_literal(HM_DEFAULT, "Level-start checkpoint unavailable");
 		else
 			HUD_init_message_literal(HM_DEFAULT, "Restarting level from checkpoint");
+		return 1;
+	}
+
+	if (android_matcen_mode_cycle_pending) {
+		int mode = (matcen_mode_get() + 1) % MATCEN_MODE_COUNT;
+
+		android_matcen_mode_cycle_pending = 0;
+		if (!PlayerCfg.MapCheatsAccessible)
+			return 0;
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI) {
+			multi_request_matcen_mode(mode);
+			return 1;
+		}
+#endif
+		matcen_set_mode(mode);
 		return 1;
 	}
 

@@ -2738,6 +2738,7 @@ RetryObjectLoading:
 		int have_android_meta = state_android_read_android_metadata_trailer(fp, &android_meta);
 		coop_save_metadata coop_meta;
 		int have_coop_meta = state_android_read_coop_metadata_trailer(fp, &coop_meta);
+		state_android_restore_matcen_mode_from_meta(have_android_meta ? &android_meta : NULL);
 		if (have_android_meta)
 			state_android_restore_music_type_from_meta(&android_meta);
 		if (have_coop_meta) {

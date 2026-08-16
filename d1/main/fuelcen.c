@@ -52,6 +52,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 
 #include "gameseq.h"
+#include "matcen_mode.h"
 
 // The max number of fuel stations per mine.
 
@@ -237,7 +238,11 @@ void trigger_matcen(int segnum)
 	if (!robotcen->Lives)
 		return;
 
+	if (!matcen_mode_can_activate(segp->matcen_num))
+		return;
+
 	robotcen->Lives--;
+	matcen_mode_record_activation(segp->matcen_num);
 	robotcen->Timer = F1_0*1000;	//	Make sure the first robot gets emitted right away.
 	robotcen->Enabled = 1;			//	Say this center is enabled, it can create robots.
 	robotcen->Capacity = i2f(Difficulty_level + 3);
@@ -633,12 +638,36 @@ void disable_matcens(void)
 	}
 }
 
+int matcen_set_mode(int mode)
+{
+	int old_mode = matcen_mode_get();
+
+	if (!matcen_mode_set(mode))
+		return 0;
+	if (old_mode == MATCEN_MODE_PAUSED || mode == MATCEN_MODE_PAUSED)
+		disable_matcens();
+	return 1;
+}
+
+int matcen_restore_mode(int mode, const ubyte *activation_counts, int count)
+{
+	int old_mode = matcen_mode_get();
+
+	if (!matcen_mode_restore(mode, activation_counts, count))
+		return 0;
+	if (old_mode == MATCEN_MODE_PAUSED || mode == MATCEN_MODE_PAUSED)
+		disable_matcens();
+	return 1;
+}
+
 //	--------------------------------------------------------------------------------------------
 //	Initialize all materialization centers.
 //	Give them all the right number of lives.
 void init_all_matcens(void)
 {
 	int	i;
+
+	matcen_mode_reset_level();
 
 	for (i=0; i<Num_fuelcenters; i++)
 		if (Station[i].Type == SEGMENT_IS_ROBOTMAKER) {

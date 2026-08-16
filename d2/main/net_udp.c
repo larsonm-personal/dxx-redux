@@ -8423,6 +8423,8 @@ void net_udp_send_extras ()
 		net_udp_send_player_flags();    
 	if (Network_sending_extras==2)
 		multi_send_powcap_update();
+	if (Network_sending_extras==1)
+		multi_send_matcen_mode_state_to_player(Player_joining_extras);
 	if (Network_sending_extras==1 && Game_mode & GM_MULTI_COOP)
 		multi_send_escort_owner(Escort_owner_player);
 	if (Network_sending_extras==1 && Game_mode & GM_BOUNTY)

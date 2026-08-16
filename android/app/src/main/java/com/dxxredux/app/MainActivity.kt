@@ -394,6 +394,10 @@ class MainActivity :
 
     external fun nativeToggleSecretAreaReveal()
 
+    external fun nativeMatcenMode(): Int
+
+    external fun nativeCycleMatcenMode()
+
     external fun nativeObjectiveOverlayMode(): Int
 
     external fun nativeCycleObjectiveOverlay()
@@ -1119,6 +1123,14 @@ class MainActivity :
                     }
                 }
 
+                TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE -> {
+                    try {
+                        nativeMatcenMode() != MATCEN_MODE_DEFAULT
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
                 TouchOverlayView.ADMIN_AUTOMAP_REACTOR -> {
                     try {
                         nativeReactorCountdownPaused()
@@ -1141,6 +1153,13 @@ class MainActivity :
                 nativeObjectiveOverlayMode()
             } catch (_: Exception) {
                 OBJECTIVE_MODE_OFF
+            }
+        }
+        touchOverlay.adminTrayMatcenModeProvider = {
+            try {
+                nativeMatcenMode()
+            } catch (_: Exception) {
+                MATCEN_MODE_DEFAULT
             }
         }
         touchOverlay.mapCheatsAccessibleProvider = {
@@ -1337,6 +1356,13 @@ class MainActivity :
                 TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL -> {
                     try {
                         nativeToggleSecretAreaReveal()
+                    } catch (_: Exception) {
+                    }
+                }
+
+                TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE -> {
+                    try {
+                        nativeCycleMatcenMode()
                     } catch (_: Exception) {
                     }
                 }

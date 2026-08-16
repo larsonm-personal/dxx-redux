@@ -101,6 +101,7 @@ extern volatile int android_demo_record_toggle_pending;
 extern volatile int android_rewind_pending;
 extern volatile int android_coop_restart_level_pending;
 extern volatile int android_reactor_pause_toggle_pending;
+extern volatile int android_matcen_mode_cycle_pending;
 extern volatile int android_weapon_select_pending;
 
 /* Requests produced by android_input.c and consumed on the game thread. */

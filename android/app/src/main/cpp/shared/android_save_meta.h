@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <physfs.h>
 
+#include "matcen_mode.h"
+
 #define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
-#define ANDROID_SAVE_META_VERSION 4
+#define ANDROID_SAVE_META_VERSION 5
 
 #define ANDROID_SAVE_META_CALLSIGN_LEN     8
 #define ANDROID_SAVE_META_DESC_LEN         20
@@ -60,6 +62,8 @@ typedef struct android_save_meta_write_params {
 	uint8_t difficulty_min;
 	uint8_t difficulty_max;
 	uint8_t guidebot_route_target_mode;
+	uint8_t matcen_mode;
+	uint8_t matcen_activation_counts[MATCEN_MODE_MAX_CENTERS];
 	const uint8_t *thumbnail_rgb6;
 	uint16_t thumbnail_width;
 	uint16_t thumbnail_height;
@@ -76,7 +80,7 @@ typedef struct android_save_meta_disk {
 	uint8_t game_id;
 	uint8_t save_kind;
 	uint8_t thumbnail_format;
-	uint8_t reserved0;
+	uint8_t matcen_mode;
 	uint16_t thumbnail_width;
 	uint16_t thumbnail_height;
 	uint64_t wall_clock_unix_seconds;
@@ -92,6 +96,7 @@ typedef struct android_save_meta_disk {
 	uint8_t difficulty_max;
 	uint8_t guidebot_route_target_mode;
 	uint8_t music_type;
+	uint8_t matcen_activation_counts[MATCEN_MODE_MAX_CENTERS];
 	uint8_t thumbnail_rgb6[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	android_save_meta_footer footer;
 } android_save_meta_disk;

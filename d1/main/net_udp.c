@@ -8217,6 +8217,8 @@ void net_udp_send_extras ()
 		multi_send_kill_goal_counts();
 	if (Network_sending_extras==2)
 		multi_send_powcap_update();
+	if (Network_sending_extras==1)
+		multi_send_matcen_mode_state_to_player(Player_joining_extras);
 	if (Network_sending_extras==1 && Game_mode & GM_BOUNTY)
 		multi_send_bounty();
 #ifdef __ANDROID__

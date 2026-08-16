@@ -64,6 +64,9 @@ target_include_directories(test_hud_layout PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR
 add_executable(test_homing_compat test_homing_compat.c)
 target_include_directories(test_homing_compat PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(test_matcen_mode test_matcen_mode.c "${DXX_TEST_SHARED_SOURCE_DIR}/matcen_mode.c")
+target_include_directories(test_matcen_mode PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
 add_executable(test_android_save_meta test_android_save_meta.c
                                       "${DXX_TEST_SHARED_SOURCE_DIR}/android_save_meta.c")
 target_link_libraries(test_android_save_meta PRIVATE ${DXX_TARGET_PREFIX}maths ${PHYSFS_LIBRARY})

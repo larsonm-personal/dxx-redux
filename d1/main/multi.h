@@ -25,6 +25,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "powerup.h"
 #include "newmenu.h"
+#include "matcen_mode.h"
 // Need these for non network builds too -Chris
 #define MAX_MESSAGE_LEN 35
 #define MULTI_REWIND_SAVE_BEGIN_LEN     32
@@ -69,7 +70,7 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30015 // Redux 1.2 + synchronized coop reactor countdown pause
+#define MULTI_PROTO_VERSION 30016 // Redux 1.2 + synchronized matcen mode
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -146,6 +147,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_ENTRY, 55)   \
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_END, 5)   \
 	VALUE(MULTI_REACTOR_PAUSE       , 7)   \
+	VALUE(MULTI_MATCEN_MODE         , 3 + MATCEN_MODE_MAX_CENTERS)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -301,6 +303,8 @@ void multi_process_data(const ubyte *dat, int len);
 void multi_process_bigdata(const ubyte *buf, unsigned len);
 void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender);
 void multi_request_reactor_pause_toggle(void);
+void multi_request_matcen_mode(int mode);
+void multi_send_matcen_mode_state_to_player(int pnum);
 void multi_do_death(int objnum);
 void multi_send_message_dialog(void);
 int multi_delete_extra_objects(void);

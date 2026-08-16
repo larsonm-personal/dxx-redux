@@ -128,6 +128,9 @@ int android_save_meta_build(android_save_meta_disk *out,
 	out->difficulty_min = android_save_meta_clamp_difficulty(params->difficulty_min);
 	out->difficulty_max = android_save_meta_clamp_difficulty(params->difficulty_max);
 	out->guidebot_route_target_mode = params->guidebot_route_target_mode;
+	out->matcen_mode = params->matcen_mode;
+	memcpy(out->matcen_activation_counts, params->matcen_activation_counts,
+	       sizeof(out->matcen_activation_counts));
 	if (out->difficulty_min > out->difficulty_max) {
 		out->difficulty_changed = 0;
 		out->difficulty_min = 0;
@@ -171,6 +174,8 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	    meta->difficulty_min > meta->difficulty_max)
 		return 0;
 	if (meta->guidebot_route_target_mode > 1)
+		return 0;
+	if (meta->matcen_mode >= MATCEN_MODE_COUNT)
 		return 0;
 	if (meta->thumbnail_format == ANDROID_SAVE_META_THUMB_NONE)
 		return 1;
